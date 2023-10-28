@@ -1,0 +1,56 @@
+name: performance testing
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  performance:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Cache pnpm dependencies
+        id: cache-pnpm-dependencies
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-dependencies-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-dependencies-
+
+      - name: Cache pnpm build
+        id: cache-pnpm-build
+        uses: actions/cache@v3
+        with:
+          path: .next
+          key: ${{ runner.os }}-performance-build-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-next-
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile
+        if: |
+          steps.cache-pnpm-dependencies.outputs.cache-hit != 'true' ||
+          steps.cache-pnpm-packages.outputs.cache-hit != 'true'
+
+      - name: Run build
+        run: pnpm run build
+        if: |
+          steps.cache-pnpm-build.outputs.cache-hit != 'true'
+
+      - name: Run desktop performance test
+        run: pnpm run lighthouse:desktop
+
+      - name: Run mobile performance test
+        run: pnpm run lighthouse:mobile
