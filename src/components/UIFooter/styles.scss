@@ -1,0 +1,63 @@
+.ui-grid-top {
+  padding-top: 8px;
+  padding-bottom: 3px;
+  background-color: #FFFFFF;
+  border-top: 1px solid #E1E7EA;
+
+  .ui-logo-container {
+    width: 139px;
+    margin-left: 7.7rem;
+  }
+
+  .ui-policy-container {
+    width: 33rem;
+    margin-right: 6.65rem;
+
+    .ui-policy-item {
+      padding-top: 3px;
+
+      .ui-link-typography {
+        background-color: #F4F5F6;
+        padding: 5px 16px 5px 16px;
+        border-radius: 8px;
+        margin: 4px;
+        text-align: center;
+      }
+    }
+  }
+}
+
+.ui-grid-bottom {
+  background-color: #F4F5F6;
+  border-radius: 16px 16px 0 0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+
+  .ui-copyright-container {
+    margin-left: 7.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .ui-copyright-typography {
+      margin-left: 9px;
+      padding-top: 9px;
+    }
+  }
+
+  .ui-social-links-container {
+    margin-right: 6rem;
+    width: 25rem;
+
+    .ui-email-link {
+      margin-top: 2px;
+      height: 33px;
+      border: 1px solid #E1E7EA;
+      border-radius: 8px;
+      padding: 5px 16px 8px 16px;
+      color: black;
+      background-color: #FFFFFF;
+      margin-right: 15px;
+    }
+  }
+}

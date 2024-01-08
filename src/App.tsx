@@ -1,21 +1,16 @@
-import { useTranslation } from 'react-i18next';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+
+import Authentication from '@/modules/User/features/Auth';
+import './index.css';
+
+const router = createBrowserRouter([
+  {
+    path: '/',
+    element: <Authentication />,
+  },
+]);
 
 function App() {
-  const { t } = useTranslation();
-
-  const click = () => {
-    setTimeout(() => {
-      // eslint-disable-next-line
-      console.log('done');
-    }, 2000);
-  };
-
-  return (
-    <div>
-      {/* eslint-disable-next-line react/button-has-type */}
-      <button onClick={click}>{ t('hello') }</button>
-    </div>
-  );
+  return <RouterProvider router={router} />;
 }
-
 export default App;

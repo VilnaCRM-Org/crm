@@ -4,23 +4,27 @@ module.exports = {
     node: true,
     es6: true,
     jest: true,
+    browser: true,
   },
   parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
-  ignorePatterns: ['node_modules/*', 'docker-compose.yml', 'pnpm-lock.yaml', 'build/*', 'coverage/*'],
+  ignorePatterns: [
+    'node_modules/*',
+    'docker-compose.yml',
+    'pnpm-lock.yaml',
+    'build/*',
+    'coverage/*',
+    'storybook-static/*',
+  ],
   extends: [
     'eslint:recommended',
     'plugin:storybook/recommended',
     'airbnb',
     'airbnb/hooks',
+    'prettier',
   ],
   overrides: [
     {
-      files: [
-        '**/*.ts',
-        '**/*.tsx',
-        '**/*.spec.js',
-        '**/*.spec.jsx',
-      ],
+      files: ['**/*.ts', '**/*.tsx', '**/*.spec.js', '**/*.spec.jsx'],
       parser: '@typescript-eslint/parser',
       settings: {
         react: { version: 'detect' },
@@ -72,9 +76,12 @@ module.exports = {
         'import/default': 'off',
         'import/no-named-as-default-member': 'off',
         'import/no-named-as-default': 'off',
+        'import/no-extraneous-dependencies': 'off',
+        'import/no-unresolved': 'off',
 
         'import/extensions': 'off',
 
+        'react/jsx-props-no-spreading': 'warn',
         'react/react-in-jsx-scope': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
 

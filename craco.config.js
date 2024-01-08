@@ -1,5 +1,4 @@
 const path = require('path');
-const eslint = require('./.eslintrc');
 const LocalizationGenerator = require('./scripts/localizationGenerator');
 
 // eslint-disable-next-line
@@ -12,7 +11,26 @@ module.exports = function () {
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
+      module: {
+        rules: [
+          {
+            test: /\.svg$/,
+            use: ['@svgr/webpack', 'url-loader'],
+          },
+          {
+            test: /\.(png|woff|woff2|eot|ttf|svg)$/,
+            loader: 'url-loader',
+          },
+          {
+            test: /\.(scss|css)$/,
+            use: ['style-loader', 'css-loader', 'sass-loader'],
+          }
+        ],
+      },
     },
-    eslint,
+    eslint: {
+      // enable: false,
+      extends: path.resolve(__dirname, '.eslintrc.js'),
+    },
   };
 };
