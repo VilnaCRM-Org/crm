@@ -1,5 +1,5 @@
-import { readdirSync, readFileSync, writeFile } from 'fs';
-import { join, dirname } from 'path';
+const fs = require('fs');
+const path = require('path');
 
 // TODO: need fix localizationGenerator for module approach
 
@@ -45,14 +45,14 @@ class LocalizationGenerator {
       return { ...acc, ...parsedLocalizationFromFolder };
     }, {});
 
-    const filePath = join(dirname(__dirname), this.pathToWriteLocalization, this.localizationFile);
+    const filePath = path.join(path.dirname(__dirname), this.pathToWriteLocalization, this.localizationFile);
     const fileContent = JSON.stringify(localizationObj);
 
     this.writeLocalizationFile(fileContent, filePath);
   }
 
   getFeatureFolders() {
-    const featureDirectories = readdirSync(this.featurePath, { withFileTypes: true });
+    const featureDirectories = fs.readdirSync(this.featurePath, { withFileTypes: true });
 
     return featureDirectories
       .filter((directory) => directory.isDirectory())
@@ -60,7 +60,7 @@ class LocalizationGenerator {
   }
 
   getLocalizationFromFolder(folder) {
-    const localizationFiles = readdirSync(this.pathToI18nFolder.replace('{folder}', folder), {
+    const localizationFiles = fs.readdirSync(this.pathToI18nFolder.replace('{folder}', folder), {
       withFileTypes: true,
     });
 
@@ -71,7 +71,7 @@ class LocalizationGenerator {
 
       if (fileType !== this.jsonFileType) return localizations;
 
-      const localizationContent = readFileSync(
+      const localizationContent = fs.readFileSync(
         this.pathToI18nFile.replace('{folder}', folder).replace('{file.name}', file.name),
         'utf8'
       );
@@ -88,7 +88,7 @@ class LocalizationGenerator {
 
   // eslint-disable-next-line class-methods-use-this
   writeLocalizationFile(fileContent, filePath) {
-    writeFile(filePath, fileContent, (err) => {
+    fs.writeFile(filePath, fileContent, (err) => {
       if (err) {
         throw new Error(err);
       }
