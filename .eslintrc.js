@@ -60,6 +60,8 @@ module.exports = {
           },
         ],
 
+        'class-methods-use-this': 'off',
+
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
 
         'linebreak-style': ['error', 'unix'],
@@ -89,6 +91,13 @@ module.exports = {
 
         '@typescript-eslint/no-unused-vars': ['error'],
 
+        "@typescript-eslint/explicit-member-accessibility": ["error", {
+          "accessibility": "explicit",
+          "overrides": {
+            "constructors": "no-public",
+          },
+        }],
+        "@typescript-eslint/member-ordering": "error",
         '@typescript-eslint/explicit-function-return-type': ['off'],
         '@typescript-eslint/explicit-module-boundary-types': ['off'],
         '@typescript-eslint/no-empty-function': ['off'],

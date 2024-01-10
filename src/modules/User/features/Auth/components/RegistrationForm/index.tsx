@@ -1,15 +1,15 @@
 // TODO: need research why this component can be imported normally only with slash
 // import UITextField from "@/components/UITextField/";
-import UIFormTextField from '@/components/UIFormTextField';
-import UITypography from "@/components/UITypography";
 import { Grid, Checkbox, Box, Button, Divider } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { useForm } from "react-hook-form"
 import { Link } from 'react-router-dom';
 
 import Theme from './Theme';
-// TODO: need to try change approach with importing scss files inside react components
-import './styles.scss';
+
+import UIFormTextField from '@/components/UIFormTextField';
+import UITypography from "@/components/UITypography";
+import { registerUser } from "@/modules/User/store";
 
 export default function RegistrationForm() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -23,6 +23,8 @@ export default function RegistrationForm() {
 
   const registrationHandler = (data: any) => {
     console.log('registration', data);
+
+    registerUser(data);
   }
 
   return (
