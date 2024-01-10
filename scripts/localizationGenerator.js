@@ -96,4 +96,4 @@ class LocalizationGenerator {
   }
 }
 
-export default LocalizationGenerator;
+module.exports = LocalizationGenerator;
