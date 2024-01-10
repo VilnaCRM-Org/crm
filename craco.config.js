@@ -1,10 +1,11 @@
 const path = require('path');
-const LocalizationGenerator = require('./scripts/localizationGenerator');
+// const LocalizationGenerator = require('./scripts/localizationGenerator');
 
 // eslint-disable-next-line
 module.exports = function () {
-  const localizationGenerator = new LocalizationGenerator();
-  localizationGenerator.generateLocalizationFile();
+  // TODO: need fix localizationGenerator for module approach
+  // const localizationGenerator = new LocalizationGenerator();
+  // localizationGenerator.generateLocalizationFile();
 
   return {
     webpack: {
