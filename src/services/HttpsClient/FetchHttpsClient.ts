@@ -6,7 +6,6 @@ export default class FetchHttpsClient implements HttpsClient {
   }
 
   public post<T>(url: string, data: T): Promise<T> {
-    console.log('in FetchHttpsCLient.ts line 9', url, data);
     return this.request(url, 'POST', data, null) as Promise<T>;
   }
 
