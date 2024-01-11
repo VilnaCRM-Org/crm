@@ -2,8 +2,9 @@
 // import UITextField from "@/components/UITextField/";
 import { Grid, Checkbox, Box, Button, Divider } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
-import { useForm } from "react-hook-form"
+import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 
 import Theme from './Theme';
 
@@ -11,9 +12,10 @@ import UIFormTextField from '@/components/UIFormTextField';
 import UITypography from "@/components/UITypography";
 import { registerUser } from "@/modules/User/store";
 
-export default function RegistrationForm() {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { handleSubmit, control, formState: { errors } } = useForm({
+export default function RegistrationForm(): JSX.Element {
+  const dispatch = useDispatch();
+
+  const { handleSubmit, control } = useForm({
     defaultValues: {
       firstAndLastName: '',
       email: '',
@@ -21,11 +23,9 @@ export default function RegistrationForm() {
     }
   });
 
-  const registrationHandler = (data: any) => {
-    console.log('registration', data);
-
-    registerUser(data);
-  }
+  const registrationHandler = (data: any): void => {
+    dispatch(registerUser(data));
+  };
 
   return (
     <ThemeProvider theme={Theme}>

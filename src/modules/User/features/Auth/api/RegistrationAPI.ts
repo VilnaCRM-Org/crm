@@ -1,3 +1,7 @@
+import { container } from 'tsyringe';
+import HttpsClient from "@/services/HttpsClient/HttpsClient";
+
+const httpsClient = container.resolve<HttpsClient>('HttpsClient');
 
 interface ICredentials {
   nameAndSurname: string,
@@ -6,7 +10,7 @@ interface ICredentials {
 }
 
 export default class RegistrationAPI {
-  public register(credentials: ICredentials) {
-    console.log('in RegistrationAPI.ts line 11', credentials);
+  public async register(credentials: ICredentials): Promise<void> {
+    await httpsClient.post('https://localhost/api/users', credentials);
   }
 }

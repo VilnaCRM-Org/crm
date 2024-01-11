@@ -3,7 +3,7 @@ import HttpsClient from "@/services/HttpsClient/HttpsClient";
 export default class HttpClientFactory {
   private clientConstructors = new Map<string, new () => HttpsClient>();
 
-  public registerClient(name: string, constructor: new () => HttpsClient) {
+  public registerClient(name: string, constructor: new () => HttpsClient): void {
     this.clientConstructors.set(name, constructor);
   }
 

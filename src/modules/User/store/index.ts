@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice } from '@reduxjs/toolkit';
 
 import RegistrationAPI from "@/modules/User/features/Auth/api/RegistrationAPI";
 
@@ -12,12 +12,12 @@ const authSlice = createSlice({
     password: '',
   },
   reducers: {
-    async registerUser(state, action) {
-      await registrationAPI.register(action.payload);
+    registerUser(state, action) {
+      registrationAPI.register(action.payload);
     }
   }
-})
+});
 
-export const { registerUser } = authSlice.actions
+export const { registerUser } = authSlice.actions;
 
-export default authSlice.reducer
+export default authSlice.reducer;
