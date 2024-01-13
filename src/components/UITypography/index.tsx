@@ -9,6 +9,7 @@ export default function UITypography(props: TypographyProps): JSX.Element {
 
   return (
     <ThemeProvider theme={Theme}>
+      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
       <Typography {...props}>{children}</Typography>
     </ThemeProvider>
   );

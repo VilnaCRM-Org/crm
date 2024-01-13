@@ -24,7 +24,7 @@ jobs:
         run: pnpm i --frozen-lockfile
 
       - name: Build
-        run: set CI=false & pnpm run build
+        run: pnpm run build
 
       - name: Cypress run
         uses: cypress-io/github-action@v5

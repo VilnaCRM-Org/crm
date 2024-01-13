@@ -81,7 +81,7 @@ module.exports = {
         'import/extensions': 'off',
 
         'react/prop-types': 'off',
-        'react/jsx-props-no-spreading': 'warn',
+        'react/jsx-props-no-spreading': 'error',
         'react/react-in-jsx-scope': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
 

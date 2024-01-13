@@ -26,14 +26,8 @@ export default function UIFormTextField<T extends FieldValues> ({ control, rules
         defaultValue={defaultValue}
         rules={rules}
         render={({ field }) => (
-            <TextField
-              {...field}
-              {...props}
-              {...inputProps}
-              inputRef={ref}
-              error={invalid}
-              helperText={error?.message}
-            />
+          // eslint-disable-next-line react/jsx-props-no-spreading
+            <TextField {...field} {...props} {...inputProps} inputRef={ref} error={invalid} helperText={error?.message} />
           )}
       />
     </ThemeProvider>
