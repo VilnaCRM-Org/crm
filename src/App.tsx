@@ -1,3 +1,4 @@
+import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import Authentication from '@/modules/User/features/Auth';
@@ -10,7 +11,7 @@ const router = createBrowserRouter([
   },
 ]);
 
-function App() {
+function App(): React.ReactElement {
   return <RouterProvider router={router} />;
 }
 export default App;

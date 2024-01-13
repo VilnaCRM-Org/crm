@@ -10,7 +10,7 @@ import { ReactComponent as VilnaLogo } from '../../assets/icons/VilnaLogo.svg';
 
 import SocialMedia from './socialMedia';
 
-export default function UIFooter() {
+export default function UIFooter(): React.ReactElement {
   return (
     <Box>
       <Grid container direction="row" justifyContent="space-between" className='ui-grid-top'>

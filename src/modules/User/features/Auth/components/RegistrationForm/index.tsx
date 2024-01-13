@@ -1,29 +1,30 @@
 // TODO: need research why this component can be imported normally only with slash
 // import UITextField from "@/components/UITextField/";
+import UIFormTextField from '@/components/UIFormTextField';
+import UITypography from '@/components/UITypography';
 import { Grid, Checkbox, Box, Button, Divider } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { Link } from 'react-router-dom';
+
+import Credentials from '@/modules/User/features/Auth/types/Credentials';
+import { registerUser } from '@/modules/User/store';
 
 import Theme from './Theme';
-
-import UIFormTextField from '@/components/UIFormTextField';
-import UITypography from "@/components/UITypography";
-import { registerUser } from "@/modules/User/store";
 
 export default function RegistrationForm(): JSX.Element {
   const dispatch = useDispatch();
 
-  const { handleSubmit, control } = useForm({
+  const { handleSubmit, control } = useForm<Credentials>({
     defaultValues: {
-      firstAndLastName: '',
+      initials: '',
       email: '',
       password: '',
     }
   });
 
-  const registrationHandler = (data: any): void => {
+  const registrationHandler = (data: Credentials): void => {
     dispatch(registerUser(data));
   };
 
@@ -59,7 +60,7 @@ export default function RegistrationForm(): JSX.Element {
               control={control}
               rules={{ required: true }}
               defaultValue=''
-              name='firstAndLastName'
+              name='initials'
               label='name and surname'
             />
           </Grid>

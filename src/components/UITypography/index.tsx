@@ -11,5 +11,5 @@ export default function UITypography(props: TypographyProps): JSX.Element {
     <ThemeProvider theme={Theme}>
       <Typography {...props}>{children}</Typography>
     </ThemeProvider>
-  )
+  );
 }

@@ -1,13 +1,14 @@
 import UIFooter from '@/components/UIFooter';
+import Theme from '@/styles/theme';
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import { Grid, Typography, Box, Button } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
+import React from 'react';
 import { Link } from 'react-router-dom';
 
-import RegistrationForm from "@/modules/User/features/Auth/components/RegistrationForm";
-import Theme from '@/styles/theme';
+import RegistrationForm from '@/modules/User/features/Auth/components/RegistrationForm';
 
-export default function Authentication(): JSX.Element {
+export default function Authentication(): React.ReactElement {
   return (
     <ThemeProvider theme={Theme}>
       <Box sx={{ backgroundColor: '#FBFBFB' }}>

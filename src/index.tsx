@@ -9,10 +9,6 @@ import Store from '@/stores';
 
 import App from './App';
 
-function projectInitiator() {
-
-}
-
 const root = createRoot(document.getElementById('root') as HTMLElement);
 root.render(
   <React.StrictMode>

@@ -31,7 +31,7 @@ module.exports = function () {
     },
     eslint: {
       // enable: false,
-      extends: path.resolve(__dirname, '.eslintrc.js'),
+      extends: path.resolve(__dirname, './eslintrc.js'),
     },
   };
 };

@@ -59,15 +59,11 @@ module.exports = {
             patterns: ['@/features/*/*'],
           },
         ],
-
+        'no-extra-semi': 'off',
         'class-methods-use-this': 'off',
-
+        'quotes': ['error', 'single', { 'avoidEscape': true, 'allowTemplateLiterals': true }],
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
-
-        'semi': ['error', 'always'],
-
         'linebreak-style': ['error', 'unix'],
-        'react/prop-types': 'off',
 
         'import/order': [
           'error',
@@ -82,9 +78,9 @@ module.exports = {
         'import/no-named-as-default': 'off',
         'import/no-extraneous-dependencies': 'off',
         'import/no-unresolved': 'off',
-
         'import/extensions': 'off',
 
+        'react/prop-types': 'off',
         'react/jsx-props-no-spreading': 'warn',
         'react/react-in-jsx-scope': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
@@ -92,7 +88,20 @@ module.exports = {
         'jsx-a11y/anchor-is-valid': 'off',
 
         '@typescript-eslint/no-unused-vars': ['error'],
-
+        "@typescript-eslint/semi": ["error", "always"],
+        "@typescript-eslint/member-delimiter-style": [
+          "error",
+          {
+            "overrides": {
+              "interface": {
+                "multiline": {
+                  "delimiter": "semi",
+                  "requireLast": true
+                }
+              }
+            }
+          }
+        ],
         "@typescript-eslint/explicit-member-accessibility": ["error", {
           "accessibility": "explicit",
           "overrides": {

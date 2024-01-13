@@ -1,18 +1,18 @@
-import { ThemeProvider, TextField } from "@mui/material";
-import { TextFieldProps } from "@mui/material/TextField";
+import { ThemeProvider, TextField } from '@mui/material';
+import { TextFieldProps } from '@mui/material/TextField';
 import React from 'react';
-import { Controller, useController } from "react-hook-form";
+import { Controller, useController, Control, FieldValues, PathValue, Path, RegisterOptions } from 'react-hook-form';
 
 import Theme from './Theme';
 
-interface ICustomTextField extends TextFieldProps<'standard'>{
-  control: any,
-  rules: any,
-  defaultValue: string,
-  name: string,
+interface CustomTextField<T extends FieldValues> extends TextFieldProps<'standard'>{
+  control: Control<T>;
+  rules: Omit<RegisterOptions<T, Path<T>>, 'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'>;
+  defaultValue: PathValue<T, Path<T>>;
+  name: Path<T>;
 }
 
-export default function UIFormTextField ({ control, rules, defaultValue, name, ...props }: ICustomTextField) {
+export default function UIFormTextField<T extends FieldValues> ({ control, rules, defaultValue, name, ...props }: CustomTextField<T>): React.ReactElement {
   const {
     field: { ref, ...inputProps },
     fieldState: { invalid, error },
@@ -21,9 +21,9 @@ export default function UIFormTextField ({ control, rules, defaultValue, name, .
   return (
     <ThemeProvider theme={Theme}>
       <Controller
-        name="firstAndLastName"
+        name={name}
         control={control}
-        defaultValue=""
+        defaultValue={defaultValue}
         rules={rules}
         render={({ field }) => (
             <TextField

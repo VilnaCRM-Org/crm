@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-import RegistrationAPI from "@/modules/User/features/Auth/api/RegistrationAPI";
+import RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 
 const registrationAPI = new RegistrationAPI();
 

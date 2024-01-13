@@ -1,4 +1,4 @@
-import HttpsClient, { RequestMethod } from "@/services/HttpsClient/HttpsClient";
+import HttpsClient, { RequestMethod } from '@/services/HttpsClient/HttpsClient';
 
 export default class FetchHttpsClient implements HttpsClient {
   public get<T>(url: string): Promise<T> {

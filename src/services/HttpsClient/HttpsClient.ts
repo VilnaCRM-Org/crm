@@ -6,4 +6,4 @@ export default interface HttpsClient {
   patch<T>(url: string, data: T): Promise<T>;
   put<T>(url: string, data: T): Promise<T>;
   delete<T>(url: string, data: T): Promise<T>;
-};
+}
