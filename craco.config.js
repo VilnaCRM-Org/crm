@@ -9,6 +9,10 @@ module.exports = function () {
 
   return {
     webpack: {
+      configure: (webpackConfig) => ({
+          ...webpackConfig,
+          stats: 'errors-only'
+        }),
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
@@ -30,7 +34,6 @@ module.exports = function () {
       },
     },
     eslint: {
-      // enable: false,
       extends: path.resolve(__dirname, './eslintrc.js'),
     },
   };
