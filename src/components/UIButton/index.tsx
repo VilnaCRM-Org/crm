@@ -2,7 +2,7 @@ import { ThemeProvider, Button } from '@mui/material';
 import { ButtonProps } from '@mui/material/Button';
 import React from 'react';
 
-import Theme from '@/components/UILink/Theme';
+import Theme from './Theme';
 
 export default function UIButton(props: ButtonProps): JSX.Element {
   const { children } = props;

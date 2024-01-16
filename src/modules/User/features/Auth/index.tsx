@@ -11,7 +11,14 @@ import RegistrationForm from '@/modules/User/features/Auth/components/Registrati
 export default function Authentication(): React.ReactElement {
   return (
     <ThemeProvider theme={Theme}>
-      <Box sx={{ backgroundColor: '#FBFBFB' }}>
+      <Box
+        sx={{
+          backgroundColor: '#FBFBFB',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: '100vh',
+        }}
+      >
         <Box sx={{ backgroundColor: '#FFFFFF', height: '4rem' }}>
           <Grid
             container
@@ -27,7 +34,7 @@ export default function Authentication(): React.ReactElement {
             <Button sx={{ padding: '0' }}>
               <Link to="/">
                 <Grid container flexDirection="row" justifyContent="center">
-                  <ArrowBackIosIcon />
+                  <ArrowBackIosIcon sx={{ color: '#969B9D' }} />
                   <Typography
                     sx={{
                       fontSize: '14.5px',

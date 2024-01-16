@@ -3,6 +3,7 @@ import { TextFieldProps } from '@mui/material/TextField';
 import React from 'react';
 import { Controller, useController, Control, FieldValues, PathValue, Path, RegisterOptions } from 'react-hook-form';
 
+import Styles from './styles';
 import Theme from './Theme';
 
 interface CustomTextField<T extends FieldValues> extends TextFieldProps<'standard'>{
@@ -27,7 +28,7 @@ export default function UIFormTextField<T extends FieldValues> ({ control, rules
         rules={rules}
         render={({ field }) => (
           // eslint-disable-next-line react/jsx-props-no-spreading
-            <TextField {...field} {...props} {...inputProps} inputRef={ref} error={invalid} helperText={error?.message} />
+            <TextField {...field} {...props} {...inputProps} inputRef={ref} error={invalid} helperText={error?.message} sx={Styles} />
           )}
       />
     </ThemeProvider>

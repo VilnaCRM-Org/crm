@@ -102,6 +102,14 @@ module.exports = {
             }
           }
         ],
+        // '@typescript-eslint/typedef': ['error', {
+        //   variableDeclaration: true,
+        //   variableDeclarationIgnoreFunction: false,
+        //   arrayDestructuring: false,
+        //   objectDestructuring: false,
+        //   propertyDeclaration: true,
+        //   memberVariableDeclaration: true
+        // }],
         "@typescript-eslint/explicit-member-accessibility": ["error", {
           "accessibility": "explicit",
           "overrides": {

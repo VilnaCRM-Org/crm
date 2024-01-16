@@ -22,7 +22,7 @@ class LocalizationGenerator {
     i18nPath = 'i18n',
     featurePath = 'src/modules/User/Features',
     jsonFileType = 'json',
-    localizationFile = 'localization.json'
+    localizationFile = 'ua.json'
   ) {
     this.i18nPath = i18nPath;
     this.featurePath = featurePath;

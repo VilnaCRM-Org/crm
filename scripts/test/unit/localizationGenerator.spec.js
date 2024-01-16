@@ -65,7 +65,7 @@ describe('LocalizationGenerator', () => {
 
   describe('writeLocalizationFile', () => {
     test('should write the localization file', () => {
-      const filePath = 'scripts/test/unit/localization.json';
+      const filePath = 'scripts/test/unit/ua.json';
       const fileContent = JSON.stringify({ greeting: 'Hello' });
 
       const mockWriteFile = mockedWriteFile();
@@ -88,7 +88,7 @@ describe('LocalizationGenerator', () => {
       const generator = new LocalizationGenerator();
 
       const fileContent = JSON.stringify({ key: 'value' });
-      const filePath = 'scripts/test/unit/localization.json';
+      const filePath = 'scripts/test/unit/ua.json';
 
       expect(() => {
         generator.writeLocalizationFile(fileContent, filePath);
