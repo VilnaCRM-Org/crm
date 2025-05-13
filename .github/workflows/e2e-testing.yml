@@ -12,19 +12,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Node.js and install dependencies
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: ${{ vars.NODE_VERSION }}
-          cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store/v3
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
 
       - name: Install dependencies
-        run: pnpm install
-        working-directory: .
-
-      - name: Build
-        run: pnpm run build
+        run: pnpm i --frozen-lockfile
 
       - name: Cache Cypress binary
         uses: actions/cache@v3
@@ -34,11 +39,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cypress-
 
+      - name: Build
+        run: pnpm run build
+
       - name: Install Cypress binary
         run: pnpm exec cypress install
 
       - name: Start dev server
         run: nohup pnpm run dev > dev-server.log 2>&1 &
+
+      - name: Check server logs (on failure)
+        if: failure()
+        run: cat dev-server.log
 
       - name: Wait for dev server to start
         run: npx wait-on http://localhost:3000
