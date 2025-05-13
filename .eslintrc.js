@@ -15,6 +15,24 @@ module.exports = {
   ],
   overrides: [
     {
+      files: ['scripts/cloudfront_routing.js'],
+      env: {
+        node: true,
+        es6: false,
+      },
+      parserOptions: {
+        ecmaVersion: 5,
+        sourceType: 'script',
+      },
+      rules: {
+        'no-var': 'off',
+        'prefer-const': 'off',
+        'prefer-destructuring': 'off',
+        'no-console': 'warn',
+        strict: ['error', 'global'],
+      },
+    },
+    {
       files: [
         '**/*.ts',
         '**/*.tsx',

@@ -32,3 +32,6 @@ jobs:
           start: pnpm run dev
           wait-on: 'http://localhost:3000'
           browser: chrome
+
+      - name: Run Cypress tests
+        run: pnpm run test:e2e
