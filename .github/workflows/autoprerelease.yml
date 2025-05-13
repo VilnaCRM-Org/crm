@@ -1,14 +1,19 @@
+
 name: generate changelog and create pre release
 
 on:
   pull_request:
-    branches: [ "main" ]
+    types: [opened, reopened]
+    branches:
+      - main
     paths-ignore:
       - 'package.json'
       - 'CHANGELOG.md'
 
 jobs:
   build:
+    env:
+      PR_BRANCH: ${{ github.head_ref }}
     runs-on: ubuntu-latest
 
     permissions:
@@ -38,3 +43,8 @@ jobs:
           tag_name: ${{ steps.changelog.outputs.tag }}
           release_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
+
+      - name: Push changes
+        if: ${{ github.event.action == 'opened' && steps.changelog.outputs.skipped == 'false' }}
+        run: |
+          git push origin $PR_BRANCH --follow-tags
