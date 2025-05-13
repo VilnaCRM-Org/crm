@@ -26,7 +26,7 @@ module.exports = {
 
           const taskNumber = data.header.match(regexp);
 
-          const correctCommit = data.header.includes(taskNumber) || false;
+          const correctCommit = taskNumber !== null;
 
           return [
             correctCommit,

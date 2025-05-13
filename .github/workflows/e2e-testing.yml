@@ -17,11 +17,12 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      - name: Install dependencies
-        run: pnpm i --frozen-lockfile
+      - name: Set up Node.js & install dependencies
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+          cache: 'pnpm'
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Build
         run: pnpm run build
@@ -30,15 +31,15 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
             ${{ runner.os }}-cypress-
 
       - name: Install Cypress binary
-        run: npx cypress install
+        run: pnpm exec cypress install
 
       - name: Start dev server
-        run: pnpm run dev &
+        run: nohup pnpm run dev > dev-server.log 2>&1 &
 
       - name: Wait for dev server
         run: npx wait-on http://localhost:3000
