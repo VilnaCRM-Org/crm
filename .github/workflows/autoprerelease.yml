@@ -2,8 +2,7 @@ name: generate changelog and create pre release
 
 on:
   pull_request:
-    branches:
-      - main
+    branches: [ "main" ]
     paths-ignore:
       - 'package.json'
       - 'CHANGELOG.md'
@@ -16,20 +15,18 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout PR branch with full history and tags
+      - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
-          fetch-depth: 0
+          ref: 'main'
 
       - name: Conventional Changelog Action
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v3
+        uses: TriPSs/conventional-changelog-action@v4
         with:
           github-token: ${{ secrets.REPO_GITHUB_TOKEN }}
-          output-file: 'false'
-          version-file: 'package.json'
-          pre-release: 'true'
+          output-file: 'CHANGELOG.md'
+          version-file: "package.json"
 
       - name: Create Release
         uses: actions/create-release@v1
@@ -40,11 +37,3 @@ jobs:
           tag_name: ${{ steps.changelog.outputs.tag }}
           release_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
-
-      - name: Push changes
-        if: ${{ steps.changelog.outputs.skipped == 'false' }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git push origin ${{ github.event.pull_request.head.ref }} --follow-tags
-
