@@ -26,12 +26,22 @@ jobs:
       - name: Build
         run: pnpm run build
 
-      - name: Cypress run
-        uses: cypress-io/github-action@v5
+      - name: Cache Cypress binary
+        uses: actions/cache@v3
         with:
-          start: pnpm run dev
-          wait-on: 'http://localhost:3000'
-          browser: chrome
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
+
+      - name: Install Cypress binary
+        run: npx cypress install
+
+      - name: Start dev server
+        run: pnpm run dev &
+
+      - name: Wait for dev server
+        run: npx wait-on http://localhost:3000
 
       - name: Run Cypress tests
         run: pnpm run test:e2e
