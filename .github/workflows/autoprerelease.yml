@@ -1,7 +1,8 @@
 name: generate changelog and create release
 
 on:
-  push:
+  pull_request:
+    types: [opened, reopened]
     branches: [ "main" ]
     paths-ignore:
       - 'package.json'
@@ -9,8 +10,9 @@ on:
 
 jobs:
   build:
+    env:
+     PR_BRANCH: ${{ github.head_ref }}
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
 
@@ -18,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: 'main'
+          ref: $PR_BRANCH
 
       - name: Conventional Changelog Action
         id: changelog
@@ -37,3 +39,10 @@ jobs:
           tag_name: ${{ steps.changelog.outputs.tag }}
           release_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
+
+      - name: Push changes
+        if: ${{ github.event.action == 'opened' && steps.changelog.outputs.skipped == 'false' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git push origin $PR_BRANCH --follow-tags
