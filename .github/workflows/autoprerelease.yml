@@ -1,4 +1,4 @@
-name: generate changelog and create release
+name: generate changelog and create pre release
 
 on:
   pull_request:
