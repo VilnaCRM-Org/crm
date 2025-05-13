@@ -3,7 +3,7 @@ name: generate changelog and create pre release
 
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
     branches:
       - main
     paths-ignore:
@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: 'main'
+          ref: ${{ github.head_ref }}
 
       - name: Conventional Changelog Action
         id: changelog
@@ -47,4 +47,6 @@ jobs:
       - name: Push changes
         if: ${{ github.event.action == 'opened' && steps.changelog.outputs.skipped == 'false' }}
         run: |
-          git push origin $PR_BRANCH --follow-tags
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git push origin $PR_BRANCH
