@@ -16,10 +16,11 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout PR branch with full history and tags
         uses: actions/checkout@v4
         with:
-          ref: 'main'
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
 
       - name: Conventional Changelog Action
         id: changelog
@@ -39,3 +40,11 @@ jobs:
           tag_name: ${{ steps.changelog.outputs.tag }}
           release_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
+
+      - name: Push changes
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git push origin HEAD --follow-tags
+
