@@ -1,7 +1,7 @@
-name: generate changelog and create pre release
+name: generate changelog and create release
 
 on:
-  pull_request:
+  push:
     branches: [ "main" ]
     paths-ignore:
       - 'package.json'
