@@ -6,6 +6,10 @@ import App from './App';
 
 const rootElement = document.getElementById('root');
 
+if (!rootElement) {
+  throw new Error('Root element not found');
+}
+
 if (rootElement) {
   const root = createRoot(rootElement);
   root.render(
@@ -13,7 +17,4 @@ if (rootElement) {
       <App />
     </React.StrictMode>,
   );
-} else {
-  // eslint-disable-next-line no-console
-  console.error('Root element not found');
 }
