@@ -1,5 +1,3 @@
 import { createTheme } from '@mui/material';
 
-export default createTheme({
-
-});
+export default createTheme({});

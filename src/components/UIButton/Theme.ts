@@ -10,7 +10,7 @@ export default createTheme({
         contained: {
           backgroundColor: '#1EAEFF',
           borderRadius: '57px',
-          padding: '20px 32px'
+          padding: '20px 32px',
         },
         outlined: {
           padding: '17px 38px',
@@ -23,8 +23,8 @@ export default createTheme({
             padding: '17px 65px',
             marginBottom: '8px',
           },
-        }
-      }
-    }
-  }
+        },
+      },
+    },
+  },
 });

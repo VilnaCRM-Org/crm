@@ -46,7 +46,6 @@ If you find an issue to work on, you are welcome to open a PR with a fix.
 1. Fork the repository.
 
 - Using GitHub Desktop:
-
   - [Getting started with GitHub Desktop](https://docs.github.com/en/desktop/installing-and-configuring-github-desktop/getting-started-with-github-desktop)
     will guide you through setting up Desktop.
   - Once Desktop is set up, you can use

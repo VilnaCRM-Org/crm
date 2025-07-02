@@ -11,28 +11,31 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-
     steps:
+      - name: Generate token
+        id: generate_token
+        uses: tibdex/github-app-token@v1
+        with:
+          app_id: ${{ secrets.VILNACRM_APP_ID }}
+          private_key: ${{ secrets.VILNACRM_APP_PRIVATE_KEY }}
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: 'main'
+          token: ${{ steps.generate_token.outputs.token }}
+          fetch-depth: 0
 
       - name: Conventional Changelog Action
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v4
+        uses: TriPSs/conventional-changelog-action@v5
         with:
-          github-token: ${{ secrets.REPO_GITHUB_TOKEN }}
+          github-token: ${{ steps.generate_token.outputs.token }}
           output-file: 'CHANGELOG.md'
           version-file: 'package.json'
-
       - name: Create Release
         uses: actions/create-release@v1
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.REPO_GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
         with:
           tag_name: ${{ steps.changelog.outputs.tag }}
           release_name: ${{ steps.changelog.outputs.tag }}

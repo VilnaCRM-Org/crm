@@ -41,7 +41,7 @@ export default function RegistrationForm(): JSX.Element {
       initials: '',
       email: '',
       password: '',
-    }
+    },
   });
 
   const registrationHandler = (data: Credentials): void => {
@@ -50,7 +50,7 @@ export default function RegistrationForm(): JSX.Element {
 
   return (
     <ThemeProvider theme={Theme}>
-      <Box sx={{ flex: '1', }}>
+      <Box sx={{ flex: '1' }}>
         <Box
           sx={{
             width: '31.38rem',
@@ -70,7 +70,7 @@ export default function RegistrationForm(): JSX.Element {
               width: '22.6875rem',
               marginTop: '0',
               padding: '23px 23px 16px 23px',
-            }
+            },
           }}
         >
           <form onSubmit={handleSubmit(registrationHandler)}>
@@ -83,7 +83,7 @@ export default function RegistrationForm(): JSX.Element {
                 '@media (max-width: 375px)': {
                   fontSize: '1.375rem',
                   marginBottom: '0.4rem',
-                }
+                },
               }}
             >
               Реєстрація
@@ -95,8 +95,7 @@ export default function RegistrationForm(): JSX.Element {
                 '@media (max-width: 375px)': {
                   letterSpacing: '0.18px',
                   marginBottom: '0.82rem',
-
-                }
+                },
               }}
             >
               Створіть аккаунт у VilnaCRM
@@ -114,7 +113,7 @@ export default function RegistrationForm(): JSX.Element {
                   },
                   '@media (max-width: 375px)': {
                     marginBottom: '2px',
-                  }
+                  },
                 }}
               >
                 Ваше імя та прізвище
@@ -122,10 +121,10 @@ export default function RegistrationForm(): JSX.Element {
               <UIFormTextField
                 control={control}
                 rules={{ required: true }}
-                defaultValue=''
-                name='initials'
-                placeholder='Михайло Светський'
-                type='text'
+                defaultValue=""
+                name="initials"
+                placeholder="Михайло Светський"
+                type="text"
               />
             </Grid>
             <Grid container flexDirection="column">
@@ -143,7 +142,7 @@ export default function RegistrationForm(): JSX.Element {
                   '@media (max-width: 375px)': {
                     marginTop: '5.5px',
                     marginBottom: '2px',
-                  }
+                  },
                 }}
               >
                 E-mail
@@ -151,10 +150,10 @@ export default function RegistrationForm(): JSX.Element {
               <UIFormTextField
                 control={control}
                 rules={{ required: true }}
-                defaultValue=''
-                name='email'
-                placeholder='vilnaCRM@gmail.com'
-                type='email'
+                defaultValue=""
+                name="email"
+                placeholder="vilnaCRM@gmail.com"
+                type="email"
               />
             </Grid>
             <Grid
@@ -167,7 +166,7 @@ export default function RegistrationForm(): JSX.Element {
                 },
                 '@media (max-width: 375px)': {
                   marginBottom: '14px',
-                }
+                },
               }}
             >
               <UITypography
@@ -183,19 +182,21 @@ export default function RegistrationForm(): JSX.Element {
                   '@media (max-width: 375px)': {
                     marginTop: '5.5px',
                     marginBottom: '2px',
-                  }
+                  },
                 }}
-              >Пароль</UITypography>
+              >
+                Пароль
+              </UITypography>
               <UIFormTextField
                 control={control}
                 rules={{ required: true }}
-                defaultValue=''
-                name='password'
+                defaultValue=""
+                name="password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder='Створіть пароль'
+                placeholder="Створіть пароль"
                 InputProps={{
                   endAdornment: (
-                    <InputAdornment position="end" sx={{  }}>
+                    <InputAdornment position="end" sx={{}}>
                       <IconButton
                         sx={{ paddingRight: '18px' }}
                         aria-label="toggle password visibility"
@@ -227,9 +228,9 @@ export default function RegistrationForm(): JSX.Element {
                   },
                   '@media (max-width: 375px)': {
                     padding: '9px 32px',
-                  }
+                  },
                 }}
-                type='submit'
+                type="submit"
                 variant="contained"
               >
                 Реєстрація
@@ -250,21 +251,31 @@ export default function RegistrationForm(): JSX.Element {
                 '@media (max-width: 375px)': {
                   marginTop: '17px',
                   marginBottom: '14px',
-                }
+                },
               }}
-            >Або</Divider>
-            <Grid container justifyContent='space-between'>
-              <UIButton variant='outlined'><Google /></UIButton>
-              <UIButton variant='outlined'><Facebook /></UIButton>
-              <UIButton variant='outlined'><Github /></UIButton>
-              <UIButton variant='outlined'><Twitter /></UIButton>
+            >
+              Або
+            </Divider>
+            <Grid container justifyContent="space-between">
+              <UIButton variant="outlined">
+                <Google />
+              </UIButton>
+              <UIButton variant="outlined">
+                <Facebook />
+              </UIButton>
+              <UIButton variant="outlined">
+                <Github />
+              </UIButton>
+              <UIButton variant="outlined">
+                <Twitter />
+              </UIButton>
             </Grid>
           </form>
         </Box>
         <Box>
           <Grid
             container
-            justifyContent='center'
+            justifyContent="center"
             sx={{
               marginTop: '21px',
               marginBottom: '48px',
@@ -274,7 +285,7 @@ export default function RegistrationForm(): JSX.Element {
               '@media (max-width: 375px)': {
                 marginTop: '17px',
                 marginBottom: '18px',
-              }
+              },
             }}
           >
             <UIButton
@@ -287,7 +298,7 @@ export default function RegistrationForm(): JSX.Element {
                 '@media (max-width: 1024px)': {
                   fontSize: '1.125rem',
                   letterSpacing: '0',
-                }
+                },
               }}
             >
               У вас вже є аккаунт?

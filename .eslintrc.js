@@ -4,7 +4,6 @@ module.exports = {
     node: true,
     es6: true,
     jest: true,
-    browser: true,
   },
   parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
   ignorePatterns: [
@@ -23,6 +22,24 @@ module.exports = {
     'prettier',
   ],
   overrides: [
+    {
+      files: ['scripts/cloudfront_routing.js'],
+      env: {
+        node: true,
+        es6: false,
+      },
+      parserOptions: {
+        ecmaVersion: 5,
+        sourceType: 'script',
+      },
+      rules: {
+        'no-var': 'off',
+        'prefer-const': 'off',
+        'prefer-destructuring': 'off',
+        'no-console': 'warn',
+        strict: ['error', 'global'],
+      },
+    },
     {
       files: ['**/*.ts', '**/*.tsx', '**/*.spec.js', '**/*.spec.jsx'],
       parser: '@typescript-eslint/parser',
@@ -61,9 +78,11 @@ module.exports = {
         ],
         'no-extra-semi': 'off',
         'class-methods-use-this': 'off',
-        'quotes': ['error', 'single', { 'avoidEscape': true, 'allowTemplateLiterals': true }],
+        quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
+
         'linebreak-style': ['error', 'unix'],
+        'react/prop-types': 'off',
 
         'import/order': [
           'error',
@@ -80,7 +99,6 @@ module.exports = {
         'import/no-unresolved': 'off',
         'import/extensions': 'off',
 
-        'react/prop-types': 'off',
         'react/jsx-props-no-spreading': 'error',
         'react/react-in-jsx-scope': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
@@ -88,19 +106,19 @@ module.exports = {
         'jsx-a11y/anchor-is-valid': 'off',
 
         '@typescript-eslint/no-unused-vars': ['error'],
-        "@typescript-eslint/semi": ["error", "always"],
-        "@typescript-eslint/member-delimiter-style": [
-          "error",
+        '@typescript-eslint/semi': ['error', 'always'],
+        '@typescript-eslint/member-delimiter-style': [
+          'error',
           {
-            "overrides": {
-              "interface": {
-                "multiline": {
-                  "delimiter": "semi",
-                  "requireLast": true
-                }
-              }
-            }
-          }
+            overrides: {
+              interface: {
+                multiline: {
+                  delimiter: 'semi',
+                  requireLast: true,
+                },
+              },
+            },
+          },
         ],
         // '@typescript-eslint/typedef': ['error', {
         //   variableDeclaration: true,
@@ -110,13 +128,16 @@ module.exports = {
         //   propertyDeclaration: true,
         //   memberVariableDeclaration: true
         // }],
-        "@typescript-eslint/explicit-member-accessibility": ["error", {
-          "accessibility": "explicit",
-          "overrides": {
-            "constructors": "no-public",
+        '@typescript-eslint/explicit-member-accessibility': [
+          'error',
+          {
+            accessibility: 'explicit',
+            overrides: {
+              constructors: 'no-public',
+            },
           },
-        }],
-        "@typescript-eslint/member-ordering": "error",
+        ],
+        '@typescript-eslint/member-ordering': 'error',
         '@typescript-eslint/explicit-function-return-type': 'error',
         '@typescript-eslint/explicit-module-boundary-types': ['off'],
         '@typescript-eslint/no-empty-function': ['off'],

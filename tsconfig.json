@@ -20,13 +20,7 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": [
-    "./src",
-    "./scripts",
-    "./src/assets/**/*.svg",
-    "./src/**/*.d.ts",
-    "./src/**/*.tsx"
-  ],
+  "include": ["./src", "./scripts", "./src/assets/**/*.svg", "./src/**/*.d.ts", "./src/**/*.tsx"],
   "exclude": ["node_modules"],
   "extends": "./tsconfig.paths.json"
 }

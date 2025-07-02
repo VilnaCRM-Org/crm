@@ -18,19 +18,19 @@ export default {
       marginLeft: '0',
       flexDirection: 'column',
       textAlign: 'center',
-    }
+    },
   },
   uiLogo: {
     '@media (max-width: 341px)': {
       marginRight: '13px',
-    }
+    },
   },
   uiPolicyContainer: {
     marginRight: '6.65rem',
     marginTop: '0.5rem',
     '@media (max-width: 1024px)': {
       marginRight: '0.4rem',
-    }
+    },
   },
   uiPolicyItem: {
     width: '100%',
@@ -56,8 +56,7 @@ export default {
     flexDirection: 'column',
     justifyContent: 'center',
     marginLeft: '7px',
-    '@media (max-width: 1024px)': {
-    }
+    '@media (max-width: 1024px)': {},
   },
   uiCopyrightTypography: {
     padding: '15px',
@@ -73,7 +72,7 @@ export default {
     '@media (max-width: 320px)': {
       marginTop: '0',
       marginRight: '0',
-    }
+    },
   },
   uiEmailLink: {
     marginTop: '2px',

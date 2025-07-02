@@ -20,15 +20,15 @@ module.exports = {
     {
       rules: {
         'check-task-number-rule': (data) => {
-          const list = this.listOfNames.join('|');
+          const list = module.exports.listOfNames.join('|');
 
           const regexp = new RegExp(`(${list})(.#(\\d+)).:`, 'gm');
 
           const taskNumber = data.header.match(regexp);
 
-          const correctCommit = data.header.includes(taskNumber) || false;
+          const correctCommit = taskNumber !== null;
 
-          return [correctCommit, `your task number incorrect (${this.listOfNames.join('|')}(#1))`];
+          return [correctCommit, `your task number is incorrect (${list}(#1))`];
         },
       },
     },

@@ -18,12 +18,8 @@ export default function SocialMedia(): React.ReactElement {
 
   return (
     <>
-    {links.map((link: { href: string; icon: React.ReactElement }) => (
-        <UILink
-          href={link.href}
-          key={Math.floor(Math.random() * 100000 )}
-          sx={Styles.uiLinkItem}
-        >
+      {links.map((link: { href: string; icon: React.ReactElement }) => (
+        <UILink href={link.href} key={Math.floor(Math.random() * 100000)} sx={Styles.uiLinkItem}>
           {link.icon}
         </UILink>
       ))}

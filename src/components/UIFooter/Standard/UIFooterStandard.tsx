@@ -15,20 +15,20 @@ export default function UIFooterStandard(): React.ReactElement {
       <Grid container direction="row" justifyContent="space-between" sx={Styles.uiGridTop}>
         <Grid container item sx={Styles.uiLogoContainer}>
           <Grid item>
-            <img src={VilnaLogo} alt='test' />
+            <img src={VilnaLogo} alt="test" />
           </Grid>
         </Grid>
         <Grid container item sx={Styles.uiPolicyContainer}>
           <Grid item sx={Styles.uiPolicyItem}>
             <UILink href="#">
-              <UITypography sx={Styles.uiLinkTypography} variant='steelGray'>
+              <UITypography sx={Styles.uiLinkTypography} variant="steelGray">
                 Політика конфіденційності
               </UITypography>
             </UILink>
           </Grid>
           <Grid item sx={Styles.uiPolicyItem}>
             <UILink href="#">
-              <UITypography sx={Styles.uiLinkTypography} variant='steelGray'>
+              <UITypography sx={Styles.uiLinkTypography} variant="steelGray">
                 Політика використовування
               </UITypography>
             </UILink>
@@ -44,18 +44,15 @@ export default function UIFooterStandard(): React.ReactElement {
           sx={Styles.uiGridBottom}
         >
           <Grid item sx={Styles.uiCopyrightContainer}>
-            <UITypography sx={Styles.uiCopyrightTypography}>Copyright © ТОВ “Вільна СРМ”, 2022</UITypography>
+            <UITypography sx={Styles.uiCopyrightTypography}>
+              Copyright © ТОВ “Вільна СРМ”, 2022
+            </UITypography>
           </Grid>
-          <Grid
-            container
-            item
-            direction="row"
-            sx={Styles.uiSocialLinksContainer}
-          >
+          <Grid container item direction="row" sx={Styles.uiSocialLinksContainer}>
             <UILink href="mailto:info@vilnacrm.com" sx={Styles.uiEmailLink}>
               <UITypography>info@vilnacrm.com</UITypography>
             </UILink>
-            <SocialMedia/>
+            <SocialMedia />
           </Grid>
         </Grid>
       </Grid>

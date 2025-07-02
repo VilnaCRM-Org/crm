@@ -10,6 +10,11 @@ import Store from '@/stores';
 import App from './App';
 
 const root = createRoot(document.getElementById('root') as HTMLElement);
+
+if (!root) {
+  throw new Error('Root element not found');
+}
+
 root.render(
   <React.StrictMode>
     <StyledEngineProvider injectFirst>

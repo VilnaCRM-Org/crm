@@ -5,7 +5,7 @@ export default createTheme({
     primary: {
       main: '#1A1C1E',
       contrastText: '#1A1C1E',
-    }
+    },
   },
   typography: {
     body1: {
@@ -25,7 +25,7 @@ export default createTheme({
       lineHeight: 1.5,
       fontFamily: 'Golos, Inter',
       letterSpacing: '0.15px',
-    }
+    },
     // '0.90625rem',
   },
   components: {
@@ -38,6 +38,6 @@ export default createTheme({
           steelGray: 'p',
         },
       },
-    }
-  }
+    },
+  },
 });

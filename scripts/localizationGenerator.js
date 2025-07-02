@@ -45,7 +45,11 @@ class LocalizationGenerator {
       return { ...acc, ...parsedLocalizationFromFolder };
     }, {});
 
-    const filePath = path.join(path.dirname(__dirname), this.pathToWriteLocalization, this.localizationFile);
+    const filePath = path.join(
+      path.dirname(__dirname),
+      this.pathToWriteLocalization,
+      this.localizationFile
+    );
     const fileContent = JSON.stringify(localizationObj);
 
     this.writeLocalizationFile(fileContent, filePath);

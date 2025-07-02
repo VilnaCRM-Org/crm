@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-import RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
+import RegistrationAPI from '../features/Auth/api/RegistrationAPI';
 
 const registrationAPI = new RegistrationAPI();
 
@@ -14,8 +14,8 @@ const authSlice = createSlice({
   reducers: {
     registerUser(state, action) {
       registrationAPI.register(action.payload);
-    }
-  }
+    },
+  },
 });
 
 export const { registerUser } = authSlice.actions;

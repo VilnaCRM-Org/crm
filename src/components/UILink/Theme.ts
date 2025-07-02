@@ -7,7 +7,7 @@ export default createTheme({
         root: {
           textDecoration: 'none',
         },
-      }
-    }
-  }
+      },
+    },
+  },
 });

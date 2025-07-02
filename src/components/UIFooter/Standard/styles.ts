@@ -10,7 +10,7 @@ export default {
     marginLeft: '7.7rem',
     '@media (max-width: 1024px)': {
       marginLeft: '1.9rem',
-    }
+    },
   },
   uiPolicyContainer: {
     width: '33rem',
@@ -18,7 +18,7 @@ export default {
     '@media (max-width: 1024px)': {
       marginRight: '0.5rem',
       marginTop: '0.1rem',
-    }
+    },
   },
   uiPolicyItem: {
     paddingTop: '3px',
@@ -44,7 +44,7 @@ export default {
     justifyContent: 'center',
     '@media (max-width: 1024px)': {
       marginLeft: '1.3rem',
-    }
+    },
   },
   uiCopyrightTypography: {
     marginLeft: '10px',
@@ -55,7 +55,7 @@ export default {
     width: '25rem',
     '@media (max-width: 1024px)': {
       marginRight: '0.1rem',
-    }
+    },
   },
   uiEmailLink: {
     marginTop: '4px',

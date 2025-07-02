@@ -20,15 +20,40 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
+      - name: Cache pnpm dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.pnpm-store/v3
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
       - name: Install dependencies
         run: pnpm i --frozen-lockfile
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/Cypress
+          key: ${{ runner.os }}-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-cypress-
 
       - name: Build
         run: pnpm run build
 
-      - name: Cypress run
-        uses: cypress-io/github-action@v5
-        with:
-          start: pnpm run dev
-          wait-on: 'http://localhost:3000'
-          browser: chrome
+      - name: Install Cypress binary
+        run: pnpm exec cypress install
+
+      - name: Start dev server
+        run: nohup pnpm run dev > dev-server.log 2>&1 &
+
+      - name: Check server logs (on failure)
+        if: failure()
+        run: cat dev-server.log
+
+      - name: Wait for dev server to start
+        run: npx wait-on http://localhost:3000
+
+      - name: Run Cypress tests
+        run: pnpm run test:e2e

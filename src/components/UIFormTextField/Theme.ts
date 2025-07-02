@@ -18,14 +18,14 @@ export default createTheme({
           },
           '&.Mui-disabled .MuiOutlinedInput-notchedOutline': {
             borderWidth: 0,
-          }
+          },
         },
         notchedOutline: {
           border: '1px solid #D0D4D8',
           borderRadius: '8px',
           '&:hover': {
             borderColor: '#969B9D',
-          }
+          },
         },
         input: {
           padding: '20.5px 28px',
@@ -37,9 +37,9 @@ export default createTheme({
           '@media (max-width: 375px)': {
             padding: '14.5px 21px',
             fontSize: '0.875rem',
-          }
-        }
-      }
-    }
-  }
+          },
+        },
+      },
+    },
+  },
 });

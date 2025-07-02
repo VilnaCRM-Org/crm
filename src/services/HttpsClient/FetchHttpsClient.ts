@@ -1,4 +1,4 @@
-import HttpsClient, { RequestMethod } from '@/services/HttpsClient/HttpsClient';
+import HttpsClient, { RequestMethod } from './HttpsClient';
 
 export default class FetchHttpsClient implements HttpsClient {
   public get<T>(url: string): Promise<T> {
@@ -21,14 +21,23 @@ export default class FetchHttpsClient implements HttpsClient {
     return this.request(url, 'DELETE', data, null) as Promise<T>;
   }
 
-  private async request<T>(url: string, method: RequestMethod, body: T, token: string | null): Promise<T> {
+  private async request<T>(
+    url: string,
+    method: RequestMethod,
+    body: T,
+    token: string | null
+  ): Promise<T> {
     const config = this.createRequestConfig(method, body, token);
     const response = await fetch(url, config);
 
     return this.processResponse(response);
   }
 
-  private createRequestConfig<T>(method: RequestMethod, body?: T, token?: string | null): RequestInit {
+  private createRequestConfig<T>(
+    method: RequestMethod,
+    body?: T,
+    token?: string | null
+  ): RequestInit {
     return {
       method,
       headers: this.createHeaders(token),
@@ -39,8 +48,8 @@ export default class FetchHttpsClient implements HttpsClient {
   private createHeaders(token: string | undefined | null): HeadersInit {
     return {
       'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      ...(token && {'Authorization': `Bearer ${token}`}),
+      Accept: 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
     };
   }
 
