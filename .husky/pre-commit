@@ -2,7 +2,12 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 pnpm format
-pnpm lint:eslint && git diff --name-only main | grep -E "(.js$|.ts$|.tsx$)"
-pnpm lint:tsc --noEmit
-pnpm lint:md && git diff --name-only main | grep -E "(.md$)"
-pnpm test:unit --passWithNoTests $(git diff --cached --name-only | grep '.ts$')
+# Get list of changed files
+CHANGED_JS_FILES=$(git diff --cached --name-only | grep -E "(.js$|.ts$|.tsx$)" || true)
+CHANGED_MD_FILES=$(git diff --cached --name-only | grep -E "(.md$)" || true)
+CHANGED_TS_FILES=$(git diff --cached --name-only | grep '.ts$' || true)
+# Run linting and tests
+pnpm lint:tsc --noEmit &&
+if [ -n "$CHANGED_JS_FILES" ]; then pnpm lint:eslint; fi &&
+if [ -n "$CHANGED_MD_FILES" ]; then pnpm lint:md; fi &&
+if [ -n "$CHANGED_TS_FILES" ]; then pnpm test:unit --passWithNoTests $CHANGED_TS_FILES; fi

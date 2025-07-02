@@ -4,5 +4,3 @@ describe('test', () => {
     expect(true).to.equal(true);
   });
 });
-
-export {};

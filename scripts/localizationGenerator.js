@@ -20,7 +20,7 @@ class LocalizationGenerator {
 
   constructor(
     i18nPath = 'i18n',
-    featurePath = 'src/modules/User/Features',
+    featurePath = 'src/modules/User/features',
     jsonFileType = 'json',
     localizationFile = 'ua.json'
   ) {

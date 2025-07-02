@@ -3,6 +3,7 @@
 import UIButton from '@/components/UIButton';
 import UIFormTextField from '@/components/UIFormTextField';
 import UITypography from '@/components/UITypography';
+import useAppDispatch from '@/hooks';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import { Grid, Box, Divider } from '@mui/material';
@@ -11,9 +12,8 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { ThemeProvider } from '@mui/material/styles';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useDispatch } from 'react-redux';
 
-import Credentials from '@/modules/User/features/Auth/types/Credentials';
+import RegisterUserDto from '@/modules/User/features/Auth/types/Credentials';
 import { registerUser } from '@/modules/User/store';
 
 import { ReactComponent as Facebook } from '../../assets/facebookColor.svg';
@@ -25,6 +25,7 @@ import Theme from './Theme';
 
 export default function RegistrationForm(): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string>('');
 
   const handleClickShowPassword = (): void => {
     setShowPassword(!showPassword);
@@ -34,18 +35,23 @@ export default function RegistrationForm(): JSX.Element {
     event.preventDefault();
   };
 
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
 
-  const { handleSubmit, control } = useForm<Credentials>({
+  const { handleSubmit, control } = useForm<RegisterUserDto>({
     defaultValues: {
-      initials: '',
+      fullName: '',
       email: '',
       password: '',
     },
   });
 
-  const registrationHandler = (data: Credentials): void => {
-    dispatch(registerUser(data));
+  const registrationHandler = async (data: RegisterUserDto): Promise<void> => {
+    const resultAction = await dispatch(registerUser(data));
+
+    if (registerUser.rejected.match(resultAction)) {
+      const message = resultAction.payload || 'Unknown error';
+      setError(`Registration failed: ${message}`);
+    }
   };
 
   return (
@@ -73,6 +79,7 @@ export default function RegistrationForm(): JSX.Element {
             },
           }}
         >
+          {error ? <UITypography sx={{ color: 'red' }}>{error}</UITypography> : null}
           <form onSubmit={handleSubmit(registrationHandler)}>
             <UITypography
               variant="h4"
@@ -122,7 +129,7 @@ export default function RegistrationForm(): JSX.Element {
                 control={control}
                 rules={{ required: true }}
                 defaultValue=""
-                name="initials"
+                name="fullName"
                 placeholder="Михайло Светський"
                 type="text"
               />

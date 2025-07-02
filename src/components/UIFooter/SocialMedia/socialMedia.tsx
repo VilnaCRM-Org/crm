@@ -10,16 +10,16 @@ import Styles from './styles';
 
 export default function SocialMedia(): React.ReactElement {
   const links = [
-    { href: '#', icon: <InstagramIcon style={Styles.uiSvgItem} /> },
-    { href: '#', icon: <GitHubIcon style={Styles.uiSvgItem} /> },
-    { href: '#', icon: <FacebookIcon style={Styles.uiSvgItem} /> },
-    { href: '#', icon: <LinkedInIcon style={Styles.uiSvgItem} /> },
+    { href: '#', label: 'instagram', icon: <InstagramIcon style={Styles.uiSvgItem} /> },
+    { href: '#', label: 'github', icon: <GitHubIcon style={Styles.uiSvgItem} /> },
+    { href: '#', label: 'facebook', icon: <FacebookIcon style={Styles.uiSvgItem} /> },
+    { href: '#', label: 'linkedin', icon: <LinkedInIcon style={Styles.uiSvgItem} /> },
   ];
 
   return (
     <>
-      {links.map((link: { href: string; icon: React.ReactElement }) => (
-        <UILink href={link.href} key={Math.floor(Math.random() * 100000)} sx={Styles.uiLinkItem}>
+      {links.map((link: { href: string; icon: React.ReactElement; label: string }) => (
+        <UILink href={link.href} key={link.label} sx={Styles.uiLinkItem}>
           {link.icon}
         </UILink>
       ))}

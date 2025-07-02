@@ -26,10 +26,10 @@ export default createTheme({
             local('Golos')
             url(${Golos}) format('ttf')
         }
-        @font-face {
-          font-family: Golos;
+          @font-face {
+          font-family: Inter;
           src:
-            local('Golos')
+            local('Inter')
             url(${Inter}) format('ttf')
         }
       `,

@@ -9,11 +9,13 @@ import Store from '@/stores';
 
 import App from './App';
 
-const root = createRoot(document.getElementById('root') as HTMLElement);
+const rootElement = document.getElementById('root');
 
-if (!root) {
+if (!rootElement) {
   throw new Error('Root element not found');
 }
+
+const root = createRoot(rootElement);
 
 root.render(
   <React.StrictMode>

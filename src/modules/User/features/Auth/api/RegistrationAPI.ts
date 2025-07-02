@@ -1,16 +1,16 @@
 import HttpsClient from '@/services/HttpsClient/HttpsClient';
 import { container } from 'tsyringe';
 
+import RegisterUserDto from '@/modules/User/features/Auth/types/Credentials';
+
 const httpsClient = container.resolve<HttpsClient>('HttpsClient');
 
-interface ICredentials {
-  nameAndSurname: string;
-  email: string;
-  password: string;
-}
-
 export default class RegistrationAPI {
-  public async register(credentials: ICredentials): Promise<void> {
-    await httpsClient.post('https://localhost/api/users', credentials);
+  public async register(credentials: RegisterUserDto): Promise<void> {
+    try {
+      await httpsClient.post(`/api/users`, credentials);
+    } catch (error) {
+      throw new Error('Failed to register user. Please try again.');
+    }
   }
 }

@@ -4,13 +4,11 @@ import { TextFieldProps } from '@mui/material/TextField';
 import React from 'react';
 import {
   Controller,
-  useController,
   Control,
   FieldValues,
   PathValue,
   Path,
   RegisterOptions,
-  ControllerRenderProps,
 } from 'react-hook-form';
 
 import Styles from './styles';
@@ -33,11 +31,6 @@ export default function UIFormTextField<T extends FieldValues>({
   name,
   ...props
 }: CustomTextField<T>): React.ReactElement {
-  const {
-    field: { ref, ...inputProps },
-    fieldState: { invalid, error },
-  } = useController({ name, control, defaultValue });
-
   return (
     <ThemeProvider theme={Theme}>
       <Controller
@@ -45,14 +38,12 @@ export default function UIFormTextField<T extends FieldValues>({
         control={control}
         defaultValue={defaultValue}
         rules={rules}
-        render={({ field }: { field: ControllerRenderProps<T, Path<T>> }): React.ReactElement => (
+        render={({ field, fieldState }): React.ReactElement => (
           <TextField
             {...field}
             {...props}
-            {...inputProps}
-            inputRef={ref}
-            error={invalid}
-            helperText={error?.message}
+            error={fieldState.invalid}
+            helperText={fieldState.error?.message}
             sx={Styles}
           />
         )}
