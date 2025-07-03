@@ -1,96 +1,62 @@
+import breakpointsTheme from '@/components/UIBreakpoints';
+import colorTheme from '@/components/UIColorTheme';
+
 export default {
-  uiGridTop: {
-    paddingTop: '8px',
-    paddingBottom: '3px',
-    backgroundColor: '#FFFFFF',
-    borderTop: '1px solid #E1E7EA',
-  },
-  uiLogoContainer: {
-    marginTop: '5px',
-    marginLeft: '7.7rem',
-    '@media (max-width: 1024px)': {
-      marginLeft: '1.9rem',
-    },
-    '@media (max-width: 768px)': {
-      marginLeft: '0.7rem',
-    },
-    '@media (max-width: 341px)': {
-      marginLeft: '0',
-      flexDirection: 'column',
-      textAlign: 'center',
-    },
-  },
-  uiLogo: {
-    '@media (max-width: 341px)': {
-      marginRight: '13px',
-    },
-  },
-  uiPolicyContainer: {
-    marginRight: '6.65rem',
-    marginTop: '0.5rem',
-    '@media (max-width: 1024px)': {
-      marginRight: '0.4rem',
-    },
-  },
-  uiPolicyItem: {
-    width: '100%',
-    paddingTop: '3px',
-  },
-  uiLinkTypography: {
-    backgroundColor: '#F4F5F6',
-    padding: '15px 16px',
-    borderRadius: '8px',
-    margin: '1px 9px 0 15px',
-    textAlign: 'center',
-    letterSpacing: '0',
-  },
-  uiGridBottom: {
-    backgroundColor: '#F4F5F6',
-    borderRadius: '16px 16px 0 0',
-    paddingTop: '10px',
-    paddingBottom: '10px',
-  },
-  uiCopyrightContainer: {
-    width: '100%',
+  footerBranding:{
     display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    marginLeft: '7px',
-    '@media (max-width: 1024px)': {},
-  },
-  uiCopyrightTypography: {
-    padding: '15px',
-    textAlign: 'center',
-  },
-  uiSocialLinksContainer: {
-    width: '100%',
-    textAlign: 'center',
-  },
-  uiSocialLinks: {
-    marginTop: '6px',
-    marginRight: '11px',
-    '@media (max-width: 320px)': {
-      marginTop: '0',
-      marginRight: '0',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+
+    [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+     marginBottom: '15px',
     },
   },
-  uiEmailLink: {
-    marginTop: '2px',
-    height: '33px',
-    border: '1px solid #E1E7EA',
-    borderRadius: '8px',
-    padding: '5px 16px 8px 16px',
-    color: 'black',
-    backgroundColor: '#FFFFFF',
-    marginRight: '13px',
+
+
+  uiInfoWrapper: {
+    textAlign: 'center',
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      display:'none',
+    },
   },
   uiEmail: {
-    border: '1px solid #E1E7EA',
-    borderRadius: '8px',
-    padding: '12px 0',
-    marginLeft: '15px',
-    marginRight: '9px',
+    padding: '12px 0px',
+
+    fontWeight: 600,
+    fontFamily: 'Golos',
     fontSize: '18px',
-    letterSpacing: '0.1px',
+    letterSpacing: '0',
+
+    border: `1px solid ${colorTheme.palette.grey[50]}`,
+    borderRadius: '8px',
+  },
+
+  uiLinkTypography: {
+    fontWeight: 500,
+    fontFamily: 'Golos',
+    fontSize: '1rem',
+    lineHeight: '1.125rem',
+
+    paddingTop: '1.0625rem',
+    paddingBottom: '1.125rem',
+    marginTop:'0.25rem',
+
+    textAlign: 'center',
+    letterSpacing: '0',
+
+    borderRadius: '8px',
+    backgroundColor: colorTheme.palette.grey[100],
+  },
+
+  uiCopyrightTypography: {
+    fontWeight: 500,
+    fontFamily: 'Golos',
+    fontSize:' 0.94rem',
+    lineHeight: '1.125rem',
+
+    paddingTop: '1rem',
+    paddingBottom: '1.25rem',
+    textAlign: 'center',
   },
 };

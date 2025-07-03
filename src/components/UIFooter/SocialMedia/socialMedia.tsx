@@ -1,3 +1,4 @@
+import {Box} from '@mui/material';
 import * as React from 'react';
 
 import { ReactComponent as FacebookIcon } from '@/assets/icons/facebook.svg';
@@ -17,12 +18,12 @@ export default function SocialMedia(): React.ReactElement {
   ];
 
   return (
-    <>
+    <Box sx={Styles.uiLinksWrapper}>
       {links.map((link: { href: string; icon: React.ReactElement; label: string }) => (
         <UILink href={link.href} key={link.label} sx={Styles.uiLinkItem}>
           {link.icon}
         </UILink>
       ))}
-    </>
+    </Box>
   );
 }
