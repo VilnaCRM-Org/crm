@@ -15,7 +15,7 @@ export default {
   },
 
   backButton: {
-    padding:'0rem',
+    padding: '0rem',
     ...centeredFlex,
   },
 
@@ -23,7 +23,7 @@ export default {
     color: '#969B9D',
   },
 
-  backText:{
+  backText: {
     marginLeft: '0.5rem',
     paddingTop: '0.1875rem',
     paddingBottom: '0.1875rem',

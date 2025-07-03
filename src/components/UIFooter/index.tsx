@@ -9,9 +9,9 @@ import Styles from './styles';
 
 export default function UIFooter(): React.ReactElement {
   return (
-    <Box component='section' sx={Styles.footerSection}>
+    <Box component="section" sx={Styles.footerSection}>
       <UIContainer>
-          <UIFooterMobile />
+        <UIFooterMobile />
       </UIContainer>
 
       <Box sx={Styles.uiStandard}>

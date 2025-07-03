@@ -16,7 +16,7 @@ const colorTheme: Theme = createTheme({
     },
     grey: {
       50: '#E1E7EA',
-      100:'#F4F5F6'
+      100: '#F4F5F6',
     },
   },
 });

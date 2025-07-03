@@ -1,7 +1,7 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
 
 export default {
-  uiLinksWrapper:{
+  uiLinksWrapper: {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
@@ -11,7 +11,7 @@ export default {
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      display:'none'
+      display: 'none',
     },
   },
   uiLinkItem: {
@@ -22,7 +22,7 @@ export default {
 
   uiSvgItem: {
     color: '#1B2327',
-    width:'40px',
-    height:'40px',
+    width: '40px',
+    height: '40px',
   },
 };

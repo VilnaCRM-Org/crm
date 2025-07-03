@@ -1,4 +1,4 @@
-import {Box} from '@mui/material';
+import { Box } from '@mui/material';
 import * as React from 'react';
 
 import { ReactComponent as FacebookIcon } from '@/assets/icons/facebook.svg';

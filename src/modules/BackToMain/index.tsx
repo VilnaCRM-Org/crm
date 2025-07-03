@@ -7,18 +7,13 @@ import UIContainer from '@/components/UIContainer';
 
 import styles from './styles';
 
-
 export default function BackToMain(): React.ReactElement {
   return (
     <Box component="section" sx={styles.section}>
       <UIContainer>
         <UIButton sx={styles.backButton}>
           <ArrowBackIosIcon sx={styles.icon} />
-          <Typography
-            sx={styles.backText}
-          >
-            На головну сторінку
-          </Typography>
+          <Typography sx={styles.backText}>На головну сторінку</Typography>
         </UIButton>
       </UIContainer>
     </Box>
