@@ -9,27 +9,27 @@ import SocialMedia from '../SocialMedia/socialMedia';
 
 import Styles from './styles';
 
-export default function UIFooterMobile(): React.ReactElement {
+export default function UIFooterContent(): React.ReactElement {
   return (
-    <Box>
+    <Box sx={Styles.footerDesktopWrapper}>
       <Box sx={Styles.footerBranding}>
         <img src={VilnaLogo} width={131} height={44} alt="logo" />
         <SocialMedia />
       </Box>
 
       <Grid item sx={Styles.uiInfoWrapper}>
-        <UILink href="mailto:info@vilnacrm.com">
-          <UITypography sx={Styles.uiEmail}>info@vilnacrm.com</UITypography>
+        <UILink href="mailto:info@vilnacrm.com"  sx={Styles.uiEmailLink}>
+          info@vilnacrm.com
         </UILink>
 
-        <UILink href="#">
-          <UITypography variant="steelGray" sx={Styles.uiLinkTypography}>
+        <UILink href="#" sx={Styles.uiLinkTypography}>
+          <UITypography variant="steelGray">
             Політика конфіденційності
           </UITypography>
         </UILink>
 
-        <UILink href="#">
-          <UITypography variant="steelGray" sx={Styles.uiLinkTypography}>
+        <UILink href="#" sx={Styles.uiLinkTypography}>
+          <UITypography variant="steelGray">
             Політика використовування
           </UITypography>
         </UILink>

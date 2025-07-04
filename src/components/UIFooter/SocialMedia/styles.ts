@@ -10,7 +10,7 @@ export default {
       gap: '8px',
     },
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       display: 'none',
     },
   },
