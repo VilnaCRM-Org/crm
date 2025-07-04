@@ -1,17 +1,16 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
 import colorTheme from '@/components/UIColorTheme';
 
-
 const centeredFlex = {
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
 };
 export default {
-  footerDesktopWrapper:{
+  footerDesktopWrapper: {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      display:'flex',
-      justifyContent:'space-between',
+      display: 'flex',
+      justifyContent: 'space-between',
     },
   },
   footerBranding: {
@@ -32,11 +31,11 @@ export default {
     },
   },
 
-  uiEmailLink:{
-    display:'block',
+  uiEmailLink: {
+    display: 'block',
 
     paddingTop: '0.9375rem',
-    paddingBottom:'1rem',
+    paddingBottom: '1rem',
 
     fontWeight: 600,
     fontFamily: 'Golos',
@@ -44,7 +43,7 @@ export default {
     lineHeight: '100%',
     letterSpacing: '0',
 
-    color:'#1B2327',
+    color: '#1B2327',
     border: `1px solid ${colorTheme.palette.grey[50]}`,
     borderRadius: '8px',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
@@ -74,12 +73,10 @@ export default {
       padding: '0.5rem 1rem',
       marginTop: '0rem',
 
-
       '&:not(:last-of-type)': {
         marginRight: '0.5rem',
       },
     },
-
   },
 
   uiCopyrightTypography: {

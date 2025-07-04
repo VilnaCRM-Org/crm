@@ -18,20 +18,16 @@ export default function UIFooterContent(): React.ReactElement {
       </Box>
 
       <Grid item sx={Styles.uiInfoWrapper}>
-        <UILink href="mailto:info@vilnacrm.com"  sx={Styles.uiEmailLink}>
+        <UILink href="mailto:info@vilnacrm.com" sx={Styles.uiEmailLink}>
           info@vilnacrm.com
         </UILink>
 
         <UILink href="#" sx={Styles.uiLinkTypography}>
-          <UITypography variant="steelGray">
-            Політика конфіденційності
-          </UITypography>
+          <UITypography variant="steelGray">Політика конфіденційності</UITypography>
         </UILink>
 
         <UILink href="#" sx={Styles.uiLinkTypography}>
-          <UITypography variant="steelGray">
-            Політика використовування
-          </UITypography>
+          <UITypography variant="steelGray">Політика використовування</UITypography>
         </UILink>
 
         <UITypography sx={Styles.uiCopyrightTypography}>
