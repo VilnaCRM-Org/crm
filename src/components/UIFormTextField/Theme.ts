@@ -1,5 +1,7 @@
 import { createTheme } from '@mui/material';
 
+import breakpointsTheme from '@/components/UIBreakpoints';
+
 export default createTheme({
   components: {
     MuiOutlinedInput: {
@@ -28,15 +30,45 @@ export default createTheme({
           },
         },
         input: {
-          padding: '20.5px 28px',
-          letterSpacing: '0.4px',
-          '@media (max-width: 1024px)': {
-            fontSize: '1.125rem',
-            padding: '26.8px 28px',
+          height: '3rem',
+          paddingTop: '0.9375rem',
+          paddingBottom: '0.9375rem',
+          paddingLeft: '1.25rem',
+
+          fontFamily: `Inter, sans-serif`,
+          fontWeight: 500,
+          fontStyle: 'normal',
+          fontSize: '0.875rem',
+          lineHeight: 1.2857,
+          letterSpacing: 0,
+          color: '#404142',
+
+          boxSizing: 'border-box',
+          borderRadius: '0.5rem',
+          borderWidth: '1px',
+
+          '&::placeholder': {
+            color: '#969B9D',
           },
-          '@media (max-width: 375px)': {
-            padding: '14.5px 21px',
-            fontSize: '0.875rem',
+
+          [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+            height: '4.9375rem',
+
+            paddingTop: '1.9375rem',
+            paddingBottom: '1.875rem',
+            paddingLeft: '1.75rem',
+
+            fontWeight: 400,
+            fontSize: '1.125rem',
+            lineHeight: 1,
+          },
+          [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+            height: '4rem',
+            paddingTop: '1.4375rem',
+            paddingBottom: '1.4375rem',
+
+            fontSize: '1rem',
+            lineHeight: 1.125,
           },
         },
       },

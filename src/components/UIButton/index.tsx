@@ -4,7 +4,7 @@ import React from 'react';
 
 import Theme from './Theme';
 
-export default function UIButton(props: ButtonProps): JSX.Element {
+function UIButton(props: ButtonProps): JSX.Element {
   const { children } = props;
 
   return (
@@ -14,3 +14,5 @@ export default function UIButton(props: ButtonProps): JSX.Element {
     </ThemeProvider>
   );
 }
+UIButton.displayName = 'UIButton';
+export default UIButton;

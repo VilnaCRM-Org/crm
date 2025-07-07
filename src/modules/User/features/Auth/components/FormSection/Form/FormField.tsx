@@ -1,6 +1,7 @@
 import UIFormTextField from '@/components/UIFormTextField';
 import UITypography from '@/components/UITypography';
 import { Grid } from '@mui/material';
+import type { InputProps } from '@mui/material/Input';
 import { InputHTMLAttributes } from 'react';
 import { Control, FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
 
@@ -14,6 +15,9 @@ export interface FormFieldProps<T extends FieldValues = FieldValues> {
   placeholder: string;
   type: InputHTMLAttributes<HTMLInputElement>['type'];
   label: string;
+  autoComplete: string;
+  // eslint-disable-next-line react/require-default-props
+  inputProps?: InputProps;
 }
 
 export default function FormField<T extends FieldValues>({
@@ -24,6 +28,8 @@ export default function FormField<T extends FieldValues>({
   placeholder,
   type,
   label,
+  autoComplete,
+  inputProps,
 }: FormFieldProps<T>): JSX.Element {
   return (
     <Grid container flexDirection="column" sx={Styles.formFieldWrapper}>
@@ -35,6 +41,9 @@ export default function FormField<T extends FieldValues>({
         name={name}
         placeholder={placeholder}
         type={type}
+        autoComplete={autoComplete}
+        sx={Styles.formFieldInput}
+        InputProps={inputProps}
       />
     </Grid>
   );

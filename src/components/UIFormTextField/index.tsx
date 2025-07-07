@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import { ThemeProvider, TextField } from '@mui/material';
+import { ThemeProvider, TextField, SxProps } from '@mui/material';
 import { TextFieldProps } from '@mui/material/TextField';
 import React from 'react';
 import {
@@ -11,7 +11,7 @@ import {
   RegisterOptions,
 } from 'react-hook-form';
 
-import Styles from './styles';
+import styles from './styles';
 import Theme from './Theme';
 
 interface CustomTextField<T extends FieldValues> extends TextFieldProps<'standard'> {
@@ -22,6 +22,7 @@ interface CustomTextField<T extends FieldValues> extends TextFieldProps<'standar
   >;
   defaultValue: PathValue<T, Path<T>>;
   name: Path<T>;
+  sx: SxProps<typeof Theme>;
 }
 
 export default function UIFormTextField<T extends FieldValues>({
@@ -29,6 +30,7 @@ export default function UIFormTextField<T extends FieldValues>({
   rules,
   defaultValue,
   name,
+  sx,
   ...props
 }: CustomTextField<T>): React.ReactElement {
   return (
@@ -44,7 +46,7 @@ export default function UIFormTextField<T extends FieldValues>({
             {...props}
             error={fieldState.invalid}
             helperText={fieldState.error?.message}
-            sx={Styles}
+            sx={[styles.textField, sx]}
           />
         )}
       />
