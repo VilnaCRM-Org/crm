@@ -5,8 +5,8 @@ import { ReactComponent as Twitter } from '@/modules/User/features/Auth/assets/t
 
 function handleThirdPartyAuth(service: string): void {
   // TODO: Implement actual OAuth authentication
-  console.log(`Initiating ${service} authentication`);
-  // Example: window.location.href = `/auth/${service}`;
+  //  example:
+  window.location.href = `/auth/${service}`;
 }
 const authServices = [
   {
@@ -22,10 +22,10 @@ const authServices = [
     ariaLabel: 'Sign in with Facebook',
   },
   {
-    label: 'Github',
+    label: 'GitHub',
     component: <Github />,
     onClick: (): void => handleThirdPartyAuth('github'),
-    ariaLabel: 'Sign in with Github',
+    ariaLabel: 'Sign in with GitHub',
   },
   {
     label: 'Twitter',
