@@ -4,7 +4,6 @@ import { Box, Divider, ListItem, List } from '@mui/material';
 import authServices from './authServices';
 import styles from './styles';
 
-
 export default function ThirdPartyAuth(): JSX.Element {
   return (
     <Box sx={styles.thirdPartyWrapper}>

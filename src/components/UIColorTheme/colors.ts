@@ -1,4 +1,4 @@
- const Colors = {
+const Colors = {
   primary: {
     main: '#1EAEFF',
   },
@@ -34,9 +34,9 @@
   shadow: {
     subtle: '#E7E7E77D',
   },
-   decorative:{
-     divider: '#57595B'
-   }
+  decorative: {
+    divider: '#57595B',
+  },
 } as const;
 
- export default Colors;
+export default Colors;

@@ -51,12 +51,12 @@ export default {
 
     [`@media (min-width:375px)`]: {
       display: 'flex',
-      flexWrap:'wrap',
+      flexWrap: 'wrap',
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      flexWrap:'nowrap',
-      justifyContent:'space-between',
+      flexWrap: 'nowrap',
+      justifyContent: 'space-between',
     },
   },
   servicesItem: {
@@ -66,37 +66,35 @@ export default {
 
     width: '100%',
 
-    [`@media (max-width:374px)`]:{
-      '&:not(:last-child)':{
-        marginBottom:'1rem'
+    [`@media (max-width:374px)`]: {
+      '&:not(:last-child)': {
+        marginBottom: '1rem',
       },
     },
 
-
     [`@media (min-width:375px)`]: {
-      maxWidth:'9.625rem',
-      marginTop:'1rem',
+      maxWidth: '9.625rem',
+      marginTop: '1rem',
 
-      '&:nth-of-type(2n+1)':{
-        marginRight:'0.3rem'
+      '&:nth-of-type(2n+1)': {
+        marginRight: '0.3rem',
       },
 
       '&:nth-of-type(-n+2)': {
-        marginTop:0
-      }
+        marginTop: 0,
+      },
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      maxWidth:'8.25rem',
-      margin:0,
+      maxWidth: '8.25rem',
+      margin: 0,
 
-      '&:nth-of-type(2n+1)':{
-        margin:0
+      '&:nth-of-type(2n+1)': {
+        margin: 0,
       },
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      maxWidth:'6.25rem',
-
+      maxWidth: '6.25rem',
     },
   },
   serviceItemButton: {
@@ -105,7 +103,7 @@ export default {
     padding: 0,
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-     padding:'1.0625rem 2.5rem'
+      padding: '1.0625rem 2.5rem',
     },
   },
 };

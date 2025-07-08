@@ -1,15 +1,13 @@
 import CssBaseline from '@mui/material/CssBaseline';
-import {StyledEngineProvider, ThemeProvider} from '@mui/material/styles';
+import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
-
 
 import '@/config/DependencyInjectionConfig';
 import '@/styles/fonts.css';
 import Store from '@/stores';
 import theme from '@/styles/theme';
-
 
 import App from './App';
 

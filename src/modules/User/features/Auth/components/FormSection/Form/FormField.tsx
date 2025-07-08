@@ -29,7 +29,7 @@ export default function FormField<T extends FieldValues>({
   type,
   label,
   autoComplete,
-  inputProps={},
+  inputProps = {},
 }: FormFieldProps<T>): JSX.Element {
   return (
     <Grid container flexDirection="column" sx={Styles.formFieldWrapper}>

@@ -33,7 +33,7 @@ declare module '@mui/material/styles' {
       shadow?: {
         subtle?: string;
       };
-      decorative:{
+      decorative: {
         divider?: string;
       };
     };

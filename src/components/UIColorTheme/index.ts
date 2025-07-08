@@ -1,6 +1,5 @@
 import { Theme, createTheme } from '@mui/material';
 
-
 const colorTheme: Theme = createTheme({
   palette: {
     primary: {
@@ -32,11 +31,10 @@ const colorTheme: Theme = createTheme({
       shadow: {
         subtle: '#E7E7E77D',
       },
-      decorative:{
-        divider: '#57595B'
-      }
+      decorative: {
+        divider: '#57595B',
+      },
     },
-
   },
 });
 

@@ -15,9 +15,9 @@ export default createTheme({
       contrastText: '#FFFFFF',
     },
     custom: {
-      decorative:{
-        divider: '#57595B'
-      }
+      decorative: {
+        divider: '#57595B',
+      },
     },
   },
   typography: {

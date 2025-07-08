@@ -15,6 +15,9 @@ import { registerUser } from '@/modules/User/store';
 
 import authForms from './constants/AuthForms';
 import styles from './styles';
+import { validateEmail, validateFullName, validatePassword } from './Validations';
+
+const fieldIsRequired = "Це поле обов'язкове";
 
 export default function Form({ isLoginMode }: { isLoginMode: boolean }): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
@@ -55,8 +58,11 @@ export default function Form({ isLoginMode }: { isLoginMode: boolean }): JSX.Ele
       {!isLoginMode ? (
         <FormField<RegisterUserDto>
           control={control}
-          rules={{ required: true }}
-          defaultValue=""
+          rules={{
+            required: fieldIsRequired,
+            validate: validateFullName,
+          }}
+          defaultValue="Михайло Светський"
           name="fullName"
           placeholder="Михайло Светський"
           type="text"
@@ -67,7 +73,10 @@ export default function Form({ isLoginMode }: { isLoginMode: boolean }): JSX.Ele
 
       <FormField<RegisterUserDto>
         control={control}
-        rules={{ required: true }}
+        rules={{
+          required: fieldIsRequired,
+          validate: validateEmail,
+        }}
         defaultValue=""
         name="email"
         placeholder="vilnaCRM@gmail.com"
@@ -78,7 +87,10 @@ export default function Form({ isLoginMode }: { isLoginMode: boolean }): JSX.Ele
 
       <FormField<RegisterUserDto>
         control={control}
-        rules={{ required: true }}
+        rules={{
+          required: fieldIsRequired,
+          validate: validatePassword,
+        }}
         defaultValue=""
         name="password"
         type={showPassword ? 'text' : 'password'}

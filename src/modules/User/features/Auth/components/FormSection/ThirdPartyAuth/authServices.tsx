@@ -3,33 +3,34 @@ import { ReactComponent as Github } from '@/modules/User/features/Auth/assets/gi
 import { ReactComponent as Google } from '@/modules/User/features/Auth/assets/GoogleColor.svg';
 import { ReactComponent as Twitter } from '@/modules/User/features/Auth/assets/twitterColor.svg';
 
-function handleThirdPartyAuth(service: string): string {
-  return `You choose ${service}`;
+function handleThirdPartyAuth(service: string): void {
+  // TODO: Implement actual OAuth authentication
+  console.log(`Initiating ${service} authentication`);
+  // Example: window.location.href = `/auth/${service}`;
 }
-
- const authServices = [
+const authServices = [
   {
     label: 'Google',
     component: <Google />,
-    onClick: (): string => handleThirdPartyAuth('google'),
+    onClick: (): void => handleThirdPartyAuth('google'),
     ariaLabel: 'Sign in with Google',
   },
   {
     label: 'Facebook',
     component: <Facebook />,
-    onClick: (): string => handleThirdPartyAuth('facebook'),
+    onClick: (): void => handleThirdPartyAuth('facebook'),
     ariaLabel: 'Sign in with Facebook',
   },
   {
     label: 'Github',
     component: <Github />,
-    onClick: (): string => handleThirdPartyAuth('github'),
+    onClick: (): void => handleThirdPartyAuth('github'),
     ariaLabel: 'Sign in with Github',
   },
   {
     label: 'Twitter',
     component: <Twitter />,
-    onClick: (): string => handleThirdPartyAuth('twitter'),
+    onClick: (): void => handleThirdPartyAuth('twitter'),
     ariaLabel: 'Sign in with Twitter',
   },
 ];
