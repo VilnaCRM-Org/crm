@@ -16,7 +16,7 @@ export default function FormSection(): JSX.Element {
   }, []);
 
   const switchCaption = useMemo(
-    () => (isLoginMode ? 'У Вас немає аккаунту?' : 'У вас вже є аккаунт?'),
+    () => (isLoginMode ? 'У Вас немає аккаунту?' : 'У вас уже є аккаунт?'),
     [isLoginMode]
   );
   return (

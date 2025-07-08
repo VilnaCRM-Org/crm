@@ -1,5 +1,6 @@
 import { Theme, createTheme } from '@mui/material';
 
+
 const colorTheme: Theme = createTheme({
   palette: {
     primary: {
@@ -18,6 +19,24 @@ const colorTheme: Theme = createTheme({
       50: '#E1E7EA',
       100: '#F4F5F6',
     },
+
+    custom: {
+      social: {
+        icon: '#1B2327',
+        iconHover: '#333333',
+      },
+      border: {
+        default: '#EAECEE',
+        focus: '#969B9D',
+      },
+      shadow: {
+        subtle: '#E7E7E77D',
+      },
+      decorative:{
+        divider: '#57595B'
+      }
+    },
+
   },
 });
 

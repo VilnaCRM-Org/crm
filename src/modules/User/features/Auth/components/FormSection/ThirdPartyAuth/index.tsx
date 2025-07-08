@@ -1,19 +1,9 @@
 import UIButton from '@/components/UIButton';
 import { Box, Divider, ListItem, List } from '@mui/material';
 
-import { ReactComponent as Facebook } from '../../../assets/facebookColor.svg';
-import { ReactComponent as Github } from '../../../assets/github.svg';
-import { ReactComponent as Google } from '../../../assets/GoogleColor.svg';
-import { ReactComponent as Twitter } from '../../../assets/twitterColor.svg';
-
+import authServices from './authServices';
 import styles from './styles';
 
-const authServices = [
-  { label: 'Google', component: <Google /> },
-  { label: 'Facebook', component: <Facebook /> },
-  { label: 'Github', component: <Github /> },
-  { label: 'Twitter', component: <Twitter /> },
-];
 
 export default function ThirdPartyAuth(): JSX.Element {
   return (
@@ -21,9 +11,15 @@ export default function ThirdPartyAuth(): JSX.Element {
       <Divider sx={styles.divider}>Або</Divider>
 
       <List sx={styles.servicesList}>
-        {authServices.map(({ label, component }) => (
+        {authServices.map(({ label, component, ariaLabel, onClick }) => (
           <ListItem disablePadding key={label} sx={styles.servicesItem}>
-            <UIButton variant="outlined" sx={styles.serviceItemButton}>
+            <UIButton
+              variant="outlined"
+              sx={styles.serviceItemButton}
+              onClick={onClick}
+              aria-label={ariaLabel}
+              type="button"
+            >
               {component}
             </UIButton>
           </ListItem>

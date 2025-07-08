@@ -1,4 +1,5 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
+import Colors from '@/components/UIColorTheme/colors';
 
 export default {
   formSection: {
@@ -22,10 +23,10 @@ export default {
     padding: '1.5rem 1.5rem 1.375rem',
     margin: '0 auto',
 
-    backgroundColor: '#FFFFFF',
-    border: '1px solid #EAECEE',
+    backgroundColor: Colors.background.default,
+    border: `1px solid ${Colors.border.default}`,
     borderRadius: '16px',
-    boxShadow: '0px 7px 40px 0px #E7E7E77D',
+    boxShadow: `0px 7px 40px 0px ${Colors.shadow.subtle}`,
 
     maxWidth: '22.7rem',
 
@@ -48,7 +49,7 @@ export default {
     fontSize: '0.9375rem',
     lineHeight: 1.2,
     letterSpacing: 0,
-    color: '#969B9D',
+    color: Colors.text.secondary,
     textTransform: 'none',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {

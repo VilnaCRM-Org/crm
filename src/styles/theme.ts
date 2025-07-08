@@ -2,6 +2,7 @@ import { createTheme } from '@mui/material/styles';
 
 import Golos from '@/assets/fonts/golos/Golos-Text_Black.ttf';
 import Inter from '@/assets/fonts/inter/Inter-Black.ttf';
+import './types';
 
 export default createTheme({
   palette: {
@@ -12,6 +13,11 @@ export default createTheme({
     error: {
       main: '#DC3939',
       contrastText: '#FFFFFF',
+    },
+    custom: {
+      decorative:{
+        divider: '#57595B'
+      }
     },
   },
   typography: {

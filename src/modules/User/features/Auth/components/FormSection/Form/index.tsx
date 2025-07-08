@@ -24,10 +24,6 @@ export default function Form({ isLoginMode }: { isLoginMode: boolean }): JSX.Ele
     setShowPassword(!showPassword);
   };
 
-  const handleMouseDownPassword = (event: { preventDefault: () => void }): void => {
-    event.preventDefault();
-  };
-
   const dispatch = useAppDispatch();
 
   const { handleSubmit, control } = useForm<RegisterUserDto>({
@@ -95,7 +91,6 @@ export default function Form({ isLoginMode }: { isLoginMode: boolean }): JSX.Ele
               <IconButton
                 aria-label="toggle password visibility"
                 onClick={handleClickShowPassword}
-                onMouseDown={handleMouseDownPassword}
                 edge="end"
                 size="small"
               >
