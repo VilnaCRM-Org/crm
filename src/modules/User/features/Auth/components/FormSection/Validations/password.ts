@@ -1,6 +1,4 @@
-import { Validate } from 'react-hook-form';
-
-import RegisterUserDto from '@/modules/User/features/Auth/types/Credentials';
+import { Validate, FieldValues } from 'react-hook-form';
 
 const isLengthValid = (value: string): boolean => value.length >= 8 && value.length <= 64;
 
@@ -16,7 +14,7 @@ const validationPswdMessages: Record<ValidationPswdMessageKey, string> = {
   uppercaseRequired: 'Будь ласка, додайте принаймні одну велику літеру',
 };
 
-const validatePassword: Validate<string, RegisterUserDto> = (value) => {
+const validatePassword: Validate<string, FieldValues> = (value: string) => {
   if (!value) return "Це поле обов'язкове";
   if (!isLengthValid(value)) return validationPswdMessages.invalidLength;
   if (!hasNumber(value)) return validationPswdMessages.numberRequired;

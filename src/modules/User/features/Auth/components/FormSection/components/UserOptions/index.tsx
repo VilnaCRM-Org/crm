@@ -4,7 +4,7 @@ import React from 'react';
 
 import styles from './styles';
 
-export default function AuthOptions(): JSX.Element {
+export default function UserOptions(): JSX.Element {
   return (
     <Box sx={styles.authOptionsWrapper}>
       <FormControlLabel

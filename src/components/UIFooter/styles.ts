@@ -13,6 +13,11 @@ export default {
       paddingBottom: '1.25rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      position: 'fixed',
+      bottom: 0,
+      width: '100%',
+      maxHeight: '3.9375rem',
+
       paddingTop: '0.538rem',
       paddingBottom: '0.726rem',
     },

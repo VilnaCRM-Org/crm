@@ -1,5 +1,7 @@
-export default interface RegisterUserDto {
+export interface RegisterUserDto {
   fullName: string;
   email: string;
   password: string;
 }
+
+export type LoginUserDto = Pick<RegisterUserDto, 'email' | 'password'>;

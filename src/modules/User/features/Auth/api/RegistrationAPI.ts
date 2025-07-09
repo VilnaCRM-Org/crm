@@ -1,7 +1,7 @@
 import HttpsClient from '@/services/HttpsClient/HttpsClient';
 import { container } from 'tsyringe';
 
-import RegisterUserDto from '@/modules/User/features/Auth/types/Credentials';
+import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 const httpsClient = container.resolve<HttpsClient>('HttpsClient');
 

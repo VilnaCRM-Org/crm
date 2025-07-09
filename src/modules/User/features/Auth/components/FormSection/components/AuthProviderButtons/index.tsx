@@ -1,16 +1,16 @@
 import UIButton from '@/components/UIButton';
 import { Box, Divider, ListItem, List } from '@mui/material';
 
-import authServices from './authServices';
+import oauthProviders from './oauthProviders';
 import styles from './styles';
 
-export default function ThirdPartyAuth(): JSX.Element {
+export default function AuthProviderButtons(): JSX.Element {
   return (
     <Box sx={styles.thirdPartyWrapper}>
       <Divider sx={styles.divider}>Або</Divider>
 
       <List sx={styles.servicesList}>
-        {authServices.map(({ label, component, ariaLabel, onClick }) => (
+        {oauthProviders.map(({ label, component, ariaLabel, onClick }) => (
           <ListItem disablePadding key={label} sx={styles.servicesItem}>
             <UIButton
               variant="outlined"

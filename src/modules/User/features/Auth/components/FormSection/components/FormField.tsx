@@ -3,27 +3,26 @@ import UITypography from '@/components/UITypography';
 import { Grid } from '@mui/material';
 import type { InputProps } from '@mui/material/Input';
 import { InputHTMLAttributes } from 'react';
-import { Control, FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
+import { useFormContext, FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
 
-import Styles from '@/modules/User/features/Auth/components/FormSection/Form/styles';
+import Styles from './styles';
 
 export interface FormFieldProps<T extends FieldValues = FieldValues> {
-  control: Control<T>;
   rules: RegisterOptions<T, Path<T>>;
-  defaultValue: PathValue<T, Path<T>>;
   name: Path<T>;
   placeholder: string;
   type: InputHTMLAttributes<HTMLInputElement>['type'];
   label: string;
   autoComplete: string;
   // eslint-disable-next-line react/require-default-props
+  defaultValue?: PathValue<T, Path<T>>;
+  // eslint-disable-next-line react/require-default-props
   inputProps?: InputProps;
 }
 
 export default function FormField<T extends FieldValues>({
-  control,
-  rules,
-  defaultValue,
+  rules = {},
+  defaultValue = '' as PathValue<T, Path<T>>,
   name,
   placeholder,
   type,
@@ -31,6 +30,8 @@ export default function FormField<T extends FieldValues>({
   autoComplete,
   inputProps = {},
 }: FormFieldProps<T>): JSX.Element {
+  const { control } = useFormContext<T>();
+
   return (
     <Grid container flexDirection="column" sx={Styles.formFieldWrapper}>
       <UITypography sx={Styles.formFieldLabel}>{label}</UITypography>

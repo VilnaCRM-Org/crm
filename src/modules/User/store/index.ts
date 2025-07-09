@@ -1,13 +1,15 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-import RegisterUserDto from '@/modules/User/features/Auth/types/Credentials';
+import LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
+import { RegisterUserDto, LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 import RegistrationAPI from '../features/Auth/api/RegistrationAPI';
 
 const registrationAPI = new RegistrationAPI();
+type SafeUserInfo = Omit<RegisterUserDto, 'password'>;
 
 export const registerUser = createAsyncThunk<
-  { fullName: string; email: string },
+  SafeUserInfo,
   RegisterUserDto,
   { rejectValue: string }
 >('auth/registerUser', async (credentials, { rejectWithValue }) => {
@@ -22,9 +24,23 @@ export const registerUser = createAsyncThunk<
   }
 });
 
-type SafeUserInfo = Omit<RegisterUserDto, 'password'>;
+const loginAPI = new LoginAPI();
+
+export const loginUser = createAsyncThunk<
+  { email: string; token: string },
+  LoginUserDto,
+  { rejectValue: string }
+>('auth/loginUser', async (credentials, { rejectWithValue }) => {
+  try {
+    const { token } = await loginAPI.login(credentials);
+    return { email: credentials.email, token };
+  } catch (err) {
+    return rejectWithValue((err as Error).message);
+  }
+});
 
 interface AuthState extends SafeUserInfo {
+  token: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -32,6 +48,7 @@ interface AuthState extends SafeUserInfo {
 const initialState: AuthState = {
   fullName: '',
   email: '',
+  token: null,
   loading: false,
   error: null,
 };
@@ -54,6 +71,22 @@ const authSlice = createSlice({
         email: action.payload.email,
       }))
       .addCase(registerUser.rejected, (state, action) => ({
+        ...state,
+        loading: false,
+        error: action.payload ?? action.error.message ?? 'Unknown error',
+      }))
+      .addCase(loginUser.pending, (state) => ({
+        ...state,
+        loading: true,
+        error: null,
+      }))
+      .addCase(loginUser.fulfilled, (state, action) => ({
+        ...state,
+        loading: false,
+        token: action.payload.token,
+        email: action.payload.email,
+      }))
+      .addCase(loginUser.rejected, (state, action) => ({
         ...state,
         loading: false,
         error: action.payload ?? action.error.message ?? 'Unknown error',

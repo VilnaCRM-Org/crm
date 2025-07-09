@@ -1,6 +1,6 @@
 import { Validate } from 'react-hook-form';
 
-import RegisterUserDto from '@/modules/User/features/Auth/types/Credentials';
+import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 const MAX_INITIALS_LENGTH = 255;
 

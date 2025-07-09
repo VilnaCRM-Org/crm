@@ -1,33 +1,31 @@
 import UIButton from '@/components/UIButton';
 import { Box } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 
-import Form from './Form';
+import { LoginForm, RegistrationForm } from './AuthForms';
+import AuthProviderButtons from './components/AuthProviderButtons';
 import styles from './styles';
 import Theme from './Theme';
-import ThirdPartyAuth from './ThirdPartyAuth';
+import { AuthMode } from './types';
 
 export default function FormSection(): JSX.Element {
-  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [mode, setMode] = useState<AuthMode>('login');
 
   const handleSwitch = useCallback(() => {
-    setIsLoginMode((prev) => !prev);
+    setMode((prev) => (prev === 'login' ? 'register' : 'login'));
   }, []);
 
-  const switchCaption = useMemo(
-    () => (isLoginMode ? 'У Вас немає аккаунту?' : 'У вас уже є аккаунт?'),
-    [isLoginMode]
-  );
   return (
     <ThemeProvider theme={Theme}>
       <Box component="section" sx={styles.formSection}>
         <Box sx={styles.formWrapper}>
-          <Form isLoginMode={isLoginMode} />
-          <ThirdPartyAuth />
+          {mode === 'login' ? <LoginForm /> : <RegistrationForm />}
+          <AuthProviderButtons />
         </Box>
+
         <UIButton sx={styles.formSwitcherButton} onClick={handleSwitch}>
-          {switchCaption}
+          {mode === 'login' ? 'У Вас немає аккаунту?' : 'У вас уже є аккаунт'}
         </UIButton>
       </Box>
     </ThemeProvider>
