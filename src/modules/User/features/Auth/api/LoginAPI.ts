@@ -12,10 +12,7 @@ export interface LoginResponse {
 export default class LoginAPI {
   public async login(credentials: LoginUserDto): Promise<LoginResponse> {
     try {
-      return await httpsClient.post<LoginResponse>(
-        '/api/users',
-        credentials as unknown as LoginResponse
-      );
+      return await httpsClient.post<LoginUserDto, LoginResponse>('/api/users', credentials);
     } catch (error) {
       throw new Error('Failed to login. Please try again.');
     }

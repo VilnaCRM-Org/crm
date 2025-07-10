@@ -76,6 +76,13 @@ module.exports = {
             patterns: ['@/features/*/*'],
           },
         ],
+        'no-param-reassign': [
+          'error',
+          {
+            props: true,
+            ignorePropertyModificationsFor: ['state'],
+          },
+        ],
         'no-extra-semi': 'off',
         'class-methods-use-this': 'off',
         quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
