@@ -15,14 +15,8 @@ export default {
     },
   },
 
-  rememberMeCheckbox: {
-    paddingTop: 0,
-    paddingBottom: 0,
-    paddingRight: '0.8125rem',
-    color: '#D0D4D8',
-  },
   rememberMeLabel: {
-    marginRight: 0,
+    margin: 0,
 
     '& .MuiFormControlLabel-label': {
       fontFamily: `Inter, sans-serif`,
@@ -43,6 +37,11 @@ export default {
         lineHeight: '1.2857',
       },
     },
+  },
+
+  rememberMeCheckbox: {
+    padding: 0,
+    marginRight: '0.8125rem',
   },
 
   forgePassword: {
