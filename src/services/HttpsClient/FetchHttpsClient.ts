@@ -5,20 +5,20 @@ export default class FetchHttpsClient implements HttpsClient {
     return this.request<T>(url, 'GET');
   }
 
-  public post<T, R>(url: string, data: T, headers?: Record<string, string>): Promise<R> {
-    return this.request<R>(url, 'POST', data, headers);
+  public post<T, R>(url: string, data: T): Promise<R> {
+    return this.request<R>(url, 'POST', data);
   }
 
-  public put<T, R>(url: string, data: T, headers?: Record<string, string>): Promise<R> {
-    return this.request<R>(url, 'PUT', data, headers);
+  public put<T, R>(url: string, data: T): Promise<R> {
+    return this.request<R>(url, 'PUT', data);
   }
 
-  public patch<T, R>(url: string, data: T, headers?: Record<string, string>): Promise<R> {
-    return this.request<R>(url, 'PATCH', data, headers);
+  public patch<T, R>(url: string, data: T): Promise<R> {
+    return this.request<R>(url, 'PATCH', data);
   }
 
-  public delete<T, R>(url: string, data?: T, headers?: Record<string, string>): Promise<R> {
-    return this.request<R>(url, 'DELETE', data, headers);
+  public delete<T, R>(url: string, data?: T): Promise<R> {
+    return this.request<R>(url, 'DELETE', data);
   }
 
   private async request<R>(
@@ -32,24 +32,34 @@ export default class FetchHttpsClient implements HttpsClient {
     return this.processResponse<R>(response);
   }
 
-  private createRequestConfig<T>(
+  private createRequestConfig(
     method: RequestMethod,
-    body?: T,
+    body?: unknown,
     headers?: Record<string, string>
   ): RequestInit {
-    return {
+    const config: RequestInit = {
       method,
-      headers: this.createHeaders(headers),
-      body: body ? JSON.stringify(body) : undefined,
+      headers: this.createHeaders(method, headers),
     };
+    if (body !== undefined) {
+      config.body = JSON.stringify(body);
+    }
+
+    return config;
   }
 
-  private createHeaders(customHeaders?: Record<string, string>): Record<string, string> {
-    return {
-      'Content-Type': 'application/json',
+  private createHeaders(
+    method: RequestMethod,
+    customHeaders?: Record<string, string>
+  ): Record<string, string> {
+    const headers: Record<string, string> = {
       Accept: 'application/json',
       ...customHeaders,
     };
+    if (method !== 'GET' && method !== 'DELETE') {
+      headers['Content-Type'] = 'application/json';
+    }
+    return headers;
   }
 
   private async processResponse<T>(response: Response): Promise<T> {

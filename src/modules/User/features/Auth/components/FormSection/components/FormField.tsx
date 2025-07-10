@@ -21,8 +21,8 @@ export interface FormFieldProps<T extends FieldValues = FieldValues> {
 }
 
 export default function FormField<T extends FieldValues>({
-  rules = {},
-  defaultValue = '' as PathValue<T, Path<T>>,
+  rules = {} as RegisterOptions<T, Path<T>>,
+  defaultValue = '' as unknown as PathValue<T, Path<T>>,
   name,
   placeholder,
   type,

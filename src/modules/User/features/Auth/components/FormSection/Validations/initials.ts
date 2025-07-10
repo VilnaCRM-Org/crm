@@ -25,11 +25,11 @@ export const validators: Record<ValidationKeys, ValidationFunction> = {
   isEmpty: (value) => value.trim().length === 0,
 };
 const validateFullName: Validate<string, RegisterUserDto> = (fullName) => {
-  if (!fullName) return validationMessages.required;
+  if (!fullName || validators.isEmpty(fullName)) {
+    return validationMessages.required;
+  }
 
   const trimmed = fullName.trim();
-
-  if (trimmed.length === 0) return validationMessages.required;
 
   if (!validators.isLettersOnly(trimmed)) {
     return validationMessages.lettersOnlyError;

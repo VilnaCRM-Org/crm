@@ -1,5 +1,13 @@
+/* eslint-disable react/require-default-props */
 import { ReactNode } from 'react';
-import { useForm, FormProvider, SubmitHandler, FieldValues, DefaultValues } from 'react-hook-form';
+import {
+  useForm,
+  FormProvider,
+  SubmitHandler,
+  FieldValues,
+  DefaultValues,
+  UseFormProps,
+} from 'react-hook-form';
 
 import UIButton from '@/components/UIButton';
 
@@ -11,17 +19,13 @@ interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
   defaultValues: DefaultValues<T>;
   children: ReactNode;
-  // eslint-disable-next-line react/require-default-props
+  formOptions?: Omit<UseFormProps<T>, 'defaultValues'>;
   isSubmitting?: boolean;
-  // eslint-disable-next-line react/require-default-props
   error?: string;
   submitLabel: string;
   title: string;
-  // eslint-disable-next-line react/require-default-props
   subtitle?: string;
-  // eslint-disable-next-line react/require-default-props
   showTitle?: boolean;
-  // eslint-disable-next-line react/require-default-props
   showSubtitle?: boolean;
 }
 
@@ -29,6 +33,7 @@ export default function UIForm<T extends FieldValues>({
   onSubmit,
   defaultValues,
   children,
+  formOptions,
   isSubmitting = false,
   error,
   submitLabel,
@@ -37,7 +42,7 @@ export default function UIForm<T extends FieldValues>({
   showTitle = true,
   showSubtitle = true,
 }: UIFormProps<T>): JSX.Element {
-  const methods = useForm<T>({ defaultValues });
+  const methods = useForm<T>({ defaultValues, ...formOptions });
 
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading

@@ -25,7 +25,11 @@ export default function RegistrationForm(): JSX.Element {
 
       if (registerUser.rejected.match(resultAction)) {
         const message = resultAction.payload || 'Unknown error';
-        setError(`Registration failed: ${message}`);
+        setError(
+          message.includes('email')
+            ? 'Електронна адреса вже використовується'
+            : 'Помилка реєстрації. Спробуйте пізніше'
+        );
       }
     } catch (err) {
       setError('An unexpected error occurred');

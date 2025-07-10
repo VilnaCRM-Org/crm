@@ -3,7 +3,9 @@ import { Validate } from 'react-hook-form';
 import { AuthVariants } from '../types';
 
 export const isValidEmailFormat: (email: string) => boolean = (email: string): boolean =>
-  /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+  /^[a-zA-Z0-9]([a-zA-Z0-9._%-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$/.test(
+    email
+  );
 
 const validationMessages = {
   required: "Це поле обов'язкове",
