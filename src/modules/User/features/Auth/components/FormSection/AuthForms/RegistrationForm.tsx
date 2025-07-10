@@ -21,18 +21,14 @@ export default function RegistrationForm(): JSX.Element {
     setError('');
 
     try {
-      const resultAction = await dispatch(registerUser(data));
-
-      if (registerUser.rejected.match(resultAction)) {
-        const message = resultAction.payload || 'Unknown error';
-        setError(
-          message.includes('email')
-            ? 'Електронна адреса вже використовується'
-            : 'Помилка реєстрації. Спробуйте пізніше'
-        );
-      }
+      await dispatch(registerUser(data)).unwrap();
     } catch (err) {
-      setError('An unexpected error occurred');
+      const message = err instanceof Error ? err.message : String(err);
+      setError(
+        message.includes('email') || message.includes('exists')
+          ? 'Електронна адреса вже використовується'
+          : 'Помилка реєстрації. Спробуйте пізніше'
+      );
     } finally {
       setIsSubmitting(false);
     }

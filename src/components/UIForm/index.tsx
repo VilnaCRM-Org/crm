@@ -1,4 +1,5 @@
 /* eslint-disable react/require-default-props */
+import { CircularProgress } from '@mui/material';
 import { ReactNode } from 'react';
 import {
   useForm,
@@ -70,6 +71,7 @@ export default function UIForm<T extends FieldValues>({
         >
           {isSubmitting ? 'Loading...' : submitLabel}
         </UIButton>
+        {isSubmitting ? <CircularProgress color="primary" size={70} sx={styles.loader} /> : null}
       </form>
     </FormProvider>
   );

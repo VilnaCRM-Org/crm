@@ -19,6 +19,7 @@ export default {
     },
   },
   formWrapper: {
+    position: 'relative',
     width: '100%',
     padding: '1.5rem 1.5rem 1.375rem',
     margin: '0 auto',

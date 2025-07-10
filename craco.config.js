@@ -16,11 +16,19 @@ module.exports = function () {
         rules: [
           {
             test: /\.svg$/,
-            use: ['@svgr/webpack', 'url-loader'],
+            issuer: /\.[jt]sx?$/,
+            use: ['@svgr/webpack'],
           },
           {
-            test: /\.(png|woff|woff2|eot|ttf|svg)$/,
+            test: /\.(png|woff|woff2|eot|ttf)$/,
             loader: 'url-loader',
+          },
+          {
+            test: /\.svg$/,
+            type: 'asset/resource',
+            generator: {
+              filename: 'assets/[name][ext]',
+            },
           },
           {
             test: /\.(scss|css)$/,

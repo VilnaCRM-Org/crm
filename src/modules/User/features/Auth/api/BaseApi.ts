@@ -15,7 +15,7 @@ export default class BaseAPI {
         case 401:
           return new AuthenticationError();
         case 409:
-          return new ConflictError('User with this email already exists');
+          return new ConflictError(`${context} conflict. Resource already exists.`);
         case 500:
           return new ApiError('Server error. Please try again later.', 'SERVER_ERROR', 500);
         default:
@@ -47,9 +47,12 @@ export default class BaseAPI {
 
   private isNetworkError(message: string): boolean {
     return (
-      message.includes('Network') ||
-      message.includes('fetch') ||
-      message.includes('Failed to fetch')
+      message.toLowerCase().includes('Failed to fetch') ||
+      message.toLowerCase().includes('network') ||
+      message.toLowerCase().includes('fetch') ||
+      message.toLowerCase().includes('connection') ||
+      message.toLowerCase().includes('timeout') ||
+      message.toLowerCase().includes('cors')
     );
   }
 }
