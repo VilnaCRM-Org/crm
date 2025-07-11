@@ -1,41 +1,11 @@
 import '@mui/material/styles';
+import { CustomColors } from './colors';
 
 declare module '@mui/material/styles' {
-  interface Palette {
-    custom: {
-      social: {
-        icon: string;
-        iconHover: string;
-      };
-      border: {
-        default: string;
-        focus: string;
-      };
-      shadow: {
-        subtle: string;
-      };
-      decorative: {
-        divider: string;
-      };
-    };
+  interface Theme {
+    customColors: CustomColors;
   }
-
-  interface PaletteOptions {
-    custom?: {
-      social?: {
-        icon?: string;
-        iconHover?: string;
-      };
-      border?: {
-        default?: string;
-        focus?: string;
-      };
-      shadow?: {
-        subtle?: string;
-      };
-      decorative: {
-        divider?: string;
-      };
-    };
+  interface ThemeOptions {
+    customColors?: CustomColors;
   }
 }

@@ -36,6 +36,9 @@ declare module '@mui/material/styles' {
       decorative: {
         divider?: string;
       };
+      text: {
+        disabled?: string;
+      };
     };
   }
 }

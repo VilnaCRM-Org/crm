@@ -1,5 +1,5 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
-import colorTheme from '@/components/UIColorTheme';
+import { paletteColors } from '@/styles/colors';
 
 const centeredFlex = {
   display: 'flex',
@@ -44,7 +44,7 @@ export default {
     letterSpacing: '0',
 
     color: '#1B2327',
-    border: `1px solid ${colorTheme.palette.grey[50]}`,
+    border: `1px solid ${paletteColors.background.subtle}`,
     borderRadius: '8px',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       display: 'none',
@@ -54,27 +54,29 @@ export default {
   uiLinkTypography: {
     ...centeredFlex,
 
-    fontWeight: 500,
-    fontFamily: 'Golos',
-    fontSize: '1rem',
-    lineHeight: '1.125rem',
+    '& .MuiTypography-root': {
+      fontWeight: 500,
+      fontFamily: 'Golos',
+      fontSize: '1rem',
+      lineHeight: '1.125rem',
+      letterSpacing: '0',
+    },
 
     paddingTop: '1.0625rem',
     paddingBottom: '1.125rem',
     marginTop: '0.25rem',
 
     textAlign: 'center',
-    letterSpacing: '0',
 
     borderRadius: '8px',
-    backgroundColor: colorTheme.palette.grey[100],
+    backgroundColor: paletteColors.background.paper,
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       padding: '0.5rem 1rem',
       marginTop: '0rem',
 
-      '&:not(:last-of-type)': {
-        marginRight: '0.5rem',
+      '&:last-of-type': {
+        marginLeft: '0.5rem',
       },
     },
   },

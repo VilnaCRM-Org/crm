@@ -1,13 +1,16 @@
 import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import { Box, Typography } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import React from 'react';
 
 import UIButton from '@/components/UIButton';
 import UIContainer from '@/components/UIContainer';
 
-import styles from './styles';
+import getBackToMainStyles from './styles';
 
 export default function BackToMain(): React.ReactElement {
+  const theme = useTheme();
+  const styles = getBackToMainStyles(theme);
   return (
     <Box component="section" sx={styles.section}>
       <UIContainer>

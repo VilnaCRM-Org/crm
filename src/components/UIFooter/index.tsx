@@ -8,7 +8,7 @@ import UIFooterContent from './UIFooterContent/UIFooter';
 
 export default function UIFooter(): React.ReactElement {
   return (
-    <Box component="section" sx={Styles.footerSection}>
+    <Box component="footer" sx={Styles.footerSection}>
       <UIContainer>
         <UIFooterContent />
       </UIContainer>

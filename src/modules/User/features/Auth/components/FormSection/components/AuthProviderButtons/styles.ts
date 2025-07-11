@@ -1,5 +1,5 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
-import Colors from '@/components/UIColorTheme/colors';
+import { customColors } from '@/styles/colors';
 
 export default {
   thirdPartyWrapper: {
@@ -7,38 +7,6 @@ export default {
 
     [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       paddingTop: '1.5rem',
-    },
-  },
-
-  divider: {
-    marginBottom: '0.875rem',
-
-    '& .MuiDivider-wrapper': {
-      padding: '0rem 1.375rem',
-    },
-
-    fontFamily: `'Inter', sans-serif`,
-    fontWeight: 500,
-    fontStyle: 'normal',
-    fontSize: '0.875rem',
-    lineHeight: '1.2857',
-    letterSpacing: 0,
-    color: Colors.decorative.divider,
-    textTransform: 'uppercase',
-
-    [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      marginBottom: '1.125rem',
-
-      fontWeight: 400,
-      fontSize: '1.125rem',
-      lineHeight: 1,
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      marginBottom: '1.5rem',
-
-      fontWeight: 500,
-      fontSize: '0.875rem',
-      lineHeight: '1.2857',
     },
   },
 
@@ -104,6 +72,10 @@ export default {
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       padding: '1.0625rem 2.5rem',
+    },
+
+    '&:hover, &:focus': {
+      borderColor: customColors.brand.blue,
     },
   },
 };

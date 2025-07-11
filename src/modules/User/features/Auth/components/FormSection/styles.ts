@@ -1,12 +1,11 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
-import Colors from '@/components/UIColorTheme/colors';
+import { paletteColors, customColors } from '@/styles/colors';
 
 export default {
   formSection: {
     paddingTop: '0.5rem',
     paddingX: '0.375rem',
     paddingBottom: '1.5rem',
-
     fontFamily: 'Golos',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
@@ -24,10 +23,10 @@ export default {
     padding: '1.5rem 1.5rem 1.375rem',
     margin: '0 auto',
 
-    backgroundColor: Colors.background.default,
-    border: `1px solid ${Colors.border.default}`,
+    backgroundColor: paletteColors.background.default,
+    border: `1px solid ${paletteColors.border.default}`,
     borderRadius: '16px',
-    boxShadow: `0px 7px 40px 0px ${Colors.shadow.subtle}`,
+    boxShadow: `0px 7px 40px 0px ${paletteColors.shadow.subtle}`,
 
     maxWidth: '22.7rem',
 
@@ -48,16 +47,25 @@ export default {
 
     fontWeight: 500,
     fontSize: '0.9375rem',
+    fontStyle: 'normal',
     lineHeight: 1.2,
     letterSpacing: 0,
-    color: Colors.text.secondary,
+    color: customColors.text.secondary,
     textTransform: 'none',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       margin: '2.75rem auto 0',
+
+      fontWeight: 600,
+      fontSize: '1.125rem',
+      lineHeight: 1,
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       margin: '1.265rem auto 0',
+
+      fontWeight: 500,
+      fontSize: '0.9375rem',
+      lineHeight: 1.2,
     },
   },
 };

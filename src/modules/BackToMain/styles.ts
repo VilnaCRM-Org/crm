@@ -1,39 +1,35 @@
-import colorTheme from '@/components/UIColorTheme';
+import { SxProps } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 
-const centeredFlex = {
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-};
-
-export default {
+const getBackToMainStyles = (theme: Theme): Record<string, SxProps<Theme>> => ({
   section: {
-    paddingTop: '1rem',
-    paddingBottom: '1rem',
+    paddingTop: theme.spacing(2),
+    paddingBottom: theme.spacing(2),
 
-    backgroundColor: colorTheme.palette.background.default,
+    backgroundColor: theme.palette.background.default,
   },
-
   backButton: {
-    padding: '0rem',
-    ...centeredFlex,
+    padding: 0,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-
   icon: {
-    color: '#969B9D',
+    color: theme.palette.grey[50],
   },
 
   backText: {
-    marginLeft: '0.5rem',
-    paddingTop: '0.1875rem',
-    paddingBottom: '0.1875rem',
+    marginLeft: theme.spacing(1),
+    paddingTop: theme.spacing(0.75),
+    paddingBottom: theme.spacing(0.75),
 
-    fontFamily: 'Golos',
-    fontWeight: '500',
-    fontSize: '0.9375rem',
-    lineHeight: '1.125rem',
-
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: 500,
+    fontSize: theme.typography.pxToRem(15),
+    lineHeight: theme.typography.pxToRem(18),
     textTransform: 'none',
-    color: '#969B9D',
+
+    color: theme.palette.grey[50],
   },
-};
+});
+export default getBackToMainStyles;

@@ -1,4 +1,5 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
+import { customColors, paletteColors } from '@/styles/colors';
 
 export default {
   authOptionsWrapper: {
@@ -26,7 +27,7 @@ export default {
       lineHeight: '1.2857',
       letterSpacing: 0,
 
-      color: '#404142',
+      color: customColors.text.primary,
 
       [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
         fontSize: '1rem',
@@ -54,7 +55,7 @@ export default {
     lineHeight: 1.2,
     letterSpacing: 0,
     textTransform: 'none',
-    color: '#1EAEFF',
+    color: paletteColors.primary.main,
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       fontWeight: 600,

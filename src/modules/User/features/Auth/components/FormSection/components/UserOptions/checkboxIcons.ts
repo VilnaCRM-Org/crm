@@ -1,21 +1,22 @@
+import { customColors } from '@/styles/colors';
 import { styled } from '@mui/material/styles';
 
 export const CheckBoxIcon = styled('span')(() => ({
   width: '1.25rem',
   height: '1.25rem',
 
-  border: '1px solid #D0D4D8',
+  border: `1px solid ${customColors.checkbox.main}`,
   borderRadius: '8px',
-  color: '#D0D4D8',
+  color: customColors.checkbox.main,
 }));
 
 export const CheckBoxChecked = styled('span')(() => ({
   width: '1.25rem',
   height: '1.25rem',
 
-  border: '1px solid #D0D4D8',
+  border: `1px solid ${customColors.checkbox.main}`,
   borderRadius: '8px',
-  backgroundColor: '#D0D4D8',
+  backgroundColor: customColors.checkbox.main,
 
   display: 'flex',
   alignItems: 'center',
@@ -24,9 +25,9 @@ export const CheckBoxChecked = styled('span')(() => ({
   '&::after': {
     content: '""',
     width: '0.7rem',
-    height: '0.4rem',
-    borderLeft: '2px solid white',
-    borderBottom: '2px solid white',
+    height: '0.5rem',
+    borderLeft: '3px solid white',
+    borderBottom: '3px solid white',
     transform: 'rotate(-45deg)',
   },
 }));

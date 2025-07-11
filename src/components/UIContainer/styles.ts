@@ -1,4 +1,4 @@
-import breakpointsTheme from '@/components/UIColorTheme';
+import breakpointsTheme from '@/components/UIBreakpoints';
 
 const containerPadding = {
   xs: '0.9375rem', // 15px
@@ -10,12 +10,11 @@ const containerPadding = {
 export default {
   container: {
     width: '100%',
-    margin: '0 auto',
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.xs}px)`]: {
-      paddingLeft: containerPadding.xs,
-      paddingRight: containerPadding.xs,
-    },
+    paddingLeft: containerPadding.xs,
+    paddingRight: containerPadding.xs,
+
+    margin: '0 auto',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       paddingLeft: containerPadding.md,

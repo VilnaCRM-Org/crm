@@ -1,4 +1,5 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
+import { customColors } from '@/styles/colors';
 
 export default {
   formFieldWrapper: {
@@ -24,7 +25,7 @@ export default {
 
     marginBottom: '0.25rem',
 
-    color: '#404142',
+    color: customColors.text.primary,
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1rem',

@@ -2,24 +2,22 @@ import { createTheme } from '@mui/material/styles';
 
 import Golos from '@/assets/fonts/golos/Golos-Text_Black.ttf';
 import Inter from '@/assets/fonts/inter/Inter-Black.ttf';
+
+import { customColors, paletteColors } from './colors';
 import './types';
 
 export default createTheme({
   palette: {
-    primary: {
-      main: '#1EAEFF',
-      contrastText: '#FFFFFF',
-    },
-    error: {
-      main: '#DC3939',
-      contrastText: '#FFFFFF',
-    },
-    custom: {
-      decorative: {
-        divider: '#57595B',
-      },
-    },
+    primary: paletteColors.primary,
+    secondary: paletteColors.secondary,
+    error: paletteColors.error,
+    success: paletteColors.success,
+    warning: paletteColors.warning,
+    info: paletteColors.info,
+    background: paletteColors.background,
+    grey: paletteColors.grey,
   },
+  customColors,
   typography: {
     fontFamily: 'Golos, Inter',
   },

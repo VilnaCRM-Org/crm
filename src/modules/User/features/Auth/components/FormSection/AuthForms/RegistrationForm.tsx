@@ -7,7 +7,6 @@ import { registerUser } from '@/modules/User/store';
 
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
-import UserOptions from '../components/UserOptions';
 import { authForms, fieldIsRequired } from '../constants';
 import { validateEmail, validateFullName } from '../Validations';
 
@@ -61,7 +60,6 @@ export default function RegistrationForm(): JSX.Element {
         rules={{ required: fieldIsRequired, validate: validateEmail }}
       />
       <PasswordField<RegisterUserDto> mode="register" />
-      <UserOptions />
     </UIForm>
   );
 }

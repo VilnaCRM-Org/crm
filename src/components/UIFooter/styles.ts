@@ -1,10 +1,10 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
-import colorTheme from '@/components/UIColorTheme';
+import { paletteColors } from '@/styles/colors';
 
 export default {
   footerSection: {
-    borderTop: `1px solid ${colorTheme.palette.grey['50']}`,
-    backgroundColor: colorTheme.palette.background.default,
+    borderTop: `1px solid ${paletteColors.background.subtle}`,
+    backgroundColor: paletteColors.background.default,
 
     boxShadow: '0px -5px 46px 0px rgba(198, 209, 220, 0.25)',
 
@@ -13,8 +13,6 @@ export default {
       paddingBottom: '1.25rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      position: 'fixed',
-      bottom: 0,
       width: '100%',
       maxHeight: '3.9375rem',
 

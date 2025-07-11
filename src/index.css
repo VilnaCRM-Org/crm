@@ -1,3 +1,7 @@
+:root {
+  --mui-palette-deep-green: #38b386;
+}
+
 html,
 body {
   padding: 0;
@@ -15,17 +19,13 @@ body {
     sans-serif;
   font-size: 16px;
 }
-
 a {
   color: inherit;
   text-decoration: none;
 }
-a:hover,
-a:focus-visible {
-  text-decoration: underline;
-}
+
 a:visited {
-  color: #e8f4ef;
+  color: var(--mui-palette-deep-green, green);
 }
 
 *,

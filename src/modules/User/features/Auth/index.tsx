@@ -9,11 +9,11 @@ import FormSection from '@/modules/User/features/Auth/components/FormSection';
 export default function Authentication(): JSX.Element {
   return (
     <ThemeProvider theme={Theme}>
+      <BackToMain />
       <main>
-        <BackToMain />
         <FormSection />
-        <UIFooter />
       </main>
+      <UIFooter />
     </ThemeProvider>
   );
 }
