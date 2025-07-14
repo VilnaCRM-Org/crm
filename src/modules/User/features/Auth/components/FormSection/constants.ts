@@ -14,3 +14,6 @@ export const authForms = {
 };
 
 export const fieldIsRequired = "Це поле обов'язкове";
+
+export const EMAIL_ALREADY_USED = 'Електронна адреса вже використовується';
+export const GENERIC_SIGNUP_ERROR = 'Помилка реєстрації. Спробуйте пізніше';
