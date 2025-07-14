@@ -28,10 +28,7 @@ module.exports = {
 
           const correctCommit = taskNumber !== null;
 
-          return [
-            correctCommit,
-            `your task number is incorrect (${list}(#1))`,
-          ];
+          return [correctCommit, `your task number is incorrect (${list}(#1))`];
         },
       },
     },

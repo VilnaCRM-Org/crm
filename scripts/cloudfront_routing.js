@@ -9,9 +9,7 @@ var winston = require('winston');
 
 var logger = winston.createLogger({
   level: 'error',
-  transports: [
-    new winston.transports.Console(),
-  ],
+  transports: [new winston.transports.Console()],
 });
 
 /* eslint-disable no-unused-vars */

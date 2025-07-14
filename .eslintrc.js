@@ -6,13 +6,14 @@ module.exports = {
     jest: true,
   },
   parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
-  ignorePatterns: ['node_modules/*', 'docker-compose.yml', 'pnpm-lock.yaml', 'build/*', 'coverage/*'],
-  extends: [
-    'eslint:recommended',
-    'plugin:storybook/recommended',
-    'airbnb',
-    'airbnb/hooks',
+  ignorePatterns: [
+    'node_modules/*',
+    'docker-compose.yml',
+    'pnpm-lock.yaml',
+    'build/*',
+    'coverage/*',
   ],
+  extends: ['eslint:recommended', 'plugin:storybook/recommended', 'airbnb', 'airbnb/hooks'],
   overrides: [
     {
       files: ['scripts/cloudfront_routing.js'],
@@ -33,12 +34,7 @@ module.exports = {
       },
     },
     {
-      files: [
-        '**/*.ts',
-        '**/*.tsx',
-        '**/*.spec.js',
-        '**/*.spec.jsx',
-      ],
+      files: ['**/*.ts', '**/*.tsx', '**/*.spec.js', '**/*.spec.jsx'],
       parser: '@typescript-eslint/parser',
       settings: {
         react: { version: 'detect' },

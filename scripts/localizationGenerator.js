@@ -39,10 +39,7 @@ class LocalizationGenerator {
   }
 
   getFeatureFolders() {
-    const featureDirectories = fs.readdirSync(
-      this.featurePath,
-      { withFileTypes: true },
-    );
+    const featureDirectories = fs.readdirSync(this.featurePath, { withFileTypes: true });
 
     return featureDirectories
       .filter((directory) => directory.isDirectory())
@@ -50,10 +47,9 @@ class LocalizationGenerator {
   }
 
   getLocalizationFromFolder(folder) {
-    const localizationFiles = fs.readdirSync(
-      this.pathToI18nFolder.replace('{folder}', folder),
-      { withFileTypes: true },
-    );
+    const localizationFiles = fs.readdirSync(this.pathToI18nFolder.replace('{folder}', folder), {
+      withFileTypes: true,
+    });
 
     return localizationFiles.reduce((localizations, file) => {
       if (!file.isFile()) return localizations;
