@@ -1,4 +1,4 @@
-FROM node:23.11.1-alpine3.21 AS base
+FROM node:24-alpine3.21 AS base
 
 RUN apk add --no-cache \
     make=4.4.1-r2 \

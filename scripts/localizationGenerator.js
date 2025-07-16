@@ -6,7 +6,7 @@ class LocalizationGenerator {
     i18nPath = 'i18n',
     featurePath = 'src/features',
     jsonFileType = 'json',
-    localizationFile = 'localization.json',
+    localizationFile = 'localization.json'
   ) {
     this.featurePath = featurePath;
     this.jsonFileType = jsonFileType;
@@ -25,13 +25,24 @@ class LocalizationGenerator {
     const localizationObj = featureFolders.reduce((acc, folder) => {
       const parsedLocalizationFromFolder = this.getLocalizationFromFolder(folder);
 
-      return { ...acc, ...parsedLocalizationFromFolder };
+      Object.keys(parsedLocalizationFromFolder).forEach((language) => {
+        if (!acc[language]) {
+          acc[language] = { translation: {} };
+        }
+
+        acc[language].translation = this.deepMerge(
+          acc[language].translation,
+          parsedLocalizationFromFolder[language].translation
+        );
+      });
+
+      return acc;
     }, {});
 
     const filePath = path.join(
       path.dirname(__dirname),
       this.pathToWriteLocalization,
-      this.localizationFile,
+      this.localizationFile
     );
     const fileContent = JSON.stringify(localizationObj);
 
@@ -39,7 +50,9 @@ class LocalizationGenerator {
   }
 
   getFeatureFolders() {
-    const featureDirectories = fs.readdirSync(this.featurePath, { withFileTypes: true });
+    const featureDirectories = fs.readdirSync(this.featurePath, {
+      withFileTypes: true,
+    });
 
     return featureDirectories
       .filter((directory) => directory.isDirectory())
@@ -60,7 +73,7 @@ class LocalizationGenerator {
 
       const localizationContent = fs.readFileSync(
         this.pathToI18nFile.replace('{folder}', folder).replace('{file.name}', file.name),
-        'utf8',
+        'utf8'
       );
       const parsedLocalization = JSON.parse(localizationContent);
 
@@ -80,6 +93,22 @@ class LocalizationGenerator {
         throw new Error(err);
       }
     });
+  }
+  deepMerge(target = {}, source = {}) {
+    for (const key of Object.keys(source)) {
+      if (key === '__proto__' || key === 'constructor') {
+        continue;
+      }
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+        if (!target[key] || typeof target[key] !== 'object') {
+          target[key] = {};
+        }
+        this.deepMerge(target[key], source[key]);
+      } else {
+        target[key] = source[key];
+      }
+    }
+    return target;
   }
 }
 

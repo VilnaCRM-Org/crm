@@ -22,7 +22,7 @@ module.exports = {
         'check-task-number-rule': (data) => {
           const list = module.exports.listOfNames.join('|');
 
-          const regexp = new RegExp(`(${list})(.#(\\d+)).:`, 'gm');
+          const regexp = new RegExp(`(${list})\\(#(\\d+)\\):`, 'm');
 
           const taskNumber = data.header.match(regexp);
 

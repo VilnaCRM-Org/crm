@@ -1,18 +1,18 @@
-const path = require('path');
-const eslint = require('./.eslintrc');
-const LocalizationGenerator = require('./scripts/localizationGenerator');
+import { resolve } from 'node:path';
 
-// eslint-disable-next-line
-module.exports = function () {
+import eslint from './.eslintrc';
+import LocalizationGenerator from './scripts/localizationGenerator';
+
+export default function cracoConfig() {
   const localizationGenerator = new LocalizationGenerator();
   localizationGenerator.generateLocalizationFile();
 
   return {
     webpack: {
       alias: {
-        '@': path.resolve(__dirname, 'src'),
+        '@': resolve(__dirname, 'src'),
       },
     },
     eslint,
   };
-};
+}

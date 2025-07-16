@@ -1,3 +1,5 @@
+/// <reference types="jest" />
+
 function sum(a: number, b: number) {
   return a + b;
 }

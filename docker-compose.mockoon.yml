@@ -6,3 +6,7 @@ services:
     ports:
       - '8080:8080'
     restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-q', 'http://localhost:8080/api/users', '-O', '-']
+      interval: 5s
+      retries: 5

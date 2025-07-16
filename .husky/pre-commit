@@ -10,4 +10,4 @@ CHANGED_TS_FILES=$(git diff --cached --name-only | grep '.ts$' || true)
 pnpm lint:tsc --noEmit &&
 if [ -n "$CHANGED_JS_FILES" ]; then pnpm lint:eslint; fi &&
 if [ -n "$CHANGED_MD_FILES" ]; then pnpm lint:md; fi &&
-if [ -n "$CHANGED_TS_FILES" ]; then pnpm test:unit --passWithNoTests $CHANGED_TS_FILES; fi
+pnpm test:unit --passWithNoTests
