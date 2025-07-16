@@ -1,0 +1,54 @@
+services:
+  prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://${WEBSITE_DOMAIN}:${PROD_PORT}']
+      interval: 5s
+      retries: 5
+
+  playwright:
+    build:
+      context: .
+      dockerfile: Playwright.Dockerfile
+    restart: unless-stopped
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - '9324:9324'
+    environment:
+      - NEXT_PUBLIC_PROD_HOST_API_URL=http://${PROD_HOST}:${PROD_PORT}
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://${WEBSITE_DOMAIN}:${PLAYWRIGHT_TEST_PORT}']
+      interval: 5s
+      retries: 5
+
+  apollo:
+    build:
+      context: .
+      dockerfile: Apollo.Dockerfile
+    restart: unless-stopped
+    ports:
+      - '4000:4000'
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://${WEBSITE_DOMAIN}:${GRAPHQL_PORT}/${GRAPHQL_API_PATH}']
+      interval: 5s
+      retries: 5
+
+  mockoon:
+    build:
+      context: .
+      dockerfile: Mockoon.Dockerfile
+    ports:
+      - '8080:8080'
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-q', 'http://localhost:${MOCKOON_PORT}/api/users', '-O', '-']
+      interval: 5s
+      retries: 5

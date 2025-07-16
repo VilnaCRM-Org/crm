@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "outDir": "./out",
+    "rootDir": "./",
+    "noEmit": false,
+    "skipLibCheck": true
+  },
+  "include": ["docker/**/*"],
+  "exclude": ["node_modules"]
+}
