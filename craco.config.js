@@ -1,18 +1,18 @@
-import { resolve } from 'node:path';
+const path = require('path');
 
-import eslint from './.eslintrc';
-import LocalizationGenerator from './scripts/localizationGenerator';
+const eslint = require('./.eslintrc');
+const LocalizationGenerator = require('./scripts/localizationGenerator');
 
-export default function cracoConfig() {
+module.exports = function cracoConfig() {
   const localizationGenerator = new LocalizationGenerator();
   localizationGenerator.generateLocalizationFile();
 
   return {
     webpack: {
       alias: {
-        '@': resolve(__dirname, 'src'),
+        '@': path.resolve(__dirname, 'src'),
       },
     },
     eslint,
   };
-}
+};

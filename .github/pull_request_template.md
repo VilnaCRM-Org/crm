@@ -25,7 +25,7 @@
 
 ## Types of changes
 
-<!--- What types of changes does your code introduce? Put an `x` in all the boxes that apply: -->
+<!---What type of change does this PR introduce? Put an `x` in all the boxes that apply: -->
 
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)
@@ -44,4 +44,4 @@
 - [ ] I have read the [**CONTRIBUTING.md**](https://github.com/VilnaCRM-Org/frontend-spa-template/blob/main/CONTRIBUTING.md) document.
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
-- [ ] You have only one commit (if not, squash them into one commit).
+- [ ] I have only one commit (if not, I squashed them into one commit).
