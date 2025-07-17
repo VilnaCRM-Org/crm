@@ -1,4 +1,5 @@
 import { GraphQLResolveInfo } from 'graphql';
+import { GraphQLFormattedError } from 'graphql/index';
 
 export interface CreateUserInput {
   email: string;
@@ -41,4 +42,8 @@ export interface MutationResolvers {
     context: unknown,
     info: GraphQLResolveInfo
   ) => Promise<CreateUserPayload>;
+}
+
+export interface CustomFormattedError extends GraphQLFormattedError {
+  details?: string;
 }

@@ -10,6 +10,7 @@
 
 
 /out/
+/docker/apollo-server/out
 
 # production
 /build
@@ -47,3 +48,5 @@ yarn-error.log*
 .vscode/
 ./.vscode/
 
+app.log
+*.log

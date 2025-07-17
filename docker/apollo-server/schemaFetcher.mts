@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { fileURLToPath } from 'url';
 
 import dotenv, { DotenvConfigOutput } from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
@@ -15,6 +16,12 @@ if (!SCHEMA_URL) {
   throw new Error(
     'Schema URL is not configured. Please set the GRAPHQL_SCHEMA_URL environment variable.'
   );
+}
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+if (process.argv[1] === __filename) {
+  console.log('SOME LOG HERE FOR SOME PURPOSE');
 }
 
 const OUTPUT_DIR: string = path.join(__dirname);
@@ -96,7 +103,7 @@ export async function fetchAndSaveSchema(): Promise<void> {
     }
   }
 }
-if (require.main === module) {
+if (process.argv[1] === __filename) {
   fetchAndSaveSchema().catch((error) => {
     logger.error('Fatal error during schema fetch:', error);
     process.exit(1);

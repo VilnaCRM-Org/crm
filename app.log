@@ -1,2 +1,0 @@
-{"level":"info","message":"Fetching OpenAPI schema from: https://raw.githubusercontent.com/VilnaCRM-Org/user-service/v2.4.1/.github/graphql-spec/spec... (Attempt 1/3)","timestamp":"2025-07-16T14:58:06.197Z"}
-{"level":"info","message":"Schema successfully saved to: /home/yu/WebstormProjects/crm/out/docker/apollo-server/schema.graphql","timestamp":"2025-07-16T14:58:06.719Z"}

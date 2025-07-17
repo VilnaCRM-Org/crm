@@ -37,6 +37,6 @@ COPY --from=build /app/node_modules ./node_modules
 
 COPY memlab ./memlab
 COPY src/config/i18nConfig.js ./src/config/i18nConfig.js
-COPY pages/i18n/localization.json ./pages/i18n/localization.json
+COPY src/i18n/localization.json ./src/i18n/localization.json
 
 CMD ["sleep","infinity"]

@@ -7,12 +7,11 @@ RUN npm install -g pnpm@10.6.5 typescript@5.8.2
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml checkNodeVersion.js ./
-COPY tsconfig.server.json tsconfig.server.json
 COPY docker docker
 COPY .env .env
 
 RUN pnpm install
-RUN tsc --project tsconfig.server.json
+RUN tsc --project ./docker/apollo-server/tsconfig.server.json
 
-CMD node ./out/docker/apollo-server/schemaFetcher.js && \
-    node ./out/docker/apollo-server/server.mjs
+CMD node ./docker/apollo-server/out/schemaFetcher.mjs && \
+    node ./docker/apollo-server/out/server.mjs
