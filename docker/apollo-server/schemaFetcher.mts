@@ -1,5 +1,5 @@
-import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { promises as fsPromises } from 'node:fs';
 import { fileURLToPath } from 'url';
 
 import dotenv, { DotenvConfigOutput } from 'dotenv';
@@ -20,18 +20,16 @@ if (!SCHEMA_URL) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-if (process.argv[1] === __filename) {
-  console.log('SOME LOG HERE FOR SOME PURPOSE');
-}
-
 const OUTPUT_DIR: string = path.join(__dirname);
 const OUTPUT_FILE: string = path.join(OUTPUT_DIR, 'schema.graphql');
 const LOG_LEVEL: string = process.env.GRAPHQL_LOG_LEVEL || 'info';
 
+const LOG_FILE_PATH: string = process.env.GRAPHQL_LOG_FILE || 'app.log';
+
 const logger: Logger = createLogger({
   level: LOG_LEVEL,
   format: format.combine(format.timestamp(), format.json()),
-  transports: [new transports.Console(), new transports.File({ filename: 'app.log' })],
+  transports: [new transports.Console(), new transports.File({ filename: LOG_FILE_PATH })],
 });
 const MAX_RETRIES: number = Number(process.env.GRAPHQL_MAX_RETRIES) || 3;
 const TIMEOUT_MS: number = Number(process.env.GRAPHQL_TIMEOUT_MS) || 5000;
@@ -44,9 +42,7 @@ export async function fetchAndSaveSchema(): Promise<void> {
     if (retries > 0) {
       const backoffTime: number = Math.min(1000 * 2 ** retries, 10000);
       logger.info(`Retry attempt ${retries}/${MAX_RETRIES} after ${backoffTime}ms`);
-      await new Promise<void>((resolve) => {
-        setTimeout(() => resolve(), backoffTime);
-      });
+      await new Promise<void>((resolve) => setTimeout(resolve, backoffTime));
     }
 
     logger.info(
@@ -69,12 +65,12 @@ export async function fetchAndSaveSchema(): Promise<void> {
         throw new Error(`Failed to fetch schema: ${response.statusText}`);
       }
 
-      if (!fs.existsSync(OUTPUT_DIR)) {
-        fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-      }
+      try {
+        await fsPromises.mkdir(OUTPUT_DIR, { recursive: true });
+      } catch (err) {}
 
       const data: string = await response.text();
-      fs.writeFileSync(OUTPUT_FILE, data, 'utf-8');
+      await fsPromises.writeFile(OUTPUT_FILE, data, 'utf-8');
 
       logger.info(`Schema successfully saved to: ${OUTPUT_FILE}`);
       return;

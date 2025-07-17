@@ -8,7 +8,7 @@ if (!mainLanguage || !fallbackLanguage) {
 const getResources = () => {
   try {
     // eslint-disable-next-line global-require
-    return require('../i18n/localization.json'); // chek if path is correct
+    return require('../i18n/localization.json');
   } catch (error) {
     throw new Error(`Failed to load localization resources: ${error.message}`);
   }

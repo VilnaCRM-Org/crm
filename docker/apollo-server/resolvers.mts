@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { GraphQLError } from 'graphql';
 
 const validateCreateUserInput = (input: CreateUserInput) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailRegex =
+    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
   if (!input.email || !emailRegex.test(input.email)) {
     throw new GraphQLError('Invalid email format', {
@@ -23,6 +24,23 @@ const validateCreateUserInput = (input: CreateUserInput) => {
     });
   }
 };
+function rejectIfExists<K, V>(
+  collection: Map<K, V>,
+  item: K,
+  message = 'Item already exists',
+  status = 409,
+  code = 'BAD_REQUEST'
+): void {
+  if (collection.has(item)) {
+    throw new GraphQLError(message, {
+      extensions: {
+        code,
+        http: { status },
+      },
+    });
+  }
+}
+
 const users = new Map<string, User>();
 
 export const resolvers = {
@@ -32,9 +50,11 @@ export const resolvers = {
       { input }: { input: CreateUserInput }
     ): Promise<CreateUserResponse> => {
       validateCreateUserInput(input);
+      rejectIfExists(users, input.email, 'Email already exists');
+
       try {
         const newUser: User = {
-          id: input.clientMutationId || uuidv4(),
+          id: uuidv4(),
           confirmed: true,
           email: input.email,
           initials: input.initials,

@@ -41,7 +41,9 @@
 - [ ] I have commented my code, particularly in hard-to-understand areas.
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the documentation accordingly.
-- [ ] I have read the [**CONTRIBUTING.md**](https://github.com/VilnaCRM-Org/crm/blob/main/CONTRIBUTING.md) document.
+- [ ] I have read the
+      [**CONTRIBUTING.md**](https://github.com/VilnaCRM-Org/crm/blob/main/CONTRIBUTING.md)
+      document.
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
 - [ ] I have only one commit (if not, I have squashed it into a single commit).

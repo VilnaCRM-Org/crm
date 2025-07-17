@@ -17,6 +17,7 @@ class CriticalError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'CriticalError';
+    Object.setPrototypeOf(this, CriticalError.prototype);
   }
 }
 
@@ -34,4 +35,10 @@ export function shouldShutdown(error: unknown): boolean {
   }
 
   return false;
+}
+
+export async function handleServerFailure() {
+  console.log('Attempting to clean up before exiting...');
+  await cleanupResources();
+  process.exit(1);
 }

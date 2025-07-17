@@ -9,7 +9,7 @@ import { GraphQLError } from 'graphql';
 import fs from 'node:fs';
 import path, { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cleanupResources, shouldShutdown } from './shutdownFunctions..mjs';
+import { cleanupResources, handleServerFailure, shouldShutdown } from './shutdownFunctions.mjs';
 import { resolvers } from './resolvers.mjs';
 import { formatError } from './formatError.mjs';
 
@@ -127,7 +127,6 @@ async function gracefulShutdownAndExit(server: ApolloServerInstance) {
 let isShuttingDown = false;
 
 async function initializeServer() {
-  let server: ApolloServerInstance = undefined;
   try {
     server = await startServer();
 
@@ -169,17 +168,10 @@ async function shutdown(server: ApolloServerInstance) {
     }
   } catch (err) {
     console.error('Error while closing server connections:', err);
-    const error = new Error('Failed to shut down the server gracefully');
-    (error as any).cause = err;
-    throw error;
+    throw new Error('Failed to shut down the server gracefully');
   }
 
   await cleanupResources();
-}
-async function handleServerFailure() {
-  console.log('Attempting to clean up before exiting...');
-  await cleanupResources();
-  await gracefulShutdownAndExit(server);
 }
 
 initializeServer().catch((error) => {
