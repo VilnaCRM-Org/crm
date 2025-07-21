@@ -5,7 +5,9 @@ module.exports = {
     es6: true,
     jest: true,
   },
-  parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  parser: '@typescript-eslint/parser',
+  parserOptions: { ecmaVersion: 2022, sourceType: 'module', project: './tsconfig.json' },
+  plugins: ['@typescript-eslint', 'eslint-comments'],
   ignorePatterns: [
     'node_modules/*',
     'docker-compose.yml',
@@ -19,6 +21,8 @@ module.exports = {
     'plugin:storybook/recommended',
     'airbnb',
     'airbnb/hooks',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react/recommended',
     'prettier',
   ],
   overrides: [
@@ -41,13 +45,14 @@ module.exports = {
       },
     },
     {
-      files: ['**/*.ts', '**/*.tsx', '**/*.spec.js', '**/*.spec.jsx'],
+      files: ['**/*.ts', '**/*.tsx', '**/*.spec.js', '**/*.spec.jsx', '**/*.jsx', '**/*.js'],
       parser: '@typescript-eslint/parser',
+      plugins: ['@typescript-eslint', 'eslint-comments'],
       settings: {
         react: { version: 'detect' },
         'import/resolver': {
           node: {
-            extensions: ['.ts', '.tsx', '.js', ',jsx'],
+            extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'],
           },
           typescript: {},
         },
@@ -68,24 +73,27 @@ module.exports = {
         'plugin:jsx-a11y/recommended',
         'plugin:testing-library/react',
         'plugin:jest-dom/recommended',
+        'plugin:eslint-comments/recommended',
       ],
       rules: {
+        'eslint-comments/no-use': [
+          'error',
+          { allow: ['eslint-disable-next-line', 'eslint-disable', 'eslint-enable'] },
+        ],
+        'react/jsx-no-bind': 'warn',
+        'no-await-in-loop': 'warn',
+        'no-restricted-syntax': 'warn',
+        'no-alert': 'error',
+        'no-console': 'error',
+        'import/prefer-default-export': 'warn',
+        'max-len': ['error', { code: 150 }],
         'no-restricted-imports': [
           'error',
           {
             patterns: ['@/features/*/*'],
           },
         ],
-        'no-param-reassign': [
-          'error',
-          {
-            props: true,
-            ignorePropertyModificationsFor: ['state'],
-          },
-        ],
-        'no-extra-semi': 'off',
-        'class-methods-use-this': 'off',
-        quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
+
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
 
         'linebreak-style': ['error', 'unix'],
@@ -102,54 +110,42 @@ module.exports = {
         'import/default': 'off',
         'import/no-named-as-default-member': 'off',
         'import/no-named-as-default': 'off',
-        'import/no-extraneous-dependencies': 'off',
-        'import/no-unresolved': 'off',
+
         'import/extensions': 'off',
 
-        'react/jsx-props-no-spreading': 'error',
         'react/react-in-jsx-scope': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
 
         'jsx-a11y/anchor-is-valid': 'off',
 
         '@typescript-eslint/no-unused-vars': ['error'],
-        '@typescript-eslint/semi': ['error', 'always'],
-        '@typescript-eslint/member-delimiter-style': [
-          'error',
-          {
-            overrides: {
-              interface: {
-                multiline: {
-                  delimiter: 'semi',
-                  requireLast: true,
-                },
-              },
-            },
-          },
-        ],
-        // '@typescript-eslint/typedef': ['error', {
-        //   variableDeclaration: true,
-        //   variableDeclarationIgnoreFunction: false,
-        //   arrayDestructuring: false,
-        //   objectDestructuring: false,
-        //   propertyDeclaration: true,
-        //   memberVariableDeclaration: true
-        // }],
-        '@typescript-eslint/explicit-member-accessibility': [
-          'error',
-          {
-            accessibility: 'explicit',
-            overrides: {
-              constructors: 'no-public',
-            },
-          },
-        ],
-        '@typescript-eslint/member-ordering': 'error',
-        '@typescript-eslint/explicit-function-return-type': 'error',
+
+        '@typescript-eslint/explicit-function-return-type': ['off'],
         '@typescript-eslint/explicit-module-boundary-types': ['off'],
         '@typescript-eslint/no-empty-function': ['off'],
-        '@typescript-eslint/no-explicit-any': 'error',
+        '@typescript-eslint/no-explicit-any': ['off'],
         '@typescript-eslint/no-var-requires': ['off'],
+      },
+    },
+    {
+      files: ['**/*.spec.js', '**/*.spec.jsx', 'src/test/load/**/*.js'],
+      parser: 'espree',
+      extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
+      rules: {
+        'no-console': 'error',
+        'import/extensions': ['off', 'never', { js: 'never', jsx: 'never' }],
+        'prefer-template': 'off',
+        'no-restricted-syntax': 'off',
+        'import/no-unresolved': 'off',
+        'class-methods-use-this': 'off',
+        'no-restricted-globals': 'off',
+        'no-undef': 'off',
+        'no-use-before-define': 'off',
+        'import/no-extraneous-dependencies': 'off',
+        'import/no-dynamic-require': 'off',
+        'global-require': 'off',
+        'no-await-in-loop': 'off',
+        '@typescript-eslint/no-var-requires': 'off',
       },
     },
   ],

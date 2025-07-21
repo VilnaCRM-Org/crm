@@ -1,8 +1,7 @@
 const path = require('path');
 // const LocalizationGenerator = require('./scripts/localizationGenerator');
 
-// eslint-disable-next-line
-module.exports = function () {
+module.exports = function cracoConfig() {
   // TODO: need fix localizationGenerator for module approach
   // const localizationGenerator = new LocalizationGenerator();
   // localizationGenerator.generateLocalizationFile();
