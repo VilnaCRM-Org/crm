@@ -29,16 +29,10 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install dependencies
-        run: pnpm i --frozen-lockfile
+        run: make install
         if: |
           steps.cache-pnpm-dependencies.outputs.cache-hit != 'true' ||
           steps.cache-pnpm-packages.outputs.cache-hit != 'true'
 
-      - name: Run next linter
-        run: pnpm run lint:eslint
-
-      - name: Run tsc linter
-        run: pnpm run lint:tsc
-
-      - name: Run markdown linter
-        run: pnpm run lint:md
+      - name: Run all linters
+        run: make lint

@@ -51,7 +51,7 @@ async function startServer() {
     });
 
     const { url } = await startStandaloneServer(server, {
-      listen: { port: 4000 },
+      listen: { port: Number(process.env.GRAPHQL_PORT) || 4000 },
 
       context: async ({ req }) => {
         if (req.url === HEALTH_CHECK_PATH) {
@@ -60,7 +60,10 @@ async function startServer() {
 
         const contentType = req.headers['content-type'] || '';
 
-        if (contentType.includes('text/plain')) {
+        if (
+          contentType.includes('text/plain') ||
+          (req.method === 'POST' && !contentType.includes('application/json'))
+        ) {
           throw new GraphQLError('Invalid content-type header for CSRF prevention', {
             extensions: {
               code: 'BAD_REQUEST',
@@ -87,8 +90,14 @@ async function startServer() {
 
 process.on('unhandledRejection', async (reason, promise) => {
   const timestamp = new Date().toISOString();
+  const errorType = reason instanceof Error ? reason.constructor.name : 'Unknown';
+  const errorMessage = reason instanceof Error ? reason.message : String(reason);
 
-  console.error(`[${timestamp}] Unhandled Promise Rejection:`, { reason, promise });
+  console.error(`[${timestamp}] Unhandled Promise Rejection [${errorType}]:`, {
+    message: errorMessage,
+    stack: reason instanceof Error ? reason.stack : undefined,
+    promise: promise.toString(),
+  });
 
   if (shouldShutdown(reason)) {
     console.error(`[${timestamp}] Critical error detected, initiating graceful shutdown...`);

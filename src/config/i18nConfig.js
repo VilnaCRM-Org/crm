@@ -1,5 +1,5 @@
-const mainLanguage = process.env.NEXT_PUBLIC_MAIN_LANGUAGE;
-const fallbackLanguage = process.env.NEXT_PUBLIC_FALLBACK_LANGUAGE;
+const mainLanguage = process.env.REACT_APP_MAIN_LANGUAGE;
+const fallbackLanguage = process.env.REACT_APP_FALLBACK_LANGUAGE;
 
 if (!mainLanguage || !fallbackLanguage) {
   throw new Error('Missing required environment variables for localization');

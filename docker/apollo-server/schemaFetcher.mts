@@ -46,7 +46,7 @@ export async function fetchAndSaveSchema(): Promise<void> {
     }
 
     logger.info(
-      `Fetching OpenAPI schema from: ${SCHEMA_URL}... (Attempt ${retries + 1}/${MAX_RETRIES})`
+      `Fetching GraphQL schema from: ${SCHEMA_URL}... (Attempt ${retries + 1}/${MAX_RETRIES})`
     );
 
     const controller: AbortController = new AbortController();

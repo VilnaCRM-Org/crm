@@ -1,13 +1,9 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-pnpm format
-# Get list of changed files
-CHANGED_JS_FILES=$(git diff --cached --name-only | grep -E "(.js$|.ts$|.tsx$)" || true)
-CHANGED_MD_FILES=$(git diff --cached --name-only | grep -E "(.md$)" || true)
-CHANGED_TS_FILES=$(git diff --cached --name-only | grep '.ts$' || true)
-# Run linting and tests
-pnpm lint:tsc --noEmit &&
-if [ -n "$CHANGED_JS_FILES" ]; then pnpm lint:eslint; fi &&
-if [ -n "$CHANGED_MD_FILES" ]; then pnpm lint:md; fi &&
+make format
+make lint-eslint
+make lint-tsc TSC_FLAGS="--noEmit"
+make lint-md
+
 pnpm test:unit --passWithNoTests
