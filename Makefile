@@ -12,14 +12,12 @@ DOCKER_COMPOSE              = docker compose
 
 BIN_DIR                     = ./node_modules/.bin
 IMG_OPTIMIZE                = $(BIN_DIR)/next-export-optimize-images
-TS_BIN                      = $(BIN_DIR)/tsc
 STORYBOOK_BIN               = $(BIN_DIR)/storybook
 JEST_BIN                    = $(BIN_DIR)/jest
 SERVE_BIN                   = $(BIN_DIR)/serve
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
-CRACO_BUILD                 = npx craco build
-NEXT_BUILD_CMD              = $(NEXT_BUILD) && $(IMG_OPTIMIZE)
+CRACO_BUILD                 = pnpm craco build
 STORYBOOK_BUILD_CMD         = $(STORYBOOK_BIN) build
 
 TEST_DIR_BASE               = ./src/test
@@ -73,8 +71,9 @@ CI                          ?= 0
 
 ifeq ($(CI), 1)
     EXEC_CMD                = $(EXEC_DEV_TTYLESS)
-    PNPM_EXEC               = pnpm exec
+    PNPM_EXEC               = pnpm
     DEV_CMD                 = craco start
+    BUILD_CMD               = $(CRACO_BUILD)
 
     UNIT_TESTS              = env
 
@@ -87,8 +86,9 @@ ifeq ($(CI), 1)
     MARKDOWNLINT_BIN        = npx markdownlint
 else
     EXEC_CMD                =
-    PNPM_EXEC               = $(EXEC_DEV_TTYLESS)
+    PNPM_EXEC               = $(EXEC_DEV_TTYLESS) pnpm
     DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
+    BUILD_CMD               = docker compose run --rm dev $(CRACO_BUILD)
 
     STRYKER_CMD             = make start && $(EXEC_DEV_TTYLESS) pnpm stryker run
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
@@ -107,7 +107,8 @@ endif
 
 .DEFAULT_GOAL               = help
 .RECIPEPREFIX               +=
-.PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
+.PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
+.PHONY: all clean test lint
 
 run-visual                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 run-e2e                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
@@ -124,13 +125,18 @@ start: ## Start the application
 wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	@echo "Waiting for dev service to be ready on port $(DEV_PORT)..."
 	@while ! npx wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) 2>/dev/null; do printf "."; done
+	@for i in $(seq 1 60); do \
+      npx wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) 2>/dev/null && break; \
+      printf "."; sleep 2; \
+      [ $$i -eq 60 ] && echo "❌ Timed out waiting for dev service" && exit 1; \
+    done
 	@printf '\nDev service is up and running!\n'
 
-build: ## A tool build the project
+build: ## Build the dev container
 	$(DOCKER_COMPOSE) build
 
-build-in-dev: ## Run craco build inside dev container
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
+all: ## Fully build the project using Craco
+	$(BUILD_CMD)
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
@@ -151,7 +157,7 @@ lint-eslint: ## This command executes ESLint
 	$(EXEC_CMD) npx eslint .
 
 lint-tsc: ## This command executes Typescript linter
-	$(PNPM_EXEC) $(TS_BIN)
+	$(PNPM_EXEC) tsc
 
 lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS) "**/*.md"
@@ -247,7 +253,7 @@ lighthouse-mobile: ## Run a Lighthouse audit using mobile viewport settings to e
 	$(LHCI_MOBILE)
 
 install: ## Install node modules using pnpm (CI=1 runs locally, default runs in container) — uses frozen lockfile and affects node_modules via volumes
-	$(PNPM_EXEC) pnpm install --frozen-lockfile
+	$(PNPM_EXEC) install --frozen-lockfile
 
 update: ## Update node modules to latest allowed versions — always runs locally, updates lockfile (run before committing dependency changes)
 	pnpm update
@@ -273,8 +279,8 @@ stop: ## Stop docker
 check-node-version: ## Check if the correct Node.js version is installed
 	$(PNPM_EXEC) node checkNodeVersion.js
 
-
-
+clean: down ## Clean up containers and artifacts
+	docker system prune -f
 # ******
 
 # Executables: local only
