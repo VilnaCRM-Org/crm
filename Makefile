@@ -59,7 +59,7 @@ LOAD_TESTS_RUN_SWAGGER      = $(K6) run --summary-trend-stats="avg,min,med,max,p
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
 
-MD_LINT_ARGS                = npx markdownlint -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
+MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
 PRETTIER_CMD                = pnpm prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
 
 JEST_FLAGS                  = --verbose
@@ -70,7 +70,7 @@ CI                          ?= 0
 
 
 ifeq ($(CI), 1)
-    EXEC_CMD                = $(EXEC_DEV_TTYLESS)
+    EXEC_CMD                =
     PNPM_EXEC               = pnpm
     DEV_CMD                 = craco start
     BUILD_CMD               = $(CRACO_BUILD)
@@ -85,7 +85,7 @@ ifeq ($(CI), 1)
 
     MARKDOWNLINT_BIN        = npx markdownlint
 else
-    EXEC_CMD                =
+    EXEC_CMD                = $(EXEC_DEV_TTYLESS)
     PNPM_EXEC               = $(EXEC_DEV_TTYLESS) pnpm
     DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
     BUILD_CMD               = docker compose run --rm dev $(CRACO_BUILD)
