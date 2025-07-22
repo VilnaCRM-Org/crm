@@ -37,10 +37,6 @@ yarn-error.log*
 /.idea
 .vsco
 
-./cypress/downloads/
-./cypress/screenshots/
-./cypress/videos/
-
 .lighthouseci/
 
 ./tsconfig.tsbuildinfo
@@ -50,3 +46,8 @@ yarn-error.log*
 
 app.log
 *.log
+
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

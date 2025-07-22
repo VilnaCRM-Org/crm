@@ -45,7 +45,7 @@ module.exports = {
       },
     },
     {
-      files: ['**/*.ts', '**/*.tsx', '**/*.spec.js', '**/*.spec.jsx', '**/*.jsx', '**/*.js'],
+      files: ['**/*.ts', '**/*.tsx', '**/*.spec.ts', '**/*.spec.tsx', '**/*.jsx', '**/*.js'],
       parser: '@typescript-eslint/parser',
       plugins: ['@typescript-eslint', 'eslint-comments'],
       settings: {
@@ -128,8 +128,15 @@ module.exports = {
       },
     },
     {
-      files: ['**/*.spec.js', '**/*.spec.jsx', 'src/test/load/**/*.js'],
-      parser: 'espree',
+      files: [
+        '**/*.ts',
+        '**/*.spec.js',
+        '**/*.spec.jsx',
+        '**/*.spec.ts',
+        '**/*.spec.tsx',
+        'src/test/load/**/*.js',
+      ],
+      parser: '@typescript-eslint/parser',
       extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
       rules: {
         'no-console': 'error',

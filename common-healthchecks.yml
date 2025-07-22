@@ -1,0 +1,15 @@
+x-healthcheck-default: &healthcheck-default
+  interval: 10s
+  timeout: 5s
+  retries: 3
+  start_period: 30s
+
+services:
+  prod:
+    healthcheck: *healthcheck-default
+  playwright:
+    healthcheck: *healthcheck-default
+  apollo:
+    healthcheck: *healthcheck-default
+  mockoon:
+    healthcheck: *healthcheck-default

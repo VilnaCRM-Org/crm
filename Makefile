@@ -124,7 +124,6 @@ start: ## Start the application
 
 wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	@echo "Waiting for dev service to be ready on port $(DEV_PORT)..."
-	@while ! npx wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) 2>/dev/null; do printf "."; done
 	@for i in $(seq 1 60); do \
       npx wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) 2>/dev/null && break; \
       printf "."; sleep 2; \
@@ -198,9 +197,13 @@ create-network: ## Create the external Docker network if it doesn't exist
 start-prod: create-network ## Build image and start container in production mode
 	$(DOCKER_COMPOSE) $(COMMON_HEALTHCHECKS_FILE) $(DOCKER_COMPOSE_TEST_FILE) up -d && make wait-for-prod
 
-wait-for-prod: ## Wait for the prod service to be ready on port $(NEXT_PUBLIC_PROD_PORT).
-	@echo "Waiting for prod service to be ready on port $(NEXT_PUBLIC_PROD_PORT)..."
-	@while ! npx wait-on http://$(WEBSITE_DOMAIN):$(NEXT_PUBLIC_PROD_PORT) 2>/dev/null; do printf "."; done
+wait-for-prod: ## Wait for the prod service to be ready on port $(PROD_PORT).
+	@echo "Waiting for prod service to be ready on port $(PROD_PORT)..."
+	@for i in $(seq 1 60); do \
+      npx wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) 2>/dev/null && break; \
+      printf "."; sleep 2; \
+      [ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
+    done
 	@printf '\nProd service is up and running!\n'
 
 test-unit-all: test-unit-client test-unit-server ## This command executes unit tests for both client and server environments.
@@ -272,6 +275,9 @@ logs: ## Show all logs
 
 new-logs: ## Show live logs of the dev container
 	@$(DOCKER_COMPOSE) logs --tail=0 --follow dev
+
+logs-prod: ## Show all logs
+	@$(DOCKER_COMPOSE) -f docker-compose.test.yml logs --follow prod
 
 stop: ## Stop docker
 	$(DOCKER_COMPOSE) stop

@@ -15,7 +15,7 @@ RUN pnpm install
 FROM base AS build
 
 COPY . .
-RUN pnpm build
+RUN npx craco build
 
 
 # -------- Production Image --------
