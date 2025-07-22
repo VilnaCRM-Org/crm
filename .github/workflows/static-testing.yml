@@ -32,7 +32,7 @@ jobs:
         run: make install
         if: |
           steps.cache-pnpm-dependencies.outputs.cache-hit != 'true' ||
-          steps.cache-pnpm-packages.outputs.cache-hit != 'true'
+          steps.cache-pnpm-dependencies.outputs.cache-hit != 'true'
 
       - name: Run all linters
         run: make lint

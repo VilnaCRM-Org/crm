@@ -72,7 +72,7 @@ CI                          ?= 0
 
 
 ifeq ($(CI), 1)
-    EXEC_CMD                =
+    EXEC_CMD                = $(EXEC_DEV_TTYLESS)
     PNPM_EXEC               = pnpm exec
     DEV_CMD                 = craco start
 
@@ -86,7 +86,7 @@ ifeq ($(CI), 1)
 
     MARKDOWNLINT_BIN        = npx markdownlint
 else
-    EXEC_CMD                = $(EXEC_DEV_TTYLESS)
+    EXEC_CMD                =
     PNPM_EXEC               = $(EXEC_DEV_TTYLESS)
     DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
 
