@@ -46,13 +46,13 @@ MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
 MEMLEAK_TEST_SCRIPT         = ./src/test/memory-leak/runMemlabTests.js
 MEMLEAK_SETUP 				= \
-								@echo "🧪 Starting memory leak test environment..."; \
+								echo "🧪 Starting memory leak test environment..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d
 MEMLEAK_RUN_TESTS			 = \
-								@echo "🚀 Running memory leak tests..."; \
+								echo "🚀 Running memory leak tests..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) node $(MEMLEAK_TEST_SCRIPT)
 MEMLEAK_RUN_CLEANUP			 = \
-								@echo "🧹 Cleaning up memory leak test containers..."; \
+								echo "🧹 Cleaning up memory leak test containers..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) down --remove-orphans
 
 K6_TEST_SCRIPT              ?= /loadTests/homepage.js
@@ -86,9 +86,9 @@ ifeq ($(CI), 1)
 
     STORYBOOK_START         = $(STORYBOOK_BIN) dev -p $(STORYBOOK_PORT)
 
-    LHCI_BUILD_CMD          = $(NEXT_BUILD_CMD) && $(LHCI)
-    LHCI_DESKTOP            = $(LHCI_BUILD_CMD) $(LHCI_DESKTOP_SERVE)
-    LHCI_MOBILE             = $(LHCI_BUILD_CMD) $(LHCI_MOBILE_SERVE)
+    LHCI_BUILD_CMD          = $(CRACO_BUILD) && $(LHCI)
+    LHCI_DESKTOP            = $(CRACO_BUILD) $(LHCI_DESKTOP_SERVE)
+    LHCI_MOBILE             = $(CRACO_BUILD) $(LHCI_MOBILE_SERVE)
 
     MARKDOWNLINT_BIN        = npx markdownlint
     RUN_MEMLAB				= node $(MEMLEAK_TEST_SCRIPT)
@@ -228,7 +228,7 @@ test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js e
 	$(UNIT_TESTS) TEST_ENV=server $(JEST_BIN) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
 
 test-memory-leak: start-prod ## This command executes memory leaks tests using Memlab library.
-	$(RUN_MEMLAB)
+	@$(RUN_MEMLAB)
 
 test-mutation: build ## Run mutation tests using Stryker after building the app
 	$(STRYKER_CMD)
@@ -289,7 +289,7 @@ stop: ## Stop docker
 	$(DOCKER_COMPOSE) stop
 
 check-node-version: ## Check if the correct Node.js version is installed
-	$(PNPM_EXEC) node checkNodeVersion.js
+	$(PNPM_EXEC) exec -- node checkNodeVersion.js
 
 clean: down ## Clean up containers and artifacts
 	docker system prune -f
@@ -315,17 +315,8 @@ clean: down ## Clean up containers and artifacts
 # generate-ts-doc: ## This command generates documentation from the typescript files.
 # 	$(PNPM_RUN) doc
 #
-# test-e2e: ## This command executes cypress tests.
-# 	$(PNPM_RUN) test:e2e
-#
-# test-e2e-local: ## This command opens management UI for cypress tests.
-# 	$(PNPM_RUN) test:e2e:local
-#
 # test-unit: ## This command executes unit tests using Jest library.
 # 	$(PNPM_RUN) test:unit
-#
-# test-memory-leak: ## This command executes memory leaks tests using Memlab library.
-# 	$(PNPM_RUN) test:memory-leak
 #
 # lighthouse-desktop: ## This command executes lighthouse tests for desktop.
 # 	$(PNPM_RUN) lighthouse:desktop

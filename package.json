@@ -6,12 +6,9 @@
     "storybook-start": "start-storybook -p 6006",
     "storybook-build": "build-storybook",
     "generate-ts-doc": "api-extractor run --local --verbose",
-    "test:e2e": "cypress run --headless",
-    "test:e2e-local": "cypress open",
     "test:unit": "jest --verbose",
     "lighthouse:desktop": "lhci autorun --config=lighthouserc.desktop.js",
-    "lighthouse:mobile": "lhci autorun --config=lighthouserc.mobile.js",
-    "preinstall": "node checkNodeVersion.js"
+    "lighthouse:mobile": "lhci autorun --config=lighthouserc.mobile.js"
   },
   "dependencies": {
     "@apollo/client": "^3.13.8",
