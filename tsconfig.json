@@ -23,7 +23,7 @@
     "experimentalDecorators": true,
     "newLine": "lf"
   },
-  "include": ["src/**/*", "scripts/**/*", "memlab/**/*", "docker/**/*", "*.ts", "*.tsx", "*.js"],
+  "include": ["src/**/*", "scripts/**/*", "docker/**/*", "*.ts", "*.tsx", "*.js"],
   "exclude": ["node_modules", "dist", "coverage"],
   "extends": "./tsconfig.paths.json"
 }

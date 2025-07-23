@@ -44,9 +44,16 @@ PLAYWRIGHT_TEST             = $(PLAYWRIGHT_DOCKER_CMD) sh -c
 
 MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
-MEMLEAK_BASE_PATH           = ./memlab
-MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
-MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/runMemlabTests.js
+MEMLEAK_TEST_SCRIPT         = ./src/test/memory-leak/runMemlabTests.js
+MEMLEAK_SETUP 				= \
+								@echo "🧪 Starting memory leak test environment..."; \
+								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d
+MEMLEAK_RUN_TESTS			 = \
+								@echo "🚀 Running memory leak tests..."; \
+								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) node $(MEMLEAK_TEST_SCRIPT)
+MEMLEAK_RUN_CLEANUP			 = \
+								@echo "🧹 Cleaning up memory leak test containers..."; \
+								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) down --remove-orphans
 
 K6_TEST_SCRIPT              ?= /loadTests/homepage.js
 K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
@@ -84,6 +91,7 @@ ifeq ($(CI), 1)
     LHCI_MOBILE             = $(LHCI_BUILD_CMD) $(LHCI_MOBILE_SERVE)
 
     MARKDOWNLINT_BIN        = npx markdownlint
+    RUN_MEMLAB				= node $(MEMLEAK_TEST_SCRIPT)
 else
     EXEC_CMD                = $(EXEC_DEV_TTYLESS)
     PNPM_EXEC               = $(EXEC_DEV_TTYLESS) pnpm
@@ -101,6 +109,10 @@ else
 
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
+    RUN_MEMLAB				= \
+                              	$(MEMLEAK_SETUP); \
+                              	$(MEMLEAK_RUN_TESTS); \
+                              	$(MEMLEAK_RUN_CLEANUP)
 endif
 
 # To Run in CI mode specify CI variable. Example: make lint-md CI=1
@@ -113,6 +125,7 @@ endif
 run-visual                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 run-e2e                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
 playwright-test             = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
+
 
 help:
 	@printf "\033[33mUsage:\033[0m make [target] [arg=\"val\"...]\n"
@@ -215,14 +228,7 @@ test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js e
 	$(UNIT_TESTS) TEST_ENV=server $(JEST_BIN) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
 
 test-memory-leak: start-prod ## This command executes memory leaks tests using Memlab library.
-	@echo "🧪 Starting memory leak test environment..."
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d
-	@echo "🧹 Cleaning up previous memory leak results..."
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) rm -rf $(MEMLEAK_RESULTS_DIR)
-	@echo "🚀 Running memory leak tests..."
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) node $(MEMLEAK_TEST_SCRIPT)
-	@echo "🧹 Cleaning up memory leak test containers..."
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) down --remove-orphans
+	$(RUN_MEMLAB)
 
 test-mutation: build ## Run mutation tests using Stryker after building the app
 	$(STRYKER_CMD)
@@ -328,9 +334,6 @@ clean: down ## Clean up containers and artifacts
 # 	$(PNPM_RUN) lighthouse:mobile
 # up: ## Start the docker hub (Nodejs)
 # 	$(DOCKER_COMPOSE) up -d
-#
-# build: ## Builds the images (Nodejs)
-# 	$(DOCKER_COMPOSE) build --pull --no-cache
 #
 # down: ## Stop the docker hub
 # 	$(DOCKER_COMPOSE) down --remove-orphans

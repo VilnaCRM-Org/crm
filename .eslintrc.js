@@ -130,6 +130,7 @@ module.exports = {
     {
       files: [
         '**/*.ts',
+        '**/*.js',
         '**/*.spec.js',
         '**/*.spec.jsx',
         '**/*.spec.ts',
