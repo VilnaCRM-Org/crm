@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const mainLanguage = process.env.REACT_APP_MAIN_LANGUAGE;
 const fallbackLanguage = process.env.REACT_APP_FALLBACK_LANGUAGE;
 

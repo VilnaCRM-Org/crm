@@ -26,7 +26,7 @@ WORKDIR /app
 
 FROM base AS build
 
-COPY package.json pnpm-lock.yaml checkNodeVersion.js ./
+COPY package.json pnpm-lock.yaml checkNodeVersion.js .env ./
 RUN pnpm install
 
 

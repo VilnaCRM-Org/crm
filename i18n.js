@@ -1,6 +1,8 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
+const i18n = require('i18next');
+const { initReactI18next } = require('react-i18next');
 
-import i18nConfig from './src/config/i18nConfig';
+const i18nConfig = require('./src/config/i18nConfig');
 
 i18n.use(initReactI18next).init(i18nConfig);
+
+module.exports = i18n;

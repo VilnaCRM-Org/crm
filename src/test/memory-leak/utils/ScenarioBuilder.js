@@ -3,6 +3,8 @@
  * Handles URL generation, HTTP headers, and scenario composition for memory leak testing.
  */
 
+require('dotenv').config();
+
 class ScenarioBuilder {
   /**
    * Creates a new ScenarioBuilder instance.
@@ -74,4 +76,4 @@ class ScenarioBuilder {
   }
 }
 
-module.exports = ScenarioBuilder;
+export default ScenarioBuilder;

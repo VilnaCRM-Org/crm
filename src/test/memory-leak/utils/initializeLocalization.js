@@ -4,8 +4,12 @@ const { initReactI18next } = require('react-i18next');
 const i18nConfig = require('../../../config/i18nConfig');
 
 async function initializeLocalization() {
-  await i18n.use(initReactI18next).init(i18nConfig);
-  return i18n;
+  try {
+    await i18n.use(initReactI18next).init(i18nConfig);
+    return i18n;
+  } catch (error) {
+    throw new Error(`Failed to initialize i18n: ${error}`);
+  }
 }
 
 module.exports = { initializeLocalization, i18n };

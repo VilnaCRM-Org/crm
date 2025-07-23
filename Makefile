@@ -11,7 +11,6 @@ export
 DOCKER_COMPOSE              = docker compose
 
 BIN_DIR                     = ./node_modules/.bin
-IMG_OPTIMIZE                = $(BIN_DIR)/next-export-optimize-images
 STORYBOOK_BIN               = $(BIN_DIR)/storybook
 JEST_BIN                    = $(BIN_DIR)/jest
 SERVE_BIN                   = $(BIN_DIR)/serve
@@ -221,7 +220,7 @@ wait-for-prod: ## Wait for the prod service to be ready on port $(PROD_PORT).
 
 test-unit-all: test-unit-client test-unit-server ## This command executes unit tests for both client and server environments.
 
-test-unit-client: ## Run all client-side unit tests using Jest (Next.js env, TEST_ENV=client)
+test-unit-client: ## Run all client-side unit tests using Jest (TEST_ENV=client)
 	$(UNIT_TESTS) TEST_ENV=client $(JEST_BIN) $(JEST_FLAGS)
 
 test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js env, TEST_ENV=server, target: $(TEST_DIR_APOLLO))
@@ -248,7 +247,7 @@ wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
 	done
 
 load-tests: start-prod wait-for-prod-health ## This command executes load tests using K6 library. Note: The target host is determined by the service URL
-                       ## using $(NEXT_PUBLIC_PROD_PORT), which maps to the production service in Docker Compose.
+                       ## using $(PROD_PORT), which maps to the production service in Docker Compose.
 	$(LOAD_TESTS_RUN)
 
 load-tests-swagger: start-prod wait-for-prod-health ## Execute comprehensive load tests for the Swagger page. Use environment variables to run specific scenarios:
@@ -289,7 +288,7 @@ stop: ## Stop docker
 	$(DOCKER_COMPOSE) stop
 
 check-node-version: ## Check if the correct Node.js version is installed
-	$(PNPM_EXEC) exec -- node checkNodeVersion.js
+	$(EXEC_CMD) pnpm exec -- node checkNodeVersion.js
 
 clean: down ## Clean up containers and artifacts
 	docker system prune -f

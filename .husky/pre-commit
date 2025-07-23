@@ -6,4 +6,4 @@ make lint-eslint
 make lint-tsc TSC_FLAGS="--noEmit"
 make lint-md
 
-pnpm test:unit --passWithNoTests
+make test-unit-all

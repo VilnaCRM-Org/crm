@@ -1,9 +1,17 @@
 /** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
   clearMocks: true,
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  roots: ['./src/test/unit', './scripts/test/unit'],
+  coverageProvider: 'v8',
+  testMatch: [
+    process.env.TEST_ENV === 'server'
+      ? '<rootDir>/src/test/apollo-server**/*.test.ts'
+      : '<rootDir>/src/test/testing-library**/*.test.tsx',
+    '<rootDir>/src/test/unit/**/*.test.ts',
+  ],
+  preset: 'ts-jest',
+  testEnvironment: process.env.TEST_ENV === 'server' ? 'node' : 'jsdom',
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  modulePathIgnorePatterns: ['<rootDir>/.stryker-tmp/'],
 };
