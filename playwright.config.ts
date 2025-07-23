@@ -19,7 +19,7 @@ export default defineConfig({
     baseURL: process.env.REACT_APP_PROD_CONTAINER_API_URL,
     extraHTTPHeaders: {
       [`aws-cf-cd-${process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME}`]:
-        process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE!,
+        process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE || '',
     },
   },
   projects: [
