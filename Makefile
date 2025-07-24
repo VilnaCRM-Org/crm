@@ -68,7 +68,7 @@ UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
 PRETTIER_CMD                = pnpm prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
 
-JEST_FLAGS                  = --verbose
+JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 
 NETWORK_NAME                = website-network
 
@@ -292,19 +292,9 @@ check-node-version: ## Check if the correct Node.js version is installed
 
 clean: down ## Clean up containers and artifacts
 	docker system prune -f
-# ******
 
-# Executables: local only
-# PNPM_BIN    		    = pnpm
-#
-# # Executables
-# EXEC_NODEJS	= $(DOCKER_COMPOSE) exec nodejs
-# PNPM      	= $(EXEC_NODEJS) pnpm
-# PNPM_RUN    = $(PNPM_RUN) run
-#
-# git-hooks-install: ## Install git hooks
-# 	$(PNPM_RUN) prepare
-#
+
+# ******
 # storybook-start: ## Start Storybook UI. Storybook is a frontend workshop for building UI components and pages in isolation.
 # 	$(PNPM_RUN) storybook
 #
@@ -313,20 +303,11 @@ clean: down ## Clean up containers and artifacts
 #
 # generate-ts-doc: ## This command generates documentation from the typescript files.
 # 	$(PNPM_RUN) doc
-#
-# test-unit: ## This command executes unit tests using Jest library.
-# 	$(PNPM_RUN) test:unit
+
 #
 # lighthouse-desktop: ## This command executes lighthouse tests for desktop.
 # 	$(PNPM_RUN) lighthouse:desktop
 #
 # lighthouse-mobile: ## This command executes lighthouse tests for mobile.
 # 	$(PNPM_RUN) lighthouse:mobile
-# up: ## Start the docker hub (Nodejs)
-# 	$(DOCKER_COMPOSE) up -d
-#
-# down: ## Stop the docker hub
-# 	$(DOCKER_COMPOSE) down --remove-orphans
-#
-# stop: ## Stop docker
-# 	$(DOCKER_COMPOSE) stop
+
