@@ -7,15 +7,23 @@ const mainLanguage = process.env.REACT_APP_MAIN_LANGUAGE;
 const fallbackLanguage = process.env.REACT_APP_FALLBACK_LANGUAGE;
 
 if (!mainLanguage || !fallbackLanguage) {
-  throw new Error('Missing required environment variables for localization');
+  const missing = [];
+  if (!mainLanguage) missing.push('REACT_APP_MAIN_LANGUAGE');
+  if (!fallbackLanguage) missing.push('REACT_APP_FALLBACK_LANGUAGE');
+  throw new Error(`Missing required environment variables for localization: ${missing.join(', ')}`);
 }
 
 const getResources = () => {
   try {
     const resourcePath = path.join(__dirname, '../i18n/localization.json');
     const data = fs.readFileSync(resourcePath, 'utf8');
+    const resources = JSON.parse(data);
 
-    return JSON.parse(data);
+    if (typeof resources !== 'object' || resources === null) {
+      throw new Error('Invalid localization resources format: expected object');
+    }
+
+    return resources;
   } catch (error) {
     throw new Error(`Failed to load localization resources: ${error.message}`);
   }

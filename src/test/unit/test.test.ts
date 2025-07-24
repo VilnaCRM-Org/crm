@@ -1,9 +1,8 @@
-export default function sum(a: number, b: number) {
-  return a + b;
-}
-
-describe('sum function', () => {
-  it('should return 3 when adding 1 + 2', () => {
-    expect(sum(1, 2)).toBe(3);
+describe('example test suite', () => {
+  it('should pass a basic assertion', () => {
+    const result = 2 + 2;
+    expect(result).toBe(4);
   });
 });
+
+export {};

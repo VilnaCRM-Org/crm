@@ -45,7 +45,23 @@ module.exports = {
       },
     },
     {
-      files: ['**/*.ts', '**/*.tsx', '**/*.spec.ts', '**/*.spec.tsx', '**/*.jsx', '**/*.js'],
+      files: ['**/*.js', '**/*.jsx'],
+      settings: {
+        'import/resolver': {
+          node: {
+            extensions: ['.js', '.jsx', '.mjs'],
+          },
+        },
+        react: { version: 'detect' },
+      },
+      env: {
+        browser: true,
+        node: true,
+        es6: true,
+      },
+    },
+    {
+      files: ['**/*.ts', '**/*.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
       parser: '@typescript-eslint/parser',
       plugins: ['@typescript-eslint', 'eslint-comments'],
       settings: {
@@ -54,7 +70,9 @@ module.exports = {
           node: {
             extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'],
           },
-          typescript: {},
+          typescript: {
+            project: './tsconfig.json',
+          },
         },
       },
       env: {
@@ -93,12 +111,9 @@ module.exports = {
             patterns: ['@/features/*/*'],
           },
         ],
-
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
-
         'linebreak-style': ['error', 'unix'],
         'react/prop-types': 'off',
-
         'import/order': [
           'error',
           {
@@ -110,16 +125,11 @@ module.exports = {
         'import/default': 'off',
         'import/no-named-as-default-member': 'off',
         'import/no-named-as-default': 'off',
-
         'import/extensions': 'off',
-
         'react/react-in-jsx-scope': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
-
         'jsx-a11y/anchor-is-valid': 'off',
-
         '@typescript-eslint/no-unused-vars': ['error'],
-
         '@typescript-eslint/explicit-function-return-type': ['off'],
         '@typescript-eslint/explicit-module-boundary-types': ['off'],
         '@typescript-eslint/no-empty-function': ['off'],

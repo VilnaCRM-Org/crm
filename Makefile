@@ -49,7 +49,7 @@ MEMLEAK_SETUP 				= \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d
 MEMLEAK_RUN_TESTS			 = \
 								echo "🚀 Running memory leak tests..."; \
-								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) node $(MEMLEAK_TEST_SCRIPT)
+								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) node $(MEMLEAK_TEST_SCRIPT) || exit 1
 MEMLEAK_RUN_CLEANUP			 = \
 								echo "🧹 Cleaning up memory leak test containers..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) down --remove-orphans

@@ -53,9 +53,7 @@ class ScenarioBuilder {
       process.env.NODE_ENV === 'production'
         ? process.env.REACT_APP_PROD_CONTAINER_API_URL
         : process.env.REACT_APP_PROD_HOST_API_URL;
-    if (!baseUrl) {
-      throw new Error('Failed to determine base URL from environment variables');
-    }
+
     return this.path ? `${baseUrl}${this.path}` : baseUrl;
   }
 
