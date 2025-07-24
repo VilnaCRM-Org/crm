@@ -28,10 +28,13 @@ STRYKER_CMD                 = pnpm stryker run
 
 SERVE_CMD                   = --collect.startServerCommand="$(SERVE_BIN) out"
 LHCI                        = pnpm lhci autorun
-LHCI_CONFIG_DESKTOP         = --config=lighthouserc.desktop.js
-LHCI_CONFIG_MOBILE          = --config=lighthouserc.mobile.js
-LHCI_DESKTOP_SERVE          = $(LHCI_CONFIG_DESKTOP) $(SERVE_CMD)
-LHCI_MOBILE_SERVE           = $(LHCI_CONFIG_MOBILE) $(SERVE_CMD)
+LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
+LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.desktop.js
+LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
+LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
+LHCI_BUILD_CMD          	= make start-prod && $(LHCI)
+LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS)
+LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_FLAGS)
 
 DOCKER_COMPOSE_TEST_FILE    = -f docker-compose.test.yml
 DOCKER_COMPOSE_DEV_FILE     = -f docker-compose.yml
@@ -85,12 +88,9 @@ ifeq ($(CI), 1)
 
     STORYBOOK_START         = $(STORYBOOK_BIN) dev -p $(STORYBOOK_PORT)
 
-    LHCI_BUILD_CMD          = $(CRACO_BUILD) && $(LHCI)
-    LHCI_DESKTOP            = $(CRACO_BUILD) $(LHCI_DESKTOP_SERVE)
-    LHCI_MOBILE             = $(CRACO_BUILD) $(LHCI_MOBILE_SERVE)
-
     MARKDOWNLINT_BIN        = npx markdownlint
     RUN_MEMLAB				= node $(MEMLEAK_TEST_SCRIPT)
+    LHCI_TARGET_URL 		= $(WEBSITE_URL)
 else
     EXEC_CMD                = $(EXEC_DEV_TTYLESS)
     PNPM_EXEC               = $(EXEC_DEV_TTYLESS) pnpm
@@ -101,11 +101,6 @@ else
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
 
     STORYBOOK_START         = $(STORYBOOK_BIN) dev -p $(STORYBOOK_PORT) --host 0.0.0.0
-
-    LHCI_BUILD_CMD          = make start-prod && $(LHCI)
-    LHCI_DESKTOP            = $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP)
-    LHCI_MOBILE             = $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE)
-
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
     RUN_MEMLAB				= \
@@ -303,11 +298,3 @@ clean: down ## Clean up containers and artifacts
 #
 # generate-ts-doc: ## This command generates documentation from the typescript files.
 # 	$(PNPM_RUN) doc
-
-#
-# lighthouse-desktop: ## This command executes lighthouse tests for desktop.
-# 	$(PNPM_RUN) lighthouse:desktop
-#
-# lighthouse-mobile: ## This command executes lighthouse tests for mobile.
-# 	$(PNPM_RUN) lighthouse:mobile
-

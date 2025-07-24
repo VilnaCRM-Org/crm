@@ -67,7 +67,7 @@ export const screenSizes: { width: number; height: number; name: string }[] = [
   },
 ];
 
-export const currentLanguage: string = process.env.NEXT_PUBLIC_MAIN_LANGUAGE as string;
+export const currentLanguage: string = process.env.REACT_APP_MAIN_LANGUAGE as string;
 export const timeoutDuration = 3000;
 
 interface PlaceholderFields {

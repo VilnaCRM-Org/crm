@@ -1,12 +1,16 @@
+const { baseUrl } = require('./constants');
+
 module.exports = {
   ci: {
     collect: {
+      url: [baseUrl],
       settings: {
         preset: 'desktop',
       },
     },
     upload: {
-      target: 'temporary-public-storage',
+      target: 'filesystem',
+      outputDir: 'lhci-reports-desktop',
     },
     assert: {
       assertions: {

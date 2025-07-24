@@ -38,6 +38,8 @@ yarn-error.log*
 .vsco
 
 .lighthouseci/
+/lhci-reports-desktop
+/lhci-reports-mobile
 
 ./tsconfig.tsbuildinfo
 

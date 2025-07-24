@@ -1,8 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { screenSizes, timeoutDuration } from './constants';
-
-const currentLanguage: string = process.env.REACT_APP_MAIN_LANGUAGE as string;
+import { screenSizes, timeoutDuration, currentLanguage } from './constants';
 
 test.describe('Visual Tests', () => {
   for (const screen of screenSizes) {

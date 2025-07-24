@@ -23,7 +23,22 @@
     "experimentalDecorators": true,
     "newLine": "lf"
   },
-  "include": ["src/**/*", "scripts/**/*", "docker/**/*", "*.ts", "*.tsx", "*.js"],
-  "exclude": ["node_modules", "dist", "coverage"],
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "docker/**/*",
+    "lighthouse/**/*",
+    "*.ts",
+    "*.tsx",
+    "*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "lhci-reports-desktop",
+    "lhci-reports-mobile",
+    ".lighthouseci"
+  ],
   "extends": "./tsconfig.paths.json"
 }
