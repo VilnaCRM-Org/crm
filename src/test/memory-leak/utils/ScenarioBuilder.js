@@ -28,14 +28,6 @@ class ScenarioBuilder {
         const headerName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME;
         const headerValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE;
 
-        if (!headerName || !headerValue) {
-          throw new Error(
-            `Missing required environment variables: ${
-              !headerName ? 'REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME' : ''
-            } ${!headerValue ? 'REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE' : ''}`
-          );
-        }
-
         await page.setExtraHTTPHeaders({
           [`aws-cf-cd-${headerName}`]: headerValue,
         });
@@ -76,4 +68,4 @@ class ScenarioBuilder {
   }
 }
 
-export default ScenarioBuilder;
+module.exports = ScenarioBuilder;

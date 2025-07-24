@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+const fs = require('fs');
+const path = require('path');
+
 const mainLanguage = process.env.REACT_APP_MAIN_LANGUAGE;
 const fallbackLanguage = process.env.REACT_APP_FALLBACK_LANGUAGE;
 
@@ -9,8 +12,10 @@ if (!mainLanguage || !fallbackLanguage) {
 
 const getResources = () => {
   try {
-    // eslint-disable-next-line global-require
-    return require('../i18n/localization.json');
+    const resourcePath = path.join(__dirname, '../i18n/localization.json');
+    const data = fs.readFileSync(resourcePath, 'utf8');
+
+    return JSON.parse(data);
   } catch (error) {
     throw new Error(`Failed to load localization resources: ${error.message}`);
   }
