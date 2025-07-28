@@ -18,7 +18,6 @@ module.exports = {
   ],
   extends: [
     'eslint:recommended',
-    'plugin:storybook/recommended',
     'airbnb',
     'airbnb/hooks',
     'plugin:@typescript-eslint/recommended',

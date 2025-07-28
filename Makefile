@@ -11,13 +11,11 @@ export
 DOCKER_COMPOSE              = docker compose
 
 BIN_DIR                     = ./node_modules/.bin
-STORYBOOK_BIN               = $(BIN_DIR)/storybook
 JEST_BIN                    = $(BIN_DIR)/jest
-SERVE_BIN                   = $(BIN_DIR)/serve
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
 CRACO_BUILD                 = pnpm craco build
-STORYBOOK_BUILD_CMD         = $(STORYBOOK_BIN) build
+STORYBOOK_CMD         		= storybook dev -p $(STORYBOOK_PORT)
 
 TEST_DIR_BASE               = ./src/test
 TEST_DIR_APOLLO             = $(TEST_DIR_BASE)/apollo-server
@@ -26,10 +24,9 @@ TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual
 
 STRYKER_CMD                 = pnpm stryker run
 
-SERVE_CMD                   = --collect.startServerCommand="$(SERVE_BIN) out"
 LHCI                        = pnpm lhci autorun
 LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
-LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.desktop.js
+LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
 LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
 LHCI_BUILD_CMD          	= make start-prod && $(LHCI)
@@ -65,6 +62,8 @@ K6                          = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) --pr
 LOAD_TESTS_RUN              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)" --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
 LOAD_TESTS_RUN_SWAGGER      = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)" --out "web-dashboard=period=1s&export=$(K6_SWAGGER_RESULTS_FILE)" $(K6_SWAGGER_TEST_SCRIPT)
 
+STORYBOOK_BUILD 			= $(EXEC_DEV_TTYLESS) pnpm storybook build
+
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
 
@@ -86,7 +85,7 @@ ifeq ($(CI), 1)
 
     UNIT_TESTS              = env
 
-    STORYBOOK_START         = $(STORYBOOK_BIN) dev -p $(STORYBOOK_PORT)
+    STORYBOOK_START         = $(STORYBOOK_CMD)
 
     MARKDOWNLINT_BIN        = npx markdownlint
     RUN_MEMLAB				= node $(MEMLEAK_TEST_SCRIPT)
@@ -100,7 +99,7 @@ else
     STRYKER_CMD             = make start && $(EXEC_DEV_TTYLESS) pnpm stryker run
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
 
-    STORYBOOK_START         = $(STORYBOOK_BIN) dev -p $(STORYBOOK_PORT) --host 0.0.0.0
+	STORYBOOK_START         = $(EXEC_DEV_TTYLESS) pnpm $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
     RUN_MEMLAB				= \
@@ -115,6 +114,7 @@ endif
 .RECIPEPREFIX               +=
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
 .PHONY: all clean test lint
+.PHONY: storybook
 
 run-visual                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 run-e2e                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
@@ -174,10 +174,10 @@ husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	pnpm husky install
 
 storybook-start: ## Start Storybook UI and open in browser
-	$(PNPM_EXEC) $(STORYBOOK_START)
+	$(STORYBOOK_START)
 
 storybook-build: ## Build Storybook UI.
-	$(PNPM_EXEC) $(STORYBOOK_BUILD_CMD)
+	$(STORYBOOK_BUILD)
 
 test-e2e: start-prod  ## Start production and run E2E tests (Playwright)
 	$(run-e2e)

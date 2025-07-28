@@ -53,3 +53,5 @@ app.log
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+/storybook-static
