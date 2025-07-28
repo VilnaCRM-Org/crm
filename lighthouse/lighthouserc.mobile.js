@@ -5,7 +5,8 @@ module.exports = {
     collect: {
       url: [baseUrl],
       settings: {
-        preset: 'mobile',
+        preset: 'perf',
+        formFactor: 'mobile',
       },
     },
     upload: {
