@@ -287,14 +287,3 @@ check-node-version: ## Check if the correct Node.js version is installed
 
 clean: down ## Clean up containers and artifacts
 	docker system prune -f
-
-
-# ******
-# storybook-start: ## Start Storybook UI. Storybook is a frontend workshop for building UI components and pages in isolation.
-# 	$(PNPM_RUN) storybook
-#
-# storybook-build: ## Build Storybook UI. Storybook is a frontend workshop for building UI components and pages in isolation.
-# 	$(PNPM_RUN) build-storybook
-#
-# generate-ts-doc: ## This command generates documentation from the typescript files.
-# 	$(PNPM_RUN) doc

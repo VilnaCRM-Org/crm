@@ -1,14 +1,38 @@
-import React from 'react';
+import type { Meta, StoryObj } from '@storybook/react';
 
-function Button() {
-  return <button type="button">Button</button>;
-}
+import { Button } from './Button';
 
-export default {
+const meta: Meta<typeof Button> = {
   title: 'Example/Button',
   component: Button,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component: 'A simple button component for demonstration purposes.',
+      },
+    },
+  },
 };
 
-export function ButtonElement(): JSX.Element {
-  return <button type="button">Click me</button>;
-}
+export default meta;
+
+type Story = StoryObj<typeof Button>;
+
+export const Primary: Story = {
+  args: {
+    label: 'Primary Button',
+    variant: 'primary',
+    // eslint-disable-next-line no-console
+    onClick: () => console.log('Clicked primary'),
+  },
+};
+
+export const Secondary: Story = {
+  args: {
+    label: 'Secondary Button',
+    variant: 'secondary',
+    // eslint-disable-next-line no-console
+    onClick: () => console.log('Clicked secondary'),
+  },
+};
