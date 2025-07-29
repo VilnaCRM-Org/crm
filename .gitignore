@@ -49,3 +49,5 @@ app.log
 
 .stryker-tmp
 stryker.log
+
+reports/

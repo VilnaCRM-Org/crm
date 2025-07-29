@@ -145,6 +145,7 @@ module.exports = {
         '**/*.spec.ts',
         '**/*.spec.tsx',
         'src/test/load/**/*.js',
+        'src/**/*.{ts,tsx}',
       ],
       parser: '@typescript-eslint/parser',
       extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
