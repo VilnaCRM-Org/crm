@@ -126,8 +126,8 @@ module.exports = {
               '**/jest.config.*',
               '**/playwright.config.*',
               '**/stryker.config.*',
-            ]
-          }
+            ],
+          },
         ],
         'import/order': [
           'error',
