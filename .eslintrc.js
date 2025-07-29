@@ -113,6 +113,22 @@ module.exports = {
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
         'linebreak-style': ['error', 'unix'],
         'react/prop-types': 'off',
+        'import/no-extraneous-dependencies': [
+          'error',
+          {
+            devDependencies: [
+              '**/*.test.*',
+              '**/*.spec.*',
+              '**/test/**/*',
+              '**/tests/**/*',
+              '**/*.stories.*',
+              '**/jest.setup.*',
+              '**/jest.config.*',
+              '**/playwright.config.*',
+              '**/stryker.config.*',
+            ]
+          }
+        ],
         'import/order': [
           'error',
           {
@@ -145,7 +161,6 @@ module.exports = {
         '**/*.spec.ts',
         '**/*.spec.tsx',
         'src/test/load/**/*.js',
-        'src/**/*.{ts,tsx}',
       ],
       parser: '@typescript-eslint/parser',
       extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
