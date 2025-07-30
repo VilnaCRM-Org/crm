@@ -24,8 +24,8 @@ export default class Utils {
     return this.params;
   }
 
-  shouldExecuteScenario(variable) {
-    return __ENV[variable];
+  shouldSkipScenario(variable) {
+    return !!__ENV[variable];
   }
 
   checkResponse(response, checkName, checkFunction) {

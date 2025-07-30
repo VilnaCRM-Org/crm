@@ -35,7 +35,7 @@ export default class ScenarioUtils {
     };
 
     for (const key in scenarioFunctions) {
-      if (!this.utils.shouldExecuteScenario(key)) scenarioFunctions[key]();
+      if (!this.utils.shouldSkipScenario(key)) scenarioFunctions[key]();
     }
     return scenariosBuilder.build();
   }
@@ -79,7 +79,7 @@ export default class ScenarioUtils {
     };
 
     for (const key in thresholdConfigs) {
-      if (!this.utils.shouldExecuteScenario(key)) {
+      if (!this.utils.shouldSkipScenario(key)) {
         const { name, config } = thresholdConfigs[key];
         thresholdsBuilder.addThreshold(name, config);
       }

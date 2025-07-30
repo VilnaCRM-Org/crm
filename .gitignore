@@ -6,13 +6,11 @@
 
 /coverage
 
-
 /out/
 /docker/apollo-server/out
 
 /build
 
-# misc
 .DS_Store
 *.pem
 

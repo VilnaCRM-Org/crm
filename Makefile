@@ -74,7 +74,7 @@ NETWORK_NAME                = website-network
 CI                          ?= 0
 
 
-ifeq ($(CI), 1)
+ifeq ($(origin CI), environment)
     EXEC_CMD                =
     PNPM_EXEC               = pnpm
     DEV_CMD                 = craco start
@@ -99,10 +99,10 @@ else
 	STORYBOOK_START         = $(EXEC_DEV_TTYLESS) pnpm $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
-    RUN_MEMLAB				= \
-                              	$(MEMLEAK_SETUP); \
-                              	$(MEMLEAK_RUN_TESTS); \
-                              	$(MEMLEAK_RUN_CLEANUP)
+    RUN_MEMLAB				= bash -c '\
+                              set -eE; trap "$(MEMLEAK_RUN_CLEANUP)" EXIT; \
+                              $(MEMLEAK_SETUP); \
+                              $(MEMLEAK_RUN_TESTS)'
 endif
 
 # To Run in CI mode specify CI variable. Example: make lint-md CI=1
