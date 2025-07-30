@@ -30,7 +30,7 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install dependencies
-        run: pnpm i --frozen-lockfile
+        run: make install
         if: |
           steps.cache-pnpm-dependencies.outputs.cache-hit != 'true' ||
           steps.cache-pnpm-packages.outputs.cache-hit != 'true'

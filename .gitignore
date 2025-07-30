@@ -51,3 +51,4 @@ app.log
 stryker.log
 
 reports/
+/src/test/load/results/

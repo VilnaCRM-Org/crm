@@ -56,11 +56,8 @@ MEMLEAK_RUN_CLEANUP			 = \
 
 K6_TEST_SCRIPT              ?= /loadTests/homepage.js
 K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
-K6_SWAGGER_TEST_SCRIPT      ?= /loadTests/swagger.js
-K6_SWAGGER_RESULTS_FILE     ?= /loadTests/results/swagger.html
 K6                          = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) --profile load run --rm k6
 LOAD_TESTS_RUN              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)" --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
-LOAD_TESTS_RUN_SWAGGER      = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)" --out "web-dashboard=period=1s&export=$(K6_SWAGGER_RESULTS_FILE)" $(K6_SWAGGER_TEST_SCRIPT)
 
 STORYBOOK_BUILD 			= $(EXEC_DEV_TTYLESS) pnpm storybook build
 
@@ -241,13 +238,12 @@ wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
 		fi; \
 	done
 
-load-tests: start-prod wait-for-prod-health ## This command executes load tests using K6 library. Note: The target host is determined by the service URL
+prepare-results-dir:
+	mkdir -p ./src/test/load/results
+
+load-tests: start-prod wait-for-prod-health prepare-results-dir ## This command executes load tests using K6 library. Note: The target host is determined by the service URL
                        ## using $(PROD_PORT), which maps to the production service in Docker Compose.
 	$(LOAD_TESTS_RUN)
-
-load-tests-swagger: start-prod wait-for-prod-health ## Execute comprehensive load tests for the Swagger page. Use environment variables to run specific scenarios:
-                       ## run_smoke=true, run_average=true, run_stress=true, run_spike=true. If none set, runs all scenarios.
-	$(LOAD_TESTS_RUN_SWAGGER)
 
 lighthouse-desktop: ## Run a Lighthouse audit using desktop viewport settings to evaluate performance and best practices
 	$(LHCI_DESKTOP)

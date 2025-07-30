@@ -8,7 +8,7 @@ services:
     ports:
       - '3001:3001'
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://${WEBSITE_DOMAIN}:${PROD_PORT}']
+      test: ["CMD", "wget", "--spider", "-q", 'http://${WEBSITE_DOMAIN}:${PROD_PORT}']
     networks:
       - website-network
 
@@ -50,6 +50,19 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ['CMD', 'wget', '-q', 'http://localhost:${MOCKOON_PORT}/api/users', '-O', '-']
+    networks:
+      - website-network
+
+  k6:
+    profiles: ["load"]
+    build:
+      context: .
+      dockerfile: ./src/test/load/Dockerfile
+    depends_on:
+      prod:
+        condition: service_healthy
+    volumes:
+      - ./src/test/load:/loadTests
     networks:
       - website-network
 
