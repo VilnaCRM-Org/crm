@@ -74,7 +74,7 @@ NETWORK_NAME                = website-network
 CI                          ?= 0
 
 
-ifeq ($(origin CI), environment)
+ifeq ($(CI), 1)
     EXEC_CMD                =
     PNPM_EXEC               = pnpm
     DEV_CMD                 = craco start
@@ -128,7 +128,7 @@ start: ## Start the application
 
 wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	@echo "Waiting for dev service to be ready on port $(DEV_PORT)..."
-	@for i in $(seq 1 60); do \
+	@for i in $$(seq 1 60); do \
       npx wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) 2>/dev/null && break; \
       printf "."; sleep 2; \
       [ $$i -eq 60 ] && echo "❌ Timed out waiting for dev service" && exit 1; \
@@ -203,7 +203,7 @@ start-prod: create-network ## Build image and start container in production mode
 
 wait-for-prod: ## Wait for the prod service to be ready on port $(PROD_PORT).
 	@echo "Waiting for prod service to be ready on port $(PROD_PORT)..."
-	@for i in $(seq 1 60); do \
+	@for i in $$(seq 1 60); do \
       npx wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) 2>/dev/null && break; \
       printf "."; sleep 2; \
       [ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
