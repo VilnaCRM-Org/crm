@@ -1,4 +1,4 @@
-include .env
+-include .env
 -include .env.local
 -include .env.production
 -include .env.production.local
