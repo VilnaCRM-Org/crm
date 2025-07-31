@@ -28,6 +28,7 @@
     "scripts/**/*",
     "docker/**/*",
     "lighthouse/**/*",
+    "test/**/*",
     "*.ts",
     "*.tsx",
     "*.js"

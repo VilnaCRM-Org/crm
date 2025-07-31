@@ -35,7 +35,6 @@ yarn-error.log*
 .vscode/
 ./.vscode/
 
-app.log
 *.log
 
 /test-results/
@@ -49,5 +48,5 @@ app.log
 stryker.log
 
 reports/
-/src/test/load/results/
-/src/test/memory-leak/results/
+/test/load/results/
+/test/memory-leak/results/

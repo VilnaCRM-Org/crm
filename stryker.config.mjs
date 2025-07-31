@@ -10,8 +10,8 @@ const config = {
     configFile: 'jest.config.ts',
     enableFindRelatedTests: false,
   },
-  mutate: [   './src/components/**/*.tsx', ],
-  ignorePatterns: ['**/*.stories.tsx', '**/*.stories.ts', 'dist', 'coverage', 'src/test/memory-leak/results/**'],
+  mutate: [ './src/components/**/*.tsx', ],
+  ignorePatterns: ['**/*.stories.tsx', '**/*.stories.ts', 'dist', 'coverage', 'test/memory-leak/results/**'],
   thresholds: { high: 100, break: 25 }, // TODO: Update `break` to 90 once full test coverage is implemented
 
 };

@@ -119,8 +119,7 @@ module.exports = {
             devDependencies: [
               '**/*.test.*',
               '**/*.spec.*',
-              '**/test/**/*',
-              '**/tests/**/*',
+              'test/**/*',
               '**/*.stories.*',
               '**/jest.setup.*',
               '**/jest.config.*',
@@ -160,7 +159,7 @@ module.exports = {
         '**/*.spec.jsx',
         '**/*.spec.ts',
         '**/*.spec.tsx',
-        'src/test/load/**/*.js',
+        'test/load/**/*.js',
       ],
       parser: '@typescript-eslint/parser',
       extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],

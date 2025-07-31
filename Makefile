@@ -17,7 +17,7 @@ PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 CRACO_BUILD                 = pnpm craco build
 STORYBOOK_CMD         		= storybook dev -p $(STORYBOOK_PORT)
 
-TEST_DIR_BASE               = ./src/test
+TEST_DIR_BASE               = ./test
 TEST_DIR_APOLLO             = $(TEST_DIR_BASE)/apollo-server
 TEST_DIR_E2E                = $(TEST_DIR_BASE)/e2e
 TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual
@@ -43,14 +43,14 @@ PLAYWRIGHT_TEST             = $(PLAYWRIGHT_DOCKER_CMD) sh -c
 
 MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
-MEMLEAK_TEST_SCRIPT         = ./src/test/memory-leak/runMemlabTests.js
+MEMLEAK_TEST_SCRIPT         = ./test/memory-leak/runMemlabTests.js
 MEMLEAK_SETUP 				= \
 								echo "🧪 Starting memory leak test environment..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d
-MEMLEAK_RUN_TESTS			 = \
+MEMLEAK_RUN_TESTS			= \
 								echo "🚀 Running memory leak tests..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) node $(MEMLEAK_TEST_SCRIPT) || exit 1
-MEMLEAK_RUN_CLEANUP			 = \
+MEMLEAK_RUN_CLEANUP			= \
 								echo "🧹 Cleaning up memory leak test containers..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) down --remove-orphans
 
@@ -236,7 +236,7 @@ wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
 	done
 
 prepare-results-dir:
-	mkdir -p ./src/test/load/results
+	mkdir -p ./test/load/results
 
 load-tests: start-prod wait-for-prod-health prepare-results-dir ## This command executes load tests using K6 library. Note: The target host is determined by the service URL
                        ## using $(PROD_PORT), which maps to the production service in Docker Compose.
