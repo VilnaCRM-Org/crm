@@ -17,10 +17,6 @@ test.describe('Visual Tests', () => {
 
       await page.waitForTimeout(timeoutDuration);
 
-      await page.setViewportSize({ width: screen.width, height: screen.height });
-
-      await page.waitForTimeout(timeoutDuration);
-
       await expect(page).toHaveScreenshot(`${currentLanguage}_${screen.name}.png`, {
         fullPage: true,
       });

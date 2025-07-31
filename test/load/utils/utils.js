@@ -12,7 +12,13 @@ export default class Utils {
     try {
       return JSON.parse(open('config.json'));
     } catch (error) {
-      return JSON.parse(open('config.json.dist'));
+      try {
+        return JSON.parse(open('config.json.dist'));
+      } catch (fallbackError) {
+        throw new Error(
+          `Failed to load both config.json and config.json.dist: ${fallbackError.message}`
+        );
+      }
     }
   }
 
@@ -25,10 +31,23 @@ export default class Utils {
   }
 
   shouldSkipScenario(variable) {
-    return !!__ENV[variable];
+    if (typeof variable !== 'string' || !variable) {
+      throw new Error('variable must be a non-empty string');
+    }
+    return __ENV[variable] === 'true' || __ENV[variable] === '1';
   }
 
   checkResponse(response, checkName, checkFunction) {
+    if (!response) {
+      throw new Error('response is required');
+    }
+    if (!checkName || typeof checkName !== 'string') {
+      throw new Error('checkName must be a non-empty string');
+    }
+    if (typeof checkFunction !== 'function') {
+      throw new Error('checkFunction must be a function');
+    }
+
     check(response, {
       [checkName]: (res) => checkFunction(res),
     });

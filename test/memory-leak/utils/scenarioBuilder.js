@@ -5,6 +5,14 @@
 
 require('dotenv').config();
 
+const getRequiredUrlEnvVars = (nodeEnv) => {
+  const envVarMap = {
+    production: ['REACT_APP_PROD_CONTAINER_API_URL'],
+    default: ['REACT_APP_PROD_HOST_API_URL'],
+  };
+  return envVarMap[nodeEnv] || envVarMap.default;
+};
+
 class ScenarioBuilder {
   /**
    * Creates a new ScenarioBuilder instance.
@@ -28,6 +36,10 @@ class ScenarioBuilder {
         const headerName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME;
         const headerValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE;
 
+        if (!/^[a-zA-Z0-9-_]+$/.test(headerName)) {
+          throw new Error(`Invalid header name format: ${headerName}`);
+        }
+
         await page.setExtraHTTPHeaders({
           [`aws-cf-cd-${headerName}`]: headerValue,
         });
@@ -40,10 +52,8 @@ class ScenarioBuilder {
   }
 
   url() {
-    const requiredUrlEnvVars =
-      process.env.NODE_ENV === 'production'
-        ? ['REACT_APP_PROD_CONTAINER_API_URL']
-        : ['REACT_APP_PROD_HOST_API_URL'];
+    const requiredUrlEnvVars = getRequiredUrlEnvVars(process.env.NODE_ENV);
+
     for (const envVar of requiredUrlEnvVars) {
       if (!process.env[envVar]) {
         throw new Error(`Missing required environment variable for URL generation: ${envVar}`);

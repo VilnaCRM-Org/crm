@@ -1,7 +1,7 @@
 const i18n = require('i18next');
 const { initReactI18next } = require('react-i18next');
 
-const i18nConfig = require('../../../config/i18nConfig');
+const i18nConfig = require('../../../src/config/i18nConfig');
 
 async function initializeLocalization() {
   try {

@@ -95,8 +95,8 @@ else
     STRYKER_CMD             = make start && $(EXEC_DEV_TTYLESS) pnpm stryker run
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
 
-	STORYBOOK_BUILD			= $(EXEC_DEV_TTYLESS) pnpm storybook build
-	STORYBOOK_START         = $(EXEC_DEV_TTYLESS) pnpm $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
+    STORYBOOK_BUILD			= $(EXEC_DEV_TTYLESS) pnpm storybook build
+    STORYBOOK_START         = $(EXEC_DEV_TTYLESS) pnpm $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
     RUN_MEMLAB				= \

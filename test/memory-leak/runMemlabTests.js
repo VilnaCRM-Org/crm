@@ -1,16 +1,20 @@
 require('dotenv').config();
 
 const fs = require('node:fs');
+const path = require('node:path');
 
 const { run, analyze } = require('@memlab/api');
 const { StringAnalysis } = require('@memlab/heap-analysis');
 
 const { initializeLocalization } = require('./utils/initializeLocalization');
 
-const memoryLeakDir = './src/test/memory-leak';
-const testsDir = './tests';
+// const memoryLeakDir = './src/test/memory-leak';
+// const testsDir = './tests';
 
-const workDir = './src/test/memory-leak/results';
+const memoryLeakDir = path.join('.', 'test', 'memory-leak');
+const testsDir = path.join('.', 'tests');
+
+const workDir = path.join(memoryLeakDir, 'results');
 const consoleMode = 'VERBOSE';
 
 (async function runMemoryLeakTests() {
@@ -32,8 +36,14 @@ const consoleMode = 'VERBOSE';
     try {
       const scenario = require(testFilePath);
       if (!scenario || typeof scenario !== 'object') {
-        throw new Error(`Invalid scenario exported from ${testFilePath}`);
+        throw new Error(`Invalid scenario exported from ${testFilePath}: must export an object`);
       }
+      if (typeof scenario.url !== 'function' && typeof scenario.url !== 'string') {
+        throw new Error(
+          `Invalid scenario exported from ${testFilePath}: missing or invalid 'url' property`
+        );
+      }
+
       const { runResult } = await run({
         scenario,
         consoleMode,

@@ -1,4 +1,4 @@
-const ScenarioBuilder = require('../utils/ScenarioBuilder');
+const ScenarioBuilder = require('../utils/scenarioBuilder');
 
 const scenarioBuilder = new ScenarioBuilder();
 
@@ -9,7 +9,7 @@ async function action(page) {
     await page.waitForSelector(signUpButtonSelector, { timeout: 5000 });
     await page.click(signUpButtonSelector);
   } catch (error) {
-    throw new Error('Something went wrong');
+    throw new Error(`Button interaction failed: ${error.message}`);
   }
 }
 

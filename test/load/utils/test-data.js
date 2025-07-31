@@ -1,12 +1,12 @@
 const TEST_DATA_GENERATORS = {
-  generateUser: () => {
+  generateUser: (password = 'TestPassword123!') => {
     const timestamp = Date.now();
-    const uniqueId = `${__VU || 1}_${__ITER || 0}_${timestamp}`;
+    const uniqueId = `${__VU || 1}_${__ITER || 0}_${timestamp}_${Math.random().toString(36).substr(2, 5)}`;
 
     return {
       name: `Test User ${uniqueId}`,
       email: `test${uniqueId}@example.com`,
-      password: 'TestPassword123!',
+      password,
     };
   },
   userId: () => (((__VU || 1) * 1000 + (__ITER || 0)) % 1000) + 1,
