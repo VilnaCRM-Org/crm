@@ -50,3 +50,4 @@ stryker.log
 
 reports/
 /src/test/load/results/
+/src/test/memory-leak/results/

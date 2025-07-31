@@ -59,8 +59,6 @@ K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
 K6                          = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) --profile load run --rm k6
 LOAD_TESTS_RUN              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)" --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
 
-STORYBOOK_BUILD 			= $(EXEC_DEV_TTYLESS) pnpm storybook build
-
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
 
@@ -83,6 +81,7 @@ ifeq ($(CI), 1)
     UNIT_TESTS              = env
 
     STORYBOOK_START         = $(STORYBOOK_CMD)
+    STORYBOOK_BUILD 		= pnpm storybook build
 
     MARKDOWNLINT_BIN        = npx markdownlint
     RUN_MEMLAB				= node $(MEMLEAK_TEST_SCRIPT)
@@ -96,13 +95,14 @@ else
     STRYKER_CMD             = make start && $(EXEC_DEV_TTYLESS) pnpm stryker run
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
 
+	STORYBOOK_BUILD			= $(EXEC_DEV_TTYLESS) pnpm storybook build
 	STORYBOOK_START         = $(EXEC_DEV_TTYLESS) pnpm $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
-    RUN_MEMLAB				= bash -c '\
-                              set -eE; trap "$(MEMLEAK_RUN_CLEANUP)" EXIT; \
-                              $(MEMLEAK_SETUP); \
-                              $(MEMLEAK_RUN_TESTS)'
+    RUN_MEMLAB				= \
+                              	$(MEMLEAK_SETUP); \
+                              	$(MEMLEAK_RUN_TESTS); \
+                              	$(MEMLEAK_RUN_CLEANUP)
 endif
 
 # To Run in CI mode specify CI variable. Example: make lint-md CI=1
@@ -110,7 +110,7 @@ endif
 .DEFAULT_GOAL               = help
 .RECIPEPREFIX               +=
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
-.PHONY: all clean test lint
+.PHONY: clean test lint
 .PHONY: storybook
 
 run-visual                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
@@ -137,9 +137,6 @@ wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 
 build: ## Build the dev container
 	$(DOCKER_COMPOSE) build
-
-all: ## Fully build the project using Craco
-	$(BUILD_CMD)
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
