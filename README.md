@@ -9,8 +9,7 @@
 ## Possibilities
 
 - Modern JavaScript stack for services: [React](https://react.dev/)
-- A lot of CI checks to ensure the highest code quality that can be
-  (Security checks, Code style fixer, static linters, DeepScan, Snyk)
+- Extensive CI checks (security, style, static analysis, Snyk, DeepScan) to maintain code quality
 - Configured testing tools: [Playwright](https://playwright.dev/), [Jest](https://jestjs.io/)
 - This template is based on [bulletproof-react](https://github.com/alan2207/bulletproof-react/tree/master)
 - Much more!
@@ -171,7 +170,14 @@ Docker
   make wait-for-prod: waits for the prod service to be ready on port 3001
 ```
 
-Note: The following commands do not require the `CI=1` prefix:
+💡 Tip: To run commands locally without Docker, please prefix command with CI=1.
+Example:
+
+```bash
+  CI=1 make start
+```
+
+The following commands can't be run with `CI=1` prefix:
 
 ```bash
   make test-e2e: starts production and runs end-to-end tests inside the prod container
@@ -184,13 +190,6 @@ Note: The following commands do not require the `CI=1` prefix:
 
   make git-hooks-install: installs husky Git hooks locally
   make update: runs locally on the host machine, not in a container
-```
-
-💡 Tip: To run commands locally without Docker, please prefix command with CI=1.
-Example:
-
-```bash
-  CI=1 make start
 ```
 
 ### Load Testing with K6

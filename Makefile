@@ -22,12 +22,9 @@ TEST_DIR_APOLLO             = $(TEST_DIR_BASE)/apollo-server
 TEST_DIR_E2E                = $(TEST_DIR_BASE)/e2e
 TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual
 
-STRYKER_CMD                 = pnpm stryker run
-
 LHCI                        = pnpm lhci autorun
 LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
 LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
-LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
 LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
 LHCI_BUILD_CMD          	= make start-prod && $(LHCI)
 LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS)
@@ -82,14 +79,15 @@ ifeq ($(CI), 1)
     DEV_CMD                 = craco start
     BUILD_CMD               = $(CRACO_BUILD)
 
+	STRYKER_CMD             = pnpm stryker run
     UNIT_TESTS              = env
 
-    STORYBOOK_START         = $(STORYBOOK_CMD)
     STORYBOOK_BUILD 		= pnpm storybook build
+    STORYBOOK_START         = $(STORYBOOK_CMD)
 
     MARKDOWNLINT_BIN        = npx markdownlint
+	LHCI_TARGET_URL 		= $(WEBSITE_URL)
     RUN_MEMLAB				= $(MEMLEAK_REMOVE_RESULTS) && node $(MEMLEAK_TEST_SCRIPT)
-    LHCI_TARGET_URL 		= $(WEBSITE_URL)
 else
     EXEC_CMD                = $(EXEC_DEV_TTYLESS)
     PNPM_EXEC               = $(EXEC_DEV_TTYLESS) pnpm
@@ -103,6 +101,7 @@ else
     STORYBOOK_START         = $(EXEC_DEV_TTYLESS) pnpm $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
+    LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
     RUN_MEMLAB				= \
     							$(MEMLEAK_REMOVE_RESULTS); \
                               	$(MEMLEAK_SETUP); \
