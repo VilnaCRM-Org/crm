@@ -8,11 +8,8 @@ const { StringAnalysis } = require('@memlab/heap-analysis');
 
 const { initializeLocalization } = require('./utils/initializeLocalization');
 
-// const memoryLeakDir = './src/test/memory-leak';
-// const testsDir = './tests';
-
 const memoryLeakDir = path.join('.', 'test', 'memory-leak');
-const testsDir = path.join('.', 'tests');
+const testsDir = path.join(memoryLeakDir, 'tests');
 
 const workDir = path.join(memoryLeakDir, 'results');
 const consoleMode = 'VERBOSE';
@@ -21,9 +18,9 @@ const consoleMode = 'VERBOSE';
   let testFilePaths;
   try {
     testFilePaths = fs
-      .readdirSync(`${memoryLeakDir}/${testsDir}`)
+      .readdirSync(testsDir)
       .filter((file) => file.endsWith('.js'))
-      .map((test) => `${testsDir}/${test}`);
+      .map((test) => path.resolve(testsDir, test));
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(`Failed to read tests directory: ${memoryLeakDir}/${testsDir}`, error);

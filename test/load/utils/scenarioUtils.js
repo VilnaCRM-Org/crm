@@ -8,7 +8,7 @@ export default class ScenarioUtils {
 
     const requiredScenarios = ['smoke', 'average', 'stress', 'spike'];
     const missing = requiredScenarios.filter(
-      (type) => !this.config.endpoints[scenarioName]?.[type]
+      (type) => !this.config.endpoints[scenarioName] || !this.config.endpoints[scenarioName][type]
     );
     if (missing.length > 0) {
       throw new Error(`Missing scenario configurations: ${missing.join(', ')}`);
