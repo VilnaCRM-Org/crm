@@ -200,7 +200,7 @@ create-network: ## Create the external Docker network if it doesn't exist
 	@docker network ls | grep -q $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
 
 start-prod: create-network ## Build image and start container in production mode
-	$(DOCKER_COMPOSE) $(COMMON_HEALTHCHECKS_FILE) $(DOCKER_COMPOSE_TEST_FILE) up -d && make wait-for-prod
+	$(DOCKER_COMPOSE) $(COMMON_HEALTHCHECKS_FILE) $(DOCKER_COMPOSE_TEST_FILE) up -d --no-recreate && make wait-for-prod
 
 wait-for-prod: ## Wait for the prod service to be ready on port $(PROD_PORT).
 	@echo "Waiting for prod service to be ready on port $(PROD_PORT)..."
@@ -228,8 +228,7 @@ test-mutation: build ## Run mutation tests using Stryker after building the app
 wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
 	@echo "Waiting for prod container to become healthy (timeout: 60s)..."
 	@for i in $$(seq 1 30); do \
-		status="$$( $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) ps | awk '/\sprod\s/ {print $$NF}' )"; \
-		if [ "$$status" = "(healthy)" ]; then \
+		if $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) ps | awk '/prod/ && /healthy/ {found=1} END {exit !found}'; then \
 			echo "✅ Prod container is healthy and ready!"; \
 			break; \
 		fi; \
