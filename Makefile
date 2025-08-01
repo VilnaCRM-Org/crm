@@ -43,7 +43,11 @@ PLAYWRIGHT_TEST             = $(PLAYWRIGHT_DOCKER_CMD) sh -c
 
 MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
-MEMLEAK_TEST_SCRIPT         = ./test/memory-leak/runMemlabTests.js
+MEMLEAK_BASE_PATH           = ./test/memory-leak
+MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
+MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/runMemlabTests.js
+
+MEMLEAK_REMOVE_RESULTS		= rm -rf $(MEMLEAK_RESULTS_DIR)
 MEMLEAK_SETUP 				= \
 								echo "🧪 Starting memory leak test environment..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d
@@ -84,7 +88,7 @@ ifeq ($(CI), 1)
     STORYBOOK_BUILD 		= pnpm storybook build
 
     MARKDOWNLINT_BIN        = npx markdownlint
-    RUN_MEMLAB				= node $(MEMLEAK_TEST_SCRIPT)
+    RUN_MEMLAB				= $(MEMLEAK_REMOVE_RESULTS) && node $(MEMLEAK_TEST_SCRIPT)
     LHCI_TARGET_URL 		= $(WEBSITE_URL)
 else
     EXEC_CMD                = $(EXEC_DEV_TTYLESS)
@@ -100,6 +104,7 @@ else
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
     RUN_MEMLAB				= \
+    							$(MEMLEAK_REMOVE_RESULTS); \
                               	$(MEMLEAK_SETUP); \
                               	$(MEMLEAK_RUN_TESTS); \
                               	$(MEMLEAK_RUN_CLEANUP)
