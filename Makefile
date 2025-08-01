@@ -228,8 +228,9 @@ test-mutation: build ## Run mutation tests using Stryker after building the app
 wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
 	@echo "Waiting for prod container to become healthy (timeout: 60s)..."
 	@for i in $$(seq 1 30); do \
-		if $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) ps | grep -q "prod.*(healthy)"; then \
-			echo "Prod container is healthy and ready!"; \
+		status="$$( $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) ps | awk '/\sprod\s/ {print $$NF}' )"; \
+		if [ "$$status" = "(healthy)" ]; then \
+			echo "✅ Prod container is healthy and ready!"; \
 			break; \
 		fi; \
 		sleep 2; \
