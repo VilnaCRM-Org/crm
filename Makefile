@@ -135,16 +135,15 @@ wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	@i=0; \
 	while [ $$i -lt 60 ]; do \
 	  if $(PNPM_EXEC) exec -- wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) > /dev/null 2>&1; then \
-	    echo "\n✅ Dev service is up and running!"; \
+	    printf '\n✅ Dev service is up and running!\n'; \
 	    exit 0; \
 	  fi; \
 	  printf "."; \
 	  sleep 2; \
 	  i=$$((i+1)); \
 	done; \
-	echo "\n❌ Timed out waiting for dev service"; \
+	printf '\n❌ Timed out waiting for dev service\n'; \
 	exit 1
-
 
 build: ## Build the dev container
 	$(DOCKER_COMPOSE) build
@@ -171,7 +170,7 @@ lint-tsc: ## This command executes Typescript linter
 	$(PNPM_EXEC) tsc
 
 lint-md: ## This command executes Markdown linter
-	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS) "**/*.md"
+	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint: lint-eslint lint-tsc lint-md ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
 
