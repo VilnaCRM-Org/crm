@@ -114,12 +114,11 @@ endif
 .DEFAULT_GOAL               = help
 .RECIPEPREFIX               +=
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
-.PHONY: clean test lint
+.PHONY: clean lint
 .PHONY: storybook
-
-run-visual                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
-run-e2e                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
-playwright-test             = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
+RUN_VISUAL                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
+RUN_E2E                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
+PLAYWRIGHT_TEST_CMD             = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
 
 
 help:
@@ -184,23 +183,23 @@ storybook-build: ## Build Storybook UI.
 	$(STORYBOOK_BUILD)
 
 test-e2e: start-prod  ## Start production and run E2E tests (Playwright)
-	$(run-e2e)
+	$(RUN_E2E)
 
 test-e2e-ui: start-prod ## Start the production environment and run E2E tests with the UI available at $(UI_MODE_URL)
 	@echo "🚀 Starting Playwright UI tests..."
 	@echo "Test will be run on: $(UI_MODE_URL)"
-	$(playwright-test) $(TEST_DIR_E2E) $(UI_FLAGS)
+	$(PLAYWRIGHT_TEST_CMD) $(TEST_DIR_E2E) $(UI_FLAGS)
 
 test-visual: start-prod  ## Start production and run visual tests (Playwright)
-	$(run-visual)
+	$(RUN_VISUAL)
 
 test-visual-ui: start-prod ## Start the production environment and run visual tests with the UI available at $(UI_MODE_URL)
 	@echo "🚀 Starting Playwright UI tests..."
 	@echo "Test will be run on: $(UI_MODE_URL)"
-	$(playwright-test) $(TEST_DIR_VISUAL) $(UI_FLAGS)
+	$(PLAYWRIGHT_TEST_CMD) $(TEST_DIR_VISUAL) $(UI_FLAGS)
 
 test-visual-update: start-prod ## Update Playwright visual snapshots
-	$(playwright-test) $(TEST_DIR_VISUAL) --update-snapshots
+	$(PLAYWRIGHT_TEST_CMD) $(TEST_DIR_VISUAL) --update-snapshots
 
 create-network: ## Create the external Docker network if it doesn't exist
 	@docker network ls | grep -q $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
@@ -215,7 +214,7 @@ wait-for-prod:
 		printf "."; sleep 2; \
 		[ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
 	done; \
-	echo "\n✅ Prod service is up and running!"
+	printf '\n✅ Prod service is up and running!\n'
 
 test-unit-all: test-unit-client test-unit-server ## This command executes unit tests for both client and server environments.
 
