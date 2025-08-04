@@ -132,12 +132,19 @@ start: ## Start the application
 
 wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	@echo "Waiting for dev service to be ready on port $(DEV_PORT)..."
-	@for i in $$(seq 1 60); do \
-      npx wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) 2>/dev/null && break; \
-      printf "."; sleep 2; \
-      [ $$i -eq 60 ] && echo "❌ Timed out waiting for dev service" && exit 1; \
-    done
-	@printf '\nDev service is up and running!\n'
+	@i=0; \
+	while [ $$i -lt 60 ]; do \
+	  if $(PNPM_EXEC) exec -- wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) > /dev/null 2>&1; then \
+	    echo "\n✅ Dev service is up and running!"; \
+	    exit 0; \
+	  fi; \
+	  printf "."; \
+	  sleep 2; \
+	  i=$$((i+1)); \
+	done; \
+	echo "\n❌ Timed out waiting for dev service"; \
+	exit 1
+
 
 build: ## Build the dev container
 	$(DOCKER_COMPOSE) build
@@ -228,16 +235,22 @@ test-mutation: build ## Run mutation tests using Stryker after building the app
 wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
 	@echo "Waiting for prod container to become healthy (timeout: 60s)..."
 	@for i in $$(seq 1 30); do \
-		if $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) ps | awk '/prod/ && /\(healthy\)/ {found=1} END {exit !found}'; then \
-			echo "✅ Prod container is healthy and ready!"; \
-			break; \
+		cid=$$($(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) ps -q prod); \
+		if [ -n "$$cid" ]; then \
+			status=$$(docker inspect --format='{{.State.Health.Status}}' $$cid 2>/dev/null || echo "starting"); \
+			if [ "$$status" = "healthy" ]; then \
+				echo "✅ Prod container is healthy and ready!"; \
+				exit 0; \
+			fi; \
+			echo "⏳ Status: $$status"; \
+		else \
+			echo "⏳ Waiting for container to start..."; \
 		fi; \
 		sleep 2; \
-		if [ $$i -eq 30 ]; then \
-			echo "❌ Timed out waiting for prod container to become healthy"; \
-			exit 1; \
-		fi; \
-	done
+	done; \
+	echo "❌ Timed out waiting for prod container to become healthy"; \
+	exit 1
+
 
 prepare-results-dir:
 	mkdir -p ./test/load/results
