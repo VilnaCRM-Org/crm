@@ -3,8 +3,6 @@
  * Handles URL generation, HTTP headers, and scenario composition for memory leak testing.
  */
 
-require('dotenv').config();
-
 const getRequiredUrlEnvVars = (nodeEnv) => {
   const envVarMap = {
     production: ['REACT_APP_PROD_CONTAINER_API_URL'],
@@ -36,8 +34,12 @@ class ScenarioBuilder {
         const headerName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME;
         const headerValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE;
 
-        if (!/^[a-zA-Z0-9-_]+$/.test(headerName)) {
+        if (!headerName || !/^[a-zA-Z0-9-_]+$/.test(headerName)) {
           throw new Error(`Invalid header name format: ${headerName}`);
+        }
+
+        if (!headerValue) {
+          throw new Error(`Header value cannot be empty`);
         }
 
         await page.setExtraHTTPHeaders({

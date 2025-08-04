@@ -1,5 +1,4 @@
-import { GraphQLResolveInfo } from 'graphql';
-import { GraphQLFormattedError } from 'graphql/index';
+import { GraphQLResolveInfo, GraphQLFormattedError } from 'graphql';
 
 export interface CreateUserInput {
   email: string;
@@ -13,6 +12,7 @@ export interface User {
   email: string;
   initials: string;
 }
+
 interface CreateUserPayload {
   user: User;
   clientMutationId: string;

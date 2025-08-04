@@ -3,10 +3,13 @@ import resources from '../src/i18n/localization.json';
 import { initReactI18next } from 'react-i18next';
 import i18next from 'i18next';
 
+const mainLanguage = process.env.REACT_APP_MAIN_LANGUAGE || 'uk';
+const fallbackLanguage = process.env.REACT_APP_FALLBACK_LANGUAGE || 'en';
+
 i18next.use(initReactI18next).init({
   resources,
-  lng: 'en',
-  fallbackLng: 'en',
+  lng: mainLanguage,
+  fallbackLng: fallbackLanguage,
   interpolation: { escapeValue: false },
 });
 

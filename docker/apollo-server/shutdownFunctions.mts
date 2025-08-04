@@ -39,6 +39,11 @@ export function shouldShutdown(error: unknown): boolean {
 
 export async function handleServerFailure() {
   console.log('Attempting to clean up before exiting...');
-  await cleanupResources();
-  process.exit(1);
+  try {
+    await cleanupResources();
+  } catch (err) {
+    console.error('Cleanup failed during server failure:', err);
+  } finally {
+    process.exit(1);
+  }
 }

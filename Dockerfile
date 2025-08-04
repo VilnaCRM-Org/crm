@@ -19,7 +19,7 @@ RUN npx craco build
 
 
 # -------- Production Image --------
-FROM node:23.11.1-alpine3.21 AS production
+FROM node:24-alpine3.21 AS production
 
 WORKDIR /app
 

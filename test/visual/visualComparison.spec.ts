@@ -12,11 +12,6 @@ test.describe('Visual Tests', () => {
 
       await page.waitForTimeout(timeoutDuration);
 
-      const scrollHeight: number = await page.evaluate(() => document.documentElement.scrollHeight);
-      await page.setViewportSize({ width: screen.width, height: scrollHeight });
-
-      await page.waitForTimeout(timeoutDuration);
-
       await expect(page).toHaveScreenshot(`${currentLanguage}_${screen.name}.png`, {
         fullPage: true,
       });

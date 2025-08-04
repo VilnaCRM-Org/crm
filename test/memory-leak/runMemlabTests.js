@@ -23,7 +23,7 @@ const consoleMode = 'VERBOSE';
       .map((test) => path.resolve(testsDir, test));
   } catch (error) {
     // eslint-disable-next-line no-console
-    console.error(`Failed to read tests directory: ${memoryLeakDir}/${testsDir}`, error);
+    console.error(`Failed to read tests directory: ${testsDir}`, error);
     process.exit(1);
   }
 
