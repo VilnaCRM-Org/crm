@@ -209,13 +209,14 @@ create-network: ## Create the external Docker network if it doesn't exist
 start-prod: create-network ## Build image and start container in production mode
 	$(DOCKER_COMPOSE) $(COMMON_HEALTHCHECKS_FILE) $(DOCKER_COMPOSE_TEST_FILE) up -d --no-recreate && make wait-for-prod
 
-wait-for-prod: ## Wait for the prod service to be ready on port $(PROD_PORT).
-	@echo "Waiting for prod service to be ready on port $(PROD_PORT)..."
+wait-for-prod:
+	@echo "Waiting for prod service on port $(PROD_PORT)..."
 	@for i in $$(seq 1 60); do \
-      pnpm exec -- wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) 2>/dev/null && break; \
-      printf "."; sleep 2; \
-      [ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
-    done
+		npx wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
+		printf "."; sleep 2; \
+		[ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
+	done; \
+	echo "\n✅ Prod service is up and running!"
 
 test-unit-all: test-unit-client test-unit-server ## This command executes unit tests for both client and server environments.
 
