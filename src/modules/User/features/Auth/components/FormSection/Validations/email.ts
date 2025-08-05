@@ -1,3 +1,4 @@
+import { t } from 'i18next';
 import { Validate } from 'react-hook-form';
 
 import { AuthVariants } from '../types';
@@ -8,8 +9,8 @@ export const isValidEmailFormat: (email: string) => boolean = (email: string): b
   );
 
 const validationMessages = {
-  required: "Це поле обов'язкове",
-  incorrect: 'Будь ласка, введіть коректну електронну адресу',
+  required: t('sign_up.form.email_input.required'),
+  incorrect: t('sign_up.form.email_input.invalid_message'),
 };
 const validateEmail: Validate<string, AuthVariants> = (email) => {
   if (!email) return validationMessages.required;

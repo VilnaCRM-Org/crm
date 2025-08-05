@@ -1,3 +1,4 @@
+import { t } from 'i18next';
 import { Validate } from 'react-hook-form';
 
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
@@ -7,9 +8,9 @@ const MAX_INITIALS_LENGTH = 255;
 type ValidationMessageKey = 'formatError' | 'lettersOnlyError' | 'required';
 
 export const validationMessages: Record<ValidationMessageKey, string> = {
-  formatError: 'Будь ласка, введіть повне ім’я у правильному форматі',
-  lettersOnlyError: 'Будь ласка, використовуйте лише літери',
-  required: "Це поле обов'язкове",
+  formatError: t('sign_up.form.name_input.full_name_format_error'),
+  lettersOnlyError: t('sign_up.form.name_input.special_characters_error'),
+  required: t('sign_up.form.name_input.required'),
 };
 
 type ValidationFunction = (value: string) => boolean;

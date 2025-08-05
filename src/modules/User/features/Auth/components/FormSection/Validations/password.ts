@@ -1,3 +1,4 @@
+import { t } from 'i18next';
 import { Validate, FieldValues } from 'react-hook-form';
 
 const isLengthValid = (value: string): boolean => value.length >= 8 && value.length <= 64;
@@ -9,9 +10,9 @@ const hasUppercase = (value: string): boolean => /\p{Lu}/u.test(value);
 type ValidationPswdMessageKey = 'invalidLength' | 'numberRequired' | 'uppercaseRequired';
 
 const validationPswdMessages: Record<ValidationPswdMessageKey, string> = {
-  invalidLength: 'Будь ласка, введіть від 8 до 64 символів',
-  numberRequired: 'Будь ласка, додайте принаймні одну цифру',
-  uppercaseRequired: 'Будь ласка, додайте принаймні одну велику літеру',
+  invalidLength: t('sign_up.form.password_input.error_length'),
+  numberRequired: t('sign_up.form.password_input.error_numbers'),
+  uppercaseRequired: t('sign_up.form.password_input.error_uppercase'),
 };
 
 const validatePassword: Validate<string, FieldValues> = (value: string) => {
