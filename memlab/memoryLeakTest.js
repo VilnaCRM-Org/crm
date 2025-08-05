@@ -1,7 +1,7 @@
 require('dotenv').config();
 
 function url() {
-  return `${process.env.REACT_APP_WEBSITE_URL}/sign-in`;
+  return `${process.env.REACT_APP_WEBSITE_URL}/authentication`;
 }
 
 async function action(page) {

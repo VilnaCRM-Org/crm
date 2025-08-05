@@ -1,0 +1,63 @@
+{
+  "sign_up": {
+    "title": "Registration",
+    "subtitle": "Create an account in VilnaCRM",
+    "socials_main_heading": "Or",
+    "form": {
+      "name_input": {
+        "label": "Your name and surname",
+        "placeholder": "Mykhailo Svitskyi",
+        "special_characters_error": "Please use letters only",
+        "required": "This field is required",
+        "full_name_format_error": "Please enter your full name in the correct format"
+      },
+      "email_input": {
+        "label": "Email",
+        "placeholder": "vilnaCRM@gmail.com",
+        "required": "This field is required",
+        "email_format_error": "Please make sure your email includes '@' and '.'",
+        "invalid_message": "Please enter a valid email address"
+      },
+      "password_input": {
+        "label": "Password",
+        "placeholder": "Create a password",
+        "required": "This field is required",
+        "error_length": "Please enter a password between 8 and 64 characters",
+        "error_numbers": "Please include at least one number",
+        "error_uppercase": "Please include at least one uppercase letter"
+      },
+      "password_tip": {
+        "alt": "Password tip mark",
+        "title": "At least 8 characters.",
+        "recommendation_text": "We recommend using:",
+        "options": {
+          "option_1": "lowercase and uppercase letters",
+          "option_2": "special characters (#&*$)",
+          "option_3": "numbers"
+        }
+      },
+      "button_text": "Sign-Up",
+      "error_text": "There was an error. Please check again",
+      "switcher_text": "Already have an account?"
+    }
+  },
+  "footer": {
+    "logo_alt": "Vilna logo",
+    "copyright": "Copyright © ТОВ “Vilna CRM”",
+    "privacy": "Privacy policy",
+    "usage_policy": "Usage policy",
+    "vilna_email": "info@vilnacrm.com",
+    "aria_labels": {
+      "instagram": "Link to Instagram",
+      "github": "Link to GitHub",
+      "facebook": "Link to Facebook",
+      "linkedin": "Link to Linkedin"
+    },
+    "alt_images": {
+      "instagram": "Instagram Icon",
+      "github": "GitHub Icon",
+      "facebook": "Facebook Icon",
+      "linkedin": "Linkedin Icon"
+    }
+  }
+}

@@ -1,10 +1,9 @@
 const path = require('path');
-// const LocalizationGenerator = require('./scripts/localizationGenerator');
+const LocalizationGenerator = require('./scripts/localizationGenerator');
 
 module.exports = function cracoConfig() {
-  // TODO: need fix localizationGenerator for module approach
-  // const localizationGenerator = new LocalizationGenerator();
-  // localizationGenerator.generateLocalizationFile();
+  const localizationGenerator = new LocalizationGenerator();
+  localizationGenerator.generateLocalizationFile();
 
   return {
     webpack: {
