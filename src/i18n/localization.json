@@ -67,7 +67,7 @@
   "uk": {
     "translation": {
       "sign_up": {
-        "title": "Реєєстрація",
+        "title": "Реєстрація",
         "subtitle": "Створіть аккаунт у VilnaCRM",
         "socials_main_heading": "Або",
         "form": {
@@ -103,7 +103,7 @@
               "option_3": "цифри"
             }
           },
-          "button_text": "Реєєстрація",
+          "button_text": "Реєстрація",
           "error_text": "Виникла помилка. Перевірте ще раз",
           "switcher_text": "У вас вже є аккаунт?"
         }

@@ -6,4 +6,9 @@ module.exports = {
   collectCoverage: true,
   coverageDirectory: 'coverage',
   roots: ['./src/test/unit', './scripts/test/unit'],
+  coveragePathIgnorePatterns: ['/node_modules/', 'LocalizationGenerator\\.js'],
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.js$': 'babel-jest',
+  },
 };
