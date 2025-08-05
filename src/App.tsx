@@ -6,7 +6,7 @@ import './index.css';
 
 const router = createBrowserRouter([
   {
-    path: '/sign-in',
+    path: '/authentication',
     element: <Authentication />,
   },
 ]);

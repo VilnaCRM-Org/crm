@@ -1,16 +1,32 @@
-import { Typography, ThemeProvider } from '@mui/material';
-import { TypographyProps } from '@mui/material/Typography';
+import { ThemeProvider, Typography } from '@mui/material';
 import React from 'react';
 
-import Theme from '@/components/UITypography/Theme';
+import theme from './theme';
+import { UiTypographyProps } from './types';
 
-export default function UITypography(props: TypographyProps): JSX.Element {
-  const { children } = props;
-
+function UiTypography({
+  sx,
+  children,
+  component,
+  variant,
+  id,
+  role,
+  htmlFor,
+}: UiTypographyProps): React.ReactElement {
   return (
-    <ThemeProvider theme={Theme}>
-      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-      <Typography {...props}>{children}</Typography>
+    <ThemeProvider theme={theme}>
+      <Typography
+        sx={sx}
+        component={component || 'p'}
+        variant={variant}
+        id={id}
+        role={role}
+        htmlFor={htmlFor}
+      >
+        {children}
+      </Typography>
     </ThemeProvider>
   );
 }
+
+export default UiTypography;

@@ -23,11 +23,11 @@ export default function UIFooterContent(): React.ReactElement {
         </UILink>
 
         <UILink href="#" sx={styles.uiLinkTypography}>
-          <UITypography variant="steelGray">Політика конфіденційності</UITypography>
+          <UITypography>Політика конфіденційності</UITypography>
         </UILink>
 
         <UILink href="#" sx={styles.uiLinkTypography}>
-          <UITypography variant="steelGray">Політика використовування</UITypography>
+          <UITypography>Політика використовування</UITypography>
         </UILink>
 
         <UITypography sx={styles.uiCopyrightTypography}>
