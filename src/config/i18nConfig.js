@@ -23,6 +23,15 @@ const getResources = () => {
       throw new Error('Invalid localization resources format: expected object');
     }
 
+    if (!resources[mainLanguage]) {
+      throw new Error(`Main language '${mainLanguage}' not found in localization resources`);
+    }
+    if (!resources[fallbackLanguage]) {
+      throw new Error(
+        `Fallback language '${fallbackLanguage}' not found in localization resources`
+      );
+    }
+
     return resources;
   } catch (error) {
     throw new Error(`Failed to load localization resources: ${error.message}`);

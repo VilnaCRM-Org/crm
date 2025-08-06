@@ -11,9 +11,6 @@ const colorTheme: Theme = createTheme({
     error: {
       main: '#DC3939',
     },
-    white: {
-      main: '#FFF',
-    },
     darkPrimary: {
       main: '#1A1C1E',
     },

@@ -1,49 +1,36 @@
-export declare module '@mui/material/styles' {
-  interface TypographyVariants {
-    medium16: React.CSSProperties;
-    medium15: ReactDOM.CSSProperties;
-    medium14: React.CSSProperties;
-    regular16: React.CSSProperties;
-    bodyText18: React.CSSProperties;
-    bodyText16: React.CSSProperties;
-    bold22: React.CSSProperties;
-    demi18: React.CSSProperties;
-    button: React.CSSProperties;
-    mobileText: React.CSSProperties;
-  }
-  interface TypographyVariantsOptions {
-    medium16?: React.CSSProperties;
-    medium15?: React.CSSProperties;
-    medium14?: React.CSSProperties;
-    regular16?: React.CSSProperties;
-    bodyText18?: React.CSSProperties;
-    bodyText16?: React.CSSProperties;
-    bold22?: React.CSSProperties;
-    demi18?: React.CSSProperties;
-    button?: React.CSSProperties;
-    mobileText?: React.CSSProperties;
-  }
-}
-export declare module '@mui/material/Typography' {
-  interface TypographyPropsVariantOverrides {
-    medium16: true;
-    medium15: true;
-    medium14: true;
-    regular16: true;
-    bodyText18: true;
-    bodyText16: true;
-    bold22: true;
-    demi18: true;
-    button: true;
-    mobileText: true;
-  }
-}
+import { CSSProperties } from 'react';
 
 declare module '@mui/material/styles' {
+  interface TypographyVariants {
+    medium16: CSSProperties;
+    medium15: CSSProperties;
+    medium14: CSSProperties;
+    regular16: CSSProperties;
+    bodyText18: CSSProperties;
+    bodyText16: CSSProperties;
+    bold22: CSSProperties;
+    demi18: CSSProperties;
+    button: CSSProperties;
+    mobileText: CSSProperties;
+  }
+
+  interface TypographyVariantsOptions {
+    medium16?: CSSProperties;
+    medium15?: CSSProperties;
+    medium14?: CSSProperties;
+    regular16?: CSSProperties;
+    bodyText18?: CSSProperties;
+    bodyText16?: CSSProperties;
+    bold22?: CSSProperties;
+    demi18?: CSSProperties;
+    button?: CSSProperties;
+    mobileText?: CSSProperties;
+  }
+
   interface Palette {
     darkPrimary: Palette['primary'];
     darkSecondary: Palette['secondary'];
-    white: Palette['white'];
+    white: string;
     brandGray: Palette['brandGray'];
     grey200: Palette['grey200'];
     grey250: Palette['grey250'];
@@ -66,7 +53,7 @@ declare module '@mui/material/styles' {
   interface PaletteOptions {
     darkPrimary?: PaletteOptions['primary'];
     darkSecondary?: PaletteOptions['secondary'];
-    white?: PaletteOptions['white'];
+    white?: string;
     brandGray?: PaletteOptions['brandGray'];
     grey200?: PaletteOptions['grey200'];
     grey250?: PaletteOptions['grey250'];
@@ -84,5 +71,20 @@ declare module '@mui/material/styles' {
     notchMobileAfter?: PaletteOptions['notchMobileAfter'];
     textLinkHover?: PaletteOptions['textLinkHover'];
     textLinkActive?: PaletteOptions['textLinkActive'];
+  }
+}
+
+declare module '@mui/material/Typography' {
+  interface TypographyPropsVariantOverrides {
+    medium16: true;
+    medium15: true;
+    medium14: true;
+    regular16: true;
+    bodyText18: true;
+    bodyText16: true;
+    bold22: true;
+    demi18: true;
+    button: true;
+    mobileText: true;
   }
 }

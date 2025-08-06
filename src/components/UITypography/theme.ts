@@ -120,7 +120,7 @@ const theme: Theme = createTheme({
       fontWeight: '600',
       fontSize: '1.125rem',
       lineHeight: 'normal',
-      color: colorTheme.palette.white.main,
+      color: 'white',
       fontFamily: 'Golos, sans-serif',
     },
     mobileText: {

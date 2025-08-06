@@ -34,7 +34,9 @@ export default function FormField<T extends FieldValues>({
 
   return (
     <Grid container flexDirection="column" sx={Styles.formFieldWrapper}>
-      <UITypography sx={Styles.formFieldLabel}>{label}</UITypography>
+      <UITypography sx={Styles.formFieldLabel} component="label" htmlFor={name}>
+        {label}
+      </UITypography>
       <UIFormTextField
         control={control}
         rules={rules}

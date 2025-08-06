@@ -43,7 +43,7 @@ export default function UIForm<T extends FieldValues>({
   showTitle = true,
   showSubtitle = true,
 }: UIFormProps<T>): JSX.Element {
-  const methods = useForm<T>({ defaultValues, ...formOptions });
+  const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
 
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading

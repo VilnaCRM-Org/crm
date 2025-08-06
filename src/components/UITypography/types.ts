@@ -1,6 +1,6 @@
 import { SxProps, Theme } from '@mui/material';
 
-export interface UiTypographyProps {
+type BaseTypographyProps = {
   sx?: SxProps<Theme>;
   variant?:
     | 'h1'
@@ -20,20 +20,22 @@ export interface UiTypographyProps {
     | 'button'
     | 'mobileText';
   children: React.ReactNode;
-  component?:
-    | 'section'
-    | 'p'
-    | 'div'
-    | 'span'
-    | 'a'
-    | 'h1'
-    | 'h2'
-    | 'h3'
-    | 'h4'
-    | 'h5'
-    | 'h6'
-    | 'label';
   id?: string;
   role?: React.AriaRole;
-  htmlFor?: string;
-}
+};
+
+type LabelTypographyProps = {
+  component: 'label';
+  htmlFor: string;
+};
+
+type NonLabelTypographyProps = {
+  component?: Exclude<
+    'section' | 'p' | 'div' | 'span' | 'a' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'label',
+    'label'
+  >;
+  htmlFor?: never;
+};
+
+export type UiTypographyProps = BaseTypographyProps &
+  (LabelTypographyProps | NonLabelTypographyProps);

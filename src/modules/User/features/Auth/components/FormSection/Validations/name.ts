@@ -12,11 +12,11 @@ const FULL_NAME_PATTERN = `${SINGLE_NAME_PATTERN}(?:${NAME_SEPARATORS}${SINGLE_N
 
 type ValidationMessageKey = 'formatError' | 'lettersOnlyError' | 'required';
 
-export const validationMessages: Record<ValidationMessageKey, string> = {
+export const getValidationMessages = (): Record<ValidationMessageKey, string> => ({
   formatError: t('sign_up.form.name_input.full_name_format_error'),
   lettersOnlyError: t('sign_up.form.name_input.special_characters_error'),
   required: t('sign_up.form.name_input.required'),
-};
+});
 
 type ValidationFunction = (value: string) => boolean;
 type ValidationKeys = 'isLettersOnly' | 'isFormatted' | 'isEmpty';
@@ -30,18 +30,21 @@ export const validators: Record<ValidationKeys, ValidationFunction> = {
   isEmpty: (value) => value.trim().length === 0,
 };
 const validateFullName: Validate<string, RegisterUserDto> = (fullName) => {
-  if (validators.isEmpty(fullName || '')) {
-    return validationMessages.required;
+  const input = fullName || '';
+  const messages = getValidationMessages();
+
+  if (validators.isEmpty(input)) {
+    return messages.required;
   }
 
-  const trimmed = fullName.trim();
+  const trimmed = input.trim();
 
   if (!validators.isLettersOnly(trimmed)) {
-    return validationMessages.lettersOnlyError;
+    return messages.lettersOnlyError;
   }
 
   if (!validators.isFormatted(trimmed)) {
-    return validationMessages.formatError;
+    return messages.formatError;
   }
 
   return true;
