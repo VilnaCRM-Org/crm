@@ -26,7 +26,6 @@ export default function PasswordField<T extends FieldValues & { password: string
 
   const passwordName = 'password' as Path<T>;
   const passwordDefaultValue = '' as PathValue<T, Path<T>>;
-
   return (
     <FormField<T>
       rules={{
@@ -36,7 +35,7 @@ export default function PasswordField<T extends FieldValues & { password: string
       defaultValue={passwordDefaultValue}
       name={passwordName}
       type={showPassword ? 'text' : 'password'}
-      placeholder={t('sign_up.form.password_input.placholder')}
+      placeholder={t('sign_up.form.password_input.placeholder')}
       label={mode === 'register' ? t('sign_up.form.password_input.label') : 'Пароль'}
       autoComplete="off"
       inputProps={{

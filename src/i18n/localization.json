@@ -1,6 +1,9 @@
 {
   "en": {
     "translation": {
+      "buttons": {
+        "back_to_main": "Go to homepage"
+      },
       "sign_up": {
         "title": "Registration",
         "subtitle": "Create an account in VilnaCRM",
@@ -66,6 +69,9 @@
   },
   "uk": {
     "translation": {
+      "buttons": {
+        "back_to_main": "На головну сторінку"
+      },
       "sign_up": {
         "title": "Реєстрація",
         "subtitle": "Створіть аккаунт у VilnaCRM",

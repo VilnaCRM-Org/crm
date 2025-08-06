@@ -14,8 +14,16 @@ const getBackToMainStyles = (theme: Theme): Record<string, SxProps<Theme>> => ({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   icon: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+
     color: theme.palette.grey[50],
+    width: '24px',
+    height: '24px',
+    outline: '1px solid teal',
   },
 
   backText: {

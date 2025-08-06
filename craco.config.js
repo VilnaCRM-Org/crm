@@ -14,6 +14,11 @@ module.exports = function cracoConfig() {
         rules: [
           {
             test: /\.svg$/,
+            use: ['@svgr/webpack'],
+          },
+
+          {
+            test: /\.svg$/,
             issuer: /\.[jt]sx?$/,
             use: ['@svgr/webpack'],
           },
