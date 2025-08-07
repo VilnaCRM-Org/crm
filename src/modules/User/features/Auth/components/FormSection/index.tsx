@@ -20,6 +20,7 @@ export default function FormSection(): JSX.Element {
     <Box component="section" sx={styles.formSection}>
       <Box sx={styles.formWrapper}>
         {mode === 'login' ? <LoginForm /> : <RegistrationForm />}
+
         <AuthProviderButtons />
       </Box>
 

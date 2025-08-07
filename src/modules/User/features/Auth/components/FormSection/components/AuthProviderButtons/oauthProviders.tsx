@@ -15,17 +15,18 @@ const oauthProviders = [
     onClick: (): void => signInWithProvider('google'),
     ariaLabel: 'Sign in with Google',
   },
-  {
-    label: 'Facebook',
-    component: <Facebook />,
-    onClick: (): void => signInWithProvider('facebook'),
-    ariaLabel: 'Sign in with Facebook',
-  },
+
   {
     label: 'GitHub',
     component: <Github />,
     onClick: (): void => signInWithProvider('github'),
     ariaLabel: 'Sign in with GitHub',
+  },
+  {
+    label: 'Facebook',
+    component: <Facebook />,
+    onClick: (): void => signInWithProvider('facebook'),
+    ariaLabel: 'Sign in with Facebook',
   },
   {
     label: 'Twitter',

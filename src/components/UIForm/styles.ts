@@ -8,7 +8,7 @@ export default {
     letterSpacing: 0,
     lineHeight: '1',
 
-    marginBottom: '0.375rem',
+    marginBottom: '0.4375rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1.875rem',
@@ -25,7 +25,7 @@ export default {
     lineHeight: '1.67',
     letterSpacing: 0,
 
-    marginBottom: '1rem',
+    marginBottom: '1.1rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1rem',

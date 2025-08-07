@@ -1,4 +1,5 @@
 import UIButton from '@/components/UIButton';
+import UiTypography from '@/components/UITypography';
 import { Box, Divider, ListItem, List } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +14,9 @@ export default function AuthProviderButtons(): JSX.Element {
   return (
     <ThemeProvider theme={Theme}>
       <Box sx={styles.thirdPartyWrapper}>
-        <Divider>{t('sign_up.socials_main_heading')}</Divider>
+        <Divider role="presentation">
+          <UiTypography sx={styles.dividerText}>{t('sign_up.socials_main_heading')}</UiTypography>
+        </Divider>
 
         <List sx={styles.servicesList}>
           {oauthProviders.map(({ label, component, ariaLabel, onClick }) => (

@@ -23,13 +23,10 @@ const getBackToMainStyles = (theme: Theme): Record<string, SxProps<Theme>> => ({
     color: theme.palette.grey[50],
     width: '24px',
     height: '24px',
-    outline: '1px solid teal',
   },
 
   backText: {
     marginLeft: theme.spacing(1),
-    paddingTop: theme.spacing(0.75),
-    paddingBottom: theme.spacing(0.75),
 
     fontFamily: theme.typography.fontFamily,
     fontWeight: 500,

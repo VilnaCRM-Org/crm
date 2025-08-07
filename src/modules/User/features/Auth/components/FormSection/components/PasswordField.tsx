@@ -1,4 +1,4 @@
-import RemoveRedEyeOutlinedIcon from '@mui/icons-material/RemoveRedEyeOutlined';
+import { ReactComponent as EyeIcon } from '@/assets/icons/form/eye.svg';
 import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -11,6 +11,7 @@ import { validatePassword } from '@/modules/User/features/Auth/components/FormSe
 import { AuthMode } from '../types';
 
 import FormField from './FormField';
+import styles from './styles';
 
 type PasswordFieldProps = {
   mode: AuthMode;
@@ -47,7 +48,11 @@ export default function PasswordField<T extends FieldValues & { password: string
               edge="end"
               size="small"
             >
-              {showPassword ? <VisibilityOffOutlinedIcon /> : <RemoveRedEyeOutlinedIcon />}
+              {showPassword ? (
+                <VisibilityOffOutlinedIcon sx={styles.passwordIcon} />
+              ) : (
+                <EyeIcon style={styles.passwordIcon} />
+              )}
             </IconButton>
           </InputAdornment>
         ),

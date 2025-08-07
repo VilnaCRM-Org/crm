@@ -6,7 +6,9 @@ export default {
     paddingTop: '0.5rem',
     paddingX: '0.375rem',
     paddingBottom: '1.5rem',
+
     fontFamily: 'Golos',
+    backgroundColor: '#FBFBFB',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       paddingTop: '8.4375rem',
@@ -20,7 +22,7 @@ export default {
   formWrapper: {
     position: 'relative',
     width: '100%',
-    padding: '1.5rem 1.5rem 1.375rem',
+    padding: '1.6rem 1.5rem 1.375rem',
     margin: '0 auto',
 
     backgroundColor: paletteColors.background.default,
@@ -28,7 +30,7 @@ export default {
     borderRadius: '16px',
     boxShadow: `0px 7px 40px 0px ${paletteColors.shadow.subtle}`,
 
-    maxWidth: '22.7rem',
+    maxWidth: '22.6875rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       padding: '2rem 2.5rem 2.875rem',
@@ -43,7 +45,8 @@ export default {
 
   formSwitcherButton: {
     display: 'block',
-    margin: '1.4375rem auto 0',
+    padding: 0,
+    margin: '1.5625rem auto 0',
 
     fontWeight: 500,
     fontSize: '0.9375rem',

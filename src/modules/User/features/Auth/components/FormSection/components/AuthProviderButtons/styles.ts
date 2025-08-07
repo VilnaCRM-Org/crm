@@ -3,11 +3,22 @@ import { customColors } from '@/styles/colors';
 
 export default {
   thirdPartyWrapper: {
-    paddingTop: '1.0625rem',
+    marginTop: '1.0625rem',
 
     [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      paddingTop: '1.5rem',
+      marginTop: '1.08rem',
     },
+  },
+
+  dividerText: {
+    fontFamily: 'Inter, sans-serif',
+    fontWeight: 500,
+    fontStyle: 'normal',
+    fontSize: '0.875rem',
+    lineHeight: '1.125rem',
+    letterSpacing: 0,
+    textTransform: 'uppercase',
+    color: customColors.decorative.divider,
   },
 
   servicesList: {
@@ -33,6 +44,9 @@ export default {
     alignItems: 'center',
 
     width: '100%',
+    maxWidth: '9.5625',
+
+    borderRadius: '0.75rem',
 
     [`@media (max-width:374px)`]: {
       '&:not(:last-child)': {
@@ -42,7 +56,7 @@ export default {
 
     [`@media (min-width:375px)`]: {
       maxWidth: '9.625rem',
-      marginTop: '1rem',
+      marginTop: '0.5rem',
 
       '&:nth-of-type(2n+1)': {
         marginRight: '0.3rem',
@@ -67,12 +81,6 @@ export default {
   },
   serviceItemButton: {
     width: '100%',
-    margin: 0,
-    padding: 0,
-
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      padding: '1.0625rem 2.5rem',
-    },
 
     '&:hover, &:focus': {
       borderColor: customColors.brand.blue,

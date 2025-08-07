@@ -13,6 +13,7 @@ export default function Authentication(): JSX.Element {
       <main>
         <FormSection />
       </main>
+
       <UIFooter />
     </ThemeProvider>
   );

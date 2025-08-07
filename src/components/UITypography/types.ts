@@ -30,10 +30,7 @@ type LabelTypographyProps = {
 };
 
 type NonLabelTypographyProps = {
-  component?: Exclude<
-    'section' | 'p' | 'div' | 'span' | 'a' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'label',
-    'label'
-  >;
+  component?: 'section' | 'p' | 'div' | 'span' | 'a' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
   htmlFor?: never;
 };
 

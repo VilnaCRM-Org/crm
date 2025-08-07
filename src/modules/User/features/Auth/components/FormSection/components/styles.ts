@@ -52,4 +52,9 @@ export default {
       minWidth: '26.375rem',
     },
   },
+
+  passwordIcon: {
+    width: '20px',
+    height: '20px',
+  },
 };

@@ -34,8 +34,10 @@ export default {
   uiEmailLink: {
     display: 'block',
 
-    paddingTop: '0.9375rem',
-    paddingBottom: '1rem',
+    paddingTop: '1rem',
+    paddingBottom: '1.0625rem',
+    paddingRight: '5.5rem',
+    paddingLeft: '5.5rem',
 
     fontWeight: 600,
     fontFamily: 'Golos',
@@ -66,8 +68,6 @@ export default {
     paddingBottom: '1.125rem',
     marginTop: '0.25rem',
 
-    textAlign: 'center',
-
     borderRadius: '8px',
     backgroundColor: paletteColors.background.paper,
 
@@ -87,7 +87,7 @@ export default {
     fontSize: ' 0.94rem',
     lineHeight: '1.125rem',
 
-    paddingTop: '1rem',
+    paddingTop: '1.13rem',
     paddingBottom: '1.25rem',
     textAlign: 'center',
 
