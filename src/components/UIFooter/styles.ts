@@ -16,8 +16,8 @@ export default {
       width: '100%',
       maxHeight: '3.9375rem',
 
-      paddingTop: '0.538rem',
-      paddingBottom: '0.726rem',
+      paddingTop: '0.475625rem',
+      paddingBottom: '0.725625rem',
     },
   },
 

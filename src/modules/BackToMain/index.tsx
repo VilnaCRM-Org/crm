@@ -21,6 +21,7 @@ export default function BackToMain(): React.ReactElement {
           <Box sx={styles.icon}>
             <img src={BackArrow} alt="Back arrow icon" />
           </Box>
+
           <Typography sx={styles.backText}>{t('buttons.back_to_main')}</Typography>
         </UIButton>
       </UIContainer>

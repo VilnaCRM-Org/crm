@@ -1,6 +1,6 @@
 import UIButton from '@/components/UIButton';
 import UiTypography from '@/components/UITypography';
-import { Box, Divider, ListItem, List } from '@mui/material';
+import { Box, Divider, ListItem, List, SvgIcon } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
@@ -10,7 +10,6 @@ import Theme from './Theme';
 
 export default function AuthProviderButtons(): JSX.Element {
   const { t } = useTranslation();
-
   return (
     <ThemeProvider theme={Theme}>
       <Box sx={styles.thirdPartyWrapper}>
@@ -19,7 +18,7 @@ export default function AuthProviderButtons(): JSX.Element {
         </Divider>
 
         <List sx={styles.servicesList}>
-          {oauthProviders.map(({ label, component, ariaLabel, onClick }) => (
+          {oauthProviders.map(({ label, SvgComponent, ariaLabel, onClick }) => (
             <ListItem disablePadding key={label} sx={styles.servicesItem}>
               <UIButton
                 variant="outlined"
@@ -28,7 +27,11 @@ export default function AuthProviderButtons(): JSX.Element {
                 aria-label={ariaLabel}
                 type="button"
               >
-                {component}
+                <SvgIcon
+                  component={SvgComponent}
+                  inheritViewBox
+                  sx={styles.serviceItemButtonIcon}
+                />
               </UIButton>
             </ListItem>
           ))}

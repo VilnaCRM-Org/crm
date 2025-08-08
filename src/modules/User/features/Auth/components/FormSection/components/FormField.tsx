@@ -5,7 +5,7 @@ import type { InputProps } from '@mui/material/Input';
 import { InputHTMLAttributes } from 'react';
 import { useFormContext, FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
 
-import Styles from './styles';
+import styles from './styles';
 
 export interface FormFieldProps<T extends FieldValues = FieldValues> {
   rules: RegisterOptions<T, Path<T>>;
@@ -33,8 +33,8 @@ export default function FormField<T extends FieldValues>({
   const { control } = useFormContext<T>();
 
   return (
-    <Grid container flexDirection="column" sx={Styles.formFieldWrapper}>
-      <UITypography sx={Styles.formFieldLabel} component="label" htmlFor={name}>
+    <Grid container flexDirection="column" sx={styles.formFieldWrapper}>
+      <UITypography sx={styles.formFieldLabel} component="label" htmlFor={name}>
         {label}
       </UITypography>
       <UIFormTextField
@@ -45,7 +45,7 @@ export default function FormField<T extends FieldValues>({
         placeholder={placeholder}
         type={type}
         autoComplete={autoComplete}
-        sx={Styles.formFieldInput}
+        sx={styles.formFieldInput}
         InputProps={inputProps}
       />
     </Grid>

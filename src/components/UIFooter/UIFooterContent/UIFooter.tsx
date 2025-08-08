@@ -1,11 +1,11 @@
-import { Box, Grid } from '@mui/material';
+import { Box, Grid, SvgIcon } from '@mui/material';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UILink from '@/components/UILink';
 import UITypography from '@/components/UITypography';
 
-import VilnaLogo from '../../../assets/icons/logo/logo-mobile.svg';
+import { ReactComponent as VilnaLogo } from '../../../assets/icons/logo/vilna-logo.svg';
 import SocialMedia from '../SocialMedia/socialMedia';
 
 import styles from './styles';
@@ -16,7 +16,7 @@ export default function UIFooterContent(): React.ReactElement {
   return (
     <Box sx={styles.footerDesktopWrapper}>
       <Box sx={styles.footerBranding}>
-        <img src={VilnaLogo} width={131} height={44} alt="logo" />
+        <SvgIcon component={VilnaLogo} inheritViewBox sx={styles.footerLogo} />
 
         <SocialMedia />
       </Box>

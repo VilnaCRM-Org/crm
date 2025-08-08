@@ -13,6 +13,11 @@ export default {
       [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
         marginBottom: '1rem',
       },
+
+      [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+        //  maxWidth:'33.125rem',
+        marginBottom: '1.3125rem',
+      },
     },
   },
 
@@ -37,6 +42,11 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       fontSize: '0.875rem',
     },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      fontSize: '1rem',
+      lineHeight: '1.125rem',
+    },
   },
 
   formFieldInput: {
@@ -50,11 +60,15 @@ export default {
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       minWidth: '26.375rem',
+      // maxWidth:'33.125rem'
     },
   },
 
+  passwordButton: {
+    marginRight: 0,
+  },
   passwordIcon: {
-    width: '20px',
-    height: '20px',
+    width: '24px',
+    height: '24px',
   },
 };

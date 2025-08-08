@@ -1,11 +1,11 @@
-import { ReactComponent as EyeIcon } from '@/assets/icons/form/eye.svg';
-import VisibilityOffOutlinedIcon from '@mui/icons-material/VisibilityOffOutlined';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import { useState } from 'react';
 import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { ReactComponent as EyeIconOff } from '@/modules/User/features/Auth/assets/eye-off.svg';
+import { ReactComponent as EyeIcon } from '@/modules/User/features/Auth/assets/eye.svg';
 import { validatePassword } from '@/modules/User/features/Auth/components/FormSection/Validations';
 
 import { AuthMode } from '../types';
@@ -47,9 +47,10 @@ export default function PasswordField<T extends FieldValues & { password: string
               onClick={handleClickShowPassword}
               edge="end"
               size="small"
+              sx={styles.passwordButton}
             >
               {showPassword ? (
-                <VisibilityOffOutlinedIcon sx={styles.passwordIcon} />
+                <EyeIconOff style={styles.passwordIcon} />
               ) : (
                 <EyeIcon style={styles.passwordIcon} />
               )}

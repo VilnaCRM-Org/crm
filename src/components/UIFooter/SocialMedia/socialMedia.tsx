@@ -19,6 +19,7 @@ export default function SocialMedia(): React.ReactElement {
           sx={styles.uiLinkItem}
           aria-label={t(link.ariaLabel)}
           target="_blank"
+          rel="noopener noreferrer"
         >
           <img src={link.icon} alt={t(link.alt)} style={styles.uiSvgItem} />
         </UILink>

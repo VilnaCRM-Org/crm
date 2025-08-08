@@ -16,6 +16,11 @@ export default {
 
       marginBottom: '0.74rem',
     },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+      fontSize: '1.8125rem',
+      marginBottom: '0.9375rem',
+    },
   },
 
   formSubtitle: {
@@ -67,10 +72,12 @@ export default {
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       minWidth: '26.375rem',
-      height: '3.875rem',
-      paddingTop: '1.25rem',
-      paddingBottom: '1.25rem',
-      marginTop: '1.25rem',
+      maxHeight: '4.375rem',
+
+      paddingTop: '1.5rem',
+      paddingBottom: '1.5rem',
+
+      marginTop: '2.125rem',
     },
   },
   loader: {

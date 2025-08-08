@@ -4,7 +4,7 @@ const containerPadding = {
   xs: '0.9375rem', // 15px
   md: '1.625rem', // 26px
   lg: '2rem', // 32px
-  xl: '7.75rem',
+  xl: '7.75rem', // 124
 };
 
 export default {

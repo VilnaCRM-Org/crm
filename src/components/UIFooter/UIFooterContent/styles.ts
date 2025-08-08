@@ -22,12 +22,22 @@ export default {
       marginBottom: '15px',
     },
   },
+  footerLogo: {
+    width: '8.125rem',
+    height: '2.75rem',
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      width: '8.6875rem',
+      height: '2.92375rem',
+    },
+  },
 
   uiInfoWrapper: {
     textAlign: 'center',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       display: 'flex',
+      alignItems: 'center',
     },
   },
 
@@ -72,6 +82,7 @@ export default {
     backgroundColor: paletteColors.background.paper,
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      maxHeight: '2.125rem',
       padding: '0.5rem 1rem',
       marginTop: '0rem',
 

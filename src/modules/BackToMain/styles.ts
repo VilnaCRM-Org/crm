@@ -1,6 +1,8 @@
 import { SxProps } from '@mui/material';
 import type { Theme } from '@mui/material/styles';
 
+import breakpointsTheme from '@/components/UIBreakpoints';
+
 const getBackToMainStyles = (theme: Theme): Record<string, SxProps<Theme>> => ({
   section: {
     paddingTop: theme.spacing(2),
@@ -35,6 +37,11 @@ const getBackToMainStyles = (theme: Theme): Record<string, SxProps<Theme>> => ({
     textTransform: 'none',
 
     color: theme.palette.grey[50],
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      lineHeight: '1.125rem',
+      letterSpacing: 0,
+    },
   },
 });
 export default getBackToMainStyles;

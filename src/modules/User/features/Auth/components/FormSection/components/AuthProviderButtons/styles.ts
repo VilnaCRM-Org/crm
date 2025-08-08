@@ -8,6 +8,9 @@ export default {
     [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginTop: '1.08rem',
     },
+    [`@media (max-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      marginTop: '1.5rem',
+    },
   },
 
   dividerText: {
@@ -19,6 +22,11 @@ export default {
     letterSpacing: 0,
     textTransform: 'uppercase',
     color: customColors.decorative.divider,
+
+    [`@media (max-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      fontWeight: 400,
+      fontSize: '1.125rem',
+    },
   },
 
   servicesList: {
@@ -68,22 +76,30 @@ export default {
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      maxWidth: '8.25rem',
+      maxWidth: '8.0625rem',
       margin: 0,
 
       '&:nth-of-type(2n+1)': {
         margin: 0,
       },
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      maxWidth: '6.25rem',
-    },
   },
   serviceItemButton: {
     width: '100%',
+    height: '100%',
 
     '&:hover, &:focus': {
       borderColor: customColors.brand.blue,
+    },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      maxHeight: '75px',
+    },
+  },
+  serviceItemButtonIcon: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      width: '2rem',
+      height: '2rem',
     },
   },
 };

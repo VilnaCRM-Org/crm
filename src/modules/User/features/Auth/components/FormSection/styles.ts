@@ -11,12 +11,8 @@ export default {
     backgroundColor: '#FBFBFB',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      paddingTop: '8.4375rem',
-      paddingBottom: '22.8125rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      paddingTop: '5.25rem',
-      paddingBottom: '5.25rem',
+      paddingTop: '8.5625rem',
+      paddingBottom: '17.0625rem',
     },
   },
   formWrapper: {
@@ -38,8 +34,12 @@ export default {
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      padding: '2rem 2.5rem 2.0625rem',
-      maxWidth: '31.375rem',
+      maxWidth: '39.5rem',
+
+      paddingTop: '2.5rem ',
+      paddingLeft: '2.625rem',
+      paddingRight: '2.625rem',
+      paddingBottom: '2.1875rem',
     },
   },
 
@@ -48,6 +48,7 @@ export default {
     padding: 0,
     margin: '1.5625rem auto 0',
 
+    fontFamily: 'Golos',
     fontWeight: 500,
     fontSize: '0.9375rem',
     fontStyle: 'normal',
@@ -61,14 +62,12 @@ export default {
 
       fontWeight: 600,
       fontSize: '1.125rem',
-      lineHeight: 1,
+      lineHeight: '1rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      margin: '1.265rem auto 0',
+      margin: '2.75rem auto 0',
 
-      fontWeight: 500,
-      fontSize: '0.9375rem',
-      lineHeight: 1.2,
+      fontSize: '1.125rem',
     },
   },
 };
