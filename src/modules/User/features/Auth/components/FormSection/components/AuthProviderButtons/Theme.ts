@@ -7,7 +7,9 @@ export default createTheme({
       styleOverrides: {
         root: {
           '& .MuiDivider-wrapper': {
-            padding: '0rem 1.375rem',
+            [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+              padding: '0 1.375rem',
+            },
           },
           [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
             marginBottom: '0.875rem',

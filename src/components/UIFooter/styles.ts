@@ -19,6 +19,10 @@ export default {
       paddingTop: '0.475625rem',
       paddingBottom: '0.725625rem',
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      paddingTop: '0.5625rem',
+      paddingBottom: '0.43375rem',
+    },
   },
 
   uiMobile: {

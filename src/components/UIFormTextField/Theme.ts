@@ -7,7 +7,6 @@ export default createTheme({
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
-          paddingRight: '1.25rem',
           borderRadius: '8px',
 
           '&:hover .MuiOutlinedInput-notchedOutline': {
@@ -53,7 +52,15 @@ export default createTheme({
           borderWidth: '1px',
 
           '&::placeholder': {
+            fontFamily: 'Inter',
             color: '#969B9D',
+
+            [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+              fontWeight: 400,
+              fontSize: '1rem',
+              lineHeight: 1.125,
+              letterSpacing: 0,
+            },
           },
 
           [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
@@ -74,6 +81,18 @@ export default createTheme({
 
             fontSize: '1.125rem',
             lineHeight: '1.125rem',
+          },
+          [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+            maxHeight: '4rem',
+            paddingTop: '1.4375rem',
+            paddingBottom: '1.4375rem',
+            paddingLeft: '1.6875rem',
+
+            fontFamily: 'Inter',
+            fontWeight: 400,
+            fontSize: '1rem',
+            lineHeight: 1.125,
+            letterSpacing: 0,
           },
         },
       },

@@ -9,6 +9,11 @@ const getBackToMainStyles = (theme: Theme): Record<string, SxProps<Theme>> => ({
     paddingBottom: theme.spacing(2),
 
     backgroundColor: theme.palette.background.default,
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      paddingTop: '1.25rem',
+      paddingBottom: '1.25rem',
+    },
   },
   backButton: {
     padding: 0,

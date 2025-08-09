@@ -30,6 +30,10 @@ export default {
       width: '8.6875rem',
       height: '2.92375rem',
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      width: '9rem',
+      height: '3rem',
+    },
   },
 
   uiInfoWrapper: {

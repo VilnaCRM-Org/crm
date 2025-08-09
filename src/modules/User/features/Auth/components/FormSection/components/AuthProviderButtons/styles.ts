@@ -11,6 +11,9 @@ export default {
     [`@media (max-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginTop: '1.5rem',
     },
+    [`@media (max-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      marginTop: '0.8125rem',
+    },
   },
 
   dividerText: {
@@ -26,6 +29,11 @@ export default {
     [`@media (max-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       fontWeight: 400,
       fontSize: '1.125rem',
+    },
+    [`@media (max-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      fontWeight: 500,
+      fontSize: '0.875rem',
+      lineHeight: 1.2857,
     },
   },
 
@@ -54,6 +62,7 @@ export default {
     width: '100%',
     maxWidth: '9.5625',
 
+    border: '1px solid  #E1E7EA',
     borderRadius: '0.75rem',
 
     [`@media (max-width:374px)`]: {
@@ -83,6 +92,9 @@ export default {
         margin: 0,
       },
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      maxWidth: '100px',
+    },
   },
   serviceItemButton: {
     width: '100%',
@@ -95,11 +107,19 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       maxHeight: '75px',
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      padding: '18px 39px',
+    },
   },
   serviceItemButtonIcon: {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       width: '2rem',
       height: '2rem',
+    },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      width: '1.375rem',
+      height: '1.375rem',
     },
   },
 };

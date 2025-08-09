@@ -14,12 +14,17 @@ export default {
       paddingTop: '8.5625rem',
       paddingBottom: '17.0625rem',
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      paddingTop: '3.4375rem',
+      paddingBottom: '3.4375rem',
+    },
   },
   formWrapper: {
     position: 'relative',
     width: '100%',
     padding: '1.6rem 1.5rem 1.375rem',
     margin: '0 auto',
+    outline: '1px solid red',
 
     backgroundColor: paletteColors.background.default,
     border: `1px solid ${paletteColors.border.default}`,
@@ -40,6 +45,10 @@ export default {
       paddingLeft: '2.625rem',
       paddingRight: '2.625rem',
       paddingBottom: '2.1875rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      maxWidth: '31.375rem',
+      padding: '2.1rem 2.4375rem 1.9375rem',
     },
   },
 
@@ -68,6 +77,13 @@ export default {
       margin: '2.75rem auto 0',
 
       fontSize: '1.125rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      margin: '1.5rem auto 0',
+
+      fontWeight: 500,
+      fontSize: '0.9375rem',
+      lineHeight: 1.2,
     },
   },
 };

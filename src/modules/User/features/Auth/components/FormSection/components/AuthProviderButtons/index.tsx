@@ -21,7 +21,6 @@ export default function AuthProviderButtons(): JSX.Element {
           {oauthProviders.map(({ label, SvgComponent, ariaLabel, onClick }) => (
             <ListItem disablePadding key={label} sx={styles.servicesItem}>
               <UIButton
-                variant="outlined"
                 sx={styles.serviceItemButton}
                 onClick={onClick}
                 aria-label={ariaLabel}

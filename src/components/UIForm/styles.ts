@@ -21,6 +21,15 @@ export default {
       fontSize: '1.8125rem',
       marginBottom: '0.9375rem',
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginBottom: '0.75rem',
+
+      fontWeight: 600,
+      fontSize: '1.875rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      marginBottom: '1rem',
+    },
   },
 
   formSubtitle: {
@@ -78,6 +87,17 @@ export default {
       paddingBottom: '1.5rem',
 
       marginTop: '2.125rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      maxHeight: '3.875rem',
+      paddingTop: '1.25rem',
+      paddingBottom: '1.25rem',
+      marginTop: '1.1875rem',
+
+      fontFamily: 'Golos',
+      fontWeight: 600,
+      fontSize: '1.125rem',
+      lineHeight: 1,
     },
   },
   loader: {
