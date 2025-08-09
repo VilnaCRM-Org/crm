@@ -14,12 +14,19 @@ export default {
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       width: '100%',
-      maxHeight: '3.9375rem',
 
       paddingTop: '0.475625rem',
       paddingBottom: '0.725625rem',
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      width: '100%',
+      maxHeight: '4.149375rem',
+      
+      paddingTop: '0.538125rem',
+      paddingBottom: '0.725625rem',
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      maxHeight: '4.125rem',
       paddingTop: '0.5625rem',
       paddingBottom: '0.43375rem',
     },

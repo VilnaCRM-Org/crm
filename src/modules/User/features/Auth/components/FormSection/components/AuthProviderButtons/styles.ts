@@ -8,10 +8,10 @@ export default {
     [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginTop: '1.08rem',
     },
-    [`@media (max-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginTop: '1.5rem',
     },
-    [`@media (max-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       marginTop: '0.8125rem',
     },
   },
@@ -26,13 +26,14 @@ export default {
     textTransform: 'uppercase',
     color: customColors.decorative.divider,
 
-    [`@media (max-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       fontWeight: 400,
-      fontSize: '1.125rem',
+      fontSize: '1.0625rem',
     },
-    [`@media (max-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       fontWeight: 500,
-      fontSize: '0.875rem',
+      
+      fontSize: '1.0625rem',
       lineHeight: 1.2857,
     },
   },
@@ -92,8 +93,9 @@ export default {
         margin: 0,
       },
     },
+
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      maxWidth: '100px',
+      maxWidth: '6.25rem',
     },
   },
   serviceItemButton: {
@@ -107,6 +109,10 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       maxHeight: '75px',
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      padding: '1.375rem 3rem 1.25rem',
+    
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       padding: '18px 39px',
     },
@@ -116,7 +122,6 @@ export default {
       width: '2rem',
       height: '2rem',
     },
-
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       width: '1.375rem',
       height: '1.375rem',

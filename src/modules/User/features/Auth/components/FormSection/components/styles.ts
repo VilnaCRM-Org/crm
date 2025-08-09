@@ -11,11 +11,11 @@ export default {
       },
 
       [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-        marginBottom: '1rem',
+        marginBottom: '1.4375rem',
       },
 
       [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-        marginBottom: '1.3125rem',
+        marginBottom: '1.125rem',
       },
       [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
         marginBottom: '1rem',

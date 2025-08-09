@@ -11,10 +11,14 @@ export default {
     backgroundColor: '#FBFBFB',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      paddingTop: '8.5625rem',
-      paddingBottom: '17.0625rem',
+      paddingTop: '8.4375rem',
+      paddingBottom: '17.1875rem',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      paddingBottom: '17.375rem',
+    },
+    
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       paddingTop: '3.4375rem',
       paddingBottom: '3.4375rem',
     },
@@ -24,7 +28,6 @@ export default {
     width: '100%',
     padding: '1.6rem 1.5rem 1.375rem',
     margin: '0 auto',
-    outline: '1px solid red',
 
     backgroundColor: paletteColors.background.default,
     border: `1px solid ${paletteColors.border.default}`,
@@ -34,18 +37,14 @@ export default {
     maxWidth: '22.6875rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      padding: '2rem 2.5rem 2.875rem',
-      maxWidth: '39.5rem',
-    },
-
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       maxWidth: '39.5rem',
 
-      paddingTop: '2.5rem ',
-      paddingLeft: '2.625rem',
-      paddingRight: '2.625rem',
+      paddingTop: '2.625rem ',
+      paddingLeft: '2.8125rem',
+      paddingRight: '2.8125rem',
       paddingBottom: '2.1875rem',
     },
+
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       maxWidth: '31.375rem',
       padding: '2.1rem 2.4375rem 1.9375rem',

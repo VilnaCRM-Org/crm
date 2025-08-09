@@ -22,7 +22,7 @@ export default {
       marginBottom: '0.9375rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      marginBottom: '0.75rem',
+      marginBottom: '0.9375rem',
 
       fontWeight: 600,
       fontSize: '1.875rem',
@@ -86,7 +86,7 @@ export default {
       paddingTop: '1.5rem',
       paddingBottom: '1.5rem',
 
-      marginTop: '2.125rem',
+      marginTop: '2.0625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       maxHeight: '3.875rem',
