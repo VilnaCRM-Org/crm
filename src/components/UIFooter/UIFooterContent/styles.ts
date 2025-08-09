@@ -94,9 +94,8 @@ export default {
         marginLeft: '0.5rem',
       },
     },
-     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       padding: '0.5rem 1rem',
-
     },
   },
 

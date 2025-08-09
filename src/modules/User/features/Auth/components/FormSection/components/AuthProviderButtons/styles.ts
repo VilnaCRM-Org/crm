@@ -32,7 +32,7 @@ export default {
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       fontWeight: 500,
-      
+
       fontSize: '1.0625rem',
       lineHeight: 1.2857,
     },
@@ -111,7 +111,6 @@ export default {
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       padding: '1.375rem 3rem 1.25rem',
-    
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       padding: '18px 39px',

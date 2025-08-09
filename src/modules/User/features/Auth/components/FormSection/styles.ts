@@ -14,10 +14,10 @@ export default {
       paddingTop: '8.4375rem',
       paddingBottom: '17.1875rem',
     },
-     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       paddingBottom: '17.375rem',
     },
-    
+
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       paddingTop: '3.4375rem',
       paddingBottom: '3.4375rem',

@@ -21,7 +21,7 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       width: '100%',
       maxHeight: '4.149375rem',
-      
+
       paddingTop: '0.538125rem',
       paddingBottom: '0.725625rem',
     },

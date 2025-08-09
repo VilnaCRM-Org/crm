@@ -76,9 +76,9 @@ export default createTheme({
           },
 
           [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-            paddingTop:'1.9375rem',
-            paddingLeft:'1.75rem',
-            paddingBottom:'1.875rem',
+            paddingTop: '1.9375rem',
+            paddingLeft: '1.75rem',
+            paddingBottom: '1.875rem',
 
             fontSize: '1.125rem',
             lineHeight: '1.125rem',
