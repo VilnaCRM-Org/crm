@@ -46,21 +46,7 @@
   },
   "footer": {
     "logo_alt": "Vilna logo",
-    "copyright": "Copyright © ТОВ “Vilna CRM”",
     "privacy": "Privacy policy",
-    "usage_policy": "Usage policy",
-    "vilna_email": "info@vilnacrm.com",
-    "aria_labels": {
-      "instagram": "Link to Instagram",
-      "github": "Link to GitHub",
-      "facebook": "Link to Facebook",
-      "linkedin": "Link to Linkedin"
-    },
-    "alt_images": {
-      "instagram": "Instagram Icon",
-      "github": "GitHub Icon",
-      "facebook": "Facebook Icon",
-      "linkedin": "Linkedin Icon"
-    }
+    "usage_policy": "Usage policy"
   }
 }

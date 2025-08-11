@@ -15,10 +15,16 @@ export default createTheme({
             marginBottom: '1.5rem',
           },
           [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-            marginBottom: '1.125rem',
+            marginBottom: ' 1.125rem',
+          },
+
+          [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+            marginBottom: '1.5rem',
           },
 
           '& .MuiDivider-wrapper': {
+            padding: '0 1.375rem',
+
             [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
               padding: '0 1.375rem',
             },

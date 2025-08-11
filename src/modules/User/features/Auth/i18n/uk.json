@@ -46,21 +46,7 @@
   },
   "footer": {
     "logo_alt": "Vilna логотип",
-    "copyright": "Copyright © ТОВ “Вільна СРМ”",
     "privacy": "Політика конфіденційності",
-    "usage_policy": "Політика використовування",
-    "vilna_email": "info@vilnacrm.com",
-    "aria_labels": {
-      "instagram": "Посилання на Instagram",
-      "github": "Посилання на GitHub",
-      "facebook": "Посилання на Facebook",
-      "linkedin": "Посилання на Linkedin"
-    },
-    "alt_images": {
-      "instagram": "Instagram Іконка",
-      "github": "GitHub Іконка",
-      "facebook": "Facebook Іконка",
-      "linkedin": "Linkedin Іконка"
-    }
+    "usage_policy": "Політика використовування"
   }
 }

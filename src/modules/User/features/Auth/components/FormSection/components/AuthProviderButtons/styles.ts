@@ -6,10 +6,10 @@ export default {
     marginTop: '1.0625rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginTop: '1.5rem',
+      marginTop: '1.5625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginTop: '0.8125rem',
+      marginTop: '0.8755rem',
     },
   },
 
@@ -29,9 +29,8 @@ export default {
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       fontWeight: 500,
-
-      fontSize: '1.0625rem',
-      lineHeight: 1.2857,
+      fontSize: '0.875rem',
+      lineHeight: '1.125rem',
     },
   },
 

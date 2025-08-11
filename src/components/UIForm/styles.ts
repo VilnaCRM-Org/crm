@@ -8,19 +8,8 @@ export default {
     letterSpacing: 0,
     lineHeight: '1',
 
-    marginBottom: '0.4375rem',
+    marginBottom: '0.5rem',
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
-      fontSize: '1.875rem',
-      fontWeight: '600',
-
-      marginBottom: '0.74rem',
-    },
-
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
-      fontSize: '1.8125rem',
-      marginBottom: '0.9375rem',
-    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginBottom: '0.9375rem',
 
@@ -28,7 +17,7 @@ export default {
       fontSize: '1.875rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginBottom: '1rem',
+      marginBottom: '0.9375rem',
     },
   },
 
@@ -39,12 +28,13 @@ export default {
     lineHeight: '1.67',
     letterSpacing: 0,
 
-    marginBottom: '1.1rem',
+    marginBottom: '1.0625rem',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1rem',
       lineHeight: '1.625',
-
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginBottom: '1.25rem',
     },
   },

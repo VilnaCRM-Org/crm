@@ -48,22 +48,8 @@
       },
       "footer": {
         "logo_alt": "Vilna logo",
-        "copyright": "Copyright © ТОВ “Vilna CRM”",
         "privacy": "Privacy policy",
-        "usage_policy": "Usage policy",
-        "vilna_email": "info@vilnacrm.com",
-        "aria_labels": {
-          "instagram": "Link to Instagram",
-          "github": "Link to GitHub",
-          "facebook": "Link to Facebook",
-          "linkedin": "Link to Linkedin"
-        },
-        "alt_images": {
-          "instagram": "Instagram Icon",
-          "github": "GitHub Icon",
-          "facebook": "Facebook Icon",
-          "linkedin": "Linkedin Icon"
-        }
+        "usage_policy": "Usage policy"
       }
     }
   },
@@ -116,22 +102,8 @@
       },
       "footer": {
         "logo_alt": "Vilna логотип",
-        "copyright": "Copyright © ТОВ “Вільна СРМ”",
         "privacy": "Політика конфіденційності",
-        "usage_policy": "Політика використовування",
-        "vilna_email": "info@vilnacrm.com",
-        "aria_labels": {
-          "instagram": "Посилання на Instagram",
-          "github": "Посилання на GitHub",
-          "facebook": "Посилання на Facebook",
-          "linkedin": "Посилання на Linkedin"
-        },
-        "alt_images": {
-          "instagram": "Instagram Іконка",
-          "github": "GitHub Іконка",
-          "facebook": "Facebook Іконка",
-          "linkedin": "Linkedin Іконка"
-        }
+        "usage_policy": "Політика використовування"
       }
     }
   }

@@ -9,6 +9,10 @@ export default createTheme({
         root: {
           borderRadius: '8px',
 
+          [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+            paddingRight: '0.625rem',
+          },
+
           '&:hover .MuiOutlinedInput-notchedOutline': {
             borderColor: '#969B9D',
           },
