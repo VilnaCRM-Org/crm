@@ -15,7 +15,7 @@ export default {
       paddingBottom: '17.1875rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      paddingBottom: '17.375rem',
+      paddingBottom: '17.125rem',
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
@@ -54,7 +54,7 @@ export default {
   formSwitcherButton: {
     display: 'block',
     padding: 0,
-    margin: '1.5625rem auto 0',
+    margin: '1.4375rem auto 0',
 
     fontFamily: 'Golos',
     fontWeight: 500,
@@ -65,13 +65,6 @@ export default {
     color: customColors.text.secondary,
     textTransform: 'none',
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      margin: '2.75rem auto 0',
-
-      fontWeight: 600,
-      fontSize: '1.125rem',
-      lineHeight: '1rem',
-    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       margin: '2.75rem auto 0',
 

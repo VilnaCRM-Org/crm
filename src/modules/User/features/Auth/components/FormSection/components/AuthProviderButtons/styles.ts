@@ -5,9 +5,6 @@ export default {
   thirdPartyWrapper: {
     marginTop: '1.0625rem',
 
-    [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      marginTop: '1.08rem',
-    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginTop: '1.5rem',
     },
@@ -61,8 +58,6 @@ export default {
     alignItems: 'center',
 
     width: '100%',
-    maxWidth: '9.5625',
-
     border: '1px solid  #E1E7EA',
     borderRadius: '0.75rem',
 
@@ -101,14 +96,12 @@ export default {
   serviceItemButton: {
     width: '100%',
     height: '100%',
+    padding: '1.0625rem 4.0625rem',
 
     '&:hover, &:focus': {
       borderColor: customColors.brand.blue,
     },
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      maxHeight: '75px',
-    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       padding: '1.375rem 3rem 1.25rem',
     },
@@ -117,6 +110,9 @@ export default {
     },
   },
   serviceItemButtonIcon: {
+    width: '1.375rem',
+    height: '1.375rem',
+
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       width: '2rem',
       height: '2rem',

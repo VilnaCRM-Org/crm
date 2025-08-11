@@ -105,7 +105,7 @@ export default {
     fontSize: ' 0.94rem',
     lineHeight: '1.125rem',
 
-    paddingTop: '1.13rem',
+    paddingTop: '0.9375rem',
     paddingBottom: '1.25rem',
     textAlign: 'center',
 
