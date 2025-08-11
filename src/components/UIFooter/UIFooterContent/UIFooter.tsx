@@ -1,4 +1,4 @@
-import { Box, Grid, SvgIcon } from '@mui/material';
+import { Box, SvgIcon } from '@mui/material';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -16,15 +16,15 @@ export default function UIFooterContent(): React.ReactElement {
     <Box sx={styles.footerDesktopWrapper}>
       <SvgIcon component={VilnaLogo} inheritViewBox sx={styles.footerLogo} />
 
-      <Grid item sx={styles.uiInfoWrapper}>
-        <UILink href="#" sx={styles.uiLinkTypography}>
+      <Box sx={styles.uiInfoWrapper}>
+        <UILink href="/privacy-policy" sx={styles.uiLinkTypography}>
           <UITypography>{t('footer.privacy')}</UITypography>
         </UILink>
 
-        <UILink href="#" sx={styles.uiLinkTypography}>
+        <UILink href="/terms-of-use" sx={styles.uiLinkTypography}>
           <UITypography>{t('footer.usage_policy')}</UITypography>
         </UILink>
-      </Grid>
+      </Box>
     </Box>
   );
 }

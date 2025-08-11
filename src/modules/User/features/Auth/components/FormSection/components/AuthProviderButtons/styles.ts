@@ -57,7 +57,6 @@ export default {
     alignItems: 'center',
 
     width: '100%',
-    border: '1px solid  #E1E7EA',
     borderRadius: '0.75rem',
 
     [`@media (max-width:374px)`]: {
@@ -97,7 +96,7 @@ export default {
     height: '100%',
     padding: '1.0625rem 4.0625rem',
 
-    '&:hover, &:focus': {
+    '&:hover, &:focus-visible': {
       borderColor: customColors.brand.blue,
     },
 

@@ -37,6 +37,12 @@ module.exports = function cracoConfig() {
             test: /\.(scss|css)$/,
             use: ['style-loader', 'css-loader', 'sass-loader'],
           },
+
+          {
+            test: /\.svg$/i,
+            issuer: /\.[jt]sx?$/,
+            use: ['@svgr/webpack'],
+          },
         ],
       },
     },

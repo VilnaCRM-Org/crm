@@ -1,17 +1,26 @@
+import type { FC, SVGProps } from 'react';
+
 import { ReactComponent as Facebook } from '@/modules/User/features/Auth/assets/social-links/facebook-color.svg';
 import { ReactComponent as GitHub } from '@/modules/User/features/Auth/assets/social-links/github-color.svg';
 import { ReactComponent as Google } from '@/modules/User/features/Auth/assets/social-links/google-color.svg';
 import { ReactComponent as Twitter } from '@/modules/User/features/Auth/assets/social-links/twitter-color.svg';
 
-function signInWithProvider(service: string): void {
+type OAuthService = 'google' | 'github' | 'facebook' | 'twitter';
+
+function signInWithProvider(service: OAuthService): void {
   // TODO: Implement actual OAuth authentication
   //  example:
-  window.open(`/auth/${service}`, '_blank', 'noopener,noreferrer');
-}
+  const base = (process.env.REACT_APP_API_BASE_URL ?? '').replace(/\/+$/, '');
+  const url = `${base}/auth/${encodeURIComponent(service)}`;
+  const win = window.open(url, '_blank', 'noopener,noreferrer');
 
+  if (!win) {
+    window.location.href = url;
+  }
+}
 interface OAuthProvider {
   label: string;
-  SvgComponent: React.FC<React.SVGProps<SVGSVGElement>>;
+  SvgComponent: FC<SVGProps<SVGSVGElement>>;
   onClick: () => void;
   ariaLabel: string;
 }
