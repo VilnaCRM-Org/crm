@@ -13,35 +13,33 @@ module.exports = function cracoConfig() {
       module: {
         rules: [
           {
-            test: /\.svg$/,
-            use: ['@svgr/webpack'],
-          },
-
-          {
-            test: /\.svg$/,
-            issuer: /\.[jt]sx?$/,
-            use: ['@svgr/webpack'],
-          },
-          {
-            test: /\.(png|woff|woff2|eot|ttf)$/,
-            loader: 'url-loader',
-          },
-          {
-            test: /\.svg$/,
-            type: 'asset/resource',
-            generator: {
-              filename: 'assets/[name][ext]',
-            },
-          },
-          {
-            test: /\.(scss|css)$/,
-            use: ['style-loader', 'css-loader', 'sass-loader'],
-          },
-
-          {
             test: /\.svg$/i,
             issuer: /\.[jt]sx?$/,
             use: ['@svgr/webpack'],
+          },
+
+          {
+            test: /\.(png|jpe?g|gif|woff2?|eot|ttf)$/i,
+            type: 'asset',
+            parser: {
+              dataUrlCondition: {
+                maxSize: 8 * 1024,
+              },
+            },
+            generator: {
+              filename: 'assets/[name][hash][ext][query]',
+            },
+          },
+          {
+            test: /\.svg$/i,
+            type: 'asset/resource',
+            generator: {
+              filename: 'assets/[name][hash][ext][query]',
+            },
+          },
+          {
+            test: /\.(scss|css)$/i,
+            use: ['style-loader', 'css-loader', 'sass-loader'],
           },
         ],
       },

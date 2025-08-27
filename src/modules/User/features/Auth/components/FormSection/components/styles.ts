@@ -46,7 +46,7 @@ export default {
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       fontSize: '1rem',
-      lineHeight: '1.125rem',
+      lineHeight: '1.125',
 
       marginBottom: '0.5625rem',
     },
@@ -73,10 +73,10 @@ export default {
   },
 
   passwordButton: {
-    marginRight: 0,
+    marginInlineEnd: 0,
   },
   passwordIcon: {
-    width: '24px',
-    height: '24px',
+    width: '1.5rem',
+    height: '1.5rem',
   },
 };
