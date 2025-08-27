@@ -34,7 +34,7 @@ export default createTheme({
           borderRadius: '8px',
           padding: 0,
 
-          '&:hover': {
+          '&:hover, &:focus': {
             borderColor: customColors.text.secondary,
           },
         },
@@ -46,10 +46,10 @@ export default createTheme({
           fontFamily: theme.customFonts.inter,
           fontWeight: 500,
           fontStyle: 'normal',
-          fontSize: '0.875rem',
-          lineHeight: 1.2857,
+          fontSize: '1rem',
+          lineHeight: '1.125rem',
           letterSpacing: 0,
-          color: customColors.text.primary,
+          color: customColors.decorative.divider,
 
           boxSizing: 'border-box',
           borderRadius: '0.5rem',
@@ -57,10 +57,21 @@ export default createTheme({
 
           '&::placeholder': {
             fontFamily: theme.customFonts.inter,
+            fontWeight: 500,
             color: customColors.text.secondary,
 
-            [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+            [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
               fontWeight: 400,
+
+              fontSize: '1.125rem',
+              lineHeight: 1,
+            },
+
+            [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+              fontSize: '1.125rem',
+              lineHeight: '1.125rem',
+            },
+            [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
               fontSize: '1rem',
               lineHeight: 1.125,
               letterSpacing: 0,
@@ -73,31 +84,35 @@ export default createTheme({
             paddingTop: '1.9375rem',
             paddingBottom: '1.875rem',
             paddingLeft: '1.75rem',
-
-            fontWeight: 400,
-            fontSize: '1.125rem',
-            lineHeight: 1,
           },
 
           [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
             paddingTop: '1.9375rem',
             paddingLeft: '1.75rem',
             paddingBottom: '1.875rem',
-
-            fontSize: '1.125rem',
-            lineHeight: '1.125rem',
           },
           [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
             maxHeight: '4rem',
             paddingTop: '1.4375rem',
             paddingBottom: '1.4375rem',
             paddingLeft: '1.6875rem',
+          },
+        },
+      },
+    },
+
+    MuiFormHelperText: {
+      styleOverrides: {
+        root: {
+          '&.Mui-error': {
+            margin: '0.25rem 0 0 0',
 
             fontFamily: theme.customFonts.inter,
-            fontWeight: 400,
-            fontSize: '1rem',
-            lineHeight: 1.125,
-            letterSpacing: 0,
+            fontWeight: 500,
+            fontSize: '0.875rem',
+            lineHeight: '1.125rem',
+            letterSpacing: '0',
+            color: paletteColors.error.main,
           },
         },
       },
