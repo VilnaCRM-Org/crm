@@ -49,7 +49,7 @@ module.exports = {
           node: {
             extensions: ['.ts', '.tsx', '.js', ',jsx'],
           },
-          typescript: {},
+          typescript: { project: './tsconfig.json' },
         },
       },
       env: {

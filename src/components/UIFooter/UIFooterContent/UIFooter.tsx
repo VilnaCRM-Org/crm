@@ -17,11 +17,19 @@ export default function UIFooterContent(): React.ReactElement {
       <SvgIcon component={VilnaLogo} inheritViewBox sx={styles.footerLogo} />
 
       <Box sx={styles.uiInfoWrapper}>
-        <UILink href="/privacy-policy" sx={styles.uiLinkTypography}>
+        <UILink
+          href="/privacy-policy"
+          sx={styles.uiLinkTypography}
+          aria-label={t('footer.privacy')}
+        >
           <UITypography>{t('footer.privacy')}</UITypography>
         </UILink>
 
-        <UILink href="/terms-of-use" sx={styles.uiLinkTypography}>
+        <UILink
+          href="/terms-of-use"
+          sx={styles.uiLinkTypography}
+          aria-label={t('footer.usage_policy')}
+        >
           <UITypography>{t('footer.usage_policy')}</UITypography>
         </UILink>
       </Box>

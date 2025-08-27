@@ -1,11 +1,18 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
 import { paletteColors } from '@/styles/colors';
+import theme from '@/styles/theme';
 
 const centeredFlex = {
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
 };
+const LOGO_DIMENSIONS = {
+  base: { width: '8.125rem', height: '2.75rem' },
+  lg: { width: '8.6875rem', height: '2.92375rem' },
+  xl: { width: '9rem', height: '3rem' },
+} as const;
+
 export default {
   footerDesktopWrapper: {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
@@ -15,20 +22,17 @@ export default {
   },
 
   footerLogo: {
-    width: '8.125rem',
-    height: '2.75rem',
+    ...LOGO_DIMENSIONS.base,
 
     [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       display: 'block',
       margin: '0 auto 0.9375rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      width: '8.6875rem',
-      height: '2.92375rem',
+      ...LOGO_DIMENSIONS.lg,
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      width: '9rem',
-      height: '3rem',
+      ...LOGO_DIMENSIONS.xl,
     },
   },
 
@@ -46,7 +50,7 @@ export default {
 
     '& .MuiTypography-root': {
       fontWeight: 500,
-      fontFamily: 'Golos',
+      fontFamily: theme.typography.fontFamily || 'Golos',
       fontSize: '1rem',
       lineHeight: '1.125rem',
       letterSpacing: '0',
@@ -67,9 +71,6 @@ export default {
       '&:last-of-type': {
         marginLeft: '0.5rem',
       },
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      padding: '0.5rem 1rem',
     },
   },
 };

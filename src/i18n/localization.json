@@ -2,7 +2,7 @@
   "en": {
     "translation": {
       "buttons": {
-        "back_to_main": "Go to homepage"
+        "back_to_main": "Back to homepage"
       },
       "sign_up": {
         "title": "Registration",
@@ -10,7 +10,7 @@
         "socials_main_heading": "Or",
         "form": {
           "name_input": {
-            "label": "Your name and surname",
+            "label": "Your first and last name",
             "placeholder": "Mykhailo Svitskyi",
             "special_characters_error": "Please use letters only",
             "required": "This field is required",
@@ -28,12 +28,12 @@
             "placeholder": "Create a password",
             "required": "This field is required",
             "error_length": "Please enter a password between 8 and 64 characters",
-            "error_numbers": "Please include at least one number",
+            "error_numbers": "Please include at least one digit",
             "error_uppercase": "Please include at least one uppercase letter"
           },
           "password_tip": {
-            "alt": "Password tip mark",
-            "title": "At least 8 characters.",
+            "alt": "Password tip icon",
+            "title": "8 to 64 characters.",
             "recommendation_text": "We recommend using:",
             "options": {
               "option_1": "lowercase and uppercase letters",
@@ -41,15 +41,15 @@
               "option_3": "numbers"
             }
           },
-          "button_text": "Sign-Up",
+          "button_text": "Sign Up",
           "error_text": "There was an error. Please check again",
           "switcher_text": "Already have an account?"
         }
       },
       "footer": {
-        "logo_alt": "Vilna logo",
-        "privacy": "Privacy policy",
-        "usage_policy": "Usage policy"
+        "logo_alt": "VilnaCRM logo",
+        "privacy": "Privacy Policy",
+        "usage_policy": "Terms of Use"
       }
     }
   },
@@ -86,12 +86,12 @@
             "error_uppercase": "Будь ласка, додайте принаймні одну велику літеру"
           },
           "password_tip": {
-            "alt": "Позначка підказки пароля",
-            "title": "Не менше 8 символів.",
+            "alt": "Іконка підказки пароля",
+            "title": "Від 8 до 64 символів.",
             "recommendation_text": "Рекомендуємо використовувати:",
             "options": {
               "option_1": "малі та великі літери",
-              "option_2": "спеціальні символи(#&*$)",
+              "option_2": "спеціальні символи (#&*$)",
               "option_3": "цифри"
             }
           },
@@ -101,9 +101,9 @@
         }
       },
       "footer": {
-        "logo_alt": "Vilna логотип",
+        "logo_alt": "Логотип Vilna",
         "privacy": "Політика конфіденційності",
-        "usage_policy": "Політика використовування"
+        "usage_policy": "Політика використання"
       }
     }
   }

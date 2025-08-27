@@ -1,6 +1,8 @@
 import { createTheme } from '@mui/material';
 
 import breakpointsTheme from '@/components/UIBreakpoints';
+import { customColors, paletteColors } from '@/styles/colors';
+import theme from '@/styles/theme';
 
 export default createTheme({
   components: {
@@ -14,50 +16,48 @@ export default createTheme({
           },
 
           '&:hover .MuiOutlinedInput-notchedOutline': {
-            borderColor: '#969B9D',
+            borderColor: customColors.text.secondary,
           },
           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-            border: '1px solid #969B9D',
+            border: `1px solid ${customColors.text.secondary}`,
           },
           '&.Mui-disabled': {
-            backgroundColor: '#E1E7EA',
-            color: '#969B9D',
+            backgroundColor: paletteColors.background.subtle,
+            color: customColors.text.secondary,
           },
           '&.Mui-disabled .MuiOutlinedInput-notchedOutline': {
             borderWidth: 0,
           },
         },
         notchedOutline: {
-          border: '1px solid #D0D4D8',
+          border: `1px solid ${customColors.checkbox.main}`,
           borderRadius: '8px',
           padding: 0,
 
           '&:hover': {
-            borderColor: '#969B9D',
+            borderColor: customColors.text.secondary,
           },
         },
 
         input: {
-          height: '3rem',
-          paddingTop: '0.9375rem',
-          paddingBottom: '0.9375rem',
-          paddingLeft: '1.25rem',
+          height: 'clamp(3rem, 4vw, 4rem)',
+          padding: 'clamp(0.9375rem, 2vw, 1.4375rem) clamp(1.25rem, 2vw, 1.6875rem)',
 
-          fontFamily: `Inter, sans-serif`,
+          fontFamily: theme.customFonts.inter,
           fontWeight: 500,
           fontStyle: 'normal',
           fontSize: '0.875rem',
           lineHeight: 1.2857,
           letterSpacing: 0,
-          color: '#404142',
+          color: customColors.text.primary,
 
           boxSizing: 'border-box',
           borderRadius: '0.5rem',
           borderWidth: '1px',
 
           '&::placeholder': {
-            fontFamily: 'Inter',
-            color: '#969B9D',
+            fontFamily: theme.customFonts.inter,
+            color: customColors.text.secondary,
 
             [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
               fontWeight: 400,
@@ -93,7 +93,7 @@ export default createTheme({
             paddingBottom: '1.4375rem',
             paddingLeft: '1.6875rem',
 
-            fontFamily: 'Inter',
+            fontFamily: theme.customFonts.inter,
             fontWeight: 400,
             fontSize: '1rem',
             lineHeight: 1.125,

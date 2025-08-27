@@ -19,7 +19,10 @@ export default createTheme({
   },
   customColors,
   typography: {
-    fontFamily: 'Golos, Inter',
+    fontFamily: 'Golos, sans-serif',
+  },
+  customFonts: {
+    inter: 'Inter, sans-serif',
   },
   components: {
     MuiCssBaseline: {

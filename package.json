@@ -103,6 +103,7 @@
     "storybook": "^7.6.20",
     "style-loader": "^3.3.4",
     "ts-jest": "^29.3.2",
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "typescript": "^5.3.3",
     "url-loader": "^4.1.1"
   },
