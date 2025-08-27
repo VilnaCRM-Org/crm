@@ -49,6 +49,7 @@
     "tsyringe": "^4.10.0",
     "wait-on": "^8.0.3",
     "web-vitals": "^3.5.2",
+    "webpack": "^5.101.3",
     "winston": "^3.17.0"
   },
   "devDependencies": {
@@ -99,8 +100,7 @@
     "style-loader": "^3.3.4",
     "ts-jest": "^29.3.2",
     "tsconfig-paths-webpack-plugin": "^4.2.0",
-    "typescript": "^5.3.3",
-    "webpack": "^5.99.8"
+    "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=20.0.0",

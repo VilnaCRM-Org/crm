@@ -58,13 +58,8 @@ module.exports = function cracoConfig() {
         },
       },
     },
-
     eslint: {
-      enable: true,
-      mode: 'extends',
-      configure: {
-        extends: [path.resolve(__dirname, './eslintrc.js')],
-      },
+      extends: path.resolve(__dirname, './eslintrc.js'),
     },
   };
 };
