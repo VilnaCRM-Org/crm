@@ -3,7 +3,14 @@ const LocalizationGenerator = require('./scripts/localizationGenerator');
 
 module.exports = function cracoConfig() {
   const localizationGenerator = new LocalizationGenerator();
-  localizationGenerator.generateLocalizationFile();
+
+  if (process.env.SKIP_LOCALE_GEN !== '1') {
+    try {
+      localizationGenerator.generateLocalizationFile();
+    } catch (err) {
+      return `Localization generation failed: ${err?.message || err}`;
+    }
+  }
 
   return {
     webpack: {
@@ -14,10 +21,20 @@ module.exports = function cracoConfig() {
         rules: [
           {
             test: /\.svg$/i,
-            issuer: /\.[jt]sx?$/,
-            use: ['@svgr/webpack'],
+            oneOf: [
+              {
+                issuer: /\.[jt]sx?$/,
+                resourceQuery: { not: [/url/] },
+                use: ['@svgr/webpack'],
+              },
+              {
+                type: 'asset/resource',
+                generator: {
+                  filename: 'assets/[name].[contenthash:8][ext][query]',
+                },
+              },
+            ],
           },
-
           {
             test: /\.(png|jpe?g|gif|woff2?|eot|ttf)$/i,
             type: 'asset',
@@ -27,25 +44,27 @@ module.exports = function cracoConfig() {
               },
             },
             generator: {
-              filename: 'assets/[name][hash][ext][query]',
+              filename: 'assets/[name].[contenthash:8][ext][query]',
             },
-          },
-          {
-            test: /\.svg$/i,
-            type: 'asset/resource',
-            generator: {
-              filename: 'assets/[name][hash][ext][query]',
-            },
-          },
-          {
-            test: /\.(scss|css)$/i,
-            use: ['style-loader', 'css-loader', 'sass-loader'],
           },
         ],
       },
     },
+
+    style: {
+      sass: {
+        loaderOptions: {
+          // additionalData: `@use "@/styles/variables" as *;`
+        },
+      },
+    },
+
     eslint: {
-      extends: path.resolve(__dirname, './eslintrc.js'),
+      enable: true,
+      mode: 'extends',
+      configure: {
+        extends: [path.resolve(__dirname, './eslintrc.js')],
+      },
     },
   };
 };

@@ -13,9 +13,33 @@ const config = {
   },
   webpackFinal: async (cfg) => {
     cfg.resolve = cfg.resolve || {};
+    cfg.resolve.extensions = cfg.resolve.extensions || [
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+      '.mjs',
+      '.cjs',
+    ];
     cfg.resolve.plugins = [
       ...(cfg.resolve.plugins || []),
-      new TsconfigPathsPlugin({ extensions: cfg.resolve.extensions }),
+      new TsconfigPathsPlugin({
+        extensions: cfg.resolve.extensions,
+        configFile: 'tsconfig.paths.json',
+      }),
+    ];
+    cfg.module = cfg.module || {};
+    cfg.module.rules = [
+      ...(cfg.module.rules || []),
+      {
+        test: /\.s[ac]ss$/i,
+        use: ['style-loader', 'css-loader', 'sass-loader'],
+      },
+      {
+        test: /\.svg$/i,
+        issuer: /\.[jt]sx?$/,
+        use: ['@svgr/webpack'],
+      },
     ];
     return cfg;
   },
