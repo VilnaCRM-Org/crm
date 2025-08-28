@@ -3,6 +3,7 @@ export const paletteColors = {
     main: '#1EAEFF',
     hover: '#00A3FF',
     active: '#0399ED',
+    linkHover: '#297FFF',
   },
   secondary: {
     main: '#FFC01E',

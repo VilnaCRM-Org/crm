@@ -33,6 +33,8 @@ module.exports = function cracoConfig() {
                     options: {
                       typescript: true,
                       icon: true,
+                      memo: true,
+                      ref: true,
                       svgo: true,
                       svgoConfig: {
                         plugins: [
@@ -40,6 +42,7 @@ module.exports = function cracoConfig() {
                             name: 'preset-default',
                             params: { overrides: { removeViewBox: false } },
                           },
+                          { name: 'removeDimensions', active: true },
                         ],
                       },
                     },

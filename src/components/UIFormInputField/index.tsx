@@ -19,7 +19,7 @@ type CustomTextField<T extends FieldValues> = TextFieldProps & {
     RegisterOptions<T, Path<T>>,
     'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
   >;
-  defaultValue?: PathValue<T, Path<T>>;
+  defaultValue: PathValue<T, Path<T>> | undefined;
   name: Path<T>;
 };
 
@@ -52,6 +52,3 @@ export default function UIFormInputField<T extends FieldValues>({
     </ThemeProvider>
   );
 }
-UIFormInputField.defaultProps = {
-  defaultValue: undefined,
-};

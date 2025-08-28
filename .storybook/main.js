@@ -12,7 +12,8 @@ const config = {
     name: '@storybook/react-webpack5',
     options: {},
   },
-  webpackFinal: async (cfg) => {
+  webpackFinal: async (cfg, { configType }) => {
+    const isProd = configType === 'PRODUCTION';
     cfg.resolve = cfg.resolve || {};
     cfg.resolve.extensions = cfg.resolve.extensions || [
       '.ts',
@@ -29,15 +30,21 @@ const config = {
         extensions: cfg.resolve.extensions,
         configFile: path.resolve(process.cwd(), 'tsconfig.paths.json'),
       }),
-      ,
     ];
 
     cfg.module = cfg.module || {};
     const existingRules = cfg.module.rules || [];
 
-    const sanitizedRules = existingRules.map((rule) =>
-      rule?.test && rule.test.toString().includes('svg') ? { ...rule, exclude: /\.svg$/i } : rule
-    );
+    const sanitizeSvgInRules = (rules) =>
+      (rules || []).map((rule) => {
+        if (!rule) return rule;
+        if (rule.oneOf) return { ...rule, oneOf: sanitizeSvgInRules(rule.oneOf) };
+        if (rule.test && rule.test.toString().includes('svg')) {
+          return { ...rule, exclude: /\.svg$/i };
+        }
+        return rule;
+      });
+    const sanitizedRules = sanitizeSvgInRules(existingRules);
 
     cfg.module.rules = [
       {
@@ -61,15 +68,22 @@ const config = {
           'style-loader',
           {
             loader: 'css-loader',
-            options: { modules: { localIdentName: '[name]__[local]__[hash:base64:5]' } },
+            options: {
+              modules: { localIdentName: '[name]__[local]__[hash:base64:5]' },
+              sourceMap: !isProd,
+            },
           },
-          'sass-loader',
+          { loader: 'sass-loader', options: { sourceMap: !isProd } },
         ],
       },
       {
         test: /\.s[ac]ss$/i,
         exclude: /\.module\.s[ac]ss$/i,
-        use: ['style-loader', 'css-loader', 'sass-loader'],
+        use: [
+          'style-loader',
+          { loader: 'css-loader', options: { sourceMap: !isProd } },
+          { loader: 'sass-loader', options: { sourceMap: !isProd } },
+        ],
       },
     ];
 

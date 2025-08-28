@@ -26,7 +26,9 @@ root.render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <Provider store={Store}>
-          <App />
+          <React.Suspense fallback={null}>
+            <App />
+          </React.Suspense>
         </Provider>
       </ThemeProvider>
     </StyledEngineProvider>

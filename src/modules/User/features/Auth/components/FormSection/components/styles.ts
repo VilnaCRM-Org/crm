@@ -74,6 +74,10 @@ export default {
 
   passwordButton: {
     marginInlineEnd: 0,
+
+    '&:hover, &:focus-visible': {
+      backgroundColor: 'transparent',
+    },
   },
 
   passwordField: {

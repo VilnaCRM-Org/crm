@@ -48,6 +48,13 @@ export default {
   uiLinkTypography: {
     ...centeredFlex,
 
+    '&:hover, &:focus-visible': {
+      color: paletteColors.primary.linkHover,
+    },
+    '&:visited': {
+      color: paletteColors.primary.active,
+    },
+
     '& .MuiTypography-root': {
       fontWeight: 500,
       fontFamily: theme.typography.fontFamily || 'Golos',

@@ -1,5 +1,5 @@
 :root {
-  --mui-palette-deep-green: #38b386;
+  --mui-palette-deep-blue: #297fff;
 }
 
 html,
@@ -25,7 +25,7 @@ a {
 }
 
 a:visited {
-  color: var(--mui-palette-deep-green, green);
+  color: var(--mui-palette-deep-blue);
 }
 
 *,
