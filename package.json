@@ -1,6 +1,7 @@
 {
   "name": "crm",
   "version": "0.2.0",
+  "packageManager": "pnpm@9.15.3",
   "private": true,
   "scripts": {
     "dev": "craco start",
@@ -45,7 +46,6 @@
     "react-scripts": "^5.0.1",
     "reflect-metadata": "^0.2.1",
     "require-from-string": "^2.0.2",
-    "semver": "^7.5.4",
     "tsyringe": "^4.10.0",
     "wait-on": "^8.0.3",
     "web-vitals": "^3.5.2",
@@ -68,7 +68,7 @@
     "@testing-library/react": "^13.4.0",
     "@types/jest": "^29.5.14",
     "@types/node": "20.19.11",
-    "@types/react": "18.0.25",
+    "@types/react": "18.3.24",
     "@types/react-dom": "^18.3.7",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",

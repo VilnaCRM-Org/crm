@@ -37,8 +37,17 @@ const config = {
       },
       {
         test: /\.svg$/i,
-        issuer: /\.[jt]sx?$/,
-        use: ['@svgr/webpack'],
+        oneOf: [
+          {
+            issuer: /\.[jt]sx?$/,
+            resourceQuery: { not: [/url/] },
+            use: ['@svgr/webpack'],
+          },
+          {
+            type: 'asset/resource',
+            generator: { filename: 'assets/[name].[contenthash:8][ext][query]' },
+          },
+        ],
       },
     ];
     return cfg;

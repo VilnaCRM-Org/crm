@@ -75,6 +75,17 @@ export default {
   passwordButton: {
     marginInlineEnd: 0,
   },
+
+  passwordField: {
+    paddingRight: '0.5625rem',
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      paddingRight: '0.875rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      paddingRight: '0.9375rem',
+    },
+  },
   passwordIcon: {
     width: '1.5rem',
     height: '1.5rem',

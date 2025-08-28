@@ -11,10 +11,6 @@ export default createTheme({
         root: {
           borderRadius: '8px',
 
-          [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-            paddingRight: '0.625rem',
-          },
-
           '&:hover .MuiOutlinedInput-notchedOutline': {
             borderColor: customColors.text.secondary,
           },
@@ -58,6 +54,10 @@ export default createTheme({
           '&::placeholder': {
             fontFamily: theme.customFonts.inter,
             fontWeight: 500,
+            fontSize: '0.875rem',
+            lineHeight: '1.125rem',
+            letterSpacing: 0,
+
             color: customColors.text.secondary,
 
             [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {

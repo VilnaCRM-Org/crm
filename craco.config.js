@@ -8,7 +8,7 @@ module.exports = function cracoConfig() {
     try {
       localizationGenerator.generateLocalizationFile();
     } catch (err) {
-      return `Localization generation failed: ${err?.message || err}`;
+      throw new Error(`Localization generation failed: ${err?.message || err}`);
     }
   }
 
@@ -58,11 +58,10 @@ module.exports = function cracoConfig() {
         },
       },
     },
+
     eslint: {
-      eslint: {
-        enable: true,
-        mode: 'file',
-      },
+      enable: true,
+      mode: 'file',
     },
   };
 };

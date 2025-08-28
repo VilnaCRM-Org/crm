@@ -1,6 +1,8 @@
 export const paletteColors = {
   primary: {
     main: '#1EAEFF',
+    hover: '#00A3FF',
+    active: '#0399ED',
   },
   secondary: {
     main: '#FFC01E',

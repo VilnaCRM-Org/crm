@@ -40,6 +40,7 @@ export default function PasswordField<T extends FieldValues & { password: string
       label={mode === 'register' ? t('sign_up.form.password_input.label') : 'Пароль'}
       autoComplete="off"
       inputProps={{
+        sx: styles.passwordField,
         endAdornment: (
           <InputAdornment position="end">
             <IconButton

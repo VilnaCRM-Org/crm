@@ -11,7 +11,6 @@ import {
   RegisterOptions,
 } from 'react-hook-form';
 
-import styles from './styles';
 import Theme from './Theme';
 
 interface CustomTextField<T extends FieldValues> extends TextFieldProps<'standard'> {
@@ -25,7 +24,7 @@ interface CustomTextField<T extends FieldValues> extends TextFieldProps<'standar
   sx: SxProps<typeof Theme>;
 }
 
-export default function UIFormTextField<T extends FieldValues>({
+export default function UIFormInputField<T extends FieldValues>({
   control,
   rules,
   defaultValue,
@@ -46,7 +45,7 @@ export default function UIFormTextField<T extends FieldValues>({
             {...props}
             error={fieldState.invalid}
             helperText={fieldState.error?.message}
-            sx={[styles.textField, sx]}
+            sx={sx}
           />
         )}
       />

@@ -1,5 +1,7 @@
 import { createTheme } from '@mui/material';
 
+import { paletteColors } from '@/styles/colors';
+
 export default createTheme({
   components: {
     MuiButton: {
@@ -11,6 +13,19 @@ export default createTheme({
           backgroundColor: '#1EAEFF',
           borderRadius: '57px',
           padding: '20px 32px',
+
+          '&:hover, &:focus-visible': {
+            backgroundColor: paletteColors.primary.hover,
+            boxShadow: 'none',
+          },
+          '&:active': {
+            backgroundColor: paletteColors.primary.active,
+            boxShadow: 'none',
+          },
+          '&:disabled': {
+            backgroundColor: paletteColors.background.subtle,
+            color: paletteColors.background.default,
+          },
         },
         outlined: {
           padding: '17px 38px',

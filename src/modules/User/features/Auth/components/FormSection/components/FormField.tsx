@@ -1,9 +1,9 @@
-import UIFormTextField from '@/components/UIFormTextField';
+import UIFormInputField from '@/components/UIFormInputField';
 import UITypography from '@/components/UITypography';
 import { Grid } from '@mui/material';
 import type { InputProps } from '@mui/material/Input';
 import { InputHTMLAttributes } from 'react';
-import { useFormContext, FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
+import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
 import styles from './styles';
 
@@ -37,7 +37,7 @@ export default function FormField<T extends FieldValues>({
       <UITypography sx={styles.formFieldLabel} component="label" htmlFor={name}>
         {label}
       </UITypography>
-      <UIFormTextField
+      <UIFormInputField
         control={control}
         rules={rules}
         defaultValue={defaultValue}
