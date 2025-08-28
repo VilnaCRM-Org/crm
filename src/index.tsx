@@ -3,10 +3,11 @@ import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
+import 'reflect-metadata';
 
 import '@/config/DependencyInjectionConfig';
-import '@/styles/fonts.css';
 import Store from '@/stores';
+import '@/styles/fonts.css';
 import theme from '@/styles/theme';
 
 import App from './App';

@@ -27,12 +27,8 @@ export default createTheme({
         },
         notchedOutline: {
           border: `1px solid ${customColors.checkbox.main}`,
-          borderRadius: '8px',
+          borderRadius: '0.5rem',
           padding: 0,
-
-          '&:hover, &:focus': {
-            borderColor: customColors.text.secondary,
-          },
         },
 
         input: {
@@ -48,8 +44,6 @@ export default createTheme({
           color: customColors.decorative.divider,
 
           boxSizing: 'border-box',
-          borderRadius: '0.5rem',
-          borderWidth: '1px',
 
           '&::placeholder': {
             fontFamily: theme.customFonts.inter,
@@ -111,7 +105,7 @@ export default createTheme({
             fontWeight: 500,
             fontSize: '0.875rem',
             lineHeight: '1.125rem',
-            letterSpacing: '0',
+            letterSpacing: 0,
             color: paletteColors.error.main,
           },
         },

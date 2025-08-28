@@ -1,5 +1,5 @@
 /* eslint-disable react/jsx-props-no-spreading */
-import { SxProps, TextField, ThemeProvider } from '@mui/material';
+import { TextField, ThemeProvider } from '@mui/material';
 import { TextFieldProps } from '@mui/material/TextField';
 import React from 'react';
 import {
@@ -11,40 +11,40 @@ import {
   RegisterOptions,
 } from 'react-hook-form';
 
-import Theme from './Theme';
+import theme from './Theme';
 
-interface CustomTextField<T extends FieldValues> extends TextFieldProps<'standard'> {
+type CustomTextField<T extends FieldValues> = TextFieldProps & {
   control: Control<T>;
   rules: Omit<
     RegisterOptions<T, Path<T>>,
     'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
   >;
-  defaultValue: PathValue<T, Path<T>>;
+  defaultValue?: PathValue<T, Path<T>>;
   name: Path<T>;
-  sx: SxProps<typeof Theme>;
-}
+};
 
 export default function UIFormInputField<T extends FieldValues>({
   control,
   rules,
-  defaultValue,
+  defaultValue = undefined,
   name,
   sx,
   ...props
 }: CustomTextField<T>): React.ReactElement {
   return (
-    <ThemeProvider theme={Theme}>
+    <ThemeProvider theme={theme}>
       <Controller
         name={name}
         control={control}
-        defaultValue={defaultValue}
+        defaultValue={defaultValue as PathValue<T, Path<T>>}
         rules={rules}
         render={({ field, fieldState }): React.ReactElement => (
           <TextField
-            {...field}
             {...props}
+            {...field}
+            inputRef={field.ref}
             error={fieldState.invalid}
-            helperText={fieldState.error?.message}
+            helperText={fieldState.error?.message ?? props.helperText}
             sx={sx}
           />
         )}
@@ -52,3 +52,6 @@ export default function UIFormInputField<T extends FieldValues>({
     </ThemeProvider>
   );
 }
+UIFormInputField.defaultProps = {
+  defaultValue: undefined,
+};

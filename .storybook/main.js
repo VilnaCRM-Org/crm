@@ -1,3 +1,4 @@
+import path from 'node:path';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 
 const config = {
@@ -20,21 +21,25 @@ const config = {
       '.jsx',
       '.mjs',
       '.cjs',
+      '.json',
     ];
     cfg.resolve.plugins = [
       ...(cfg.resolve.plugins || []),
       new TsconfigPathsPlugin({
         extensions: cfg.resolve.extensions,
-        configFile: 'tsconfig.paths.json',
+        configFile: path.resolve(process.cwd(), 'tsconfig.paths.json'),
       }),
+      ,
     ];
+
     cfg.module = cfg.module || {};
+    const existingRules = cfg.module.rules || [];
+
+    const sanitizedRules = existingRules.map((rule) =>
+      rule?.test && rule.test.toString().includes('svg') ? { ...rule, exclude: /\.svg$/i } : rule
+    );
+
     cfg.module.rules = [
-      ...(cfg.module.rules || []),
-      {
-        test: /\.s[ac]ss$/i,
-        use: ['style-loader', 'css-loader', 'sass-loader'],
-      },
       {
         test: /\.svg$/i,
         oneOf: [
@@ -49,7 +54,25 @@ const config = {
           },
         ],
       },
+      ...sanitizedRules,
+      {
+        test: /\.module\.s[ac]ss$/i,
+        use: [
+          'style-loader',
+          {
+            loader: 'css-loader',
+            options: { modules: { localIdentName: '[name]__[local]__[hash:base64:5]' } },
+          },
+          'sass-loader',
+        ],
+      },
+      {
+        test: /\.s[ac]ss$/i,
+        exclude: /\.module\.s[ac]ss$/i,
+        use: ['style-loader', 'css-loader', 'sass-loader'],
+      },
     ];
+
     return cfg;
   },
 };

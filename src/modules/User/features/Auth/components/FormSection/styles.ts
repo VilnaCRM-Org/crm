@@ -1,5 +1,5 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
-import { paletteColors, customColors } from '@/styles/colors';
+import { customColors, paletteColors } from '@/styles/colors';
 
 export default {
   formSection: {
@@ -12,10 +12,7 @@ export default {
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       paddingTop: '8.4375rem',
-      paddingBottom: '17.1875rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      paddingBottom: '17.125rem',
+      paddingBottom: '8.4375rem',
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {

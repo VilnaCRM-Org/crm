@@ -1,4 +1,3 @@
-import 'reflect-metadata';
 import { container } from 'tsyringe';
 
 import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';

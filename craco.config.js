@@ -8,7 +8,9 @@ module.exports = function cracoConfig() {
     try {
       localizationGenerator.generateLocalizationFile();
     } catch (err) {
-      throw new Error(`Localization generation failed: ${err?.message || err}`);
+      throw err instanceof Error
+        ? err
+        : new Error(`Localization generation failed: ${String(err)}`);
     }
   }
 
@@ -25,7 +27,24 @@ module.exports = function cracoConfig() {
               {
                 issuer: /\.[jt]sx?$/,
                 resourceQuery: { not: [/url/] },
-                use: ['@svgr/webpack'],
+                use: [
+                  {
+                    loader: '@svgr/webpack',
+                    options: {
+                      typescript: true,
+                      icon: true,
+                      svgo: true,
+                      svgoConfig: {
+                        plugins: [
+                          {
+                            name: 'preset-default',
+                            params: { overrides: { removeViewBox: false } },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                ],
               },
               {
                 type: 'asset/resource',
@@ -36,7 +55,7 @@ module.exports = function cracoConfig() {
             ],
           },
           {
-            test: /\.(png|jpe?g|gif|woff2?|eot|ttf)$/i,
+            test: /\.(png|jpe?g|gif|webp|avif|bmp|ico|woff2?|eot|ttf)$/i,
             type: 'asset',
             parser: {
               dataUrlCondition: {
