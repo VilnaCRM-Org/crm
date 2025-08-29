@@ -3,8 +3,9 @@ const LocalizationGenerator = require('./scripts/localizationGenerator');
 
 module.exports = function cracoConfig() {
   const localizationGenerator = new LocalizationGenerator();
+  const skipLocaleGen = /^(1|true|yes)$/i.test(process.env.SKIP_LOCALE_GEN || '');
 
-  if (process.env.SKIP_LOCALE_GEN !== '1') {
+  if (!skipLocaleGen) {
     try {
       localizationGenerator.generateLocalizationFile();
     } catch (err) {
@@ -37,12 +38,14 @@ module.exports = function cracoConfig() {
                       ref: true,
                       svgo: true,
                       svgoConfig: {
+                        multipass: true,
                         plugins: [
                           {
                             name: 'preset-default',
                             params: { overrides: { removeViewBox: false } },
                           },
                           { name: 'removeDimensions', active: true },
+                          { name: 'removeTitle', active: false },
                         ],
                       },
                     },
@@ -58,13 +61,20 @@ module.exports = function cracoConfig() {
             ],
           },
           {
-            test: /\.(png|jpe?g|gif|webp|avif|bmp|ico|woff2?|eot|ttf)$/i,
+            test: /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i,
             type: 'asset',
             parser: {
               dataUrlCondition: {
                 maxSize: 8 * 1024,
               },
             },
+            generator: {
+              filename: 'assets/[name].[contenthash:8][ext][query]',
+            },
+          },
+          {
+            test: /\.(woff2?|eot|ttf)$/i,
+            type: 'asset/resource',
             generator: {
               filename: 'assets/[name].[contenthash:8][ext][query]',
             },

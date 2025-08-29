@@ -1,7 +1,7 @@
-import path from 'node:path';
-import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
+const path = require('node:path');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
-const config = {
+module.exports = {
   stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: [
     '@storybook/addon-links',
@@ -40,7 +40,12 @@ const config = {
         if (!rule) return rule;
         if (rule.oneOf) return { ...rule, oneOf: sanitizeSvgInRules(rule.oneOf) };
         if (rule.test && rule.test.toString().includes('svg')) {
-          return { ...rule, exclude: /\.svg$/i };
+          const prev = rule.exclude
+            ? Array.isArray(rule.exclude)
+              ? rule.exclude
+              : [rule.exclude]
+            : [];
+          return { ...rule, exclude: [...prev, /\.svg$/i] };
         }
         return rule;
       });
@@ -83,6 +88,7 @@ const config = {
             loader: 'css-loader',
             options: {
               modules: { localIdentName: '[name]__[local]__[hash:base64:5]' },
+              importLoaders: 1,
               sourceMap: !isProd,
             },
           },
@@ -90,6 +96,7 @@ const config = {
         ],
       },
       {
+        sideEffects: true,
         test: /\.s[ac]ss$/i,
         exclude: /\.module\.s[ac]ss$/i,
         use: [
@@ -104,4 +111,4 @@ const config = {
   },
 };
 
-export default config;
+// export default config;

@@ -15,7 +15,7 @@ const LOGO_DIMENSIONS = {
 
 export default {
   footerDesktopWrapper: {
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    [breakpointsTheme.breakpoints.up('md')]: {
       display: 'flex',
       justifyContent: 'space-between',
     },
@@ -24,14 +24,14 @@ export default {
   footerLogo: {
     ...LOGO_DIMENSIONS.base,
 
-    [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    [breakpointsTheme.breakpoints.down('md')]: {
       display: 'block',
       margin: '0 auto 0.9375rem',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+    [breakpointsTheme.breakpoints.up('lg')]: {
       ...LOGO_DIMENSIONS.lg,
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+    [breakpointsTheme.breakpoints.up('xl')]: {
       ...LOGO_DIMENSIONS.xl,
     },
   },
@@ -39,7 +39,7 @@ export default {
   uiInfoWrapper: {
     textAlign: 'center',
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    [breakpointsTheme.breakpoints.up('md')]: {
       display: 'flex',
       alignItems: 'center',
     },
@@ -48,8 +48,13 @@ export default {
   uiLinkTypography: {
     ...centeredFlex,
 
-    '&:hover, &:focus-visible': {
+    '&:hover': {
       color: paletteColors.primary.linkHover,
+    },
+    '&:focus-visible': {
+      color: paletteColors.primary.linkHover,
+      outline: `2px solid ${paletteColors.primary.main}`,
+      outlineOffset: '2px',
     },
     '&:visited': {
       color: paletteColors.primary.active,
@@ -70,12 +75,12 @@ export default {
     borderRadius: '8px',
     backgroundColor: paletteColors.background.paper,
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    [breakpointsTheme.breakpoints.up('md')]: {
       maxHeight: '2.125rem',
       padding: '0.5rem 1rem',
       marginTop: '0rem',
 
-      '&:last-of-type': {
+      '&:not(:first-of-type)': {
         marginLeft: '0.5rem',
       },
     },
