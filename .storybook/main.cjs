@@ -7,6 +7,7 @@ module.exports = {
     '@storybook/addon-links',
     '@storybook/addon-essentials',
     '@storybook/addon-interactions',
+    '@storybook/addon-a11y',
   ],
   framework: {
     name: '@storybook/react-webpack5',
@@ -37,9 +38,18 @@ module.exports = {
 
     const sanitizeSvgInRules = (rules) =>
       (rules || []).map((rule) => {
-        if (!rule) return rule;
-        if (rule.oneOf) return { ...rule, oneOf: sanitizeSvgInRules(rule.oneOf) };
-        if (rule.test && rule.test.toString().includes('svg')) {
+        if (!rule || typeof rule !== 'object') return rule;
+        if (Array.isArray(rule.oneOf)) return { ...rule, oneOf: sanitizeSvgInRules(rule.oneOf) };
+        const test = rule.test;
+        const hasSvg =
+          test instanceof RegExp
+            ? /svg/.test(test.source)
+            : Array.isArray(test)
+              ? test.some((t) => t instanceof RegExp && /svg/.test(t.source))
+              : typeof test === 'string'
+                ? test.includes('svg')
+                : false;
+        if (hasSvg) {
           const prev = rule.exclude
             ? Array.isArray(rule.exclude)
               ? rule.exclude
@@ -110,5 +120,3 @@ module.exports = {
     return cfg;
   },
 };
-
-// export default config;

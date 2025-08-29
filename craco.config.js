@@ -33,7 +33,7 @@ module.exports = function cracoConfig() {
                     loader: '@svgr/webpack',
                     options: {
                       typescript: true,
-                      icon: true,
+                      dimensions: false,
                       memo: true,
                       ref: true,
                       svgo: true,
@@ -73,10 +73,10 @@ module.exports = function cracoConfig() {
             },
           },
           {
-            test: /\.(woff2?|eot|ttf)$/i,
+            test: /\.(woff2?|eot|ttf|otf)$/i,
             type: 'asset/resource',
             generator: {
-              filename: 'assets/[name].[contenthash:8][ext][query]',
+              filename: 'assets/fonts/[name].[contenthash:8][ext][query]',
             },
           },
         ],
