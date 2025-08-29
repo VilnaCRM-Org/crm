@@ -1,5 +1,9 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
 import { customColors } from '@/styles/colors';
+import { styled } from '@mui/material/styles';
+
+import { ReactComponent as EyeIconOff } from '@/modules/User/features/Auth/assets/eye-off.svg';
+import { ReactComponent as EyeIcon } from '@/modules/User/features/Auth/assets/eye.svg';
 
 export default {
   formFieldWrapper: {
@@ -71,15 +75,6 @@ export default {
       minWidth: '26.375rem',
     },
   },
-
-  passwordButton: {
-    marginInlineEnd: 0,
-
-    '&:hover, &:focus-visible': {
-      backgroundColor: 'transparent',
-    },
-  },
-
   passwordField: {
     paddingRight: '0.5625rem',
 
@@ -90,8 +85,37 @@ export default {
       paddingRight: '0.9375rem',
     },
   },
-  passwordIcon: {
-    width: '1.5rem',
-    height: '1.5rem',
+
+  endAdornment: {
+    marginLeft: 0,
+  },
+  passwordButton: {
+    minWidth: '2rem',
+    minHeight: '2rem',
+
+    marginInlineEnd: 0,
+    p: 0,
+
+    '&:hover, &:focus-visible': {
+      backgroundColor: 'transparent',
+    },
   },
 };
+
+export const StyledEyeIcon = styled(EyeIcon)(({ theme }) => ({
+  width: '20px',
+  height: '24px',
+  fill: 'none',
+  [theme.breakpoints.up('md')]: {
+    width: '24px',
+  },
+}));
+
+export const StyledEyeIconOff = styled(EyeIconOff)(({ theme }) => ({
+  width: '20px',
+  height: '24px',
+  fill: 'none',
+  [theme.breakpoints.up('md')]: {
+    width: '24px',
+  },
+}));

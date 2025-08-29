@@ -4,14 +4,12 @@ import { useState } from 'react';
 import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { ReactComponent as EyeIconOff } from '@/modules/User/features/Auth/assets/eye-off.svg';
-import { ReactComponent as EyeIcon } from '@/modules/User/features/Auth/assets/eye.svg';
 import { validatePassword } from '@/modules/User/features/Auth/components/FormSection/Validations';
 
 import { AuthMode } from '../types';
 
 import FormField from './FormField';
-import styles from './styles';
+import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
 
 type PasswordFieldProps = {
   mode: AuthMode;
@@ -42,19 +40,9 @@ export default function PasswordField<T extends FieldValues & { password: string
       inputProps={{
         sx: styles.passwordField,
         endAdornment: (
-          <InputAdornment position="end">
-            <IconButton
-              aria-label={showPassword ? 'hide password' : 'show password'}
-              onClick={handleClickShowPassword}
-              edge="end"
-              size="small"
-              sx={styles.passwordButton}
-            >
-              {showPassword ? (
-                <EyeIconOff style={styles.passwordIcon} />
-              ) : (
-                <EyeIcon style={styles.passwordIcon} />
-              )}
+          <InputAdornment position="end" sx={styles.endAdornment}>
+            <IconButton onClick={handleClickShowPassword} edge="end" sx={styles.passwordButton}>
+              {showPassword ? <StyledEyeIconOff /> : <StyledEyeIcon />}
             </IconButton>
           </InputAdornment>
         ),
