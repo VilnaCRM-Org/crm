@@ -9,9 +9,9 @@ module.exports = function cracoConfig() {
     try {
       localizationGenerator.generateLocalizationFile();
     } catch (err) {
-      throw err instanceof Error
-        ? err
-        : new Error(`Localization generation failed: ${String(err)}`);
+        const message =
+        `Localization generation failed: ${err instanceof Error ? err.message : String(err)}`;
+      throw new Error(message, { cause: err });
     }
   }
 
@@ -44,7 +44,6 @@ module.exports = function cracoConfig() {
                             name: 'preset-default',
                             params: { overrides: { removeViewBox: false } },
                           },
-                          { name: 'removeDimensions', active: true },
                           { name: 'removeTitle', active: false },
                         ],
                       },
