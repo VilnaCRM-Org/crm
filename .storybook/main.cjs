@@ -2,19 +2,19 @@ const path = require('node:path');
 const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 
 module.exports = {
-  stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],  
+  stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
   addons: [
     '@storybook/addon-links',
     '@storybook/addon-essentials',
     '@storybook/addon-interactions',
-    '@storybook/addon-a11y', 
-  ],  
+    '@storybook/addon-a11y',
+  ],
   framework: {
     name: '@storybook/react-webpack5',
     options: {},
   },
-   webpackFinal: async (cfg, { configType }) => {
-    const isProd = configType === 'PRODUCTION';    
+  webpackFinal: async (cfg, { configType }) => {
+    const isProd = configType === 'PRODUCTION';
     cfg.resolve = cfg.resolve || {};
     cfg.resolve.extensions = cfg.resolve.extensions || [
       '.ts',
@@ -24,7 +24,7 @@ module.exports = {
       '.mjs',
       '.cjs',
       '.json',
-    ];    
+    ];
     cfg.resolve.plugins = [
       ...(cfg.resolve.plugins || []),
       new TsconfigPathsPlugin({
@@ -39,7 +39,7 @@ module.exports = {
     const sanitizeSvgInRules = (rules) =>
       (rules || []).map((rule) => {
         if (!rule || typeof rule !== 'object') return rule;
-        if (Array.isArray(rule.oneOf)) return { ...rule, oneOf: sanitizeSvgInRules(rule.oneOf) };        
+        if (Array.isArray(rule.oneOf)) return { ...rule, oneOf: sanitizeSvgInRules(rule.oneOf) };
         const test = rule.test;
         const hasSvg =
           test instanceof RegExp
@@ -49,7 +49,7 @@ module.exports = {
               : typeof test === 'string'
                 ? test.includes('svg')
                 : false;
-                
+
         if (hasSvg) {
           const prev = rule.exclude
             ? Array.isArray(rule.exclude)
@@ -60,7 +60,7 @@ module.exports = {
         }
         return rule;
       });
-      
+
     const sanitizedRules = sanitizeSvgInRules(existingRules);
 
     cfg.module.rules = [
@@ -69,7 +69,7 @@ module.exports = {
         oneOf: [
           {
             issuer: /\.(?:mdx|[jt]sx?)$/,
-            resourceQuery: { not: [/url/] }, 
+            resourceQuery: { not: [/url/] },
             use: [
               {
                 loader: '@svgr/webpack',
@@ -81,8 +81,8 @@ module.exports = {
                       'removeDimensions',
                     ],
                   },
-                  titleProp: true, 
-                  ref: true,      
+                  titleProp: true,
+                  ref: true,
                 },
               },
             ],
@@ -95,9 +95,9 @@ module.exports = {
           },
         ],
       },
-      
+
       ...sanitizedRules,
-      
+
       {
         test: /\.module\.s[ac]ss$/i,
         use: [
@@ -117,7 +117,7 @@ module.exports = {
             },
           },
         ],
-      },      
+      },
       {
         test: /\.s[ac]ss$/i,
         exclude: /\.module\.s[ac]ss$/i,

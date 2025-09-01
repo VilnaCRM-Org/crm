@@ -9,8 +9,7 @@ module.exports = function cracoConfig() {
     try {
       localizationGenerator.generateLocalizationFile();
     } catch (err) {
-        const message =
-        `Localization generation failed: ${err instanceof Error ? err.message : String(err)}`;
+      const message = `Localization generation failed: ${err instanceof Error ? err.message : String(err)}`;
       throw new Error(message, { cause: err });
     }
   }

@@ -1,9 +1,9 @@
 import UIForm from '@/components/UIForm';
-import useAppDispatch from '@/hooks';
+import useAppDispatch from '@/stores/hooks';
 import { useState } from 'react';
 
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import { loginUser } from '@/modules/User/store';
+import { loginUser } from '@/modules/User/store/loginSlice';
 
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';

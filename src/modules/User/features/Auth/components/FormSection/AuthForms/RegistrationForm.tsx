@@ -1,11 +1,11 @@
 import UIForm from '@/components/UIForm';
-import useAppDispatch from '@/hooks';
+import useAppDispatch from '@/stores/hooks';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import isAPIError from '@/modules/User/helpers/isAPIError';
-import { registerUser } from '@/modules/User/store';
+import { registerUser } from '@/modules/User/store/registrationSlice';
 
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
