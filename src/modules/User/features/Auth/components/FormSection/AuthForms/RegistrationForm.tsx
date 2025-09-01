@@ -71,7 +71,7 @@ export default function RegistrationForm(): JSX.Element {
         rules={{ required: fieldIsRequired, validate: validateEmail }}
       />
 
-      <PasswordField<RegisterUserDto> mode="register" />
+      <PasswordField<RegisterUserDto> mode="register" autoComplete="off" />
     </UIForm>
   );
 }

@@ -14,11 +14,8 @@ export const registerUser = createAsyncThunk<
   { rejectValue: string }
 >('register/registerUser', async (credentials, { rejectWithValue }) => {
   try {
-    await registrationAPI.register(credentials);
-    return {
-      fullName: credentials.fullName,
-      email: credentials.email,
-    };
+    const { fullName, email } = await registrationAPI.register(credentials);
+    return { fullName, email };
   } catch (err) {
     return rejectWithValue((err as Error).message);
   }

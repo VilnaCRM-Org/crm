@@ -13,10 +13,12 @@ import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
 
 type PasswordFieldProps = {
   mode: AuthMode;
+  autoComplete: string;
 };
 
 export default function PasswordField<T extends FieldValues & { password: string }>({
   mode,
+  autoComplete,
 }: PasswordFieldProps): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
@@ -36,7 +38,7 @@ export default function PasswordField<T extends FieldValues & { password: string
       type={showPassword ? 'text' : 'password'}
       placeholder={t('sign_up.form.password_input.placeholder')}
       label={mode === 'register' ? t('sign_up.form.password_input.label') : 'Пароль'}
-      autoComplete="off"
+      autoComplete={autoComplete}
       inputProps={{
         sx: styles.passwordField,
         endAdornment: (

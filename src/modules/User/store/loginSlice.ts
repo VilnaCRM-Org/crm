@@ -1,16 +1,16 @@
-import container from '@/config/DependencyInjectionConfig';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-import LoginAPI from '../features/Auth/api/LoginAPI';
 import { LoginUserDto } from '../features/Auth/types/Credentials';
 
-const loginAPI = container.resolve<LoginAPI>('LoginAPI');
+import { ThunkExtra } from './types';
+
+type LoginResponse = { email: string; token: string };
 
 export const loginUser = createAsyncThunk<
-  { email: string; token: string },
+  LoginResponse,
   LoginUserDto,
-  { rejectValue: string }
->('auth/loginUser', async (credentials, { rejectWithValue }) => {
+  { rejectValue: string; extra: ThunkExtra }
+>('auth/loginUser', async (credentials, { rejectWithValue, extra: { loginAPI } }) => {
   try {
     const { token } = await loginAPI.login(credentials);
     return { email: credentials.email, token };

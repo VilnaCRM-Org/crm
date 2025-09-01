@@ -21,14 +21,11 @@ export default function LoginForm(): JSX.Element {
     setError('');
 
     try {
-      const resultAction = await dispatch(loginUser(data));
-
-      if (loginUser.rejected.match(resultAction)) {
-        const message = resultAction.payload || 'Unknown error';
-        setError(`Login failed: ${message}`);
-      }
+      await dispatch(loginUser(data)).unwrap();
     } catch (err) {
-      setError('An unexpected error occurred');
+      const message = (err as string) || 'auth.errors.unknown';
+      // TODO: replace hardcoded keys/strings with actual `t()` calls when keys are added
+      setError(`Помилка входу: ${message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -49,10 +46,10 @@ export default function LoginForm(): JSX.Element {
         label="E-mail"
         placeholder="vilnaCRM@gmail.com"
         type="email"
-        autoComplete="off"
+        autoComplete="email"
         rules={{ required: fieldIsRequired, validate: validateEmail }}
       />
-      <PasswordField<LoginUserDto> mode="login" />
+      <PasswordField<LoginUserDto> mode="login" autoComplete="current-password" />
       <UserOptions />
     </UIForm>
   );
