@@ -19,53 +19,65 @@ module.exports = function cracoConfig() {
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
-      configure: (webpackConfig) => {
-        const svgRule = {
-          test: /\.svg$/i,
-          oneOf: [
-            {
-              issuer: /\.[jt]sx?$/,
-              resourceQuery: { not: [/url/] },
-              use: [
-                {
-                  loader: '@svgr/webpack',
-                  options: {
-                    typescript: true,
-                    dimensions: false,
-                    memo: true,
-                    ref: true,
-                    svgo: true,
-                    svgoConfig: {
-                      multipass: true,
-                      plugins: [
-                        { name: 'preset-default', params: { overrides: { removeViewBox: false } } },
-                        { name: 'removeTitle', active: false },
-                        { name: 'prefixIds' },
-                      ],
+      module: {
+        rules: [
+          {
+            test: /\.svg$/i,
+            oneOf: [
+              {
+                issuer: /\.[jt]sx?$/,
+                resourceQuery: { not: [/url/] },
+                use: [
+                  {
+                    loader: '@svgr/webpack',
+                    options: {
+                      typescript: true,
+                      dimensions: false,
+                      memo: true,
+                      ref: true,
+                      svgo: true,
+                      svgoConfig: {
+                        multipass: true,
+                        plugins: [
+                          {
+                            name: 'preset-default',
+                            params: { overrides: { removeViewBox: false } },
+                          },
+                          { name: 'removeTitle', active: false },
+                        ],
+                      },
                     },
                   },
+                ],
+              },
+              {
+                type: 'asset/resource',
+                generator: {
+                  filename: 'assets/[name].[contenthash:8][ext][query]',
                 },
-              ],
+              },
+            ],
+          },
+          {
+            test: /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i,
+            type: 'asset',
+            parser: {
+              dataUrlCondition: {
+                maxSize: 8 * 1024,
+              },
             },
-            {
-              type: 'asset/resource',
-              generator: { filename: 'assets/[name].[contenthash:8][ext][query]' },
+            generator: {
+              filename: 'assets/[name].[contenthash:8][ext][query]',
             },
-          ],
-        };
-        const imagesRule = {
-          test: /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i,
-          type: 'asset',
-          parser: { dataUrlCondition: { maxSize: 8 * 1024 } },
-          generator: { filename: 'assets/[name].[contenthash:8][ext][query]' },
-        };
-        const fontsRule = {
-          test: /\.(woff2?|eot|ttf|otf)$/i,
-          type: 'asset/resource',
-          generator: { filename: 'assets/fonts/[name].[contenthash:8][ext][query]' },
-        };
-        webpackConfig.module.rules.unshift(svgRule, imagesRule, fontsRule);
-        return webpackConfig;
+          },
+          {
+            test: /\.(woff2?|eot|ttf|otf)$/i,
+            type: 'asset/resource',
+            generator: {
+              filename: 'assets/fonts/[name].[contenthash:8][ext][query]',
+            },
+          },
+        ],
       },
     },
 
