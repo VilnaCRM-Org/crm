@@ -1,19 +1,27 @@
-import HttpsClient from '@/services/HttpsClient/HttpsClient';
-import { container } from 'tsyringe';
+import type HttpsClient from '@/services/HttpsClient/HttpsClient';
+import { injectable, inject } from 'tsyringe';
 
-import BaseAPI from '@/modules/User/features/Auth/api/BaseApi';
-import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import { LoginUserDto } from '../types/Credentials';
 
-const httpsClient = container.resolve<HttpsClient>('HttpsClient');
+import BaseAPI from './BaseApi';
 
 export interface LoginResponse {
   token: string;
 }
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+@injectable()
 export default class LoginAPI extends BaseAPI {
+  constructor(@inject('HttpsClient') private readonly httpsClient: HttpsClient) {
+    super();
+  }
+
   public async login(credentials: LoginUserDto): Promise<LoginResponse> {
     try {
-      return await httpsClient.post<LoginUserDto, LoginResponse>('/api/users/login', credentials);
+      return await this.httpsClient.post<LoginUserDto, LoginResponse>(
+        `${API_BASE_URL}/api/users/login`,
+        credentials
+      );
     } catch (error) {
       throw this.handleApiError(error, 'Login');
     }

@@ -1,23 +1,24 @@
+import container from '@/config/DependencyInjectionConfig';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
+import LoginAPI from '../features/Auth/api/LoginAPI';
 import { LoginUserDto } from '../features/Auth/types/Credentials';
-
-import { ThunkExtra } from './types';
 
 type LoginResponse = { email: string; token: string };
 
-export const loginUser = createAsyncThunk<
-  LoginResponse,
-  LoginUserDto,
-  { rejectValue: string; extra: ThunkExtra }
->('auth/loginUser', async (credentials, { rejectWithValue, extra: { loginAPI } }) => {
-  try {
-    const { token } = await loginAPI.login(credentials);
-    return { email: credentials.email, token };
-  } catch (err) {
-    return rejectWithValue((err as Error).message);
+export const loginUser = createAsyncThunk<LoginResponse, LoginUserDto, { rejectValue: string }>(
+  'auth/loginUser',
+  async (credentials, { rejectWithValue }) => {
+    try {
+      // lazy resolve avoids TypeInfo error
+      const loginAPI = container.resolve<LoginAPI>('LoginAPI');
+      const { token } = await loginAPI.login(credentials);
+      return { email: credentials.email, token };
+    } catch (err) {
+      return rejectWithValue((err as Error).message);
+    }
   }
-});
+);
 
 interface LoginState {
   email: string;

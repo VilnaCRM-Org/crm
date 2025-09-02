@@ -47,7 +47,7 @@ export default class BaseAPI {
 
   private isNetworkError(message: string): boolean {
     return (
-      message.toLowerCase().includes('Failed to fetch') ||
+      message.toLowerCase().includes('failed to fetch') ||
       message.toLowerCase().includes('network') ||
       message.toLowerCase().includes('fetch') ||
       message.toLowerCase().includes('connection') ||

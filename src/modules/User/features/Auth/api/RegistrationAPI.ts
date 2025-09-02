@@ -1,23 +1,26 @@
-import HttpsClient from '@/services/HttpsClient/HttpsClient';
-import { container } from 'tsyringe';
+import type HttpsClient from '@/services/HttpsClient/HttpsClient';
+import { inject, injectable } from 'tsyringe';
 
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 import BaseAPI from './BaseApi';
 
-const httpsClient = container.resolve<HttpsClient>('HttpsClient');
-
 export interface RegistrationResponse {
-  id: string;
   fullName: string;
   email: string;
 }
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+@injectable()
 export default class RegistrationAPI extends BaseAPI {
+  constructor(@inject('HttpsClient') private readonly httpsClient: HttpsClient) {
+    super();
+  }
+
   public async register(credentials: RegisterUserDto): Promise<RegistrationResponse> {
     try {
-      return await httpsClient.post<RegisterUserDto, RegistrationResponse>(
-        '/api/users',
+      return await this.httpsClient.post<RegisterUserDto, RegistrationResponse>(
+        `${API_BASE_URL}/api/users/register`,
         credentials
       );
     } catch (error) {

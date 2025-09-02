@@ -4,16 +4,15 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import RegistrationAPI from '../features/Auth/api/RegistrationAPI';
 import { RegisterUserDto } from '../features/Auth/types/Credentials';
 
-const registrationAPI = container.resolve<RegistrationAPI>('RegistrationAPI');
-
 export type SafeUserInfo = Omit<RegisterUserDto, 'password'>;
 
 export const registerUser = createAsyncThunk<
   SafeUserInfo,
   RegisterUserDto,
   { rejectValue: string }
->('register/registerUser', async (credentials, { rejectWithValue }) => {
+>('auth/registerUser', async (credentials, { rejectWithValue }) => {
   try {
+    const registrationAPI = container.resolve<RegistrationAPI>('RegistrationAPI');
     const { fullName, email } = await registrationAPI.register(credentials);
     return { fullName, email };
   } catch (err) {
