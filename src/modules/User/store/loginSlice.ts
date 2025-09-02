@@ -1,24 +1,27 @@
 import container from '@/config/DependencyInjectionConfig';
+import TOKENS from '@/config/tokens';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-import LoginAPI from '../features/Auth/api/LoginAPI';
+import type LoginAPI from '../features/Auth/api/LoginAPI';
 import { LoginUserDto } from '../features/Auth/types/Credentials';
 
-type LoginResponse = { email: string; token: string };
+type LoginSuccessPayload = { email: string; token: string };
 
-export const loginUser = createAsyncThunk<LoginResponse, LoginUserDto, { rejectValue: string }>(
-  'auth/loginUser',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      // lazy resolve avoids TypeInfo error
-      const loginAPI = container.resolve<LoginAPI>('LoginAPI');
-      const { token } = await loginAPI.login(credentials);
-      return { email: credentials.email, token };
-    } catch (err) {
-      return rejectWithValue((err as Error).message);
-    }
+export const loginUser = createAsyncThunk<
+  LoginSuccessPayload,
+  LoginUserDto,
+  { rejectValue: string }
+>('auth/loginUser', async (credentials, { rejectWithValue }) => {
+  try {
+    // lazy resolve avoids TypeInfo error
+    const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+    const { token } = await loginAPI.login(credentials);
+    return { email: credentials.email, token };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+    return rejectWithValue(message);
   }
-);
+});
 
 interface LoginState {
   email: string;
@@ -42,6 +45,7 @@ export const loginSlice = createSlice({
       state.token = null;
       state.email = '';
       state.error = null;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {

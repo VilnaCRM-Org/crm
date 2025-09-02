@@ -1,3 +1,4 @@
+import TOKENS from '@/config/tokens';
 import type HttpsClient from '@/services/HttpsClient/HttpsClient';
 import { inject, injectable } from 'tsyringe';
 
@@ -9,18 +10,18 @@ export interface RegistrationResponse {
   fullName: string;
   email: string;
 }
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+const BASE_URL = (process.env.API_BASE_URL ?? '').trim();
 
 @injectable()
 export default class RegistrationAPI extends BaseAPI {
-  constructor(@inject('HttpsClient') private readonly httpsClient: HttpsClient) {
+  constructor(@inject(TOKENS.HttpsClient) private readonly httpsClient: HttpsClient) {
     super();
   }
 
   public async register(credentials: RegisterUserDto): Promise<RegistrationResponse> {
     try {
       return await this.httpsClient.post<RegisterUserDto, RegistrationResponse>(
-        `${API_BASE_URL}/api/users/register`,
+        `${BASE_URL}/api/users/register`,
         credentials
       );
     } catch (error) {

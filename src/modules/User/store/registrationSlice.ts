@@ -1,4 +1,5 @@
 import container from '@/config/DependencyInjectionConfig';
+import TOKENS from '@/config/tokens';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import RegistrationAPI from '../features/Auth/api/RegistrationAPI';
@@ -12,7 +13,7 @@ export const registerUser = createAsyncThunk<
   { rejectValue: string }
 >('auth/registerUser', async (credentials, { rejectWithValue }) => {
   try {
-    const registrationAPI = container.resolve<RegistrationAPI>('RegistrationAPI');
+    const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
     const { fullName, email } = await registrationAPI.register(credentials);
     return { fullName, email };
   } catch (err) {

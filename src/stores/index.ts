@@ -6,7 +6,7 @@ import registrationReducer from '@/modules/User/store/registrationSlice';
 export const store = configureStore({
   reducer: {
     auth: loginReducer,
-    register: registrationReducer,
+    registration: registrationReducer,
   },
 });
 

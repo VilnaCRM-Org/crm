@@ -1,3 +1,4 @@
+import TOKENS from '@/config/tokens';
 import type HttpsClient from '@/services/HttpsClient/HttpsClient';
 import { injectable, inject } from 'tsyringe';
 
@@ -8,18 +9,22 @@ import BaseAPI from './BaseApi';
 export interface LoginResponse {
   token: string;
 }
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+const BASE_URL = (process.env.API_BASE_URL ?? '').trim();
 
 @injectable()
 export default class LoginAPI extends BaseAPI {
-  constructor(@inject('HttpsClient') private readonly httpsClient: HttpsClient) {
+  constructor(
+    @inject(TOKENS.HttpsClient)
+    private readonly httpsClient: HttpsClient
+  ) {
     super();
   }
 
   public async login(credentials: LoginUserDto): Promise<LoginResponse> {
     try {
       return await this.httpsClient.post<LoginUserDto, LoginResponse>(
-        `${API_BASE_URL}/api/users/login`,
+        `${BASE_URL}/api/users/login`,
         credentials
       );
     } catch (error) {
