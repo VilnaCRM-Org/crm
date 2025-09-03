@@ -5,7 +5,7 @@ module.exports = function cracoConfig() {
   const localizationGenerator = new LocalizationGenerator();
   const skipLocaleGen = /^(1|true|yes|on|enabled)$/i.test(process.env.SKIP_LOCALE_GEN || '');
 
-  if (!skipLocaleGen) {
+  if (!skipLocaleGen && process.env.NODE_ENV === 'production') {
     try {
       localizationGenerator.generateLocalizationFile();
     } catch (err) {
@@ -39,12 +39,19 @@ module.exports = function cracoConfig() {
           type: 'asset/resource',
           generator: { filename: 'assets/fonts/[name].[contenthash:8][ext][query]' },
         };
-        const oneOfRule = webpackConfig.module.rules.find((r) => Array.isArray(r.oneOf));
-        if (oneOfRule) {
-          oneOfRule.oneOf.unshift(imagesRule, fontsRule);
-        } else {
-          webpackConfig.module.rules.unshift(imagesRule, fontsRule);
-        }
+        const faviconRule = {
+          test: /favicon\.ico$/i,
+          type: 'asset/resource',
+          generator: { filename: 'assets/[name].[contenthash:8][ext][query]' },
+        };
+        const targetRules =
+          webpackConfig.module.rules.find((r) => Array.isArray(r.oneOf))?.oneOf ||
+          webpackConfig.module.rules;
+        const hasTest = (rules, test) =>
+          rules.some((r) => r.test && String(r.test) === String(test));
+        if (!hasTest(targetRules, faviconRule.test)) targetRules.unshift(faviconRule);
+        if (!hasTest(targetRules, fontsRule.test)) targetRules.unshift(fontsRule);
+        if (!hasTest(targetRules, imagesRule.test)) targetRules.unshift(imagesRule);
         return webpackConfig;
       },
     },

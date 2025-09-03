@@ -1,11 +1,17 @@
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { z } from 'zod';
 
 import RegistrationAPI from '../features/Auth/api/RegistrationAPI';
 import { RegisterUserDto } from '../features/Auth/types/Credentials';
 
-export type SafeUserInfo = Omit<RegisterUserDto, 'password'>;
+const RegistrationResponseSchema = z.object({
+  fullName: z.string().min(1, 'Full name is required'),
+  email: z.string().email('Invalid email'),
+});
+
+export type SafeUserInfo = z.infer<typeof RegistrationResponseSchema>;
 
 export const registerUser = createAsyncThunk<
   SafeUserInfo,
@@ -14,8 +20,11 @@ export const registerUser = createAsyncThunk<
 >('auth/registerUser', async (credentials, { rejectWithValue }) => {
   try {
     const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
-    const { fullName, email } = await registrationAPI.register(credentials);
-    return { fullName, email };
+    const apiResponse = await registrationAPI.register(credentials);
+
+    const validated = RegistrationResponseSchema.parse(apiResponse);
+
+    return validated;
   } catch (err) {
     return rejectWithValue((err as Error).message);
   }

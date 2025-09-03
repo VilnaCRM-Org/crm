@@ -1,11 +1,16 @@
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { z } from 'zod';
 
 import type LoginAPI from '../features/Auth/api/LoginAPI';
 import { LoginUserDto } from '../features/Auth/types/Credentials';
 
-type LoginSuccessPayload = { email: string; token: string };
+const LoginResponseSchema = z.object({
+  token: z.string(),
+});
+
+type LoginSuccessPayload = z.infer<typeof LoginResponseSchema> & { email: string };
 
 export const loginUser = createAsyncThunk<
   LoginSuccessPayload,
@@ -15,8 +20,11 @@ export const loginUser = createAsyncThunk<
   try {
     // lazy resolve avoids TypeInfo error
     const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
-    const { token } = await loginAPI.login(credentials);
-    return { email: credentials.email, token };
+    const apiResponse = await loginAPI.login(credentials);
+
+    const validated = LoginResponseSchema.parse(apiResponse);
+
+    return { email: credentials.email, ...validated };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
     return rejectWithValue(message);

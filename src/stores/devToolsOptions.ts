@@ -14,8 +14,14 @@ const SENSITIVE_KEYS_LOWER = new Set([
   'secret',
 
   'authorization',
+  'auth',
+  'jwt',
+  'bearer',
   'cookie',
   'set-cookie',
+  'x-auth-token',
+  'csrf',
+  'xsrf',
   'session',
 ]);
 
@@ -27,16 +33,22 @@ const isPlainObject = (val: unknown): val is Record<string, unknown> => {
 
 const isSensitiveKey = (k: string): boolean => {
   const lower = k.toLowerCase();
+  if (SENSITIVE_KEYS_LOWER.has(lower)) return true;
   return (
-    SENSITIVE_KEYS_LOWER.has(lower) ||
     lower.includes('token') ||
-    lower.endsWith('key') ||
     lower.includes('secret') ||
-    lower.includes('pass')
+    lower.includes('pass') ||
+    /(^|[-_])(api|x-?api|access|private|client)?key$/.test(lower) ||
+    lower.includes('auth')
   );
 };
 function deepRedact<T>(input: T): T {
-  if (input == null) return input as T;
+  if (input instanceof Map) {
+    return new Map(Array.from(input.entries(), ([k, v]) => [k, deepRedact(v)])) as unknown as T;
+  }
+  if (input instanceof Set) {
+    return new Set(Array.from(input.values(), (v) => deepRedact(v))) as unknown as T;
+  }
   if (Array.isArray(input)) return input.map(deepRedact) as unknown as T;
   if (!isPlainObject(input)) return input as T;
   return Object.fromEntries(
@@ -49,22 +61,40 @@ function deepRedact<T>(input: T): T {
 
 const devToolsOptions: DevToolsEnhancerOptions = {
   actionSanitizer: <A extends AnyAction>(action: A): A => {
-    if (action.meta && typeof action.meta === 'object') {
-      const m = action.meta as Record<string, unknown>;
-
-      if (m.arg && typeof m.arg === 'object') m.arg = deepRedact(m.arg);
-      if (m.headers && typeof m.headers === 'object') m.headers = deepRedact(m.headers);
-      if (m.request && typeof m.request === 'object') m.request = deepRedact(m.request);
+    let changed = false;
+    let nextMeta = action.meta as Record<string, unknown> | undefined;
+    if (nextMeta && typeof nextMeta === 'object') {
+      const m: Record<string, unknown> = { ...nextMeta };
+      if (m.arg && typeof m.arg === 'object') {
+        m.arg = deepRedact(m.arg);
+        changed = true;
+      }
+      if (m.headers && typeof m.headers === 'object') {
+        m.headers = deepRedact(m.headers);
+        changed = true;
+      }
+      if (m.request && typeof m.request === 'object') {
+        m.request = deepRedact(m.request);
+        changed = true;
+      }
+      if (changed) nextMeta = m;
     }
-
-    const aWithPayload = action as A & { payload?: unknown };
-    if (aWithPayload.payload && typeof aWithPayload.payload === 'object') {
-      aWithPayload.payload = deepRedact(aWithPayload.payload);
-    }
-
-    return action;
+    const ap = (action as A & { payload?: unknown }).payload;
+    const nextPayload = ap && typeof ap === 'object' ? deepRedact(ap) : ap;
+    const payloadChanged = nextPayload !== ap;
+    return changed || payloadChanged
+      ? ({ ...action, meta: nextMeta, payload: nextPayload } as A)
+      : action;
   },
-  stateSanitizer: <S>(state: S): S => deepRedact(state) as S,
+  stateSanitizer: <S>(state: S): S => {
+    if (!state || typeof state !== 'object') return state;
+
+    const stateObj = state as S & { auth?: unknown };
+    return {
+      ...stateObj,
+      auth: stateObj.auth ? deepRedact(stateObj.auth) : undefined,
+    };
+  },
 };
 
 export default devToolsOptions;
