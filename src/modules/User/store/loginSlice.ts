@@ -1,9 +1,9 @@
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { z } from 'zod';
+import { z, ZodError, ZodIssue } from 'zod';
 
-import type LoginAPI from '../features/Auth/api/LoginAPI';
+import { type LoginAPI } from '../features/Auth/api';
 import { LoginUserDto } from '../features/Auth/types/Credentials';
 
 const LoginResponseSchema = z.object({
@@ -26,6 +26,10 @@ export const loginUser = createAsyncThunk<
 
     return { email: credentials.email, ...validated };
   } catch (err) {
+    if (err instanceof ZodError) {
+      const messages = err.issues.map((e: ZodIssue) => e.message).join('; ');
+      return rejectWithValue(messages);
+    }
     const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
     return rejectWithValue(message);
   }
@@ -37,7 +41,6 @@ interface LoginState {
   loading: boolean;
   error: string | null;
 }
-
 const initialState: LoginState = {
   email: '',
   token: null,
@@ -75,4 +78,4 @@ export const loginSlice = createSlice({
 });
 
 export const { logout } = loginSlice.actions;
-export default loginSlice.reducer;
+export const loginReducer = loginSlice.reducer;

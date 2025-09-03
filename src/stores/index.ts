@@ -1,7 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 
-import loginReducer from '@/modules/User/store/loginSlice';
-import registrationReducer from '@/modules/User/store/registrationSlice';
+import { loginReducer, registrationReducer } from '@/modules/User/store';
 
 import devToolsOptions from './devToolsOptions';
 
@@ -10,6 +9,7 @@ export const store = configureStore({
     auth: loginReducer,
     registration: registrationReducer,
   },
+
   devTools: process.env.NODE_ENV !== 'production' ? devToolsOptions : false,
 });
 

@@ -1,5 +1,4 @@
-import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
+import { type RegistrationAPI, type LoginAPI } from '../features/Auth/api';
 
 export type ThunkExtra = {
   loginAPI: LoginAPI;

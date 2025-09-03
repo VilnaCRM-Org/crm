@@ -1,7 +1,6 @@
 import { container } from 'tsyringe';
 
-import LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
+import { LoginAPI, RegistrationAPI } from '@/modules/User/features/Auth/api';
 import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
 import HttpsClient from '@/services/HttpsClient/HttpsClient';
 

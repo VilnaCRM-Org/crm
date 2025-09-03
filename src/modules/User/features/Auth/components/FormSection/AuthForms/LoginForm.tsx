@@ -3,7 +3,7 @@ import useAppDispatch from '@/stores/hooks';
 import { useState } from 'react';
 
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import { loginUser } from '@/modules/User/store/loginSlice';
+import { loginUser } from '@/modules/User/store';
 
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
