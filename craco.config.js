@@ -10,7 +10,14 @@ module.exports = function cracoConfig() {
       localizationGenerator.generateLocalizationFile();
     } catch (err) {
       const message = `Localization generation failed: ${err instanceof Error ? err.message : String(err)}`;
-      throw new Error(message, { cause: err });
+      let error;
+      try {
+        error = new Error(message, { cause: err });
+      } catch {
+        error = new Error(message);
+        error.cause = err;
+      }
+      throw error;
     }
   }
 

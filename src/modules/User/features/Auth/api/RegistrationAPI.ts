@@ -3,7 +3,7 @@ import TOKENS from '@/config/tokens';
 import type HttpsClient from '@/services/HttpsClient/HttpsClient';
 import { inject, injectable } from 'tsyringe';
 
-import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import type { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 import BaseAPI from './BaseApi';
 

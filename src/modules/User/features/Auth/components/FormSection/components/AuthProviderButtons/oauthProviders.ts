@@ -1,3 +1,4 @@
+import buildApiUrl from '@/utils/urlBuilder';
 import type { FC, SVGProps } from 'react';
 
 import { ReactComponent as Facebook } from '@/modules/User/features/Auth/assets/social-links/facebook-color.svg';
@@ -10,8 +11,7 @@ type OAuthService = 'google' | 'github' | 'facebook' | 'twitter';
 function signInWithProvider(service: OAuthService): void {
   // TODO: Implement actual OAuth authentication
   //  example:
-  const base = (process.env.REACT_APP_API_BASE_URL ?? '').replace(/\/+$/, '');
-  const url = `${base}/auth/${encodeURIComponent(service)}`;
+  const url = buildApiUrl(`/auth/${encodeURIComponent(service)}`);
   const win = window.open(url, '_blank', 'noopener,noreferrer');
 
   if (!win) {
