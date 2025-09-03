@@ -1,3 +1,4 @@
+import API_ENDPOINTS from '@/config/apiConfig';
 import TOKENS from '@/config/tokens';
 import type HttpsClient from '@/services/HttpsClient/HttpsClient';
 import { injectable, inject } from 'tsyringe';
@@ -9,8 +10,6 @@ import BaseAPI from './BaseApi';
 export interface LoginResponse {
   token: string;
 }
-
-const BASE_URL = (process.env.API_BASE_URL ?? '').trim();
 
 @injectable()
 export default class LoginAPI extends BaseAPI {
@@ -24,7 +23,7 @@ export default class LoginAPI extends BaseAPI {
   public async login(credentials: LoginUserDto): Promise<LoginResponse> {
     try {
       return await this.httpsClient.post<LoginUserDto, LoginResponse>(
-        `${BASE_URL}/api/users/login`,
+        API_ENDPOINTS.LOGIN,
         credentials
       );
     } catch (error) {

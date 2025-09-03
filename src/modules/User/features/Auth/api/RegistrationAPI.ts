@@ -1,3 +1,4 @@
+import API_ENDPOINTS from '@/config/apiConfig';
 import TOKENS from '@/config/tokens';
 import type HttpsClient from '@/services/HttpsClient/HttpsClient';
 import { inject, injectable } from 'tsyringe';
@@ -10,7 +11,6 @@ export interface RegistrationResponse {
   fullName: string;
   email: string;
 }
-const BASE_URL = (process.env.API_BASE_URL ?? '').trim();
 
 @injectable()
 export default class RegistrationAPI extends BaseAPI {
@@ -21,7 +21,7 @@ export default class RegistrationAPI extends BaseAPI {
   public async register(credentials: RegisterUserDto): Promise<RegistrationResponse> {
     try {
       return await this.httpsClient.post<RegisterUserDto, RegistrationResponse>(
-        `${BASE_URL}/api/users/register`,
+        API_ENDPOINTS.REGISTER,
         credentials
       );
     } catch (error) {
