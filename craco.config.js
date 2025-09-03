@@ -3,7 +3,7 @@ const LocalizationGenerator = require('./scripts/localizationGenerator');
 
 module.exports = function cracoConfig() {
   const localizationGenerator = new LocalizationGenerator();
-  const skipLocaleGen = /^(1|true|yes)$/i.test(process.env.SKIP_LOCALE_GEN || '');
+  const skipLocaleGen = /^(1|true|yes|on|enabled)$/i.test(process.env.SKIP_LOCALE_GEN || '');
 
   if (!skipLocaleGen) {
     try {
@@ -39,7 +39,12 @@ module.exports = function cracoConfig() {
           type: 'asset/resource',
           generator: { filename: 'assets/fonts/[name].[contenthash:8][ext][query]' },
         };
-        webpackConfig.module.rules.unshift(imagesRule, fontsRule);
+        const oneOfRule = webpackConfig.module.rules.find((r) => Array.isArray(r.oneOf));
+        if (oneOfRule) {
+          oneOfRule.oneOf.unshift(imagesRule, fontsRule);
+        } else {
+          webpackConfig.module.rules.unshift(imagesRule, fontsRule);
+        }
         return webpackConfig;
       },
     },
