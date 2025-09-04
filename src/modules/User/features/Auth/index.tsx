@@ -6,12 +6,16 @@ import React from 'react';
 
 import FormSection from '@/modules/User/features/Auth/components/FormSection';
 
+import AuthErrorBoundary from './components/AuthErrorBoundary';
+
 export default function Authentication(): JSX.Element {
   return (
     <ThemeProvider theme={Theme}>
       <BackToMain />
       <main>
-        <FormSection />
+        <AuthErrorBoundary>
+          <FormSection />
+        </AuthErrorBoundary>
       </main>
 
       <UIFooter />
