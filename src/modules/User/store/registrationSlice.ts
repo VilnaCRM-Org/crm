@@ -1,10 +1,9 @@
-import container from '@/config/DependencyInjectionConfig';
-import TOKENS from '@/config/tokens';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { z, ZodError, ZodIssue } from 'zod';
 
-import { type RegistrationAPI } from '../features/Auth/api';
 import { RegisterUserDto } from '../features/Auth/types/Credentials';
+
+import { ThunkExtra } from './types';
 
 const RegistrationResponseSchema = z.object({
   fullName: z.string().trim().min(1, 'Full name is required'),
@@ -16,11 +15,10 @@ export type SafeUserInfo = z.infer<typeof RegistrationResponseSchema>;
 export const registerUser = createAsyncThunk<
   SafeUserInfo,
   RegisterUserDto,
-  { rejectValue: string }
->('register/registerUser', async (credentials, { rejectWithValue }) => {
+  { extra: ThunkExtra; rejectValue: string }
+>('auth/registerUser', async (credentials, { extra, rejectWithValue }) => {
   try {
-    const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
-    const apiResponse = await registrationAPI.register(credentials);
+    const apiResponse = await extra.registrationAPI.register(credentials);
 
     const validated = RegistrationResponseSchema.parse(apiResponse);
 
@@ -30,6 +28,7 @@ export const registerUser = createAsyncThunk<
       const messages = err.issues.map((e: ZodIssue) => e.message).join('; ');
       return rejectWithValue(messages);
     }
+
     const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
     return rejectWithValue(message);
   }

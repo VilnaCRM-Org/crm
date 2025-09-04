@@ -5,7 +5,7 @@ module.exports = function cracoConfig() {
   const localizationGenerator = new LocalizationGenerator();
   const skipLocaleGen = /^(1|true|yes|on|enabled)$/i.test(process.env.SKIP_LOCALE_GEN || '');
 
-  if (!skipLocaleGen && process.env.NODE_ENV === 'production') {
+  if (!skipLocaleGen && process.env.NODE_ENV !== 'test') {
     try {
       localizationGenerator.generateLocalizationFile();
     } catch (err) {
@@ -30,10 +30,10 @@ module.exports = function cracoConfig() {
       configure: (webpackConfig) => {
         const injectedTag = Symbol.for('craco.injectedRule');
         const imagesRule = {
-          test: /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i,
+          test: /\.(png|jpe?g|gif|webp|avif|bmp)$/i,
           type: 'asset',
           parser: { dataUrlCondition: { maxSize: 8 * 1024 } },
-          generator: { filename: 'assets/[name].[contenthash:8][ext][query]' },
+          generator: { filename: 'assets/images/[name].[contenthash:8][ext][query]' },
         };
         imagesRule[injectedTag] = true;
 
@@ -54,15 +54,22 @@ module.exports = function cracoConfig() {
         const targetRules =
           webpackConfig.module.rules.find((r) => Array.isArray(r.oneOf))?.oneOf ||
           webpackConfig.module.rules;
+        const regEq = (a, b) =>
+          a instanceof RegExp &&
+          b instanceof RegExp &&
+          a.source === b.source &&
+          a.flags === b.flags;
         const hasRule = (rules, test) =>
-          rules.some((r) => r[injectedTag] || (r.test && String(r.test) === String(test)));
+          rules.some((r) => r[injectedTag] || (r.test && regEq(r.test, test)));
         if (!hasRule(targetRules, imagesRule.test)) targetRules.unshift(imagesRule);
         if (!hasRule(targetRules, fontsRule.test)) targetRules.unshift(fontsRule);
         if (!hasRule(targetRules, faviconRule.test)) targetRules.unshift(faviconRule);
         return webpackConfig;
       },
     },
-
+    babel: {
+      plugins: ['babel-plugin-transform-typescript-metadata'],
+    },
     style: {
       sass: {
         loaderOptions: {
