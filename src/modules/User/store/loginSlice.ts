@@ -13,15 +13,19 @@ export const loginUser = createAsyncThunk<
   LoginSuccessPayload,
   LoginUserDto,
   { extra: ThunkExtra; rejectValue: string }
->('auth/loginUser', async (credentials, { extra, rejectWithValue }) => {
+>('auth/loginUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
-    const apiResponse = await extra.loginAPI.login(credentials);
+    const apiResponse = await extra.loginAPI.login(credentials, { signal });
+    const parsed = LoginResponseSchema.safeParse(apiResponse);
 
-    const validated = LoginResponseSchema.parse(apiResponse);
+    if (!parsed.success) {
+      return rejectWithValue(parsed.error.issues.map((i) => i.message).join('; '));
+    }
 
-    return { email: credentials.email, ...validated };
+    return { email: credentials.email, ...parsed.data };
   } catch (err) {
-    return rejectWithValue((err as Error).message);
+    const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
+    return rejectWithValue(message);
   }
 });
 

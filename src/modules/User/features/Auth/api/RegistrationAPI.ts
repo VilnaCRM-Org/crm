@@ -18,11 +18,15 @@ export default class RegistrationAPI extends BaseAPI {
     super();
   }
 
-  public async register(credentials: RegisterUserDto): Promise<RegistrationResponse> {
+  public async register(
+    credentials: RegisterUserDto,
+    options?: { signal?: AbortSignal }
+  ): Promise<RegistrationResponse> {
     try {
       return await this.httpsClient.post<RegisterUserDto, RegistrationResponse>(
         API_ENDPOINTS.REGISTER,
-        credentials
+        credentials,
+        options
       );
     } catch (error) {
       throw this.handleApiError(error, 'Registration');

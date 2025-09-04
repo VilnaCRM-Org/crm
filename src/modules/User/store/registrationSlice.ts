@@ -16,9 +16,9 @@ export const registerUser = createAsyncThunk<
   SafeUserInfo,
   RegisterUserDto,
   { extra: ThunkExtra; rejectValue: string }
->('auth/registerUser', async (credentials, { extra, rejectWithValue }) => {
+>('auth/registerUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
-    const apiResponse = await extra.registrationAPI.register(credentials);
+    const apiResponse = await extra.registrationAPI.register(credentials, { signal });
 
     const validated = RegistrationResponseSchema.parse(apiResponse);
 

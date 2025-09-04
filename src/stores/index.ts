@@ -2,8 +2,8 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
-import LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
+import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
+import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 import { loginReducer, registrationReducer } from '@/modules/User/store';
 import type { ThunkExtra } from '@/modules/User/store/types';
 

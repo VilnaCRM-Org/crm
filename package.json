@@ -13,7 +13,7 @@
     "generate-ts-doc": "api-extractor run --local --verbose",
     "format": "prettier --write .",
     "lint:eslint": "eslint .",
-    "lint:tsc": "tsc --noEmit --newLine LF",
+    "lint:tsc": "tsc --noEmit",
     "lint:md": "markdownlint -i CHANGELOG.md **/*.md",
     "test:e2e": "cypress run --headless",
     "test:e2e-local": "cypress open",
@@ -34,7 +34,7 @@
     "@mui/system": "^7.3.1",
     "@reduxjs/toolkit": "^2.0.1",
     "@sentry/react": "^7.120.3",
-    "dotenv": "^16.5.0",
+    "dotenv": "^17.2.2",
     "graphql": "^16.11.0",
     "i18next": "^23.7.16",
     "react": "18.3.1",
@@ -46,8 +46,8 @@
     "react-scripts": "^5.0.1",
     "reflect-metadata": "^0.2.1",
     "require-from-string": "^2.0.2",
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "tsyringe": "^4.10.0",
-    "wait-on": "^8.0.3",
     "web-vitals": "^3.5.2",
     "winston": "^3.17.0",
     "zod": "^4.1.5"
@@ -101,8 +101,8 @@
     "storybook": "^7.6.20",
     "style-loader": "^3.3.4",
     "ts-jest": "^29.3.2",
-    "tsconfig-paths-webpack-plugin": "^4.2.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "wait-on": "^8.0.4"
   },
   "engines": {
     "node": ">=20.0.0",

@@ -1,33 +1,36 @@
 import HttpsClient, { RequestMethod } from './HttpsClient';
 
 export default class FetchHttpsClient implements HttpsClient {
-  public get<T>(url: string): Promise<T> {
-    return this.request<T>(url, 'GET');
+  public get<T>(url: string, options?: { signal?: AbortSignal }): Promise<T> {
+    return this.request<T>(url, 'GET', undefined, undefined, options);
   }
 
-  public post<T, R>(url: string, data: T): Promise<R> {
-    return this.request<R>(url, 'POST', data);
+  public post<T, R>(url: string, data: T, options?: { signal?: AbortSignal }): Promise<R> {
+    return this.request<R>(url, 'POST', data, undefined, options);
   }
 
-  public put<T, R>(url: string, data: T): Promise<R> {
-    return this.request<R>(url, 'PUT', data);
+  public put<T, R>(url: string, data: T, options?: { signal?: AbortSignal }): Promise<R> {
+    return this.request<R>(url, 'PUT', data, undefined, options);
   }
 
-  public patch<T, R>(url: string, data: T): Promise<R> {
-    return this.request<R>(url, 'PATCH', data);
+  public patch<T, R>(url: string, data: T, options?: { signal?: AbortSignal }): Promise<R> {
+    return this.request<R>(url, 'PATCH', data, undefined, options);
   }
 
-  public delete<T, R>(url: string, data?: T): Promise<R> {
-    return this.request<R>(url, 'DELETE', data);
+  public delete<T, R>(url: string, data?: T, options?: { signal?: AbortSignal }): Promise<R> {
+    return this.request<R>(url, 'DELETE', data, undefined, options);
   }
 
   private async request<R>(
     url: string,
     method: RequestMethod,
     body?: unknown,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
+    options?: { signal?: AbortSignal }
   ): Promise<R> {
-    const config = this.createRequestConfig(method, body, headers);
+    const config: RequestInit = this.createRequestConfig(method, body, headers);
+    if (options?.signal) config.signal = options.signal;
+
     const response = await fetch(url, config);
     return this.processResponse<R>(response);
   }
@@ -44,7 +47,6 @@ export default class FetchHttpsClient implements HttpsClient {
     if (body !== undefined) {
       config.body = JSON.stringify(body);
     }
-
     return config;
   }
 
@@ -71,10 +73,6 @@ export default class FetchHttpsClient implements HttpsClient {
     if (!contentType || !contentType.includes('application/json')) {
       throw new Error('Response is not JSON');
     }
-    try {
-      return await response.json();
-    } catch (error) {
-      throw new Error('Failed to parse JSON response');
-    }
+    return response.json() as Promise<T>;
   }
 }

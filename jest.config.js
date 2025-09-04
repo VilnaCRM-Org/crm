@@ -8,11 +8,10 @@ module.exports = {
   roots: ['./src/test/unit', './scripts/test/unit'],
   coveragePathIgnorePatterns: ['/node_modules/', 'LocalizationGenerator\\.js'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': 'ts-jest',
     '^.+\\.js$': 'babel-jest',
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '^@$': '<rootDir>/src',
   },
 };

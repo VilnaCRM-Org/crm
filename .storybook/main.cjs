@@ -13,10 +13,11 @@ module.exports = {
     name: '@storybook/react-webpack5',
     options: {},
   },
-  webpackFinal: async (cfg, { configType }) => {
+  webpackFinal: async (config, { configType }) => {
     const isProd = configType === 'PRODUCTION';
-    cfg.resolve = cfg.resolve || {};
-    cfg.resolve.extensions = cfg.resolve.extensions || [
+
+    config.resolve = config.resolve || {};
+    config.resolve.extensions = config.resolve.extensions || [
       '.ts',
       '.tsx',
       '.js',
@@ -25,17 +26,13 @@ module.exports = {
       '.cjs',
       '.json',
     ];
-    cfg.resolve.plugins = [
-      ...(cfg.resolve.plugins || []),
+    config.resolve.plugins = [
+      ...(config.resolve.plugins || []),
       new TsconfigPathsPlugin({
-        extensions: cfg.resolve.extensions,
+        extensions: config.resolve.extensions,
         configFile: path.resolve(process.cwd(), 'tsconfig.paths.json'),
       }),
     ];
-
-    cfg.module = cfg.module || {};
-    const existingRules = cfg.module.rules || [];
-
     const sanitizeSvgInRules = (rules) =>
       (rules || []).map((rule) => {
         if (!rule || typeof rule !== 'object') return rule;
@@ -49,7 +46,6 @@ module.exports = {
               : typeof test === 'string'
                 ? test.includes('svg')
                 : false;
-
         if (hasSvg) {
           const prev = rule.exclude
             ? Array.isArray(rule.exclude)
@@ -61,9 +57,10 @@ module.exports = {
         return rule;
       });
 
+    const existingRules = config.module.rules || [];
     const sanitizedRules = sanitizeSvgInRules(existingRules);
 
-    cfg.module.rules = [
+    config.module.rules = [
       {
         test: /\.svg$/i,
         oneOf: [
@@ -112,9 +109,7 @@ module.exports = {
           },
           {
             loader: 'sass-loader',
-            options: {
-              sourceMap: !isProd,
-            },
+            options: { sourceMap: !isProd },
           },
         ],
       },
@@ -124,17 +119,12 @@ module.exports = {
         use: [
           'style-loader',
           'css-loader',
-          {
-            loader: 'sass-loader',
-            options: {
-              sourceMap: !isProd,
-            },
-          },
+          { loader: 'sass-loader', options: { sourceMap: !isProd } },
         ],
         sideEffects: true,
       },
     ];
 
-    return cfg;
+    return config;
   },
 };

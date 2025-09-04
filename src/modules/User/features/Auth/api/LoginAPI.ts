@@ -20,11 +20,15 @@ export default class LoginAPI extends BaseAPI {
     super();
   }
 
-  public async login(credentials: LoginUserDto): Promise<LoginResponse> {
+  public async login(
+    credentials: LoginUserDto,
+    options?: { signal?: AbortSignal }
+  ): Promise<LoginResponse> {
     try {
       return await this.httpsClient.post<LoginUserDto, LoginResponse>(
         API_ENDPOINTS.LOGIN,
-        credentials
+        credentials,
+        options
       );
     } catch (error) {
       throw this.handleApiError(error, 'Login');

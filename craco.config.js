@@ -1,4 +1,5 @@
 const path = require('path');
+const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const LocalizationGenerator = require('./scripts/localizationGenerator');
 
 module.exports = function cracoConfig() {
@@ -28,7 +29,22 @@ module.exports = function cracoConfig() {
       },
 
       configure: (webpackConfig) => {
+        const config = {
+          ...webpackConfig,
+          resolve: { ...(webpackConfig.resolve || {}) },
+          module: { ...(webpackConfig.module || {}) },
+        };
+
+        config.resolve.plugins = [...(config.resolve.plugins || [])];
+        config.resolve.plugins.push(
+          new TsconfigPathsPlugin({
+            configFile: path.resolve(__dirname, 'tsconfig.json'),
+            extensions: config.resolve.extensions,
+          })
+        );
+
         const injectedTag = Symbol.for('craco.injectedRule');
+
         const imagesRule = {
           test: /\.(png|jpe?g|gif|webp|avif|bmp)$/i,
           type: 'asset',
@@ -52,24 +68,35 @@ module.exports = function cracoConfig() {
         faviconRule[injectedTag] = true;
 
         const targetRules =
-          webpackConfig.module.rules.find((r) => Array.isArray(r.oneOf))?.oneOf ||
-          webpackConfig.module.rules;
+          config.module.rules?.find((r) => Array.isArray(r.oneOf))?.oneOf ||
+          config.module.rules ||
+          [];
+
         const regEq = (a, b) =>
           a instanceof RegExp &&
           b instanceof RegExp &&
           a.source === b.source &&
           a.flags === b.flags;
+
         const hasRule = (rules, test) =>
           rules.some((r) => r[injectedTag] || (r.test && regEq(r.test, test)));
+
         if (!hasRule(targetRules, imagesRule.test)) targetRules.unshift(imagesRule);
         if (!hasRule(targetRules, fontsRule.test)) targetRules.unshift(fontsRule);
         if (!hasRule(targetRules, faviconRule.test)) targetRules.unshift(faviconRule);
-        return webpackConfig;
+
+        config.module.rules = targetRules;
+        return config;
       },
     },
+
     babel: {
-      plugins: ['babel-plugin-transform-typescript-metadata'],
+      plugins: [
+        ['@babel/plugin-proposal-decorators', { legacy: true }],
+        'babel-plugin-transform-typescript-metadata',
+      ],
     },
+
     style: {
       sass: {
         loaderOptions: {
