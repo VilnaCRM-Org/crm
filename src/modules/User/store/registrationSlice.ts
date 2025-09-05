@@ -1,4 +1,4 @@
-import { ApiError, ErrorHandler } from '@/services/error';
+import { UiError, ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
@@ -7,18 +7,20 @@ import { RegisterUserDto } from '../features/Auth/types/Credentials';
 
 import { ThunkExtra } from './types';
 
-
 export const registerUser = createAsyncThunk<
   SafeUserInfo,
   RegisterUserDto,
-  { extra: ThunkExtra; rejectValue: ApiError }
+  { extra: ThunkExtra; rejectValue: UiError }
 >('auth/registerUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.registrationAPI.register(credentials, { signal });
 
-    const validated = RegistrationResponseSchema.parse(apiResponse);
-
-    return validated;
+    const parsed = RegistrationResponseSchema.safeParse(apiResponse);
+    if (!parsed.success) {
+      const displayMessage = parsed.error.issues.map((i) => i.message).join('; ');
+      return rejectWithValue({ displayMessage, retryable: true });
+    }
+    return parsed.data;
   } catch (err) {
     const parsedError = ErrorParser.parseHttpError(err);
     const apiError = ErrorHandler.handleAuthError(parsedError);

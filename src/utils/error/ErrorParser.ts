@@ -2,7 +2,7 @@ import ParsedError from './types';
 
 export default class ErrorParser {
   public static parseHttpError(error: unknown): ParsedError {
-    if (error instanceof Response) {
+    if (typeof Response !== 'undefined' && error instanceof Response) {
       return {
         code: `HTTP_${error.status}`,
         message: `HTTP error ${error.status}`,

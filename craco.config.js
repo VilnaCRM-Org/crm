@@ -36,14 +36,17 @@ module.exports = function cracoConfig() {
         };
 
         config.resolve.plugins = [...(config.resolve.plugins || [])];
-        config.resolve.plugins.push(
-          new TsconfigPathsPlugin({
-            configFile: path.resolve(__dirname, 'tsconfig.json'),
-            extensions: config.resolve.extensions,
-          })
+        const hasTsPaths = (config.resolve.plugins || []).some(
+          (p) => p && p.constructor && p.constructor.name === 'TsconfigPathsPlugin'
         );
-
-        const injectedTag = Symbol.for('craco.injectedRule');
+        if (!hasTsPaths) {
+          config.resolve.plugins.push(
+            new TsconfigPathsPlugin({
+              configFile: path.resolve(__dirname, 'tsconfig.json'),
+              extensions: config.resolve.extensions,
+            })
+          );
+        }
 
         const imagesRule = {
           test: /\.(png|jpe?g|gif|webp|avif|bmp)$/i,
@@ -51,21 +54,18 @@ module.exports = function cracoConfig() {
           parser: { dataUrlCondition: { maxSize: 8 * 1024 } },
           generator: { filename: 'assets/images/[name].[contenthash:8][ext][query]' },
         };
-        imagesRule[injectedTag] = true;
 
         const fontsRule = {
           test: /\.(woff2?|eot|ttf|otf)$/i,
           type: 'asset/resource',
           generator: { filename: 'assets/fonts/[name].[contenthash:8][ext][query]' },
         };
-        fontsRule[injectedTag] = true;
 
         const faviconRule = {
           test: /favicon\.ico$/i,
           type: 'asset/resource',
           generator: { filename: 'assets/[name].[contenthash:8][ext][query]' },
         };
-        faviconRule[injectedTag] = true;
 
         const rulesContainer = config.module.rules?.find((r) => Array.isArray(r.oneOf));
         const targetRules = rulesContainer ? rulesContainer.oneOf : (config.module.rules ||= []);

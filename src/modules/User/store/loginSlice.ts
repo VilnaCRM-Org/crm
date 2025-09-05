@@ -1,4 +1,4 @@
-import { ApiError, ErrorHandler } from '@/services/error';
+import { UiError, ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
@@ -12,7 +12,7 @@ type LoginSuccessPayload = LoginResponse & { email: string };
 export const loginUser = createAsyncThunk<
   LoginSuccessPayload,
   LoginUserDto,
-  { extra: ThunkExtra; rejectValue: ApiError }
+  { extra: ThunkExtra; rejectValue: UiError }
 >('auth/loginUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.loginAPI.login(credentials, { signal });

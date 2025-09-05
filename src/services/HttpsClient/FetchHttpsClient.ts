@@ -1,4 +1,5 @@
-import HttpError from './HttpError';
+import throwIfHttpError from './hrowIfHttpError';
+import { HttpError } from './HttpError';
 import HttpsClient, { RequestMethod } from './HttpsClient';
 
 export default class FetchHttpsClient implements HttpsClient {
@@ -66,19 +67,14 @@ export default class FetchHttpsClient implements HttpsClient {
   }
 
   private async processResponse<T>(response: Response): Promise<T> {
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new HttpError({
-        status: response.status,
-        message: errorText || response.statusText,
-      });
-    }
+    await throwIfHttpError(response); // Throws if status is not ok
 
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       throw new HttpError({
         status: response.status,
         message: 'Response is not JSON',
+        cause: response,
       });
     }
 
@@ -88,6 +84,7 @@ export default class FetchHttpsClient implements HttpsClient {
       throw new HttpError({
         status: response.status,
         message: 'Failed to parse JSON response',
+        cause: response,
       });
     }
   }

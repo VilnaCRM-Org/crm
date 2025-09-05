@@ -1,16 +1,15 @@
 import ParsedError from '@/utils/error/types';
 
-import { ERROR_CODES } from './errorCodes';
+import { ERROR_CODES, type ErrorCode } from './errorCodes';
 
-export interface ApiError {
+export interface UiError {
   displayMessage: string;
   retryable: boolean;
 }
-
-const errorMap: Record<string, ApiError> = {
+const errorMap: Record<ErrorCode, UiError> = {
   [ERROR_CODES.AUTH_INVALID]: {
     displayMessage: 'Invalid credentials',
-    retryable: true,
+    retryable: false,
   },
   [ERROR_CODES.HTTP_401]: {
     displayMessage: 'Unauthorized',
@@ -20,14 +19,16 @@ const errorMap: Record<string, ApiError> = {
     displayMessage: 'Internal server error',
     retryable: false,
   },
+  [ERROR_CODES.JS_ERROR]: { displayMessage: 'JavaScript error occurred', retryable: true },
+  [ERROR_CODES.UNKNOWN_ERROR]: { displayMessage: 'An unknown error occurred', retryable: true },
 };
 
 export class ErrorHandler {
-  public static handleAuthError(error: ParsedError): ApiError {
+  public static handleAuthError(error: ParsedError): UiError {
     return (
-      errorMap[error.code] ?? {
-        displayMessage: error.message,
-        retryable: true,
+      errorMap[error.code as ErrorCode] ?? {
+        displayMessage: 'Something went wrong. Please try again.',
+        retryable: false,
       }
     );
   }
