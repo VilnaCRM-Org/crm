@@ -3,8 +3,8 @@ import ParsedError from '@/utils/error/types';
 import { ERROR_CODES, type ErrorCode } from './errorCodes';
 
 export interface UiError {
-  displayMessage: string;
-  retryable: boolean;
+  readonly displayMessage: string;
+  readonly retryable: boolean;
 }
 const errorMap: Record<ErrorCode, UiError> = {
   [ERROR_CODES.AUTH_INVALID]: {
@@ -19,8 +19,8 @@ const errorMap: Record<ErrorCode, UiError> = {
     displayMessage: 'Internal server error',
     retryable: false,
   },
-  [ERROR_CODES.JS_ERROR]: { displayMessage: 'JavaScript error occurred', retryable: true },
-  [ERROR_CODES.UNKNOWN_ERROR]: { displayMessage: 'An unknown error occurred', retryable: true },
+  [ERROR_CODES.JS_ERROR]: { displayMessage: 'JavaScript error occurred', retryable: false },
+  [ERROR_CODES.UNKNOWN_ERROR]: { displayMessage: 'An unknown error occurred', retryable: false },
 };
 
 export class ErrorHandler {

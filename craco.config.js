@@ -37,8 +37,9 @@ module.exports = function cracoConfig() {
 
         config.resolve.plugins = [...(config.resolve.plugins || [])];
         const hasTsPaths = (config.resolve.plugins || []).some(
-          (p) => p && p.constructor && p.constructor.name === 'TsconfigPathsPlugin'
+          (p) => p instanceof TsconfigPathsPlugin
         );
+
         if (!hasTsPaths) {
           config.resolve.plugins.push(
             new TsconfigPathsPlugin({
@@ -90,10 +91,25 @@ module.exports = function cracoConfig() {
     },
 
     babel: {
-      plugins: [
-        ['@babel/plugin-proposal-decorators', { legacy: true }],
-        'babel-plugin-transform-typescript-metadata',
-      ],
+      loaderOptions: (options) => {
+        const plugins = Array.isArray(options.plugins) ? options.plugins : [];
+        const rest = plugins.filter((p) => {
+          const name = Array.isArray(p) ? p[0] : p;
+          return (
+            name !== '@babel/plugin-proposal-decorators' &&
+            name !== 'babel-plugin-transform-typescript-metadata'
+          );
+        });
+
+        return {
+          ...options,
+          plugins: [
+            ['@babel/plugin-proposal-decorators', { legacy: true }],
+            'babel-plugin-transform-typescript-metadata',
+            ...rest,
+          ],
+        };
+      },
     },
 
     style: {

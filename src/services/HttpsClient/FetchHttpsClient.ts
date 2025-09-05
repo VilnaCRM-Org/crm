@@ -1,6 +1,6 @@
-import throwIfHttpError from './hrowIfHttpError';
 import { HttpError } from './HttpError';
 import HttpsClient, { RequestMethod } from './HttpsClient';
+import throwIfHttpError from './throwIfHttpError';
 
 export default class FetchHttpsClient implements HttpsClient {
   public get<T>(url: string, options?: { signal?: AbortSignal }): Promise<T> {
@@ -42,47 +42,51 @@ export default class FetchHttpsClient implements HttpsClient {
     body?: unknown,
     headers?: Record<string, string>
   ): RequestInit {
+    const hasBody = body !== undefined;
     const config: RequestInit = {
       method,
-      headers: this.createHeaders(method, headers),
+      headers: this.createHeaders(hasBody, headers),
     };
-    if (body !== undefined) {
+    if (hasBody) {
       config.body = JSON.stringify(body);
     }
     return config;
   }
 
   private createHeaders(
-    method: RequestMethod,
+    hasBody: boolean,
     customHeaders?: Record<string, string>
   ): Record<string, string> {
     const headers: Record<string, string> = {
       Accept: 'application/json',
       ...customHeaders,
     };
-    if (method !== 'GET' && method !== 'DELETE') {
-      headers['Content-Type'] = 'application/json';
-    }
+    if (hasBody) headers['Content-Type'] = 'application/json';
     return headers;
   }
 
   private async processResponse<T>(response: Response): Promise<T> {
     await throwIfHttpError(response); // Throws if status is not ok
-
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
+    const { status } = response;
+    if (status === 204 || status === 205 || status === 304) {
+      return undefined as T;
+    }
+    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    const isJson = /\bjson\b/.test(contentType) || contentType.includes('+json');
+    if (!isJson) {
+      const text = await response.text().catch(() => '');
+      if (!text) return undefined as T;
       throw new HttpError({
-        status: response.status,
+        status,
         message: 'Response is not JSON',
         cause: response,
       });
     }
-
     try {
-      return await response.json();
+      return (await response.json()) as T;
     } catch {
       throw new HttpError({
-        status: response.status,
+        status,
         message: 'Failed to parse JSON response',
         cause: response,
       });

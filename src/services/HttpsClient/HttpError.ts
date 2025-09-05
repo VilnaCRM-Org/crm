@@ -20,6 +20,10 @@ export class HttpError extends Error {
       Error.captureStackTrace(this, new.target);
     }
   }
+
+  public toJSON(): { name: string; message: string; status: number; cause?: unknown } {
+    return { name: this.name, message: this.message, status: this.status, cause: this.cause };
+  }
 }
 
 export const isHttpError = (e: unknown): e is HttpError => {

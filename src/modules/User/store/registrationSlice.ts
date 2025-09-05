@@ -17,9 +17,10 @@ export const registerUser = createAsyncThunk<
 
     const parsed = RegistrationResponseSchema.safeParse(apiResponse);
     if (!parsed.success) {
-      const displayMessage = parsed.error.issues.map((i) => i.message).join('; ');
-      return rejectWithValue({ displayMessage, retryable: true });
+      const displayMessage = parsed.error.issues.map((i) => i.message).join('\n');
+      return rejectWithValue({ displayMessage, retryable: false });
     }
+
     return parsed.data;
   } catch (err) {
     const parsedError = ErrorParser.parseHttpError(err);
@@ -32,6 +33,7 @@ export const registerUser = createAsyncThunk<
 interface RegistrationState extends SafeUserInfo {
   loading: boolean;
   error: string | null;
+  retryable?: boolean;
 }
 
 const initialState: RegistrationState = {
@@ -42,7 +44,7 @@ const initialState: RegistrationState = {
 };
 
 export const registrationSlice = createSlice({
-  name: 'register',
+  name: 'registration',
   initialState,
   reducers: {},
   extraReducers: (builder) => {
@@ -59,6 +61,7 @@ export const registrationSlice = createSlice({
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
+        state.retryable = action.payload?.retryable;
       });
   },
 });
