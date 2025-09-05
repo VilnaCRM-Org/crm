@@ -67,10 +67,8 @@ module.exports = function cracoConfig() {
         };
         faviconRule[injectedTag] = true;
 
-        const targetRules =
-          config.module.rules?.find((r) => Array.isArray(r.oneOf))?.oneOf ||
-          config.module.rules ||
-          [];
+        const rulesContainer = config.module.rules?.find((r) => Array.isArray(r.oneOf));
+        const targetRules = rulesContainer ? rulesContainer.oneOf : (config.module.rules ||= []);
 
         const regEq = (a, b) =>
           a instanceof RegExp &&
@@ -78,14 +76,15 @@ module.exports = function cracoConfig() {
           a.source === b.source &&
           a.flags === b.flags;
 
-        const hasRule = (rules, test) =>
-          rules.some((r) => r[injectedTag] || (r.test && regEq(r.test, test)));
+        const hasRule = (rules, test) => rules.some((r) => r.test && regEq(r.test, test));
 
         if (!hasRule(targetRules, imagesRule.test)) targetRules.unshift(imagesRule);
         if (!hasRule(targetRules, fontsRule.test)) targetRules.unshift(fontsRule);
         if (!hasRule(targetRules, faviconRule.test)) targetRules.unshift(faviconRule);
 
-        config.module.rules = targetRules;
+        if (!rulesContainer) {
+          config.module.rules = targetRules;
+        }
         return config;
       },
     },

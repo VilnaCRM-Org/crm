@@ -1,3 +1,4 @@
+import HttpError from './HttpError';
 import HttpsClient, { RequestMethod } from './HttpsClient';
 
 export default class FetchHttpsClient implements HttpsClient {
@@ -67,12 +68,27 @@ export default class FetchHttpsClient implements HttpsClient {
   private async processResponse<T>(response: Response): Promise<T> {
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`HTTP ${response.status}: ${errorText}`);
+      throw new HttpError({
+        status: response.status,
+        message: errorText || response.statusText,
+      });
     }
+
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      throw new Error('Response is not JSON');
+      throw new HttpError({
+        status: response.status,
+        message: 'Response is not JSON',
+      });
     }
-    return response.json() as Promise<T>;
+
+    try {
+      return await response.json();
+    } catch {
+      throw new HttpError({
+        status: response.status,
+        message: 'Failed to parse JSON response',
+      });
+    }
   }
 }
