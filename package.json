@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "craco start",
     "build": "craco build",
-    "git-hooks-install": "husky install",
     "prepare": "husky install",
     "storybook-start": "storybook dev -p 6006",
     "storybook-build": "storybook build",

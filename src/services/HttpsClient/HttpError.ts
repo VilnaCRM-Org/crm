@@ -10,5 +10,9 @@ export default class HttpError extends Error {
     super(message);
     this.status = status;
     this.name = 'HttpError';
+    Object.setPrototypeOf(this, new.target.prototype);
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, new.target);
+    }
   }
 }

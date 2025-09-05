@@ -1,31 +1,34 @@
+import { ApiError, ErrorHandler } from '@/services/error';
+import { ErrorParser } from '@/utils/error';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { z } from 'zod';
 
+import { LoginResponseSchema, type LoginResponse } from '../features/Auth/types/ApiResponses';
 import { LoginUserDto } from '../features/Auth/types/Credentials';
 
 import { ThunkExtra } from './types';
 
-const LoginResponseSchema = z.object({ token: z.string() });
-
-type LoginSuccessPayload = z.infer<typeof LoginResponseSchema> & { email: string };
+type LoginSuccessPayload = LoginResponse & { email: string };
 
 export const loginUser = createAsyncThunk<
   LoginSuccessPayload,
   LoginUserDto,
-  { extra: ThunkExtra; rejectValue: string }
+  { extra: ThunkExtra; rejectValue: ApiError }
 >('auth/loginUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.loginAPI.login(credentials, { signal });
     const parsed = LoginResponseSchema.safeParse(apiResponse);
 
     if (!parsed.success) {
-      return rejectWithValue(parsed.error.issues.map((i) => i.message).join('; '));
+      const displayMessage = parsed.error.issues.map((i) => i.message).join('; ');
+      return rejectWithValue({ displayMessage, retryable: true });
     }
 
-    return { email: credentials.email, ...parsed.data };
+    return { email: credentials.email.toLowerCase(), ...parsed.data };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
-    return rejectWithValue(message);
+    const parsedError = ErrorParser.parseHttpError(err);
+    const apiError = ErrorHandler.handleAuthError(parsedError);
+
+    return rejectWithValue(apiError);
   }
 });
 
@@ -66,7 +69,7 @@ export const loginSlice = createSlice({
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload ?? action.error.message ?? 'Unknown error';
+        state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
       });
   },
 });

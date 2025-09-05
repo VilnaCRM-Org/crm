@@ -1,21 +1,17 @@
+import { ApiError, ErrorHandler } from '@/services/error';
+import { ErrorParser } from '@/utils/error';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { z, ZodError, ZodIssue } from 'zod';
 
+import { RegistrationResponseSchema, SafeUserInfo } from '../features/Auth/types/ApiResponses';
 import { RegisterUserDto } from '../features/Auth/types/Credentials';
 
 import { ThunkExtra } from './types';
 
-const RegistrationResponseSchema = z.object({
-  fullName: z.string().trim().min(1, 'Full name is required'),
-  email: z.string().trim().email('Invalid email'),
-});
-
-export type SafeUserInfo = z.infer<typeof RegistrationResponseSchema>;
 
 export const registerUser = createAsyncThunk<
   SafeUserInfo,
   RegisterUserDto,
-  { extra: ThunkExtra; rejectValue: string }
+  { extra: ThunkExtra; rejectValue: ApiError }
 >('auth/registerUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.registrationAPI.register(credentials, { signal });
@@ -24,13 +20,10 @@ export const registerUser = createAsyncThunk<
 
     return validated;
   } catch (err) {
-    if (err instanceof ZodError) {
-      const messages = err.issues.map((e: ZodIssue) => e.message).join('; ');
-      return rejectWithValue(messages);
-    }
+    const parsedError = ErrorParser.parseHttpError(err);
+    const apiError = ErrorHandler.handleAuthError(parsedError);
 
-    const message = err instanceof Error ? err.message : String(err ?? 'Unknown error');
-    return rejectWithValue(message);
+    return rejectWithValue(apiError);
   }
 });
 
@@ -63,7 +56,7 @@ export const registrationSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload ?? action.error.message ?? 'Unknown error';
+        state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
       });
   },
 });

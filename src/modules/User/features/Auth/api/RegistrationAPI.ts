@@ -5,12 +5,10 @@ import { inject, injectable } from 'tsyringe';
 
 import type { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
-import BaseAPI from './BaseApi';
+import type { RegistrationResponse } from '../types/ApiResponses';
 
-export interface RegistrationResponse {
-  fullName: string;
-  email: string;
-}
+import BaseAPI from './BaseAPI';
+import { RequestOptions } from './types';
 
 @injectable()
 export default class RegistrationAPI extends BaseAPI {
@@ -20,7 +18,7 @@ export default class RegistrationAPI extends BaseAPI {
 
   public async register(
     credentials: RegisterUserDto,
-    options?: { signal?: AbortSignal }
+    options?: RequestOptions
   ): Promise<RegistrationResponse> {
     try {
       return await this.httpsClient.post<RegisterUserDto, RegistrationResponse>(

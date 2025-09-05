@@ -7,7 +7,7 @@ interface AuthErrorBoundaryState {
 
 interface AuthErrorBoundaryProps {
   children: ReactNode;
-  fallback?: ReactNode;
+  fallback?: ReactNode | ((args: { error?: Error; reset: () => void }) => ReactNode);
   onError?: (error: Error, info: React.ErrorInfo) => void;
 }
 
@@ -33,20 +33,33 @@ export default class AuthErrorBoundary extends Component<
   public componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const { onError } = this.props;
 
-    onError?.(error, info);
+    if (!onError && process.env.NODE_ENV !== 'production') {
+      // eslint-disable-next-line no-console
+      console.error('AuthErrorBoundary caught an error:', error, info);
+    }
   }
 
+  // eslint-disable-next-line react/sort-comp
   public render(): ReactNode {
     const { children, fallback } = this.props;
     const { hasError, error } = this.state;
+    const renderedFallback =
+      typeof fallback === 'function' ? fallback({ error, reset: this.handleReset }) : fallback;
 
     if (hasError) {
       return (
-        <div role="alert" aria-live="assertive" data-testid="auth-error-boundary-fallback">
-          {fallback}
+        <div
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          data-testid="auth-error-boundary-fallback"
+        >
+          {renderedFallback}
+
           <button
             type="button"
-            onClick={() => this.setState({ hasError: false, error: undefined })}
+            data-testid="auth-error-boundary-try-again"
+            onClick={this.handleReset}
             style={{ marginTop: '1rem' }}
           >
             Try again
@@ -63,4 +76,6 @@ export default class AuthErrorBoundary extends Component<
 
     return children;
   }
+
+  private handleReset = (): void => this.setState({ hasError: false, error: undefined });
 }
