@@ -37,14 +37,18 @@ module.exports = function cracoConfig() {
 
         config.resolve.plugins = [...(config.resolve.plugins || [])];
         const hasTsPaths = (config.resolve.plugins || []).some(
-          (p) => p instanceof TsconfigPathsPlugin
+          (p) =>
+            p && (p instanceof TsconfigPathsPlugin || p.constructor?.name === 'TsconfigPathsPlugin')
         );
 
         if (!hasTsPaths) {
+          const exts = Array.isArray(config.resolve.extensions)
+            ? config.resolve.extensions
+            : ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'];
           config.resolve.plugins.push(
             new TsconfigPathsPlugin({
               configFile: path.resolve(__dirname, 'tsconfig.json'),
-              extensions: config.resolve.extensions,
+              extensions: exts,
             })
           );
         }

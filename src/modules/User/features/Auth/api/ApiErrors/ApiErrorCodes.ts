@@ -5,6 +5,11 @@ export const ApiErrorCodes = {
   SERVER: 'SERVER_ERROR',
   NETWORK: 'NETWORK_ERROR',
   UNKNOWN: 'UNKNOWN_ERROR',
+  FORBIDDEN: 'FORBIDDEN',
+  NOT_FOUND: 'NOT_FOUND',
+  TIMEOUT: 'TIMEOUT',
+  RATE_LIMITED: 'RATE_LIMITED',
+  CANCELLED: 'CANCELLED',
 } as const;
 
-export type ApiErrorCode = (typeof ApiErrorCodes)[keyof typeof ApiErrorCodes];
+export default ApiErrorCodes;

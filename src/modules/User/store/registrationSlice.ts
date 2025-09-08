@@ -17,7 +17,9 @@ export const registerUser = createAsyncThunk<
 
     const parsed = RegistrationResponseSchema.safeParse(apiResponse);
     if (!parsed.success) {
-      const displayMessage = parsed.error.issues.map((i) => i.message).join('\n');
+      const displayMessage = parsed.error.issues
+        .map((i) => `${i.path.join('.')}: ${i.message}`)
+        .join('\n');
       return rejectWithValue({ displayMessage, retryable: false });
     }
 
@@ -30,15 +32,15 @@ export const registerUser = createAsyncThunk<
   }
 });
 
-interface RegistrationState extends SafeUserInfo {
+interface RegistrationState {
+  user: SafeUserInfo | null;
   loading: boolean;
   error: string | null;
   retryable?: boolean;
 }
 
 const initialState: RegistrationState = {
-  fullName: '',
-  email: '',
+  user: null,
   loading: false,
   error: null,
 };
@@ -46,17 +48,20 @@ const initialState: RegistrationState = {
 export const registrationSlice = createSlice({
   name: 'registration',
   initialState,
-  reducers: {},
+  reducers: {
+    reset: () => initialState,
+  },
   extraReducers: (builder) => {
     builder
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.retryable = undefined;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.fullName = action.payload.fullName;
-        state.email = action.payload.email;
+        state.retryable = undefined;
+        state.user = action.payload;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -66,3 +71,4 @@ export const registrationSlice = createSlice({
   },
 });
 export const registrationReducer = registrationSlice.reducer;
+export const { reset } = registrationSlice.actions;
