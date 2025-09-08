@@ -13,18 +13,18 @@ export default async function throwIfHttpError(res: Response): Promise<void> {
   try {
     const ct = (res.headers.get('content-type') || '').toLowerCase();
 
-    if (/\bjson\b/.test(ct) || ct.includes('json')) {
+    if (ct.includes('json')) {
       const data = await res.json().catch(() => undefined);
       body = data;
 
       const jsonData = data as JsonWithMessage | undefined;
       if (jsonData?.message) {
-        msg = jsonData.message;
+        msg = jsonData.message.slice(0, 500);
       }
     } else {
       const text = await res.text().catch(() => '');
       body = text;
-      if (text) msg = text.slice(0, 500);
+      if (ct.includes('text/plain') && text) msg = text.slice(0, 500);
     }
   } catch {
     // ignore body extraction errors; keep default message
@@ -33,6 +33,10 @@ export default async function throwIfHttpError(res: Response): Promise<void> {
   throw new HttpError({
     status: res.status,
     message: msg,
-    cause: { response: res, body, url: res.url },
+    cause: {
+      url: res.url,
+      contentType: res.headers.get('content-type') ?? undefined,
+      body,
+    },
   });
 }

@@ -22,7 +22,7 @@ interface UIFormProps<T extends FieldValues> {
   children: ReactNode;
   formOptions?: Omit<UseFormProps<T>, 'defaultValues'>;
   isSubmitting?: boolean;
-  error?: string;
+  error?: string | null;
   submitLabel: string;
   title: string;
   subtitle?: string;

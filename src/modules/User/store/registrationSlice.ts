@@ -11,7 +11,7 @@ export const registerUser = createAsyncThunk<
   SafeUserInfo,
   RegisterUserDto,
   { extra: ThunkExtra; rejectValue: UiError }
->('auth/registerUser', async (credentials, { extra, rejectWithValue, signal }) => {
+>('registration/registerUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.registrationAPI.register(credentials, { signal });
 
@@ -32,7 +32,7 @@ export const registerUser = createAsyncThunk<
   }
 });
 
-interface RegistrationState {
+export interface RegistrationState {
   user: SafeUserInfo | null;
   loading: boolean;
   error: string | null;
@@ -57,6 +57,7 @@ export const registrationSlice = createSlice({
         state.loading = true;
         state.error = null;
         state.retryable = undefined;
+        state.user = null;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -64,6 +65,9 @@ export const registrationSlice = createSlice({
         state.user = action.payload;
       })
       .addCase(registerUser.rejected, (state, action) => {
+        if (action.meta.aborted) {
+          return;
+        }
         state.loading = false;
         state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
         state.retryable = action.payload?.retryable;

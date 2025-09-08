@@ -1,47 +1,36 @@
 import UIForm from '@/components/UIForm';
-import useAppDispatch from '@/stores/hooks';
-import { useState } from 'react';
+import useAppDispatch, { useAppSelector } from '@/stores/hooks';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import isAPIError from '@/modules/User/helpers/isAPIError';
 import { registerUser } from '@/modules/User/store';
+import {
+  selectRegistrationError,
+  selectRegistrationLoading,
+} from '@/modules/User/store/registrationSelectors';
 
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
-import { fieldIsRequired, EMAIL_ALREADY_USED, GENERIC_SIGNUP_ERROR } from '../constants';
+import { EMAIL_ALREADY_USED, fieldIsRequired, GENERIC_SIGNUP_ERROR } from '../constants';
 import { validateEmail, validateFullName } from '../Validations';
 
 export default function RegistrationForm(): JSX.Element {
-  const [error, setError] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useAppDispatch();
+  const isSubmitting = useAppSelector(selectRegistrationLoading);
   const { t } = useTranslation();
+  const rawError = useAppSelector(selectRegistrationError);
 
-  const handleRegister = async (data: RegisterUserDto): Promise<void> => {
-    setIsSubmitting(true);
-    setError('');
-
-    try {
-      await dispatch(registerUser(data)).unwrap();
-    } catch (err) {
-      if (isAPIError(err)) {
-        setError(
-          err.code === 'EMAIL_EXISTS' || err.code === 'DUPLICATE_EMAIL'
-            ? EMAIL_ALREADY_USED
-            : GENERIC_SIGNUP_ERROR
-        );
-      } else {
-        const message = err instanceof Error ? err.message : String(err);
-        setError(
-          message.includes('email') || message.includes('exists')
-            ? EMAIL_ALREADY_USED
-            : GENERIC_SIGNUP_ERROR
-        );
-      }
-    } finally {
-      setIsSubmitting(false);
+  const error = useMemo(() => {
+    if (!rawError) return null;
+    if (rawError.includes('email') || rawError.includes('exists')) {
+      return EMAIL_ALREADY_USED;
     }
+    return GENERIC_SIGNUP_ERROR;
+  }, [rawError]);
+
+  const handleRegister = (data: RegisterUserDto): void => {
+    dispatch(registerUser(data));
   };
 
   return (

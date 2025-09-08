@@ -81,7 +81,18 @@ module.exports = function cracoConfig() {
           a.source === b.source &&
           a.flags === b.flags;
 
-        const hasRule = (rules, test) => rules.some((r) => r.test && regEq(r.test, test));
+        const hasRule = (rules, test) =>
+          rules.some((r) => {
+            let tests = [];
+
+            if (Array.isArray(r.test)) {
+              tests = r.test;
+            } else if (r.test instanceof RegExp) {
+              tests = [r.test];
+            }
+
+            return tests.some((t) => regEq(t, test));
+          });
 
         if (!hasRule(targetRules, imagesRule.test)) targetRules.unshift(imagesRule);
         if (!hasRule(targetRules, fontsRule.test)) targetRules.unshift(fontsRule);
