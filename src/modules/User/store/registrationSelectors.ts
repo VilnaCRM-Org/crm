@@ -2,8 +2,6 @@ import type { RootState } from '@/stores';
 
 import type { RegistrationState } from './registrationSlice';
 
-export const selectRegistrationState = (state: RootState): RegistrationState => state.registration;
-
 export const selectRegistrationUser = (state: RootState): RegistrationState['user'] =>
   state.registration.user;
 

@@ -43,7 +43,7 @@
     "react-redux": "^9.1.0",
     "react-router-dom": "^6.21.2",
     "react-scripts": "^5.0.1",
-    "reflect-metadata": "^0.2.1",
+    "reflect-metadata": "^0.2.2",
     "require-from-string": "^2.0.2",
     "tsconfig-paths-webpack-plugin": "^4.2.0",
     "tsyringe": "^4.10.0",

@@ -54,7 +54,8 @@ module.exports = function cracoConfig() {
         }
 
         const imagesRule = {
-          test: /\.(png|jpe?g|gif|webp|avif|bmp)$/i,
+          test: /\.(png|jpe?g|gif|webp|avif|bmp|ico)$/i,
+          exclude: /favicon\.ico$/i,
           type: 'asset',
           parser: { dataUrlCondition: { maxSize: 8 * 1024 } },
           generator: { filename: 'assets/images/[name].[contenthash:8][ext][query]' },

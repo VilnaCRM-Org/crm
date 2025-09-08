@@ -18,8 +18,8 @@ import { validateEmail, validateFullName } from '../Validations';
 export default function RegistrationForm(): JSX.Element {
   const dispatch = useAppDispatch();
   const isSubmitting = useAppSelector(selectRegistrationLoading);
-  const { t } = useTranslation();
   const rawError = useAppSelector(selectRegistrationError);
+  const { t } = useTranslation();
 
   const error = useMemo(() => {
     if (!rawError) return null;
