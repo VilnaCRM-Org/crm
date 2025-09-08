@@ -3,11 +3,11 @@ const TsconfigPathsPlugin = require('tsconfig-paths-webpack-plugin');
 const LocalizationGenerator = require('./scripts/localizationGenerator');
 
 module.exports = function cracoConfig() {
-  const localizationGenerator = new LocalizationGenerator();
   const skipLocaleGen = /^(1|true|yes|on|enabled)$/i.test(process.env.SKIP_LOCALE_GEN || '');
 
   if (!skipLocaleGen && process.env.NODE_ENV !== 'test') {
     try {
+      const localizationGenerator = new LocalizationGenerator();
       localizationGenerator.generateLocalizationFile();
     } catch (err) {
       const message = `Localization generation failed: ${err instanceof Error ? err.message : String(err)}`;
