@@ -7,8 +7,8 @@ const config: Config = {
   coverageProvider: 'v8',
   testMatch: [
     process.env.TEST_ENV === 'server'
-      ? '<rootDir>/test/apollo-server**/*.test.ts'
-      : '<rootDir>/test/unit/**/*.test.{ts,tsx}',
+      ? '<rootDir>/tests/apollo-server**/*.test.ts'
+      : '<rootDir>/tests/unit/**/*.test.{ts,tsx}',
   ],
   preset: 'ts-jest',
   testEnvironment: process.env.TEST_ENV === 'server' ? 'node' : 'jsdom',

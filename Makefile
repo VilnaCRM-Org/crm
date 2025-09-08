@@ -17,7 +17,7 @@ PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 CRACO_BUILD                 = pnpm craco build
 STORYBOOK_CMD         		= storybook dev -p $(STORYBOOK_PORT)
 
-TEST_DIR_BASE               = ./test
+TEST_DIR_BASE               = ./tests
 TEST_DIR_APOLLO             = $(TEST_DIR_BASE)/apollo-server
 TEST_DIR_E2E                = $(TEST_DIR_BASE)/e2e
 TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual

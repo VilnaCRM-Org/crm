@@ -35,7 +35,7 @@ FROM base AS final
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 
-COPY test/memory-leak test/memory-leak
+COPY tests/memory-leak tests/memory-leak
 COPY src/config/i18nConfig.js ./src/config/i18nConfig.js
 COPY src/i18n/localization.json ./src/i18n/localization.json
 
