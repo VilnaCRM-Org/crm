@@ -1,6 +1,13 @@
 {
+  "root_element_missing": "Root element not found",
   "buttons": {
     "back_to_main": "Back to homepage"
+  },
+  "auth": {
+    "password": {
+      "hide": "Hide password",
+      "show": "Conceal password"
+    }
   },
   "sign_up": {
     "title": "Registration",

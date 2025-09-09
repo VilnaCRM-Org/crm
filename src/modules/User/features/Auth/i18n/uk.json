@@ -1,6 +1,13 @@
 {
+  "root_element_missing": "Кореневий елемент не знайдено",
   "buttons": {
     "back_to_main": "На головну сторінку"
+  },
+  "auth": {
+    "password": {
+      "hide": "Приховати пароль",
+      "show": "Показати пароль"
+    }
   },
   "sign_up": {
     "title": "Реєстрація",
@@ -9,13 +16,13 @@
     "form": {
       "name_input": {
         "label": "Ваше ім’я та прізвище",
-        "placeholder": "Михайло Светський",
+        "placeholder": "Михайло Світський",
         "special_characters_error": "Будь ласка, використовуйте лише літери",
         "required": "Це поле обов'язкове",
         "full_name_format_error": "Будь ласка, введіть повне ім’я у правильному форматі"
       },
       "email_input": {
-        "label": "E-mail",
+        "label": "Електронна пошта",
         "placeholder": "vilnaCRM@gmail.com",
         "required": "Це поле обов'язкове",
         "email_format_error": "Будь ласка, переконайтеся, що email містить '@' та '.'",
@@ -42,8 +49,8 @@
       "submitting": "Обробка…",
       "submit_button": "Реєстрація",
       "error_text": "Виникла помилка. Перевірте ще раз",
-      "switcher_text_have_account": "У вас вже є аккаунт?",
-      "switcher_text_no_account": "У вас немає аккаунту?"
+      "switcher_text_have_account": "У вас вже є обліковий запис?",
+      "switcher_text_no_account": "У вас немає облікового запису?"
     },
     "errors": {
       "email_used": "Електронна адреса вже використовується",
@@ -51,20 +58,20 @@
     }
   },
   "sign_in": {
-    "title": "Аунтефикація",
-    "subtitle": "Увійдіть до свого аккаунту у два кліки",
+    "title": "Аутентифікація",
+    "subtitle": "Увійдіть до свого облікового запису у два кліки",
     "form": {
       "password_input": {
         "placeholder": "Введіть пароль",
         "label": "Пароль"
       },
-      "submit_button": "Увійти до аккаунту",
+      "submit_button": "Увійти до облікового запису",
       "submitting": "Вхід…"
     }
   },
   "footer": {
-    "logo_alt": "Логотип Vilna",
+    "logo_alt": "Логотип VilnaCRM",
     "privacy": "Політика конфіденційності",
-    "usage_policy": "Політика використання"
+    "usage_policy": "Умови користування"
   }
 }

@@ -1,20 +1,21 @@
-import i18n from '@/i18n';
+export const EMAIL_ALREADY_USED_KEY = 'sign_up.errors.email_used' as const;
+export const GENERIC_SIGNUP_ERROR_KEY = 'sign_up.errors.signup_error' as const;
 
-export const EMAIL_ALREADY_USED = i18n.t('sign_up.errors.email_used');
-export const GENERIC_SIGNUP_ERROR = i18n.t('sign_up.errors.signup_error');
+type MessageKey = typeof EMAIL_ALREADY_USED_KEY | typeof GENERIC_SIGNUP_ERROR_KEY;
 
-const ERROR_PATTERNS: { keys: string[]; message: string }[] = [
-  { keys: ['email', 'exists'], message: EMAIL_ALREADY_USED },
+const ERROR_PATTERNS: { keys: string[]; messageKey: MessageKey }[] = [
+  { keys: ['email', 'exists'], messageKey: EMAIL_ALREADY_USED_KEY },
 ];
 
 export const getRegistrationError = (rawError: string | null | undefined): string | null => {
   if (!rawError) return null;
 
+  const haystack = rawError.toLowerCase();
   const matchedPattern = ERROR_PATTERNS.find(({ keys }) =>
-    keys.some((key) => rawError.includes(key))
+    keys.every((key) => haystack.includes(key.toLowerCase()))
   );
 
-  return matchedPattern ? matchedPattern.message : GENERIC_SIGNUP_ERROR;
+  return matchedPattern ? matchedPattern.messageKey : GENERIC_SIGNUP_ERROR_KEY;
 };
 
 export default getRegistrationError;

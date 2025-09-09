@@ -6,13 +6,10 @@ import { useTranslation } from 'react-i18next';
 
 import { validatePassword } from '@/modules/User/features/Auth/components/FormSection/Validations';
 
-// import { AuthMode } from '../types';
-
 import FormField from './FormField';
 import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
 
 type PasswordFieldProps = {
-  // mode: AuthMode;
   placeholder: string;
   label: string;
   autoComplete: string;
@@ -26,14 +23,15 @@ export default function PasswordField<T extends FieldValues & { password: string
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
 
-  const handleClickShowPassword = (): void => setShowPassword(!showPassword);
+  const handleClickShowPassword = (): void => setShowPassword((prev) => !prev);
 
   const passwordName = 'password' as Path<T>;
   const passwordDefaultValue = '' as PathValue<T, Path<T>>;
+
   return (
     <FormField<T>
       rules={{
-        required: t('sign_up.form.name_input.required'),
+        required: t('sign_up.form.password_input.required'),
         validate: validatePassword,
       }}
       defaultValue={passwordDefaultValue}
@@ -46,7 +44,14 @@ export default function PasswordField<T extends FieldValues & { password: string
         sx: styles.passwordField,
         endAdornment: (
           <InputAdornment position="end" sx={styles.endAdornment}>
-            <IconButton onClick={handleClickShowPassword} edge="end" sx={styles.passwordButton}>
+            <IconButton
+              onClick={handleClickShowPassword}
+              onMouseDown={(e) => e.preventDefault()}
+              aria-label={showPassword ? t('auth.password.hide') : t('auth.password.show')}
+              aria-pressed={showPassword}
+              edge="end"
+              sx={styles.passwordButton}
+            >
               {showPassword ? <StyledEyeIconOff /> : <StyledEyeIcon />}
             </IconButton>
           </InputAdornment>

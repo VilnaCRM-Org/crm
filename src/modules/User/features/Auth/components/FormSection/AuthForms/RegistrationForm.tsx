@@ -21,7 +21,8 @@ export default function RegistrationForm(): JSX.Element {
   const rawError = useAppSelector(selectRegistrationError);
   const { t } = useTranslation();
 
-  const error = getRegistrationError(rawError);
+  const errorKey = getRegistrationError(rawError);
+  const error = errorKey ? t(errorKey) : null;
 
   const handleRegister = (data: RegisterUserDto): void => {
     dispatch(registerUser(data));

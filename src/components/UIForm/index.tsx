@@ -16,7 +16,7 @@ import UITypography from '../UITypography';
 
 import styles from './styles';
 
-interface UIFormProps<T extends FieldValues> {
+export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
   defaultValues: DefaultValues<T>;
   children: ReactNode;
@@ -24,8 +24,8 @@ interface UIFormProps<T extends FieldValues> {
   isSubmitting?: boolean;
   error?: string | null;
   submitLabel: string;
-  title: string;
-  subtitle?: string;
+  title: ReactNode;
+  subtitle?: ReactNode;
   showTitle?: boolean;
   showSubtitle?: boolean;
 }
@@ -35,7 +35,7 @@ export default function UIForm<T extends FieldValues>({
   defaultValues,
   children,
   formOptions,
-  isSubmitting = false,
+  isSubmitting,
   error,
   submitLabel,
   title,
@@ -44,12 +44,17 @@ export default function UIForm<T extends FieldValues>({
   showSubtitle = true,
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
+  const submitting = isSubmitting ?? methods.formState.isSubmitting;
 
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSubmit)}>
-        {error && <UITypography sx={{ color: 'red', marginBottom: '1rem' }}>{error}</UITypography>}
+      <form noValidate onSubmit={methods.handleSubmit(onSubmit)}>
+        {error && (
+          <UITypography role="alert" aria-live="polite" sx={{ color: 'red', marginBottom: '1rem' }}>
+            {error}
+          </UITypography>
+        )}
 
         {showTitle && title && (
           <UITypography variant="h4" sx={styles.formTitle}>
@@ -63,15 +68,10 @@ export default function UIForm<T extends FieldValues>({
 
         {children}
 
-        <UIButton
-          type="submit"
-          disabled={isSubmitting}
-          variant="contained"
-          sx={styles.submitButton}
-        >
+        <UIButton type="submit" disabled={submitting} variant="contained" sx={styles.submitButton}>
           {submitLabel}
         </UIButton>
-        {isSubmitting ? <CircularProgress color="primary" size={70} sx={styles.loader} /> : null}
+        {submitting ? <CircularProgress color="primary" size={70} sx={styles.loader} /> : null}
       </form>
     </FormProvider>
   );
