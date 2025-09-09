@@ -25,7 +25,9 @@ export default function FormSection(): JSX.Element {
       </Box>
 
       <UIButton sx={styles.formSwitcherButton} onClick={handleSwitch}>
-        {mode === 'login' ? 'У Вас немає аккаунту?' : t('sign_up.form.switcher_text')}
+        {mode === 'login'
+          ? t('sign_up.form.switcher_text_no_account')
+          : t('sign_up.form.switcher_text_have_account')}
       </UIButton>
     </Box>
   );

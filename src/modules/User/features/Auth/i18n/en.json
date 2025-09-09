@@ -39,9 +39,27 @@
           "option_3": "numbers"
         }
       },
-      "button_text": "Sign Up",
+      "submitting": "Signing up…",
+      "submit_button": "Sign Up",
       "error_text": "There was an error. Please check again",
-      "switcher_text": "Already have an account?"
+      "switcher_text_have_account": "Already have an account?",
+      "switcher_text_no_account": "Don’t have an account yet?"
+    }
+  },
+  "sign_in": {
+    "title": "Authentication",
+    "subtitle": "Sign in to your account in two clicks",
+    "form": {
+      "password_input": {
+        "placeholder": "Enter your password",
+        "label": "Password"
+      },
+      "submit_button": "Sign in",
+      "submitting": "Signing in…"
+    },
+    "errors": {
+      "email_used": "Email address is already in use",
+      "signup_error": "Registration error. Please try again later"
     }
   },
   "footer": {

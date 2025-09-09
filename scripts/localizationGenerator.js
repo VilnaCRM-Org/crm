@@ -4,7 +4,7 @@ const path = require('path');
 class LocalizationGenerator {
   constructor(
     i18nFolderName = 'i18n',
-    modulesPath = 'src/modules',
+    modulesPath = 'src',
     localizationFile = 'localization.json'
   ) {
     this.modulesPath = modulesPath;

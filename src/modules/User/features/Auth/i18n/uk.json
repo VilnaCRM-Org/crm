@@ -39,9 +39,27 @@
           "option_3": "цифри"
         }
       },
-      "button_text": "Реєстрація",
+      "submitting": "Обробка…",
+      "submit_button": "Реєстрація",
       "error_text": "Виникла помилка. Перевірте ще раз",
-      "switcher_text": "У вас вже є аккаунт?"
+      "switcher_text_have_account": "У вас вже є аккаунт?",
+      "switcher_text_no_account": "У вас немає аккаунту?"
+    },
+    "errors": {
+      "email_used": "Електронна адреса вже використовується",
+      "signup_error": "Помилка реєстрації. Спробуйте пізніше"
+    }
+  },
+  "sign_in": {
+    "title": "Аунтефикація",
+    "subtitle": "Увійдіть до свого аккаунту у два кліки",
+    "form": {
+      "password_input": {
+        "placeholder": "Введіть пароль",
+        "label": "Пароль"
+      },
+      "submit_button": "Увійти до аккаунту",
+      "submitting": "Вхід…"
     }
   },
   "footer": {

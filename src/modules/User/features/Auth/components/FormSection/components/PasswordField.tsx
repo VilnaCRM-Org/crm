@@ -6,18 +6,21 @@ import { useTranslation } from 'react-i18next';
 
 import { validatePassword } from '@/modules/User/features/Auth/components/FormSection/Validations';
 
-import { AuthMode } from '../types';
+// import { AuthMode } from '../types';
 
 import FormField from './FormField';
 import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
 
 type PasswordFieldProps = {
-  mode: AuthMode;
+  // mode: AuthMode;
+  placeholder: string;
+  label: string;
   autoComplete: string;
 };
 
 export default function PasswordField<T extends FieldValues & { password: string }>({
-  mode,
+  placeholder,
+  label,
   autoComplete,
 }: PasswordFieldProps): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
@@ -36,8 +39,8 @@ export default function PasswordField<T extends FieldValues & { password: string
       defaultValue={passwordDefaultValue}
       name={passwordName}
       type={showPassword ? 'text' : 'password'}
-      placeholder={t('sign_up.form.password_input.placeholder')}
-      label={mode === 'register' ? t('sign_up.form.password_input.label') : 'Пароль'}
+      placeholder={placeholder}
+      label={label}
       autoComplete={autoComplete}
       inputProps={{
         sx: styles.passwordField,

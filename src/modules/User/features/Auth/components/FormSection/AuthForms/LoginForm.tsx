@@ -1,19 +1,21 @@
 import UIForm from '@/components/UIForm';
 import useAppDispatch from '@/stores/hooks';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import { loginUser } from '@/modules/User/store';
 
+import getSubmitLabelKey from '../../../utils/getSubmitLabelKey';
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
 import UserOptions from '../components/UserOptions';
-import { authForms, fieldIsRequired } from '../constants';
 import { validateEmail } from '../Validations';
 
 export default function LoginForm(): JSX.Element {
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
   const handleLogin = async (data: LoginUserDto): Promise<void> => {
@@ -37,9 +39,9 @@ export default function LoginForm(): JSX.Element {
       defaultValues={{ email: '', password: '' }}
       error={error}
       isSubmitting={isSubmitting}
-      submitLabel={authForms.login.submitButton}
-      title={authForms.login.title}
-      subtitle={authForms.login.infoText}
+      submitLabel={t(getSubmitLabelKey('sign_in', isSubmitting))}
+      title={t('sign_in.title')}
+      subtitle={t('sign_in.subtitle')}
     >
       <FormField<LoginUserDto>
         name="email"
@@ -47,9 +49,13 @@ export default function LoginForm(): JSX.Element {
         placeholder="vilnaCRM@gmail.com"
         type="email"
         autoComplete="email"
-        rules={{ required: fieldIsRequired, validate: validateEmail }}
+        rules={{ required: t('sign_up.form.email_input.required'), validate: validateEmail }}
       />
-      <PasswordField<LoginUserDto> mode="login" autoComplete="current-password" />
+      <PasswordField<LoginUserDto>
+        placeholder={t('sign_in.form.password_input.placeholder')}
+        label={t('sign_in.form.password_input.label')}
+        autoComplete="current-password"
+      />
       <UserOptions />
     </UIForm>
   );

@@ -1,6 +1,5 @@
 import UIForm from '@/components/UIForm';
 import useAppDispatch, { useAppSelector } from '@/stores/hooks';
-import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
@@ -10,9 +9,10 @@ import {
   selectRegistrationLoading,
 } from '@/modules/User/store/registrationSelectors';
 
+import getSubmitLabelKey from '../../../utils/getSubmitLabelKey';
+import getRegistrationError from '../../../utils/mapRegistrationError';
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
-import { EMAIL_ALREADY_USED, fieldIsRequired, GENERIC_SIGNUP_ERROR } from '../constants';
 import { validateEmail, validateFullName } from '../Validations';
 
 export default function RegistrationForm(): JSX.Element {
@@ -21,13 +21,7 @@ export default function RegistrationForm(): JSX.Element {
   const rawError = useAppSelector(selectRegistrationError);
   const { t } = useTranslation();
 
-  const error = useMemo(() => {
-    if (!rawError) return null;
-    if (rawError.includes('email') || rawError.includes('exists')) {
-      return EMAIL_ALREADY_USED;
-    }
-    return GENERIC_SIGNUP_ERROR;
-  }, [rawError]);
+  const error = getRegistrationError(rawError);
 
   const handleRegister = (data: RegisterUserDto): void => {
     dispatch(registerUser(data));
@@ -39,7 +33,7 @@ export default function RegistrationForm(): JSX.Element {
       defaultValues={{ fullName: '', email: '', password: '' }}
       error={error}
       isSubmitting={isSubmitting}
-      submitLabel={t('sign_up.form.button_text')}
+      submitLabel={t(getSubmitLabelKey('sign_up', isSubmitting))}
       title={t('sign_up.title')}
       subtitle={t('sign_up.subtitle')}
     >
@@ -49,7 +43,7 @@ export default function RegistrationForm(): JSX.Element {
         placeholder={t('sign_up.form.name_input.placeholder')}
         type="text"
         autoComplete="off"
-        rules={{ required: fieldIsRequired, validate: validateFullName }}
+        rules={{ required: t('sign_up.form.name_input.required'), validate: validateFullName }}
       />
       <FormField<RegisterUserDto>
         name="email"
@@ -57,10 +51,14 @@ export default function RegistrationForm(): JSX.Element {
         placeholder={t('sign_up.form.email_input.placeholder')}
         type="email"
         autoComplete="off"
-        rules={{ required: fieldIsRequired, validate: validateEmail }}
+        rules={{ required: t('sign_up.form.email_input.required'), validate: validateEmail }}
       />
 
-      <PasswordField<RegisterUserDto> mode="register" autoComplete="off" />
+      <PasswordField<RegisterUserDto>
+        placeholder={t('sign_up.form.password_input.placeholder')}
+        label={t('sign_up.form.password_input.label')}
+        autoComplete="off"
+      />
     </UIForm>
   );
 }
