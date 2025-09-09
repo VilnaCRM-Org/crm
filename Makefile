@@ -40,7 +40,7 @@ PLAYWRIGHT_TEST             = $(PLAYWRIGHT_DOCKER_CMD) sh -c
 
 MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
-MEMLEAK_BASE_PATH           = ./test/memory-leak
+MEMLEAK_BASE_PATH           = ./tests/memory-leak
 MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
 MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/runMemlabTests.js
 
@@ -251,7 +251,7 @@ wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
 
 
 prepare-results-dir:
-	mkdir -p ./test/load/results
+	mkdir -p ./tests/load/results
 
 load-tests: start-prod wait-for-prod-health prepare-results-dir ## This command executes load tests using K6 library. Note: The target host is determined by the service URL
                        ## using $(PROD_PORT), which maps to the production service in Docker Compose.

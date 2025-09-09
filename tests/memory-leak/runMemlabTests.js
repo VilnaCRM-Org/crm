@@ -8,7 +8,7 @@ const { StringAnalysis } = require('@memlab/heap-analysis');
 
 const { initializeLocalization } = require('./utils/initializeLocalization');
 
-const memoryLeakDir = path.join('.', 'test', 'memory-leak');
+const memoryLeakDir = path.join('.', 'tests', 'memory-leak');
 const testsDir = path.join(memoryLeakDir, 'tests');
 
 const workDir = path.join(memoryLeakDir, 'results');
