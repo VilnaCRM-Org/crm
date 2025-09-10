@@ -33,7 +33,8 @@ class ScenarioBuilder {
         const headerName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME;
         const headerValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE;
 
-        if (!headerName || !/^[a-zA-Z0-9-_]$/.test(headerName)) {
+        const tokenRe = /^[!#$%&'*.^_`|~0-9A-Za-z-]{1,64}$/;
+        if (typeof headerName !== 'string' || !tokenRe.test(headerName)) {
           throw new Error(`Invalid header name format: ${headerName}`);
         }
 

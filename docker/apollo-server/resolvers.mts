@@ -1,10 +1,10 @@
-import { CreateUserInput, CreateUserResponse, User } from './type.js';
+import { CreateUserInput, User } from './type.js';
 import { v4 as uuidv4 } from 'uuid';
 import { GraphQLError } from 'graphql';
 
 const validateCreateUserInput = (input: CreateUserInput) => {
   const emailRegex =
-    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+    /^[a-zA-Z0-9.!#$%&'*/=?^_`{|}~-]@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
   if (!input.email || !emailRegex.test(input.email)) {
     throw new GraphQLError('Invalid email format', {
@@ -48,7 +48,7 @@ export const resolvers = {
     createUser: async (
       _: unknown,
       { input }: { input: CreateUserInput }
-    ): Promise<CreateUserResponse> => {
+    ): Promise<{ user: User; clientMutationId: string }> => {
       validateCreateUserInput(input);
       rejectIfExists(users, input.email, 'Email already exists');
 
@@ -60,24 +60,13 @@ export const resolvers = {
           initials: input.initials,
         };
         users.set(newUser.email, newUser);
-        return {
-          data: {
-            createUser: {
-              user: newUser,
-              clientMutationId: input.clientMutationId,
-            },
-          },
-        };
+        return { user: newUser, clientMutationId: input.clientMutationId };
       } catch (error) {
         console.error('Failed to create user:', error);
         throw new GraphQLError('Internal Server Error: Failed to create user', {
           extensions: {
             code: 'INTERNAL_SERVER_ERROR',
-            originalError: error instanceof Error ? error.message : String(error),
-            http: {
-              status: 500,
-              headers: { 'x-error-type': 'server-error' },
-            },
+            http: { status: 500, headers: { 'x-error-type': 'server-error' } },
           },
         });
       }

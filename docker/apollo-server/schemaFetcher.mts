@@ -35,6 +35,14 @@ const MAX_RETRIES: number = Number(process.env.GRAPHQL_MAX_RETRIES) || 3;
 const TIMEOUT_MS: number = Number(process.env.GRAPHQL_TIMEOUT_MS) || 5000;
 
 export async function fetchAndSaveSchema(): Promise<void> {
+  if (!SCHEMA_URL) {
+    logger.error('GRAPHQL_SCHEMA_URL is not set. Skipping schema fetch.');
+    if (process.env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
+    return;
+  }
+
   let retries: number = 0;
   let lastError: Error | null = null;
 
@@ -57,7 +65,7 @@ export async function fetchAndSaveSchema(): Promise<void> {
         signal: controller.signal,
         headers: {
           'User-Agent': 'GraphQL/SchemaFetcher',
-          Accept: 'application/json',
+          Accept: 'text/plain, application/graphql, application/json;q=0.9, */*;q=0.8',
         },
       }).finally(() => clearTimeout(timeoutId));
 
@@ -67,7 +75,11 @@ export async function fetchAndSaveSchema(): Promise<void> {
 
       try {
         await fsPromises.mkdir(OUTPUT_DIR, { recursive: true });
-      } catch (err) {}
+      } catch (err: any) {
+        if (err?.code !== 'EEXIST') {
+          throw err;
+        }
+      }
 
       const data: string = await response.text();
       await fsPromises.writeFile(OUTPUT_FILE, data, 'utf-8');

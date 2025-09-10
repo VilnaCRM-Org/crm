@@ -54,22 +54,18 @@ async function startServer() {
       listen: { port: Number(process.env.GRAPHQL_PORT) || 4000 },
 
       context: async ({ req }) => {
-        if (req.url === HEALTH_CHECK_PATH) {
-          return {};
-        }
-
-        const contentType = req.headers['content-type'] || '';
-
-        if (
-          contentType.includes('text/plain') ||
-          (req.method === 'POST' && !contentType.includes('application/json'))
-        ) {
-          throw new GraphQLError('Invalid content-type header for CSRF prevention', {
-            extensions: {
-              code: 'BAD_REQUEST',
-              http: { status: 400 },
-            },
-          });
+        if (req.url?.endsWith(`/${HEALTH_CHECK_PATH}`)) return {};
+        const ct = String(req.headers['content-type'] || '').toLowerCase();
+        const query = typeof (req as any).body?.query === 'string' ? (req as any).body.query : '';
+        const isMutation = /^\s*mutation\b/i.test(query);
+        const allowed = ['application/json', 'application/graphql+json', 'application/graphql'];
+        if (isMutation) {
+          const ok = allowed.some((a) => ct.includes(a)) && !ct.includes('text/plain');
+          if (!ok) {
+            throw new GraphQLError('Invalid content-type header for CSRF prevention', {
+              extensions: { code: 'BAD_REQUEST', http: { status: 400 } },
+            });
+          }
         }
         return {};
       },

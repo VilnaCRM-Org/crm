@@ -293,5 +293,7 @@ stop: ## Stop docker
 check-node-version: ## Check if the correct Node.js version is installed
 	$(EXEC_CMD) pnpm exec -- node checkNodeVersion.js
 
-clean: down ## Clean up containers and artifacts
-	docker system prune -f
+clean: down ## Clean up only this project's containers, images, and volumes
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) down --volumes --remove-orphans --rmi local
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) down --volumes --remove-orphans --rmi local
+
