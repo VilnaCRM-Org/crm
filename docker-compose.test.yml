@@ -57,12 +57,12 @@ services:
     profiles: ["load"]
     build:
       context: .
-      dockerfile: ./test/load/Dockerfile
+      dockerfile: ./tests/load/Dockerfile
     depends_on:
       prod:
         condition: service_healthy
     volumes:
-      - ./test/load:/loadTests
+      - ./tests/load:/loadTests
     networks:
       - website-network
 

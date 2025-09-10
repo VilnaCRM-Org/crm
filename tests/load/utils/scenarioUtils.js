@@ -18,8 +18,8 @@ export default class ScenarioUtils {
     this.averageConfig = this.config.endpoints[scenarioName].average;
     this.stressConfig = this.config.endpoints[scenarioName].stress;
     this.spikeConfig = this.config.endpoints[scenarioName].spike;
-    this.setupTimeout = this.config.endpoints[scenarioName].setupTimeoutInMinutes + 'm';
-    this.delay = this.config.delayBetweenScenarios;
+    this.setupTimeout = `${Number(this.config.endpoints[scenarioName].setupTimeoutInMinutes || 2)}m`;
+    this.delay = Number(this.config.delayBetweenScenarios || 0);
     this.averageTestStartTime = 0;
     this.stressTestStartTime = 0;
     this.spikeTestStartTime = 0;
@@ -51,16 +51,16 @@ export default class ScenarioUtils {
 
   addSmokeScenario(scenariosBuilder) {
     scenariosBuilder.addSmokeScenario(this.smokeConfig);
-    this.averageTestStartTime = this.smokeConfig.duration + this.delay;
+    this.averageTestStartTime = Number(this.smokeConfig.duration) + this.delay;
   }
 
   addAverageScenario(scenariosBuilder) {
     scenariosBuilder.addAverageScenario(this.averageConfig, this.averageTestStartTime);
     this.stressTestStartTime =
       this.averageTestStartTime +
-      this.averageConfig.duration.rise +
-      this.averageConfig.duration.plateau +
-      this.averageConfig.duration.fall +
+      Number(this.averageConfig.duration.rise) +
+      Number(this.averageConfig.duration.plateau) +
+      Number(this.averageConfig.duration.fall) +
       this.delay;
   }
 
@@ -68,9 +68,9 @@ export default class ScenarioUtils {
     scenariosBuilder.addStressScenario(this.stressConfig, this.stressTestStartTime);
     this.spikeTestStartTime =
       this.stressTestStartTime +
-      this.stressConfig.duration.rise +
-      this.stressConfig.duration.plateau +
-      this.stressConfig.duration.fall +
+      Number(this.stressConfig.duration.rise) +
+      Number(this.stressConfig.duration.plateau) +
+      Number(this.stressConfig.duration.fall) +
       this.delay;
   }
 

@@ -21,8 +21,7 @@ class ScenarioBuilder {
     const requiredEnvVars = [
       'REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME',
       'REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE',
-      'REACT_APP_PROD_CONTAINER_API_URL',
-      'REACT_APP_PROD_HOST_API_URL',
+      ...getRequiredUrlEnvVars(process.env.NODE_ENV),
     ];
     for (const envVar of requiredEnvVars) {
       if (!process.env[envVar]) {
@@ -34,7 +33,7 @@ class ScenarioBuilder {
         const headerName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME;
         const headerValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE;
 
-        if (!headerName || !/^[a-zA-Z0-9-_]+$/.test(headerName)) {
+        if (!headerName || !/^[a-zA-Z0-9-_]$/.test(headerName)) {
           throw new Error(`Invalid header name format: ${headerName}`);
         }
 
@@ -71,7 +70,7 @@ class ScenarioBuilder {
 
   createScenario(scenarioOptions) {
     return {
-      url: this.url,
+      url: () => this.url(),
       beforeInitialPageLoad: this.beforeInitialPageLoad,
       ...scenarioOptions,
     };

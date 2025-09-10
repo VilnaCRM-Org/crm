@@ -4,5 +4,3 @@ describe('example test suite', () => {
     expect(result).toBe(4);
   });
 });
-
-export {};

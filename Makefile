@@ -76,7 +76,7 @@ CI                          ?= 0
 ifeq ($(CI), 1)
     EXEC_CMD                =
     PNPM_EXEC               = pnpm
-    DEV_CMD                 = craco start
+    DEV_CMD                 = $(BIN_DIR)/craco start
     BUILD_CMD               = $(CRACO_BUILD)
 
 	STRYKER_CMD             = pnpm stryker run
@@ -210,7 +210,7 @@ start-prod: create-network ## Build image and start container in production mode
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
 	@for i in $$(seq 1 60); do \
-		npx wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
+		pnpm exec -- wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
 		printf "."; sleep 2; \
 		[ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
 	done; \
@@ -253,7 +253,7 @@ wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
 prepare-results-dir:
 	mkdir -p ./tests/load/results
 
-load-tests: start-prod wait-for-prod-health prepare-results-dir ## This command executes load tests using K6 library. Note: The target host is determined by the service URL
+test-load: start-prod wait-for-prod-health prepare-results-dir ## This command executes load tests using K6 library. Note: The target host is determined by the service URL
                        ## using $(PROD_PORT), which maps to the production service in Docker Compose.
 	$(LOAD_TESTS_RUN)
 

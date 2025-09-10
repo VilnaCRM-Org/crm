@@ -48,5 +48,5 @@ yarn-error.log*
 stryker.log
 
 reports/
-/test/load/results/
-/test/memory-leak/results/
+/tests/load/results/
+/tests/memory-leak/results/

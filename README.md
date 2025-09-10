@@ -110,7 +110,7 @@ Testing
   make test-unit-client: runs unit tests for the client using Jest
   make test-unit-server: runs unit tests for the server using Jest
   make test-memory-leak: runs memory leak tests using Memlab
-  make load-tests: executes load tests using the K6 library
+  make test-load: executes load tests using the K6 library
 ```
 
 Runs tests inside the Playwright container, targeting the production container:
@@ -185,7 +185,7 @@ The following commands can't be run with `CI=1` prefix:
   make test-e2e-ui: runs end-to-end tests with UI inside the prod container
   make test-visual-ui: runs visual tests with UI inside the prod container
 
-  make load-tests: executes load tests using the K6 library
+  make test-load: executes load tests using the K6 library
   (uses "prod" as hostname, which maps to the Docker service)
 
   make git-hooks-install: installs husky Git hooks locally

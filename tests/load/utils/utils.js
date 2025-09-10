@@ -4,7 +4,7 @@ export default class Utils {
   constructor() {
     const { protocol, host, port, params } = this.getConfig();
 
-    this.baseUrl = `${protocol}://${host}:${port}`;
+    this.baseUrl = `${protocol}://${host}${port ? `:${port}` : ''}`;
     this.params = params;
   }
 
