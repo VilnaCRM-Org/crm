@@ -4,7 +4,7 @@
 
 [![CodeScene Code Health](https://codescene.io/projects/43862/status-badges/code-health)](https://codescene.io/projects/43862)
 [![CodeScene System Mastery](https://codescene.io/projects/43862/status-badges/system-mastery)](https://codescene.io/projects/43862)
-[![codecov](https://codecov.io/gh/VilnaCRM-Org/frontend-spa-template/graph/badge.svg?token=iV60KVUVxQ)](https://codecov.io/gh/VilnaCRM-Org/frontend-spa-template)
+[![codecov](https://codecov.io/gh/VilnaCRM-Org/crm/graph/badge.svg?token=iV60KVUVxQ)](https://codecov.io/gh/VilnaCRM-Org/crm)
 
 ## Possibilities
 
@@ -26,14 +26,14 @@ front-end applications. This template is used for all our microservices in Vilna
 
 This software is distributed under the
 [Creative Commons Zero v1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/deed) license.
-Please read [LICENSE](https://github.com/VilnaCRM-Org/frontend-spa-template/blob/main/LICENSE) for information
+Please read [LICENSE](https://github.com/VilnaCRM-Org/crm/blob/main/LICENSE) for information
 on the software availability and distribution.
 
 ### Minimal installation
 
 You can clone this repository locally or use Github functionality "Use this template"
 
-Install [node.js](https://nodejs.org/en/) and [pnpm](https://pnpm.io/)
+Install [node.js](https://nodejs.org/en/) 20 version or higher and [pnpm](https://pnpm.io/)
 
 Use pnpm install for installing all dependencies and pnpm run dev for running application
 
@@ -70,9 +70,9 @@ particularly when hosted on platforms like AWS CloudFront.
 
 ## Documentation
 
-Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/frontend-spa-template/wiki).
+Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
 If you're having trouble, head for
-[the troubleshooting guide](https://github.com/VilnaCRM-Org/frontend-spa-template/wiki/Troubleshooting)
+[the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 as it's frequently updated.
 
 You can generate complete API-level documentation by running `doc` in the top-level
@@ -82,11 +82,11 @@ folder, and documentation will appear in the `docs` folder, though you'll need t
 If the documentation doesn't cover what you need, search the
 [many questions on Stack Overflow](http://stackoverflow.com/questions/tagged/vilnacrm),
 and before you ask a question,
-[read the troubleshooting guide](https://github.com/VilnaCRM-Org/frontend-spa-template/wiki/Troubleshooting).
+[read the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting).
 
 ## Tests
 
-[Tests](https://github.com/VilnaCRM-Org/frontend-spa-template/actions)
+[Tests](https://github.com/VilnaCRM-Org/crm/actions)
 
 If this isn't passing, is there something you can do to help?
 
@@ -95,14 +95,14 @@ If this isn't passing, is there something you can do to help?
 Please disclose any vulnerabilities found responsibly – report security issues to the maintainers privately.
 
 See
-[SECURITY](https://github.com/VilnaCRM-Org/frontend-spa-template/tree/main/SECURITY.md)
+[SECURITY](https://github.com/VilnaCRM-Org/crm/tree/main/SECURITY.md)
 and
-[Security advisories on GitHub](https://github.com/VilnaCRM-Org/frontend-spa-template/security).
+[Security advisories on GitHub](https://github.com/VilnaCRM-Org/crm/security).
 
 ## Contributing
 
 Please submit bug reports, suggestions, and pull requests to the
-[GitHub issue tracker](https://github.com/VilnaCRM-Org/frontend-spa-template/issues).
+[GitHub issue tracker](https://github.com/VilnaCRM-Org/crm/issues).
 
 We're particularly interested in fixing edge cases, expanding test coverage,
 and updating translations.
@@ -119,7 +119,7 @@ the free and opensource CRM system.
 Donations are very welcome, whether in beer 🍺, T-shirts 👕, or cold, hard cash 💰.
 Sponsorship through GitHub is a simple and convenient way to say "thank you" to
 maintainers and contributors – just click the "Sponsor" button
-[on the project page](https://github.com/VilnaCRM-Org/frontend-spa-template).
+[on the project page](https://github.com/VilnaCRM-Org/crm).
 If your company uses this template, consider taking part in the VilnaCRM's enterprise support program.
 
 ## Changelog

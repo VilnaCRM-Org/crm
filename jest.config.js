@@ -5,8 +5,13 @@ module.exports = {
   clearMocks: true,
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  roots: [
-    './src/test/unit',
-    './scripts/test/unit',
-  ],
+  roots: ['./src/test/unit', './scripts/test/unit'],
+  coveragePathIgnorePatterns: ['/node_modules/', 'LocalizationGenerator\\.js'],
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.js$': 'babel-jest',
+  },
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
 };
