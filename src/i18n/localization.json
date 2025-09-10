@@ -8,7 +8,7 @@
       "auth": {
         "password": {
           "hide": "Hide password",
-          "show": "Conceal password"
+          "show": "Show password"
         }
       },
       "sign_up": {
@@ -53,6 +53,10 @@
           "error_text": "There was an error. Please check again",
           "switcher_text_have_account": "Already have an account?",
           "switcher_text_no_account": "Don’t have an account yet?"
+        },
+        "errors": {
+          "email_used": "Email address is already in use",
+          "signup_error": "Registration error. Please try again later"
         }
       },
       "sign_in": {
@@ -65,10 +69,6 @@
           },
           "submit_button": "Sign in",
           "submitting": "Signing in…"
-        },
-        "errors": {
-          "email_used": "Email address is already in use",
-          "signup_error": "Registration error. Please try again later"
         }
       },
       "footer": {
@@ -92,7 +92,7 @@
       },
       "sign_up": {
         "title": "Реєстрація",
-        "subtitle": "Створіть аккаунт у VilnaCRM",
+        "subtitle": "Створіть обліковий запис у VilnaCRM",
         "socials_main_heading": "Або",
         "form": {
           "name_input": {

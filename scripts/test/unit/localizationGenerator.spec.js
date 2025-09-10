@@ -59,10 +59,10 @@ describe('LocalizationGenerator', () => {
 
   describe('getFeaturePaths', () => {
     it('should find i18n folders recursively in module structure', () => {
-      fs.existsSync.mockImplementation((dir) => true);
-
+      fs.existsSync.mockReturnValue(true);
       fs.readdirSync.mockImplementation((dir, options) => {
         const mockStructure = {
+          src: [{ name: 'modules', isDirectory: () => true, isFile: () => false }],
           'src/modules': [
             { name: 'feature1', isDirectory: () => true, isFile: () => false },
             { name: 'feature2', isDirectory: () => true, isFile: () => false },
@@ -85,10 +85,17 @@ describe('LocalizationGenerator', () => {
             { name: 'i18n', isDirectory: () => true, isFile: () => false },
           ],
         };
-
         const entries = mockStructure[dir] || [];
         return options?.withFileTypes ? entries : entries.map((e) => e.name);
       });
+      const result = generator.getFeaturePaths();
+      expect(result.sort()).toEqual(
+        [
+          path.join('src', 'modules', 'feature1', 'i18n'),
+          path.join('src', 'modules', 'feature2', 'subfeature', 'i18n'),
+          path.join('src', 'modules', 'feature3', 'nested', 'deeper', 'i18n'),
+        ].sort()
+      );
     });
 
     it('should return empty array when no i18n folders exist', () => {
@@ -120,6 +127,7 @@ describe('LocalizationGenerator', () => {
 
     it('should handle mixed file and directory entries', () => {
       const mockDirectoryStructure = {
+        src: [{ name: 'modules', isDirectory: () => true, isFile: () => false }],
         'src/modules': [
           {
             name: 'feature1',
@@ -145,24 +153,13 @@ describe('LocalizationGenerator', () => {
           },
         ],
       };
-
       fs.existsSync.mockImplementation((dir) => true);
-
       fs.readdirSync.mockImplementation((dir, options) => {
-        const structure = {
-          'src/modules': [
-            { name: 'feature1', isDirectory: () => true, isFile: () => false },
-            { name: 'README.md', isDirectory: () => false, isFile: () => true },
-            { name: 'i18n', isDirectory: () => true, isFile: () => false },
-          ],
-          'src/modules/feature1': [
-            { name: 'somefile.txt', isDirectory: () => false, isFile: () => true },
-          ],
-        };
-        return options?.withFileTypes
-          ? structure[dir] || []
-          : (structure[dir] || []).map((e) => e.name);
+        const entries = mockDirectoryStructure[dir] || [];
+        return options?.withFileTypes ? entries : entries.map((e) => e.name);
       });
+      const result = generator.getFeaturePaths();
+      expect(result).toEqual([path.join('src', 'modules', 'i18n')]);
     });
 
     it('should handle empty directory', () => {

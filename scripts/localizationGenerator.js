@@ -5,12 +5,13 @@ class LocalizationGenerator {
   constructor(
     i18nFolderName = 'i18n',
     modulesPath = 'src',
-    localizationFile = 'localization.json'
+    localizationFile = 'localization.json',
+    outputPath = 'src/i18n'
   ) {
     this.modulesPath = modulesPath;
     this.i18nFolderName = i18nFolderName;
     this.localizationFile = localizationFile;
-    this.pathToWriteLocalization = 'src/i18n';
+    this.pathToWriteLocalization = outputPath;
   }
 
   generateLocalizationFile() {
@@ -42,6 +43,7 @@ class LocalizationGenerator {
     );
     const fileContent = JSON.stringify(localizationObj, null, 2);
     this.writeLocalizationFile(fileContent, outputPath);
+    return { outputPath, localizationObj };
   }
 
   getFeaturePaths() {
@@ -103,7 +105,12 @@ class LocalizationGenerator {
     for (const key of Object.keys(source)) {
       if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
 
-      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      if (
+        source[key] &&
+        typeof source[key] === 'object' &&
+        !Array.isArray(source[key]) &&
+        source[key].constructor === Object
+      ) {
         target[key] = this.deepMerge(target[key] || {}, source[key]);
       } else {
         target[key] = source[key];

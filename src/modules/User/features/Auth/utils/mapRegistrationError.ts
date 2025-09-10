@@ -3,11 +3,11 @@ export const GENERIC_SIGNUP_ERROR_KEY = 'sign_up.errors.signup_error' as const;
 
 type MessageKey = typeof EMAIL_ALREADY_USED_KEY | typeof GENERIC_SIGNUP_ERROR_KEY;
 
-const ERROR_PATTERNS: { keys: string[]; messageKey: MessageKey }[] = [
-  { keys: ['email', 'exists'], messageKey: EMAIL_ALREADY_USED_KEY },
-];
+const ERROR_PATTERNS = [
+  { keys: ['email', 'exists'] as const, messageKey: EMAIL_ALREADY_USED_KEY },
+] as const;
 
-export const getRegistrationError = (rawError: string | null | undefined): string | null => {
+const getRegistrationError = (rawError: string | null | undefined): MessageKey | null => {
   if (!rawError) return null;
 
   const haystack = rawError.toLowerCase();
