@@ -5,7 +5,9 @@ module.exports = {
     es6: true,
     jest: true,
   },
-  parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
+  parser: '@typescript-eslint/parser',
+  parserOptions: { ecmaVersion: 2022, sourceType: 'module', project: './tsconfig.json' },
+  plugins: ['@typescript-eslint', 'eslint-comments'],
   ignorePatterns: [
     'node_modules/*',
     'docker-compose.yml',
@@ -16,9 +18,10 @@ module.exports = {
   ],
   extends: [
     'eslint:recommended',
-    'plugin:storybook/recommended',
     'airbnb',
     'airbnb/hooks',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react/recommended',
     'prettier',
   ],
   overrides: [
@@ -41,13 +44,23 @@ module.exports = {
       },
     },
     {
-      files: ['**/*.ts', '**/*.tsx', '**/*.spec.js', '**/*.spec.jsx'],
+      files: ['**/*.js', '**/*.jsx'],
+
+      env: {
+        browser: true,
+        node: true,
+        es6: true,
+      },
+    },
+    {
+      files: ['**/*.ts', '**/*.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
       parser: '@typescript-eslint/parser',
+      plugins: ['@typescript-eslint', 'eslint-comments'],
       settings: {
         react: { version: 'detect' },
         'import/resolver': {
           node: {
-            extensions: ['.ts', '.tsx', '.js', ',jsx'],
+            extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'],
           },
           typescript: { project: './tsconfig.json' },
         },
@@ -68,8 +81,21 @@ module.exports = {
         'plugin:jsx-a11y/recommended',
         'plugin:testing-library/react',
         'plugin:jest-dom/recommended',
+        'plugin:eslint-comments/recommended',
       ],
       rules: {
+        'eslint-comments/no-use': [
+          'error',
+          { allow: ['eslint-disable-next-line', 'eslint-disable', 'eslint-enable'] },
+        ],
+        'react/jsx-no-bind': 'warn',
+        'no-await-in-loop': 'warn',
+        'no-restricted-syntax': 'warn',
+        'no-alert': 'error',
+        'no-console': 'error',
+        'import/prefer-default-export': 'warn',
+        'max-len': ['error', { code: 150 }],
+        'eslint-comments/disable-enable-pair': 'off',
         'no-restricted-imports': [
           'error',
           {
@@ -87,10 +113,23 @@ module.exports = {
         'class-methods-use-this': 'off',
         quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
-
         'linebreak-style': ['error', 'unix'],
         'react/prop-types': 'off',
-
+        'import/no-extraneous-dependencies': [
+          'error',
+          {
+            devDependencies: [
+              '**/*.test.*',
+              '**/*.spec.*',
+              'test/**/*',
+              '**/*.stories.*',
+              '**/jest.setup.*',
+              '**/jest.config.*',
+              '**/playwright.config.*',
+              '**/stryker.config.*',
+            ],
+          },
+        ],
         'import/order': [
           'error',
           {
@@ -109,9 +148,7 @@ module.exports = {
         'react/jsx-props-no-spreading': 'error',
         'react/react-in-jsx-scope': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
-
         'jsx-a11y/anchor-is-valid': 'off',
-
         '@typescript-eslint/no-unused-vars': ['error'],
         '@typescript-eslint/semi': ['error', 'always'],
         '@typescript-eslint/member-delimiter-style': [
@@ -142,6 +179,35 @@ module.exports = {
         '@typescript-eslint/no-empty-function': ['off'],
         '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/no-var-requires': ['off'],
+      },
+    },
+    {
+      files: [
+        '**/*.ts',
+        '**/*.js',
+        '**/*.spec.js',
+        '**/*.spec.jsx',
+        '**/*.spec.ts',
+        '**/*.spec.tsx',
+        'test/load/**/*.js',
+      ],
+      parser: '@typescript-eslint/parser',
+      extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
+      rules: {
+        'no-console': 'error',
+        'import/extensions': ['off', 'never', { js: 'never', jsx: 'never' }],
+        'prefer-template': 'off',
+        'no-restricted-syntax': 'off',
+        'import/no-unresolved': 'off',
+        'class-methods-use-this': 'off',
+        'no-restricted-globals': 'off',
+        'no-undef': 'off',
+        'no-use-before-define': 'off',
+        'import/no-extraneous-dependencies': 'off',
+        'import/no-dynamic-require': 'off',
+        'global-require': 'off',
+        'no-await-in-loop': 'off',
+        '@typescript-eslint/no-var-requires': 'off',
       },
     },
   ],

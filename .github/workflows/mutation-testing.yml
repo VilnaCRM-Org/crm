@@ -1,0 +1,18 @@
+name: mutation testing
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  mutation-testing:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run mutation testing
+        run: make test-mutation
+        

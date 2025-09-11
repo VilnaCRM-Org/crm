@@ -20,10 +20,10 @@ Include specific tasks in the order they need to be done. Include links to speci
 
 ### Acceptance Criteria
 
-Include specific criteria for how to prove that this issue will be done
+Include specific criteria for how to prove that this issue will be done.
 
 - [ ] Task 1
 - [ ] Task 2
 - [ ] Task 3
 
-Remember to use helpful labels and milestones
+Remember to use helpful labels and milestones.

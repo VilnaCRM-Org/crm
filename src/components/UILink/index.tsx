@@ -1,6 +1,5 @@
 import { ThemeProvider, Link } from '@mui/material';
 import { LinkProps } from '@mui/material/Link';
-import React from 'react';
 
 import Theme from '@/components/UILink/Theme';
 

@@ -20,10 +20,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Cache CodeQL databases
-        uses: actions/cache@v3
+        uses: actions/cache@v4.2.3
         with:
           path: ${{ runner.workspace }}/codeql_databases
           key: ${{ runner.os }}-codeql-${{ hashFiles('**/pnpm-lock.yaml') }}

@@ -1,2 +1,5 @@
 scripts/
 checkNodeVersion.js
+
+out/
+docker/

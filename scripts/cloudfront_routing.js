@@ -36,7 +36,7 @@ function handler(event) {
       return request;
     }
 
-    if (uri.substr(-1) === '/') {
+    if (uri.slice(-1) === '/') {
       uri += 'index.html';
     } else if (uri.indexOf('.') === -1) {
       uri += '/index.html';
