@@ -1,0 +1,171 @@
+name: sandbox
+
+on:
+  pull_request:
+    types: [opened]
+  push:
+    branches-ignore: [main]
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+jobs:
+  check-tokens:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate AWS Region
+        run: |
+          if [ -z "${{ vars.AWS_REGION }}" ]; then
+            echo "::error::AWS_REGION is not set"
+            exit 1
+          fi
+
+      - name: Configure AWS Credentials (Test)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{vars.TEST_AWS_ACCOUNT_ID}}:role/github-actions-crm-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine Test Rotation
+        id: determine_test_rotation
+        run: |
+          if ! SECRET_ID=$(aws secretsmanager list-secrets \
+            --region "${AWS_REGION}" \
+            --query "SecretList[?starts_with(Name, 'crm-github-token-') && DeletionDate==null].Name | [0]" \
+            --output text); then
+            echo "::error::Failed to list secrets: ${SECRET_ID}"
+            exit 1
+          fi
+
+          if [ -z "$SECRET_ID" ] || [ "$SECRET_ID" = "None" ]; then
+            echo "Token doesn't exist in the test account."
+          else
+            SECRET_VALUE=$(aws secretsmanager get-secret-value \
+              --secret-id "${SECRET_ID}" \
+              --region "${AWS_REGION}" \
+              --query SecretString \
+              --output text)
+
+            EXPIRES_AT=$(echo "$SECRET_VALUE" | jq -r '.expires_at // empty')
+            if [ -z "$EXPIRES_AT" ]; then
+              echo "Token doesn't exist in the test account."
+            else
+              NOW=$(date -u +%s)
+              EXPIRATION_TIME=$(date -d "$EXPIRES_AT" +%s 2>/dev/null)
+              if [ "$NOW" -ge "$EXPIRATION_TIME" ]; then
+                echo "Token has expired in the test account."
+              else
+                echo "Token exists in the test account."
+              fi
+            fi
+          fi
+
+      - name: Configure AWS Credentials (Prod)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{vars.PROD_AWS_ACCOUNT_ID}}:role/github-actions-crm-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine Prod Rotation
+        id: determine_prod_rotation
+        run: |
+          if ! SECRET_ID=$(aws secretsmanager list-secrets \
+            --region "${AWS_REGION}" \
+            --query "SecretList[?starts_with(Name, 'github-token-') && DeletionDate==null].Name | [0]" \
+            --output text); then
+            echo "::error::Failed to list secrets: ${SECRET_ID}"
+            exit 1
+          fi
+
+          if [ -z "$SECRET_ID" ] || [ "$SECRET_ID" = "None" ]; then
+            echo "Token doesn't exist in the prod account."
+          else
+            SECRET_VALUE=$(aws secretsmanager get-secret-value \
+              --secret-id "${SECRET_ID}" \
+              --region "${AWS_REGION}" \
+              --query SecretString \
+              --output text)
+
+            EXPIRES_AT=$(echo "$SECRET_VALUE" | jq -r '.expires_at // empty')
+            if [ -z "$EXPIRES_AT" ]; then
+              echo "Token doesn't exist in the prod account."
+            else
+              NOW=$(date -u +%s)
+              EXPIRATION_TIME=$(date -d "$EXPIRES_AT" +%s 2>/dev/null)
+              if [ "$NOW" -ge "$EXPIRATION_TIME" ]; then
+                echo "Token has expired in the prod account."
+              else
+                echo "Token exists in the prod account."
+              fi
+            fi
+          fi
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [check-tokens]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{vars.PROD_AWS_ACCOUNT_ID}}:role/github-actions-crm-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Retrieve GitHub Token from Secrets Manager
+        run: |
+          SECRET_ID=$(aws secretsmanager list-secrets \
+            --region "${AWS_REGION}" \
+            --query "SecretList[?starts_with(Name, 'github-token-') && DeletionDate==null].Name | [0]" \
+            --output text)
+
+          if [ -z "$SECRET_ID" ] || [ "$SECRET_ID" = "None" ]; then
+            echo "No active secret found with prefix 'crm-github-token-'"
+            exit 1
+          fi
+
+          GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
+            --region "${AWS_REGION}" \
+            --secret-id "$SECRET_ID" \
+            --query "SecretString" \
+            --output text | jq -r '.token')
+
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "Error: Unable to extract GitHub token from secret"
+            exit 1
+          fi
+
+          echo "GITHUB_TOKEN=${GITHUB_TOKEN}" >> $GITHUB_ENV
+
+      - name: Get PR Number
+        id: get_pr_number
+        run: |
+          RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?head=${GITHUB_REPOSITORY_OWNER}:${GITHUB_REF_NAME}")
+
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to retrieve PR number: ${PR_NUMBER}"
+            exit 1
+          fi
+          PR_NUMBER=$(echo "$RESPONSE" | jq -r '.[0].number')
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+
+      - name: Configure AWS Credentials (Sandbox Creation Trigger Role)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{vars.PROD_AWS_ACCOUNT_ID}}:role/sandbox-crm-creation-trigger-role
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Start Pipeline Execution
+        run: |
+          aws codepipeline start-pipeline-execution --name "sandbox-creation" \
+            --variables "name=BRANCH_NAME,value=${BRANCH_NAME}" "name=PR_NUMBER,value=${PR_NUMBER}" "name=IS_PULL_REQUEST,value=1"
