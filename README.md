@@ -4,7 +4,7 @@
 
 [![CodeScene Code Health](https://codescene.io/projects/43862/status-badges/code-health)](https://codescene.io/projects/43862)
 [![CodeScene System Mastery](https://codescene.io/projects/43862/status-badges/system-mastery)](https://codescene.io/projects/43862)
-[![codecov](https://codecov.io/gh/VilnaCRM-Org/frontend-spa-template/graph/badge.svg?token=iV60KVUVxQ)](https://codecov.io/gh/VilnaCRM-Org/frontend-spa-template)
+[![codecov](https://codecov.io/gh/VilnaCRM-Org/crm/graph/badge.svg)](https://codecov.io/gh/VilnaCRM-Org/crm)
 
 ## Possibilities
 
@@ -25,7 +25,7 @@ front-end applications. This template is used for all our microservices in Vilna
 
 This software is distributed under the
 [Creative Commons Zero v1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/deed) license.
-Please read [LICENSE](https://github.com/VilnaCRM-Org/frontend-spa-template/blob/main/LICENSE) for information
+Please read [LICENSE](https://github.com/VilnaCRM-Org/crm/blob/main/LICENSE) for information
 on the software availability and distribution.
 
 ### 🚀 Minimal Installation Guide
@@ -125,11 +125,10 @@ Runs tests inside the Playwright container, targeting the production container:
 ### Important Note About Swagger E2E Tests
 
 For Swagger E2E tests, the application uses Mockoon to handle API requests.
-The API endpoints from the Swagger schema are automatically rewritten during
-both production and development container builds. This means that all API requests
-are currently directed to Mockoon instead of a real backend. Please keep
-this in mind if you plan to integrate with a real backend service in
-the future—you'll need to update the API configuration accordingly.
+Mockoon serves as a mock API server that automatically starts when running E2E tests.
+It uses the OpenAPI specification from the user-service repository and runs on port 8080
+within the Docker test network. The mock server provides consistent API responses
+during automated testing without requiring a real backend connection.
 
 To run tests locally, the Mockoon mock server is automatically started via
 `make test-e2e`. For manual setup, see the Mockoon configuration in
@@ -239,9 +238,9 @@ particularly when hosted on platforms like AWS CloudFront.
 
 ## Documentation
 
-Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/frontend-spa-template/wiki).
+Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
 If you're having trouble, head for
-[the troubleshooting guide](https://github.com/VilnaCRM-Org/frontend-spa-template/wiki/Troubleshooting)
+[the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 as it's frequently updated.
 
 You can generate complete API-level documentation by running `doc` in the top-level
@@ -251,11 +250,11 @@ folder, and documentation will appear in the `docs` folder, though you'll need t
 If the documentation doesn't cover what you need, search the
 [many questions on Stack Overflow](http://stackoverflow.com/questions/tagged/vilnacrm),
 and before you ask a question,
-[read the troubleshooting guide](https://github.com/VilnaCRM-Org/frontend-spa-template/wiki/Troubleshooting).
+[read the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/roubleshooting).
 
 ## Tests
 
-[Tests](https://github.com/VilnaCRM-Org/frontend-spa-template/actions)
+[Tests](https://github.com/VilnaCRM-Org/crm/actions)
 
 If this isn't passing, is there something you can do to help?
 
@@ -264,14 +263,14 @@ If this isn't passing, is there something you can do to help?
 Please disclose any vulnerabilities found responsibly – report security issues to the maintainers privately.
 
 See
-[SECURITY](https://github.com/VilnaCRM-Org/frontend-spa-template/tree/main/SECURITY.md)
+[SECURITY](https://github.com/VilnaCRM-Org/crm/blob/main/SECURITY.md)
 and
-[Security advisories on GitHub](https://github.com/VilnaCRM-Org/frontend-spa-template/security).
+[Security advisories on GitHub](https://github.com/VilnaCRM-Org/crm/security).
 
 ## Contributing
 
 Please submit bug reports, suggestions, and pull requests to the
-[GitHub issue tracker](https://github.com/VilnaCRM-Org/frontend-spa-template/issues).
+[GitHub issue tracker](https://github.com/VilnaCRM-Org/crm/issues).
 
 We're particularly interested in fixing edge cases, expanding test coverage,
 and updating translations.
@@ -288,9 +287,9 @@ the free and opensource CRM system.
 Donations are very welcome, whether in beer 🍺, T-shirts 👕, or cold, hard cash 💰.
 Sponsorship through GitHub is a simple and convenient way to say "thank you" to
 maintainers and contributors – just click the "Sponsor" button
-[on the project page](https://github.com/VilnaCRM-Org/frontend-spa-template).
+[on the project page](https://github.com/VilnaCRM-Org/crm).
 If your company uses this template, consider taking part in the VilnaCRM's enterprise support program.
 
 ## Changelog
 
-See [changelog](CHANGELOG.md).
+See [changelog](https://github.com/VilnaCRM-Org/crm/blob/main/CHANGELOG.md).

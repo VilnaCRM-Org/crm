@@ -1,9 +1,10 @@
-const { baseUrl } = require('./constants');
+const { baseUrl } = require('./constants').default;
 
 module.exports = {
   ci: {
     collect: {
       url: [baseUrl],
+      numberOfRuns: 3,
       settings: {
         preset: 'desktop',
       },

@@ -8,4 +8,5 @@ jobs:
   yamlfmt:
     runs-on: ubuntu-latest
     steps:
-      - uses: norwd/fmtya@v1
+       - uses: actions/checkout@v4
+       - uses: norwd/fmtya@v1

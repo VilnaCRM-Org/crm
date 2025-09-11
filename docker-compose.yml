@@ -11,7 +11,7 @@ services:
       - '3000:3000'
       - "6006:6006"
     healthcheck:
-      test: ['CMD', 'curl', '-f', 'http://${WEBSITE_DOMAIN}:${DEV_PORT}']
+      test: ['CMD-SHELL', 'curl -fsS http://localhost:${DEV_PORT} || exit 1']
       interval: 10s
       timeout: 5s
       retries: 3

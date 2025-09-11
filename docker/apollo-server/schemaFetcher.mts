@@ -12,11 +12,6 @@ dotenvExpand.expand(env);
 
 const SCHEMA_URL: string = process.env.GRAPHQL_SCHEMA_URL || '';
 
-if (!SCHEMA_URL) {
-  throw new Error(
-    'Schema URL is not configured. Please set the GRAPHQL_SCHEMA_URL environment variable.'
-  );
-}
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

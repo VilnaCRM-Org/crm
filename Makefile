@@ -85,7 +85,7 @@ ifeq ($(CI), 1)
     STORYBOOK_BUILD 		= pnpm storybook build
     STORYBOOK_START         = $(STORYBOOK_CMD)
 
-    MARKDOWNLINT_BIN        = npx markdownlint
+    MARKDOWNLINT_BIN        = pnpm exec -- markdownlint
 	LHCI_TARGET_URL 		= $(WEBSITE_URL)
     RUN_MEMLAB				= $(MEMLEAK_REMOVE_RESULTS) && node $(MEMLEAK_TEST_SCRIPT)
 else
@@ -116,6 +116,10 @@ endif
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
 .PHONY: clean lint
 .PHONY: storybook
+.PHONY: all test
+all: help
+test: test-unit-all
+
 RUN_VISUAL                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 RUN_E2E                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
 PLAYWRIGHT_TEST_CMD             = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
