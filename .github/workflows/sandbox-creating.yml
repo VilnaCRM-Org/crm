@@ -161,7 +161,7 @@ jobs:
       - name: Configure AWS Credentials (Sandbox Creation Trigger Role)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{vars.PROD_AWS_ACCOUNT_ID}}:role/sandbox-crm-creation-trigger-role
+          role-to-assume: arn:aws:iam::${{vars.TEST_AWS_ACCOUNT_ID}}:role/sandbox-crm-creation-trigger-role
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
 
