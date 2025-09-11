@@ -77,7 +77,7 @@ jobs:
         run: |
           if ! SECRET_ID=$(aws secretsmanager list-secrets \
             --region "${AWS_REGION}" \
-            --query "SecretList[?starts_with(Name, 'github-token-') && DeletionDate==null].Name | [0]" \
+            --query "SecretList[?starts_with(Name, 'crm-github-token-') && DeletionDate==null].Name | [0]" \
             --output text); then
             echo "::error::Failed to list secrets: ${SECRET_ID}"
             exit 1
@@ -123,7 +123,7 @@ jobs:
         run: |
           SECRET_ID=$(aws secretsmanager list-secrets \
             --region "${AWS_REGION}" \
-            --query "SecretList[?starts_with(Name, 'github-token-') && DeletionDate==null].Name | [0]" \
+            --query "SecretList[?starts_with(Name, 'crm-github-token-') && DeletionDate==null].Name | [0]" \
             --output text)
 
           if [ -z "$SECRET_ID" ] || [ "$SECRET_ID" = "None" ]; then
