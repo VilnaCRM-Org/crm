@@ -239,7 +239,9 @@ particularly when hosted on platforms like AWS CloudFront.
 ## Documentation
 
 Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
+Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
 If you're having trouble, head for
+[the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 [the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 as it's frequently updated.
 
@@ -255,6 +257,7 @@ and before you ask a question,
 ## Tests
 
 [Tests](https://github.com/VilnaCRM-Org/crm/actions)
+[Tests](https://github.com/VilnaCRM-Org/crm/actions)
 
 If this isn't passing, is there something you can do to help?
 
@@ -266,10 +269,12 @@ See
 [SECURITY](https://github.com/VilnaCRM-Org/crm/blob/main/SECURITY.md)
 and
 [Security advisories on GitHub](https://github.com/VilnaCRM-Org/crm/security).
+[Security advisories on GitHub](https://github.com/VilnaCRM-Org/crm/security).
 
 ## Contributing
 
 Please submit bug reports, suggestions, and pull requests to the
+[GitHub issue tracker](https://github.com/VilnaCRM-Org/crm/issues).
 [GitHub issue tracker](https://github.com/VilnaCRM-Org/crm/issues).
 
 We're particularly interested in fixing edge cases, expanding test coverage,
@@ -287,6 +292,7 @@ the free and opensource CRM system.
 Donations are very welcome, whether in beer 🍺, T-shirts 👕, or cold, hard cash 💰.
 Sponsorship through GitHub is a simple and convenient way to say "thank you" to
 maintainers and contributors – just click the "Sponsor" button
+[on the project page](https://github.com/VilnaCRM-Org/crm).
 [on the project page](https://github.com/VilnaCRM-Org/crm).
 If your company uses this template, consider taking part in the VilnaCRM's enterprise support program.
 

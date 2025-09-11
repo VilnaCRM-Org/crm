@@ -45,14 +45,7 @@ module.exports = {
     },
     {
       files: ['**/*.js', '**/*.jsx'],
-      settings: {
-        'import/resolver': {
-          node: {
-            extensions: ['.js', '.jsx', '.mjs'],
-          },
-        },
-        react: { version: 'detect' },
-      },
+
       env: {
         browser: true,
         node: true,
@@ -69,9 +62,7 @@ module.exports = {
           node: {
             extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'],
           },
-          typescript: {
-            project: './tsconfig.json',
-          },
+          typescript: { project: './tsconfig.json' },
         },
       },
       env: {
@@ -104,12 +95,23 @@ module.exports = {
         'no-console': 'error',
         'import/prefer-default-export': 'warn',
         'max-len': ['error', { code: 150 }],
+        'eslint-comments/disable-enable-pair': 'off',
         'no-restricted-imports': [
           'error',
           {
             patterns: ['@/features/*/*'],
           },
         ],
+        'no-param-reassign': [
+          'error',
+          {
+            props: true,
+            ignorePropertyModificationsFor: ['state'],
+          },
+        ],
+        'no-extra-semi': 'off',
+        'class-methods-use-this': 'off',
+        quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
         'linebreak-style': ['error', 'unix'],
         'react/prop-types': 'off',
@@ -139,15 +141,43 @@ module.exports = {
         'import/default': 'off',
         'import/no-named-as-default-member': 'off',
         'import/no-named-as-default': 'off',
+        'import/no-extraneous-dependencies': 'off',
+        'import/no-unresolved': 'off',
         'import/extensions': 'off',
+
+        'react/jsx-props-no-spreading': 'error',
         'react/react-in-jsx-scope': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
         'jsx-a11y/anchor-is-valid': 'off',
         '@typescript-eslint/no-unused-vars': ['error'],
-        '@typescript-eslint/explicit-function-return-type': ['off'],
+        '@typescript-eslint/semi': ['error', 'always'],
+        '@typescript-eslint/member-delimiter-style': [
+          'error',
+          {
+            overrides: {
+              interface: {
+                multiline: {
+                  delimiter: 'semi',
+                  requireLast: true,
+                },
+              },
+            },
+          },
+        ],
+        '@typescript-eslint/explicit-member-accessibility': [
+          'error',
+          {
+            accessibility: 'explicit',
+            overrides: {
+              constructors: 'no-public',
+            },
+          },
+        ],
+        '@typescript-eslint/member-ordering': 'error',
+        '@typescript-eslint/explicit-function-return-type': 'error',
         '@typescript-eslint/explicit-module-boundary-types': ['off'],
         '@typescript-eslint/no-empty-function': ['off'],
-        '@typescript-eslint/no-explicit-any': ['off'],
+        '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/no-var-requires': ['off'],
       },
     },

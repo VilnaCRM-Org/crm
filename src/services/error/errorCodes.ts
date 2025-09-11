@@ -1,0 +1,9 @@
+export const ERROR_CODES = {
+  AUTH_INVALID: 'AUTH_INVALID',
+  HTTP_401: 'HTTP_401',
+  HTTP_500: 'HTTP_500',
+  JS_ERROR: 'JS_ERROR',
+  UNKNOWN_ERROR: 'UNKNOWN_ERROR',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

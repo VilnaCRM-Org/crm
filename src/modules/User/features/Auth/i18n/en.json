@@ -1,0 +1,77 @@
+{
+  "root_element_missing": "Root element not found",
+  "buttons": {
+    "back_to_main": "Back to homepage"
+  },
+  "auth": {
+    "password": {
+      "hide": "Hide password",
+      "show": "Show password"
+    }
+  },
+  "sign_up": {
+    "title": "Registration",
+    "subtitle": "Create an account in VilnaCRM",
+    "socials_main_heading": "Or",
+    "form": {
+      "name_input": {
+        "label": "Your first and last name",
+        "placeholder": "Mykhailo Svitskyi",
+        "special_characters_error": "Please use letters only",
+        "required": "This field is required",
+        "full_name_format_error": "Please enter your full name in the correct format"
+      },
+      "email_input": {
+        "label": "Email",
+        "placeholder": "vilnaCRM@gmail.com",
+        "required": "This field is required",
+        "email_format_error": "Please make sure your email includes '@' and '.'",
+        "invalid_message": "Please enter a valid email address"
+      },
+      "password_input": {
+        "label": "Password",
+        "placeholder": "Create a password",
+        "required": "This field is required",
+        "error_length": "Please enter a password between 8 and 64 characters",
+        "error_numbers": "Please include at least one digit",
+        "error_uppercase": "Please include at least one uppercase letter"
+      },
+      "password_tip": {
+        "alt": "Password tip icon",
+        "title": "8 to 64 characters.",
+        "recommendation_text": "We recommend using:",
+        "options": {
+          "option_1": "lowercase and uppercase letters",
+          "option_2": "special characters (#&*$)",
+          "option_3": "numbers"
+        }
+      },
+      "submitting": "Signing up…",
+      "submit_button": "Sign Up",
+      "error_text": "There was an error. Please check again",
+      "switcher_text_have_account": "Already have an account?",
+      "switcher_text_no_account": "Don’t have an account yet?"
+    },
+    "errors": {
+      "email_used": "Email address is already in use",
+      "signup_error": "Registration error. Please try again later"
+    }
+  },
+  "sign_in": {
+    "title": "Authentication",
+    "subtitle": "Sign in to your account in two clicks",
+    "form": {
+      "password_input": {
+        "placeholder": "Enter your password",
+        "label": "Password"
+      },
+      "submit_button": "Sign in",
+      "submitting": "Signing in…"
+    }
+  },
+  "footer": {
+    "logo_alt": "VilnaCRM logo",
+    "privacy": "Privacy Policy",
+    "usage_policy": "Terms of Use"
+  }
+}

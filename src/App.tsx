@@ -1,22 +1,24 @@
-import { useTranslation } from 'react-i18next';
+import React, { useEffect } from 'react';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-function App() {
-  const { t } = useTranslation();
+import Authentication from '@/modules/User/features/Auth';
 
-  const click = () => {
-    setTimeout(() => {
-      // eslint-disable-next-line no-console
-      console.log('done');
-    }, 2000);
-  };
+import i18n from './i18n';
 
-  return (
-    <div>
-      <button type="button" onClick={click}>
-        {t('hello')}
-      </button>
-    </div>
-  );
+import './index.css';
+
+const router = createBrowserRouter([
+  {
+    path: '/authentication',
+    element: <Authentication />,
+  },
+]);
+
+function App(): React.ReactElement {
+  useEffect(() => {
+    document.documentElement.dir = i18n.dir?.() || 'ltr';
+  }, []);
+
+  return <RouterProvider router={router} />;
 }
-
 export default App;

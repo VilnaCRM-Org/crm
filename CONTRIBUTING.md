@@ -65,6 +65,8 @@ If you find an issue to work on, you are welcome to open a PR with a fix.
 Commit the changes once you are happy with them.
 Don't forget to self-review to speed up the review process:zap:.
 
+Our commits are based on [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+
 ### Pull Request
 
 When you're finished with the changes, create a pull request, also known as a PR.

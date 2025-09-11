@@ -1,0 +1,35 @@
+:root {
+  --mui-palette-deep-blue: #297fff;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    Segoe UI,
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    Fira Sans,
+    Helvetica Neue,
+    sans-serif;
+  font-size: 16px;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:visited {
+  color: var(--mui-palette-deep-blue);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}

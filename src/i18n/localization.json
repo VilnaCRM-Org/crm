@@ -4,6 +4,160 @@
       "login": {
         "title": "Автентифікація",
         "info_desc": "Увійдіть до свого аккаунту за два кліки"
+      },
+      "root_element_missing": "Кореневий елемент не знайдено",
+      "buttons": {
+        "back_to_main": "На головну сторінку"
+      },
+      "auth": {
+        "password": {
+          "hide": "Приховати пароль",
+          "show": "Показати пароль"
+        }
+      },
+      "sign_up": {
+        "title": "Реєстрація",
+        "subtitle": "Створіть обліковий запис у VilnaCRM",
+        "socials_main_heading": "Або",
+        "form": {
+          "name_input": {
+            "label": "Ваше ім’я та прізвище",
+            "placeholder": "Михайло Світський",
+            "special_characters_error": "Будь ласка, використовуйте лише літери",
+            "required": "Це поле обов'язкове",
+            "full_name_format_error": "Будь ласка, введіть повне ім’я у правильному форматі"
+          },
+          "email_input": {
+            "label": "Електронна пошта",
+            "placeholder": "vilnaCRM@gmail.com",
+            "required": "Це поле обов'язкове",
+            "email_format_error": "Будь ласка, переконайтеся, що email містить '@' та '.'",
+            "invalid_message": "Будь ласка, введіть коректну електронну адресу"
+          },
+          "password_input": {
+            "label": "Пароль",
+            "placeholder": "Створіть пароль",
+            "required": "Це поле обов'язкове",
+            "error_length": "Будь ласка, введіть від 8 до 64 символів",
+            "error_numbers": "Будь ласка, додайте принаймні одну цифру",
+            "error_uppercase": "Будь ласка, додайте принаймні одну велику літеру"
+          },
+          "password_tip": {
+            "alt": "Іконка підказки пароля",
+            "title": "Від 8 до 64 символів.",
+            "recommendation_text": "Рекомендуємо використовувати:",
+            "options": {
+              "option_1": "малі та великі літери",
+              "option_2": "спеціальні символи (#&*$)",
+              "option_3": "цифри"
+            }
+          },
+          "submitting": "Обробка…",
+          "submit_button": "Реєстрація",
+          "error_text": "Виникла помилка. Перевірте ще раз",
+          "switcher_text_have_account": "У вас вже є обліковий запис?",
+          "switcher_text_no_account": "У вас немає облікового запису?"
+        },
+        "errors": {
+          "email_used": "Електронна адреса вже використовується",
+          "signup_error": "Помилка реєстрації. Спробуйте пізніше"
+        }
+      },
+      "sign_in": {
+        "title": "Аутентифікація",
+        "subtitle": "Увійдіть до свого облікового запису у два кліки",
+        "form": {
+          "password_input": {
+            "placeholder": "Введіть пароль",
+            "label": "Пароль"
+          },
+          "submit_button": "Увійти до облікового запису",
+          "submitting": "Вхід…"
+        }
+      },
+      "footer": {
+        "logo_alt": "Логотип VilnaCRM",
+        "privacy": "Політика конфіденційності",
+        "usage_policy": "Умови користування"
+      }
+    }
+  },
+  "en": {
+    "translation": {
+      "root_element_missing": "Root element not found",
+      "buttons": {
+        "back_to_main": "Back to homepage"
+      },
+      "auth": {
+        "password": {
+          "hide": "Hide password",
+          "show": "Show password"
+        }
+      },
+      "sign_up": {
+        "title": "Registration",
+        "subtitle": "Create an account in VilnaCRM",
+        "socials_main_heading": "Or",
+        "form": {
+          "name_input": {
+            "label": "Your first and last name",
+            "placeholder": "Mykhailo Svitskyi",
+            "special_characters_error": "Please use letters only",
+            "required": "This field is required",
+            "full_name_format_error": "Please enter your full name in the correct format"
+          },
+          "email_input": {
+            "label": "Email",
+            "placeholder": "vilnaCRM@gmail.com",
+            "required": "This field is required",
+            "email_format_error": "Please make sure your email includes '@' and '.'",
+            "invalid_message": "Please enter a valid email address"
+          },
+          "password_input": {
+            "label": "Password",
+            "placeholder": "Create a password",
+            "required": "This field is required",
+            "error_length": "Please enter a password between 8 and 64 characters",
+            "error_numbers": "Please include at least one digit",
+            "error_uppercase": "Please include at least one uppercase letter"
+          },
+          "password_tip": {
+            "alt": "Password tip icon",
+            "title": "8 to 64 characters.",
+            "recommendation_text": "We recommend using:",
+            "options": {
+              "option_1": "lowercase and uppercase letters",
+              "option_2": "special characters (#&*$)",
+              "option_3": "numbers"
+            }
+          },
+          "submitting": "Signing up…",
+          "submit_button": "Sign Up",
+          "error_text": "There was an error. Please check again",
+          "switcher_text_have_account": "Already have an account?",
+          "switcher_text_no_account": "Don’t have an account yet?"
+        },
+        "errors": {
+          "email_used": "Email address is already in use",
+          "signup_error": "Registration error. Please try again later"
+        }
+      },
+      "sign_in": {
+        "title": "Authentication",
+        "subtitle": "Sign in to your account in two clicks",
+        "form": {
+          "password_input": {
+            "placeholder": "Enter your password",
+            "label": "Password"
+          },
+          "submit_button": "Sign in",
+          "submitting": "Signing in…"
+        }
+      },
+      "footer": {
+        "logo_alt": "VilnaCRM logo",
+        "privacy": "Privacy Policy",
+        "usage_policy": "Terms of Use"
       }
     }
   }

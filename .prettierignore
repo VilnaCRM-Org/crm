@@ -2,6 +2,7 @@ node_modules
 .pnpm-store
 
 build
+.next
 
 .stryker-tmp
 **/.stryker-tmp/**
@@ -14,6 +15,7 @@ lhci-reports-desktop/
 lhci-reports-mobile/
 .lighthouseci
 
+out
 storybook-static/
 
 .cache
