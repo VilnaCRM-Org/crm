@@ -1,9 +1,11 @@
-name: Generate Changelog and Create Release
+name: generate changelog and create release
 
 on:
   push:
-    branches:
-      - main
+    branches: ['main']
+    paths-ignore:
+      - 'package.json'
+      - 'CHANGELOG.md'
 
 jobs:
   build:
@@ -27,8 +29,8 @@ jobs:
         uses: TriPSs/conventional-changelog-action@v5
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
-          output-file: "CHANGELOG.md"
-          version-file: "package.json"
+          output-file: 'CHANGELOG.md'
+          version-file: 'package.json'
       - name: Create Release
         uses: actions/create-release@v1
         if: ${{ steps.changelog.outputs.skipped == 'false' }}

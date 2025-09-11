@@ -6,12 +6,20 @@ module.exports = {
     jest: true,
   },
   parserOptions: { ecmaVersion: 2022, sourceType: 'module' },
-  ignorePatterns: ['node_modules/*', 'docker-compose.yml', 'pnpm-lock.yaml', 'build/*', 'coverage/*'],
+  ignorePatterns: [
+    'node_modules/*',
+    'docker-compose.yml',
+    'pnpm-lock.yaml',
+    'build/*',
+    'coverage/*',
+    'storybook-static/*',
+  ],
   extends: [
     'eslint:recommended',
     'plugin:storybook/recommended',
     'airbnb',
     'airbnb/hooks',
+    'prettier',
   ],
   overrides: [
     {
@@ -33,12 +41,7 @@ module.exports = {
       },
     },
     {
-      files: [
-        '**/*.ts',
-        '**/*.tsx',
-        '**/*.spec.js',
-        '**/*.spec.jsx',
-      ],
+      files: ['**/*.ts', '**/*.tsx', '**/*.spec.js', '**/*.spec.jsx'],
       parser: '@typescript-eslint/parser',
       settings: {
         react: { version: 'detect' },
@@ -46,7 +49,7 @@ module.exports = {
           node: {
             extensions: ['.ts', '.tsx', '.js', ',jsx'],
           },
-          typescript: {},
+          typescript: { project: './tsconfig.json' },
         },
       },
       env: {
@@ -73,7 +76,16 @@ module.exports = {
             patterns: ['@/features/*/*'],
           },
         ],
-
+        'no-param-reassign': [
+          'error',
+          {
+            props: true,
+            ignorePropertyModificationsFor: ['state'],
+          },
+        ],
+        'no-extra-semi': 'off',
+        'class-methods-use-this': 'off',
+        quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
 
         'linebreak-style': ['error', 'unix'],
@@ -90,20 +102,45 @@ module.exports = {
         'import/default': 'off',
         'import/no-named-as-default-member': 'off',
         'import/no-named-as-default': 'off',
-
+        'import/no-extraneous-dependencies': 'off',
+        'import/no-unresolved': 'off',
         'import/extensions': 'off',
 
+        'react/jsx-props-no-spreading': 'error',
         'react/react-in-jsx-scope': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
 
         'jsx-a11y/anchor-is-valid': 'off',
 
         '@typescript-eslint/no-unused-vars': ['error'],
-
-        '@typescript-eslint/explicit-function-return-type': ['off'],
+        '@typescript-eslint/semi': ['error', 'always'],
+        '@typescript-eslint/member-delimiter-style': [
+          'error',
+          {
+            overrides: {
+              interface: {
+                multiline: {
+                  delimiter: 'semi',
+                  requireLast: true,
+                },
+              },
+            },
+          },
+        ],
+        '@typescript-eslint/explicit-member-accessibility': [
+          'error',
+          {
+            accessibility: 'explicit',
+            overrides: {
+              constructors: 'no-public',
+            },
+          },
+        ],
+        '@typescript-eslint/member-ordering': 'error',
+        '@typescript-eslint/explicit-function-return-type': 'error',
         '@typescript-eslint/explicit-module-boundary-types': ['off'],
         '@typescript-eslint/no-empty-function': ['off'],
-        '@typescript-eslint/no-explicit-any': ['off'],
+        '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/no-var-requires': ['off'],
       },
     },

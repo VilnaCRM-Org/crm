@@ -3,87 +3,120 @@ const path = require('path');
 
 class LocalizationGenerator {
   constructor(
-    i18nPath = 'i18n',
-    featurePath = 'src/features',
-    jsonFileType = 'json',
+    i18nFolderName = 'i18n',
+    modulesPath = 'src',
     localizationFile = 'localization.json',
+    outputPath = 'src/i18n'
   ) {
-    this.featurePath = featurePath;
-    this.jsonFileType = jsonFileType;
+    this.modulesPath = modulesPath;
+    this.i18nFolderName = i18nFolderName;
     this.localizationFile = localizationFile;
-
-    this.pathToWriteLocalization = `src/${i18nPath}`;
-    this.pathToI18nFolder = `${featurePath}/{folder}/${i18nPath}`;
-    this.pathToI18nFile = `${featurePath}/{folder}/${i18nPath}/{file.name}`;
+    this.pathToWriteLocalization = outputPath;
   }
 
   generateLocalizationFile() {
-    const featureFolders = this.getFeatureFolders();
+    const featurePaths = this.getFeaturePaths();
 
-    if (!featureFolders.length) return;
+    if (!featurePaths.length) return;
 
-    const localizationObj = featureFolders.reduce((acc, folder) => {
-      const parsedLocalizationFromFolder = this.getLocalizationFromFolder(folder);
+    const localizationObj = featurePaths.reduce((acc, featurePath) => {
+      const parsedLocalization = this.getLocalizationFromFolder(featurePath);
 
-      return { ...acc, ...parsedLocalizationFromFolder };
+      Object.keys(parsedLocalization).forEach((language) => {
+        if (!acc[language]) {
+          acc[language] = { translation: {} };
+        }
+
+        acc[language].translation = this.deepMerge(
+          acc[language].translation,
+          parsedLocalization[language].translation
+        );
+      });
+
+      return acc;
     }, {});
 
-    const filePath = path.join(
-      path.dirname(__dirname),
+    const outputPath = path.join(
+      process.cwd(),
       this.pathToWriteLocalization,
-      this.localizationFile,
+      this.localizationFile
     );
-    const fileContent = JSON.stringify(localizationObj);
-
-    this.writeLocalizationFile(fileContent, filePath);
+    const fileContent = JSON.stringify(localizationObj, null, 2);
+    this.writeLocalizationFile(fileContent, outputPath);
+    return { outputPath, localizationObj };
   }
 
-  getFeatureFolders() {
-    const featureDirectories = fs.readdirSync(
-      this.featurePath,
-      { withFileTypes: true },
-    );
-
-    return featureDirectories
-      .filter((directory) => directory.isDirectory())
-      .map((directory) => directory.name);
+  getFeaturePaths() {
+    const featureDirs = [];
+    const walk = (dir) => {
+      if (!fs.existsSync(dir)) return;
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name === this.i18nFolderName) {
+            const outputDirAbs = path.resolve(
+              path.dirname(__dirname),
+              this.pathToWriteLocalization
+            );
+            if (path.resolve(fullPath) !== outputDirAbs) {
+              featureDirs.push(fullPath);
+            }
+          } else {
+            walk(fullPath);
+          }
+        }
+      }
+    };
+    walk(this.modulesPath);
+    return featureDirs;
   }
 
-  getLocalizationFromFolder(folder) {
-    const localizationFiles = fs.readdirSync(
-      this.pathToI18nFolder.replace('{folder}', folder),
-      { withFileTypes: true },
-    );
-
-    return localizationFiles.reduce((localizations, file) => {
-      if (!file.isFile()) return localizations;
-
-      const [language, fileType] = file.name.split('.');
-
-      if (fileType !== this.jsonFileType) return localizations;
-
-      const localizationContent = fs.readFileSync(
-        this.pathToI18nFile.replace('{folder}', folder).replace('{file.name}', file.name),
-        'utf8',
-      );
-      const parsedLocalization = JSON.parse(localizationContent);
-
-      return {
-        ...localizations,
-        [language]: {
-          translation: parsedLocalization,
-        },
-      };
+  getLocalizationFromFolder(i18nFolderPath) {
+    if (!fs.existsSync(i18nFolderPath)) return {};
+    const files = fs.readdirSync(i18nFolderPath, { withFileTypes: true });
+    return files.reduce((acc, file) => {
+      if (!file.isFile() || !file.name.endsWith('.json')) return acc;
+      if (file.name === this.localizationFile) return acc;
+      const [language] = file.name.split('.');
+      const content = fs.readFileSync(path.join(i18nFolderPath, file.name), 'utf8');
+      let parsed = {};
+      try {
+        parsed = JSON.parse(content);
+      } catch (e) {
+        console.warn(
+          `Skipping invalid JSON: ${path.join(i18nFolderPath, file.name)} - ${e.message}`
+        );
+        return acc;
+      }
+      acc[language] = acc[language] || { translation: {} };
+      acc[language].translation = this.deepMerge(acc[language].translation, parsed);
+      return acc;
     }, {});
   }
 
-  // eslint-disable-next-line class-methods-use-this
   writeLocalizationFile(fileContent, filePath) {
-    fs.writeFile(filePath, fileContent, (err) => {
-      if (err) {
-        throw new Error(err);
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+
+    fs.writeFileSync(filePath, fileContent, { encoding: 'utf8', mode: 0o644 });
+  }
+
+  deepMerge(target = {}, source = {}) {
+    for (const key of Object.keys(source)) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
+
+      if (
+        source[key] &&
+        typeof source[key] === 'object' &&
+        !Array.isArray(source[key]) &&
+        source[key].constructor === Object
+      ) {
+        target[key] = this.deepMerge(target[key] || {}, source[key]);
+      } else {
+        target[key] = source[key];
       }
-    });
+    }
+    return target;
   }
 }
 

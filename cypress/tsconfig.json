@@ -2,12 +2,9 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["cypress"]
+    "types": ["cypress", "node"],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
-  "include": [
-    "../node_modules/cypress",
-    "./**/*.ts",
-    "./*.ts",
-  ]
+  "include": ["./**/*.ts", "./**/*.tsx"]
 }
-
