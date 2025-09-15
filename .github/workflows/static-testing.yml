@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.5.0'
+          node-version: '20.x'
 
       - name: Cache pnpm dependencies
         id: cache-pnpm-dependencies
@@ -31,7 +31,7 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install dependencies
-        run: make install
+        run: make install --frozen-lockfile
         if: steps.cache-pnpm-dependencies.outputs.cache-hit != 'true'
 
       - name: Run all linters
