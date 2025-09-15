@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - make_cmd: load-tests
+          - make_cmd: test-load
             label: homepage
 
     name: ${{ matrix.label }} load testing
