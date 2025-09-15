@@ -1,4 +1,4 @@
-const { baseUrl } = require('./constants').default;
+const { baseUrl } = require('./constants');
 
 module.exports = {
   ci: {

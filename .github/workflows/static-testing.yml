@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ vars.NODE_VERSION }}
+          node-version: '20.5.0'
 
       - name: Cache pnpm dependencies
         id: cache-pnpm-dependencies
@@ -32,9 +32,7 @@ jobs:
 
       - name: Install dependencies
         run: make install
-        if: |
-          steps.cache-pnpm-dependencies.outputs.cache-hit != 'true' ||
-          steps.cache-pnpm-dependencies.outputs.cache-hit != 'true'
+        if: steps.cache-pnpm-dependencies.outputs.cache-hit != 'true'
 
       - name: Run all linters
         run: make lint
