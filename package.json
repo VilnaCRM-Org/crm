@@ -37,6 +37,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",
+    "@babel/plugin-proposal-decorators": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
     "@commitlint/cli": "^17.8.1",
     "@commitlint/config-conventional": "^17.8.1",

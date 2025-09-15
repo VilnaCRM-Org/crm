@@ -102,6 +102,9 @@ importers:
       '@babel/core':
         specifier: ^7.27.1
         version: 7.28.4
+      '@babel/plugin-proposal-decorators':
+        specifier: ^7.28.0
+        version: 7.28.0(@babel/core@7.28.4)
       '@babel/preset-env':
         specifier: ^7.28.0
         version: 7.28.3(@babel/core@7.28.4)
