@@ -33,4 +33,4 @@ USER node
 
 EXPOSE 3001
 
-CMD ["serve", "build", "-p", "3001"]
+CMD ["serve", "-s", "build", "-l", "tcp://0.0.0.0:3001"]
