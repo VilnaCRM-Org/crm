@@ -31,7 +31,7 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install dependencies
-        run: make install --frozen-lockfile
+        run: make install
         if: steps.cache-pnpm-dependencies.outputs.cache-hit != 'true'
 
       - name: Run all linters
