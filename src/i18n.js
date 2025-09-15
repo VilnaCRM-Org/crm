@@ -1,7 +1,7 @@
 const i18n = require('i18next');
 const { initReactI18next } = require('react-i18next');
 
-const i18nConfig = require('./i18n/localization.json');
+const localization = require('./i18n/localization.json');
 
 const MAIN_LANGUAGE = process.env.REACT_APP_MAIN_LANGUAGE || 'uk';
 const FALLBACK_LANGUAGE = process.env.REACT_APP_FALLBACK_LANGUAGE || 'en';

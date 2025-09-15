@@ -15,6 +15,8 @@ module.exports = {
     'build/*',
     'coverage/*',
     'storybook-static/*',
+    '.eslintrc.js',
+    'memlab/*',
   ],
   extends: [
     'eslint:recommended',
@@ -62,7 +64,13 @@ module.exports = {
           node: {
             extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'],
           },
-          typescript: { project: './tsconfig.json' },
+          typescript: {
+            project: './tsconfig.json',
+            alwaysTryTypes: true,
+          },
+          webpack: {
+            config: './craco.config.js',
+          },
         },
       },
       env: {
@@ -115,21 +123,7 @@ module.exports = {
         'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
         'linebreak-style': ['error', 'unix'],
         'react/prop-types': 'off',
-        'import/no-extraneous-dependencies': [
-          'error',
-          {
-            devDependencies: [
-              '**/*.test.*',
-              '**/*.spec.*',
-              'test/**/*',
-              '**/*.stories.*',
-              '**/jest.setup.*',
-              '**/jest.config.*',
-              '**/playwright.config.*',
-              '**/stryker.config.*',
-            ],
-          },
-        ],
+        'import/no-extraneous-dependencies': 'off',
         'import/order': [
           'error',
           {
@@ -141,7 +135,6 @@ module.exports = {
         'import/default': 'off',
         'import/no-named-as-default-member': 'off',
         'import/no-named-as-default': 'off',
-        'import/no-extraneous-dependencies': 'off',
         'import/no-unresolved': 'off',
         'import/extensions': 'off',
 
@@ -179,6 +172,7 @@ module.exports = {
         '@typescript-eslint/no-empty-function': ['off'],
         '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/no-var-requires': ['off'],
+        'no-unused-vars': 'off',
       },
     },
     {
@@ -208,6 +202,7 @@ module.exports = {
         'global-require': 'off',
         'no-await-in-loop': 'off',
         '@typescript-eslint/no-var-requires': 'off',
+        'no-unused-vars': 'off',
       },
     },
   ],
