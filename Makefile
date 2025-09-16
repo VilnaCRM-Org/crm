@@ -209,7 +209,7 @@ create-network: ## Create the external Docker network if it doesn't exist
 	@docker network ls | grep -q $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
 
 start-prod: create-network ## Build image and start container in production mode
-	$(DOCKER_COMPOSE) $(COMMON_HEALTHCHECKS_FILE) $(DOCKER_COMPOSE_TEST_FILE) up -d --no-recreate && make wait-for-prod
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) up -d --no-recreate && make wait-for-prod-health
 
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."

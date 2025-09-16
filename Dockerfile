@@ -25,7 +25,8 @@ FROM node:24-alpine3.21 AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
-RUN npm install -g serve@14.2.0
+RUN apk add --no-cache curl && \
+    npm install -g serve@14.2.0
 
 RUN mkdir -p /app && chown -R node:node /app
 COPY --from=build --chown=node:node /app/build ./build

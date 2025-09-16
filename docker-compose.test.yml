@@ -8,7 +8,11 @@ services:
     ports:
       - '3001:3001'
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://${WEBSITE_DOMAIN}:${PROD_PORT}"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
     networks:
       - website-network
 
