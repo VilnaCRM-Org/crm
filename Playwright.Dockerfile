@@ -8,14 +8,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     && npm install -g pnpm@10.6.5 \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-
 WORKDIR /app
 
-RUN mkdir -p /app && chown -R pwuser:pwuser /app
-USER pwuser
-COPY package.json pnpm-lock.yaml checkNodeVersion.js ./
-RUN pnpm install --frozen-lockfile
+RUN mkdir -p /app /tmp/test-results && \
+    chown -R pwuser:pwuser /app /tmp/test-results
 
-RUN mkdir -p /app/test-results
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
+
+USER pwuser
 
 CMD ["tail", "-f", "/dev/null"]
