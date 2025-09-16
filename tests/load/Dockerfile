@@ -4,6 +4,8 @@ WORKDIR /app
 
 ENV CGO_ENABLED 0
 
+RUN apk add --no-cache git
+
 RUN go install go.k6.io/xk6/cmd/xk6@v0.18.0
 
 RUN xk6 build \
