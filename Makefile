@@ -196,8 +196,6 @@ test-e2e-ui: start-prod ## Start the production environment and run E2E tests wi
 
 test-visual: start-prod  ## Start production and run visual tests (Playwright)
 	$(RUN_VISUAL)
-	@echo "📋 Copying test reports to host directory..."
-	$(PLAYWRIGHT_DOCKER_CMD) sh -c "cp -r /tmp/playwright-report /app/ 2>/dev/null || echo 'No reports to copy'"
 
 test-visual-ui: start-prod ## Start the production environment and run visual tests with the UI available at $(UI_MODE_URL)
 	@echo "🚀 Starting Playwright UI tests..."
