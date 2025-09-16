@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
 
 WORKDIR /app
 
-RUN mkdir -p /app /tmp/test-results && \
-    chown -R pwuser:pwuser /app /tmp/test-results
+RUN mkdir -p /app /tmp/test-results /tmp/playwright-report && \
+    chown -R pwuser:pwuser /app /tmp/test-results /tmp/playwright-report
 
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
