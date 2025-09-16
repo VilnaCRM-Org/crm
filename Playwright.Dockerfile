@@ -14,7 +14,8 @@ WORKDIR /app
 RUN mkdir -p /app && chown -R pwuser:pwuser /app
 USER pwuser
 COPY package.json pnpm-lock.yaml checkNodeVersion.js ./
-
 RUN pnpm install --frozen-lockfile
+
+RUN mkdir -p /app/test-results
 
 CMD ["tail", "-f", "/dev/null"]
