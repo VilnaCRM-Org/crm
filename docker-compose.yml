@@ -11,7 +11,7 @@ services:
       - '3000:3000'
       - "6006:6006"
     healthcheck:
-      test: ["CMD-SHELL", "npx wait-on http://localhost:${DEV_PORT}"]
+      test: ['CMD', 'curl', '-f', 'http://${WEBSITE_DOMAIN}:${DEV_PORT}']
       interval: 15s
       timeout: 30s
       retries: 5
