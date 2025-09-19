@@ -206,7 +206,7 @@ test-visual-update: start-prod ## Update Playwright visual snapshots
 	$(PLAYWRIGHT_TEST_CMD) $(TEST_DIR_VISUAL) --update-snapshots
 
 create-network: ## Create the external Docker network if it doesn't exist
-	@docker network ls | grep -q $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
+	@docker network ls | grep -wq $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
 
 start-prod: create-network ## Build image and start container in production mode
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) up -d --no-recreate && make wait-for-prod-health
@@ -269,6 +269,7 @@ lighthouse-mobile: ## Run a Lighthouse audit using mobile viewport settings to e
 
 install: ## Install node modules using pnpm (CI=1 runs locally, default runs in container) — uses frozen lockfile and affects node_modules via volumes
 	$(PNPM_EXEC) install --frozen-lockfile
+	make husky
 
 update: ## Update node modules to latest allowed versions — always runs locally, updates lockfile (run before committing dependency changes)
 	pnpm update
@@ -276,10 +277,10 @@ update: ## Update node modules to latest allowed versions — always runs locall
 down: ## Stop the docker containers
 	$(DOCKER_COMPOSE) down --remove-orphans
 
-sh: ## Log to the docker container
+sh: ## Open a shell in the dev container
 	$(DOCKER_COMPOSE) exec dev sh
 
-ps: ## Log to the docker container
+ps: ## Show Docker Compose services status
 	@$(DOCKER_COMPOSE) ps
 
 logs: ## Show all logs

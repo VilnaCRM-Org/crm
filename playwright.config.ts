@@ -1,10 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
-import dotenv, { DotenvConfigOutput } from 'dotenv';
-import dotenvExpand from 'dotenv-expand';
+import { config as dotenvConfig, type DotenvConfigOutput } from 'dotenv';
+import { expand as dotenvExpand } from 'dotenv-expand';
 
-const env: DotenvConfigOutput = dotenv.config();
-
-dotenvExpand.expand(env);
+const env: DotenvConfigOutput = dotenvConfig();
+dotenvExpand(env);
 
 export default defineConfig({
   testMatch: ['**/*.spec.ts'],

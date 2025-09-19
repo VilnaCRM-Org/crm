@@ -50,7 +50,7 @@ services:
       context: .
       dockerfile: Mockoon.Dockerfile
     ports:
-      - '8080:8080'
+      - "${MOCKOON_PORT}:${MOCKOON_PORT}"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "http://${WEBSITE_DOMAIN}:${MOCKOON_PORT}/api/users", "-O", "-"]
