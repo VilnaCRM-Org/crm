@@ -408,8 +408,8 @@ auto_detect_pr() {
         exit 1
     fi
 
-    echo "→ Current branch: $current_branch"
-    echo "→ Searching for PR associated with this branch..."
+    log "→ Current branch: $current_branch"
+    log "→ Searching for PR associated with this branch..."
 
     # Use GitHub CLI to find PR for the current branch
     local pr_data
@@ -448,7 +448,7 @@ auto_detect_pr() {
         exit 1
     fi
 
-    echo "✓ Auto-detected PR #$detected_pr for branch '$current_branch'"
+    log "✓ Auto-detected PR #$detected_pr for branch '$current_branch'"
     PR_NUMBER="$detected_pr"
 }
 
@@ -471,7 +471,7 @@ detect_repo() {
             exit 1
         fi
     fi
-    echo "→ Repository: $REPO"
+    log "→ Repository: $REPO"
 }
 
 # Validate PR number
@@ -502,7 +502,7 @@ get_pr_comments() {
     local pr_number="$1"
     local format="$2"
 
-    echo "→ Fetching unresolved comments for PR #$pr_number..."
+    log "→ Fetching unresolved comments for PR #$pr_number..."
 
     # Get repository owner and name for GraphQL query
     local repo_owner repo_name
@@ -582,7 +582,7 @@ get_pr_comments() {
     comment_count=$(echo "$unresolved_comments" | jq 'length')
 
     if [[ "$comment_count" -eq 0 ]]; then
-        echo "No unresolved comments found for PR #$pr_number"
+        log "No unresolved comments found for PR #$pr_number"
         exit 0
     fi
 
@@ -721,9 +721,9 @@ main() {
     esac
 
     # Execute main workflow
-    echo "GitHub PR Unresolved Comments Retrieval"
-    echo "========================================"
-    echo ""
+    log "GitHub PR Unresolved Comments Retrieval"
+    log "========================================"
+    log ""
 
     check_dependencies
     detect_repo
