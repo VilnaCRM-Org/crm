@@ -37,6 +37,8 @@ services:
     build:
       context: .
       dockerfile: Apollo.Dockerfile
+    env_file:
+      - .env
     restart: unless-stopped
     ports:
       - '4000:4000'

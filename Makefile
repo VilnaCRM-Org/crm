@@ -14,8 +14,8 @@ BIN_DIR                     = ./node_modules/.bin
 JEST_BIN                    = $(BIN_DIR)/jest
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
-CRACO_BUILD                 = pnpm craco build
-STORYBOOK_CMD         		= storybook dev -p $(STORYBOOK_PORT)
+CRACO_BUILD                 = pnpm exec -- craco build
+STORYBOOK_CMD         		= pnpm exec -- storybook dev -p $(STORYBOOK_PORT)
 
 TEST_DIR_BASE               = ./tests
 TEST_DIR_APOLLO             = $(TEST_DIR_BASE)/apollo-server
@@ -64,7 +64,7 @@ UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_H
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
 
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
-PRETTIER_CMD                = pnpm prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
+PRETTIER_CMD                = pnpm exec -- prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 
@@ -82,7 +82,7 @@ ifeq ($(CI), 1)
 	STRYKER_CMD             = pnpm stryker run
     UNIT_TESTS              = env
 
-    STORYBOOK_BUILD 		= pnpm storybook build
+    STORYBOOK_BUILD 		= pnpm exec -- storybook build
     STORYBOOK_START         = $(STORYBOOK_CMD)
 
     MARKDOWNLINT_BIN        = pnpm exec -- markdownlint
@@ -97,8 +97,8 @@ else
     STRYKER_CMD             = make start && $(EXEC_DEV_TTYLESS) pnpm stryker run
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
 
-    STORYBOOK_BUILD			= $(EXEC_DEV_TTYLESS) pnpm storybook build
-    STORYBOOK_START         = $(EXEC_DEV_TTYLESS) pnpm $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
+    STORYBOOK_BUILD			= $(EXEC_DEV_TTYLESS) pnpm exec -- storybook build
+    STORYBOOK_START         = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
     LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)

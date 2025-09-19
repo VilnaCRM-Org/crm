@@ -21,10 +21,10 @@
 <!--- Describe test approach, env, and impact on other areas. Include commands and artifacts. -->
 <!--- Examples (adapt for your change): -->
 <!---  - Unit: make test -->
-<!---  - E2E (Playwright): make e2e (include trace/video if failing) -->
+<!---  - E2E (Playwright): make test-e2e (include trace/video if failing) -->
 <!---  - Mutation: make test-mutation (runs inside Docker; no extra CI deps needed) -->
 <!---  - Load/Perf: make k6; Memory: make memlab -->
-<!---  - Mocks: Mockoon collection name, port, Docker service used -->
+<!---  - Mocks: Mockoon collection name, port (default 8080), Docker service (auto-starts via docker-compose.test.yml during `make test-e2e`) -->
 
 ## Screenshots or recordings (if appropriate)
 

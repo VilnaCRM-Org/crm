@@ -311,6 +311,10 @@ check_dependencies() {
 # Enhanced authentication function
 authenticate_github() {
     local temp_auth=false
+    local gh_auth_args=()
+    if [[ -n "$GITHUB_HOST" && "$GITHUB_HOST" != "github.com" ]]; then
+        gh_auth_args+=(--hostname "$GITHUB_HOST")
+    fi
 
     # Method 1: Environment token
     if [[ -n "${GITHUB_TOKEN:-}" ]]; then
@@ -325,6 +329,19 @@ authenticate_github() {
     if ! $temp_auth && gh auth status --hostname "$GITHUB_HOST" &>/dev/null; then
         echo "→ Using existing GitHub CLI authentication"
     elif ! $temp_auth; then
+       # Non-interactive environments: avoid hanging on prompts
+    if $temp_auth; then
+        # Validate env token by making an authenticated API call
+        if ! gh api "${gh_auth_args[@]}" user >/dev/null 2>&1; then
+            echo "Error: Provided token is invalid or lacks permissions for $GITHUB_HOST"
+            exit 1
+        fi
+    else
+        if ! gh auth status --hostname "$GITHUB_HOST" &>/dev/null; then
+            echo "Error: GitHub authentication verification failed"
+            exit 1
+        fi
+    fi
         # Method 3: Interactive authentication
         echo "No GitHub authentication found."
         echo ""
@@ -378,7 +395,7 @@ authenticate_github() {
 
     # Show authenticated user
     local user
-    if user=$(gh api user --hostname "$GITHUB_HOST" -q '.login' 2>/dev/null); then
+    if user=$(gh api "${gh_auth_args[@]}" user -q '.login' 2>/dev/null); then
         echo "✓ Authenticated as: $user"
     fi
 }

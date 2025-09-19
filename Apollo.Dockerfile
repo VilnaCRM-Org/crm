@@ -22,9 +22,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --only=production
 
 COPY --from=builder /app/docker/apollo-server/out ./docker/apollo-server/out
-COPY .env .env  
 
 USER node
-CMD node ./docker/apollo-server/out/schemaFetcher.mjs && \
-    node ./docker/apollo-server/out/server.mjs
+CMD ["node", "./docker/apollo-server/bootstrap.mjs"]
 
