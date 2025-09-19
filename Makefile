@@ -15,6 +15,7 @@ JEST_BIN                    = $(BIN_DIR)/jest
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
 CRACO_BUILD                 = pnpm exec -- craco build
+STORYBOOK_PORT				?= 6006
 STORYBOOK_CMD         		= pnpm exec -- storybook dev -p $(STORYBOOK_PORT)
 
 TEST_DIR_BASE               = ./tests
@@ -22,7 +23,7 @@ TEST_DIR_APOLLO             = $(TEST_DIR_BASE)/apollo-server
 TEST_DIR_E2E                = $(TEST_DIR_BASE)/e2e
 TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual
 
-LHCI                        = pnpm lhci autorun
+LHCI                        = pnpm exec -- lhci autorun
 LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
 LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
@@ -92,7 +93,7 @@ else
     EXEC_CMD                = $(EXEC_DEV_TTYLESS)
     PNPM_EXEC               = $(EXEC_DEV_TTYLESS) pnpm
     DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
-    BUILD_CMD               = docker compose run --rm dev $(CRACO_BUILD)
+    BUILD_CMD               = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
 
     STRYKER_CMD             = make start && $(EXEC_DEV_TTYLESS) pnpm stryker run
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
@@ -100,7 +101,7 @@ else
     STORYBOOK_BUILD			= $(EXEC_DEV_TTYLESS) pnpm exec -- storybook build
     STORYBOOK_START         = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
-    MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) npx markdownlint
+    MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) pnpm exec -- markdownlint
     LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
     RUN_MEMLAB				= \
     							$(MEMLEAK_REMOVE_RESULTS); \
@@ -112,7 +113,7 @@ endif
 # To Run in CI mode specify CI variable. Example: make lint-md CI=1
 
 .DEFAULT_GOAL               = help
-.RECIPEPREFIX               +=
+# .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
 .PHONY: clean lint
 .PHONY: storybook
@@ -149,7 +150,7 @@ wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	exit 1
 
 build: ## Build the dev container
-	$(DOCKER_COMPOSE) build
+	$(BUILD_CMD)
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
@@ -209,7 +210,7 @@ create-network: ## Create the external Docker network if it doesn't exist
 	@docker network ls | grep -wq $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
 
 start-prod: create-network ## Build image and start container in production mode
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) up -d --no-recreate && make wait-for-prod-health
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate && make wait-for-prod-health
 
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
@@ -290,7 +291,7 @@ new-logs: ## Show live logs of the dev container
 	@$(DOCKER_COMPOSE) logs --tail=0 --follow dev
 
 logs-prod: ## Show all logs
-	@$(DOCKER_COMPOSE) -f docker-compose.test.yml logs --follow prod
+	@$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) logs --follow prod
 
 stop: ## Stop docker
 	$(DOCKER_COMPOSE) stop

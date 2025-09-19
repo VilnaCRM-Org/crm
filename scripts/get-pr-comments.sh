@@ -310,38 +310,33 @@ check_dependencies() {
 
 # Enhanced authentication function
 authenticate_github() {
-    local temp_auth=false
+local temp_auth=false
     local gh_auth_args=()
     if [[ -n "$GITHUB_HOST" && "$GITHUB_HOST" != "github.com" ]]; then
         gh_auth_args+=(--hostname "$GITHUB_HOST")
     fi
 
-    # Method 1: Environment token
-    if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-        echo "→ Using GITHUB_TOKEN from environment"
+    # Method 1: Environment token (preferred in CI)
+    if [[ -n "${GITHUB_TOKEN:-}" || -n "${GH_TOKEN:-}" ]]; then
+        echo "→ Using token from environment"
         temp_auth=true
-    elif [[ -n "${GH_TOKEN:-}" ]]; then
-        echo "→ Using GH_TOKEN from environment"
-        temp_auth=true
-    fi
-
-    # Method 2: Check existing CLI authentication
-    if ! $temp_auth && gh auth status --hostname "$GITHUB_HOST" &>/dev/null; then
-        echo "→ Using existing GitHub CLI authentication"
-    elif ! $temp_auth; then
-       # Non-interactive environments: avoid hanging on prompts
-    if $temp_auth; then
-        # Validate env token by making an authenticated API call
+        # Validate by making an authenticated API call
         if ! gh api "${gh_auth_args[@]}" user >/dev/null 2>&1; then
             echo "Error: Provided token is invalid or lacks permissions for $GITHUB_HOST"
             exit 1
         fi
-    else
-        if ! gh auth status --hostname "$GITHUB_HOST" &>/dev/null; then
-            echo "Error: GitHub authentication verification failed"
+    fi
+
+    # Method 2: Existing gh auth state
+    if ! $temp_auth && gh auth status "${gh_auth_args[@]}" &>/dev/null; then
+        echo "→ Using existing GitHub CLI authentication"
+    elif ! $temp_auth; then
+        # Non-interactive environments: avoid hanging on prompts
+        if [[ ! -t 0 ]]; then
+            echo "No GitHub authentication found and no TTY to prompt."
+            echo "Set GITHUB_TOKEN/GH_TOKEN or run 'gh auth login' beforehand."
             exit 1
         fi
-    fi
         # Method 3: Interactive authentication
         echo "No GitHub authentication found."
         echo ""
@@ -356,7 +351,7 @@ authenticate_github() {
             1)
                 read -s -p "Enter GitHub Personal Access Token: " token
                 echo ""
-                if echo "$token" | gh auth login --with-token --hostname "$GITHUB_HOST" 2>/dev/null; then
+                if printf %s "$token" | gh auth login --with-token "${gh_auth_args[@]}" 2>/dev/null; then
                     echo "✓ Token authentication successful"
                 else
                     echo "✗ Token authentication failed"
@@ -365,7 +360,7 @@ authenticate_github() {
                 fi
                 ;;
             2)
-                if gh auth login --hostname "$GITHUB_HOST"; then
+                if gh auth login "${gh_auth_args[@]}"; then
                     echo "✓ Interactive authentication successful"
                 else
                     echo "✗ Interactive authentication failed"
@@ -387,13 +382,11 @@ authenticate_github() {
         esac
     fi
 
-    # Final verification
-    if ! gh auth status --hostname "$GITHUB_HOST" &>/dev/null; then
+    # Final verification (uniform)
+    if ! gh api "${gh_auth_args[@]}" user >/dev/null 2>&1; then
         echo "Error: GitHub authentication verification failed"
         exit 1
     fi
-
-    # Show authenticated user
     local user
     if user=$(gh api "${gh_auth_args[@]}" user -q '.login' 2>/dev/null); then
         echo "✓ Authenticated as: $user"
