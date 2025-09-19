@@ -9,8 +9,8 @@
 # options, outputting results to stdout in a structured format.
 #
 # AUTHOR:     VilnaCRM Team
-# VERSION:    2.0.0
-# DATE:       2025-09-06
+# VERSION:    2.0.1
+# DATE:       2025-09-19
 # LICENSE:    MIT
 #
 # ==============================================================================
@@ -229,6 +229,11 @@ PR_NUMBER=""
 FORMAT="text"
 REPO=""
 GITHUB_HOST="${GITHUB_HOST:-github.com}"
+
+# Logging function
+log() {
+    echo "$@" >&2
+}
 
 # Help functions
 show_usage() {
@@ -555,26 +560,27 @@ get_pr_comments() {
         exit 1
     fi
 
-    # Filter for unresolved and non-outdated threads and transform to expected format
+    # Filter for unresolved and non-outdated threads and flatten ALL comments from each thread
     local unresolved_comments
     unresolved_comments=$(echo "$threads_data" | jq --argjson pr_number "$pr_number" '
         .data.repository.pullRequest.reviewThreads.nodes
         | map(select(.isResolved == false and .isOutdated == false))
-        | map(.comments.nodes[0] as $comment | {
-            id: $comment.id,
-            path: .path,
-            line: .line,
-            original_line: .originalLine,
-            start_line: .startLine,
-            original_start_line: .originalStartLine,
-            body: $comment.body,
-            user: $comment.author,
-            created_at: $comment.createdAt,
-            updated_at: $comment.updatedAt,
-            html_url: $comment.url,
-            thread_id: .id,
+        | map(. as $thread | .comments.nodes[] | {
+            id: .id,
+            path: $thread.path,
+            line: $thread.line,
+            original_line: $thread.originalLine,
+            start_line: $thread.startLine,
+            original_start_line: $thread.originalStartLine,
+            body: .body,
+            user: .author,
+            created_at: .createdAt,
+            updated_at: .updatedAt,
+            html_url: .url,
+            thread_id: $thread.id,
             in_reply_to_id: null
         })
+        | flatten
     ')
 
     # Check if any unresolved comments exist
