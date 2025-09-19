@@ -231,7 +231,7 @@ test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js e
 test-memory-leak: start-prod ## This command executes memory leaks tests using Memlab library.
 	$(RUN_MEMLAB)
 
-test-mutation: build ## Run mutation tests using Stryker after building the app
+test-mutation: ## Run mutation tests using Stryker after building the app
 	$(STRYKER_CMD)
 
 wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
