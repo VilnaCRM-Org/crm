@@ -14,8 +14,14 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: [['html', { open: 'never', outputFolder: 'playwright-report' }]],
-  outputDir: '/tmp/test-results',
+    reporter: process.env.CI
+    ? [
+            ['junit', { outputFile: 'test-results/junit.xml' }],
+            ['github'],
+            ['html', { open: 'never', outputFolder: 'playwright-report' }],
+          ]
+      : [['html', { open: 'never', outputFolder: 'playwright-report' }]],
+    outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR || 'test-results',
   use: {
     trace: 'on-first-retry',
     ignoreHTTPSErrors: true,
