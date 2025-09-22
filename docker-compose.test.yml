@@ -21,6 +21,7 @@ services:
       context: .
       dockerfile: Playwright.Dockerfile
     restart: unless-stopped
+    user: pwuser
     volumes:
       - .:/app
       - /app/node_modules

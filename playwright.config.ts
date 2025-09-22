@@ -14,23 +14,24 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-    reporter: process.env.CI
+  reporter: process.env.CI
     ? [
-            ['junit', { outputFile: 'test-results/junit.xml' }],
-            ['github'],
-            ['html', { open: 'never', outputFolder: 'playwright-report' }],
-          ]
-      : [['html', { open: 'never', outputFolder: 'playwright-report' }]],
-    outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR || 'test-results',
+        ['junit', { outputFile: 'test-results/junit.xml' }],
+        ['github'],
+        ['html', { open: 'never', outputFolder: 'playwright-report' }],
+      ]
+    : [['html', { open: 'never', outputFolder: 'playwright-report' }]],
+
+  outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR || 'test-results',
   use: {
     trace: 'on-first-retry',
     ignoreHTTPSErrors: true,
     baseURL: process.env.REACT_APP_PROD_CONTAINER_API_URL,
-        ...(cdHeaderName && cdHeaderValue
-        ? {
-              extraHTTPHeaders: {
-                [`aws-cf-cd-${cdHeaderName}`]: cdHeaderValue,
-            },
+    ...(cdHeaderName && cdHeaderValue
+      ? {
+          extraHTTPHeaders: {
+            [`aws-cf-cd-${cdHeaderName}`]: cdHeaderValue,
+          },
         }
       : {}),
   },
