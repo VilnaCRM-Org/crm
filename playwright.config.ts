@@ -5,6 +5,9 @@ import { expand as dotenvExpand } from 'dotenv-expand';
 const env: DotenvConfigOutput = dotenvConfig();
 dotenvExpand(env);
 
+const cdHeaderName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME;
+const cdHeaderValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE;
+
 export default defineConfig({
   testMatch: ['**/*.spec.ts'],
   fullyParallel: true,
@@ -17,10 +20,13 @@ export default defineConfig({
     trace: 'on-first-retry',
     ignoreHTTPSErrors: true,
     baseURL: process.env.REACT_APP_PROD_CONTAINER_API_URL,
-    extraHTTPHeaders: {
-      [`aws-cf-cd-${process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME}`]:
-        process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE || '',
-    },
+        ...(cdHeaderName && cdHeaderValue
+        ? {
+              extraHTTPHeaders: {
+                [`aws-cf-cd-${cdHeaderName}`]: cdHeaderValue,
+            },
+        }
+      : {}),
   },
   projects: [
     {
