@@ -20,6 +20,7 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "incremental": true,
+    "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "newLine": "lf"
   },

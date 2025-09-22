@@ -24,6 +24,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
+      - ./playwright-report:/app/playwright-report
     ports:
       - '9324:9324'
     environment:
