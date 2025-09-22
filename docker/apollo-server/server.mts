@@ -44,9 +44,7 @@ async function startServer() {
     server = new ApolloServer<BaseContext>({
       typeDefs,
       resolvers,
-      csrfPrevention: {
-        requestHeaders: ['Apollo-Require-Preflight', 'X-Apollo-Operation-Name'],
-      },
+      csrfPrevention: false,
       formatError,
     });
 

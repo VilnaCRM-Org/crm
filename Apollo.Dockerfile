@@ -20,11 +20,11 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install --frozen-lockfile --only=production \
-    && pnpm add winston
+RUN pnpm install --frozen-lockfile --only=production
 
 COPY --from=builder /app/docker/apollo-server/out ./docker/apollo-server/out
 COPY docker/apollo-server/bootstrap.mjs ./docker/apollo-server/bootstrap.mjs
 
+RUN chown -R node:node /app
 USER node
 CMD ["node", "./docker/apollo-server/bootstrap.mjs"]

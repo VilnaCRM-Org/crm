@@ -518,7 +518,7 @@ get_pr_comments() {
     local graphql_query='{
   repository(owner: "'$repo_owner'", name: "'$repo_name'") {
     pullRequest(number: '$pr_number') {
-      reviewThreads(first: 100) {
+      reviewThreads(first: 250) {
         nodes {
           id
           isResolved
@@ -528,7 +528,7 @@ get_pr_comments() {
           originalLine
           startLine
           originalStartLine
-          comments(first: 10) {
+          comments(first: 100) {
             nodes {
               id
               body

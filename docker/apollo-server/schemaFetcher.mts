@@ -33,7 +33,7 @@ export async function fetchAndSaveSchema(): Promise<void> {
   if (!SCHEMA_URL) {
     logger.error('GRAPHQL_SCHEMA_URL is not set. Skipping schema fetch.');
     if (process.env.NODE_ENV === 'production') {
-      process.exit(1);
+      throw new Error('GRAPHQL_SCHEMA_URL is required in production environment');
     }
     return;
   }
@@ -99,8 +99,8 @@ export async function fetchAndSaveSchema(): Promise<void> {
 
   if (lastError) {
     if (process.env.NODE_ENV === 'production') {
-      logger.info('Exiting process due to repeated errors...');
-      process.exit(1);
+      logger.info('Schema fetch failed after all retry attempts...');
+      throw lastError;
     } else {
       logger.info('All retry attempts failed, but continuing execution...');
     }
