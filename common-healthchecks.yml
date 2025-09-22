@@ -6,8 +6,6 @@ x-healthcheck-default: &healthcheck-default
   start_period: 30s
 
 services:
-  playwright:
-    healthcheck: *healthcheck-default
   apollo:
     healthcheck: *healthcheck-default
   mockoon:
