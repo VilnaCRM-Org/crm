@@ -21,7 +21,6 @@ export default defineConfig({
         ['html', { open: 'never', outputFolder: 'playwright-report' }],
       ]
     : [['html', { open: 'never', outputFolder: 'playwright-report' }]],
-
   outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR || 'test-results',
   use: {
     trace: 'on-first-retry',
