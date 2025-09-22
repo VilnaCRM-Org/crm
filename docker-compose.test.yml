@@ -25,6 +25,7 @@ services:
       - .:/app
       - /app/node_modules
       - ./playwright-report:/app/playwright-report
+      - ./test-results:/app/test-results
     ports:
       - '9324:9324'
     environment:
