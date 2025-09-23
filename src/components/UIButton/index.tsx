@@ -1,6 +1,5 @@
 import { ThemeProvider, Button } from '@mui/material';
 import { ButtonProps } from '@mui/material/Button';
-import React from 'react';
 
 import Theme from './Theme';
 

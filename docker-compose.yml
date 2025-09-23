@@ -1,10 +1,18 @@
-version: '3.8'
-
 services:
-  nodejs:
-    build: .
+  dev:
+    build:
+      context: .
+      target: base
+    command: ['./node_modules/.bin/craco', 'start']
     restart: unless-stopped
     volumes:
       - .:/app
     ports:
       - '3000:3000'
+      - "6006:6006"
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://${WEBSITE_DOMAIN}:${DEV_PORT}']
+      interval: 15s
+      timeout: 30s
+      retries: 5
+      start_period: 90s

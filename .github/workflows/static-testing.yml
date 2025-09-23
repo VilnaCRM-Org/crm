@@ -7,18 +7,20 @@ on:
 jobs:
   static:
     runs-on: ubuntu-latest
+    env:
+      CI: 1
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
       - name: Cache pnpm dependencies
         id: cache-pnpm-dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4.2.3
         with:
           path: node_modules
           key: ${{ runner.os }}-dependencies-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -29,16 +31,8 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install dependencies
-        run: pnpm i --frozen-lockfile
-        if: |
-          steps.cache-pnpm-dependencies.outputs.cache-hit != 'true' ||
-          steps.cache-pnpm-packages.outputs.cache-hit != 'true'
+        run: make install
+        if: steps.cache-pnpm-dependencies.outputs.cache-hit != 'true'
 
-      - name: Run next linter
-        run: pnpm run lint:eslint
-
-      - name: Run tsc linter
-        run: pnpm run lint:tsc
-
-      - name: Run markdown linter
-        run: pnpm run lint:md
+      - name: Run all linters
+        run: make lint

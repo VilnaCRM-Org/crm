@@ -1,0 +1,30 @@
+name: load testing
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  load-testing:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - make_cmd: test-load
+            label: homepage
+
+    name: ${{ matrix.label }} load testing
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Run ${{ matrix.label }} target
+        run: make ${{ matrix.make_cmd }}

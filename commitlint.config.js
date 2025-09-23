@@ -22,16 +22,13 @@ module.exports = {
         'check-task-number-rule': (data) => {
           const list = module.exports.listOfNames.join('|');
 
-          const regexp = new RegExp(`^(${list})\\(#(\\d+)\\):`, 'gm');
+          const regexp = new RegExp(`^(${list})(\\([\\w-]+\\))?(!)?\\(#(\\d+)\\):`, 'm');
 
           const taskNumber = data.header.match(regexp);
 
           const correctCommit = taskNumber !== null;
 
-          return [
-            correctCommit,
-            'Your commit message should follow <type>(#<task>): e.g. feat(#123): add registration form',
-          ];
+          return [correctCommit, `your task number is incorrect (e.g., feat(#1): message)`];
         },
       },
     },

@@ -1,6 +1,6 @@
 import UIButton from '@/components/UIButton';
 import { Box, FormControlLabel, Checkbox } from '@mui/material';
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 import { CheckBoxChecked, CheckBoxIcon } from './checkboxIcons';
 import styles from './styles';
