@@ -1,9 +1,5 @@
 name: performance testing
 
-concurrency:
-  group: perf-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 on:
   pull_request:
     branches:
@@ -21,14 +17,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ vars.NODE_VERSION }}
-        cache: 'pnpm'
-        cache-dependency-path: '**/pnpm-lock.yaml'
+
+      - name: Cache pnpm dependencies
+        id: cache-pnpm-dependencies
+        uses: actions/cache@v4.2.3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-dependencies-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-dependencies-
 
       - name: Install pnpm
         run: npm install -g pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        if: |
+          steps.cache-pnpm-dependencies.outputs.cache-hit != 'true' ||
+          false
 
       - name: Run desktop performance test
         run: make lighthouse-desktop
