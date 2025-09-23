@@ -5,8 +5,8 @@ import { expand as dotenvExpand } from 'dotenv-expand';
 const env: DotenvConfigOutput = dotenvConfig();
 dotenvExpand(env);
 
-const cdHeaderName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME;
-const cdHeaderValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE;
+const cdHeaderName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME?.trim();
+const cdHeaderValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE?.trim();
 
 export default defineConfig({
   testMatch: ['**/*.spec.ts'],
