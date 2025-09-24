@@ -17,12 +17,14 @@ export default function BackToMain(): React.ReactElement {
   return (
     <Box component="section" sx={styles.section}>
       <UIContainer>
-        <UIButton sx={styles.backButton}>
+        <UIButton disableRipple sx={styles.backButton} to="/">
           <Box sx={styles.icon}>
             <img src={BackArrow} alt="Back arrow icon" />
           </Box>
 
-          <Typography sx={styles.backText}>{t('buttons.back_to_main')}</Typography>
+          <Typography sx={styles.backText} component="span">
+            {t('buttons.back_to_main')}
+          </Typography>
         </UIButton>
       </UIContainer>
     </Box>
