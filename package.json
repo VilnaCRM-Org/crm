@@ -96,7 +96,7 @@
     "wait-on": "^8.0.4"
   },
   "engines": {
-    "node": ">=20.0.0",
+    "node": ">=20.5.0",
     "pnpm": ">=9"
   },
   "engineStrict": true,

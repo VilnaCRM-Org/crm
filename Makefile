@@ -92,7 +92,7 @@ ifeq ($(CI), 1)
 else
     EXEC_CMD                = $(EXEC_DEV_TTYLESS)
     PNPM_EXEC               = $(EXEC_DEV_TTYLESS) pnpm
-    DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up dev && make wait-for-dev
+    DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
     BUILD_CMD               = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
 
     STRYKER_CMD             = make start && $(EXEC_DEV_TTYLESS) pnpm stryker run
