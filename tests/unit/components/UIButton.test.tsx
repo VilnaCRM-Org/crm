@@ -49,6 +49,7 @@ describe('UIButton Component', () => {
       const button = screen.getByRole('button');
       expect(button).toBeInTheDocument();
       expect(button.tagName.toLowerCase()).toBe('button');
+      expect(button).not.toHaveAttribute('to');
     });
 
     it('should render with text content when used as button', () => {

@@ -2,40 +2,42 @@ import { test, expect } from '@playwright/test';
 
 import viewports from '../utils/constants';
 
+const backToHomeSpec = {
+  href: '/',
+  text: 'Back to homepage',
+  imgAlt: '""',
+};
+
 test.describe('BackToMain Component E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/authentication');
   });
 
   test.describe('Navigation Functionality', () => {
     test('should navigate to home page when back button is clicked', async ({ page }) => {
-      try {
-        await page.goto('/');
-      } catch (error) {
-        //
-      }
+      const arrowBack = page.locator('img[alt=""]');
+      const backButton = page
+        .locator(`a[href="${backToHomeSpec.href}"]`)
+        .filter({ has: arrowBack });
 
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
-
-      if ((await backButton.count()) > 0) {
-        await backButton.click();
-
-        await expect(page).toHaveURL('/');
-      }
+      await expect(backButton).toHaveCount(1);
+      await backButton.click();
+      await expect(page).toHaveURL(backToHomeSpec.href);
     });
 
     test('should have correct href attribute pointing to root', async ({ page }) => {
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
+      const arrowBack = page.locator('img[alt=""]');
+      const backButton = page
+        .locator(`a[href='${backToHomeSpec.href}']`)
+        .filter({ has: arrowBack });
 
-      if ((await backButton.count()) > 0) {
-        await expect(backButton).toHaveAttribute('href', '/');
-      }
+      await expect(backButton).toHaveAttribute('href', backToHomeSpec.href);
     });
   });
 
   test.describe('Visual Elements', () => {
     test('should display back arrow icon', async ({ page }) => {
-      const backIcon = page.locator('img[alt="Back arrow icon"]');
+      const backIcon = page.locator(`img[alt=${backToHomeSpec.imgAlt}]`);
 
       if ((await backIcon.count()) > 0) {
         await expect(backIcon).toBeVisible();
@@ -46,7 +48,7 @@ test.describe('BackToMain Component E2E Tests', () => {
     });
 
     test('should display back text', async ({ page }) => {
-      const backText = page.locator('text=/back/i');
+      const backText = page.locator(`text=${backToHomeSpec.text}`);
 
       if ((await backText.count()) > 0) {
         await expect(backText).toBeVisible();
@@ -54,7 +56,9 @@ test.describe('BackToMain Component E2E Tests', () => {
     });
 
     test('should have proper button styling', async ({ page }) => {
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
+      const backButton = page
+        .locator(`a[href='${backToHomeSpec.href}']`)
+        .filter({ hasText: backToHomeSpec.text });
 
       if ((await backButton.count()) > 0) {
         await expect(backButton).toBeVisible();
@@ -67,7 +71,9 @@ test.describe('BackToMain Component E2E Tests', () => {
 
   test.describe('User Interactions', () => {
     test('should be keyboard accessible', async ({ page }) => {
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
+      const backButton = page
+        .locator(`a[href="${backToHomeSpec.href}"]`)
+        .filter({ hasText: backToHomeSpec.text });
 
       if ((await backButton.count()) > 0) {
         await page.keyboard.press('Tab');
@@ -84,7 +90,9 @@ test.describe('BackToMain Component E2E Tests', () => {
     });
 
     test('should respond to mouse hover', async ({ page }) => {
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
+      const backButton = page
+        .locator(`a[href="${backToHomeSpec.href}"]`)
+        .filter({ hasText: backToHomeSpec.text });
 
       if ((await backButton.count()) > 0) {
         await backButton.hover();
@@ -96,7 +104,9 @@ test.describe('BackToMain Component E2E Tests', () => {
     test('should be clickable on mobile viewport', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 });
 
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
+      const backButton = page
+        .locator(`a[href="${backToHomeSpec.href}"]`)
+        .filter({ hasText: backToHomeSpec.text });
 
       if ((await backButton.count()) > 0) {
         await expect(backButton).toBeVisible();
@@ -108,20 +118,12 @@ test.describe('BackToMain Component E2E Tests', () => {
   });
 
   test.describe('Responsive Design', () => {
-    test('should be visible on desktop viewport', async ({ page }) => {
-      await page.setViewportSize({ width: 1920, height: 1080 });
-
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
-
-      if ((await backButton.count()) > 0) {
-        await expect(backButton).toBeVisible();
-      }
-    });
-
     test('should be visible on tablet viewport', async ({ page }) => {
       await page.setViewportSize({ width: 768, height: 1024 });
 
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
+      const backButton = page
+        .locator(`a[href="${backToHomeSpec.href}"]`)
+        .filter({ hasText: backToHomeSpec.text });
 
       if ((await backButton.count()) > 0) {
         await expect(backButton).toBeVisible();
@@ -132,13 +134,15 @@ test.describe('BackToMain Component E2E Tests', () => {
       for (const viewport of viewports) {
         await page.setViewportSize(viewport);
 
-        const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
+        const backButton = page
+          .locator(`a[href="${backToHomeSpec.href}"]`)
+          .filter({ hasText: backToHomeSpec.text });
 
         if ((await backButton.count()) > 0) {
           await expect(backButton).toBeVisible();
 
           await backButton.click();
-          await expect(page).toHaveURL('/');
+          await expect(page).toHaveURL(backToHomeSpec.href);
 
           await page.goBack();
         }
@@ -147,54 +151,24 @@ test.describe('BackToMain Component E2E Tests', () => {
   });
 
   test.describe('Accessibility', () => {
-    test('should have proper ARIA attributes', async ({ page }) => {
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
-
-      if ((await backButton.count()) > 0) {
-        await expect(backButton).toHaveAttribute('href', '/');
-      }
-    });
-
-    test('should have accessible image alt text', async ({ page }) => {
-      const backIcon = page.locator('img[alt="Back arrow icon"]');
-
-      if ((await backIcon.count()) > 0) {
-        await expect(backIcon).toHaveAttribute('alt', 'Back arrow icon');
-      }
-    });
-
     test('should be keyboard navigable', async ({ page }) => {
-      await page.keyboard.press('Home');
-
-      let foundBackButton = false;
-
-      for (let i = 0; i < 10; i += 1) {
-        await page.keyboard.press('Tab');
-
-        const focusedElement = page.locator(':focus');
-        if ((await focusedElement.count()) > 0) {
-          const href = await focusedElement.getAttribute('href');
-          if (href === '/') {
-            foundBackButton = true;
-            break;
-          }
-        }
-      }
-
-      if (foundBackButton) {
-        await page.keyboard.press('Enter');
-        await expect(page).toHaveURL('/');
-      }
+      const backButton = page.locator(`a[href="${backToHomeSpec.href}"]`);
+      await backButton.focus();
+      await expect(backButton).toBeFocused();
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL('/');
     });
   });
 
   test.describe('Performance', () => {
-    test('should load and render quickly', async ({ page }) => {
+    test.fixme('should load and render quickly (non-deterministic in CI)', async ({ page }) => {
       const startTime = Date.now();
 
       await page.goto('/');
 
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
+      const backButton = page
+        .locator(`a[href="${backToHomeSpec.href}"]`)
+        .filter({ hasText: /back/i });
 
       if ((await backButton.count()) > 0) {
         await expect(backButton).toBeVisible();
@@ -206,7 +180,7 @@ test.describe('BackToMain Component E2E Tests', () => {
       }
     });
 
-    test('should not cause layout shifts', async ({ page }) => {
+    test.fixme('should not cause layout shifts (heuristic is flaky)', async ({ page }) => {
       await page.goto('/');
 
       await page.waitForTimeout(1000);

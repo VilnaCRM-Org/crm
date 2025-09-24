@@ -21,8 +21,12 @@ const getBackToMainStyles = (theme: Theme): Record<string, SxProps<Theme>> => ({
     '&:hover': {
       backgroundColor: 'transparent',
     },
-    '&:focus': {
+    '&:focus-visible': {
       backgroundColor: 'transparent',
+      outline: theme.palette.primary.main
+        ? `2px solid ${theme.palette.primary.main}`
+        : '2px solid #1976d2',
+      outlineOffset: '2px',
     },
   },
 

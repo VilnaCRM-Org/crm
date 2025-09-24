@@ -1,31 +1,14 @@
-import { ThemeProvider } from '@mui/material/styles';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import i18n from 'i18next';
-import { I18nextProvider } from 'react-i18next';
-import { BrowserRouter } from 'react-router-dom';
+import { within } from 'storybook/test';
 
 import BackToMain from '@/modules/BackToMain';
 
 import renderWithProviders, { testTheme } from '../utils/renderWithProviders';
 
-jest.mock('@/assets/icons/arrows/back-arrow.svg', () => 'back-arrow-mock.svg');
+const BackToHomeText: string = 'Back to homepage';
 
-i18n.init({
-  lng: 'en',
-  fallbackLng: 'en',
-  resources: {
-    en: {
-      translation: {
-        buttons: {
-          back_to_main: 'Back to main',
-        },
-      },
-    },
-  },
-  interpolation: {
-    escapeValue: false,
-  },
-});
+jest.mock('@/assets/icons/arrows/back-arrow.svg', () => 'back-arrow-mock.svg');
 
 describe('BackToMain Component', () => {
   beforeEach(() => {
@@ -42,7 +25,8 @@ describe('BackToMain Component', () => {
     it('should render back arrow icon', () => {
       renderWithProviders(<BackToMain />);
 
-      const icon = screen.getByAltText('Back arrow icon');
+      const icon = screen.getByRole('img', { hidden: true });
+
       expect(icon).toBeInTheDocument();
       expect(icon).toHaveAttribute('src', 'back-arrow-mock.svg');
     });
@@ -50,7 +34,7 @@ describe('BackToMain Component', () => {
     it('should render translated back text', () => {
       renderWithProviders(<BackToMain />);
 
-      expect(screen.getByText('Back to main')).toBeInTheDocument();
+      expect(screen.getByText(BackToHomeText)).toBeInTheDocument();
     });
   });
 
@@ -71,13 +55,12 @@ describe('BackToMain Component', () => {
   });
 
   describe('Styling and Props', () => {
-    it('should have disableRipple prop set', () => {
+    it('should disable ripple effect', () => {
       renderWithProviders(<BackToMain />);
 
-      const button = screen.getByRole('link');
-      expect(button).toHaveClass('MuiButtonBase-root');
+      const button = screen.getByText(BackToHomeText);
+      expect(within(button).queryByTestId('ripple')).not.toBeInTheDocument();
     });
-
     it('should contain UIContainer wrapper', () => {
       renderWithProviders(<BackToMain />);
 
@@ -90,11 +73,11 @@ describe('BackToMain Component', () => {
     it('should have proper alt text for icon', () => {
       renderWithProviders(<BackToMain />);
 
-      const icon = screen.getByAltText('Back arrow icon');
+      const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toBeInTheDocument();
     });
 
-    it('should be keyboard accessible as a button', () => {
+    it('should be keyboard accessible as a link', () => {
       renderWithProviders(<BackToMain />);
 
       const button = screen.getByRole('link');
@@ -107,16 +90,16 @@ describe('BackToMain Component', () => {
     it('should use translation key for button text', () => {
       renderWithProviders(<BackToMain />);
 
-      expect(screen.getByText('Back to main')).toBeInTheDocument();
+      expect(screen.getByText(BackToHomeText)).toBeInTheDocument();
     });
 
     it('should handle different languages', async () => {
-      const testI18n = i18n.createInstance();
-      await testI18n.init({
+      const i18nMock = i18n.createInstance();
+      await i18nMock.init({
         lng: 'es',
         fallbackLng: 'en',
         resources: {
-          es: {
+          en: {
             translation: {
               buttons: {
                 back_to_main: 'Volver al principal',
@@ -128,18 +111,28 @@ describe('BackToMain Component', () => {
           escapeValue: false,
         },
       });
-
-      render(
-        <BrowserRouter>
-          <ThemeProvider theme={testTheme}>
-            <I18nextProvider i18n={testI18n}>
-              <BackToMain />
-            </I18nextProvider>
-          </ThemeProvider>
-        </BrowserRouter>
-      );
+      renderWithProviders(<BackToMain />, { i18nMock });
 
       expect(screen.getByText('Volver al principal')).toBeInTheDocument();
+    });
+  });
+
+  describe('Theme Coverage', () => {
+    it('should handle theme without primary.main color', async () => {
+      const themeWithoutPrimary = {
+        ...testTheme,
+        palette: {
+          ...testTheme.palette,
+          primary: {
+            ...testTheme.palette.primary,
+            main: '',
+          },
+        },
+      };
+      renderWithProviders(<BackToMain />, { theme: themeWithoutPrimary });
+
+      const button = screen.getByRole('link');
+      expect(button).toBeInTheDocument();
     });
   });
 });

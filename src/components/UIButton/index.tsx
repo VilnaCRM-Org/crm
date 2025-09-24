@@ -9,11 +9,15 @@ interface UiButtonProps extends ButtonProps {
   to?: To;
 }
 
-function UIButton({ to = '', children, ...rest }: UiButtonProps): React.ReactElement {
+function UIButton({
+  to,
+  children,
+  ...rest
+}: React.PropsWithChildren<UiButtonProps>): React.ReactElement {
   return (
     <ThemeProvider theme={Theme}>
       {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-      <Button {...rest} component={to ? RouterLink : 'button'} to={to}>
+      <Button {...rest} {...(to ? { component: RouterLink, to } : {})}>
         {children}
       </Button>
     </ThemeProvider>
