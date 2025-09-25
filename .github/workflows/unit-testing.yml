@@ -15,8 +15,10 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Enable repo pnpm version
+        run: |
+            corepack enable
+            corepack use $(node -p "require('./package.json').packageManager")
 
       - name: Cache pnpm dependencies
         id: cache-pnpm-dependencies

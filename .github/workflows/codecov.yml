@@ -23,15 +23,17 @@ jobs:
         uses: actions/cache@v4.2.3
         with:
           path: node_modules
-          key: ${{ runner.os }}-dependencies-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-${{ hashFiles('**/pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-dependencies-
+            ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-
 
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Enable repo pnpm version
+        run: |
+          corepack enable
+          corepack use $(node -p "require('./package.json').packageManager")
 
       - name: Run unit tests
         run: make test-unit-all

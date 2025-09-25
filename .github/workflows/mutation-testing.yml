@@ -27,8 +27,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dependencies-
 
-      - name: Install pnpm
-        run: npm install -g pnpm
+      - name: Enable repo pnpm version
+        run: |
+          corepack enable
+          corepack use $(node -p "require('./package.json').packageManager")
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
