@@ -29,9 +29,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        if: |
-          steps.cache-pnpm-dependencies.outputs.cache-hit != 'true' ||
-          false
 
       - name: Run unit tests
         run: make test-unit-all
