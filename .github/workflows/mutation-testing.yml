@@ -27,5 +27,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dependencies-
 
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        if: |
+          steps.cache-pnpm-dependencies.outputs.cache-hit != 'true' ||
+          false
+
       - name: Run mutation testing
         run: make test-mutation
