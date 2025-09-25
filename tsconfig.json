@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2018",
+    "target": "ES6",
     "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["jest", "node"],
     "allowJs": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "esnext",
@@ -14,13 +17,30 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "incremental": true,
+    "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "newLine": "lf"
   },
-  "include": ["./src", "./scripts", "./src/assets/**/*.svg", "./src/**/*.d.ts", "./src/**/*.tsx"],
-  "exclude": ["node_modules"],
+  "include": [
+    "src/**/*",
+    "scripts/**/*",
+    "docker/**/*",
+    "lighthouse/**/*",
+    "tests/**/*",
+    "*.ts",
+    "*.tsx",
+    "*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "lhci-reports-desktop",
+    "lhci-reports-mobile",
+    ".lighthouseci"
+  ],
   "extends": "./tsconfig.paths.json"
 }

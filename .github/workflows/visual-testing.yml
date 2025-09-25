@@ -1,0 +1,24 @@
+name: visual tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  visual-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run visual tests
+        run: make test-visual
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
