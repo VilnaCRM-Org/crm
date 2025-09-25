@@ -6,7 +6,7 @@ import takeVisualSnapshot from './takePageScreenshot';
 test.describe('Visual Tests', () => {
   for (const screen of screenSizes) {
     test(`${screen.name} test`, async ({ page }) => {
-      await takeVisualSnapshot(page, PAGES.HOME, screen);
+      await takeVisualSnapshot(page, PAGES.AUTH, screen);
     });
   }
 });
