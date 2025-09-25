@@ -252,6 +252,9 @@ importers:
       sass-loader:
         specifier: ^13.3.3
         version: 13.3.3(sass@1.92.1)(webpack@5.101.3(esbuild@0.25.9))
+      semver:
+        specifier: ^7.7.2
+        version: 7.7.2
       serve:
         specifier: ^14.2.4
         version: 14.2.5

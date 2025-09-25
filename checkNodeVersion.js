@@ -1,18 +1,13 @@
+#!/usr/bin/env node
+const semver = require('semver');
 const { engines } = require('./package.json');
 
-const current = process.versions.node.split('.').map(Number);
-const parseMin = (range) => {
-  const m = String(range).match(/>=\s*(\d  )(?:\.(\d  ))?(?:\.(\d  ))?/);
-  return m ? [Number(m[1]), Number(m[2] || 0), Number(m[3] || 0)] : [0, 0, 0];
-};
-const required = parseMin(engines.node);
-const cmp = (a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+const required = engines.node;
+const current = process.version;
 
-if (cmp(current, required) < 0) {
-  console.error(
-    `Required Node version ${engines.node} not satisfied. Current version: ${process.version}`
-  );
+if (!semver.satisfies(current, required)) {
+  console.error(`Required Node version ${required} not satisfied. Current version: ${current}`);
   process.exit(1);
 }
 
-console.log(`Node version ${process.version} satisfies requirement ${engines.node}`);
+console.log(`Node version ${current} satisfies requirement ${required}`);
