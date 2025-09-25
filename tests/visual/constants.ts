@@ -92,4 +92,4 @@ export const placeholders: PlaceholderFields = {
 export const PAGES = {
   HOME: '/',
   AUTH: '/authentication',
-};
+} as const;
