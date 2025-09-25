@@ -33,7 +33,7 @@ jobs:
       - name: Enable repo pnpm version
         run: |
           corepack enable
-          corepack use $(node -p "require('./package.json').packageManager")
+          corepack prepare $(node -p "require('./package.json').packageManager") --activate
 
       - name: Run unit tests
         run: make test-unit-all

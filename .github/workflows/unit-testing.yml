@@ -17,8 +17,8 @@ jobs:
 
       - name: Enable repo pnpm version
         run: |
-            corepack enable
-            corepack use $(node -p "require('./package.json').packageManager")
+          corepack enable
+          corepack prepare $(node -p "require('./package.json').packageManager") --activate
 
       - name: Cache pnpm dependencies
         id: cache-pnpm-dependencies
