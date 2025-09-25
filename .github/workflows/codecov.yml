@@ -27,13 +27,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-
 
-      - name: Install pnpm
-        run: npm install -g pnpm
-
       - name: Enable repo pnpm version
         run: |
           corepack enable
           corepack prepare $(node -p "require('./package.json').packageManager") --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Run unit tests
         run: make test-unit-all
