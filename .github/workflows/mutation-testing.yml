@@ -27,5 +27,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dependencies-
 
+      - name: Enable repo pnpm version
+        run: |
+          corepack enable
+          corepack prepare $(node -p "require('./package.json').packageManager") --activate
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Run mutation testing
         run: make test-mutation
