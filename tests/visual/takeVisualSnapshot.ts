@@ -2,10 +2,18 @@ import { Page, expect } from '@playwright/test';
 
 import { currentLanguage, ScreenSize, timeoutDuration } from './constants';
 
-async function takeVisualSnapshot(page: Page, url: string, screen: ScreenSize): Promise<void> {
+async function takeVisualSnapshot(
+  page: Page,
+  url: string,
+  screen: ScreenSize,
+  fileName?: string
+): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
+
   await page.addInitScript(() => {
+    if (document.getElementById('__pw-disable-animations')) return;
     const style = document.createElement('style');
+    style.id = '__pw-disable-animations';
     style.textContent = `
       *, *::before, *::after {
         transition: none !important;
@@ -14,15 +22,21 @@ async function takeVisualSnapshot(page: Page, url: string, screen: ScreenSize): 
       }`;
     document.head.appendChild(style);
   });
-  await page.goto(url);
-  await page.waitForLoadState('domcontentloaded');
-  await page.waitForLoadState('networkidle', { timeout: timeoutDuration }).catch(() => {});
+
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+
+  try {
+    await page.waitForLoadState('networkidle', { timeout: timeoutDuration });
+  } catch {
+    //
+  }
 
   if (await page.evaluate(() => 'fonts' in document)) {
     await page.evaluate(() => document.fonts.ready).catch(() => {});
   }
+  const snapshotName = fileName ?? `${currentLanguage}_${screen.name}.png`;
 
-  await expect(page).toHaveScreenshot(`${currentLanguage}_${screen.name}.png`, {
+  await expect(page).toHaveScreenshot(snapshotName, {
     fullPage: true,
     animations: 'disabled',
   });
