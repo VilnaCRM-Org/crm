@@ -4,7 +4,7 @@ export interface ScreenSize {
   name: string;
 }
 
-export const screenSizes: ScreenSize[] = [
+export const screenSizes: ReadonlyArray<ScreenSize> = [
   {
     width: 1920,
     height: 1080,
