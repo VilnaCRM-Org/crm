@@ -9,7 +9,7 @@ services:
       - .:/app
     ports:
       - '3000:3000'
-      - "6006:6006"
+      - '6006:6006'
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://${WEBSITE_DOMAIN}:${DEV_PORT}']
       interval: 15s
