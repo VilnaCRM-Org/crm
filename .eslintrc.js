@@ -140,6 +140,7 @@ module.exports = {
 
         'react/jsx-props-no-spreading': 'error',
         'react/react-in-jsx-scope': 'off',
+        'react/require-default-props': 'off',
         'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
         'jsx-a11y/anchor-is-valid': 'off',
         '@typescript-eslint/no-unused-vars': ['error'],

@@ -1,4 +1,4 @@
-FROM node:24-alpine3.21 AS base
+FROM node:24.8.0-alpine3.21 AS base
 
 RUN apk add --no-cache \
     python3=3.12.11-r0 \
@@ -21,7 +21,7 @@ RUN npx craco build
 
 
 # -------- Production Image --------
-FROM node:24-alpine3.21 AS production
+FROM node:24.8.0-alpine3.21  AS production
 
 WORKDIR /app
 

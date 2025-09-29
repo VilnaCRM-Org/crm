@@ -1,4 +1,4 @@
-FROM node:23.11.1-alpine3.21 AS builder
+FROM node:24.8.0-alpine3.21 AS builder
 RUN corepack enable && corepack prepare pnpm@10.6.5 --activate
 
 WORKDIR /app
@@ -8,7 +8,7 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm exec tsc --project ./docker/apollo-server/tsconfig.server.json
 
 ## -------- Production Stage --------
-FROM node:23.11.1-alpine3.21
+FROM node:24.8.0-alpine3.21
 ENV NODE_ENV=production
 ENV DEV_PORT=3000
 

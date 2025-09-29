@@ -17,9 +17,17 @@ const getBackToMainStyles = (theme: Theme): Record<string, SxProps<Theme>> => ({
   },
   backButton: {
     padding: 0,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
+
+    '&:hover': {
+      backgroundColor: 'transparent',
+    },
+    '&:focus-visible': {
+      backgroundColor: 'transparent',
+      outline: theme.palette.primary.main
+        ? `2px solid ${theme.palette.primary.main}`
+        : '2px solid #1976d2',
+      outlineOffset: '2px',
+    },
   },
 
   icon: {
