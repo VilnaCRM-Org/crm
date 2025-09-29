@@ -1,4 +1,4 @@
-FROM node:23.11.1-alpine3.21 AS base
+FROM node:24.8.0-alpine3.21 AS base
 
 RUN apk add --no-cache \
     chromium=136.0.7103.113-r0 \
