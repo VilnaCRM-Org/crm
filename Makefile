@@ -155,14 +155,14 @@ build: ## Build the dev container
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
 
-build-out: ## Build production artifacts to ./build directory (via Docker)
+build-out: ## Build production artifacts to ./out directory (via Docker)
 	@echo "🏗️ Building production Docker image for Craco..."
 	docker build -t craco-build -f Dockerfile --target production .
 	@container_id=$$(docker create craco-build) && \
-	rm -rf ./build && \
-	docker cp $$container_id:/app/build ./ && \
+	rm -rf ./out && \
+	docker cp $$container_id:/app/build ./out && \
 	docker rm $$container_id && \
-	echo "✅ Build artifacts extracted to ./build directory"
+	echo "✅ Build artifacts extracted to ./out directory"
 
 format: ## This command executes Prettier formatting
 	$(EXEC_CMD) $(PRETTIER_CMD)
