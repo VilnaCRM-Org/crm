@@ -1,5 +1,5 @@
 import { t } from 'i18next';
-import { Validate, FieldValues } from 'react-hook-form';
+import { ValidateResult } from 'react-hook-form';
 
 const isLengthValid = (value: string): boolean => value.length >= 8 && value.length <= 64;
 
@@ -14,8 +14,9 @@ const validationPswdMessages: Record<ValidationPswdMessageKey, string> = {
   numberRequired: t('sign_up.form.password_input.error_numbers'),
   uppercaseRequired: t('sign_up.form.password_input.error_uppercase'),
 };
+type PasswordValidator = (value: string) => ValidateResult;
 
-const validatePassword: Validate<string, FieldValues> = (value: string) => {
+const validatePassword: PasswordValidator = (value: string) => {
   if (!value) return "Це поле обов'язкове";
   if (!isLengthValid(value)) return validationPswdMessages.invalidLength;
   if (!hasNumber(value)) return validationPswdMessages.numberRequired;

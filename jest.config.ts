@@ -7,6 +7,16 @@ const config: Config = {
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
   coveragePathIgnorePatterns: ['/node_modules/'],
+  collectCoverageFrom:
+    process.env.TEST_ENV === 'server'
+      ? ['docker/apollo-server/**/*.{ts,js}', '!**/*.d.ts']
+      : [
+          '<rootDir>/src/**/*.{ts,tsx}',
+          '!<rootDir>/src/**/*.d.ts',
+          '!<rootDir>/src/**/*.stories.{ts,tsx}',
+          '!<rootDir>/src/**/*.test.{ts,tsx}',
+          '!<rootDir>/src/index.tsx',
+        ],
   roots:
     process.env.TEST_ENV === 'server'
       ? ['./tests/apollo-server']
