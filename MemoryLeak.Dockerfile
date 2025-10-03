@@ -6,7 +6,7 @@ RUN apk add --no-cache \
     nss=3.109-r0 \
     freetype=2.13.3-r0 \
     harfbuzz=9.0.0-r1 \
-    ca-certificates \
+    ca-certificates=20250911-r0 \
     ttf-freefont=20120503-r4 \
     dbus=1.14.10-r4 \
     libx11=1.8.10-r0 \

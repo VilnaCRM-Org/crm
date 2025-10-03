@@ -140,15 +140,13 @@ describe('ErrorParser', () => {
     });
 
     describe('with unknown error types', () => {
-      it('should parse string error', () => {
+      it('should parse string error as unknown', () => {
         const error = 'String error message';
         const result: ParsedError = ErrorParser.parseHttpError(error);
 
-        expect(result).toEqual({
-          code: 'UNKNOWN_ERROR',
-          message: 'An unknown error occurred',
-          original: error,
-        });
+        expect(result.code).toBe('UNKNOWN_ERROR');
+        expect(result.message).toBe('An unknown error occurred');
+        expect(result.original).toBe(error);
       });
 
       it('should parse number error', () => {
@@ -226,6 +224,40 @@ describe('ErrorParser', () => {
           message: 'An unknown error occurred',
           original: error,
         });
+      });
+
+      it('should return UNKNOWN_ERROR code for non-Response non-Error types', () => {
+        const plainObject = { data: 'test' };
+        const result = ErrorParser.parseHttpError(plainObject);
+
+        expect(result.code).toBe('UNKNOWN_ERROR');
+        expect(result.message).toBe('An unknown error occurred');
+        expect(result.original).toBe(plainObject);
+      });
+
+      it('should handle all unknown error return properties', () => {
+        const unknownError = 'some string';
+        const result = ErrorParser.parseHttpError(unknownError);
+
+        expect(result).toHaveProperty('code', 'UNKNOWN_ERROR');
+        expect(result).toHaveProperty('message', 'An unknown error occurred');
+        expect(result).toHaveProperty('original', unknownError);
+      });
+
+      it('should construct unknown error object with all required fields', () => {
+        const plainValue = 123;
+        const parsed = ErrorParser.parseHttpError(plainValue);
+
+        const expectedResult: ParsedError = {
+          code: 'UNKNOWN_ERROR',
+          message: 'An unknown error occurred',
+          original: plainValue,
+        };
+
+        expect(parsed).toMatchObject(expectedResult);
+        expect(parsed.code).toStrictEqual('UNKNOWN_ERROR');
+        expect(parsed.message).toStrictEqual('An unknown error occurred');
+        expect(parsed.original).toStrictEqual(plainValue);
       });
     });
 

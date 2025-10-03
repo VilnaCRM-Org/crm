@@ -639,6 +639,47 @@ describe('FetchHttpsClient', () => {
         body: buffer,
       });
     });
+
+    it('should handle ReadableStream body', async () => {
+      class MockReadableStream {
+        public locked = false;
+
+        public cancel(): Promise<void> {
+          return Promise.resolve();
+        }
+
+        public getReader(): ReadableStreamDefaultReader {
+          return {} as ReadableStreamDefaultReader;
+        }
+      }
+
+      global.ReadableStream = MockReadableStream as unknown as typeof ReadableStream;
+
+      const stream = new MockReadableStream();
+      const responseData = { success: true };
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => responseData,
+        clone: () => ({
+          text: async (): Promise<string> => JSON.stringify(responseData),
+        }),
+      });
+
+      await client.post('/api/stream', stream as unknown as ReadableStream);
+
+      expect(mockFetch).toHaveBeenCalledWith('/api/stream', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+        body: stream,
+      });
+
+      delete (global as { ReadableStream?: unknown }).ReadableStream;
+    });
   });
 
   describe('headers', () => {
@@ -766,6 +807,30 @@ describe('FetchHttpsClient', () => {
       const result = await client.get('/api/test');
 
       expect(result).toEqual(responseData);
+    });
+
+    it('should return undefined for non-JSON response with empty text', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/html' }),
+        text: async (): Promise<string> => '',
+      });
+
+      const result = await client.get('/api/test');
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should handle missing content-type header', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers(),
+        text: async (): Promise<string> => '<html>not json</html>',
+      });
+
+      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
     });
   });
 });
