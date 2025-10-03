@@ -1,4 +1,10 @@
-export const screenSizes: { width: number; height: number; name: string }[] = [
+export interface ScreenSize {
+  width: number;
+  height: number;
+  name: string;
+}
+
+export const screenSizes: ReadonlyArray<ScreenSize> = [
   {
     width: 1920,
     height: 1080,
@@ -82,3 +88,8 @@ export const placeholders: PlaceholderFields = {
   email: 'vilnaCRM@gmail.com',
   password: 'Створіть пароль',
 };
+
+export const PAGES = {
+  HOME: '/',
+  AUTH: '/authentication',
+} as const;
