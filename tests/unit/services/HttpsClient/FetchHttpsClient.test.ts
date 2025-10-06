@@ -3,16 +3,20 @@ import { HttpError } from '@/services/HttpsClient/HttpError';
 import ResponseMessages from '@/services/HttpsClient/responseMessages';
 
 describe('FetchHttpsClient', () => {
+  const originalFetch = global.fetch;
   let client: FetchHttpsClient;
   let mockFetch: jest.Mock;
 
   beforeEach(() => {
     client = new FetchHttpsClient();
     mockFetch = jest.fn();
-    global.fetch = mockFetch;
+    global.fetch = mockFetch as unknown as typeof fetch;
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
+
+    global.fetch = originalFetch;
     jest.restoreAllMocks();
   });
 

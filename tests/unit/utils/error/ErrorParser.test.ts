@@ -3,7 +3,14 @@ import ParsedError from '@/utils/error/types';
 
 import MockResponse from './MockResponse';
 
-global.Response = MockResponse as unknown as typeof Response;
+const originalResponse = global.Response;
+
+beforeAll(() => {
+  global.Response = MockResponse as unknown as typeof Response;
+});
+afterAll(() => {
+  global.Response = originalResponse;
+});
 
 describe('ErrorParser', () => {
   describe('parseHttpError', () => {

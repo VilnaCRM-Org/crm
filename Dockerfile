@@ -26,7 +26,7 @@ FROM node:24.8.0-alpine3.21  AS production
 WORKDIR /app
 
 ENV NODE_ENV=production
-RUN apk add --no-cache curl && \
+RUN apk add --no-cache curl=8.14.1-r2 && \
     npm install -g serve@14.2.0
 
 RUN mkdir -p /app && chown -R node:node /app

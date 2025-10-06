@@ -49,7 +49,13 @@ class MockResponse {
   }
 }
 
-global.Response = MockResponse as unknown as typeof Response;
+const originalResponse = global.Response;
+beforeAll(() => {
+  global.Response = MockResponse as unknown as typeof Response;
+});
+afterAll(() => {
+  global.Response = originalResponse;
+});
 
 const createMockResponse = (
   body: unknown,
