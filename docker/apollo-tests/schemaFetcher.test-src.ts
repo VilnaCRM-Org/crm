@@ -105,6 +105,7 @@ export async function fetchAndSaveSchema(): Promise<void> {
     }
   }
 }
+/* istanbul ignore next */
 if (process.argv[1] === __filename) {
   fetchAndSaveSchema().catch((error) => {
     const logger: Logger = getLogger();

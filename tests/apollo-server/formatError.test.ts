@@ -273,6 +273,35 @@ describe('formatError', () => {
 
       expect(result).toEqual(formattedError);
     });
+
+    it('should handle null formattedError', () => {
+      const formattedError = null as unknown as GraphQLFormattedError;
+      const error = new Error('Test');
+      const result = formatError(formattedError, error);
+
+      expect(result).toBeNull();
+    });
+
+    it('should handle formattedError with null extensions', () => {
+      const formattedError: GraphQLFormattedError = { message: 'Error' };
+
+      const error = new Error('Test');
+      const result = formatError(formattedError, error);
+
+      expect(result).toEqual(formattedError);
+    });
+
+    it('should handle formattedError with undefined extensions.code', () => {
+      const formattedError: GraphQLFormattedError = {
+        message: 'Error',
+        extensions: { code: undefined },
+      };
+
+      const error = new Error('Test');
+      const result = formatError(formattedError, error);
+
+      expect(result).toEqual(formattedError);
+    });
   });
 
   describe('environment detection', () => {

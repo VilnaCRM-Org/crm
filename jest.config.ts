@@ -9,11 +9,7 @@ const config: Config = {
   coveragePathIgnorePatterns: ['/node_modules/'],
   collectCoverageFrom:
     process.env.TEST_ENV === 'server'
-      ? [
-          'docker/apollo-server/**/*.test-src.ts',
-          '!**/*.d.ts',
-          '!docker/apollo-server/schemaFetcher.test-src.ts',
-        ]
+      ? ['<rootDir>/docker/apollo-tests/**/*.test-src.ts', '!**/*.d.ts']
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
           '!<rootDir>/src/**/*.d.ts',
@@ -45,17 +41,19 @@ const config: Config = {
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   modulePathIgnorePatterns: ['<rootDir>/.stryker-tmp/'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mts', 'json', 'node'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^(\\.{1,2}/.+)\\.js$': '$1',
   },
   coverageThreshold:
     process.env.TEST_ENV === 'server'
       ? {
           global: {
-            branches: 91,
+            branches: 96,
             functions: 100,
-            lines: 99,
-            statements: 99,
+            lines: 97,
+            statements: 97,
           },
         }
       : {

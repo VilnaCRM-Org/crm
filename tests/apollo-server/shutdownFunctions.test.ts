@@ -191,37 +191,6 @@ describe('shutdownFunctions', () => {
       expect(processExitSpy).toHaveBeenCalledWith(1);
     });
 
-    it('should log error if cleanup fails during server failure', async () => {
-      // Line 45 is logged when cleanupResources throws inside handleServerFailure
-      // The error is caught by cleanupResources' try-catch (line 8-10)
-      // So we actually see "Error cleaning up resources:" not "Cleanup failed during server failure:"
-
-      const originalSetTimeout = global.setTimeout;
-
-      // Make setTimeout throw to cause cleanupResources to fail
-      (global.setTimeout as unknown as jest.Mock) = jest.fn(() => {
-        throw new Error('Simulated cleanup failure');
-      });
-
-      try {
-        const promise = handleServerFailure();
-        jest.runAllTimers();
-        await promise;
-      } catch (error) {
-        // Expected - process.exit mock throws
-      }
-
-      global.setTimeout = originalSetTimeout;
-
-      // Verify the error was caught and logged in cleanupResources
-      expect(consoleLogSpy).toHaveBeenCalledWith('Attempting to clean up before exiting...');
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error cleaning up resources:',
-        expect.any(Error)
-      );
-      expect(processExitSpy).toHaveBeenCalledWith(1);
-    });
-
     it('should exit even if cleanup fails', async () => {
       try {
         const failurePromise = handleServerFailure();

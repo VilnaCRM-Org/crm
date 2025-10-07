@@ -7,8 +7,7 @@ import { startStandaloneServer } from '@apollo/server/standalone';
 import { GraphQLError } from 'graphql';
 
 import fs from 'node:fs';
-import path, { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import {
   cleanupResources,
   handleServerFailure,
@@ -25,9 +24,6 @@ const GRAPHQL_API_PATH = process.env.GRAPHQL_API_PATH || 'graphql';
 const HEALTH_CHECK_PATH = process.env.HEALTH_CHECK_PATH || 'health';
 
 type ApolloServerInstance = ApolloServer<BaseContext> | undefined;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 const SCHEMA_FILE_PATH = path.join(__dirname, 'schema.graphql');
 
