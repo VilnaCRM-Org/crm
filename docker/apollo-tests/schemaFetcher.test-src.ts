@@ -1,26 +1,34 @@
 import * as path from 'node:path';
 import { promises as fsPromises } from 'node:fs';
 
-import dotenv, { DotenvConfigOutput } from 'dotenv';
+import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
 import { createLogger, Logger, format, transports } from 'winston';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 
-const env: DotenvConfigOutput = dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-dotenvExpand.expand(env);
+dotenvExpand.expand(dotenv.config());
 
 const OUTPUT_DIR: string = __dirname;
 const OUTPUT_FILE: string = path.join(OUTPUT_DIR, 'schema.graphql');
+let logger: Logger | null = null;
 
 function getLogger(): Logger {
+  if (logger) {
+    return logger;
+  }
   const LOG_LEVEL: string = process.env.GRAPHQL_LOG_LEVEL || 'info';
   const LOG_FILE_PATH: string = process.env.GRAPHQL_LOG_FILE || 'app.log';
 
-  return createLogger({
+  logger = createLogger({
     level: LOG_LEVEL,
     format: format.combine(format.timestamp(), format.json()),
     transports: [new transports.Console(), new transports.File({ filename: LOG_FILE_PATH })],
   });
+  return logger;
 }
 
 export async function fetchAndSaveSchema(): Promise<void> {
@@ -106,7 +114,7 @@ export async function fetchAndSaveSchema(): Promise<void> {
   }
 }
 /* istanbul ignore next */
-if (process.argv[1] === __filename) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   fetchAndSaveSchema().catch((error) => {
     const logger: Logger = getLogger();
     logger.error('Fatal error during schema fetch:', error);
