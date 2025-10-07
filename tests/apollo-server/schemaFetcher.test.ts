@@ -58,7 +58,6 @@ describe('schemaFetcher', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.clearAllTimers();
 
     // Reset environment but keep structure
     Object.keys(process.env).forEach((key) => delete process.env[key]);
@@ -68,7 +67,6 @@ describe('schemaFetcher', () => {
   });
 
   afterEach(() => {
-    jest.clearAllTimers();
     Object.keys(process.env).forEach((key) => delete process.env[key]);
     Object.assign(process.env, originalEnv);
     consoleLogSpy.mockRestore();
@@ -359,5 +357,28 @@ describe('schemaFetcher', () => {
 
       expect(fetch).toHaveBeenCalled();
     }, 15000);
+  });
+
+  describe('logger caching', () => {
+    it('should reuse logger instance on subsequent calls', async () => {
+      process.env.GRAPHQL_SCHEMA_URL = 'http://example.com/schema.graphql';
+
+      const mockSchema = 'type Query { hello: String }';
+      (fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(mockSchema),
+      });
+
+      // First call creates the logger
+      await getFetchAndSaveSchema()();
+      const firstCallCount = jest.mocked(require('winston').createLogger).mock.calls.length;
+
+      // Second call should reuse the logger
+      await getFetchAndSaveSchema()();
+      const secondCallCount = jest.mocked(require('winston').createLogger).mock.calls.length;
+
+      // Logger should only be created once
+      expect(secondCallCount).toBe(firstCallCount);
+    });
   });
 });

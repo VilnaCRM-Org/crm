@@ -63,6 +63,14 @@ describe('shutdownFunctions', () => {
         );
       try {
         await cleanupResources();
+        // Should not reach here since cleanupResources now throws
+        expect(true).toBe(false);
+      } catch (error) {
+        // Expected - cleanupResources now rethrows errors
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Error cleaning up resources:',
+          expect.any(Error)
+        );
       } finally {
         setTimeoutSpy.mockRestore();
       }
@@ -199,6 +207,42 @@ describe('shutdownFunctions', () => {
 
       // Process.exit should be called in finally block
       expect(processExitSpy).toHaveBeenCalled();
+    });
+
+    it('should log error when cleanup throws', async () => {
+      // Make setTimeout throw to simulate cleanup failure
+      const originalSetTimeout = global.setTimeout;
+      let callCount = 0;
+      (global.setTimeout as unknown as jest.Mock) = jest.fn((fn, delay) => {
+        callCount += 1;
+        if (callCount === 1) {
+          // First setTimeout in closeDatabaseConnections - throw error
+          throw new Error('Database connection timeout');
+        }
+        return originalSetTimeout(fn as TimerHandler, delay);
+      });
+
+      try {
+        const failurePromise = handleServerFailure();
+        jest.runAllTimers();
+        await failurePromise;
+      } catch (error) {
+        // Expected due to process.exit
+      }
+
+      // Should log both errors: first from cleanupResources, then from handleServerFailure
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error cleaning up resources:',
+        expect.any(Error)
+      );
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Cleanup failed during server failure:',
+        expect.any(Error)
+      );
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+
+      // Restore setTimeout
+      global.setTimeout = originalSetTimeout;
     });
   });
 

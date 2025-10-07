@@ -5,9 +5,15 @@ import { formatError } from '../../docker/apollo-tests/formatError.test-src';
 
 describe('formatError', () => {
   const originalEnv = process.env.NODE_ENV;
+  let consoleErrorSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+  });
 
   afterEach(() => {
     process.env.NODE_ENV = originalEnv;
+    consoleErrorSpy.mockRestore();
   });
 
   describe('INTERNAL_SERVER_ERROR', () => {
@@ -184,14 +190,14 @@ describe('formatError', () => {
   });
 
   describe('error logging', () => {
-    let consoleErrorSpy: jest.SpyInstance;
+    let errorSpy: jest.SpyInstance;
 
     beforeEach(() => {
-      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      errorSpy = jest.spyOn(console, 'error').mockImplementation();
     });
 
     afterEach(() => {
-      consoleErrorSpy.mockRestore();
+      errorSpy.mockRestore();
     });
 
     it('should log error to console', () => {
@@ -205,7 +211,7 @@ describe('formatError', () => {
       const error = new Error('Error details');
       formatError(formattedError, error);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('GraphQL Error:', error);
+      expect(errorSpy).toHaveBeenCalledWith('GraphQL Error:', error);
     });
   });
 

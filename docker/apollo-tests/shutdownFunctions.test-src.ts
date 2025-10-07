@@ -7,6 +7,7 @@ export async function cleanupResources() {
     console.log('Cleanup complete.');
   } catch (err) {
     console.error('Error cleaning up resources:', err);
+    throw err;
   }
 }
 async function closeDatabaseConnections() {

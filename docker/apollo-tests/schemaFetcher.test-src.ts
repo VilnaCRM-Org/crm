@@ -4,15 +4,12 @@ import { promises as fsPromises } from 'node:fs';
 import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
 import { createLogger, Logger, format, transports } from 'winston';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 dotenvExpand.expand(dotenv.config());
 
-const OUTPUT_DIR: string = __dirname;
+// Use path.resolve to get the directory of this file
+// This works in both CommonJS (Jest) and ESM contexts
+const OUTPUT_DIR: string = __dirname || path.resolve();
 const OUTPUT_FILE: string = path.join(OUTPUT_DIR, 'schema.graphql');
 let logger: Logger | null = null;
 
@@ -21,7 +18,7 @@ function getLogger(): Logger {
     return logger;
   }
   const LOG_LEVEL: string = process.env.GRAPHQL_LOG_LEVEL || 'info';
-  const LOG_FILE_PATH: string = process.env.GRAPHQL_LOG_FILE || 'app.log';
+  const LOG_FILE_PATH: string = process.env.GRAPHQL_LOG_FILE || path.join(OUTPUT_DIR, 'app.log');
 
   logger = createLogger({
     level: LOG_LEVEL,
@@ -114,7 +111,7 @@ export async function fetchAndSaveSchema(): Promise<void> {
   }
 }
 /* istanbul ignore next */
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   fetchAndSaveSchema().catch((error) => {
     const logger: Logger = getLogger();
     logger.error('Fatal error during schema fetch:', error);
