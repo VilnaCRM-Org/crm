@@ -17,7 +17,6 @@ describe('FetchHttpsClient', () => {
     jest.restoreAllMocks();
 
     global.fetch = originalFetch;
-    jest.restoreAllMocks();
   });
 
   describe('GET requests', () => {

@@ -17,7 +17,7 @@ const validationPswdMessages: Record<ValidationPswdMessageKey, string> = {
 type PasswordValidator = (value: string) => ValidateResult;
 
 const validatePassword: PasswordValidator = (value: string) => {
-  if (!value) return "Це поле обов'язкове";
+  if (!value) return t('sign_up.form.password_input.error_required');
   if (!isLengthValid(value)) return validationPswdMessages.invalidLength;
   if (!hasNumber(value)) return validationPswdMessages.numberRequired;
   if (!hasUppercase(value)) return validationPswdMessages.uppercaseRequired;

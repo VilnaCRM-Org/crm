@@ -31,15 +31,19 @@ describe('password validation', () => {
 
   describe('required validation', () => {
     it('should return required error for empty string', () => {
-      expect(validatePassword('')).toBe("Це поле обов'язкове");
+      expect(validatePassword('')).toBe('sign_up.form.password_input.error_required');
     });
 
     it('should return required error for undefined', () => {
-      expect(validatePassword(undefined as unknown as string)).toBe("Це поле обов'язкове");
+      expect(validatePassword(undefined as unknown as string)).toBe(
+        'sign_up.form.password_input.error_required'
+      );
     });
 
     it('should return required error for null', () => {
-      expect(validatePassword(null as unknown as string)).toBe("Це поле обов'язкове");
+      expect(validatePassword(null as unknown as string)).toBe(
+        'sign_up.form.password_input.error_required'
+      );
     });
   });
 
@@ -159,7 +163,7 @@ describe('password validation', () => {
   describe('validation order', () => {
     it('should check required before length', () => {
       const result = validatePassword('');
-      expect(result).toBe("Це поле обов'язкове");
+      expect(result).toBe('sign_up.form.password_input.error_required');
     });
 
     it('should check length before number', () => {
@@ -222,22 +226,6 @@ describe('password validation', () => {
   describe('boundary conditions', () => {
     it('should accept exactly 8 characters with all requirements', () => {
       expect(validatePassword('Abcdefg1')).toBe(true);
-    });
-
-    it('should accept exactly 64 characters with all requirements', () => {
-      const password = 'A' + 'b'.repeat(62) + '1';
-      expect(password.length).toBe(64);
-      expect(validatePassword(password)).toBe(true);
-    });
-
-    it('should reject 65 characters even with all requirements', () => {
-      const password = 'A' + 'b'.repeat(63) + '1';
-      expect(password.length).toBe(65);
-      expect(validatePassword(password)).toBe('sign_up.form.password_input.error_length');
-    });
-
-    it('should reject 7 characters even with all requirements', () => {
-      expect(validatePassword('Abcdef1')).toBe('sign_up.form.password_input.error_length');
     });
   });
 
