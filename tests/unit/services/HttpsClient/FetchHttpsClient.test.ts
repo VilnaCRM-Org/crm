@@ -644,6 +644,8 @@ describe('FetchHttpsClient', () => {
     });
 
     it('should handle ReadableStream body', async () => {
+      const originalReadableStream = global.ReadableStream;
+
       class MockReadableStream {
         public locked = false;
 
@@ -681,7 +683,7 @@ describe('FetchHttpsClient', () => {
         body: stream,
       });
 
-      delete (global as { ReadableStream?: unknown }).ReadableStream;
+      global.ReadableStream = originalReadableStream;
     });
   });
 

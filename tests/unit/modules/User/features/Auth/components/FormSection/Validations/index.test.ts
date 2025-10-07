@@ -63,7 +63,7 @@ describe('validations module exports', () => {
     it('should validate password correctly', () => {
       expect(validatePassword('Password1')).toBe(true);
       expect(validatePassword('pass')).toBe('sign_up.form.password_input.error_length');
-      expect(validatePassword('')).toBe("Це поле обов'язкове");
+      expect(validatePassword('')).toBe('sign_up.form.password_input.error_required');
     });
   });
 
@@ -107,7 +107,9 @@ describe('validations module exports', () => {
       expect(validateFullName(formData.fullName, emptyUser)).toBe(
         'sign_up.form.name_input.required'
       );
-      expect(validatePassword(formData.password)).toBe("Це поле обов'язкове");
+      expect(validatePassword(formData.password)).toBe(
+        'sign_up.form.password_input.error_required'
+      );
     });
   });
 });
