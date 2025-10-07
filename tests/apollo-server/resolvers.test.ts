@@ -1,7 +1,7 @@
 import { GraphQLError } from 'graphql';
 
-import { resolvers, clearUsers } from '../../docker/apollo-server/resolvers.test-src';
 import { CreateUserInput } from '../../docker/apollo-server/type';
+import { resolvers, clearUsers } from '../../docker/apollo-tests/resolvers.test-src';
 
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mocked-uuid-1234'),

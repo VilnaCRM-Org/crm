@@ -3,7 +3,7 @@ import {
   shouldShutdown,
   handleServerFailure,
   CriticalError,
-} from '../../docker/apollo-server/shutdownFunctions.test-src';
+} from '../../docker/apollo-tests/shutdownFunctions.test-src';
 
 describe('shutdownFunctions', () => {
   let consoleLogSpy: jest.SpyInstance;
@@ -45,22 +45,26 @@ describe('shutdownFunctions', () => {
     });
 
     it('should handle cleanup errors gracefully', async () => {
-      const originalSetTimeout = global.setTimeout;
-
+      const original = global.setTimeout;
       let callCount = 0;
 
-      (global.setTimeout as unknown as jest.Mock) = jest.fn((fn: () => void, delay: number) => {
-        callCount += 1;
-        if (callCount === 1) {
-          throw new Error('Cleanup error during timeout');
-        }
-        return originalSetTimeout(fn, delay);
-      });
+      const setTimeoutSpy = jest
+        .spyOn(global, 'setTimeout')
+        .mockImplementation(
+          <TArgs extends unknown[]>(
+            fn: (...args: TArgs) => void,
+            delay?: number
+          ): ReturnType<typeof setTimeout> => {
+            callCount += 1;
+            if (callCount === 1) {
+              throw new Error('Cleanup error during timeout');
+            }
+            return original(fn, delay) as unknown as ReturnType<typeof setTimeout>;
+          }
+        );
 
       await cleanupResources();
-
-      global.setTimeout = originalSetTimeout;
-
+      setTimeoutSpy.mockRestore();
       expect(consoleLogSpy).toHaveBeenCalledWith('Cleaning up resources...');
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Error cleaning up resources:',

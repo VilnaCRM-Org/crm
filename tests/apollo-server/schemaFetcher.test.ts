@@ -1,8 +1,3 @@
-import { promises as fsPromises } from 'node:fs';
-
-import { fetchAndSaveSchema } from '../../docker/apollo-server/schemaFetcher.test-src';
-
-// Mock dependencies BEFORE importing the module
 jest.mock('node:fs', () => ({
   promises: {
     mkdir: jest.fn(),
@@ -10,7 +5,6 @@ jest.mock('node:fs', () => ({
   },
 }));
 
-// Don't mock dotenv - we'll control env vars directly
 jest.mock('dotenv', () => {
   const actualDotenv = jest.requireActual('dotenv');
   return {
@@ -42,10 +36,23 @@ jest.mock('winston', () => ({
     File: jest.fn(),
   },
 }));
-
 global.fetch = jest.fn();
 
-describe.skip('schemaFetcher', () => {
+let fsPromises: { mkdir: jest.Mock; writeFile: jest.Mock };
+
+function getFetchAndSaveSchema(): () => Promise<void> {
+  return require('../../docker/apollo-tests/schemaFetcher.test-src')
+    .fetchAndSaveSchema as () => Promise<void>;
+}
+
+beforeEach(() => {
+  jest.resetModules();
+  jest.clearAllMocks();
+  // Get fresh mocked fs promises after resetModules
+  fsPromises = require('node:fs').promises;
+});
+
+describe('schemaFetcher', () => {
   const originalEnv = { ...process.env };
   let consoleLogSpy: jest.SpyInstance;
 
@@ -72,7 +79,7 @@ describe.skip('schemaFetcher', () => {
       delete process.env.GRAPHQL_SCHEMA_URL;
       process.env.NODE_ENV = 'development';
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).not.toHaveBeenCalled();
     }, 10000);
@@ -81,7 +88,7 @@ describe.skip('schemaFetcher', () => {
       delete process.env.GRAPHQL_SCHEMA_URL;
       process.env.NODE_ENV = 'production';
 
-      await expect(fetchAndSaveSchema()).rejects.toThrow(
+      await expect(getFetchAndSaveSchema()()).rejects.toThrow(
         'GRAPHQL_SCHEMA_URL is required in production environment'
       );
     }, 10000);
@@ -90,7 +97,7 @@ describe.skip('schemaFetcher', () => {
       process.env.GRAPHQL_SCHEMA_URL = '';
       process.env.NODE_ENV = 'development';
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).not.toHaveBeenCalled();
     }, 10000);
@@ -108,7 +115,7 @@ describe.skip('schemaFetcher', () => {
         text: jest.fn().mockResolvedValue(mockSchema),
       });
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalledWith(
         'http://example.com/schema.graphql',
@@ -139,23 +146,24 @@ describe.skip('schemaFetcher', () => {
       dirError.code = 'EEXIST';
       (fsPromises.mkdir as jest.Mock).mockRejectedValueOnce(dirError);
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fsPromises.writeFile).toHaveBeenCalled();
     });
 
     it('should throw error for non-EEXIST directory creation error', async () => {
+      process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
-      (fetch as jest.Mock).mockResolvedValueOnce({
+      (fetch as jest.Mock).mockResolvedValue({
         ok: true,
         text: jest.fn().mockResolvedValue(mockSchema),
       });
 
       const dirError = new Error('Permission denied') as NodeJS.ErrnoException;
       dirError.code = 'EACCES';
-      (fsPromises.mkdir as jest.Mock).mockRejectedValueOnce(dirError);
+      (fsPromises.mkdir as jest.Mock).mockRejectedValue(dirError);
 
-      await expect(fetchAndSaveSchema()).rejects.toThrow('Permission denied');
+      await expect(getFetchAndSaveSchema()()).rejects.toThrow('Permission denied');
     }, 10000);
   });
 
@@ -171,7 +179,7 @@ describe.skip('schemaFetcher', () => {
         statusText: 'Not Found',
       });
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalledTimes(3); // Default MAX_RETRIES
     }, 15000);
@@ -191,7 +199,7 @@ describe.skip('schemaFetcher', () => {
         });
       });
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalled();
     }, 20000);
@@ -199,7 +207,7 @@ describe.skip('schemaFetcher', () => {
     it('should handle network error', async () => {
       (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalledTimes(3);
     }, 15000);
@@ -220,7 +228,7 @@ describe.skip('schemaFetcher', () => {
           text: jest.fn().mockResolvedValue('schema'),
         });
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalledTimes(3);
     }, 15000);
@@ -229,7 +237,7 @@ describe.skip('schemaFetcher', () => {
       process.env.GRAPHQL_MAX_RETRIES = '2';
       (fetch as jest.Mock).mockRejectedValue(new Error('Failure'));
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalledTimes(2);
     }, 10000);
@@ -243,7 +251,7 @@ describe.skip('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(new Error('Failure'));
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalledTimes(5);
     }, 30000);
@@ -255,7 +263,7 @@ describe.skip('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(new Error('Failure'));
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalledTimes(3);
     }, 15000);
@@ -269,7 +277,7 @@ describe.skip('schemaFetcher', () => {
         text: jest.fn().mockResolvedValue('schema'),
       });
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalledWith(
         expect.any(String),
@@ -287,7 +295,7 @@ describe.skip('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
-      await expect(fetchAndSaveSchema()).rejects.toThrow('Network error');
+      await expect(getFetchAndSaveSchema()()).rejects.toThrow('Network error');
     }, 15000);
 
     it('should not throw in development after retries', async () => {
@@ -296,14 +304,14 @@ describe.skip('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
-      await expect(fetchAndSaveSchema()).resolves.toBeUndefined();
+      await expect(getFetchAndSaveSchema()()).resolves.toBeUndefined();
     }, 15000);
 
     it('should require GRAPHQL_SCHEMA_URL in production', async () => {
       delete process.env.GRAPHQL_SCHEMA_URL;
       process.env.NODE_ENV = 'production';
 
-      await expect(fetchAndSaveSchema()).rejects.toThrow(
+      await expect(getFetchAndSaveSchema()()).rejects.toThrow(
         'GRAPHQL_SCHEMA_URL is required in production environment'
       );
     }, 10000);
@@ -320,7 +328,7 @@ describe.skip('schemaFetcher', () => {
         text: jest.fn().mockResolvedValue('schema'),
       });
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(clearTimeoutSpy).toHaveBeenCalled();
       clearTimeoutSpy.mockRestore();
@@ -339,7 +347,7 @@ describe.skip('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(abortError);
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalled();
     }, 15000);
@@ -347,7 +355,7 @@ describe.skip('schemaFetcher', () => {
     it('should handle non-AbortError', async () => {
       (fetch as jest.Mock).mockRejectedValue(new Error('Generic error'));
 
-      await fetchAndSaveSchema();
+      await getFetchAndSaveSchema()();
 
       expect(fetch).toHaveBeenCalled();
     }, 15000);

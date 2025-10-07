@@ -9,9 +9,13 @@ import { GraphQLError } from 'graphql';
 import fs from 'node:fs';
 import path, { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cleanupResources, handleServerFailure, shouldShutdown } from './shutdownFunctions.mjs';
-import { resolvers } from './resolvers.mjs';
-import { formatError } from './formatError.mjs';
+import {
+  cleanupResources,
+  handleServerFailure,
+  shouldShutdown,
+} from '../apollo-server/shutdownFunctions.mjs';
+import { resolvers } from '../apollo-server/resolvers.mjs';
+import { formatError } from '../apollo-server/formatError.mjs';
 
 const env: DotenvConfigOutput = dotenv.config();
 
@@ -82,24 +86,27 @@ async function startServer() {
   }
 }
 
-process.on('unhandledRejection', async (reason, promise) => {
-  const timestamp = new Date().toISOString();
-  const errorType = reason instanceof Error ? reason.constructor.name : 'Unknown';
-  const errorMessage = reason instanceof Error ? reason.message : String(reason);
+if (process.env.NODE_ENV !== 'test') {
+  process.on('unhandledRejection', async (reason, promise) => {
+    const timestamp = new Date().toISOString();
+    const errorType = reason instanceof Error ? reason.constructor.name : 'Unknown';
+    const errorMessage = reason instanceof Error ? reason.message : String(reason);
 
-  console.error(`[${timestamp}] Unhandled Promise Rejection [${errorType}]:`, {
-    message: errorMessage,
-    stack: reason instanceof Error ? reason.stack : undefined,
-    promise: promise.toString(),
+    console.error(`[${timestamp}] Unhandled Promise Rejection [${errorType}]:`, {
+      message: errorMessage,
+      stack: reason instanceof Error ? reason.stack : undefined,
+      promise: promise.toString(),
+    });
+
+    if (shouldShutdown(reason)) {
+      console.error(`[${timestamp}] Critical error detected, initiating graceful shutdown...`);
+      await gracefulShutdownAndExit(server);
+    } else {
+      console.warn(`[${timestamp}] Recoverable error, system will continue running.`);
+    }
   });
+}
 
-  if (shouldShutdown(reason)) {
-    console.error(`[${timestamp}] Critical error detected, initiating graceful shutdown...`);
-    await gracefulShutdownAndExit(server);
-  } else {
-    console.warn(`[${timestamp}] Recoverable error, system will continue running.`);
-  }
-});
 const TIMEOUT = Number(process.env.GRACEFUL_SHUTDOWN_TIMEOUT) || 10000;
 async function gracefulShutdownAndExit(server: ApolloServerInstance) {
   console.log('Initiating graceful shutdown...');
@@ -177,7 +184,9 @@ async function shutdown(server: ApolloServerInstance) {
   await cleanupResources();
 }
 
-initializeServer().catch((error) => {
-  console.error('Fatal error during server initialization:', error);
-  process.exit(1);
-});
+if (typeof require !== 'undefined' && require.main === module) {
+  initializeServer().catch((error) => {
+    console.error('Fatal error during server initialization:', error);
+    process.exit(1);
+  });
+}

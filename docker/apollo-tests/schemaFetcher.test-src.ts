@@ -9,23 +9,26 @@ const env: DotenvConfigOutput = dotenv.config();
 
 dotenvExpand.expand(env);
 
-const SCHEMA_URL: string = process.env.GRAPHQL_SCHEMA_URL || '';
-
-const OUTPUT_DIR: string = path.join(__dirname, 'docker/apollo-server');
+const OUTPUT_DIR: string = __dirname;
 const OUTPUT_FILE: string = path.join(OUTPUT_DIR, 'schema.graphql');
-const LOG_LEVEL: string = process.env.GRAPHQL_LOG_LEVEL || 'info';
 
-const LOG_FILE_PATH: string = process.env.GRAPHQL_LOG_FILE || 'app.log';
+function getLogger(): Logger {
+  const LOG_LEVEL: string = process.env.GRAPHQL_LOG_LEVEL || 'info';
+  const LOG_FILE_PATH: string = process.env.GRAPHQL_LOG_FILE || 'app.log';
 
-const logger: Logger = createLogger({
-  level: LOG_LEVEL,
-  format: format.combine(format.timestamp(), format.json()),
-  transports: [new transports.Console(), new transports.File({ filename: LOG_FILE_PATH })],
-});
-const MAX_RETRIES: number = Number(process.env.GRAPHQL_MAX_RETRIES) || 3;
-const TIMEOUT_MS: number = Number(process.env.GRAPHQL_TIMEOUT_MS) || 5000;
+  return createLogger({
+    level: LOG_LEVEL,
+    format: format.combine(format.timestamp(), format.json()),
+    transports: [new transports.Console(), new transports.File({ filename: LOG_FILE_PATH })],
+  });
+}
 
 export async function fetchAndSaveSchema(): Promise<void> {
+  const SCHEMA_URL: string = process.env.GRAPHQL_SCHEMA_URL || '';
+  const MAX_RETRIES: number = Number(process.env.GRAPHQL_MAX_RETRIES) || 3;
+  const TIMEOUT_MS: number = Number(process.env.GRAPHQL_TIMEOUT_MS) || 5000;
+  const logger: Logger = getLogger();
+
   if (!SCHEMA_URL) {
     logger.error('GRAPHQL_SCHEMA_URL is not set. Skipping schema fetch.');
     if (process.env.NODE_ENV === 'production') {
@@ -104,6 +107,7 @@ export async function fetchAndSaveSchema(): Promise<void> {
 }
 if (process.argv[1] === __filename) {
   fetchAndSaveSchema().catch((error) => {
+    const logger: Logger = getLogger();
     logger.error('Fatal error during schema fetch:', error);
     process.exit(1);
   });

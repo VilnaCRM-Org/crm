@@ -1,4 +1,4 @@
-import { CreateUserInput, User } from './type';
+import { CreateUserInput, User } from '../apollo-server/type';
 import { v4 as uuidv4 } from 'uuid';
 import { GraphQLError } from 'graphql';
 

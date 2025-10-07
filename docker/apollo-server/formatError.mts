@@ -1,5 +1,5 @@
 import { GraphQLFormattedError } from 'graphql';
-import { CustomFormattedError } from './type';
+import { CustomFormattedError } from './type.js';
 import { ApolloServerErrorCode } from '@apollo/server/errors';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
