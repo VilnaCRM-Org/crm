@@ -43,6 +43,11 @@ function rejectIfExists<K, V>(
 
 const users = new Map<string, User>();
 
+// Export for testing
+export function clearUsers() {
+  users.clear();
+}
+
 export const resolvers = {
   Mutation: {
     createUser: async (

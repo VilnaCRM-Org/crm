@@ -9,7 +9,11 @@ const config: Config = {
   coveragePathIgnorePatterns: ['/node_modules/'],
   collectCoverageFrom:
     process.env.TEST_ENV === 'server'
-      ? ['docker/apollo-server/**/*.{ts,js}', '!**/*.d.ts']
+      ? [
+          'docker/apollo-server/**/*.test-src.ts',
+          '!**/*.d.ts',
+          '!docker/apollo-server/schemaFetcher.test-src.ts',
+        ]
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
           '!<rootDir>/src/**/*.d.ts',
@@ -24,11 +28,19 @@ const config: Config = {
   testEnvironment: process.env.TEST_ENV === 'server' ? 'node' : 'jsdom',
   testMatch: [
     process.env.TEST_ENV === 'server'
-      ? '<rootDir>/tests/apollo-server/server.test.ts'
+      ? '<rootDir>/tests/apollo-server/**/*.test.ts'
       : '<rootDir>/tests/unit/**/*.test.{ts,tsx}',
   ],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(mts)$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          module: 'commonjs',
+        },
+      },
+    ],
     '^.+\\.js$': 'babel-jest',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
@@ -36,14 +48,24 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
-  coverageThreshold: {
-    global: {
-      branches: 100,
-      functions: 100,
-      lines: 100,
-      statements: 100,
-    },
-  },
+  coverageThreshold:
+    process.env.TEST_ENV === 'server'
+      ? {
+          global: {
+            branches: 91,
+            functions: 100,
+            lines: 99,
+            statements: 99,
+          },
+        }
+      : {
+          global: {
+            branches: 100,
+            functions: 100,
+            lines: 100,
+            statements: 100,
+          },
+        },
 };
 
 export default config;

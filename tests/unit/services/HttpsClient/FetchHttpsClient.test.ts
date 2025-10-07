@@ -2,6 +2,22 @@ import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
 import { HttpError } from '@/services/HttpsClient/HttpError';
 import ResponseMessages from '@/services/HttpsClient/responseMessages';
 
+function createMockResponse(
+  status: number,
+  data?: unknown,
+  contentType = 'application/json'
+): Response {
+  const responseData = data ?? { success: true };
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    headers: new Headers(contentType ? { 'content-type': contentType } : {}),
+    json: async () => responseData,
+    clone: () => ({
+      text: async (): Promise<string> => (data !== undefined ? JSON.stringify(responseData) : ''),
+    }),
+  } as unknown as Response;
+}
 describe('FetchHttpsClient', () => {
   const originalFetch = global.fetch;
   let client: FetchHttpsClient;
@@ -22,15 +38,7 @@ describe('FetchHttpsClient', () => {
   describe('GET requests', () => {
     it('should make successful GET request', async () => {
       const responseData = { id: 1, name: 'Test' };
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       const result = await client.get<typeof responseData>('/api/test');
 
@@ -46,15 +54,7 @@ describe('FetchHttpsClient', () => {
     it('should handle GET request with AbortSignal', async () => {
       const controller = new AbortController();
       const responseData = { data: 'test' };
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.get('/api/test', { signal: controller.signal });
 
@@ -68,11 +68,7 @@ describe('FetchHttpsClient', () => {
     });
 
     it('should return undefined for 204 No Content', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 204,
-        headers: new Headers(),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(204, undefined, ''));
 
       const result = await client.get('/api/test');
 
@@ -80,11 +76,7 @@ describe('FetchHttpsClient', () => {
     });
 
     it('should return undefined for 205 Reset Content', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 205,
-        headers: new Headers(),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(205, undefined, ''));
 
       const result = await client.get('/api/test');
 
@@ -119,7 +111,6 @@ describe('FetchHttpsClient', () => {
     it('should throw HttpError on network error', async () => {
       mockFetch.mockRejectedValue(new Error('Network failure'));
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
       await expect(client.get('/api/test')).rejects.toMatchObject({
         status: 0,
         message: ResponseMessages.NETWORK_ERROR,
@@ -132,15 +123,7 @@ describe('FetchHttpsClient', () => {
       const requestData = { name: 'Test', email: 'test@example.com' };
       const responseData = { id: 1, ...requestData };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 201,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(201, responseData));
 
       const result = await client.post('/api/users', requestData);
 
@@ -160,15 +143,7 @@ describe('FetchHttpsClient', () => {
       formData.append('file', 'test');
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       const result = await client.post('/api/upload', formData);
 
@@ -185,15 +160,7 @@ describe('FetchHttpsClient', () => {
     it('should make POST request with string body', async () => {
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.post('/api/data', 'plain text');
 
@@ -210,15 +177,7 @@ describe('FetchHttpsClient', () => {
       const controller = new AbortController();
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.post('/api/test', { data: 'test' }, { signal: controller.signal });
 
@@ -236,15 +195,7 @@ describe('FetchHttpsClient', () => {
       const requestData = { id: 1, name: 'Updated' };
       const responseData = { ...requestData, updated: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       const result = await client.put('/api/users/1', requestData);
 
@@ -263,15 +214,7 @@ describe('FetchHttpsClient', () => {
       const controller = new AbortController();
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.put('/api/test', { data: 'test' }, { signal: controller.signal });
 
@@ -289,15 +232,7 @@ describe('FetchHttpsClient', () => {
       const requestData = { name: 'Patched' };
       const responseData = { id: 1, name: 'Patched' };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       const result = await client.patch('/api/users/1', requestData);
 
@@ -316,15 +251,7 @@ describe('FetchHttpsClient', () => {
       const controller = new AbortController();
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.patch('/api/test', { data: 'test' }, { signal: controller.signal });
 
@@ -341,15 +268,7 @@ describe('FetchHttpsClient', () => {
     it('should make successful DELETE request without body', async () => {
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       const result = await client.delete('/api/users/1');
 
@@ -366,15 +285,7 @@ describe('FetchHttpsClient', () => {
       const requestData = { reason: 'Spam' };
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       const result = await client.delete('/api/users/1', requestData);
 
@@ -393,15 +304,7 @@ describe('FetchHttpsClient', () => {
       const controller = new AbortController();
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.delete('/api/test', undefined, { signal: controller.signal });
 
@@ -418,15 +321,7 @@ describe('FetchHttpsClient', () => {
     it('should handle JSON response', async () => {
       const responseData = { data: 'test' };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       const result = await client.get('/api/test');
 
@@ -436,15 +331,9 @@ describe('FetchHttpsClient', () => {
     it('should handle JSON response with charset', async () => {
       const responseData = { data: 'test' };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json; charset=utf-8' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(
+        createMockResponse(200, responseData, 'application/json; charset=utf-8')
+      );
 
       const result = await client.get('/api/test');
 
@@ -579,16 +468,11 @@ describe('FetchHttpsClient', () => {
       const networkError = new Error('Network error');
       mockFetch.mockRejectedValue(networkError);
 
-      try {
-        await client.get('/api/test');
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.status).toBe(0);
-          expect(error.message).toBe(ResponseMessages.NETWORK_ERROR);
-          expect(error.cause).toBe(networkError);
-        }
-      }
+      await expect(client.get('/api/test')).rejects.toMatchObject({
+        status: 0,
+        message: ResponseMessages.NETWORK_ERROR,
+        cause: networkError,
+      });
     });
   });
 
@@ -597,15 +481,7 @@ describe('FetchHttpsClient', () => {
       const blob = new Blob(['test'], { type: 'text/plain' });
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.post('/api/upload', blob);
 
@@ -622,15 +498,7 @@ describe('FetchHttpsClient', () => {
       const buffer = new ArrayBuffer(8);
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.post('/api/binary', buffer);
 
@@ -645,45 +513,33 @@ describe('FetchHttpsClient', () => {
 
     it('should handle ReadableStream body', async () => {
       const originalReadableStream = global.ReadableStream;
+      try {
+        class MockReadableStream {
+          public locked = false;
 
-      class MockReadableStream {
-        public locked = false;
+          public cancel(): Promise<void> {
+            return Promise.resolve();
+          }
 
-        public cancel(): Promise<void> {
-          return Promise.resolve();
+          public getReader(): ReadableStreamDefaultReader {
+            return {} as ReadableStreamDefaultReader;
+          }
         }
-
-        public getReader(): ReadableStreamDefaultReader {
-          return {} as ReadableStreamDefaultReader;
-        }
+        global.ReadableStream = MockReadableStream as unknown as typeof ReadableStream;
+        const stream = new MockReadableStream();
+        const responseData = { success: true };
+        mockFetch.mockResolvedValue(createMockResponse(200, responseData));
+        await client.post('/api/stream', stream as unknown as ReadableStream);
+        expect(mockFetch).toHaveBeenCalledWith('/api/stream', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+          },
+          body: stream,
+        });
+      } finally {
+        global.ReadableStream = originalReadableStream;
       }
-
-      global.ReadableStream = MockReadableStream as unknown as typeof ReadableStream;
-
-      const stream = new MockReadableStream();
-      const responseData = { success: true };
-
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
-
-      await client.post('/api/stream', stream as unknown as ReadableStream);
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/stream', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-        },
-        body: stream,
-      });
-
-      global.ReadableStream = originalReadableStream;
     });
   });
 
@@ -691,15 +547,7 @@ describe('FetchHttpsClient', () => {
     it('should set Content-Type for JSON body', async () => {
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.post('/api/test', { data: 'test' });
 
@@ -711,15 +559,7 @@ describe('FetchHttpsClient', () => {
       const formData = new FormData();
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.post('/api/upload', formData);
 
@@ -730,15 +570,7 @@ describe('FetchHttpsClient', () => {
     it('should always set Accept header', async () => {
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.get('/api/test');
 
@@ -751,15 +583,7 @@ describe('FetchHttpsClient', () => {
     it('should handle undefined body in POST', async () => {
       const responseData = { success: true };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
       await client.post('/api/test', undefined);
 
@@ -770,44 +594,17 @@ describe('FetchHttpsClient', () => {
     it('should handle very large response', async () => {
       const largeData = { data: 'A'.repeat(1000000) };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'application/json' }),
-        json: async () => largeData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(largeData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, largeData));
 
       const result = await client.get('/api/large');
 
       expect(result).toEqual(largeData);
     });
 
-    it('should return undefined for response with missing content-type and empty text', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 204,
-        headers: new Headers(),
-      });
-
-      const result = await client.get('/api/test');
-      expect(result).toBeUndefined();
-    });
-
     it('should handle case-insensitive content-type', async () => {
       const responseData = { data: 'test' };
 
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 200,
-        headers: new Headers({ 'content-type': 'Application/JSON' }),
-        json: async () => responseData,
-        clone: () => ({
-          text: async (): Promise<string> => JSON.stringify(responseData),
-        }),
-      });
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData, 'Application/JSON'));
 
       const result = await client.get('/api/test');
 
