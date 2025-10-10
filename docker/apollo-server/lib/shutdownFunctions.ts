@@ -1,17 +1,25 @@
-export async function cleanupResources() {
+export async function cleanupResources(rethrowErrors: boolean = false): Promise<void> {
   try {
+    // eslint-disable-next-line no-console
     console.log('Cleaning up resources...');
 
     await closeDatabaseConnections();
 
+    // eslint-disable-next-line no-console
     console.log('Cleanup complete.');
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error('Error cleaning up resources:', err);
-    throw err;
+    if (rethrowErrors) {
+      throw err;
+    }
   }
 }
-async function closeDatabaseConnections() {
-  return new Promise((resolve) => setTimeout(resolve, 1000));
+
+async function closeDatabaseConnections(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, 1000);
+  });
 }
 
 export class CriticalError extends Error {
@@ -38,11 +46,13 @@ export function shouldShutdown(error: unknown): boolean {
   return false;
 }
 
-export async function handleServerFailure() {
+export async function handleServerFailure(): Promise<void> {
+  // eslint-disable-next-line no-console
   console.log('Attempting to clean up before exiting...');
   try {
-    await cleanupResources();
+    await cleanupResources(true);
   } catch (err) {
+    // eslint-disable-next-line no-console
     console.error('Cleanup failed during server failure:', err);
   } finally {
     process.exit(1);

@@ -1,7 +1,7 @@
 import { ApolloServerErrorCode } from '@apollo/server/errors';
 import { GraphQLFormattedError } from 'graphql';
 
-import { formatError } from '../../docker/apollo-tests/formatError.test-src';
+import { formatError } from '../../docker/apollo-server/lib/formatError';
 
 describe('formatError', () => {
   const originalEnv = process.env.NODE_ENV;
@@ -43,9 +43,7 @@ describe('formatError', () => {
       process.env.NODE_ENV = 'development';
 
       jest.resetModules();
-      const {
-        formatError: formatErrorDev,
-      } = require('../../docker/apollo-tests/formatError.test-src');
+      const { formatError: formatErrorDev } = require('../../docker/apollo-server/lib/formatError');
 
       const formattedError: GraphQLFormattedError = {
         message: 'Original error message',
@@ -64,8 +62,6 @@ describe('formatError', () => {
         },
         details: 'Detailed error message',
       });
-
-      process.env.NODE_ENV = originalEnv;
     });
   });
 
@@ -97,9 +93,7 @@ describe('formatError', () => {
 
       // Re-import to pick up new NODE_ENV
       jest.resetModules();
-      const {
-        formatError: formatErrorDev,
-      } = require('../../docker/apollo-tests/formatError.test-src');
+      const { formatError: formatErrorDev } = require('../../docker/apollo-server/lib/formatError');
 
       const formattedError: GraphQLFormattedError = {
         message: 'Original error message',
@@ -118,8 +112,6 @@ describe('formatError', () => {
         },
         details: 'Validation failed',
       });
-
-      process.env.NODE_ENV = originalEnv;
     });
   });
 
@@ -190,16 +182,6 @@ describe('formatError', () => {
   });
 
   describe('error logging', () => {
-    let errorSpy: jest.SpyInstance;
-
-    beforeEach(() => {
-      errorSpy = jest.spyOn(console, 'error').mockImplementation();
-    });
-
-    afterEach(() => {
-      errorSpy.mockRestore();
-    });
-
     it('should log error to console', () => {
       const formattedError: GraphQLFormattedError = {
         message: 'Test error',
@@ -211,7 +193,7 @@ describe('formatError', () => {
       const error = new Error('Error details');
       formatError(formattedError, error);
 
-      expect(errorSpy).toHaveBeenCalledWith('GraphQL Error:', error);
+      expect(consoleErrorSpy).toHaveBeenCalledWith('GraphQL Error:', error);
     });
   });
 
@@ -221,9 +203,7 @@ describe('formatError', () => {
 
       // Re-import to pick up new NODE_ENV
       jest.resetModules();
-      const {
-        formatError: formatErrorDev,
-      } = require('../../docker/apollo-tests/formatError.test-src');
+      const { formatError: formatErrorDev } = require('../../docker/apollo-server/lib/formatError');
 
       const formattedError: GraphQLFormattedError = {
         message: '',
@@ -237,8 +217,6 @@ describe('formatError', () => {
 
       expect(result).toHaveProperty('message');
       expect(result.details).toBe('');
-
-      process.env.NODE_ENV = originalEnv;
     });
 
     it('should handle non-Error objects', () => {

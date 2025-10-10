@@ -9,7 +9,7 @@ const config: Config = {
   coveragePathIgnorePatterns: ['/node_modules/'],
   collectCoverageFrom:
     process.env.TEST_ENV === 'server'
-      ? ['<rootDir>/docker/apollo-tests/**/*.test-src.ts', '!**/*.d.ts']
+      ? ['<rootDir>/docker/apollo-server/lib/**/*.ts', '!**/*.d.ts']
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
           '!<rootDir>/src/**/*.d.ts',
@@ -46,24 +46,14 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.+)\\.js$': '$1',
   },
-  coverageThreshold:
-    process.env.TEST_ENV === 'server'
-      ? {
-          global: {
-            branches: 96,
-            functions: 100,
-            lines: 97,
-            statements: 97,
-          },
-        }
-      : {
-          global: {
-            branches: 100,
-            functions: 100,
-            lines: 100,
-            statements: 100,
-          },
-        },
+  coverageThreshold: {
+    global: {
+      branches: 100,
+      functions: 100,
+      lines: 100,
+      statements: 100,
+    },
+  },
 };
 
 export default config;

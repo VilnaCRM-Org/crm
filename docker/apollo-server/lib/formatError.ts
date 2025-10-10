@@ -1,6 +1,7 @@
-import { GraphQLFormattedError } from 'graphql';
-import { CustomFormattedError } from '../apollo-server/type';
 import { ApolloServerErrorCode } from '@apollo/server/errors';
+import { GraphQLFormattedError } from 'graphql';
+
+import { CustomFormattedError } from './types';
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -8,6 +9,7 @@ export const formatError = (
   formattedError: GraphQLFormattedError,
   error: unknown
 ): CustomFormattedError => {
+  // eslint-disable-next-line no-console
   console.error('GraphQL Error:', error);
 
   if (formattedError?.extensions?.code === 'INTERNAL_SERVER_ERROR') {

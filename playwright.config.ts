@@ -18,7 +18,8 @@ export default defineConfig({
   use: {
     trace: 'on-first-retry',
     ignoreHTTPSErrors: true,
-    baseURL: process.env.REACT_APP_PROD_CONTAINER_API_URL,
+    baseURL: 'http://localhost:3001/',
+    // baseURL: process.env.REACT_APP_PROD_CONTAINER_API_URL,
     ...(cdHeaderName && cdHeaderValue
       ? {
           extraHTTPHeaders: {

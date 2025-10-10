@@ -3,7 +3,7 @@ import {
   shouldShutdown,
   handleServerFailure,
   CriticalError,
-} from '../../docker/apollo-tests/shutdownFunctions.test-src';
+} from '../../docker/apollo-server/lib/shutdownFunctions';
 
 describe('shutdownFunctions', () => {
   let consoleLogSpy: jest.SpyInstance;
@@ -86,6 +86,65 @@ describe('shutdownFunctions', () => {
       await cleanupPromise;
 
       expect(consoleLogSpy).toHaveBeenCalledWith('Cleaning up resources...');
+    });
+
+    it('should rethrow errors when rethrowErrors is true', async () => {
+      const original = global.setTimeout;
+      let callCount = 0;
+      const setTimeoutSpy = jest
+        .spyOn(global, 'setTimeout')
+        .mockImplementation(
+          <TArgs extends unknown[]>(
+            fn: (...args: TArgs) => void,
+            delay?: number
+          ): ReturnType<typeof setTimeout> => {
+            callCount += 1;
+            if (callCount === 1) {
+              throw new Error('Database connection timeout');
+            }
+            return original(fn, delay) as unknown as ReturnType<typeof setTimeout>;
+          }
+        );
+
+      try {
+        await cleanupResources(true);
+        expect(true).toBe(false); // Should not reach here
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe('Database connection timeout');
+      } finally {
+        setTimeoutSpy.mockRestore();
+      }
+    });
+
+    it('should not rethrow errors when rethrowErrors is false', async () => {
+      const original = global.setTimeout;
+      let callCount = 0;
+      const setTimeoutSpy = jest
+        .spyOn(global, 'setTimeout')
+        .mockImplementation(
+          <TArgs extends unknown[]>(
+            fn: (...args: TArgs) => void,
+            delay?: number
+          ): ReturnType<typeof setTimeout> => {
+            callCount += 1;
+            if (callCount === 1) {
+              throw new Error('Database connection timeout');
+            }
+            return original(fn, delay) as unknown as ReturnType<typeof setTimeout>;
+          }
+        );
+
+      try {
+        await cleanupResources(false);
+        // Should complete without throwing
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Error cleaning up resources:',
+          expect.any(Error)
+        );
+      } finally {
+        setTimeoutSpy.mockRestore();
+      }
     });
   });
 
@@ -210,17 +269,22 @@ describe('shutdownFunctions', () => {
     });
 
     it('should log error when cleanup throws', async () => {
-      // Make setTimeout throw to simulate cleanup failure
       const originalSetTimeout = global.setTimeout;
       let callCount = 0;
-      (global.setTimeout as unknown as jest.Mock) = jest.fn((fn, delay) => {
-        callCount += 1;
-        if (callCount === 1) {
-          // First setTimeout in closeDatabaseConnections - throw error
-          throw new Error('Database connection timeout');
-        }
-        return originalSetTimeout(fn as TimerHandler, delay);
-      });
+      const setTimeoutSpy = jest
+        .spyOn(global, 'setTimeout')
+        .mockImplementation(
+          <TArgs extends unknown[]>(
+            fn: (...args: TArgs) => void,
+            delay?: number
+          ): ReturnType<typeof setTimeout> => {
+            callCount += 1;
+            if (callCount === 1) {
+              throw new Error('Database connection timeout');
+            }
+            return originalSetTimeout(fn, delay) as unknown as ReturnType<typeof setTimeout>;
+          }
+        );
 
       try {
         const failurePromise = handleServerFailure();
@@ -228,21 +292,21 @@ describe('shutdownFunctions', () => {
         await failurePromise;
       } catch (error) {
         // Expected due to process.exit
+      } finally {
+        setTimeoutSpy.mockRestore();
       }
 
-      // Should log both errors: first from cleanupResources, then from handleServerFailure
+      // Expect error to be logged in cleanupResources
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Error cleaning up resources:',
         expect.any(Error)
       );
+      // Expect error to be logged in handleServerFailure catch block
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Cleanup failed during server failure:',
         expect.any(Error)
       );
       expect(processExitSpy).toHaveBeenCalledWith(1);
-
-      // Restore setTimeout
-      global.setTimeout = originalSetTimeout;
     });
   });
 

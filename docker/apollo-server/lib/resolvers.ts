@@ -1,8 +1,9 @@
-import { CreateUserInput, User } from '../apollo-server/type';
-import { v4 as uuidv4 } from 'uuid';
 import { GraphQLError } from 'graphql';
+import { v4 as uuidv4 } from 'uuid';
 
-const validateCreateUserInput = (input: CreateUserInput) => {
+import { CreateUserInput, User } from './types';
+
+const validateCreateUserInput = (input: CreateUserInput): void => {
   const emailRegex =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
@@ -24,6 +25,7 @@ const validateCreateUserInput = (input: CreateUserInput) => {
     });
   }
 };
+
 function rejectIfExists<K, V>(
   collection: Map<K, V>,
   item: K,
@@ -43,8 +45,7 @@ function rejectIfExists<K, V>(
 
 const users = new Map<string, User>();
 
-// Export for testing
-export function clearUsers() {
+export function clearUsers(): void {
   users.clear();
 }
 
@@ -67,6 +68,7 @@ export const resolvers = {
         users.set(newUser.email, newUser);
         return { user: newUser, clientMutationId: input.clientMutationId };
       } catch (error) {
+        // eslint-disable-next-line no-console
         console.error('Failed to create user:', error);
         throw new GraphQLError('Internal Server Error: Failed to create user', {
           extensions: {

@@ -40,9 +40,18 @@ global.fetch = jest.fn();
 
 let fsPromises: { mkdir: jest.Mock; writeFile: jest.Mock };
 
-function getFetchAndSaveSchema(): () => Promise<void> {
-  return require('../../docker/apollo-tests/schemaFetcher.test-src')
-    .fetchAndSaveSchema as () => Promise<void>;
+interface SchemaFetcherModule {
+  fetchAndSaveSchema: (outputDir: string) => Promise<void>;
+  handleFatalError: (error: Error, outputDir?: string) => never;
+  getLogger: (outputDir?: string) => { info: jest.Mock; error: jest.Mock };
+}
+
+function getSchemaFetcherModule(): SchemaFetcherModule {
+  return require('../../docker/apollo-server/lib/schemaFetcher') as SchemaFetcherModule;
+}
+
+function getFetchAndSaveSchema(): (outputDir: string) => Promise<void> {
+  return getSchemaFetcherModule().fetchAndSaveSchema;
 }
 
 beforeEach(() => {
@@ -54,6 +63,7 @@ beforeEach(() => {
 
 describe('schemaFetcher', () => {
   const originalEnv = { ...process.env };
+  const TEST_DIR = '/test/output';
   let consoleLogSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -77,7 +87,7 @@ describe('schemaFetcher', () => {
       delete process.env.GRAPHQL_SCHEMA_URL;
       process.env.NODE_ENV = 'development';
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).not.toHaveBeenCalled();
     }, 10000);
@@ -86,7 +96,7 @@ describe('schemaFetcher', () => {
       delete process.env.GRAPHQL_SCHEMA_URL;
       process.env.NODE_ENV = 'production';
 
-      await expect(getFetchAndSaveSchema()()).rejects.toThrow(
+      await expect(getFetchAndSaveSchema()(TEST_DIR)).rejects.toThrow(
         'GRAPHQL_SCHEMA_URL is required in production environment'
       );
     }, 10000);
@@ -95,7 +105,7 @@ describe('schemaFetcher', () => {
       process.env.GRAPHQL_SCHEMA_URL = '';
       process.env.NODE_ENV = 'development';
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).not.toHaveBeenCalled();
     }, 10000);
@@ -113,7 +123,7 @@ describe('schemaFetcher', () => {
         text: jest.fn().mockResolvedValue(mockSchema),
       });
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalledWith(
         'http://example.com/schema.graphql',
@@ -144,7 +154,7 @@ describe('schemaFetcher', () => {
       dirError.code = 'EEXIST';
       (fsPromises.mkdir as jest.Mock).mockRejectedValueOnce(dirError);
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fsPromises.writeFile).toHaveBeenCalled();
     });
@@ -161,7 +171,34 @@ describe('schemaFetcher', () => {
       dirError.code = 'EACCES';
       (fsPromises.mkdir as jest.Mock).mockRejectedValue(dirError);
 
-      await expect(getFetchAndSaveSchema()()).rejects.toThrow('Permission denied');
+      await expect(getFetchAndSaveSchema()(TEST_DIR)).rejects.toThrow('Permission denied');
+    }, 10000);
+
+    it('should throw error when directory creation fails without code property', async () => {
+      process.env.NODE_ENV = 'production';
+      const mockSchema = 'type Query { hello: String }';
+      (fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(mockSchema),
+      });
+
+      const dirError = new Error('Unknown filesystem error');
+      (fsPromises.mkdir as jest.Mock).mockRejectedValue(dirError);
+
+      await expect(getFetchAndSaveSchema()(TEST_DIR)).rejects.toThrow('Unknown filesystem error');
+    }, 10000);
+
+    it('should throw error when directory creation fails with null error', async () => {
+      process.env.NODE_ENV = 'production';
+      const mockSchema = 'type Query { hello: String }';
+      (fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        text: jest.fn().mockResolvedValue(mockSchema),
+      });
+
+      (fsPromises.mkdir as jest.Mock).mockRejectedValue(null);
+
+      await expect(getFetchAndSaveSchema()(TEST_DIR)).rejects.toThrow();
     }, 10000);
   });
 
@@ -177,7 +214,7 @@ describe('schemaFetcher', () => {
         statusText: 'Not Found',
       });
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalledTimes(3); // Default MAX_RETRIES
     }, 15000);
@@ -197,7 +234,7 @@ describe('schemaFetcher', () => {
         });
       });
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalled();
     }, 20000);
@@ -205,7 +242,7 @@ describe('schemaFetcher', () => {
     it('should handle network error', async () => {
       (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalledTimes(3);
     }, 15000);
@@ -226,7 +263,7 @@ describe('schemaFetcher', () => {
           text: jest.fn().mockResolvedValue('schema'),
         });
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalledTimes(3);
     }, 15000);
@@ -235,7 +272,7 @@ describe('schemaFetcher', () => {
       process.env.GRAPHQL_MAX_RETRIES = '2';
       (fetch as jest.Mock).mockRejectedValue(new Error('Failure'));
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalledTimes(2);
     }, 10000);
@@ -249,7 +286,7 @@ describe('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(new Error('Failure'));
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalledTimes(5);
     }, 30000);
@@ -261,7 +298,7 @@ describe('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(new Error('Failure'));
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalledTimes(3);
     }, 15000);
@@ -275,7 +312,7 @@ describe('schemaFetcher', () => {
         text: jest.fn().mockResolvedValue('schema'),
       });
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalledWith(
         expect.any(String),
@@ -293,7 +330,7 @@ describe('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
-      await expect(getFetchAndSaveSchema()()).rejects.toThrow('Network error');
+      await expect(getFetchAndSaveSchema()(TEST_DIR)).rejects.toThrow('Network error');
     }, 15000);
 
     it('should not throw in development after retries', async () => {
@@ -302,14 +339,14 @@ describe('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
 
-      await expect(getFetchAndSaveSchema()()).resolves.toBeUndefined();
+      await expect(getFetchAndSaveSchema()(TEST_DIR)).resolves.toBeUndefined();
     }, 15000);
 
     it('should require GRAPHQL_SCHEMA_URL in production', async () => {
       delete process.env.GRAPHQL_SCHEMA_URL;
       process.env.NODE_ENV = 'production';
 
-      await expect(getFetchAndSaveSchema()()).rejects.toThrow(
+      await expect(getFetchAndSaveSchema()(TEST_DIR)).rejects.toThrow(
         'GRAPHQL_SCHEMA_URL is required in production environment'
       );
     }, 10000);
@@ -326,7 +363,7 @@ describe('schemaFetcher', () => {
         text: jest.fn().mockResolvedValue('schema'),
       });
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(clearTimeoutSpy).toHaveBeenCalled();
       clearTimeoutSpy.mockRestore();
@@ -345,7 +382,7 @@ describe('schemaFetcher', () => {
 
       (fetch as jest.Mock).mockRejectedValue(abortError);
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalled();
     }, 15000);
@@ -353,7 +390,7 @@ describe('schemaFetcher', () => {
     it('should handle non-AbortError', async () => {
       (fetch as jest.Mock).mockRejectedValue(new Error('Generic error'));
 
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
 
       expect(fetch).toHaveBeenCalled();
     }, 15000);
@@ -370,15 +407,105 @@ describe('schemaFetcher', () => {
       });
 
       // First call creates the logger
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
       const firstCallCount = jest.mocked(require('winston').createLogger).mock.calls.length;
 
       // Second call should reuse the logger
-      await getFetchAndSaveSchema()();
+      await getFetchAndSaveSchema()(TEST_DIR);
       const secondCallCount = jest.mocked(require('winston').createLogger).mock.calls.length;
 
       // Logger should only be created once
       expect(secondCallCount).toBe(firstCallCount);
+    });
+
+    it('should create logger without outputDir and use process.cwd()', () => {
+      const { getLogger } = getSchemaFetcherModule();
+      const cwdSpy = jest.spyOn(process, 'cwd').mockReturnValue('/default/path');
+
+      delete process.env.GRAPHQL_LOG_FILE;
+
+      const logger = getLogger();
+
+      expect(logger).toBeDefined();
+      expect(cwdSpy).toHaveBeenCalled();
+
+      cwdSpy.mockRestore();
+    });
+  });
+
+  describe('handleFatalError', () => {
+    let processExitSpy: jest.SpyInstance<
+      never,
+      [code?: string | number | null | undefined],
+      unknown
+    >;
+    let mockLogger: { info: jest.Mock; error: jest.Mock };
+
+    beforeEach(() => {
+      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
+        code?: string | number | null | undefined
+      ) => {
+        throw new Error(`process.exit called with code ${code}`);
+      }) as (code?: string | number | null | undefined) => never);
+
+      mockLogger = {
+        info: jest.fn(),
+        error: jest.fn(),
+      };
+
+      jest.mocked(require('winston').createLogger).mockReturnValue(mockLogger);
+    });
+
+    afterEach(() => {
+      processExitSpy.mockRestore();
+    });
+
+    it('should log error and exit with code 1', () => {
+      const testError = new Error('Fatal network error');
+      const { handleFatalError } = getSchemaFetcherModule();
+
+      expect(() => {
+        handleFatalError(testError, TEST_DIR);
+      }).toThrow('process.exit called');
+
+      expect(mockLogger.error).toHaveBeenCalledWith('Fatal error during schema fetch:', testError);
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('should handle different error types', () => {
+      const networkError = new Error('Network timeout');
+      networkError.name = 'NetworkError';
+
+      const { handleFatalError } = getSchemaFetcherModule();
+
+      expect(() => {
+        handleFatalError(networkError, TEST_DIR);
+      }).toThrow('process.exit called');
+
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Fatal error during schema fetch:',
+        networkError
+      );
+      expect(processExitSpy).toHaveBeenCalledWith(1);
+    });
+
+    it('should create and use logger instance', () => {
+      const testError = new Error('Test error');
+      const { handleFatalError } = getSchemaFetcherModule();
+      const createLoggerMock = jest.mocked(require('winston').createLogger);
+
+      const callCountBefore = createLoggerMock.mock.calls.length;
+
+      expect(() => {
+        handleFatalError(testError, TEST_DIR);
+      }).toThrow('process.exit called');
+
+      // Verify logger was used
+      expect(mockLogger.error).toHaveBeenCalledWith('Fatal error during schema fetch:', testError);
+
+      // Verify logger creation
+      const callCountAfter = createLoggerMock.mock.calls.length;
+      expect(callCountAfter).toBeGreaterThanOrEqual(callCountBefore);
     });
   });
 });
