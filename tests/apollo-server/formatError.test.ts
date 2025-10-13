@@ -216,7 +216,7 @@ describe('formatError', () => {
       const result = formatErrorDev(formattedError, error);
 
       expect(result).toHaveProperty('message');
-      expect(result.details).toBe('');
+      expect(result.details).toBeUndefined();
     });
 
     it('should handle non-Error objects', () => {

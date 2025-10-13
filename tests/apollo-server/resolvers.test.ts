@@ -65,10 +65,9 @@ describe('resolvers', () => {
             clientMutationId: 'mutation-123',
           } as CreateUserInput;
 
-          await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toThrow(
-            GraphQLError
-          );
-          await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toMatchObject({
+          const promise = resolvers.Mutation.createUser(undefined, { input });
+          await expect(promise).rejects.toThrow(GraphQLError);
+          await expect(promise).rejects.toMatchObject({
             message: 'Invalid email format',
             extensions: {
               code: 'BAD_REQUEST',
@@ -133,10 +132,9 @@ describe('resolvers', () => {
             clientMutationId: 'mutation-123',
           } as CreateUserInput;
 
-          await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toThrow(
-            GraphQLError
-          );
-          await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toMatchObject({
+          const promise = resolvers.Mutation.createUser(undefined, { input });
+          await expect(promise).rejects.toThrow(GraphQLError);
+          await expect(promise).rejects.toMatchObject({
             message: 'Invalid initials',
             extensions: {
               code: 'BAD_REQUEST',
@@ -193,15 +191,12 @@ describe('resolvers', () => {
 
           // Second creation with same email should fail
           const input2 = { ...input, clientMutationId: 'mutation-2' };
-          await expect(resolvers.Mutation.createUser(undefined, { input: input2 })).rejects.toThrow(
-            GraphQLError
-          );
-          await expect(
-            resolvers.Mutation.createUser(undefined, { input: input2 })
-          ).rejects.toMatchObject({
+          const promise = resolvers.Mutation.createUser(undefined, { input: input2 });
+          await expect(promise).rejects.toThrow(GraphQLError);
+          await expect(promise).rejects.toMatchObject({
             message: 'Email already exists',
             extensions: {
-              code: 'BAD_REQUEST',
+              code: 'CONFLICT',
               http: { status: 409 },
             },
           });
@@ -285,13 +280,149 @@ describe('resolvers', () => {
             clientMutationId: 'mutation-123',
           };
 
-          await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toThrow(
-            GraphQLError
-          );
+          const promise = resolvers.Mutation.createUser(undefined, { input });
+          await expect(promise).rejects.toThrow(GraphQLError);
+          await expect(promise).rejects.toMatchObject({
+            message: 'Internal Server Error: Failed to create user',
+            extensions: {
+              code: 'INTERNAL_SERVER_ERROR',
+              http: {
+                status: 500,
+                headers: { 'x-error-type': 'server-error' },
+              },
+            },
+          });
 
           expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to create user:', expect.any(Error));
 
           consoleErrorSpy.mockRestore();
+        });
+      });
+
+      describe('edge cases', () => {
+        it('should reject email with only spaces', async () => {
+          const input: CreateUserInput = {
+            email: '   ',
+            initials: 'John Doe',
+            clientMutationId: 'mutation-123',
+          };
+
+          const promise = resolvers.Mutation.createUser(undefined, { input });
+          await expect(promise).rejects.toThrow(GraphQLError);
+          await expect(promise).rejects.toMatchObject({
+            message: 'Invalid email format',
+          });
+        });
+
+        it('should accept email with subdomain', async () => {
+          const input: CreateUserInput = {
+            email: 'user@mail.example.com',
+            initials: 'John Doe',
+            clientMutationId: 'mutation-123',
+          };
+
+          const result = await resolvers.Mutation.createUser(undefined, { input });
+          expect(result.user.email).toBe('user@mail.example.com');
+        });
+
+        it('should accept email with numbers', async () => {
+          const input: CreateUserInput = {
+            email: 'user123@example456.com',
+            initials: 'John Doe',
+            clientMutationId: 'mutation-123',
+          };
+
+          const result = await resolvers.Mutation.createUser(undefined, { input });
+          expect(result.user.email).toBe('user123@example456.com');
+        });
+
+        it('should accept email with consecutive dots (current regex allows this)', async () => {
+          const input: CreateUserInput = {
+            email: 'user..name@example.com',
+            initials: 'John Doe',
+            clientMutationId: 'mutation-123',
+          };
+
+          // Note: The current email regex does not reject consecutive dots
+          const result = await resolvers.Mutation.createUser(undefined, { input });
+          expect(result.user.email).toBe('user..name@example.com');
+        });
+
+        it('should accept initials with only spaces if length >= 2 (current validation)', async () => {
+          const input: CreateUserInput = {
+            email: 'test-spaces@example.com',
+            initials: '   ',
+            clientMutationId: 'mutation-123',
+          };
+
+          // Note: Current validation only checks length, not trimmed content
+          const result = await resolvers.Mutation.createUser(undefined, { input });
+          expect(result.user.initials).toBe('   ');
+        });
+
+        it('should handle very long initials', async () => {
+          const longInitials = 'A'.repeat(200);
+          const input: CreateUserInput = {
+            email: 'test-long@example.com',
+            initials: longInitials,
+            clientMutationId: 'mutation-123',
+          };
+
+          const result = await resolvers.Mutation.createUser(undefined, { input });
+          expect(result.user.initials).toBe(longInitials);
+        });
+
+        it('should handle unicode characters in initials', async () => {
+          const input: CreateUserInput = {
+            email: 'unicode@example.com',
+            initials: 'Иван Петров',
+            clientMutationId: 'mutation-123',
+          };
+
+          const result = await resolvers.Mutation.createUser(undefined, { input });
+          expect(result.user.initials).toBe('Иван Петров');
+        });
+
+        it('should handle special characters in initials', async () => {
+          const input: CreateUserInput = {
+            email: 'special@example.com',
+            initials: "O'Brien-Smith",
+            clientMutationId: 'mutation-123',
+          };
+
+          const result = await resolvers.Mutation.createUser(undefined, { input });
+          expect(result.user.initials).toBe("O'Brien-Smith");
+        });
+
+        it('should handle email with hyphen in domain', async () => {
+          const input: CreateUserInput = {
+            email: 'user@ex-ample.com',
+            initials: 'John Doe',
+            clientMutationId: 'mutation-123',
+          };
+
+          const result = await resolvers.Mutation.createUser(undefined, { input });
+          expect(result.user.email).toBe('user@ex-ample.com');
+        });
+      });
+
+      describe('concurrent operations', () => {
+        it('should handle multiple users being created concurrently', async () => {
+          const inputs = Array.from({ length: 5 }, (_, i) => ({
+            email: `user${i}@example.com`,
+            initials: `User ${i}`,
+            clientMutationId: `mutation-${i}`,
+          }));
+
+          const results = await Promise.all(
+            inputs.map((input) => resolvers.Mutation.createUser(undefined, { input }))
+          );
+
+          expect(results).toHaveLength(5);
+          results.forEach((result, i) => {
+            expect(result.user.email).toBe(`user${i}@example.com`);
+            expect(result.user.initials).toBe(`User ${i}`);
+          });
         });
       });
     });

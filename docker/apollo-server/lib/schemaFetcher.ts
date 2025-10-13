@@ -3,7 +3,7 @@ import * as path from 'node:path';
 
 import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
-import { createLogger, Logger, format, transports } from 'winston';
+import { createLogger, Logger, format, transports, transport } from 'winston';
 
 dotenvExpand.expand(dotenv.config());
 
@@ -17,18 +17,27 @@ export function getLogger(outputDir?: string): Logger {
   const LOG_FILE_PATH: string =
     process.env.GRAPHQL_LOG_FILE || path.join(outputDir || process.cwd(), 'app.log');
 
+  const transportList: transport[] = [new transports.Console()];
+
+  try {
+    transportList.push(new transports.File({ filename: LOG_FILE_PATH }));
+  } catch (_e) {
+    console.warn(`Logger file transport could not be initialized, using console only.`);
+  }
   logger = createLogger({
     level: LOG_LEVEL,
     format: format.combine(format.timestamp(), format.json()),
-    transports: [new transports.Console(), new transports.File({ filename: LOG_FILE_PATH })],
+    transports: transportList,
   });
   return logger;
 }
 
 export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
   const SCHEMA_URL: string = process.env.GRAPHQL_SCHEMA_URL || '';
-  const MAX_RETRIES: number = Number(process.env.GRAPHQL_MAX_RETRIES) || 3;
-  const TIMEOUT_MS: number = Number(process.env.GRAPHQL_TIMEOUT_MS) || 5000;
+  const parsedRetries = Number(process.env.GRAPHQL_MAX_RETRIES);
+  const MAX_RETRIES: number = Number.isFinite(parsedRetries) ? parsedRetries : 3;
+  const parsedTimeout = Number(process.env.GRAPHQL_TIMEOUT_MS);
+  const TIMEOUT_MS: number = Number.isFinite(parsedTimeout) ? parsedTimeout : 5000;
   const OUTPUT_FILE: string = path.join(outputDir, 'schema.graphql');
   const schemaLogger: Logger = getLogger(outputDir);
 
@@ -87,13 +96,14 @@ export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
       schemaLogger.info(`Schema successfully saved to: ${OUTPUT_FILE}`);
       return;
     } catch (error) {
-      lastError = error as Error;
+      const normalizedError: Error = error instanceof Error ? error : new Error(String(error));
+      lastError = normalizedError;
       retries += 1;
 
-      if ((error as Error).name === 'AbortError') {
+      if (normalizedError.name === 'AbortError') {
         schemaLogger.error('Schema fetch timeout after configured time');
       } else {
-        schemaLogger.error(`Schema fetch failed: ${(error as Error).message}`);
+        schemaLogger.error(`Schema fetch failed: ${normalizedError.message}`);
       }
 
       if (retries >= MAX_RETRIES) {

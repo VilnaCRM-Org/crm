@@ -9,14 +9,13 @@ export const formatError = (
   formattedError: GraphQLFormattedError,
   error: unknown
 ): CustomFormattedError => {
-  // eslint-disable-next-line no-console
   console.error('GraphQL Error:', error);
 
   if (formattedError?.extensions?.code === 'INTERNAL_SERVER_ERROR') {
     return {
       ...formattedError,
       message: 'Something went wrong on the server. Please try again later.',
-      ...(isDevelopment && { details: (error as Error).message }),
+      ...(isDevelopment && error instanceof Error && error.message && { details: error.message }),
     };
   }
 
@@ -24,7 +23,7 @@ export const formatError = (
     return {
       ...formattedError,
       message: 'The request was invalid. Please check your input.',
-      ...(isDevelopment && { details: (error as Error).message }),
+      ...(isDevelopment && error instanceof Error && error.message && { details: error.message }),
     };
   }
 

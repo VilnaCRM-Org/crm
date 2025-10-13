@@ -22,7 +22,7 @@ export interface CreateUserResponse {
   data: {
     createUser: CreateUserPayload;
   };
-  errors?: { message: string }[];
+  errors?: CustomFormattedError[];
 }
 
 export interface MutationResolvers {

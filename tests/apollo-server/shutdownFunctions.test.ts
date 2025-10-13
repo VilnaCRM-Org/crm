@@ -219,6 +219,17 @@ describe('shutdownFunctions', () => {
   });
 
   describe('handleServerFailure', () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+
+    beforeEach(() => {
+      // Set NODE_ENV to 'production' so process.exit is called in handleServerFailure
+      process.env.NODE_ENV = 'production';
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+
     it('should log cleanup attempt', async () => {
       try {
         const failurePromise = handleServerFailure();

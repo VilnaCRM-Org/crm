@@ -31,7 +31,7 @@ function rejectIfExists<K, V>(
   item: K,
   message = 'Item already exists',
   status = 409,
-  code = 'BAD_REQUEST'
+  code = 'CONFLICT'
 ): void {
   if (collection.has(item)) {
     throw new GraphQLError(message, {
@@ -68,7 +68,6 @@ export const resolvers = {
         users.set(newUser.email, newUser);
         return { user: newUser, clientMutationId: input.clientMutationId };
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('Failed to create user:', error);
         throw new GraphQLError('Internal Server Error: Failed to create user', {
           extensions: {
