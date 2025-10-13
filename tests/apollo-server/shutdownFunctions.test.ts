@@ -62,18 +62,16 @@ describe('shutdownFunctions', () => {
           }
         );
       try {
-        await cleanupResources();
-        // Should not reach here since cleanupResources now throws
-        expect(true).toBe(false);
-      } catch (error) {
-        // Expected - cleanupResources now rethrows errors
+        await expect(cleanupResources()).resolves.toBeUndefined();
         expect(consoleErrorSpy).toHaveBeenCalledWith(
           'Error cleaning up resources:',
           expect.any(Error)
         );
+        expect(consoleLogSpy).toHaveBeenCalledWith('Cleaning up resources...');
       } finally {
         setTimeoutSpy.mockRestore();
       }
+
       expect(consoleLogSpy).toHaveBeenCalledWith('Cleaning up resources...');
     });
 

@@ -3,15 +3,14 @@ import { GraphQLFormattedError } from 'graphql';
 
 import { CustomFormattedError } from './types';
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-
 export const formatError = (
   formattedError: GraphQLFormattedError,
   error: unknown
 ): CustomFormattedError => {
+  const isDevelopment = process.env.NODE_ENV === 'development';
   console.error('GraphQL Error:', error);
 
-  if (formattedError?.extensions?.code === 'INTERNAL_SERVER_ERROR') {
+  if (formattedError?.extensions?.code === ApolloServerErrorCode.INTERNAL_SERVER_ERROR) {
     return {
       ...formattedError,
       message: 'Something went wrong on the server. Please try again later.',

@@ -35,9 +35,13 @@ export function getLogger(outputDir?: string): Logger {
 export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
   const SCHEMA_URL: string = process.env.GRAPHQL_SCHEMA_URL || '';
   const parsedRetries = Number(process.env.GRAPHQL_MAX_RETRIES);
-  const MAX_RETRIES: number = Number.isFinite(parsedRetries) ? parsedRetries : 3;
+  const MAX_RETRIES: number = Number.isFinite(parsedRetries)
+    ? Math.max(1, Math.floor(parsedRetries))
+    : 3;
   const parsedTimeout = Number(process.env.GRAPHQL_TIMEOUT_MS);
-  const TIMEOUT_MS: number = Number.isFinite(parsedTimeout) ? parsedTimeout : 5000;
+  const TIMEOUT_MS: number = Number.isFinite(parsedTimeout)
+    ? Math.max(1, Math.floor(parsedTimeout))
+    : 5000;
   const OUTPUT_FILE: string = path.join(outputDir, 'schema.graphql');
   const schemaLogger: Logger = getLogger(outputDir);
 
