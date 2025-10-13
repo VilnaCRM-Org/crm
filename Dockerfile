@@ -1,7 +1,7 @@
 FROM node:24.8.0-alpine3.21 AS base
 
 RUN apk add --no-cache \
-    python3=3.12.11-r0 \
+    python3=3.12.12-r0 \
     make=4.4.1-r2 \
     g++=14.2.0-r4  \
     curl=8.12.1-r1 && \
