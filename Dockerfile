@@ -25,6 +25,8 @@ RUN npx craco build
 # -------- Production Image --------
 FROM node:24.8.0-alpine3.21  AS production
 
+ARG CURL_VERSION=8.14.1-r2
+
 WORKDIR /app
 
 ENV NODE_ENV=production

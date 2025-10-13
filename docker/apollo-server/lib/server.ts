@@ -89,7 +89,6 @@ export async function gracefulShutdownAndExit(server: ApolloServerInstance): Pro
     try {
       await server.stop();
       console.log('Server stopped gracefully.');
-
       await cleanupResources();
       clearTimeout(shutdownTimeout);
       process.exit(0);

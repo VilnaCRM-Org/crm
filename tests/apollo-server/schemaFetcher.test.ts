@@ -262,6 +262,16 @@ describe('schemaFetcher', () => {
 
       expect(fetch).toHaveBeenCalledTimes(3);
     }, 15000);
+
+    it('should handle non-Error thrown from fetch', async () => {
+      (fetch as jest.Mock).mockRejectedValue('String error from fetch');
+
+      const p = getFetchAndSaveSchema()(TEST_DIR);
+      await jest.runAllTimersAsync();
+      await p;
+
+      expect(fetch).toHaveBeenCalledTimes(3);
+    }, 15000);
   });
 
   describe('retry logic', () => {
@@ -500,7 +510,7 @@ describe('schemaFetcher', () => {
       );
     });
 
-    it('should handle File transport initialization failure', () => {
+    it('should handle File transport initialization failure with Error', () => {
       jest.resetModules();
       jest.clearAllMocks();
 
@@ -533,7 +543,48 @@ describe('schemaFetcher', () => {
       expect(logger).toBeDefined();
       expect(mockFileTransport).toHaveBeenCalled();
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Logger file transport could not be initialized, using console only.'
+        'Logger file transport could not be initialized (File transport initialization failed), using console only.'
+      );
+
+      consoleWarnSpy.mockRestore();
+      jest.dontMock('winston');
+    });
+
+    it('should handle File transport initialization failure with non-Error value', () => {
+      jest.resetModules();
+      jest.clearAllMocks();
+
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+      const mockConsoleTransport = jest.fn();
+      const mockFileTransport = jest.fn(() => {
+        // eslint-disable-next-line no-throw-literal
+        throw 'String error message';
+      });
+
+      jest.doMock('winston', () => ({
+        createLogger: jest.fn(() => ({
+          info: jest.fn(),
+          error: jest.fn(),
+        })),
+        format: {
+          combine: jest.fn(),
+          timestamp: jest.fn(),
+          json: jest.fn(),
+        },
+        transports: {
+          Console: mockConsoleTransport,
+          File: mockFileTransport,
+        },
+      }));
+
+      const { getLogger } = require('../../docker/apollo-server/lib/schemaFetcher');
+
+      const logger = getLogger(TEST_DIR);
+
+      expect(logger).toBeDefined();
+      expect(mockFileTransport).toHaveBeenCalled();
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'Logger file transport could not be initialized (String error message), using console only.'
       );
 
       consoleWarnSpy.mockRestore();

@@ -68,11 +68,10 @@ describe('shutdownFunctions', () => {
           expect.any(Error)
         );
         expect(consoleLogSpy).toHaveBeenCalledWith('Cleaning up resources...');
+        expect(consoleLogSpy).not.toHaveBeenCalledWith('Cleanup complete.');
       } finally {
         setTimeoutSpy.mockRestore();
       }
-
-      expect(consoleLogSpy).toHaveBeenCalledWith('Cleaning up resources...');
     });
 
     it('should wait for database connections to close', async () => {
@@ -388,6 +387,7 @@ describe('shutdownFunctions', () => {
       await Promise.all([cleanup1, cleanup2]);
 
       expect(consoleLogSpy).toHaveBeenCalledWith('Cleaning up resources...');
+      expect(consoleLogSpy).toHaveBeenCalledTimes(4);
     });
   });
 

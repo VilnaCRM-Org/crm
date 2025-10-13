@@ -7,11 +7,13 @@ import { createLogger, Logger, format, transports, transport } from 'winston';
 
 dotenvExpand.expand(dotenv.config());
 
-let logger: Logger | null = null;
+const loggers: Map<string, Logger> = new Map();
 
 export function getLogger(outputDir?: string): Logger {
-  if (logger) {
-    return logger;
+  const key = outputDir || process.cwd();
+  const cached = loggers.get(key);
+  if (cached) {
+    return cached;
   }
   const LOG_LEVEL: string = process.env.GRAPHQL_LOG_LEVEL || 'info';
   const LOG_FILE_PATH: string =
@@ -21,15 +23,18 @@ export function getLogger(outputDir?: string): Logger {
 
   try {
     transportList.push(new transports.File({ filename: LOG_FILE_PATH }));
-  } catch (_e) {
-    console.warn(`Logger file transport could not be initialized, using console only.`);
+  } catch (e) {
+    console.warn(
+      `Logger file transport could not be initialized (${e instanceof Error ? e.message : String(e)}), using console only.`
+    );
   }
-  logger = createLogger({
+  const newLogger = createLogger({
     level: LOG_LEVEL,
     format: format.combine(format.timestamp(), format.json()),
     transports: transportList,
   });
-  return logger;
+  loggers.set(key, newLogger);
+  return newLogger;
 }
 
 export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
@@ -88,9 +93,10 @@ export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
       try {
         await fsPromises.mkdir(outputDir, { recursive: true });
       } catch (err) {
-        const fsError = err as NodeJS.ErrnoException;
-        if (fsError?.code !== 'EEXIST') {
-          throw fsError;
+        const normalizedErr: Error = err instanceof Error ? err : new Error(String(err));
+        const fsError = normalizedErr as NodeJS.ErrnoException;
+        if (fsError.code !== 'EEXIST') {
+          throw normalizedErr;
         }
       }
 
