@@ -1,5 +1,6 @@
 /**
- * Waits for page navigation to a specific route and verifies the URL.
+ * Verifies the page is on a specific route by checking the current URL.
+ * Note: This function does not wait for navigation; ensure navigation is complete before calling.
  *
  * @param {Object} page - Puppeteer page instance
  * @param {string} route - The expected route (path) that the page should include, e.g., '/authentication'

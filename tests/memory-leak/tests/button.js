@@ -1,3 +1,7 @@
+/**
+ * Example for the home page. Should be removed after the design is implemented.
+ */
+
 const ScenarioBuilder = require('../utils/scenarioBuilder');
 
 const scenarioBuilder = new ScenarioBuilder();
