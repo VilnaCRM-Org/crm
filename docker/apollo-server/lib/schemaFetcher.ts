@@ -3,7 +3,8 @@ import * as path from 'node:path';
 
 import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
-import { createLogger, Logger, format, transports, transport } from 'winston';
+import { createLogger, Logger, format, transports } from 'winston';
+import type TransportStream from 'winston-transport';
 
 dotenvExpand.expand(dotenv.config());
 
@@ -19,7 +20,7 @@ export function getLogger(outputDir?: string): Logger {
   const LOG_FILE_PATH: string =
     process.env.GRAPHQL_LOG_FILE || path.join(outputDir || process.cwd(), 'app.log');
 
-  const transportList: transport[] = [new transports.Console()];
+  const transportList: TransportStream[] = [new transports.Console()];
 
   try {
     transportList.push(new transports.File({ filename: LOG_FILE_PATH }));
@@ -87,7 +88,7 @@ export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
       }).finally(() => clearTimeout(timeoutId));
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch schema: ${response.statusText}`);
+        throw new Error(`Failed to fetch schema: ${response.status} ${response.statusText}`);
       }
 
       try {

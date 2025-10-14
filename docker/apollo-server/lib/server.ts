@@ -13,8 +13,6 @@ import { cleanupResources, handleServerFailure, shouldShutdown } from './shutdow
 const env: DotenvConfigOutput = dotenv.config();
 dotenvExpand.expand(env);
 
-const HEALTH_CHECK_PATH = process.env.HEALTH_CHECK_PATH || 'health';
-
 export type ApolloServerInstance = ApolloServer<BaseContext> | undefined;
 
 interface StartServerOptions {
@@ -27,7 +25,7 @@ export interface StartServerResult {
 }
 
 const parsedTimeout = Number(process.env.GRACEFUL_SHUTDOWN_TIMEOUT);
-const TIMEOUT = Number.isFinite(parsedTimeout) ? parsedTimeout : 10000;
+const TIMEOUT = Number.isFinite(parsedTimeout) ? Math.max(1000, Math.floor(parsedTimeout)) : 10000;
 
 export async function startServer({
   schemaFilePath,
@@ -53,7 +51,6 @@ export async function startServer({
     listen: { port: Number(process.env.GRAPHQL_PORT) || 4000 },
 
     context: async ({ req }) => {
-      if (req.url?.endsWith(`/${HEALTH_CHECK_PATH}`)) return {};
       const ct = String(req.headers['content-type'] || '').toLowerCase();
       const method = (req.method || '').toUpperCase();
       const allowed = ['application/json', 'application/graphql+json', 'application/graphql'];
@@ -81,9 +78,15 @@ export async function gracefulShutdownAndExit(server: ApolloServerInstance): Pro
   console.log('Initiating graceful shutdown...');
 
   if (server) {
-    const shutdownTimeout = setTimeout(() => {
+    const shutdownTimeout = setTimeout(async () => {
       console.error('Graceful shutdown timeout reached. Forcing exit.');
-      process.exit(1);
+      try {
+        await cleanupResources();
+      } catch (e) {
+        console.error('Error during forced cleanup:', e);
+      } finally {
+        process.exit(1);
+      }
     }, TIMEOUT);
 
     try {
@@ -95,11 +98,23 @@ export async function gracefulShutdownAndExit(server: ApolloServerInstance): Pro
     } catch (shutdownError) {
       console.error('Error during graceful shutdown:', shutdownError);
       clearTimeout(shutdownTimeout);
-      process.exit(1);
+      try {
+        await cleanupResources();
+      } catch (e) {
+        console.error('Error during cleanup after shutdown failure:', e);
+      } finally {
+        process.exit(1);
+      }
     }
   } else {
     console.error('No server instance found for shutdown.');
-    process.exit(1);
+    try {
+      await cleanupResources();
+    } catch (e) {
+      console.error('Error during cleanup with no server instance:', e);
+    } finally {
+      process.exit(1);
+    }
   }
 }
 
