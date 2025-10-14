@@ -1,10 +1,21 @@
 import { check } from 'k6';
 
 export default class Utils {
-  constructor() {
-    const { protocol, host, port, params } = this.getConfig();
+  constructor(endpointName = null) {
+    const config = this.getConfig();
+    const { protocol, host, port, params } = config;
 
-    this.baseUrl = `${protocol}://${host}${port ? `:${port}` : ''}`;
+    // Use endpoint-specific host/port if available
+    let finalHost = host;
+    let finalPort = port;
+
+    if (endpointName && config.endpoints && config.endpoints[endpointName]) {
+      const endpointConfig = config.endpoints[endpointName];
+      if (endpointConfig.host) finalHost = endpointConfig.host;
+      if (endpointConfig.port) finalPort = endpointConfig.port;
+    }
+
+    this.baseUrl = `${protocol}://${finalHost}${finalPort ? `:${finalPort}` : ''}`;
     this.params = params;
   }
 

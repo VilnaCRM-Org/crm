@@ -46,6 +46,46 @@
           "fall": 10
         }
       }
+    },
+    "signup-authentication": {
+      "host": "mockoon",
+      "port": "8080",
+      "setupTimeoutInMinutes": 10,
+      "smoke": {
+        "threshold": 8000,
+        "rps": 3,
+        "vus": 3,
+        "duration": 10
+      },
+      "average": {
+        "threshold": 5000,
+        "rps": 10,
+        "vus": 10,
+        "duration": {
+          "rise": 5,
+          "plateau": 30,
+          "fall": 5
+        }
+      },
+      "stress": {
+        "threshold": 12000,
+        "rps": 50,
+        "vus": 50,
+        "duration": {
+          "rise": 5,
+          "plateau": 30,
+          "fall": 5
+        }
+      },
+      "spike": {
+        "threshold": 25000,
+        "rps": 100,
+        "vus": 100,
+        "duration": {
+          "rise": 30,
+          "fall": 10
+        }
+      }
     }
   }
 }

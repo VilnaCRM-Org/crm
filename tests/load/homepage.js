@@ -5,7 +5,7 @@ import Utils from './utils/utils.js';
 
 const scenarioName = 'homepage';
 
-const utils = new Utils();
+const utils = new Utils(scenarioName);
 const scenarioUtils = new ScenarioUtils(utils, scenarioName);
 
 export const options = scenarioUtils.getOptions();
