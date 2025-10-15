@@ -3,8 +3,8 @@ import * as path from 'node:path';
 
 import dotenv from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
+import type * as Transport from 'winston/lib/winston/transports';
 import { createLogger, Logger, format, transports } from 'winston';
-import type TransportStream from 'winston-transport';
 
 dotenvExpand.expand(dotenv.config());
 
@@ -20,7 +20,9 @@ export function getLogger(outputDir?: string): Logger {
   const LOG_FILE_PATH: string =
     process.env.GRAPHQL_LOG_FILE || path.join(outputDir || process.cwd(), 'app.log');
 
-  const transportList: TransportStream[] = [new transports.Console()];
+  const transportList: (Transport.ConsoleTransportInstance | Transport.FileTransportInstance)[] = [
+    new transports.Console(),
+  ];
 
   try {
     transportList.push(new transports.File({ filename: LOG_FILE_PATH }));

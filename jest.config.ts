@@ -12,20 +12,18 @@ const config: Config = {
       ? ['<rootDir>/docker/apollo-server/lib/**/*.ts', '!**/*.d.ts']
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
+          '<rootDir>/scripts/localizationGenerator.js',
           '!<rootDir>/src/**/*.d.ts',
           '!<rootDir>/src/**/*.stories.{ts,tsx}',
           '!<rootDir>/src/**/*.test.{ts,tsx}',
           '!<rootDir>/src/index.tsx',
         ],
-  roots:
-    process.env.TEST_ENV === 'server'
-      ? ['./tests/apollo-server']
-      : ['./tests/unit', './scripts/test/unit'],
+  roots: process.env.TEST_ENV === 'server' ? ['./tests/apollo-server'] : ['./tests/unit'],
   testEnvironment: process.env.TEST_ENV === 'server' ? 'node' : 'jsdom',
   testMatch: [
     process.env.TEST_ENV === 'server'
       ? '<rootDir>/tests/apollo-server/**/*.test.ts'
-      : '<rootDir>/tests/unit/**/*.test.{ts,tsx}',
+      : '<rootDir>/tests/unit/**/*.test.{ts,tsx,js}',
   ],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
