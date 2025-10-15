@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const LocalizationGenerator = require('../../localizationGenerator');
+const LocalizationGenerator = require('../../../scripts/localizationGenerator');
 
 jest.mock('fs');
 
@@ -259,6 +259,34 @@ describe('LocalizationGenerator', () => {
       expect(result).toEqual({
         en: { translation: { valid: 'json' } },
       });
+    });
+
+    it('should ignore the output localization file to prevent circular reading', () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readdirSync.mockReturnValue([
+        { name: 'en.json', isFile: () => true },
+        { name: generator.localizationFile, isFile: () => true },
+        { name: 'de.json', isFile: () => true },
+      ]);
+
+      mockFs.readFileSync.mockImplementation((filePath) => {
+        const fileName = path.basename(filePath);
+        const mockFileContents = {
+          'en.json': JSON.stringify({ hello: 'Hello' }),
+          'de.json': JSON.stringify({ hello: 'Hallo' }),
+          [generator.localizationFile]: JSON.stringify({ should: 'be ignored' }),
+        };
+        return mockFileContents[fileName] || '';
+      });
+
+      const result = generator.getLocalizationFromFolder('test/i18n');
+
+      expect(result).toEqual({
+        en: { translation: { hello: 'Hello' } },
+        de: { translation: { hello: 'Hallo' } },
+      });
+      // Verify that the localization file was not read
+      expect(mockFs.readFileSync).toHaveBeenCalledTimes(2); // Only en.json and de.json
     });
   });
 
