@@ -265,7 +265,7 @@ describe('LocalizationGenerator', () => {
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readdirSync.mockReturnValue([
         { name: 'en.json', isFile: () => true },
-        { name: 'localization.json', isFile: () => true }, // Should be ignored
+        { name: generator.localizationFile, isFile: () => true },
         { name: 'de.json', isFile: () => true },
       ]);
 
@@ -274,7 +274,7 @@ describe('LocalizationGenerator', () => {
         const mockFileContents = {
           'en.json': JSON.stringify({ hello: 'Hello' }),
           'de.json': JSON.stringify({ hello: 'Hallo' }),
-          'localization.json': JSON.stringify({ should: 'be ignored' }),
+          [generator.localizationFile]: JSON.stringify({ should: 'be ignored' }),
         };
         return mockFileContents[fileName] || '';
       });
@@ -285,7 +285,7 @@ describe('LocalizationGenerator', () => {
         en: { translation: { hello: 'Hello' } },
         de: { translation: { hello: 'Hallo' } },
       });
-      // Verify that localization.json was not read
+      // Verify that the localization file was not read
       expect(mockFs.readFileSync).toHaveBeenCalledTimes(2); // Only en.json and de.json
     });
   });

@@ -9,7 +9,7 @@ const config: Config = {
   coveragePathIgnorePatterns: ['/node_modules/'],
   collectCoverageFrom:
     process.env.TEST_ENV === 'server'
-      ? ['<rootDir>/docker/apollo-server/lib/**/*.ts', '!**/*.d.ts']
+      ? ['<rootDir>/docker/apollo-server/lib/**/*.{ts,mts}', '!**/*.d.ts']
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
           '<rootDir>/scripts/localizationGenerator.js',
@@ -22,19 +22,13 @@ const config: Config = {
   testEnvironment: process.env.TEST_ENV === 'server' ? 'node' : 'jsdom',
   testMatch: [
     process.env.TEST_ENV === 'server'
-      ? '<rootDir>/tests/apollo-server/**/*.test.ts'
-      : '<rootDir>/tests/unit/**/*.test.{ts,tsx,js}',
+      ? '<rootDir>/tests/apollo-server/**/*.test.{ts,mts}'
+      : '<rootDir>/tests/unit/**/*.test.{ts,tsx,js,jsx}',
   ],
+  extensionsToTreatAsEsm: ['.mts'],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
-    '^.+\\.(mts)$': [
-      'ts-jest',
-      {
-        tsconfig: {
-          module: 'commonjs',
-        },
-      },
-    ],
+    '^.+\\.(mts)$': ['ts-jest', { useESM: true }],
     '^.+\\.js$': 'babel-jest',
   },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
