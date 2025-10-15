@@ -15,7 +15,7 @@ export const options = scenarioUtils.getOptions();
  * Main load test function for signup/registration endpoint
  * Tests the performance and reliability of user registration under various load conditions
  */
-export default function signupAuthentication() {
+export default function signup() {
   const baseUrl = utils.getBaseUrl();
   const params = utils.getParams();
 
@@ -33,8 +33,8 @@ export default function signupAuthentication() {
   };
 
   const response = http.post(`${baseUrl}/api/users`, payload, {
-    headers,
     ...params,
+    headers,
   });
 
   // Validate response status codes

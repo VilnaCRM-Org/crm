@@ -7,9 +7,10 @@
  * @throws {Error} If page is not on the expected route
  */
 async function verifyPage(page, route) {
-  const currentUrl = page.url();
+  const currentUrl = new URL(page.url());
+  const { pathname } = currentUrl;
 
-  if (!currentUrl.includes(`${route}`)) {
+  if (!pathname.startsWith(route) && pathname !== route) {
     throw new Error(`Page was not redirected to ${route} as expected. Current URL: ${currentUrl}`);
   }
 }

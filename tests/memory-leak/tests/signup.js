@@ -17,16 +17,6 @@ const NETWORK_IDLE_TIMEOUT = 30000;
 const scenarioBuilder = new ScenarioBuilder(ROUTE_PATH);
 
 /**
- * Utility function to create a delay
- * @param {number} ms - Milliseconds to wait
- * @returns {Promise<void>}
- */
-const delay = (ms) =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-
-/**
  * Creates input selector by placeholder text
  * @param {string} placeholder - The placeholder text
  * @returns {string} CSS selector
@@ -202,7 +192,6 @@ async function completeRegistrationAction(page) {
     if (currentUrl.includes('login')) {
       await page.waitForSelector(formSwitcher, { timeout: DEFAULT_TIMEOUT });
       await page.click(formSwitcher);
-      await delay(300);
       await waitForRegistrationForm(page);
     }
 

@@ -13,6 +13,11 @@ export default class Utils {
       const endpointConfig = config.endpoints[endpointName];
       if (endpointConfig.host) finalHost = endpointConfig.host;
       if (endpointConfig.port) finalPort = endpointConfig.port;
+    } else if (endpointName) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `Endpoint '${endpointName}' not found in configuration, using default host/port`
+      );
     }
 
     this.baseUrl = `${protocol}://${finalHost}${finalPort ? `:${finalPort}` : ''}`;

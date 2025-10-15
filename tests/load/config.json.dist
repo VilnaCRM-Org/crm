@@ -47,7 +47,7 @@
         }
       }
     },
-    "signup-authentication": {
+    "signup": {
       "host": "mockoon",
       "port": "8080",
       "setupTimeoutInMinutes": 10,

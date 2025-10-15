@@ -81,9 +81,13 @@ const consoleMode = 'VERBOSE';
           skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
           debug: process.env.MEMLAB_DEBUG === 'true',
         });
-        const analyzer = new StringAnalysis();
-        await analyze(runResult, analyzer);
-        runResult.cleanup();
+        try {
+          const analyzer = new StringAnalysis();
+          await analyze(runResult, analyzer);
+        } finally {
+          runResult.cleanup();
+        }
+
         logger.info(`✅ Completed scenario: ${name}`);
       }
     } catch (error) {

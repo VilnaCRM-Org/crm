@@ -58,8 +58,8 @@ MEMLEAK_RUN_CLEANUP			= \
 
 K6_TEST_SCRIPT              ?= /loadTests/homepage.js
 K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
-K6_SIGNUP_TEST_SCRIPT       ?= /loadTests/signup-authentication.js
-K6_SIGNUP_RESULTS_FILE		?= /loadTests/results/signup-authentication.js
+K6_SIGNUP_TEST_SCRIPT       ?= /loadTests/signup.js
+K6_SIGNUP_RESULTS_FILE		?= /loadTests/results/signup.html
 K6                          = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) --profile load run --rm k6
 LOAD_TESTS_RUN              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)" --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
 LOAD_TESTS_RUN_SIGNUP       = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)" --out "web-dashboard=period=1s&export=$(K6_SIGNUP_RESULTS_FILE)" $(K6_SIGNUP_TEST_SCRIPT)
@@ -265,7 +265,7 @@ test-load: start-prod wait-for-prod-health prepare-results-dir ## This command e
                        ## using $(PROD_PORT), which maps to the production service in Docker Compose.
 	$(LOAD_TESTS_RUN)
 
-test-load-signup: start-prod wait-for-prod-health prepare-results-dir ## Execute comprehensive load tests for the Swagger page. Use environment variables to run specific scenarios:
+test-load-signup: start-prod wait-for-prod-health prepare-results-dir ## Execute comprehensive load tests for the sign-up page. Use environment variables to run specific scenarios:
                        ## run_smoke=true, run_average=true, run_stress=true, run_spike=true. If none set, runs all scenarios.
 	$(LOAD_TESTS_RUN_SIGNUP)
 
