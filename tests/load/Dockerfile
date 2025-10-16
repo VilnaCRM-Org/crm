@@ -2,7 +2,7 @@ FROM golang:1.24.1-alpine3.21 AS builder
 
 WORKDIR /app
 
-ENV CGO_ENABLED 0
+ENV CGO_ENABLED=0
 
 RUN apk add --no-cache git
 
@@ -14,10 +14,7 @@ RUN xk6 build \
     --with github.com/avitalique/xk6-file@v1.5.0
 
 FROM alpine:3.21
-RUN apk add --no-cache ca-certificates tzdata \
-    python3 py3-pip python3-dev build-base linux-headers \
-    && ln -sf /usr/bin/python3 /usr/bin/python \
-    && pip3 --no-cache-dir install --upgrade pip setuptools
+RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=builder /app/k6 /bin/
 
