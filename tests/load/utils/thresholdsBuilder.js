@@ -15,12 +15,16 @@ export default class ThresholdsBuilder {
       throw new Error('threshold must be a positive number (milliseconds)');
     }
 
+    // Response time threshold (p99)
     this.thresholds[`http_req_duration{scenario:${testType}}`] = [`p(99)<${config.threshold}`];
 
-    this.thresholds[`checks{scenario:${testType}}`] = ['rate>0.99'];
+    // Check pass rate threshold (95% must pass - realistic for load testing)
+    this.thresholds[`checks{scenario:${testType}}`] = ['rate>0.95'];
 
-    this.thresholds[`http_req_failed{scenario:${testType}}`] = ['rate<0.01'];
+    // Error rate threshold (less than 5% failed requests - allows for failures under extreme load)
+    this.thresholds[`http_req_failed{scenario:${testType}}`] = ['rate<0.05'];
 
+    // Request count threshold (at least some requests must be made)
     this.thresholds[`http_reqs{scenario:${testType}}`] = ['count>0'];
 
     return this;

@@ -3,6 +3,7 @@ import { group, sleep } from 'k6';
 import runPositiveTests from './signup/positive.js';
 import runNegativeTests from './signup/negative.js';
 import runRateLimitTests from './signup/ratelimit.js';
+import runIntegrationTests from './signup/integration.js';
 import ScenarioUtils from './utils/scenarioUtils.js';
 import Utils from './utils/utils.js';
 
@@ -44,4 +45,13 @@ export default function signup() {
       runRateLimitTests(utils, baseUrl, params);
     });
   }
+
+  // Small delay between test groups
+  sleep(0.5);
+
+  // Run integration tests to validate end-to-end flows
+  // These test complete user journeys (signup → login → access)
+  group('Integration Tests - End-to-End Flows', () => {
+    runIntegrationTests(utils, baseUrl, params);
+  });
 }
