@@ -1,72 +1,47 @@
-import http from 'k6/http';
+import { group, sleep } from 'k6';
 
+import runPositiveTests from './signup/positive.js';
+import runNegativeTests from './signup/negative.js';
+import runRateLimitTests from './signup/ratelimit.js';
 import ScenarioUtils from './utils/scenarioUtils.js';
-import TEST_DATA_GENERATORS from './utils/test-data.js';
 import Utils from './utils/utils.js';
 
-const scenarioName = 'signup-authentication';
-
+const scenarioName = 'signup';
 const utils = new Utils(scenarioName);
 const scenarioUtils = new ScenarioUtils(utils, scenarioName);
 
+// Export options from scenarioUtils (used for all test groups)
 export const options = scenarioUtils.getOptions();
 
 /**
- * Main load test function for signup/registration endpoint
- * Tests the performance and reliability of user registration under various load conditions
+ * Main test orchestrator that runs all signup test scenarios
+ * This includes positive, negative, and rate limit tests
  */
 export default function signup() {
   const baseUrl = utils.getBaseUrl();
   const params = utils.getParams();
 
-  const userData = TEST_DATA_GENERATORS.generateUser();
-
-  const payload = JSON.stringify({
-    fullName: userData.name,
-    email: userData.email,
-    password: userData.password,
+  // Run positive tests (normal registration flow)
+  group('Positive Tests - Normal Registration Flow', () => {
+    runPositiveTests(utils, baseUrl, params);
   });
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...params.headers,
-  };
+  // Small delay between test groups
+  sleep(0.5);
 
-  const response = http.post(`${baseUrl}/api/users`, payload, {
-    ...params,
-    headers,
+  // Run negative tests (validation and security)
+  group('Negative Tests - Validation & Security', () => {
+    runNegativeTests(utils, baseUrl, params);
   });
 
-  // Validate response status codes
-  // 201: Successfully created new user
-  // 200: Request was successful (alternative success status)
-  // 400: Bad request (validation errors, duplicate email, etc.)
-  // 500: Server error
-  utils.checkResponse(
-    response,
-    'registration request completed',
-    (res) => res.status === 201 || res.status === 200 || res.status === 400 || res.status === 500
-  );
+  // Small delay between test groups
+  sleep(0.5);
 
-  utils.checkResponse(
-    response,
-    'successful registration (201 or 200)',
-    (res) => res.status === 201 || res.status === 200
-  );
-
-  if (response.status === 201 || response.status === 200) {
-    utils.checkResponse(response, 'response has valid JSON body', (res) => {
-      try {
-        const body = JSON.parse(res.body);
-        return body !== null && typeof body === 'object';
-      } catch {
-        return false;
-      }
+  // Run rate limit tests only on first iteration of each VU to avoid excessive requests
+  // Rate limit tests make 100+ requests and would overwhelm the system if run every iteration
+  if (__ITER === 0) {
+    group('Rate Limit Tests - Abuse Protection', () => {
+      runRateLimitTests(utils, baseUrl, params);
     });
-  }
-
-  if (response.status >= 400) {
-    // eslint-disable-next-line no-console
-    console.warn(`Registration failed with status ${response.status}: ${response.body}`);
   }
 }

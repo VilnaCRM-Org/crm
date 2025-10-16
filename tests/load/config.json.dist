@@ -55,12 +55,14 @@
         "threshold": 8000,
         "rps": 3,
         "vus": 3,
+        "maxVUs": 10,
         "duration": 10
       },
       "average": {
         "threshold": 5000,
         "rps": 10,
         "vus": 10,
+        "maxVus": 30,
         "duration": {
           "rise": 5,
           "plateau": 30,
@@ -71,6 +73,7 @@
         "threshold": 12000,
         "rps": 50,
         "vus": 50,
+        "maxVus": 150,
         "duration": {
           "rise": 5,
           "plateau": 30,
@@ -81,6 +84,7 @@
         "threshold": 25000,
         "rps": 100,
         "vus": 100,
+        "maxVus": 300,
         "duration": {
           "rise": 30,
           "fall": 10

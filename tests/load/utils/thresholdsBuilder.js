@@ -7,9 +7,6 @@ export default class ThresholdsBuilder {
     if (!testType || typeof testType !== 'string') {
       throw new Error('testType must be a non-empty string');
     }
-    if (!testType || typeof testType !== 'string') {
-      throw new Error('testType must be a non-empty string');
-    }
     if (!config || typeof config.threshold === 'undefined') {
       throw new Error('config must contain a threshold property');
     }
@@ -19,7 +16,13 @@ export default class ThresholdsBuilder {
     }
 
     this.thresholds[`http_req_duration{scenario:${testType}}`] = [`p(99)<${config.threshold}`];
+
     this.thresholds[`checks{scenario:${testType}}`] = ['rate>0.99'];
+
+    this.thresholds[`http_req_failed{scenario:${testType}}`] = ['rate<0.01'];
+
+    this.thresholds[`http_reqs{scenario:${testType}}`] = ['count>0'];
+
     return this;
   }
 
