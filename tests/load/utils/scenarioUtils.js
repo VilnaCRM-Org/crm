@@ -5,6 +5,7 @@ export default class ScenarioUtils {
   constructor(utils, scenarioName) {
     this.utils = utils;
     this.config = utils.getConfig();
+    this.scenarioName = scenarioName;
 
     const requiredScenarios = ['smoke', 'average', 'stress', 'spike'];
     const missing = requiredScenarios.filter(
@@ -14,11 +15,12 @@ export default class ScenarioUtils {
       throw new Error(`Missing scenario configurations: ${missing.join(', ')}`);
     }
 
-    this.smokeConfig = this.config.endpoints[scenarioName].smoke;
-    this.averageConfig = this.config.endpoints[scenarioName].average;
-    this.stressConfig = this.config.endpoints[scenarioName].stress;
-    this.spikeConfig = this.config.endpoints[scenarioName].spike;
-    this.setupTimeout = `${Number(this.config.endpoints[scenarioName].setupTimeoutInMinutes || 2)}m`;
+    this.endpointConfig = this.config.endpoints[scenarioName];
+    this.smokeConfig = this.endpointConfig.smoke;
+    this.averageConfig = this.endpointConfig.average;
+    this.stressConfig = this.endpointConfig.stress;
+    this.spikeConfig = this.endpointConfig.spike;
+    this.setupTimeout = `${Number(this.endpointConfig.setupTimeoutInMinutes || 2)}m`;
     this.delay = Number(this.config.delayBetweenScenarios || 0);
     this.averageTestStartTime = 0;
     this.stressTestStartTime = 0;
@@ -79,7 +81,7 @@ export default class ScenarioUtils {
   }
 
   getThresholds() {
-    const thresholdsBuilder = new ThresholdsBuilder();
+    const thresholdsBuilder = new ThresholdsBuilder(this.endpointConfig.thresholds);
     const thresholdConfigs = {
       run_smoke: { name: 'smoke', config: this.smokeConfig },
       run_average: { name: 'average', config: this.averageConfig },

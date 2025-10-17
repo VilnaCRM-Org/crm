@@ -12,7 +12,7 @@ const TEST_DATA_GENERATORS = {
     const password = `Test${randomString(8)}!${randomDigits}`;
 
     return {
-      name: `Test User ${uniqueId}`,
+      fullName: `Test User ${uniqueId}`,
       email: `test${uniqueId}@example.com`,
       password,
     };
@@ -37,7 +37,7 @@ const TEST_DATA_GENERATORS = {
       const password = `Test${randomString(8)}!${randomDigits}`;
 
       return {
-        name: `Test User ${uniqueId}`,
+        fullName: `Test User ${uniqueId}`,
         email: `test${uniqueId}@example.com`,
         password,
       };

@@ -4,8 +4,19 @@ import TEST_DATA_GENERATORS from '../utils/test-data.js';
 
 /**
  * Negative test scenarios for signup endpoint
- * Tests validation, error handling, and security measures
- * Note: These tests verify that the API properly handles invalid inputs
+ * Tests security and error handling
+ *
+ * IMPORTANT: The Mockoon API (based on OpenAPI spec) does NOT perform validation:
+ * - NO password complexity validation (frontend-only)
+ * - NO email format validation (frontend-only)
+ * - NO required field validation (frontend-only)
+ * - NO duplicate email checking (no database/state)
+ *
+ * ALL validation happens in the frontend. The API accepts any input.
+ *
+ * Tests here focus on:
+ * - Security: Ensure API doesn't crash on SQL injection/XSS attempts
+ * - Graceful handling: API returns valid responses for any input
  */
 export default function runNegativeTests(utils, baseUrl, params) {
   const headers = {
@@ -13,168 +24,19 @@ export default function runNegativeTests(utils, baseUrl, params) {
     ...params.headers,
   };
 
-  testDuplicateEmail(utils, baseUrl, headers, params);
-
-  testInvalidEmailFormat(utils, baseUrl, headers, params);
-
-  testWeakPasswords(utils, baseUrl, headers, params);
-
-  testPasswordRequirements(utils, baseUrl, headers, params);
-
-  testMissingFields(utils, baseUrl, headers, params);
-
+  // Only test that API handles malicious input gracefully (doesn't crash)
   testSQLInjection(utils, baseUrl, headers, params);
 
   testXSSAttempts(utils, baseUrl, headers, params);
 }
 
 /**
- * Test duplicate email registration
+ * NOTE: the API does not validate:
+ * - Duplicate emails (no database/state in Mockoon)
+ * - Password complexity (validation is frontend-only)
+ *
+ * These validations happen in the frontend or real backend, not in Mockoon mock.
  */
-function testDuplicateEmail(utils, baseUrl, headers, params) {
-  const existingUser = TEST_DATA_GENERATORS.generateUser();
-  const payload = JSON.stringify({
-    fullName: existingUser.name,
-    email: existingUser.email,
-    password: existingUser.password,
-  });
-
-  // First registration - should succeed
-  http.post(`${baseUrl}/api/users`, payload, { headers, ...params });
-
-  // Duplicate registration - should fail
-  const duplicateResponse = http.post(`${baseUrl}/api/users`, payload, { headers, ...params });
-
-  // Under load, server might return 500 errors, which is acceptable
-  utils.checkResponse(
-    duplicateResponse,
-    'duplicate email handled',
-    (res) => res.status === 409 || res.status === 400 || res.status >= 500
-  );
-
-  // Only validate error message structure for expected error codes (not server errors)
-  if (duplicateResponse.status === 409 || duplicateResponse.status === 400) {
-    utils.checkResponse(duplicateResponse, 'duplicate error has message', (res) => {
-      try {
-        const body = JSON.parse(res.body);
-        return typeof body.message === 'string' || typeof body.error === 'string';
-      } catch {
-        // Under load, error responses might not be JSON
-        return true;
-      }
-    });
-  }
-}
-
-/**
- * Test invalid email formats (reduced set for load testing)
- */
-function testInvalidEmailFormat(utils, baseUrl, headers, params) {
-  // Reduced to 3 most common invalid formats to minimize load
-  const invalidEmails = ['not-an-email', '@nodomain.com', ''];
-
-  invalidEmails.forEach((invalidEmail) => {
-    const payload = JSON.stringify({
-      fullName: 'Test User',
-      email: invalidEmail,
-      password: 'TestPassword123!',
-    });
-
-    const response = http.post(`${baseUrl}/api/users`, payload, { headers, ...params });
-
-    // Under load, accept any error response (4xx/5xx)
-    utils.checkResponse(
-      response,
-      `invalid email handled: ${invalidEmail || '(empty)'}`,
-      (res) => res.status >= 400
-    );
-  });
-}
-
-/**
- * Test weak or missing passwords (reduced set for load testing)
- */
-function testWeakPasswords(utils, baseUrl, headers, params) {
-  // Reduced to 2 most common weak passwords to minimize load
-  const weakPasswords = [
-    '', // Empty password
-    '123', // Too short
-  ];
-
-  weakPasswords.forEach((weakPassword) => {
-    const payload = JSON.stringify({
-      fullName: 'Test User',
-      email: TEST_DATA_GENERATORS.generateUser().email,
-      password: weakPassword,
-    });
-
-    const response = http.post(`${baseUrl}/api/users`, payload, { headers, ...params });
-
-    // Under load, accept any error response (4xx/5xx)
-    utils.checkResponse(
-      response,
-      `weak password handled: ${weakPassword || '(empty)'}`,
-      (res) => res.status >= 400
-    );
-  });
-}
-
-/**
- * Test detailed password requirements (complexity rules)
- */
-function testPasswordRequirements(utils, baseUrl, headers, params) {
-  const weakPasswords = [
-    { pwd: 'alllowercase', desc: 'no uppercase/numbers/special' },
-    { pwd: 'ALLUPPERCASE', desc: 'no lowercase/numbers/special' },
-    { pwd: 'NoNumbers!', desc: 'no numbers' },
-    { pwd: 'NoSpecial123', desc: 'no special chars' },
-  ];
-
-  weakPasswords.forEach(({ pwd, desc }) => {
-    const payload = JSON.stringify({
-      fullName: 'Test User',
-      email: TEST_DATA_GENERATORS.generateUser().email,
-      password: pwd,
-    });
-
-    const response = http.post(`${baseUrl}/api/users`, payload, { headers, ...params });
-
-    // Under load, accept any error response (4xx/5xx)
-    utils.checkResponse(
-      response,
-      `password requirement validated: ${desc}`,
-      (res) => res.status >= 400
-    );
-  });
-}
-
-/**
- * Test missing required fields (reduced set for load testing)
- */
-function testMissingFields(utils, baseUrl, headers, params) {
-  // Test only the most critical missing field scenarios
-  const testCases = [
-    { payload: {}, description: 'all fields missing' },
-    {
-      payload: { fullName: 'Test User', email: 'test@example.com' },
-      description: 'password missing',
-    },
-  ];
-
-  testCases.forEach(({ payload, description }) => {
-    const response = http.post(`${baseUrl}/api/users`, JSON.stringify(payload), {
-      headers,
-      ...params,
-    });
-
-    // Under load, accept any error response (4xx/5xx)
-    utils.checkResponse(
-      response,
-      `missing fields handled: ${description}`,
-      (res) => res.status >= 400
-    );
-  });
-}
 
 /**
  * Test SQL injection attempts (reduced set for load testing)

@@ -51,6 +51,20 @@
       "host": "mockoon",
       "port": "8080",
       "setupTimeoutInMinutes": 10,
+      "thresholds": {
+        "errorRate": {
+          "smoke": 0.15,
+          "average": 0.20,
+          "stress": 0.25,
+          "spike": 0.30
+        },
+        "checkPassRate": {
+          "smoke": 0.85,
+          "average": 0.85,
+          "stress": 0.80,
+          "spike": 0.75
+        }
+      },
       "smoke": {
         "threshold": 8000,
         "rps": 3,

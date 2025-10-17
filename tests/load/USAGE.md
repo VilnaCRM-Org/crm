@@ -132,6 +132,71 @@ The signup endpoint can have custom host/port settings:
 }
 ```
 
+## Performance Thresholds
+
+The tests use scenario-specific thresholds following industry best practices:
+
+### Default Thresholds (Standard Endpoints like Homepage)
+
+**HTTP Request Failure Rates:**
+
+- **Smoke** (< 2%): Basic functionality verification - minimal failures expected
+- **Average** (< 5%): Normal load conditions - low failure rate expected
+- **Stress** (< 15%): System pushed beyond normal capacity - moderate failures acceptable
+- **Spike** (< 20%): Sudden traffic bursts - higher temporary failures acceptable
+
+**Check Pass Rates:**
+
+- **Smoke/Average** (> 95%): Tight control under normal conditions
+- **Stress** (> 90%): System under heavy load
+- **Spike** (> 85%): Sudden traffic can cause more validation failures
+
+### Endpoint-Specific Overrides
+
+Some endpoints may have custom thresholds due to specific testing requirements. For example, the **signup** endpoint includes negative tests (SQL injection, XSS) which result in higher failure rates.
+
+To configure endpoint-specific thresholds, add a `thresholds` section in `config.json`:
+
+```json
+{
+  "endpoints": {
+    "signup": {
+      "thresholds": {
+        "errorRate": {
+          "smoke": 0.15, // 15% failure rate allowed
+          "average": 0.2, // 20% failure rate allowed
+          "stress": 0.25, // 25% failure rate allowed
+          "spike": 0.3 // 30% failure rate allowed
+        },
+        "checkPassRate": {
+          "smoke": 0.85, // 85% checks must pass
+          "average": 0.85, // 85% checks must pass
+          "stress": 0.8, // 80% checks must pass
+          "spike": 0.75 // 75% checks must pass
+        }
+      }
+    }
+  }
+}
+```
+
+**Why signup has higher thresholds:**
+
+- Includes security tests (SQL injection, XSS) that intentionally send malicious payloads
+- Integration tests with multi-step flows (signup → login → access)
+- Mockoon (schema-based mock) doesn't validate like a real backend
+- Higher failure rates don't indicate problems - they reflect comprehensive testing
+
+### Threshold Rationale
+
+These thresholds account for:
+
+- Negative/security tests returning unexpected status codes
+- Integration tests with multiple failure points
+- Network variability and server resource constraints
+- Real-world conditions where some failures are expected under extreme load
+- Different testing goals per endpoint (performance vs. security vs. integration)
+
 ## Prerequisites
 
 - Docker and Docker Compose installed

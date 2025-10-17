@@ -7,16 +7,20 @@ const hasNumber = (value: string): boolean => /[0-9]/.test(value);
 
 const hasUppercase = (value: string): boolean => /\p{Lu}/u.test(value);
 
+const hasLowercase = (value: string): boolean => /\p{Ll}/u.test(value);
+
 type ValidationPswdMessageKey =
   | 'invalidLength'
   | 'numberRequired'
   | 'uppercaseRequired'
+  | 'lowercaseRequired'
   | 'fieldRequired';
 
 const validationPswdMessages: Record<ValidationPswdMessageKey, string> = {
   invalidLength: t('sign_up.form.password_input.error_length'),
   numberRequired: t('sign_up.form.password_input.error_numbers'),
   uppercaseRequired: t('sign_up.form.password_input.error_uppercase'),
+  lowercaseRequired: t('sign_up.form.password_input.error_lowercase'),
   fieldRequired: t('sign_up.form.password_input.error_required'),
 };
 type PasswordValidator = (value: string) => ValidateResult;
@@ -26,6 +30,7 @@ const validatePassword: PasswordValidator = (value: string) => {
   if (!isLengthValid(value)) return validationPswdMessages.invalidLength;
   if (!hasNumber(value)) return validationPswdMessages.numberRequired;
   if (!hasUppercase(value)) return validationPswdMessages.uppercaseRequired;
+  if (!hasLowercase(value)) return validationPswdMessages.lowercaseRequired;
   return true;
 };
 

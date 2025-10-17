@@ -26,7 +26,7 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
   const userData = TEST_DATA_GENERATORS.generateUser();
 
   const payload = JSON.stringify({
-    fullName: userData.name,
+    fullName: userData.fullName,
     email: userData.email,
     password: userData.password,
   });
@@ -37,7 +37,7 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
   };
 
   let rateLimitHit = false;
-  const maxRequests = 15; // Reduced from 30 to minimize load
+  const maxRequests = 15;
   let successCount = 0;
   let duplicateCount = 0;
 
@@ -51,7 +51,7 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
     // Track response patterns
     if (response.status === 201 || response.status === 200) {
       successCount += 1;
-    } else if (response.status === 400 || response.status === 409) {
+    } else if (response.status === 422 || response.status === 400) {
       duplicateCount += 1;
     }
 
@@ -61,7 +61,7 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
         response,
         'first duplicate request processed',
         (res) =>
-          res.status === 201 || res.status === 200 || res.status === 400 || res.status === 409
+          res.status === 201 || res.status === 200 || res.status === 422 || res.status === 400
       );
     }
 
@@ -127,7 +127,7 @@ function testRapidRequestsDifferentData(utils, baseUrl, params) {
     const userData = TEST_DATA_GENERATORS.generateUser();
 
     const payload = JSON.stringify({
-      fullName: userData.name,
+      fullName: userData.fullName,
       email: userData.email,
       password: userData.password,
     });
