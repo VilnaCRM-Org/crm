@@ -201,7 +201,8 @@ Configuration is managed in `tests/load/config.json.dist` under the `signup` end
 
 ## Success Criteria
 
-The signup tests use **endpoint-specific thresholds** (higher than standard endpoints) to account for comprehensive security and integration testing.
+The signup tests use **endpoint-specific thresholds** (higher than standard endpoints)
+to account for comprehensive security and integration testing.
 
 ### Response Time
 
@@ -241,7 +242,8 @@ These relaxed thresholds are justified because signup tests include:
 3. **Mockoon limitations**: Schema-based mock doesn't validate like a real backend
 4. **Comprehensive coverage**: Tests prioritize thorough validation over pure performance
 
-**Important**: These thresholds don't indicate poor performance - they reflect comprehensive testing goals that differ from standard performance testing.
+**Important**: These thresholds don't indicate poor performance - they reflect comprehensive
+testing goals that differ from standard performance testing.
 
 ## Test Data Generation **[ENHANCED]**
 

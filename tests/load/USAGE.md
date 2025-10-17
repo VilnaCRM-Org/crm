@@ -153,26 +153,28 @@ The tests use scenario-specific thresholds following industry best practices:
 
 ### Endpoint-Specific Overrides
 
-Some endpoints may have custom thresholds due to specific testing requirements. For example, the **signup** endpoint includes negative tests (SQL injection, XSS) which result in higher failure rates.
+Some endpoints may have custom thresholds due to specific testing requirements.
+For example, the **signup** endpoint includes negative tests (SQL injection, XSS) which
+result in higher failure rates.
 
 To configure endpoint-specific thresholds, add a `thresholds` section in `config.json`:
 
-```json
+```bash
 {
   "endpoints": {
     "signup": {
       "thresholds": {
         "errorRate": {
-          "smoke": 0.15, // 15% failure rate allowed
-          "average": 0.2, // 20% failure rate allowed
-          "stress": 0.25, // 25% failure rate allowed
-          "spike": 0.3 // 30% failure rate allowed
+          "smoke": 0.15,
+          "average": 0.2,
+          "stress": 0.25,
+          "spike": 0.3
         },
         "checkPassRate": {
-          "smoke": 0.85, // 85% checks must pass
-          "average": 0.85, // 85% checks must pass
-          "stress": 0.8, // 80% checks must pass
-          "spike": 0.75 // 75% checks must pass
+          "smoke": 0.85,
+          "average": 0.85,
+          "stress": 0.8,
+          "spike": 0.75
         }
       }
     }

@@ -57,12 +57,12 @@ export default class ThresholdsBuilder {
 
     // Default thresholds
     const thresholds = {
-      smoke: 0.02, // 2%
-      average: 0.05, // 5%
-      stress: 0.15, // 15%
-      spike: 0.2, // 20%
+      smoke: 0.02,
+      average: 0.05,
+      stress: 0.15,
+      spike: 0.2,
     };
-    return thresholds[testType] || 0.05; // Default to 5% if unknown type
+    return thresholds[testType] || 0.05;
   }
 
   /**
@@ -78,12 +78,12 @@ export default class ThresholdsBuilder {
 
     // Default pass rates
     const passRates = {
-      smoke: 0.95, // 95%
-      average: 0.95, // 95%
-      stress: 0.9, // 90%
-      spike: 0.85, // 85%
+      smoke: 0.95,
+      average: 0.95,
+      stress: 0.9,
+      spike: 0.85,
     };
-    return passRates[testType] || 0.95; // Default to 95% if unknown type
+    return passRates[testType] || 0.95;
   }
 
   build() {
