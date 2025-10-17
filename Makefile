@@ -229,6 +229,12 @@ test-unit-client: ## Run all client-side unit tests using Jest (TEST_ENV=client)
 test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js env, TEST_ENV=server, target: $(TEST_DIR_APOLLO))
 	$(UNIT_TESTS) TEST_ENV=server $(JEST_BIN) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
 
+test-integration: ## Run integration tests using Jest
+	$(UNIT_TESTS) $(JEST_BIN) $(JEST_FLAGS) --testPathPattern=integration --coverage
+
+test-integration-watch: ## Run integration tests in watch mode
+	$(UNIT_TESTS) $(JEST_BIN) --testPathPattern=integration --watch
+
 test-memory-leak: start-prod ## This command executes memory leaks tests using Memlab library.
 	$(RUN_MEMLAB)
 

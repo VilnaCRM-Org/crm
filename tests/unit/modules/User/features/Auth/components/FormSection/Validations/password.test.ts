@@ -242,5 +242,16 @@ describe('password validation', () => {
     it('should return number error when length is valid but no number and no uppercase', () => {
       expect(validatePassword('password')).toBe('sign_up.form.password_input.error_numbers');
     });
+
+    it('should return uppercase error when length is valid and has number but no uppercase', () => {
+      expect(validatePassword('password1')).toBe('sign_up.form.password_input.error_uppercase');
+      expect(validatePassword('testpass123')).toBe('sign_up.form.password_input.error_uppercase');
+      expect(validatePassword('mypassword99')).toBe('sign_up.form.password_input.error_uppercase');
+    });
+
+    it('should pass all validations when length, number, and uppercase are present', () => {
+      expect(validatePassword('Password1')).toBe(true);
+      expect(validatePassword('ValidPass123')).toBe(true);
+    });
   });
 });

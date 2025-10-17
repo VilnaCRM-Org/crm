@@ -18,13 +18,18 @@ const config: Config = {
           '!<rootDir>/src/**/*.test.{ts,tsx}',
           '!<rootDir>/src/index.tsx',
         ],
-  roots: process.env.TEST_ENV === 'server' ? ['./tests/apollo-server'] : ['./tests/unit'],
-  testEnvironment: process.env.TEST_ENV === 'server' ? 'node' : 'jsdom',
-  testMatch: [
+  roots:
     process.env.TEST_ENV === 'server'
-      ? '<rootDir>/tests/apollo-server/**/*.test.{ts,mts}'
-      : '<rootDir>/tests/unit/**/*.test.{ts,tsx,js,jsx}',
-  ],
+      ? ['./tests/apollo-server']
+      : ['./tests/unit', './tests/integration'],
+  testEnvironment: process.env.TEST_ENV === 'server' ? 'node' : 'jsdom',
+  testMatch:
+    process.env.TEST_ENV === 'server'
+      ? ['<rootDir>/tests/apollo-server/**/*.test.{ts,mts}']
+      : [
+          '<rootDir>/tests/unit/**/*.test.{ts,tsx,js,jsx}',
+          '<rootDir>/tests/integration/**/*.integration.test.{ts,tsx}',
+        ],
   extensionsToTreatAsEsm: ['.mts'],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',

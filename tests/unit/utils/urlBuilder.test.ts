@@ -110,8 +110,8 @@ describe('buildApiUrl', () => {
     });
 
     it('should handle localhost URL', () => {
-      process.env.REACT_APP_API_BASE_URL = 'http://localhost:3000';
-      expect(buildApiUrl('users')).toBe('http://localhost:3000/users');
+      process.env.REACT_APP_API_BASE_URL = 'http://localhost:8080';
+      expect(buildApiUrl('users')).toBe('http://localhost:8080/users');
     });
   });
 });

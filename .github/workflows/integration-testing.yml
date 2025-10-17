@@ -1,0 +1,41 @@
+name: integration testing
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Enable repo pnpm version
+        run: |
+          corepack enable
+          corepack prepare $(node -p "require('./package.json').packageManager") --activate
+
+      - name: Set PNPM store path
+        run: pnpm config set store-dir ~/.pnpm-store
+
+      - name: Cache pnpm dependencies
+        id: cache-pnpm-dependencies
+        uses: actions/cache@v4.2.3
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+          key: ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run integration tests
+        run: make test-integration
