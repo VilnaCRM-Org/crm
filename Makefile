@@ -71,7 +71,7 @@ LOAD_TESTS_RUN_SIGNUP       = \
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
 
-MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
+MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" -i agents.md -i cursor_project_guide.md "**/*.md"
 PRETTIER_CMD                = pnpm exec -- prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
