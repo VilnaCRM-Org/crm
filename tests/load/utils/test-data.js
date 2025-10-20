@@ -1,5 +1,14 @@
 import { randomString } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js';
 
+/**
+ * Generate a random password meeting validation requirements
+ * Format: Test{8 random chars}!{2 random digits}
+ */
+const generatePassword = () => {
+  const randomDigits = randomString(2, '0123456789');
+  return `Test${randomString(8)}!${randomDigits}`;
+};
+
 const TEST_DATA_GENERATORS = {
   /**
    * Generate a single unique user with email, name, and password
@@ -8,8 +17,7 @@ const TEST_DATA_GENERATORS = {
     const timestamp = Date.now();
     const uniqueId = `${__VU || 1}_${__ITER || 0}_${timestamp}_${Math.random().toString(36).substring(2, 7)}`;
 
-    const randomDigits = randomString(2, '0123456789');
-    const password = `Test${randomString(8)}!${randomDigits}`;
+    const password = generatePassword();
 
     return {
       fullName: `Test User ${uniqueId}`,
@@ -33,8 +41,7 @@ const TEST_DATA_GENERATORS = {
       const timestamp = Date.now();
       const uniqueId = `${__VU || 1}_${__ITER || 0}_${timestamp}_${index}_${Math.random().toString(36).substring(2, 7)}`;
 
-      const randomDigits = randomString(2, '0123456789');
-      const password = `Test${randomString(8)}!${randomDigits}`;
+      const password = generatePassword();
 
       return {
         fullName: `Test User ${uniqueId}`,

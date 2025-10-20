@@ -8,6 +8,10 @@ const scenarioBuilder = new ScenarioBuilder();
 
 const signUpButtonSelector = 'button';
 
+async function setup(page) {
+  await page.goto('http://localhost:3000');
+}
+
 async function action(page) {
   try {
     await page.waitForSelector(signUpButtonSelector, { timeout: 5000 });
@@ -17,4 +21,8 @@ async function action(page) {
   }
 }
 
-module.exports = scenarioBuilder.createScenario({ action });
+async function back(page) {
+  await page.goto('http://localhost:3000');
+}
+
+module.exports = scenarioBuilder.createScenario({ setup, action, back });

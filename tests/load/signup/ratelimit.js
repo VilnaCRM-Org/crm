@@ -86,12 +86,36 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
       break;
     }
 
-    // All responses should have some status code (accept any, including server errors under load)
-    utils.checkResponse(
-      response,
-      'rapid duplicate request handled',
-      (res) => res.status >= 200 && res.status < 600
-    );
+    // FIXED: Only accept specific expected statuses and reject 5xx server errors
+    // Expected statuses:
+    // - 200/201: Success (user created)
+    // - 400: Bad request (validation error)
+    // - 409: Conflict (duplicate email)
+    // - 422: Unprocessable entity (validation error)
+    // - 429: Rate limit exceeded
+    // Reject: 5xx server errors which indicate backend problems
+    utils.checkResponse(response, 'rapid duplicate request handled without server error', (res) => {
+      const validStatuses = [200, 201, 400, 409, 422, 429];
+      if (validStatuses.includes(res.status)) {
+        return true;
+      }
+
+      // Fail on server errors (5xx)
+      if (res.status >= 500 && res.status < 600) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[ERROR] Server error during rate limit test: ${res.status} - ${res.body.substring(0, 100)}`
+        );
+        return false;
+      }
+
+      // Log unexpected client errors but don't fail
+      // eslint-disable-next-line no-console
+      console.log(
+        `[WARN] Unexpected status during rate limit test: ${res.status} - ${res.body.substring(0, 100)}`
+      );
+      return true;
+    });
   }
 
   // Informational logging only - not a failure condition
@@ -150,12 +174,25 @@ function testRapidRequestsDifferentData(utils, baseUrl, params) {
       break;
     }
 
-    // All bulk requests should have some response (accept any status under load)
-    utils.checkResponse(
-      response,
-      'bulk registration handled',
-      (res) => res.status >= 200 && res.status < 600
-    );
+    // FIXED: Only accept 2xx or 4xx responses, reject 5xx server errors
+    // This matches the expected-status pattern from lines 89-95
+    utils.checkResponse(response, 'bulk registration handled without server error', (res) => {
+      // Accept success (2xx) and client errors (4xx)
+      if ((res.status >= 200 && res.status < 300) || (res.status >= 400 && res.status < 500)) {
+        return true;
+      }
+
+      // Fail on server errors (5xx)
+      if (res.status >= 500) {
+        // eslint-disable-next-line no-console
+        console.error(
+          `[ERROR] Server error during bulk registration: ${res.status} - ${res.body.substring(0, 100)}`
+        );
+        return false;
+      }
+
+      return false; // Unexpected status
+    });
   }
 
   // Informational logging only - not a failure condition

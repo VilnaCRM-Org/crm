@@ -39,7 +39,7 @@
     "@babel/preset-env": "^7.28.0",
     "@commitlint/cli": "^17.8.1",
     "@commitlint/config-conventional": "^17.8.1",
-    "@faker-js/faker": "^10.0.0",
+    "@faker-js/faker": "^9.2.0",
     "@lhci/cli": "^0.10.0",
     "@memlab/api": "^1.0.41",
     "@memlab/heap-analysis": "^1.0.39",
