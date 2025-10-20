@@ -2,7 +2,9 @@
 
 AI Agent Guide for VilnaCRM React Template
 
-This document provides workflows, patterns, and troubleshooting tips specifically for AI assistants working with this codebase. For project overview and tech stack details, see `CLAUDE.md`.
+This document provides workflows, patterns, and troubleshooting tips specifically for
+AI assistants working with this codebase. For project overview and tech stack details,
+see `CLAUDE.md`.
 
 ## Quick Start for Agents
 
@@ -20,7 +22,8 @@ This document provides workflows, patterns, and troubleshooting tips specificall
 
 1. **Identify the module** - Features belong in `src/modules/` or `src/features/`
 2. **Create feature structure**:
-   ```
+
+   ```bash
    src/modules/[Module]/features/[Feature]/
    ├── components/       # Feature UI components
    ├── api/             # API client and types
@@ -28,6 +31,7 @@ This document provides workflows, patterns, and troubleshooting tips specificall
    ├── helpers/         # Feature utilities
    └── index.ts         # Public exports
    ```
+
 3. **Add translations** - Always provide both `en.json` and `uk.json`
 4. **Register services** - If needed, add to `src/config/DependencyInjectionConfig.ts`
 5. **Add tests** - Unit tests in `tests/unit/`, E2E in `tests/e2e/`
@@ -46,10 +50,12 @@ This document provides workflows, patterns, and troubleshooting tips specificall
    ```
 
 2. **Check test coverage**:
+
    ```bash
    CI=1 make test-unit-all
    # Coverage report in terminal
    ```
+
 3. **Update related tests** - Tests live in `tests/` mirroring `src/` structure
 4. **Verify E2E tests pass** - `make test-e2e` (may take 5-10 minutes)
 
@@ -76,7 +82,8 @@ This document provides workflows, patterns, and troubleshooting tips specificall
 
 **CRITICAL**: Always use `make pr-comments` to retrieve and address all code review comments systematically.
 
-The repository provides a comprehensive code review workflow that enables automatic retrieval and systematic addressing of all unresolved comments on a Pull Request.
+The repository provides a comprehensive code review workflow that enables automatic
+retrieval and systematic addressing of all unresolved comments on a Pull Request.
 
 #### Using the PR Comments Command
 
@@ -146,7 +153,7 @@ Categorize each comment by type:
 
 #### 3. Systematic Implementation Strategy
 
-##### For Committable Suggestions:
+##### For Committable Suggestions
 
 ```typescript
 // Apply suggestion directly to the code
@@ -159,7 +166,7 @@ git add .
 git commit -m "Apply code review suggestion: improve component naming"
 ```
 
-##### For LLM Prompts:
+##### For LLM Prompts
 
 ```typescript
 // Use the comment as a detailed prompt for refactoring
@@ -171,7 +178,7 @@ git commit -m "Apply code review suggestion: improve component naming"
 // 5. Verify with make lint and make test-unit-all
 ```
 
-##### For Complex Refactoring Requests:
+##### For Complex Refactoring Requests
 
 ```typescript
 // Break down large refactoring into smaller commits
@@ -229,20 +236,20 @@ Reply to comments systematically:
 
 ### Advanced Code Review Patterns
 
-#### Handling Conflicting Comments:
+#### Handling Conflicting Comments
 
 - Prioritize architectural concerns over stylistic preferences
 - Discuss conflicting suggestions with reviewers before implementing
 - Document decisions in commit messages or PR comments
 
-#### Large-Scale Refactoring:
+#### Large-Scale Refactoring
 
 - Create separate commits for each logical change
 - Maintain backward compatibility when possible
 - Update tests incrementally with code changes
 - Use feature flags for risky changes
 
-#### Performance and Security Comments:
+#### Performance and Security Comments
 
 - Address security concerns immediately with highest priority
 - Benchmark performance changes when suggested (use Lighthouse, K6)
@@ -250,7 +257,7 @@ Reply to comments systematically:
 
 ### Integration with Development Workflow
 
-#### Before Starting Code Review Refactoring:
+#### Before Starting Code Review Refactoring
 
 ```bash
 git status                  # Ensure clean working directory
@@ -258,7 +265,7 @@ git pull origin main        # Get latest changes
 make pr-comments           # Get current comment status
 ```
 
-#### During Refactoring:
+#### During Refactoring
 
 ```bash
 # Work on one comment or related group at a time
@@ -274,7 +281,7 @@ Addresses review comment: https://github.com/org/repo/pull/123#discussion_r45678
 - Added unit tests for hook logic"
 ```
 
-#### After Completing All Comments:
+#### After Completing All Comments
 
 ```bash
 make lint                  # Full quality check
@@ -581,6 +588,7 @@ export const UIComponentName: React.FC<UIComponentNameProps> = (props) => {
    ```
 
 4. **Run specific test**:
+
    ```bash
    docker compose -f docker-compose.test.yml exec playwright \
      pnpm exec playwright test tests/e2e/login.spec.ts
@@ -689,6 +697,7 @@ nvm use        # If using nvm
 2. Use React DevTools in browser
 
 3. Check Redux state:
+
    ```typescript
    import { useSelector } from 'react-redux';
    const state = useSelector((state) => state);
@@ -705,10 +714,12 @@ nvm use        # If using nvm
 
 1. Use UI mode: `make test-e2e-ui`
 2. Add debug steps:
+
    ```typescript
    await page.pause(); // Pauses execution
    await page.screenshot({ path: 'debug.png' });
    ```
+
 3. Check test artifacts: `tests/e2e/.playwright/results/`
 
 ## Performance Optimization
@@ -755,7 +766,7 @@ make test-memory-leak
 
 Follow conventional commits:
 
-```
+```bash
 feat(module): add user registration
 fix(auth): resolve token expiration issue
 test(e2e): add login flow tests
@@ -966,6 +977,7 @@ make check-node-version # Verify Node version
 
 ## Feedback and Improvements
 
-This document is maintained alongside the codebase. When patterns emerge or common issues are resolved, update this guide to help future agents work more effectively.
+This document is maintained alongside the codebase. When patterns emerge or common
+issues are resolved, update this guide to help future agents work more effectively.
 
 **Last updated**: 2025-10-20

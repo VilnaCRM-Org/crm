@@ -135,7 +135,7 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
   utils.checkResponse(
     loginResponse,
     'integration: login returns valid status (shape-only)',
-    (res) => res.status === 200 || res.status === 201 || res.status >= 400
+    (res) => res.status === 200 || res.status === 201 || (res.status >= 400 && res.status < 500)
   );
 
   // If login succeeds (in Mockoon mode), verify response has auth token structure

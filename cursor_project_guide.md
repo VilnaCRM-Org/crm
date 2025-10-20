@@ -1,10 +1,13 @@
 # Cursor Project Guide
 
-Comprehensive guide for working with VilnaCRM React Template in Cursor IDE and other AI-powered development environments.
+Comprehensive guide for working with VilnaCRM React Template in Cursor IDE and other
+AI-powered development environments.
 
 ## Project Overview
 
-This is a modern SPA template based on React 18.3, TypeScript, Material-UI v7, featuring extensive CI checks, configured testing tools (Playwright, Jest), and a modular architecture inspired by bulletproof-react.
+This is a modern SPA template based on React 18.3, TypeScript, Material-UI v7,
+featuring extensive CI checks, configured testing tools (Playwright, Jest),
+and a modular architecture inspired by bulletproof-react.
 
 For detailed tech stack and architecture information, see `CLAUDE.md` and `agents.md`.
 
@@ -22,7 +25,8 @@ For detailed tech stack and architecture information, see `CLAUDE.md` and `agent
 
 **CRITICAL**: Always use `make pr-comments` to retrieve and address all code review comments systematically.
 
-The repository provides a comprehensive code review workflow that enables automatic retrieval and systematic addressing of all unresolved comments on a Pull Request.
+The repository provides a comprehensive code review workflow that enables automatic
+retrieval and systematic addressing of all unresolved comments on a Pull Request.
 
 #### Using the PR Comments Command
 
@@ -92,7 +96,7 @@ Categorize each comment by type:
 
 #### 3. Systematic Implementation Strategy
 
-##### For Committable Suggestions:
+##### For Committable Suggestions
 
 ```bash
 # Apply suggestion directly to the code
@@ -105,7 +109,7 @@ git add .
 git commit -m "Apply code review suggestion: improve component naming"
 ```
 
-##### For LLM Prompts:
+##### For LLM Prompts
 
 ```bash
 # Use the comment as a detailed prompt for refactoring
@@ -117,7 +121,7 @@ git commit -m "Apply code review suggestion: improve component naming"
 # 5. Verify with make lint and make test-unit-all
 ```
 
-##### For Complex Refactoring Requests:
+##### For Complex Refactoring Requests
 
 ```bash
 # Break down large refactoring into smaller commits
@@ -175,20 +179,20 @@ Reply to comments systematically:
 
 ### Advanced Code Review Patterns
 
-#### Handling Conflicting Comments:
+#### Handling Conflicting Comments
 
 - Prioritize architectural concerns over stylistic preferences
 - Discuss conflicting suggestions with reviewers before implementing
 - Document decisions in commit messages or PR comments
 
-#### Large-Scale Refactoring:
+#### Large-Scale Refactoring
 
 - Create separate commits for each logical change
 - Maintain backward compatibility when possible
 - Update tests incrementally with code changes
 - Use feature flags for risky changes
 
-#### Performance and Security Comments:
+#### Performance and Security Comments
 
 - Address security concerns immediately with highest priority
 - Benchmark performance changes when suggested (use Lighthouse, K6)
@@ -196,7 +200,7 @@ Reply to comments systematically:
 
 ### Integration with Development Workflow
 
-#### Before Starting Code Review Refactoring:
+#### Before Starting Code Review Refactoring
 
 ```bash
 git status                  # Ensure clean working directory
@@ -204,7 +208,7 @@ git pull origin main        # Get latest changes
 make pr-comments           # Get current comment status
 ```
 
-#### During Refactoring:
+#### During Refactoring
 
 ```bash
 # Work on one comment or related group at a time
@@ -220,7 +224,7 @@ Addresses review comment: https://github.com/org/repo/pull/123#discussion_r45678
 - Added unit tests for hook logic"
 ```
 
-#### After Completing All Comments:
+#### After Completing All Comments
 
 ```bash
 make lint                  # Full quality check
@@ -525,7 +529,7 @@ ls -la docker/apollo-server/schema.graphql
 
 ### Component Structure
 
-```typescript
+```ts
 // src/components/UIMyComponent.tsx
 import React from 'react';
 import { styled } from '@mui/material/styles';
@@ -550,7 +554,7 @@ export const UIMyComponent: React.FC<UIMyComponentProps> = ({ title, onAction })
 
 ### Redux Slice Structure
 
-```typescript
+```ts
 // src/modules/MyModule/store/myModuleSlice.ts
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { ThunkExtra } from '@/stores/store';
@@ -592,7 +596,7 @@ export default myModuleSlice.reducer;
 
 ### Test Structure
 
-```typescript
+```ts
 // tests/unit/components/UIMyComponent.test.tsx
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -620,7 +624,7 @@ describe('UIMyComponent', () => {
 
 Follow conventional commits:
 
-```
+```bash
 type(scope): subject
 
 body (optional)
@@ -632,7 +636,7 @@ Types: `feat`, `fix`, `test`, `chore`, `docs`, `refactor`, `style`, `perf`
 
 Examples:
 
-```
+```bash
 feat(auth): add password reset functionality
 fix(login): resolve token expiration issue
 test(e2e): add user registration flow tests
@@ -655,12 +659,13 @@ refactor(auth): extract validation to custom hook
 - **CLAUDE.md**: Project overview and tech stack
 - **agents.md**: AI agent-specific workflows and patterns
 - **README.md**: User-facing documentation
-- **.github/workflows/**: CI/CD pipeline configurations
+- **GitHub Workflows** (`.github/workflows/`): CI/CD pipeline configurations
 - **Makefile**: All available commands
 
 ## Keeping This Guide Updated
 
-This document evolves with the project. When you discover new patterns, solve common issues, or establish new conventions:
+This document evolves with the project. When you discover new patterns,
+solve common issues, or establish new conventions:
 
 1. Update the relevant section
 2. Add examples where helpful
