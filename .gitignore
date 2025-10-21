@@ -9,7 +9,6 @@
 /out/
 /docker/apollo-server/out
 
-/build
 
 .DS_Store
 *.pem
