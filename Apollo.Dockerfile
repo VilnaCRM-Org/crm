@@ -19,7 +19,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile  --prod
 
 USER root
-RUN apk update && apk add --no-cache curl
+RUN apk update && apk add --no-cache curl=8.14.1-r2
 
 COPY --from=builder /app/docker/apollo-server/out ./docker/apollo-server/out
 COPY docker/apollo-server/bootstrap.mjs ./docker/apollo-server/bootstrap.mjs
