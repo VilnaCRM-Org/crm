@@ -3,9 +3,8 @@ import { setupServer } from 'msw/node';
 
 import API_ENDPOINTS from '@/config/apiConfig';
 
-// Default handlers for common scenarios
 const handlers = [
-  rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+  rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
     res(
       ctx.status(200),
       ctx.json({
@@ -13,7 +12,7 @@ const handlers = [
       })
     )
   ),
-  rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
+  rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
     res(
       ctx.status(201),
       ctx.json({

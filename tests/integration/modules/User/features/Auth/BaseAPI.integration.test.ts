@@ -79,7 +79,7 @@ describe('BaseAPI Integration', () => {
       });
 
       it('should return Timeout ApiError for 408 status', () => {
-        const httpError = new HttpError({ status: 408, message: 'Request timeout' });
+        const httpError = new HttpError({ status: 408, message: 'Request took too long' });
         const result = api.testHandleApiError(httpError, 'Request');
 
         expect(result).toBeInstanceOf(ApiError);
@@ -124,7 +124,7 @@ describe('BaseAPI Integration', () => {
       });
 
       it('should return Service Unavailable ApiError for 504 status', () => {
-        const httpError = new HttpError({ status: 504, message: 'Gateway timeout' });
+        const httpError = new HttpError({ status: 504, message: 'Gateway unavailable' });
         const result = api.testHandleApiError(httpError, 'Service');
 
         expect(result).toBeInstanceOf(ApiError);

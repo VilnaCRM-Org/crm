@@ -47,6 +47,12 @@ class MockResponse {
     }
     return JSON.stringify(this.bodyContent);
   }
+
+  public clone(): MockResponse {
+    // Return this to preserve any method overrides (e.g., json(), text())
+    // In tests, we don't need true cloning since body isn't consumed
+    return this;
+  }
 }
 
 const originalResponse = global.Response;

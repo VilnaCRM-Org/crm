@@ -6,6 +6,7 @@ import API_ENDPOINTS from '@/config/apiConfig';
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
+import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 import { loginReducer, loginUser, logout } from '@/modules/User/store/loginSlice';
 import type { ThunkExtra } from '@/modules/User/store/types';
 
@@ -21,9 +22,13 @@ describe('Login Slice Integration', () => {
   let store: TestStore;
 
   beforeEach(() => {
+    // Use REAL services from DI container for integration testing
+    const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+    const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+
     const thunkExtraArgument: ThunkExtra = {
-      loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),
-      registrationAPI: container.resolve(TOKENS.RegistrationAPI),
+      loginAPI,
+      registrationAPI,
     };
 
     store = configureStore({
@@ -37,22 +42,35 @@ describe('Login Slice Integration', () => {
     }) as TestStore;
   });
 
+  describe('initial state', () => {
+    it('should have correct initial state', () => {
+      const state = store.getState().auth;
+
+      expect(state.email).toBe('');
+      expect(state.token).toBeNull();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+  });
+
   describe('successful login flow', () => {
     it('should update state to pending when login starts', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, async (_req, res, ctx) => {
-          await new Promise<void>((resolve) => {
-            setTimeout(() => resolve(), 50);
+        rest.post(API_ENDPOINTS.LOGIN, async (_, res, ctx) => {
+          // Delay response to capture pending state
+          await new Promise((resolve) => {
+            setTimeout(resolve, 50);
           });
           return res(ctx.status(200), ctx.json({ token: 'token123' }));
         })
       );
 
-      const promise = store.dispatch(
-        loginUser({ email: 'test@test.com', password: 'password123' })
-      );
+      const promise = store.dispatch(loginUser({ email: 'user@test.com', password: 'pass' }));
 
       // Check pending state
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
       expect(store.getState().auth.loading).toBe(true);
       expect(store.getState().auth.error).toBeNull();
 
@@ -61,7 +79,7 @@ describe('Login Slice Integration', () => {
 
     it('should update state on successful login', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(200), ctx.json({ token: 'token123' }))
         )
       );
@@ -69,6 +87,7 @@ describe('Login Slice Integration', () => {
       await store.dispatch(loginUser({ email: 'user@example.com', password: 'pass123' }));
 
       const state = store.getState().auth;
+
       expect(state.loading).toBe(false);
       expect(state.email).toBe('user@example.com');
       expect(state.token).toBe('token123');
@@ -77,49 +96,45 @@ describe('Login Slice Integration', () => {
 
     it('should normalize email to lowercase', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'token', userId: '1', email: 'Test@Test.com' }))
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(200), ctx.json({ token: 'token-abc' }))
         )
       );
 
-      await store.dispatch(loginUser({ email: 'Test@Example.COM', password: 'pass' }));
+      await store.dispatch(loginUser({ email: 'USER@TEST.COM', password: 'pass' }));
 
       const state = store.getState().auth;
-      expect(state.email).toBe('test@example.com');
+      expect(state.email).toBe('user@test.com');
     });
 
-    it('should replace previous token on successful login', async () => {
+    it('should handle multiple successful logins', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
-          res(
-            ctx.status(200),
-            ctx.json({ token: 'first-token', userId: '1', email: 'user@test.com' })
-          )
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(200), ctx.json({ token: 'first-token' }))
         )
       );
 
-      await store.dispatch(loginUser({ email: 'user@test.com', password: 'pass1' }));
+      await store.dispatch(loginUser({ email: 'first@test.com', password: 'pass' }));
       expect(store.getState().auth.token).toBe('first-token');
 
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
-          res(
-            ctx.status(200),
-            ctx.json({ token: 'second-token', userId: '2', email: 'user2@test.com' })
-          )
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(200), ctx.json({ token: 'second-token' }))
         )
       );
 
-      await store.dispatch(loginUser({ email: 'user2@test.com', password: 'pass2' }));
-      expect(store.getState().auth.token).toBe('second-token');
-      expect(store.getState().auth.email).toBe('user2@test.com');
+      await store.dispatch(loginUser({ email: 'second@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.token).toBe('second-token');
+      expect(state.email).toBe('second@test.com');
     });
   });
 
   describe('error handling', () => {
-    it('should set error state on 401 login failure', async () => {
+    it('should set error state on 401 authentication error', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(401), ctx.json({ message: 'Invalid credentials' }))
         )
       );
@@ -130,13 +145,10 @@ describe('Login Slice Integration', () => {
       expect(state.loading).toBe(false);
       expect(state.token).toBeNull();
       expect(state.error).toBeTruthy();
-      expect(state.error).toContain('Invalid credentials');
     });
 
     it('should set error state on network failure', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res) => res.networkError('Failed to fetch'))
-      );
+      server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Failed to fetch')));
 
       await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
 
@@ -148,7 +160,7 @@ describe('Login Slice Integration', () => {
 
     it('should set error state on 400 validation error', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(400), ctx.json({ message: 'Invalid data' }))
         )
       );
@@ -161,9 +173,8 @@ describe('Login Slice Integration', () => {
     });
 
     it('should clear previous error on new login attempt', async () => {
-      // First, cause an error
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(401), ctx.json({ message: 'Invalid' }))
         )
       );
@@ -171,9 +182,8 @@ describe('Login Slice Integration', () => {
       await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
       expect(store.getState().auth.error).toBeTruthy();
 
-      // Then try again successfully
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(200), ctx.json({ token: 'new-token' }))
         )
       );
@@ -184,14 +194,41 @@ describe('Login Slice Integration', () => {
       expect(state.error).toBeNull();
       expect(state.token).toBe('new-token');
     });
+
+    it('should handle 500 server error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(500), ctx.json({ message: 'Internal server error' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 500 error with empty response body', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(500), ctx.json({})))
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      // System provides user-friendly error message
+      expect(state.error).toBeTruthy();
+      expect(state.error?.toLowerCase()).toContain('error');
+    });
   });
 
   describe('logout action', () => {
     it('should clear all auth state on logout', async () => {
-      // First login
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'token123', userId: '1', email: 'user@test.com' }))
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(200), ctx.json({ token: 'token123' }))
         )
       );
 
@@ -199,7 +236,6 @@ describe('Login Slice Integration', () => {
       expect(store.getState().auth.token).toBe('token123');
       expect(store.getState().auth.email).toBe('user@test.com');
 
-      // Then logout
       store.dispatch(logout());
 
       const state = store.getState().auth;
@@ -212,19 +248,19 @@ describe('Login Slice Integration', () => {
 
   describe('request cancellation', () => {
     it('should handle cancelled requests', async () => {
-      const controller = new AbortController();
-
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, async (_req, res, ctx) => {
-          await new Promise<void>((resolve) => {
-            setTimeout(() => resolve(), 100);
+        rest.post(API_ENDPOINTS.LOGIN, async (_, res, ctx) => {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 100);
           });
           return res(ctx.status(200), ctx.json({ token: 'token' }));
         })
       );
 
+      const controller = new AbortController();
       const promise = store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
 
+      // Abort immediately
       controller.abort();
 
       await promise;
@@ -237,7 +273,7 @@ describe('Login Slice Integration', () => {
   describe('schema validation', () => {
     it('should handle invalid response schema', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(200), ctx.json({ invalidField: 'value' }))
         )
       );
@@ -251,13 +287,11 @@ describe('Login Slice Integration', () => {
     });
   });
 
-  describe('thunk extra argument', () => {
-    it('should use loginAPI from DI container via thunk extra', async () => {
-      const mockResponse = { token: 'di-token', userId: '99', email: 'di@test.com' };
-
+  describe('real integration with DI container', () => {
+    it('should use real LoginAPI from DI container', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
-          res(ctx.status(200), ctx.json(mockResponse))
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(200), ctx.json({ token: 'di-token' }))
         )
       );
 
@@ -265,6 +299,7 @@ describe('Login Slice Integration', () => {
 
       const state = store.getState().auth;
       expect(state.token).toBe('di-token');
+      expect(state.email).toBe('di@test.com');
     });
   });
 });

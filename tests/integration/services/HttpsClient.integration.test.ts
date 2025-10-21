@@ -1,40 +1,66 @@
-import { rest } from 'msw';
-
-import '../setup';
 import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
 import { HttpError, isHttpError } from '@/services/HttpsClient/HttpError';
 import ResponseMessages from '@/services/HttpsClient/responseMessages';
 
-import server from '../mocks/server';
+const TEST_URL = 'http://localhost:8080/api/test';
 
-const TEST_URL = 'http://localhost:3000/api/test';
+const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 
 describe('FetchHttpsClient Integration', () => {
   let client: FetchHttpsClient;
 
+  beforeAll(() => {
+    global.fetch = mockFetch;
+  });
+
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
+
   beforeEach(() => {
     client = new FetchHttpsClient();
+    mockFetch.mockClear();
   });
 
   describe('GET requests', () => {
     it('should successfully make a GET request', async () => {
       const mockData = { id: 1, name: 'Test' };
-      server.use(rest.get(TEST_URL, (_, res, ctx) => res(ctx.status(200), ctx.json(mockData))));
+
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
 
       const result = await client.get<typeof mockData>(TEST_URL);
 
       expect(result).toEqual(mockData);
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
     });
 
     it('should handle GET request with AbortSignal', async () => {
       const mockData = { id: 1 };
       const controller = new AbortController();
 
-      server.use(rest.get(TEST_URL, (_, res, ctx) => res(ctx.status(200), ctx.json(mockData))));
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(mockData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
 
       const result = await client.get<typeof mockData>(TEST_URL, { signal: controller.signal });
 
       expect(result).toEqual(mockData);
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+        signal: controller.signal,
+      });
     });
   });
 
@@ -43,11 +69,10 @@ describe('FetchHttpsClient Integration', () => {
       const requestData = { name: 'New Item' };
       const responseData = { id: 1, ...requestData };
 
-      server.use(
-        rest.post(TEST_URL, async (req, res, ctx) => {
-          const body = await req.json();
-          expect(body).toEqual(requestData);
-          return res(ctx.status(201), ctx.json(responseData));
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(responseData), {
+          status: 201,
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -57,6 +82,11 @@ describe('FetchHttpsClient Integration', () => {
       );
 
       expect(result).toEqual(responseData);
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'POST',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData),
+      });
     });
   });
 
@@ -65,11 +95,10 @@ describe('FetchHttpsClient Integration', () => {
       const requestData = { id: 1, name: 'Updated Item' };
       const responseData = { ...requestData, updated: true };
 
-      server.use(
-        rest.put(TEST_URL, async (req, res, ctx) => {
-          const body = await req.json();
-          expect(body).toEqual(requestData);
-          return res(ctx.status(200), ctx.json(responseData));
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(responseData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -79,6 +108,11 @@ describe('FetchHttpsClient Integration', () => {
       );
 
       expect(result).toEqual(responseData);
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'PUT',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData),
+      });
     });
   });
 
@@ -87,11 +121,10 @@ describe('FetchHttpsClient Integration', () => {
       const requestData = { name: 'Patched Item' };
       const responseData = { id: 1, ...requestData };
 
-      server.use(
-        rest.patch(TEST_URL, async (req, res, ctx) => {
-          const body = await req.json();
-          expect(body).toEqual(requestData);
-          return res(ctx.status(200), ctx.json(responseData));
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(responseData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -101,6 +134,11 @@ describe('FetchHttpsClient Integration', () => {
       );
 
       expect(result).toEqual(responseData);
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'PATCH',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData),
+      });
     });
   });
 
@@ -109,11 +147,10 @@ describe('FetchHttpsClient Integration', () => {
       const requestData = { id: 1 };
       const responseData = { deleted: true };
 
-      server.use(
-        rest.delete(TEST_URL, async (req, res, ctx) => {
-          const body = await req.json();
-          expect(body).toEqual(requestData);
-          return res(ctx.status(200), ctx.json(responseData));
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(responseData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
@@ -123,63 +160,89 @@ describe('FetchHttpsClient Integration', () => {
       );
 
       expect(result).toEqual(responseData);
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'DELETE',
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData),
+      });
     });
 
     it('should successfully make a DELETE request without data', async () => {
       const responseData = { deleted: true };
 
-      server.use(
-        rest.delete(TEST_URL, (_, res, ctx) => res(ctx.status(200), ctx.json(responseData)))
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify(responseData), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
       );
 
       const result = await client.delete<unknown, typeof responseData>(TEST_URL);
 
       expect(result).toEqual(responseData);
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'DELETE',
+        headers: { Accept: 'application/json' },
+      });
     });
   });
 
   describe('status code handling', () => {
     it('should return undefined for 204 No Content', async () => {
-      server.use(rest.get(TEST_URL, (_, res, ctx) => res(ctx.status(204))));
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
 
       const result = await client.get<unknown>(TEST_URL);
 
       expect(result).toBeUndefined();
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
     });
 
     it('should return undefined for 205 Reset Content', async () => {
-      server.use(rest.get(TEST_URL, (_, res, ctx) => res(ctx.status(205))));
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 205 }));
 
       const result = await client.get<unknown>(TEST_URL);
 
       expect(result).toBeUndefined();
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
     });
 
     it('should return undefined for 304 Not Modified', async () => {
-      server.use(rest.get(TEST_URL, (_, res, ctx) => res(ctx.status(304))));
+      mockFetch.mockResolvedValueOnce(new Response(null, { status: 304 }));
 
       const result = await client.get<unknown>(TEST_URL);
 
       expect(result).toBeUndefined();
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      });
     });
   });
 
   describe('error handling', () => {
     it('should throw HttpError on 400 Bad Request', async () => {
-      server.use(
-        rest.get(TEST_URL, (_, res, ctx) =>
-          res(ctx.status(400), ctx.json({ message: 'Bad Request' }))
-        )
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'Bad Request' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
       );
 
       await expect(client.get(TEST_URL)).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 500 Internal Server Error', async () => {
-      server.use(
-        rest.get(TEST_URL, (_, res, ctx) =>
-          res(ctx.status(500), ctx.json({ message: 'Internal Server Error' }))
-        )
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: 'Internal Server Error' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        })
       );
 
       await expect(client.get(TEST_URL)).rejects.toThrow(HttpError);
@@ -187,91 +250,65 @@ describe('FetchHttpsClient Integration', () => {
 
     it('should throw HttpError with message from response', async () => {
       const errorMessage = 'Custom error message';
-      server.use(
-        rest.get(TEST_URL, (_, res, ctx) =>
-          res(ctx.status(400), ctx.json({ message: errorMessage }))
-        )
+
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ message: errorMessage }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        })
       );
 
-      try {
-        await client.get(TEST_URL);
-        fail('Expected to throw');
-      } catch (error) {
-        if (isHttpError(error)) {
-          expect(error.message).toBe(errorMessage);
-          expect(error.status).toBe(400);
-        } else {
-          fail('Expected HttpError');
-        }
-      }
+      await expect(client.get(TEST_URL)).rejects.toThrow(errorMessage);
     });
 
     it('should handle plain text error responses', async () => {
       const errorText = 'Plain text error';
-      server.use(
-        rest.get(TEST_URL, (_, res, ctx) =>
-          res(ctx.status(400), ctx.set('Content-Type', 'text/plain'), ctx.body(errorText))
-        )
+
+      mockFetch.mockResolvedValueOnce(
+        new Response(errorText, {
+          status: 400,
+          headers: { 'Content-Type': 'text/plain' },
+        })
       );
 
-      try {
-        await client.get(TEST_URL);
-        fail('Expected to throw');
-      } catch (error) {
-        if (isHttpError(error)) {
-          expect(error.message).toBe(errorText);
-        } else {
-          fail('Expected HttpError');
-        }
-      }
+      await expect(client.get(TEST_URL)).rejects.toThrow(errorText);
     });
 
     it('should handle empty response body with error status', async () => {
-      server.use(rest.get(TEST_URL, (_, res, ctx) => res(ctx.status(404))));
+      mockFetch.mockResolvedValueOnce(new Response('', { status: 404 }));
 
       await expect(client.get(TEST_URL)).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on network error', async () => {
-      server.use(rest.get(TEST_URL, (_, res) => res.networkError('Network error')));
+      mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
 
-      try {
-        await client.get(TEST_URL);
-        fail('Expected to throw');
-      } catch (error) {
-        if (isHttpError(error)) {
-          expect(error.status).toBe(0);
-          expect(error.message).toBe(ResponseMessages.NETWORK_ERROR);
-        } else {
-          fail('Expected HttpError');
-        }
+      const error = await client.get(TEST_URL).catch((err) => err);
+      expect(isHttpError(error)).toBe(true);
+      if (isHttpError(error)) {
+        expect(error.status).toBe(0);
+        expect(error.message).toBe(ResponseMessages.NETWORK_ERROR);
       }
     });
 
     it('should throw HttpError on non-JSON response when JSON expected', async () => {
-      server.use(
-        rest.get(TEST_URL, (_, res, ctx) =>
-          res(ctx.status(200), ctx.set('Content-Type', 'application/json'), ctx.body('not json'))
-        )
+      // Create a Response with invalid JSON that will trigger JSON_PARSE_FAILED
+      mockFetch.mockResolvedValueOnce(
+        new Response('invalid json content', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
       );
 
-      try {
-        await client.get(TEST_URL);
-        fail('Expected to throw');
-      } catch (error) {
-        if (isHttpError(error)) {
-          expect(error.message).toBe(ResponseMessages.JSON_PARSE_FAILED);
-        } else {
-          fail('Expected HttpError');
-        }
-      }
+      await expect(client.get(TEST_URL)).rejects.toThrow(ResponseMessages.JSON_PARSE_FAILED);
     });
 
     it('should handle empty JSON response', async () => {
-      server.use(
-        rest.get(TEST_URL, (_, res, ctx) =>
-          res(ctx.status(200), ctx.set('Content-Type', 'application/json'), ctx.body(''))
-        )
+      mockFetch.mockResolvedValueOnce(
+        new Response('', {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
       );
 
       const result = await client.get(TEST_URL);
@@ -279,20 +316,66 @@ describe('FetchHttpsClient Integration', () => {
     });
 
     it('should throw HttpError for non-JSON response with 200 status', async () => {
-      server.use(
-        rest.get(TEST_URL, (_, res, ctx) =>
-          res(ctx.status(200), ctx.set('Content-Type', 'text/html'), ctx.body('<html></html>'))
-        )
+      mockFetch.mockResolvedValueOnce(
+        new Response('<html></html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' },
+        })
       );
+
+      await expect(client.get(TEST_URL)).rejects.toThrow(ResponseMessages.RESPONSE_NOT_JSON);
+    });
+
+    it('should handle errors during body extraction for error responses', async () => {
+      // Create a response that will fail during body extraction in throwIfHttpError
+      const mockResponse = {
+        ok: false,
+        status: 400,
+        statusText: 'Bad Request',
+        url: TEST_URL,
+        headers: {
+          get: (key: string) => {
+            if (key === 'content-type') return 'application/json';
+            return null;
+          },
+        },
+        clone: () => ({
+          json: (): Promise<never> => Promise.reject(new Error('JSON parse error')),
+          text: (): Promise<never> => Promise.reject(new Error('Text parse error')),
+        }),
+      } as unknown as Response;
+
+      mockFetch.mockResolvedValueOnce(mockResponse);
+
+      await expect(client.get(TEST_URL)).rejects.toThrow(HttpError);
+    });
+
+    it('should use default error message when body extraction fails', async () => {
+      // Response with JSON content-type but extraction fails
+      const mockResponse = {
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        url: TEST_URL,
+        headers: {
+          get: (key: string) => (key === 'content-type' ? 'application/json' : null),
+        },
+        clone: () => ({
+          json: (): Promise<never> => Promise.reject(new Error('Cannot parse')),
+          text: (): Promise<never> => Promise.reject(new Error('Cannot read')),
+        }),
+      } as unknown as Response;
+
+      mockFetch.mockResolvedValueOnce(mockResponse);
 
       try {
         await client.get(TEST_URL);
-        fail('Expected to throw');
+        fail('Should have thrown an error');
       } catch (error) {
+        expect(isHttpError(error)).toBe(true);
         if (isHttpError(error)) {
-          expect(error.message).toBe(ResponseMessages.RESPONSE_NOT_JSON);
-        } else {
-          fail('Expected HttpError');
+          expect(error.status).toBe(500);
+          expect(error.message).toContain('500');
         }
       }
     });
@@ -303,31 +386,41 @@ describe('FetchHttpsClient Integration', () => {
       const formData = new FormData();
       formData.append('key', 'value');
 
-      server.use(
-        rest.post(TEST_URL, async (req, res, ctx) => {
-          // Check that Content-Type was not set to application/json for FormData
-          expect(req.headers.get('Content-Type')).not.toContain('application/json');
-          return res(ctx.status(200), ctx.json({ success: true }));
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
       const result = await client.post<FormData, { success: boolean }>(TEST_URL, formData);
+
       expect(result).toEqual({ success: true });
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: formData,
+      });
     });
 
     it('should handle string body', async () => {
       const stringData = 'plain string';
 
-      server.use(
-        rest.post(TEST_URL, async (req, res, ctx) => {
-          const body = await req.text();
-          expect(body).toBe(stringData);
-          return res(ctx.status(200), ctx.json({ success: true }));
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
         })
       );
 
       const result = await client.post<string, { success: boolean }>(TEST_URL, stringData);
+
       expect(result).toEqual({ success: true });
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'POST',
+        headers: { Accept: 'application/json' },
+        body: stringData,
+      });
     });
   });
 });

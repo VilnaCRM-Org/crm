@@ -97,6 +97,7 @@ export default class BaseAPI {
   }
 
   private isNetworkError(message: string): boolean {
+    if (!message) return false;
     const m = message.toLowerCase();
     return (
       m.includes('failed to fetch') ||
