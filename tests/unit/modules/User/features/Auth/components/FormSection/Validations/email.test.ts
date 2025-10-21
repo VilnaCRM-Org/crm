@@ -1,6 +1,7 @@
-import validateEmail, {
-  isValidEmailFormat,
-} from '@/modules/User/features/Auth/components/FormSection/Validations/email';
+import { TFunction } from 'i18next';
+
+import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
+import { isValidEmailFormat } from '@/modules/User/features/Auth/components/FormSection/Validations/email';
 
 import emptyUser from './contsants';
 
@@ -112,47 +113,60 @@ describe('email validation', () => {
     });
   });
 
-  describe('validateEmail', () => {
+  describe('validators.email', () => {
+    const tMock = ((key: string) => key) as unknown as TFunction;
+    const validators = createValidators(tMock);
+
     describe('valid emails', () => {
       it('should return true for valid email', () => {
-        expect(validateEmail('user@example.com', emptyUser)).toBe(true);
+        expect(validators.email('user@example.com', emptyUser)).toBe(true);
       });
 
       it.each(['test@test.com', 'first.last@sub.domain.com', 'user123@example456.com'])(
         'should return true for valid email: %s',
         (email) => {
-          expect(validateEmail(email, emptyUser)).toBe(true);
+          expect(validators.email(email, emptyUser)).toBe(true);
         }
       );
     });
 
     describe('invalid emails', () => {
       it('should return error message for invalid email', () => {
-        const result = validateEmail('invalid', emptyUser);
-        expect(result).toBe('sign_up.form.email_input.invalid_message');
+        const result = validators.email('invalid', emptyUser);
+        expect(result).toBe('sign_up.form.email_input.email_format_error');
       });
 
-      it.each(['invalid@', '@example.com', 'user@', 'user @example.com', 'user@example'])(
+      it.each(['invalid@', 'user@', 'user@example'])(
         'should return error message for invalid email: %s',
         (email) => {
-          expect(validateEmail(email, emptyUser)).toBe('sign_up.form.email_input.invalid_message');
+          expect(validators.email(email, emptyUser)).toBe(
+            'sign_up.form.email_input.email_format_error'
+          );
+        }
+      );
+      it.each(['@example.com', 'user @example.com'])(
+        'should return error message for invalid email: %s',
+        (email) => {
+          expect(validators.email(email, emptyUser)).toBe(
+            'sign_up.form.email_input.invalid_message'
+          );
         }
       );
     });
 
     describe('empty email', () => {
       it('should return required error for empty string', () => {
-        expect(validateEmail('', emptyUser)).toBe('sign_up.form.email_input.required');
+        expect(validators.email('', emptyUser)).toBe('sign_up.form.email_input.required');
       });
 
       it('should return required error for undefined', () => {
-        expect(validateEmail(undefined as unknown as string, emptyUser)).toBe(
+        expect(validators.email(undefined as unknown as string, emptyUser)).toBe(
           'sign_up.form.email_input.required'
         );
       });
 
       it('should return required error for null', () => {
-        expect(validateEmail(null as unknown as string, emptyUser)).toBe(
+        expect(validators.email(null as unknown as string, emptyUser)).toBe(
           'sign_up.form.email_input.required'
         );
       });
@@ -160,34 +174,30 @@ describe('email validation', () => {
 
     describe('validation order', () => {
       it('should check required before format', () => {
-        const result = validateEmail('', emptyUser);
+        const result = validators.email('', emptyUser);
         expect(result).toBe('sign_up.form.email_input.required');
         expect(result).not.toBe('sign_up.form.email_input.invalid_message');
       });
 
       it('should check format after required', () => {
-        const result = validateEmail('invalid', emptyUser);
-        expect(result).toBe('sign_up.form.email_input.invalid_message');
+        const result = validators.email('invalid', emptyUser);
+        expect(result).toBe('sign_up.form.email_input.email_format_error');
       });
     });
 
     describe('edge cases', () => {
       it('should handle whitespace-only email', () => {
-        expect(validateEmail('   ', emptyUser)).toBe('sign_up.form.email_input.invalid_message');
+        expect(validators.email('   ', emptyUser)).toBe('sign_up.form.email_input.required');
       });
 
       it('should handle email with leading/trailing spaces', () => {
-        // Note: The validator doesn't trim, so spaces make it invalid
-        expect(validateEmail(' user@example.com ', emptyUser)).toBe(
-          'sign_up.form.email_input.invalid_message'
-        );
+        expect(validators.email(' user@example.com ', emptyUser)).toBe(true);
       });
 
       it('should handle very long email', () => {
         const longLocalPart = 'a'.repeat(100);
         const email = `${longLocalPart}@example.com`;
-        // Should still validate based on format
-        expect(validateEmail(email, emptyUser)).toBe(true);
+        expect(validators.email(email, emptyUser)).toBe(true);
       });
     });
   });

@@ -108,6 +108,9 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^17.8.1
         version: 17.8.1
+      '@faker-js/faker':
+        specifier: ^10.1.0
+        version: 10.1.0
       '@lhci/cli':
         specifier: ^0.10.0
         version: 0.10.0
@@ -1524,6 +1527,10 @@ packages:
   '@eslint/js@8.56.0':
     resolution: {integrity: sha512-gMsVel9D7f2HLkBma9VbtzZRehRogVRfbr++f06nL2vnCGCNlzOD+/MUov/F4p8myyAHspEhVobgjpX64q5m6A==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
+
+  '@faker-js/faker@10.1.0':
+    resolution: {integrity: sha512-C3mrr3b5dRVlKPJdfrAXS8+dq+rq8Qm5SNRazca0JKgw1HQERFmrVb0towvMmw5uu8hHKNiQasMaR/tydf3Zsg==}
+    engines: {node: ^20.19.0 || ^22.13.0 || ^23.5.0 || >=24.0.0, npm: '>=10'}
 
   '@graphql-tools/merge@8.4.2':
     resolution: {integrity: sha512-XbrHAaj8yDuINph+sAfuq3QCZ/tKblrTLOpirK0+CAgNlZUCHs0Fa+xtMUURgwCVThLle1AF7svJCxFizygLsw==}
@@ -11107,6 +11114,8 @@ snapshots:
       - supports-color
 
   '@eslint/js@8.56.0': {}
+
+  '@faker-js/faker@10.1.0': {}
 
   '@graphql-tools/merge@8.4.2(graphql@16.11.0)':
     dependencies:

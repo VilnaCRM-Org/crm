@@ -28,6 +28,7 @@ export interface UIFormProps<T extends FieldValues> {
   subtitle?: ReactNode;
   showTitle?: boolean;
   showSubtitle?: boolean;
+  resetOnSuccess?: boolean;
 }
 
 export default function UIForm<T extends FieldValues>({
@@ -42,14 +43,22 @@ export default function UIForm<T extends FieldValues>({
   subtitle,
   showTitle = true,
   showSubtitle = true,
+  resetOnSuccess = false,
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
 
+  const handleSubmit: SubmitHandler<T> = async (data) => {
+    await onSubmit(data);
+    if (resetOnSuccess) {
+      methods.reset(defaultValues);
+    }
+  };
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading
     <FormProvider {...methods}>
-      <form noValidate onSubmit={methods.handleSubmit(onSubmit)}>
+      <form noValidate onSubmit={methods.handleSubmit(handleSubmit)}>
+        {/* TODO: Implement correct error handling (replace temporary inline error display). Update tests */}
         {error && (
           <UITypography role="alert" aria-live="polite" sx={{ color: 'red', marginBottom: '1rem' }}>
             {error}

@@ -10,7 +10,7 @@ import getSubmitLabelKey from '../../../utils/getSubmitLabelKey';
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
 import UserOptions from '../components/UserOptions';
-import { validateEmail } from '../Validations';
+import { createValidators } from '../Validations';
 
 export default function LoginForm(): JSX.Element {
   const [error, setError] = useState<string>('');
@@ -32,6 +32,7 @@ export default function LoginForm(): JSX.Element {
       setIsSubmitting(false);
     }
   };
+  const validators = createValidators(t);
 
   return (
     <UIForm<LoginUserDto>
@@ -49,7 +50,7 @@ export default function LoginForm(): JSX.Element {
         placeholder="vilnaCRM@gmail.com"
         type="email"
         autoComplete="email"
-        rules={{ required: t('sign_up.form.email_input.required'), validate: validateEmail }}
+        rules={{ required: t('sign_up.form.email_input.required'), validate: validators.email }}
       />
       <PasswordField<LoginUserDto>
         placeholder={t('sign_in.form.password_input.placeholder')}

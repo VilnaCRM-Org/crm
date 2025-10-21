@@ -1,11 +1,6 @@
-import {
-  validateEmail,
-  validateFullName,
-  validatePassword,
-} from '@/modules/User/features/Auth/components/FormSection/Validations';
-import validateEmailFunc from '@/modules/User/features/Auth/components/FormSection/Validations/email';
-import validateFullNameFunc from '@/modules/User/features/Auth/components/FormSection/Validations/name';
-import validatePasswordFunc from '@/modules/User/features/Auth/components/FormSection/Validations/password';
+import { TFunction } from 'i18next';
+
+import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
 
 import emptyUser from './contsants';
 
@@ -14,56 +9,51 @@ jest.mock('i18next', () => ({
 }));
 
 describe('validations module exports', () => {
+  const tMock = ((key: string) => key) as unknown as TFunction;
+  const validators = createValidators(tMock);
+
   describe('validateEmail export', () => {
     it('should export validateEmail function', () => {
-      expect(validateEmail).toBeDefined();
-      expect(typeof validateEmail).toBe('function');
-    });
-
-    it('should be the same as the default export from email module', () => {
-      expect(validateEmail).toBe(validateEmailFunc);
+      expect(validators.email).toBeDefined();
+      expect(typeof validators.email).toBe('function');
     });
 
     it('should validate email correctly', () => {
-      expect(validateEmail('user@example.com', emptyUser)).toBe(true);
-      expect(validateEmail('invalid', emptyUser)).toBe('sign_up.form.email_input.invalid_message');
-      expect(validateEmail('', emptyUser)).toBe('sign_up.form.email_input.required');
+      expect(validators.email('user@example.com', emptyUser)).toBe(true);
+      expect(validators.email('invalid', emptyUser)).toBe(
+        'sign_up.form.email_input.email_format_error'
+      );
+      expect(validators.email('', emptyUser)).toBe('sign_up.form.email_input.required');
     });
   });
 
   describe('validateFullName export', () => {
     it('should export validateFullName function', () => {
-      expect(validateFullName).toBeDefined();
-      expect(typeof validateFullName).toBe('function');
-    });
-
-    it('should be the same as the default export from name module', () => {
-      expect(validateFullName).toBe(validateFullNameFunc);
+      expect(validators.fullName).toBeDefined();
+      expect(typeof validators.fullName).toBe('function');
     });
 
     it('should validate full name correctly', () => {
-      expect(validateFullName('John Doe', emptyUser)).toBe(true);
-      expect(validateFullName('John', emptyUser)).toBe(
+      expect(validators.fullName('John Doe', emptyUser)).toBe(true);
+      expect(validators.fullName('John', emptyUser)).toBe(
         'sign_up.form.name_input.full_name_format_error'
       );
-      expect(validateFullName('', emptyUser)).toBe('sign_up.form.name_input.required');
+      expect(validators.fullName('', emptyUser)).toBe('sign_up.form.name_input.required');
     });
   });
 
   describe('validatePassword export', () => {
     it('should export validatePassword function', () => {
-      expect(validatePassword).toBeDefined();
-      expect(typeof validatePassword).toBe('function');
-    });
-
-    it('should be the same as the default export from password module', () => {
-      expect(validatePassword).toBe(validatePasswordFunc);
+      expect(validators.password).toBeDefined();
+      expect(typeof validators.password).toBe('function');
     });
 
     it('should validate password correctly', () => {
-      expect(validatePassword('Password1')).toBe(true);
-      expect(validatePassword('pass')).toBe('sign_up.form.password_input.error_length');
-      expect(validatePassword('')).toBe('sign_up.form.password_input.error_required');
+      expect(validators.password('Password1', emptyUser)).toBe(true);
+      expect(validators.password('pass', emptyUser)).toBe(
+        'sign_up.form.password_input.error_length'
+      );
+      expect(validators.password('', emptyUser)).toBe('sign_up.form.password_input.error_required');
     });
   });
 
@@ -75,9 +65,9 @@ describe('validations module exports', () => {
         password: 'Password1',
       };
 
-      expect(validateEmail(formData.email, emptyUser)).toBe(true);
-      expect(validateFullName(formData.fullName, emptyUser)).toBe(true);
-      expect(validatePassword(formData.password)).toBe(true);
+      expect(validators.email(formData.email, emptyUser)).toBe(true);
+      expect(validators.fullName(formData.fullName, emptyUser)).toBe(true);
+      expect(validators.password(formData.password, emptyUser)).toBe(true);
     });
 
     it('should return errors for invalid form data', () => {
@@ -87,13 +77,15 @@ describe('validations module exports', () => {
         password: 'pass',
       };
 
-      expect(validateEmail(formData.email, emptyUser)).toBe(
-        'sign_up.form.email_input.invalid_message'
+      expect(validators.email(formData.email, emptyUser)).toBe(
+        'sign_up.form.email_input.email_format_error'
       );
-      expect(validateFullName(formData.fullName, emptyUser)).toBe(
+      expect(validators.fullName(formData.fullName, emptyUser)).toBe(
         'sign_up.form.name_input.full_name_format_error'
       );
-      expect(validatePassword(formData.password)).toBe('sign_up.form.password_input.error_length');
+      expect(validators.password(formData.password, emptyUser)).toBe(
+        'sign_up.form.password_input.error_length'
+      );
     });
 
     it('should handle empty form data', () => {
@@ -103,11 +95,11 @@ describe('validations module exports', () => {
         password: '',
       };
 
-      expect(validateEmail(formData.email, emptyUser)).toBe('sign_up.form.email_input.required');
-      expect(validateFullName(formData.fullName, emptyUser)).toBe(
+      expect(validators.email(formData.email, emptyUser)).toBe('sign_up.form.email_input.required');
+      expect(validators.fullName(formData.fullName, emptyUser)).toBe(
         'sign_up.form.name_input.required'
       );
-      expect(validatePassword(formData.password)).toBe(
+      expect(validators.password(formData.password, emptyUser)).toBe(
         'sign_up.form.password_input.error_required'
       );
     });

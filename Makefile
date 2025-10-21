@@ -123,7 +123,7 @@ test: test-unit-all
 
 RUN_VISUAL                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 RUN_E2E                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
-PLAYWRIGHT_TEST_CMD             = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
+PLAYWRIGHT_TEST_CMD         = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
 
 
 help:
