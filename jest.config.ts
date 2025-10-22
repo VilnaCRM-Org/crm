@@ -21,7 +21,7 @@ const testMatchMap: Record<string, string[]> = {
 
 const testMatch = testMatchMap[TEST_ENV ?? ''] || testMatchMap.default;
 
-const thresholdValue = isIntegration ? 100 : 90;
+const thresholdValue = isIntegration ? 90 : 100;
 const coverageThreshold = {
   global: {
     branches: thresholdValue,
@@ -30,7 +30,6 @@ const coverageThreshold = {
     statements: thresholdValue,
   },
 };
-
 const config: Config = {
   preset: 'ts-jest',
   clearMocks: true,

@@ -4,7 +4,7 @@ on:
     branches:
       - main
 jobs:
-  unit:
+  integration:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
