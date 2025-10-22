@@ -202,11 +202,7 @@ describe('LoginAPI Integration', () => {
   });
 
   describe('request cancellation', () => {
-    // Note: AbortSignal tests are skipped because:
-    // 1. fetch/MSW in Node test environment doesn't properly handle AbortSignal
-    // 2. The actual abort logic is in BaseAPI.ts which has 100% coverage
-    // 3. In real browser/production environments, AbortSignal works correctly
-    it.skip('should handle pre-aborted AbortSignal (skipped: test environment limitation)', async () => {
+    it('should handle pre-aborted AbortSignal', async () => {
       const controller = new AbortController();
 
       // Abort before making the request

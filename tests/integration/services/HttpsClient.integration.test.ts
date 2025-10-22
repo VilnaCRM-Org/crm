@@ -423,6 +423,49 @@ describe('FetchHttpsClient Integration', () => {
       });
     });
   });
+
+  describe('edge cases for complete coverage', () => {
+    it('should handle response without content-type header', async () => {
+      // Test the fallback branch when content-type is null (line 94)
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (): null => null, // No content-type header
+        },
+        clone: () => ({
+          text: (): Promise<string> => Promise.resolve('plain text'),
+        }),
+        text: (): Promise<string> => Promise.resolve('plain text'),
+      } as unknown as Response;
+
+      mockFetch.mockResolvedValueOnce(mockResponse);
+
+      await expect(client.get(TEST_URL)).rejects.toThrow(ResponseMessages.RESPONSE_NOT_JSON);
+    });
+
+    it('should return undefined for non-JSON response with empty body', async () => {
+      // Test line 98: return undefined when non-JSON response has no text
+      const mockResponse = {
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: {
+          get: (): string => 'text/plain',
+        },
+        clone: () => ({
+          text: (): Promise<string> => Promise.resolve(''),
+        }),
+        text: (): Promise<string> => Promise.resolve(''),
+      } as unknown as Response;
+
+      mockFetch.mockResolvedValueOnce(mockResponse);
+
+      const result = await client.get(TEST_URL);
+      expect(result).toBeUndefined();
+    });
+  });
 });
 
 describe('HttpError class', () => {
