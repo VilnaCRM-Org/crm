@@ -6,7 +6,8 @@ import 'reflect-metadata';
 
 // Set test environment variable for API base URL BEFORE any imports
 // This ensures buildApiUrl constructs absolute URLs that MSW can intercept
-process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080';
+const mockoonPort = process.env.MOCKOON_PORT || '8080';
+process.env.REACT_APP_MOCKOON_URL = `http://localhost:${mockoonPort}`;
 
 // Import node-fetch and set as global BEFORE any other imports
 import fetch, { Headers, Request, Response } from 'node-fetch';

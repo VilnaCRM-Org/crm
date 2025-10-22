@@ -33,6 +33,7 @@ export async function fillEmailInput(page: Page, user: RegisterUserDto): Promise
   await page.locator('button', { hasText: signUpButton }).click();
   for (const expectation of expectationsEmail) {
     await emailInput.fill(expectation.email);
+    await emailInput.blur();
     const emailError: Locator = page
       .locator(requiredErrorSelector, { hasText: requiredEmailError })
       .first();

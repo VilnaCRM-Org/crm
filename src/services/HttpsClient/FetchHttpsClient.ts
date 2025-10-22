@@ -45,11 +45,13 @@ export default class FetchHttpsClient implements HttpsClient {
       const response = await fetch(url, config);
       return await this.processResponse<R>(response);
     } catch (err) {
-      // If it's already an HttpError (from throwIfHttpError or processResponse), re-throw it
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw err;
+      }
+
       if (err instanceof HttpError) {
         throw err;
       }
-      // Only wrap non-HttpErrors as network errors
       throw new HttpError({ status: 0, message: ResponseMessages.NETWORK_ERROR, cause: err });
     }
   }

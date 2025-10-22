@@ -5,7 +5,11 @@ describe('urlBuilder', () => {
   const originalEnv = process.env.REACT_APP_MOCKOON_URL;
 
   afterEach(() => {
-    process.env.REACT_APP_MOCKOON_URL = originalEnv;
+    if (originalEnv === undefined) {
+      delete process.env.REACT_APP_MOCKOON_URL;
+    } else {
+      process.env.REACT_APP_MOCKOON_URL = originalEnv;
+    }
   });
 
   describe('with base URL', () => {

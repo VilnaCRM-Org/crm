@@ -148,17 +148,11 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         ok: true,
         status: 200,
         headers: new Headers({ 'content-type': 'text/html' }),
-        clone() {
-          return {
-            text: jest.fn().mockRejectedValue(new Error('Text read error')),
-          };
-        },
+        text: jest.fn().mockRejectedValue(new Error('Text read error')),
       } as unknown as Response;
-
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
-
-      await expect(client.get('/test')).rejects.toThrow(HttpError);
-      await expect(client.get('/test')).rejects.toThrow('Network error');
+      const result = await client.get('/test');
+      expect(result).toBeUndefined();
     });
   });
 

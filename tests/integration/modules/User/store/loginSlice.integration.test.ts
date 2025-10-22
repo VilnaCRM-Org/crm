@@ -397,12 +397,8 @@ describe('Login Slice Integration', () => {
         })
       );
 
-      const controller = new AbortController();
       const promise = store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
-
-      // Abort immediately
-      controller.abort();
-
+      promise.abort();
       await promise;
 
       const state = store.getState().auth;

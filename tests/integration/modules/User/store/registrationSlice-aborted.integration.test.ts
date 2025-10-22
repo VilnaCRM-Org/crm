@@ -44,27 +44,31 @@ describe('Registration Slice Aborted Action Tests', () => {
     }) as TestStore;
   });
 
-  it('should handle aborted action by not updating error state', async () => {
-    // Set error state first
+  it('should handle cancelled requests', async () => {
     server.use(
-      rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-        res(ctx.status(500), ctx.json({ message: 'Error message' }))
-      )
+      rest.post(API_ENDPOINTS.REGISTER, async (_, res, ctx) => {
+        await new Promise((resolve) => {
+          setTimeout(resolve, 500);
+        });
+        return res(ctx.status(201), ctx.json({ fullName: 'Test User', email: 'test@test.com' }));
+      })
     );
 
-    await store.dispatch(
+    const promise = store.dispatch(
       registerUser({ email: 'test@test.com', password: 'pass', fullName: 'Test' })
     );
 
-    // Verify error is set
-    expect(store.getState().registration.error).toBeTruthy();
+    // Abort the thunk before the response completes
+    promise.abort();
 
-    // Now test the aborted path - the action.meta.aborted check in registrationSlice
-    // This is tested by verifying that when an aborted action is received,
-    // the reducer returns early without modifying state
+    // Swallow rejection so the test doesn't fail
+    await promise.catch(() => {});
+
     const state = store.getState().registration;
+
     expect(state.loading).toBe(false);
-    expect(state.error).toBeTruthy(); // Error should still be there from previous call
+    expect(state.user).toBeNull();
+    expect(state.error).toBeNull();
   });
 
   it('should handle error without payload displayMessage', async () => {

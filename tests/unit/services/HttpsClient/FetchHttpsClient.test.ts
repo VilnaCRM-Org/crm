@@ -542,6 +542,20 @@ describe('FetchHttpsClient', () => {
         cause: networkError,
       });
     });
+
+    it('should rethrow AbortError if fetch rejects with AbortError', async () => {
+      const abortError = new Error('Aborted during fetch');
+      abortError.name = 'AbortError';
+
+      mockFetch.mockRejectedValue(abortError);
+
+      await expect(client.get('/api/test')).rejects.toMatchObject({
+        name: 'AbortError',
+        message: 'Aborted during fetch',
+      });
+
+      expect(mockFetch).toHaveBeenCalled();
+    });
   });
 
   describe('body types', () => {

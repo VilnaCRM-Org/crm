@@ -281,23 +281,26 @@ describe('Registration Slice Integration', () => {
       server.use(
         rest.post(API_ENDPOINTS.REGISTER, async (_, res, ctx) => {
           await new Promise((resolve) => {
-            setTimeout(resolve, 100);
+            setTimeout(resolve, 500);
           });
           return res(ctx.status(201), ctx.json({ fullName: 'Test User', email: 'test@test.com' }));
         })
       );
 
-      const controller = new AbortController();
       const promise = store.dispatch(
         registerUser({ email: 'test@test.com', password: 'pass', fullName: 'Test' })
       );
 
-      controller.abort();
+      // Abort immediately — definitely before fetch completes
+      promise.abort();
 
-      await promise;
+      await promise.catch(() => {});
 
       const state = store.getState().registration;
+
       expect(state.loading).toBe(false);
+      expect(state.user).toBeNull();
+      expect(state.error).toBeNull();
     });
   });
 

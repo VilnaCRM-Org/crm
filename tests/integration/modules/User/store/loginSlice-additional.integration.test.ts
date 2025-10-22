@@ -42,15 +42,30 @@ describe('Login Slice Coverage Tests', () => {
   });
 
   describe('error message fallbacks', () => {
-    it('should use "Unknown error" when both payload and error.message are undefined', async () => {
-      // Mock an error that will result in no payload and no error.message
+    it('should get error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, async () => {
+          throw new Error();
+        })
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+
+      expect(state.error).toBeTruthy();
+      expect(state.loading).toBe(false);
+    });
+
+    it('should set network error message when login fails due to network', async () => {
       server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Network failure')));
 
       await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
 
       const state = store.getState().auth;
-      expect(state.error).toBeTruthy();
-      // The error should be set to some message (either from payload, error.message, or fallback)
+
+      expect(state.error).toBe('Network error. Please check your connection.');
+      expect(state.loading).toBe(false);
     });
 
     it('should use action.error.message when payload is undefined', async () => {
@@ -64,6 +79,7 @@ describe('Login Slice Coverage Tests', () => {
 
       const state = store.getState().auth;
       expect(state.error).toBeTruthy();
+      expect(state.error?.toLowerCase()).toContain('server error');
     });
   });
 });
