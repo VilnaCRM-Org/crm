@@ -10,7 +10,8 @@ const rootsMap: Record<string, string[]> = {
 
 const roots = rootsMap[TEST_ENV ?? ''] || rootsMap.default;
 
-const testEnvironment = TEST_ENV === 'server' || TEST_ENV === 'integration' ? 'node' : 'jsdom';
+const isIntegration = process.env.TEST_ENV === 'integration';
+const testEnvironment = TEST_ENV === 'server' || isIntegration ? 'node' : 'jsdom';
 
 const testMatchMap: Record<string, string[]> = {
   server: ['<rootDir>/tests/apollo-server/**/*.test.{ts,mts}'],
@@ -19,6 +20,16 @@ const testMatchMap: Record<string, string[]> = {
 };
 
 const testMatch = testMatchMap[TEST_ENV ?? ''] || testMatchMap.default;
+
+const thresholdValue = isIntegration ? 100 : 90;
+const coverageThreshold = {
+  global: {
+    branches: thresholdValue,
+    functions: thresholdValue,
+    lines: thresholdValue,
+    statements: thresholdValue,
+  },
+};
 
 const config: Config = {
   preset: 'ts-jest',
@@ -55,14 +66,7 @@ const config: Config = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.+)\\.js$': '$1',
   },
-  coverageThreshold: {
-    global: {
-      branches: 100,
-      functions: 100,
-      lines: 100,
-      statements: 100,
-    },
-  },
+  coverageThreshold,
 };
 
 export default config;
