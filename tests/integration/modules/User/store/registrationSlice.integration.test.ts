@@ -305,7 +305,8 @@ describe('Registration Slice Integration', () => {
     it('should handle invalid response schema', async () => {
       server.use(
         rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-          res(ctx.status(201), ctx.json({ invalidField: 'value' }))
+          // Response with wrong type for email (should be string but is number)
+          res(ctx.status(201), ctx.json({ email: 123, fullName: true }))
         )
       );
 
@@ -322,7 +323,8 @@ describe('Registration Slice Integration', () => {
     it('should handle schema validation error messages', async () => {
       server.use(
         rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-          res(ctx.status(201), ctx.json({ email: 'invalid-schema' }))
+          // Response with wrong types should fail zod validation
+          res(ctx.status(201), ctx.json({ email: [], fullName: {} }))
         )
       );
 

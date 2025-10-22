@@ -222,6 +222,146 @@ describe('Login Slice Integration', () => {
       expect(state.error).toBeTruthy();
       expect(state.error?.toLowerCase()).toContain('error');
     });
+
+    it('should handle 403 forbidden error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(403), ctx.json({ message: 'Forbidden' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 404 not found error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(404), ctx.json({ message: 'Not found' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 408 timeout error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(408), ctx.json({ message: 'Request timeout' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 422 unprocessable entity error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(422), ctx.json({ message: 'Unprocessable' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 429 rate limit error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(429), ctx.json({ message: 'Too many requests' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 409 conflict error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(409), ctx.json({ message: 'Conflict' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 502 bad gateway error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(502), ctx.json({ message: 'Bad gateway' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 503 service unavailable error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(503), ctx.json({ message: 'Service unavailable' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 504 gateway timeout error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(504), ctx.json({ message: 'Gateway timeout' }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle unknown HTTP status code', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.status(418), ctx.json({ message: "I'm a teapot" }))
+        )
+      );
+
+      await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+      const state = store.getState().auth;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
   });
 
   describe('logout action', () => {

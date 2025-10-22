@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 import fillInput from '../../../../../../../utils/fillInput';
 
-import { REGISTRATION_URL, userData } from './constants/constants';
+import { REGISTRATION_URL, REGISTRATION_API_URL, userData } from './constants/constants';
 import { fillEmailInput, fillInitialsInput, fillPasswordInput } from './utils/fillForm';
 import getFormFields from './utils/getFormFields';
 import { serverErrorResponse, successResponse } from './utils/responses';
@@ -19,7 +19,7 @@ test.describe('Registration Form', () => {
     await fillInput(emailInput, userData.email);
     await fillInput(passwordInput, userData.password);
 
-    await page.route(REGISTRATION_URL, successResponse);
+    await page.route(REGISTRATION_API_URL, successResponse);
 
     await signupButton.click();
 
@@ -39,7 +39,10 @@ test.describe('Registration Form', () => {
   test('displays server error on registration failure', async ({ page }) => {
     const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
 
-    await page.route('**/api/users', serverErrorResponse(400, { message: 'EMAIL_ALREADY_EXISTS' }));
+    await page.route(
+      REGISTRATION_API_URL,
+      serverErrorResponse(400, { message: 'EMAIL_ALREADY_EXISTS' })
+    );
 
     await fillInput(initialsInput, userData.fullName);
     await fillInput(emailInput, userData.email);

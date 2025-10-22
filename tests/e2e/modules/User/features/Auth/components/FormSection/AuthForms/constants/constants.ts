@@ -4,6 +4,7 @@ import { t } from '../../../../../../../../utils/initializeLocalization';
 import { ExpectationEmail, ExpectationsPassword, User } from '../types';
 
 export const REGISTRATION_URL = '/authentication';
+export const REGISTRATION_API_URL = '**/api/users'; // mockoon schema
 
 export const placeholderInitials: string = t('sign_up.form.name_input.placeholder');
 export const placeholderEmail: string = t('sign_up.form.email_input.placeholder');
