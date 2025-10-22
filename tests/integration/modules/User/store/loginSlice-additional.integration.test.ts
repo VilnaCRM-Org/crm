@@ -82,4 +82,31 @@ describe('Login Slice Coverage Tests', () => {
       expect(state.error?.toLowerCase()).toContain('server error');
     });
   });
+
+  describe('Login Slice - Error Handling', () => {
+    // Option 1: Integration tests with thunk
+    describe('through loginUser thunk', () => {
+      it('should set error from displayMessage for network failures', async () => {
+        server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Network failure')));
+
+        await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+        const state = store.getState().auth;
+        expect(state.error).toBe('Network error. Please check your connection.');
+      });
+
+      it('should set error from displayMessage for server errors', async () => {
+        server.use(
+          rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+            res(ctx.status(500), ctx.json({ message: 'Server error' }))
+          )
+        );
+
+        await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
+
+        const state = store.getState().auth;
+        expect(state.error).toBe('Internal server error');
+      });
+    });
+  });
 });

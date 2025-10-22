@@ -60,12 +60,13 @@ describe('Registration Slice Integration', () => {
   describe('successful registration flow', () => {
     it('should update state to pending when registration starts', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, async (_, res, ctx) => {
-          await new Promise((resolve) => {
-            setTimeout(resolve, 50);
-          });
-          return res(ctx.status(201), ctx.json({ fullName: 'Test User', email: 'test@test.com' }));
-        })
+        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
+          res(
+            ctx.delay(50),
+            ctx.status(201),
+            ctx.json({ fullName: 'Test User', email: 'test@test.com' })
+          )
+        )
       );
 
       const promise = store.dispatch(

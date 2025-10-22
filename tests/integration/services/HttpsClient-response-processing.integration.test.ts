@@ -4,9 +4,19 @@ import { HttpError } from '@/services/HttpsClient/HttpError';
 
 describe('FetchHttpsClient Response Processing Coverage', () => {
   let client: FetchHttpsClient;
+  const originalFetch = global.fetch;
 
   beforeEach(() => {
     client = new FetchHttpsClient();
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    if (jest.isMockFunction(originalFetch)) {
+      jest.restoreAllMocks();
+    } else {
+      jest.resetAllMocks?.();
+    }
   });
 
   describe('response content type handling', () => {
@@ -61,6 +71,11 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       await expect(client.get('/test')).rejects.toThrow(HttpError);
       await expect(client.get('/test')).rejects.toThrow('Response is not JSON');
+      await expect(client.get('/test')).rejects.toBeInstanceOf(HttpError);
+      await client.get('/test').catch((e) => {
+        expect(e).toBeInstanceOf(HttpError);
+        expect((e as HttpError).status).toBe(200);
+      });
     });
 
     it('should handle empty text response for non-JSON content type', async () => {

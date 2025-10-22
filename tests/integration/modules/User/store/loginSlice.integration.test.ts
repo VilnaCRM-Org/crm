@@ -56,13 +56,9 @@ describe('Login Slice Integration', () => {
   describe('successful login flow', () => {
     it('should update state to pending when login starts', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, async (_, res, ctx) => {
-          // Delay response to capture pending state
-          await new Promise((resolve) => {
-            setTimeout(resolve, 50);
-          });
-          return res(ctx.status(200), ctx.json({ token: 'token123' }));
-        })
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
+          res(ctx.delay(50), ctx.status(200), ctx.json({ token: 'token123' }))
+        )
       );
 
       const promise = store.dispatch(loginUser({ email: 'user@test.com', password: 'pass' }));

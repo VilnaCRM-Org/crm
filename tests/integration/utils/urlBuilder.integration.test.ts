@@ -78,6 +78,18 @@ describe('urlBuilder', () => {
     });
   });
 
+  it('should preserve query string and not double-encode', () => {
+    process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api/';
+    const result = buildApiUrl('/users?active=true&role=admin');
+    expect(result).toBe('http://localhost:8080/api/users?active=true&role=admin');
+  });
+
+  it('should preserve URL fragment', () => {
+    process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api';
+    const result = buildApiUrl('/users#section');
+    expect(result).toBe('http://localhost:8080/api/users#section');
+  });
+
   describe('without base URL', () => {
     it('should return endpoint with leading slash when base URL is empty', () => {
       process.env.REACT_APP_MOCKOON_URL = '';

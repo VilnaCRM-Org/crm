@@ -10,7 +10,7 @@ const rootsMap: Record<string, string[]> = {
 
 const roots = rootsMap[TEST_ENV ?? ''] || rootsMap.default;
 
-const isIntegration = process.env.TEST_ENV === 'integration';
+const isIntegration = TEST_ENV === 'integration';
 const testEnvironment = TEST_ENV === 'server' || isIntegration ? 'node' : 'jsdom';
 
 const testMatchMap: Record<string, string[]> = {
@@ -36,7 +36,7 @@ const config: Config = {
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
-  coveragePathIgnorePatterns: ['/node_modules/', '/jest.setup.ts'],
+  coveragePathIgnorePatterns: ['/node_modules/', '<rootDir>/jest.setup.ts'],
   collectCoverageFrom:
     process.env.TEST_ENV === 'server'
       ? ['<rootDir>/docker/apollo-server/lib/**/*.{ts,mts}', '!**/*.d.ts']
@@ -58,11 +58,12 @@ const config: Config = {
     '^.+\\.(mts)$': ['ts-jest', { useESM: true }],
     '^.+\\.js$': 'babel-jest',
   },
-  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  setupFilesAfterEnv: isIntegration
+    ? ['<rootDir>/tests/integration/setup.ts']
+    : ['<rootDir>/jest.setup.ts'],
   modulePathIgnorePatterns: ['<rootDir>/.stryker-tmp/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mts', 'json', 'node'],
   moduleNameMapper: {
-    '^@$': '<rootDir>/src',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.+)\\.js$': '$1',
   },

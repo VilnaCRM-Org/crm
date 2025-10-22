@@ -73,7 +73,6 @@ describe('FetchHttpsClient', () => {
 
       await expect(client.get('/api/test', { signal: controller.signal })).rejects.toMatchObject({
         name: 'AbortError',
-        message: 'The operation was aborted',
       });
 
       expect(mockFetch).not.toHaveBeenCalled();

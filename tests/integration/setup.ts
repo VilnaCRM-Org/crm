@@ -13,12 +13,10 @@ process.env.REACT_APP_MOCKOON_URL = `http://localhost:${mockoonPort}`;
 import fetch, { Headers, Request, Response } from 'node-fetch';
 
 // Must set global.fetch before importing server or any code that uses fetch
-if (!global.fetch) {
-  global.fetch = fetch as unknown as typeof global.fetch;
-  global.Headers = Headers as unknown as typeof global.Headers;
-  global.Request = Request as unknown as typeof global.Request;
-  global.Response = Response as unknown as typeof global.Response;
-}
+if (!global.fetch) global.fetch = fetch as unknown as typeof global.fetch;
+if (!global.Headers) global.Headers = Headers as unknown as typeof global.Headers;
+if (!global.Request) global.Request = Request as unknown as typeof global.Request;
+if (!global.Response) global.Response = Response as unknown as typeof global.Response;
 
 import server from './mocks/server';
 /* eslint-enable import/first */

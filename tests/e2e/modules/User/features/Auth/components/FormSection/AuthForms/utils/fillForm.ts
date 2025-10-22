@@ -10,7 +10,6 @@ import {
   expectationsEmail,
   expectationsPassword,
   placeholderPassword,
-  requiredEmailError,
 } from '../constants/constants';
 
 const requiredErrorSelector = 'p.MuiFormHelperText-root.Mui-error';
@@ -35,7 +34,7 @@ export async function fillEmailInput(page: Page, user: RegisterUserDto): Promise
     await emailInput.fill(expectation.email);
     await emailInput.blur();
     const emailError: Locator = page
-      .locator(requiredErrorSelector, { hasText: requiredEmailError })
+      .locator(requiredErrorSelector, { hasText: expectation.errorText })
       .first();
 
     await expect(emailError).toBeVisible();
