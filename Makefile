@@ -332,13 +332,21 @@ lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 create-temp-dev-container-dind: ## Create temporary dev container for dind testing
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
 	docker run -d --name "$(TEMP_CONTAINER_NAME)" --network $(NETWORK_NAME) \
-		-v "$(PWD):/app" -w /app \
+		-w /app \
 		crm-dev \
 		tail -f /dev/null
 
 copy-source-to-container-dind: ## Copy source code to temp container for dind testing
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker cp . "$(TEMP_CONTAINER_NAME):/app/"
+	tar -cf - \
+		--exclude="./.git" \
+		--exclude="./node_modules" \
+		--exclude="./.next" \
+		--exclude="./out" \
+		--exclude="./coverage" \
+		--exclude="./playwright-report" \
+		--exclude="./test-results" \
+		./ | docker exec -i "$(TEMP_CONTAINER_NAME)" tar -xf - -C /app
 
 install-deps-in-container-dind: ## Install dependencies in temp container for dind testing
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
