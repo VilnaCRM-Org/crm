@@ -17,7 +17,7 @@ services:
     init: true
     shm_size: '1gb'
     networks:
-      - website-network
+      - crm-network
     healthcheck:
       interval: 10s
       timeout: 5s
@@ -26,6 +26,6 @@ services:
       test: ['CMD', 'chromium-browser', '--version']
 
 networks:
-  website-network:
+  crm-network:
     external: true
-    name: website-network
+    name: crm-network

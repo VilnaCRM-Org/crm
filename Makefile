@@ -69,7 +69,7 @@ PRETTIER_CMD                = pnpm exec -- prettier "**/*.{js,jsx,ts,tsx,mts,jso
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 
-NETWORK_NAME                = website-network
+NETWORK_NAME                = crm-network
 
 CI                          ?= 0
 
@@ -150,7 +150,11 @@ wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	exit 1
 
 build: ## Build the dev container
+ifeq ($(DIND), 1)
+	docker build -t crm-dev -f Dockerfile --target base .
+else
 	$(BUILD_CMD)
+endif
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
@@ -329,7 +333,7 @@ create-temp-dev-container-dind: ## Create temporary dev container for dind testi
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
 	docker run -d --name "$(TEMP_CONTAINER_NAME)" --network $(NETWORK_NAME) \
 		-v "$(PWD):/app" -w /app \
-		node:24.8.0-alpine3.21 \
+		crm-dev \
 		tail -f /dev/null
 
 copy-source-to-container-dind: ## Copy source code to temp container for dind testing
@@ -338,7 +342,6 @@ copy-source-to-container-dind: ## Copy source code to temp container for dind te
 
 install-deps-in-container-dind: ## Install dependencies in temp container for dind testing
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" sh -c "apk add --no-cache python3 make g++ curl && npm install -g pnpm@10.6.5"
 	docker exec "$(TEMP_CONTAINER_NAME)" pnpm install --frozen-lockfile
 
 run-unit-tests-dind: ## Run unit tests in temp container for dind
