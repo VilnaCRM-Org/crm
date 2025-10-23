@@ -5,7 +5,6 @@ export default class Utils {
     const config = this.getConfig();
     const { protocol, host, port, params } = config;
 
-    // Use endpoint-specific host/port if available
     let finalHost = host;
     let finalPort = port;
 

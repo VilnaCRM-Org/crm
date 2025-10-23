@@ -36,20 +36,15 @@ const consoleMode = 'VERBOSE';
       logger.debug(`\n📂 Loading test file: ${path.basename(testFilePath)}`);
       logger.debug(`Exported keys: ${Object.keys(testModule).join(', ')}`);
 
-      // Collect all exported scenarios
       const scenarios = [];
 
-      // Check if default export is a valid scenario
       if (testModule && typeof testModule === 'object') {
-        // Check for default export (when module.exports = scenario)
         if (typeof testModule.url === 'function' || typeof testModule.url === 'string') {
           scenarios.push({ name: 'default', scenario: testModule });
           logger.debug(`✓ Found default export as scenario`);
         }
 
-        // Check for named exports (when module.exports.scenarioName = scenario)
         for (const [key, value] of Object.entries(testModule)) {
-          // Skip scenario properties (url, action, back, setup) from the default export
           const isScenarioProperty = ['url', 'action', 'back', 'setup'].includes(key);
 
           if (
@@ -71,7 +66,6 @@ const consoleMode = 'VERBOSE';
 
       logger.info(`\n📋 Found ${scenarios.length} scenario(s) in ${path.basename(testFilePath)}`);
 
-      // Run each scenario
       for (const { name, scenario } of scenarios) {
         logger.info(`\n🧪 Running scenario: ${name} from ${path.basename(testFilePath)}`);
         const { runResult } = await run({

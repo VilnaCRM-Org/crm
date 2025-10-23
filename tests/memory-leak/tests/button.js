@@ -1,5 +1,5 @@
 /**
- * Example for the home page. Should be removed after the design is implemented.
+ * TODO: Remove after the final homepage design is implemented.
  */
 
 const ScenarioBuilder = require('../utils/scenarioBuilder');

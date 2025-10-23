@@ -16,46 +16,24 @@ export default class ThresholdsBuilder {
       throw new Error('threshold must be a positive number (milliseconds)');
     }
 
-    // Response time threshold (p99)
     this.thresholds[`http_req_duration{scenario:${testType}}`] = [`p(99)<${config.threshold}`];
 
-    // Check pass rate threshold - adjusted based on test type
-    // Smoke/Average: 95% pass rate (tight control under normal conditions)
-    // Stress: 90% pass rate (system under heavy load)
-    // Spike: 85% pass rate (sudden traffic can cause more failures)
     const checkPassRate = this.getCheckPassRate(testType);
     this.thresholds[`checks{scenario:${testType}}`] = [`rate>${checkPassRate}`];
 
-    // HTTP failure rate threshold - scenario-specific following industry best practices:
-    // Smoke: < 2% (basic functionality verification)
-    // Average: < 5% (normal load conditions)
-    // Stress: < 15% (pushed beyond normal capacity, some failures expected)
-    // Spike: < 20% (sudden traffic bursts, temporary failures acceptable)
     const errorRateThreshold = this.getErrorRateThreshold(testType);
     this.thresholds[`http_req_failed{scenario:${testType}}`] = [`rate<${errorRateThreshold}`];
 
-    // Request count threshold (at least some requests must be made)
     this.thresholds[`http_reqs{scenario:${testType}}`] = ['count>0'];
 
     return this;
   }
 
-  /**
-   * Get error rate threshold based on test type
-   * Checks for endpoint-specific overrides first, then falls back to defaults
-   * Industry best practices for load testing:
-   * - Smoke: Minimal failures expected (< 2%)
-   * - Average: Low failure rate under normal load (< 5%)
-   * - Stress: Moderate failures acceptable when pushing limits (< 15%)
-   * - Spike: Higher failures acceptable during traffic bursts (< 20%)
-   */
   getErrorRateThreshold(testType) {
-    // Check for endpoint-specific override
     if (this.endpointThresholds?.errorRate?.[testType] !== undefined) {
       return this.endpointThresholds.errorRate[testType];
     }
 
-    // Default thresholds
     const thresholds = {
       smoke: 0.02,
       average: 0.05,
@@ -65,18 +43,11 @@ export default class ThresholdsBuilder {
     return thresholds[testType] || 0.05;
   }
 
-  /**
-   * Get check pass rate based on test type
-   * Checks for endpoint-specific overrides first, then falls back to defaults
-   * More lenient for stress and spike scenarios
-   */
   getCheckPassRate(testType) {
-    // Check for endpoint-specific override
     if (this.endpointThresholds?.checkPassRate?.[testType] !== undefined) {
       return this.endpointThresholds.checkPassRate[testType];
     }
 
-    // Default pass rates
     const passRates = {
       smoke: 0.95,
       average: 0.95,

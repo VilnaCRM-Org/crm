@@ -1,8 +1,3 @@
-/**
- * Logger utility for memory leak tests
- * Provides logging methods without triggering ESLint warnings
- */
-
 /* eslint-disable no-console */
 
 const logger = {
