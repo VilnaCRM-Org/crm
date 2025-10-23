@@ -14,6 +14,8 @@ jobs:
         include:
           - make_cmd: test-load
             label: homepage
+          - make_cmd: test-load-signup
+            label: signup
 
     name: ${{ matrix.label }} load testing
 

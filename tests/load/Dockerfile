@@ -2,7 +2,7 @@ FROM golang:1.24.1-alpine3.21 AS builder
 
 WORKDIR /app
 
-ENV CGO_ENABLED 0
+ENV CGO_ENABLED=0
 
 RUN apk add --no-cache git
 
