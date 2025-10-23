@@ -1,0 +1,105 @@
+name: Trigger Sandbox Deletion
+
+on:
+  pull_request:
+    types:
+      - closed
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+jobs:
+  trigger-sandbox-deletion-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate environment variables
+        run: |
+          if [ -z "${{ env.AWS_REGION }}" ]; then
+            echo "::error::AWS_REGION variable is not set"
+            exit 1
+          fi
+          if [ -z "${{ vars.PROD_AWS_ACCOUNT_ID }}" ]; then
+            echo "::error::PROD_AWS_ACCOUNT_ID variable is not set"
+            exit 1
+          fi
+
+      - name: Configure AWS Credentials (Prod)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{vars.PROD_AWS_ACCOUNT_ID}}:role/github-actions-crm-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Retrieve GitHub Token from Secrets Manager
+        run: |
+          if ! command -v jq &> /dev/null; then
+            echo "::error::jq is required but not installed"
+            exit 1
+          fi
+
+          SECRET_ID=$(aws secretsmanager list-secrets \
+            --region "${AWS_REGION}" \
+            --query "SecretList[?starts_with(Name, 'crm-github-token-') && DeletionDate==null].Name | [0]" \
+            --output text)
+
+          if [ -z "$SECRET_ID" ] || [ "$SECRET_ID" = "None" ]; then
+            echo "No active secret found with prefix 'crm-github-token-'"
+            exit 1
+          fi
+
+          GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
+            --region "${AWS_REGION}" \
+            --secret-id "$SECRET_ID" \
+            --query "SecretString" \
+            --output text | jq -r '.token')
+
+          if [ -z "$GITHUB_TOKEN" ]; then
+            echo "Error: Unable to extract GitHub token from secret"
+            exit 1
+          fi
+
+          echo "GITHUB_TOKEN=${GITHUB_TOKEN}" >> $GITHUB_ENV
+
+      - name: Get PR Number
+        id: get_pr_number
+        run: |
+          RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?head=${GITHUB_REPOSITORY_OWNER}:${GITHUB_REF_NAME}")
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to retrieve PR number. Full response: $RESPONSE"
+            exit 1
+          fi
+          PR_NUMBER=$(echo "$RESPONSE" | jq -r '.[0].number')
+          if [ -z "$PR_NUMBER" ]; then
+            echo "::error::PR number extraction failed; received an empty value"
+            exit 1
+          fi
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{vars.PROD_AWS_ACCOUNT_ID}}:role/sandbox-crm-deletion-trigger-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: trigger sandbox deletion pipeline
+        run: |
+          PR_NUMBER="${{ env.PR_NUMBER }}"
+          if ! aws codepipeline start-pipeline-execution \
+            --name "sandbox-crm-deletion" \
+            --variables \
+              "name=BRANCH_NAME,value=${BRANCH_NAME}" \
+              "name=PR_NUMBER,value=${PR_NUMBER}" \
+              "name=IS_PULL_REQUEST,value=0"; then
+            echo "::error::Failed to start pipeline execution"
+            exit 1
+          fi
