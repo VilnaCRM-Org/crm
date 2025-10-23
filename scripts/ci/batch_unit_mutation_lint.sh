@@ -1,15 +1,15 @@
 #!/bin/bash
 set -e
 
-NETWORK_NAME=${NETWORK_NAME:-"crm-network"}
+NETWORK_NAME=${NETWORK_NAME:-"website-network"}
 CRM_DOMAIN=${CRM_DOMAIN:-"localhost"}
 DEV_PORT=${DEV_PORT:-"3000"}
 NEXT_PUBLIC_PROD_PORT=${NEXT_PUBLIC_PROD_PORT:-"3001"}
 PLAYWRIGHT_TEST_PORT=${PLAYWRIGHT_TEST_PORT:-"9323"}
 UI_HOST=${UI_HOST:-"0.0.0.0"}
-PROD_CONTAINER_NAME=${PROD_CONTAINER_NAME:-"crm-prod"}
-PLAYWRIGHT_CONTAINER_NAME=${PLAYWRIGHT_CONTAINER_NAME:-"crm-playwright"}
-DEV_CONTAINER_NAME=${DEV_CONTAINER_NAME:-"crm-dev"}
+PROD_CONTAINER_NAME=${PROD_CONTAINER_NAME:-"prod"}
+PLAYWRIGHT_CONTAINER_NAME=${PLAYWRIGHT_CONTAINER_NAME:-"playwright"}
+DEV_CONTAINER_NAME=${DEV_CONTAINER_NAME:-"dev"}
 DOCKER_COMPOSE_DEV_FILE=${DOCKER_COMPOSE_DEV_FILE:-"docker-compose.yml"}
 DOCKER_COMPOSE_TEST_FILE=${DOCKER_COMPOSE_TEST_FILE:-"docker-compose.test.yml"}
 COMMON_HEALTHCHECKS_FILE=${COMMON_HEALTHCHECKS_FILE:-"common-healthchecks.yml"}
@@ -21,7 +21,7 @@ setup_docker_network() {
 run_unit_tests_dind() {
     setup_docker_network
     make build
-    temp_dev_container="crm-dev-test"
+    temp_dev_container="dev-test"
     make create-temp-dev-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
     make copy-source-to-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
     make install-deps-in-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
@@ -33,7 +33,7 @@ run_unit_tests_dind() {
 run_mutation_tests_dind() {
     setup_docker_network
     make build
-    temp_dev_container="crm-dev-test"
+    temp_dev_container="dev-test"
     make create-temp-dev-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
     make copy-source-to-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
     make install-deps-in-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
@@ -45,7 +45,7 @@ run_mutation_tests_dind() {
 run_lint_tests_dind() {
     setup_docker_network
     make build
-    temp_dev_container="crm-dev-lint"
+    temp_dev_container="dev-lint"
     make create-temp-dev-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
     make copy-source-to-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
     make install-deps-in-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
@@ -96,4 +96,5 @@ case "${1:-all}" in
         main "$@"
         ;;
 esac
+
 
