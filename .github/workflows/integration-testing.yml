@@ -34,6 +34,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-
 
+      - name: Start container
+        run: make start
+
       - name: Install dependencies
         run: make install
 
