@@ -48,6 +48,7 @@ export async function fillPasswordInput(page: Page, user: RegisterUserDto): Prom
   await page.locator('button', { hasText: signUpButton }).click();
   for (const expectation of expectationsPassword) {
     await passwordInput.fill(expectation.password);
+    await passwordInput.blur();
     const passwordError: Locator = page.locator(requiredErrorSelector, {
       hasText: expectation.errorText,
     });

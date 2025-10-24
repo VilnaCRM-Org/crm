@@ -42,7 +42,7 @@ describe('Login Slice Coverage Tests', () => {
   });
 
   describe('error message fallbacks', () => {
-    it('should get error', async () => {
+    it('should handle unexpected errors with specific message', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, async () => {
           throw new Error();
@@ -53,7 +53,7 @@ describe('Login Slice Coverage Tests', () => {
 
       const state = store.getState().auth;
 
-      expect(state.error).toBeTruthy();
+      expect(state.error).toBe('Network error. Please check your connection.');
       expect(state.loading).toBe(false);
     });
 
@@ -78,34 +78,33 @@ describe('Login Slice Coverage Tests', () => {
       await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
 
       const state = store.getState().auth;
-      expect(state.error).toBeTruthy();
-      expect(state.error?.toLowerCase()).toContain('server error');
+      expect(state.error).toBe('Internal server error');
     });
   });
 
-  describe('Login Slice - Error Handling', () => {
-    describe('through loginUser thunk', () => {
-      it('should set error from displayMessage for network failures', async () => {
-        server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Network failure')));
-
-        await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
-
-        const state = store.getState().auth;
-        expect(state.error).toBe('Network error. Please check your connection.');
+  describe('reducer error fallback logic', () => {
+    it('should use action.error.message when payload is undefined', () => {
+      const initialState = { email: '', token: null, loading: false, error: null };
+      const state = loginReducer(initialState, {
+        type: loginUser.rejected.type,
+        error: { message: 'Custom error message' },
+        meta: { requestId: '123', arg: { email: 'test@test.com', password: 'pass' } },
       });
 
-      it('should set error from displayMessage for server errors', async () => {
-        server.use(
-          rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-            res(ctx.status(500), ctx.json({ message: 'Server error' }))
-          )
-        );
+      expect(state.error).toBe('Custom error message');
+      expect(state.loading).toBe(false);
+    });
 
-        await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
-
-        const state = store.getState().auth;
-        expect(state.error).toBe('Internal server error');
+    it('should use "Unknown error" when both payload and error.message are undefined', () => {
+      const initialState = { email: '', token: null, loading: false, error: null };
+      const state = loginReducer(initialState, {
+        type: loginUser.rejected.type,
+        error: {},
+        meta: { requestId: '123', arg: { email: 'test@test.com', password: 'pass' } },
       });
+
+      expect(state.error).toBe('Unknown error');
+      expect(state.loading).toBe(false);
     });
   });
 });

@@ -10,8 +10,7 @@ const rootsMap: Record<string, string[]> = {
 
 const roots = rootsMap[TEST_ENV ?? ''] || rootsMap.default;
 
-const isIntegration = TEST_ENV === 'integration';
-const testEnvironment = TEST_ENV === 'server' || isIntegration ? 'node' : 'jsdom';
+const testEnvironment = TEST_ENV === 'server' ? 'node' : 'jsdom';
 
 const testMatchMap: Record<string, string[]> = {
   server: ['<rootDir>/tests/apollo-server/**/*.test.{ts,mts}'],
@@ -21,6 +20,7 @@ const testMatchMap: Record<string, string[]> = {
 
 const testMatch = testMatchMap[TEST_ENV ?? ''] || testMatchMap.default;
 
+const isIntegration = TEST_ENV === 'integration';
 const thresholdValue = isIntegration ? 90 : 100;
 const coverageThreshold = {
   global: {
@@ -38,7 +38,7 @@ const config: Config = {
   coverageProvider: 'v8',
   coveragePathIgnorePatterns: ['/node_modules/', '<rootDir>/jest.setup.ts'],
   collectCoverageFrom:
-    process.env.TEST_ENV === 'server'
+    TEST_ENV === 'server'
       ? ['<rootDir>/docker/apollo-server/lib/**/*.{ts,mts}', '!**/*.d.ts']
       : [
           '<rootDir>/src/**/*.{ts,tsx}',

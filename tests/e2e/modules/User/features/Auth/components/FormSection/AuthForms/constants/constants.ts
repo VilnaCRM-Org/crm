@@ -13,19 +13,19 @@ export const signUpButton: string = t('sign_up.form.submit_button');
 
 export const requiredNameError: string = t('sign_up.form.name_input.required');
 
-const firstName: string = faker.helpers.fromRegExp(/[A-Za-zА-Яа-яІіЇїЄєҐґ]{3,10}/);
-const lastName: string = faker.helpers.fromRegExp(/[A-Za-zА-Яа-яІіЇїЄєҐґ]{3,10}/);
-
-export function generateValidEmail(): string {
+export function generateUserData(): User {
+  const firstName: string = faker.helpers.fromRegExp(/[A-Za-zА-Яа-яІіЇїЄєҐґ]{3,10}/);
+  const lastName: string = faker.helpers.fromRegExp(/[A-Za-zА-Яа-яІіЇїЄєҐґ]{3,10}/);
   const domain = faker.internet.domainName();
-  return `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`;
+  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`;
+  return {
+    fullName: `${firstName} ${lastName}`,
+    email,
+    password: faker.internet.password({ length: 16, prefix: 'Q9' }),
+  };
 }
 
-export const userData: User = {
-  fullName: `${firstName} ${lastName}`,
-  email: generateValidEmail(),
-  password: faker.internet.password({ length: 16, prefix: 'Q9' }),
-};
+export const userData: User = generateUserData();
 
 const textShortText: string = faker.internet.password({
   length: 7,

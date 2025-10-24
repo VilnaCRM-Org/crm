@@ -50,7 +50,7 @@ describe('Registration Slice Aborted Action Tests', () => {
         await new Promise((resolve) => {
           setTimeout(resolve, 500);
         });
-        return res(ctx.status(201), ctx.json({ fullName: 'Test User', email: 'test@test.com' }));
+        return res(ctx.status(201));
       })
     );
 
@@ -69,10 +69,10 @@ describe('Registration Slice Aborted Action Tests', () => {
     expect(state.error).toBeNull();
   });
 
-  it('should handle error without payload displayMessage', async () => {
+  it('should parse errors without displayMessage field', async () => {
     server.use(
       rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-        res(ctx.status(500), ctx.json({ message: 'Internal Server Error' }))
+        res(ctx.status(500), ctx.json({ message: 'Internal server Error' }))
       )
     );
 
@@ -81,7 +81,7 @@ describe('Registration Slice Aborted Action Tests', () => {
     );
 
     const state = store.getState().registration;
-    expect(state.error).toBeTruthy();
+    expect(state.error).toBe('Internal server error');
     expect(state.loading).toBe(false);
   });
 });

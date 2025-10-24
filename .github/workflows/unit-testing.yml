@@ -34,8 +34,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-
 
+      - name: Start container
+        run: make start
+
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: make install
 
       - name: Run unit tests
         run: make test-unit-all
