@@ -292,7 +292,6 @@ describe('FetchHttpsClient Integration', () => {
     });
 
     it('should throw HttpError on non-JSON response when JSON expected', async () => {
-      // Create a Response with invalid JSON that will trigger JSON_PARSE_FAILED
       mockFetch.mockResolvedValueOnce(
         new Response('invalid json content', {
           status: 200,
@@ -327,7 +326,6 @@ describe('FetchHttpsClient Integration', () => {
     });
 
     it('should handle errors during body extraction for error responses', async () => {
-      // Create a response that will fail during body extraction in throwIfHttpError
       const mockResponse = {
         ok: false,
         status: 400,
@@ -351,7 +349,6 @@ describe('FetchHttpsClient Integration', () => {
     });
 
     it('should use default error message when body extraction fails', async () => {
-      // Response with JSON content-type but extraction fails
       const mockResponse = {
         ok: false,
         status: 500,
@@ -426,7 +423,6 @@ describe('FetchHttpsClient Integration', () => {
 
   describe('edge cases for complete coverage', () => {
     it('should handle response without content-type header', async () => {
-      // Test the fallback branch when content-type is null (line 94)
       const mockResponse = {
         ok: true,
         status: 200,
@@ -446,7 +442,6 @@ describe('FetchHttpsClient Integration', () => {
     });
 
     it('should return undefined for non-JSON response with empty body', async () => {
-      // Test line 98: return undefined when non-JSON response has no text
       const mockResponse = {
         ok: true,
         status: 200,

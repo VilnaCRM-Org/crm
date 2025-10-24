@@ -58,10 +58,8 @@ describe('Registration Slice Aborted Action Tests', () => {
       registerUser({ email: 'test@test.com', password: 'pass', fullName: 'Test' })
     );
 
-    // Abort the thunk before the response completes
     promise.abort();
 
-    // Swallow rejection so the test doesn't fail
     await promise.catch(() => {});
 
     const state = store.getState().registration;

@@ -22,7 +22,6 @@ describe('Login Slice Integration', () => {
   let store: TestStore;
 
   beforeEach(() => {
-    // Use REAL services from DI container for integration testing
     const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
     const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
 
@@ -63,7 +62,6 @@ describe('Login Slice Integration', () => {
 
       const promise = store.dispatch(loginUser({ email: 'user@test.com', password: 'pass' }));
 
-      // Check pending state
       await new Promise((resolve) => {
         setTimeout(resolve, 10);
       });
@@ -214,7 +212,7 @@ describe('Login Slice Integration', () => {
 
       const state = store.getState().auth;
       expect(state.loading).toBe(false);
-      // System provides user-friendly error message
+
       expect(state.error).toBeTruthy();
       expect(state.error?.toLowerCase()).toContain('error');
     });

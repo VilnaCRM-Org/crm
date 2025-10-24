@@ -31,7 +31,6 @@ export default class FetchHttpsClient implements HttpsClient {
     headers?: Record<string, string>,
     options?: { signal?: AbortSignal }
   ): Promise<R> {
-    // Check if signal is already aborted before making the request
     if (options?.signal?.aborted) {
       const abortError = new Error('The operation was aborted');
       abortError.name = 'AbortError';

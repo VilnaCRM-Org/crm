@@ -12,7 +12,6 @@ export default async function throwIfHttpError(res: Response): Promise<void> {
 
   try {
     const ct = (res.headers.get('content-type') || '').toLowerCase();
-    // Clone the response to avoid consuming the original body
     const clonedRes = res.clone();
 
     if (ct.includes('json')) {

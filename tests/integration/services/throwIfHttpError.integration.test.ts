@@ -4,7 +4,6 @@ import throwIfHttpError from '@/services/HttpsClient/throwIfHttpError';
 
 describe('throwIfHttpError Coverage Tests', () => {
   it('should handle errors during body extraction (catch block coverage)', async () => {
-    // Test lines 32-33: catch block when body extraction fails
     const mockResponse = {
       ok: false,
       status: 400,

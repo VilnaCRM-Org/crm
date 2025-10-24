@@ -84,7 +84,6 @@ describe('Login Slice Coverage Tests', () => {
   });
 
   describe('Login Slice - Error Handling', () => {
-    // Option 1: Integration tests with thunk
     describe('through loginUser thunk', () => {
       it('should set error from displayMessage for network failures', async () => {
         server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Network failure')));

@@ -27,7 +27,6 @@ type RegistrationTestStore = {
   getState: () => { registration: RegistrationState };
 };
 
-// This test ensures ErrorParser paths are exercised through real slice usage
 describe('ErrorParser Integration Coverage', () => {
   describe('via loginSlice', () => {
     let store: LoginTestStore;

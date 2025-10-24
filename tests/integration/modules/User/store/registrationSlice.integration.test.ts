@@ -26,7 +26,6 @@ describe('Registration Slice Integration', () => {
   let store: TestStore;
 
   beforeEach(() => {
-    // Use REAL services from DI container for integration testing
     const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
     const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
 
@@ -230,7 +229,7 @@ describe('Registration Slice Integration', () => {
 
       const state = store.getState().registration;
       expect(state.loading).toBe(false);
-      // System provides user-friendly error message
+
       expect(state.error).toBeTruthy();
       expect(state.error?.toLowerCase()).toContain('error');
     });
@@ -292,7 +291,6 @@ describe('Registration Slice Integration', () => {
         registerUser({ email: 'test@test.com', password: 'pass', fullName: 'Test' })
       );
 
-      // Abort immediately — definitely before fetch completes
       promise.abort();
 
       await promise.catch(() => {});
@@ -309,7 +307,6 @@ describe('Registration Slice Integration', () => {
     it('should handle invalid response schema', async () => {
       server.use(
         rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-          // Response with wrong type for email (should be string but is number)
           res(ctx.status(201), ctx.json({ email: 123, fullName: true }))
         )
       );
@@ -327,7 +324,6 @@ describe('Registration Slice Integration', () => {
     it('should handle schema validation error messages', async () => {
       server.use(
         rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-          // Response with wrong types should fail zod validation
           res(ctx.status(201), ctx.json({ email: [], fullName: {} }))
         )
       );

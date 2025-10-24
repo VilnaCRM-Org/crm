@@ -3,7 +3,6 @@ import { ErrorHandler } from '@/services/error';
 
 describe('ErrorHandler Coverage Tests', () => {
   it('should return fallback error for unknown error codes', () => {
-    // Test lines 70-72: fallback when error code not in errorMap
     const unknownError = {
       code: 'UNKNOWN_CODE_9999',
       message: 'Unknown error',
@@ -43,7 +42,6 @@ describe('ErrorHandler Coverage Tests', () => {
   });
 
   it('should return mapped error for known error codes', () => {
-    // Test the non-fallback branch (lines before 70)
     const networkError = {
       code: 'NETWORK_ERROR',
       message: 'Network failed',
@@ -57,7 +55,6 @@ describe('ErrorHandler Coverage Tests', () => {
   });
 
   it('should call handle method and log error to console', () => {
-    // Test lines 77-79: the handle method
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
     const testError = new Error('Test error');

@@ -35,7 +35,7 @@ jobs:
             ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: make install
 
       - name: Run integration tests
         run: make test-integration
