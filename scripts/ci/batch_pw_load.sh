@@ -4,11 +4,11 @@ set -eu
 NETWORK_NAME=${NETWORK_NAME:-"crm-network"}
 CRM_DOMAIN=${CRM_DOMAIN:-"localhost"}
 DEV_PORT=${DEV_PORT:-"3000"}
-NEXT_PUBLIC_PROD_PORT=${NEXT_PUBLIC_PROD_PORT:-"3001"}
-PLAYWRIGHT_TEST_PORT=${PLAYWRIGHT_TEST_PORT:-"9323"}
+REACT_APP_PROD_PORT=${REACT_APP_PROD_PORT:-"3001"}
+PLAYWRIGHT_TEST_PORT=${PLAYWRIGHT_TEST_PORT:-"9324"}
 UI_HOST=${UI_HOST:-"0.0.0.0"}
-PROD_CONTAINER_NAME=${PROD_CONTAINER_NAME:-"crm-prod"}
-PLAYWRIGHT_CONTAINER_NAME=${PLAYWRIGHT_CONTAINER_NAME:-"crm-playwright"}
+PROD_CONTAINER_NAME=${PROD_CONTAINER_NAME:-"prod"}
+PLAYWRIGHT_CONTAINER_NAME=${PLAYWRIGHT_CONTAINER_NAME:-"playwright"}
 DOCKER_COMPOSE_DEV_FILE=${DOCKER_COMPOSE_DEV_FILE:-"docker-compose.yml"}
 DOCKER_COMPOSE_TEST_FILE=${DOCKER_COMPOSE_TEST_FILE:-"docker-compose.test.yml"}
 COMMON_HEALTHCHECKS_FILE=${COMMON_HEALTHCHECKS_FILE:-"common-healthchecks.yml"}
@@ -24,20 +24,19 @@ fi
 COMPOSE_ARGS="$COMPOSE_ARGS -f $DOCKER_COMPOSE_TEST_FILE"
 
 # Ensure required compose env vars have sane defaults for healthchecks
-NEXT_PUBLIC_MOCKOON_PORT=${NEXT_PUBLIC_MOCKOON_PORT:-"8080"}
+REACT_APP_MOCKOON_PORT=${REACT_APP_MOCKOON_PORT:-"8080"}
 GRAPHQL_PORT=${GRAPHQL_PORT:-"4000"}
 GRAPHQL_API_PATH=${GRAPHQL_API_PATH:-"graphql"}
-export NEXT_PUBLIC_MOCKOON_PORT GRAPHQL_PORT GRAPHQL_API_PATH NEXT_PUBLIC_PROD_PORT
+export REACT_APP_MOCKOON_PORT GRAPHQL_PORT GRAPHQL_API_PATH REACT_APP_PROD_PORT
 
 :
 
 PLAYWRIGHT_ENV_FLAGS="\
-    -e NEXT_PUBLIC_MAIN_LANGUAGE=uk \
-    -e NEXT_PUBLIC_FALLBACK_LANGUAGE=en \
-    -e NEXT_PUBLIC_CONTINUOUS_DEPLOYMENT_HEADER_NAME=no-aws-header-name \
-    -e NEXT_PUBLIC_CONTINUOUS_DEPLOYMENT_HEADER_VALUE=no-aws-header-value \
-    -e NEXT_PUBLIC_VILNACRM_PRIVACY_POLICY_URL=https://github.com/VilnaCRM-Org/ \
-    -e NEXT_PUBLIC_GRAPHQL_API_URL=http://apollo:4000/graphql"
+    -e REACT_APP_MAIN_LANGUAGE=uk \
+    -e REACT_APP_FALLBACK_LANGUAGE=en \
+    -e REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME=no-aws-header-name \
+    -e REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE=no-aws-header-value \
+    -e REACT_APP_GRAPHQL_API_URL=http://apollo:4000/graphql"
 
 setup_docker_network() {
     docker network create "$NETWORK_NAME" 2>/dev/null || :
@@ -86,7 +85,6 @@ run_e2e_tests_dind() {
 run_visual_tests_dind() {
     setup_docker_network
     make start-prod
-    docker compose ${COMPOSE_ARGS} exec -T playwright mkdir -p /app/src/test /app/src/config /app/pages/i18n
     # Stream source using tar to avoid docker cp EOF/tar issues; exclude heavy/transient dirs
     docker compose ${COMPOSE_ARGS} exec -T playwright mkdir -p /app
     if ! tar -cf - \
@@ -147,4 +145,5 @@ case "${1:-all}" in
         main "$@"
         ;;
     esac
+
 
