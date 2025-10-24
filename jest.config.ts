@@ -1,11 +1,10 @@
 import type { Config } from 'jest';
 
 const { TEST_ENV } = process.env;
-
 const rootsMap: Record<string, string[]> = {
-  server: ['./tests/apollo-server'],
-  integration: ['./tests/integration'],
-  default: ['./tests/unit'],
+  server: ['<rootDir>/tests/apollo-server'],
+  integration: ['<rootDir>/tests/integration', '<rootDir>/src'],
+  default: ['<rootDir>/tests/unit', '<rootDir>/src'],
 };
 
 const roots = rootsMap[TEST_ENV ?? ''] || rootsMap.default;
@@ -30,13 +29,23 @@ const coverageThreshold = {
     statements: thresholdValue,
   },
 };
+let setupFiles: string[] = [];
+
+if (isIntegration) {
+  setupFiles = ['<rootDir>/tests/integration/setup.ts'];
+} else if (TEST_ENV === 'server') {
+  setupFiles = [];
+} else {
+  setupFiles = ['<rootDir>/jest.setup.ts'];
+}
+
 const config: Config = {
   preset: 'ts-jest',
   clearMocks: true,
   collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageProvider: 'v8',
-  coveragePathIgnorePatterns: ['/node_modules/', '<rootDir>/jest.setup.ts'],
+  coveragePathIgnorePatterns: ['/node_modules/'],
   collectCoverageFrom:
     TEST_ENV === 'server'
       ? ['<rootDir>/docker/apollo-server/lib/**/*.{ts,mts}', '!**/*.d.ts']
@@ -46,6 +55,9 @@ const config: Config = {
           '!<rootDir>/src/**/*.d.ts',
           '!<rootDir>/src/**/*.stories.{ts,tsx}',
           '!<rootDir>/src/**/*.test.{ts,tsx}',
+          '!<rootDir>/src/**/__mocks__/**',
+          '!<rootDir>/src/**/__fixtures__/**',
+          '!<rootDir>/src/test-utils/**',
           '!<rootDir>/src/index.tsx',
         ],
 
@@ -58,9 +70,7 @@ const config: Config = {
     '^.+\\.(mts)$': ['ts-jest', { useESM: true }],
     '^.+\\.js$': 'babel-jest',
   },
-  setupFilesAfterEnv: isIntegration
-    ? ['<rootDir>/tests/integration/setup.ts']
-    : ['<rootDir>/jest.setup.ts'],
+  setupFilesAfterEnv: setupFiles,
   modulePathIgnorePatterns: ['<rootDir>/.stryker-tmp/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mts', 'json', 'node'],
   moduleNameMapper: {
