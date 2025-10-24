@@ -67,6 +67,17 @@ describe('FetchHttpsClient', () => {
       });
     });
 
+    it('should throw AbortError when signal is already aborted before GET request', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(client.get('/api/test', { signal: controller.signal })).rejects.toMatchObject({
+        name: 'AbortError',
+      });
+
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
     it('should return undefined for 204 No Content', async () => {
       mockFetch.mockResolvedValue(createMockResponse(204, undefined, ''));
 
@@ -188,6 +199,20 @@ describe('FetchHttpsClient', () => {
         })
       );
     });
+
+    it('should throw AbortError when signal is already aborted before POST request', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        client.post('/api/test', { data: 'test' }, { signal: controller.signal })
+      ).rejects.toMatchObject({
+        name: 'AbortError',
+        message: 'The operation was aborted',
+      });
+
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
   });
 
   describe('PUT requests', () => {
@@ -225,6 +250,20 @@ describe('FetchHttpsClient', () => {
         })
       );
     });
+
+    it('should throw AbortError when signal is already aborted before PUT request', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        client.put('/api/test', { data: 'test' }, { signal: controller.signal })
+      ).rejects.toMatchObject({
+        name: 'AbortError',
+        message: 'The operation was aborted',
+      });
+
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
   });
 
   describe('PATCH requests', () => {
@@ -261,6 +300,20 @@ describe('FetchHttpsClient', () => {
           signal: controller.signal,
         })
       );
+    });
+
+    it('should throw AbortError when signal is already aborted before PATCH request', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        client.patch('/api/test', { data: 'test' }, { signal: controller.signal })
+      ).rejects.toMatchObject({
+        name: 'AbortError',
+        message: 'The operation was aborted',
+      });
+
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 
@@ -314,6 +367,20 @@ describe('FetchHttpsClient', () => {
           signal: controller.signal,
         })
       );
+    });
+
+    it('should throw AbortError when signal is already aborted before DELETE request', async () => {
+      const controller = new AbortController();
+      controller.abort();
+
+      await expect(
+        client.delete('/api/test', undefined, { signal: controller.signal })
+      ).rejects.toMatchObject({
+        name: 'AbortError',
+        message: 'The operation was aborted',
+      });
+
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 
@@ -473,6 +540,20 @@ describe('FetchHttpsClient', () => {
         message: ResponseMessages.NETWORK_ERROR,
         cause: networkError,
       });
+    });
+
+    it('should rethrow AbortError if fetch rejects with AbortError', async () => {
+      const abortError = new Error('Aborted during fetch');
+      abortError.name = 'AbortError';
+
+      mockFetch.mockRejectedValue(abortError);
+
+      await expect(client.get('/api/test')).rejects.toMatchObject({
+        name: 'AbortError',
+        message: 'Aborted during fetch',
+      });
+
+      expect(mockFetch).toHaveBeenCalled();
     });
   });
 

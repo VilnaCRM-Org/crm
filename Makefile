@@ -123,7 +123,7 @@ test: test-unit-all
 
 RUN_VISUAL                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 RUN_E2E                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
-PLAYWRIGHT_TEST_CMD             = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
+PLAYWRIGHT_TEST_CMD         = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
 
 
 help:
@@ -228,6 +228,12 @@ test-unit-client: ## Run all client-side unit tests using Jest (TEST_ENV=client)
 
 test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js env, TEST_ENV=server, target: $(TEST_DIR_APOLLO))
 	$(UNIT_TESTS) TEST_ENV=server $(JEST_BIN) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
+
+test-integration: ## Run integration tests using Jest
+	$(UNIT_TESTS) TEST_ENV=integration $(JEST_BIN) $(JEST_FLAGS)
+
+test-integration-watch: ## Run integration tests in watch mode
+	$(UNIT_TESTS) TEST_ENV=integration $(JEST_BIN) --watch
 
 test-memory-leak: start-prod ## This command executes memory leaks tests using Memlab library.
 	$(RUN_MEMLAB)

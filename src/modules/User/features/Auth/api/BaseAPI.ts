@@ -11,6 +11,16 @@ import {
 export default class BaseAPI {
   protected handleApiError(error: unknown, context: string): ApiError {
     if (isHttpError(error)) {
+      // Check if it's a network error (status 0)
+      if (error.status === 0 || this.isNetworkError(error.message)) {
+        return new ApiError(
+          'Network error. Please check your connection.',
+          ApiErrorCodes.NETWORK,
+          undefined,
+          error
+        );
+      }
+
       switch (error.status) {
         case 400:
           return new ValidationError({
@@ -87,6 +97,7 @@ export default class BaseAPI {
   }
 
   private isNetworkError(message: string): boolean {
+    if (!message) return false;
     const m = message.toLowerCase();
     return (
       m.includes('failed to fetch') ||
