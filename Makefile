@@ -69,7 +69,7 @@ PRETTIER_CMD                = pnpm exec -- prettier "**/*.{js,jsx,ts,tsx,mts,jso
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 
-NETWORK_NAME                = website-network
+NETWORK_NAME                = crm-network
 
 CI                          ?= 0
 
@@ -150,7 +150,11 @@ wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	exit 1
 
 build: ## Build the dev container
+ifeq ($(DIND), 1)
+	docker build -t crm-dev -f Dockerfile --target base .
+else
 	$(BUILD_CMD)
+endif
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
@@ -302,4 +306,82 @@ check-node-version: ## Check if the correct Node.js version is installed
 clean: down ## Clean up only this project's containers, images, and volumes
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) down --volumes --remove-orphans --rmi local
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) down --volumes --remove-orphans --rmi local
+
+# DIND (Docker-in-Docker) targets for CI scripts
+build-prod: ## Build production image for dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build prod
+
+build-k6: ## Build K6 load testing image for dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build k6
+
+install-chromium-lhci: ## Install Chromium for Lighthouse CI in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "apk add --no-cache chromium"
+
+test-chromium: ## Test Chromium installation in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "chromium-browser --version"
+
+memory-leak-dind: ## Run memory leak tests in dind environment
+	$(RUN_MEMLAB)
+
+lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "cd /app && REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) $(LHCI_CONFIG_DESKTOP) --collect.url=http://localhost:3001"
+
+lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "cd /app && REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) $(LHCI_CONFIG_MOBILE) --collect.url=http://localhost:3001"
+
+create-temp-dev-container-dind: ## Create temporary dev container for dind testing
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker run -d --name "$(TEMP_CONTAINER_NAME)" --network $(NETWORK_NAME) \
+		-w /app \
+		crm-dev \
+		tail -f /dev/null
+
+copy-source-to-container-dind: ## Copy source code to temp container for dind testing
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	tar -cf - \
+		--exclude="./.git" \
+		--exclude="./node_modules" \
+		--exclude="./.next" \
+		--exclude="./out" \
+		--exclude="./coverage" \
+		--exclude="./playwright-report" \
+		--exclude="./test-results" \
+		./ | docker exec -i "$(TEMP_CONTAINER_NAME)" tar -xf - -C /app
+
+install-deps-in-container-dind: ## Install dependencies in temp container for dind testing
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" pnpm install --frozen-lockfile
+
+run-unit-tests-dind: ## Run unit tests in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=client $(JEST_BIN) $(JEST_FLAGS)
+	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=server $(JEST_BIN) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
+
+run-mutation-tests-dind: ## Run mutation tests in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" $(STRYKER_CMD)
+
+run-eslint-tests-dind: ## Run ESLint in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" npx eslint .
+
+run-typescript-tests-dind: ## Run TypeScript check in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" pnpm tsc
+
+run-markdown-lint-tests-dind: ## Run Markdown lint in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" $(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
+
+create-k6-helper-container-dind: ## Create K6 helper container for dind load testing
+	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi
+	docker run -d --name "$(K6_HELPER_NAME)" --network $(NETWORK_NAME) \
+		$(shell docker images -q grafana/k6:latest | head -1) \
+		tail -f /dev/null
+
+run-load-tests-dind: ## Run load tests in K6 helper container for dind
+	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi
+	docker exec "$(K6_HELPER_NAME)" k6 run --summary-trend-stats="avg,min,med,max,p(95),p(99)" \
+		--out "web-dashboard=period=1s&export=/loadTests/results/homepage.html" \
+		/loadTests/homepage.js
 
