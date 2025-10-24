@@ -2,9 +2,9 @@ import type { Config } from 'jest';
 
 const { TEST_ENV } = process.env;
 const rootsMap: Record<string, string[]> = {
-  server: ['<rootDir>/tests/apollo-server'],
-  integration: ['<rootDir>/tests/integration', '<rootDir>/src'],
-  default: ['<rootDir>/tests/unit', '<rootDir>/src'],
+  server: ['./tests/apollo-server'],
+  integration: ['./tests/integration'],
+  default: ['./tests/unit'],
 };
 
 const roots = rootsMap[TEST_ENV ?? ''] || rootsMap.default;
@@ -52,6 +52,10 @@ const config: Config = {
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
           '<rootDir>/scripts/localizationGenerator.js',
+          '!<rootDir>/src/**/types/**',
+          '!<rootDir>/src/**/types.ts',
+          '!<rootDir>/src/**/theme.ts',
+          '!<rootDir>/src/**/styles/**',
           '!<rootDir>/src/**/*.d.ts',
           '!<rootDir>/src/**/*.stories.{ts,tsx}',
           '!<rootDir>/src/**/*.test.{ts,tsx}',
