@@ -113,12 +113,12 @@ run_load_tests_dind() {
     k6_helper_container="crm-k6-helper"
     make create-k6-helper-container-dind K6_HELPER_NAME="$k6_helper_container"
     docker exec "$k6_helper_container" mkdir -p /loadTests/results
-    docker cp "src/test/load/." "$k6_helper_container:/loadTests/"
+    docker cp "tests/load/." "$k6_helper_container:/loadTests/"
     if ! make run-load-tests-dind K6_HELPER_NAME="$k6_helper_container"; then
         exit 1
     fi
-    mkdir -p src/test/load/reports
-    docker cp "$k6_helper_container:/loadTests/results/." "src/test/load/reports/" 2>/dev/null || :
+    mkdir -p tests/load/reports
+    docker cp "$k6_helper_container:/loadTests/results/." "tests/load/reports/" 2>/dev/null || :
 }
 
 main() {

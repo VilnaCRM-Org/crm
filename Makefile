@@ -381,9 +381,12 @@ run-markdown-lint-tests-dind: ## Run Markdown lint in temp container for dind
 
 create-k6-helper-container-dind: ## Create K6 helper container for dind load testing
 	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi
-	docker run -d --name "$(K6_HELPER_NAME)" --network $(NETWORK_NAME) \
-		$(shell docker images -q grafana/k6:latest | head -1) \
-		tail -f /dev/null
+	@IMAGE_ID=$$(docker images -q crm-k6 | head -1); \
+	if [ -z "$$IMAGE_ID" ]; then \
+		echo "Error: k6 image not found. Run 'make build-k6' first."; \
+		exit 1; \
+	fi; \
+	docker run -d --name "$(K6_HELPER_NAME)" --network $(NETWORK_NAME) "$$IMAGE_ID" tail -f /dev/null
 
 run-load-tests-dind: ## Run load tests in K6 helper container for dind
 	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi
