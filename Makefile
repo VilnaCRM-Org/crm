@@ -363,6 +363,10 @@ run-unit-tests-dind: ## Run unit tests in temp container for dind
 	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=client $(JEST_BIN) $(JEST_FLAGS)
 	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=server $(JEST_BIN) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
 
+run-integration-tests-dind: ## Run integration tests in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=integration $(JEST_BIN) $(JEST_FLAGS)
+
 run-mutation-tests-dind: ## Run mutation tests in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
 	docker exec "$(TEMP_CONTAINER_NAME)" $(STRYKER_CMD)
@@ -386,7 +390,7 @@ create-k6-helper-container-dind: ## Create K6 helper container for dind load tes
 		echo "Error: k6 image not found. Run 'make build-k6' first."; \
 		exit 1; \
 	fi; \
-	docker run -d --name "$(K6_HELPER_NAME)" --network $(NETWORK_NAME) "$$IMAGE_ID" tail -f /dev/null
+	docker run -d --name "$(K6_HELPER_NAME)" --network $(NETWORK_NAME) --entrypoint /bin/sh "$$IMAGE_ID" -c "exec read -r DUMMY"
 
 run-load-tests-dind: ## Run load tests in K6 helper container for dind
 	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi

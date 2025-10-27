@@ -72,6 +72,18 @@ run_lint_tests_dind() {
     fi
 }
 
+run_integration_tests_dind() {
+    setup_docker_network
+    make build
+    temp_dev_container="dev-integration"
+    make create-temp-dev-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
+    make copy-source-to-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
+    make install-deps-in-container-dind TEMP_CONTAINER_NAME="$temp_dev_container"
+    if ! make run-integration-tests-dind TEMP_CONTAINER_NAME="$temp_dev_container"; then
+        exit 1
+    fi
+}
+
 main() {
     local crm_dir="${1:-.}"
     if [ ! -d "$crm_dir" ]; then
@@ -79,6 +91,7 @@ main() {
     fi
     run_unit_tests_dind
     run_mutation_tests_dind
+    run_integration_tests_dind
     run_lint_tests_dind
 }
 
@@ -91,6 +104,9 @@ case "${1:-all}" in
         ;;
     test-lint)
         run_lint_tests_dind
+        ;;
+    test-integration)
+        run_integration_tests_dind
         ;;
     *)
         main "$@"
