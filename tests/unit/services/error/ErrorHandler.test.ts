@@ -493,4 +493,68 @@ describe('ErrorHandler', () => {
       });
     });
   });
+
+  describe('handle', () => {
+    let consoleErrorSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    });
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should log error to console with label', () => {
+      const error = new Error('Test error');
+      ErrorHandler.handle(error);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+    });
+
+    it('should handle unknown error types', () => {
+      const unknownError = { message: 'Unknown error' };
+      ErrorHandler.handle(unknownError);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', unknownError);
+    });
+
+    it('should handle string errors', () => {
+      const stringError = 'String error';
+      ErrorHandler.handle(stringError);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', stringError);
+    });
+
+    it('should handle null errors', () => {
+      ErrorHandler.handle(null);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', null);
+    });
+
+    it('should handle undefined errors', () => {
+      ErrorHandler.handle(undefined);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', undefined);
+    });
+
+    it('should handle number errors', () => {
+      ErrorHandler.handle(42);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', 42);
+    });
+
+    it('should handle boolean errors', () => {
+      ErrorHandler.handle(false);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', false);
+    });
+
+    it('should handle array errors', () => {
+      const arrayError = ['error1', 'error2'];
+      ErrorHandler.handle(arrayError);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', arrayError);
+    });
+  });
 });

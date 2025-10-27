@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import viewports from '../utils/constants';
+import viewports from '../constants/viewports';
 
 const backToHomeSpec = {
   href: '/',

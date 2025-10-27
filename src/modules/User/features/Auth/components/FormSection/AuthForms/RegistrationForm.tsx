@@ -13,7 +13,7 @@ import getSubmitLabelKey from '../../../utils/getSubmitLabelKey';
 import getRegistrationError from '../../../utils/mapRegistrationError';
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
-import { validateEmail, validateFullName } from '../Validations';
+import { createValidators } from '../Validations';
 
 export default function RegistrationForm(): JSX.Element {
   const dispatch = useAppDispatch();
@@ -27,13 +27,14 @@ export default function RegistrationForm(): JSX.Element {
   const handleRegister = (data: RegisterUserDto): void => {
     dispatch(registerUser(data));
   };
-
+  const validators = createValidators(t);
   return (
     <UIForm<RegisterUserDto>
       onSubmit={handleRegister}
       defaultValues={{ fullName: '', email: '', password: '' }}
       error={error}
       isSubmitting={isSubmitting}
+      resetOnSuccess
       submitLabel={t(getSubmitLabelKey('sign_up', isSubmitting))}
       title={t('sign_up.title')}
       subtitle={t('sign_up.subtitle')}
@@ -44,7 +45,7 @@ export default function RegistrationForm(): JSX.Element {
         placeholder={t('sign_up.form.name_input.placeholder')}
         type="text"
         autoComplete="off"
-        rules={{ required: t('sign_up.form.name_input.required'), validate: validateFullName }}
+        rules={{ required: t('sign_up.form.name_input.required'), validate: validators.fullName }}
       />
       <FormField<RegisterUserDto>
         name="email"
@@ -52,7 +53,7 @@ export default function RegistrationForm(): JSX.Element {
         placeholder={t('sign_up.form.email_input.placeholder')}
         type="email"
         autoComplete="off"
-        rules={{ required: t('sign_up.form.email_input.required'), validate: validateEmail }}
+        rules={{ required: t('sign_up.form.email_input.required'), validate: validators.email }}
       />
 
       <PasswordField<RegisterUserDto>

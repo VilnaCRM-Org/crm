@@ -47,6 +47,12 @@ class MockResponse {
     }
     return JSON.stringify(this.bodyContent);
   }
+
+  public clone(): MockResponse {
+    // Return this to preserve any method overrides (e.g., json(), text())
+    // In tests, we don't need true cloning since body isn't consumed
+    return this;
+  }
 }
 
 const originalResponse = global.Response;
@@ -631,6 +637,41 @@ describe('throwIfHttpError', () => {
         expect(error).toBeInstanceOf(HttpError);
         if (error instanceof HttpError) {
           expect(error.message).toBe('500 Internal Server Error');
+        }
+      }
+    });
+
+    it('should handle non-JSON content with text successfully extracted', async () => {
+      const response = createMockResponse('Custom error text for XML', {
+        status: 400,
+        statusText: 'Bad Request',
+        headers: { 'content-type': 'application/xml' },
+      });
+
+      try {
+        await throwIfHttpError(response);
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        if (error instanceof HttpError) {
+          expect((error.cause as ErrorCause).body).toBe('Custom error text for XML');
+        }
+      }
+    });
+
+    it('should handle text/plain without message when text is empty', async () => {
+      const response = createMockResponse('', {
+        status: 500,
+        statusText: 'Internal Server Error',
+        headers: { 'content-type': 'text/plain' },
+      });
+
+      try {
+        await throwIfHttpError(response);
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        if (error instanceof HttpError) {
+          expect(error.message).toBe('500 Internal Server Error');
+          expect((error.cause as ErrorCause).body).toBe('');
         }
       }
     });
