@@ -331,10 +331,26 @@ memory-leak-dind: ## Run memory leak tests in dind environment
 	$(RUN_MEMLAB)
 
 lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "cd /app && REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) $(LHCI_CONFIG_DESKTOP) --collect.url=http://localhost:3001"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "cd /app && \\
+		CONFIG_PATH=./lighthouse/lighthouserc.desktop.js; \\
+		if [ ! -f \"$$CONFIG_PATH\" ] && [ -f ./lighthouserc.desktop.js ]; then \\
+			mkdir -p ./lighthouse; \\
+			cp ./lighthouserc.desktop.js ./lighthouse/ 2>/dev/null || :; \\
+			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \\
+		fi; \\
+		[ -f \"$$CONFIG_PATH\" ] || { echo 'Lighthouse desktop config not found'; exit 1; }; \\
+		REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001"
 
 lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "cd /app && REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) $(LHCI_CONFIG_MOBILE) --collect.url=http://localhost:3001"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "cd /app && \\
+		CONFIG_PATH=./lighthouse/lighthouserc.mobile.js; \\
+		if [ ! -f \"$$CONFIG_PATH\" ] && [ -f ./lighthouserc.mobile.js ]; then \\
+			mkdir -p ./lighthouse; \\
+			cp ./lighthouserc.mobile.js ./lighthouse/ 2>/dev/null || :; \\
+			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \\
+		fi; \\
+		[ -f \"$$CONFIG_PATH\" ] || { echo 'Lighthouse mobile config not found'; exit 1; }; \\
+		REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001"
 
 create-temp-dev-container-dind: ## Create temporary dev container for dind testing
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
