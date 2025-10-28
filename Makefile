@@ -79,6 +79,7 @@ ifeq ($(CI), 1)
     PNPM_EXEC               = pnpm
     DEV_CMD                 = $(BIN_DIR)/craco start
     BUILD_CMD               = $(CRACO_BUILD)
+    LHCI                    = lhci autorun
 
 	STRYKER_CMD             = pnpm stryker run
     UNIT_TESTS              = env
@@ -320,8 +321,8 @@ build-prod: ## Build production image for dind
 build-k6: ## Build K6 load testing image for dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build k6
 
-install-chromium-lhci: ## Install Chromium for Lighthouse CI in dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "apk add --no-cache chromium"
+install-chromium-lhci: ## Install Chromium and LHCI tooling for Lighthouse CI in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c "apk add --no-cache chromium && npm install -g @lhci/cli@0.10.0"
 
 test-chromium: ## Test Chromium installation in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "chromium-browser --version"
@@ -390,11 +391,11 @@ create-k6-helper-container-dind: ## Create K6 helper container for dind load tes
 		echo "Error: k6 image not found. Run 'make build-k6' first."; \
 		exit 1; \
 	fi; \
-	docker run -d --name "$(K6_HELPER_NAME)" --network $(NETWORK_NAME) --entrypoint /bin/sh "$$IMAGE_ID" -c "exec read -r DUMMY"
+	docker rm -f "$(K6_HELPER_NAME)" >/dev/null 2>&1 || :; \
+	docker run -d --name "$(K6_HELPER_NAME)" --network $(NETWORK_NAME) --entrypoint /bin/sh "$$IMAGE_ID" -c "tail -f /dev/null"
 
 run-load-tests-dind: ## Run load tests in K6 helper container for dind
 	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi
 	docker exec "$(K6_HELPER_NAME)" k6 run --summary-trend-stats="avg,min,med,max,p(95),p(99)" \
 		--out "web-dashboard=period=1s&export=/loadTests/results/homepage.html" \
 		/loadTests/homepage.js
-

@@ -112,13 +112,21 @@ run_load_tests_dind() {
     make build-k6
     k6_helper_container="crm-k6-helper"
     make create-k6-helper-container-dind K6_HELPER_NAME="$k6_helper_container"
+    cleanup_helper() {
+        docker rm -f "$k6_helper_container" >/dev/null 2>&1 || :
+    }
+    trap cleanup_helper EXIT
     docker exec "$k6_helper_container" mkdir -p /loadTests/results
     docker cp "tests/load/." "$k6_helper_container:/loadTests/"
     if ! make run-load-tests-dind K6_HELPER_NAME="$k6_helper_container"; then
+        cleanup_helper
+        trap - EXIT
         exit 1
     fi
     mkdir -p tests/load/reports
     docker cp "$k6_helper_container:/loadTests/results/." "tests/load/reports/" 2>/dev/null || :
+    cleanup_helper
+    trap - EXIT
 }
 
 main() {
@@ -145,5 +153,3 @@ case "${1:-all}" in
         main "$@"
         ;;
     esac
-
-
