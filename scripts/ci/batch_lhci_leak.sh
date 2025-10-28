@@ -53,8 +53,8 @@ run_lighthouse_desktop_dind() {
         set -e
         make start-prod
         make install-chromium-lhci
-        docker compose ${COMPOSE_ARGS} cp "lighthouse/lighthouserc.desktop.js" "prod:/app/"
-        docker compose ${COMPOSE_ARGS} cp "lighthouse/constants.js" "prod:/app/"
+        docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'mkdir -p /app/lighthouse'
+        docker compose ${COMPOSE_ARGS} cp "lighthouse/." "prod:/app/lighthouse/"
         make test-chromium
         make lighthouse-desktop-dind
         mkdir -p lhci-reports-desktop
@@ -65,7 +65,7 @@ run_lighthouse_desktop_dind() {
         exit_code=$?
     fi
 
-    docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouserc.mobile.js /app/lighthouserc.desktop.js /app/constants.js' 2>/dev/null || :
+    docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
     docker compose ${COMPOSE_ARGS} down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
 
@@ -82,8 +82,8 @@ run_lighthouse_mobile_dind() {
         set -e
         make start-prod
         make install-chromium-lhci
-        docker compose ${COMPOSE_ARGS} cp "lighthouse/lighthouserc.mobile.js" "prod:/app/"
-        docker compose ${COMPOSE_ARGS} cp "lighthouse/constants.js" "prod:/app/"
+        docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'mkdir -p /app/lighthouse'
+        docker compose ${COMPOSE_ARGS} cp "lighthouse/." "prod:/app/lighthouse/"
         make test-chromium
         make lighthouse-mobile-dind    
         mkdir -p lhci-reports-mobile
@@ -94,7 +94,7 @@ run_lighthouse_mobile_dind() {
         exit_code=$?
     fi
 
-    docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouserc.mobile.js /app/lighthouserc.desktop.js /app/constants.js' 2>/dev/null || :
+    docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
     docker compose ${COMPOSE_ARGS} down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
     if [ "$exit_code" -ne 0 ]; then
@@ -126,5 +126,3 @@ case "${1:-all}" in
         main "$@"
         ;;
 	esac
-
-
