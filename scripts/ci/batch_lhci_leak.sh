@@ -20,29 +20,34 @@ setup_docker_network() {
     docker network create "$NETWORK_NAME" 2>/dev/null || :
 }
 run_memory_leak_tests_dind() {
-    # TODO: Remove CodeBuild skip once Chrome/CDP timeout issues are resolved
-    if [ -n "$CODEBUILD_BUILD_ID" ] || [ -n "$AWS_REGION" ]; then
-        echo "🚧 CodeBuild detected - skipping memory leak tests due to known Chrome/CDP issues"
-        echo "📝 TODO: Re-enable once CodeBuild container constraints are resolved"
-        echo "✅ Memory leak tests: SKIPPED (would run in other CI environments)"
-        mkdir -p memory-leak-logs
-        echo "Memory leak tests skipped in CodeBuild environment" > memory-leak-logs/test-execution.log
-        return 0
-    fi
-
-    make start-prod
+    setup_docker_network
 
     export REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME=no-aws-header-name
     export REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE=no-aws-header-value
 
-    if ! make memory-leak-dind; then
+    exit_code=0
+    if (
+        set -e
+        export DIND=1
+        make start-prod
+        DIND=1 make memory-leak-dind
+    ); then
+        :
+    else
+        exit_code=$?
         docker compose -p memleak -f docker-compose.memory-leak.yml logs --tail=30 memory-leak || true
-        exit 1
     fi
 
     mkdir -p "memory-leak-logs"
     docker compose -p memleak -f docker-compose.memory-leak.yml cp "memory-leak:/app/tests/memory-leak/results/." "memory-leak-logs/" 2>/dev/null || :
     docker compose -p memleak -f docker-compose.memory-leak.yml logs memory-leak > "memory-leak-logs/test-execution.log" 2>&1 || true
+
+    docker compose ${COMPOSE_ARGS} down --volumes --remove-orphans || true
+    docker network rm "$NETWORK_NAME" 2>/dev/null || :
+
+    if [ "$exit_code" -ne 0 ]; then
+        exit "$exit_code"
+    fi
 }
 
 run_lighthouse_desktop_dind() {
