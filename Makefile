@@ -327,7 +327,7 @@ build-k6: ## Build K6 load testing image for dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build k6
 
 install-chromium-lhci: ## Install Chromium and LHCI tooling for Lighthouse CI in dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c "apk add --no-cache chromium && npm install -g @lhci/cli@0.10.0"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c "apk add --no-cache chromium && npm install -g @lhci/cli@0.10.0 dotenv@16.4.5"
 
 test-chromium: ## Test Chromium installation in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "chromium-browser --version"
@@ -344,7 +344,7 @@ lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
 			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
 		fi; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse desktop config not found"; exit 1; }; \
-		REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001'
+		NODE_PATH=/usr/local/lib/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001'
 
 lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && \
@@ -355,7 +355,7 @@ lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
 		fi; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse mobile config not found"; exit 1; }; \
-		REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001'
+		NODE_PATH=/usr/local/lib/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001'
 
 create-temp-dev-container-dind: ## Create temporary dev container for dind testing
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
