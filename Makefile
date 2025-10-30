@@ -29,7 +29,7 @@ LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
 LHCI_DIND_CHROME_FLAGS      = --no-sandbox --disable-dev-shm-usage --disable-extensions --disable-gpu --headless --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-software-rasterizer --disable-setuid-sandbox --single-process --no-zygote --js-flags=--max-old-space-size=4096
 LHCI_DIND_CHROME_PATH_ARG   = --collect.chromePath=$(CHROMIUM_BIN_PATH)
-LHCI_DIND_CHROME_FLAGS_ARG  = --collect.chromeFlags="$(LHCI_DIND_CHROME_FLAGS)"
+LHCI_DIND_CHROME_FLAGS_ARG  = --collect.settings.chromeFlags="$(LHCI_DIND_CHROME_FLAGS)"
 LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
 LHCI_BUILD_CMD          	= make start-prod && $(LHCI)
 LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS)
