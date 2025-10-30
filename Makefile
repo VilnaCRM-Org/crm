@@ -336,6 +336,8 @@ memory-leak-dind: ## Run memory leak tests in dind environment
 	$(RUN_MEMLAB)
 
 lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc "rm -rf /app/lighthouse/node_modules/dotenv && mkdir -p /app/lighthouse/node_modules"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) cp node_modules/dotenv "prod:/app/lighthouse/node_modules"
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && \
 		CONFIG_PATH=./lighthouse/lighthouserc.desktop.js; \
 		if [ ! -f "$$CONFIG_PATH" ] && [ -f ./lighthouserc.desktop.js ]; then \
@@ -347,6 +349,8 @@ lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
 		NODE_PATH=/usr/local/lib/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001'
 
 lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc "rm -rf /app/lighthouse/node_modules/dotenv && mkdir -p /app/lighthouse/node_modules"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) cp node_modules/dotenv "prod:/app/lighthouse/node_modules"
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && \
 		CONFIG_PATH=./lighthouse/lighthouserc.mobile.js; \
 		if [ ! -f "$$CONFIG_PATH" ] && [ -f ./lighthouserc.mobile.js ]; then \
