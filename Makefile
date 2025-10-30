@@ -26,6 +26,10 @@ TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual
 LHCI                        = pnpm exec -- lhci autorun
 LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
 LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
+CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
+LHCI_DIND_CHROME_FLAGS      = --no-sandbox --disable-dev-shm-usage --disable-extensions --disable-gpu --headless --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-software-rasterizer --disable-setuid-sandbox --single-process --no-zygote --js-flags=--max-old-space-size=4096
+LHCI_DIND_CHROME_PATH_ARG   = --collect.chromePath=$(CHROMIUM_BIN_PATH)
+LHCI_DIND_CHROME_FLAGS_ARG  = --collect.chromeFlags="$(LHCI_DIND_CHROME_FLAGS)"
 LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
 LHCI_BUILD_CMD          	= make start-prod && $(LHCI)
 LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS)
@@ -345,7 +349,7 @@ lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
 			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
 		fi; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse desktop config not found"; exit 1; }; \
-		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001'
+		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001 $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
 
 lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5'
@@ -357,7 +361,7 @@ lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
 		fi; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse mobile config not found"; exit 1; }; \
-		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001'
+		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001 $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
 
 create-temp-dev-container-dind: ## Create temporary dev container for dind testing
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
