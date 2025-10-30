@@ -10,6 +10,7 @@ PROD_CONTAINER_NAME=${PROD_CONTAINER_NAME:-"prod"}
 DOCKER_COMPOSE_DEV_FILE=${DOCKER_COMPOSE_DEV_FILE:-"docker-compose.yml"}
 DOCKER_COMPOSE_TEST_FILE=${DOCKER_COMPOSE_TEST_FILE:-"docker-compose.test.yml"}
 COMMON_HEALTHCHECKS_FILE=${COMMON_HEALTHCHECKS_FILE:-"common-healthchecks.yml"}
+MOCKOON_PORT=${MOCKOON_PORT:-"8080"}
 
 COMPOSE_ARGS=""
 if [ -n "$COMMON_HEALTHCHECKS_FILE" ] && [ -s "$COMMON_HEALTHCHECKS_FILE" ]; then
@@ -29,7 +30,8 @@ run_memory_leak_tests_dind() {
     if (
         set -e
         export DIND=1
-        make start-prod
+        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod
+        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod
         make patch-prod-mockoon-url
         DIND=1 make memory-leak-dind
     ); then
@@ -57,7 +59,8 @@ run_lighthouse_desktop_dind() {
     exit_code=0
     if (
         set -e
-        make start-prod
+        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod
+        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod
         make patch-prod-mockoon-url
         make install-chromium-lhci
         docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'mkdir -p /app/lighthouse'
@@ -87,7 +90,8 @@ run_lighthouse_mobile_dind() {
     exit_code=0
     if (
         set -e
-        make start-prod
+        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod
+        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod
         make patch-prod-mockoon-url
         make install-chromium-lhci
         docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'mkdir -p /app/lighthouse'

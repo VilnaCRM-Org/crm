@@ -363,32 +363,19 @@ lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse mobile config not found"; exit 1; }; \
 		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001 $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
 
-patch-prod-mockoon-url: ## Update built assets in prod container to point to mockoon service instead of localhost
+patch-prod-mockoon-url: ## Rewrite localhost Mockoon URLs inside the prod bundle to use container host
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc '\
 		set -e; \
-		TARGET_URL="http://localhost:$${MOCKOON_PORT:-8080}"; \
-		REPLACEMENT_URL="http://mockoon:$${MOCKOON_PORT:-8080}"; \
-		if [ "$$TARGET_URL" = "$$REPLACEMENT_URL" ]; then exit 0; fi; \
-		if [ ! -d /app/build ]; then \
-			echo "Prod build directory not found; skipping mockoon URL patch."; \
+		BUILD_DIR=/app/build; \
+		if [ ! -d "$$BUILD_DIR" ]; then \
+			echo "Prod build directory not found; skipping Mockoon URL patch."; \
 			exit 0; \
 		fi; \
-		PATCH_COUNT=0; \
-		TMP_FILE=$$(mktemp); \
-		trap "rm -f $$TMP_FILE" EXIT; \
-		find /app/build -type f \( -name "*.js" -o -name "*.css" -o -name "*.html" -o -name "*.json" \) -print0 > "$$TMP_FILE"; \
-		if [ -s "$$TMP_FILE" ]; then \
-			while IFS= read -r -d "" file; do \
-				sed -i "s|$$TARGET_URL|$$REPLACEMENT_URL|g" "$$file" && PATCH_COUNT=$$((PATCH_COUNT+1)); \
-			done < "$$TMP_FILE"; \
-		fi; \
-		rm -f "$$TMP_FILE"; \
-		trap - EXIT; \
-		if [ "$$PATCH_COUNT" -gt 0 ]; then \
-			echo "Patched Mockoon URLs from $$TARGET_URL to $$REPLACEMENT_URL in $$PATCH_COUNT files"; \
-		else \
-			echo "No files required Mockoon URL patching"; \
-		fi; \
+	TARGET="http://localhost:$${MOCKOON_PORT:-8080}"; \
+	REPLACEMENT="http://mockoon:$${MOCKOON_PORT:-8080}"; \
+	if [ "$$TARGET" = "$$REPLACEMENT" ]; then exit 0; fi; \
+	find "$$BUILD_DIR" -type f \\( -name \"*.js\" -o -name \"*.html\" -o -name \"*.json\" -o -name \"*.css\" \\) -exec sed -i \"s|$$TARGET|$$REPLACEMENT|g\" {} +; \
+	echo \"Patched Mockoon URLs from $$TARGET to $$REPLACEMENT\"; \
 	'
 
 create-temp-dev-container-dind: ## Create temporary dev container for dind testing
