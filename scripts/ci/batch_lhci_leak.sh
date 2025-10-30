@@ -30,6 +30,7 @@ run_memory_leak_tests_dind() {
         set -e
         export DIND=1
         make start-prod
+        make patch-prod-mockoon-url
         DIND=1 make memory-leak-dind
     ); then
         :
@@ -57,6 +58,7 @@ run_lighthouse_desktop_dind() {
     if (
         set -e
         make start-prod
+        make patch-prod-mockoon-url
         make install-chromium-lhci
         docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'mkdir -p /app/lighthouse'
         docker compose ${COMPOSE_ARGS} cp "lighthouse/." "prod:/app/lighthouse/"
@@ -86,6 +88,7 @@ run_lighthouse_mobile_dind() {
     if (
         set -e
         make start-prod
+        make patch-prod-mockoon-url
         make install-chromium-lhci
         docker compose ${COMPOSE_ARGS} exec -T prod sh -lc 'mkdir -p /app/lighthouse'
         docker compose ${COMPOSE_ARGS} cp "lighthouse/." "prod:/app/lighthouse/"
