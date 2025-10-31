@@ -26,6 +26,10 @@ TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual
 LHCI                        = pnpm exec -- lhci autorun
 LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
 LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
+CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
+LHCI_DIND_CHROME_FLAGS      = --no-sandbox --disable-dev-shm-usage --disable-extensions --disable-gpu --headless --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-software-rasterizer --disable-setuid-sandbox --single-process --no-zygote --js-flags=--max-old-space-size=4096
+LHCI_DIND_CHROME_PATH_ARG   = --collect.chromePath=$(CHROMIUM_BIN_PATH)
+LHCI_DIND_CHROME_FLAGS_ARG  = --collect.settings.chromeFlags="$(LHCI_DIND_CHROME_FLAGS)"
 LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
 LHCI_BUILD_CMD          	= make start-prod && $(LHCI)
 LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS)
@@ -55,6 +59,11 @@ MEMLEAK_RUN_TESTS			= \
 MEMLEAK_RUN_CLEANUP			= \
 								echo "🧹 Cleaning up memory leak test containers..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) down --remove-orphans
+MEMLEAK_RUN_DOCKER			= \
+								$(MEMLEAK_REMOVE_RESULTS); \
+								$(MEMLEAK_SETUP); \
+								$(MEMLEAK_RUN_TESTS); \
+								$(MEMLEAK_RUN_CLEANUP)
 
 K6_TEST_SCRIPT              ?= /loadTests/homepage.js
 K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
@@ -69,7 +78,7 @@ PRETTIER_CMD                = pnpm exec -- prettier "**/*.{js,jsx,ts,tsx,mts,jso
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 
-NETWORK_NAME                = website-network
+NETWORK_NAME                = crm-network
 
 CI                          ?= 0
 
@@ -79,6 +88,7 @@ ifeq ($(CI), 1)
     PNPM_EXEC               = pnpm
     DEV_CMD                 = $(BIN_DIR)/craco start
     BUILD_CMD               = $(CRACO_BUILD)
+    LHCI                    = lhci autorun
 
 	STRYKER_CMD             = pnpm stryker run
     UNIT_TESTS              = env
@@ -88,7 +98,11 @@ ifeq ($(CI), 1)
 
     MARKDOWNLINT_BIN        = pnpm exec -- markdownlint
 	LHCI_TARGET_URL 		= $(WEBSITE_URL)
-    RUN_MEMLAB				= $(MEMLEAK_REMOVE_RESULTS) && node $(MEMLEAK_TEST_SCRIPT)
+ifeq ($(DIND), 1)
+    RUN_MEMLAB              = $(MEMLEAK_RUN_DOCKER)
+else
+    RUN_MEMLAB              = $(MEMLEAK_REMOVE_RESULTS) && node $(MEMLEAK_TEST_SCRIPT)
+endif
 else
     EXEC_CMD                = $(EXEC_DEV_TTYLESS)
     PNPM_EXEC               = $(EXEC_DEV_TTYLESS) pnpm
@@ -103,11 +117,7 @@ else
 
     MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) pnpm exec -- markdownlint
     LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
-    RUN_MEMLAB				= \
-    							$(MEMLEAK_REMOVE_RESULTS); \
-                              	$(MEMLEAK_SETUP); \
-                              	$(MEMLEAK_RUN_TESTS); \
-                              	$(MEMLEAK_RUN_CLEANUP)
+    RUN_MEMLAB               = $(MEMLEAK_RUN_DOCKER)
 endif
 
 # To Run in CI mode specify CI variable. Example: make lint-md CI=1
@@ -150,7 +160,11 @@ wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	exit 1
 
 build: ## Build the dev container
+ifeq ($(DIND), 1)
+	docker build -t crm-dev -f Dockerfile --target base .
+else
 	$(BUILD_CMD)
+endif
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
@@ -309,3 +323,121 @@ clean: down ## Clean up only this project's containers, images, and volumes
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) down --volumes --remove-orphans --rmi local
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) down --volumes --remove-orphans --rmi local
 
+# DIND (Docker-in-Docker) targets for CI scripts
+build-prod: ## Build production image for dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build prod
+
+build-k6: ## Build K6 load testing image for dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build k6
+
+install-chromium-lhci: ## Install Chromium and LHCI tooling for Lighthouse CI in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c "apk add --no-cache chromium && npm install -g @lhci/cli@0.10.0 dotenv@16.4.5"
+
+test-chromium: ## Test Chromium installation in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "chromium-browser --version"
+
+memory-leak-dind: ## Run memory leak tests in dind environment
+	$(RUN_MEMLAB)
+
+lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5'
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && \
+		CONFIG_PATH=./lighthouse/lighthouserc.desktop.js; \
+		if [ ! -f "$$CONFIG_PATH" ] && [ -f ./lighthouserc.desktop.js ]; then \
+			mkdir -p ./lighthouse; \
+			cp ./lighthouserc.desktop.js ./lighthouse/ 2>/dev/null || :; \
+			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
+		fi; \
+		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse desktop config not found"; exit 1; }; \
+		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001 $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
+
+lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5'
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && \
+		CONFIG_PATH=./lighthouse/lighthouserc.mobile.js; \
+		if [ ! -f "$$CONFIG_PATH" ] && [ -f ./lighthouserc.mobile.js ]; then \
+			mkdir -p ./lighthouse; \
+			cp ./lighthouserc.mobile.js ./lighthouse/ 2>/dev/null || :; \
+			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
+		fi; \
+		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse mobile config not found"; exit 1; }; \
+		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001 $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
+
+patch-prod-mockoon-url: ## Rewrite localhost Mockoon URLs inside the prod bundle to use container host
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc '\
+		set -e; \
+		BUILD_DIR=/app/build; \
+		if [ ! -d "$$BUILD_DIR" ]; then \
+			echo "Prod build directory not found; skipping Mockoon URL patch."; \
+			exit 0; \
+		fi; \
+	TARGET="http://localhost:$${MOCKOON_PORT:-8080}"; \
+	REPLACEMENT="http://mockoon:$${MOCKOON_PORT:-8080}"; \
+	if [ "$$TARGET" = "$$REPLACEMENT" ]; then exit 0; fi; \
+	find "$$BUILD_DIR" -type f \\( -name \"*.js\" -o -name \"*.html\" -o -name \"*.json\" -o -name \"*.css\" \\) -exec sed -i \"s|$$TARGET|$$REPLACEMENT|g\" {} +; \
+	echo \"Patched Mockoon URLs from $$TARGET to $$REPLACEMENT\"; \
+	'
+
+create-temp-dev-container-dind: ## Create temporary dev container for dind testing
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker run -d --name "$(TEMP_CONTAINER_NAME)" --network $(NETWORK_NAME) \
+		-w /app \
+		crm-dev \
+		tail -f /dev/null
+
+copy-source-to-container-dind: ## Copy source code to temp container for dind testing
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	tar -cf - \
+		--exclude="./.git" \
+		--exclude="./node_modules" \
+		--exclude="./.next" \
+		--exclude="./out" \
+		--exclude="./coverage" \
+		--exclude="./playwright-report" \
+		--exclude="./test-results" \
+		./ | docker exec -i "$(TEMP_CONTAINER_NAME)" tar -xf - -C /app
+
+install-deps-in-container-dind: ## Install dependencies in temp container for dind testing
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" pnpm install --frozen-lockfile
+
+run-unit-tests-dind: ## Run unit tests in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=client $(JEST_BIN) $(JEST_FLAGS)
+	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=server $(JEST_BIN) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
+
+run-integration-tests-dind: ## Run integration tests in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=integration $(JEST_BIN) $(JEST_FLAGS)
+
+run-mutation-tests-dind: ## Run mutation tests in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" $(STRYKER_CMD)
+
+run-eslint-tests-dind: ## Run ESLint in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" npx eslint .
+
+run-typescript-tests-dind: ## Run TypeScript check in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" pnpm tsc
+
+run-markdown-lint-tests-dind: ## Run Markdown lint in temp container for dind
+	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
+	docker exec "$(TEMP_CONTAINER_NAME)" $(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
+
+create-k6-helper-container-dind: ## Create K6 helper container for dind load testing
+	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi
+	@IMAGE_ID=$$(docker images -q crm-k6 | head -1); \
+	if [ -z "$$IMAGE_ID" ]; then \
+		echo "Error: k6 image not found. Run 'make build-k6' first."; \
+		exit 1; \
+	fi; \
+	docker rm -f "$(K6_HELPER_NAME)" >/dev/null 2>&1 || :; \
+	docker run -d --name "$(K6_HELPER_NAME)" --network $(NETWORK_NAME) --entrypoint /bin/sh "$$IMAGE_ID" -c "tail -f /dev/null"
+
+run-load-tests-dind: ## Run load tests in K6 helper container for dind
+	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi
+	docker exec "$(K6_HELPER_NAME)" k6 run --summary-trend-stats="avg,min,med,max,p(95),p(99)" \
+		--out "web-dashboard=period=1s&export=/loadTests/results/homepage.html" \
+		/loadTests/homepage.js

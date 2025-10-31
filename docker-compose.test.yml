@@ -14,7 +14,7 @@ services:
       retries: 3
       start_period: 45s
     networks:
-      - website-network
+      - crm-network
 
   playwright:
     build:
@@ -29,7 +29,7 @@ services:
     environment:
       - REACT_APP_PROD_CONTAINER_API_URL=http://prod:3001
     networks:
-      - website-network
+      - crm-network
 
   apollo:
     build:
@@ -43,7 +43,7 @@ services:
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${GRAPHQL_PORT:-4000}/${GRAPHQL_API_PATH:-graphql}"]
     networks:
-      - website-network
+      - crm-network
 
   mockoon:
     build:
@@ -55,7 +55,7 @@ services:
     healthcheck:
       test: ["CMD", "wget", "-q", "http://localhost:${MOCKOON_PORT:-8080}/api/users", "-O", "-"]
     networks:
-      - website-network
+      - crm-network
 
   k6:
     profiles: ["load"]
@@ -68,10 +68,10 @@ services:
     volumes:
       - ./tests/load:/loadTests
     networks:
-      - website-network
+      - crm-network
 
 
 networks:
-  website-network:
+  crm-network:
     external: true
-    name: website-network
+    name: crm-network
