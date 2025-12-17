@@ -1,30 +1,30 @@
 FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS builder
 
-RUN apk add --no-cache bash=5.2.26-r0 curl=8.14.1-r2 && \
+RUN apk add --no-cache bash curl=8.14.1-r2 && \
     curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.4"
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml checkNodeVersion.js ./
+COPY package.json bun.lock* checkNodeVersion.js ./
 COPY docker docker
 RUN bun install --frozen-lockfile
-RUN bunx tsc --project ./docker/apollo-server/tsconfig.server.json
+RUN node ./node_modules/typescript/bin/tsc --project ./docker/apollo-server/tsconfig.server.json
 
 ## -------- Production Stage --------
 FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21
 ENV NODE_ENV=production
 ENV DEV_PORT=3000
 
-RUN apk add --no-cache bash=5.2.26-r0 curl=8.14.1-r2 && \
+RUN apk add --no-cache bash curl=8.14.1-r2 && \
     curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.4"
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
+COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile --production
 
 USER root

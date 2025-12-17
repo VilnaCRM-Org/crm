@@ -1,7 +1,7 @@
 FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS base
 
 RUN apk add --no-cache \
-    bash=5.2.26-r0 \
+    bash \
     chromium=136.0.7103.113-r0 \
     xvfb=21.1.16-r0 \
     nss=3.109-r0 \
@@ -31,7 +31,7 @@ WORKDIR /app
 
 FROM base AS build
 
-COPY package.json pnpm-lock.yaml checkNodeVersion.js .env ./
+COPY package.json bun.lock* checkNodeVersion.js .env ./
 RUN bun install
 
 

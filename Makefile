@@ -15,7 +15,7 @@ JEST_BIN                    = ./node_modules/jest/bin/jest.js
 JEST_CMD                    = node $(JEST_BIN)
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
-CRACO_BUILD                 = $(BUNX) craco build
+RSPACK_BUILD                = $(BUNX) rspack build --mode production
 STORYBOOK_PORT				?= 6006
 STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 
@@ -90,8 +90,8 @@ ifeq ($(CI), 1)
     EXEC_CMD                =
     BUN                     = bun
     BUNX                    = bunx
-    DEV_CMD                 = $(BIN_DIR)/craco start
-    BUILD_CMD               = $(CRACO_BUILD)
+    DEV_CMD                 = $(BUNX) rspack serve --host 0.0.0.0 --port $(DEV_PORT)
+    BUILD_CMD               = $(RSPACK_BUILD)
     LHCI                    = lhci autorun
 
 	STRYKER_CMD             = $(BUNX) stryker run
@@ -112,7 +112,7 @@ else
     BUN                     = $(EXEC_DEV_TTYLESS) bun
     BUNX                    = $(EXEC_DEV_TTYLESS) bunx
     DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
-    BUILD_CMD               = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
+    BUILD_CMD               = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSPACK_BUILD)
 
     STRYKER_CMD             = make start && $(BUNX) stryker run
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
@@ -172,12 +172,12 @@ else
 endif
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(RSPACK_BUILD)
 
 build-out: ## Build production artifacts to ./out directory (via Docker)
-	@echo "🏗️ Building production Docker image for Craco..."
-	docker build -t craco-build -f Dockerfile --target production .
-	@container_id=$$(docker create craco-build) && \
+	@echo "🏗️ Building production Docker image for Rspack bundle..."
+	docker build -t rspack-build -f Dockerfile --target production .
+	@container_id=$$(docker create rspack-build) && \
 	rm -rf ./out && \
 	docker cp $$container_id:/app/build ./out && \
 	docker rm $$container_id && \

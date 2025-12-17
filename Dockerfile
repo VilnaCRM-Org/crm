@@ -3,7 +3,7 @@ FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS base
 ARG CURL_VERSION=8.14.1-r2
 
 RUN apk add --no-cache \
-    bash=5.2.26-r0 \
+    bash \
     python3=3.12.12-r0 \
     make=4.4.1-r2 \
     g++=14.2.0-r4  \
@@ -15,7 +15,7 @@ ENV PATH="${BUN_INSTALL}/bin:${PATH}"
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml checkNodeVersion.js ./
+COPY package.json bun.lock* checkNodeVersion.js ./
 RUN bun install --frozen-lockfile
 
 
@@ -23,7 +23,7 @@ RUN bun install --frozen-lockfile
 FROM base AS build
 
 COPY . .
-RUN npx craco build
+RUN bunx rspack build --mode production
 
 
 # -------- Production Image --------
