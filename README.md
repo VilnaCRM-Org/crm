@@ -51,10 +51,8 @@ Before running the application, make sure the following tools are installed on y
   Docker applications. Docker Compose is essential for starting up the
   development environment and running the services defined in docker-compose.yml.
 
-- **[pnpm](https://pnpm.io/)** a fast, disk space-efficient package manager for JavaScript and
-  Node.js projects. It uses a unique content-addressable storage to save dependencies on your machine
-  only once, and creates hard links to them in project folders, resulting in faster installations and
-  smaller disk usage compared to npm or yarn.
+- **[Bun](https://bun.sh/)** used as the package manager (Node.js remains the runtime). Bun reads the
+  existing `pnpm-lock.yaml` to keep dependency resolutions consistent while delivering fast installs.
 
 #### 3. Run the Application
 
@@ -91,7 +89,7 @@ General
   make build: builds the application
   make format: formats the codebase to ensure consistent style across all files
   make update: updates node modules according to the current package.json file
-  make install: installs node modules according to the current pnpm-lock.yaml file
+  make install: installs node modules according to the current pnpm-lock.yaml file using Bun
   make check-node-version: checks if the correct Node.js version is installed
 ```
 

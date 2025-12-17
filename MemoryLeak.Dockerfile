@@ -1,6 +1,7 @@
 FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS base
 
 RUN apk add --no-cache \
+    bash=5.2.26-r0 \
     chromium=136.0.7103.113-r0 \
     xvfb=21.1.16-r0 \
     nss=3.109-r0 \
@@ -13,7 +14,11 @@ RUN apk add --no-cache \
     libxcomposite=0.4.6-r5 \
     libxdamage=1.1.6-r5 \
     libxext=1.3.6-r2 \
-    && npm install -g pnpm@10.11.0
+    curl=8.14.1-r2 \
+    && curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.4"
+
+ENV BUN_INSTALL=/root/.bun
+ENV PATH="${BUN_INSTALL}/bin:${PATH}"
 
 ENV DISPLAY=:99 \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \
@@ -27,7 +32,7 @@ WORKDIR /app
 FROM base AS build
 
 COPY package.json pnpm-lock.yaml checkNodeVersion.js .env ./
-RUN pnpm install
+RUN bun install
 
 
 FROM base AS final

@@ -5,13 +5,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     make=4.3-4.1build1 \
     g++=4:11.2.0-1ubuntu1 \
     curl=7.81.0-* \
-    && npm install -g pnpm@10.6.5 \
+    && curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.4" \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV BUN_INSTALL=/root/.bun
+ENV PATH="${BUN_INSTALL}/bin:${PATH}"
 
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install
+RUN bun install
 
 CMD ["tail", "-f", "/dev/null"]
