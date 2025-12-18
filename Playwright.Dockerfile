@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/playwright:v1.55.0-jammy
+FROM mcr.microsoft.com/playwright:v1.57.0-jammy
 
 RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     python3 \
@@ -16,6 +16,6 @@ WORKDIR /app
 
 COPY package.json bun.lock* ./
 
-RUN bun install
+RUN bun install && bunx playwright install --with-deps
 
 CMD ["tail", "-f", "/dev/null"]
