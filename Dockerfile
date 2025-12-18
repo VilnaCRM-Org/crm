@@ -23,7 +23,7 @@ RUN bun install --frozen-lockfile
 FROM base AS build
 
 COPY . .
-RUN bunx rspack build --mode production
+RUN bunx craco build
 
 
 # -------- Production Image --------
