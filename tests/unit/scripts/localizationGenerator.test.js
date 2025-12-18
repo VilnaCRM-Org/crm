@@ -169,6 +169,30 @@ describe('LocalizationGenerator', () => {
 
       expect(result).toEqual([]);
     });
+
+    it('should ignore the output localization directory when walking modules', () => {
+      fs.existsSync.mockReturnValue(true);
+      fs.readdirSync.mockImplementation((dir, options) => {
+        const structure = {
+          src: [
+            { name: 'i18n', isDirectory: () => true, isFile: () => false },
+            { name: 'modules', isDirectory: () => true, isFile: () => false },
+          ],
+          'src/modules': [
+            { name: 'feature', isDirectory: () => true, isFile: () => false },
+          ],
+          'src/modules/feature': [
+            { name: 'i18n', isDirectory: () => true, isFile: () => false },
+          ],
+        };
+        const entries = structure[dir] || [];
+        return options?.withFileTypes ? entries : entries.map((e) => e.name);
+      });
+
+      const result = generator.getFeaturePaths();
+
+      expect(result).toEqual([path.join('src', 'modules', 'feature', 'i18n')]);
+    });
   });
 
   describe('getLocalizationFromFolder', () => {
@@ -378,6 +402,16 @@ describe('LocalizationGenerator', () => {
       expect(result).toEqual({
         items: [4, 5, 6],
       });
+    });
+
+    it('should skip prototype keys for safety', () => {
+      const target = {};
+      const source = { prototype: { bad: true }, safe: true };
+
+      const result = generator.deepMerge(target, source);
+
+      expect(result).toEqual({ safe: true });
+      expect(Object.prototype).not.toHaveProperty('bad');
     });
   });
 

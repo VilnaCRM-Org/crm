@@ -82,6 +82,7 @@ JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 NETWORK_NAME                = crm-network
 
 CI                          ?= 0
+DOCKER_AVAILABLE            := $(shell docker info >/dev/null 2>&1 && echo 1 || echo 0)
 
 BUN                         = bun
 BUNX                        = bunx
@@ -115,7 +116,11 @@ else
     BUILD_CMD               = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
 
     STRYKER_CMD             = make start && $(BUNX) stryker run
+ifeq ($(DOCKER_AVAILABLE),1)
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
+else
+    UNIT_TESTS              = env
+endif
 
     STORYBOOK_BUILD			= $(BUNX) storybook build
     STORYBOOK_START         = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
