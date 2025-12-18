@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     g++ \
     curl \
     unzip \
-    && curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.4" \
+    && curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5" \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV BUN_INSTALL=/root/.bun

@@ -1,7 +1,7 @@
 FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS builder
 
 RUN apk add --no-cache bash curl=8.14.1-r2 && \
-    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.4"
+    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
@@ -18,7 +18,7 @@ ENV NODE_ENV=production
 ENV DEV_PORT=3000
 
 RUN apk add --no-cache bash curl=8.14.1-r2 && \
-    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.4"
+    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"

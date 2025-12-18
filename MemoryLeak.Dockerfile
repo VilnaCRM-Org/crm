@@ -15,7 +15,7 @@ RUN apk add --no-cache \
     libxdamage=1.1.6-r5 \
     libxext=1.3.6-r2 \
     curl=8.14.1-r2 \
-    && curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.4"
+    && curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"

@@ -8,7 +8,7 @@ RUN apk add --no-cache \
     make=4.4.1-r2 \
     g++=14.2.0-r4  \
     curl=${CURL_VERSION} && \
-    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.4"
+    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
@@ -21,6 +21,9 @@ RUN bun install --frozen-lockfile
 
 # -------- Build Stage --------
 FROM base AS build
+
+# Ensure Bun binaries are in PATH for this stage
+ENV PATH="/root/.bun/bin:${PATH}"
 
 COPY . .
 RUN bunx craco build
