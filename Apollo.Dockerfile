@@ -30,9 +30,8 @@ RUN bun install --frozen-lockfile --production
 USER root
 RUN apk update && apk add --no-cache curl=8.14.1-r2
 
-COPY --from=builder /app/docker/apollo-server/out ./docker/apollo-server/out
-COPY docker/apollo-server/bootstrap.mjs ./docker/apollo-server/bootstrap.mjs
+COPY --from=builder --chown=node:node /app/docker/apollo-server/out ./docker/apollo-server/out
+COPY --chown=node:node docker/apollo-server/bootstrap.mjs ./docker/apollo-server/bootstrap.mjs
 
-RUN chown -R node:node /app
 USER node
 CMD ["node", "./docker/apollo-server/bootstrap.mjs"]

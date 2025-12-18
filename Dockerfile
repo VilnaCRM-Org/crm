@@ -8,7 +8,8 @@ RUN apk add --no-cache \
     make=4.4.1-r2 \
     g++=14.2.0-r4  \
     curl=${CURL_VERSION} && \
-    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
+    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5" && \
+    ln -sf /root/.bun/bin/bun /root/.bun/bin/bunx
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
@@ -26,7 +27,7 @@ FROM base AS build
 ENV PATH="/root/.bun/bin:${PATH}"
 
 COPY . .
-RUN bunx craco build
+RUN bun x craco build
 
 
 # -------- Production Image --------
