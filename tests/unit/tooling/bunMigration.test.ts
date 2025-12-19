@@ -1,9 +1,11 @@
 import fs from 'fs';
 import path from 'path';
+
 import type { Config } from 'jest';
+
 import jestConfig from '../../../jest.config';
 
-const readFile = (filePath: string) =>
+const readFile = (filePath: string): string =>
   fs.readFileSync(path.resolve(__dirname, '..', '..', '..', filePath), 'utf-8');
 
 describe('Bun migration tooling expectations', () => {

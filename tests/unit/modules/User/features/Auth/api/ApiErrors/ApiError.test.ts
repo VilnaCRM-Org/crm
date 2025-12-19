@@ -203,6 +203,18 @@ describe('ApiError', () => {
       expect(error.message).toBe(message);
     });
 
+    it('should still build stack when captureStackTrace is unavailable', () => {
+      const originalCapture = Error.captureStackTrace;
+      // @ts-expect-error intentionally removing to cover fallback path
+      Error.captureStackTrace = undefined;
+
+      const error = new ApiError('Stack fallback', 'TEST_CODE');
+
+      expect(error.stack).toBeDefined();
+
+      Error.captureStackTrace = originalCapture;
+    });
+
     it('should handle various HTTP status codes', () => {
       const statuses = [200, 201, 400, 401, 403, 404, 409, 422, 500, 502, 503];
 

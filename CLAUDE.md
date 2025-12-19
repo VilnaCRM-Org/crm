@@ -17,7 +17,8 @@ This template is used for all VilnaCRM microservices.
 - **i18n**: react-i18next (main language: uk, fallback: en)
 - **Build**: CRACO (Create React App Configuration Override)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
-- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime; Bun is used only to manage dependencies using `bun.lock`.
+- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
+  Bun is used only to manage dependencies using `bun.lock`.
 - **Node**: >=24.8.0 (enforced via engineStrict)
 
 ## Development Environment

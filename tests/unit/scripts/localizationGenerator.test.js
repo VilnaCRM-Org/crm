@@ -413,6 +413,12 @@ describe('LocalizationGenerator', () => {
       expect(result).toEqual({ safe: true });
       expect(Object.prototype).not.toHaveProperty('bad');
     });
+
+    it('should return empty object when called without arguments', () => {
+      const result = generator.deepMerge();
+
+      expect(result).toEqual({});
+    });
   });
 
   describe('writeLocalizationFile', () => {

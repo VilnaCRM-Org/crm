@@ -476,6 +476,23 @@ describe('FetchHttpsClient', () => {
       const result = await client.get('/api/test');
       expect(result).toBeUndefined();
     });
+
+    it('should return undefined when clone text fails during JSON parsing', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ data: 'ignored' }),
+        clone: () => ({
+          text: async (): Promise<string> => {
+            throw new Error('text failed');
+          },
+        }),
+      });
+
+      const result = await client.get('/api/test');
+      expect(result).toBeUndefined();
+    });
   });
 
   describe('error handling', () => {

@@ -675,5 +675,17 @@ describe('throwIfHttpError', () => {
         }
       }
     });
+
+    it('should expose content type in HttpError cause', async () => {
+      const response = createMockResponse({ error: 'Unauthorized' }, {
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: { 'content-type': 'application/json' },
+      });
+
+      await expect(throwIfHttpError(response)).rejects.toMatchObject({
+        cause: expect.objectContaining({ contentType: 'application/json' }),
+      });
+    });
   });
 });

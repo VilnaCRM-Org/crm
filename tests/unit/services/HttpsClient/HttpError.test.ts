@@ -43,6 +43,17 @@ describe('HttpError', () => {
       expect(error.cause instanceof TypeError).toBe(true);
     });
 
+    it('should still build stack when captureStackTrace is unavailable', () => {
+      const originalCapture = Error.captureStackTrace;
+      // @ts-expect-error intentional removal for branch coverage
+      Error.captureStackTrace = undefined;
+
+      const error = new HttpError({ status: 500, message: 'Stackless' });
+      expect(error.stack).toBeDefined();
+
+      Error.captureStackTrace = originalCapture;
+    });
+
     it('should create error with cause as string', () => {
       const error = new HttpError({ status: 403, message: 'Forbidden', cause: 'Access denied' });
 
