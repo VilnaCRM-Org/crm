@@ -17,7 +17,7 @@ describe('Button component', () => {
 
   it('renders with default props', () => {
     const handleClick = jest.fn();
-    render(<Button onClick={handleClick} />);
+    render(<Button label="Button" variant="primary" onClick={handleClick} />);
 
     expect(screen.getByText('Button')).toBeInTheDocument();
     expect(screen.getByRole('button')).toHaveClass('btn-primary');

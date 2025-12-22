@@ -16,3 +16,10 @@ services:
       timeout: 30s
       retries: 5
       start_period: 90s
+    networks:
+      - crm-network
+
+networks:
+  crm-network:
+    external: true
+    name: crm-network

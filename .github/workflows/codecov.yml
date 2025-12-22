@@ -18,24 +18,37 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Cache pnpm dependencies
-        id: cache-pnpm-dependencies
+      - name: Detect package manager
+        id: pkg-manager
+        run: |
+          pm=$(node -p "require('./package.json').packageManager || ''")
+          echo "value=$pm" >> "$GITHUB_OUTPUT"
+          if [[ "$pm" == bun@* ]]; then
+            echo "bun_version=${pm#bun@}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cache dependencies
+        id: cache-dependencies
         uses: actions/cache@v4.2.3
         with:
           path: node_modules
-          key: ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-${{ hashFiles('bun.lock') }}
           restore-keys: |
             ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-
 
-      - name: Enable repo pnpm version
-        run: |
-          corepack enable
-          corepack prepare $(node -p "require('./package.json').packageManager") --activate
+      - name: Start container
+        env:
+          CI: 0
+        run: make start
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        env:
+          CI: 0
+        run: make install
 
       - name: Run unit tests
+        env:
+          CI: 0
         run: make test-unit-all
 
       - name: Upload coverage to Codecov

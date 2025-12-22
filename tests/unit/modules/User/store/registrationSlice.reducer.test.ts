@@ -3,9 +3,9 @@ import { configureStore, type ThunkDispatch, type UnknownAction } from '@reduxjs
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 import { registrationReducer, registerUser, type RegistrationState } from '@/modules/User/store/registrationSlice';
+import type { ThunkExtra } from '@/modules/User/store/types';
 import { ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
-import type { ThunkExtra } from '@/modules/User/store/types';
 
 type TestStore = {
   dispatch: ThunkDispatch<{ registration: RegistrationState }, ThunkExtra, UnknownAction>;
@@ -145,7 +145,10 @@ describe('registrationSlice reducer and thunk coverage', () => {
   it('handles aborted rejection without overriding error', async () => {
     const store = createStore();
     (registrationAPI.register as jest.Mock).mockImplementation(
-      () => new Promise((resolve) => setTimeout(resolve, 50))
+      () =>
+        new Promise((resolve) => {
+          setTimeout(resolve, 50);
+        })
     );
 
     const promise = store.dispatch(
