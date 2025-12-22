@@ -3,7 +3,7 @@ services:
     build:
       context: .
       target: base
-    command: ['bun', 'x', 'craco', 'start']
+    command: ['sh', '-c', 'bun install --frozen-lockfile && bun x craco start']
     restart: unless-stopped
     volumes:
       - .:/app
