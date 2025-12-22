@@ -42,7 +42,7 @@ jobs:
           path: |
             ~/.pnpm-store
             node_modules
-          key: ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-${{ hashFiles('bun.lock') }}
+          key: ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-${{ hashFiles('**/pnpm-lock.yaml', 'bun.lock*', 'package-lock.json', 'yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-dependencies-node-${{ vars.NODE_VERSION }}-
 

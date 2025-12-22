@@ -33,7 +33,7 @@ jobs:
         uses: actions/cache@v4.2.3
         with:
           path: node_modules
-          key: ${{ runner.os }}-dependencies-${{ hashFiles('bun.lock') }}
+          key: ${{ runner.os }}-dependencies-${{ hashFiles('**/pnpm-lock.yaml', 'bun.lock*', 'package-lock.json', 'yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-dependencies-
 

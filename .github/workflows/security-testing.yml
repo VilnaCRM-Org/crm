@@ -26,7 +26,7 @@ jobs:
         uses: actions/cache@v4.2.3
         with:
           path: ${{ runner.workspace }}/codeql_databases
-          key: ${{ runner.os }}-codeql-${{ hashFiles('bun.lock') }}
+          key: ${{ runner.os }}-codeql-${{ hashFiles('**/pnpm-lock.yaml', 'bun.lock*', 'package-lock.json', 'yarn.lock') }}
           restore-keys: |
             ${{ runner.os }}-codeql-
 
