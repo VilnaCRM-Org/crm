@@ -144,12 +144,11 @@ describe('registrationSlice reducer and thunk coverage', () => {
 
   it('handles aborted rejection without overriding error', async () => {
     const store = createStore();
-    (registrationAPI.register as jest.Mock).mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          setTimeout(resolve, 50);
-        })
-    );
+    (registrationAPI.register as jest.Mock).mockImplementation(async () => {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 50);
+      });
+    });
 
     const promise = store.dispatch(
       registerUser({ email: 'abort@test.com', password: 'pass', fullName: 'Abort User' })

@@ -40,7 +40,7 @@ jobs:
         if: ${{ startsWith(steps.pkg-manager.outputs.value, 'bun') }}
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ steps.pkg-manager.outputs.bun_version || 'latest' }}
+          bun-version-file: .bun-version
 
       - name: Install dependencies
         env:

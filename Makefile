@@ -15,7 +15,7 @@ JEST_BIN                    = ./node_modules/jest/bin/jest.js
 JEST_CMD                    = node $(JEST_BIN)
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
-CRACO_BUILD                 = bunx craco build
+CRACO_BUILD                 = $(BUNX) craco build
 STORYBOOK_PORT				?= 6006
 STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 
@@ -128,6 +128,12 @@ endif
     MARKDOWNLINT_BIN        = $(BUNX) markdownlint
     LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
     RUN_MEMLAB               = $(MEMLEAK_RUN_DOCKER)
+endif
+
+# When Docker is unavailable locally, run Bun commands directly on the host instead of via dev container
+ifneq ($(DOCKER_AVAILABLE),1)
+    BUN                     = bun
+    BUNX                    = bunx
 endif
 
 # To Run in CI mode specify CI variable. Example: make lint-md CI=1
@@ -243,7 +249,7 @@ start-prod: create-network ## Build image and start container in production mode
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
 	@for i in $$(seq 1 60); do \
-		$(BUNX) wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
+		bunx wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
 		printf "."; sleep 2; \
 		[ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
 	done; \
@@ -306,7 +312,7 @@ install: ## Install node modules using Bun (CI=1 runs locally, default runs in c
 	$(BUN) install --frozen-lockfile
 	make husky
 
-update: ## Update node modules to latest allowed versions — always runs locally, updates lockfile (run before committing dependency changes)
+update: ## Update node modules to latest allowed versions — updates lockfile; runs on host or dev container depending on environment
 	$(BUN) update
 
 down: ## Stop the docker containers

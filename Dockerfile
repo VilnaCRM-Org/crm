@@ -9,8 +9,7 @@ RUN apk add --no-cache \
     g++=14.2.0-r4  \
     curl=${CURL_VERSION} && \
     curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5" && \
-    ln -sf /root/.bun/bin/bun /root/.bun/bin/bunx && \
-    ln -sf /root/.bun/bin/bun /usr/local/bin/bunx
+    ln -sf /root/.bun/bin/bunx /usr/local/bin/bunx
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"
