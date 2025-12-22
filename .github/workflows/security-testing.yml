@@ -22,6 +22,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install dependencies (host)
+        env:
+          CI: 1
+        run: make install
+
       - name: Cache CodeQL databases
         uses: actions/cache@v4.2.3
         with:

@@ -37,15 +37,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-dependencies-
 
+      - name: Install dependencies
+        env:
+          CI: 1
+        run: make install
+
       - name: Start container
         env:
           CI: 0
         run: make start
-
-      - name: Install dependencies
-        env:
-          CI: 0
-        run: make install
 
       - name: Run mutation testing
         env:

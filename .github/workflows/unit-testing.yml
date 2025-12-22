@@ -52,15 +52,15 @@ jobs:
         with:
           bun-version: ${{ steps.pkg-manager.outputs.bun_version || 'latest' }}
 
+      - name: Install dependencies
+        env:
+          CI: 1
+        run: make install
+
       - name: Start container
         env:
           CI: 0
         run: make start
-
-      - name: Install dependencies
-        env:
-          CI: 0
-        run: make install
 
       - name: Run unit tests
         env:
