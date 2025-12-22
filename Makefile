@@ -154,19 +154,23 @@ help:
 start: create-network ## Start the application
 	$(DEV_CMD)
 
+WAIT_FOR_DEV_MAX_TRIES     ?= 150
+WAIT_FOR_DEV_SLEEP         ?= 2
+
 wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
-	@echo "Waiting for dev service to be ready on port $(DEV_PORT)..."
+	@echo "Waiting for dev service to be ready on http://$(WEBSITE_DOMAIN):$(DEV_PORT)..."
 	@i=0; \
-	while [ $$i -lt 60 ]; do \
+	while [ $$i -lt $(WAIT_FOR_DEV_MAX_TRIES) ]; do \
 	  if $(BUNX) wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) > /dev/null 2>&1; then \
 	    printf '\n✅ Dev service is up and running!\n'; \
 	    exit 0; \
 	  fi; \
 	  printf "."; \
-	  sleep 2; \
+	  sleep $(WAIT_FOR_DEV_SLEEP); \
 	  i=$$((i+1)); \
 	done; \
 	printf '\n❌ Timed out waiting for dev service\n'; \
+	$(DOCKER_COMPOSE) logs --tail=50 dev || true; \
 	exit 1
 
 build: ## Build the dev container
