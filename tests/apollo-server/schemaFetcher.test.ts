@@ -646,4 +646,107 @@ describe('schemaFetcher', () => {
       expect(processExitSpy).toHaveBeenCalledWith(1);
     });
   });
+
+  describe('fetchAndSaveSchema production failure path', () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+
+    beforeEach(() => {
+      process.env.NODE_ENV = 'production';
+      process.env.GRAPHQL_SCHEMA_URL = 'http://fake-url/graphql';
+      process.env.GRAPHQL_MAX_RETRIES = '1';
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalNodeEnv;
+      delete process.env.GRAPHQL_SCHEMA_URL;
+      delete process.env.GRAPHQL_MAX_RETRIES;
+      jest.restoreAllMocks();
+    });
+
+    it('should throw after all retries fail in production', async () => {
+      const fetchSpy = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('network down'));
+      const loggerInfoSpy = jest.spyOn(console, 'info').mockImplementation();
+
+      const { fetchAndSaveSchema } = getSchemaFetcherModule();
+      await expect(fetchAndSaveSchema(TEST_DIR)).rejects.toThrow('network down');
+
+      expect(fetchSpy).toHaveBeenCalled();
+      expect(loggerInfoSpy).not.toHaveBeenCalledWith(
+        'All retry attempts failed, but continuing execution...'
+      );
+    });
+
+    it('should throw when GRAPHQL_SCHEMA_URL is missing in production', async () => {
+      delete process.env.GRAPHQL_SCHEMA_URL;
+      const { fetchAndSaveSchema } = getSchemaFetcherModule();
+      await expect(fetchAndSaveSchema(TEST_DIR)).rejects.toThrow(
+        'GRAPHQL_SCHEMA_URL is required in production environment'
+      );
+    });
+  });
+
+  describe('fetchAndSaveSchema non-production failure path', () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+
+    beforeEach(() => {
+      process.env.NODE_ENV = 'development';
+      process.env.GRAPHQL_SCHEMA_URL = 'http://fake-url/graphql';
+      process.env.GRAPHQL_MAX_RETRIES = '1';
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalNodeEnv;
+      delete process.env.GRAPHQL_SCHEMA_URL;
+      delete process.env.GRAPHQL_MAX_RETRIES;
+      jest.restoreAllMocks();
+    });
+
+    it('should not throw after retries fail in non-production', async () => {
+      jest.spyOn(global, 'fetch').mockRejectedValue(new Error('network down'));
+      const { fetchAndSaveSchema } = getSchemaFetcherModule();
+      await expect(fetchAndSaveSchema(TEST_DIR)).resolves.toBeUndefined();
+    });
+
+    it('should succeed when schema fetch works and leave lastError unset', async () => {
+      const pathLib = jest.requireActual('path') as typeof import('path');
+      const fsMock = require('node:fs') as unknown as {
+        promises: { writeFile: jest.Mock; mkdir: jest.Mock };
+      };
+      fsMock.promises.writeFile.mockResolvedValue(undefined);
+      fsMock.promises.mkdir.mockResolvedValue(undefined);
+
+      const tmpDir = pathLib.join(TEST_DIR, 'success-dir');
+      const schemaText = 'type Query { ping: String }';
+      jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        text: async () => schemaText,
+      } as unknown as Response);
+
+      const { fetchAndSaveSchema } = getSchemaFetcherModule();
+      await expect(fetchAndSaveSchema(tmpDir)).resolves.toBeUndefined();
+
+      expect(fsMock.promises.writeFile).toHaveBeenCalledWith(
+        pathLib.join(tmpDir, 'schema.graphql'),
+        schemaText,
+        'utf-8'
+      );
+    });
+
+    it('should skip retries when MAX_RETRIES is zero without setting lastError', async () => {
+      process.env.GRAPHQL_MAX_RETRIES = '0';
+      jest.spyOn(global, 'fetch').mockImplementation(() => {
+        throw new Error('should not be called');
+      });
+
+      const { fetchAndSaveSchema } = getSchemaFetcherModule();
+      await expect(fetchAndSaveSchema(TEST_DIR)).resolves.toBeUndefined();
+    });
+
+    it('handleFinalError no-ops when lastError is null', () => {
+      const schemaLogger = { info: jest.fn() } as unknown as Logger;
+      const { handleFinalError } = getSchemaFetcherModule();
+      expect(() => handleFinalError(null, schemaLogger)).not.toThrow();
+      expect(schemaLogger.info).not.toHaveBeenCalled();
+    });
+  });
 });

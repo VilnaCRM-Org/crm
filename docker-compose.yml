@@ -3,10 +3,11 @@ services:
     build:
       context: .
       target: base
-    command: ['sh', '-c', 'bun install --frozen-lockfile && bun x craco start']
+    command: ['bun', 'x', 'craco', 'start']
     restart: unless-stopped
     volumes:
       - .:/app
+      - node_modules:/app/node_modules
     ports:
       - '3000:3000'
       - '6006:6006'
@@ -23,3 +24,5 @@ networks:
   crm-network:
     external: true
     name: crm-network
+volumes:
+  node_modules:
