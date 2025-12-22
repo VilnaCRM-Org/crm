@@ -335,6 +335,43 @@ describe('Registration Slice Integration', () => {
       const state = store.getState().registration;
       expect(state.error).toBeTruthy();
     });
+
+    it('should store displayMessage and retryable from rejected payload', () => {
+      store.dispatch({
+        type: registerUser.rejected.type,
+        payload: { displayMessage: 'Custom message', retryable: true },
+        meta: { aborted: false },
+        error: { message: 'ignored' },
+      });
+
+      const state = store.getState().registration;
+      expect(state.error).toBe('Custom message');
+      expect(state.retryable).toBe(true);
+    });
+
+    it('should fall back to action.error.message when payload is missing', () => {
+      store.dispatch({
+        type: registerUser.rejected.type,
+        meta: { aborted: false },
+        error: { message: 'Action error message' },
+      });
+
+      const state = store.getState().registration;
+      expect(state.error).toBe('Action error message');
+      expect(state.retryable).toBeUndefined();
+    });
+
+    it('should fall back to default message when payload and error message are missing', () => {
+      store.dispatch({
+        type: registerUser.rejected.type,
+        meta: { aborted: false },
+        error: {},
+      });
+
+      const state = store.getState().registration;
+      expect(state.error).toBe('Unknown error');
+      expect(state.retryable).toBeUndefined();
+    });
   });
 
   describe('real integration with DI container', () => {

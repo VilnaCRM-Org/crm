@@ -27,19 +27,6 @@ jobs:
         with:
           bun-version-file: .bun-version
 
-      - name: Install dependencies (host)
-        env:
-          CI: 1
-        run: make install
-
-      - name: Cache CodeQL databases
-        uses: actions/cache@v4.2.3
-        with:
-          path: ${{ github.workspace }}/codeql_databases
-          key: ${{ runner.os }}-codeql-${{ hashFiles('bun.lock*') }}
-          restore-keys: |
-            ${{ runner.os }}-codeql-
-
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:

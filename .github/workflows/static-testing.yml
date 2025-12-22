@@ -23,11 +23,6 @@ jobs:
         with:
           bun-version-file: .bun-version
 
-      - name: Install dependencies
-        env:
-          CI: 1
-        run: make install
-
       - name: Start container
         env:
           CI: 0

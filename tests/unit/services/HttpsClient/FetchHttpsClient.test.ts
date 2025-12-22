@@ -767,14 +767,23 @@ describe('FetchHttpsClient', () => {
 
     it('should not override an explicitly provided Content-Type header', () => {
       const customHeaders = { 'Content-Type': 'text/plain', Accept: 'application/xml' };
-      const config = (client as unknown as { createRequestConfig: Function }).createRequestConfig(
+      const config = (
+        client as unknown as {
+          createRequestConfig: (
+            method: string,
+            body?: unknown,
+            headers?: Record<string, string>
+          ) => RequestInit;
+        }
+      ).createRequestConfig(
         'POST',
         { sample: true },
         customHeaders
       );
 
-      expect(config.headers['Content-Type']).toBe('text/plain');
-      expect(config.headers.Accept).toBe('application/xml');
+      const headers = (config.headers as Record<string, string>) || {};
+      expect(headers['Content-Type']).toBe('text/plain');
+      expect(headers.Accept).toBe('application/xml');
     });
   });
 });
