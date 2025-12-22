@@ -22,20 +22,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Detect package manager
-        id: pkg-manager
-        run: |
-          pm=$(node -p "require('./package.json').packageManager || ''")
-          echo "value=$pm" >> "$GITHUB_OUTPUT"
-          if [[ "$pm" == bun@* ]]; then
-            echo "bun_version=${pm#bun@}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Install Bun
-        if: ${{ startsWith(steps.pkg-manager.outputs.value, 'bun') }}
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ steps.pkg-manager.outputs.bun_version || 'latest' }}
+          bun-version-file: .bun-version
 
       - name: Install dependencies (host)
         env:
@@ -46,7 +36,7 @@ jobs:
         uses: actions/cache@v4.2.3
         with:
           path: ${{ github.workspace }}/codeql_databases
-          key: ${{ runner.os }}-codeql-${{ hashFiles('**/pnpm-lock.yaml', 'bun.lock*', 'package-lock.json', 'yarn.lock') }}
+          key: ${{ runner.os }}-codeql-${{ hashFiles('bun.lock*') }}
           restore-keys: |
             ${{ runner.os }}-codeql-
 

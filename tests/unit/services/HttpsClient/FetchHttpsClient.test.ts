@@ -732,5 +732,49 @@ describe('FetchHttpsClient', () => {
 
       await expect(client.get('/api/test')).rejects.toThrow(HttpError);
     });
+
+    it('should throw HttpError when non-JSON response includes body text', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async (): Promise<string> => 'plain text payload',
+      });
+
+      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+    });
+
+    it('should return undefined when non-JSON response body cannot be read', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async (): Promise<string> => {
+          throw new Error('read failure');
+        },
+      });
+
+      const result = await client.get('/api/test');
+      expect(result).toBeUndefined();
+    });
+
+    it('should rethrow HttpError without wrapping when fetch rejects with HttpError', async () => {
+      const httpError = new HttpError({ status: 418, message: 'teapot' });
+      mockFetch.mockRejectedValue(httpError);
+
+      await expect(client.get('/api/test')).rejects.toBe(httpError);
+    });
+
+    it('should not override an explicitly provided Content-Type header', () => {
+      const customHeaders = { 'Content-Type': 'text/plain', Accept: 'application/xml' };
+      const config = (client as unknown as { createRequestConfig: Function }).createRequestConfig(
+        'POST',
+        { sample: true },
+        customHeaders
+      );
+
+      expect(config.headers['Content-Type']).toBe('text/plain');
+      expect(config.headers.Accept).toBe('application/xml');
+    });
   });
 });

@@ -88,7 +88,6 @@ JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 NETWORK_NAME                = crm-network
 
 CI                          ?= 0
-DOCKER_AVAILABLE            := $(shell docker info >/dev/null 2>&1 && echo 1 || echo 0)
 
 BUN                         = bun
 BUNX                        = bunx
@@ -102,7 +101,7 @@ ifeq ($(CI), 1)
     LHCI                    = lhci autorun
 
 	STRYKER_CMD             = $(BUNX) stryker run
-    UNIT_TESTS              = env
+    UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
 
     STORYBOOK_BUILD 		= $(BUNX) storybook build
     STORYBOOK_START         = $(STORYBOOK_CMD)
@@ -122,11 +121,7 @@ else
     BUILD_CMD               = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
 
     STRYKER_CMD             = make start && $(BUNX) stryker run
-ifeq ($(DOCKER_AVAILABLE),1)
     UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
-else
-    UNIT_TESTS              = env
-endif
 
     STORYBOOK_BUILD			= $(BUNX) storybook build
     STORYBOOK_START         = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
@@ -134,12 +129,6 @@ endif
     MARKDOWNLINT_BIN        = $(BUNX) markdownlint
     LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
     RUN_MEMLAB               = $(MEMLEAK_RUN_DOCKER)
-endif
-
-# When Docker is unavailable locally, run Bun commands directly on the host instead of via dev container
-ifneq ($(DOCKER_AVAILABLE),1)
-    BUN                     = bun
-    BUNX                    = bunx
 endif
 
 # To Run in CI mode specify CI variable. Example: make lint-md CI=1

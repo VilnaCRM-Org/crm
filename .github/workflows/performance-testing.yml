@@ -18,30 +18,10 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Detect package manager
-        id: pkg-manager
-        run: |
-          pm=$(node -p "require('./package.json').packageManager || ''")
-          echo "value=$pm" >> "$GITHUB_OUTPUT"
-          if [[ "$pm" == bun@* ]]; then
-            echo "bun_version=${pm#bun@}" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Cache dependencies
-        id: cache-dependencies
-        if: ${{ !startsWith(steps.pkg-manager.outputs.value, 'bun') }}
-        uses: actions/cache@v4.2.3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-dependencies-${{ hashFiles('**/pnpm-lock.yaml', 'bun.lock*', 'package-lock.json', 'yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-dependencies-
-
       - name: Install Bun
-        if: ${{ startsWith(steps.pkg-manager.outputs.value, 'bun') }}
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: ${{ steps.pkg-manager.outputs.bun_version || 'latest' }}
+          bun-version-file: .bun-version
 
       - name: Install dependencies
         env:

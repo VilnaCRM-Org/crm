@@ -1,6 +1,6 @@
 import { GraphQLError } from 'graphql';
 
-import { resolvers, clearUsers } from '../../docker/apollo-server/lib/resolvers';
+import { resolvers, clearUsers, __test__ } from '../../docker/apollo-server/lib/resolvers';
 import { CreateUserInput } from '../../docker/apollo-server/lib/types';
 
 jest.mock('uuid', () => ({
@@ -200,6 +200,37 @@ describe('resolvers', () => {
               http: { status: 409 },
             },
           });
+        });
+
+        it('should allow custom conflict metadata via rejectIfExists helper', () => {
+          const map = new Map<string, string>();
+
+          __test__.rejectIfExists(map, 'a', 'Custom message', 410, 'GONE');
+
+          map.set('a', 'value');
+          expect(() => __test__.rejectIfExists(map, 'a', 'Custom message', 410, 'GONE')).toThrow(
+            expect.objectContaining({
+              message: 'Custom message',
+              extensions: expect.objectContaining({
+                code: 'GONE',
+                http: expect.objectContaining({ status: 410 }),
+              }),
+            })
+          );
+        });
+
+        it('should use default conflict metadata when no overrides are provided', () => {
+          const map = new Map<string, string>([['dup@example.com', 'existing']]);
+
+          expect(() => __test__.rejectIfExists(map, 'dup@example.com')).toThrow(
+            expect.objectContaining({
+              message: 'Item already exists',
+              extensions: expect.objectContaining({
+                code: 'CONFLICT',
+                http: expect.objectContaining({ status: 409 }),
+              }),
+            })
+          );
         });
       });
 

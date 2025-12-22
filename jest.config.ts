@@ -20,7 +20,7 @@ const testMatchMap: Record<string, string[]> = {
 const testMatch = testMatchMap[TEST_ENV ?? ''] || testMatchMap.default;
 
 const isIntegration = TEST_ENV === 'integration';
-const thresholdValue = isIntegration ? 90 : 96;
+const thresholdValue = 100;
 const coverageThreshold = {
   global: {
     branches: thresholdValue,

@@ -22,12 +22,11 @@ describe('Bun migration tooling expectations', () => {
     expect(compose).toContain("command: ['bun', 'x', 'craco', 'start']");
   });
 
-  it('Makefile keeps host fallback when Docker is unavailable', () => {
+  it('Makefile enforces dockerized workflows with Bun tooling', () => {
     const makefile = readFile('Makefile');
 
-    expect(makefile).toContain('DOCKER_AVAILABLE');
     expect(makefile).toContain('UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env');
-    expect(makefile).toContain('UNIT_TESTS              = env');
+    expect(makefile).not.toContain('UNIT_TESTS              = env');
   });
 
   it('Jest config uses babel coverage provider and expected thresholds', () => {
@@ -35,10 +34,10 @@ describe('Bun migration tooling expectations', () => {
 
     expect(config.coverageProvider).toBe('babel');
     expect(config.coverageThreshold?.global).toEqual({
-      branches: 96,
-      functions: 96,
-      lines: 96,
-      statements: 96,
+      branches: 100,
+      functions: 100,
+      lines: 100,
+      statements: 100,
     });
   });
 });
