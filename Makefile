@@ -74,6 +74,12 @@ LOAD_TESTS_RUN              = $(K6) run --summary-trend-stats="avg,min,med,max,p
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
 
+WEBSITE_DOMAIN              ?= localhost
+DEV_PORT                    ?= 3000
+PROD_PORT                   ?= 3001
+PLAYWRIGHT_TEST_PORT        ?= 9324
+UI_HOST                     ?= 0.0.0.0
+
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
 PRETTIER_CMD                = $(BUNX) prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
 
