@@ -736,14 +736,20 @@ describe('schemaFetcher', () => {
       );
     });
 
-    it('should skip retries when MAX_RETRIES is zero without setting lastError', async () => {
+    it('should clamp MAX_RETRIES to one and still attempt a fetch', async () => {
       process.env.GRAPHQL_MAX_RETRIES = '0';
-      jest.spyOn(global, 'fetch').mockImplementation(() => {
-        throw new Error('should not be called');
-      });
+      const fetchSpy = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('network down'));
 
-      const { fetchAndSaveSchema } = getSchemaFetcherModule();
+      const { getLogger, fetchAndSaveSchema } = getSchemaFetcherModule();
+      const schemaLogger = getLogger(TEST_DIR);
+      const loggerInfoSpy = jest.spyOn(schemaLogger, 'info');
+
       await expect(fetchAndSaveSchema(TEST_DIR)).resolves.toBeUndefined();
+
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      expect(loggerInfoSpy).toHaveBeenCalledWith(
+        'All retry attempts failed, but continuing execution...'
+      );
     });
 
     it('handleFinalError no-ops when lastError is null', () => {
