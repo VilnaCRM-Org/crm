@@ -20,7 +20,7 @@ RUN apk add --no-cache \
     && curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
 ENV BUN_INSTALL=/root/.bun
-ENV PATH="${BUN_INSTALL}/bin:${PATH}"
+ENV PATH="/root/.bun/bin:$PATH"
 
 ENV DISPLAY=:99 \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser \

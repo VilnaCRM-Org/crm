@@ -6,7 +6,7 @@ RUN apk add --no-cache bash~=5.2 curl=8.14.1-r2 && \
     curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
 ENV BUN_INSTALL=/root/.bun
-ENV PATH="${BUN_INSTALL}/bin:${PATH}"
+ENV PATH="/root/.bun/bin:$PATH"
 
 WORKDIR /app
 COPY package.json bun.lock* checkNodeVersion.js ./
@@ -25,7 +25,7 @@ RUN apk add --no-cache bash~=5.2 curl=8.14.1-r2 && \
     curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
 ENV BUN_INSTALL=/root/.bun
-ENV PATH="${BUN_INSTALL}/bin:${PATH}"
+ENV PATH="/root/.bun/bin:$PATH"
 
 WORKDIR /app
 COPY package.json bun.lock* ./

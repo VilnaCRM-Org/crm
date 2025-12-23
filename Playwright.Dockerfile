@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV BUN_INSTALL=/root/.bun
-ENV PATH="${BUN_INSTALL}/bin:${PATH}"
+ENV PATH="/root/.bun/bin:$PATH"
 
 WORKDIR /app
 
