@@ -7,14 +7,13 @@ const readFile = (filePath: string): string =>
   fs.readFileSync(path.resolve(__dirname, '..', '..', '..', filePath), 'utf-8');
 
 describe('Bun migration tooling expectations', () => {
-  it('Dockerfile installs bun v1.3.5 and exposes bunx', () => {
+  it('Dockerfile installs bun v1.3.5 with built-in bunx', () => {
     const dockerfile = readFile('Dockerfile');
 
     expect(dockerfile).toContain(
       'curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"'
     );
-    expect(dockerfile).toContain('ln -sf /root/.bun/bin/bun /root/.bun/bin/bunx');
-    expect(dockerfile).toContain('ln -sf /root/.bun/bin/bun /usr/local/bin/bunx');
+    expect(dockerfile).not.toMatch(/ln -sf .*bunx/);
   });
 
   it('dev docker-compose uses bun to start the app', () => {
