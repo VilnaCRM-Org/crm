@@ -132,7 +132,10 @@ export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
  * Final guard for the schema fetch CLI entrypoint.
  * Intended to be called by the command-line wrapper (`schemaFetcher.mts`) when an unhandled
  * error bubbles up so we can log the context and exit with a failure code.
+ *
+ * ts-prune-ignore-next - used by the .mts CLI entrypoint so it won't appear in TS import graphs.
  */
+// ts-prune-ignore-next
 export function handleFatalError(error: Error, outputDir?: string): never {
   const errorLogger: Logger = getLogger(outputDir);
   errorLogger.error('Fatal error during schema fetch:', error);
