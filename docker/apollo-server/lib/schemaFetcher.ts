@@ -125,7 +125,7 @@ export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
     }
   }
 
-  handleFinalError(lastError, schemaLogger);
+  handleFinalError(lastError, schemaLogger, outputDir);
 }
 
 /**
@@ -142,13 +142,19 @@ export function handleFatalError(error: Error, outputDir?: string): never {
   process.exit(1);
 }
 
-export function handleFinalError(lastError: Error | null, schemaLogger: Logger): void {
-  if (lastError) {
-    if (process.env.NODE_ENV === 'production') {
-      schemaLogger.info('Schema fetch failed after all retry attempts...');
-      throw lastError;
-    } else {
-      schemaLogger.info('All retry attempts failed, but continuing execution...');
-    }
+export function handleFinalError(
+  lastError: Error | null,
+  schemaLogger: Logger,
+  outputDir?: string
+): void {
+  if (!lastError) {
+    return;
   }
+
+  if (process.env.NODE_ENV === 'production') {
+    schemaLogger.info('Schema fetch failed after all retry attempts; exiting.');
+    handleFatalError(lastError, outputDir);
+  }
+
+  schemaLogger.info('All retry attempts failed, but continuing execution...');
 }

@@ -45,7 +45,7 @@ let fsPromises: { mkdir: jest.Mock; writeFile: jest.Mock };
 interface SchemaFetcherModule {
   fetchAndSaveSchema: (outputDir: string) => Promise<void>;
   handleFatalError: (error: Error, outputDir?: string) => never;
-  handleFinalError: (lastError: Error | null, schemaLogger: Logger) => void;
+  handleFinalError: (lastError: Error | null, schemaLogger: Logger, outputDir?: string) => void;
   getLogger: (outputDir?: string) => { info: jest.Mock; error: jest.Mock };
 }
 
@@ -164,6 +164,12 @@ describe('schemaFetcher', () => {
     });
 
     it('should throw error for non-EEXIST directory creation error', async () => {
+      const processExitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation(((code?: string | number | null | undefined) => {
+          throw new Error(`process.exit called with code ${code}`);
+        }) as (code?: string | number | null | undefined) => never);
+
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
       (fetch as jest.Mock).mockResolvedValue({
@@ -177,11 +183,18 @@ describe('schemaFetcher', () => {
 
       const p = getFetchAndSaveSchema()(TEST_DIR);
       const timerPromise = jest.runAllTimersAsync();
-      await expect(p).rejects.toThrow('Permission denied');
+      await expect(p).rejects.toThrow('process.exit called');
       await timerPromise;
+      processExitSpy.mockRestore();
     }, 10000);
 
     it('should throw error when directory creation fails without code property', async () => {
+      const processExitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation(((code?: string | number | null | undefined) => {
+          throw new Error(`process.exit called with code ${code}`);
+        }) as (code?: string | number | null | undefined) => never);
+
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
       (fetch as jest.Mock).mockResolvedValue({
@@ -194,11 +207,18 @@ describe('schemaFetcher', () => {
 
       const p = getFetchAndSaveSchema()(TEST_DIR);
       const timerPromise = jest.runAllTimersAsync();
-      await expect(p).rejects.toThrow('Unknown filesystem error');
+      await expect(p).rejects.toThrow('process.exit called');
       await timerPromise;
+      processExitSpy.mockRestore();
     }, 10000);
 
     it('should throw error when directory creation fails with null error', async () => {
+      const processExitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation(((code?: string | number | null | undefined) => {
+          throw new Error(`process.exit called with code ${code}`);
+        }) as (code?: string | number | null | undefined) => never);
+
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
       (fetch as jest.Mock).mockResolvedValue({
@@ -210,8 +230,9 @@ describe('schemaFetcher', () => {
 
       const p = getFetchAndSaveSchema()(TEST_DIR);
       const timerPromise = jest.runAllTimersAsync();
-      await expect(p).rejects.toThrow();
+      await expect(p).rejects.toThrow('process.exit called');
       await timerPromise;
+      processExitSpy.mockRestore();
     }, 10000);
   });
 
@@ -361,6 +382,20 @@ describe('schemaFetcher', () => {
   });
 
   describe('production environment', () => {
+    let processExitSpy: jest.SpyInstance<never, [code?: string | number | null | undefined], unknown>;
+
+    beforeEach(() => {
+      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
+        code?: string | number | null | undefined
+      ) => {
+        throw new Error(`process.exit called with code ${code}`);
+      }) as (code?: string | number | null | undefined) => never);
+    });
+
+    afterEach(() => {
+      processExitSpy.mockRestore();
+    });
+
     it('should throw error after all retries in production', async () => {
       process.env.GRAPHQL_SCHEMA_URL = 'http://example.com/schema.graphql';
       process.env.NODE_ENV = 'production';
@@ -369,7 +404,7 @@ describe('schemaFetcher', () => {
 
       const p = getFetchAndSaveSchema()(TEST_DIR);
       const timerPromise = jest.runAllTimersAsync();
-      await expect(p).rejects.toThrow('Network error');
+      await expect(p).rejects.toThrow('process.exit called');
       await timerPromise;
     }, 15000);
 
@@ -652,11 +687,21 @@ describe('schemaFetcher', () => {
 
   describe('fetchAndSaveSchema production failure path', () => {
     const originalNodeEnv = process.env.NODE_ENV;
+    let processExitSpy: jest.SpyInstance<
+      never,
+      [code?: string | number | null | undefined],
+      unknown
+    >;
 
     beforeEach(() => {
       process.env.NODE_ENV = 'production';
       process.env.GRAPHQL_SCHEMA_URL = 'http://fake-url/graphql';
       process.env.GRAPHQL_MAX_RETRIES = '1';
+      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
+        code?: string | number | null | undefined
+      ) => {
+        throw new Error(`process.exit called with code ${code}`);
+      }) as (code?: string | number | null | undefined) => never);
     });
 
     afterEach(() => {
@@ -664,20 +709,17 @@ describe('schemaFetcher', () => {
       delete process.env.GRAPHQL_SCHEMA_URL;
       delete process.env.GRAPHQL_MAX_RETRIES;
       jest.restoreAllMocks();
+      processExitSpy.mockRestore();
     });
 
-    it('should throw after all retries fail in production', async () => {
+    it('should exit after all retries fail in production', async () => {
       const fetchSpy = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('network down'));
-      const { getLogger, fetchAndSaveSchema } = getSchemaFetcherModule();
-      const schemaLogger = getLogger(TEST_DIR);
-      const loggerInfoSpy = jest.spyOn(schemaLogger, 'info');
+      const { fetchAndSaveSchema } = getSchemaFetcherModule();
 
-      await expect(fetchAndSaveSchema(TEST_DIR)).rejects.toThrow('network down');
+      await expect(fetchAndSaveSchema(TEST_DIR)).rejects.toThrow('process.exit called');
 
       expect(fetchSpy).toHaveBeenCalled();
-      expect(loggerInfoSpy).not.toHaveBeenCalledWith(
-        'All retry attempts failed, but continuing execution...'
-      );
+      expect(processExitSpy).toHaveBeenCalledWith(1);
     });
 
     it('should throw when GRAPHQL_SCHEMA_URL is missing in production', async () => {
