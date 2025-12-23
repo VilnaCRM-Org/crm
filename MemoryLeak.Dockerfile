@@ -17,7 +17,7 @@ RUN apk add --no-cache \
     nss=3.109-r0 \
     ttf-freefont=20120503-r4 \
     xvfb=21.1.16-r0 \
-    && curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
+    && curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="${BUN_INSTALL}/bin:${PATH}"

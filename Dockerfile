@@ -10,7 +10,7 @@ RUN apk add --no-cache \
     g++=14.2.0-r4  \
     make=4.4.1-r2 \
     python3=3.12.12-r0 && \
-    curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5" && \
+    curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5" && \
     ln -sf /root/.bun/bin/bun /root/.bun/bin/bunx && \
     ln -sf /root/.bun/bin/bun /usr/local/bin/bunx
 
