@@ -128,12 +128,12 @@ export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
   handleFinalError(lastError, schemaLogger);
 }
 
+/**
+ * Final guard for the schema fetch CLI entrypoint.
+ * Intended to be called by the command-line wrapper (`schemaFetcher.mts`) when an unhandled
+ * error bubbles up so we can log the context and exit with a failure code.
+ */
 export function handleFatalError(error: Error, outputDir?: string): never {
-  /**
-   * Final guard for the schema fetch CLI entrypoint.
-   * Called from `schemaFetcher.mts` when an unhandled error bubbles up so we can log context
-   * and exit the process with a failure code.
-   */
   const errorLogger: Logger = getLogger(outputDir);
   errorLogger.error('Fatal error during schema fetch:', error);
   process.exit(1);
