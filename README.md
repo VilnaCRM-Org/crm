@@ -67,10 +67,12 @@ After installing all prerequisites, you can start the application inside a Docke
 The command will:
 
 - Build and start the project inside a Docker container named `dev`.
-- Use the dependencies already baked into the dev image (mounted via a named `node_modules` volume) instead of reinstalling on every start.
+- Use the dependencies already baked into the dev image (mounted via a named `node_modules`
+  volume) instead of reinstalling on every start.
 - The application will be up and running.
 
-> First-time setup: ensure the external Docker network exists before starting containers: `docker network create crm-network || true`.
+> First-time setup: ensure the external Docker network exists before starting containers:
+> `docker network create crm-network || true`.
 
 Access the application at <http://localhost:3000>.
 
