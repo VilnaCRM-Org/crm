@@ -10,6 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     python3=3.10.6-1~22.04.1 \
     unzip=6.0-26ubuntu3.2 \
     && curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5" \
+    && if [ ! -x /root/.bun/bin/bunx ]; then ln -sf /root/.bun/bin/bun /root/.bun/bin/bunx; fi \
+    && ln -sf /root/.bun/bin/bunx /usr/local/bin/bunx \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV BUN_INSTALL=/root/.bun
