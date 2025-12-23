@@ -9,8 +9,9 @@ describe('HttpError integration', () => {
   });
 
   it('still constructs when captureStackTrace is missing', () => {
-    const originalCapture = (Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace })
-      .captureStackTrace;
+    const originalCapture = (
+      Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
+    ).captureStackTrace;
     // Simulate environment without captureStackTrace
     (Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }).captureStackTrace =
       undefined;
@@ -21,8 +22,9 @@ describe('HttpError integration', () => {
       expect(error.cause).toBe('cause');
       expect(error.stack).toBeDefined();
     } finally {
-      (Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }).captureStackTrace =
-        originalCapture;
+      (
+        Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
+      ).captureStackTrace = originalCapture;
     }
   });
 });

@@ -32,10 +32,12 @@ describe('ApiError classes', () => {
     });
 
     it('should construct even when captureStackTrace is unavailable', () => {
-      const originalCapture = (Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace })
-        .captureStackTrace;
-      (Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }).captureStackTrace =
-        undefined;
+      const originalCapture = (
+        Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
+      ).captureStackTrace;
+      (
+        Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
+      ).captureStackTrace = undefined;
 
       try {
         const error = new ApiError('No stack capture', ApiErrorCodes.UNKNOWN, 400);
@@ -43,8 +45,9 @@ describe('ApiError classes', () => {
         expect(error.status).toBe(400);
         expect(error.name).toBe('ApiError');
       } finally {
-        (Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }).captureStackTrace =
-          originalCapture;
+        (
+          Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
+        ).captureStackTrace = originalCapture;
       }
     });
   });

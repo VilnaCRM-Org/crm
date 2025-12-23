@@ -1,20 +1,22 @@
 FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS base
 
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
+
 RUN apk add --no-cache \
-    bash \
+    bash~=5.2 \
+    ca-certificates=20250911-r0 \
     chromium=136.0.7103.113-r0 \
-    xvfb=21.1.16-r0 \
-    nss=3.109-r0 \
+    curl=8.14.1-r2 \
+    dbus=1.14.10-r4 \
     freetype=2.13.3-r0 \
     harfbuzz=9.0.0-r1 \
-    ca-certificates=20250911-r0 \
-    ttf-freefont=20120503-r4 \
-    dbus=1.14.10-r4 \
     libx11=1.8.10-r0 \
     libxcomposite=0.4.6-r5 \
     libxdamage=1.1.6-r5 \
     libxext=1.3.6-r2 \
-    curl=8.14.1-r2 \
+    nss=3.109-r0 \
+    ttf-freefont=20120503-r4 \
+    xvfb=21.1.16-r0 \
     && curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
 ENV BUN_INSTALL=/root/.bun

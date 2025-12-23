@@ -1,10 +1,13 @@
 FROM mcr.microsoft.com/playwright:v1.57.0-jammy
 
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
 RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
-    python3 \
-    make \
-    g++ \
+    bash \
     curl \
+    g++ \
+    make \
+    python3 \
     unzip \
     && curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5" \
     && apt-get clean && rm -rf /var/lib/apt/lists/*

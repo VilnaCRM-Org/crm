@@ -49,6 +49,8 @@ interface SchemaFetcherModule {
   getLogger: (outputDir?: string) => { info: jest.Mock; error: jest.Mock };
 }
 
+type ProcessExitCode = string | number | null | undefined;
+
 function getSchemaFetcherModule(): SchemaFetcherModule {
   return require('../../docker/apollo-server/lib/schemaFetcher') as SchemaFetcherModule;
 }
@@ -166,9 +168,9 @@ describe('schemaFetcher', () => {
     it('should throw error for non-EEXIST directory creation error', async () => {
       const processExitSpy = jest
         .spyOn(process, 'exit')
-        .mockImplementation(((code?: string | number | null | undefined) => {
+        .mockImplementation(((code?: ProcessExitCode) => {
           throw new Error(`process.exit called with code ${code}`);
-        }) as (code?: string | number | null | undefined) => never);
+        }) as (code?: ProcessExitCode) => never);
 
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
@@ -191,9 +193,9 @@ describe('schemaFetcher', () => {
     it('should throw error when directory creation fails without code property', async () => {
       const processExitSpy = jest
         .spyOn(process, 'exit')
-        .mockImplementation(((code?: string | number | null | undefined) => {
+        .mockImplementation(((code?: ProcessExitCode) => {
           throw new Error(`process.exit called with code ${code}`);
-        }) as (code?: string | number | null | undefined) => never);
+        }) as (code?: ProcessExitCode) => never);
 
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
@@ -215,9 +217,9 @@ describe('schemaFetcher', () => {
     it('should throw error when directory creation fails with null error', async () => {
       const processExitSpy = jest
         .spyOn(process, 'exit')
-        .mockImplementation(((code?: string | number | null | undefined) => {
+        .mockImplementation(((code?: ProcessExitCode) => {
           throw new Error(`process.exit called with code ${code}`);
-        }) as (code?: string | number | null | undefined) => never);
+        }) as (code?: ProcessExitCode) => never);
 
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
@@ -382,14 +384,12 @@ describe('schemaFetcher', () => {
   });
 
   describe('production environment', () => {
-    let processExitSpy: jest.SpyInstance<never, [code?: string | number | null | undefined], unknown>;
+    let processExitSpy: jest.SpyInstance<never, [code?: ProcessExitCode], unknown>;
 
     beforeEach(() => {
-      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
-        code?: string | number | null | undefined
-      ) => {
+      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((code?: ProcessExitCode) => {
         throw new Error(`process.exit called with code ${code}`);
-      }) as (code?: string | number | null | undefined) => never);
+      }) as (code?: ProcessExitCode) => never);
     });
 
     afterEach(() => {
@@ -631,18 +631,12 @@ describe('schemaFetcher', () => {
   });
 
   describe('handleFatalError', () => {
-    let processExitSpy: jest.SpyInstance<
-      never,
-      [code?: string | number | null | undefined],
-      unknown
-    >;
+    let processExitSpy: jest.SpyInstance<never, [code?: ProcessExitCode], unknown>;
 
     beforeEach(() => {
-      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
-        code?: string | number | null | undefined
-      ) => {
+      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((code?: ProcessExitCode) => {
         throw new Error(`process.exit called with code ${code}`);
-      }) as (code?: string | number | null | undefined) => never);
+      }) as (code?: ProcessExitCode) => never);
     });
 
     afterEach(() => {
@@ -687,21 +681,15 @@ describe('schemaFetcher', () => {
 
   describe('fetchAndSaveSchema production failure path', () => {
     const originalNodeEnv = process.env.NODE_ENV;
-    let processExitSpy: jest.SpyInstance<
-      never,
-      [code?: string | number | null | undefined],
-      unknown
-    >;
+    let processExitSpy: jest.SpyInstance<never, [code?: ProcessExitCode], unknown>;
 
     beforeEach(() => {
       process.env.NODE_ENV = 'production';
       process.env.GRAPHQL_SCHEMA_URL = 'http://fake-url/graphql';
       process.env.GRAPHQL_MAX_RETRIES = '1';
-      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
-        code?: string | number | null | undefined
-      ) => {
+      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((code?: ProcessExitCode) => {
         throw new Error(`process.exit called with code ${code}`);
-      }) as (code?: string | number | null | undefined) => never);
+      }) as (code?: ProcessExitCode) => never);
     });
 
     afterEach(() => {
@@ -754,7 +742,7 @@ describe('schemaFetcher', () => {
     });
 
     it('should succeed when schema fetch works and leave lastError unset', async () => {
-      const pathLib = jest.requireActual('path') as typeof import('path');
+      const pathLib = jest.requireActual<typeof import('path')>('path');
       const fsMock = require('node:fs') as unknown as {
         promises: { writeFile: jest.Mock; mkdir: jest.Mock };
       };

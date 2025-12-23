@@ -18,6 +18,23 @@ function createMockResponse(
     }),
   } as unknown as Response;
 }
+
+const createStatusOnlyResponse = (status: number): Response =>
+  ({
+    ok: status >= 200 && status < 300,
+    status,
+    headers: new Headers(),
+  }) as unknown as Response;
+
+const createErrorResponse = (status: number, statusText: string, url: string): Response =>
+  ({
+    ok: false,
+    status,
+    statusText,
+    url,
+    headers: new Headers(),
+    json: async () => ({}),
+  }) as unknown as Response;
 describe('FetchHttpsClient', () => {
   const originalFetch = global.fetch;
   let client: FetchHttpsClient;
@@ -95,11 +112,7 @@ describe('FetchHttpsClient', () => {
     });
 
     it('should return undefined for 304 Not Modified', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 304,
-        headers: new Headers(),
-      });
+      mockFetch.mockResolvedValue(createStatusOnlyResponse(304));
 
       const result = await client.get('/api/test');
 
@@ -107,14 +120,7 @@ describe('FetchHttpsClient', () => {
     });
 
     it('should throw HttpError on 404', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(404, 'Not Found', '/api/test'));
 
       await expect(client.get('/api/test')).rejects.toThrow(HttpError);
     });
@@ -775,11 +781,7 @@ describe('FetchHttpsClient', () => {
             headers?: Record<string, string>
           ) => RequestInit;
         }
-      ).createRequestConfig(
-        'POST',
-        { sample: true },
-        customHeaders
-      );
+      ).createRequestConfig('POST', { sample: true }, customHeaders);
 
       const headers = (config.headers as Record<string, string>) || {};
       expect(headers['Content-Type']).toBe('text/plain');

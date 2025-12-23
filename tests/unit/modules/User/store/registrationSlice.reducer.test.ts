@@ -2,7 +2,11 @@ import { configureStore, type ThunkDispatch, type UnknownAction } from '@reduxjs
 
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
-import { registrationReducer, registerUser, type RegistrationState } from '@/modules/User/store/registrationSlice';
+import {
+  registrationReducer,
+  registerUser,
+  type RegistrationState,
+} from '@/modules/User/store/registrationSlice';
 import type { ThunkExtra } from '@/modules/User/store/types';
 import { ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';

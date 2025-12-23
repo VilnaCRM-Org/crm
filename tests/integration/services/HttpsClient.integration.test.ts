@@ -249,7 +249,7 @@ describe('FetchHttpsClient Integration', () => {
         headers: { Accept: 'application/json' },
       });
     });
-      });
+  });
 
   describe('request configuration', () => {
     it('should treat ReadableStream body as non-JSON without adding Content-Type', () => {
@@ -275,8 +275,9 @@ describe('FetchHttpsClient Integration', () => {
         expect(headers['Content-Type']).toBeUndefined();
         expect(headers.Accept).toBe('application/json');
       } finally {
-        (global as unknown as { ReadableStream: typeof ReadableStream | undefined }).ReadableStream =
-          originalReadableStream;
+        (
+          global as unknown as { ReadableStream: typeof ReadableStream | undefined }
+        ).ReadableStream = originalReadableStream;
       }
     });
   });

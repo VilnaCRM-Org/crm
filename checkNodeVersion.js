@@ -7,7 +7,9 @@ const checkRuntime = (name, currentVersion, requiredRange) => {
   const normalized = semver.coerce(currentVersion)?.version;
 
   if (!normalized || !semver.satisfies(normalized, requiredRange)) {
-    console.error(`Required ${name} version ${requiredRange} not satisfied. Current version: ${currentVersion}`);
+    console.error(
+      `Required ${name} version ${requiredRange} not satisfied. Current version: ${currentVersion}`
+    );
     process.exit(1);
   }
 

@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 
-import type { Config } from 'jest';
-
 import jestConfig from '../../../jest.config';
 
 const readFile = (filePath: string): string =>
@@ -31,7 +29,7 @@ describe('Bun migration tooling expectations', () => {
   });
 
   it('Jest config uses babel coverage provider and expected thresholds', () => {
-    const config = jestConfig as Config;
+    const config = jestConfig;
 
     expect(config.coverageProvider).toBe('babel');
     expect(config.coverageThreshold?.global).toEqual({
