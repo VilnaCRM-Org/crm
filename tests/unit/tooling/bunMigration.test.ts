@@ -13,10 +13,8 @@ describe('Bun migration tooling expectations', () => {
     expect(dockerfile).toContain(
       'curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"'
     );
-    expect(dockerfile).toContain(
-      'if [ ! -x /root/.bun/bin/bunx ]; then ln -sf /root/.bun/bin/bun /root/.bun/bin/bunx; fi'
-    );
-    expect(dockerfile).toContain('ln -sf /root/.bun/bin/bunx /usr/local/bin/bunx');
+    expect(dockerfile).not.toContain('ln -sf /root/.bun/bin/bunx');
+    expect(dockerfile).toContain('ENV PATH="${BUN_INSTALL}/bin:${PATH}"');
   });
 
   it('dev docker-compose uses bun to start the app', () => {
