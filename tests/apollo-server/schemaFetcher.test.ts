@@ -668,9 +668,10 @@ describe('schemaFetcher', () => {
 
     it('should throw after all retries fail in production', async () => {
       const fetchSpy = jest.spyOn(global, 'fetch').mockRejectedValue(new Error('network down'));
-      const loggerInfoSpy = jest.spyOn(console, 'info').mockImplementation();
+      const { getLogger, fetchAndSaveSchema } = getSchemaFetcherModule();
+      const schemaLogger = getLogger(TEST_DIR);
+      const loggerInfoSpy = jest.spyOn(schemaLogger, 'info');
 
-      const { fetchAndSaveSchema } = getSchemaFetcherModule();
       await expect(fetchAndSaveSchema(TEST_DIR)).rejects.toThrow('network down');
 
       expect(fetchSpy).toHaveBeenCalled();
