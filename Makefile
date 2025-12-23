@@ -90,12 +90,12 @@ NETWORK_NAME                = crm-network
 CI                          ?= 0
 
 BUN                         = bun
-BUNX                        = bunx
+BUNX                        = $(BUN) x
 
 ifeq ($(CI), 1)
     EXEC_CMD                =
     BUN                     = bun
-    BUNX                    = bunx
+    BUNX                    = $(BUN) x
     DEV_CMD                 = $(BUNX) craco start
     BUILD_CMD               = $(CRACO_BUILD)
     LHCI                    = lhci autorun
@@ -116,7 +116,7 @@ endif
 else
     EXEC_CMD                = $(EXEC_DEV_TTYLESS)
     BUN                     = $(EXEC_DEV_TTYLESS) bun
-    BUNX                    = $(EXEC_DEV_TTYLESS) bunx
+    BUNX                    = $(BUN) x
     DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
     BUILD_CMD               = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
 
@@ -246,7 +246,7 @@ start-prod: create-network ## Build image and start container in production mode
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
 	@for i in $$(seq 1 60); do \
-		bunx wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
+		bun x wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
 		printf "."; sleep 2; \
 		[ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
 	done; \
@@ -437,7 +437,7 @@ run-eslint-tests-dind: ## Run ESLint in temp container for dind
 
 run-typescript-tests-dind: ## Run TypeScript check in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" bunx tsc
+	docker exec "$(TEMP_CONTAINER_NAME)" bun x tsc
 
 run-markdown-lint-tests-dind: ## Run Markdown lint in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi

@@ -19,6 +19,6 @@ WORKDIR /app
 
 COPY package.json bun.lock* ./
 
-RUN bun install && bunx playwright install --with-deps
+RUN bun install && bun x playwright install --with-deps
 
 CMD ["tail", "-f", "/dev/null"]
