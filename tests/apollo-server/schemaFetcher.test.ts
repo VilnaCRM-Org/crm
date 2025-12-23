@@ -1,3 +1,5 @@
+import type { Logger } from 'winston';
+
 jest.mock('node:fs', () => ({
   promises: {
     mkdir: jest.fn(),
@@ -43,6 +45,7 @@ let fsPromises: { mkdir: jest.Mock; writeFile: jest.Mock };
 interface SchemaFetcherModule {
   fetchAndSaveSchema: (outputDir: string) => Promise<void>;
   handleFatalError: (error: Error, outputDir?: string) => never;
+  handleFinalError: (lastError: Error | null, schemaLogger: Logger) => void;
   getLogger: (outputDir?: string) => { info: jest.Mock; error: jest.Mock };
 }
 
