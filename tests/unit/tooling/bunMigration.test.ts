@@ -10,7 +10,9 @@ describe('Bun migration tooling expectations', () => {
   it('Dockerfile installs bun v1.3.5 and exposes bunx', () => {
     const dockerfile = readFile('Dockerfile');
 
-    expect(dockerfile).toContain('curl -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"');
+    expect(dockerfile).toContain(
+      'curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"'
+    );
     expect(dockerfile).toContain('ln -sf /root/.bun/bin/bun /root/.bun/bin/bunx');
     expect(dockerfile).toContain('ln -sf /root/.bun/bin/bun /usr/local/bin/bunx');
   });
