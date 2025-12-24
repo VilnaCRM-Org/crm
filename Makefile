@@ -208,8 +208,6 @@ test-visual-update: start-prod ## Update Playwright visual snapshots
 create-network: ## Create the external Docker network if it doesn't exist
 	@docker network ls | grep -wq $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
 
-setup-network: create-network ## Idempotent helper to create the external Docker network
-
 start-prod: create-network ## Build image and start container in production mode
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate && make wait-for-prod-health
 

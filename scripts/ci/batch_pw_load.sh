@@ -47,16 +47,6 @@ start_prod_dind() {
     make build-prod
     docker compose ${COMPOSE_ARGS} up -d --wait prod
 }
-run_make_with_prod_dind() {
-    target=$1
-    description=$2
-    crm_dir=$3
-    start_prod_dind
-    export DIND=1
-    if ! cd "$crm_dir" || ! make "$target"; then
-        exit 1
-    fi
-}
 
 run_e2e_tests_dind() {
     setup_docker_network

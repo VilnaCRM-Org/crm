@@ -71,7 +71,7 @@ The command will:
   volume) instead of reinstalling on every start.
 - The application will be up and running.
 
-> First-time setup: run `make setup-network` to create the external `crm-network` before
+> First-time setup: run `make create-network` to create the external `crm-network` before
 > using `docker compose` directly. `make start` runs this automatically.
 
 Access the application at <http://localhost:3000>.
@@ -90,7 +90,7 @@ General
 
 ```bash
   make start: starts the application
-  make setup-network: creates the external crm-network (idempotent helper)
+  make create-network: creates the external crm-network (idempotent helper)
   make build: builds the application
   make format: formats the codebase to ensure consistent style across all files
   make update: updates node modules according to the current package.json file
