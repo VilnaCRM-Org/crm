@@ -19,6 +19,7 @@ WORKDIR /app
 
 COPY package.json bun.lock* ./
 
-RUN bun install && bun x playwright install --with-deps
+# Install all dependencies from package.json via bun; no manual installs
+RUN bun install --frozen-lockfile
 
 CMD ["tail", "-f", "/dev/null"]

@@ -6,14 +6,9 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 RUN apk add --no-cache \
     bash=5.2.37-r0 \
-    chromium=136.0.7103.113-r0 \
     curl=${CURL_VERSION} \
-    font-freefont=20120503-r4 \
-    g++=14.2.0-r4  \
-    harfbuzz=9.0.0-r1 \
-    nss=3.109-r0 \
+    g++=14.2.0-r4 \
     make=4.4.1-r2 \
-    freetype=2.13.3-r0 \
     python3=3.12.12-r0 && \
     curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
 
