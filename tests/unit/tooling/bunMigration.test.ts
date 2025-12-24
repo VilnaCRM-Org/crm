@@ -26,7 +26,7 @@ describe('Bun migration tooling expectations', () => {
   it('Makefile enforces dockerized workflows with Bun tooling', () => {
     const makefile = readFile('Makefile');
 
-    expect(makefile).toContain('UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env');
+    expect(makefile).toMatch(/UNIT_TESTS\\s+= make start && \\$\\(EXEC_DEV_TTYLESS\\) env/);
     expect(makefile).not.toContain('UNIT_TESTS              = env');
   });
 
