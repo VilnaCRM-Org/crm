@@ -87,51 +87,21 @@ JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 
 NETWORK_NAME                = crm-network
 
-CI                          ?= 0
-
-BUN                         = bun
+BUN                         = $(EXEC_DEV_TTYLESS) bun
 BUNX                        = $(BUN) x
+EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
+BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
 
-ifeq ($(CI), 1)
-    EXEC_CMD                =
-    BUN                     = bun
-    BUNX                    = $(BUN) x
-    DEV_CMD                 = $(BUNX) craco start
-    BUILD_CMD               = $(CRACO_BUILD)
-    LHCI                    = lhci autorun
+STRYKER_CMD                 = make start && $(BUNX) stryker run
+UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
 
-	STRYKER_CMD             = $(BUNX) stryker run
-    UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
+STORYBOOK_BUILD             = $(BUNX) storybook build
+STORYBOOK_START             = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
-    STORYBOOK_BUILD 		= $(BUNX) storybook build
-    STORYBOOK_START         = $(STORYBOOK_CMD)
-
-    MARKDOWNLINT_BIN        = $(BUNX) markdownlint
-	LHCI_TARGET_URL 		= $(WEBSITE_URL)
-ifeq ($(DIND), 1)
-    RUN_MEMLAB              = $(MEMLEAK_RUN_DOCKER)
-else
-    RUN_MEMLAB              = $(MEMLEAK_REMOVE_RESULTS) && node $(MEMLEAK_TEST_SCRIPT)
-endif
-else
-    EXEC_CMD                = $(EXEC_DEV_TTYLESS)
-    BUN                     = $(EXEC_DEV_TTYLESS) bun
-    BUNX                    = $(BUN) x
-    DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
-    BUILD_CMD               = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
-
-    STRYKER_CMD             = make start && $(BUNX) stryker run
-    UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
-
-    STORYBOOK_BUILD			= $(BUNX) storybook build
-    STORYBOOK_START         = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
-
-    MARKDOWNLINT_BIN        = $(BUNX) markdownlint
-    LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
-    RUN_MEMLAB               = $(MEMLEAK_RUN_DOCKER)
-endif
-
-# To Run in CI mode specify CI variable. Example: make lint-md CI=1
+MARKDOWNLINT_BIN            = $(BUNX) markdownlint
+LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
+RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
@@ -305,7 +275,7 @@ lighthouse-desktop: ## Run a Lighthouse audit using desktop viewport settings to
 lighthouse-mobile: ## Run a Lighthouse audit using mobile viewport settings to evaluate mobile UX and performance
 	$(LHCI_MOBILE)
 
-install: ## Install node modules using Bun (CI=1 runs locally, default runs in container) — uses frozen lockfile and affects node_modules via volumes
+install: ## Install node modules using Bun in the dev container — uses frozen lockfile and affects node_modules via volumes
 	$(BUN) install --frozen-lockfile
 	make husky
 

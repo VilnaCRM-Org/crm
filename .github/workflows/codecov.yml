@@ -18,19 +18,10 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-
       - name: Start container
-        env:
-          CI: 0
         run: make start
 
       - name: Run unit tests
-        env:
-          CI: 0
         run: make test-unit-all
 
       - name: Upload coverage to Codecov

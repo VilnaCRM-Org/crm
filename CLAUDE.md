@@ -25,15 +25,6 @@ This template is used for all VilnaCRM microservices.
 
 The project uses Docker for all development and testing. Commands are managed via Makefile.
 
-### Running Locally Without Docker
-
-Prefix any command with `CI=1` to run locally:
-
-```bash
-CI=1 make start
-CI=1 make test-unit-all
-```
-
 ### Starting Development
 
 ```bash
@@ -217,13 +208,13 @@ make clean      # Remove containers, images, volumes
 For unit tests (client):
 
 ```bash
-CI=1 bunx jest tests/unit/path/to/test.test.tsx
+docker compose exec -T dev bun x jest tests/unit/path/to/test.test.tsx
 ```
 
 For unit tests (server):
 
 ```bash
-CI=1 TEST_ENV=server bunx jest tests/apollo-server/server.test.ts
+docker compose exec -T dev TEST_ENV=server bun x jest tests/apollo-server/server.test.ts
 ```
 
 For specific E2E test:

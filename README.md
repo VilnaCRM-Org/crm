@@ -172,28 +172,6 @@ Docker
   make wait-for-prod: waits for the prod service to be ready on port 3001
 ```
 
-💡 Tip: To run commands locally without Docker, please prefix command with CI=1.
-Example:
-
-```bash
-  CI=1 make start
-```
-
-The following commands can't be run with `CI=1` prefix:
-
-```bash
-  make test-e2e: starts production and runs end-to-end tests inside the prod container
-  make test-visual: runs visual tests inside the prod container
-  make test-e2e-ui: runs end-to-end tests with UI inside the prod container
-  make test-visual-ui: runs visual tests with UI inside the prod container
-
-  make test-load: executes load tests using the K6 library
-  (uses "prod" as hostname, which maps to the Docker service)
-
-  make git-hooks-install: installs husky Git hooks locally
-  make update: runs locally on the host machine, not in a container
-```
-
 ### Load Testing with K6
 
 This project includes a dedicated load testing service using K6, configured via a Docker Compose profile.

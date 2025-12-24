@@ -18,24 +18,14 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: .bun-version
-
       - name: Start container
-        env:
-          CI: 0
         run: make start
 
       - name: Install Chromium in dev container
-        env:
-          CI: 0
         run: docker compose exec -T dev apk add --no-cache chromium nss freetype ttf-freefont harfbuzz
 
       - name: Run desktop performance test
         env:
-          CI: 0
           LHCI_CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new --ignore-certificate-errors
           LHCI_TARGET_URL: http://prod:3001
           REACT_APP_PROD_HOST_API_URL: http://prod:3001
@@ -44,7 +34,6 @@ jobs:
 
       - name: Run mobile performance test
         env:
-          CI: 0
           LHCI_CHROME_FLAGS: --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new --ignore-certificate-errors
           LHCI_TARGET_URL: http://prod:3001
           REACT_APP_PROD_HOST_API_URL: http://prod:3001

@@ -53,7 +53,7 @@ run_make_with_prod_dind() {
     crm_dir=$3
     start_prod_dind
     export DIND=1
-    if ! cd "$crm_dir" || ! make "$target" CI=0; then
+    if ! cd "$crm_dir" || ! make "$target"; then
         exit 1
     fi
 }
