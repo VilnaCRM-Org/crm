@@ -21,6 +21,15 @@ jobs:
       - name: Start container
         run: make start
 
+      - name: Install Chromium in dev container for Lighthouse
+        run: |
+          docker compose exec -T dev apk add --no-cache \
+            chromium \
+            font-freefont \
+            freetype \
+            harfbuzz \
+            nss
+
       - name: Run desktop performance test
         run: make lighthouse-desktop
 
