@@ -164,10 +164,10 @@ build-out: ## Build production artifacts to ./out directory (via Docker)
 	echo "✅ Build artifacts extracted to ./out directory"
 
 format: ## This command executes Prettier formatting
-	$(EXEC_CMD) $(PRETTIER_CMD)
+	$(PRETTIER_CMD)
 
 lint-eslint: ## This command executes ESLint
-	$(EXEC_CMD) npx eslint .
+	$(BUNX) eslint .
 
 lint-tsc: ## This command executes Typescript linter
 	$(BUNX) tsc
