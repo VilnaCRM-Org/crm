@@ -79,6 +79,7 @@ DEV_PORT                    ?= 3000
 PROD_PORT                   ?= 3001
 PLAYWRIGHT_TEST_PORT        ?= 9324
 UI_HOST                     ?= 0.0.0.0
+INSTALL_CHROMIUM            ?= false
 
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
 PRETTIER_CMD                = $(BUNX) prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
@@ -150,6 +151,9 @@ ifeq ($(DIND), 1)
 else
 	$(BUILD_CMD)
 endif
+
+build-dev-chromium:
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) build --build-arg INSTALL_CHROMIUM=$(INSTALL_CHROMIUM) dev
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
