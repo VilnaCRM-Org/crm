@@ -15,7 +15,7 @@ JEST_BIN                    = ./node_modules/jest/bin/jest.js
 JEST_CMD                    = node $(JEST_BIN)
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
-CRACO_BUILD                 = $(BUNX) craco build
+RSBUILD_BUILD               = $(BUNX) @rsbuild/core build
 STORYBOOK_PORT				?= 6006
 STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 
@@ -91,8 +91,8 @@ NETWORK_NAME                = crm-network
 BUN                         = $(EXEC_DEV_TTYLESS) bun
 BUNX                        = $(BUN) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
-DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
-BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev && make wait-for-dev
+BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 
 STRYKER_CMD                 = make start && $(BUNX) stryker run
 UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
@@ -156,14 +156,14 @@ build-dev-chromium:
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) build --build-arg INSTALL_CHROMIUM=$(INSTALL_CHROMIUM) dev
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(RSBUILD_BUILD)
 
 build-out: ## Build production artifacts to ./out directory (via Docker)
-	@echo "🏗️ Building production Docker image for CRA bundle..."
-	docker build -t cra-build -f Dockerfile --target production .
-	@container_id=$$(docker create cra-build) && \
+	@echo "🏗️ Building production Docker image for Rsbuild bundle..."
+	docker build -t rsbuild-bundle -f Dockerfile --target production .
+	@container_id=$$(docker create rsbuild-bundle) && \
 	rm -rf ./out && \
-	docker cp $$container_id:/app/build ./out && \
+	docker cp $$container_id:/app/dist ./out && \
 	docker rm $$container_id && \
 	echo "✅ Build artifacts extracted to ./out directory"
 
