@@ -1,3 +1,5 @@
+import * as path from 'path';
+
 import { defineConfig, loadEnv } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
@@ -33,6 +35,11 @@ export default defineConfig({
   },
   tools: {
     rspack: {
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, 'src'),
+        },
+      },
       plugins: [
         new ModuleFederationPlugin({
           name: 'crm',
