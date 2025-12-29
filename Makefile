@@ -367,7 +367,7 @@ lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 patch-prod-mockoon-url: ## Rewrite localhost Mockoon URLs inside the prod bundle to use container host
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc '\
 		set -e; \
-		BUILD_DIR=/app/build; \
+		BUILD_DIR=/app/dist; \
 		if [ ! -d "$$BUILD_DIR" ]; then \
 			echo "Prod build directory not found; skipping Mockoon URL patch."; \
 			exit 0; \

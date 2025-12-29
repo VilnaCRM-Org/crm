@@ -156,7 +156,7 @@ import { LoginAPI } from '@/modules/User/features/Auth/api';
 Configured in:
 
 - `tsconfig.paths.json` for TypeScript
-- `craco.config.js` for webpack
+- `rsbuild.config.js` for webpack
 - `jest.config.ts` for Jest
 
 ### GraphQL Setup

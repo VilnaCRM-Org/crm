@@ -1,4 +1,4 @@
-import { defineConfig } from '@rsbuild/core';
+import { defineConfig, loadEnv } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
 import { container } from '@rspack/core';
@@ -7,6 +7,7 @@ import { container } from '@rspack/core';
 const pkg = require('./package.json');
 
 const { ModuleFederationPlugin } = container;
+const { publicVars } = loadEnv({ prefixes: ['REACT_APP_'] });
 
 const sharedDependencies = {
   react: { singleton: true, requiredVersion: pkg.dependencies.react },
@@ -60,5 +61,6 @@ export default defineConfig({
   },
   source: {
     decorators: { version: 'legacy' },
+    define: publicVars,
   },
 });
