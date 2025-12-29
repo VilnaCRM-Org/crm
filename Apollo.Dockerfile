@@ -19,17 +19,10 @@ FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21
 ENV NODE_ENV=production
 ENV DEV_PORT=3000
 
-SHELL ["/bin/ash", "-o", "pipefail", "-c"]
-
-RUN apk add --no-cache bash~=5.2 curl=8.14.1-r2 && \
-    curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
-
-ENV BUN_INSTALL=/root/.bun
-ENV PATH="/root/.bun/bin:$PATH"
-
 WORKDIR /app
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile --production
+COPY --from=builder --chown=node:node /app/node_modules ./node_modules
+COPY --from=builder --chown=node:node /app/package.json ./package.json
+COPY --from=builder --chown=node:node /app/bun.lock* ./bun.lock*
 
 USER root
 

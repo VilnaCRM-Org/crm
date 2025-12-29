@@ -1,6 +1,17 @@
 import { defineConfig } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
+import { container } from '@rspack/core';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const pkg = require('./package.json');
+
+const { ModuleFederationPlugin } = container;
+
+const sharedDependencies = {
+  react: { singleton: true, requiredVersion: pkg.dependencies.react },
+  'react-dom': { singleton: true, requiredVersion: pkg.dependencies['react-dom'] },
+};
 
 export default defineConfig({
   plugins: [
@@ -20,6 +31,17 @@ export default defineConfig({
     template: './public/index.html',
   },
   tools: {
+    rspack: {
+      plugins: [
+        new ModuleFederationPlugin({
+          name: 'crm',
+          filename: 'remoteEntry.js',
+          exposes: {},
+          remotes: {},
+          shared: sharedDependencies,
+        }),
+      ],
+    },
     swc: {
       jsc: {
         parser: {

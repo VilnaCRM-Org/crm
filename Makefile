@@ -28,11 +28,12 @@ LHCI                        = $(BUNX) lhci autorun
 LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
 LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
+CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-r4 freetype=2.13.3-r0 harfbuzz=9.0.0-r1 nss=3.109-r0
 LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
 LHCI_CHROME_FLAGS_ARG       = --collect.settings.chromeFlags="$(LHCI_CHROME_FLAGS)"
 LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
-LHCI_BUILD_CMD          	= make start-prod && $(LHCI)
+LHCI_BUILD_CMD          	= make ensure-chromium && make start-prod && $(LHCI)
 LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 
@@ -154,6 +155,17 @@ endif
 
 build-dev-chromium:
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) build --build-arg INSTALL_CHROMIUM=$(INSTALL_CHROMIUM) dev
+
+ensure-chromium: ## Ensure Chromium is installed in the dev container for Lighthouse runs
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev
+	@$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) exec -T dev sh -lc '\
+		if [ -x "$(CHROMIUM_BIN_PATH)" ]; then \
+			echo "Chromium already installed: $$(chromium-browser --version)"; \
+			exit 0; \
+		fi; \
+		echo "Installing Chromium for Lighthouse..."; \
+		apk add --no-cache $(CHROMIUM_APK_PACKAGES); \
+	'
 
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(RSBUILD_BUILD)
