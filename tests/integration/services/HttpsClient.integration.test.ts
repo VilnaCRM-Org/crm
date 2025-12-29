@@ -1,3 +1,5 @@
+import { ReadableStream } from 'node:stream/web';
+
 import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
 import { HttpError, isHttpError } from '@/services/HttpsClient/HttpError';
 import ResponseMessages from '@/services/HttpsClient/responseMessages';
@@ -61,6 +63,30 @@ describe('FetchHttpsClient Integration', () => {
         headers: { Accept: 'application/json' },
         signal: controller.signal,
       });
+    });
+
+    it('should rethrow AbortError from fetch', async () => {
+      const abortError = new Error('aborted');
+      abortError.name = 'AbortError';
+      mockFetch.mockRejectedValueOnce(abortError);
+
+      await expect(client.get(TEST_URL)).rejects.toBe(abortError);
+    });
+
+    it('should return undefined when JSON response body is empty or unreadable', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'Content-Type': 'application/json' }),
+        clone: () => ({
+          text: async (): Promise<never> => {
+            throw new Error('cannot read body');
+          },
+        }),
+      } as unknown as Response);
+
+      const result = await client.get(TEST_URL);
+      expect(result).toBeUndefined();
     });
   });
 
@@ -222,6 +248,37 @@ describe('FetchHttpsClient Integration', () => {
         method: 'GET',
         headers: { Accept: 'application/json' },
       });
+    });
+  });
+
+  describe('request configuration', () => {
+    it('should treat ReadableStream body as non-JSON without adding Content-Type', () => {
+      const globalWithStream = globalThis as unknown as { ReadableStream?: typeof ReadableStream };
+      const originalReadableStream = globalWithStream.ReadableStream;
+      // Provide a ReadableStream constructor for instanceof checks without relying on DOM lib types
+      globalWithStream.ReadableStream = ReadableStream;
+      try {
+        const stream = new ReadableStream();
+
+        const config = (
+          client as unknown as {
+            createRequestConfig: (
+              method: string,
+              body?: unknown,
+              headers?: Record<string, string>
+            ) => RequestInit;
+          }
+        ).createRequestConfig('POST', stream);
+
+        expect(config.body).toBe(stream);
+        const headers = (config.headers as Record<string, string>) || {};
+        expect(headers['Content-Type']).toBeUndefined();
+        expect(headers.Accept).toBe('application/json');
+      } finally {
+        (
+          global as unknown as { ReadableStream: typeof ReadableStream | undefined }
+        ).ReadableStream = originalReadableStream;
+      }
     });
   });
 

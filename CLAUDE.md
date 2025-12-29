@@ -17,21 +17,13 @@ This template is used for all VilnaCRM microservices.
 - **i18n**: react-i18next (main language: uk, fallback: en)
 - **Build**: CRACO (Create React App Configuration Override)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
-- **Package Manager**: pnpm (required, version >=9)
+- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
+  Bun is used only to manage dependencies using `bun.lock`.
 - **Node**: >=24.8.0 (enforced via engineStrict)
 
 ## Development Environment
 
 The project uses Docker for all development and testing. Commands are managed via Makefile.
-
-### Running Locally Without Docker
-
-Prefix any command with `CI=1` to run locally:
-
-```bash
-CI=1 make start
-CI=1 make test-unit-all
-```
 
 ### Starting Development
 
@@ -216,13 +208,13 @@ make clean      # Remove containers, images, volumes
 For unit tests (client):
 
 ```bash
-CI=1 pnpm exec jest tests/unit/path/to/test.test.tsx
+docker compose exec -T dev bun x jest tests/unit/path/to/test.test.tsx
 ```
 
 For unit tests (server):
 
 ```bash
-CI=1 TEST_ENV=server pnpm exec jest tests/apollo-server/server.test.ts
+docker compose exec -T dev TEST_ENV=server bun x jest tests/apollo-server/server.test.ts
 ```
 
 For specific E2E test:
@@ -230,7 +222,7 @@ For specific E2E test:
 ```bash
 make start-prod
 # In another terminal:
-docker compose -f docker-compose.test.yml exec playwright pnpm exec playwright test tests/e2e/path/to/test.spec.ts
+docker compose -f docker-compose.test.yml exec playwright bunx playwright test tests/e2e/path/to/test.spec.ts
 ```
 
 ## Environment Variables

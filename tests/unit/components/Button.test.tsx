@@ -14,4 +14,22 @@ describe('Button component', () => {
     fireEvent.click(screen.getByText('Click'));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
+
+  it('renders with default props', () => {
+    const handleClick = jest.fn();
+    render(<Button label="Button" variant="primary" onClick={handleClick} />);
+
+    expect(screen.getByText('Button')).toBeInTheDocument();
+    expect(screen.getByRole('button')).toHaveClass('btn-primary');
+  });
+
+  it('falls back to default label and variant when omitted', () => {
+    const handleClick = jest.fn();
+    // @ts-expect-error Deliberately omit props to exercise runtime defaults
+    render(<Button onClick={handleClick} />);
+
+    const button = screen.getByRole('button');
+    expect(button).toHaveTextContent('Button');
+    expect(button).toHaveClass('btn-primary');
+  });
 });

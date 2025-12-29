@@ -11,29 +11,30 @@ export
 DOCKER_COMPOSE              = docker compose
 
 BIN_DIR                     = ./node_modules/.bin
-JEST_BIN                    = $(BIN_DIR)/jest
+JEST_BIN                    = ./node_modules/jest/bin/jest.js
+JEST_CMD                    = node $(JEST_BIN)
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
-CRACO_BUILD                 = pnpm exec -- craco build
+CRACO_BUILD                 = $(BUNX) craco build
 STORYBOOK_PORT				?= 6006
-STORYBOOK_CMD         		= pnpm exec -- storybook dev -p $(STORYBOOK_PORT)
+STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 
 TEST_DIR_BASE               = ./tests
 TEST_DIR_APOLLO             = $(TEST_DIR_BASE)/apollo-server
 TEST_DIR_E2E                = $(TEST_DIR_BASE)/e2e
 TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual
 
-LHCI                        = pnpm exec -- lhci autorun
+LHCI                        = $(BUNX) lhci autorun
 LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
 LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
-LHCI_DIND_CHROME_FLAGS      = --no-sandbox --disable-dev-shm-usage --disable-extensions --disable-gpu --headless --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-renderer-backgrounding --disable-software-rasterizer --disable-setuid-sandbox --single-process --no-zygote --js-flags=--max-old-space-size=4096
-LHCI_DIND_CHROME_PATH_ARG   = --collect.chromePath=$(CHROMIUM_BIN_PATH)
-LHCI_DIND_CHROME_FLAGS_ARG  = --collect.settings.chromeFlags="$(LHCI_DIND_CHROME_FLAGS)"
+LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new
+LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
+LHCI_CHROME_FLAGS_ARG       = --collect.settings.chromeFlags="$(LHCI_CHROME_FLAGS)"
 LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
 LHCI_BUILD_CMD          	= make start-prod && $(LHCI)
-LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS)
-LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_FLAGS)
+LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
+LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 
 DOCKER_COMPOSE_TEST_FILE    = -f docker-compose.test.yml
 DOCKER_COMPOSE_DEV_FILE     = -f docker-compose.yml
@@ -73,54 +74,35 @@ LOAD_TESTS_RUN              = $(K6) run --summary-trend-stats="avg,min,med,max,p
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
 
+WEBSITE_DOMAIN              ?= localhost
+DEV_PORT                    ?= 3000
+PROD_PORT                   ?= 3001
+PLAYWRIGHT_TEST_PORT        ?= 9324
+UI_HOST                     ?= 0.0.0.0
+INSTALL_CHROMIUM            ?= false
+
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
-PRETTIER_CMD                = pnpm exec -- prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
+PRETTIER_CMD                = $(BUNX) prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 
 NETWORK_NAME                = crm-network
 
-CI                          ?= 0
+BUN                         = $(EXEC_DEV_TTYLESS) bun
+BUNX                        = $(BUN) x
+EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
+BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
 
+STRYKER_CMD                 = make start && $(BUNX) stryker run
+UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
 
-ifeq ($(CI), 1)
-    EXEC_CMD                =
-    PNPM_EXEC               = pnpm
-    DEV_CMD                 = $(BIN_DIR)/craco start
-    BUILD_CMD               = $(CRACO_BUILD)
-    LHCI                    = lhci autorun
+STORYBOOK_BUILD             = $(BUNX) storybook build
+STORYBOOK_START             = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
-	STRYKER_CMD             = pnpm stryker run
-    UNIT_TESTS              = env
-
-    STORYBOOK_BUILD 		= pnpm exec -- storybook build
-    STORYBOOK_START         = $(STORYBOOK_CMD)
-
-    MARKDOWNLINT_BIN        = pnpm exec -- markdownlint
-	LHCI_TARGET_URL 		= $(WEBSITE_URL)
-ifeq ($(DIND), 1)
-    RUN_MEMLAB              = $(MEMLEAK_RUN_DOCKER)
-else
-    RUN_MEMLAB              = $(MEMLEAK_REMOVE_RESULTS) && node $(MEMLEAK_TEST_SCRIPT)
-endif
-else
-    EXEC_CMD                = $(EXEC_DEV_TTYLESS)
-    PNPM_EXEC               = $(EXEC_DEV_TTYLESS) pnpm
-    DEV_CMD                 = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
-    BUILD_CMD               = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
-
-    STRYKER_CMD             = make start && $(EXEC_DEV_TTYLESS) pnpm stryker run
-    UNIT_TESTS              = make start && $(EXEC_DEV_TTYLESS) env
-
-    STORYBOOK_BUILD			= $(EXEC_DEV_TTYLESS) pnpm exec -- storybook build
-    STORYBOOK_START         = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
-
-    MARKDOWNLINT_BIN        = $(EXEC_DEV_TTYLESS) pnpm exec -- markdownlint
-    LHCI_TARGET_URL             ?= $(REACT_APP_PROD_HOST_API_URL)
-    RUN_MEMLAB               = $(MEMLEAK_RUN_DOCKER)
-endif
-
-# To Run in CI mode specify CI variable. Example: make lint-md CI=1
+MARKDOWNLINT_BIN            = $(BUNX) markdownlint
+LHCI_TARGET_URL             ?= $(REACT_APP_PROD_CONTAINER_API_URL)
+RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
@@ -141,22 +123,26 @@ help:
 	@printf "\033[33mTargets:\033[0m\n"
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' Makefile | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[32m%-20s\033[0m %s\n", $$1, $$2}'
 
-start: ## Start the application
+start: create-network ## Start the application
 	$(DEV_CMD)
 
+WAIT_FOR_DEV_MAX_TRIES     ?= 150
+WAIT_FOR_DEV_SLEEP         ?= 2
+
 wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
-	@echo "Waiting for dev service to be ready on port $(DEV_PORT)..."
+	@echo "Waiting for dev service to be ready on http://$(WEBSITE_DOMAIN):$(DEV_PORT)..."
 	@i=0; \
-	while [ $$i -lt 60 ]; do \
-	  if $(PNPM_EXEC) exec -- wait-on http://$(WEBSITE_DOMAIN):$(DEV_PORT) > /dev/null 2>&1; then \
-	    printf '\n✅ Dev service is up and running!\n'; \
-	    exit 0; \
-	  fi; \
-	  printf "."; \
-	  sleep 2; \
-	  i=$$((i+1)); \
+	while [ $$i -lt $(WAIT_FOR_DEV_MAX_TRIES) ]; do \
+		if curl -fsS http://$(WEBSITE_DOMAIN):$(DEV_PORT) > /dev/null 2>&1; then \
+			printf '\n✅ Dev service is up and running!\n'; \
+			exit 0; \
+		fi; \
+		printf "."; \
+		sleep $(WAIT_FOR_DEV_SLEEP); \
+		i=$$((i+1)); \
 	done; \
 	printf '\n❌ Timed out waiting for dev service\n'; \
+	$(DOCKER_COMPOSE) logs --tail=50 dev || true; \
 	exit 1
 
 build: ## Build the dev container
@@ -166,26 +152,29 @@ else
 	$(BUILD_CMD)
 endif
 
+build-dev-chromium:
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) build --build-arg INSTALL_CHROMIUM=$(INSTALL_CHROMIUM) dev
+
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
 
 build-out: ## Build production artifacts to ./out directory (via Docker)
-	@echo "🏗️ Building production Docker image for Craco..."
-	docker build -t craco-build -f Dockerfile --target production .
-	@container_id=$$(docker create craco-build) && \
+	@echo "🏗️ Building production Docker image for CRA bundle..."
+	docker build -t cra-build -f Dockerfile --target production .
+	@container_id=$$(docker create cra-build) && \
 	rm -rf ./out && \
 	docker cp $$container_id:/app/build ./out && \
 	docker rm $$container_id && \
 	echo "✅ Build artifacts extracted to ./out directory"
 
 format: ## This command executes Prettier formatting
-	$(EXEC_CMD) $(PRETTIER_CMD)
+	$(PRETTIER_CMD)
 
 lint-eslint: ## This command executes ESLint
-	$(EXEC_CMD) npx eslint .
+	$(BUNX) eslint .
 
 lint-tsc: ## This command executes Typescript linter
-	$(PNPM_EXEC) tsc
+	$(BUNX) tsc
 
 lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
@@ -193,7 +182,7 @@ lint-md: ## This command executes Markdown linter
 lint: lint-eslint lint-tsc lint-md ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
 
 husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
-	pnpm husky install
+	$(BUNX) husky install
 
 storybook-start: ## Start Storybook UI and open in browser
 	$(STORYBOOK_START)
@@ -229,7 +218,7 @@ start-prod: create-network ## Build image and start container in production mode
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
 	@for i in $$(seq 1 60); do \
-		pnpm exec -- wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
+		bun x wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
 		printf "."; sleep 2; \
 		[ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
 	done; \
@@ -238,16 +227,16 @@ wait-for-prod:
 test-unit-all: test-unit-client test-unit-server ## This command executes unit tests for both client and server environments.
 
 test-unit-client: ## Run all client-side unit tests using Jest (TEST_ENV=client)
-	$(UNIT_TESTS) TEST_ENV=client $(JEST_BIN) $(JEST_FLAGS)
+	$(UNIT_TESTS) TEST_ENV=client $(JEST_CMD) $(JEST_FLAGS)
 
 test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js env, TEST_ENV=server, target: $(TEST_DIR_APOLLO))
-	$(UNIT_TESTS) TEST_ENV=server $(JEST_BIN) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
+	$(UNIT_TESTS) TEST_ENV=server $(JEST_CMD) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
 
 test-integration: ## Run integration tests using Jest
-	$(UNIT_TESTS) TEST_ENV=integration $(JEST_BIN) $(JEST_FLAGS)
+	$(UNIT_TESTS) TEST_ENV=integration $(JEST_CMD) $(JEST_FLAGS)
 
 test-integration-watch: ## Run integration tests in watch mode
-	$(UNIT_TESTS) TEST_ENV=integration $(JEST_BIN) --watch
+	$(UNIT_TESTS) TEST_ENV=integration $(JEST_CMD) --watch
 
 test-memory-leak: start-prod ## This command executes memory leaks tests using Memlab library.
 	$(RUN_MEMLAB)
@@ -288,12 +277,12 @@ lighthouse-desktop: ## Run a Lighthouse audit using desktop viewport settings to
 lighthouse-mobile: ## Run a Lighthouse audit using mobile viewport settings to evaluate mobile UX and performance
 	$(LHCI_MOBILE)
 
-install: ## Install node modules using pnpm (CI=1 runs locally, default runs in container) — uses frozen lockfile and affects node_modules via volumes
-	$(PNPM_EXEC) install --frozen-lockfile
+install: ## Install node modules using Bun in the dev container — uses frozen lockfile and affects node_modules via volumes
+	$(BUN) install --frozen-lockfile
 	make husky
 
-update: ## Update node modules to latest allowed versions — always runs locally, updates lockfile (run before committing dependency changes)
-	pnpm update
+update: ## Update node modules to latest allowed versions — updates lockfile; runs on host or dev container depending on environment
+	$(BUN) update
 
 down: ## Stop the docker containers
 	$(DOCKER_COMPOSE) down --remove-orphans
@@ -317,7 +306,7 @@ stop: ## Stop docker
 	$(DOCKER_COMPOSE) stop
 
 check-node-version: ## Check if the correct Node.js version is installed
-	$(EXEC_CMD) pnpm exec -- node checkNodeVersion.js
+	$(EXEC_CMD) node checkNodeVersion.js
 
 clean: down ## Clean up only this project's containers, images, and volumes
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) down --volumes --remove-orphans --rmi local
@@ -399,16 +388,16 @@ copy-source-to-container-dind: ## Copy source code to temp container for dind te
 
 install-deps-in-container-dind: ## Install dependencies in temp container for dind testing
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" pnpm install --frozen-lockfile
+	docker exec "$(TEMP_CONTAINER_NAME)" bun install --frozen-lockfile
 
 run-unit-tests-dind: ## Run unit tests in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=client $(JEST_BIN) $(JEST_FLAGS)
-	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=server $(JEST_BIN) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
+	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=client $(JEST_CMD) $(JEST_FLAGS)
+	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=server $(JEST_CMD) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
 
 run-integration-tests-dind: ## Run integration tests in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=integration $(JEST_BIN) $(JEST_FLAGS)
+	docker exec "$(TEMP_CONTAINER_NAME)" env TEST_ENV=integration $(JEST_CMD) $(JEST_FLAGS)
 
 run-mutation-tests-dind: ## Run mutation tests in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
@@ -420,7 +409,7 @@ run-eslint-tests-dind: ## Run ESLint in temp container for dind
 
 run-typescript-tests-dind: ## Run TypeScript check in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" pnpm tsc
+	docker exec "$(TEMP_CONTAINER_NAME)" bun x tsc
 
 run-markdown-lint-tests-dind: ## Run Markdown lint in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi

@@ -18,6 +18,23 @@ function createMockResponse(
     }),
   } as unknown as Response;
 }
+
+const createStatusOnlyResponse = (status: number): Response =>
+  ({
+    ok: status >= 200 && status < 300,
+    status,
+    headers: new Headers(),
+  }) as unknown as Response;
+
+const createErrorResponse = (status: number, statusText: string, url: string): Response =>
+  ({
+    ok: false,
+    status,
+    statusText,
+    url,
+    headers: new Headers(),
+    json: async () => ({}),
+  }) as unknown as Response;
 describe('FetchHttpsClient', () => {
   const originalFetch = global.fetch;
   let client: FetchHttpsClient;
@@ -95,11 +112,7 @@ describe('FetchHttpsClient', () => {
     });
 
     it('should return undefined for 304 Not Modified', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        status: 304,
-        headers: new Headers(),
-      });
+      mockFetch.mockResolvedValue(createStatusOnlyResponse(304));
 
       const result = await client.get('/api/test');
 
@@ -107,14 +120,7 @@ describe('FetchHttpsClient', () => {
     });
 
     it('should throw HttpError on 404', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-        statusText: 'Not Found',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(404, 'Not Found', '/api/test'));
 
       await expect(client.get('/api/test')).rejects.toThrow(HttpError);
     });
@@ -476,6 +482,23 @@ describe('FetchHttpsClient', () => {
       const result = await client.get('/api/test');
       expect(result).toBeUndefined();
     });
+
+    it('should return undefined when clone text fails during JSON parsing', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({ data: 'ignored' }),
+        clone: () => ({
+          text: async (): Promise<string> => {
+            throw new Error('text failed');
+          },
+        }),
+      });
+
+      const result = await client.get('/api/test');
+      expect(result).toBeUndefined();
+    });
   });
 
   describe('error handling', () => {
@@ -714,6 +737,55 @@ describe('FetchHttpsClient', () => {
       });
 
       await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+    });
+
+    it('should throw HttpError when non-JSON response includes body text', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async (): Promise<string> => 'plain text payload',
+      });
+
+      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+    });
+
+    it('should return undefined when non-JSON response body cannot be read', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        text: async (): Promise<string> => {
+          throw new Error('read failure');
+        },
+      });
+
+      const result = await client.get('/api/test');
+      expect(result).toBeUndefined();
+    });
+
+    it('should rethrow HttpError without wrapping when fetch rejects with HttpError', async () => {
+      const httpError = new HttpError({ status: 418, message: 'teapot' });
+      mockFetch.mockRejectedValue(httpError);
+
+      await expect(client.get('/api/test')).rejects.toBe(httpError);
+    });
+
+    it('should not override an explicitly provided Content-Type header', () => {
+      const customHeaders = { 'Content-Type': 'text/plain', Accept: 'application/xml' };
+      const config = (
+        client as unknown as {
+          createRequestConfig: (
+            method: string,
+            body?: unknown,
+            headers?: Record<string, string>
+          ) => RequestInit;
+        }
+      ).createRequestConfig('POST', { sample: true }, customHeaders);
+
+      const headers = (config.headers as Record<string, string>) || {};
+      expect(headers['Content-Type']).toBe('text/plain');
+      expect(headers.Accept).toBe('application/xml');
     });
   });
 });

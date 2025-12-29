@@ -79,3 +79,6 @@ export const resolvers = {
     },
   },
 };
+
+// Expose internal helpers for targeted testing
+export const __test__ = { rejectIfExists };

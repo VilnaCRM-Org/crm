@@ -20,7 +20,7 @@ const testMatchMap: Record<string, string[]> = {
 const testMatch = testMatchMap[TEST_ENV ?? ''] || testMatchMap.default;
 
 const isIntegration = TEST_ENV === 'integration';
-const thresholdValue = isIntegration ? 90 : 100;
+const thresholdValue = 100;
 const coverageThreshold = {
   global: {
     branches: thresholdValue,
@@ -44,7 +44,7 @@ const config: Config = {
   clearMocks: true,
   collectCoverage: true,
   coverageDirectory: 'coverage',
-  coverageProvider: 'v8',
+  coverageProvider: 'babel',
   coveragePathIgnorePatterns: ['/node_modules/'],
   collectCoverageFrom:
     TEST_ENV === 'server'

@@ -11,7 +11,7 @@ module.exports = {
   ignorePatterns: [
     'node_modules/*',
     'docker-compose.yml',
-    'pnpm-lock.yaml',
+    'bun.lock*',
     'build/*',
     'coverage/*',
     'storybook-static/*',

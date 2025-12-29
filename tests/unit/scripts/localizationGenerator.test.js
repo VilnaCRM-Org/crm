@@ -4,6 +4,19 @@ const LocalizationGenerator = require('../../../scripts/localizationGenerator');
 
 jest.mock('fs');
 
+const directoryEntry = (name, isDir) => ({
+  name,
+  isDirectory: () => isDir,
+  isFile: () => !isDir,
+});
+
+const mockReaddirWithStructure = (structure) => {
+  fs.readdirSync.mockImplementation((dir, options) => {
+    const entries = structure[dir] || [];
+    return options?.withFileTypes ? entries : entries.map((entry) => entry.name);
+  });
+};
+
 describe('LocalizationGenerator', () => {
   let generator;
   let mockFs;
@@ -60,34 +73,17 @@ describe('LocalizationGenerator', () => {
   describe('getFeaturePaths', () => {
     it('should find i18n folders recursively in module structure', () => {
       fs.existsSync.mockReturnValue(true);
-      fs.readdirSync.mockImplementation((dir, options) => {
-        const mockStructure = {
-          src: [{ name: 'modules', isDirectory: () => true, isFile: () => false }],
-          'src/modules': [
-            { name: 'feature1', isDirectory: () => true, isFile: () => false },
-            { name: 'feature2', isDirectory: () => true, isFile: () => false },
-            { name: 'feature3', isDirectory: () => true, isFile: () => false },
-          ],
-          'src/modules/feature1': [{ name: 'i18n', isDirectory: () => true, isFile: () => false }],
-          'src/modules/feature2': [
-            { name: 'subfeature', isDirectory: () => true, isFile: () => false },
-          ],
-          'src/modules/feature2/subfeature': [
-            { name: 'i18n', isDirectory: () => true, isFile: () => false },
-          ],
-          'src/modules/feature3': [
-            { name: 'nested', isDirectory: () => true, isFile: () => false },
-          ],
-          'src/modules/feature3/nested': [
-            { name: 'deeper', isDirectory: () => true, isFile: () => false },
-          ],
-          'src/modules/feature3/nested/deeper': [
-            { name: 'i18n', isDirectory: () => true, isFile: () => false },
-          ],
-        };
-        const entries = mockStructure[dir] || [];
-        return options?.withFileTypes ? entries : entries.map((e) => e.name);
-      });
+      const mockStructure = {
+        src: [directoryEntry('modules', true)],
+        'src/modules': [directoryEntry('feature1', true), directoryEntry('feature2', true), directoryEntry('feature3', true)],
+        'src/modules/feature1': [directoryEntry('i18n', true)],
+        'src/modules/feature2': [directoryEntry('subfeature', true)],
+        'src/modules/feature2/subfeature': [directoryEntry('i18n', true)],
+        'src/modules/feature3': [directoryEntry('nested', true)],
+        'src/modules/feature3/nested': [directoryEntry('deeper', true)],
+        'src/modules/feature3/nested/deeper': [directoryEntry('i18n', true)],
+      };
+      mockReaddirWithStructure(mockStructure);
       const result = generator.getFeaturePaths();
       expect(result.sort()).toEqual(
         [
@@ -101,24 +97,18 @@ describe('LocalizationGenerator', () => {
     it('should return empty array when no i18n folders exist', () => {
       const mockDirectoryStructure = {
         'src/modules': [
-          { name: 'feature1', isDirectory: () => true, isFile: () => false },
-          { name: 'feature2', isDirectory: () => true, isFile: () => false },
+          directoryEntry('feature1', true),
+          directoryEntry('feature2', true),
         ],
         'src/modules/feature1': [
-          { name: 'config.json', isDirectory: () => false, isFile: () => true },
+          directoryEntry('config.json', false),
         ],
         'src/modules/feature2': [
-          { name: 'data.txt', isDirectory: () => false, isFile: () => true },
+          directoryEntry('data.txt', false),
         ],
       };
 
-      mockFs.readdirSync.mockImplementation((dir) => {
-        const entries = mockDirectoryStructure[dir];
-        if (!entries) {
-          return [];
-        }
-        return entries;
-      });
+      mockReaddirWithStructure(mockDirectoryStructure);
 
       const result = generator.getFeaturePaths();
 
@@ -127,37 +117,18 @@ describe('LocalizationGenerator', () => {
 
     it('should handle mixed file and directory entries', () => {
       const mockDirectoryStructure = {
-        src: [{ name: 'modules', isDirectory: () => true, isFile: () => false }],
+        src: [directoryEntry('modules', true)],
         'src/modules': [
-          {
-            name: 'feature1',
-            isDirectory: () => true,
-            isFile: () => false,
-          },
-          {
-            name: 'README.md',
-            isDirectory: () => false,
-            isFile: () => true,
-          },
-          {
-            name: 'i18n',
-            isDirectory: () => true,
-            isFile: () => false,
-          },
+          directoryEntry('feature1', true),
+          directoryEntry('README.md', false),
+          directoryEntry('i18n', true),
         ],
         'src/modules/feature1': [
-          {
-            name: 'somefile.txt',
-            isDirectory: () => false,
-            isFile: () => true,
-          },
+          directoryEntry('somefile.txt', false),
         ],
       };
       fs.existsSync.mockImplementation((dir) => true);
-      fs.readdirSync.mockImplementation((dir, options) => {
-        const entries = mockDirectoryStructure[dir] || [];
-        return options?.withFileTypes ? entries : entries.map((e) => e.name);
-      });
+      mockReaddirWithStructure(mockDirectoryStructure);
       const result = generator.getFeaturePaths();
       expect(result).toEqual([path.join('src', 'modules', 'i18n')]);
     });
@@ -168,6 +139,20 @@ describe('LocalizationGenerator', () => {
       const result = generator.getFeaturePaths();
 
       expect(result).toEqual([]);
+    });
+
+    it('should ignore the output localization directory when walking modules', () => {
+      fs.existsSync.mockReturnValue(true);
+      const structure = {
+        src: [directoryEntry('i18n', true), directoryEntry('modules', true)],
+        'src/modules': [directoryEntry('feature', true)],
+        'src/modules/feature': [directoryEntry('i18n', true)],
+      };
+      mockReaddirWithStructure(structure);
+
+      const result = generator.getFeaturePaths();
+
+      expect(result).toEqual([path.join('src', 'modules', 'feature', 'i18n')]);
     });
   });
 
@@ -378,6 +363,22 @@ describe('LocalizationGenerator', () => {
       expect(result).toEqual({
         items: [4, 5, 6],
       });
+    });
+
+    it('should skip prototype keys for safety', () => {
+      const target = {};
+      const source = { prototype: { bad: true }, safe: true };
+
+      const result = generator.deepMerge(target, source);
+
+      expect(result).toEqual({ safe: true });
+      expect(Object.prototype).not.toHaveProperty('bad');
+    });
+
+    it('should return empty object when called without arguments', () => {
+      const result = generator.deepMerge();
+
+      expect(result).toEqual({});
     });
   });
 

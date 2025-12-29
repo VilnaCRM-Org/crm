@@ -7,6 +7,7 @@ coverage
 playwright-report
 stryker.log
 **/test-results
+build
 
 .cache
 *.log
@@ -14,3 +15,4 @@ stryker.log
 storybook-static
 
 dist
+node_modules
