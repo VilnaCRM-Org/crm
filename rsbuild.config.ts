@@ -3,18 +3,10 @@ import * as path from 'path';
 import { defineConfig, loadEnv } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
-import { container } from '@rspack/core';
+import { pluginModuleFederation } from '@module-federation/rsbuild-plugin';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const pkg = require('./package.json');
-
-const { ModuleFederationPlugin } = container;
-const { publicVars } = loadEnv({ prefixes: ['REACT_APP_'] });
-
-const sharedDependencies = {
-  react: { singleton: true, requiredVersion: pkg.dependencies.react },
-  'react-dom': { singleton: true, requiredVersion: pkg.dependencies['react-dom'] },
-};
+const mode = process.env.NODE_ENV || 'production';
+const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
 
 export default defineConfig({
   plugins: [
@@ -40,15 +32,6 @@ export default defineConfig({
           '@': path.resolve(__dirname, 'src'),
         },
       },
-      plugins: [
-        new ModuleFederationPlugin({
-          name: 'crm',
-          filename: 'remoteEntry.js',
-          exposes: {},
-          remotes: {},
-          shared: sharedDependencies,
-        }),
-      ],
     },
     swc: {
       jsc: {
@@ -70,4 +53,12 @@ export default defineConfig({
     decorators: { version: 'legacy' },
     define: publicVars,
   },
+  plugins: [
+    pluginModuleFederation({
+      name: 'crm',
+      remotes: {},
+      exposes: {},
+      shared: {},
+    }),
+  ],
 });
