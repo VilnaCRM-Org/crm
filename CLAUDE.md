@@ -37,7 +37,7 @@ make sh             # Open shell in dev container
 
 ```bash
 make build          # Build inside Docker
-make build-out      # Extract build artifacts to ./build
+make build-out      # Extract build artifacts to ./dist
 make build-analyze  # Run with bundle analyzer
 ```
 
@@ -156,7 +156,7 @@ import { LoginAPI } from '@/modules/User/features/Auth/api';
 Configured in:
 
 - `tsconfig.paths.json` for TypeScript
-- `rsbuild.config.js` for webpack
+- `rsbuild.config.ts` for RSBuild
 - `jest.config.ts` for Jest
 
 ### GraphQL Setup

@@ -68,9 +68,6 @@ module.exports = {
             project: './tsconfig.json',
             alwaysTryTypes: true,
           },
-          webpack: {
-            config: './craco.config.js',
-          },
         },
       },
       env: {

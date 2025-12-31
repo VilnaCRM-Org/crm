@@ -1,17 +1,17 @@
 import * as path from 'path';
 
+import { pluginModuleFederation } from '@module-federation/rsbuild-plugin';
 import { defineConfig, loadEnv } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
-import { pluginModuleFederation } from '@module-federation/rsbuild-plugin';
 
 const mode = process.env.NODE_ENV || 'production';
+const isDev = mode === 'development';
 const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
 
 export default defineConfig({
   plugins: [
     pluginReact(),
-    // Match CRA behavior: default import is URL, named ReactComponent is the component.
     pluginSvgr({
       mixedImport: true,
       svgrOptions: {
@@ -21,9 +21,43 @@ export default defineConfig({
         svgo: false,
       },
     }),
+    pluginModuleFederation({
+      name: 'crm',
+      remotes: {},
+      exposes: {},
+      shared: {
+        react: { singleton: true, eager: true, requiredVersion: false },
+        'react-dom': { singleton: true, eager: true, requiredVersion: false },
+      },
+    }),
   ],
   html: {
     template: './public/index.html',
+  },
+  dev: {
+    lazyCompilation: true,
+  },
+  performance: {
+    buildCache: true,
+    printFileSize: true,
+    removeConsole: ['log', 'info'],
+    removeMomentLocale: true,
+    chunkSplit: {
+      strategy: 'split-by-experience',
+      forceSplitting: {
+        vendors: /[/]node_modules[/](react|react-dom|@mui|redux|tsyringe)[/]/,
+      },
+      override: {
+        minSize: 50000, // 50KB minimum chunk size
+        maxSize: 250000, // 250KB maximum chunk size
+      },
+    },
+  },
+  output: {
+    sourceMap: {
+      js: isDev ? 'cheap-module-source-map' : false,
+      css: isDev,
+    },
   },
   tools: {
     rspack: {
@@ -31,6 +65,10 @@ export default defineConfig({
         alias: {
           '@': path.resolve(__dirname, 'src'),
         },
+      },
+      experiments: {
+        lazyCompilation: true,
+        nativeWatcher: true,
       },
     },
     swc: {
@@ -43,7 +81,6 @@ export default defineConfig({
         transform: {
           legacyDecorator: true,
           decoratorMetadata: true,
-          // Keep class fields in loose mode for compatibility with legacy decorators.
           useDefineForClassFields: false,
         },
       },
@@ -53,12 +90,4 @@ export default defineConfig({
     decorators: { version: 'legacy' },
     define: publicVars,
   },
-  plugins: [
-    pluginModuleFederation({
-      name: 'crm',
-      remotes: {},
-      exposes: {},
-      shared: {},
-    }),
-  ],
 });

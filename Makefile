@@ -15,7 +15,7 @@ JEST_BIN                    = ./node_modules/jest/bin/jest.js
 JEST_CMD                    = node $(JEST_BIN)
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
-RSBUILD_BUILD               = $(BUNX) @rsbuild/core build
+RSBUILD_BUILD               = bun run build
 STORYBOOK_PORT				?= 6006
 STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 
