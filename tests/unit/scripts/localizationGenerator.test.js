@@ -75,7 +75,11 @@ describe('LocalizationGenerator', () => {
       fs.existsSync.mockReturnValue(true);
       const mockStructure = {
         src: [directoryEntry('modules', true)],
-        'src/modules': [directoryEntry('feature1', true), directoryEntry('feature2', true), directoryEntry('feature3', true)],
+        'src/modules': [
+          directoryEntry('feature1', true),
+          directoryEntry('feature2', true),
+          directoryEntry('feature3', true),
+        ],
         'src/modules/feature1': [directoryEntry('i18n', true)],
         'src/modules/feature2': [directoryEntry('subfeature', true)],
         'src/modules/feature2/subfeature': [directoryEntry('i18n', true)],
@@ -96,16 +100,9 @@ describe('LocalizationGenerator', () => {
 
     it('should return empty array when no i18n folders exist', () => {
       const mockDirectoryStructure = {
-        'src/modules': [
-          directoryEntry('feature1', true),
-          directoryEntry('feature2', true),
-        ],
-        'src/modules/feature1': [
-          directoryEntry('config.json', false),
-        ],
-        'src/modules/feature2': [
-          directoryEntry('data.txt', false),
-        ],
+        'src/modules': [directoryEntry('feature1', true), directoryEntry('feature2', true)],
+        'src/modules/feature1': [directoryEntry('config.json', false)],
+        'src/modules/feature2': [directoryEntry('data.txt', false)],
       };
 
       mockReaddirWithStructure(mockDirectoryStructure);
@@ -123,9 +120,7 @@ describe('LocalizationGenerator', () => {
           directoryEntry('README.md', false),
           directoryEntry('i18n', true),
         ],
-        'src/modules/feature1': [
-          directoryEntry('somefile.txt', false),
-        ],
+        'src/modules/feature1': [directoryEntry('somefile.txt', false)],
       };
       fs.existsSync.mockImplementation((dir) => true);
       mockReaddirWithStructure(mockDirectoryStructure);

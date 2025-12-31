@@ -37,7 +37,7 @@ FROM base AS build
 ENV PATH="/root/.bun/bin:${PATH}"
 
 COPY . .
-RUN bun x @rsbuild/core build
+RUN bun run build
 
 
 # -------- Production Image --------
