@@ -34,6 +34,9 @@ export default defineConfig({
   html: {
     template: './public/index.html',
   },
+  dev: {
+    lazyCompilation: true,
+  },
   performance: {
     buildCache: true,
     printFileSize: true,
