@@ -52,8 +52,6 @@ export default defineConfig({
       js: isDev ? 'cheap-module-source-map' : false,
       css: isDev,
     },
-    legalComments: 'none',
-    filenameHash: true,
   },
   tools: {
     rspack: {
