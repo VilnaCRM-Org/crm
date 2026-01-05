@@ -28,6 +28,7 @@ LHCI                        = $(BUNX) lhci autorun
 LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
 LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
+# Alpine 3.21 package pins (verified 2026-01-05); update when base image bumps
 CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-r4 freetype=2.13.3-r0 harfbuzz=9.0.0-r1 nss=3.109-r0
 LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
@@ -230,7 +231,8 @@ start-prod: create-network ## Build image and start container in production mode
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
 	@for i in $$(seq 1 60); do \
-		bun x wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
+		# use Bun shim for consistency with other bun x invocations
+		$(BUNX) wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
 		printf "."; sleep 2; \
 		[ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
 	done; \

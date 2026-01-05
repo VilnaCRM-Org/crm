@@ -26,8 +26,8 @@ export default defineConfig({
       remotes: {},
       exposes: {},
       shared: {
-        react: { singleton: true, eager: true, requiredVersion: false },
-        'react-dom': { singleton: true, eager: true, requiredVersion: false },
+        react: { singleton: true, eager: true, requiredVersion: '^18.0.0' },
+        'react-dom': { singleton: true, eager: true, requiredVersion: '^18.0.0' },
       },
     }),
   ],
@@ -61,7 +61,6 @@ export default defineConfig({
         },
       },
       experiments: {
-        lazyCompilation: true,
         nativeWatcher: true,
       },
     },
