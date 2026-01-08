@@ -7,7 +7,6 @@ module.exports = {
       numberOfRuns: 3,
       settings: {
         formFactor: 'mobile',
-        throttlingMethod: 'simulate',
         screenEmulation: {
           mobile: true,
           width: 360,
@@ -16,7 +15,7 @@ module.exports = {
           disabled: false,
         },
         emulatedUserAgent:
-          'Mozilla/5.0 (Linux; Android 10; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36',
+          'Mozilla/5.0 (Linux; Android 10; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.7559.59 Mobile Safari/537.36',
       },
     },
     upload: {
