@@ -166,11 +166,11 @@ describe('schemaFetcher', () => {
     });
 
     it('should throw error for non-EEXIST directory creation error', async () => {
-      const processExitSpy = jest
-        .spyOn(process, 'exit')
-        .mockImplementation(((code?: ProcessExitCode) => {
-          throw new Error(`process.exit called with code ${code}`);
-        }) as (code?: ProcessExitCode) => never);
+      const processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
+        code?: ProcessExitCode
+      ) => {
+        throw new Error(`process.exit called with code ${code}`);
+      }) as (code?: ProcessExitCode) => never);
 
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
@@ -191,11 +191,11 @@ describe('schemaFetcher', () => {
     }, 10000);
 
     it('should throw error when directory creation fails without code property', async () => {
-      const processExitSpy = jest
-        .spyOn(process, 'exit')
-        .mockImplementation(((code?: ProcessExitCode) => {
-          throw new Error(`process.exit called with code ${code}`);
-        }) as (code?: ProcessExitCode) => never);
+      const processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
+        code?: ProcessExitCode
+      ) => {
+        throw new Error(`process.exit called with code ${code}`);
+      }) as (code?: ProcessExitCode) => never);
 
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
@@ -215,11 +215,11 @@ describe('schemaFetcher', () => {
     }, 10000);
 
     it('should throw error when directory creation fails with null error', async () => {
-      const processExitSpy = jest
-        .spyOn(process, 'exit')
-        .mockImplementation(((code?: ProcessExitCode) => {
-          throw new Error(`process.exit called with code ${code}`);
-        }) as (code?: ProcessExitCode) => never);
+      const processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
+        code?: ProcessExitCode
+      ) => {
+        throw new Error(`process.exit called with code ${code}`);
+      }) as (code?: ProcessExitCode) => never);
 
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';

@@ -19,7 +19,7 @@ describe('Bun migration tooling expectations', () => {
 
   it('dev docker-compose uses bun to start the app', () => {
     const compose = readFile('docker-compose.yml');
-    expect(compose).toContain("command: ['bun', 'x', 'craco', 'start']");
+    expect(compose).toContain("command: ['bun', 'x', 'rsbuild', 'dev']");
     expect(compose).toContain('node_modules:/app/node_modules');
   });
 

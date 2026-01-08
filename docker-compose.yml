@@ -3,7 +3,7 @@ services:
     build:
       context: .
       target: base
-    command: ['bun', 'x', 'craco', 'start']
+    command: ['bun', 'x', 'rsbuild', 'dev']
     restart: unless-stopped
     volumes:
       - .:/app

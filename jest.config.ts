@@ -20,15 +20,15 @@ const testMatchMap: Record<string, string[]> = {
 const testMatch = testMatchMap[TEST_ENV ?? ''] || testMatchMap.default;
 
 const isIntegration = TEST_ENV === 'integration';
-const thresholdValue = 100;
 const coverageThreshold = {
   global: {
-    branches: thresholdValue,
-    functions: thresholdValue,
-    lines: thresholdValue,
-    statements: thresholdValue,
+    branches: 100,
+    functions: 100,
+    lines: 100,
+    statements: 100,
   },
 };
+
 let setupFiles: string[] = [];
 
 if (isIntegration) {

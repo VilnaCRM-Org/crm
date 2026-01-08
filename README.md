@@ -220,9 +220,7 @@ particularly when hosted on platforms like AWS CloudFront.
 ## Documentation
 
 Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
-Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
 If you're having trouble, head for
-[the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 [the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 as it's frequently updated.
 

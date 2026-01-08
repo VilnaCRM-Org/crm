@@ -15,7 +15,7 @@ This template is used for all VilnaCRM microservices.
 - **Routing**: React Router v6
 - **DI Container**: tsyringe with reflect-metadata decorators
 - **i18n**: react-i18next (main language: uk, fallback: en)
-- **Build**: CRACO (Create React App Configuration Override)
+- **Build**: RSBuild (Rspack-based bundler, configured via `rsbuild.config.ts`)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
 - **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
   Bun is used only to manage dependencies using `bun.lock`.
@@ -37,7 +37,7 @@ make sh             # Open shell in dev container
 
 ```bash
 make build          # Build inside Docker
-make build-out      # Extract build artifacts to ./build
+make build-out      # Extract build artifacts to ./dist
 make build-analyze  # Run with bundle analyzer
 ```
 
@@ -156,7 +156,7 @@ import { LoginAPI } from '@/modules/User/features/Auth/api';
 Configured in:
 
 - `tsconfig.paths.json` for TypeScript
-- `craco.config.js` for webpack
+- `rsbuild.config.ts` for RSBuild
 - `jest.config.ts` for Jest
 
 ### GraphQL Setup

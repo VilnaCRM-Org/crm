@@ -15,7 +15,7 @@ JEST_BIN                    = ./node_modules/jest/bin/jest.js
 JEST_CMD                    = node $(JEST_BIN)
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
-CRACO_BUILD                 = $(BUNX) craco build
+RSBUILD_BUILD               = bun x rsbuild build
 STORYBOOK_PORT				?= 6006
 STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 
@@ -28,11 +28,13 @@ LHCI                        = $(BUNX) lhci autorun
 LHCI_CONFIG_DESKTOP         = --config=./lighthouse/lighthouserc.desktop.js
 LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
+# Alpine 3.21 package pins (verified 2026-01-05); update when base image bumps
+CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-r4 freetype=2.13.3-r0 harfbuzz=9.0.0-r1 nss=3.109-r0
 LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
 LHCI_CHROME_FLAGS_ARG       = --collect.settings.chromeFlags="$(LHCI_CHROME_FLAGS)"
 LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
-LHCI_BUILD_CMD          	= make start-prod && $(LHCI)
+LHCI_BUILD_CMD          	= make ensure-chromium && make start-prod && $(LHCI)
 LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 
@@ -91,8 +93,8 @@ NETWORK_NAME                = crm-network
 BUN                         = $(EXEC_DEV_TTYLESS) bun
 BUNX                        = $(BUN) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
-DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev && make wait-for-dev
-BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(CRACO_BUILD)
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev && make wait-for-dev
+BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 
 STRYKER_CMD                 = make start && $(BUNX) stryker run
 UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
@@ -155,15 +157,26 @@ endif
 build-dev-chromium:
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) build --build-arg INSTALL_CHROMIUM=$(INSTALL_CHROMIUM) dev
 
+ensure-chromium: ## Ensure Chromium is installed in the dev container for Lighthouse runs
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev
+	@$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) exec -T dev sh -lc '\
+		if [ -x "$(CHROMIUM_BIN_PATH)" ]; then \
+			echo "Chromium already installed: $$(chromium-browser --version)"; \
+			exit 0; \
+		fi; \
+		echo "Installing Chromium for Lighthouse..."; \
+		apk add --no-cache $(CHROMIUM_APK_PACKAGES); \
+	'
+
 build-analyze: ## Build production bundle and launch bundle-analyzer report (ANALYZE=true)
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(CRACO_BUILD)
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(RSBUILD_BUILD)
 
 build-out: ## Build production artifacts to ./out directory (via Docker)
-	@echo "🏗️ Building production Docker image for CRA bundle..."
-	docker build -t cra-build -f Dockerfile --target production .
-	@container_id=$$(docker create cra-build) && \
+	@echo "🏗️ Building production Docker image for Rsbuild bundle..."
+	docker build -t rsbuild-bundle -f Dockerfile --target production .
+	@container_id=$$(docker create rsbuild-bundle) && \
 	rm -rf ./out && \
-	docker cp $$container_id:/app/build ./out && \
+	docker cp $$container_id:/app/dist ./out && \
 	docker rm $$container_id && \
 	echo "✅ Build artifacts extracted to ./out directory"
 
@@ -218,7 +231,8 @@ start-prod: create-network ## Build image and start container in production mode
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
 	@for i in $$(seq 1 60); do \
-		bun x wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
+		# use Bun shim for consistency with other bun x invocations
+		$(BUNX) wait-on http://$(WEBSITE_DOMAIN):$(PROD_PORT) > /dev/null 2>&1 && break; \
 		printf "."; sleep 2; \
 		[ $$i -eq 60 ] && echo "❌ Timed out waiting for prod service" && exit 1; \
 	done; \
@@ -355,7 +369,7 @@ lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 patch-prod-mockoon-url: ## Rewrite localhost Mockoon URLs inside the prod bundle to use container host
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc '\
 		set -e; \
-		BUILD_DIR=/app/build; \
+		BUILD_DIR=/app/dist; \
 		if [ ! -d "$$BUILD_DIR" ]; then \
 			echo "Prod build directory not found; skipping Mockoon URL patch."; \
 			exit 0; \

@@ -37,7 +37,7 @@ FROM base AS build
 ENV PATH="/root/.bun/bin:${PATH}"
 
 COPY . .
-RUN bun x craco build
+RUN bun x rsbuild build
 
 
 # -------- Production Image --------
@@ -52,9 +52,9 @@ RUN apk add --no-cache curl=${CURL_VERSION} && \
     npm install -g serve@14.2.0
 
 RUN mkdir -p /app && chown -R node:node /app
-COPY --from=build --chown=node:node /app/build ./build
+COPY --from=build --chown=node:node /app/dist ./dist
 USER node
 
 EXPOSE 3001
 
-CMD ["serve", "-s", "build", "-l", "tcp://0.0.0.0:3001"]
+CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001"]
