@@ -18,7 +18,7 @@ export default defineConfig({
         exportType: 'named',
         namedExport: 'ReactComponent',
         ref: true,
-        svgo: false,
+        svgo: true,
       },
     }),
     pluginModuleFederation({
@@ -40,11 +40,9 @@ export default defineConfig({
   performance: {
     buildCache: true,
     printFileSize: true,
+    removeConsole: !isDev,
     chunkSplit: {
       strategy: 'split-by-experience',
-      forceSplitting: {
-        vendors: /[/]node_modules[/](react|react-dom|@mui|redux|tsyringe)[/]/,
-      },
     },
   },
   output: {
