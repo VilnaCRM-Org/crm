@@ -7,7 +7,7 @@ module.exports = {
       numberOfRuns: 3,
       settings: {
         formFactor: 'mobile',
-        throttlingMethod: 'provided',
+        throttlingMethod: 'simulate',
         screenEmulation: {
           mobile: true,
           width: 360,
