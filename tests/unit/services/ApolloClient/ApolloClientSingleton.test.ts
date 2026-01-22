@@ -3,8 +3,8 @@ import ApolloClientSingleton from '@/services/ApolloClient';
 global.fetch = jest.fn();
 
 describe('ApolloClientSingleton', () => {
-  afterEach(() => {
-    ApolloClientSingleton.resetInstance();
+  afterEach(async () => {
+    await ApolloClientSingleton.resetInstance();
   });
 
   it('should return the same instance on multiple calls', () => {
@@ -14,9 +14,9 @@ describe('ApolloClientSingleton', () => {
     expect(instance1).toBe(instance2);
   });
 
-  it('should create a new instance after reset', () => {
+  it('should create a new instance after reset', async () => {
     const instance1 = ApolloClientSingleton.getInstance();
-    ApolloClientSingleton.resetInstance();
+    await ApolloClientSingleton.resetInstance();
     const instance2 = ApolloClientSingleton.getInstance();
 
     expect(instance1).not.toBe(instance2);

@@ -1,7 +1,9 @@
 import { ApolloClient, InMemoryCache, HttpLink, NormalizedCacheObject } from '@apollo/client';
+import { injectable } from 'tsyringe';
 
 const GRAPHQL_URL = process.env.REACT_APP_GRAPHQL_URL || 'http://localhost:4000/graphql';
 
+@injectable()
 class ApolloClientSingleton {
   private static instance: ApolloClient<NormalizedCacheObject> | null = null;
 
@@ -15,9 +17,9 @@ class ApolloClientSingleton {
     return this.instance;
   }
 
-  public static resetInstance(): void {
+  public static async resetInstance(): Promise<void> {
     if (this.instance) {
-      this.instance.clearStore();
+      await this.instance.clearStore();
       this.instance = null;
     }
   }

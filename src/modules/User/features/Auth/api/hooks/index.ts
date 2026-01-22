@@ -1,2 +1,5 @@
-export { default as useCreateUser, buildCreateUserInput } from './useCreateUser';
-export type { CreateUserVariables } from './useCreateUser';
+export {
+  default as useCreateUser,
+  buildCreateUserInput,
+} from '@/modules/User/features/Auth/api/hooks/useCreateUser';
+export type { CreateUserVariables } from '@/modules/User/features/Auth/api/hooks/useCreateUser';
