@@ -4,14 +4,14 @@ import { t } from '../../../../../../../../utils/initializeLocalization';
 import { ExpectationEmail, ExpectationsPassword, User } from '../types';
 
 export const REGISTRATION_URL = '/authentication';
-export const REGISTRATION_API_URL = '**/api/users'; // mockoon schema
+export const GRAPHQL_URL = '**/graphql';
 
 export const placeholderInitials: string = t('sign_up.form.name_input.placeholder');
 export const placeholderEmail: string = t('sign_up.form.email_input.placeholder');
 export const placeholderPassword: string = t('sign_up.form.password_input.placeholder');
 export const signUpButton: string = t('sign_up.form.submit_button');
 
-export const requiredNameError: string = t('sign_up.form.name_input.required');
+export const requiredInitialsError: string = t('sign_up.form.name_input.required');
 
 export function generateUserData(): User {
   const firstName: string = faker.helpers.fromRegExp(/[A-Za-zА-Яа-яІіЇїЄєҐґ]{3,10}/);

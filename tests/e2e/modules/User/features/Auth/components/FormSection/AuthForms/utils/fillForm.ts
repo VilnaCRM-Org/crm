@@ -4,7 +4,7 @@ import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials'
 
 import {
   placeholderInitials,
-  requiredNameError,
+  requiredInitialsError,
   signUpButton,
   placeholderEmail,
   expectationsEmail,
@@ -19,11 +19,11 @@ export async function fillInitialsInput(page: Page, user: RegisterUserDto): Prom
   await page.locator('button', { hasText: signUpButton }).click();
 
   await initialsInput.fill(' ');
-  const fullNameError: Locator = page
-    .locator(requiredErrorSelector, { hasText: requiredNameError })
+  const initialsError: Locator = page
+    .locator(requiredErrorSelector, { hasText: requiredInitialsError })
     .first();
 
-  await expect(fullNameError).toBeVisible();
+  await expect(initialsError).toBeVisible();
   await initialsInput.fill(user.fullName);
 }
 

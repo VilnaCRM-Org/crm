@@ -6,7 +6,6 @@ import API_ENDPOINTS from '@/config/apiConfig';
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 import { loginReducer, loginUser } from '@/modules/User/store/loginSlice';
 import type { ThunkExtra } from '@/modules/User/store/types';
 
@@ -23,11 +22,9 @@ describe('Login Slice Coverage Tests', () => {
 
   beforeEach(() => {
     const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
-    const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
 
     const thunkExtraArgument: ThunkExtra = {
       loginAPI,
-      registrationAPI,
     };
 
     store = configureStore({

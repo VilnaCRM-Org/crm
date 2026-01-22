@@ -50,7 +50,7 @@
       "submit_button": "Sign Up",
       "error_text": "There was an error. Please check again",
       "switcher_text_have_account": "Already have an account?",
-      "switcher_text_no_account": "Don’t have an account yet?"
+      "switcher_text_no_account": "Don't have an account yet?"
     },
     "errors": {
       "email_used": "Email address is already in use",

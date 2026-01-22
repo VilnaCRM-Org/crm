@@ -10,14 +10,12 @@ import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import i18n from '@/i18n';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
-import { loginReducer, registrationReducer } from '@/modules/User/store';
+import { loginReducer } from '@/modules/User/store';
 import type { ThunkExtra } from '@/modules/User/store/types';
 import type { RootState } from '@/stores';
 
 type TestRootState = {
   auth: ReturnType<typeof loginReducer>;
-  registration: ReturnType<typeof registrationReducer>;
 };
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
@@ -27,7 +25,6 @@ interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
 
 const rootReducer = combineReducers({
   auth: loginReducer,
-  registration: registrationReducer,
 });
 
 type RenderWithProvidersResult = ReturnType<typeof render> & {
@@ -45,7 +42,6 @@ export function renderWithProviders(
           thunk: {
             extraArgument: {
               loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),
-              registrationAPI: container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI),
             } as ThunkExtra,
           },
         }),

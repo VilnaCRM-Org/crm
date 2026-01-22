@@ -23,11 +23,23 @@ export async function successResponse(route: Route): Promise<void> {
 }
 
 export const serverErrorResponse =
-  (status: number, body: Record<string, unknown>) =>
+  (status: number, body: { message: string }) =>
   async (route: Route): Promise<void> => {
+    const errorCode = body.message === 'EMAIL_ALREADY_EXISTS' ? 'CONFLICT' : 'BAD_REQUEST';
     await route.fulfill({
-      status,
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        errors: [
+          {
+            message: body.message,
+            extensions: {
+              code: errorCode,
+              http: { status },
+            },
+          },
+        ],
+        data: null,
+      }),
     });
   };

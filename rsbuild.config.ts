@@ -28,6 +28,8 @@ export default defineConfig({
       shared: {
         react: { singleton: true, eager: true, requiredVersion: '^18.0.0' },
         'react-dom': { singleton: true, eager: true, requiredVersion: '^18.0.0' },
+        '@apollo/client': { singleton: true, eager: true, requiredVersion: '^3.0.0' },
+        graphql: { singleton: true, eager: true, requiredVersion: '^16.0.0' },
       },
     }),
   ],

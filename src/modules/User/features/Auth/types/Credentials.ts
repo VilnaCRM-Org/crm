@@ -4,4 +4,7 @@ export interface RegisterUserDto {
   password: string;
 }
 
-export type LoginUserDto = Pick<RegisterUserDto, 'email' | 'password'>;
+export interface LoginUserDto {
+  email: string;
+  password: string;
+}

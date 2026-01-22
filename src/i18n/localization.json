@@ -20,13 +20,6 @@
         "subtitle": "Створіть обліковий запис у VilnaCRM",
         "socials_main_heading": "Або",
         "form": {
-          "name_input": {
-            "label": "Ваше ім’я та прізвище",
-            "placeholder": "Михайло Світський",
-            "special_characters_error": "Будь ласка, використовуйте лише літери",
-            "required": "Це поле обов'язкове",
-            "full_name_format_error": "Будь ласка, введіть повне ім’я у правильному форматі"
-          },
           "email_input": {
             "label": "Електронна пошта",
             "placeholder": "vilnaCRM@gmail.com",
@@ -56,7 +49,14 @@
           "submit_button": "Реєстрація",
           "error_text": "Виникла помилка. Перевірте ще раз",
           "switcher_text_have_account": "У вас вже є обліковий запис?",
-          "switcher_text_no_account": "У вас немає облікового запису?"
+          "switcher_text_no_account": "У вас немає облікового запису?",
+          "name_input": {
+            "label": "Ваше ім’я та прізвище",
+            "placeholder": "Михайло Світський",
+            "special_characters_error": "Будь ласка, використовуйте лише літери",
+            "required": "Це поле обов'язкове",
+            "full_name_format_error": "Будь ласка, введіть повне ім’я у правильному форматі"
+          }
         },
         "errors": {
           "email_used": "Електронна адреса вже використовується",
@@ -99,13 +99,6 @@
         "subtitle": "Create an account in VilnaCRM",
         "socials_main_heading": "Or",
         "form": {
-          "name_input": {
-            "label": "Your first and last name",
-            "placeholder": "Mykhailo Svitskyi",
-            "special_characters_error": "Please use letters only",
-            "required": "This field is required",
-            "full_name_format_error": "Please enter your full name in the correct format"
-          },
           "email_input": {
             "label": "Email",
             "placeholder": "vilnaCRM@gmail.com",
@@ -135,7 +128,14 @@
           "submit_button": "Sign Up",
           "error_text": "There was an error. Please check again",
           "switcher_text_have_account": "Already have an account?",
-          "switcher_text_no_account": "Don’t have an account yet?"
+          "switcher_text_no_account": "Don’t have an account yet?",
+          "name_input": {
+            "label": "Your first and last name",
+            "placeholder": "Mykhailo Svitskyi",
+            "special_characters_error": "Please use letters only",
+            "required": "This field is required",
+            "full_name_format_error": "Please enter your full name in the correct format"
+          }
         },
         "errors": {
           "email_used": "Email address is already in use",

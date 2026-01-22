@@ -1,38 +1,52 @@
 import UIForm from '@/components/UIForm';
-import useAppDispatch, { useAppSelector } from '@/stores/hooks';
+import { ApolloError } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 
+import { useCreateUser, buildCreateUserInput } from '@/modules/User/features/Auth/api/hooks';
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import { registerUser } from '@/modules/User/store';
-import {
-  selectRegistrationError,
-  selectRegistrationLoading,
-} from '@/modules/User/store/registrationSelectors';
 
 import getSubmitLabelKey from '../../../utils/getSubmitLabelKey';
-import getRegistrationError from '../../../utils/mapRegistrationError';
+import normalizeRegistrationData from '../../../utils/normalizeRegistrationData';
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
 import { createValidators } from '../Validations';
 
+function getErrorMessage(error: ApolloError | undefined, t: (key: string) => string): string | null {
+  if (!error) return null;
+
+  const graphQLError = error.graphQLErrors[0];
+  if (graphQLError?.extensions?.code === 'CONFLICT') {
+    return t('sign_up.errors.email_used');
+  }
+
+  return t('sign_up.errors.signup_error');
+}
+
 export default function RegistrationForm(): JSX.Element {
-  const dispatch = useAppDispatch();
-  const isSubmitting = useAppSelector(selectRegistrationLoading);
-  const rawError = useAppSelector(selectRegistrationError);
   const { t } = useTranslation();
+  const [createUser, { loading: isSubmitting, error, reset }] = useCreateUser();
 
-  const errorKey = getRegistrationError(rawError);
-  const error = errorKey ? t(errorKey) : null;
+  const errorMessage = getErrorMessage(error, t);
 
-  const handleRegister = (data: RegisterUserDto): void => {
-    dispatch(registerUser(data));
+  const handleRegister = async (data: RegisterUserDto): Promise<void> => {
+    const normalizedData = normalizeRegistrationData(data);
+    const input = buildCreateUserInput(normalizedData);
+
+    try {
+      await createUser({ variables: { input } });
+      reset();
+    } catch {
+      // Error is handled by Apollo's error state
+    }
   };
+
   const validators = createValidators(t);
+
   return (
     <UIForm<RegisterUserDto>
       onSubmit={handleRegister}
       defaultValues={{ fullName: '', email: '', password: '' }}
-      error={error}
+      error={errorMessage}
       isSubmitting={isSubmitting}
       resetOnSuccess
       submitLabel={t(getSubmitLabelKey('sign_up', isSubmitting))}
@@ -55,11 +69,10 @@ export default function RegistrationForm(): JSX.Element {
         autoComplete="off"
         rules={{ required: t('sign_up.form.email_input.required'), validate: validators.email }}
       />
-
       <PasswordField<RegisterUserDto>
-        placeholder={t('sign_up.form.password_input.placeholder')}
         label={t('sign_up.form.password_input.label')}
-        autoComplete="off"
+        placeholder={t('sign_up.form.password_input.placeholder')}
+        autoComplete="new-password"
       />
     </UIForm>
   );

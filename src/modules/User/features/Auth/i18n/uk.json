@@ -15,11 +15,11 @@
     "socials_main_heading": "Або",
     "form": {
       "name_input": {
-        "label": "Ваше ім’я та прізвище",
+        "label": "Ваше ім'я та прізвище",
         "placeholder": "Михайло Світський",
         "special_characters_error": "Будь ласка, використовуйте лише літери",
         "required": "Це поле обов'язкове",
-        "full_name_format_error": "Будь ласка, введіть повне ім’я у правильному форматі"
+        "full_name_format_error": "Будь ласка, введіть повне ім'я у правильному форматі"
       },
       "email_input": {
         "label": "Електронна пошта",

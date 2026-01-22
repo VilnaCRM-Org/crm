@@ -34,18 +34,18 @@ describe('password validation', () => {
 
   describe('required validation', () => {
     it('should return required error for empty string', () => {
-      expect(validators.password('', emptyUser)).toBe('sign_up.form.password_input.error_required');
+      expect(validators.password('', emptyUser)).toBe('sign_up.form.password_input.required');
     });
 
     it('should return required error for undefined', () => {
       expect(validators.password(undefined as unknown as string, emptyUser)).toBe(
-        'sign_up.form.password_input.error_required'
+        'sign_up.form.password_input.required'
       );
     });
 
     it('should return required error for null', () => {
       expect(validators.password(null as unknown as string, emptyUser)).toBe(
-        'sign_up.form.password_input.error_required'
+        'sign_up.form.password_input.required'
       );
     });
   });
@@ -198,7 +198,7 @@ describe('password validation', () => {
   describe('validation order', () => {
     it('should check required before length', () => {
       const result = validators.password('', emptyUser);
-      expect(result).toBe('sign_up.form.password_input.error_required');
+      expect(result).toBe('sign_up.form.password_input.required');
     });
 
     it('should check length before number', () => {
@@ -250,7 +250,7 @@ describe('password validation', () => {
     it('should handle whitespace-only password', () => {
       const whitespace = '        ';
       expect(validators.password(whitespace, emptyUser)).toBe(
-        'sign_up.form.password_input.error_required'
+        'sign_up.form.password_input.required'
       );
     });
 
