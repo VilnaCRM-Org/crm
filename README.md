@@ -21,6 +21,10 @@ Many front-end developers need to create new projects from scratch and spend a l
 We decided to simplify this exhausting process and create a public template for modern
 front-end applications. This template is used for all our microservices in VilnaCRM.
 
+## Documentation
+
+- [Architecture Decision Records (ADRs)](docs/adr/README.md)
+
 ## License
 
 This software is distributed under the
