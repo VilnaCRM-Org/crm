@@ -42,7 +42,9 @@ concerns.
 
 - Independent store creation without providers (ideal for Module Federation)
 - ~95% reduction in state management boilerplate
-- Smaller bundle impact (~2KB vs ~10–14KB for Redux Toolkit + react-redux) (as of 2026-01, measured via [Bundlephobia: zustand](https://bundlephobia.com/package/zustand) and [Bundlephobia: @reduxjs/toolkit](https://bundlephobia.com/package/@reduxjs/toolkit) + [react-redux](https://bundlephobia.com/package/react-redux))
+- Smaller bundle impact (~2KB vs ~10–14KB for Redux Toolkit + react-redux)
+  (as of 2026-01, measured via [Bundlephobia: zustand][zst] and
+  [Bundlephobia: @reduxjs/toolkit][rtk] + [react-redux][rr])
 - Excellent TypeScript inference without extra annotations
 - Redux DevTools compatibility for debugging
 - Built-in middleware for persistence and immer
@@ -58,7 +60,7 @@ concerns.
 
 | Aspect            | Redux Toolkit           | Zustand    | Jotai     | MobX     |
 | ----------------- | ----------------------- | ---------- | --------- | -------- |
-| Bundle Size       | ~10–14KB (as of 2026-01, measured via [Bundlephobia: @reduxjs/toolkit](https://bundlephobia.com/package/@reduxjs/toolkit) + [react-redux](https://bundlephobia.com/package/react-redux)) | ~2KB (as of 2026-01, measured via [Bundlephobia: zustand](https://bundlephobia.com/package/zustand)) | ~3KB      | ~15KB    |
+| Bundle Size       | ~10–14KB (2026-01, [rtk]+[rr]) | ~2KB (2026-01, [zst]) | ~3KB      | ~15KB    |
 | Boilerplate       | High (actions, reducers)| Minimal    | Minimal   | Moderate |
 | Provider Required | Yes                     | No         | Optional  | Yes      |
 | Module Federation | Needs config            | Native     | Needs config | Needs config |
@@ -73,3 +75,7 @@ concerns.
 - [Zustand GitHub](https://github.com/pmndrs/zustand)
 - [Zustand vs Redux Comparison](https://docs.pmnd.rs/zustand/getting-started/comparison)
 - [ADR‐001: Module Federation vs Single-SPA](https://github.com/VilnaCRM-Org/crm/wiki/ADR%E2%80%90001:-Module-Federation-vs-Single-SPA)
+
+[zst]: https://bundlephobia.com/package/zustand
+[rtk]: https://bundlephobia.com/package/@reduxjs/toolkit
+[rr]: https://bundlephobia.com/package/react-redux
