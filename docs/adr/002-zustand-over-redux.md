@@ -42,7 +42,7 @@ concerns.
 
 - Independent store creation without providers (ideal for Module Federation)
 - ~95% reduction in state management boilerplate
-- Smaller bundle impact (~2KB vs ~40KB for Redux Toolkit)
+- Smaller bundle impact (~2KB vs ~10–14KB for Redux Toolkit + react-redux)
 - Excellent TypeScript inference without extra annotations
 - Redux DevTools compatibility for debugging
 - Built-in middleware for persistence and immer
@@ -61,7 +61,7 @@ concerns.
 | Bundle Size       | ~40KB                   | ~2KB       | ~3KB      | ~15KB    |
 | Boilerplate       | High (actions, reducers)| Minimal    | Minimal   | Moderate |
 | Provider Required | Yes                     | No         | Optional  | Yes      |
-| Module Federation | Needs config            | Native     | Needs cfg | Needs    |
+| Module Federation | Needs config            | Native     | Needs config | Needs config |
 | TypeScript        | Good (needs setup)      | Excellent  | Good      | Good     |
 | DevTools          | Native                  | Compatible | Limited   | Separate |
 | Learning Curve    | Steep                   | Low        | Moderate  | Moderate |
