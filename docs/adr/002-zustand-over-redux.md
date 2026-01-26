@@ -1,6 +1,6 @@
 # ADR‐002: Zustand vs Redux for Client State Management
 
-- Status: Proposed
+- Status: Approved
 
 - Deciders: @kravalg
 
