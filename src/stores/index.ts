@@ -5,8 +5,7 @@ import TOKENS from '@/config/tokens';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 import { loginReducer } from '@/modules/User/store';
 import type { ThunkExtra } from '@/modules/User/store/types';
-
-import devToolsOptions from './devToolsOptions';
+import devToolsOptions from '@/stores/devToolsOptions';
 
 const thunkExtraArgument: ThunkExtra = {
   loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),

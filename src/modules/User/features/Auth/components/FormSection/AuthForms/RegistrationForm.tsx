@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 
 import { useCreateUser, buildCreateUserInput } from '@/modules/User/features/Auth/api/hooks';
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
+import normalizeRegistrationData from '@/modules/User/features/Auth/utils/normalizeRegistrationData';
 
-import getSubmitLabelKey from '../../../utils/getSubmitLabelKey';
-import normalizeRegistrationData from '../../../utils/normalizeRegistrationData';
 import FormField from '../components/FormField';
 import PasswordField from '../components/PasswordField';
 import { createValidators } from '../Validations';

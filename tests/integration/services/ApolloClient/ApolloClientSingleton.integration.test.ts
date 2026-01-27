@@ -22,7 +22,7 @@ describe('ApolloClientSingleton - Production Environment', () => {
     expect(() => {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       require('@/services/ApolloClient');
-    }).toThrow('REACT_APP_GRAPHQL_URL must be defined in production environment');
+    }).toThrow(/REACT_APP_GRAPHQL_URL must be defined in production environment/);
   });
 
   it('should work in production with REACT_APP_GRAPHQL_URL defined', () => {
