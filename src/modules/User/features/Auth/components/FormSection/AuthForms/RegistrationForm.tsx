@@ -73,6 +73,7 @@ export default function RegistrationForm(): JSX.Element {
         label={t('sign_up.form.password_input.label')}
         placeholder={t('sign_up.form.password_input.placeholder')}
         autoComplete="new-password"
+        rules={{ required: t('sign_up.form.password_input.required'), validate: validators.password }}
       />
     </UIForm>
   );
