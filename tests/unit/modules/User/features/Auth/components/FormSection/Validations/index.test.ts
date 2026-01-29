@@ -1,6 +1,9 @@
 import { TFunction } from 'i18next';
 
-import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
+import {
+  buildPasswordRules,
+  createValidators,
+} from '@/modules/User/features/Auth/components/FormSection/Validations';
 
 import emptyUser from './constants';
 
@@ -102,6 +105,15 @@ describe('validations module exports', () => {
       expect(validators.password(formData.password, emptyUser)).toBe(
         'sign_up.form.password_input.required'
       );
+    });
+  });
+
+  describe('buildPasswordRules', () => {
+    it('should build password rules with required and validate', () => {
+      const rules = buildPasswordRules<typeof emptyUser>(tMock);
+
+      expect(rules.required).toBe('sign_up.form.password_input.required');
+      expect(typeof rules.validate).toBe('function');
     });
   });
 });

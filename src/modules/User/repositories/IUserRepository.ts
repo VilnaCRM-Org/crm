@@ -1,4 +1,4 @@
-import type { LoginUserDto, RegisterUserDto } from '../features/Auth/types/Credentials';
+import type { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 export interface LoginResult {
   token: string;

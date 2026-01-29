@@ -3,10 +3,11 @@ import '../../../setup';
 import { rest } from 'msw';
 
 import API_ENDPOINTS from '@/config/apiConfig';
-import ApolloClientService from '@/services/ApolloClient/ApolloClientService';
-import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
 import LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 import UserRepository from '@/modules/User/repositories/UserRepository';
+import ApolloClientService from '@/services/ApolloClient/ApolloClientService';
+import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
+
 import server from '../../../mocks/server';
 
 describe('UserRepository Integration', () => {
@@ -41,11 +42,12 @@ describe('UserRepository Integration', () => {
     const apolloClientService = new ApolloClientService();
     const repository = new UserRepository(loginApi, apolloClientService);
 
-    let capturedBody: Record<string, unknown> | null = null;
+    let capturedVariables: Record<string, string> | undefined;
 
     server.use(
       rest.post('http://localhost:4000/graphql', async (req, res, ctx) => {
-        capturedBody = (await req.json()) as Record<string, unknown>;
+        const body = (await req.json()) as { variables?: { input?: Record<string, string> } };
+        capturedVariables = body.variables?.input;
 
         return res(
           ctx.status(200),
@@ -77,10 +79,7 @@ describe('UserRepository Integration', () => {
       email: 'test@example.com',
     });
 
-    const variables = (capturedBody?.variables as Record<string, Record<string, string>> | undefined)
-      ?.input;
-
-    expect(variables).toEqual({
+    expect(capturedVariables).toEqual({
       email: 'test@example.com',
       initials: 'Test User',
       password: 'pass123',

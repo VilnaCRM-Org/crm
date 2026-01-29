@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
+import { buildPasswordRules } from '@/modules/User/features/Auth/components/FormSection/Validations';
 
 import FormField from './FormField';
 import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
@@ -29,12 +29,7 @@ export default function PasswordField<T extends FieldValues & { password: string
 
   const passwordName = 'password' as Path<T>;
   const passwordDefaultValue = '' as PathValue<T, Path<T>>;
-  const validators = createValidators(t);
-
-  const defaultRules: RegisterOptions<T> = {
-    required: t('sign_up.form.password_input.required'),
-    validate: validators.password,
-  };
+  const defaultRules: RegisterOptions<T> = buildPasswordRules<T>(t);
 
   return (
     <FormField<T>
