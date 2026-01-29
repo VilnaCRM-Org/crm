@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import ButtonExample from '@/ButtonExample';
+import AuthSkeleton from '@/components/Skeletons/AuthSkeleton';
 
 import './index.css';
 
@@ -12,7 +13,7 @@ const router = createBrowserRouter([
   {
     path: '/authentication',
     element: (
-      <Suspense fallback={null}>
+      <Suspense fallback={<AuthSkeleton />}>
         <Authentication />
       </Suspense>
     ),
