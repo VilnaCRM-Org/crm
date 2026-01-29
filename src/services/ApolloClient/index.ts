@@ -1,3 +1,4 @@
-import ApolloClientSingleton from './ApolloClientSingleton';
+import ApolloClientService from './ApolloClientService';
 
-export default ApolloClientSingleton;
+export { ApolloClientService };
+export type ApolloClientServiceType = ApolloClientService;

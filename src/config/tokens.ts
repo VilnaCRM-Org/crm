@@ -1,7 +1,8 @@
 const TOKENS = Object.freeze({
   LoginAPI: Symbol('LoginAPI'),
   HttpsClient: Symbol('HttpsClient'),
-  ApolloClientSingleton: Symbol('ApolloClientSingleton'),
+  ApolloClientService: Symbol('ApolloClientService'),
+  UserRepository: Symbol('UserRepository'),
 } as const);
 
 export default TOKENS;
