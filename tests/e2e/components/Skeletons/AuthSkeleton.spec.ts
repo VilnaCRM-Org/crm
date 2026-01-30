@@ -7,7 +7,9 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
   test.describe('Loading State', () => {
     test('should display skeleton while authentication module loads', async ({ page }) => {
       await page.route('**/static/js/**/*.js', async (route) => {
-        await new Promise((resolve) => setTimeout(resolve, JS_DELAY_MS));
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, JS_DELAY_MS);
+        });
         await route.continue();
       });
 
@@ -25,7 +27,9 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
 
     test('should transition from skeleton to authentication form', async ({ page }) => {
       await page.route('**/static/js/**/*.js', async (route) => {
-        await new Promise((resolve) => setTimeout(resolve, JS_DELAY_MS));
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, JS_DELAY_MS);
+        });
         await route.continue();
       });
 

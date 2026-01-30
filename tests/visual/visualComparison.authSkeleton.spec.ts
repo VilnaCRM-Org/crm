@@ -1,12 +1,15 @@
 import { test, expect } from '@playwright/test';
+import type { Page, Route } from '@playwright/test';
 
 import { currentLanguage, PAGES, ScreenSize, screenSizes } from './constants';
 
-async function takeSkeletonSnapshot(page: any, screen: ScreenSize): Promise<void> {
+async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
 
-  await page.route('**/static/js/**/*.js', async (route: any) => {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+  await page.route('**/static/js/**/*.js', async (route: Route) => {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 3000);
+    });
     await route.continue();
   });
 
