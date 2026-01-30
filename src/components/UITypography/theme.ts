@@ -1,5 +1,5 @@
 import { Theme, createTheme } from '@mui/material';
-import { CSSProperties } from '@mui/material/styles/createMixins';
+import { CSSProperties } from '@mui/material/styles';
 
 import '@/config/Fonts/golos.css';
 import '@/config/Fonts/inter.css';

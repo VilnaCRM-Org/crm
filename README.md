@@ -106,6 +106,15 @@ Linting & Formatting
   make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
 ```
 
+### Dependency rules
+
+We use dependency-cruiser to enforce module boundaries and prevent circular
+dependencies.
+
+- Run locally: `make lint-deps`
+- Config: `.dependency-cruiser.js`
+- Key rules: modules cannot import from other modules directly; shared UI components must not depend on feature modules
+
 Testing
 
 ```bash

@@ -9,7 +9,7 @@ import UIContainer from '@/components/UIContainer';
 
 import getBackToMainStyles from './styles';
 
-export default function BackToMain(): React.ReactElement {
+export default function UIBackToMain(): React.ReactElement {
   const theme = useTheme();
   const styles = getBackToMainStyles(theme);
   const { t } = useTranslation();

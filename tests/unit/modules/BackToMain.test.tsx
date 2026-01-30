@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import i18n from 'i18next';
 import { within } from 'storybook/test';
 
-import BackToMain from '@/modules/BackToMain';
+import UIBackToMain from '@/components/UIBackToMain';
 
 import renderWithProviders, { testTheme } from '../utils/renderWithProviders';
 
@@ -10,20 +10,20 @@ const BackToHomeText: string = 'Back to homepage';
 
 jest.mock('@/assets/icons/arrows/back-arrow.svg', () => 'back-arrow-mock.svg');
 
-describe('BackToMain Component', () => {
+describe('UIBackToMain Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       expect(screen.getByRole('link')).toBeInTheDocument();
     });
 
     it('should render back arrow icon', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       const icon = screen.getByRole('img', { hidden: true });
 
@@ -32,7 +32,7 @@ describe('BackToMain Component', () => {
     });
 
     it('should render translated back text', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       expect(screen.getByText(BackToHomeText)).toBeInTheDocument();
     });
@@ -40,14 +40,14 @@ describe('BackToMain Component', () => {
 
   describe('Routing', () => {
     it('should have correct navigation link to root path', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       const button = screen.getByRole('link');
       expect(button).toHaveAttribute('href', '/');
     });
 
     it('should render as a link component when to prop is provided', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       const linkButton = screen.getByRole('link');
       expect(linkButton).toBeInTheDocument();
@@ -56,13 +56,13 @@ describe('BackToMain Component', () => {
 
   describe('Styling and Props', () => {
     it('should disable ripple effect', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       const button = screen.getByText(BackToHomeText);
       expect(within(button).queryByTestId('ripple')).not.toBeInTheDocument();
     });
     it('should contain UIContainer wrapper', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       const containerElement = screen.getByLabelText(/container/i);
       expect(containerElement).toBeInTheDocument();
@@ -71,14 +71,14 @@ describe('BackToMain Component', () => {
 
   describe('Accessibility', () => {
     it('should have proper alt text for icon', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toBeInTheDocument();
     });
 
     it('should be keyboard accessible as a link', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       const button = screen.getByRole('link');
       expect(button).toBeInTheDocument();
@@ -88,7 +88,7 @@ describe('BackToMain Component', () => {
 
   describe('Internationalization', () => {
     it('should use translation key for button text', () => {
-      renderWithProviders(<BackToMain />);
+      renderWithProviders(<UIBackToMain />);
 
       expect(screen.getByText(BackToHomeText)).toBeInTheDocument();
     });
@@ -111,7 +111,7 @@ describe('BackToMain Component', () => {
           escapeValue: false,
         },
       });
-      renderWithProviders(<BackToMain />, { i18nMock });
+      renderWithProviders(<UIBackToMain />, { i18nMock });
 
       expect(screen.getByText('Volver al principal')).toBeInTheDocument();
     });
@@ -129,7 +129,7 @@ describe('BackToMain Component', () => {
           },
         },
       };
-      renderWithProviders(<BackToMain />, { theme: themeWithoutPrimary });
+      renderWithProviders(<UIBackToMain />, { theme: themeWithoutPrimary });
 
       const button = screen.getByRole('link');
       expect(button).toBeInTheDocument();

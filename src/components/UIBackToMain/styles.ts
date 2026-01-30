@@ -57,4 +57,5 @@ const getBackToMainStyles = (theme: Theme): Record<string, SxProps<Theme>> => ({
     },
   },
 });
+
 export default getBackToMainStyles;
