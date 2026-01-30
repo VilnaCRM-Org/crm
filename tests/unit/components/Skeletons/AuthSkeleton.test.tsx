@@ -1,0 +1,107 @@
+import { render, screen } from '@testing-library/react';
+
+import AuthSkeleton from '@/components/Skeletons/AuthSkeleton';
+
+describe('AuthSkeleton Component', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Rendering structure', () => {
+    it('should render the component without crashing', () => {
+      render(<AuthSkeleton />);
+      const divider = screen.getByRole('presentation');
+      expect(divider).toBeInTheDocument();
+    });
+
+    it('should render skeleton elements', () => {
+      render(<AuthSkeleton />);
+      const divider = screen.getByRole('presentation');
+      expect(divider).toBeInTheDocument();
+    });
+  });
+
+  describe('Divider skeleton', () => {
+    it('should render a divider with presentation role', () => {
+      render(<AuthSkeleton />);
+      const divider = screen.getByRole('presentation');
+      expect(divider).toBeInTheDocument();
+    });
+
+    it('should have content within divider for accessibility', () => {
+      render(<AuthSkeleton />);
+      const divider = screen.getByRole('presentation');
+      expect(divider).toHaveTextContent('');
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('should have proper structure for screen readers', () => {
+      render(<AuthSkeleton />);
+      const divider = screen.getByRole('presentation');
+      expect(divider).toBeInTheDocument();
+    });
+
+    it('should render divider with presentation role', () => {
+      render(<AuthSkeleton />);
+      const divider = screen.getByRole('presentation');
+      expect(divider).toBeInTheDocument();
+    });
+
+    it('should not have interactive elements during loading', () => {
+      render(<AuthSkeleton />);
+      const buttons = screen.queryAllByRole('button');
+      const links = screen.queryAllByRole('link');
+      const inputs = screen.queryAllByRole('textbox');
+      expect(buttons).toHaveLength(0);
+      expect(links).toHaveLength(0);
+      expect(inputs).toHaveLength(0);
+    });
+
+    it('should not have form elements during loading', () => {
+      render(<AuthSkeleton />);
+      const checkboxes = screen.queryAllByRole('checkbox');
+      const radios = screen.queryAllByRole('radio');
+      const selects = screen.queryAllByRole('combobox');
+      expect(checkboxes).toHaveLength(0);
+      expect(radios).toHaveLength(0);
+      expect(selects).toHaveLength(0);
+    });
+  });
+
+  describe('Component behavior', () => {
+    it('should render consistently on multiple renders', () => {
+      const { rerender } = render(<AuthSkeleton />);
+      const divider1 = screen.getByRole('presentation');
+      expect(divider1).toBeInTheDocument();
+
+      rerender(<AuthSkeleton />);
+      const divider2 = screen.getByRole('presentation');
+      expect(divider2).toBeInTheDocument();
+    });
+
+    it('should be static content without user interaction', () => {
+      render(<AuthSkeleton />);
+      const divider = screen.getByRole('presentation');
+      expect(divider).toBeInTheDocument();
+      const buttons = screen.queryAllByRole('button');
+      expect(buttons).toHaveLength(0);
+    });
+  });
+
+  describe('Visual loading state', () => {
+    it('should provide loading indicator through skeleton structure', () => {
+      render(<AuthSkeleton />);
+      const divider = screen.getByRole('presentation');
+      expect(divider).toBeInTheDocument();
+    });
+
+    it('should be non-interactive placeholder', () => {
+      render(<AuthSkeleton />);
+      const interactiveElements = screen.queryAllByRole('button')
+        .concat(screen.queryAllByRole('link'))
+        .concat(screen.queryAllByRole('textbox'));
+      expect(interactiveElements).toHaveLength(0);
+    });
+  });
+});

@@ -1,0 +1,40 @@
+import { test, expect } from '@playwright/test';
+
+import { currentLanguage, PAGES, ScreenSize, screenSizes } from './constants';
+
+async function takeSkeletonSnapshot(page: any, screen: ScreenSize): Promise<void> {
+  await page.setViewportSize({ width: screen.width, height: screen.height });
+
+  await page.route('**/static/js/**/*.js', async (route: any) => {
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await route.continue();
+  });
+
+  await page.goto(PAGES.AUTH, { waitUntil: 'domcontentloaded' });
+
+  const divider = page.locator('[role="presentation"]');
+  await expect(divider).toBeVisible({ timeout: 5000 });
+
+  await page.waitForTimeout(300);
+
+  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
+
+  const snapshotName = `${currentLanguage}_${screen.name}.png`;
+
+  await expect(page).toHaveScreenshot(snapshotName, {
+    fullPage: true,
+    animations: 'disabled',
+    scale: 'css',
+    timeout: 10000,
+  });
+
+  await page.unroute('**/static/js/**/*.js');
+}
+
+test.describe.parallel('Auth Skeleton Visual Tests', () => {
+  for (const screen of screenSizes) {
+    test(`[auth-skeleton] ${screen.name}`, async ({ page }) => {
+      await takeSkeletonSnapshot(page, screen);
+    });
+  }
+});
