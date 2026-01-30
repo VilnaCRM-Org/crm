@@ -28,7 +28,7 @@ describe('AuthSkeleton Component', () => {
       expect(divider).toBeInTheDocument();
     });
 
-    it('should have content within divider for accessibility', () => {
+    it('should have empty content within divider for accessibility', () => {
       render(<AuthSkeleton />);
       const divider = screen.getByRole('presentation');
       expect(divider).toHaveTextContent('');

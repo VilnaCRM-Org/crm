@@ -6,10 +6,14 @@ const JS_DELAY_MS = 2000;
 test.describe('AuthSkeleton Component E2E Tests', () => {
   test.describe('Loading State', () => {
     test('should display skeleton while authentication module loads', async ({ page }) => {
+      let jsDelayApplied = false;
       await page.route('**/static/js/**/*.js', async (route) => {
-        await new Promise<void>((resolve) => {
-          setTimeout(resolve, JS_DELAY_MS);
-        });
+        if (!jsDelayApplied) {
+          jsDelayApplied = true;
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, JS_DELAY_MS);
+          });
+        }
         await route.continue();
       });
 
@@ -26,10 +30,14 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
     });
 
     test('should transition from skeleton to authentication form', async ({ page }) => {
+      let jsDelayApplied = false;
       await page.route('**/static/js/**/*.js', async (route) => {
-        await new Promise<void>((resolve) => {
-          setTimeout(resolve, JS_DELAY_MS);
-        });
+        if (!jsDelayApplied) {
+          jsDelayApplied = true;
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, JS_DELAY_MS);
+          });
+        }
         await route.continue();
       });
 
