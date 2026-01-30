@@ -48,3 +48,6 @@ stryker.log
 reports/
 /tests/load/results/
 /tests/memory-leak/results/
+
+# Git worktrees
+.worktrees/
