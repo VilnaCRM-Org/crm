@@ -4,8 +4,12 @@ import { devtools } from 'zustand/middleware';
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import { LoginResponseSchema } from '@/modules/User/features/Auth/types/ApiResponses';
-import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
+import {
+  LoginResponseSchema,
+  RegistrationResponseSchema,
+} from '@/modules/User/features/Auth/types/ApiResponses';
+import { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import { ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
 
@@ -18,6 +22,7 @@ interface AuthState {
 
 interface AuthActions {
   loginUser: (credentials: LoginUserDto, signal?: AbortSignal) => Promise<void>;
+  registerUser: (credentials: RegisterUserDto, signal?: AbortSignal) => Promise<void>;
   logout: () => void;
   reset: () => void;
 }
@@ -65,6 +70,16 @@ export const useAuthStore = create<AuthStore>()(
             'auth/loginUser/fulfilled'
           );
         } catch (err) {
+          // Short-circuit for AbortError - just update loading state
+          if (
+            (err as Error)?.name === 'AbortError' ||
+            err instanceof DOMException ||
+            (err instanceof Error && err.message?.includes('abort'))
+          ) {
+            set({ loading: false }, false, 'auth/loginUser/aborted');
+            return;
+          }
+
           const parsedError = ErrorParser.parseHttpError(err);
           const apiError = ErrorHandler.handleAuthError(parsedError);
 
@@ -72,6 +87,57 @@ export const useAuthStore = create<AuthStore>()(
             { loading: false, error: apiError.displayMessage },
             false,
             'auth/loginUser/rejected'
+          );
+        }
+      },
+
+      registerUser: async (
+        credentials: RegisterUserDto,
+        signal?: AbortSignal
+      ): Promise<void> => {
+        set({ loading: true, error: null }, false, 'auth/registerUser/pending');
+
+        try {
+          const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+          const apiResponse = await registrationAPI.register(credentials, { signal });
+          const parsed = RegistrationResponseSchema.safeParse(apiResponse);
+
+          if (!parsed.success) {
+            const displayMessage = parsed.error.issues.map((i) => i.message).join('; ');
+            set(
+              { loading: false, error: displayMessage },
+              false,
+              'auth/registerUser/rejected'
+            );
+            return;
+          }
+
+          set(
+            {
+              loading: false,
+              error: null,
+            },
+            false,
+            'auth/registerUser/fulfilled'
+          );
+        } catch (err) {
+          // Short-circuit for AbortError - just update loading state
+          if (
+            (err as Error)?.name === 'AbortError' ||
+            err instanceof DOMException ||
+            (err instanceof Error && err.message?.includes('abort'))
+          ) {
+            set({ loading: false }, false, 'auth/registerUser/aborted');
+            return;
+          }
+
+          const parsedError = ErrorParser.parseHttpError(err);
+          const apiError = ErrorHandler.handleAuthError(parsedError);
+
+          set(
+            { loading: false, error: apiError.displayMessage },
+            false,
+            'auth/registerUser/rejected'
           );
         }
       },

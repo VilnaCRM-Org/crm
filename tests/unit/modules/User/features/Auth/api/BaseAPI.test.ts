@@ -1,10 +1,9 @@
+import { ApiError, ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors';
+import BaseAPI from '@/modules/User/features/Auth/api/BaseAPI';
 import { HttpError } from '@/services/HttpsClient/HttpError';
 
-import BaseAPI from '@/modules/User/features/Auth/api/BaseAPI';
-import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors';
-
 class TestAPI extends BaseAPI {
-  public testHandleApiError(error: unknown, context: string) {
+  public testHandleApiError(error: unknown, context: string): ApiError {
     return this.handleApiError(error, context);
   }
 }

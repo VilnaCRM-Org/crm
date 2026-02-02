@@ -60,6 +60,7 @@
   "sign_in": {
     "title": "Authentication",
     "subtitle": "Sign in to your account in two clicks",
+    "error_prefix": "Login error:",
     "form": {
       "password_input": {
         "placeholder": "Enter your password",

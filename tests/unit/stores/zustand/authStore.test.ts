@@ -3,16 +3,22 @@ import 'reflect-metadata';
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
+import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 import { useAuthStore } from '@/stores/zustand/authStore';
 
 const mockLoginAPI = {
   login: jest.fn(),
 } as unknown as LoginAPI;
 
+const mockRegistrationAPI = {
+  register: jest.fn(),
+} as unknown as RegistrationAPI;
+
 describe('authStore', () => {
   beforeEach(() => {
     container.clearInstances();
     container.registerInstance(TOKENS.LoginAPI, mockLoginAPI);
+    container.registerInstance(TOKENS.RegistrationAPI, mockRegistrationAPI);
     jest.clearAllMocks();
   });
 
@@ -136,6 +142,97 @@ describe('authStore', () => {
 
       abortController.abort();
       await loginPromise;
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+    });
+  });
+
+  describe('registerUser', () => {
+    it('should handle successful registration', async () => {
+      const mockResponse = {};
+      (mockRegistrationAPI.register as jest.Mock).mockResolvedValue(mockResponse);
+
+      const { registerUser } = useAuthStore.getState();
+      const credentials = {
+        email: 'Test@Example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      };
+
+      await registerUser(credentials);
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+
+    it('should set loading state during registration', async () => {
+      (mockRegistrationAPI.register as jest.Mock).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(resolve, 100);
+          })
+      );
+
+      const { registerUser } = useAuthStore.getState();
+      const registerPromise = registerUser({
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      });
+
+      expect(useAuthStore.getState().loading).toBe(true);
+
+      await registerPromise;
+    });
+
+    it('should handle validation error from API response', async () => {
+      const mockResponse = { fullName: 123, email: 456 };
+      (mockRegistrationAPI.register as jest.Mock).mockResolvedValue(mockResponse);
+
+      const { registerUser } = useAuthStore.getState();
+      await registerUser({
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle API error', async () => {
+      const mockError = new Error('Network error');
+      (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(mockError);
+
+      const { registerUser } = useAuthStore.getState();
+      await registerUser({
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle abort signal', async () => {
+      const abortController = new AbortController();
+      (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(
+        new DOMException('Aborted', 'AbortError')
+      );
+
+      const { registerUser } = useAuthStore.getState();
+      const registerPromise = registerUser(
+        { email: 'test@example.com', password: 'password123', fullName: 'Test User' },
+        abortController.signal
+      );
+
+      abortController.abort();
+      await registerPromise;
 
       const state = useAuthStore.getState();
       expect(state.loading).toBe(false);

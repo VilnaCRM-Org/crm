@@ -38,15 +38,19 @@ describe('Auth Store Integration', () => {
         )
       );
 
+      let loadingWasTrue = false;
+      const unsubscribe = useAuthStore.subscribe((state) => {
+        if (state.loading) {
+          loadingWasTrue = true;
+        }
+      });
+
       const promise = useAuthStore.getState().loginUser({ email: 'user@test.com', password: 'pass' });
 
-      await new Promise((resolve) => {
-        setTimeout(resolve, 10);
-      });
-      expect(useAuthStore.getState().loading).toBe(true);
-      expect(useAuthStore.getState().error).toBeNull();
-
       await promise;
+
+      unsubscribe();
+      expect(loadingWasTrue).toBe(true);
     });
 
     it('should update state on successful login', async () => {

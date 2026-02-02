@@ -15,7 +15,7 @@ export default function LoginForm(): JSX.Element {
   const isSubmitting = useAuthStore(selectLoading);
   const storeError = useAuthStore(selectError);
 
-  const error = storeError ? `Помилка входу: ${storeError}` : '';
+  const error = storeError ? `${t('sign_in.error_prefix')} ${storeError}` : '';
 
   const handleLogin = async (data: LoginUserDto): Promise<void> => {
     await loginUser(data);

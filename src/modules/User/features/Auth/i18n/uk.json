@@ -60,6 +60,7 @@
   "sign_in": {
     "title": "Аутентифікація",
     "subtitle": "Увійдіть до свого облікового запису у два кліки",
+    "error_prefix": "Помилка входу:",
     "form": {
       "password_input": {
         "placeholder": "Введіть пароль",
