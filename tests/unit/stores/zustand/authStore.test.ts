@@ -130,7 +130,7 @@ describe('authStore', () => {
       expect(state.token).toBeNull();
     });
 
-    it('should handle abort signal', async () => {
+    it('should handle abort signal with DOMException', async () => {
       const abortController = new AbortController();
       (mockLoginAPI.login as jest.Mock).mockRejectedValue(new DOMException('Aborted', 'AbortError'));
 
@@ -145,6 +145,79 @@ describe('authStore', () => {
 
       const state = useAuthStore.getState();
       expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+
+    it('should handle abort error with name === "AbortError"', async () => {
+      const abortError = new Error('Operation aborted');
+      abortError.name = 'AbortError';
+      (mockLoginAPI.login as jest.Mock).mockRejectedValue(abortError);
+
+      const { loginUser } = useAuthStore.getState();
+      await loginUser({ email: 'test@example.com', password: 'password123' });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+
+    it('should handle error with "abort" in message', async () => {
+      const error = new Error('Request was aborted by user');
+      (mockLoginAPI.login as jest.Mock).mockRejectedValue(error);
+
+      const { loginUser } = useAuthStore.getState();
+      await loginUser({ email: 'test@example.com', password: 'password123' });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+
+    it('should handle error without name property', async () => {
+      const error = { message: 'Some error' };
+      (mockLoginAPI.login as jest.Mock).mockRejectedValue(error);
+
+      const { loginUser } = useAuthStore.getState();
+      await loginUser({ email: 'test@example.com', password: 'password123' });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle error without message property', async () => {
+      const error = new Error();
+      error.message = undefined as unknown as string;
+      (mockLoginAPI.login as jest.Mock).mockRejectedValue(error);
+
+      const { loginUser } = useAuthStore.getState();
+      await loginUser({ email: 'test@example.com', password: 'password123' });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle null error', async () => {
+      (mockLoginAPI.login as jest.Mock).mockRejectedValue(null);
+
+      const { loginUser } = useAuthStore.getState();
+      await loginUser({ email: 'test@example.com', password: 'password123' });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle undefined error', async () => {
+      (mockLoginAPI.login as jest.Mock).mockRejectedValue(undefined);
+
+      const { loginUser } = useAuthStore.getState();
+      await loginUser({ email: 'test@example.com', password: 'password123' });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
     });
   });
 
@@ -219,7 +292,7 @@ describe('authStore', () => {
       expect(state.error).toBeTruthy();
     });
 
-    it('should handle abort signal', async () => {
+    it('should handle abort signal with DOMException', async () => {
       const abortController = new AbortController();
       (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(
         new DOMException('Aborted', 'AbortError')
@@ -236,6 +309,103 @@ describe('authStore', () => {
 
       const state = useAuthStore.getState();
       expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+
+    it('should handle abort error with name === "AbortError"', async () => {
+      const abortError = new Error('Operation aborted');
+      abortError.name = 'AbortError';
+      (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(abortError);
+
+      const { registerUser } = useAuthStore.getState();
+      await registerUser({
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+
+    it('should handle error with "abort" in message', async () => {
+      const error = new Error('Request was aborted by user');
+      (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(error);
+
+      const { registerUser } = useAuthStore.getState();
+      await registerUser({
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+
+    it('should handle error without name property', async () => {
+      const error = { message: 'Some error' };
+      (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(error);
+
+      const { registerUser } = useAuthStore.getState();
+      await registerUser({
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle error without message property', async () => {
+      const error = new Error();
+      error.message = undefined as unknown as string;
+      (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(error);
+
+      const { registerUser } = useAuthStore.getState();
+      await registerUser({
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle null error', async () => {
+      (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(null);
+
+      const { registerUser } = useAuthStore.getState();
+      await registerUser({
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle undefined error', async () => {
+      (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(undefined);
+
+      const { registerUser } = useAuthStore.getState();
+      await registerUser({
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      });
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
     });
   });
 
