@@ -113,7 +113,9 @@ dependencies.
 
 - Run locally: `make lint-deps`
 - Config: `.dependency-cruiser.js`
-- Key rules: modules cannot import from other modules directly; shared UI components must not depend on feature modules
+- Key rules:
+  - Modules cannot import from other modules directly
+  - Shared UI components must not depend on feature modules
 
 Testing
 

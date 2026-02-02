@@ -30,10 +30,11 @@ export default function PasswordField<T extends FieldValues & { password: string
   const passwordName = 'password' as Path<T>;
   const passwordDefaultValue = '' as PathValue<T, Path<T>>;
   const defaultRules: RegisterOptions<T> = buildPasswordRules<T>(t);
+  const mergedRules: RegisterOptions<T> = { ...defaultRules, ...rules } as RegisterOptions<T>;
 
   return (
     <FormField<T>
-      rules={rules || defaultRules}
+      rules={mergedRules}
       defaultValue={passwordDefaultValue}
       name={passwordName}
       type={showPassword ? 'text' : 'password'}

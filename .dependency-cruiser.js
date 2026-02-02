@@ -380,7 +380,7 @@ module.exports = {
        See https://github.com/sverweij/dependency-cruiser/blob/main/doc/options-reference.md#builtinmodules-influencing-what-to-consider-built-in--core-modules
        for details
     */
-    builtInModules: { 
+    builtInModules: {
       add: [
         "bun",
         "bun:ffi",
@@ -388,9 +388,7 @@ module.exports = {
         "bun:sqlite",
         "bun:test",
         "bun:wrap",
-        "detect-libc",
-        "undici",
-        "ws"
+        "detect-libc"
       ]
     },
 

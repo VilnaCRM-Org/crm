@@ -1,6 +1,5 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import i18n from 'i18next';
-import { within } from 'storybook/test';
 
 import UIBackToMain from '@/components/UIBackToMain';
 
