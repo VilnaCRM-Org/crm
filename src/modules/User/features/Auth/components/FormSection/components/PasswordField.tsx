@@ -4,10 +4,9 @@ import { useState } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import FormField from '@/modules/User/features/Auth/components/FormSection/components/FormField';
+import styles, { StyledEyeIcon, StyledEyeIconOff } from '@/modules/User/features/Auth/components/FormSection/components/styles';
 import { buildPasswordRules } from '@/modules/User/features/Auth/components/FormSection/Validations';
-
-import FormField from './FormField';
-import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
 
 type PasswordFieldProps<T extends FieldValues> = {
   placeholder: string;
