@@ -119,9 +119,10 @@ describe('AuthSkeleton Responsive Integration Tests', () => {
         });
         window.dispatchEvent(new Event('resize'));
 
-        render(<AuthSkeleton />);
+        const { unmount } = render(<AuthSkeleton />);
         const section = screen.getByRole('region');
         expect(section).toBeInTheDocument();
+        unmount();
       });
     });
 
@@ -136,11 +137,12 @@ describe('AuthSkeleton Responsive Integration Tests', () => {
         });
         window.dispatchEvent(new Event('resize'));
 
-        render(<AuthSkeleton />);
+        const { unmount } = render(<AuthSkeleton />);
         const buttons = screen.queryAllByRole('button');
         const links = screen.queryAllByRole('link');
         expect(buttons).toHaveLength(0);
         expect(links).toHaveLength(0);
+        unmount();
       });
     });
   });

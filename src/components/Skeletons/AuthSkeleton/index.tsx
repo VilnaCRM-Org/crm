@@ -15,7 +15,7 @@ const SOCIAL_BUTTONS = [
 
 export default function AuthSkeleton(): JSX.Element {
   return (
-    <Box component="section" sx={authFormSectionStyles.formSection}>
+    <Box component="section" role="region" aria-label="Loading authentication form" sx={authFormSectionStyles.formSection}>
       <Box sx={authFormSectionStyles.formWrapper}>
         <Skeleton variant="text" height={44} width="70%" sx={styles.titleSkeleton} />
         <Skeleton variant="text" height={28} width="90%" sx={styles.subtitleSkeleton} />
