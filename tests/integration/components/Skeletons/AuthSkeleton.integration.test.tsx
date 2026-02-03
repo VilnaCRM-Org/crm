@@ -33,8 +33,13 @@ describe('AuthSkeleton Responsive Integration Tests', () => {
 
     it('should render all skeleton elements on mobile', () => {
       render(<AuthSkeleton />);
-      const section = screen.getByRole('region');
-      expect(section).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
+      expect(screen.getAllByTestId('auth-skeleton-field-label')).toHaveLength(3);
+      expect(screen.getAllByTestId('auth-skeleton-input')).toHaveLength(3);
+      expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-divider')).toBeInTheDocument();
+      expect(screen.getAllByTestId('auth-skeleton-social')).toHaveLength(4);
     });
   });
 
@@ -56,8 +61,13 @@ describe('AuthSkeleton Responsive Integration Tests', () => {
 
     it('should maintain proper structure on tablet', () => {
       render(<AuthSkeleton />);
-      const section = screen.getByRole('region');
-      expect(section).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
+      expect(screen.getAllByTestId('auth-skeleton-field-label')).toHaveLength(3);
+      expect(screen.getAllByTestId('auth-skeleton-input')).toHaveLength(3);
+      expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-divider')).toBeInTheDocument();
+      expect(screen.getAllByTestId('auth-skeleton-social')).toHaveLength(4);
     });
   });
 
@@ -79,8 +89,7 @@ describe('AuthSkeleton Responsive Integration Tests', () => {
 
     it('should render social button skeletons on desktop', () => {
       render(<AuthSkeleton />);
-      const section = screen.getByRole('region');
-      expect(section).toBeInTheDocument();
+      expect(screen.getAllByTestId('auth-skeleton-social')).toHaveLength(4);
     });
   });
 
@@ -102,8 +111,13 @@ describe('AuthSkeleton Responsive Integration Tests', () => {
 
     it('should render complete skeleton layout on large desktop', () => {
       render(<AuthSkeleton />);
-      const section = screen.getByRole('region');
-      expect(section).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
+      expect(screen.getAllByTestId('auth-skeleton-field-label')).toHaveLength(3);
+      expect(screen.getAllByTestId('auth-skeleton-input')).toHaveLength(3);
+      expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-divider')).toBeInTheDocument();
+      expect(screen.getAllByTestId('auth-skeleton-social')).toHaveLength(4);
     });
   });
 
