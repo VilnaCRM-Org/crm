@@ -30,6 +30,10 @@ const config: StorybookConfig = {
     config.resolve.extensions = Array.from(
       new Set([...(config.resolve.extensions || []), '.ts', '.tsx'])
     );
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname, '../src'),
+    };
 
     return config;
   },
