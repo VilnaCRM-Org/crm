@@ -60,24 +60,19 @@ export default {
   },
   buttonSkeleton: {
     marginTop: '1rem',
+    marginBottom: '1.5rem',
     borderRadius: '57px',
-    height: '3.125rem',
+    height: '3.25rem',
     width: '100%',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       minWidth: '19.6875rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      marginTop: '2.125rem',
-      height: '4.375rem',
+      height: '4rem',
       minWidth: '33.75rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginTop: '2.0625rem',
       minWidth: '26.375rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginTop: '1.1875rem',
-      height: '3.875rem',
     },
   },
   divider: {
