@@ -4,7 +4,7 @@ import Skeleton from '@mui/material/Skeleton';
 
 import authFormSectionStyles from '@/modules/User/features/Auth/components/FormSection/styles';
 
-import styles from './styles';
+import styles from '@/components/Skeletons/AuthSkeleton/styles';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },
