@@ -1,7 +1,7 @@
-import { HttpError } from '@/services/https-client/http-error';
 
 import { ApiErrorCodes } from '@/modules/user/features/auth/types/api-errors';
 import { handleApiError, isAPIError } from '@/modules/user/lib/errors';
+import { HttpError } from '@/services/https-client/http-error';
 
 describe('errors barrel exports', () => {
   it('re-exports handleApiError and isAPIError', () => {

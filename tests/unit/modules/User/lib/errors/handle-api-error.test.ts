@@ -1,4 +1,3 @@
-import { HttpError } from '@/services/https-client/http-error';
 
 import {
   ApiErrorCodes,
@@ -7,6 +6,7 @@ import {
   ValidationError,
 } from '@/modules/user/features/auth/types/api-errors';
 import handleApiError from '@/modules/user/lib/errors/handle-api-error';
+import { HttpError } from '@/services/https-client/http-error';
 
 describe('handleApiError', () => {
   it('maps HttpError status 0 to network error', () => {
@@ -88,12 +88,9 @@ describe('handleApiError', () => {
     const emptyMessageError = new Error('');
     expect(handleApiError(emptyMessageError, 'Login').code).toBe(ApiErrorCodes.UNKNOWN);
 
-    const malformed = new Error('will be cleared') as Error & {
-      name: string | undefined;
-      message: string | undefined;
-    };
-    malformed.name = undefined;
-    malformed.message = undefined;
+    const malformed = new Error('will be cleared');
+    Object.defineProperty(malformed, 'name', { value: undefined });
+    Object.defineProperty(malformed, 'message', { value: undefined });
 
     expect(handleApiError(malformed, 'Login').code).toBe(ApiErrorCodes.UNKNOWN);
   });
