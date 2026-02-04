@@ -2,9 +2,8 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
 
-import authFormSectionStyles from '@/modules/User/features/Auth/components/FormSection/styles';
-
 import styles from '@/components/Skeletons/AuthSkeleton/styles';
+import authFormSectionStyles from '@/modules/User/features/Auth/components/FormSection/styles';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },
