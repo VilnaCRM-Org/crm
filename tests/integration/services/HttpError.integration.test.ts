@@ -1,4 +1,4 @@
-import { HttpError } from '@/services/HttpsClient/HttpError';
+import { HttpError } from '@/services/https-client/http-error';
 
 describe('HttpError integration', () => {
   it('uses captureStackTrace when available', () => {

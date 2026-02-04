@@ -1,4 +1,4 @@
-import buildApiUrl from '@/utils/urlBuilder';
+import buildApiUrl from '@/utils/url-builder';
 
 describe('buildApiUrl', () => {
   const originalEnv = process.env.REACT_APP_MOCKOON_URL;

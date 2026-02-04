@@ -2,32 +2,31 @@ import '../../../setup';
 
 import { rest } from 'msw';
 
-import API_ENDPOINTS from '@/config/apiConfig';
-import LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import UserRepository from '@/modules/User/repositories/UserRepository';
-import ApolloClientService from '@/services/ApolloClient/ApolloClientService';
-import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
+import API_ENDPOINTS from '@/config/api-config';
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
+import type { IUserRepository } from '@/modules/user/features/auth/repositories/user/user-repository.types';
 
 import server from '../../../mocks/server';
 
 describe('UserRepository Integration', () => {
+  let repository: IUserRepository;
   const originalEnv = { ...process.env };
+
+  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+  afterEach(() => {
+    server.resetHandlers();
+    process.env = { ...originalEnv };
+  });
+  afterAll(() => server.close());
 
   beforeEach(() => {
     process.env = { ...originalEnv };
     process.env.REACT_APP_GRAPHQL_URL = 'http://localhost:4000/graphql';
-  });
-
-  afterEach(() => {
-    process.env = { ...originalEnv };
+    repository = container.resolve<IUserRepository>(TOKENS.UserRepository);
   });
 
   it('logs in and normalizes email to lowercase', async () => {
-    const httpsClient = new FetchHttpsClient();
-    const loginApi = new LoginAPI(httpsClient);
-    const apolloClientService = new ApolloClientService();
-    const repository = new UserRepository(loginApi, apolloClientService);
-
     const result = await repository.login({ email: 'Test@Example.com', password: 'password' });
 
     expect(result).toEqual({
@@ -37,11 +36,6 @@ describe('UserRepository Integration', () => {
   });
 
   it('creates a user via GraphQL and maps response', async () => {
-    const httpsClient = new FetchHttpsClient();
-    const loginApi = new LoginAPI(httpsClient);
-    const apolloClientService = new ApolloClientService();
-    const repository = new UserRepository(loginApi, apolloClientService);
-
     let capturedVariables: Record<string, string> | undefined;
 
     server.use(
@@ -88,11 +82,6 @@ describe('UserRepository Integration', () => {
   });
 
   it('throws when GraphQL response is missing user data', async () => {
-    const httpsClient = new FetchHttpsClient();
-    const loginApi = new LoginAPI(httpsClient);
-    const apolloClientService = new ApolloClientService();
-    const repository = new UserRepository(loginApi, apolloClientService);
-
     server.use(
       rest.post('http://localhost:4000/graphql', (_req, res, ctx) =>
         res(
@@ -119,18 +108,8 @@ describe('UserRepository Integration', () => {
   });
 
   it('throws when GraphQL response is missing data', async () => {
-    const httpsClient = new FetchHttpsClient();
-    const loginApi = new LoginAPI(httpsClient);
-    const apolloClientService = new ApolloClientService();
-    const repository = new UserRepository(loginApi, apolloClientService);
-
     server.use(
-      rest.post('http://localhost:4000/graphql', (_req, res, ctx) =>
-        res(
-          ctx.status(200),
-          ctx.json({})
-        )
-      )
+      rest.post('http://localhost:4000/graphql', (_req, res, ctx) => res(ctx.status(200), ctx.json({})))
     );
 
     await expect(
@@ -142,15 +121,12 @@ describe('UserRepository Integration', () => {
     ).rejects.toThrow('Server response was missing for query');
   });
 
-  it('throws when GraphQL response data is undefined', async () => {
-    const httpsClient = new FetchHttpsClient();
-    const loginApi = new LoginAPI(httpsClient);
-    const apolloClientService = new ApolloClientService();
-    const repository = new UserRepository(loginApi, apolloClientService);
-
-    jest
-      .spyOn(apolloClientService, 'getClient')
-      .mockReturnValue({ mutate: jest.fn().mockResolvedValue({ data: undefined }) } as never);
+  it('throws when GraphQL response has data but createUser is undefined', async () => {
+    server.use(
+      rest.post('http://localhost:4000/graphql', (_req, res, ctx) =>
+        res(ctx.status(200), ctx.json({ data: { createUser: null } }))
+      )
+    );
 
     await expect(
       repository.createUser({
@@ -161,15 +137,12 @@ describe('UserRepository Integration', () => {
     ).rejects.toThrow('Failed to create user');
   });
 
-  it('throws when GraphQL response is missing createUser payload', async () => {
-    const httpsClient = new FetchHttpsClient();
-    const loginApi = new LoginAPI(httpsClient);
-    const apolloClientService = new ApolloClientService();
-    const repository = new UserRepository(loginApi, apolloClientService);
-
-    jest.spyOn(apolloClientService, 'getClient').mockReturnValue({
-      mutate: jest.fn().mockResolvedValue({ data: { createUser: undefined } }),
-    } as never);
+  it('throws when GraphQL response has createUser but user is undefined', async () => {
+    server.use(
+      rest.post('http://localhost:4000/graphql', (_req, res, ctx) =>
+        res(ctx.status(200), ctx.json({ data: { createUser: { user: undefined } } }))
+      )
+    );
 
     await expect(
       repository.createUser({
@@ -181,11 +154,6 @@ describe('UserRepository Integration', () => {
   });
 
   it('uses the configured REST endpoint for login', async () => {
-    const httpsClient = new FetchHttpsClient();
-    const loginApi = new LoginAPI(httpsClient);
-    const apolloClientService = new ApolloClientService();
-    const repository = new UserRepository(loginApi, apolloClientService);
-
     let requestUrl: string | null = null;
 
     server.use(

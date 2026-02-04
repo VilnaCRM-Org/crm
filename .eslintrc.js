@@ -7,7 +7,7 @@ module.exports = {
   },
   parser: '@typescript-eslint/parser',
   parserOptions: { ecmaVersion: 2022, sourceType: 'module', project: './tsconfig.json' },
-  plugins: ['@typescript-eslint', 'eslint-comments'],
+  plugins: ['@typescript-eslint', 'eslint-comments', 'check-file'],
   ignorePatterns: [
     'node_modules/*',
     'docker-compose.yml',
@@ -57,7 +57,7 @@ module.exports = {
     {
       files: ['**/*.ts', '**/*.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
       parser: '@typescript-eslint/parser',
-      plugins: ['@typescript-eslint', 'eslint-comments'],
+      plugins: ['@typescript-eslint', 'eslint-comments', 'check-file'],
       settings: {
         react: { version: 'detect' },
         'import/resolver': {
@@ -171,6 +171,26 @@ module.exports = {
         '@typescript-eslint/no-explicit-any': 'error',
         '@typescript-eslint/no-var-requires': ['off'],
         'no-unused-vars': 'off',
+      },
+    },
+    {
+      files: ['src/**/*.{ts,tsx}'],
+      rules: {
+        'check-file/filename-naming-convention': [
+          'error',
+          {
+            'src/**/*.{ts,tsx}': 'KEBAB_CASE',
+          },
+          {
+            ignoreMiddleExtensions: true,
+          },
+        ],
+        'check-file/folder-naming-convention': [
+          'error',
+          {
+            'src/**/!(__tests__)': 'KEBAB_CASE',
+          },
+        ],
       },
     },
     {

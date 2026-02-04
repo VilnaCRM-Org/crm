@@ -1,5 +1,5 @@
-import ApiError from '@/modules/User/features/Auth/api/ApiErrors/ApiError';
-import ErrorParser from '@/utils/error/ErrorParser';
+import ApiError from '@/modules/user/features/auth/types/api-errors/api-error';
+import ErrorParser from '@/utils/error/error-parser';
 import ParsedError from '@/utils/error/types';
 
 import MockResponse from './MockResponse';

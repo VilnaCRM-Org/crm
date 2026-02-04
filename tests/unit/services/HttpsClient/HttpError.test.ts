@@ -1,4 +1,4 @@
-import { HttpError, isHttpError } from '@/services/HttpsClient/HttpError';
+import { HttpError, isHttpError } from '@/services/https-client/http-error';
 
 describe('HttpError', () => {
   describe('constructor', () => {

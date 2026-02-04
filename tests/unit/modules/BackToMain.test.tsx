@@ -1,9 +1,10 @@
 import { screen, within } from '@testing-library/react';
 import i18n from 'i18next';
 
-import UIBackToMain from '@/components/UIBackToMain';
+import UIBackToMain from '@/components/ui-back-to-main';
 
 import renderWithProviders, { testTheme } from '../utils/renderWithProviders';
+
 
 const BackToHomeText: string = 'Back to homepage';
 

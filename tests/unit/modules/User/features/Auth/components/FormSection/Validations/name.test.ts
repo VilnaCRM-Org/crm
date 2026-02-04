@@ -1,9 +1,11 @@
 import { TFunction } from 'i18next';
 
-import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
-import { fullNameValidators } from '@/modules/User/features/Auth/components/FormSection/Validations/name';
+
+import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
+import { fullNameValidators } from '@/modules/user/features/auth/components/form-section/validations/name';
 
 import emptyUser from './constants';
+
 
 jest.mock('i18next', () => ({
   t: (key: string): string => key,

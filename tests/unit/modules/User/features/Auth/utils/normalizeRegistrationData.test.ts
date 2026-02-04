@@ -1,4 +1,4 @@
-import normalizeRegistrationData from '@/modules/User/features/Auth/utils/normalizeRegistrationData';
+import normalizeRegistrationData from '@/modules/user/features/auth/utils/normalize-registration-data';
 
 describe('normalizeRegistrationData', () => {
   it('trims full name while preserving other fields', () => {

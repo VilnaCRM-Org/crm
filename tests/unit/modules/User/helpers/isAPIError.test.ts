@@ -1,4 +1,4 @@
-import isAPIError from '@/modules/User/helpers/isAPIError';
+import isAPIError from '@/modules/user/lib/errors/is-api-error';
 
 describe('isAPIError', () => {
   describe('valid API errors', () => {

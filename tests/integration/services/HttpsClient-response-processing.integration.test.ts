@@ -1,6 +1,6 @@
 import '../setup';
-import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
-import { HttpError } from '@/services/HttpsClient/HttpError';
+import FetchHttpsClient from '@/services/https-client/fetch-https-client';
+import { HttpError } from '@/services/https-client/http-error';
 
 describe('FetchHttpsClient Response Processing Coverage', () => {
   let client: FetchHttpsClient;

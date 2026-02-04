@@ -1,19 +1,18 @@
 import 'reflect-metadata';
-import { ApolloProvider } from '@apollo/client';
+import { ApolloClient, ApolloProvider, NormalizedCacheObject } from '@apollo/client';
 import CssBaseline from '@mui/material/CssBaseline';
 import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 
-import container from '@/config/DependencyInjectionConfig';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import type ApolloClientService from '@/services/ApolloClient/ApolloClientService';
 import Store from '@/stores';
 import '@/styles/fonts.css';
 import theme from '@/styles/theme';
 
-import App from './App';
+import App from './app';
 import i18n from './i18n';
 
 const rootElement = document.getElementById('root');
@@ -23,14 +22,14 @@ if (!rootElement) {
 }
 
 const root = createRoot(rootElement);
-const apolloService = container.resolve<ApolloClientService>(TOKENS.ApolloClientService);
+const apolloClient = container.resolve<ApolloClient<NormalizedCacheObject>>(TOKENS.ApolloClient);
 
 root.render(
   <React.StrictMode>
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <ApolloProvider client={apolloService.getClient()}>
+        <ApolloProvider client={apolloClient}>
           <Provider store={Store}>
             <React.Suspense fallback={null}>
               <App />

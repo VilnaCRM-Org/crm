@@ -1,5 +1,5 @@
-import { ERROR_CODES } from '@/services/error/errorCodes';
-import { ErrorHandler, UiError } from '@/services/error/ErrorHandler';
+import { ERROR_CODES } from '@/services/error/error-codes';
+import { ErrorHandler, UiError } from '@/services/error/error-handler';
 import ParsedError from '@/utils/error/types';
 
 describe('ErrorHandler', () => {

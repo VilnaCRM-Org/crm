@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 
-import UIButton from '@/components/UIButton';
+import UIButton from '@/components/ui-button';
 
 describe('UIButton Component', () => {
   beforeEach(() => {

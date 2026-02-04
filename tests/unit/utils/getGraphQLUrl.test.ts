@@ -1,4 +1,4 @@
-import getGraphQLUrl from '@/utils/getGraphQLUrl';
+import getGraphQLUrl from '@/utils/get-graphql-url';
 
 describe('getGraphQLUrl', () => {
   const originalEnv = process.env;

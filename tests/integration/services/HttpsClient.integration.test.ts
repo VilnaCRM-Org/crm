@@ -1,8 +1,8 @@
 import { ReadableStream } from 'node:stream/web';
 
-import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
-import { HttpError, isHttpError } from '@/services/HttpsClient/HttpError';
-import ResponseMessages from '@/services/HttpsClient/responseMessages';
+import FetchHttpsClient from '@/services/https-client/fetch-https-client';
+import { HttpError, isHttpError } from '@/services/https-client/http-error';
+import ResponseMessages from '@/services/https-client/response-messages';
 
 const TEST_URL = 'http://localhost:8080/api/test';
 

@@ -5,9 +5,9 @@ import {
   ConflictError,
   ValidationError,
   ApiErrorCodes,
-} from '@/modules/User/features/Auth/api/ApiErrors';
-import { ErrorHandler } from '@/services/error/ErrorHandler';
-import ErrorParser from '@/utils/error/ErrorParser';
+} from '@/modules/user/features/auth/types/api-errors';
+import { ErrorHandler } from '@/services/error/error-handler';
+import ErrorParser from '@/utils/error/error-parser';
 
 describe('ApiError classes', () => {
   describe('ApiError', () => {

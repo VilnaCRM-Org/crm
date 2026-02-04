@@ -6,12 +6,12 @@ import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
-import container from '@/config/DependencyInjectionConfig';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import i18n from '@/i18n';
-import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import { loginReducer } from '@/modules/User/store';
-import type { ThunkExtra } from '@/modules/User/store/types';
+import type { IUserRepository } from '@/modules/user/features/auth/repositories';
+import { loginReducer } from '@/modules/user/store';
+import type { ThunkExtra } from '@/modules/user/store/types';
 import type { RootState } from '@/stores';
 
 type TestRootState = {
@@ -41,7 +41,7 @@ export function renderWithProviders(
         getDefaultMiddleware({
           thunk: {
             extraArgument: {
-              loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),
+              userRepository: container.resolve<IUserRepository>(TOKENS.UserRepository),
             } as ThunkExtra,
           },
         }),

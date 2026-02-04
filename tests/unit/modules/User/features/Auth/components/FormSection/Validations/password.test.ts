@@ -1,8 +1,9 @@
 import { TFunction } from 'i18next';
 
-import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
+import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
 
 import emptyUser from './constants';
+
 
 describe('password validation', () => {
   const tMock = ((key: string) => key) as unknown as TFunction;

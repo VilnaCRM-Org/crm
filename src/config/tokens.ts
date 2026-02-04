@@ -1,7 +1,7 @@
 const TOKENS = Object.freeze({
-  LoginAPI: Symbol('LoginAPI'),
   HttpsClient: Symbol('HttpsClient'),
-  ApolloClientService: Symbol('ApolloClientService'),
+  ApolloClient: Symbol('ApolloClient'),
+  UserRemoteSource: Symbol('UserRemoteSource'),
   UserRepository: Symbol('UserRepository'),
 } as const);
 

@@ -1,16 +1,16 @@
 import { rest } from 'msw';
 
 import '../../../../setup';
-import API_ENDPOINTS from '@/config/apiConfig';
-import container from '@/config/DependencyInjectionConfig';
+import API_ENDPOINTS from '@/config/api-config';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import { AuthenticationError } from '@/modules/User/features/Auth/api/ApiErrors';
-import LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
+import UserRemoteSource from '@/modules/user/features/auth/repositories/user/sources/user.remote';
+import { AuthenticationError } from '@/modules/user/features/auth/types/api-errors';
 
 import server from '../../../../mocks/server';
 
-describe('LoginAPI Integration', () => {
-  let loginAPI: LoginAPI;
+describe('UserRemoteSource Integration (Login)', () => {
+  let userRemoteSource: UserRemoteSource;
 
   beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
   afterEach(() => server.resetHandlers());
@@ -18,7 +18,7 @@ describe('LoginAPI Integration', () => {
 
   beforeEach(() => {
     // Resolve from actual DI container
-    loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+    userRemoteSource = container.resolve<UserRemoteSource>(TOKENS.UserRemoteSource);
   });
 
   describe('successful login', () => {
@@ -33,12 +33,15 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      const result = await loginAPI.login({
+      const result = await userRemoteSource.login({
         email: 'test@example.com',
         password: 'password123',
       });
 
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        token: mockResponse.token,
+        email: 'test@example.com',
+      });
     });
 
     it('should send correct request body', async () => {
@@ -51,7 +54,7 @@ describe('LoginAPI Integration', () => {
         })
       );
 
-      await loginAPI.login({
+      await userRemoteSource.login({
         email: 'user@test.com',
         password: 'mypassword',
       });
@@ -72,7 +75,7 @@ describe('LoginAPI Integration', () => {
       );
 
       await expect(
-        loginAPI.login({ email: 'wrong@test.com', password: 'wrongpass' })
+        userRemoteSource.login({ email: 'wrong@test.com', password: 'wrongpass' })
       ).rejects.toThrow(AuthenticationError);
     });
 
@@ -83,9 +86,9 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'invalid', password: '123' })).rejects.toThrow(
-        'Invalid login data'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'invalid', password: '123' })
+      ).rejects.toThrow('Invalid login data');
     });
 
     it('should throw ApiError for 403 status', async () => {
@@ -95,9 +98,9 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Forbidden'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'test@test.com', password: 'pass' })
+      ).rejects.toThrow('Forbidden');
     });
 
     it('should throw ApiError for 404 status', async () => {
@@ -107,25 +110,21 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Login not found'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'test@test.com', password: 'pass' })
+      ).rejects.toThrow('Login not found');
     });
 
-    it('should handle 408 timeout (MSW limitation: triggers network error)', async () => {
-      // Note: MSW has a limitation where certain status codes (408, 504) trigger
-      // network errors instead of returning the status code. Our code correctly
-      // handles this as a network error, which is appropriate fallback behavior.
+    it('should handle 408 timeout', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(408), ctx.json({ message: 'Request timeout' }))
         )
       );
 
-      // MSW triggers network error for 408, our code handles it correctly
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Network error. Please check your connection.'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'test@test.com', password: 'pass' })
+      ).rejects.toThrow('Request timed out. Please try again.');
     });
 
     it('should throw ApiError for 429 rate limit', async () => {
@@ -135,9 +134,9 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Too many requests. Please slow down.'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'test@test.com', password: 'pass' })
+      ).rejects.toThrow('Too many requests. Please slow down.');
     });
 
     it('should throw ApiError for 500 server error', async () => {
@@ -147,9 +146,9 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Server error. Please try again later.'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'test@test.com', password: 'pass' })
+      ).rejects.toThrow('Server error. Please try again later.');
     });
 
     it('should throw ApiError for 502 bad gateway', async () => {
@@ -159,9 +158,9 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Service unavailable. Please try again later.'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'test@test.com', password: 'pass' })
+      ).rejects.toThrow('Service unavailable. Please try again later.');
     });
 
     it('should throw ApiError for 503 service unavailable', async () => {
@@ -171,33 +170,29 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Service unavailable. Please try again later.'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'test@test.com', password: 'pass' })
+      ).rejects.toThrow('Service unavailable. Please try again later.');
     });
 
-    it('should handle 504 gateway timeout (MSW limitation: triggers network error)', async () => {
-      // Note: MSW has a limitation where certain status codes (408, 504) trigger
-      // network errors instead of returning the status code. Our code correctly
-      // handles this as a network error, which is appropriate fallback behavior.
+    it('should handle 504 gateway timeout', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(504), ctx.json({ message: 'Gateway timeout' }))
         )
       );
 
-      // MSW triggers network error for 504, our code handles it correctly
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Network error. Please check your connection.'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'test@test.com', password: 'pass' })
+      ).rejects.toThrow('Service unavailable. Please try again later.');
     });
 
     it('should handle network errors', async () => {
       server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Failed to fetch')));
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Network error. Please check your connection.'
-      );
+      await expect(
+        userRemoteSource.login({ email: 'test@test.com', password: 'pass' })
+      ).rejects.toThrow('Network error. Please check your connection.');
     });
   });
 
@@ -209,7 +204,10 @@ describe('LoginAPI Integration', () => {
       controller.abort();
 
       await expect(
-        loginAPI.login({ email: 'test@test.com', password: 'pass' }, { signal: controller.signal })
+        userRemoteSource.login(
+          { email: 'test@test.com', password: 'pass' },
+          { signal: controller.signal }
+        )
       ).rejects.toThrow();
     });
 
@@ -223,24 +221,27 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      const result = await loginAPI.login(
+      const result = await userRemoteSource.login(
         { email: 'test@test.com', password: 'pass' },
         { signal: controller.signal }
       );
 
       controller.abort();
 
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual({
+        token: mockResponse.token,
+        email: 'test@test.com',
+      });
     });
   });
 
   describe('DI container integration', () => {
     it('should be resolvable from DI container multiple times', () => {
-      const instance1 = container.resolve<LoginAPI>(TOKENS.LoginAPI);
-      const instance2 = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const instance1 = container.resolve<UserRemoteSource>(TOKENS.UserRemoteSource);
+      const instance2 = container.resolve<UserRemoteSource>(TOKENS.UserRemoteSource);
 
-      expect(instance1).toBeInstanceOf(LoginAPI);
-      expect(instance2).toBeInstanceOf(LoginAPI);
+      expect(instance1).toBeInstanceOf(UserRemoteSource);
+      expect(instance2).toBeInstanceOf(UserRemoteSource);
     });
   });
 });

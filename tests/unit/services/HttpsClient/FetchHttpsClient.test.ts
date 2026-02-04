@@ -1,6 +1,6 @@
-import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
-import { HttpError } from '@/services/HttpsClient/HttpError';
-import ResponseMessages from '@/services/HttpsClient/responseMessages';
+import FetchHttpsClient from '@/services/https-client/fetch-https-client';
+import { HttpError } from '@/services/https-client/http-error';
+import ResponseMessages from '@/services/https-client/response-messages';
 
 function createMockResponse(
   status: number,

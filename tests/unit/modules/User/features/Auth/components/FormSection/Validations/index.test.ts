@@ -3,9 +3,10 @@ import { TFunction } from 'i18next';
 import {
   buildPasswordRules,
   createValidators,
-} from '@/modules/User/features/Auth/components/FormSection/Validations';
+} from '@/modules/user/features/auth/components/form-section/validations';
 
 import emptyUser from './constants';
+
 
 jest.mock('i18next', () => ({
   t: (key: string): string => key,

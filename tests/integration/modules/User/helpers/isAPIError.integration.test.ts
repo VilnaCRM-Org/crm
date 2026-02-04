@@ -1,15 +1,7 @@
 import '../../../setup';
-import { isAPIError as isAPIErrorFromBarrel } from '@/modules/User/features/Auth/api';
-import isAPIError from '@/modules/User/helpers/isAPIError';
+import isAPIError from '@/modules/user/lib/errors/is-api-error';
 
 describe('isAPIError Integration Tests', () => {
-  describe('barrel export', () => {
-    it('should be accessible via Auth API barrel export', () => {
-      expect(isAPIErrorFromBarrel).toBe(isAPIError);
-      expect(isAPIErrorFromBarrel({ code: 'TEST', message: 'test' })).toBe(true);
-    });
-  });
-
   describe('valid API errors', () => {
     it('should return true for objects with code and message strings', () => {
       const validError = { code: 'VALIDATION_ERROR', message: 'Invalid input' };

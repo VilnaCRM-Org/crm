@@ -2,12 +2,12 @@ import { configureStore, type ThunkDispatch, type UnknownAction } from '@reduxjs
 import { rest } from 'msw';
 
 import '../../../setup';
-import API_ENDPOINTS from '@/config/apiConfig';
-import container from '@/config/DependencyInjectionConfig';
+import API_ENDPOINTS from '@/config/api-config';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import { loginReducer, loginUser, type LoginState } from '@/modules/User/store/loginSlice';
-import type { ThunkExtra } from '@/modules/User/store/types';
+import type { IUserRepository } from '@/modules/user/features/auth/repositories';
+import { loginReducer, loginUser, type LoginState } from '@/modules/user/store/login-slice';
+import type { ThunkExtra } from '@/modules/user/store/types';
 
 import server from '../../../mocks/server';
 
@@ -21,10 +21,10 @@ describe('ErrorParser Integration Coverage', () => {
     let store: LoginTestStore;
 
     beforeEach(() => {
-      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const userRepository = container.resolve<IUserRepository>(TOKENS.UserRepository);
 
       const thunkExtraArgument: ThunkExtra = {
-        loginAPI,
+        userRepository,
       };
 
       store = configureStore({
