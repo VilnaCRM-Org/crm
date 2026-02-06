@@ -6,7 +6,7 @@ import {
   AuthenticationError,
   ConflictError,
   ApiErrorCodes,
-} from '@/modules/user/features/auth/types/api-errors';
+} from '@/modules/user/types/api-errors';
 
 function isAbortError(err: Error): boolean {
   const name = err.name?.toLowerCase?.() ?? '';

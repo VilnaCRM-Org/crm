@@ -1,11 +1,10 @@
 import UIForm from '@/components/ui-form';
-import useAppDispatch from '@/stores/hooks';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { LoginUserDto } from '@/modules/user/features/auth/types/credentials';
-import { loginUser } from '@/modules/user/store';
 
+import useLogin from '../../../hooks/use-login';
 import getSubmitLabelKey from '../../../utils/get-submit-label-key';
 import FormField from '../components/form-field';
 import PasswordField from '../components/password-field';
@@ -16,14 +15,14 @@ export default function LoginForm(): JSX.Element {
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
+  const { login } = useLogin();
 
   const handleLogin = async (data: LoginUserDto): Promise<void> => {
     setIsSubmitting(true);
     setError('');
 
     try {
-      await dispatch(loginUser(data)).unwrap();
+      await login(data);
     } catch (err) {
       const message = (err as string) || 'auth.errors.unknown';
       // TODO: replace hardcoded keys/strings with actual `t()` calls when keys are added

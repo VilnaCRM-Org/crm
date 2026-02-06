@@ -1,6 +1,6 @@
-import ApiError from '@/modules/user/features/auth/types/api-errors/api-error';
-import { ApiErrorCodes } from '@/modules/user/features/auth/types/api-errors/api-error-codes';
-import ConflictError from '@/modules/user/features/auth/types/api-errors/conflict-error';
+import ApiError from '@/modules/user/types/api-errors/api-error';
+import { ApiErrorCodes } from '@/modules/user/types/api-errors/api-error-codes';
+import ConflictError from '@/modules/user/types/api-errors/conflict-error';
 
 describe('ConflictError', () => {
   describe('constructor', () => {

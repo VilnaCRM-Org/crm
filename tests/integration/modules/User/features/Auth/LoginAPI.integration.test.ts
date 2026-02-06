@@ -5,7 +5,7 @@ import API_ENDPOINTS from '@/config/api-config';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import UserRemoteSource from '@/modules/user/features/auth/repositories/user/sources/user.remote';
-import { AuthenticationError } from '@/modules/user/features/auth/types/api-errors';
+import { AuthenticationError } from '@/modules/user/types/api-errors';
 
 import server from '../../../../mocks/server';
 

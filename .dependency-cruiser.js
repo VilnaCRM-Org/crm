@@ -231,6 +231,114 @@ module.exports = {
       to: {
         path: '^src/modules/'
       }
+    },
+    {
+      name: 'no-repository-internal-imports',
+      comment:
+        'Imports from repositories must go through the repositories public API (index file).',
+      severity: 'error',
+      from: {
+        path: '^src/',
+        pathNot: '^src/modules/[^/]+/features/[^/]+/repositories/'
+      },
+      to: {
+        path: '^src/modules/[^/]+/features/[^/]+/repositories/(?!index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$).+'
+      }
+    },
+    {
+      name: 'no-repositories-to-ui-hooks',
+      comment:
+        'Repositories are data-access layer and must not depend on feature UI/hooks/routes or module app-layer folders.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/([^/]+)/features/([^/]+)/repositories/'
+      },
+      to: {
+        path: [
+          '^src/modules/$1/features/$2/(components|hooks|routes)/',
+          '^src/modules/$1/(hooks|store)/'
+        ]
+      }
+    },
+    {
+      name: 'no-cross-feature-imports',
+      comment:
+        'Features within a module must not import from sibling features. Use the module-level shared layers (hooks, lib, store, types, utils) instead.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/([^/]+)/features/([^/]+)/'
+      },
+      to: {
+        path: '^src/modules/$1/features/(?!$2/)',
+      }
+    },
+    {
+      name: 'no-components-to-repositories',
+      comment:
+        'Components must not import repositories directly. Use hooks as the mediator between UI and data-access layers.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/[^/]+/features/[^/]+/components/'
+      },
+      to: {
+        path: '^src/modules/[^/]+/features/[^/]+/repositories/'
+      }
+    },
+    {
+      name: 'no-components-to-store',
+      comment:
+        'Feature components must not import from the module store directly. Use hooks to access store state and dispatch.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/[^/]+/features/[^/]+/components/'
+      },
+      to: {
+        path: '^src/modules/[^/]+/store/'
+      }
+    },
+    {
+      name: 'no-store-to-feature-ui',
+      comment:
+        'Module store must not depend on feature components, hooks, or routes.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/([^/]+)/store/'
+      },
+      to: {
+        path: '^src/modules/$1/features/[^/]+/(components|hooks|routes)/'
+      }
+    },
+    {
+      name: 'no-lib-to-features',
+      comment:
+        'Module lib is a shared utility layer and must not depend on feature-specific code.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/([^/]+)/lib/'
+      },
+      to: {
+        path: '^src/modules/$1/features/'
+      }
+    },
+    {
+      name: 'module-allowed-folders',
+      comment:
+        'Module root may only contain allowed folders: config, features, hooks, lib, store, types, utils.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/[^/]+/(?!config|features|hooks|lib|store|types|utils)[^/]+/'
+      },
+      to: {}
+    },
+    {
+      name: 'feature-allowed-folders',
+      comment:
+        'Feature root may only contain allowed folders: assets, components, hooks, i18n, repositories, routes, types, utils.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/[^/]+/features/[^/]+/(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/'
+      },
+      to: {}
     }
   ],
   options: {

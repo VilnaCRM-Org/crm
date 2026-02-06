@@ -1,6 +1,6 @@
 
-import { ApiErrorCodes } from '@/modules/user/features/auth/types/api-errors';
 import { handleApiError, isAPIError } from '@/modules/user/lib/errors';
+import { ApiErrorCodes } from '@/modules/user/types/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
 
 describe('errors barrel exports', () => {

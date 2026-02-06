@@ -1,11 +1,11 @@
 
+import handleApiError from '@/modules/user/lib/errors/handle-api-error';
 import {
   ApiErrorCodes,
   AuthenticationError,
   ConflictError,
   ValidationError,
-} from '@/modules/user/features/auth/types/api-errors';
-import handleApiError from '@/modules/user/lib/errors/handle-api-error';
+} from '@/modules/user/types/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
 
 describe('handleApiError', () => {

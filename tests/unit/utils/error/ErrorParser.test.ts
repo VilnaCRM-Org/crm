@@ -1,4 +1,4 @@
-import ApiError from '@/modules/user/features/auth/types/api-errors/api-error';
+import ApiError from '@/modules/user/types/api-errors/api-error';
 import ErrorParser from '@/utils/error/error-parser';
 import ParsedError from '@/utils/error/types';
 
