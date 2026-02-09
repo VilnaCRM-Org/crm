@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 
-import styles from './styles';
-import { UISkeletonInputProps } from './types';
+import styles from '@/components/Skeletons/UISkeletonInput/styles';
+import { UISkeletonInputProps } from '@/components/Skeletons/UISkeletonInput/types';
 
 function UISkeletonInput({
   'data-testid': dataTestId,

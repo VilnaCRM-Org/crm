@@ -1,6 +1,5 @@
 import { baseSkeletonStyle } from '@/components/Skeletons/base/styles';
-
-import { SkeletonTextSize } from './types';
+import { SkeletonTextSize } from '@/components/Skeletons/UISkeletonText/types';
 
 const sizeHeights: Record<SkeletonTextSize, string> = {
   s: '8px',

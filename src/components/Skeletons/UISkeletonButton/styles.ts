@@ -1,4 +1,7 @@
-import { baseSkeletonStyle } from '@/components/Skeletons/base/styles';
+import {
+  SMALL_MOBILE_BREAKPOINT,
+  baseSkeletonStyle,
+} from '@/components/Skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
 
 export default {
@@ -8,7 +11,7 @@ export default {
     borderRadius: '57px',
     height: '3.125rem',
     width: '100%',
-    [`@media (min-width:375px)`]: {
+    [`@media (min-width:${SMALL_MOBILE_BREAKPOINT}px)`]: {
       minWidth: '19.6875rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {

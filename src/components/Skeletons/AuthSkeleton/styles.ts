@@ -1,3 +1,4 @@
+import { SMALL_MOBILE_BREAKPOINT } from '@/components/Skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
 
 export default {
@@ -61,7 +62,7 @@ export default {
   },
   socialContainer: {
     display: 'block',
-    [`@media (min-width:375px)`]: {
+    [`@media (min-width:${SMALL_MOBILE_BREAKPOINT}px)`]: {
       display: 'flex',
       flexWrap: 'wrap',
     },
@@ -79,7 +80,7 @@ export default {
     '&:last-child': {
       marginBottom: 0,
     },
-    [`@media (min-width:375px)`]: {
+    [`@media (min-width:${SMALL_MOBILE_BREAKPOINT}px)`]: {
       maxWidth: '9.625rem',
       marginTop: '0.5rem',
       marginBottom: 0,

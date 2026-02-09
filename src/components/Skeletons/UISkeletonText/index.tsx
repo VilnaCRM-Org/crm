@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 
-import getTextSkeletonStyles from './styles';
-import { UISkeletonTextProps } from './types';
+import getTextSkeletonStyles from '@/components/Skeletons/UISkeletonText/styles';
+import { UISkeletonTextProps } from '@/components/Skeletons/UISkeletonText/types';
 
 function UISkeletonText({
   size = 'm',

@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 
-import styles from './styles';
-import { UISkeletonButtonProps } from './types';
+import styles from '@/components/Skeletons/UISkeletonButton/styles';
+import { UISkeletonButtonProps } from '@/components/Skeletons/UISkeletonButton/types';
 
 function UISkeletonButton({
   sx,
