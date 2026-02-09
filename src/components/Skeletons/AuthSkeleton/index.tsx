@@ -1,9 +1,13 @@
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
-import Skeleton from '@mui/material/Skeleton';
 
-import styles from '@/components/Skeletons/AuthSkeleton/styles';
+import UISkeletonBlock from '@/components/Skeletons/UISkeletonBlock';
+import UISkeletonButton from '@/components/Skeletons/UISkeletonButton';
+import UISkeletonInput from '@/components/Skeletons/UISkeletonInput';
+import UISkeletonText from '@/components/Skeletons/UISkeletonText';
 import authFormSectionStyles from '@/modules/User/features/Auth/components/FormSection/styles';
+
+import styles from './styles';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },
@@ -14,87 +18,75 @@ const SOCIAL_BUTTONS = [
 
 export default function AuthSkeleton(): JSX.Element {
   return (
-    <Box component="section" role="region" aria-label="Loading authentication form" sx={authFormSectionStyles.formSection}>
+    <Box
+      component="section"
+      role="region"
+      aria-label="Loading authentication form"
+      sx={authFormSectionStyles.formSection}
+    >
       <Box sx={authFormSectionStyles.formWrapper}>
-        <Skeleton
-          variant="text"
-          height={44}
+        <UISkeletonBlock
           width="70%"
+          height="44px"
+          borderRadius="57px"
           sx={styles.titleSkeleton}
           data-testid="auth-skeleton-title"
         />
-        <Skeleton
-          variant="text"
-          height={28}
+        <UISkeletonBlock
           width="90%"
+          height="28px"
+          borderRadius="57px"
           sx={styles.subtitleSkeleton}
           data-testid="auth-skeleton-subtitle"
         />
 
         <Box sx={styles.fieldContainer}>
-          <Skeleton
-            variant="text"
-            height={18}
+          <UISkeletonText
+            size="l"
             width="40%"
             sx={styles.fieldLabel}
             data-testid="auth-skeleton-field-label"
           />
-          <Skeleton
-            variant="rectangular"
-            sx={styles.inputSkeleton}
-            data-testid="auth-skeleton-input"
-          />
+          <UISkeletonInput data-testid="auth-skeleton-input" />
         </Box>
 
         <Box sx={styles.fieldContainer}>
-          <Skeleton
-            variant="text"
-            height={18}
+          <UISkeletonText
+            size="l"
             width="40%"
             sx={styles.fieldLabel}
             data-testid="auth-skeleton-field-label"
           />
-          <Skeleton
-            variant="rectangular"
-            sx={styles.inputSkeleton}
-            data-testid="auth-skeleton-input"
-          />
+          <UISkeletonInput data-testid="auth-skeleton-input" />
         </Box>
 
         <Box sx={styles.lastFieldContainer}>
-          <Skeleton
-            variant="text"
-            height={18}
+          <UISkeletonText
+            size="l"
             width="40%"
             sx={styles.fieldLabel}
             data-testid="auth-skeleton-field-label"
           />
-          <Skeleton
-            variant="rectangular"
-            sx={styles.inputSkeleton}
-            data-testid="auth-skeleton-input"
-          />
+          <UISkeletonInput data-testid="auth-skeleton-input" />
         </Box>
 
-        <Skeleton
-          variant="rectangular"
+        <UISkeletonButton
           sx={styles.buttonSkeleton}
           data-testid="auth-skeleton-submit"
         />
 
         <Divider role="presentation" sx={styles.divider}>
-          <Skeleton
-            variant="text"
-            sx={styles.dividerText}
+          <UISkeletonText
+            size="l"
+            width={180}
             data-testid="auth-skeleton-divider"
           />
         </Divider>
 
         <Box sx={styles.socialContainer}>
           {SOCIAL_BUTTONS.map((button) => (
-            <Skeleton
+            <UISkeletonBlock
               key={button.id}
-              variant="rectangular"
               sx={styles.socialButton}
               data-testid="auth-skeleton-social"
             />
