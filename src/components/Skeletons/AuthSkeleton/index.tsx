@@ -25,17 +25,15 @@ export default function AuthSkeleton(): JSX.Element {
       sx={authFormSectionStyles.formSection}
     >
       <Box sx={authFormSectionStyles.formWrapper}>
-        <UISkeletonBlock
+        <UISkeletonText
+          size="l"
           width="70%"
-          height="44px"
-          borderRadius="57px"
           sx={styles.titleSkeleton}
           data-testid="auth-skeleton-title"
         />
-        <UISkeletonBlock
+        <UISkeletonText
+          size="l"
           width="90%"
-          height="28px"
-          borderRadius="57px"
           sx={styles.subtitleSkeleton}
           data-testid="auth-skeleton-subtitle"
         />
