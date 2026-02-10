@@ -261,6 +261,7 @@ describe('Auth Store Integration', () => {
 
       const state = useAuthStore.getState();
       expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
     });
   });
 
@@ -300,7 +301,10 @@ describe('Auth Store Integration', () => {
       server.use(
         rest.post(API_ENDPOINTS.REGISTER, async (_, res, ctx) => {
           await createDelayedPromise(50);
-          return res(ctx.status(201), ctx.json({}));
+          return res(
+            ctx.status(201),
+            ctx.json({ fullName: 'Test User', email: 'test@example.com' })
+          );
         })
       );
 
@@ -315,6 +319,10 @@ describe('Auth Store Integration', () => {
 
       unsubscribe();
       expect(loadingWasTrue).toBe(true);
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
     });
 
     it('should handle validation error from API response', async () => {

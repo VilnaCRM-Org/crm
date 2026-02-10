@@ -137,7 +137,7 @@ The project uses tsyringe for DI:
 
 Example from Zustand store (resolving APIs inside actions):
 
-```bash
+```typescript
 const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
 const registrationAPI =
   container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
@@ -145,7 +145,7 @@ const registrationAPI =
 
 Zustand store pattern (`src/stores/zustand/authStore.ts`):
 
-```bash
+```typescript
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
