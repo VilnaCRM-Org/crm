@@ -14,6 +14,12 @@ const mockRegistrationAPI = {
   register: jest.fn(),
 } as unknown as RegistrationAPI;
 
+function createDelayedPromise(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 describe('authStore', () => {
   beforeEach(() => {
     container.clearInstances();
@@ -87,12 +93,7 @@ describe('authStore', () => {
     });
 
     it('should set loading state during login', async () => {
-      (mockLoginAPI.login as jest.Mock).mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(resolve, 100);
-          })
-      );
+      (mockLoginAPI.login as jest.Mock).mockImplementation(() => createDelayedPromise(100));
 
       const { loginUser } = useAuthStore.getState();
       const loginPromise = loginUser({ email: 'test@example.com', password: 'password123' });
@@ -241,12 +242,7 @@ describe('authStore', () => {
     });
 
     it('should set loading state during registration', async () => {
-      (mockRegistrationAPI.register as jest.Mock).mockImplementation(
-        () =>
-          new Promise((resolve) => {
-            setTimeout(resolve, 100);
-          })
-      );
+      (mockRegistrationAPI.register as jest.Mock).mockImplementation(() => createDelayedPromise(100));
 
       const { registerUser } = useAuthStore.getState();
       const registerPromise = registerUser({

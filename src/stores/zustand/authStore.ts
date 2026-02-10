@@ -13,6 +13,14 @@ import { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/type
 import { ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
 
+function isAbortError(err: unknown): boolean {
+  return (
+    (err as Error)?.name === 'AbortError' ||
+    err instanceof DOMException ||
+    (err instanceof Error && err.message?.includes('abort'))
+  );
+}
+
 interface AuthState {
   email: string;
   token: string | null;
@@ -70,12 +78,7 @@ export const useAuthStore = create<AuthStore>()(
             'auth/loginUser/fulfilled'
           );
         } catch (err) {
-          // Short-circuit for AbortError - just update loading state
-          if (
-            (err as Error)?.name === 'AbortError' ||
-            err instanceof DOMException ||
-            (err instanceof Error && err.message?.includes('abort'))
-          ) {
+          if (isAbortError(err)) {
             set({ loading: false }, false, 'auth/loginUser/aborted');
             return;
           }
@@ -121,12 +124,7 @@ export const useAuthStore = create<AuthStore>()(
             'auth/registerUser/fulfilled'
           );
         } catch (err) {
-          // Short-circuit for AbortError - just update loading state
-          if (
-            (err as Error)?.name === 'AbortError' ||
-            err instanceof DOMException ||
-            (err instanceof Error && err.message?.includes('abort'))
-          ) {
+          if (isAbortError(err)) {
             set({ loading: false }, false, 'auth/registerUser/aborted');
             return;
           }
