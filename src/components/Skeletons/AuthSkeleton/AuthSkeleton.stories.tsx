@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Suspense } from 'react';
+import type { JSX } from 'react';
 
 import AuthSkeleton from './index';
 
@@ -37,17 +37,32 @@ export const Default: Story = {
   },
 };
 
-export const InSuspense: Story = {
-  render: () => (
-    <Suspense fallback={<AuthSkeleton />}>
-      <div>Content would load here</div>
-    </Suspense>
-  ),
+export const Static: Story = {
   parameters: {
     docs: {
       description: {
-        story: 'AuthSkeleton wrapped in Suspense boundary, matching real usage in App.tsx.',
+        story: 'AuthSkeleton with animations disabled to inspect the static layout.',
       },
     },
   },
+  decorators: [
+    (StoryFn): JSX.Element => (
+      <div style={{ animationPlayState: 'paused' }}>
+        <style>{`
+          *, *::before, *::after {
+            animation: none !important;
+            background-size: 100% 100% !important;
+          }
+          [data-testid="auth-skeleton-input"] {
+            border: 1px solid transparent !important;
+            background-image: linear-gradient(#fff, #fff),
+              linear-gradient(90deg, rgba(211, 216, 224, 0.78) 0%, rgba(211, 216, 224, 0.598958) 49.13%, rgba(211, 216, 224, 0) 100%) !important;
+            background-origin: border-box !important;
+            background-clip: padding-box, border-box !important;
+          }
+        `}</style>
+        <StoryFn />
+      </div>
+    ),
+  ],
 };
