@@ -11,7 +11,7 @@ This template is used for all VilnaCRM microservices.
 ## Tech Stack
 
 - **Frontend**: React 18.3, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
-- **State Management**: Redux Toolkit with RTK Query
+- **State Management**: Zustand (lightweight store with `create` and `devtools`)
 - **Routing**: React Router v6
 - **DI Container**: tsyringe with reflect-metadata decorators
 - **i18n**: react-i18next (main language: uk, fallback: en)
@@ -112,13 +112,13 @@ src/
 ├── modules/          # Feature modules (e.g., User, BackToMain)
 │   └── User/
 │       ├── features/    # Feature-specific code (Auth)
-│       ├── store/       # Redux slices
+│       ├── store/       # Zustand stores
 │       ├── helpers/     # Module utilities
 │       └── package.json # Module metadata
 ├── components/      # Reusable UI components (prefixed with UI*)
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
-├── stores/          # Global Redux store configuration
+├── stores/          # Global Zustand stores (e.g., authStore)
 ├── config/          # DI configuration, tokens, API config
 ├── routes/          # Route definitions
 ├── providers/       # React context providers
@@ -135,13 +135,30 @@ The project uses tsyringe for DI:
 4. Use `@injectable()` decorator on classes
 5. Resolve dependencies via `container.resolve<Type>(TOKENS.ServiceName)`
 
-Example from store configuration:
+Example from Zustand store (resolving APIs inside actions):
 
 ```bash
-const thunkExtraArgument: ThunkExtra = {
-  loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),
-  registrationAPI: container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI),
-};
+const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+const registrationAPI =
+  container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+```
+
+Zustand store pattern (`src/stores/zustand/authStore.ts`):
+
+```bash
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+
+export const useAuthStore = create<AuthStore>()(
+  devtools(
+    (set) => ({ /* state + actions */ }),
+    { name: 'auth' }
+  )
+);
+
+// Selectors
+export const selectEmail = (s: AuthStore): string =>
+  s.email;
 ```
 
 ### Path Aliases

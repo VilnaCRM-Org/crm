@@ -30,6 +30,7 @@ describe('Auth Store Integration', () => {
 
   afterEach(() => {
     useAuthStore.getState().reset();
+    server.resetHandlers();
   });
 
   describe('initial state', () => {

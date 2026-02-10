@@ -119,7 +119,8 @@ Performance/quality suites (run when required by scope or explicitly requested):
 - Follow Conventional Commits (per `CONTRIBUTING.md`).
 - Prefer small, reviewable PRs with a clear test plan.
 - Before making any commit, ask the user for permission.
-- **IMPORTANT**: Do NOT commit or push markdown (.md) files unless the user explicitly instructs you to do so.
+- **IMPORTANT**: Do NOT commit or push markdown (.md) files unless
+  the user explicitly instructs you to do so.
 
 ---
 
