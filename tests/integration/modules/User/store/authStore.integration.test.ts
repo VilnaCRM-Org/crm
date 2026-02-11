@@ -406,6 +406,7 @@ describe('Auth Store Integration', () => {
 
       const state = useAuthStore.getState();
       expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
     });
 
     it('should handle DOMException abort from LoginAPI', async () => {
