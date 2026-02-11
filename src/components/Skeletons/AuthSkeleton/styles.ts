@@ -31,6 +31,9 @@ export default {
   },
   fieldLabel: {
     marginBottom: '0.25rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginBottom: '0.125rem',
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginBottom: '0.5625rem',
     },
@@ -52,12 +55,17 @@ export default {
   },
   divider: {
     marginTop: '1.0625rem',
-    marginBottom: '1rem',
+    marginBottom: '0.875rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginBottom: '1.5rem',
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginTop: '1.5625rem',
+      marginBottom: '1.125rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       marginTop: '0.8755rem',
+      marginBottom: '1.5rem',
     },
   },
   socialContainer: {
@@ -74,7 +82,7 @@ export default {
   socialButton: {
     border: '1px solid #E1E7EA',
     borderRadius: '0.75rem',
-    height: '3.25rem',
+    height: '3.625rem',
     width: '100%',
     marginBottom: '1rem',
     '&:last-child': {
@@ -82,6 +90,7 @@ export default {
     },
     [`@media (min-width:${SMALL_MOBILE_BREAKPOINT}px)`]: {
       maxWidth: '9.625rem',
+      height: '4.75rem',
       marginTop: '0.5rem',
       marginBottom: 0,
       '&:nth-of-type(2n+1)': {
@@ -96,14 +105,18 @@ export default {
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       maxWidth: '8.0625rem',
-      height: '3.75rem',
+      height: '5.375rem',
       margin: 0,
       '&:nth-of-type(2n+1)': {
         margin: 0,
       },
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      height: '4.75rem',
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       maxWidth: '6.25rem',
+      height: '3.75rem',
     },
   },
   spacer: {
