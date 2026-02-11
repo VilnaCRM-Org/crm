@@ -1,32 +1,20 @@
 import UIForm from '@/components/ui-form';
-import { ApolloError } from '@apollo/client';
 import { useTranslation } from 'react-i18next';
 
+import getRegistrationErrorMessage from '@/modules/user/features/auth/components/form-section/auth-forms/registration-error';
+import FormField from '@/modules/user/features/auth/components/form-section/components/form-field';
+import PasswordField from '@/modules/user/features/auth/components/form-section/components/password-field';
+import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
 import { useCreateUser, buildCreateUserInput } from '@/modules/user/features/auth/hooks';
 import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
 import getSubmitLabelKey from '@/modules/user/features/auth/utils/get-submit-label-key';
 import normalizeRegistrationData from '@/modules/user/features/auth/utils/normalize-registration-data';
 
-import FormField from '../components/form-field';
-import PasswordField from '../components/password-field';
-import { createValidators } from '../validations';
-
-function getErrorMessage(error: ApolloError | undefined, t: (key: string) => string): string | null {
-  if (!error) return null;
-
-  const graphQLError = error.graphQLErrors[0];
-  if (graphQLError?.extensions?.code === 'CONFLICT') {
-    return t('sign_up.errors.email_used');
-  }
-
-  return t('sign_up.errors.signup_error');
-}
-
 export default function RegistrationForm(): JSX.Element {
   const { t } = useTranslation();
   const [createUser, { loading: isSubmitting, error, reset }] = useCreateUser();
 
-  const errorMessage = getErrorMessage(error, t);
+  const errorMessage = getRegistrationErrorMessage(error, t);
 
   const handleRegister = async (data: RegisterUserDto): Promise<void> => {
     const normalizedData = normalizeRegistrationData(data);

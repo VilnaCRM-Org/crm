@@ -93,7 +93,7 @@ NETWORK_NAME                = crm-network
 BUN                         = $(EXEC_DEV_TTYLESS) bun
 BUNX                        = $(BUN) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
-DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev && make wait-for-dev
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) up -d --build dev apollo mockoon && make wait-for-dev
 BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 
 STRYKER_CMD                 = make start && $(BUNX) stryker run

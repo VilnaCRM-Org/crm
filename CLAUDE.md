@@ -118,7 +118,9 @@ src/
 ├── components/      # Reusable UI components (prefixed with UI*)
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
-├── stores/          # Global Redux store configuration
+├── stores/          # Global state store configuration
+│   └── zustand/
+│       └── authStore.ts
 ├── config/          # DI configuration, tokens, API config
 ├── routes/          # Route definitions
 ├── providers/       # React context providers
