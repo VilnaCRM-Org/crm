@@ -93,14 +93,14 @@ NETWORK_NAME                = crm-network
 BUN                         = $(EXEC_DEV_TTYLESS) bun
 BUNX                        = $(BUN) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
-DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) up -d --build dev apollo mockoon && make wait-for-dev
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev && make wait-for-dev
 BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 
 STRYKER_CMD                 = make start && $(BUNX) stryker run
 UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
-STORYBOOK_START             = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
+STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint
 LHCI_TARGET_URL             ?= $(REACT_APP_PROD_CONTAINER_API_URL)
