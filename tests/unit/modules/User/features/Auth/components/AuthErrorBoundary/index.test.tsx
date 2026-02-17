@@ -1,0 +1,118 @@
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+import AuthErrorBoundary from '@/modules/User/features/Auth/components/AuthErrorBoundary';
+
+function ThrowingChild({ shouldThrow }: { shouldThrow: boolean }): JSX.Element {
+  if (shouldThrow) throw new Error('test error');
+  return <div data-testid="child">OK</div>;
+}
+
+function renderWithBoundary(
+  props: Partial<React.ComponentProps<typeof AuthErrorBoundary>> = {},
+  shouldThrow = true
+): ReturnType<typeof render> {
+  return render(
+    <AuthErrorBoundary {...props}>
+      <ThrowingChild shouldThrow={shouldThrow} />
+    </AuthErrorBoundary>
+  );
+}
+
+beforeEach(() => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe('AuthErrorBoundary', () => {
+  it('renders children when no error occurs', () => {
+    renderWithBoundary({}, false);
+    expect(screen.getByTestId('child')).toBeInTheDocument();
+  });
+
+  it('renders default fallback when a child throws', () => {
+    renderWithBoundary();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Something went wrong. Please try again later.'
+    );
+  });
+
+  it('renders custom ReactNode fallback', () => {
+    renderWithBoundary({ fallback: <span>Custom fallback</span> });
+    expect(screen.getByRole('alert')).toHaveTextContent('Custom fallback');
+  });
+
+  it('calls function fallback with error and reset', () => {
+    const fallbackFn = jest.fn(({ error }: { error?: Error }) => (
+      <span>{error?.message}</span>
+    ));
+
+    renderWithBoundary({ fallback: fallbackFn });
+
+    expect(fallbackFn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.any(Error),
+        reset: expect.any(Function),
+      })
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent('test error');
+  });
+
+  it('suppresses console.error when onError prop is provided', () => {
+    renderWithBoundary({ onError: jest.fn() });
+
+    expect(console.error).not.toHaveBeenCalledWith(
+      'AuthErrorBoundary caught an error:',
+      expect.anything(),
+      expect.anything()
+    );
+  });
+
+  it('logs to console.error when no onError in non-production', () => {
+    renderWithBoundary();
+
+    expect(console.error).toHaveBeenCalledWith(
+      'AuthErrorBoundary caught an error:',
+      expect.any(Error),
+      expect.objectContaining({ componentStack: expect.any(String) })
+    );
+  });
+
+  it('resets error state when "Try again" is clicked', async () => {
+    let shouldThrow = true;
+
+    const { rerender } = render(
+      <AuthErrorBoundary>
+        <ThrowingChild shouldThrow={shouldThrow} />
+      </AuthErrorBoundary>
+    );
+
+    expect(screen.getByTestId('auth-error-boundary-fallback')).toBeInTheDocument();
+
+    shouldThrow = false;
+    rerender(
+      <AuthErrorBoundary>
+        <ThrowingChild shouldThrow={shouldThrow} />
+      </AuthErrorBoundary>
+    );
+
+    await userEvent.click(screen.getByTestId('auth-error-boundary-try-again'));
+
+    expect(screen.getByTestId('child')).toBeInTheDocument();
+  });
+
+  it('shows error details in development mode', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'development';
+
+    renderWithBoundary();
+
+    expect(screen.getByText('Error Details')).toBeInTheDocument();
+    expect(screen.getByText('test error')).toBeInTheDocument();
+
+    process.env.NODE_ENV = originalEnv;
+  });
+});

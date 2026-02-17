@@ -3,15 +3,37 @@ import breakpointsTheme from '@/components/UIBreakpoints';
 
 export default {
   titleSkeleton: {
+    height: '1.375rem',
     marginBottom: '0.5rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      height: '1.875rem',
+      width: '10.3125rem',
       marginBottom: '0.9375rem',
     },
   },
-  subtitleSkeleton: {
+  subtitleWrapper: {
     marginBottom: '1.0625rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginBottom: '1.25rem',
+    },
+  },
+  subtitleFirstLine: {
+    height: '1.5625rem',
+    '@media (max-width:336px)': {
+      height: '1.25rem',
+      width: '100%',
+      marginBottom: '0.625rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+      height: '1.625rem',
+      width: '18.5rem',
+    },
+  },
+  subtitleSecondLine: {
+    display: 'none',
+    '@media (max-width:336px)': {
+      display: 'block',
+      height: '1.25rem',
     },
   },
   fieldContainer: {
@@ -30,11 +52,14 @@ export default {
     },
   },
   fieldLabel: {
+    height: '1.125rem',
     marginBottom: '0.25rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      marginBottom: '0.125rem',
+      height: '0.984375rem',
+      marginBottom: '0.25rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      height: '1.125rem',
       marginBottom: '0.5625rem',
     },
   },
@@ -120,12 +145,12 @@ export default {
     },
   },
   spacer: {
-    height: '2.5rem',
+    height: '2.5625rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      height: '4.25rem',
+      height: '4.1rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      height: '2.5rem',
+      height: '2.625rem',
     },
   },
 };

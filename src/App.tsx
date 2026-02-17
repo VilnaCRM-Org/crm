@@ -1,22 +1,16 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import ButtonExample from '@/ButtonExample';
-import AuthSkeleton from '@/components/Skeletons/AuthSkeleton';
+import Authentication from '@/modules/User/features/Auth';
 
 import './index.css';
-
-const Authentication = lazy(() => import('@/modules/User/features/Auth'));
 
 const router = createBrowserRouter([
   {
     path: '/authentication',
-    element: (
-      <Suspense fallback={<AuthSkeleton />}>
-        <Authentication />
-      </Suspense>
-    ),
+    element: <Authentication />,
   },
   {
     path: '/',
