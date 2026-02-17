@@ -20,6 +20,13 @@
         "subtitle": "Створіть обліковий запис у VilnaCRM",
         "socials_main_heading": "Або",
         "form": {
+          "name_input": {
+            "label": "Ваше ім'я та прізвище",
+            "placeholder": "Михайло Світський",
+            "special_characters_error": "Будь ласка, використовуйте лише літери",
+            "required": "Це поле обов'язкове",
+            "full_name_format_error": "Будь ласка, введіть повне ім'я у правильному форматі"
+          },
           "email_input": {
             "label": "Електронна пошта",
             "placeholder": "vilnaCRM@gmail.com",
@@ -49,14 +56,7 @@
           "submit_button": "Реєстрація",
           "error_text": "Виникла помилка. Перевірте ще раз",
           "switcher_text_have_account": "У вас вже є обліковий запис?",
-          "switcher_text_no_account": "У вас немає облікового запису?",
-          "name_input": {
-            "label": "Ваше ім’я та прізвище",
-            "placeholder": "Михайло Світський",
-            "special_characters_error": "Будь ласка, використовуйте лише літери",
-            "required": "Це поле обов'язкове",
-            "full_name_format_error": "Будь ласка, введіть повне ім’я у правильному форматі"
-          }
+          "switcher_text_no_account": "У вас немає облікового запису?"
         },
         "errors": {
           "email_used": "Електронна адреса вже використовується",
@@ -73,6 +73,31 @@
           },
           "submit_button": "Увійти до облікового запису",
           "submitting": "Вхід…"
+        }
+      },
+      "notifications": {
+        "close": "Закрити сповіщення",
+        "success": {
+          "title": "Вітаємо!",
+          "description": "Ви успішно зареєструвались",
+          "button": "На головну проєкту",
+          "images": {
+            "confetti": "Веселе і барвисте конфеті",
+            "gears": "Святкові шестерні"
+          }
+        },
+        "error": {
+          "title": "Трапилась помилка",
+          "retry_button": "Спробувати ще раз",
+          "button": "Назад",
+          "images": {
+            "error": "Червоний трикутник з попередженням про помилку."
+          }
+        }
+      },
+      "failure_responses": {
+        "client_errors": {
+          "something_went_wrong": "Щось пішло не так із запитом. Спробуйте ще раз пізніше"
         }
       },
       "footer": {
@@ -99,6 +124,13 @@
         "subtitle": "Create an account in VilnaCRM",
         "socials_main_heading": "Or",
         "form": {
+          "name_input": {
+            "label": "Your first and last name",
+            "placeholder": "Mykhailo Svitskyi",
+            "special_characters_error": "Please use letters only",
+            "required": "This field is required",
+            "full_name_format_error": "Please enter your full name in the correct format"
+          },
           "email_input": {
             "label": "Email",
             "placeholder": "vilnaCRM@gmail.com",
@@ -128,14 +160,7 @@
           "submit_button": "Sign Up",
           "error_text": "There was an error. Please check again",
           "switcher_text_have_account": "Already have an account?",
-          "switcher_text_no_account": "Don’t have an account yet?",
-          "name_input": {
-            "label": "Your first and last name",
-            "placeholder": "Mykhailo Svitskyi",
-            "special_characters_error": "Please use letters only",
-            "required": "This field is required",
-            "full_name_format_error": "Please enter your full name in the correct format"
-          }
+          "switcher_text_no_account": "Don't have an account yet?"
         },
         "errors": {
           "email_used": "Email address is already in use",
@@ -152,6 +177,31 @@
           },
           "submit_button": "Sign in",
           "submitting": "Signing in…"
+        }
+      },
+      "notifications": {
+        "close": "Close notification",
+        "success": {
+          "title": "Congratulations!",
+          "description": "You have successfully registered",
+          "button": "To project home",
+          "images": {
+            "confetti": "Cheerful and colorful confetti",
+            "gears": "Decorative celebration gears"
+          }
+        },
+        "error": {
+          "title": "An error occurred",
+          "retry_button": "Try again",
+          "button": "Go back",
+          "images": {
+            "error": "Red triangle with a warning about an error."
+          }
+        }
+      },
+      "failure_responses": {
+        "client_errors": {
+          "something_went_wrong": "Something went wrong with the request. Try again later"
         }
       },
       "footer": {

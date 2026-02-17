@@ -69,6 +69,31 @@
       "submitting": "Вхід…"
     }
   },
+  "notifications": {
+    "close": "Закрити сповіщення",
+    "success": {
+      "title": "Вітаємо!",
+      "description": "Ви успішно зареєструвались",
+      "button": "На головну проєкту",
+      "images": {
+        "confetti": "Веселе і барвисте конфеті",
+        "gears": "Святкові шестерні"
+      }
+    },
+    "error": {
+      "title": "Трапилась помилка",
+      "retry_button": "Спробувати ще раз",
+      "button": "Назад",
+      "images": {
+        "error": "Червоний трикутник з попередженням про помилку."
+      }
+    }
+  },
+  "failure_responses": {
+    "client_errors": {
+      "something_went_wrong": "Щось пішло не так із запитом. Спробуйте ще раз пізніше"
+    }
+  },
   "footer": {
     "logo_alt": "Логотип VilnaCRM",
     "privacy": "Політика конфіденційності",

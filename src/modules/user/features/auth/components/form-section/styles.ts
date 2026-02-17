@@ -47,7 +47,16 @@ export default {
       padding: '2.1rem 2.4375rem 1.9375rem',
     },
   },
+  formWrapperWithNotification: {
+    '&&': {
+      overflow: 'hidden',
+    },
+  },
 
+  hiddenElement: {
+    visibility: 'hidden',
+    pointerEvents: 'none',
+  },
   formSwitcherButton: {
     display: 'block',
     padding: 0,

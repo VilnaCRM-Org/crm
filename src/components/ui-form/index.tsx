@@ -4,7 +4,6 @@ import { ReactNode } from 'react';
 import {
   useForm,
   FormProvider,
-  SubmitHandler,
   FieldValues,
   DefaultValues,
   UseFormProps,
@@ -16,8 +15,10 @@ import UITypography from '../ui-typography';
 
 import styles from './styles';
 
+type SubmitResult = void | boolean | Promise<void> | Promise<boolean>;
+
 export interface UIFormProps<T extends FieldValues> {
-  onSubmit: SubmitHandler<T>;
+  onSubmit: (data: T) => SubmitResult;
   defaultValues: DefaultValues<T>;
   children: ReactNode;
   formOptions?: Omit<UseFormProps<T>, 'defaultValues'>;
@@ -48,9 +49,10 @@ export default function UIForm<T extends FieldValues>({
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
 
-  const handleSubmit: SubmitHandler<T> = async (data) => {
-    await onSubmit(data);
-    if (resetOnSuccess) {
+  const handleSubmit = async (data: T): Promise<void> => {
+    const submitResult = await onSubmit(data);
+
+    if (resetOnSuccess && submitResult !== false) {
       methods.reset(defaultValues);
     }
   };

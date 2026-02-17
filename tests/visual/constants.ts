@@ -1,3 +1,5 @@
+import { t } from '../e2e/utils/initializeLocalization';
+
 export interface ScreenSize {
   width: number;
   height: number;
@@ -84,9 +86,9 @@ interface PlaceholderFields {
 }
 
 export const placeholders: PlaceholderFields = {
-  name: 'Михайло Светський',
-  email: 'vilnaCRM@gmail.com',
-  password: 'Створіть пароль',
+  name: t('sign_up.form.name_input.placeholder'),
+  email: t('sign_up.form.email_input.placeholder'),
+  password: t('sign_up.form.password_input.placeholder'),
 };
 
 export const PAGES = {

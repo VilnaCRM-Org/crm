@@ -4,12 +4,22 @@ import { t } from '../../../../../../../../utils/initializeLocalization';
 import { ExpectationEmail, ExpectationsPassword, User } from '../types';
 
 export const REGISTRATION_URL = '/authentication';
-export const GRAPHQL_URL = '**/graphql';
+export const GRAPHQL_URL = '**/*graphql*';
 
 export const placeholderInitials: string = t('sign_up.form.name_input.placeholder');
 export const placeholderEmail: string = t('sign_up.form.email_input.placeholder');
 export const placeholderPassword: string = t('sign_up.form.password_input.placeholder');
 export const signUpButton: string = t('sign_up.form.submit_button');
+export const duplicateEmailServerError: string = t('sign_up.errors.email_used');
+export const registrationGenericError: string = t('sign_up.errors.signup_error');
+export const notificationSuccessTitle: string = t('notifications.success.title');
+export const notificationSuccessButton: string = t('notifications.success.button');
+export const notificationSuccessConfettiAlt: string = t('notifications.success.images.confetti');
+export const notificationErrorTitle: string = t('notifications.error.title');
+export const notificationErrorButton: string = t('notifications.error.button');
+export const notificationErrorRetryButton: string = t('notifications.error.retry_button');
+export const notificationErrorImageAlt: string = t('notifications.error.images.error');
+export const notificationCloseLabel: string = t('notifications.close');
 
 export const requiredInitialsError: string = t('sign_up.form.name_input.required');
 

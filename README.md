@@ -174,6 +174,7 @@ Docker
   make down: stops the Docker containers and removes orphaned containers
   make stop: stops dev container
   make start-prod: builds image and starts the prod container (production mode)
+  make start-prod-clean: force rebuild and recreate all test containers
   make ps: displays currently running Docker containers with their details
   make sh: starts a terminal inside the dev Docker container for manual commands
   make logs: shows all logs of dev container
