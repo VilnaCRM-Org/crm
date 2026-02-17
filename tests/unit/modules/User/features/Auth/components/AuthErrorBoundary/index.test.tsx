@@ -12,8 +12,9 @@ function renderWithBoundary(
   props: Partial<React.ComponentProps<typeof AuthErrorBoundary>> = {},
   shouldThrow = true
 ): ReturnType<typeof render> {
+  const { fallback, onError } = props;
   return render(
-    <AuthErrorBoundary {...props}>
+    <AuthErrorBoundary fallback={fallback} onError={onError}>
       <ThrowingChild shouldThrow={shouldThrow} />
     </AuthErrorBoundary>
   );
@@ -64,6 +65,7 @@ describe('AuthErrorBoundary', () => {
   it('suppresses console.error when onError prop is provided', () => {
     renderWithBoundary({ onError: jest.fn() });
 
+    // eslint-disable-next-line no-console
     expect(console.error).not.toHaveBeenCalledWith(
       'AuthErrorBoundary caught an error:',
       expect.anything(),
@@ -74,6 +76,7 @@ describe('AuthErrorBoundary', () => {
   it('logs to console.error when no onError in non-production', () => {
     renderWithBoundary();
 
+    // eslint-disable-next-line no-console
     expect(console.error).toHaveBeenCalledWith(
       'AuthErrorBoundary caught an error:',
       expect.any(Error),
