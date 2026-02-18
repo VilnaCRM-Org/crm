@@ -95,6 +95,10 @@ export default {
     alignItems: 'center',
     justifyContent: 'center',
     animation: ENTRY_ANIMATION,
+    '@media (max-width: 374px)': {
+      justifyContent: 'flex-start',
+      paddingTop: '40%',
+    },
   },
   successTopImgBox: {
     position: 'absolute',
@@ -189,12 +193,12 @@ export default {
     textAlign: 'center',
     marginTop: '0.5rem',
     fontWeight: 400,
-    fontSize: '0.9375rem',
-    lineHeight: '1.67',
+    fontSize: '0.98rem',
+    lineHeight: '1.5625rem',
     color: customColors.text.primary,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
-      fontSize: '1rem',
-      lineHeight: '1.625',
+      fontSize: '1.2rem',
+      lineHeight: '1.625rem',
     },
   },
 
@@ -219,12 +223,12 @@ export default {
     textAlign: 'center',
     marginTop: '0.5rem',
     fontWeight: 400,
-    fontSize: '0.9375rem',
-    lineHeight: '1.67',
+    fontSize: '0.98rem',
+    lineHeight: '1.5625rem',
     color: customColors.text.primary,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
-      fontSize: '1rem',
-      lineHeight: '1.625',
+      fontSize: '1.2rem',
+      lineHeight: '1.625rem',
     },
   },
   messageButton: {
@@ -271,7 +275,7 @@ export default {
         minHeight: '4.375rem',
         fontWeight: 600,
         fontSize: '1.125rem',
-        lineHeight: '1',
+        lineHeight: '1.35rem',
       },
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
@@ -289,14 +293,18 @@ export default {
   contentBoxError: {
     flex: 1,
     width: '100%',
+    height: '100%',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '0.125rem',
     boxSizing: 'border-box',
     padding: '0.5rem 0.875rem 0.875rem',
     animation: ENTRY_ANIMATION,
+    '@media (max-width: 374px)': {
+      justifyContent: 'flex-start',
+      paddingTop: '1rem',
+    },
     [`@media (min-width:641px)`]: {
       padding: '0.5rem 1rem 0.75rem',
     },
@@ -332,18 +340,13 @@ export default {
   buttonsBox: {
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'stretch',
+    alignItems: 'center',
     flexDirection: 'column',
     width: '100%',
-    gap: '0.5rem',
     marginTop: '1rem',
     animation: 'notificationFadeInUp 460ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both',
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+    '@media (min-width: 641px)': {
       marginTop: '2rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      flexDirection: 'row-reverse',
-      gap: '0.75rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginTop: '1rem',
@@ -351,49 +354,43 @@ export default {
   },
   errorButton: {
     width: '100%',
-    maxWidth: 'none',
-    height: '48px',
-    minHeight: '48px',
-    padding: '0 1rem',
+    height: '50px',
+    minWidth: '260px',
     boxSizing: 'border-box',
     borderRadius: '3.5625rem',
     boxShadow: 'none',
     textTransform: 'none',
     whiteSpace: 'nowrap',
+    fontWeight: 500,
+    fontSize: '0.9375rem',
+    lineHeight: '1.125rem',
     '&.MuiButton-contained, &.MuiButton-outlined': {
-      height: '48px',
-      minHeight: '48px',
+      height: '50px',
       padding: '0 1rem',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      flex: '1 1 0',
-      '&.MuiButton-contained': {
-        fontWeight: 600,
-        fontSize: '1.125rem',
-        lineHeight: '1',
-        backgroundColor: 'transparent',
-        color: paletteColors.primary.main,
-        border: `1px solid ${paletteColors.primary.main}`,
-        boxShadow: 'none',
-        '&:hover': {
-          backgroundColor: 'rgba(30, 174, 255, 0.04)',
-        },
+    '@media (min-width: 375px)': {
+      minWidth: '301px',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+      width: '315px',
+      height: '70px',
+      fontWeight: 600,
+      fontSize: '1.125rem',
+      lineHeight: '1.35rem',
+      '&.MuiButton-contained, &.MuiButton-outlined': {
+        height: '70px',
       },
-      '&.MuiButton-outlined': {
-        fontWeight: 600,
-        fontSize: '1.125rem',
-        lineHeight: '1',
-        backgroundColor: paletteColors.primary.main,
-        color: '#FFFFFF',
-        border: 'none',
-        '&:hover': {
-          backgroundColor: paletteColors.primary.hover,
-        },
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      width: '291px',
+      height: '62px',
+      '&.MuiButton-contained, &.MuiButton-outlined': {
+        height: '62px',
       },
     },
   },
   errorButtonSecondary: {
-    marginTop: 0,
+    marginTop: '0.5rem',
   },
   loader: {
     position: 'absolute',

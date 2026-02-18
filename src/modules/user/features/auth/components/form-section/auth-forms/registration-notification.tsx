@@ -56,14 +56,6 @@ export default function RegistrationNotification({
         aria-live="polite"
         sx={[styles.notificationSection, isClosing ? styles.notificationSectionClosing : {}]}
       >
-        <IconButton
-          aria-label={t('notifications.close')}
-          onClick={handleBack}
-          disabled={isSubmitting || isClosing}
-          sx={styles.closeButton}
-        >
-          <CloseIcon />
-        </IconButton>
         <Box sx={styles.contentBoxError}>
           <Box sx={styles.imageWrapperError}>
             <Box

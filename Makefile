@@ -231,8 +231,8 @@ create-network: ## Create the external Docker network if it doesn't exist
 start-prod: create-network ## Build image and start container in production mode
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate && make wait-for-prod-health
 
-start-prod-clean: create-network ## Force rebuild and recreate all test containers
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build prod playwright apollo mockoon && make wait-for-prod-health
+start-prod-clean: create-network ## Rebuild and recreate all test containers
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build && make wait-for-prod-health
 
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
