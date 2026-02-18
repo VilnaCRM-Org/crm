@@ -20,9 +20,9 @@ export default {
   subtitleFirstLine: {
     height: '1.5625rem',
     '@media (max-width:336px)': {
-      height: '1.25rem',
+      height: '1.375rem',
       width: '100%',
-      marginBottom: '0.625rem',
+      marginBottom: '0.375rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       height: '1.625rem',
@@ -33,7 +33,7 @@ export default {
     display: 'none',
     '@media (max-width:336px)': {
       display: 'block',
-      height: '1.25rem',
+      height: '1.375rem',
     },
   },
   fieldContainer: {
@@ -76,6 +76,15 @@ export default {
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       marginTop: '1.1875rem',
+    },
+  },
+  dividerText: {
+    width: '1.86rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      width: '2.23rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      width: '1.86rem',
     },
   },
   divider: {

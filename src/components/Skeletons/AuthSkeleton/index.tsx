@@ -84,7 +84,8 @@ export default function AuthSkeleton(): JSX.Element {
         <Divider role="presentation" sx={styles.divider}>
           <UISkeletonText
             size="l"
-            width={180}
+            width="1.86rem"
+            sx={styles.dividerText}
             data-testid="auth-skeleton-divider"
           />
         </Divider>
