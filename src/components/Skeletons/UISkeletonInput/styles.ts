@@ -39,9 +39,15 @@ export default {
     zIndex: 1,
     width: '147px',
     height: '18px',
-    left: '25px',
+    left: '1.25rem',
     top: '50%',
     transform: 'translateY(-50%)',
     borderRadius: '57px',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      left: '1.75rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      left: '1.6875rem',
+    },
   },
 };

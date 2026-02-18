@@ -24,7 +24,7 @@ export default function AuthSkeleton(): JSX.Element {
       aria-label="Loading authentication form"
       sx={authFormSectionStyles.formSection}
     >
-      <Box sx={authFormSectionStyles.formWrapper}>
+      <Box sx={[authFormSectionStyles.formWrapper, styles.formWrapperPulse]}>
         <UISkeletonText
           size="l"
           width="7.5rem"

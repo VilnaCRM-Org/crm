@@ -1,7 +1,10 @@
-import { SMALL_MOBILE_BREAKPOINT } from '@/components/Skeletons/base/styles';
+import { shadowPulseAnimation, SMALL_MOBILE_BREAKPOINT } from '@/components/Skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
 
 export default {
+  formWrapperPulse: {
+    animation: `${shadowPulseAnimation} 1.5s ease-in-out infinite alternate`,
+  },
   titleSkeleton: {
     height: '1.375rem',
     marginBottom: '0.5rem',
@@ -90,6 +93,9 @@ export default {
   divider: {
     marginTop: '1.0625rem',
     marginBottom: '0.875rem',
+    '& .MuiDivider-wrapper': {
+      padding: '0 1.375rem',
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginBottom: '1.5rem',
     },
