@@ -1,3 +1,5 @@
+import path from 'path';
+
 import type { StorybookConfig } from '@storybook/react-webpack5';
 
 const config: StorybookConfig = {
@@ -32,7 +34,7 @@ const config: StorybookConfig = {
     );
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': require('path').resolve(__dirname, '../src'),
+      '@': path.resolve(__dirname, '../src'),
     };
 
     return config;

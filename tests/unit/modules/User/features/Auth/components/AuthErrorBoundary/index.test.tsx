@@ -20,15 +20,15 @@ function renderWithBoundary(
   );
 }
 
-beforeEach(() => {
-  jest.spyOn(console, 'error').mockImplementation(() => {});
-});
-
-afterEach(() => {
-  jest.restoreAllMocks();
-});
-
 describe('AuthErrorBoundary', () => {
+  beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('renders children when no error occurs', () => {
     renderWithBoundary({}, false);
     expect(screen.getByTestId('child')).toBeInTheDocument();
@@ -63,8 +63,10 @@ describe('AuthErrorBoundary', () => {
   });
 
   it('suppresses console.error when onError prop is provided', () => {
-    renderWithBoundary({ onError: jest.fn() });
+    const mockOnError = jest.fn();
+    renderWithBoundary({ onError: mockOnError });
 
+    expect(mockOnError).toHaveBeenCalled();
     // eslint-disable-next-line no-console
     expect(console.error).not.toHaveBeenCalledWith(
       'AuthErrorBoundary caught an error:',
@@ -111,11 +113,13 @@ describe('AuthErrorBoundary', () => {
     const originalEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'development';
 
-    renderWithBoundary();
+    try {
+      renderWithBoundary();
 
-    expect(screen.getByText('Error Details')).toBeInTheDocument();
-    expect(screen.getByText('test error')).toBeInTheDocument();
-
-    process.env.NODE_ENV = originalEnv;
+      expect(screen.getByText('Error Details')).toBeInTheDocument();
+      expect(screen.getByText('test error')).toBeInTheDocument();
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+    }
   });
 });

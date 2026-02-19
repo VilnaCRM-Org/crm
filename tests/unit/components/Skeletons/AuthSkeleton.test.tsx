@@ -3,10 +3,6 @@ import { render, screen } from '@testing-library/react';
 import AuthSkeleton from '@/components/Skeletons/AuthSkeleton';
 
 describe('AuthSkeleton Component', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe('Rendering structure', () => {
     it('should render the component without crashing', () => {
       render(<AuthSkeleton />);

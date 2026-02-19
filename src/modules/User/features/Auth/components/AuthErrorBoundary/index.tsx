@@ -33,7 +33,9 @@ export default class AuthErrorBoundary extends Component<
   public componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const { onError } = this.props;
 
-    if (!onError && process.env.NODE_ENV !== 'production') {
+    if (onError) {
+      onError(error, info);
+    } else if (process.env.NODE_ENV !== 'production') {
       // eslint-disable-next-line no-console
       console.error('AuthErrorBoundary caught an error:', error, info);
     }

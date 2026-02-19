@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import type { JSX } from 'react';
 
-import AuthSkeleton from './index';
+import AuthSkeleton from '@/components/Skeletons/AuthSkeleton';
 
 const meta: Meta<typeof AuthSkeleton> = {
   title: 'Components/Skeletons/AuthSkeleton',
@@ -47,7 +47,7 @@ export const Static: Story = {
   },
   decorators: [
     (StoryFn): JSX.Element => (
-      <div style={{ animationPlayState: 'paused' }}>
+      <div>
         <style>{`
           *, *::before, *::after {
             animation: none !important;

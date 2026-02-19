@@ -8,7 +8,7 @@ function UISkeletonText({
   width = '100%',
   sx,
   'data-testid': dataTestId,
-}: UISkeletonTextProps): React.ReactElement {
+}: UISkeletonTextProps): JSX.Element {
   return (
     <Box
       sx={[getTextSkeletonStyles(size, width), ...(Array.isArray(sx) ? sx : [sx])]}

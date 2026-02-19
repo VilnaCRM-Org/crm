@@ -9,7 +9,7 @@ describe('UISkeletonBlock', () => {
     expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();
   });
 
-  it('passes custom dimensions and borderRadius', () => {
+  it('renders with custom dimensions and borderRadius', () => {
     render(
       <UISkeletonBlock
         width="200px"

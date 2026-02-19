@@ -6,7 +6,7 @@ import { UISkeletonButtonProps } from '@/components/Skeletons/UISkeletonButton/t
 function UISkeletonButton({
   sx,
   'data-testid': dataTestId,
-}: UISkeletonButtonProps): React.ReactElement {
+}: UISkeletonButtonProps): JSX.Element {
   return (
     <Box
       sx={[styles.buttonSkeleton, ...(Array.isArray(sx) ? sx : [sx])]}

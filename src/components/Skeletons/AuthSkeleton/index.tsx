@@ -1,13 +1,12 @@
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 
+import styles from '@/components/Skeletons/AuthSkeleton/styles';
 import UISkeletonBlock from '@/components/Skeletons/UISkeletonBlock';
 import UISkeletonButton from '@/components/Skeletons/UISkeletonButton';
 import UISkeletonInput from '@/components/Skeletons/UISkeletonInput';
 import UISkeletonText from '@/components/Skeletons/UISkeletonText';
 import authFormSectionStyles from '@/modules/User/features/Auth/components/FormSection/styles';
-
-import styles from './styles';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },
@@ -20,7 +19,6 @@ export default function AuthSkeleton(): JSX.Element {
   return (
     <Box
       component="section"
-      role="region"
       aria-label="Loading authentication form"
       sx={authFormSectionStyles.formSection}
     >

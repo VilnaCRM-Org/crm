@@ -5,7 +5,7 @@ import { UISkeletonInputProps } from '@/components/Skeletons/UISkeletonInput/typ
 
 function UISkeletonInput({
   'data-testid': dataTestId,
-}: UISkeletonInputProps): React.ReactElement {
+}: UISkeletonInputProps): JSX.Element {
   return (
     <Box sx={styles.inputContainer} data-testid={dataTestId}>
       <Box sx={styles.inputPlaceholder} />

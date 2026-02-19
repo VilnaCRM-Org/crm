@@ -6,10 +6,14 @@ import { currentLanguage, PAGES, ScreenSize, screenSizes } from './constants';
 async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
 
+  let jsDelayApplied = false;
   await page.route('**/static/js/**/*.js', async (route: Route) => {
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 3000);
-    });
+    if (!jsDelayApplied) {
+      jsDelayApplied = true;
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, 3000);
+      });
+    }
     await route.continue();
   });
 
@@ -24,14 +28,16 @@ async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<voi
 
   const snapshotName = `${currentLanguage}_${screen.name}.png`;
 
-  await expect(page).toHaveScreenshot(snapshotName, {
-    fullPage: true,
-    animations: 'disabled',
-    scale: 'css',
-    timeout: 10000,
-  });
-
-  await page.unroute('**/static/js/**/*.js');
+  try {
+    await expect(page).toHaveScreenshot(snapshotName, {
+      fullPage: true,
+      animations: 'disabled',
+      scale: 'css',
+      timeout: 10000,
+    });
+  } finally {
+    await page.unroute('**/static/js/**/*.js');
+  }
 }
 
 test.describe.parallel('Auth Skeleton Visual Tests', () => {

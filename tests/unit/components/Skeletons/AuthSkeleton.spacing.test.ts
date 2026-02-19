@@ -42,7 +42,7 @@ function valueAt(style: Record<string, unknown>, prop: string, breakpoint: Break
   if (breakpoint === 'base' || breakpoint === 'sm') {
     if (breakpoint === 'sm' && style[mediaKey('sm')]) {
       const smStyle = style[mediaKey('sm')] as Record<string, string>;
-      if (smStyle[prop]) {
+      if (smStyle[prop] !== undefined) {
         return smStyle[prop];
       }
     }

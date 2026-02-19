@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 
 import AuthSkeleton from '@/components/Skeletons/AuthSkeleton';
 
-describe('AuthSkeleton Responsive Integration Tests', () => {
+describe('AuthSkeleton Integration Tests', () => {
   const originalInnerWidth = window.innerWidth;
 
   afterEach(() => {
@@ -122,7 +122,7 @@ describe('AuthSkeleton Responsive Integration Tests', () => {
   });
 
   describe('Cross-viewport consistency', () => {
-    it('should render divider across all viewports', () => {
+    it('should render section across all viewports', () => {
       const viewports = [375, 768, 1024, 1920];
 
       viewports.forEach((width) => {

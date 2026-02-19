@@ -63,9 +63,11 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
     test('should load authentication page without critical errors', async ({ page }) => {
       const criticalErrors: string[] = [];
       page.on('pageerror', (error) => {
-        if (!error.message.includes('400')) {
-          criticalErrors.push(error.message);
-        }
+        criticalErrors.push(error.message);
+      });
+      page.on('response', (response) => {
+        if (response.status() === 400) return;
+        if (!response.ok()) criticalErrors.push(`${response.status()} ${response.url()}`);
       });
 
       await page.goto(AUTH_URL);
