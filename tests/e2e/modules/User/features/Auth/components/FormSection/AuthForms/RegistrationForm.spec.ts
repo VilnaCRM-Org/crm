@@ -16,7 +16,6 @@ import {
   notificationErrorButton,
   notificationErrorRetryButton,
   notificationErrorImageAlt,
-  notificationCloseLabel,
 } from './constants/constants';
 import { fillEmailInput, fillInitialsInput, fillPasswordInput } from './utils/fillForm';
 import getFormFields from './utils/getFormFields';
@@ -157,7 +156,7 @@ test.describe('Registration Form', () => {
     await expect(page.getByText(notificationSuccessTitle)).toBeVisible();
   });
 
-  test('resets form fields after successful retry and closing notification', async ({ page }) => {
+  test('navigates home after successful retry from error replacement', async ({ page }) => {
     const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
 
     let requestCount = 0;
@@ -178,11 +177,7 @@ test.describe('Registration Form', () => {
     await expect(page.getByText(notificationErrorTitle)).toBeVisible();
     await page.getByRole('button', { name: notificationErrorRetryButton }).click();
     await expect(page.getByText(notificationSuccessTitle)).toBeVisible();
-
-    await page.getByRole('button', { name: notificationCloseLabel }).click();
-
-    await expect(initialsInput).toHaveValue('');
-    await expect(emailInput).toHaveValue('');
-    await expect(passwordInput).toHaveValue('');
+    await page.getByRole('link', { name: notificationSuccessButton }).click();
+    await expect(page).toHaveURL('/');
   });
 });
