@@ -90,11 +90,11 @@ export default {
       lineHeight: 1,
     },
   },
-  loader: {
+  buttonLoader: {
     position: 'absolute',
-    top: '38%',
-    left: '42%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 10,
+    top: '50%',
+    left: '50%',
+    marginTop: '-12px',
+    marginLeft: '-12px',
   },
 };

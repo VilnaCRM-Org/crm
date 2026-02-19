@@ -73,18 +73,6 @@ export default {
   notificationSectionClosing: {
     animation: 'notificationFadeOutDown 240ms cubic-bezier(0.4, 0, 0.2, 1) both',
   },
-  closeButton: {
-    position: 'absolute',
-    top: '1.25rem',
-    right: '1.25rem',
-    zIndex: 101,
-    color: '#A6ADB4',
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      top: '1.5rem',
-      right: '1.5rem',
-    },
-  },
-
   contentBox: {
     zIndex: 3,
     width: '100%',
@@ -97,23 +85,25 @@ export default {
     animation: ENTRY_ANIMATION,
     '@media (max-width: 374px)': {
       justifyContent: 'flex-start',
-      paddingTop: '40%',
+      paddingTop: '11rem',
     },
   },
   successTopImgBox: {
     position: 'absolute',
-    top: 0,
-    left: '-7rem',
+    top: '-0.78rem',
+    left: '-8.5rem',
     zIndex: 5,
     pointerEvents: 'none',
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      top: 0,
-      left: '0rem',
-      transform: 'scale(1.03)',
+    [`@media (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+      transform: 'scale(0.91)',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      top: 0,
-      left: 0,
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      top: '0.6rem',
+      left: '0rem',
+      transform: 'scale(1.07)',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      top: '0rem',
       transform: 'scale(1)',
     },
   },
@@ -123,19 +113,26 @@ export default {
   },
   bottomImgBox: {
     position: 'absolute',
-    display: 'none',
-    left: '-8.75rem',
-    bottom: '-8.25rem',
+    bottom: '-0.78rem',
+    left: '-11.8rem',
     zIndex: 1,
-    opacity: 0.6,
+    transform: 'rotate(-180deg)',
     pointerEvents: 'none',
-    transform: 'rotate(-180deg) scale(0.9)',
+    [`@media (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+      transform: 'rotate(-180deg) scale(0.91)',
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      display: 'block',
+      left: '0rem',
+      bottom: '0.6rem',
+      transform: 'rotate(-180deg) scale(1.07)',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      left: '-8.5rem',
-      bottom: '-8rem',
+      left: '1.3rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      left: '0rem',
+      bottom: '0.1rem',
+      transform: 'rotate(-180deg) scale(1)',
     },
   },
   successBottomConfetti: {
@@ -143,7 +140,17 @@ export default {
     animation: 'notificationConfettiReveal 560ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both',
   },
   gears: {
+    position: 'absolute',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    top: '2rem',
     zIndex: 6,
+    [`@media (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+      transform: 'translateX(-50%) scale(0.8)',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      top: '3rem',
+    },
   },
   successGears: {
     display: 'block',
@@ -151,10 +158,6 @@ export default {
     height: '10.25rem',
     maxWidth: '100%',
     animation: 'notificationGearSpinIn 600ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both',
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      width: '13.375rem',
-      height: '13.375rem',
-    },
   },
   messageContainer: {
     display: 'flex',
@@ -168,12 +171,15 @@ export default {
       width: '100%',
     },
   },
-  successTextGroup: {
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '0.5rem',
+  messageButtonText: {
+    fontWeight: 500,
+    fontSize: '0.9375rem',
+    lineHeight: '1.125rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+      fontWeight: 600,
+      fontSize: '1.125rem',
+      lineHeight: '1.35rem',
+    },
   },
   successMessageTitle: {
     fontWeight: 700,
@@ -183,7 +189,7 @@ export default {
     textTransform: 'none',
     letterSpacing: 0,
     whiteSpace: 'nowrap',
-    [`@media (min-width:641px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontWeight: 600,
       fontSize: '1.875rem',
       lineHeight: '2.25rem',
@@ -211,7 +217,7 @@ export default {
     color: customColors.text.primary,
     textTransform: 'none',
     letterSpacing: 0,
-    [`@media (min-width:641px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontWeight: 600,
       fontSize: '1.875rem',
       lineHeight: '2.25rem',
@@ -232,14 +238,9 @@ export default {
     },
   },
   messageButton: {
-    width: '15rem',
-    maxWidth: '100%',
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
-      width: '18.8125rem',
-    },
+    minWidth: '260px',
+    width: '100%',
     marginTop: '1rem',
-    height: '3.125rem',
-    minHeight: '3.125rem',
     borderRadius: '3.5625rem',
     textTransform: 'none',
     boxShadow: 'none',
@@ -249,12 +250,7 @@ export default {
       color: '#FFFFFF',
     },
     '&.MuiButton-contained': {
-      padding: '1rem 1.5rem',
-      height: '3.125rem',
-      minHeight: '3.125rem',
-      fontWeight: 500,
-      fontSize: '0.9375rem',
-      lineHeight: '1.125rem',
+      padding: '1rem 1.438rem',
       color: '#FFFFFF',
     },
     '&.MuiButton-contained:visited, &.MuiButton-contained:hover, &.MuiButton-contained:active, &.MuiButton-contained:focus-visible':
@@ -264,29 +260,20 @@ export default {
     '& .MuiTypography-root': {
       color: '#FFFFFF',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      marginTop: '1.5rem',
-      width: '16.625rem',
-      height: '4.375rem',
-      minHeight: '4.375rem',
-      '&.MuiButton-contained': {
-        padding: '1.25rem 2.75rem',
-        height: '4.375rem',
-        minHeight: '4.375rem',
-        fontWeight: 600,
-        fontSize: '1.125rem',
-        lineHeight: '1.35rem',
-      },
+    '@media (min-width: 375px)': {
+      minWidth: '301px',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      width: '15.125rem',
-      height: '3.875rem',
-      minHeight: '3.875rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       '&.MuiButton-contained': {
         padding: '1.25rem 2rem',
-        height: '3.875rem',
-        minHeight: '3.875rem',
       },
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginTop: '1.5rem',
+      maxWidth: '266px',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      maxWidth: '242px',
     },
   },
 
@@ -305,7 +292,7 @@ export default {
       justifyContent: 'flex-start',
       paddingTop: '1rem',
     },
-    [`@media (min-width:641px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       padding: '0.5rem 1rem 0.75rem',
     },
   },
@@ -333,7 +320,7 @@ export default {
     [`@media (min-width:334px) and (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       padding: '0rem 0.6rem',
     },
-    [`@media (min-width:1131px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       padding: '0rem 1.2rem',
     },
   },
@@ -345,7 +332,7 @@ export default {
     width: '100%',
     marginTop: '1rem',
     animation: 'notificationFadeInUp 460ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both',
-    '@media (min-width: 641px)': {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginTop: '2rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
@@ -392,11 +379,11 @@ export default {
   errorButtonSecondary: {
     marginTop: '0.5rem',
   },
-  loader: {
+  buttonLoader: {
     position: 'absolute',
-    top: '38%',
-    left: '42%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 10,
+    top: '50%',
+    left: '50%',
+    marginTop: '-12px',
+    marginLeft: '-12px',
   },
 } as const;

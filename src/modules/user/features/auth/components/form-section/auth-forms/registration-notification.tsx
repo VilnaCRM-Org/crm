@@ -3,8 +3,7 @@ import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/ui-button';
 import UiTypography from '@/components/ui-typography';
-import CloseIcon from '@mui/icons-material/Close';
-import { Box, CircularProgress, IconButton } from '@mui/material';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -83,6 +82,7 @@ export default function RegistrationNotification({
                 onClick={onRetry}
               >
                 {t('notifications.error.retry_button')}
+                {isSubmitting && <CircularProgress color="primary" size={24} sx={styles.buttonLoader} />}
               </UIButton>
               <UIButton
                 sx={[styles.errorButton, styles.errorButtonSecondary]}
@@ -96,26 +96,13 @@ export default function RegistrationNotification({
             </Box>
           </Box>
         </Box>
-        {isSubmitting && <CircularProgress color="primary" size={70} sx={styles.loader} />}
       </Box>
     );
   }
 
   return (
-    <Box
-      role="alert"
-      aria-live="polite"
-      sx={[styles.notificationSection, isClosing ? styles.notificationSectionClosing : {}]}
-    >
-      <IconButton
-        aria-label={t('notifications.close')}
-        onClick={handleBack}
-        disabled={isClosing}
-        sx={styles.closeButton}
-      >
-        <CloseIcon />
-      </IconButton>
-      <Box sx={styles.contentBox}>
+    <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
+      <Box sx={styles.contentBox} aria-label="success">
         <Box sx={styles.successTopImgBox}>
           <Box
             component={ConfettiImage}
@@ -134,17 +121,24 @@ export default function RegistrationNotification({
         </Box>
 
         <Box sx={styles.messageContainer}>
-          <Box sx={styles.successTextGroup}>
-            <UiTypography component="h4" sx={styles.successMessageTitle}>
-              {t('notifications.success.title')}
-            </UiTypography>
-            <UiTypography component="span" sx={styles.successMessageDescription}>
-              {t('notifications.success.description')}
-            </UiTypography>
-          </Box>
+          <UiTypography component="h4" sx={styles.successMessageTitle}>
+            {t('notifications.success.title')}
+          </UiTypography>
+          <UiTypography component="span" sx={styles.successMessageDescription}>
+            {t('notifications.success.description')}
+          </UiTypography>
 
-          <UIButton sx={styles.messageButton} variant="contained" type="button" to="/">
-            {t('notifications.success.button')}
+          <UIButton
+            sx={styles.messageButton}
+            variant="contained"
+            type="button"
+            size="medium"
+            fullWidth
+            to="/"
+          >
+            <Typography component="span" sx={styles.messageButtonText}>
+              {t('notifications.success.button')}
+            </Typography>
           </UIButton>
         </Box>
 

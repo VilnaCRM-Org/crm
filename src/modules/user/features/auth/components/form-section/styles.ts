@@ -1,8 +1,12 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
+const MOBILE_NOTIFICATION_HEIGHT = 'max(400px, calc(100dvh + 1rem))';
+
 export default {
   formSection: {
+    display: 'flex',
+    flexDirection: 'column',
     paddingTop: '0.5rem',
     paddingX: '0.375rem',
     paddingBottom: '1.5rem',
@@ -50,6 +54,10 @@ export default {
   formWrapperWithNotification: {
     '&&': {
       overflow: 'hidden',
+      '@media (max-width: 374px)': {
+        height: MOBILE_NOTIFICATION_HEIGHT,
+        minHeight: MOBILE_NOTIFICATION_HEIGHT,
+      },
     },
   },
 

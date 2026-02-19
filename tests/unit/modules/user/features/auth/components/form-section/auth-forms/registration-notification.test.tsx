@@ -82,24 +82,15 @@ describe('RegistrationNotification', () => {
     jest.useRealTimers();
   });
 
-  it('renders success state content and handles close action with animation delay', () => {
-    jest.useFakeTimers();
-    const onBack = jest.fn();
-
+  it('renders success state content with a home link', () => {
     render(
       <MemoryRouter>
-        <RegistrationNotification view="success" isSubmitting={false} onBack={onBack} />
+        <RegistrationNotification view="success" isSubmitting={false} onBack={jest.fn()} />
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'notifications.close' }));
-
-    expect(onBack).not.toHaveBeenCalled();
-    jest.advanceTimersByTime(260);
-    expect(onBack).toHaveBeenCalledTimes(1);
     expect(screen.getByText('notifications.success.title')).toBeInTheDocument();
     expect(screen.getByText('notifications.success.description')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'notifications.success.button' })).toBeInTheDocument();
-    jest.useRealTimers();
   });
 });
