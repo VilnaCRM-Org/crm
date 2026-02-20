@@ -15,7 +15,7 @@ describe('AuthSkeleton Integration Tests', () => {
     window.dispatchEvent(new Event('resize'));
   });
 
-  describe('Mobile viewport (375px)', () => {
+  describe('Structural tests (375px)', () => {
     beforeEach(() => {
       Object.defineProperty(window, 'innerWidth', {
         writable: true,
@@ -43,7 +43,7 @@ describe('AuthSkeleton Integration Tests', () => {
     });
   });
 
-  describe('Tablet viewport (768px)', () => {
+  describe('Structural tests (768px)', () => {
     beforeEach(() => {
       Object.defineProperty(window, 'innerWidth', {
         writable: true,
@@ -71,7 +71,7 @@ describe('AuthSkeleton Integration Tests', () => {
     });
   });
 
-  describe('Desktop viewport (1024px)', () => {
+  describe('Structural tests (1024px)', () => {
     beforeEach(() => {
       Object.defineProperty(window, 'innerWidth', {
         writable: true,
@@ -93,7 +93,7 @@ describe('AuthSkeleton Integration Tests', () => {
     });
   });
 
-  describe('Large desktop viewport (1920px)', () => {
+  describe('Structural tests (1920px)', () => {
     beforeEach(() => {
       Object.defineProperty(window, 'innerWidth', {
         writable: true,

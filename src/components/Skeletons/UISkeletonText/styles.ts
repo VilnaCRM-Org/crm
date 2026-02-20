@@ -1,4 +1,4 @@
-import { baseSkeletonStyle } from '@/components/Skeletons/base/styles';
+import { SKELETON_BORDER_RADIUS, baseSkeletonStyle } from '@/components/Skeletons/base/styles';
 import { SkeletonTextSize } from '@/components/Skeletons/UISkeletonText/types';
 
 const sizeHeights: Record<SkeletonTextSize, string> = {
@@ -21,6 +21,6 @@ export default function getTextSkeletonStyles(
     ...baseSkeletonStyle,
     height: sizeHeights[size],
     width,
-    borderRadius: '57px',
+    borderRadius: SKELETON_BORDER_RADIUS,
   };
 }

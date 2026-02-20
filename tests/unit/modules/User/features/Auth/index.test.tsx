@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import Authentication from '@/modules/User/features/Auth';
@@ -23,16 +23,22 @@ jest.mock('@/components/Skeletons/AuthSkeleton', () => ({
   default: (): ReactElement => <div data-testid="auth-shell-skeleton" />,
 }));
 
+const mockFormSectionDefault = jest.fn((): never => {
+  throw new Promise<void>((): void => {
+    // keep pending to force suspense fallback
+  });
+});
+
 jest.mock('@/modules/User/features/Auth/components/FormSection', () => ({
   __esModule: true,
-  default: (): never => {
-    throw new Promise<void>((): void => {
-      // keep pending to force suspense fallback
-    });
-  },
+  default: (): never => mockFormSectionDefault(),
 }));
 
 describe('Authentication shell', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('keeps header and footer visible while form section is loading', () => {
     render(<Authentication />);
 
@@ -40,5 +46,18 @@ describe('Authentication shell', () => {
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByTestId('auth-shell-skeleton')).toBeInTheDocument();
     expect(screen.getByTestId('auth-shell-footer')).toBeInTheDocument();
+  });
+
+  it('shows error boundary fallback when FormSection throws synchronously', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockFormSectionDefault.mockImplementation((): never => {
+      throw new Error('test sync error');
+    });
+
+    render(<Authentication />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-error-boundary-fallback')).toBeInTheDocument();
+    });
   });
 });

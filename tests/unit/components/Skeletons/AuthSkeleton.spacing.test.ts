@@ -140,8 +140,8 @@ function lineHeightAt(
 
     for (const bp of order) {
       const style = pick(bp);
-      if (style.fontSize) fontSize = style.fontSize;
-      if (style.lineHeight) lineHeight = style.lineHeight;
+      if (style.fontSize !== undefined) fontSize = style.fontSize;
+      if (style.lineHeight !== undefined) lineHeight = style.lineHeight;
     }
   }
 
@@ -206,11 +206,16 @@ describe('AuthSkeleton spacing parity', () => {
     );
     const xlLineHeight = lineBoxHeightRem(xlButton.fontSize, xlButton.lineHeight);
 
-    expect(authSkeletonStyles.spacer.height).toBe(formatRem(baseMarginTop + baseLineHeight));
-    expect((authSkeletonStyles.spacer[lgKey] as { height: string }).height).toBe(
+    const lgSwitcher = authSkeletonStyles.switcherSkeleton[lgKey] as { marginTop: string; height: string };
+    const xlSwitcher = authSkeletonStyles.switcherSkeleton[xlKey] as { marginTop: string; height: string };
+
+    expect(formatRem(toRem(authSkeletonStyles.switcherSkeleton.marginTop) + toRem(authSkeletonStyles.switcherSkeleton.height))).toBe(
+      formatRem(baseMarginTop + baseLineHeight)
+    );
+    expect(formatRem(toRem(lgSwitcher.marginTop) + toRem(lgSwitcher.height))).toBe(
       formatRem(lgMarginTop + lgLineHeight)
     );
-    expect((authSkeletonStyles.spacer[xlKey] as { height: string }).height).toBe(
+    expect(formatRem(toRem(xlSwitcher.marginTop) + toRem(xlSwitcher.height))).toBe(
       formatRem(xlMarginTop + xlLineHeight)
     );
   });

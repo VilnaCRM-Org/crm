@@ -60,7 +60,7 @@ concerns.
 
 | Aspect            | Redux Toolkit           | Zustand    | Jotai     | MobX     |
 | ----------------- | ----------------------- | ---------- | --------- | -------- |
-| Bundle Size       | ~10–14KB (2026-01, [rtk]+[rr]) | ~2KB (2026-01, [zst]) | ~3KB      | ~15KB    |
+| Bundle Size       | ~10–14KB (2026-01, [rtk]+[rr]) | ~2KB (2026-01, [zst]) | ~3KB (2026-01, [jot]) | ~15KB (2026-01, [mbx]) |
 | Boilerplate       | High (actions, reducers)| Minimal    | Minimal   | Moderate |
 | Provider Required | Yes                     | No         | Optional  | Yes      |
 | Module Federation | Needs config            | Native     | Needs config | Needs config |
@@ -79,3 +79,5 @@ concerns.
 [zst]: https://bundlephobia.com/package/zustand
 [rtk]: https://bundlephobia.com/package/@reduxjs/toolkit
 [rr]: https://bundlephobia.com/package/react-redux
+[jot]: https://bundlephobia.com/package/jotai
+[mbx]: https://bundlephobia.com/package/mobx

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { ComponentProps } from 'react';
 
 import AuthErrorBoundary from '@/modules/User/features/Auth/components/AuthErrorBoundary';
 
@@ -9,7 +10,7 @@ function ThrowingChild({ shouldThrow }: { shouldThrow: boolean }): JSX.Element {
 }
 
 function renderWithBoundary(
-  props: Partial<React.ComponentProps<typeof AuthErrorBoundary>> = {},
+  props: Partial<ComponentProps<typeof AuthErrorBoundary>> = {},
   shouldThrow = true
 ): ReturnType<typeof render> {
   const { fallback, onError } = props;
@@ -66,7 +67,10 @@ describe('AuthErrorBoundary', () => {
     const mockOnError = jest.fn();
     renderWithBoundary({ onError: mockOnError });
 
-    expect(mockOnError).toHaveBeenCalled();
+    expect(mockOnError).toHaveBeenCalledWith(
+      expect.any(Error),
+      expect.objectContaining({ componentStack: expect.any(String) })
+    );
     // eslint-disable-next-line no-console
     expect(console.error).not.toHaveBeenCalledWith(
       'AuthErrorBoundary caught an error:',

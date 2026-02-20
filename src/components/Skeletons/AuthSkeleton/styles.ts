@@ -1,6 +1,8 @@
 import { shadowPulseAnimation, SMALL_MOBILE_BREAKPOINT } from '@/components/Skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
 
+const AUTH_SKELETON_TINY_BREAKPOINT = '336px';
+
 export default {
   formWrapperPulse: {
     animation: `${shadowPulseAnimation} 1.5s ease-in-out infinite alternate`,
@@ -22,7 +24,7 @@ export default {
   },
   subtitleFirstLine: {
     height: '1.5625rem',
-    '@media (max-width:336px)': {
+    [`@media (max-width:${AUTH_SKELETON_TINY_BREAKPOINT})`]: {
       height: '1.375rem',
       width: '100%',
       marginBottom: '0.375rem',
@@ -34,7 +36,7 @@ export default {
   },
   subtitleSecondLine: {
     display: 'none',
-    '@media (max-width:336px)': {
+    [`@media (max-width:${AUTH_SKELETON_TINY_BREAKPOINT})`]: {
       display: 'block',
       height: '1.375rem',
     },
@@ -104,7 +106,7 @@ export default {
       marginBottom: '1.125rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginTop: '0.8755rem',
+      marginTop: '0.875rem',
       marginBottom: '1.5rem',
     },
   },
@@ -130,7 +132,6 @@ export default {
     },
     [`@media (min-width:${SMALL_MOBILE_BREAKPOINT}px)`]: {
       maxWidth: '9.625rem',
-      height: '4.75rem',
       marginTop: '0.5rem',
       marginBottom: 0,
       '&:nth-of-type(2n+1)': {
@@ -159,13 +160,20 @@ export default {
       height: '3.75rem',
     },
   },
-  spacer: {
-    height: '2.5625rem',
+  switcherSkeleton: {
+    marginTop: '1.4375rem',
+    marginLeft: 'auto',
+    marginRight: 'auto',
+    height: '1.125rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      height: '4.1rem',
+      marginTop: '2.75rem',
+      height: '1.35rem',
+      width: '17rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      height: '2.625rem',
+      marginTop: '1.5rem',
+      height: '1.125rem',
+      width: '14rem',
     },
   },
 };

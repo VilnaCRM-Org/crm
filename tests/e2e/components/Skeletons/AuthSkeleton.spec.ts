@@ -66,8 +66,10 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
         criticalErrors.push(error.message);
       });
       page.on('response', (response) => {
-        if (response.status() === 400) return;
-        if (!response.ok()) criticalErrors.push(`${response.status()} ${response.url()}`);
+        const status = response.status();
+        if (status >= 300 && status < 400) return;
+        if (status === 400) return;
+        if (!response.ok()) criticalErrors.push(`${status} ${response.url()}`);
       });
 
       await page.goto(AUTH_URL);

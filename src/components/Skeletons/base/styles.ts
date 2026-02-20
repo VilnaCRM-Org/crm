@@ -28,6 +28,8 @@ export const shimmerGradient = `linear-gradient(
 
 export const SMALL_MOBILE_BREAKPOINT = 375;
 
+export const SKELETON_BORDER_RADIUS = '57px';
+
 export const baseSkeletonStyle = {
   background: shimmerGradient,
   backgroundSize: '200% 100%',

@@ -21,14 +21,14 @@ async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<voi
   };
   await page.route(AUTH_ASYNC_JS_GLOB, delayAsyncChunksOnce);
 
+  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
+
   await page.goto(PAGES.AUTH, { waitUntil: 'domcontentloaded' });
 
   const skeletonTitle = page.locator('[data-testid="auth-skeleton-title"]');
   await expect(skeletonTitle).toBeVisible({ timeout: 5000 });
 
   await page.waitForTimeout(300);
-
-  await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
 
   const snapshotName = `${currentLanguage}_${screen.name}.png`;
 

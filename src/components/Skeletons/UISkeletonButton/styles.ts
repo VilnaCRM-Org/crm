@@ -1,4 +1,5 @@
 import {
+  SKELETON_BORDER_RADIUS,
   SMALL_MOBILE_BREAKPOINT,
   baseSkeletonStyle,
 } from '@/components/Skeletons/base/styles';
@@ -8,7 +9,7 @@ export default {
   buttonSkeleton: {
     ...baseSkeletonStyle,
     border: '1px solid #E1E7EA',
-    borderRadius: '57px',
+    borderRadius: SKELETON_BORDER_RADIUS,
     height: '3.125rem',
     width: '100%',
     [`@media (min-width:${SMALL_MOBILE_BREAKPOINT}px)`]: {

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 
 import UISkeletonText from '@/components/Skeletons/UISkeletonText';
 import getTextSkeletonStyles from '@/components/Skeletons/UISkeletonText/styles';
-import { SkeletonTextSize } from '@/components/Skeletons/UISkeletonText/types';
+import type { SkeletonTextSize } from '@/components/Skeletons/UISkeletonText/types';
 
 jest.mock('@/components/Skeletons/UISkeletonText/styles', () => ({
   __esModule: true,

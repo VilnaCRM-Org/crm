@@ -99,7 +99,12 @@ export default function AuthSkeleton(): JSX.Element {
         </Box>
       </Box>
 
-      <Box sx={styles.spacer} />
+      <UISkeletonText
+        size="l"
+        width="14rem"
+        sx={styles.switcherSkeleton}
+        data-testid="auth-skeleton-switcher"
+      />
     </Box>
   );
 }
