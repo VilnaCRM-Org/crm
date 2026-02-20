@@ -60,7 +60,7 @@ concerns.
 
 | Aspect            | Redux Toolkit           | Zustand    | Jotai     | MobX     |
 | ----------------- | ----------------------- | ---------- | --------- | -------- |
-| Bundle Size       | ~10–14KB (2026-01, [rtk]+[rr]) | ~2KB (2026-01, [zst]) | ~3KB (2026-01, [jot]) | ~15KB (2026-01, [mbx]) |
+| Bundle Size       | ~10–14KB ([rtk], [rr]) | ~2KB ([zst]) | ~3KB ([jot]) | ~15KB ([mbx]) |
 | Boilerplate       | High (actions, reducers)| Minimal    | Minimal   | Moderate |
 | Provider Required | Yes                     | No         | Optional  | Yes      |
 | Module Federation | Needs config            | Native     | Needs config | Needs config |
