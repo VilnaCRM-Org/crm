@@ -3,24 +3,28 @@ import type { Page, Route } from '@playwright/test';
 
 import { currentLanguage, PAGES, ScreenSize, screenSizes } from './constants';
 
+const AUTH_ASYNC_JS_GLOB = '**/static/js/async/*.js';
+const JS_DELAY_MS = 3000;
+
 async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
 
-  let jsDelayApplied = false;
-  await page.route('**/static/js/**/*.js', async (route: Route) => {
-    if (!jsDelayApplied) {
-      jsDelayApplied = true;
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, 3000);
+  let sharedAsyncDelay: Promise<void> | null = null;
+  const delayAsyncChunksOnce = async (route: Route): Promise<void> => {
+    if (!sharedAsyncDelay) {
+      sharedAsyncDelay = new Promise<void>((resolve) => {
+        setTimeout(resolve, JS_DELAY_MS);
       });
     }
+    await sharedAsyncDelay;
     await route.continue();
-  });
+  };
+  await page.route(AUTH_ASYNC_JS_GLOB, delayAsyncChunksOnce);
 
   await page.goto(PAGES.AUTH, { waitUntil: 'domcontentloaded' });
 
-  const divider = page.locator('[role="presentation"]');
-  await expect(divider).toBeVisible({ timeout: 5000 });
+  const skeletonTitle = page.locator('[data-testid="auth-skeleton-title"]');
+  await expect(skeletonTitle).toBeVisible({ timeout: 5000 });
 
   await page.waitForTimeout(300);
 
@@ -36,7 +40,7 @@ async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<voi
       timeout: 10000,
     });
   } finally {
-    await page.unroute('**/static/js/**/*.js');
+    await page.unroute(AUTH_ASYNC_JS_GLOB, delayAsyncChunksOnce);
   }
 }
 
