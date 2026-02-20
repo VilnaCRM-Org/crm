@@ -144,6 +144,9 @@ export default {
         marginBottom: 0,
       },
     },
+    [`@media (min-width:${SMALL_MOBILE_BREAKPOINT + 1}px)`]: {
+      height: '4.75rem',
+    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       maxWidth: '8.0625rem',
       height: '5.375rem',
