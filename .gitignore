@@ -49,5 +49,5 @@ reports/
 /tests/load/results/
 /tests/memory-leak/results/
 
-_bmad
-_bmad-output
+/_bmad/
+/_bmad-output/

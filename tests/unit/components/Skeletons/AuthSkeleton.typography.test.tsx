@@ -19,6 +19,9 @@ describe('AuthSkeleton typography parity', () => {
     const titleSkeleton = calls.find((props) => props['data-testid'] === 'auth-skeleton-title');
     const subtitleSkeleton = calls.find((props) => props['data-testid'] === 'auth-skeleton-subtitle');
 
+    expect(titleSkeleton).toBeDefined();
+    expect(subtitleSkeleton).toBeDefined();
+
     expect(titleSkeleton).toEqual(
       expect.objectContaining({
         size: 'l',

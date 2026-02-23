@@ -9,7 +9,7 @@ describe('UISkeletonButton', () => {
     expect(screen.getByTestId('skeleton-button')).toBeInTheDocument();
   });
 
-  it('composes array sx prop without spreading', () => {
+  it('renders without error when sx is an array', () => {
     const arraySx = [{ mt: 1 }, { mb: 2 }];
 
     render(<UISkeletonButton sx={arraySx} data-testid="skeleton-button" />);

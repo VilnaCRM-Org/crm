@@ -37,7 +37,7 @@ describe('UISkeletonText', () => {
     expect(getTextSkeletonStyles).toHaveBeenCalledWith(size, width);
   });
 
-  it('composes array sx prop without spreading', () => {
+  it('renders with array sx prop', () => {
     const arraySx = [{ mt: 1 }, { mb: 2 }];
 
     render(

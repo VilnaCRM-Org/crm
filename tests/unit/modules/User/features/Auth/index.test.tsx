@@ -37,6 +37,12 @@ jest.mock('@/modules/User/features/Auth/components/FormSection', () => ({
 describe('Authentication shell', () => {
   afterEach(() => {
     jest.restoreAllMocks();
+    mockFormSectionDefault.mockReset();
+    mockFormSectionDefault.mockImplementation((): never => {
+      throw new Promise<void>((): void => {
+        // keep pending to force suspense fallback
+      });
+    });
   });
 
   it('keeps header and footer visible while form section is loading', () => {

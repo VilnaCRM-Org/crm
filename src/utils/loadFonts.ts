@@ -1,5 +1,5 @@
 const loadFonts = (): Promise<FontFace[][]> => {
-  if (!document.fonts?.load) return Promise.resolve([]);
+  if (typeof document === 'undefined' || !document.fonts?.load) return Promise.resolve([]);
   return Promise.all([
     document.fonts.load('400 1em Golos'),
     document.fonts.load('500 1em Golos'),

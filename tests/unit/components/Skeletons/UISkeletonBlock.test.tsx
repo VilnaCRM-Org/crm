@@ -34,7 +34,7 @@ describe('UISkeletonBlock', () => {
     expect(getBlockSkeletonStyles).toHaveBeenCalledWith('200px', '4rem', '12px');
   });
 
-  it('composes array sx prop without spreading', () => {
+  it('renders with array sx prop', () => {
     const arraySx = [{ mt: 1 }, { mb: 2 }];
 
     render(<UISkeletonBlock sx={arraySx} data-testid="skeleton-block" />);
