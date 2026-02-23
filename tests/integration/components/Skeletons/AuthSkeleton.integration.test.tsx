@@ -35,11 +35,12 @@ describe('AuthSkeleton Integration Tests', () => {
       render(<AuthSkeleton />);
       expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
-      expect(screen.getAllByTestId('auth-skeleton-field-label')).toHaveLength(3);
-      expect(screen.getAllByTestId('auth-skeleton-input')).toHaveLength(3);
+      expect(screen.getAllByTestId(/^auth-skeleton-field-label-/)).toHaveLength(3);
+      expect(screen.getAllByTestId(/^auth-skeleton-input-/)).toHaveLength(3);
       expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-divider')).toBeInTheDocument();
-      expect(screen.getAllByTestId('auth-skeleton-social')).toHaveLength(4);
+      expect(screen.getAllByTestId(/^auth-skeleton-social-/)).toHaveLength(4);
+      expect(screen.getByTestId('auth-skeleton-switcher')).toBeInTheDocument();
     });
   });
 
@@ -63,11 +64,12 @@ describe('AuthSkeleton Integration Tests', () => {
       render(<AuthSkeleton />);
       expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
-      expect(screen.getAllByTestId('auth-skeleton-field-label')).toHaveLength(3);
-      expect(screen.getAllByTestId('auth-skeleton-input')).toHaveLength(3);
+      expect(screen.getAllByTestId(/^auth-skeleton-field-label-/)).toHaveLength(3);
+      expect(screen.getAllByTestId(/^auth-skeleton-input-/)).toHaveLength(3);
       expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-divider')).toBeInTheDocument();
-      expect(screen.getAllByTestId('auth-skeleton-social')).toHaveLength(4);
+      expect(screen.getAllByTestId(/^auth-skeleton-social-/)).toHaveLength(4);
+      expect(screen.getByTestId('auth-skeleton-switcher')).toBeInTheDocument();
     });
   });
 
@@ -87,9 +89,16 @@ describe('AuthSkeleton Integration Tests', () => {
       expect(section).toBeInTheDocument();
     });
 
-    it('should render social button skeletons on desktop', () => {
+    it('should render complete skeleton layout on desktop', () => {
       render(<AuthSkeleton />);
-      expect(screen.getAllByTestId('auth-skeleton-social')).toHaveLength(4);
+      expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
+      expect(screen.getAllByTestId(/^auth-skeleton-field-label-/)).toHaveLength(3);
+      expect(screen.getAllByTestId(/^auth-skeleton-input-/)).toHaveLength(3);
+      expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-divider')).toBeInTheDocument();
+      expect(screen.getAllByTestId(/^auth-skeleton-social-/)).toHaveLength(4);
+      expect(screen.getByTestId('auth-skeleton-switcher')).toBeInTheDocument();
     });
   });
 
@@ -113,11 +122,12 @@ describe('AuthSkeleton Integration Tests', () => {
       render(<AuthSkeleton />);
       expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
-      expect(screen.getAllByTestId('auth-skeleton-field-label')).toHaveLength(3);
-      expect(screen.getAllByTestId('auth-skeleton-input')).toHaveLength(3);
+      expect(screen.getAllByTestId(/^auth-skeleton-field-label-/)).toHaveLength(3);
+      expect(screen.getAllByTestId(/^auth-skeleton-input-/)).toHaveLength(3);
       expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-divider')).toBeInTheDocument();
-      expect(screen.getAllByTestId('auth-skeleton-social')).toHaveLength(4);
+      expect(screen.getAllByTestId(/^auth-skeleton-social-/)).toHaveLength(4);
+      expect(screen.getByTestId('auth-skeleton-switcher')).toBeInTheDocument();
     });
   });
 

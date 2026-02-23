@@ -74,7 +74,7 @@ concerns.
 - [Zustand Documentation](https://docs.pmnd.rs/zustand/getting-started/introduction)
 - [Zustand GitHub](https://github.com/pmndrs/zustand)
 - [Zustand vs Redux Comparison](https://docs.pmnd.rs/zustand/getting-started/comparison)
-- [ADR-001: Module Federation vs Single-SPA](https://github.com/VilnaCRM-Org/crm/wiki/ADR%E2%80%90001:-Module-Federation-vs-Single-SPA)
+- [ADR-001: Module Federation vs Single-SPA](./001-module-federation-vs-single-spa.md)
 
 [zst]: https://bundlephobia.com/package/zustand
 [rtk]: https://bundlephobia.com/package/@reduxjs/toolkit

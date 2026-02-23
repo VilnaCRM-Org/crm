@@ -14,8 +14,8 @@ describe('AuthSkeleton Component', () => {
       render(<AuthSkeleton />);
       expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
-      expect(screen.getAllByTestId('auth-skeleton-field-label')).toHaveLength(3);
-      expect(screen.getAllByTestId('auth-skeleton-input')).toHaveLength(3);
+      expect(screen.getAllByTestId(/^auth-skeleton-field-label-/)).toHaveLength(3);
+      expect(screen.getAllByTestId(/^auth-skeleton-input-/)).toHaveLength(3);
       expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
     });
   });
@@ -39,12 +39,6 @@ describe('AuthSkeleton Component', () => {
       render(<AuthSkeleton />);
       const section = screen.getByRole('region');
       expect(section).toHaveAttribute('aria-label', 'Loading authentication form');
-      const divider = screen.getByRole('presentation');
-      expect(divider).toBeInTheDocument();
-    });
-
-    it('should render divider with presentation role', () => {
-      render(<AuthSkeleton />);
       const divider = screen.getByRole('presentation');
       expect(divider).toBeInTheDocument();
     });

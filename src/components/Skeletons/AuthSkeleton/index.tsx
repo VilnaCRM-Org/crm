@@ -49,9 +49,9 @@ export default function AuthSkeleton(): JSX.Element {
             size="l"
             width="40%"
             sx={styles.fieldLabel}
-            data-testid="auth-skeleton-field-label"
+            data-testid="auth-skeleton-field-label-1"
           />
-          <UISkeletonInput data-testid="auth-skeleton-input" />
+          <UISkeletonInput data-testid="auth-skeleton-input-1" />
         </Box>
 
         <Box sx={styles.fieldContainer}>
@@ -59,9 +59,9 @@ export default function AuthSkeleton(): JSX.Element {
             size="l"
             width="40%"
             sx={styles.fieldLabel}
-            data-testid="auth-skeleton-field-label"
+            data-testid="auth-skeleton-field-label-2"
           />
-          <UISkeletonInput data-testid="auth-skeleton-input" />
+          <UISkeletonInput data-testid="auth-skeleton-input-2" />
         </Box>
 
         <Box sx={styles.lastFieldContainer}>
@@ -69,9 +69,9 @@ export default function AuthSkeleton(): JSX.Element {
             size="l"
             width="40%"
             sx={styles.fieldLabel}
-            data-testid="auth-skeleton-field-label"
+            data-testid="auth-skeleton-field-label-3"
           />
-          <UISkeletonInput data-testid="auth-skeleton-input" />
+          <UISkeletonInput data-testid="auth-skeleton-input-3" />
         </Box>
 
         <UISkeletonButton
@@ -93,7 +93,7 @@ export default function AuthSkeleton(): JSX.Element {
             <UISkeletonBlock
               key={button.id}
               sx={styles.socialButton}
-              data-testid="auth-skeleton-social"
+              data-testid={`auth-skeleton-social-${button.id}`}
             />
           ))}
         </Box>

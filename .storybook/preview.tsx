@@ -10,12 +10,20 @@ import theme from '../src/styles/theme';
 const mainLanguage = process.env.REACT_APP_MAIN_LANGUAGE || 'uk';
 const fallbackLanguage = process.env.REACT_APP_FALLBACK_LANGUAGE || 'en';
 
-i18next.use(initReactI18next).init({
-  resources,
-  lng: mainLanguage,
-  fallbackLng: fallbackLanguage,
-  interpolation: { escapeValue: false },
-});
+if (!i18next.isInitialized) {
+  i18next
+    .use(initReactI18next)
+    .init({
+      resources,
+      lng: mainLanguage,
+      fallbackLng: fallbackLanguage,
+      interpolation: { escapeValue: false },
+    })
+    .catch((error: unknown) => {
+      // eslint-disable-next-line no-console
+      console.error('i18next initialization failed', error);
+    });
+}
 
 const customViewports: ViewportMap = {
   xs: {
@@ -47,7 +55,6 @@ const customViewports: ViewportMap = {
 
 const preview: Preview = {
   parameters: {
-    actions: { argTypesRegex: '^on[A-Z].*' },
     controls: {
       matchers: {
         color: /(background|color)$/i,

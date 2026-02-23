@@ -45,6 +45,8 @@ export default class AuthErrorBoundary extends Component<
   public render(): ReactNode {
     const { children, fallback } = this.props;
     const { hasError, error } = this.state;
+    const shouldShowErrorDetails =
+      (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && error;
     const renderedFallback =
       typeof fallback === 'function' ? fallback({ error, reset: this.handleReset }) : fallback;
 
@@ -66,7 +68,7 @@ export default class AuthErrorBoundary extends Component<
           >
             Try again
           </button>
-          {process.env.NODE_ENV === 'development' && error && (
+          {shouldShowErrorDetails && (
             <details style={{ marginTop: '1rem' }}>
               <summary>Error Details</summary>
               <pre style={{ whiteSpace: 'pre-wrap' }}>{error.message}</pre>

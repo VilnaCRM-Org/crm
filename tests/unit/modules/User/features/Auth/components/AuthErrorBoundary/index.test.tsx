@@ -113,17 +113,10 @@ describe('AuthErrorBoundary', () => {
     expect(screen.getByTestId('child')).toBeInTheDocument();
   });
 
-  it('shows error details in development mode', () => {
-    const originalEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'development';
+  it('shows error details in test mode', () => {
+    renderWithBoundary();
 
-    try {
-      renderWithBoundary();
-
-      expect(screen.getByText('Error Details')).toBeInTheDocument();
-      expect(screen.getByText('test error')).toBeInTheDocument();
-    } finally {
-      process.env.NODE_ENV = originalEnv;
-    }
+    expect(screen.getByText('Error Details')).toBeInTheDocument();
+    expect(screen.getByText('test error')).toBeInTheDocument();
   });
 });

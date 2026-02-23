@@ -77,10 +77,16 @@ function effectiveHeight(style: Record<string, unknown>, breakpoint: BreakpointN
   return maxHeightStr ? Math.min(height, toRem(maxHeightStr)) : height;
 }
 
+const INPUT_HEIGHTS: Record<BreakpointName, number> = {
+  base: 3,
+  sm: 3,
+  md: 4.9375,
+  lg: 4.9375,
+  xl: 4,
+};
+
 function inputHeightAt(breakpoint: BreakpointName): number {
-  if (breakpoint === 'base' || breakpoint === 'sm') return 3;
-  if (breakpoint === 'xl') return 4;
-  return 4.9375;
+  return INPUT_HEIGHTS[breakpoint];
 }
 
 const FORM_LABEL_STYLE: Record<string, unknown> = {
@@ -96,7 +102,7 @@ const FORM_LABEL_STYLE: Record<string, unknown> = {
   },
   [mediaKey('lg')]: {
     fontSize: '1rem',
-    lineHeight: '1.125',
+    lineHeight: 1.125,
     marginBottom: '0.5625rem',
   },
   [mediaKey('xl')]: {
@@ -167,7 +173,7 @@ describe('AuthSkeleton spacing parity', () => {
 
     const baseLineBox = lineBoxHeightRem(
       baseSubtitle.fontSize as string,
-      baseSubtitle.lineHeight as string
+      baseSubtitle.lineHeight
     );
     expect(toRem(authSkeletonStyles.subtitleFirstLine.height as string)).toBeCloseTo(baseLineBox, 1);
 

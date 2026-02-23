@@ -1,28 +1,30 @@
-import { test, expect } from '@playwright/test';
+import { type Page, test, expect } from '@playwright/test';
 
 const AUTH_URL = '/authentication';
 const JS_DELAY_MS = 2000;
 
+async function interceptJsWithDelay(page: Page, delayMs: number): Promise<void> {
+  let applied = false;
+  await page.route('**/static/js/**/*.js', async (route) => {
+    if (!applied) {
+      applied = true;
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, delayMs);
+      });
+    }
+    await route.continue();
+  });
+}
+
 test.describe('AuthSkeleton Component E2E Tests', () => {
   test.describe('Loading State', () => {
     test('should display skeleton while authentication module loads', async ({ page }) => {
-      let jsDelayApplied = false;
-      await page.route('**/static/js/**/*.js', async (route) => {
-        if (!jsDelayApplied) {
-          jsDelayApplied = true;
-          await new Promise<void>((resolve) => {
-            setTimeout(resolve, JS_DELAY_MS);
-          });
-        }
-        await route.continue();
-      });
+      await interceptJsWithDelay(page, JS_DELAY_MS);
 
-      const navigationPromise = page.goto(AUTH_URL);
+      await page.goto(AUTH_URL, { waitUntil: 'domcontentloaded' });
 
-      const divider = page.locator('[role="presentation"]');
+      const divider = page.locator('[data-testid="auth-skeleton-divider"]');
       await expect(divider).toBeVisible({ timeout: 5000 });
-
-      await navigationPromise;
 
       await page.unroute('**/static/js/**/*.js');
 
@@ -30,20 +32,11 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
     });
 
     test('should transition from skeleton to authentication form', async ({ page }) => {
-      let jsDelayApplied = false;
-      await page.route('**/static/js/**/*.js', async (route) => {
-        if (!jsDelayApplied) {
-          jsDelayApplied = true;
-          await new Promise<void>((resolve) => {
-            setTimeout(resolve, JS_DELAY_MS);
-          });
-        }
-        await route.continue();
-      });
+      await interceptJsWithDelay(page, JS_DELAY_MS);
 
       await page.goto(AUTH_URL, { waitUntil: 'domcontentloaded' });
 
-      const divider = page.locator('[role="presentation"]');
+      const divider = page.locator('[data-testid="auth-skeleton-divider"]');
       await expect(divider).toBeVisible({ timeout: 3000 });
 
       await page.unroute('**/static/js/**/*.js');
