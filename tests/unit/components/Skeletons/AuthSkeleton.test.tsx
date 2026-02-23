@@ -30,7 +30,7 @@ describe('AuthSkeleton Component', () => {
     it('should have empty content within divider for accessibility', () => {
       render(<AuthSkeleton />);
       const divider = screen.getByRole('presentation');
-      expect(divider).toHaveTextContent('');
+      expect(divider.textContent?.trim()).toBe('');
     });
   });
 
