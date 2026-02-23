@@ -28,7 +28,8 @@ module.exports = {
           '[.]d[.]ts$',                                                       // TypeScript declaration files
           '(^|/)tsconfig[.]json$',                                            // TypeScript config
           '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // other configs
-          '^src/index[.]tsx$'                                                 // app entrypoint
+          '^src/index[.]tsx$',                                                // app entrypoint
+          '^tests/load/utils/test-data[.]js$'                                 // data generator used ad-hoc in load testing
         ]
       },
       to: {},
@@ -339,6 +340,66 @@ module.exports = {
         path: '^src/modules/[^/]+/features/[^/]+/(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/'
       },
       to: {}
+    },
+    {
+      name: 'tests-top-level-allowed-folders',
+      comment:
+        'Tests root may only contain allowed folders: apollo-server, e2e, integration, load, memory-leak, unit, visual.',
+      severity: 'error',
+      from: {
+        path: '^tests/(?!apollo-server|e2e|integration|load|memory-leak|unit|visual)[^/]+/'
+      },
+      to: {}
+    },
+    {
+      name: 'tests-lowercase-paths',
+      comment:
+        'Tests paths must be lowercase and kebab-style to stay aligned with src naming.',
+      severity: 'error',
+      from: {
+        path: '^tests/.*[A-Z].*'
+      },
+      to: {}
+    },
+    {
+      name: 'tests-module-name-lowercase',
+      comment:
+        'Test module names under tests/{e2e,integration,unit}/modules must be lowercase kebab-case.',
+      severity: 'error',
+      from: {
+        path: '^tests/(?:e2e|integration|unit)/modules/(?![a-z0-9-]+/)[^/]+/'
+      },
+      to: {}
+    },
+    {
+      name: 'tests-module-allowed-folders',
+      comment:
+        'Test module root may only contain allowed folders: features, helpers, lib, repositories, store.',
+      severity: 'error',
+      from: {
+        path: '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/(?!features|helpers|lib|repositories|store)[^/]+/'
+      },
+      to: {}
+    },
+    {
+      name: 'tests-feature-name-lowercase',
+      comment:
+        'Test feature names under tests/*/modules/*/features must be lowercase kebab-case.',
+      severity: 'error',
+      from: {
+        path: '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/features/(?![a-z0-9-]+/)[^/]+/'
+      },
+      to: {}
+    },
+    {
+      name: 'tests-feature-allowed-folders',
+      comment:
+        'Test feature root may only contain allowed folders: assets, components, hooks, i18n, repositories, routes, types, utils.',
+      severity: 'error',
+      from: {
+        path: '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/features/[a-z0-9-]+/(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/'
+      },
+      to: {}
     }
   ],
   options: {
@@ -496,7 +557,9 @@ module.exports = {
         "bun:sqlite",
         "bun:test",
         "bun:wrap",
-        "detect-libc"
+        "detect-libc",
+        "k6",
+        "k6/http"
       ]
     },
 
