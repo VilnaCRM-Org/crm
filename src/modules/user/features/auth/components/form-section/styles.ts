@@ -1,12 +1,13 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
-const MOBILE_NOTIFICATION_HEIGHT = 'max(400px, calc(100dvh + 1rem))';
+const MOBILE_NOTIFICATION_HEIGHT = 'max(450px, calc(100dvh + 1rem))';
 
 export default {
   formSection: {
     display: 'flex',
     flexDirection: 'column',
+    flexGrow: 1,
     paddingTop: '0.5rem',
     paddingX: '0.375rem',
     paddingBottom: '1.5rem',

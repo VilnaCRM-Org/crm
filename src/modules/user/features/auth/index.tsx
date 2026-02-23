@@ -12,7 +12,7 @@ export default function Authentication(): JSX.Element {
   return (
     <ThemeProvider theme={Theme}>
       <UIBackToMain />
-      <Box component="main" sx={{ flex: 1}}>
+      <Box component="main" sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <AuthErrorBoundary>
           <FormSection />
         </AuthErrorBoundary>

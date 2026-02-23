@@ -59,6 +59,14 @@ export default function FormSection(): JSX.Element {
           showRegistrationReplacement ? styles.formWrapperWithNotification : {},
           showRegistrationReplacement && formHeight
             ? {
+                ...(formHeight <= window.innerHeight && {
+                  '&&': {
+                    '@media (max-width: 374px)': {
+                      height: `${formHeight}px`,
+                      minHeight: `${formHeight}px`,
+                    },
+                  },
+                }),
                 height: `${formHeight}px`,
                 minHeight: `${formHeight}px`,
               }
