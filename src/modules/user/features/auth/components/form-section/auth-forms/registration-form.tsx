@@ -1,7 +1,6 @@
 import UIForm from '@/components/ui-form';
 import { Box } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { useCreateUser, buildCreateUserInput } from '../../../hooks';
@@ -12,6 +11,7 @@ import FormField from '../components/form-field';
 import PasswordField from '../components/password-field';
 import type { RegistrationView } from '../types';
 import { createValidators } from '../validations';
+import ServerErrorSync from '../validations/server-error-sync';
 
 import getRegistrationErrorMessage from './registration-error';
 import RegistrationNotification from './registration-notification';
@@ -19,24 +19,6 @@ import RegistrationNotification from './registration-notification';
 type RegistrationFormProps = {
   onViewChange?: (view: RegistrationView) => void;
 };
-
-function EmailErrorSync({ emailError }: { emailError: string | null }): null {
-  const { setError, clearErrors, getFieldState } = useFormContext<RegisterUserDto>();
-
-  useEffect(() => {
-    if (emailError) {
-      setError('email', { type: 'server', message: emailError });
-      return;
-    }
-
-    const currentError = getFieldState('email').error;
-    if (currentError?.type === 'server') {
-      clearErrors('email');
-    }
-  }, [emailError, setError, clearErrors, getFieldState]);
-
-  return null;
-}
 
 export default function RegistrationForm({ onViewChange }: RegistrationFormProps): JSX.Element {
   const { t } = useTranslation();
@@ -46,18 +28,18 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
   const [notificationErrorText, setNotificationErrorText] = useState<string>('');
   const [formKey, setFormKey] = useState(0);
 
-  const { formError, emailError } = getRegistrationErrorMessage(error, t);
+  const { formError, emailError, passwordError, nameError } = getRegistrationErrorMessage(error, t);
 
   useEffect(() => {
     onViewChange?.(view);
   }, [onViewChange, view]);
 
   useEffect(() => {
-    if (emailError) {
+    if (emailError || passwordError || nameError) {
       setView('form');
       setNotificationErrorText('');
     }
-  }, [emailError]);
+  }, [emailError, passwordError, nameError]);
 
   useEffect(() => {
     if (!formError) return;
@@ -123,7 +105,9 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
           title={t('sign_up.title')}
           subtitle={t('sign_up.subtitle')}
         >
-          <EmailErrorSync emailError={emailError} />
+          <ServerErrorSync field="email" message={emailError} />
+          <ServerErrorSync field="password" message={passwordError} />
+          <ServerErrorSync field="fullName" message={nameError} />
           <FormField<RegisterUserDto>
             name="fullName"
             label={t('sign_up.form.name_input.label')}

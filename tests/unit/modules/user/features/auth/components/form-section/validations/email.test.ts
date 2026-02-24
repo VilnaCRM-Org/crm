@@ -178,7 +178,7 @@ describe('email validation', () => {
       it('should check required before format', () => {
         const result = validators.email('', emptyUser);
         expect(result).toBe('sign_up.form.email_input.required');
-        expect(result).not.toBe('sign_up.form.email_input.invalid_message');
+        expect(result).not.toBe('sign_up.form.email_input.email_format_error');
       });
 
       it('should check format after required', () => {

@@ -137,7 +137,7 @@ describe('password validation', () => {
       expect(validators.password('Password123', emptyUser)).toBe(true);
     });
 
-    it('should accept password with numbers only (if other conditions met)', () => {
+    it('should reject password with numbers only (missing uppercase letters)', () => {
       expect(validators.password('12345678', emptyUser)).toBe(
         'sign_up.form.password_input.error_uppercase'
       );

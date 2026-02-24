@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { MemoryRouter } from 'react-router-dom';
 
 import RegistrationNotification from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification';
 
@@ -82,15 +81,13 @@ describe('RegistrationNotification', () => {
     jest.useRealTimers();
   });
 
-  it('renders success state content with a home link', () => {
+  it('renders success state content with a back button', () => {
     render(
-      <MemoryRouter>
-        <RegistrationNotification view="success" isSubmitting={false} onBack={jest.fn()} />
-      </MemoryRouter>
+      <RegistrationNotification view="success" isSubmitting={false} onBack={jest.fn()} />
     );
 
     expect(screen.getByText('notifications.success.title')).toBeInTheDocument();
     expect(screen.getByText('notifications.success.description')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'notifications.success.button' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'notifications.success.button' })).toBeInTheDocument();
   });
 });

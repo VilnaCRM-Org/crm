@@ -19,6 +19,7 @@
         "placeholder": "Mykhailo Svitskyi",
         "special_characters_error": "Please use letters only",
         "required": "This field is required",
+        "only_spaces_error": "Name cannot consist only of spaces",
         "full_name_format_error": "Please enter your full name in the correct format"
       },
       "email_input": {
@@ -74,7 +75,7 @@
     "success": {
       "title": "Congratulations!",
       "description": "You have successfully registered",
-      "button": "To project home",
+      "button": "Go back",
       "images": {
         "confetti": "Cheerful and colorful confetti",
         "gears": "Decorative celebration gears"

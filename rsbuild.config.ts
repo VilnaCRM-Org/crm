@@ -1,9 +1,34 @@
 import * as path from 'path';
 
 import { pluginModuleFederation } from '@module-federation/rsbuild-plugin';
-import { defineConfig, loadEnv } from '@rsbuild/core';
+import { defineConfig, loadEnv, type RsbuildPluginAPI } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
+
+import LocalizationGenerator from './scripts/localizationGenerator';
+
+const pluginLocalization = () => ({
+  name: 'plugin-localization',
+  setup(api: RsbuildPluginAPI) {
+    const run = async (): Promise<void> => {
+      if (process.env.SKIP_LOCALE_GEN === '1') return;
+
+      try {
+        await Promise.resolve(new LocalizationGenerator().generateLocalizationFile());
+      } catch (error) {
+        api.logger.error(
+          '[plugin-localization] Failed to generate localization file. Aborting startup/build.'
+        );
+        api.logger.error(error);
+        // Policy: abort to avoid running with stale or missing localization artifacts.
+        throw error;
+      }
+    };
+
+    api.onBeforeBuild(run);
+    api.onBeforeStartDevServer(run);
+  },
+});
 
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
@@ -11,6 +36,7 @@ const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
 
 export default defineConfig({
   plugins: [
+    pluginLocalization(),
     pluginReact(),
     pluginSvgr({
       mixedImport: true,

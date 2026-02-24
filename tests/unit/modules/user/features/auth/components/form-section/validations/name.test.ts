@@ -230,8 +230,8 @@ describe('name validation', () => {
         expect(validators.fullName('', emptyUser)).toBe('sign_up.form.name_input.required');
       });
 
-      it('should return required error for whitespace only', () => {
-        expect(validators.fullName('   ', emptyUser)).toBe('sign_up.form.name_input.required');
+      it('should return only spaces error for whitespace-only input', () => {
+        expect(validators.fullName('   ', emptyUser)).toBe('sign_up.form.name_input.only_spaces_error');
       });
 
       it('should return required error for undefined', () => {
@@ -310,8 +310,8 @@ describe('name validation', () => {
         expect(validators.fullName('  John Doe  ', emptyUser)).toBe(true);
       });
 
-      it('should trim to empty and return required error', () => {
-        expect(validators.fullName('   ', emptyUser)).toBe('sign_up.form.name_input.required');
+      it('should return only spaces error for whitespace-only input', () => {
+        expect(validators.fullName('   ', emptyUser)).toBe('sign_up.form.name_input.only_spaces_error');
       });
     });
 

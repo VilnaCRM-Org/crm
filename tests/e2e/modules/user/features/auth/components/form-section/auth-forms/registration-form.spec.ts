@@ -16,6 +16,8 @@ import {
   notificationErrorButton,
   notificationErrorRetryButton,
   notificationErrorImageAlt,
+  serverPasswordNoNumbersError,
+  serverInitialsOnlySpacesError,
 } from './constants/constants';
 import { fillEmailInput, fillInitialsInput, fillPasswordInput } from './utils/fill-form';
 import getFormFields from './utils/get-form-fields';
@@ -41,8 +43,8 @@ test.describe('Registration Form', () => {
     await expect(
       page.getByRole('img', { name: notificationSuccessConfettiAlt }).first()
     ).toBeVisible();
-    await page.getByRole('link', { name: notificationSuccessButton }).click();
-    await expect(page).toHaveURL('/');
+    await page.getByRole('button', { name: notificationSuccessButton }).click();
+    await expect(initialsInput).toBeVisible();
   });
 
   test('should display error messages for invalid inputs', async ({ page }) => {
@@ -177,7 +179,49 @@ test.describe('Registration Form', () => {
     await expect(page.getByText(notificationErrorTitle)).toBeVisible();
     await page.getByRole('button', { name: notificationErrorRetryButton }).click();
     await expect(page.getByText(notificationSuccessTitle)).toBeVisible();
-    await page.getByRole('link', { name: notificationSuccessButton }).click();
-    await expect(page).toHaveURL('/');
+    await page.getByRole('button', { name: notificationSuccessButton }).click();
+    await expect(initialsInput).toBeVisible();
+  });
+
+  test('displays password error under password input from server', async ({ page }) => {
+    const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
+
+    await page.route(
+      GRAPHQL_URL,
+      serverErrorResponse(400, { message: 'password: Password must contain at least one number' })
+    );
+
+    await fillInput(initialsInput, userData.fullName);
+    await fillInput(emailInput, userData.email);
+    await fillInput(passwordInput, userData.password);
+    await signupButton.click();
+
+    await expect(
+      page
+        .locator('p.MuiFormHelperText-root.Mui-error', { hasText: serverPasswordNoNumbersError })
+        .first()
+    ).toBeVisible();
+    await expect(page.locator('[role="alert"]')).not.toBeVisible();
+  });
+
+  test('displays initials error under name input from server', async ({ page }) => {
+    const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
+
+    await page.route(
+      GRAPHQL_URL,
+      serverErrorResponse(400, { message: 'initials: Initials cannot consist only of spaces' })
+    );
+
+    await fillInput(initialsInput, userData.fullName);
+    await fillInput(emailInput, userData.email);
+    await fillInput(passwordInput, userData.password);
+    await signupButton.click();
+
+    await expect(
+      page
+        .locator('p.MuiFormHelperText-root.Mui-error', { hasText: serverInitialsOnlySpacesError })
+        .first()
+    ).toBeVisible();
+    await expect(page.locator('[role="alert"]')).not.toBeVisible();
   });
 });

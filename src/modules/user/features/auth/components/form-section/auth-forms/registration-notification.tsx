@@ -134,7 +134,7 @@ export default function RegistrationNotification({
             type="button"
             size="medium"
             fullWidth
-            to="/"
+            onClick={onBack}
           >
             <Typography component="span" sx={styles.messageButtonText}>
               {t('notifications.success.button')}

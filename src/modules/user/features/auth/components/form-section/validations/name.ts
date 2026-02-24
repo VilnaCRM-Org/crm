@@ -30,11 +30,14 @@ const createFullNameValidator =
 
     const messages = {
       required: t('sign_up.form.name_input.required'),
+      onlySpacesError: t('sign_up.form.name_input.only_spaces_error'),
       lettersOnlyError: t('sign_up.form.name_input.special_characters_error'),
       formatError: t('sign_up.form.name_input.full_name_format_error'),
     };
 
-    if (fullNameValidators.isEmpty(input)) return messages.required;
+    if (fullNameValidators.isEmpty(input)) {
+      return input.length > 0 ? messages.onlySpacesError : messages.required;
+    }
     const trimmed = input.trim();
     if (!fullNameValidators.isLettersOnly(trimmed)) return messages.lettersOnlyError;
     if (!fullNameValidators.isFormatted(trimmed)) return messages.formatError;

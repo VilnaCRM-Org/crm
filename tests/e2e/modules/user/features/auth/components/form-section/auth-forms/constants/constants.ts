@@ -65,6 +65,9 @@ const passwordErrorKeys: { length: string; numbers: string; uppercase: string } 
   uppercase: t('sign_up.form.password_input.error_uppercase'),
 };
 
+export const serverPasswordNoNumbersError: string = t('sign_up.form.password_input.error_numbers');
+export const serverInitialsOnlySpacesError: string = t('sign_up.form.name_input.only_spaces_error');
+
 export const expectationsEmail: ExpectationEmail[] = [
   {
     errorText: emailErrorKeys.stepError,

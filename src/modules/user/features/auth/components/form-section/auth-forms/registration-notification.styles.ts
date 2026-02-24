@@ -83,10 +83,6 @@ export default {
     alignItems: 'center',
     justifyContent: 'center',
     animation: ENTRY_ANIMATION,
-    '@media (max-width: 374px)': {
-      justifyContent: 'flex-start',
-      paddingTop: '11rem',
-    },
   },
   successTopImgBox: {
     position: 'absolute',
@@ -140,16 +136,14 @@ export default {
     animation: 'notificationConfettiReveal 560ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both',
   },
   gears: {
-    position: 'absolute',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    top: '2rem',
     zIndex: 6,
+    marginBottom: '0.75rem',
     [`@media (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
-      transform: 'translateX(-50%) scale(0.8)',
+      transform: 'scale(0.8)',
+      marginBottom: '0.5rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      top: '3rem',
+      marginBottom: '1rem',
     },
   },
   successGears: {
@@ -351,9 +345,22 @@ export default {
     fontWeight: 500,
     fontSize: '0.9375rem',
     lineHeight: '1.125rem',
-    '&.MuiButton-contained, &.MuiButton-outlined': {
+    '&.MuiButton-contained': {
       height: '50px',
       padding: '0 1rem',
+      backgroundColor: paletteColors.primary.main,
+      color: paletteColors.background.default,
+      '&:hover': { backgroundColor: paletteColors.primary.hover, boxShadow: 'none' },
+      '&:active': { backgroundColor: paletteColors.primary.active, boxShadow: 'none' },
+    },
+    '&.MuiButton-outlined': {
+      height: '50px',
+      padding: '0 1rem',
+      color: customColors.social.icon,
+      backgroundColor: paletteColors.background.default,
+      border: `1px solid ${paletteColors.grey[50]}`,
+      '&:hover': { backgroundColor: paletteColors.border.default, border: '1px solid rgba(0,0,0,0)' },
+      '&:active': { border: `1px solid ${paletteColors.border.default}` },
     },
     '@media (min-width: 375px)': {
       minWidth: '301px',

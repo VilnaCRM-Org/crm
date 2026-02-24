@@ -22,9 +22,14 @@ type ApolloErrorLike = ApolloError & {
 export type RegistrationErrorState = {
   formError: string | null;
   emailError: string | null;
+  passwordError: string | null;
+  nameError: string | null;
 };
 
 const EMAIL_PREFIX = /^email\s*:\s*/i;
+const PASSWORD_PREFIX = /^password\s*:\s*/i;
+const INITIALS_PREFIX = /^initials\s*:\s*/i;
+
 const EMAIL_CONFLICT_PATTERNS = [
   'email already exists',
   'email address is already registered',
@@ -41,6 +46,27 @@ const EMAIL_INVALID_PATTERNS = [
 ] as const;
 
 const EMAIL_REQUIRED_PATTERNS = ['not be blank', 'not.blank', 'не має бути пустим'] as const;
+
+const PASSWORD_UPPERCASE_PATTERNS = [
+  'at least one uppercase letter',
+  'принаймні одну велику літеру',
+] as const;
+
+const PASSWORD_NUMBERS_PATTERNS = ['at least one number', 'хоча б одне число'] as const;
+
+const PASSWORD_LENGTH_PATTERNS = [
+  'between 8 and 64 characters',
+  'від 8 до 64 символів',
+] as const;
+
+const PASSWORD_REQUIRED_PATTERNS = ['not be blank', 'not.blank', 'не має бути пустим'] as const;
+
+const INITIALS_SPACES_PATTERNS = [
+  'cannot consist only of spaces',
+  'не можуть складатися лише з пробілів',
+] as const;
+
+const INITIALS_REQUIRED_PATTERNS = ['not be blank', 'not.blank', 'не має бути пустим'] as const;
 
 function getGraphQLErrorCandidates(error: ApolloErrorLike): GraphQLErrorLike[] {
   return [
@@ -78,62 +104,89 @@ function isConflictError(error: ApolloErrorLike): boolean {
   );
 }
 
-function extractEmailValidationMessage(error: ApolloErrorLike): string | null {
-  const candidate = getGraphQLErrorCandidates(error).find((c) =>
-    EMAIL_PREFIX.test(c.message ?? '')
-  );
+function extractMessageByPrefix(error: ApolloErrorLike, prefix: RegExp): string | null {
+  const candidate = getGraphQLErrorCandidates(error).find((c) => prefix.test(c.message ?? ''));
 
   if (candidate?.message) {
-    return candidate.message.trim().replace(EMAIL_PREFIX, '').trim() || null;
+    return candidate.message.trim().replace(prefix, '').trim() || null;
   }
 
   const rootMessage = (error.message ?? '').trim();
-  if (rootMessage && EMAIL_PREFIX.test(rootMessage)) {
-    return rootMessage.replace(EMAIL_PREFIX, '').trim();
+  if (rootMessage && prefix.test(rootMessage)) {
+    return rootMessage.replace(prefix, '').trim() || null;
   }
 
   return null;
 }
 
-function mapEmailValidationMessage(message: string, t: (key: string) => string): string {
+function mapEmailMessage(message: string, t: (key: string) => string): string {
   const normalized = normalize(message);
 
-  if (matchesAnyPattern(normalized, EMAIL_REQUIRED_PATTERNS)) {
+  if (matchesAnyPattern(normalized, EMAIL_REQUIRED_PATTERNS))
     return t('sign_up.form.email_input.required');
-  }
-
-  if (matchesAnyPattern(normalized, EMAIL_INVALID_PATTERNS)) {
+  if (matchesAnyPattern(normalized, EMAIL_INVALID_PATTERNS))
     return t('sign_up.form.email_input.invalid_message');
-  }
 
   return message;
 }
+
+function mapPasswordMessage(message: string, t: (key: string) => string): string {
+  const normalized = normalize(message);
+
+  if (matchesAnyPattern(normalized, PASSWORD_REQUIRED_PATTERNS))
+    return t('sign_up.form.password_input.required');
+  if (matchesAnyPattern(normalized, PASSWORD_UPPERCASE_PATTERNS))
+    return t('sign_up.form.password_input.error_uppercase');
+  if (matchesAnyPattern(normalized, PASSWORD_NUMBERS_PATTERNS))
+    return t('sign_up.form.password_input.error_numbers');
+  if (matchesAnyPattern(normalized, PASSWORD_LENGTH_PATTERNS))
+    return t('sign_up.form.password_input.error_length');
+
+  return message;
+}
+
+function mapInitialsMessage(message: string, t: (key: string) => string): string {
+  const normalized = normalize(message);
+
+  if (matchesAnyPattern(normalized, INITIALS_REQUIRED_PATTERNS))
+    return t('sign_up.form.name_input.required');
+  if (matchesAnyPattern(normalized, INITIALS_SPACES_PATTERNS))
+    return t('sign_up.form.name_input.only_spaces_error');
+
+  return message;
+}
+
+const NO_ERROR: RegistrationErrorState = {
+  formError: null,
+  emailError: null,
+  passwordError: null,
+  nameError: null,
+};
 
 export default function getRegistrationErrorMessage(
   error: ApolloError | undefined,
   t: (key: string) => string
 ): RegistrationErrorState {
-  if (!error) {
-    return { formError: null, emailError: null };
-  }
+  if (!error) return NO_ERROR;
 
   if (isConflictError(error as ApolloErrorLike)) {
-    return {
-      formError: null,
-      emailError: t('sign_up.errors.email_used'),
-    };
+    return { ...NO_ERROR, emailError: t('sign_up.errors.email_used') };
   }
 
-  const emailValidationMessage = extractEmailValidationMessage(error as ApolloErrorLike);
-  if (emailValidationMessage) {
-    return {
-      formError: null,
-      emailError: mapEmailValidationMessage(emailValidationMessage, t),
-    };
+  const emailMessage = extractMessageByPrefix(error as ApolloErrorLike, EMAIL_PREFIX);
+  if (emailMessage) {
+    return { ...NO_ERROR, emailError: mapEmailMessage(emailMessage, t) };
   }
 
-  return {
-    formError: t('sign_up.errors.signup_error'),
-    emailError: null,
-  };
+  const passwordMessage = extractMessageByPrefix(error as ApolloErrorLike, PASSWORD_PREFIX);
+  if (passwordMessage) {
+    return { ...NO_ERROR, passwordError: mapPasswordMessage(passwordMessage, t) };
+  }
+
+  const initialsMessage = extractMessageByPrefix(error as ApolloErrorLike, INITIALS_PREFIX);
+  if (initialsMessage) {
+    return { ...NO_ERROR, nameError: mapInitialsMessage(initialsMessage, t) };
+  }
+
+  return { ...NO_ERROR, formError: t('sign_up.errors.signup_error') };
 }

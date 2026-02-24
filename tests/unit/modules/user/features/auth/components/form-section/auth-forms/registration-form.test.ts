@@ -10,6 +10,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(undefined, t)).toEqual({
       formError: null,
       emailError: null,
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -23,6 +25,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
       emailError: 'sign_up.errors.email_used',
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -39,6 +43,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
       emailError: 'sign_up.errors.email_used',
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -52,6 +58,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
       emailError: 'sign_up.errors.email_used',
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -65,6 +73,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
       emailError: 'sign_up.errors.email_used',
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -78,6 +88,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
       emailError: 'sign_up.form.email_input.invalid_message',
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -89,10 +101,12 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
       emailError: 'sign_up.form.email_input.required',
+      passwordError: null,
+      nameError: null,
     });
   });
 
-  it('returns backend message text for unknown email-focused validation error', () => {
+  it('returns controlled fallback for unknown email-focused validation error', () => {
     const error = {
       message: 'Mutation completed with errors',
       graphQLErrors: [],
@@ -104,10 +118,12 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
       emailError: 'Something specific to backend validation',
+      passwordError: null,
+      nameError: null,
     });
   });
 
-  it('extracts email validation from root error message when no candidates match', () => {
+  it('extracts root email validation and returns controlled fallback when unmatched', () => {
     const error = {
       message: 'email: Some unknown validation issue',
       graphQLErrors: [],
@@ -116,6 +132,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
       emailError: 'Some unknown validation issue',
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -127,6 +145,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: 'sign_up.errors.signup_error',
       emailError: null,
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -139,6 +159,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: 'sign_up.errors.signup_error',
       emailError: null,
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -151,6 +173,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: 'sign_up.errors.signup_error',
       emailError: null,
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -162,6 +186,8 @@ describe('registration-form error mapping', () => {
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: 'sign_up.errors.signup_error',
       emailError: null,
+      passwordError: null,
+      nameError: null,
     });
   });
 
@@ -177,8 +203,151 @@ describe('registration-form error mapping', () => {
     } as unknown as ApolloError;
 
     expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: 'sign_up.form.password_input.error_numbers',
+      nameError: null,
+    });
+  });
+
+  it('maps password no-uppercase server error to inline password error', () => {
+    const error = new ApolloError({ errorMessage: 'Mutation completed with errors' }) as ApolloError & {
+      errors: Array<{ message: string }>;
+    };
+    error.errors = [{ message: 'password: Password must contain at least one uppercase letter' }];
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: 'sign_up.form.password_input.error_uppercase',
+      nameError: null,
+    });
+  });
+
+  it('maps password no-numbers server error to inline password error', () => {
+    const error = {
+      message: 'Mutation completed with errors',
+      graphQLErrors: [],
+      networkError: {
+        result: {
+          errors: [{ message: 'password: Password must contain at least one number' }],
+        },
+      },
+    } as unknown as ApolloError;
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: 'sign_up.form.password_input.error_numbers',
+      nameError: null,
+    });
+  });
+
+  it('maps password invalid-length server error to inline password error', () => {
+    const error = new ApolloError({
+      graphQLErrors: [new GraphQLError('password: Password must be between 8 and 64 characters long')],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: 'sign_up.form.password_input.error_length',
+      nameError: null,
+    });
+  });
+
+  it('maps password required server error to inline password error', () => {
+    const error = new ApolloError({
+      graphQLErrors: [new GraphQLError('password: This value should not be blank.')],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: 'sign_up.form.password_input.required',
+      nameError: null,
+    });
+  });
+
+  it('maps password no-uppercase server error in Ukrainian to inline password error', () => {
+    const error = new ApolloError({
+      graphQLErrors: [new GraphQLError('password: Пароль має містити принаймні одну велику літеру')],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: 'sign_up.form.password_input.error_uppercase',
+      nameError: null,
+    });
+  });
+
+  it('maps initials only-spaces server error to inline name error', () => {
+    const error = new ApolloError({ errorMessage: 'Mutation completed with errors' }) as ApolloError & {
+      errors: Array<{ message: string }>;
+    };
+    error.errors = [{ message: 'initials: Initials cannot consist only of spaces' }];
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: null,
+      nameError: 'sign_up.form.name_input.only_spaces_error',
+    });
+  });
+
+  it('maps initials required server error to inline name error', () => {
+    const error = new ApolloError({
+      graphQLErrors: [new GraphQLError('initials: This value should not be blank.')],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: null,
+      nameError: 'sign_up.form.name_input.required',
+    });
+  });
+
+  it('maps initials only-spaces server error in Ukrainian to inline name error', () => {
+    const error = new ApolloError({
+      graphQLErrors: [new GraphQLError("initials: Ім'я та прізвище не можуть складатися лише з пробілів")],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: null,
+      nameError: 'sign_up.form.name_input.only_spaces_error',
+    });
+  });
+
+  it('returns form error when root message has password prefix but empty body', () => {
+    const error = {
+      message: 'password:  ',
+      graphQLErrors: [],
+    } as unknown as ApolloError;
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: 'sign_up.errors.signup_error',
       emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('falls back to validations.generic for unrecognized password-prefixed error', () => {
+    const error = new ApolloError({
+      graphQLErrors: [new GraphQLError('password: Some unknown password policy')],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: 'Some unknown password policy',
+      nameError: null,
+    });
+  });
+
+  it('falls back to validations.generic for unrecognized initials-prefixed error', () => {
+    const error = new ApolloError({
+      graphQLErrors: [new GraphQLError('initials: Some unknown name policy')],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: null,
+      emailError: null,
+      passwordError: null,
+      nameError: 'Some unknown name policy',
     });
   });
 });

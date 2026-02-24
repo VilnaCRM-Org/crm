@@ -25,6 +25,7 @@
             "placeholder": "Михайло Світський",
             "special_characters_error": "Будь ласка, використовуйте лише літери",
             "required": "Це поле обов'язкове",
+            "only_spaces_error": "Ім'я не може складатися лише з пробілів",
             "full_name_format_error": "Будь ласка, введіть повне ім'я у правильному форматі"
           },
           "email_input": {
@@ -80,7 +81,7 @@
         "success": {
           "title": "Вітаємо!",
           "description": "Ви успішно зареєструвались",
-          "button": "На головну проєкту",
+          "button": "Назад",
           "images": {
             "confetti": "Веселе і барвисте конфеті",
             "gears": "Святкові шестерні"
@@ -129,6 +130,7 @@
             "placeholder": "Mykhailo Svitskyi",
             "special_characters_error": "Please use letters only",
             "required": "This field is required",
+            "only_spaces_error": "Name cannot consist only of spaces",
             "full_name_format_error": "Please enter your full name in the correct format"
           },
           "email_input": {
@@ -184,7 +186,7 @@
         "success": {
           "title": "Congratulations!",
           "description": "You have successfully registered",
-          "button": "To project home",
+          "button": "Go back",
           "images": {
             "confetti": "Cheerful and colorful confetti",
             "gears": "Decorative celebration gears"
