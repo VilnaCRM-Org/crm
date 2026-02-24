@@ -3,7 +3,7 @@ import skeletonButtonStyles from '@/components/Skeletons/UISkeletonButton/styles
 import breakpointsTheme from '@/components/UIBreakpoints';
 import uiFormStyles from '@/components/UIForm/styles';
 import authProviderButtonStyles from '@/modules/User/features/Auth/components/FormSection/components/AuthProviderButtons/styles';
-import authFormSectionStyles from '@/modules/User/features/Auth/components/FormSection/styles';
+import authFormSectionStyles, { fieldGapMargins } from '@/modules/User/features/Auth/components/FormSection/styles';
 
 function toRem(value: string | number): number {
   if (typeof value === 'number') {
@@ -110,22 +110,6 @@ const FORM_LABEL_STYLE: Record<string, unknown> = {
   [mediaKey('xl')]: {
     fontSize: '0.875rem',
     lineHeight: 1.2857,
-  },
-};
-
-const FORM_FIELD_GAP_STYLE: Record<string, unknown> = {
-  marginBottom: '0.5rem',
-  [mediaKey('sm')]: {
-    marginBottom: '1.125rem',
-  },
-  [mediaKey('md')]: {
-    marginBottom: '1.4375rem',
-  },
-  [mediaKey('lg')]: {
-    marginBottom: '1.125rem',
-  },
-  [mediaKey('xl')]: {
-    marginBottom: '1rem',
   },
 };
 
@@ -242,7 +226,7 @@ describe('AuthSkeleton spacing parity', () => {
     const formSubtitle = uiFormStyles.formSubtitle as Record<string, unknown>;
     const formSubmit = uiFormStyles.submitButton as Record<string, unknown>;
     const formLabel = FORM_LABEL_STYLE;
-    const formFieldGap = FORM_FIELD_GAP_STYLE;
+    const formFieldGap = fieldGapMargins as Record<string, unknown>;
 
     const skeletonTitle = authSkeletonStyles.titleSkeleton as Record<string, unknown>;
     const skeletonSubtitleLine = authSkeletonStyles.subtitleFirstLine as Record<string, unknown>;

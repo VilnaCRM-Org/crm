@@ -6,7 +6,7 @@ import { UISkeletonTextProps } from '@/components/Skeletons/UISkeletonText/types
 function UISkeletonText({
   size = 'm',
   width = '100%',
-  sx,
+  sx = [],
   'data-testid': dataTestId,
 }: UISkeletonTextProps): JSX.Element {
   return (

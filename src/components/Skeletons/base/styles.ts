@@ -30,7 +30,7 @@ export const SMALL_MOBILE_BREAKPOINT = 375;
 export const SKELETON_BORDER_RADIUS = '57px';
 
 export const baseSkeletonStyle = {
-  background: shimmerGradient,
+  backgroundImage: shimmerGradient,
   backgroundSize: '200% 100%',
   animation: `${shimmerAnimation} 1.5s ease-in-out infinite alternate`,
 };

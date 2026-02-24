@@ -35,6 +35,7 @@ describe('AuthSkeleton Integration Tests', () => {
       render(<AuthSkeleton />);
       expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-subtitle-line2')).toBeInTheDocument();
       expect(screen.getAllByTestId(/^auth-skeleton-field-label-/)).toHaveLength(3);
       expect(screen.getAllByTestId(/^auth-skeleton-input-/)).toHaveLength(3);
       expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
@@ -64,6 +65,7 @@ describe('AuthSkeleton Integration Tests', () => {
       render(<AuthSkeleton />);
       expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-subtitle-line2')).toBeInTheDocument();
       expect(screen.getAllByTestId(/^auth-skeleton-field-label-/)).toHaveLength(3);
       expect(screen.getAllByTestId(/^auth-skeleton-input-/)).toHaveLength(3);
       expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
@@ -93,6 +95,7 @@ describe('AuthSkeleton Integration Tests', () => {
       render(<AuthSkeleton />);
       expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-subtitle-line2')).toBeInTheDocument();
       expect(screen.getAllByTestId(/^auth-skeleton-field-label-/)).toHaveLength(3);
       expect(screen.getAllByTestId(/^auth-skeleton-input-/)).toHaveLength(3);
       expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();
@@ -122,6 +125,7 @@ describe('AuthSkeleton Integration Tests', () => {
       render(<AuthSkeleton />);
       expect(screen.getByTestId('auth-skeleton-title')).toBeInTheDocument();
       expect(screen.getByTestId('auth-skeleton-subtitle')).toBeInTheDocument();
+      expect(screen.getByTestId('auth-skeleton-subtitle-line2')).toBeInTheDocument();
       expect(screen.getAllByTestId(/^auth-skeleton-field-label-/)).toHaveLength(3);
       expect(screen.getAllByTestId(/^auth-skeleton-input-/)).toHaveLength(3);
       expect(screen.getByTestId('auth-skeleton-submit')).toBeInTheDocument();

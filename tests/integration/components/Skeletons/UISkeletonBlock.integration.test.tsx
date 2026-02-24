@@ -23,13 +23,13 @@ describe('UISkeletonBlock Integration', () => {
     expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();
   });
 
-  it('composes object sx prop', () => {
+  it('renders with object sx prop', () => {
     render(<UISkeletonBlock sx={{ mt: 1 }} data-testid="skeleton-block" />);
 
     expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();
   });
 
-  it('composes array sx prop', () => {
+  it('renders with array sx prop', () => {
     render(<UISkeletonBlock sx={[{ mt: 1 }, { mb: 2 }]} data-testid="skeleton-block" />);
 
     expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();

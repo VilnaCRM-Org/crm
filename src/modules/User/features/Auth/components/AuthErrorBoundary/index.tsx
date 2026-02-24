@@ -71,7 +71,7 @@ export default class AuthErrorBoundary extends Component<
           {shouldShowErrorDetails && (
             <details style={{ marginTop: '1rem' }}>
               <summary>Error Details</summary>
-              <pre style={{ whiteSpace: 'pre-wrap' }}>{error.message}</pre>
+              <pre style={{ whiteSpace: 'pre-wrap' }}>{error!.message}</pre>
             </details>
           )}
         </div>

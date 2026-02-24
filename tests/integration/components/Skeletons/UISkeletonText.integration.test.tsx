@@ -16,13 +16,13 @@ describe('UISkeletonText Integration', () => {
     expect(screen.getByTestId('skeleton-text')).toBeInTheDocument();
   });
 
-  it('composes object sx prop', () => {
+  it('renders with object sx prop', () => {
     render(<UISkeletonText sx={{ mt: 1 }} data-testid="skeleton-text" />);
 
     expect(screen.getByTestId('skeleton-text')).toBeInTheDocument();
   });
 
-  it('composes array sx prop', () => {
+  it('renders with array sx prop', () => {
     render(<UISkeletonText sx={[{ mt: 1 }, { mb: 2 }]} data-testid="skeleton-text" />);
 
     expect(screen.getByTestId('skeleton-text')).toBeInTheDocument();

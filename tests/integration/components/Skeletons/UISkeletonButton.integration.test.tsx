@@ -10,13 +10,13 @@ describe('UISkeletonButton Integration', () => {
     expect(screen.getByTestId('skeleton-button')).toBeInTheDocument();
   });
 
-  it('composes object sx prop', () => {
+  it('renders with object sx prop', () => {
     render(<UISkeletonButton sx={{ mt: 1 }} data-testid="skeleton-button" />);
 
     expect(screen.getByTestId('skeleton-button')).toBeInTheDocument();
   });
 
-  it('composes array sx prop', () => {
+  it('renders with array sx prop', () => {
     render(<UISkeletonButton sx={[{ mt: 1 }, { mb: 2 }]} data-testid="skeleton-button" />);
 
     expect(screen.getByTestId('skeleton-button')).toBeInTheDocument();

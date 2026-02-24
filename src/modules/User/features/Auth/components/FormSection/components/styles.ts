@@ -6,8 +6,6 @@ import { ReactComponent as EyeIconOff } from '@/modules/User/features/Auth/asset
 import { ReactComponent as EyeIcon } from '@/modules/User/features/Auth/assets/eye.svg';
 import { fieldGapMargins } from '@/modules/User/features/Auth/components/FormSection/styles';
 
-export { fieldGapMargins };
-
 export default {
   formFieldWrapper: {
     '&:nth-of-type(-n+2)': {

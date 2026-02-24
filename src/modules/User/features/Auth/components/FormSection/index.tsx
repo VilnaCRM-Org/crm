@@ -14,6 +14,8 @@ const fontsPromise = loadFonts().then(
   () => {
     fontsLoaded = true;
   },
+  // Font loading failure is intentional graceful degradation:
+  // the component renders with system fonts as fallback.
   () => {
     fontsLoaded = true;
   }
