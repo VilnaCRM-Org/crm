@@ -74,10 +74,7 @@ export default function AuthSkeleton(): JSX.Element {
           <UISkeletonInput data-testid="auth-skeleton-input-3" />
         </Box>
 
-        <UISkeletonButton
-          sx={styles.buttonSkeleton}
-          data-testid="auth-skeleton-submit"
-        />
+        <UISkeletonButton sx={styles.buttonSkeleton} data-testid="auth-skeleton-submit" />
 
         <Divider role="presentation" sx={styles.divider}>
           <UISkeletonText

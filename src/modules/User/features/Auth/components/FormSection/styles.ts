@@ -1,6 +1,22 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
+export const fieldGapMargins = {
+  marginBottom: '0.5rem',
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+    marginBottom: '1.125rem',
+  },
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    marginBottom: '1.4375rem',
+  },
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+    marginBottom: '1.125rem',
+  },
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+    marginBottom: '1rem',
+  },
+};
+
 export default {
   formSection: {
     paddingTop: '0.5rem',

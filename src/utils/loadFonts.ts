@@ -7,7 +7,7 @@ const loadFonts = (): Promise<FontFace[][]> => {
     document.fonts.load('900 1em Golos'),
     document.fonts.load('400 1em Inter'),
     document.fonts.load('500 1em Inter'),
-  ]);
+  ]).catch(() => []);
 };
 
 export default loadFonts;

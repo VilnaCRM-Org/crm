@@ -1,5 +1,6 @@
 import { shadowPulseAnimation, SMALL_MOBILE_BREAKPOINT } from '@/components/Skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
+import { fieldGapMargins } from '@/modules/User/features/Auth/components/FormSection/styles';
 
 const AUTH_SKELETON_TINY_BREAKPOINT = '336px';
 
@@ -42,19 +43,7 @@ export default {
     },
   },
   fieldContainer: {
-    marginBottom: '0.5rem',
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
-      marginBottom: '1.125rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      marginBottom: '1.4375rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginBottom: '1.125rem',
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginBottom: '1rem',
-    },
+    ...fieldGapMargins,
   },
   fieldLabel: {
     height: '1.125rem',

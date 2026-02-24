@@ -4,10 +4,7 @@ import Box from '@mui/material/Box';
 import getBlockSkeletonStyles from '@/components/Skeletons/UISkeletonBlock/styles';
 import { UISkeletonBlockProps } from '@/components/Skeletons/UISkeletonBlock/types';
 
-function buildSx(
-  base: SxProps<Theme>,
-  extra: UISkeletonBlockProps['sx'],
-): SxProps<Theme> {
+function buildSx(base: SxProps<Theme>, extra: UISkeletonBlockProps['sx']): SxProps<Theme> {
   if (extra === undefined) return base;
   if (Array.isArray(extra)) return [base, ...extra] as SxProps<Theme>;
   return [base, extra] as SxProps<Theme>;

@@ -98,7 +98,6 @@ Microfrontend framework that orchestrates multiple front-end apps at runtime.
 
 - [Module Federation (official site)](https://module-federation.io/)
 - [Webpack Module Federation documentation](https://webpack.js.org/concepts/module-federation/)
-- [Single Page App (SPA) concept in React Router](https://reactrouter.com/how-to/spa)
 - [Single-SPA documentation](https://single-spa.js.org/docs/getting-started-overview/)
 
 ### Articles and Videos

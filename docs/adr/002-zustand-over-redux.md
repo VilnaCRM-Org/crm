@@ -58,16 +58,16 @@ concerns.
 
 ## Comparison of Options
 
-| Aspect            | Redux Toolkit           | Zustand    | Jotai     | MobX     |
-| ----------------- | ----------------------- | ---------- | --------- | -------- |
-| Bundle Size       | ~10–14KB ([rtk], [rr]) | ~2KB ([zst]) | ~3KB ([jot]) | ~15KB ([mbx]) |
-| Boilerplate       | High (actions, reducers)| Minimal    | Minimal   | Moderate |
-| Provider Required | Yes                     | No         | Optional  | Yes      |
-| Module Federation | Needs config            | Native     | Needs config | Needs config |
-| TypeScript        | Good (needs setup)      | Excellent  | Good      | Good     |
-| DevTools          | Native                  | Compatible | Limited   | Separate |
-| Learning Curve    | Steep                   | Low        | Moderate  | Moderate |
-| Ecosystem         | Very large              | Growing    | Small     | Large    |
+| Aspect            | Redux Toolkit            | Zustand      | Jotai        | MobX          |
+| ----------------- | ------------------------ | ------------ | ------------ | ------------- |
+| Bundle Size       | ~10–14KB ([rtk], [rr])   | ~2KB ([zst]) | ~3KB ([jot]) | ~15KB ([mbx]) |
+| Boilerplate       | High (actions, reducers) | Minimal      | Minimal      | Moderate      |
+| Provider Required | Yes                      | No           | Optional     | Yes           |
+| Module Federation | Needs config             | Native       | Needs config | Needs config  |
+| TypeScript        | Good (needs setup)       | Excellent    | Good         | Good          |
+| DevTools          | Native                   | Compatible   | Limited      | Separate      |
+| Learning Curve    | Steep                    | Low          | Moderate     | Moderate      |
+| Ecosystem         | Very large               | Growing      | Small        | Large         |
 
 ## Links
 

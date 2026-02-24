@@ -44,7 +44,9 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
       const form = page.locator('form, [role="form"]');
       await expect(form).toBeVisible({ timeout: 10000 });
 
-      const inputs = page.locator('input[type="text"], input[type="email"], input[type="password"]');
+      const inputs = page.locator(
+        'input[type="text"], input[type="email"], input[type="password"]'
+      );
       await expect(inputs.first()).toBeVisible();
 
       const submitButton = page.locator('button[type="submit"]');

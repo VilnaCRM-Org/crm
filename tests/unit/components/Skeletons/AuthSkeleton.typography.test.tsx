@@ -17,7 +17,9 @@ describe('AuthSkeleton typography parity', () => {
 
     const calls = (UISkeletonText as unknown as jest.Mock).mock.calls.map(([props]) => props);
     const titleSkeleton = calls.find((props) => props['data-testid'] === 'auth-skeleton-title');
-    const subtitleSkeleton = calls.find((props) => props['data-testid'] === 'auth-skeleton-subtitle');
+    const subtitleSkeleton = calls.find(
+      (props) => props['data-testid'] === 'auth-skeleton-subtitle'
+    );
 
     expect(titleSkeleton).toBeDefined();
     expect(subtitleSkeleton).toBeDefined();
@@ -59,7 +61,9 @@ describe('AuthSkeleton typography parity', () => {
       }),
     };
     if (Array.isArray(subtitleSx)) {
-      expect(subtitleSx).toEqual(expect.arrayContaining([expect.objectContaining(subtitleSxExpected)]));
+      expect(subtitleSx).toEqual(
+        expect.arrayContaining([expect.objectContaining(subtitleSxExpected)])
+      );
     } else {
       expect(subtitleSx).toEqual(expect.objectContaining(subtitleSxExpected));
     }

@@ -48,9 +48,7 @@ describe('AuthErrorBoundary', () => {
   });
 
   it('calls function fallback with error and reset', () => {
-    const fallbackFn = jest.fn(({ error }: { error?: Error }) => (
-      <span>{error?.message}</span>
-    ));
+    const fallbackFn = jest.fn(({ error }: { error?: Error }) => <span>{error?.message}</span>);
 
     renderWithBoundary({ fallback: fallbackFn });
 

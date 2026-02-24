@@ -24,17 +24,13 @@ describe('UISkeletonBlock Integration', () => {
   });
 
   it('composes object sx prop', () => {
-    render(
-      <UISkeletonBlock sx={{ mt: 1 }} data-testid="skeleton-block" />
-    );
+    render(<UISkeletonBlock sx={{ mt: 1 }} data-testid="skeleton-block" />);
 
     expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();
   });
 
   it('composes array sx prop', () => {
-    render(
-      <UISkeletonBlock sx={[{ mt: 1 }, { mb: 2 }]} data-testid="skeleton-block" />
-    );
+    render(<UISkeletonBlock sx={[{ mt: 1 }, { mb: 2 }]} data-testid="skeleton-block" />);
 
     expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();
   });

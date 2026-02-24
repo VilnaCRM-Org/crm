@@ -5,7 +5,7 @@ import Theme from '@/styles/theme';
 import { ThemeProvider } from '@mui/material/styles';
 import { lazy, Suspense } from 'react';
 
-import AuthErrorBoundary from './components/AuthErrorBoundary';
+import AuthErrorBoundary from '@/modules/User/features/Auth/components/AuthErrorBoundary';
 
 const FormSection = lazy(() => import('@/modules/User/features/Auth/components/FormSection'));
 

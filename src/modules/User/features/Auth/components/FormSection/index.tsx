@@ -11,8 +11,12 @@ import { AuthMode } from './types';
 
 let fontsLoaded = false;
 const fontsPromise = loadFonts().then(
-  () => { fontsLoaded = true; },
-  () => { fontsLoaded = true; },
+  () => {
+    fontsLoaded = true;
+  },
+  () => {
+    fontsLoaded = true;
+  }
 );
 
 export default function FormSection(): JSX.Element {

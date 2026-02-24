@@ -93,7 +93,8 @@ describe('AuthSkeleton Component', () => {
 
     it('should be non-interactive placeholder', () => {
       render(<AuthSkeleton />);
-      const interactiveElements = screen.queryAllByRole('button')
+      const interactiveElements = screen
+        .queryAllByRole('button')
         .concat(screen.queryAllByRole('link'))
         .concat(screen.queryAllByRole('textbox'));
       expect(interactiveElements).toHaveLength(0);

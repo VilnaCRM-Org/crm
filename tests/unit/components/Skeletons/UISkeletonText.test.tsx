@@ -25,13 +25,7 @@ describe('UISkeletonText', () => {
     const size: SkeletonTextSize = 'l';
     const width = '45%';
 
-    render(
-      <UISkeletonText
-        size={size}
-        width={width}
-        data-testid="ui-skeleton-text-custom"
-      />
-    );
+    render(<UISkeletonText size={size} width={width} data-testid="ui-skeleton-text-custom" />);
 
     expect(screen.getByTestId('ui-skeleton-text-custom')).toBeInTheDocument();
     expect(getTextSkeletonStyles).toHaveBeenCalledWith(size, width);
@@ -40,12 +34,7 @@ describe('UISkeletonText', () => {
   it('renders with array sx prop', () => {
     const arraySx = [{ mt: 1 }, { mb: 2 }];
 
-    render(
-      <UISkeletonText
-        sx={arraySx}
-        data-testid="ui-skeleton-text-array-sx"
-      />
-    );
+    render(<UISkeletonText sx={arraySx} data-testid="ui-skeleton-text-array-sx" />);
 
     expect(screen.getByTestId('ui-skeleton-text-array-sx')).toBeInTheDocument();
   });

@@ -52,7 +52,9 @@ function valueAt(style: Record<string, unknown>, prop: string, breakpoint: Break
 
   if (breakpoint === 'md') {
     const mdStyle = style[mediaKey('md')] as Record<string, string>;
-    return (mdStyle?.[prop] ?? (style[mediaKey('sm')] as Record<string, string>)?.[prop] ?? style[prop]) as string;
+    return (mdStyle?.[prop] ??
+      (style[mediaKey('sm')] as Record<string, string>)?.[prop] ??
+      style[prop]) as string;
   }
 
   if (breakpoint === 'lg') {
@@ -134,9 +136,7 @@ function lineHeightAt(
   breakpoint: BreakpointName
 ): number {
   const pick = (key: BreakpointName): { fontSize?: string; lineHeight?: string | number } =>
-    key === 'base'
-      ? {}
-      : responsive[mediaKey(key as Exclude<BreakpointName, 'base'>)] ?? {};
+    key === 'base' ? {} : (responsive[mediaKey(key as Exclude<BreakpointName, 'base'>)] ?? {});
 
   let fontSize = baseFontSize;
   let lineHeight = baseLineHeight;
@@ -167,15 +167,15 @@ describe('AuthSkeleton spacing parity', () => {
     const lgSubtitle = uiFormStyles.formSubtitle[lgKey] as { marginBottom: string };
 
     expect(authSkeletonStyles.subtitleWrapper.marginBottom).toBe(baseSubtitle.marginBottom);
-    expect((authSkeletonStyles.subtitleWrapper[lgKey] as { marginBottom: string }).marginBottom).toBe(
-      lgSubtitle.marginBottom
-    );
+    expect(
+      (authSkeletonStyles.subtitleWrapper[lgKey] as { marginBottom: string }).marginBottom
+    ).toBe(lgSubtitle.marginBottom);
 
-    const baseLineBox = lineBoxHeightRem(
-      baseSubtitle.fontSize as string,
-      baseSubtitle.lineHeight
+    const baseLineBox = lineBoxHeightRem(baseSubtitle.fontSize as string, baseSubtitle.lineHeight);
+    expect(toRem(authSkeletonStyles.subtitleFirstLine.height as string)).toBeCloseTo(
+      baseLineBox,
+      1
     );
-    expect(toRem(authSkeletonStyles.subtitleFirstLine.height as string)).toBeCloseTo(baseLineBox, 1);
 
     const smLineBox = lineBoxHeightRem(smSubtitle.fontSize, smSubtitle.lineHeight);
     expect(
@@ -212,12 +212,21 @@ describe('AuthSkeleton spacing parity', () => {
     );
     const xlLineHeight = lineBoxHeightRem(xlButton.fontSize, xlButton.lineHeight);
 
-    const lgSwitcher = authSkeletonStyles.switcherSkeleton[lgKey] as { marginTop: string; height: string };
-    const xlSwitcher = authSkeletonStyles.switcherSkeleton[xlKey] as { marginTop: string; height: string };
+    const lgSwitcher = authSkeletonStyles.switcherSkeleton[lgKey] as {
+      marginTop: string;
+      height: string;
+    };
+    const xlSwitcher = authSkeletonStyles.switcherSkeleton[xlKey] as {
+      marginTop: string;
+      height: string;
+    };
 
-    expect(formatRem(toRem(authSkeletonStyles.switcherSkeleton.marginTop) + toRem(authSkeletonStyles.switcherSkeleton.height))).toBe(
-      formatRem(baseMarginTop + baseLineHeight)
-    );
+    expect(
+      formatRem(
+        toRem(authSkeletonStyles.switcherSkeleton.marginTop) +
+          toRem(authSkeletonStyles.switcherSkeleton.height)
+      )
+    ).toBe(formatRem(baseMarginTop + baseLineHeight));
     expect(formatRem(toRem(lgSwitcher.marginTop) + toRem(lgSwitcher.height))).toBe(
       formatRem(lgMarginTop + lgLineHeight)
     );
@@ -252,7 +261,8 @@ describe('AuthSkeleton spacing parity', () => {
           breakpoint
         ) + toRem(valueAt(formTitle, 'marginBottom', breakpoint));
       const titleStepSkeleton =
-        toRem(valueAt(skeletonTitle, 'height', breakpoint)) + toRem(valueAt(skeletonTitle, 'marginBottom', breakpoint));
+        toRem(valueAt(skeletonTitle, 'height', breakpoint)) +
+        toRem(valueAt(skeletonTitle, 'marginBottom', breakpoint));
 
       const subtitleStepForm =
         lineHeightAt(
@@ -273,21 +283,36 @@ describe('AuthSkeleton spacing parity', () => {
           breakpoint
         ) + toRem(valueAt(formLabel, 'marginBottom', breakpoint));
       const labelToInputSkeleton =
-        toRem(valueAt(skeletonLabel, 'height', breakpoint)) + toRem(valueAt(skeletonLabel, 'marginBottom', breakpoint));
+        toRem(valueAt(skeletonLabel, 'height', breakpoint)) +
+        toRem(valueAt(skeletonLabel, 'marginBottom', breakpoint));
 
-      const inputToLabelForm = inputHeightAt(breakpoint) + toRem(valueAt(formFieldGap, 'marginBottom', breakpoint));
+      const inputToLabelForm =
+        inputHeightAt(breakpoint) + toRem(valueAt(formFieldGap, 'marginBottom', breakpoint));
       const inputToLabelSkeleton =
         inputHeightAt(breakpoint) + toRem(valueAt(skeletonFieldGap, 'marginBottom', breakpoint));
 
-      const inputToSubmitForm = inputHeightAt(breakpoint) + toRem(valueAt(formSubmit, 'marginTop', breakpoint));
-      const inputToSubmitSkeleton = inputHeightAt(breakpoint) + toRem(valueAt(skeletonSubmit, 'marginTop', breakpoint));
+      const inputToSubmitForm =
+        inputHeightAt(breakpoint) + toRem(valueAt(formSubmit, 'marginTop', breakpoint));
+      const inputToSubmitSkeleton =
+        inputHeightAt(breakpoint) + toRem(valueAt(skeletonSubmit, 'marginTop', breakpoint));
 
       const submitToDividerForm =
         effectiveHeight(formSubmit, breakpoint) +
-        toRem(valueAt(authProviderButtonStyles.thirdPartyWrapper as Record<string, unknown>, 'marginTop', breakpoint));
+        toRem(
+          valueAt(
+            authProviderButtonStyles.thirdPartyWrapper as Record<string, unknown>,
+            'marginTop',
+            breakpoint
+          )
+        );
       const submitToDividerSkeleton =
-        toRem(valueAt(skeletonButtonStyles.buttonSkeleton as Record<string, unknown>, 'height', breakpoint)) +
-        toRem(valueAt(skeletonDivider, 'marginTop', breakpoint));
+        toRem(
+          valueAt(
+            skeletonButtonStyles.buttonSkeleton as Record<string, unknown>,
+            'height',
+            breakpoint
+          )
+        ) + toRem(valueAt(skeletonDivider, 'marginTop', breakpoint));
 
       expect(titleStepSkeleton).toBeCloseTo(titleStepForm, 2);
       expect(subtitleStepSkeleton).toBeCloseTo(subtitleStepForm, 2);

@@ -1,7 +1,4 @@
-import {
-  SMALL_MOBILE_BREAKPOINT,
-  baseSkeletonStyle,
-} from '@/components/Skeletons/base/styles';
+import { SMALL_MOBILE_BREAKPOINT, baseSkeletonStyle } from '@/components/Skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
 
 export default {

@@ -9,7 +9,6 @@ export const shimmerAnimation = keyframes`
   }
 `;
 
-
 export const shadowPulseAnimation = keyframes`
   0% {
     box-shadow: 0px 7px 20px 0px rgba(211, 216, 224, 0.2);
