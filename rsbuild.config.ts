@@ -7,9 +7,9 @@ import { pluginSvgr } from '@rsbuild/plugin-svgr';
 
 import LocalizationGenerator from './scripts/localizationGenerator';
 
-const pluginLocalization = () => ({
+const pluginLocalization = (): { name: string; setup: (api: RsbuildPluginAPI) => void } => ({
   name: 'plugin-localization',
-  setup(api: RsbuildPluginAPI) {
+  setup(api: RsbuildPluginAPI): void {
     const run = async (): Promise<void> => {
       if (process.env.SKIP_LOCALE_GEN === '1') return;
 
