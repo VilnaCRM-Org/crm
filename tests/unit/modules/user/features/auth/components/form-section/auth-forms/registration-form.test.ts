@@ -49,7 +49,9 @@ describe('registration-form error mapping', () => {
   });
 
   it('maps user-service duplicate email message to inline email error', () => {
-    const error = new ApolloError({ errorMessage: 'Mutation completed with errors' }) as ApolloError & {
+    const error = new ApolloError({
+      errorMessage: 'Mutation completed with errors',
+    }) as ApolloError & {
       errors: Array<{ message: string }>;
     };
 
@@ -64,7 +66,9 @@ describe('registration-form error mapping', () => {
   });
 
   it('maps user-service duplicate email message in Ukrainian to inline email error', () => {
-    const error = new ApolloError({ errorMessage: 'Mutation completed with errors' }) as ApolloError & {
+    const error = new ApolloError({
+      errorMessage: 'Mutation completed with errors',
+    }) as ApolloError & {
       errors: Array<{ message: string }>;
     };
 
@@ -79,7 +83,9 @@ describe('registration-form error mapping', () => {
   });
 
   it('maps user-service invalid email message to inline email validator message', () => {
-    const error = new ApolloError({ errorMessage: 'Mutation completed with errors' }) as ApolloError & {
+    const error = new ApolloError({
+      errorMessage: 'Mutation completed with errors',
+    }) as ApolloError & {
       errors: Array<{ message: string }>;
     };
 
@@ -211,7 +217,9 @@ describe('registration-form error mapping', () => {
   });
 
   it('maps password no-uppercase server error to inline password error', () => {
-    const error = new ApolloError({ errorMessage: 'Mutation completed with errors' }) as ApolloError & {
+    const error = new ApolloError({
+      errorMessage: 'Mutation completed with errors',
+    }) as ApolloError & {
       errors: Array<{ message: string }>;
     };
     error.errors = [{ message: 'password: Password must contain at least one uppercase letter' }];
@@ -243,7 +251,9 @@ describe('registration-form error mapping', () => {
 
   it('maps password invalid-length server error to inline password error', () => {
     const error = new ApolloError({
-      graphQLErrors: [new GraphQLError('password: Password must be between 8 and 64 characters long')],
+      graphQLErrors: [
+        new GraphQLError('password: Password must be between 8 and 64 characters long'),
+      ],
     });
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
@@ -267,7 +277,9 @@ describe('registration-form error mapping', () => {
 
   it('maps password no-uppercase server error in Ukrainian to inline password error', () => {
     const error = new ApolloError({
-      graphQLErrors: [new GraphQLError('password: Пароль має містити принаймні одну велику літеру')],
+      graphQLErrors: [
+        new GraphQLError('password: Пароль має містити принаймні одну велику літеру'),
+      ],
     });
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,
@@ -278,7 +290,9 @@ describe('registration-form error mapping', () => {
   });
 
   it('maps initials only-spaces server error to inline name error', () => {
-    const error = new ApolloError({ errorMessage: 'Mutation completed with errors' }) as ApolloError & {
+    const error = new ApolloError({
+      errorMessage: 'Mutation completed with errors',
+    }) as ApolloError & {
       errors: Array<{ message: string }>;
     };
     error.errors = [{ message: 'initials: Initials cannot consist only of spaces' }];
@@ -304,7 +318,9 @@ describe('registration-form error mapping', () => {
 
   it('maps initials only-spaces server error in Ukrainian to inline name error', () => {
     const error = new ApolloError({
-      graphQLErrors: [new GraphQLError("initials: Ім'я та прізвище не можуть складатися лише з пробілів")],
+      graphQLErrors: [
+        new GraphQLError("initials: Ім'я та прізвище не можуть складатися лише з пробілів"),
+      ],
     });
     expect(getRegistrationErrorMessage(error, t)).toEqual({
       formError: null,

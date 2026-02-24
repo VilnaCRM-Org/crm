@@ -86,9 +86,9 @@ describe('UserRemoteSource Integration (Login)', () => {
         )
       );
 
-      await expect(
-        userRemoteSource.login({ email: 'invalid', password: '123' })
-      ).rejects.toThrow('Invalid login data');
+      await expect(userRemoteSource.login({ email: 'invalid', password: '123' })).rejects.toThrow(
+        'Invalid login data'
+      );
     });
 
     it('should throw ApiError for 403 status', async () => {

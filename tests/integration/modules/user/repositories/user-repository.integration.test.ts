@@ -109,7 +109,9 @@ describe('UserRepository Integration', () => {
 
   it('throws when GraphQL response is missing data', async () => {
     server.use(
-      rest.post('http://localhost:4000/graphql', (_req, res, ctx) => res(ctx.status(200), ctx.json({})))
+      rest.post('http://localhost:4000/graphql', (_req, res, ctx) =>
+        res(ctx.status(200), ctx.json({}))
+      )
     );
 
     await expect(

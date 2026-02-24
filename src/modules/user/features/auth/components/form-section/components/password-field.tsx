@@ -5,7 +5,10 @@ import { FieldValues, Path, PathValue, RegisterOptions } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import FormField from '@/modules/user/features/auth/components/form-section/components/form-field';
-import styles, { StyledEyeIcon, StyledEyeIconOff } from '@/modules/user/features/auth/components/form-section/components/styles';
+import styles, {
+  StyledEyeIcon,
+  StyledEyeIconOff,
+} from '@/modules/user/features/auth/components/form-section/components/styles';
 import { buildPasswordRules } from '@/modules/user/features/auth/components/form-section/validations';
 
 type PasswordFieldProps<T extends FieldValues> = {

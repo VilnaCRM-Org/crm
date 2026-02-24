@@ -74,5 +74,4 @@ describe('ErrorParser Integration Coverage', () => {
       expect(store.getState().auth.error).toBeTruthy();
     });
   });
-
 });

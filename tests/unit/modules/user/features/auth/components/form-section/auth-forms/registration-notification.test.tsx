@@ -82,12 +82,12 @@ describe('RegistrationNotification', () => {
   });
 
   it('renders success state content with a back button', () => {
-    render(
-      <RegistrationNotification view="success" isSubmitting={false} onBack={jest.fn()} />
-    );
+    render(<RegistrationNotification view="success" isSubmitting={false} onBack={jest.fn()} />);
 
     expect(screen.getByText('notifications.success.title')).toBeInTheDocument();
     expect(screen.getByText('notifications.success.description')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'notifications.success.button' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'notifications.success.button' })
+    ).toBeInTheDocument();
   });
 });

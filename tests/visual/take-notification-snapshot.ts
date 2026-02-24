@@ -1,14 +1,9 @@
 import { Page, Route, expect } from '@playwright/test';
 
 import { ScreenSize, currentLanguage, placeholders, timeoutDuration } from './constants';
+import { injectAnimationDisabler, normalizeSnapshotName } from './helpers';
 
 const GRAPHQL_URL = '**/*graphql*';
-
-const injectedPages = new WeakSet<Page>();
-
-function normalizeSnapshotName(name: string): string {
-  return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-}
 
 async function successResponse(route: Route): Promise<void> {
   await route.fulfill({
@@ -65,21 +60,7 @@ async function takeNotificationSnapshot(
       })
   );
 
-  if (!injectedPages.has(page)) {
-    await page.addInitScript(() => {
-      if (document.getElementById('__pw-disable-animations')) return;
-      const style = document.createElement('style');
-      style.id = '__pw-disable-animations';
-      style.textContent = `
-        *, *::before, *::after {
-          transition: none !important;
-          animation: none !important;
-          caret-color: transparent !important;
-        }`;
-      document.head.appendChild(style);
-    });
-    injectedPages.add(page);
-  }
+  await injectAnimationDisabler(page);
 
   const response = await page.goto('/authentication', { waitUntil: 'domcontentloaded' });
   expect(

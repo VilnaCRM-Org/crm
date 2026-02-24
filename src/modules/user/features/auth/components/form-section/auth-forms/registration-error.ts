@@ -54,10 +54,7 @@ const PASSWORD_UPPERCASE_PATTERNS = [
 
 const PASSWORD_NUMBERS_PATTERNS = ['at least one number', 'хоча б одне число'] as const;
 
-const PASSWORD_LENGTH_PATTERNS = [
-  'between 8 and 64 characters',
-  'від 8 до 64 символів',
-] as const;
+const PASSWORD_LENGTH_PATTERNS = ['between 8 and 64 characters', 'від 8 до 64 символів'] as const;
 
 const PASSWORD_REQUIRED_PATTERNS = ['not be blank', 'not.blank', 'не має бути пустим'] as const;
 
@@ -163,30 +160,36 @@ const NO_ERROR: RegistrationErrorState = {
   nameError: null,
 };
 
+function resolveFieldError(
+  error: ApolloErrorLike,
+  t: (key: string) => string
+): Partial<RegistrationErrorState> {
+  if (isConflictError(error)) {
+    return { emailError: t('sign_up.errors.email_used') };
+  }
+
+  const emailMessage = extractMessageByPrefix(error, EMAIL_PREFIX);
+  if (emailMessage) {
+    return { emailError: mapEmailMessage(emailMessage, t) };
+  }
+
+  const passwordMessage = extractMessageByPrefix(error, PASSWORD_PREFIX);
+  if (passwordMessage) {
+    return { passwordError: mapPasswordMessage(passwordMessage, t) };
+  }
+
+  const initialsMessage = extractMessageByPrefix(error, INITIALS_PREFIX);
+  if (initialsMessage) {
+    return { nameError: mapInitialsMessage(initialsMessage, t) };
+  }
+
+  return { formError: t('sign_up.errors.signup_error') };
+}
+
 export default function getRegistrationErrorMessage(
   error: ApolloError | undefined,
   t: (key: string) => string
 ): RegistrationErrorState {
   if (!error) return NO_ERROR;
-
-  if (isConflictError(error as ApolloErrorLike)) {
-    return { ...NO_ERROR, emailError: t('sign_up.errors.email_used') };
-  }
-
-  const emailMessage = extractMessageByPrefix(error as ApolloErrorLike, EMAIL_PREFIX);
-  if (emailMessage) {
-    return { ...NO_ERROR, emailError: mapEmailMessage(emailMessage, t) };
-  }
-
-  const passwordMessage = extractMessageByPrefix(error as ApolloErrorLike, PASSWORD_PREFIX);
-  if (passwordMessage) {
-    return { ...NO_ERROR, passwordError: mapPasswordMessage(passwordMessage, t) };
-  }
-
-  const initialsMessage = extractMessageByPrefix(error as ApolloErrorLike, INITIALS_PREFIX);
-  if (initialsMessage) {
-    return { ...NO_ERROR, nameError: mapInitialsMessage(initialsMessage, t) };
-  }
-
-  return { ...NO_ERROR, formError: t('sign_up.errors.signup_error') };
+  return { ...NO_ERROR, ...resolveFieldError(error as ApolloErrorLike, t) };
 }

@@ -33,7 +33,9 @@ export default function useCreateUser(): UseCreateUserReturn {
     const existingSignal = requestContext?.fetchOptions?.signal;
 
     if (existingSignal) {
-      return mutate(options as MutationFunctionOptions<CreateUserResponse, { input: CreateUserInput }>);
+      return mutate(
+        options as MutationFunctionOptions<CreateUserResponse, { input: CreateUserInput }>
+      );
     }
 
     const controller = new AbortController();

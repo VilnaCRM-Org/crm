@@ -33,7 +33,8 @@ describe('Repository Metadata Fallback Coverage', () => {
       });
 
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const UserRemoteSource = require('@/modules/user/features/auth/repositories/user/sources/user.remote').default;
+      const UserRemoteSource =
+        require('@/modules/user/features/auth/repositories/user/sources/user.remote').default;
       expect(UserRemoteSource).toBeDefined();
     });
   });

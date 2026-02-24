@@ -4,7 +4,6 @@ import { createValidators } from '@/modules/user/features/auth/components/form-s
 
 import emptyUser from './constants';
 
-
 describe('password validation', () => {
   const tMock = ((key: string) => key) as unknown as TFunction;
   const validators = createValidators(tMock);

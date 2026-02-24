@@ -1,12 +1,7 @@
 import { Page, expect } from '@playwright/test';
 
 import { currentLanguage, ScreenSize, timeoutDuration } from './constants';
-
-const injectedPages = new WeakSet<Page>();
-
-function normalizeSnapshotName(name: string): string {
-  return name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase();
-}
+import { injectAnimationDisabler, normalizeSnapshotName } from './helpers';
 
 async function takeVisualSnapshot(
   page: Page,
@@ -24,21 +19,7 @@ async function takeVisualSnapshot(
         });
       })
   );
-  if (!injectedPages.has(page)) {
-    await page.addInitScript(() => {
-      if (document.getElementById('__pw-disable-animations')) return;
-      const style = document.createElement('style');
-      style.id = '__pw-disable-animations';
-      style.textContent = `
-        *, *::before, *::after {
-          transition: none !important;
-          animation: none !important;
-          caret-color: transparent !important;
-        }`;
-      document.head.appendChild(style);
-    });
-    injectedPages.add(page);
-  }
+  await injectAnimationDisabler(page);
 
   const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
   expect(
@@ -64,9 +45,7 @@ async function takeVisualSnapshot(
 
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
 
-  const snapshotName = normalizeSnapshotName(
-    fileName ?? `${currentLanguage}_${screen.name}.png`
-  );
+  const snapshotName = normalizeSnapshotName(fileName ?? `${currentLanguage}_${screen.name}.png`);
 
   await page.waitForLoadState('networkidle');
   await page.waitForTimeout(timeoutDuration);

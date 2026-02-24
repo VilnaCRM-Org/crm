@@ -8,21 +8,12 @@ import AuthProviderButtons from './components/auth-provider-buttons';
 import styles from './styles';
 import { AuthMode, RegistrationView } from './types';
 
-export default function FormSection(): JSX.Element {
-  const [mode, setMode] = useState<AuthMode>('register');
-  const [registrationView, setRegistrationView] = useState<RegistrationView>('form');
+function useFormHeightObserver(
+  mode: AuthMode,
+  registrationView: RegistrationView,
+  formWrapperRef: React.RefObject<HTMLDivElement | null>
+): number | null {
   const [formHeight, setFormHeight] = useState<number | null>(null);
-  const formWrapperRef = useRef<HTMLDivElement | null>(null);
-  const { t } = useTranslation();
-
-  const handleSwitch = useCallback(() => {
-    setRegistrationView('form');
-    setMode((prev) => (prev === 'login' ? 'register' : 'login'));
-  }, []);
-
-  const handleRegistrationViewChange = useCallback((view: RegistrationView) => {
-    setRegistrationView(view);
-  }, []);
 
   useEffect(() => {
     if (mode !== 'register' || registrationView !== 'form') return undefined;
@@ -46,7 +37,28 @@ export default function FormSection(): JSX.Element {
     return (): void => {
       observer.disconnect();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, registrationView]);
+
+  return formHeight;
+}
+
+export default function FormSection(): JSX.Element {
+  const [mode, setMode] = useState<AuthMode>('register');
+  const [registrationView, setRegistrationView] = useState<RegistrationView>('form');
+  const formWrapperRef = useRef<HTMLDivElement | null>(null);
+  const { t } = useTranslation();
+
+  const formHeight = useFormHeightObserver(mode, registrationView, formWrapperRef);
+
+  const handleSwitch = useCallback(() => {
+    setRegistrationView('form');
+    setMode((prev) => (prev === 'login' ? 'register' : 'login'));
+  }, []);
+
+  const handleRegistrationViewChange = useCallback((view: RegistrationView) => {
+    setRegistrationView(view);
+  }, []);
 
   const showRegistrationReplacement = mode === 'register' && registrationView !== 'form';
 
@@ -92,10 +104,7 @@ export default function FormSection(): JSX.Element {
       </Box>
 
       <UIButton
-        sx={[
-          styles.formSwitcherButton,
-          showRegistrationReplacement ? styles.hiddenElement : {},
-        ]}
+        sx={[styles.formSwitcherButton, showRegistrationReplacement ? styles.hiddenElement : {}]}
         onClick={handleSwitch}
       >
         {mode === 'login'

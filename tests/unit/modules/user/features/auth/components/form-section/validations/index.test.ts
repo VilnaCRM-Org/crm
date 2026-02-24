@@ -7,7 +7,6 @@ import {
 
 import emptyUser from './constants';
 
-
 jest.mock('i18next', () => ({
   t: (key: string): string => key,
 }));

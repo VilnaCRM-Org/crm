@@ -1,4 +1,3 @@
-
 import handleApiError from '@/modules/user/lib/errors/handle-api-error';
 import {
   ApiErrorCodes,
@@ -18,9 +17,9 @@ describe('handleApiError', () => {
     expect(handleApiError(new HttpError({ status: 400, message: 'bad' }), 'Login')).toBeInstanceOf(
       ValidationError
     );
-    expect(handleApiError(new HttpError({ status: 401, message: 'unauth' }), 'Login')).toBeInstanceOf(
-      AuthenticationError
-    );
+    expect(
+      handleApiError(new HttpError({ status: 401, message: 'unauth' }), 'Login')
+    ).toBeInstanceOf(AuthenticationError);
     expect(handleApiError(new HttpError({ status: 403, message: 'forbidden' }), 'Login').code).toBe(
       ApiErrorCodes.FORBIDDEN
     );
@@ -30,27 +29,27 @@ describe('handleApiError', () => {
     expect(handleApiError(new HttpError({ status: 408, message: 'timeout' }), 'Login').code).toBe(
       ApiErrorCodes.TIMEOUT
     );
-    expect(handleApiError(new HttpError({ status: 429, message: 'rate limited' }), 'Login').code).toBe(
-      ApiErrorCodes.RATE_LIMITED
-    );
-    expect(handleApiError(new HttpError({ status: 409, message: 'conflict' }), 'User')).toBeInstanceOf(
-      ConflictError
-    );
-    expect(handleApiError(new HttpError({ status: 422, message: 'unprocessable' }), 'Login')).toBeInstanceOf(
-      ValidationError
-    );
+    expect(
+      handleApiError(new HttpError({ status: 429, message: 'rate limited' }), 'Login').code
+    ).toBe(ApiErrorCodes.RATE_LIMITED);
+    expect(
+      handleApiError(new HttpError({ status: 409, message: 'conflict' }), 'User')
+    ).toBeInstanceOf(ConflictError);
+    expect(
+      handleApiError(new HttpError({ status: 422, message: 'unprocessable' }), 'Login')
+    ).toBeInstanceOf(ValidationError);
   });
 
   it('maps server and unknown HttpError statuses', () => {
     expect(handleApiError(new HttpError({ status: 500, message: 'server' }), 'Login').code).toBe(
       ApiErrorCodes.SERVER
     );
-    expect(handleApiError(new HttpError({ status: 502, message: 'bad gateway' }), 'Login').code).toBe(
-      ApiErrorCodes.SERVER
-    );
-    expect(handleApiError(new HttpError({ status: 503, message: 'unavailable' }), 'Login').code).toBe(
-      ApiErrorCodes.SERVER
-    );
+    expect(
+      handleApiError(new HttpError({ status: 502, message: 'bad gateway' }), 'Login').code
+    ).toBe(ApiErrorCodes.SERVER);
+    expect(
+      handleApiError(new HttpError({ status: 503, message: 'unavailable' }), 'Login').code
+    ).toBe(ApiErrorCodes.SERVER);
     expect(handleApiError(new HttpError({ status: 504, message: 'timeout' }), 'Login').code).toBe(
       ApiErrorCodes.SERVER
     );
@@ -71,12 +70,18 @@ describe('handleApiError', () => {
     expect(handleApiError(new Error('cors blocked'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
     expect(handleApiError(new Error('econnreset issue'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
     expect(handleApiError(new Error('enotfound host'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
-    expect(handleApiError(new Error('econnrefused host'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
+    expect(handleApiError(new Error('econnrefused host'), 'Login').code).toBe(
+      ApiErrorCodes.NETWORK
+    );
     expect(handleApiError(new Error('enetunreach host'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
-    expect(handleApiError(new Error('ehostunreach host'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
+    expect(handleApiError(new Error('ehostunreach host'), 'Login').code).toBe(
+      ApiErrorCodes.NETWORK
+    );
     expect(handleApiError(new Error('ecanceled host'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
     expect(handleApiError(new Error('request canceled'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
-    expect(handleApiError(new Error('request cancelled'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
+    expect(handleApiError(new Error('request cancelled'), 'Login').code).toBe(
+      ApiErrorCodes.NETWORK
+    );
     expect(handleApiError(new Error('err_network'), 'Login').code).toBe(ApiErrorCodes.NETWORK);
   });
 

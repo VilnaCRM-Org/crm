@@ -1,11 +1,9 @@
 import { TFunction } from 'i18next';
 
-
 import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
 import { fullNameValidators } from '@/modules/user/features/auth/components/form-section/validations/name';
 
 import emptyUser from './constants';
-
 
 jest.mock('i18next', () => ({
   t: (key: string): string => key,
@@ -231,7 +229,9 @@ describe('name validation', () => {
       });
 
       it('should return only spaces error for whitespace-only input', () => {
-        expect(validators.fullName('   ', emptyUser)).toBe('sign_up.form.name_input.only_spaces_error');
+        expect(validators.fullName('   ', emptyUser)).toBe(
+          'sign_up.form.name_input.only_spaces_error'
+        );
       });
 
       it('should return required error for undefined', () => {
@@ -311,7 +311,9 @@ describe('name validation', () => {
       });
 
       it('should return only spaces error for whitespace-only input', () => {
-        expect(validators.fullName('   ', emptyUser)).toBe('sign_up.form.name_input.only_spaces_error');
+        expect(validators.fullName('   ', emptyUser)).toBe(
+          'sign_up.form.name_input.only_spaces_error'
+        );
       });
     });
 

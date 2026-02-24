@@ -12,7 +12,8 @@ describe('Repository decorator metadata fallback', () => {
         default: {},
       }));
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const UserRepository = require('@/modules/user/features/auth/repositories/user/user-repository').default;
+      const UserRepository =
+        require('@/modules/user/features/auth/repositories/user/user-repository').default;
       expect(UserRepository).toBeDefined();
     });
 
@@ -28,9 +29,8 @@ describe('Repository decorator metadata fallback', () => {
         };
       });
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const UserRemoteSource = require(
-        '@/modules/user/features/auth/repositories/user/sources/user.remote'
-      ).default;
+      const UserRemoteSource =
+        require('@/modules/user/features/auth/repositories/user/sources/user.remote').default;
       expect(UserRemoteSource).toBeDefined();
     });
   });

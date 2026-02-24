@@ -5,7 +5,6 @@ import UIBackToMain from '@/components/ui-back-to-main';
 
 import renderWithProviders, { testTheme } from '../utils/render-with-providers';
 
-
 const BackToHomeText: string = 'Back to homepage';
 
 jest.mock('@/assets/icons/arrows/back-arrow.svg', () => 'back-arrow-mock.svg');

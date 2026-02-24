@@ -3,6 +3,14 @@ import { customColors, paletteColors } from '@/styles/colors';
 
 const ENTRY_ANIMATION = 'notificationFadeInUp 380ms cubic-bezier(0.22, 1, 0.36, 1) both';
 
+const centeredColumnFlex = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  flexDirection: 'column',
+  width: '100%',
+} as const;
+
 export default {
   notificationSection: {
     position: 'absolute',
@@ -304,12 +312,8 @@ export default {
     },
   },
   messageContainerError: {
-    display: 'flex',
-    justifyContent: 'center',
-    flexDirection: 'column',
-    alignItems: 'center',
+    ...centeredColumnFlex,
     textAlign: 'center',
-    width: '100%',
     animation: 'notificationFadeInUp 420ms cubic-bezier(0.22, 1, 0.36, 1) 140ms both',
     [`@media (min-width:334px) and (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       padding: '0rem 0.6rem',
@@ -319,11 +323,7 @@ export default {
     },
   },
   buttonsBox: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection: 'column',
-    width: '100%',
+    ...centeredColumnFlex,
     marginTop: '1rem',
     animation: 'notificationFadeInUp 460ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
@@ -359,7 +359,10 @@ export default {
       color: customColors.social.icon,
       backgroundColor: paletteColors.background.default,
       border: `1px solid ${paletteColors.grey[50]}`,
-      '&:hover': { backgroundColor: paletteColors.border.default, border: '1px solid rgba(0,0,0,0)' },
+      '&:hover': {
+        backgroundColor: paletteColors.border.default,
+        border: '1px solid rgba(0,0,0,0)',
+      },
       '&:active': { border: `1px solid ${paletteColors.border.default}` },
     },
     '@media (min-width: 375px)': {

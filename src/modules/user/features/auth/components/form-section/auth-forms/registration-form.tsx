@@ -1,20 +1,17 @@
 import UIForm from '@/components/ui-form';
 import { Box } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useCreateUser, buildCreateUserInput } from '../../../hooks';
 import { RegisterUserDto } from '../../../types/credentials';
 import getSubmitLabelKey from '../../../utils/get-submit-label-key';
-import normalizeRegistrationData from '../../../utils/normalize-registration-data';
 import FormField from '../components/form-field';
 import PasswordField from '../components/password-field';
 import type { RegistrationView } from '../types';
 import { createValidators } from '../validations';
 import ServerErrorSync from '../validations/server-error-sync';
 
-import getRegistrationErrorMessage from './registration-error';
 import RegistrationNotification from './registration-notification';
+import useRegistrationForm from './use-registration-form';
 
 type RegistrationFormProps = {
   onViewChange?: (view: RegistrationView) => void;
@@ -22,65 +19,18 @@ type RegistrationFormProps = {
 
 export default function RegistrationForm({ onViewChange }: RegistrationFormProps): JSX.Element {
   const { t } = useTranslation();
-  const [createUser, { loading: isSubmitting, error, reset }] = useCreateUser();
-  const lastSubmittedDataRef = useRef<RegisterUserDto | null>(null);
-  const [view, setView] = useState<RegistrationView>('form');
-  const [notificationErrorText, setNotificationErrorText] = useState<string>('');
-  const [formKey, setFormKey] = useState(0);
-
-  const { formError, emailError, passwordError, nameError } = getRegistrationErrorMessage(error, t);
-
-  useEffect(() => {
-    onViewChange?.(view);
-  }, [onViewChange, view]);
-
-  useEffect(() => {
-    if (emailError || passwordError || nameError) {
-      setView('form');
-      setNotificationErrorText('');
-    }
-  }, [emailError, passwordError, nameError]);
-
-  useEffect(() => {
-    if (!formError) return;
-    setNotificationErrorText(formError);
-    setView('error');
-  }, [formError]);
-
-  const handleRegister = useCallback(
-    async (data: RegisterUserDto): Promise<boolean> => {
-      lastSubmittedDataRef.current = data;
-      const normalizedData = normalizeRegistrationData(data);
-      const input = buildCreateUserInput(normalizedData);
-
-      try {
-        await createUser({ variables: { input } });
-        reset();
-        setNotificationErrorText('');
-        setView('success');
-        return true;
-      } catch {
-        return false;
-      }
-    },
-    [createUser, reset]
-  );
-
-  const handleBackToForm = useCallback(() => {
-    if (view === 'success') {
-      setFormKey((prev) => prev + 1);
-    }
-    setView('form');
-    setNotificationErrorText('');
-    lastSubmittedDataRef.current = null;
-    reset();
-  }, [reset, view]);
-
-  const handleRetry = useCallback(async () => {
-    if (!lastSubmittedDataRef.current) return;
-    reset();
-    await handleRegister(lastSubmittedDataRef.current);
-  }, [handleRegister, reset]);
+  const {
+    view,
+    notificationErrorText,
+    formKey,
+    isSubmitting,
+    emailError,
+    passwordError,
+    nameError,
+    handleRegister,
+    handleBackToForm,
+    handleRetry,
+  } = useRegistrationForm(t, onViewChange);
 
   const validators = createValidators(t);
 

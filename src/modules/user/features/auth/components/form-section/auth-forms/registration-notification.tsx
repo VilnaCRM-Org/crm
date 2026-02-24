@@ -82,7 +82,9 @@ export default function RegistrationNotification({
                 onClick={onRetry}
               >
                 {t('notifications.error.retry_button')}
-                {isSubmitting && <CircularProgress color="primary" size={24} sx={styles.buttonLoader} />}
+                {isSubmitting && (
+                  <CircularProgress color="primary" size={24} sx={styles.buttonLoader} />
+                )}
               </UIButton>
               <UIButton
                 sx={[styles.errorButton, styles.errorButtonSecondary]}
