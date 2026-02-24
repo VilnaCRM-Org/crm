@@ -1,4 +1,5 @@
 import {
+  SKELETON_BORDER_COLOR,
   SKELETON_BORDER_RADIUS,
   SMALL_MOBILE_BREAKPOINT,
   baseSkeletonStyle,
@@ -8,7 +9,7 @@ import breakpointsTheme from '@/components/UIBreakpoints';
 export default {
   buttonSkeleton: {
     ...baseSkeletonStyle,
-    border: '1px solid #E1E7EA',
+    border: `1px solid ${SKELETON_BORDER_COLOR}`,
     borderRadius: SKELETON_BORDER_RADIUS,
     height: '3.125rem',
     width: '100%',

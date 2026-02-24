@@ -1,4 +1,8 @@
-import { shadowPulseAnimation, SMALL_MOBILE_BREAKPOINT } from '@/components/Skeletons/base/styles';
+import {
+  SKELETON_BORDER_COLOR,
+  SMALL_MOBILE_BREAKPOINT,
+  shadowPulseAnimation,
+} from '@/components/Skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
 import { fieldGapMargins } from '@/modules/User/features/Auth/components/FormSection/styles';
 
@@ -111,7 +115,7 @@ export default {
     },
   },
   socialButton: {
-    border: '1px solid #E1E7EA',
+    border: `1px solid ${SKELETON_BORDER_COLOR}`,
     borderRadius: '0.75rem',
     height: '3.625rem',
     width: '100%',

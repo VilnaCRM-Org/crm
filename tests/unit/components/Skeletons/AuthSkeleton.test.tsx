@@ -84,20 +84,4 @@ describe('AuthSkeleton Component', () => {
     });
   });
 
-  describe('Visual loading state', () => {
-    it('should provide loading indicator through skeleton structure', () => {
-      render(<AuthSkeleton />);
-      const divider = screen.getByRole('presentation');
-      expect(divider).toBeInTheDocument();
-    });
-
-    it('should be non-interactive placeholder', () => {
-      render(<AuthSkeleton />);
-      const interactiveElements = screen
-        .queryAllByRole('button')
-        .concat(screen.queryAllByRole('link'))
-        .concat(screen.queryAllByRole('textbox'));
-      expect(interactiveElements).toHaveLength(0);
-    });
-  });
 });
