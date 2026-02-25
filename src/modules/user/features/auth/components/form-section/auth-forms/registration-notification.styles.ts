@@ -144,21 +144,22 @@ export default {
     animation: 'notificationConfettiReveal 560ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both',
   },
   gears: {
+    position: 'absolute',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    top: '2rem',
     zIndex: 6,
-    marginBottom: '0.75rem',
     [`@media (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
-      transform: 'scale(0.8)',
-      marginBottom: '0.5rem',
+      transform: 'translateX(-50%) scale(0.8)',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      marginBottom: '1rem',
+      top: '3rem',
     },
   },
   successGears: {
     display: 'block',
     width: '10.25rem',
     height: '10.25rem',
-    maxWidth: '100%',
     animation: 'notificationGearSpinIn 600ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both',
   },
   messageContainer: {
@@ -187,7 +188,7 @@ export default {
     fontWeight: 700,
     fontSize: '1.375rem',
     lineHeight: '1.65rem',
-    color: customColors.text.primary,
+    color: customColors.text.dark,
     textTransform: 'none',
     letterSpacing: 0,
     whiteSpace: 'nowrap',
@@ -203,7 +204,7 @@ export default {
     fontWeight: 400,
     fontSize: '0.98rem',
     lineHeight: '1.5625rem',
-    color: customColors.text.primary,
+    color: customColors.text.dark,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1.2rem',
       lineHeight: '1.625rem',
@@ -216,7 +217,7 @@ export default {
     fontWeight: 700,
     fontSize: '1.375rem',
     lineHeight: '1.65rem',
-    color: customColors.text.primary,
+    color: customColors.text.dark,
     textTransform: 'none',
     letterSpacing: 0,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
@@ -233,7 +234,7 @@ export default {
     fontWeight: 400,
     fontSize: '0.98rem',
     lineHeight: '1.5625rem',
-    color: customColors.text.primary,
+    color: customColors.text.dark,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1.2rem',
       lineHeight: '1.625rem',
@@ -302,7 +303,6 @@ export default {
     display: 'block',
     width: '16.75rem',
     height: '12.1875rem',
-    maxWidth: '100%',
     animation: 'notificationErrorReveal 460ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both',
   },
   imageWrapperError: {
@@ -352,6 +352,10 @@ export default {
       color: paletteColors.background.default,
       '&:hover': { backgroundColor: paletteColors.primary.hover, boxShadow: 'none' },
       '&:active': { backgroundColor: paletteColors.primary.active, boxShadow: 'none' },
+      '&.Mui-disabled': {
+        backgroundColor: paletteColors.background.subtle,
+        color: paletteColors.background.default,
+      },
     },
     '&.MuiButton-outlined': {
       height: '50px',
@@ -364,6 +368,11 @@ export default {
         border: '1px solid rgba(0,0,0,0)',
       },
       '&:active': { border: `1px solid ${paletteColors.border.default}` },
+      '&.Mui-disabled': {
+        backgroundColor: paletteColors.background.subtle,
+        color: paletteColors.background.default,
+        border: 'none',
+      },
     },
     '@media (min-width: 375px)': {
       minWidth: '301px',
@@ -389,11 +398,11 @@ export default {
   errorButtonSecondary: {
     marginTop: '0.5rem',
   },
-  buttonLoader: {
+  loader: {
     position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginTop: '-12px',
-    marginLeft: '-12px',
+    top: '38%',
+    left: '42%',
+    transform: 'translate(-50%, -50%)',
+    zIndex: 10,
   },
 } as const;

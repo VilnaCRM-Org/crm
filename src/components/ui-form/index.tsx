@@ -75,8 +75,8 @@ export default function UIForm<T extends FieldValues>({
 
         <UIButton type="submit" disabled={submitting} variant="contained" sx={styles.submitButton}>
           {submitLabel}
-          {submitting && <CircularProgress color="primary" size={24} sx={styles.buttonLoader} />}
         </UIButton>
+        {submitting ? <CircularProgress color="primary" size={70} sx={styles.loader} /> : null}
       </form>
     </FormProvider>
   );
