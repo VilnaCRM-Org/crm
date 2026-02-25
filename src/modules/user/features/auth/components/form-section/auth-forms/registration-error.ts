@@ -4,6 +4,7 @@ type GraphQLErrorLike = {
   message?: string;
   extensions?: {
     code?: string;
+    statusCode?: number;
   };
 };
 
@@ -13,6 +14,7 @@ type ApolloErrorLike = ApolloError & {
     errors?: GraphQLErrorLike[];
   };
   networkError?: {
+    statusCode?: number;
     result?: {
       errors?: GraphQLErrorLike[];
     };
@@ -64,6 +66,14 @@ const INITIALS_SPACES_PATTERNS = [
 ] as const;
 
 const INITIALS_REQUIRED_PATTERNS = ['not be blank', 'not.blank', 'не має бути пустим'] as const;
+
+const NETWORK_ERROR_PATTERNS = [
+  'failed to fetch',
+  'network request failed',
+  'fetch failed',
+  'network error',
+  'request to',
+] as const;
 
 function getGraphQLErrorCandidates(error: ApolloErrorLike): GraphQLErrorLike[] {
   return [
@@ -160,6 +170,46 @@ const NO_ERROR: RegistrationErrorState = {
   nameError: null,
 };
 
+function resolveFormError(error: ApolloErrorLike, t: (key: string) => string): string {
+  const statusCode = error.networkError?.statusCode;
+  if (statusCode === 401) return t('failure_responses.authentication_errors.unauthorized_access');
+  if (statusCode === 403) return t('failure_responses.authentication_errors.access_denied');
+  if (statusCode !== undefined && statusCode >= 500 && statusCode < 600) {
+    return t('failure_responses.server_errors.server_error');
+  }
+
+  const candidates = getGraphQLErrorCandidates(error);
+  if (
+    candidates.some(
+      (c) =>
+        c.extensions?.code === 'INTERNAL_SERVER_ERROR' || c.extensions?.code === 'SERVER_ERROR'
+    )
+  ) {
+    return t('failure_responses.server_errors.server_error');
+  }
+  if (
+    candidates.some(
+      (c) => c.extensions?.code === 'UNAUTHORIZED' || c.extensions?.code === 'UNAUTHENTICATED'
+    )
+  ) {
+    return t('failure_responses.authentication_errors.unauthorized_access');
+  }
+  if (candidates.some((c) => c.extensions?.code === 'FORBIDDEN')) {
+    return t('failure_responses.authentication_errors.access_denied');
+  }
+
+  if (error.networkError != null && statusCode === undefined) {
+    return t('failure_responses.network_errors.network_error');
+  }
+
+  const message = normalize(error.message ?? '');
+  if (NETWORK_ERROR_PATTERNS.some((pattern) => message.includes(pattern))) {
+    return t('failure_responses.network_errors.network_error');
+  }
+
+  return t('failure_responses.client_errors.something_went_wrong');
+}
+
 function resolveFieldError(
   error: ApolloErrorLike,
   t: (key: string) => string
@@ -183,7 +233,7 @@ function resolveFieldError(
     return { nameError: mapInitialsMessage(initialsMessage, t) };
   }
 
-  return { formError: t('sign_up.errors.signup_error') };
+  return { formError: resolveFormError(error, t) };
 }
 
 export default function getRegistrationErrorMessage(

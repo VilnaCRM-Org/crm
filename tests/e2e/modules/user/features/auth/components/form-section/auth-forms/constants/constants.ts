@@ -68,6 +68,18 @@ const passwordErrorKeys: { length: string; numbers: string; uppercase: string } 
 export const serverPasswordNoNumbersError: string = t('sign_up.form.password_input.error_numbers');
 export const serverInitialsOnlySpacesError: string = t('sign_up.form.name_input.only_spaces_error');
 
+export const notificationNetworkError: string = t('failure_responses.network_errors.network_error');
+export const notificationServerError: string = t('failure_responses.server_errors.server_error');
+export const notificationUnauthorizedError: string = t(
+  'failure_responses.authentication_errors.unauthorized_access'
+);
+export const notificationAccessDeniedError: string = t(
+  'failure_responses.authentication_errors.access_denied'
+);
+export const notificationSomethingWentWrong: string = t(
+  'failure_responses.client_errors.something_went_wrong'
+);
+
 export const expectationsEmail: ExpectationEmail[] = [
   {
     errorText: emailErrorKeys.stepError,

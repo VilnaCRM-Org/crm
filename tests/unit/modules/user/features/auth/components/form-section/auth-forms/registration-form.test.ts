@@ -149,7 +149,7 @@ describe('registration-form error mapping', () => {
     } as unknown as ApolloError;
 
     expect(getRegistrationErrorMessage(error, t)).toEqual({
-      formError: 'sign_up.errors.signup_error',
+      formError: 'failure_responses.client_errors.something_went_wrong',
       emailError: null,
       passwordError: null,
       nameError: null,
@@ -163,7 +163,7 @@ describe('registration-form error mapping', () => {
     } as unknown as ApolloError;
 
     expect(getRegistrationErrorMessage(error, t)).toEqual({
-      formError: 'sign_up.errors.signup_error',
+      formError: 'failure_responses.client_errors.something_went_wrong',
       emailError: null,
       passwordError: null,
       nameError: null,
@@ -177,7 +177,7 @@ describe('registration-form error mapping', () => {
     } as unknown as ApolloError;
 
     expect(getRegistrationErrorMessage(error, t)).toEqual({
-      formError: 'sign_up.errors.signup_error',
+      formError: 'failure_responses.client_errors.something_went_wrong',
       emailError: null,
       passwordError: null,
       nameError: null,
@@ -190,7 +190,7 @@ describe('registration-form error mapping', () => {
     } as unknown as ApolloError;
 
     expect(getRegistrationErrorMessage(error, t)).toEqual({
-      formError: 'sign_up.errors.signup_error',
+      formError: 'failure_responses.client_errors.something_went_wrong',
       emailError: null,
       passwordError: null,
       nameError: null,
@@ -336,7 +336,7 @@ describe('registration-form error mapping', () => {
       graphQLErrors: [],
     } as unknown as ApolloError;
     expect(getRegistrationErrorMessage(error, t)).toEqual({
-      formError: 'sign_up.errors.signup_error',
+      formError: 'failure_responses.client_errors.something_went_wrong',
       emailError: null,
       passwordError: null,
       nameError: null,
@@ -364,6 +364,145 @@ describe('registration-form error mapping', () => {
       emailError: null,
       passwordError: null,
       nameError: 'Some unknown name policy',
+    });
+  });
+
+  it('returns unauthorized error for networkError with 401 status code', () => {
+    const error = {
+      message: 'Response not successful',
+      graphQLErrors: [],
+      networkError: { statusCode: 401 },
+    } as unknown as ApolloError;
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.authentication_errors.unauthorized_access',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('returns access denied error for networkError with 403 status code', () => {
+    const error = {
+      message: 'Response not successful',
+      graphQLErrors: [],
+      networkError: { statusCode: 403 },
+    } as unknown as ApolloError;
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.authentication_errors.access_denied',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('returns server error for networkError with 5xx status code', () => {
+    const error = {
+      message: 'Response not successful',
+      graphQLErrors: [],
+      networkError: { statusCode: 500 },
+    } as unknown as ApolloError;
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.server_errors.server_error',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('returns server error for INTERNAL_SERVER_ERROR extension code', () => {
+    const error = new ApolloError({
+      graphQLErrors: [
+        new GraphQLError('Internal error', { extensions: { code: 'INTERNAL_SERVER_ERROR' } }),
+      ],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.server_errors.server_error',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('returns server error for SERVER_ERROR extension code', () => {
+    const error = new ApolloError({
+      graphQLErrors: [
+        new GraphQLError('Server error', { extensions: { code: 'SERVER_ERROR' } }),
+      ],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.server_errors.server_error',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('returns unauthorized error for UNAUTHORIZED extension code', () => {
+    const error = new ApolloError({
+      graphQLErrors: [
+        new GraphQLError('Unauthorized', { extensions: { code: 'UNAUTHORIZED' } }),
+      ],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.authentication_errors.unauthorized_access',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('returns unauthorized error for UNAUTHENTICATED extension code', () => {
+    const error = new ApolloError({
+      graphQLErrors: [
+        new GraphQLError('Unauthenticated', { extensions: { code: 'UNAUTHENTICATED' } }),
+      ],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.authentication_errors.unauthorized_access',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('returns access denied error for FORBIDDEN extension code', () => {
+    const error = new ApolloError({
+      graphQLErrors: [
+        new GraphQLError('Forbidden', { extensions: { code: 'FORBIDDEN' } }),
+      ],
+    });
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.authentication_errors.access_denied',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('returns network error when networkError is present without statusCode', () => {
+    const error = {
+      message: 'Failed to fetch',
+      graphQLErrors: [],
+      networkError: new TypeError('Failed to fetch'),
+    } as unknown as ApolloError;
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.network_errors.network_error',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
+    });
+  });
+
+  it('returns network error when root message matches network pattern', () => {
+    const error = {
+      message: 'network request failed',
+      graphQLErrors: [],
+    } as unknown as ApolloError;
+    expect(getRegistrationErrorMessage(error, t)).toEqual({
+      formError: 'failure_responses.network_errors.network_error',
+      emailError: null,
+      passwordError: null,
+      nameError: null,
     });
   });
 });
