@@ -1,8 +1,6 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
-const ENTRY_ANIMATION = 'notificationFadeInUp 380ms cubic-bezier(0.22, 1, 0.36, 1) both';
-
 const centeredColumnFlex = {
   display: 'flex',
   justifyContent: 'center',
@@ -22,64 +20,6 @@ export default {
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
-    '@keyframes notificationFadeInUp': {
-      from: {
-        opacity: 0,
-        transform: 'translateY(0.875rem)',
-      },
-      to: {
-        opacity: 1,
-        transform: 'translateY(0)',
-      },
-    },
-    '@keyframes notificationConfettiReveal': {
-      from: {
-        opacity: 0,
-        transform: 'translateY(-0.5rem) scale(0.95)',
-      },
-      to: {
-        opacity: 1,
-        transform: 'translateY(0) scale(1)',
-      },
-    },
-    '@keyframes notificationGearSpinIn': {
-      from: {
-        opacity: 0,
-        transform: 'scale(0.9) rotate(-12deg)',
-      },
-      to: {
-        opacity: 1,
-        transform: 'scale(1) rotate(0deg)',
-      },
-    },
-    '@keyframes notificationErrorReveal': {
-      from: {
-        opacity: 0,
-        transform: 'translateY(-0.5rem) scale(0.92)',
-      },
-      to: {
-        opacity: 1,
-        transform: 'translateY(0) scale(1)',
-      },
-    },
-    '@keyframes notificationFadeOutDown': {
-      from: {
-        opacity: 1,
-        transform: 'translateY(0)',
-      },
-      to: {
-        opacity: 0,
-        transform: 'translateY(0.75rem)',
-      },
-    },
-    '@media (prefers-reduced-motion: reduce)': {
-      '& *': {
-        animation: 'none !important',
-      },
-    },
-  },
-  notificationSectionClosing: {
-    animation: 'notificationFadeOutDown 240ms cubic-bezier(0.4, 0, 0.2, 1) both',
   },
   contentBox: {
     zIndex: 3,
@@ -90,7 +30,6 @@ export default {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    animation: ENTRY_ANIMATION,
   },
   successTopImgBox: {
     position: 'absolute',
@@ -113,7 +52,6 @@ export default {
   },
   successTopConfetti: {
     display: 'block',
-    animation: 'notificationConfettiReveal 520ms cubic-bezier(0.22, 1, 0.36, 1) 90ms both',
   },
   bottomImgBox: {
     position: 'absolute',
@@ -141,7 +79,6 @@ export default {
   },
   successBottomConfetti: {
     display: 'block',
-    animation: 'notificationConfettiReveal 560ms cubic-bezier(0.22, 1, 0.36, 1) 150ms both',
   },
   gears: {
     position: 'absolute',
@@ -160,7 +97,6 @@ export default {
     display: 'block',
     width: '10.25rem',
     height: '10.25rem',
-    animation: 'notificationGearSpinIn 600ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both',
   },
   messageContainer: {
     display: 'flex',
@@ -169,7 +105,6 @@ export default {
     justifyContent: 'center',
     textAlign: 'center',
     zIndex: 20,
-    animation: 'notificationFadeInUp 420ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       width: '100%',
     },
@@ -255,11 +190,15 @@ export default {
     '&.MuiButton-contained': {
       padding: '1rem 1.438rem',
       color: '#FFFFFF',
-    },
-    '&.MuiButton-contained:visited, &.MuiButton-contained:hover, &.MuiButton-contained:active, &.MuiButton-contained:focus-visible':
-      {
+      '&:hover, &:focus-visible': {
         color: '#FFFFFF',
+        boxShadow: '0px 4px 7px 0px rgba(116, 134, 151, 0.17)',
       },
+      '&:active': {
+        color: '#FFFFFF',
+        boxShadow: '0px 4px 7px 0px rgba(71, 85, 99, 0.21)',
+      },
+    },
     '& .MuiTypography-root': {
       color: '#FFFFFF',
     },
@@ -290,7 +229,6 @@ export default {
     justifyContent: 'center',
     boxSizing: 'border-box',
     padding: '0.5rem 0.875rem 0.875rem',
-    animation: ENTRY_ANIMATION,
     '@media (max-width: 374px)': {
       justifyContent: 'flex-start',
       paddingTop: '1rem',
@@ -303,7 +241,6 @@ export default {
     display: 'block',
     width: '16.75rem',
     height: '12.1875rem',
-    animation: 'notificationErrorReveal 460ms cubic-bezier(0.22, 1, 0.36, 1) 60ms both',
   },
   imageWrapperError: {
     marginBottom: '0.8125rem',
@@ -314,7 +251,6 @@ export default {
   messageContainerError: {
     ...centeredColumnFlex,
     textAlign: 'center',
-    animation: 'notificationFadeInUp 420ms cubic-bezier(0.22, 1, 0.36, 1) 140ms both',
     [`@media (min-width:334px) and (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       padding: '0rem 0.6rem',
     },
@@ -325,7 +261,6 @@ export default {
   buttonsBox: {
     ...centeredColumnFlex,
     marginTop: '1rem',
-    animation: 'notificationFadeInUp 460ms cubic-bezier(0.22, 1, 0.36, 1) 220ms both',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginTop: '2rem',
     },
@@ -339,7 +274,6 @@ export default {
     minWidth: '260px',
     boxSizing: 'border-box',
     borderRadius: '3.5625rem',
-    boxShadow: 'none',
     textTransform: 'none',
     whiteSpace: 'nowrap',
     fontWeight: 500,
@@ -350,8 +284,15 @@ export default {
       padding: '0 1rem',
       backgroundColor: paletteColors.primary.main,
       color: paletteColors.background.default,
-      '&:hover': { backgroundColor: paletteColors.primary.hover, boxShadow: 'none' },
-      '&:active': { backgroundColor: paletteColors.primary.active, boxShadow: 'none' },
+      boxShadow: 'none',
+      '&:hover, &:focus-visible': {
+        color: '#FFFFFF',
+        boxShadow: '0px 4px 7px 0px rgba(116, 134, 151, 0.17)',
+      },
+      '&:active': {
+        color: '#FFFFFF',
+        boxShadow: '0px 4px 7px 0px rgba(71, 85, 99, 0.21)',
+      },
       '&.Mui-disabled': {
         backgroundColor: paletteColors.background.subtle,
         color: paletteColors.background.default,
@@ -363,11 +304,13 @@ export default {
       color: customColors.social.icon,
       backgroundColor: paletteColors.background.default,
       border: `1px solid ${paletteColors.grey[50]}`,
-      '&:hover': {
+      '&:hover, &:focus-visible': {
         backgroundColor: paletteColors.border.default,
         border: '1px solid rgba(0,0,0,0)',
       },
-      '&:active': { border: `1px solid ${paletteColors.border.default}` },
+      '&:active': {
+        border: `1px solid ${paletteColors.border.default}`,
+      },
       '&.Mui-disabled': {
         backgroundColor: paletteColors.background.subtle,
         color: paletteColors.background.default,

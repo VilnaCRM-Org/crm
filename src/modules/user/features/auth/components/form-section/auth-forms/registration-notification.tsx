@@ -3,7 +3,7 @@ import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/ui-button';
 import UiTypography from '@/components/ui-typography';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, CircularProgress, Fade, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -19,7 +19,7 @@ type RegistrationNotificationProps = {
   onRetry?: () => void;
 };
 
-const BACK_CLOSE_ANIMATION_MS = 240;
+const BACK_CLOSE_ANIMATION_MS = 300;
 
 export default function RegistrationNotification({
   view,
@@ -50,102 +50,102 @@ export default function RegistrationNotification({
 
   if (view === 'error') {
     return (
-      <Box
-        role="alert"
-        aria-live="polite"
-        sx={[styles.notificationSection, isClosing ? styles.notificationSectionClosing : {}]}
-      >
-        <Box sx={styles.contentBoxError}>
-          <Box sx={styles.imageWrapperError}>
-            <Box
-              component={ErrorImage}
-              role="img"
-              aria-label={t('notifications.error.images.error')}
-              sx={styles.errorImage}
-            />
-          </Box>
+      <Fade in={!isClosing} timeout={BACK_CLOSE_ANIMATION_MS} appear>
+        <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
+          <Box sx={styles.contentBoxError}>
+            <Box sx={styles.imageWrapperError}>
+              <Box
+                component={ErrorImage}
+                role="img"
+                aria-label={t('notifications.error.images.error')}
+                sx={styles.errorImage}
+              />
+            </Box>
 
-          <Box sx={styles.messageContainerError}>
-            <UiTypography component="h4" sx={styles.messageTitle}>
-              {t('notifications.error.title')}
-            </UiTypography>
-            <UiTypography component="span" sx={styles.messageDescription}>
-              {errorText || t('failure_responses.client_errors.something_went_wrong')}
-            </UiTypography>
+            <Box sx={styles.messageContainerError}>
+              <UiTypography component="h4" sx={styles.messageTitle}>
+                {t('notifications.error.title')}
+              </UiTypography>
+              <UiTypography component="span" sx={styles.messageDescription}>
+                {errorText || t('failure_responses.client_errors.something_went_wrong')}
+              </UiTypography>
 
-            <Box sx={styles.buttonsBox}>
-              <UIButton
-                sx={styles.errorButton}
-                variant="contained"
-                type="button"
-                disabled={isSubmitting || isClosing}
-                onClick={onRetry}
-              >
-                {t('notifications.error.retry_button')}
-              </UIButton>
-              <UIButton
-                sx={[styles.errorButton, styles.errorButtonSecondary]}
-                variant="outlined"
-                type="button"
-                disabled={isSubmitting || isClosing}
-                onClick={handleBack}
-              >
-                {t('notifications.error.button')}
-              </UIButton>
+              <Box sx={styles.buttonsBox}>
+                <UIButton
+                  sx={styles.errorButton}
+                  variant="contained"
+                  type="button"
+                  disabled={isSubmitting || isClosing}
+                  onClick={onRetry}
+                >
+                  {t('notifications.error.retry_button')}
+                </UIButton>
+                <UIButton
+                  sx={[styles.errorButton, styles.errorButtonSecondary]}
+                  variant="outlined"
+                  type="button"
+                  disabled={isClosing}
+                  onClick={handleBack}
+                >
+                  {t('notifications.error.button')}
+                </UIButton>
+              </Box>
             </Box>
           </Box>
+          {isSubmitting && <CircularProgress color="primary" size={70} sx={styles.loader} />}
         </Box>
-        {isSubmitting && <CircularProgress color="primary" size={70} sx={styles.loader} />}
-      </Box>
+      </Fade>
     );
   }
 
   return (
-    <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
-      <Box sx={styles.contentBox} aria-label="success">
-        <Box sx={styles.successTopImgBox}>
-          <Box
-            component={ConfettiImage}
-            role="img"
-            aria-label={t('notifications.success.images.confetti')}
-            sx={styles.successTopConfetti}
-          />
-        </Box>
-        <Box sx={styles.gears}>
-          <Box
-            component={SettingsImage}
-            role="img"
-            aria-label={t('notifications.success.images.gears')}
-            sx={styles.successGears}
-          />
-        </Box>
+    <Fade in={!isClosing} timeout={BACK_CLOSE_ANIMATION_MS} appear>
+      <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
+        <Box sx={styles.contentBox} aria-label="success">
+          <Box sx={styles.successTopImgBox}>
+            <Box
+              component={ConfettiImage}
+              role="img"
+              aria-label={t('notifications.success.images.confetti')}
+              sx={styles.successTopConfetti}
+            />
+          </Box>
+          <Box sx={styles.gears}>
+            <Box
+              component={SettingsImage}
+              role="img"
+              aria-label={t('notifications.success.images.gears')}
+              sx={styles.successGears}
+            />
+          </Box>
 
-        <Box sx={styles.messageContainer}>
-          <UiTypography component="h4" sx={styles.successMessageTitle}>
-            {t('notifications.success.title')}
-          </UiTypography>
-          <UiTypography component="span" sx={styles.successMessageDescription}>
-            {t('notifications.success.description')}
-          </UiTypography>
+          <Box sx={styles.messageContainer}>
+            <UiTypography component="h4" sx={styles.successMessageTitle}>
+              {t('notifications.success.title')}
+            </UiTypography>
+            <UiTypography component="span" sx={styles.successMessageDescription}>
+              {t('notifications.success.description')}
+            </UiTypography>
 
-          <UIButton
-            sx={styles.messageButton}
-            variant="contained"
-            type="button"
-            size="medium"
-            fullWidth
-            onClick={onBack}
-          >
-            <Typography component="span" sx={styles.messageButtonText}>
-              {t('notifications.success.button')}
-            </Typography>
-          </UIButton>
-        </Box>
+            <UIButton
+              sx={styles.messageButton}
+              variant="contained"
+              type="button"
+              size="medium"
+              fullWidth
+              onClick={handleBack}
+            >
+              <Typography component="span" sx={styles.messageButtonText}>
+                {t('notifications.success.button')}
+              </Typography>
+            </UIButton>
+          </Box>
 
-        <Box sx={styles.bottomImgBox}>
-          <Box component={ConfettiImage} aria-hidden="true" sx={styles.successBottomConfetti} />
+          <Box sx={styles.bottomImgBox}>
+            <Box component={ConfettiImage} aria-hidden="true" sx={styles.successBottomConfetti} />
+          </Box>
         </Box>
       </Box>
-    </Box>
+    </Fade>
   );
 }

@@ -76,7 +76,7 @@ describe('RegistrationNotification', () => {
 
     expect(onRetry).toHaveBeenCalledTimes(1);
     expect(onBack).not.toHaveBeenCalled();
-    jest.advanceTimersByTime(260);
+    jest.advanceTimersByTime(300);
     expect(onBack).toHaveBeenCalledTimes(1);
     jest.useRealTimers();
   });

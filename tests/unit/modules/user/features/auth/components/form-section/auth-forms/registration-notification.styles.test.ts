@@ -6,11 +6,10 @@ describe('registration notification success button styles', () => {
 
     expect(successButton.color).toBe('#FFFFFF');
     expect(successButton['&:visited, &:hover, &:active, &:focus-visible'].color).toBe('#FFFFFF');
-    expect(
-      successButton[
-        '&.MuiButton-contained:visited, &.MuiButton-contained:hover, &.MuiButton-contained:active, &.MuiButton-contained:focus-visible'
-      ].color
-    ).toBe('#FFFFFF');
+    expect(successButton['&.MuiButton-contained']['&:hover, &:focus-visible'].color).toBe(
+      '#FFFFFF'
+    );
+    expect(successButton['&.MuiButton-contained']['&:active'].color).toBe('#FFFFFF');
   });
 
   it('keeps error notification actions full-width regardless of text length', () => {
