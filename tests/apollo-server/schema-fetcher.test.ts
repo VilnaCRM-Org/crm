@@ -52,7 +52,7 @@ interface SchemaFetcherModule {
 type ProcessExitCode = string | number | null | undefined;
 
 function getSchemaFetcherModule(): SchemaFetcherModule {
-  return require('../../docker/apollo-server/lib/schemaFetcher') as SchemaFetcherModule;
+  return require('../../docker/apollo-server/lib/schema-fetcher') as SchemaFetcherModule;
 }
 
 function getFetchAndSaveSchema(): (outputDir: string) => Promise<void> {
@@ -518,7 +518,7 @@ describe('schemaFetcher', () => {
       jest.resetModules(); // Reset to clear cached logger
       process.env.GRAPHQL_LOG_LEVEL = 'debug';
 
-      const { getLogger } = require('../../docker/apollo-server/lib/schemaFetcher');
+      const { getLogger } = require('../../docker/apollo-server/lib/schema-fetcher');
       const logger = getLogger(TEST_DIR);
 
       expect(logger).toBeDefined();
@@ -535,7 +535,7 @@ describe('schemaFetcher', () => {
       jest.resetModules(); // Reset to clear cached logger
       delete process.env.GRAPHQL_LOG_LEVEL;
 
-      const { getLogger } = require('../../docker/apollo-server/lib/schemaFetcher');
+      const { getLogger } = require('../../docker/apollo-server/lib/schema-fetcher');
       const logger = getLogger(TEST_DIR);
 
       expect(logger).toBeDefined();
@@ -574,7 +574,7 @@ describe('schemaFetcher', () => {
         },
       }));
 
-      const { getLogger } = require('../../docker/apollo-server/lib/schemaFetcher');
+      const { getLogger } = require('../../docker/apollo-server/lib/schema-fetcher');
 
       const logger = getLogger(TEST_DIR);
 
@@ -615,7 +615,7 @@ describe('schemaFetcher', () => {
         },
       }));
 
-      const { getLogger } = require('../../docker/apollo-server/lib/schemaFetcher');
+      const { getLogger } = require('../../docker/apollo-server/lib/schema-fetcher');
 
       const logger = getLogger(TEST_DIR);
 

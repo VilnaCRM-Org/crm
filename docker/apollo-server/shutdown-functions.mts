@@ -3,4 +3,4 @@ export {
   CriticalError,
   shouldShutdown,
   handleServerFailure,
-} from './lib/shutdownFunctions.js';
+} from './lib/shutdown-functions.js';

@@ -47,6 +47,7 @@ export default function RegistrationNotification({
       onBack();
     }, BACK_CLOSE_ANIMATION_MS);
   }, [onBack]);
+  const errorButtonTextStyles = [styles.messageButtonText, styles.errorButtonMessage];
 
   if (view === 'error') {
     return (
@@ -78,7 +79,9 @@ export default function RegistrationNotification({
                   disabled={isSubmitting || isClosing}
                   onClick={onRetry}
                 >
-                  {t('notifications.error.retry_button')}
+                  <Typography component="span" sx={errorButtonTextStyles}>
+                    {t('notifications.error.retry_button')}
+                  </Typography>
                 </UIButton>
                 <UIButton
                   sx={[styles.errorButton, styles.errorButtonSecondary]}
@@ -87,7 +90,9 @@ export default function RegistrationNotification({
                   disabled={isClosing}
                   onClick={handleBack}
                 >
-                  {t('notifications.error.button')}
+                  <Typography component="span" sx={errorButtonTextStyles}>
+                    {t('notifications.error.button')}
+                  </Typography>
                 </UIButton>
               </Box>
             </Box>

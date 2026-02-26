@@ -332,11 +332,12 @@ module.exports = {
       to: {},
     },
     {
-      name: 'tests-lowercase-paths',
-      comment: 'Tests paths must be lowercase and kebab-style to stay aligned with src naming.',
+      name: 'no-uppercase-paths',
+      comment:
+        'All source paths must be lowercase and kebab-case. Uppercase letters in file or directory names break consistency across the project.',
       severity: 'error',
       from: {
-        path: '^tests/.*[A-Z].*',
+        path: '.*[A-Z].*',
       },
       to: {},
     },
@@ -376,6 +377,24 @@ module.exports = {
       severity: 'error',
       from: {
         path: '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/features/[a-z0-9-]+/(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/',
+      },
+      to: {},
+    },
+    {
+      name: 'src-module-name-kebab-case',
+      comment: 'Module names under src/modules must be lowercase kebab-case.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/(?![a-z0-9-]+/)[^/]+/',
+      },
+      to: {},
+    },
+    {
+      name: 'src-feature-name-kebab-case',
+      comment: 'Feature names under src/modules/*/features must be lowercase kebab-case.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/[a-z0-9-]+/features/(?![a-z0-9-]+/)[^/]+/',
       },
       to: {},
     },

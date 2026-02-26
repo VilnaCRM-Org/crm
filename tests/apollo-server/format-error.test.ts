@@ -1,7 +1,7 @@
 import { ApolloServerErrorCode } from '@apollo/server/errors';
 import { GraphQLFormattedError } from 'graphql';
 
-import { formatError } from '../../docker/apollo-server/lib/formatError';
+import { formatError } from '../../docker/apollo-server/lib/format-error';
 
 describe('formatError', () => {
   const originalEnv = process.env.NODE_ENV;
@@ -43,7 +43,7 @@ describe('formatError', () => {
       process.env.NODE_ENV = 'development';
 
       jest.resetModules();
-      const { formatError: formatErrorDev } = require('../../docker/apollo-server/lib/formatError');
+      const { formatError: formatErrorDev } = require('../../docker/apollo-server/lib/format-error');
 
       const formattedError: GraphQLFormattedError = {
         message: 'Original error message',
@@ -93,7 +93,7 @@ describe('formatError', () => {
 
       // Re-import to pick up new NODE_ENV
       jest.resetModules();
-      const { formatError: formatErrorDev } = require('../../docker/apollo-server/lib/formatError');
+      const { formatError: formatErrorDev } = require('../../docker/apollo-server/lib/format-error');
 
       const formattedError: GraphQLFormattedError = {
         message: 'Original error message',
@@ -203,7 +203,7 @@ describe('formatError', () => {
 
       // Re-import to pick up new NODE_ENV
       jest.resetModules();
-      const { formatError: formatErrorDev } = require('../../docker/apollo-server/lib/formatError');
+      const { formatError: formatErrorDev } = require('../../docker/apollo-server/lib/format-error');
 
       const formattedError: GraphQLFormattedError = {
         message: '',

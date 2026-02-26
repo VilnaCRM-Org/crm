@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const LocalizationGenerator = require('../../../scripts/localizationGenerator');
+const LocalizationGenerator = require('../../../scripts/localization-generator');
 
 jest.mock('fs');
 

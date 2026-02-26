@@ -5,7 +5,7 @@ import { defineConfig, loadEnv, type RsbuildPluginAPI } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
 
-import LocalizationGenerator from './scripts/localizationGenerator';
+import LocalizationGenerator from './scripts/localization-generator';
 
 const pluginLocalization = (): { name: string; setup: (api: RsbuildPluginAPI) => void } => ({
   name: 'plugin-localization',

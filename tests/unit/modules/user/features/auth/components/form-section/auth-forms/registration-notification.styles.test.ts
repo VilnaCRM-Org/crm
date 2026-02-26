@@ -1,3 +1,4 @@
+import breakpointsTheme from '@/components/ui-breakpoints';
 import styles from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification.styles';
 
 describe('registration notification success button styles', () => {
@@ -12,8 +13,28 @@ describe('registration notification success button styles', () => {
     expect(successButton['&.MuiButton-contained']['&:active'].color).toBe('#FFFFFF');
   });
 
-  it('keeps error notification actions full-width regardless of text length', () => {
-    expect(styles.messageContainerError.width).toBe('100%');
-    expect(styles.buttonsBox.width).toBe('100%');
+  it('keeps error buttons at minimum touch-target size regardless of text length', () => {
+    expect(styles.errorButton.minWidth).toBe('260px');
+    expect(styles.errorButton.height).toBe('50px');
+  });
+
+  it('applies Golos font family to button text, title, and description', () => {
+    expect(styles.messageButtonText.fontFamily).toBe('Golos, Golos Fallback');
+    expect(styles.messageTitle.fontFamily).toBe('Golos, Golos Fallback');
+    expect(styles.messageDescription.fontFamily).toBe('Golos, Golos Fallback');
+  });
+
+  it('uses theme breakpoints for error notification layout transitions', () => {
+    const mdMinMedia = `@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`;
+    const smRangeMedia = `@media (min-width:${breakpointsTheme.breakpoints.values.xs}px) and (max-width:${breakpointsTheme.breakpoints.values.sm}px)`;
+    const xlMinMedia = `@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`;
+
+    type MediaStyles = Record<string, Record<string, string>>;
+
+    expect((styles.imageWrapperError as unknown as MediaStyles)[mdMinMedia].marginBottom).toBe('0.75rem');
+    expect((styles.messageContainerError as unknown as MediaStyles)[smRangeMedia].padding).toBe('0rem 0.6rem');
+    expect((styles.messageContainerError as unknown as MediaStyles)[xlMinMedia].padding).toBe('0rem 1.2rem');
+    expect((styles.buttonsBox as unknown as MediaStyles)[mdMinMedia].marginTop).toBe('2rem');
+    expect((styles.errorButton as unknown as MediaStyles)[mdMinMedia].height).toBe('70px');
   });
 });

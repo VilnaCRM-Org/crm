@@ -113,6 +113,7 @@ export default {
     fontWeight: 500,
     fontSize: '0.9375rem',
     lineHeight: '1.125rem',
+    fontFamily: 'Golos, Golos Fallback',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontWeight: 600,
       fontSize: '1.125rem',
@@ -152,11 +153,13 @@ export default {
     fontWeight: 700,
     fontSize: '1.375rem',
     lineHeight: '1.65rem',
+    fontFamily: 'Golos, Golos Fallback',
     color: customColors.text.dark,
     textTransform: 'none',
-    letterSpacing: 0,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontWeight: 600,
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       fontSize: '1.875rem',
       lineHeight: '2.25rem',
     },
@@ -169,10 +172,16 @@ export default {
     fontWeight: 400,
     fontSize: '0.98rem',
     lineHeight: '1.5625rem',
+    fontFamily: 'Golos, Golos Fallback',
     color: customColors.text.dark,
+    maxWidth: '300px',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1.2rem',
       lineHeight: '1.625rem',
+      maxWidth: '350px',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      maxWidth: 'none',
     },
   },
   messageButton: {
@@ -234,24 +243,26 @@ export default {
       paddingTop: '1rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      padding: '0.5rem 1rem 0.75rem',
+      justifyContent: 'flex-start',
+      paddingTop: '4.25rem',
     },
   },
   errorImage: {
     display: 'block',
     width: '16.75rem',
-    height: '12.1875rem',
+    height: '12.4375rem',
+    maxWidth: '100%',
   },
   imageWrapperError: {
     marginBottom: '0.8125rem',
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginBottom: '0.75rem',
     },
   },
   messageContainerError: {
     ...centeredColumnFlex,
     textAlign: 'center',
-    [`@media (min-width:334px) and (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xs}px) and (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       padding: '0rem 0.6rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
@@ -320,7 +331,7 @@ export default {
     '@media (min-width: 375px)': {
       minWidth: '301px',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       width: '315px',
       height: '70px',
       fontWeight: 600,
@@ -336,6 +347,13 @@ export default {
       '&.MuiButton-contained, &.MuiButton-outlined': {
         height: '62px',
       },
+    },
+  },
+  errorButtonMessage: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+      fontWeight: 600,
+      fontSize: '18px',
+      lineHeight: '21.6px',
     },
   },
   errorButtonSecondary: {

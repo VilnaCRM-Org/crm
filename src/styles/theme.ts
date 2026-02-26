@@ -1,6 +1,11 @@
 import { createTheme } from '@mui/material/styles';
 
-import Golos from '@/assets/fonts/golos/Golos-Text_Black.ttf';
+import GolosBlack from '@/assets/fonts/golos/Golos-Text_Black.ttf';
+import GolosBold from '@/assets/fonts/golos/Golos-Text_Bold.ttf';
+import GolosExtraBold from '@/assets/fonts/golos/Golos-Text_ExtraBold.ttf';
+import GolosMedium from '@/assets/fonts/golos/Golos-Text_Medium.ttf';
+import GolosRegular from '@/assets/fonts/golos/Golos-Text_Regular.ttf';
+import GolosSemiBold from '@/assets/fonts/golos/Golos-Text_SemiBold.ttf';
 import Inter from '@/assets/fonts/inter/Inter-Black.ttf';
 
 import { customColors, paletteColors } from './colors';
@@ -29,15 +34,43 @@ export default createTheme({
       styleOverrides: `
         @font-face {
           font-family: Golos;
-          src:
-            local('Golos')
-            url(${Golos}) format('ttf')
+          src: local('Golos'), url(${GolosRegular}) format('truetype');
+          font-weight: 400;
+          font-style: normal;
         }
-          @font-face {
+        @font-face {
+          font-family: Golos;
+          src: local('Golos'), url(${GolosMedium}) format('truetype');
+          font-weight: 500;
+          font-style: normal;
+        }
+        @font-face {
+          font-family: Golos;
+          src: local('Golos'), url(${GolosSemiBold}) format('truetype');
+          font-weight: 600;
+          font-style: normal;
+        }
+        @font-face {
+          font-family: Golos;
+          src: local('Golos'), url(${GolosBold}) format('truetype');
+          font-weight: 700;
+          font-style: normal;
+        }
+        @font-face {
+          font-family: Golos;
+          src: local('Golos'), url(${GolosExtraBold}) format('truetype');
+          font-weight: 800;
+          font-style: normal;
+        }
+        @font-face {
+          font-family: Golos;
+          src: local('Golos'), url(${GolosBlack}) format('truetype');
+          font-weight: 900;
+          font-style: normal;
+        }
+        @font-face {
           font-family: Inter;
-          src:
-            local('Inter')
-            url(${Inter}) format('ttf')
+          src: local('Inter'), url(${Inter}) format('truetype');
         }
       `,
     },

@@ -130,7 +130,7 @@ export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
 
 /**
  * Final guard for the schema fetch CLI entrypoint.
- * Intended to be called by the command-line wrapper (`schemaFetcher.mts`) when an unhandled
+ * Intended to be called by the command-line wrapper (`schema-fetcher.mts`) when an unhandled
  * error bubbles up so we can log the context and exit with a failure code.
  *
  * ts-prune-ignore-next - used by the .mts CLI entrypoint so it won't appear in TS import graphs.

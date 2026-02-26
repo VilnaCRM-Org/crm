@@ -1,7 +1,7 @@
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { fetchAndSaveSchema, handleFatalError } from './lib/schemaFetcher.js';
+import { fetchAndSaveSchema, handleFatalError } from './lib/schema-fetcher.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

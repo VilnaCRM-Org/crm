@@ -3,7 +3,7 @@ import {
   shouldShutdown,
   handleServerFailure,
   CriticalError,
-} from '../../docker/apollo-server/lib/shutdownFunctions';
+} from '../../docker/apollo-server/lib/shutdown-functions';
 
 describe('shutdownFunctions', () => {
   let consoleLogSpy: jest.SpyInstance;
