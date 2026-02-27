@@ -1,5 +1,12 @@
-import { ApiError, ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors';
+import {
+  ApiError,
+  ApiErrorCodes,
+  AuthenticationError,
+  ConflictError,
+  ValidationError,
+} from '@/modules/User/features/Auth/api/ApiErrors';
 import BaseAPI from '@/modules/User/features/Auth/api/BaseAPI';
+import isAPIError from '@/modules/User/helpers/isAPIError';
 import { HttpError } from '@/services/HttpsClient/HttpError';
 
 class TestAPI extends BaseAPI {
@@ -20,6 +27,8 @@ describe('BaseAPI', () => {
       const error = new HttpError({ message: 'Bad Request', status: 400 });
       const result = api.testHandleApiError(error, 'Login');
 
+      expect(isAPIError(result)).toBe(true);
+      expect(result).toBeInstanceOf(ValidationError);
       expect(result.message).toBe('Invalid login data');
       expect(result.code).toBe(ApiErrorCodes.VALIDATION);
     });
@@ -28,6 +37,8 @@ describe('BaseAPI', () => {
       const error = new HttpError({ message: 'Unauthorized', status: 401 });
       const result = api.testHandleApiError(error, 'Login');
 
+      expect(isAPIError(result)).toBe(true);
+      expect(result).toBeInstanceOf(AuthenticationError);
       expect(result.code).toBe(ApiErrorCodes.AUTH);
     });
 
@@ -59,6 +70,8 @@ describe('BaseAPI', () => {
       const error = new HttpError({ message: 'Conflict', status: 409 });
       const result = api.testHandleApiError(error, 'Registration');
 
+      expect(isAPIError(result)).toBe(true);
+      expect(result).toBeInstanceOf(ConflictError);
       expect(result.message).toBe('Registration conflict. Resource already exists.');
       expect(result.code).toBe(ApiErrorCodes.CONFLICT);
     });
@@ -67,6 +80,8 @@ describe('BaseAPI', () => {
       const error = new HttpError({ message: 'Unprocessable Entity', status: 422 });
       const result = api.testHandleApiError(error, 'Login');
 
+      expect(isAPIError(result)).toBe(true);
+      expect(result).toBeInstanceOf(ValidationError);
       expect(result.message).toBe('Unprocessable login data');
       expect(result.code).toBe(ApiErrorCodes.VALIDATION);
     });
@@ -128,9 +143,10 @@ describe('BaseAPI', () => {
     });
 
     it('should detect network error from message', () => {
-      const error = new HttpError({ message: 'Failed to fetch', status: 0 });
+      const error = new HttpError({ message: 'Failed to fetch', status: 500 });
       const result = api.testHandleApiError(error, 'Login');
 
+      expect(result.message).toBe('Network error. Please check your connection.');
       expect(result.code).toBe(ApiErrorCodes.NETWORK);
     });
   });

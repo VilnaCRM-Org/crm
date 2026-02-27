@@ -257,7 +257,10 @@ describe('authStore', () => {
 
     it('should set loading state during registration', async () => {
       (mockRegistrationAPI.register as jest.Mock).mockImplementation(() =>
-        createDelayedPromise(100)
+        createDelayedPromise(100, {
+          fullName: 'Test User',
+          email: 'test@example.com',
+        })
       );
 
       const { registerUser } = useAuthStore.getState();
@@ -270,6 +273,10 @@ describe('authStore', () => {
       expect(useAuthStore.getState().registerLoading).toBe(true);
 
       await registerPromise;
+
+      const state = useAuthStore.getState();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeNull();
     });
 
     it('should handle validation error from API response', async () => {

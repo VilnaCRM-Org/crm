@@ -27,6 +27,11 @@ export default function RegistrationForm(): JSX.Element {
 
   const handleRegister = async (data: RegisterUserDto): Promise<void> => {
     await registerUser(data);
+
+    const { registerError } = useAuthStore.getState();
+    if (registerError) {
+      throw new Error(registerError);
+    }
   };
   const validators = createValidators(t);
   return (
