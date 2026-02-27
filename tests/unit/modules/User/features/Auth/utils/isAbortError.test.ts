@@ -1,4 +1,4 @@
-import { isAbortError } from '@/modules/User/features/Auth/utils/isAbortError';
+import isAbortError from '@/modules/User/features/Auth/utils/isAbortError';
 
 describe('isAbortError', () => {
   it('returns true for a DOMException', () => {
@@ -35,5 +35,9 @@ describe('isAbortError', () => {
     const err = new Error();
     err.message = undefined as unknown as string;
     expect(isAbortError(err)).toBe(false);
+  });
+
+  it('returns false for a DOMException with a non-abort type', () => {
+    expect(isAbortError(new DOMException('Not allowed', 'SecurityError'))).toBe(false);
   });
 });

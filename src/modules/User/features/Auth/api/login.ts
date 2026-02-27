@@ -3,11 +3,11 @@ import TOKENS from '@/config/tokens';
 import { ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
 
-import { LoginResponseSchema } from '../types/ApiResponses';
-import type { LoginUserDto } from '../types/Credentials';
-import { isAbortError } from '../utils/isAbortError';
-
-import type LoginAPI from './LoginAPI';
+import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
+import { LoginResponseSchema } from '@/modules/User/features/Auth/types/ApiResponses';
+import type { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import isAbortError from '@/modules/User/features/Auth/utils/isAbortError';
+import isAPIError from '@/modules/User/helpers/isAPIError';
 
 export type LoginResult =
   | { status: 'success'; email: string; token: string }
@@ -35,6 +35,11 @@ export async function login(credentials: LoginUserDto, signal?: AbortSignal): Pr
   } catch (err) {
     if (isAbortError(err)) {
       return { status: 'aborted' };
+    }
+
+    if (isAPIError(err)) {
+      const apiError = ErrorHandler.handleAuthError(err);
+      return { status: 'error', message: apiError.displayMessage };
     }
 
     const parsedError = ErrorParser.parseHttpError(err);
