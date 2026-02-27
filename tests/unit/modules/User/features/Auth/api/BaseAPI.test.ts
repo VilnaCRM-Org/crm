@@ -168,7 +168,8 @@ describe('BaseAPI', () => {
     });
 
     it('should handle error object with no name property', () => {
-      const error = { message: 'Some error' };
+      const error = new Error('Some error');
+      Object.defineProperty(error, 'name', { value: undefined, configurable: true });
       const result = api.testHandleApiError(error, 'Login');
 
       expect(result.message).toBe('Login failed. Please try again.');
@@ -185,7 +186,8 @@ describe('BaseAPI', () => {
     });
 
     it('should handle error object with name property but no toLowerCase method', () => {
-      const error = { name: 'CustomError' as unknown, message: 'test error' };
+      const error = new Error('test error');
+      Object.defineProperty(error, 'name', { value: { value: 'CustomError' }, configurable: true });
       const result = api.testHandleApiError(error, 'Login');
 
       expect(result.message).toBe('Login failed. Please try again.');
