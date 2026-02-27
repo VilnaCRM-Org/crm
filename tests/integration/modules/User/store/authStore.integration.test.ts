@@ -384,6 +384,17 @@ describe('Auth Store Integration', () => {
       expect(state.registerError).toBeTruthy();
     });
 
+    it('should handle non-API errors from RegistrationAPI', async () => {
+      const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+      jest.spyOn(registrationAPI, 'register').mockRejectedValue(new Error('Unexpected failure'));
+
+      await useAuthStore.getState().registerUser(registrationCredentials);
+
+      const state = useAuthStore.getState();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeTruthy();
+    });
+
     it('should handle pre-aborted signal', async () => {
       const abortController = new AbortController();
       abortController.abort();
