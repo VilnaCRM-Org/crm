@@ -47,6 +47,7 @@ export default {
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       top: '0rem',
+      left: '-7rem',
       transform: 'scale(1)',
     },
   },
@@ -124,12 +125,14 @@ export default {
     fontWeight: 700,
     fontSize: '1.375rem',
     lineHeight: '1.65rem',
+    fontFamily: 'Golos, Golos Fallback',
     color: customColors.text.dark,
     textTransform: 'none',
-    letterSpacing: 0,
     whiteSpace: 'nowrap',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontWeight: 600,
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       fontSize: '1.875rem',
       lineHeight: '2.25rem',
     },
@@ -140,6 +143,7 @@ export default {
     fontWeight: 400,
     fontSize: '0.98rem',
     lineHeight: '1.5625rem',
+    fontFamily: 'Golos, Golos Fallback',
     color: customColors.text.dark,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       fontSize: '1.2rem',
@@ -230,32 +234,27 @@ export default {
 
   contentBoxError: {
     flex: 1,
+    alignSelf: 'stretch',
     width: '100%',
-    height: '100%',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    justifyContent: 'center',
     boxSizing: 'border-box',
-    padding: '0.5rem 0.875rem 0.875rem',
-    '@media (max-width: 374px)': {
-      justifyContent: 'flex-start',
-      paddingTop: '1rem',
-    },
+    paddingTop: '1rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      justifyContent: 'flex-start',
       paddingTop: '4.25rem',
     },
   },
   errorImage: {
     display: 'block',
     width: '16.75rem',
-    height: '12.4375rem',
+    height: '12.1875rem',
     maxWidth: '100%',
   },
   imageWrapperError: {
+    paddingBottom: '0.25rem',
     marginBottom: '0.8125rem',
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       marginBottom: '0.75rem',
     },
   },
@@ -265,14 +264,17 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xs}px) and (max-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       padding: '0rem 0.6rem',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+    '@media (min-width: 1131px)': {
       padding: '0rem 1.2rem',
     },
   },
   buttonsBox: {
-    ...centeredColumnFlex,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'column',
     marginTop: '1rem',
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
       marginTop: '2rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {

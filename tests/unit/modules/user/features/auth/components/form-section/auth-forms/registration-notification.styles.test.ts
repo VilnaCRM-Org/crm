@@ -25,16 +25,17 @@ describe('registration notification success button styles', () => {
   });
 
   it('uses theme breakpoints for error notification layout transitions', () => {
+    const smMinMedia = `@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`;
     const mdMinMedia = `@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`;
     const smRangeMedia = `@media (min-width:${breakpointsTheme.breakpoints.values.xs}px) and (max-width:${breakpointsTheme.breakpoints.values.sm}px)`;
-    const xlMinMedia = `@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`;
+    const xlPaddingMedia = '@media (min-width: 1131px)';
 
     type MediaStyles = Record<string, Record<string, string>>;
 
-    expect((styles.imageWrapperError as unknown as MediaStyles)[mdMinMedia].marginBottom).toBe('0.75rem');
+    expect((styles.imageWrapperError as unknown as MediaStyles)[smMinMedia].marginBottom).toBe('0.75rem');
     expect((styles.messageContainerError as unknown as MediaStyles)[smRangeMedia].padding).toBe('0rem 0.6rem');
-    expect((styles.messageContainerError as unknown as MediaStyles)[xlMinMedia].padding).toBe('0rem 1.2rem');
-    expect((styles.buttonsBox as unknown as MediaStyles)[mdMinMedia].marginTop).toBe('2rem');
+    expect((styles.messageContainerError as unknown as MediaStyles)[xlPaddingMedia].padding).toBe('0rem 1.2rem');
+    expect((styles.buttonsBox as unknown as MediaStyles)[smMinMedia].marginTop).toBe('2rem');
     expect((styles.errorButton as unknown as MediaStyles)[mdMinMedia].height).toBe('70px');
   });
 });
