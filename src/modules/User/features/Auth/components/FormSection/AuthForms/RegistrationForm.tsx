@@ -1,5 +1,5 @@
 import UIForm from '@/components/UIForm';
-import { selectError, selectLoading, useAuthStore } from '@/stores/zustand/authStore';
+import { selectError, selectLoading, useAuthStore } from '@/modules/User/features/Auth/stores/authStore';
 import { useTranslation } from 'react-i18next';
 
 import FormField from '@/modules/User/features/Auth/components/FormSection/components/FormField';
@@ -10,7 +10,6 @@ import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabel
 import getRegistrationError from '@/modules/User/features/Auth/utils/mapRegistrationError';
 
 export default function RegistrationForm(): JSX.Element {
-  const registerUser = useAuthStore((state) => state.registerUser);
   const isSubmitting = useAuthStore(selectLoading);
   const rawError = useAuthStore(selectError);
   const { t } = useTranslation();
@@ -18,9 +17,8 @@ export default function RegistrationForm(): JSX.Element {
   const errorKey = getRegistrationError(rawError);
   const error = errorKey ? t(errorKey) : null;
 
-  const handleRegister = async (data: RegisterUserDto): Promise<void> => {
-    await registerUser(data);
-  };
+  // TODO: replace with GraphQL mutation (chore/registration-apollo)
+  const handleRegister = async (_data: RegisterUserDto): Promise<void> => {};
   const validators = createValidators(t);
   return (
     <UIForm<RegisterUserDto>

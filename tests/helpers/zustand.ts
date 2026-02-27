@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/stores/zustand/authStore';
+import { useAuthStore } from '@/modules/User/features/Auth/stores/authStore';
 
 /**
  * Reset all Zustand stores to initial state

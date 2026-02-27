@@ -1,5 +1,5 @@
 import UIForm from '@/components/UIForm';
-import { selectError, selectLoading, useAuthStore } from '@/stores/zustand/authStore';
+import { selectError, selectLoading, useAuthStore } from '@/modules/User/features/Auth/stores/authStore';
 import { useTranslation } from 'react-i18next';
 
 import FormField from '@/modules/User/features/Auth/components/FormSection/components/FormField';
