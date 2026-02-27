@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { login } from '../api/login';
-import { register } from '../api/register';
-import type { LoginUserDto, RegisterUserDto } from '../types/Credentials';
+import { login } from '@/modules/User/features/Auth/api/login';
+import { register } from '@/modules/User/features/Auth/api/register';
+import type { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 interface AuthState {
   email: string;

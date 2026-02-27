@@ -1,4 +1,5 @@
 import UIForm from '@/components/UIForm';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import FormField from '@/modules/User/features/Auth/components/FormSection/components/FormField';
@@ -18,6 +19,8 @@ export default function RegistrationForm(): JSX.Element {
   const isSubmitting = useAuthStore(selectRegisterLoading);
   const rawError = useAuthStore(selectRegisterError);
   const { t } = useTranslation();
+
+  useEffect(() => (): void => useAuthStore.setState({ registerError: null }), []);
 
   const errorKey = getRegistrationError(rawError);
   const error = errorKey ? t(errorKey) : null;

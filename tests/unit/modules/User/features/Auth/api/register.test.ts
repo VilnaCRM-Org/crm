@@ -50,6 +50,18 @@ describe('register()', () => {
     expect((result as { status: 'error'; message: string }).message).toBeTruthy();
   });
 
+  it('returns mapped auth error when API-shaped error is thrown', async () => {
+    (mockRegistrationAPI.register as jest.Mock).mockRejectedValue({
+      code: 'AUTH_INVALID',
+      message: 'Invalid credentials',
+    });
+    const result = await register({ fullName: 'Ada', email: 'a@b.com', password: 'pw' });
+    expect(result).toEqual({
+      status: 'error',
+      message: 'Invalid credentials',
+    });
+  });
+
   it('returns error for null thrown', async () => {
     (mockRegistrationAPI.register as jest.Mock).mockRejectedValue(null);
     const result = await register({ fullName: 'Ada', email: 'a@b.com', password: 'pw' });

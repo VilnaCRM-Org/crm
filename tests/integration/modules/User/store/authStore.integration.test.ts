@@ -564,7 +564,9 @@ describe('Auth Store Integration', () => {
       expect(registrationAPI).toBeDefined();
 
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) => res(ctx.status(201), ctx.json({})))
+        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
+          res(ctx.status(201), ctx.json({ fullName: 'Test User', email: 'test@example.com' }))
+        )
       );
 
       await useAuthStore.getState().registerUser(registrationCredentials);

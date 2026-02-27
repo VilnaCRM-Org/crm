@@ -237,10 +237,15 @@ describe('BaseAPI', () => {
     });
 
     it('should handle null/undefined errors', () => {
-      const result = api.testHandleApiError(null, 'Login');
+      const nullResult = api.testHandleApiError(null, 'Login');
 
-      expect(result.message).toBe('Login failed. Please try again.');
-      expect(result.code).toBe(ApiErrorCodes.UNKNOWN);
+      expect(nullResult.message).toBe('Login failed. Please try again.');
+      expect(nullResult.code).toBe(ApiErrorCodes.UNKNOWN);
+
+      const undefinedResult = api.testHandleApiError(undefined, 'Login');
+
+      expect(undefinedResult.message).toBe('Login failed. Please try again.');
+      expect(undefinedResult.code).toBe(ApiErrorCodes.UNKNOWN);
     });
   });
 });

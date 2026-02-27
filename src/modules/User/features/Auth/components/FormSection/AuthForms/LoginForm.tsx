@@ -20,7 +20,7 @@ export default function LoginForm(): JSX.Element {
   const isSubmitting = useAuthStore(selectLoginLoading);
   const storeError = useAuthStore(selectLoginError);
 
-  const error = storeError ? `${t('sign_in.error_prefix')} ${storeError}` : '';
+  const error = storeError ? `${t('sign_in.error_prefix')} ${storeError}` : null;
 
   useEffect(() => (): void => useAuthStore.setState({ loginError: null }), []);
 

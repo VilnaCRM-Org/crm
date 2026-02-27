@@ -14,9 +14,9 @@ const mockRegistrationAPI = {
   register: jest.fn(),
 } as unknown as RegistrationAPI;
 
-function createDelayedPromise(ms: number): Promise<void> {
+function createDelayedPromise<T>(ms: number, value?: T): Promise<T | undefined> {
   return new Promise((resolve) => {
-    setTimeout(resolve, ms);
+    setTimeout(() => resolve(value), ms);
   });
 }
 
@@ -99,7 +99,9 @@ describe('authStore', () => {
     });
 
     it('should set loading state during login', async () => {
-      (mockLoginAPI.login as jest.Mock).mockImplementation(() => createDelayedPromise(100));
+      (mockLoginAPI.login as jest.Mock).mockImplementation(() =>
+        createDelayedPromise(100, { token: 'test-token-123' })
+      );
 
       const { loginUser } = useAuthStore.getState();
       const loginPromise = loginUser({ email: 'test@example.com', password: 'password123' });
@@ -108,6 +110,10 @@ describe('authStore', () => {
       expect(useAuthStore.getState().loginLoading).toBe(true);
 
       await loginPromise;
+
+      const state = useAuthStore.getState();
+      expect(state.loginLoading).toBe(false);
+      expect(state.token).toBe('test-token-123');
     });
 
     it('should handle validation error from API response', async () => {
