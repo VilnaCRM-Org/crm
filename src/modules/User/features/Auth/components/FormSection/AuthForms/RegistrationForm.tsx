@@ -10,6 +10,7 @@ import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabel
 import getRegistrationError from '@/modules/User/features/Auth/utils/mapRegistrationError';
 
 export default function RegistrationForm(): JSX.Element {
+  const registerUser = useAuthStore((state) => state.registerUser);
   const isSubmitting = useAuthStore(selectLoading);
   const rawError = useAuthStore(selectError);
   const { t } = useTranslation();
@@ -17,8 +18,9 @@ export default function RegistrationForm(): JSX.Element {
   const errorKey = getRegistrationError(rawError);
   const error = errorKey ? t(errorKey) : null;
 
-  // TODO: replace with GraphQL mutation (chore/registration-apollo)
-  const handleRegister = async (_data: RegisterUserDto): Promise<void> => {};
+  const handleRegister = async (data: RegisterUserDto): Promise<void> => {
+    await registerUser(data);
+  };
   const validators = createValidators(t);
   return (
     <UIForm<RegisterUserDto>

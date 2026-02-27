@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
 import { login } from '../api/login';
-import type { LoginUserDto } from '../types/Credentials';
+import { register } from '../api/register';
+import type { LoginUserDto, RegisterUserDto } from '../types/Credentials';
 
 interface AuthState {
   email: string;
@@ -13,6 +14,7 @@ interface AuthState {
 
 interface AuthActions {
   loginUser: (credentials: LoginUserDto, signal?: AbortSignal) => Promise<void>;
+  registerUser: (credentials: RegisterUserDto, signal?: AbortSignal) => Promise<void>;
   logout: () => void;
   reset: () => void;
 }
@@ -46,6 +48,20 @@ export const useAuthStore = create<AuthStore>()(
             false,
             'auth/loginUser/fulfilled'
           );
+        }
+      },
+
+      registerUser: async (credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> => {
+        set({ loading: true, error: null }, false, 'auth/registerUser/pending');
+
+        const result = await register(credentials, signal);
+
+        if (result.status === 'aborted') {
+          set({ loading: false }, false, 'auth/registerUser/aborted');
+        } else if (result.status === 'error') {
+          set({ loading: false, error: result.message }, false, 'auth/registerUser/rejected');
+        } else {
+          set({ loading: false, error: null }, false, 'auth/registerUser/fulfilled');
         }
       },
 

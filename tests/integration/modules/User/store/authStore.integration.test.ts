@@ -5,9 +5,16 @@ import API_ENDPOINTS from '@/config/apiConfig';
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
+import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 import { useAuthStore } from '@/modules/User/features/Auth/stores/authStore';
 
 import server from '../../../mocks/server';
+
+const registrationCredentials = {
+  email: 'test@example.com',
+  password: 'password123',
+  fullName: 'Test User',
+};
 
 function createDelayedPromise(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -275,6 +282,118 @@ describe('Auth Store Integration', () => {
     });
   });
 
+  describe('registerUser', () => {
+    it('should handle successful registration', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
+          res(ctx.status(201), ctx.json({ fullName: 'Test User', email: 'test@example.com' }))
+        )
+      );
+
+      await useAuthStore.getState().registerUser(registrationCredentials);
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+
+    it('should set loading state during registration', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.REGISTER, async (_, res, ctx) => {
+          await createDelayedPromise(50);
+          return res(
+            ctx.status(201),
+            ctx.json({ fullName: 'Test User', email: 'test@example.com' })
+          );
+        })
+      );
+
+      let loadingWasTrue = false;
+      const unsubscribe = useAuthStore.subscribe((state) => {
+        if (state.loading) {
+          loadingWasTrue = true;
+        }
+      });
+
+      await useAuthStore.getState().registerUser(registrationCredentials);
+
+      unsubscribe();
+      expect(loadingWasTrue).toBe(true);
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+
+    it('should handle validation error from API response', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
+          res(ctx.status(200), ctx.json({ fullName: 123, email: 456 }))
+        )
+      );
+
+      await useAuthStore.getState().registerUser(registrationCredentials);
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 400 error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
+          res(ctx.status(400), ctx.json({ message: 'Bad request' }))
+        )
+      );
+
+      await useAuthStore.getState().registerUser(registrationCredentials);
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle 409 conflict error', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
+          res(ctx.status(409), ctx.json({ message: 'User already exists' }))
+        )
+      );
+
+      await useAuthStore.getState().registerUser(registrationCredentials);
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle network failure', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.REGISTER, (_, res) => res.networkError('Failed to fetch'))
+      );
+
+      await useAuthStore.getState().registerUser(registrationCredentials);
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeTruthy();
+    });
+
+    it('should handle pre-aborted signal', async () => {
+      const abortController = new AbortController();
+      abortController.abort();
+
+      await useAuthStore.getState().registerUser(
+        registrationCredentials,
+        abortController.signal
+      );
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
+  });
+
   describe('loginUser abort handling', () => {
     it('should handle pre-aborted signal', async () => {
       const abortController = new AbortController();
@@ -441,5 +560,21 @@ describe('Auth Store Integration', () => {
       expect(state.email).toBe('di@test.com');
     });
 
+    it('should use real RegistrationAPI from DI container', async () => {
+      const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+      expect(registrationAPI).toBeDefined();
+
+      server.use(
+        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
+          res(ctx.status(201), ctx.json({}))
+        )
+      );
+
+      await useAuthStore.getState().registerUser(registrationCredentials);
+
+      const state = useAuthStore.getState();
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    });
   });
 });
