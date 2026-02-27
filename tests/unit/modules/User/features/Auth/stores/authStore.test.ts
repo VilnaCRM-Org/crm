@@ -4,7 +4,16 @@ import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
-import { useAuthStore } from '@/modules/User/features/Auth/stores/authStore';
+import {
+  selectEmail,
+  selectIsAuthenticated,
+  selectLoginError,
+  selectLoginLoading,
+  selectRegisterError,
+  selectRegisterLoading,
+  selectToken,
+  useAuthStore,
+} from '@/modules/User/features/Auth/stores/authStore';
 
 const mockLoginAPI = {
   login: jest.fn(),
@@ -441,42 +450,34 @@ describe('authStore', () => {
     });
 
     it('selectEmail should return email', () => {
-      const { selectEmail } = require('@/modules/User/features/Auth/stores/authStore');
       expect(selectEmail(useAuthStore.getState())).toBe('user@test.com');
     });
 
     it('selectToken should return token', () => {
-      const { selectToken } = require('@/modules/User/features/Auth/stores/authStore');
       expect(selectToken(useAuthStore.getState())).toBe('test-token');
     });
 
     it('selectLoginLoading should return login loading state', () => {
-      const { selectLoginLoading } = require('@/modules/User/features/Auth/stores/authStore');
       expect(selectLoginLoading(useAuthStore.getState())).toBe(false);
     });
 
     it('selectLoginError should return login error', () => {
-      const { selectLoginError } = require('@/modules/User/features/Auth/stores/authStore');
       expect(selectLoginError(useAuthStore.getState())).toBe('login error');
     });
 
     it('selectRegisterLoading should return register loading state', () => {
-      const { selectRegisterLoading } = require('@/modules/User/features/Auth/stores/authStore');
       expect(selectRegisterLoading(useAuthStore.getState())).toBe(true);
     });
 
     it('selectRegisterError should return register error', () => {
-      const { selectRegisterError } = require('@/modules/User/features/Auth/stores/authStore');
       expect(selectRegisterError(useAuthStore.getState())).toBe('register error');
     });
 
     it('selectIsAuthenticated should return true when token exists', () => {
-      const { selectIsAuthenticated } = require('@/modules/User/features/Auth/stores/authStore');
       expect(selectIsAuthenticated(useAuthStore.getState())).toBe(true);
     });
 
     it('selectIsAuthenticated should return false when token is null', () => {
-      const { selectIsAuthenticated } = require('@/modules/User/features/Auth/stores/authStore');
       useAuthStore.setState({ token: null });
       expect(selectIsAuthenticated(useAuthStore.getState())).toBe(false);
     });

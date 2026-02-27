@@ -6,10 +6,9 @@ import { createRoot } from 'react-dom/client';
 
 import '@/config/DependencyInjectionConfig';
 import '@/styles/fonts.css';
-import theme from '@/styles/theme';
-
 import App from '@/App';
 import i18n from '@/i18n';
+import theme from '@/styles/theme';
 
 const rootElement = document.getElementById('root');
 

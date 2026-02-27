@@ -2,6 +2,8 @@ import 'reflect-metadata';
 
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
+import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors';
+import ApiError from '@/modules/User/features/Auth/api/ApiErrors/ApiError';
 import { login } from '@/modules/User/features/Auth/api/login';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 
@@ -48,11 +50,10 @@ describe('login()', () => {
     expect((result as { status: 'error'; message: string }).message).toBeTruthy();
   });
 
-  it('returns mapped auth error when API-shaped error is thrown', async () => {
-    (mockLoginAPI.login as jest.Mock).mockRejectedValue({
-      code: 'AUTH_INVALID',
-      message: 'Invalid credentials',
-    });
+  it('returns mapped auth error when ApiError is thrown', async () => {
+    (mockLoginAPI.login as jest.Mock).mockRejectedValue(
+      new ApiError('Invalid credentials', ApiErrorCodes.AUTH, 401)
+    );
     const result = await login({ email: 'a@b.com', password: 'pw' });
     expect(result).toEqual({
       status: 'error',

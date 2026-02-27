@@ -15,7 +15,7 @@ describe('RegistrationAPI', () => {
   beforeEach(() => {
     container.clearInstances();
     container.registerInstance(TOKENS.HttpsClient, mockHttpsClient);
-    registrationAPI = new RegistrationAPI(mockHttpsClient);
+    registrationAPI = container.resolve(RegistrationAPI);
     jest.clearAllMocks();
   });
 

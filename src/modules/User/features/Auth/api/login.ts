@@ -38,7 +38,8 @@ export async function login(credentials: LoginUserDto, signal?: AbortSignal): Pr
     }
 
     if (isAPIError(err)) {
-      const apiError = ErrorHandler.handleAuthError(err);
+      const parsedError = ErrorParser.parseHttpError(err);
+      const apiError = ErrorHandler.handleAuthError(parsedError);
       return { status: 'error', message: apiError.displayMessage };
     }
 
