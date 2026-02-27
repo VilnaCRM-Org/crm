@@ -4,7 +4,6 @@ export function isAbortError(err: unknown): boolean {
   return (
     (err as Error)?.name === 'AbortError' ||
     err instanceof DOMException ||
-    (err instanceof Error &&
-      (message.includes('abort') || message.includes('cancel')))
+    (err instanceof Error && (message.includes('abort') || message.includes('cancel')))
   );
 }

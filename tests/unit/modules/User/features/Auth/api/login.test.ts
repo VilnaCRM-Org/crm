@@ -2,8 +2,8 @@ import 'reflect-metadata';
 
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
-import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 import { login } from '@/modules/User/features/Auth/api/login';
+import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 
 const mockLoginAPI = { login: jest.fn() } as unknown as LoginAPI;
 

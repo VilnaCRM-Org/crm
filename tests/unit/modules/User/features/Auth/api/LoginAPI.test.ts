@@ -27,11 +27,7 @@ describe('LoginAPI', () => {
       const credentials = { email: 'test@example.com', password: 'password123' };
       const result = await loginAPI.login(credentials);
 
-      expect(mockHttpsClient.post).toHaveBeenCalledWith(
-        '/api/users',
-        credentials,
-        undefined
-      );
+      expect(mockHttpsClient.post).toHaveBeenCalledWith('/api/users', credentials, undefined);
       expect(result).toEqual(mockResponse);
     });
 
@@ -43,11 +39,7 @@ describe('LoginAPI', () => {
       const options = { signal: new AbortController().signal };
       await loginAPI.login(credentials, options);
 
-      expect(mockHttpsClient.post).toHaveBeenCalledWith(
-        '/api/users',
-        credentials,
-        options
-      );
+      expect(mockHttpsClient.post).toHaveBeenCalledWith('/api/users', credentials, options);
     });
 
     it('should handle API errors', async () => {

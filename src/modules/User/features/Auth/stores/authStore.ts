@@ -8,8 +8,10 @@ import type { LoginUserDto, RegisterUserDto } from '../types/Credentials';
 interface AuthState {
   email: string;
   token: string | null;
-  loading: boolean;
-  error: string | null;
+  loginLoading: boolean;
+  loginError: string | null;
+  registerLoading: boolean;
+  registerError: string | null;
 }
 
 interface AuthActions {
@@ -24,9 +26,18 @@ type AuthStore = AuthState & AuthActions;
 const initialState: AuthState = {
   email: '',
   token: null,
-  loading: false,
-  error: null,
+  loginLoading: false,
+  loginError: null,
+  registerLoading: false,
+  registerError: null,
 };
+
+export function sanitizeAuthState(state: AuthStore): AuthStore {
+  return {
+    ...state,
+    token: state.token ? '[REDACTED]' : null,
+  };
+}
 
 export const useAuthStore = create<AuthStore>()(
   devtools(
@@ -34,17 +45,21 @@ export const useAuthStore = create<AuthStore>()(
       ...initialState,
 
       loginUser: async (credentials: LoginUserDto, signal?: AbortSignal): Promise<void> => {
-        set({ loading: true, error: null }, false, 'auth/loginUser/pending');
+        set({ loginLoading: true, loginError: null }, false, 'auth/loginUser/pending');
 
         const result = await login(credentials, signal);
 
         if (result.status === 'aborted') {
-          set({ loading: false }, false, 'auth/loginUser/aborted');
+          set({ loginLoading: false }, false, 'auth/loginUser/aborted');
         } else if (result.status === 'error') {
-          set({ loading: false, error: result.message }, false, 'auth/loginUser/rejected');
+          set(
+            { loginLoading: false, loginError: result.message },
+            false,
+            'auth/loginUser/rejected'
+          );
         } else {
           set(
-            { loading: false, email: result.email, token: result.token, error: null },
+            { loginLoading: false, email: result.email, token: result.token, loginError: null },
             false,
             'auth/loginUser/fulfilled'
           );
@@ -52,16 +67,24 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       registerUser: async (credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> => {
-        set({ loading: true, error: null }, false, 'auth/registerUser/pending');
+        set({ registerLoading: true, registerError: null }, false, 'auth/registerUser/pending');
 
         const result = await register(credentials, signal);
 
         if (result.status === 'aborted') {
-          set({ loading: false }, false, 'auth/registerUser/aborted');
+          set({ registerLoading: false }, false, 'auth/registerUser/aborted');
         } else if (result.status === 'error') {
-          set({ loading: false, error: result.message }, false, 'auth/registerUser/rejected');
+          set(
+            { registerLoading: false, registerError: result.message },
+            false,
+            'auth/registerUser/rejected'
+          );
         } else {
-          set({ loading: false, error: null }, false, 'auth/registerUser/fulfilled');
+          set(
+            { registerLoading: false, registerError: null },
+            false,
+            'auth/registerUser/fulfilled'
+          );
         }
       },
 
@@ -73,13 +96,15 @@ export const useAuthStore = create<AuthStore>()(
         set(initialState, false, 'auth/reset');
       },
     }),
-    { name: 'auth' }
+    { name: 'auth', stateSanitizer: sanitizeAuthState }
   )
 );
 
 // Selectors
 export const selectEmail = (state: AuthStore): string => state.email;
 export const selectToken = (state: AuthStore): string | null => state.token;
-export const selectLoading = (state: AuthStore): boolean => state.loading;
-export const selectError = (state: AuthStore): string | null => state.error;
+export const selectLoginLoading = (state: AuthStore): boolean => state.loginLoading;
+export const selectLoginError = (state: AuthStore): string | null => state.loginError;
+export const selectRegisterLoading = (state: AuthStore): boolean => state.registerLoading;
+export const selectRegisterError = (state: AuthStore): string | null => state.registerError;
 export const selectIsAuthenticated = (state: AuthStore): boolean => !!state.token;

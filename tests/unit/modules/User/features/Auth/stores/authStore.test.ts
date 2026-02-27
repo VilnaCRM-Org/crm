@@ -37,8 +37,10 @@ describe('authStore', () => {
 
     expect(state.email).toBe('');
     expect(state.token).toBeNull();
-    expect(state.loading).toBe(false);
-    expect(state.error).toBeNull();
+    expect(state.loginLoading).toBe(false);
+    expect(state.loginError).toBeNull();
+    expect(state.registerLoading).toBe(false);
+    expect(state.registerError).toBeNull();
   });
 
   it('should reset state', () => {
@@ -47,8 +49,10 @@ describe('authStore', () => {
     useAuthStore.setState({
       email: 'test@example.com',
       token: 'test-token',
-      loading: true,
-      error: 'test error',
+      loginLoading: true,
+      loginError: 'login error',
+      registerLoading: true,
+      registerError: 'register error',
     });
 
     reset();
@@ -56,8 +60,10 @@ describe('authStore', () => {
     const state = useAuthStore.getState();
     expect(state.email).toBe('');
     expect(state.token).toBeNull();
-    expect(state.loading).toBe(false);
-    expect(state.error).toBeNull();
+    expect(state.loginLoading).toBe(false);
+    expect(state.loginError).toBeNull();
+    expect(state.registerLoading).toBe(false);
+    expect(state.registerError).toBeNull();
   });
 
   it('should logout and clear state', () => {
@@ -86,10 +92,10 @@ describe('authStore', () => {
       await loginUser(credentials);
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
+      expect(state.loginLoading).toBe(false);
       expect(state.email).toBe('test@example.com');
       expect(state.token).toBe('test-token-123');
-      expect(state.error).toBeNull();
+      expect(state.loginError).toBeNull();
     });
 
     it('should set loading state during login', async () => {
@@ -99,7 +105,7 @@ describe('authStore', () => {
       const loginPromise = loginUser({ email: 'test@example.com', password: 'password123' });
 
       // Check loading state immediately
-      expect(useAuthStore.getState().loading).toBe(true);
+      expect(useAuthStore.getState().loginLoading).toBe(true);
 
       await loginPromise;
     });
@@ -112,9 +118,9 @@ describe('authStore', () => {
       await loginUser({ email: 'test@example.com', password: 'password123' });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
-      expect(state.error).toContain('Invalid input');
+      expect(state.loginLoading).toBe(false);
+      expect(state.loginError).toBeTruthy();
+      expect(state.loginError).toContain('Invalid input');
       expect(state.token).toBeNull();
     });
 
@@ -126,14 +132,16 @@ describe('authStore', () => {
       await loginUser({ email: 'test@example.com', password: 'password123' });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.loginLoading).toBe(false);
+      expect(state.loginError).toBeTruthy();
       expect(state.token).toBeNull();
     });
 
     it('should handle abort signal with DOMException', async () => {
       const abortController = new AbortController();
-      (mockLoginAPI.login as jest.Mock).mockRejectedValue(new DOMException('Aborted', 'AbortError'));
+      (mockLoginAPI.login as jest.Mock).mockRejectedValue(
+        new DOMException('Aborted', 'AbortError')
+      );
 
       const { loginUser } = useAuthStore.getState();
       const loginPromise = loginUser(
@@ -145,8 +153,8 @@ describe('authStore', () => {
       await loginPromise;
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeNull();
+      expect(state.loginLoading).toBe(false);
+      expect(state.loginError).toBeNull();
     });
 
     it('should handle abort error with name === "AbortError"', async () => {
@@ -158,8 +166,8 @@ describe('authStore', () => {
       await loginUser({ email: 'test@example.com', password: 'password123' });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeNull();
+      expect(state.loginLoading).toBe(false);
+      expect(state.loginError).toBeNull();
     });
 
     it('should handle error with "abort" in message', async () => {
@@ -170,8 +178,8 @@ describe('authStore', () => {
       await loginUser({ email: 'test@example.com', password: 'password123' });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeNull();
+      expect(state.loginLoading).toBe(false);
+      expect(state.loginError).toBeNull();
     });
 
     it('should handle error without name property', async () => {
@@ -182,8 +190,8 @@ describe('authStore', () => {
       await loginUser({ email: 'test@example.com', password: 'password123' });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.loginLoading).toBe(false);
+      expect(state.loginError).toBeTruthy();
     });
 
     it('should handle error without message property', async () => {
@@ -195,8 +203,8 @@ describe('authStore', () => {
       await loginUser({ email: 'test@example.com', password: 'password123' });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.loginLoading).toBe(false);
+      expect(state.loginError).toBeTruthy();
     });
 
     it('should handle null error', async () => {
@@ -206,8 +214,8 @@ describe('authStore', () => {
       await loginUser({ email: 'test@example.com', password: 'password123' });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.loginLoading).toBe(false);
+      expect(state.loginError).toBeTruthy();
     });
 
     it('should handle undefined error', async () => {
@@ -217,8 +225,8 @@ describe('authStore', () => {
       await loginUser({ email: 'test@example.com', password: 'password123' });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.loginLoading).toBe(false);
+      expect(state.loginError).toBeTruthy();
     });
   });
 
@@ -237,12 +245,14 @@ describe('authStore', () => {
       await registerUser(credentials);
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeNull();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeNull();
     });
 
     it('should set loading state during registration', async () => {
-      (mockRegistrationAPI.register as jest.Mock).mockImplementation(() => createDelayedPromise(100));
+      (mockRegistrationAPI.register as jest.Mock).mockImplementation(() =>
+        createDelayedPromise(100)
+      );
 
       const { registerUser } = useAuthStore.getState();
       const registerPromise = registerUser({
@@ -251,7 +261,7 @@ describe('authStore', () => {
         fullName: 'Test User',
       });
 
-      expect(useAuthStore.getState().loading).toBe(true);
+      expect(useAuthStore.getState().registerLoading).toBe(true);
 
       await registerPromise;
     });
@@ -268,8 +278,8 @@ describe('authStore', () => {
       });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeTruthy();
     });
 
     it('should handle API error', async () => {
@@ -284,8 +294,8 @@ describe('authStore', () => {
       });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeTruthy();
     });
 
     it('should handle abort signal with DOMException', async () => {
@@ -304,8 +314,8 @@ describe('authStore', () => {
       await registerPromise;
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeNull();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeNull();
     });
 
     it('should handle abort error with name === "AbortError"', async () => {
@@ -321,8 +331,8 @@ describe('authStore', () => {
       });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeNull();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeNull();
     });
 
     it('should handle error with "abort" in message', async () => {
@@ -337,8 +347,8 @@ describe('authStore', () => {
       });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeNull();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeNull();
     });
 
     it('should handle error without name property', async () => {
@@ -353,8 +363,8 @@ describe('authStore', () => {
       });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeTruthy();
     });
 
     it('should handle error without message property', async () => {
@@ -370,8 +380,8 @@ describe('authStore', () => {
       });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeTruthy();
     });
 
     it('should handle null error', async () => {
@@ -385,8 +395,8 @@ describe('authStore', () => {
       });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeTruthy();
     });
 
     it('should handle undefined error', async () => {
@@ -400,8 +410,8 @@ describe('authStore', () => {
       });
 
       const state = useAuthStore.getState();
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeTruthy();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeTruthy();
     });
   });
 
@@ -410,8 +420,10 @@ describe('authStore', () => {
       useAuthStore.setState({
         email: 'user@test.com',
         token: 'test-token',
-        loading: false,
-        error: 'test error',
+        loginLoading: false,
+        loginError: 'login error',
+        registerLoading: true,
+        registerError: 'register error',
       });
     });
 
@@ -425,14 +437,24 @@ describe('authStore', () => {
       expect(selectToken(useAuthStore.getState())).toBe('test-token');
     });
 
-    it('selectLoading should return loading state', () => {
-      const { selectLoading } = require('@/modules/User/features/Auth/stores/authStore');
-      expect(selectLoading(useAuthStore.getState())).toBe(false);
+    it('selectLoginLoading should return login loading state', () => {
+      const { selectLoginLoading } = require('@/modules/User/features/Auth/stores/authStore');
+      expect(selectLoginLoading(useAuthStore.getState())).toBe(false);
     });
 
-    it('selectError should return error', () => {
-      const { selectError } = require('@/modules/User/features/Auth/stores/authStore');
-      expect(selectError(useAuthStore.getState())).toBe('test error');
+    it('selectLoginError should return login error', () => {
+      const { selectLoginError } = require('@/modules/User/features/Auth/stores/authStore');
+      expect(selectLoginError(useAuthStore.getState())).toBe('login error');
+    });
+
+    it('selectRegisterLoading should return register loading state', () => {
+      const { selectRegisterLoading } = require('@/modules/User/features/Auth/stores/authStore');
+      expect(selectRegisterLoading(useAuthStore.getState())).toBe(true);
+    });
+
+    it('selectRegisterError should return register error', () => {
+      const { selectRegisterError } = require('@/modules/User/features/Auth/stores/authStore');
+      expect(selectRegisterError(useAuthStore.getState())).toBe('register error');
     });
 
     it('selectIsAuthenticated should return true when token exists', () => {
@@ -444,6 +466,22 @@ describe('authStore', () => {
       const { selectIsAuthenticated } = require('@/modules/User/features/Auth/stores/authStore');
       useAuthStore.setState({ token: null });
       expect(selectIsAuthenticated(useAuthStore.getState())).toBe(false);
+    });
+  });
+
+  describe('sanitizeAuthState', () => {
+    it('should redact token when token exists', () => {
+      const { sanitizeAuthState } = require('@/modules/User/features/Auth/stores/authStore');
+      const stateWithToken = { ...useAuthStore.getState(), token: 'real-secret-token' };
+      const result = sanitizeAuthState(stateWithToken);
+      expect(result.token).toBe('[REDACTED]');
+    });
+
+    it('should keep null token as null', () => {
+      const { sanitizeAuthState } = require('@/modules/User/features/Auth/stores/authStore');
+      const stateWithoutToken = { ...useAuthStore.getState(), token: null };
+      const result = sanitizeAuthState(stateWithoutToken);
+      expect(result.token).toBeNull();
     });
   });
 });

@@ -141,8 +141,7 @@ Example from Zustand store (resolving APIs inside actions):
 
 ```typescript
 const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
-const registrationAPI =
-  container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
 ```
 
 Zustand store pattern (`src/stores/zustand/authStore.ts`):
@@ -153,14 +152,15 @@ import { devtools } from 'zustand/middleware';
 
 export const useAuthStore = create<AuthStore>()(
   devtools(
-    (set) => ({ /* state + actions */ }),
+    (set) => ({
+      /* state + actions */
+    }),
     { name: 'auth' }
   )
 );
 
 // Selectors
-export const selectEmail = (s: AuthStore): string =>
-  s.email;
+export const selectEmail = (s: AuthStore): string => s.email;
 ```
 
 ### Path Aliases

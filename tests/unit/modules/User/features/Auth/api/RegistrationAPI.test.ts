@@ -24,14 +24,14 @@ describe('RegistrationAPI', () => {
       const mockResponse = { token: 'test-token' };
       (mockHttpsClient.post as jest.Mock).mockResolvedValue(mockResponse);
 
-      const credentials = { email: 'test@example.com', password: 'password123', fullName: 'Test User' };
+      const credentials = {
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      };
       const result = await registrationAPI.register(credentials);
 
-      expect(mockHttpsClient.post).toHaveBeenCalledWith(
-        '/api/users',
-        credentials,
-        undefined
-      );
+      expect(mockHttpsClient.post).toHaveBeenCalledWith('/api/users', credentials, undefined);
       expect(result).toEqual(mockResponse);
     });
 
@@ -39,22 +39,26 @@ describe('RegistrationAPI', () => {
       const mockResponse = { token: 'test-token' };
       (mockHttpsClient.post as jest.Mock).mockResolvedValue(mockResponse);
 
-      const credentials = { email: 'test@example.com', password: 'password123', fullName: 'Test User' };
+      const credentials = {
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      };
       const options = { signal: new AbortController().signal };
       await registrationAPI.register(credentials, options);
 
-      expect(mockHttpsClient.post).toHaveBeenCalledWith(
-        '/api/users',
-        credentials,
-        options
-      );
+      expect(mockHttpsClient.post).toHaveBeenCalledWith('/api/users', credentials, options);
     });
 
     it('should throw AbortError directly without handling', async () => {
       const abortError = new DOMException('The operation was aborted', 'AbortError');
       (mockHttpsClient.post as jest.Mock).mockRejectedValue(abortError);
 
-      const credentials = { email: 'test@example.com', password: 'password123', fullName: 'Test User' };
+      const credentials = {
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      };
 
       await expect(registrationAPI.register(credentials)).rejects.toThrow(abortError);
     });
@@ -63,7 +67,11 @@ describe('RegistrationAPI', () => {
       const mockError = new Error('Network error');
       (mockHttpsClient.post as jest.Mock).mockRejectedValue(mockError);
 
-      const credentials = { email: 'test@example.com', password: 'password123', fullName: 'Test User' };
+      const credentials = {
+        email: 'test@example.com',
+        password: 'password123',
+        fullName: 'Test User',
+      };
 
       await expect(registrationAPI.register(credentials)).rejects.toThrow();
     });

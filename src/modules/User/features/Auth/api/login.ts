@@ -14,10 +14,7 @@ export type LoginResult =
   | { status: 'error'; message: string }
   | { status: 'aborted' };
 
-export async function login(
-  credentials: LoginUserDto,
-  signal?: AbortSignal
-): Promise<LoginResult> {
+export async function login(credentials: LoginUserDto, signal?: AbortSignal): Promise<LoginResult> {
   try {
     const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
     const apiResponse = await loginAPI.login(credentials, { signal });

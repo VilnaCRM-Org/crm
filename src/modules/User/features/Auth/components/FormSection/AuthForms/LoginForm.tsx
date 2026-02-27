@@ -1,21 +1,28 @@
 import UIForm from '@/components/UIForm';
-import { selectError, selectLoading, useAuthStore } from '@/modules/User/features/Auth/stores/authStore';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import FormField from '@/modules/User/features/Auth/components/FormSection/components/FormField';
 import PasswordField from '@/modules/User/features/Auth/components/FormSection/components/PasswordField';
 import UserOptions from '@/modules/User/features/Auth/components/FormSection/components/UserOptions';
 import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
+import {
+  selectLoginError,
+  selectLoginLoading,
+  useAuthStore,
+} from '@/modules/User/features/Auth/stores/authStore';
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
 
 export default function LoginForm(): JSX.Element {
   const { t } = useTranslation();
   const loginUser = useAuthStore((state) => state.loginUser);
-  const isSubmitting = useAuthStore(selectLoading);
-  const storeError = useAuthStore(selectError);
+  const isSubmitting = useAuthStore(selectLoginLoading);
+  const storeError = useAuthStore(selectLoginError);
 
   const error = storeError ? `${t('sign_in.error_prefix')} ${storeError}` : '';
+
+  useEffect(() => (): void => useAuthStore.setState({ loginError: null }), []);
 
   const handleLogin = async (data: LoginUserDto): Promise<void> => {
     await loginUser(data);

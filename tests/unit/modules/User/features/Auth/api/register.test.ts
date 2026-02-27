@@ -2,8 +2,8 @@ import 'reflect-metadata';
 
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 import { register } from '@/modules/User/features/Auth/api/register';
+import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 
 const mockRegistrationAPI = { register: jest.fn() } as unknown as RegistrationAPI;
 
