@@ -6,7 +6,7 @@ import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
-import { useAuthStore } from '@/modules/User/features/Auth/stores/authStore';
+import { sanitizeAuthState, useAuthStore } from '@/modules/User/features/Auth/stores/authStore';
 
 import server from '../../../mocks/server';
 
@@ -501,6 +501,8 @@ describe('Auth Store Integration', () => {
         selectToken,
         selectLoginLoading,
         selectLoginError,
+        selectRegisterLoading,
+        selectRegisterError,
         selectIsAuthenticated,
       } = require('@/modules/User/features/Auth/stores/authStore');
 
@@ -517,11 +519,25 @@ describe('Auth Store Integration', () => {
       expect(selectToken(state)).toBe('sel-token');
       expect(selectLoginLoading(state)).toBe(false);
       expect(selectLoginError(state)).toBeNull();
+      expect(selectRegisterLoading(state)).toBe(false);
+      expect(selectRegisterError(state)).toBeNull();
       expect(selectIsAuthenticated(state)).toBe(true);
 
       useAuthStore.getState().logout();
       const loggedOut = useAuthStore.getState();
       expect(selectIsAuthenticated(loggedOut)).toBe(false);
+    });
+  });
+
+  describe('sanitizeAuthState', () => {
+    it('should redact token when present', () => {
+      const state = { ...useAuthStore.getState(), token: 'secret-token' };
+      expect(sanitizeAuthState(state).token).toBe('[REDACTED]');
+    });
+
+    it('should keep null token as null', () => {
+      const state = { ...useAuthStore.getState(), token: null };
+      expect(sanitizeAuthState(state).token).toBeNull();
     });
   });
 
