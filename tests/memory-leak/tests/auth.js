@@ -1,20 +1,24 @@
 import ScenarioBuilder from '../utils/scenarioBuilder.js';
 
-const scenarioBuilder = new ScenarioBuilder();
+const homeBuilder = new ScenarioBuilder();
+const authBuilder = new ScenarioBuilder('/authentication');
 
 const authFormSelector = 'form, [role="form"]';
 
 async function action(page) {
   try {
-    await page.goto(`${scenarioBuilder.url()}/authentication`);
+    await page.evaluate((path) => {
+      window.history.pushState({}, '', path);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }, new URL(authBuilder.url()).pathname);
     await page.waitForSelector(authFormSelector, { timeout: 15000 });
   } catch (error) {
-    throw new Error(`Auth skeleton transition failed: ${error.message}`);
+    throw new Error(`Auth transition failed: ${error.message}`);
   }
 }
 
 async function back(page) {
-  await page.goto(scenarioBuilder.url());
+  await page.goto(homeBuilder.url());
 }
 
-export default scenarioBuilder.createScenario({ action, back });
+export default homeBuilder.createScenario({ action, back });
