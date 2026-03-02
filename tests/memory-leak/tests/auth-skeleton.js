@@ -1,20 +1,30 @@
-const ScenarioBuilder = require('../utils/scenarioBuilder');
+import ScenarioBuilder from '../utils/scenarioBuilder.js';
 
-const scenarioBuilder = new ScenarioBuilder('/authentication');
+const scenarioBuilder = new ScenarioBuilder();
 
 const authSkeletonSelector = '[data-testid="auth-skeleton-title"]';
-const authFormSelector = 'form, [role="form"]';
 
 async function action(page) {
   try {
-    // Skeleton is visible while the JS chunk loads
-    await page.waitForSelector(authSkeletonSelector, { timeout: 8000 });
+    await page.setRequestInterception(true);
 
-    // Wait for the form to fully replace the skeleton (skeleton unmounts)
-    await page.waitForSelector(authFormSelector, { timeout: 15000 });
+    page.on('request', (req) => {
+      if (req.url().includes('/static/js/async/')) {
+        return;
+      }
+      req.continue().catch(() => {});
+    });
+
+    await page.goto(`${scenarioBuilder.url()}/authentication`);
+    await page.waitForSelector(authSkeletonSelector, { timeout: 8000 });
   } catch (error) {
-    throw new Error(`Auth skeleton transition failed: ${error.message}`);
+    throw new Error(`Auth skeleton memory leak test failed: ${error.message}`);
   }
 }
 
-module.exports = scenarioBuilder.createScenario({ action });
+async function back(page) {
+  await page.setRequestInterception(false);
+  await page.goto(scenarioBuilder.url());
+}
+
+export default scenarioBuilder.createScenario({ action, back });
