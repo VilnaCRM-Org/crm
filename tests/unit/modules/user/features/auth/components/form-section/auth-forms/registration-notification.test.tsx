@@ -19,7 +19,10 @@ jest.mock('@/assets/notification/confetti.svg', () => ({
 }));
 
 jest.mock('@/assets/notification/error.svg', () => ({
-  ReactComponent: (): JSX.Element => <svg aria-hidden="true" />,
+  ReactComponent: ({
+    role,
+    'aria-label': ariaLabel,
+  }: React.SVGProps<SVGSVGElement>): JSX.Element => <svg role={role} aria-label={ariaLabel} />,
 }));
 
 jest.mock('@/assets/notification/settings.svg', () => ({
@@ -89,5 +92,72 @@ describe('RegistrationNotification', () => {
     expect(
       screen.getByRole('button', { name: 'notifications.success.button' })
     ).toBeInTheDocument();
+  });
+
+  it('announces error notification politely to screen readers', () => {
+    render(
+      <RegistrationNotification
+        view="error"
+        isSubmitting={false}
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+      />
+    );
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('announces success notification politely to screen readers', () => {
+    render(<RegistrationNotification view="success" isSubmitting={false} onBack={jest.fn()} />);
+
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveAttribute('aria-live', 'polite');
+  });
+
+  it('displays custom errorText instead of the default fallback', () => {
+    const customError = 'Email already in use';
+
+    render(
+      <RegistrationNotification
+        view="error"
+        isSubmitting={false}
+        errorText={customError}
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+      />
+    );
+
+    expect(screen.getByText(customError)).toBeInTheDocument();
+    expect(
+      screen.queryByText('failure_responses.client_errors.something_went_wrong')
+    ).not.toBeInTheDocument();
+  });
+
+  it('keeps the back-to-form button enabled while retry is in flight', () => {
+    render(
+      <RegistrationNotification
+        view="error"
+        isSubmitting
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+      />
+    );
+
+    expect(screen.getByRole('button', { name: 'notifications.error.retry_button' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'notifications.error.button' })).toBeEnabled();
+  });
+
+  it('error image has an accessible label', () => {
+    render(
+      <RegistrationNotification
+        view="error"
+        isSubmitting={false}
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+      />
+    );
+
+    expect(screen.getByRole('img', { name: 'notifications.error.images.error' })).toBeInTheDocument();
   });
 });
