@@ -1,6 +1,7 @@
 import {
   SKELETON_BORDER_COLOR,
   SMALL_MOBILE_BREAKPOINT,
+  SMALL_MOBILE_BREAKPOINT_UPPER,
   shadowPulseAnimation,
 } from '@/components/Skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
@@ -53,6 +54,7 @@ export default {
     height: '1.125rem',
     marginBottom: '0.25rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      // 0.875rem (md font-size) × 1.125 (sm line-height cascade) = 0.984375rem
       height: '0.984375rem',
       marginBottom: '0.25rem',
     },
@@ -137,7 +139,7 @@ export default {
         marginBottom: 0,
       },
     },
-    [`@media (min-width:${SMALL_MOBILE_BREAKPOINT + 1}px)`]: {
+    [`@media (min-width:${SMALL_MOBILE_BREAKPOINT_UPPER}px)`]: {
       height: '4.75rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {

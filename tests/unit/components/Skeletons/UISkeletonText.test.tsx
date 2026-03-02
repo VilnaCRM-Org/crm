@@ -38,4 +38,26 @@ describe('UISkeletonText', () => {
 
     expect(screen.getByTestId('ui-skeleton-text-array-sx')).toBeInTheDocument();
   });
+
+  it('calls style builder with size "s" and provided width', () => {
+    render(<UISkeletonText size="s" width="30%" data-testid="ui-skeleton-text-s" />);
+
+    expect(screen.getByTestId('ui-skeleton-text-s')).toBeInTheDocument();
+    expect(getTextSkeletonStyles).toHaveBeenCalledWith('s', '30%');
+  });
+
+  it('calls style builder with size "l" and provided width', () => {
+    render(<UISkeletonText size="l" width="80%" data-testid="ui-skeleton-text-l" />);
+
+    expect(screen.getByTestId('ui-skeleton-text-l')).toBeInTheDocument();
+    expect(getTextSkeletonStyles).toHaveBeenCalledWith('l', '80%');
+  });
+
+  it('has no interactive elements', () => {
+    render(<UISkeletonText data-testid="ui-skeleton-text" />);
+
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    expect(screen.queryAllByRole('link')).toHaveLength(0);
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+  });
 });

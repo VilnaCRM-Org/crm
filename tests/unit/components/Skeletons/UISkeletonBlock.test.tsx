@@ -41,4 +41,27 @@ describe('UISkeletonBlock', () => {
 
     expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();
   });
+
+  it('renders with object sx prop', () => {
+    render(<UISkeletonBlock sx={{ mt: 1 }} data-testid="skeleton-block" />);
+
+    expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();
+  });
+
+  it('has no interactive elements', () => {
+    render(<UISkeletonBlock data-testid="skeleton-block" />);
+
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+    expect(screen.queryAllByRole('link')).toHaveLength(0);
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+  });
+
+  it('renders consistently across re-renders', () => {
+    const { rerender } = render(<UISkeletonBlock data-testid="skeleton-block" />);
+    expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();
+
+    rerender(<UISkeletonBlock width="50%" data-testid="skeleton-block" />);
+    expect(screen.getByTestId('skeleton-block')).toBeInTheDocument();
+    expect(getBlockSkeletonStyles).toHaveBeenLastCalledWith('50%', '3rem', '8px');
+  });
 });

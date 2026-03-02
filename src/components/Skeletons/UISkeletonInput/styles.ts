@@ -1,8 +1,11 @@
+import { type Theme } from '@mui/material/styles';
+import { type SystemStyleObject } from '@mui/system';
+
 import { SMALL_MOBILE_BREAKPOINT, baseSkeletonStyle } from '@/components/Skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
 
 export default {
-  inputContainer: {
+  inputContainer: (theme: Theme): SystemStyleObject<Theme> => ({
     position: 'relative',
     boxSizing: 'border-box',
     borderRadius: '0.5rem',
@@ -14,7 +17,7 @@ export default {
       position: 'absolute',
       inset: '1px',
       borderRadius: 'calc(0.5rem - 1px)',
-      backgroundColor: '#FFFFFF',
+      backgroundColor: theme.palette.background.default,
     },
     [`@media (min-width:${SMALL_MOBILE_BREAKPOINT}px)`]: {
       minWidth: '19.6875rem',
@@ -29,7 +32,7 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       maxHeight: '4rem',
     },
-  },
+  }),
   inputPlaceholder: {
     ...baseSkeletonStyle,
     position: 'absolute',

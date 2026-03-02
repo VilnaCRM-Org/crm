@@ -10,6 +10,11 @@ const config: StorybookConfig = {
     options: {},
   },
   typescript: { check: false },
+  env: (config) => ({
+    ...config,
+    REACT_APP_MAIN_LANGUAGE: process.env.REACT_APP_MAIN_LANGUAGE ?? 'uk',
+    REACT_APP_FALLBACK_LANGUAGE: process.env.REACT_APP_FALLBACK_LANGUAGE ?? 'en',
+  }),
   webpackFinal: async (config) => {
     config.module?.rules?.push({
       test: /\.(ts|tsx)$/,

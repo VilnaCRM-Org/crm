@@ -69,6 +69,11 @@ concerns.
 | Learning Curve    | Steep                    | Low          | Moderate     | Moderate      |
 | Ecosystem         | Very large               | Growing      | Small        | Large         |
 
+## Follow-up Actions
+
+- Migrate existing Redux state to Zustand — tracked in
+  [#45 Migrate authentication state management from Redux to Zustand](https://github.com/VilnaCRM-Org/crm/issues/45)
+
 ## Links
 
 - [Zustand Documentation](https://docs.pmnd.rs/zustand/getting-started/introduction)
