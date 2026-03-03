@@ -114,7 +114,7 @@ export default {
     fontWeight: 500,
     fontSize: '0.9375rem',
     lineHeight: '1.125rem',
-    fontFamily: 'Golos, Golos Fallback',
+    fontFamily: 'Golos, sans-serif',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       fontWeight: 600,
       fontSize: '1.125rem',
@@ -125,7 +125,7 @@ export default {
     fontWeight: 700,
     fontSize: '1.375rem',
     lineHeight: '1.65rem',
-    fontFamily: 'Golos, Golos Fallback',
+    fontFamily: 'Golos, sans-serif',
     color: customColors.text.dark,
     textTransform: 'none',
     whiteSpace: 'nowrap',
@@ -141,7 +141,7 @@ export default {
     fontWeight: 400,
     fontSize: '0.98rem',
     lineHeight: '1.5625rem',
-    fontFamily: 'Golos, Golos Fallback',
+    fontFamily: 'Golos, sans-serif',
     color: customColors.text.dark,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       fontSize: '1.2rem',
@@ -155,7 +155,7 @@ export default {
     fontWeight: 700,
     fontSize: '1.375rem',
     lineHeight: '1.65rem',
-    fontFamily: 'Golos, Golos Fallback',
+    fontFamily: 'Golos, sans-serif',
     color: customColors.text.dark,
     textTransform: 'none',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
@@ -172,7 +172,7 @@ export default {
     fontWeight: 400,
     fontSize: '0.98rem',
     lineHeight: '1.5625rem',
-    fontFamily: 'Golos, Golos Fallback',
+    fontFamily: 'Golos, sans-serif',
     color: customColors.text.dark,
     maxWidth: '300px',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {

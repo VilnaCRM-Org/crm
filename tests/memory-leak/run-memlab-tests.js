@@ -31,7 +31,7 @@ const consoleMode = 'VERBOSE';
 
   for (const testFilePath of testFilePaths) {
     try {
-      const scenario = require(testFilePath);
+      const { default: scenario } = await import(testFilePath);
       if (!scenario || typeof scenario !== 'object') {
         throw new Error(`Invalid scenario exported from ${testFilePath}: must export an object`);
       }

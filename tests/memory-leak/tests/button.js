@@ -1,4 +1,4 @@
-const ScenarioBuilder = require('../utils/scenario-builder');
+import ScenarioBuilder from '../utils/scenario-builder.js';
 
 const scenarioBuilder = new ScenarioBuilder();
 
@@ -13,4 +13,4 @@ async function action(page) {
   }
 }
 
-module.exports = scenarioBuilder.createScenario({ action });
+export default scenarioBuilder.createScenario({ action });

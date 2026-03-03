@@ -19,9 +19,9 @@ describe('registration notification success button styles', () => {
   });
 
   it('applies Golos font family to button text, title, and description', () => {
-    expect(styles.messageButtonText.fontFamily).toBe('Golos, Golos Fallback');
-    expect(styles.messageTitle.fontFamily).toBe('Golos, Golos Fallback');
-    expect(styles.messageDescription.fontFamily).toBe('Golos, Golos Fallback');
+    expect(styles.messageButtonText.fontFamily).toBe('Golos, sans-serif');
+    expect(styles.messageTitle.fontFamily).toBe('Golos, sans-serif');
+    expect(styles.messageDescription.fontFamily).toBe('Golos, sans-serif');
   });
 
   it('uses theme breakpoints for error notification layout transitions', () => {
