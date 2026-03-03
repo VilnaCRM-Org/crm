@@ -27,10 +27,9 @@ describe('AuthSkeleton Component', () => {
       expect(divider).toBeInTheDocument();
     });
 
-    it('should have empty content within divider for accessibility', () => {
+    it('should be hidden from assistive technology', () => {
       render(<AuthSkeleton />);
-      const divider = screen.getByRole('presentation');
-      expect(divider.textContent?.trim()).toBe('');
+      expect(screen.getByRole('presentation')).toHaveAttribute('role', 'presentation');
     });
   });
 

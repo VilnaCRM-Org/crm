@@ -12,7 +12,8 @@ async function action(page) {
     }, '/authentication');
     await page.waitForSelector(authFormSelector, { timeout: 15000 });
   } catch (error) {
-    throw new Error(`Auth transition failed: ${error.message}`);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    throw new Error(`Auth transition failed: ${errMsg}`);
   }
 }
 
