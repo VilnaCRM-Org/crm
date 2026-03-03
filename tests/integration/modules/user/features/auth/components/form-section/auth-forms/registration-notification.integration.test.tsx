@@ -2,7 +2,10 @@ import '@testing-library/jest-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { fireEvent, render, screen, within, act } from '@testing-library/react';
 import React from 'react';
+import { MemoryRouter } from 'react-router-dom';
 
+import UIButton from '@/components/ui-button';
+import UiTypography from '@/components/ui-typography';
 import RegistrationNotification from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification';
 
 const createSvg = (props: React.SVGProps<SVGSVGElement>): JSX.Element =>
@@ -125,5 +128,34 @@ describe('RegistrationNotification Integration', () => {
     expect(
       screen.queryByText('failure_responses.client_errors.something_went_wrong')
     ).not.toBeInTheDocument();
+  });
+
+  it('renders UIButton as a link when "to" prop is provided', () => {
+    render(
+      <MemoryRouter>
+        <UIButton to="/auth">Open auth</UIButton>
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('link', { name: 'Open auth' })).toHaveAttribute('href', '/auth');
+  });
+
+  it('renders UiTypography with explicit component and htmlFor props', () => {
+    render(
+      <>
+        <UiTypography component="label" htmlFor="email-field">
+          Email
+        </UiTypography>
+        <input id="email-field" />
+      </>
+    );
+
+    expect(screen.getByText('Email')).toHaveAttribute('for', 'email-field');
+  });
+
+  it('renders UiTypography default component when "component" prop is omitted', () => {
+    render(<UiTypography>Plain text</UiTypography>);
+
+    expect(screen.getByText('Plain text').tagName).toBe('P');
   });
 });
