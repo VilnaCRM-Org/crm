@@ -29,7 +29,6 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
       const skeletonTestIds = [
         'auth-skeleton-title',
         'auth-skeleton-subtitle',
-        'auth-skeleton-subtitle-line2',
         'auth-skeleton-field-label-1',
         'auth-skeleton-field-label-2',
         'auth-skeleton-field-label-3',
@@ -50,6 +49,11 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
           expect(page.locator(`[data-testid="${testId}"]`)).toBeVisible({ timeout: 5000 })
         )
       );
+
+      // subtitle-line2 is rendered but hidden via display:none above 336px viewports
+      await expect(
+        page.locator('[data-testid="auth-skeleton-subtitle-line2"]')
+      ).toBeAttached();
     });
 
     test('should have accessible loading label on skeleton section', async ({ page }) => {

@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
 import UISkeletonInput from '@/components/Skeletons/UISkeletonInput';
 
@@ -29,7 +29,7 @@ describe('UISkeletonInput Integration', () => {
     render(<UISkeletonInput data-testid="skeleton-input" />);
     const container = screen.getByTestId('skeleton-input');
 
-    expect(container.childElementCount).toBe(1);
+    expect(within(container).getAllByTestId('skeleton-placeholder')).toHaveLength(1);
   });
 
   it('has no interactive elements during loading', () => {

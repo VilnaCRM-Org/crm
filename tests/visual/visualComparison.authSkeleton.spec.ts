@@ -3,7 +3,7 @@ import type { Page, Route } from '@playwright/test';
 
 import { currentLanguage, PAGES, ScreenSize, screenSizes } from './constants';
 
-const AUTH_ASYNC_JS_GLOB = '**/static/js/**/*.js';
+const AUTH_ASYNC_JS_GLOB = '**/static/js/async/*.js';
 const JS_DELAY_MS = 3000;
 
 async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<void> {

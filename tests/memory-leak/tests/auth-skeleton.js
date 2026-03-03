@@ -6,7 +6,7 @@ const authSkeletonSelector = '[data-testid="auth-skeleton-title"]';
 
 function handleRequest(req) {
   if (req.url().includes('/static/js/async/')) {
-    req.abort().catch(() => {});
+    // Intentionally left pending: keeps React in Suspense so the skeleton stays visible
     return;
   }
   req.continue().catch(() => {});
