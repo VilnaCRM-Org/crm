@@ -28,6 +28,7 @@ module.exports = {
           '[.]d[.]ts$', // TypeScript declaration files
           '(^|/)tsconfig[.]json$', // TypeScript config
           '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // other configs
+          '(^|/)__mocks__/.*[.](?:js|cjs|mjs|ts|cts|mts|jsx|tsx)$', // test/runtime manual mocks resolved by tooling
           '^src/index[.]tsx$', // app entrypoint
           '^tests/load/utils/test-data[.]js$', // data generator used ad-hoc in load testing
         ],
