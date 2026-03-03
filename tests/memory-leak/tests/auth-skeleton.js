@@ -4,14 +4,19 @@ const scenarioBuilder = new ScenarioBuilder();
 
 const authSkeletonSelector = '[data-testid="auth-skeleton-title"]';
 
+function handleRequest(req) {
+  if (req.url().includes('/static/js/async/')) {
+    req.abort().catch(() => {});
+    return;
+  }
+  req.continue().catch(() => {});
+}
+
 async function action(page) {
   try {
     await page.setRequestInterception(true);
 
-    page.on('request', (req) => {
-      if (req.url().includes('/static/js/async/')) return;
-      req.continue().catch(() => {});
-    });
+    page.on('request', handleRequest);
 
     await page.evaluate((path) => {
       window.history.pushState({}, '', path);
@@ -25,6 +30,7 @@ async function action(page) {
 }
 
 async function back(page) {
+  page.off('request', handleRequest);
   await page.setRequestInterception(false);
   await page.evaluate(() => {
     window.history.pushState({}, '', '/');

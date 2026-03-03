@@ -29,6 +29,7 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
       const skeletonTestIds = [
         'auth-skeleton-title',
         'auth-skeleton-subtitle',
+        'auth-skeleton-subtitle-line2',
         'auth-skeleton-field-label-1',
         'auth-skeleton-field-label-2',
         'auth-skeleton-field-label-3',

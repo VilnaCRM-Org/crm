@@ -29,7 +29,7 @@ describe('UISkeletonInput Integration', () => {
     render(<UISkeletonInput data-testid="skeleton-input" />);
     const container = screen.getByTestId('skeleton-input');
 
-    expect(container).not.toBeEmptyDOMElement();
+    expect(container.childElementCount).toBe(1);
   });
 
   it('has no interactive elements during loading', () => {

@@ -47,13 +47,13 @@ export const Static: Story = {
   },
   decorators: [
     (StoryFn): JSX.Element => (
-      <div>
+      <div className="auth-skeleton-story">
         <style>{`
-          *, *::before, *::after {
+          .auth-skeleton-story *, .auth-skeleton-story *::before, .auth-skeleton-story *::after {
             animation: none !important;
             background-size: 100% 100% !important;
           }
-          [data-testid^="auth-skeleton-input-"] {
+          .auth-skeleton-story [data-testid^="auth-skeleton-input-"] {
             border: 1px solid transparent !important;
             background-image: linear-gradient(#fff, #fff),
               linear-gradient(90deg, rgba(211, 216, 224, 0.78) 0%, rgba(211, 216, 224, 0.598958) 49.13%, rgba(211, 216, 224, 0) 100%) !important;
