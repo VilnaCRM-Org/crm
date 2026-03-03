@@ -8,20 +8,22 @@ import './index.css';
 
 const Authentication = lazy(() => import('@/modules/user/features/auth'));
 
-const router = createBrowserRouter([
-  {
-    path: '/authentication',
-    element: (
-      <Suspense fallback={null}>
-        <Authentication />
-      </Suspense>
-    ),
-  },
-  {
-    path: '/',
-    element: <ButtonExample />,
-  },
-]);
+const router = createBrowserRouter(
+  [
+    {
+      path: '/authentication',
+      element: (
+        <Suspense fallback={null}>
+          <Authentication />
+        </Suspense>
+      ),
+    },
+    {
+      path: '/',
+      element: <ButtonExample />,
+    },
+  ]
+);
 
 function App(): React.ReactElement {
   const { i18n } = useTranslation();
@@ -34,6 +36,6 @@ function App(): React.ReactElement {
     i18n.on?.('languageChanged', applyDir);
     return (): void => i18n.off?.('languageChanged', applyDir);
   }, [i18n]);
-  return <RouterProvider router={router} />;
+  return <RouterProvider router={router} future={{ v7_startTransition: true }} />;
 }
 export default App;

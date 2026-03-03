@@ -1,8 +1,6 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
-const MOBILE_NOTIFICATION_HEIGHT = 'max(450px, calc(100dvh + 1rem))';
-
 export default {
   formSection: {
     display: 'flex',
@@ -20,9 +18,19 @@ export default {
       paddingBottom: '8.4375rem',
     },
 
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height: 700px)`]: {
+      paddingTop: '2rem',
+      paddingBottom: '2rem',
+    },
+
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       paddingTop: '3.4375rem',
       paddingBottom: '3.4375rem',
+    },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px) and (max-height: 700px)`]: {
+      paddingTop: '2rem',
+      paddingBottom: '2rem',
     },
   },
   formWrapper: {
@@ -56,8 +64,7 @@ export default {
     '&&': {
       overflow: 'hidden',
       '@media (max-width: 374px)': {
-        height: MOBILE_NOTIFICATION_HEIGHT,
-        minHeight: MOBILE_NOTIFICATION_HEIGHT,
+        maxHeight: '100dvh',
       },
     },
   },

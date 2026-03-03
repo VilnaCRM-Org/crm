@@ -81,6 +81,14 @@ describe('password validation', () => {
       );
     });
 
+    it('should return length error for very long passwords (e.g. 200 chars)', () => {
+      const password = 'P' + 'a'.repeat(198) + '1';
+      expect(password.length).toBe(200);
+      expect(validators.password(password, emptyUser)).toBe(
+        'sign_up.form.password_input.error_length'
+      );
+    });
+
     it('should return length error for 7 characters', () => {
       expect(validators.password('Passwo1', emptyUser)).toBe(
         'sign_up.form.password_input.error_length'

@@ -32,48 +32,40 @@ const EMAIL_PREFIX = /^email\s*:\s*/i;
 const PASSWORD_PREFIX = /^password\s*:\s*/i;
 const INITIALS_PREFIX = /^initials\s*:\s*/i;
 
-const EMAIL_CONFLICT_PATTERNS = [
-  'email already exists',
-  'email address is already registered',
-  'email.not.unique',
-  'email already in use',
-  'email-адреса вже використовується',
-  'ця email-адреса вже зареєстрована',
-] as const;
+const GRAPHQL_ERROR_CODES = {
+  CONFLICT: 'CONFLICT',
+  INTERNAL_SERVER_ERROR: 'INTERNAL_SERVER_ERROR',
+  SERVER_ERROR: 'SERVER_ERROR',
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  UNAUTHENTICATED: 'UNAUTHENTICATED',
+  FORBIDDEN: 'FORBIDDEN',
+} as const;
 
-const EMAIL_INVALID_PATTERNS = [
-  'not a valid email address',
-  'email.invalid',
-  'не є дійсною електронною адресою',
-] as const;
-
-const EMAIL_REQUIRED_PATTERNS = ['not be blank', 'not.blank', 'не має бути пустим'] as const;
-
-const PASSWORD_UPPERCASE_PATTERNS = [
-  'at least one uppercase letter',
-  'принаймні одну велику літеру',
-] as const;
-
-const PASSWORD_NUMBERS_PATTERNS = ['at least one number', 'хоча б одне число'] as const;
-
-const PASSWORD_LENGTH_PATTERNS = ['between 8 and 64 characters', 'від 8 до 64 символів'] as const;
-
-const PASSWORD_REQUIRED_PATTERNS = ['not be blank', 'not.blank', 'не має бути пустим'] as const;
-
-const INITIALS_SPACES_PATTERNS = [
-  'cannot consist only of spaces',
-  'не можуть складатися лише з пробілів',
-] as const;
-
-const INITIALS_REQUIRED_PATTERNS = ['not be blank', 'not.blank', 'не має бути пустим'] as const;
-
-const NETWORK_ERROR_PATTERNS = [
-  'failed to fetch',
-  'network request failed',
-  'fetch failed',
-  'network error',
-  'request to',
-] as const;
+// Backend currently returns field errors as free-form messages in EN/UK locales.
+// We prefer extension codes when available; these phrases are controlled fallbacks.
+const REGISTRATION_ERROR_PATTERNS = {
+  emailConflict: [
+    'email already exists',
+    'email address is already registered',
+    'email.not.unique',
+    'email already in use',
+    'email-адреса вже використовується',
+    'ця email-адреса вже зареєстрована',
+  ],
+  emailInvalid: ['not a valid email address', 'email.invalid', 'не є дійсною електронною адресою'],
+  required: ['not be blank', 'not.blank', 'не має бути пустим'],
+  passwordUppercase: ['at least one uppercase letter', 'принаймні одну велику літеру'],
+  passwordNumbers: ['at least one number', 'хоча б одне число'],
+  passwordLength: ['between 8 and 64 characters', 'від 8 до 64 символів'],
+  initialsSpaces: ['cannot consist only of spaces', 'не можуть складатися лише з пробілів'],
+  network: [
+    'failed to fetch',
+    'network request failed',
+    'fetch failed',
+    'network error',
+    'request to',
+  ],
+} as const;
 
 function getGraphQLErrorCandidates(error: ApolloErrorLike): GraphQLErrorLike[] {
   return [
@@ -102,12 +94,12 @@ function getAllMessages(error: ApolloErrorLike): string[] {
 function isConflictError(error: ApolloErrorLike): boolean {
   const candidates = getGraphQLErrorCandidates(error);
 
-  if (candidates.some((candidate) => candidate.extensions?.code === 'CONFLICT')) {
+  if (candidates.some((candidate) => candidate.extensions?.code === GRAPHQL_ERROR_CODES.CONFLICT)) {
     return true;
   }
 
   return getAllMessages(error).some((msg) =>
-    matchesAnyPattern(normalize(msg), EMAIL_CONFLICT_PATTERNS)
+    matchesAnyPattern(normalize(msg), REGISTRATION_ERROR_PATTERNS.emailConflict)
   );
 }
 
@@ -129,9 +121,9 @@ function extractMessageByPrefix(error: ApolloErrorLike, prefix: RegExp): string 
 function mapEmailMessage(message: string, t: (key: string) => string): string {
   const normalized = normalize(message);
 
-  if (matchesAnyPattern(normalized, EMAIL_REQUIRED_PATTERNS))
+  if (matchesAnyPattern(normalized, REGISTRATION_ERROR_PATTERNS.required))
     return t('sign_up.form.email_input.required');
-  if (matchesAnyPattern(normalized, EMAIL_INVALID_PATTERNS))
+  if (matchesAnyPattern(normalized, REGISTRATION_ERROR_PATTERNS.emailInvalid))
     return t('sign_up.form.email_input.invalid_message');
 
   return message;
@@ -140,13 +132,13 @@ function mapEmailMessage(message: string, t: (key: string) => string): string {
 function mapPasswordMessage(message: string, t: (key: string) => string): string {
   const normalized = normalize(message);
 
-  if (matchesAnyPattern(normalized, PASSWORD_REQUIRED_PATTERNS))
+  if (matchesAnyPattern(normalized, REGISTRATION_ERROR_PATTERNS.required))
     return t('sign_up.form.password_input.required');
-  if (matchesAnyPattern(normalized, PASSWORD_UPPERCASE_PATTERNS))
+  if (matchesAnyPattern(normalized, REGISTRATION_ERROR_PATTERNS.passwordUppercase))
     return t('sign_up.form.password_input.error_uppercase');
-  if (matchesAnyPattern(normalized, PASSWORD_NUMBERS_PATTERNS))
+  if (matchesAnyPattern(normalized, REGISTRATION_ERROR_PATTERNS.passwordNumbers))
     return t('sign_up.form.password_input.error_numbers');
-  if (matchesAnyPattern(normalized, PASSWORD_LENGTH_PATTERNS))
+  if (matchesAnyPattern(normalized, REGISTRATION_ERROR_PATTERNS.passwordLength))
     return t('sign_up.form.password_input.error_length');
 
   return message;
@@ -155,9 +147,9 @@ function mapPasswordMessage(message: string, t: (key: string) => string): string
 function mapInitialsMessage(message: string, t: (key: string) => string): string {
   const normalized = normalize(message);
 
-  if (matchesAnyPattern(normalized, INITIALS_REQUIRED_PATTERNS))
+  if (matchesAnyPattern(normalized, REGISTRATION_ERROR_PATTERNS.required))
     return t('sign_up.form.name_input.required');
-  if (matchesAnyPattern(normalized, INITIALS_SPACES_PATTERNS))
+  if (matchesAnyPattern(normalized, REGISTRATION_ERROR_PATTERNS.initialsSpaces))
     return t('sign_up.form.name_input.only_spaces_error');
 
   return message;
@@ -182,19 +174,22 @@ function resolveFormError(error: ApolloErrorLike, t: (key: string) => string): s
   if (
     candidates.some(
       (c) =>
-        c.extensions?.code === 'INTERNAL_SERVER_ERROR' || c.extensions?.code === 'SERVER_ERROR'
+        c.extensions?.code === GRAPHQL_ERROR_CODES.INTERNAL_SERVER_ERROR ||
+        c.extensions?.code === GRAPHQL_ERROR_CODES.SERVER_ERROR
     )
   ) {
     return t('failure_responses.server_errors.server_error');
   }
   if (
     candidates.some(
-      (c) => c.extensions?.code === 'UNAUTHORIZED' || c.extensions?.code === 'UNAUTHENTICATED'
+      (c) =>
+        c.extensions?.code === GRAPHQL_ERROR_CODES.UNAUTHORIZED ||
+        c.extensions?.code === GRAPHQL_ERROR_CODES.UNAUTHENTICATED
     )
   ) {
     return t('failure_responses.authentication_errors.unauthorized_access');
   }
-  if (candidates.some((c) => c.extensions?.code === 'FORBIDDEN')) {
+  if (candidates.some((c) => c.extensions?.code === GRAPHQL_ERROR_CODES.FORBIDDEN)) {
     return t('failure_responses.authentication_errors.access_denied');
   }
 
@@ -203,7 +198,7 @@ function resolveFormError(error: ApolloErrorLike, t: (key: string) => string): s
   }
 
   const message = normalize(error.message ?? '');
-  if (NETWORK_ERROR_PATTERNS.some((pattern) => message.includes(pattern))) {
+  if (REGISTRATION_ERROR_PATTERNS.network.some((pattern) => message.includes(pattern))) {
     return t('failure_responses.network_errors.network_error');
   }
 

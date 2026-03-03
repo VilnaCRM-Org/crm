@@ -138,6 +138,7 @@ export default function RegistrationNotification({
               type="button"
               size="medium"
               fullWidth
+              disabled={isClosing}
               onClick={handleBack}
             >
               <Typography component="span" sx={styles.messageButtonText}>
