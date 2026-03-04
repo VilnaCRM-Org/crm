@@ -1,5 +1,7 @@
-import breakpointsTheme from '@/components/ui-breakpoints';
+import breakpointsTheme, { heightBreakpoints } from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
+
+const compactViewport = `@media (max-width:${breakpointsTheme.breakpoints.values.sm - 1}px) and (max-height:${heightBreakpoints.compact}px)`;
 
 const centeredColumnFlex = {
   display: 'flex',
@@ -30,6 +32,9 @@ export default {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
+    [compactViewport]: {
+      justifyContent: 'flex-start',
+    },
   },
   successTopImgBox: {
     position: 'absolute',
@@ -69,9 +74,6 @@ export default {
       bottom: '0.6rem',
       transform: 'rotate(-180deg) scale(1.07)',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      left: '1.3rem',
-    },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       left: '0rem',
       bottom: '0.1rem',
@@ -108,6 +110,9 @@ export default {
     zIndex: 20,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       width: '100%',
+    },
+    [compactViewport]: {
+      paddingTop: '13rem',
     },
   },
   messageButtonText: {
@@ -235,6 +240,12 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       paddingTop: '4.25rem',
     },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height:${heightBreakpoints.medium}px)`]: {
+      paddingTop: '1rem',
+    },
+    [compactViewport]: {
+      paddingTop: '0.25rem',
+    },
   },
   errorImage: {
     display: 'block',
@@ -247,6 +258,10 @@ export default {
     marginBottom: '0.8125rem',
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginBottom: '0.75rem',
+    },
+    [compactViewport]: {
+      marginBottom: '0.25rem',
+      paddingBottom: 0,
     },
   },
   messageContainerError: {
@@ -268,8 +283,8 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       marginTop: '2rem',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginTop: '1rem',
+    [compactViewport]: {
+      marginTop: '0.5rem',
     },
   },
   errorButton: {
@@ -351,12 +366,5 @@ export default {
   },
   errorButtonSecondary: {
     marginTop: '0.5rem',
-  },
-  loader: {
-    position: 'absolute',
-    top: '38%',
-    left: '42%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 10,
   },
 } as const;

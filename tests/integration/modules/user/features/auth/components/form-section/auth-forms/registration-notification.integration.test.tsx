@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { fireEvent, render, screen, within, act } from '@testing-library/react';
+import { fireEvent, render, screen, act } from '@testing-library/react';
 import React from 'react';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -67,7 +67,7 @@ describe('RegistrationNotification Integration', () => {
     expect(screen.getByRole('button', { name: 'notifications.error.button' })).toBeEnabled();
   });
 
-  it('renders CircularProgress in error view when isSubmitting is true', () => {
+  it('disables retry button in error view when isSubmitting is true', () => {
     render(
       <ThemeProvider theme={theme}>
         <RegistrationNotification
@@ -79,9 +79,8 @@ describe('RegistrationNotification Integration', () => {
       </ThemeProvider>
     );
 
-    const errorNotification = screen.getByRole('alert');
-    expect(within(errorNotification).getByRole('progressbar')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'notifications.error.retry_button' })).toBeDisabled();
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
   it('calls onBack after animation delay when back button is clicked', () => {

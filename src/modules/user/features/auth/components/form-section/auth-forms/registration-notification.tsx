@@ -3,7 +3,7 @@ import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/ui-button';
 import UiTypography from '@/components/ui-typography';
-import { Box, CircularProgress, Fade, Typography } from '@mui/material';
+import { Box, Fade, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -97,7 +97,6 @@ export default function RegistrationNotification({
               </Box>
             </Box>
           </Box>
-          {isSubmitting && <CircularProgress color="primary" size={70} sx={styles.loader} />}
         </Box>
       </Fade>
     );

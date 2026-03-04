@@ -30,7 +30,7 @@ jest.mock('@/assets/notification/settings.svg', () => ({
 }));
 
 describe('RegistrationNotification', () => {
-  it('shows loading indicator on retry button while retry request is in flight', () => {
+  it('disables retry button while retry request is in flight', () => {
     render(
       <RegistrationNotification
         view="error"
@@ -42,13 +42,8 @@ describe('RegistrationNotification', () => {
     );
 
     const retryButton = screen.getByRole('button', { name: 'notifications.error.retry_button' });
-    const errorNotification = screen.getByRole('alert');
-
     expect(retryButton).toBeDisabled();
-
-    const progress = within(errorNotification).getByRole('progressbar');
-    expect(progress).toBeInTheDocument();
-    expect(progress).toHaveClass('MuiCircularProgress-colorPrimary');
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
   it('shows fallback error text and keeps retry action enabled when not submitting', () => {

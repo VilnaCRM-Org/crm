@@ -145,7 +145,7 @@ test.describe('Registration Form', () => {
     await expect(page.getByText(notificationSuccessTitle)).toBeVisible();
   });
 
-  test('shows loader in try again button while retry request is in flight', async ({ page }) => {
+  test('disables retry button while retry request is in flight', async ({ page }) => {
     const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
 
     let requestCount = 0;
@@ -172,9 +172,7 @@ test.describe('Registration Form', () => {
     const retryButton = page.getByRole('button', { name: notificationErrorRetryButton });
     await retryButton.click();
 
-    const errorNotification = page.getByRole('alert');
     await expect(retryButton).toBeDisabled();
-    await expect(errorNotification.getByRole('progressbar')).toBeVisible();
     await expect(page.getByText(notificationSuccessTitle)).toBeVisible();
   });
 

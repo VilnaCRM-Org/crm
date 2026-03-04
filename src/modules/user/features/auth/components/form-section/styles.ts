@@ -1,4 +1,4 @@
-import breakpointsTheme from '@/components/ui-breakpoints';
+import breakpointsTheme, { heightBreakpoints } from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
 export default {
@@ -12,25 +12,26 @@ export default {
 
     fontFamily: 'Golos',
     backgroundColor: '#FBFBFB',
+    justifyContent: 'center',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      paddingTop: '8.4375rem',
-      paddingBottom: '8.4375rem',
+      paddingTop: '1.5rem',
+      paddingBottom: '1.5rem',
     },
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height: 700px)`]: {
-      paddingTop: '2rem',
-      paddingBottom: '2rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height: ${heightBreakpoints.medium}px)`]: {
+      paddingTop: '1rem',
+      paddingBottom: '1rem',
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      paddingTop: '3.4375rem',
-      paddingBottom: '3.4375rem',
-    },
-
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px) and (max-height: 700px)`]: {
       paddingTop: '2rem',
       paddingBottom: '2rem',
+    },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px) and (max-height: ${heightBreakpoints.medium}px)`]: {
+      paddingTop: '1rem',
+      paddingBottom: '1rem',
     },
   },
   formWrapper: {

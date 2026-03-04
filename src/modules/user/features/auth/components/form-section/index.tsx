@@ -51,7 +51,7 @@ export default function FormSection(): JSX.Element {
       </Box>
 
       <UIButton
-        sx={[styles.formSwitcherButton, showRegistrationReplacement ? styles.hiddenElement : {}]}
+        sx={styles.formSwitcherButton}
         onClick={handleSwitch}
       >
         {mode === 'login'
