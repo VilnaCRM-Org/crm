@@ -70,8 +70,15 @@ MEMLEAK_RUN_DOCKER			= \
 
 K6_TEST_SCRIPT              ?= /loadTests/homepage.js
 K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
+K6_SIGNUP_SCRIPT            ?= /loadTests/signup.js
+K6_SIGNUP_RESULTS_FILE		?= /loadTests/results/signup.html
 K6                          = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) --profile load run --rm k6
-LOAD_TESTS_RUN              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)" --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
+K6_RUN_COMMAND              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)"
+LOAD_TESTS_RUN              = $(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
+LOAD_TESTS_RUN_SIGNUP       = \
+	@echo "🧪 Running comprehensive signup load tests (positive, negative, rate limit)..." && \
+	$(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_SIGNUP_RESULTS_FILE)" $(K6_SIGNUP_SCRIPT) && \
+	echo "✅ All signup tests completed successfully!"
 
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
@@ -83,7 +90,7 @@ PLAYWRIGHT_TEST_PORT        ?= 9324
 UI_HOST                     ?= 0.0.0.0
 INSTALL_CHROMIUM            ?= false
 
-MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
+MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" -i agents.md "**/*.md"
 PRETTIER_CMD                = $(BUNX) prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
@@ -284,6 +291,10 @@ prepare-results-dir:
 test-load: start-prod wait-for-prod-health prepare-results-dir ## This command executes load tests using K6 library. Note: The target host is determined by the service URL
                        ## using $(PROD_PORT), which maps to the production service in Docker Compose.
 	$(LOAD_TESTS_RUN)
+
+test-load-signup: start-prod wait-for-prod-health prepare-results-dir ## Execute comprehensive signup load tests (all scenarios: positive, negative, rate limit).
+                       ## Use environment variables: run_smoke=true, run_average=true, run_stress=true, run_spike=true.
+	$(LOAD_TESTS_RUN_SIGNUP)
 
 lighthouse-desktop: ## Run a Lighthouse audit using desktop viewport settings to evaluate performance and best practices
 	$(LHCI_DESKTOP)

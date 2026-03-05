@@ -7,6 +7,7 @@ const { run, analyze } = require('@memlab/api');
 const { StringAnalysis } = require('@memlab/heap-analysis');
 
 const { initializeLocalization } = require('./utils/initializeLocalization');
+const logger = require('./utils/logger');
 
 const memoryLeakDir = path.join('.', 'tests', 'memory-leak');
 const testsDir = path.join(memoryLeakDir, 'tests');
@@ -22,8 +23,7 @@ const consoleMode = 'VERBOSE';
       .filter((file) => file.endsWith('.js'))
       .map((test) => path.resolve(testsDir, test));
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(`Failed to read tests directory: ${testsDir}`, error);
+    logger.error(`Failed to read tests directory: ${testsDir}`, error);
     process.exit(1);
   }
 
@@ -31,29 +31,61 @@ const consoleMode = 'VERBOSE';
 
   for (const testFilePath of testFilePaths) {
     try {
-      const scenario = require(testFilePath);
-      if (!scenario || typeof scenario !== 'object') {
-        throw new Error(`Invalid scenario exported from ${testFilePath}: must export an object`);
-      }
-      if (typeof scenario.url !== 'function' && typeof scenario.url !== 'string') {
-        throw new Error(
-          `Invalid scenario exported from ${testFilePath}: missing or invalid 'url' property`
-        );
+      const testModule = require(testFilePath);
+
+      logger.debug(`\n📂 Loading test file: ${path.basename(testFilePath)}`);
+      logger.debug(`Exported keys: ${Object.keys(testModule).join(', ')}`);
+
+      const scenarios = [];
+
+      if (testModule && typeof testModule === 'object') {
+        if (typeof testModule.url === 'function' || typeof testModule.url === 'string') {
+          scenarios.push({ name: 'default', scenario: testModule });
+          logger.debug(`✓ Found default export as scenario`);
+        }
+
+        for (const [key, value] of Object.entries(testModule)) {
+          const isScenarioProperty = ['url', 'action', 'back', 'setup'].includes(key);
+
+          if (
+            !isScenarioProperty &&
+            value &&
+            typeof value === 'object' &&
+            (typeof value.url === 'function' || typeof value.url === 'string')
+          ) {
+            scenarios.push({ name: key, scenario: value });
+            logger.debug(`✓ Found named export: ${key}`);
+          }
+        }
       }
 
-      const { runResult } = await run({
-        scenario,
-        consoleMode,
-        workDir,
-        skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
-        debug: process.env.MEMLAB_DEBUG === 'true',
-      });
-      const analyzer = new StringAnalysis();
-      await analyze(runResult, analyzer);
-      runResult.cleanup();
+      if (scenarios.length === 0) {
+        logger.error(`Available exports: ${JSON.stringify(Object.keys(testModule))}`);
+        throw new Error(`No valid scenarios found in ${testFilePath}`);
+      }
+
+      logger.info(`\n📋 Found ${scenarios.length} scenario(s) in ${path.basename(testFilePath)}`);
+
+      for (const { name, scenario } of scenarios) {
+        logger.info(`\n🧪 Running scenario: ${name} from ${path.basename(testFilePath)}`);
+        const { runResult } = await run({
+          scenario,
+          consoleMode,
+          workDir,
+          skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
+          debug: process.env.MEMLAB_DEBUG === 'true',
+        });
+        try {
+          const analyzer = new StringAnalysis();
+          await analyze(runResult, analyzer);
+        } finally {
+          runResult.cleanup();
+        }
+
+        logger.info(`✅ Completed scenario: ${name}`);
+      }
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`✗ Failed memory leak test: ${testFilePath}`, error);
+      logger.error(`✗ Failed memory leak test: ${path.basename(testFilePath)}`, error);
       process.exit(1);
     }
   }
