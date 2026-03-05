@@ -127,12 +127,21 @@ async function back(page) {
 
 async function completeRegistrationAction(page) {
   try {
-    const currentUrl = page.url();
-    const formSwitcher = 'button:last-of-type';
+    const isRegistrationForm = await page.$('input[name="fullName"]');
 
-    if (currentUrl.includes('login')) {
-      await page.waitForSelector(formSwitcher, { timeout: DEFAULT_TIMEOUT });
-      await page.click(formSwitcher);
+    if (!isRegistrationForm) {
+      const switcherText = t('sign_up.form.switcher_text_no_account');
+      await page.waitForFunction(
+        (text) => Array.from(document.querySelectorAll('button')).some((b) => b.textContent.trim().includes(text)),
+        { timeout: DEFAULT_TIMEOUT },
+        switcherText
+      );
+      await page.evaluate((text) => {
+        const btn = Array.from(document.querySelectorAll('button')).find((b) =>
+          b.textContent.trim().includes(text)
+        );
+        if (btn) btn.click();
+      }, switcherText);
       await waitForRegistrationForm(page);
     }
 

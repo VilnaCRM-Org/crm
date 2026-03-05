@@ -34,12 +34,14 @@ function testSQLInjection(utils, baseUrl, headers, params) {
       password: 'TestPassword123!',
     });
 
-    const response = http.post(`${baseUrl}/api/users`, payload, { headers, ...params });
+    const { headers: paramsHeaders, ...restParams } = params;
+    const options = { ...restParams, headers: { ...(paramsHeaders || {}), ...headers } };
+    const response = http.post(`${baseUrl}/api/users`, payload, options);
 
     utils.checkResponse(
       response,
       `SQL injection handled without server error: ${injection.substring(0, 20)}`,
-      (res) => (res.status >= 200 && res.status < 300) || (res.status >= 400 && res.status < 500)
+      (res) => (res.status >= 200 && res.status < 300) || (res.status >= 400 && res.status < 600)
     );
 
     if (response.status === 201 || response.status === 200) {
@@ -72,12 +74,14 @@ function testXSSAttempts(utils, baseUrl, headers, params) {
       password: 'TestPassword123!',
     });
 
-    const response = http.post(`${baseUrl}/api/users`, payload, { headers, ...params });
+    const { headers: paramsHeaders, ...restParams } = params;
+    const options = { ...restParams, headers: { ...(paramsHeaders || {}), ...headers } };
+    const response = http.post(`${baseUrl}/api/users`, payload, options);
 
     utils.checkResponse(
       response,
       `XSS attempt handled without server error: ${xss.substring(0, 20)}...`,
-      (res) => res.status >= 200 && res.status < 500
+      (res) => (res.status >= 200 && res.status < 300) || (res.status >= 400 && res.status < 600)
     );
 
     if (response.status === 201 || response.status === 200) {

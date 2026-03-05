@@ -222,7 +222,7 @@ describe('password validation', () => {
       expect(validators.password('Password1', emptyUser)).toBe(true);
     });
 
-    it('should accept password with all lowercase letters (if uppercase present)', () => {
+    it('should accept password with mixed case letters', () => {
       expect(validators.password('Password1', emptyUser)).toBe(true);
     });
 
@@ -319,7 +319,7 @@ describe('password validation', () => {
 
   describe('combined validation failures', () => {
     it('should return first error when multiple validations fail', () => {
-      // Too short + no number + no uppercase + no lowercase
+      // Too short + no number + no uppercase
       expect(validators.password('pass', emptyUser)).toBe(
         'sign_up.form.password_input.error_length'
       );
@@ -345,12 +345,6 @@ describe('password validation', () => {
         'sign_up.form.password_input.error_uppercase'
       );
       expect(validators.password('mypassword99', emptyUser)).toBe(
-        'sign_up.form.password_input.error_uppercase'
-      );
-    });
-
-    it('should return uppercase error when length and number are valid but no uppercase and all lowercase', () => {
-      expect(validators.password('password1', emptyUser)).toBe(
         'sign_up.form.password_input.error_uppercase'
       );
     });

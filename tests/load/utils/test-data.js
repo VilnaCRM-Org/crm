@@ -20,7 +20,7 @@ const TEST_DATA_GENERATORS = {
   },
 
   generateUniqueUserBatch: (count) => {
-    if (!count || count < 1) {
+    if (!Number.isInteger(count) || count < 1) {
       throw new Error('count must be a positive number');
     }
 

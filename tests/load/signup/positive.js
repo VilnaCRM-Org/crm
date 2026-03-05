@@ -32,24 +32,24 @@ export default function runPositiveTests(utils, baseUrl, params) {
 
     if (res.status >= 500) {
       console.error(
-        `[ERROR] Server error during signup: ${res.status} - ${res.body.substring(0, 100)}`
+        `[ERROR] Server error during signup: ${res.status} - ${(res.body || '').substring(0, 100)}`
       );
       return false;
     }
     console.log(
-      `[WARN] Unexpected status during signup: ${res.status} - ${res.body.substring(0, 100)}`
+      `[WARN] Unexpected status during signup: ${res.status} - ${(res.body || '').substring(0, 100)}`
     );
-    return true;
+    return false;
   });
 
   if (!isSuccess && !isExpectedClientError) {
     if (isServerError) {
       console.error(
-        `[ERROR] Server error during registration: ${response.status} - ${response.body.substring(0, 100)}`
+        `[ERROR] Server error during registration: ${response.status} - ${(response.body || '').substring(0, 100)}`
       );
     } else {
       console.log(
-        `[INFO] Unexpected client response: ${response.status} - ${response.body.substring(0, 100)}`
+        `[INFO] Unexpected client response: ${response.status} - ${(response.body || '').substring(0, 100)}`
       );
     }
   }

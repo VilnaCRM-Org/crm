@@ -18,10 +18,10 @@ export default class ThresholdsBuilder {
 
     this.thresholds[`http_req_duration{scenario:${testType}}`] = [`p(99)<${config.threshold}`];
 
-    const checkPassRate = this.getCheckPassRate(testType);
+    const checkPassRate = this.#getCheckPassRate(testType);
     this.thresholds[`checks{scenario:${testType}}`] = [`rate>${checkPassRate}`];
 
-    const errorRateThreshold = this.getErrorRateThreshold(testType);
+    const errorRateThreshold = this.#getErrorRateThreshold(testType);
     this.thresholds[`http_req_failed{scenario:${testType}}`] = [`rate<${errorRateThreshold}`];
 
     this.thresholds[`http_reqs{scenario:${testType}}`] = ['count>0'];
@@ -29,7 +29,7 @@ export default class ThresholdsBuilder {
     return this;
   }
 
-  getErrorRateThreshold(testType) {
+  #getErrorRateThreshold(testType) {
     if (this.endpointThresholds?.errorRate?.[testType] !== undefined) {
       return this.endpointThresholds.errorRate[testType];
     }
@@ -43,7 +43,7 @@ export default class ThresholdsBuilder {
     return thresholds[testType] || 0.05;
   }
 
-  getCheckPassRate(testType) {
+  #getCheckPassRate(testType) {
     if (this.endpointThresholds?.checkPassRate?.[testType] !== undefined) {
       return this.endpointThresholds.checkPassRate[testType];
     }
