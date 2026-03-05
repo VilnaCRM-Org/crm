@@ -35,13 +35,12 @@ This PRD defines requirements for a single PR that resolves all three issues, fo
 ### User Success
 
 - A developer runs `make start` once and has a fully working local environment — frontend dev server with hot-reload **and** Mockoon backend mock — with no additional commands required
-- API calls work immediately after `make start` completes; readiness means Mockoon responds HTTP 200 on its health endpoint (not just container started)
+- API calls work immediately after `make start` completes; readiness means Mockoon returns a successful HTTP response on `http://localhost:8080/api/health` (not just container started)
 - New contributors can start developing from a single command without needing to read docs about Mockoon or secondary services
 
 ### Business Success
 
 - All CI checks (lint, unit tests, E2E, visual, performance, etc.) can be triggered with a single `make ci` command instead of manually running each target in sequence
-- `make ci` works for both local developer use and CI pipeline use via `CI=1` environment variable
 - `make ci` fails fast and clearly; failures are attributable to a specific target with no garbled parallel output
 
 ### Technical Success
@@ -65,7 +64,7 @@ This PRD defines requirements for a single PR that resolves all three issues, fo
 
 **Before:** Alex pulls the latest changes Monday morning and runs `make start`. The frontend dev container spins up — but Mockoon isn't running. He opens the browser, navigates to the registration flow, and the form submits into silence. He spends 10 minutes wondering if it's his code before discovering Mockoon was never started. He runs a second command, waits again — 15 minutes after sitting down, he's finally working.
 
-**After:** Alex runs `make start`. Both `dev` and `mockoon` start together. The command waits until Mockoon returns HTTP 200, then exits. API calls work immediately. He's writing code within 2 minutes.
+**After:** Alex runs `make start`. Both `dev` and `mockoon` start together. The command waits until Mockoon returns a successful HTTP response on `/api/health`, then exits. API calls work immediately. He's writing code within 2 minutes.
 
 ---
 
@@ -108,7 +107,7 @@ This PRD defines requirements for a single PR that resolves all three issues, fo
 | Capability | Revealed By | Priority |
 |---|---|---|
 | Orchestrated `dev` + `mockoon` startup | Journey 1, 2 | MVP |
-| Health-based readiness checks (HTTP 200) | Journey 1 | MVP |
+| Health-based readiness checks (successful HTTP response) | Journey 1 | MVP |
 | Updated `make start` documentation | Journey 2 | MVP |
 | `make ci` with parallel execution | Journey 3a | MVP |
 | Configurable CI job list | Journey 3a | MVP |
@@ -130,8 +129,6 @@ All four user journeys (Alex, Mia, CI pipeline, Dana) are served by these three 
 
 - `make start` bringing up `dev` + `mockoon` with health-based readiness checks
 - `make ci` with two-wave parallel execution, `--output-sync=target`, `JOBS ?= 2`
-- `CI=1` switching across all CI targets
-- `ci-sequential` fallback with collected failure summary
 - Chromium install deduplication — single idempotent `ensure-chromium`
 - Updated `make help` documentation
 
@@ -143,7 +140,9 @@ All four user journeys (Alex, Mia, CI pipeline, Dana) are served by these three 
 
 **Breaking Change:** `make start` changes from non-blocking to blocking. Audit all CI YAML steps, scripts, and docs that call `make start` and assume immediate exit — these will break.
 
-**Technical Risk:** Two-wave CI with prod build dependency is the most complex piece — `ci-sequential` as a tested fallback mitigates this from day one.
+**Required Mitigation:** Publish a short migration guide for `make start` (before/after behavior and expected wait semantics) and run a CI/workflow caller audit across `.github/`, scripts, and docs in the same PR.
+
+**Technical Risk:** Two-wave CI with prod build dependency is the most complex piece — `--output-sync=target` ensures all parallel failures within each wave are visible.
 
 **Resource Risk:** If the PR must be split, Chromium deduplication is the most independent and lowest-risk item to defer.
 
@@ -157,11 +156,9 @@ This section captures implementation-relevant decisions to guide the developer, 
 - **Parallelism level:** `JOBS ?= 2` locally (resource-aware); CI overrides to `JOBS=4`
 - **Output style:** Matches `user-service` emoji conventions (`🚀`, `✅`, `❌`)
 
-### CI vs Local Execution
+### Execution Model
 
-`CI=1` environment variable switches execution context:
-- **Without `CI=1` (local):** `docker compose exec -T dev bun x jest`
-- **With `CI=1` (CI runner):** `bun x jest` directly — no Docker exec
+Startup targets use `docker compose up` to create and run services (`make start`, `make start-prod`), while follow-on execution targets (tests, lint, validation) run against already-running services via `docker compose exec` or one-off `docker compose run --rm`. CI runners mirror developer behavior: startup via `docker compose up`, then subsequent checks via `docker compose exec`/`run --rm`.
 
 ### `make ci` Phase Structure
 
@@ -178,18 +175,19 @@ If Phase 1 or Phase 2 fails, `make ci` exits immediately without starting Phase 
 ```makefile
 ci: ci-preflight ci-wave-1 ci-build-prod ci-wave-2  ## Run all CI checks
 
-ci-preflight:   # Sequential: format + style gates
+ci-preflight:   # Sequential: format check gate
 ci-wave-1:      # Parallel -j$(JOBS): lint, unit, tsc
 ci-build-prod:  # Sequential: start-prod + wait for port 3001
 ci-wave-2:      # Parallel -j$(JOBS): e2e, visual, performance
-ci-sequential:  # Fallback: run all sequentially, collect all failures
 ```
 
 ### `make start` Readiness
 
 - Brings up `dev` and `mockoon` via Docker Compose
-- Polls Mockoon health endpoint (HTTP 200) before exiting
-- Polls dev server on port 3000 before exiting
+- Polls Mockoon readiness with HTTP GET `http://localhost:8080/api/health` (accept any 2xx/3xx response)
+- Polls dev readiness with HTTP GET `http://localhost:3000/` (accept any 2xx/3xx response; HTTP probe, not raw TCP)
+- Poll interval: every 2 seconds
+- Timeout strategy for startup checks: `make start` passes explicit command-line overrides (`WAIT_FOR_DEV_MAX_TRIES=30`, `WAIT_FOR_MOCKOON_MAX_TRIES=30`, both with sleep `2`) to enforce a 60-second default window per service while preserving the standalone global default `WAIT_FOR_DEV_MAX_TRIES ?= 150`
 - Modelled on existing `make start-prod` pattern
 
 ### Chromium Install
@@ -205,16 +203,16 @@ ci-sequential:  # Fallback: run all sequentially, collect all failures
 | Deliverable | FRs |
 |---|---|
 | `make start` | FR1, FR2, FR3, FR4 |
-| `make ci` | FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR13, FR14, FR15, FR16 |
-| Chromium deduplication | FR17, FR18, FR19, FR20 |
-| Documentation | FR21, FR22, FR23 |
+| `make ci` | FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR13 |
+| Chromium deduplication | FR14, FR15, FR16, FR17 |
+| Documentation | FR18, FR19, FR20 |
 
 ### Development Environment Startup
 
 - **FR1:** Developer can start all required development services (frontend dev server + Mockoon) with a single `make start` command
 - **FR2:** `make start` waits until the frontend dev server is accepting connections on its port before exiting
-- **FR3:** `make start` waits until Mockoon responds HTTP 200 on its health endpoint before exiting
-- **FR4:** `make start` exits with a non-zero code if either service fails to reach healthy state within a fixed timeout
+- **FR3:** `make start` waits until Mockoon responds with a successful HTTP response on `http://localhost:8080/api/health` before exiting
+- **FR4:** `make start` exits with a non-zero code if either service fails to reach healthy state within the default startup timeout window
 
 ### CI Execution
 
@@ -227,22 +225,19 @@ ci-sequential:  # Fallback: run all sequentially, collect all failures
 - **FR11:** `make ci` exits with a non-zero code if any check fails
 - **FR12:** `make ci` output clearly identifies which specific target failed
 - **FR13:** Developer can configure the number of parallel jobs via a `JOBS` variable (default: 2 locally)
-- **FR14:** The system supports `CI=1` environment variable to switch all Docker exec invocations to direct command execution across all CI targets
-- **FR15:** Developer can run all CI checks sequentially via `make ci-sequential` as a fallback
-- **FR16:** `make ci-sequential` collects all failing checks and reports them together in a summary at the end rather than stopping at the first failure
 
 ### Chromium Management
 
-- **FR17:** The performance test sequence installs Chromium at most once per run
-- **FR18:** `ensure-chromium` is a no-op if Chromium is already present
-- **FR19:** Running the full Lighthouse sequence (`build-dev-chromium` → `start` → `lighthouse-desktop` → `lighthouse-mobile`) twice does not trigger a second Chromium installation
-- **FR20:** `make lighthouse-desktop` and `make lighthouse-mobile` pass after the Chromium deduplication change
+- **FR14:** The performance test sequence installs Chromium at most once per run
+- **FR15:** `ensure-chromium` is a no-op if Chromium is already present
+- **FR16:** Running the full Lighthouse sequence (`build-dev-chromium` → `start` → `lighthouse-desktop` → `lighthouse-mobile`) twice does not trigger a second Chromium installation
+- **FR17:** `make lighthouse-desktop` and `make lighthouse-mobile` pass after the Chromium deduplication change
 
 ### Documentation & Discoverability
 
-- **FR21:** Developer can see that `make start` starts both `dev` and `mockoon` services via `make help`
-- **FR22:** Developer can see which CI checks `make ci` runs via `make help`
-- **FR23:** Developer can discover `make ci-sequential` as a fallback option via `make help`
+- **FR18:** Developer can see that `make start` starts both `dev` and `mockoon` services via `make help`
+- **FR19:** Developer can see which CI checks `make ci` runs via `make help`
+- **FR20:** Developer can discover all new Makefile targets via `make help`
 
 ## Non-Functional Requirements
 
@@ -263,4 +258,4 @@ ci-sequential:  # Fallback: run all sequentially, collect all failures
 
 ## Constraints
 
-- **C1:** The implementation introduces zero breaking changes to existing Makefile targets — `make test-unit-all`, `make test-e2e`, and all other existing targets continue to work exactly as before
+- **C1:** No breaking changes to existing Makefile targets except `make start` (intentional non-blocking → blocking behavior change). Required mitigations: migration guide plus CI/workflow caller audit documented in the PR.
