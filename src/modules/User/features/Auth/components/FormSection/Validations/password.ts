@@ -1,5 +1,5 @@
-import { t } from 'i18next';
-import { ValidateResult } from 'react-hook-form';
+import type { TFunction } from 'i18next';
+import { FieldValues, Validate } from 'react-hook-form';
 
 const isLengthValid = (value: string): boolean => value.length >= 8 && value.length <= 64;
 
@@ -16,22 +16,24 @@ type ValidationPswdMessageKey =
   | 'lowercaseRequired'
   | 'fieldRequired';
 
-const validationPswdMessages: Record<ValidationPswdMessageKey, string> = {
-  invalidLength: t('sign_up.form.password_input.error_length'),
-  numberRequired: t('sign_up.form.password_input.error_numbers'),
-  uppercaseRequired: t('sign_up.form.password_input.error_uppercase'),
-  lowercaseRequired: t('sign_up.form.password_input.error_lowercase'),
-  fieldRequired: t('sign_up.form.password_input.error_required'),
-};
-type PasswordValidator = (value: string) => ValidateResult;
+const createPasswordValidator =
+  <TFieldValues extends FieldValues>(t: TFunction): Validate<string, TFieldValues> =>
+  (value: string) => {
+    const messages: Record<ValidationPswdMessageKey, string> = {
+      invalidLength: t('sign_up.form.password_input.error_length'),
+      numberRequired: t('sign_up.form.password_input.error_numbers'),
+      uppercaseRequired: t('sign_up.form.password_input.error_uppercase'),
+      lowercaseRequired: t('sign_up.form.password_input.error_lowercase'),
+      fieldRequired: t('sign_up.form.password_input.error_required'),
+    };
 
-const validatePassword: PasswordValidator = (value: string) => {
-  if (!value) return validationPswdMessages.fieldRequired;
-  if (!isLengthValid(value)) return validationPswdMessages.invalidLength;
-  if (!hasNumber(value)) return validationPswdMessages.numberRequired;
-  if (!hasUppercase(value)) return validationPswdMessages.uppercaseRequired;
-  if (!hasLowercase(value)) return validationPswdMessages.lowercaseRequired;
-  return true;
-};
+    if (!value?.trim()) return messages.fieldRequired;
+    if (!isLengthValid(value)) return messages.invalidLength;
+    if (!hasNumber(value)) return messages.numberRequired;
+    if (!hasUppercase(value)) return messages.uppercaseRequired;
+    if (!hasLowercase(value)) return messages.lowercaseRequired;
 
-export default validatePassword;
+    return true;
+  };
+
+export default createPasswordValidator;

@@ -1,8 +1,8 @@
 import { ReactElement } from 'react';
 
 export interface ButtonProps {
-  label: string;
-  variant: 'primary' | 'secondary';
+  label?: string;
+  variant?: 'primary' | 'secondary';
   onClick: () => void;
 }
 

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import viewports from '../utils/constants';
+import viewports from '../constants/viewports';
 
 const backToHomeSpec = {
   href: '/',
@@ -15,21 +15,17 @@ test.describe('BackToMain Component E2E Tests', () => {
 
   test.describe('Navigation Functionality', () => {
     test('should navigate to home page when back button is clicked', async ({ page }) => {
-      const arrowBack = page.locator('img[alt=""]');
-      const backButton = page
-        .locator(`a[href="${backToHomeSpec.href}"]`)
-        .filter({ has: arrowBack });
+      const backButton = page.locator(`a[href="${backToHomeSpec.href}"]`);
+      const backIcon = backButton.locator('svg, img[alt=""]');
 
+      await expect(backIcon).toHaveCount(1);
       await expect(backButton).toHaveCount(1);
       await backButton.click();
       await expect(page).toHaveURL(backToHomeSpec.href);
     });
 
     test('should have correct href attribute pointing to root', async ({ page }) => {
-      const arrowBack = page.locator('img[alt=""]');
-      const backButton = page
-        .locator(`a[href='${backToHomeSpec.href}']`)
-        .filter({ has: arrowBack });
+      const backButton = page.locator(`a[href='${backToHomeSpec.href}']`);
 
       await expect(backButton).toHaveAttribute('href', backToHomeSpec.href);
     });
@@ -37,13 +33,15 @@ test.describe('BackToMain Component E2E Tests', () => {
 
   test.describe('Visual Elements', () => {
     test('should display back arrow icon', async ({ page }) => {
-      const backIcon = page.locator(`img[alt=${backToHomeSpec.imgAlt}]`);
+      const backIcon = page.locator(`a[href="${backToHomeSpec.href}"]`).locator('svg, img[alt=""]');
 
       if ((await backIcon.count()) > 0) {
         await expect(backIcon).toBeVisible();
 
-        const src = await backIcon.getAttribute('src');
-        expect(src).toBeTruthy();
+        if (await backIcon.evaluate((el) => el.tagName.toLowerCase() === 'img')) {
+          const src = await backIcon.getAttribute('src');
+          expect(src).toBeTruthy();
+        }
       }
     });
 

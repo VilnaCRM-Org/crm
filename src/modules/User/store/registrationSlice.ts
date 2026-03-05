@@ -66,6 +66,7 @@ export const registrationSlice = createSlice({
       })
       .addCase(registerUser.rejected, (state, action) => {
         if (action.meta.aborted) {
+          state.loading = false;
           return;
         }
         state.loading = false;

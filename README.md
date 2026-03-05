@@ -51,10 +51,8 @@ Before running the application, make sure the following tools are installed on y
   Docker applications. Docker Compose is essential for starting up the
   development environment and running the services defined in docker-compose.yml.
 
-- **[pnpm](https://pnpm.io/)** a fast, disk space-efficient package manager for JavaScript and
-  Node.js projects. It uses a unique content-addressable storage to save dependencies on your machine
-  only once, and creates hard links to them in project folders, resulting in faster installations and
-  smaller disk usage compared to npm or yarn.
+- **[Bun](https://bun.sh/)** used as the package manager (Node.js remains the runtime). Bun uses the
+  `bun.lock` file to keep dependency resolutions consistent while delivering fast installs.
 
 #### 3. Run the Application
 
@@ -69,8 +67,12 @@ After installing all prerequisites, you can start the application inside a Docke
 The command will:
 
 - Build and start the project inside a Docker container named `dev`.
-- Install all the necessary dependencies (including Node.js dependencies) inside the container.
+- Use the dependencies already baked into the dev image (mounted via a named `node_modules`
+  volume) instead of reinstalling on every start.
 - The application will be up and running.
+
+> First-time setup: run `make create-network` to create the external `crm-network` before
+> using `docker compose` directly. `make start` runs this automatically.
 
 Access the application at <http://localhost:3000>.
 
@@ -88,10 +90,11 @@ General
 
 ```bash
   make start: starts the application
+  make create-network: creates the external crm-network (idempotent helper)
   make build: builds the application
   make format: formats the codebase to ensure consistent style across all files
   make update: updates node modules according to the current package.json file
-  make install: installs node modules according to the current pnpm-lock.yaml file
+  make install: installs node modules according to the current bun.lock file using Bun
   make check-node-version: checks if the correct Node.js version is installed
 ```
 
@@ -169,28 +172,6 @@ Docker
   make wait-for-prod: waits for the prod service to be ready on port 3001
 ```
 
-💡 Tip: To run commands locally without Docker, please prefix command with CI=1.
-Example:
-
-```bash
-  CI=1 make start
-```
-
-The following commands can't be run with `CI=1` prefix:
-
-```bash
-  make test-e2e: starts production and runs end-to-end tests inside the prod container
-  make test-visual: runs visual tests inside the prod container
-  make test-e2e-ui: runs end-to-end tests with UI inside the prod container
-  make test-visual-ui: runs visual tests with UI inside the prod container
-
-  make test-load: executes load tests using the K6 library
-  (uses "prod" as hostname, which maps to the Docker service)
-
-  make git-hooks-install: installs husky Git hooks locally
-  make update: runs locally on the host machine, not in a container
-```
-
 ### Load Testing with K6
 
 This project includes a dedicated load testing service using K6, configured via a Docker Compose profile.
@@ -239,9 +220,7 @@ particularly when hosted on platforms like AWS CloudFront.
 ## Documentation
 
 Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
-Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
 If you're having trouble, head for
-[the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 [the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 as it's frequently updated.
 

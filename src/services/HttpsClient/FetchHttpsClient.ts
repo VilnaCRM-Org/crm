@@ -31,6 +31,12 @@ export default class FetchHttpsClient implements HttpsClient {
     headers?: Record<string, string>,
     options?: { signal?: AbortSignal }
   ): Promise<R> {
+    if (options?.signal?.aborted) {
+      const abortError = new Error('The operation was aborted');
+      abortError.name = 'AbortError';
+      throw abortError;
+    }
+
     const config: RequestInit = this.createRequestConfig(method, body, headers);
     if (options?.signal) config.signal = options.signal;
 
@@ -38,6 +44,13 @@ export default class FetchHttpsClient implements HttpsClient {
       const response = await fetch(url, config);
       return await this.processResponse<R>(response);
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        throw err;
+      }
+
+      if (err instanceof HttpError) {
+        throw err;
+      }
       throw new HttpError({ status: 0, message: ResponseMessages.NETWORK_ERROR, cause: err });
     }
   }

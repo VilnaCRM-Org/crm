@@ -27,6 +27,9 @@ export default class RegistrationAPI extends BaseAPI {
         options
       );
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error; // Let RTK detect the abort
+      }
       throw this.handleApiError(error, 'Registration');
     }
   }

@@ -7,6 +7,7 @@ dotenvExpand(env);
 
 const cdHeaderName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME?.trim();
 const cdHeaderValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE?.trim();
+const baseURL = process.env.REACT_APP_PROD_CONTAINER_API_URL || 'http://localhost:3001';
 
 export default defineConfig({
   testMatch: ['**/*.spec.ts'],
@@ -18,7 +19,7 @@ export default defineConfig({
   use: {
     trace: 'on-first-retry',
     ignoreHTTPSErrors: true,
-    baseURL: process.env.REACT_APP_PROD_CONTAINER_API_URL,
+    baseURL,
     ...(cdHeaderName && cdHeaderValue
       ? {
           extraHTTPHeaders: {

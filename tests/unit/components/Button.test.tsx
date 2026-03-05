@@ -14,4 +14,13 @@ describe('Button component', () => {
     fireEvent.click(screen.getByText('Click'));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
+
+  it('falls back to default label and variant when omitted', () => {
+    const handleClick = jest.fn();
+    render(<Button onClick={handleClick} />);
+
+    const button = screen.getByRole('button');
+    expect(button).toHaveTextContent('Button');
+    expect(button).toHaveClass('btn-primary');
+  });
 });

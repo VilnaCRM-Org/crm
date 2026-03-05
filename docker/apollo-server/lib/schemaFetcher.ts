@@ -125,18 +125,36 @@ export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
     }
   }
 
-  if (lastError) {
-    if (process.env.NODE_ENV === 'production') {
-      schemaLogger.info('Schema fetch failed after all retry attempts...');
-      throw lastError;
-    } else {
-      schemaLogger.info('All retry attempts failed, but continuing execution...');
-    }
-  }
+  handleFinalError(lastError, schemaLogger, outputDir);
 }
 
+/**
+ * Final guard for the schema fetch CLI entrypoint.
+ * Intended to be called by the command-line wrapper (`schemaFetcher.mts`) when an unhandled
+ * error bubbles up so we can log the context and exit with a failure code.
+ *
+ * ts-prune-ignore-next - used by the .mts CLI entrypoint so it won't appear in TS import graphs.
+ */
+// ts-prune-ignore-next
 export function handleFatalError(error: Error, outputDir?: string): never {
   const errorLogger: Logger = getLogger(outputDir);
   errorLogger.error('Fatal error during schema fetch:', error);
   process.exit(1);
+}
+
+export function handleFinalError(
+  lastError: Error | null,
+  schemaLogger: Logger,
+  outputDir?: string
+): void {
+  if (!lastError) {
+    return;
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    schemaLogger.info('Schema fetch failed after all retry attempts; exiting.');
+    handleFatalError(lastError, outputDir);
+  }
+
+  schemaLogger.info('All retry attempts failed, but continuing execution...');
 }

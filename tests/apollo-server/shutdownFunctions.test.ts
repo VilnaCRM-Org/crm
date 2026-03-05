@@ -316,6 +316,14 @@ describe('shutdownFunctions', () => {
       );
       expect(processExitSpy).toHaveBeenCalledWith(1);
     });
+
+    it('should not exit when NODE_ENV is test', async () => {
+      process.env.NODE_ENV = 'test';
+      const promise = handleServerFailure();
+      jest.runAllTimers();
+      await promise;
+      expect(processExitSpy).not.toHaveBeenCalled();
+    });
   });
 
   describe('integration scenarios', () => {

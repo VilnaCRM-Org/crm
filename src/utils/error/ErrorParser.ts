@@ -1,3 +1,5 @@
+import ApiError from '@/modules/User/features/Auth/api/ApiErrors/ApiError';
+
 import ParsedError from './types';
 
 export default class ErrorParser {
@@ -6,6 +8,13 @@ export default class ErrorParser {
       return {
         code: `HTTP_${error.status}`,
         message: `HTTP error ${error.status}`,
+        original: error,
+      };
+    }
+    if (error instanceof ApiError) {
+      return {
+        code: error.code,
+        message: error.message,
         original: error,
       };
     }

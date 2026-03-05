@@ -11,7 +11,7 @@ module.exports = {
   ignorePatterns: [
     'node_modules/*',
     'docker-compose.yml',
-    'pnpm-lock.yaml',
+    'bun.lock*',
     'build/*',
     'coverage/*',
     'storybook-static/*',
@@ -67,9 +67,6 @@ module.exports = {
           typescript: {
             project: './tsconfig.json',
             alwaysTryTypes: true,
-          },
-          webpack: {
-            config: './craco.config.js',
           },
         },
       },
@@ -184,7 +181,11 @@ module.exports = {
         '**/*.spec.jsx',
         '**/*.spec.ts',
         '**/*.spec.tsx',
+        '**/*.integration.test.ts',
+        '**/*.integration.test.tsx',
         'test/load/**/*.js',
+        'tests/integration/**/*.ts',
+        'tests/integration/**/*.tsx',
       ],
       parser: '@typescript-eslint/parser',
       extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
@@ -194,6 +195,7 @@ module.exports = {
         'prefer-template': 'off',
         'no-restricted-syntax': 'off',
         'import/no-unresolved': 'off',
+        'import/no-cycle': 'off',
         'class-methods-use-this': 'off',
         'no-restricted-globals': 'off',
         'no-undef': 'off',

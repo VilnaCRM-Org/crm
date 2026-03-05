@@ -32,7 +32,7 @@ export const loginUser = createAsyncThunk<
   }
 });
 
-interface LoginState {
+export interface LoginState {
   email: string;
   token: string | null;
   loading: boolean;

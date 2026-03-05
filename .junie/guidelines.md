@@ -5,7 +5,7 @@ This document provides essential information for developers working on this Reac
 ## Prerequisites
 
 - **Node.js**: >=20.0.0 (enforced by `engines` in package.json)
-- **Package Manager**: pnpm >=9 (required, enforced by `engineStrict: true`)
+- **Package Manager**: Bun >=1.3.5 (pinned via `.bun-version`)
 - **Docker**: Required for containerized development environment
 - **Docker Compose**: For orchestrating development services
 
@@ -17,7 +17,7 @@ This document provides essential information for developers working on this Reac
 
    ```bash
    make install
-   # Runs: pnpm install --frozen-lockfile (in container or locally based on CI flag)
+   # Runs: bun install --frozen-lockfile (in container or locally based on CI flag)
    ```
 
 2. **Start Development Server**:
@@ -195,7 +195,7 @@ make format         # Prettier formatting
 ### Development Tools
 
 - **Build Tool**: Craco (Create React App Configuration Override)
-- **Package Manager**: pnpm (required)
+- **Package Manager**: Bun (required)
 - **Containerization**: Docker with Docker Compose
 - **Documentation**: Storybook v9
 - **Monitoring**: Sentry for error tracking
