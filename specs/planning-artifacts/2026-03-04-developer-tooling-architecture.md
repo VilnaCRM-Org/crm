@@ -200,7 +200,8 @@ are already implemented — verify and close, do not rewrite.
   -f docker-compose.yml`) can start it alongside `dev`
 - Rationale: Existing mockoon definition in `docker-compose.test.yml` is the
   authoritative template. Porting preserves all configuration (port, network).
-  Docker healthcheck uses `wget` (inside container) — correct as-is. Makefile
+  Docker healthcheck in `docker-compose.test.yml` uses `wget` (inside container) — correct as-is there.
+  Do NOT copy the healthcheck block into `docker-compose.yml`; Makefile
   polling uses `curl` (host-side) — separate context, no conflict.
 - Health endpoint note (resolved): Mockoon CLI does not expose a separate built-in
   readiness path. The loaded OpenAPI spec (`user-service` `v2.7.1`) explicitly defines

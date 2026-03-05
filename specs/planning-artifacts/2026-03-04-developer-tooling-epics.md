@@ -162,9 +162,8 @@ So that I have a fully working local environment after one command with no addit
 **Given** Story 1.1 and 1.2 are complete
 **When** a developer runs `make start`
 **Then** both `dev` and `mockoon` containers start via `docker compose up -d --build dev mockoon`
-**And** before polling begins, the implementer verifies `http://localhost:8080/api/health` is reachable in the Mockoon runtime and wires `wait-for-mockoon` to that endpoint (not `/api/users`)
 **And** `wait-for-dev` and `wait-for-mockoon` run concurrently using PID-capture pattern
-**And** readiness polling starts only against that verified Mockoon health endpoint
+**And** `wait-for-mockoon` polls the Mockoon health endpoint `http://localhost:8080/api/health` (not `/api/users`)
 **And** `make start` exits 0 only after both services pass their health checks
 **And** `make start` exits non-zero if either service fails to become healthy within 60 seconds
 **And** `make start` is idempotent — running it when services are already up produces no errors

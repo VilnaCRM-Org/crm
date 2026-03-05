@@ -217,7 +217,7 @@ ci-wave-2:      # Parallel -j$(JOBS): e2e, visual, performance
 ### CI Execution
 
 - **FR5:** Developer can run all CI checks with a single `make ci` command
-- **FR6:** `make ci` runs preflight checks (format, style gates) sequentially before parallel execution begins
+- **FR6:** `make ci` runs a format check gate (`ci-preflight` using `PRETTIER_CHECK_CMD`) sequentially before parallel execution begins; lint runs later in `ci-wave-1` to avoid double execution
 - **FR7:** `make ci` executes lint, unit tests, and TypeScript checks in parallel (Wave 1)
 - **FR8:** `make ci` starts the production build and waits for it to be healthy before proceeding
 - **FR9:** `make ci` executes E2E, visual regression, and performance/Lighthouse checks in parallel (Wave 2) only after Wave 1 and the production build succeed
