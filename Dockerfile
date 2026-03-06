@@ -26,7 +26,7 @@ ENV PATH="/root/.bun/bin:$PATH"
 
 WORKDIR /app
 
-COPY package.json bun.lock* checkNodeVersion.js ./
+COPY package.json bun.lock* check-node-version.js ./
 RUN bun install --frozen-lockfile
 
 

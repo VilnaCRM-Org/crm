@@ -50,7 +50,7 @@ MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
 MEMLEAK_BASE_PATH           = ./tests/memory-leak
 MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
-MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/runMemlabTests.js
+MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/run-memlab-tests.js
 
 MEMLEAK_REMOVE_RESULTS		= rm -rf $(MEMLEAK_RESULTS_DIR)
 MEMLEAK_SETUP 				= \
@@ -100,7 +100,7 @@ STRYKER_CMD                 = make start && $(BUNX) stryker run
 UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
-STORYBOOK_START             = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
+STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint
 LHCI_TARGET_URL             ?= $(REACT_APP_PROD_CONTAINER_API_URL)
@@ -192,7 +192,10 @@ lint-tsc: ## This command executes Typescript linter
 lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
-lint: lint-eslint lint-tsc lint-md ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
+lint-deps: ## This command executes dependency-cruiser
+	$(BUNX) depcruise .
+
+lint: lint-eslint lint-tsc lint-md lint-deps ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
 
 husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	$(BUNX) husky install
@@ -227,6 +230,9 @@ create-network: ## Create the external Docker network if it doesn't exist
 
 start-prod: create-network ## Build image and start container in production mode
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate && make wait-for-prod-health
+
+start-prod-clean: create-network ## Rebuild and recreate all test containers
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build && make wait-for-prod-health
 
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
@@ -320,7 +326,7 @@ stop: ## Stop docker
 	$(DOCKER_COMPOSE) stop
 
 check-node-version: ## Check if the correct Node.js version is installed
-	$(EXEC_CMD) node checkNodeVersion.js
+	$(EXEC_CMD) node check-node-version.js
 
 clean: down ## Clean up only this project's containers, images, and volumes
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) down --volumes --remove-orphans --rmi local

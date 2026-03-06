@@ -5,12 +5,12 @@ import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 
-import '@/config/DependencyInjectionConfig';
+import '@/config/dependency-injection-config';
 import Store from '@/stores';
 import '@/styles/fonts.css';
 import theme from '@/styles/theme';
 
-import App from './App';
+import App from './app';
 import i18n from './i18n';
 
 const rootElement = document.getElementById('root');

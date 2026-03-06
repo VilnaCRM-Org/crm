@@ -1,2 +1,2 @@
-export * from './ErrorHandler';
-export * from './errorCodes';
+export * from './error-handler';
+export * from './error-codes';
