@@ -66,6 +66,7 @@ export default {
       overflow: 'hidden',
       '@media (max-width: 374px)': {
         maxHeight: '100dvh',
+        minHeight: '420px',
       },
     },
   },
