@@ -14,6 +14,18 @@ const testsDir = path.join(memoryLeakDir, 'tests');
 const workDir = path.join(memoryLeakDir, 'results');
 const consoleMode = 'VERBOSE';
 
+function formatErrorDetails(error) {
+  if (error instanceof Error) {
+    return error.stack || error.message;
+  }
+
+  return String(error);
+}
+
+function writeFailure(message, error) {
+  process.stderr.write(`${message}\n${formatErrorDetails(error)}\n`);
+}
+
 (async function runMemoryLeakTests() {
   let testFilePaths;
   try {
@@ -22,8 +34,7 @@ const consoleMode = 'VERBOSE';
       .filter((file) => file.endsWith('.js'))
       .map((test) => path.resolve(testsDir, test));
   } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(`Failed to read tests directory: ${testsDir}`, error);
+    writeFailure(`Failed to read tests directory: ${testsDir}`, error);
     process.exit(1);
   }
 
@@ -52,8 +63,7 @@ const consoleMode = 'VERBOSE';
       await analyze(runResult, analyzer);
       runResult.cleanup();
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error(`✗ Failed memory leak test: ${testFilePath}`, error);
+      writeFailure(`✗ Failed memory leak test: ${testFilePath}`, error);
       process.exit(1);
     }
   }

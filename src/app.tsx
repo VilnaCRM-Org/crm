@@ -1,12 +1,11 @@
-import React, { lazy, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import ButtonExample from '@/button-example';
+import Authentication from '@/modules/user/features/auth';
 
 import './index.css';
-
-const Authentication = lazy(async () => import('@/modules/user/features/auth'));
 
 const router = createBrowserRouter([
   {

@@ -46,6 +46,9 @@ export default defineConfig({
     },
   },
   output: {
+    filename: {
+      font: '[name][ext]',
+    },
     sourceMap: {
       js: isDev ? 'cheap-module-source-map' : false,
       css: isDev,

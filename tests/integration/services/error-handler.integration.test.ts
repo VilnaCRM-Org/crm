@@ -54,26 +54,32 @@ describe('ErrorHandler Coverage Tests', () => {
     expect(result.retryable).toBeDefined();
   });
 
-  it('should call handle method and log error to console', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+  afterEach(() => {
+    ErrorHandler.setLogger(undefined);
+  });
+
+  it('should call handle method and log error through the configured logger', () => {
+    const logger = { error: jest.fn() };
+    ErrorHandler.setLogger(logger);
 
     const testError = new Error('Test error');
     ErrorHandler.handle(testError);
 
-    expect(consoleSpy).toHaveBeenCalledWith('[ErrorHandler]', testError);
-
-    consoleSpy.mockRestore();
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', testError);
   });
 
   it('should handle different error types in handle method', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    const logger = { error: jest.fn() };
+    ErrorHandler.setLogger(logger);
 
     ErrorHandler.handle('string error');
     ErrorHandler.handle({ custom: 'error' });
     ErrorHandler.handle(null);
 
-    expect(consoleSpy).toHaveBeenCalledTimes(3);
+    expect(logger.error).toHaveBeenCalledTimes(3);
+  });
 
-    consoleSpy.mockRestore();
+  it('should safely no-op when no logger is configured', () => {
+    expect(() => ErrorHandler.handle(new Error('No console available'))).not.toThrow();
   });
 });

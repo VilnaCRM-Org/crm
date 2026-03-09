@@ -1,4 +1,3 @@
-/* eslint-disable react/require-default-props */
 import { CircularProgress } from '@mui/material';
 import { ReactNode } from 'react';
 import {
@@ -47,6 +46,24 @@ export default function UIForm<T extends FieldValues>({
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
+  const {
+    clearErrors,
+    control,
+    formState,
+    getFieldState,
+    getValues,
+    handleSubmit: formHandleSubmit,
+    register,
+    reset,
+    resetField,
+    setError,
+    setFocus,
+    setValue,
+    subscribe,
+    trigger,
+    unregister,
+    watch,
+  } = methods;
 
   const handleSubmit: SubmitHandler<T> = async (data) => {
     await onSubmit(data);
@@ -55,9 +72,25 @@ export default function UIForm<T extends FieldValues>({
     }
   };
   return (
-    // eslint-disable-next-line react/jsx-props-no-spreading
-    <FormProvider {...methods}>
-      <form noValidate onSubmit={methods.handleSubmit(handleSubmit)}>
+    <FormProvider
+      clearErrors={clearErrors}
+      control={control}
+      formState={formState}
+      getFieldState={getFieldState}
+      getValues={getValues}
+      handleSubmit={formHandleSubmit}
+      register={register}
+      reset={reset}
+      resetField={resetField}
+      setError={setError}
+      setFocus={setFocus}
+      setValue={setValue}
+      subscribe={subscribe}
+      trigger={trigger}
+      unregister={unregister}
+      watch={watch}
+    >
+      <form noValidate onSubmit={formHandleSubmit(handleSubmit)}>
         {/* TODO: Implement correct error handling (replace temporary inline error display). Update tests */}
         {error && (
           <UITypography role="alert" aria-live="polite" sx={{ color: 'red', marginBottom: '1rem' }}>

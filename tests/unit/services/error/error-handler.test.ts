@@ -495,66 +495,80 @@ describe('ErrorHandler', () => {
   });
 
   describe('handle', () => {
-    let consoleErrorSpy: jest.SpyInstance;
+    let logger: { error: jest.Mock };
 
     beforeEach(() => {
-      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      logger = { error: jest.fn() };
+      ErrorHandler.setLogger(undefined);
     });
 
     afterEach(() => {
-      consoleErrorSpy.mockRestore();
+      ErrorHandler.setLogger(undefined);
     });
 
-    it('should log error to console with label', () => {
+    it('logs errors through the configured logger', () => {
       const error = new Error('Test error');
+      ErrorHandler.setLogger(logger);
       ErrorHandler.handle(error);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+      expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
     });
 
-    it('should handle unknown error types', () => {
+    it('logs unknown error types through the configured logger', () => {
       const unknownError = { message: 'Unknown error' };
+      ErrorHandler.setLogger(logger);
       ErrorHandler.handle(unknownError);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', unknownError);
+      expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', unknownError);
     });
 
-    it('should handle string errors', () => {
+    it('logs string errors through the configured logger', () => {
       const stringError = 'String error';
+      ErrorHandler.setLogger(logger);
       ErrorHandler.handle(stringError);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', stringError);
+      expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', stringError);
     });
 
-    it('should handle null errors', () => {
+    it('logs null errors through the configured logger', () => {
+      ErrorHandler.setLogger(logger);
       ErrorHandler.handle(null);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', null);
+      expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', null);
     });
 
-    it('should handle undefined errors', () => {
+    it('logs undefined errors through the configured logger', () => {
+      ErrorHandler.setLogger(logger);
       ErrorHandler.handle(undefined);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', undefined);
+      expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', undefined);
     });
 
-    it('should handle number errors', () => {
+    it('logs number errors through the configured logger', () => {
+      ErrorHandler.setLogger(logger);
       ErrorHandler.handle(42);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', 42);
+      expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', 42);
     });
 
-    it('should handle boolean errors', () => {
+    it('logs boolean errors through the configured logger', () => {
+      ErrorHandler.setLogger(logger);
       ErrorHandler.handle(false);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', false);
+      expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', false);
     });
 
-    it('should handle array errors', () => {
+    it('logs array errors through the configured logger', () => {
       const arrayError = ['error1', 'error2'];
+      ErrorHandler.setLogger(logger);
       ErrorHandler.handle(arrayError);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', arrayError);
+      expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', arrayError);
+    });
+
+    it('safely no-ops when no logger is configured', () => {
+      expect(() => ErrorHandler.handle(new Error('No console'))).not.toThrow();
+      expect(logger.error).not.toHaveBeenCalled();
     });
   });
 });

@@ -10,12 +10,7 @@ export default function ButtonExample(): JSX.Element {
     document.documentElement.dir = i18n.dir?.() || 'ltr';
   }, []);
 
-  const handleClick = (): void => {
-    setTimeout(() => {
-      // eslint-disable-next-line no-console
-      console.log('done');
-    }, 2000);
-  };
+  const handleClick = (): void => undefined;
 
   return (
     <button type="button" onClick={handleClick}>

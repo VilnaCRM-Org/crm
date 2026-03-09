@@ -2,6 +2,8 @@ import ParsedError from '@/utils/error/types';
 
 import { ERROR_CODES, type ErrorCode } from './error-codes';
 
+export type ErrorLogger = Pick<Console, 'error'>;
+
 export interface UiError {
   readonly displayMessage: string;
   readonly retryable: boolean;
@@ -64,6 +66,12 @@ const errorMap: Record<ErrorCode, UiError> = {
 };
 
 export class ErrorHandler {
+  private static logger: ErrorLogger | undefined;
+
+  public static setLogger(logger?: ErrorLogger): void {
+    ErrorHandler.logger = logger;
+  }
+
   public static handleAuthError(error: ParsedError): UiError {
     return (
       errorMap[error.code as ErrorCode] ?? {
@@ -74,7 +82,6 @@ export class ErrorHandler {
   }
 
   public static handle(error: unknown): void {
-    // eslint-disable-next-line no-console
-    console.error('[ErrorHandler]', error);
+    ErrorHandler.logger?.error('[ErrorHandler]', error);
   }
 }

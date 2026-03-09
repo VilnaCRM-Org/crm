@@ -1,23 +1,23 @@
 import UIFormInputField from '@/components/ui-form-input-field';
 import UITypography from '@/components/ui-typography';
 import { Grid } from '@mui/material';
-import type { InputProps } from '@mui/material/Input';
+import type { TextFieldProps } from '@mui/material/TextField';
 import { InputHTMLAttributes } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
-import styles from './styles';
+import styles from '@/modules/user/features/auth/components/form-section/components/styles';
+
+type FormFieldInputSlotProps = NonNullable<TextFieldProps['slotProps']>['input'];
 
 export interface FormFieldProps<T extends FieldValues = FieldValues> {
-  rules: RegisterOptions<T, Path<T>>;
+  rules?: RegisterOptions<T, Path<T>>;
   name: Path<T>;
   placeholder: string;
   type: InputHTMLAttributes<HTMLInputElement>['type'];
   label: string;
   autoComplete: string;
-  // eslint-disable-next-line react/require-default-props
   defaultValue?: PathValue<T, Path<T>>;
-  // eslint-disable-next-line react/require-default-props
-  inputProps?: InputProps;
+  inputSlotProps?: FormFieldInputSlotProps;
 }
 
 export default function FormField<T extends FieldValues>({
@@ -28,7 +28,7 @@ export default function FormField<T extends FieldValues>({
   type,
   label,
   autoComplete,
-  inputProps = {},
+  inputSlotProps,
 }: FormFieldProps<T>): JSX.Element {
   const { control } = useFormContext<T>();
 
@@ -45,8 +45,8 @@ export default function FormField<T extends FieldValues>({
         placeholder={placeholder}
         type={type}
         autoComplete={autoComplete}
+        slotProps={inputSlotProps ? { input: inputSlotProps } : undefined}
         sx={styles.formFieldInput}
-        InputProps={inputProps}
       />
     </Grid>
   );

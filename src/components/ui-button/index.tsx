@@ -12,12 +12,31 @@ interface UiButtonProps extends ButtonProps {
 function UIButton({
   to,
   children,
-  ...rest
+  type = 'button',
+  component,
+  disabled,
+  variant,
+  sx,
+  onClick,
+  disableRipple,
+  'aria-label': ariaLabel,
 }: React.PropsWithChildren<UiButtonProps>): React.ReactElement {
+  const linkTarget = to || undefined;
+  const resolvedComponent = component ?? (linkTarget ? RouterLink : 'button');
+
   return (
     <ThemeProvider theme={Theme}>
-      {/* eslint-disable-next-line react/jsx-props-no-spreading */}
-      <Button {...rest} {...(to ? { component: RouterLink, to } : {})}>
+      <Button
+        component={resolvedComponent}
+        to={linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined}
+        type={resolvedComponent === 'button' ? type : undefined}
+        disabled={disabled}
+        variant={variant}
+        sx={sx}
+        onClick={onClick}
+        disableRipple={disableRipple}
+        aria-label={ariaLabel}
+      >
         {children}
       </Button>
     </ThemeProvider>

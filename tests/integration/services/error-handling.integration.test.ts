@@ -145,54 +145,55 @@ describe('ApiError classes', () => {
 });
 
 describe('ErrorHandler', () => {
-  let consoleErrorSpy: jest.SpyInstance;
+  let logger: { error: jest.Mock };
 
   beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    logger = { error: jest.fn() };
+    ErrorHandler.setLogger(logger);
   });
 
   afterEach(() => {
-    consoleErrorSpy.mockRestore();
+    ErrorHandler.setLogger(undefined);
   });
 
   it('should handle Error instance', () => {
     const error = new Error('Test error');
     ErrorHandler.handle(error);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('should handle string error', () => {
     const error = 'String error';
     ErrorHandler.handle(error);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('should handle null error', () => {
     ErrorHandler.handle(null);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', null);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', null);
   });
 
   it('should handle undefined error', () => {
     ErrorHandler.handle(undefined);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', undefined);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', undefined);
   });
 
   it('should handle object error', () => {
     const error = { message: 'Object error', code: 123 };
     ErrorHandler.handle(error);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('should handle ApiError', () => {
     const error = new ApiError('API error', ApiErrorCodes.SERVER, 500);
     ErrorHandler.handle(error);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 });
 

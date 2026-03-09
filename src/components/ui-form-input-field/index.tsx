@@ -1,4 +1,3 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import { TextField, ThemeProvider } from '@mui/material';
 import { TextFieldProps } from '@mui/material/TextField';
 import React from 'react';
@@ -24,12 +23,16 @@ type CustomTextField<T extends FieldValues> = TextFieldProps & {
 };
 
 export default function UIFormInputField<T extends FieldValues>({
+  autoComplete,
   control,
+  helperText,
   rules,
   defaultValue = undefined,
   name,
+  placeholder,
+  slotProps,
   sx,
-  ...props
+  type,
 }: CustomTextField<T>): React.ReactElement {
   return (
     <ThemeProvider theme={theme}>
@@ -40,12 +43,18 @@ export default function UIFormInputField<T extends FieldValues>({
         rules={rules}
         render={({ field, fieldState }): React.ReactElement => (
           <TextField
-            {...props}
-            {...field}
-            inputRef={field.ref}
+            autoComplete={autoComplete}
             error={fieldState.invalid}
-            helperText={fieldState.error?.message ?? props.helperText}
+            helperText={fieldState.error?.message ?? helperText}
+            inputRef={field.ref}
+            name={field.name}
+            onBlur={field.onBlur}
+            onChange={field.onChange}
+            placeholder={placeholder}
+            slotProps={slotProps}
             sx={sx}
+            type={type}
+            value={field.value ?? ''}
           />
         )}
       />

@@ -19,6 +19,7 @@ describe('UIButton Component', () => {
       const button = screen.getByRole('link');
       expect(button).toBeInTheDocument();
       expect(button).toHaveAttribute('href', '/test-path');
+      expect(button).not.toHaveAttribute('type');
       expect(button.tagName.toLowerCase()).toBe('a');
     });
 
@@ -60,6 +61,13 @@ describe('UIButton Component', () => {
   });
 
   describe('Props passing', () => {
+    it('should use the component prop when explicitly provided', () => {
+      render(<UIButton component="button">Custom Component</UIButton>);
+
+      const button = screen.getByRole('button');
+      expect(button).toBeInTheDocument();
+    });
+
     it('should pass through other Button props', () => {
       render(<UIButton disabled>Disabled Button</UIButton>);
 

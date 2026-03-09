@@ -2,10 +2,12 @@ import UIBackToMain from '@/components/ui-back-to-main';
 import UIFooter from '@/components/ui-footer';
 import Theme from '@/styles/theme';
 import { ThemeProvider } from '@mui/material/styles';
+import { lazy, Suspense } from 'react';
 
-import FormSection from '@/modules/user/features/auth/components/form-section';
+import AuthErrorBoundary from '@/modules/user/features/auth/components/auth-error-boundary';
+import AuthSkeleton from '@/modules/user/features/auth/components/auth-skeleton';
 
-import AuthErrorBoundary from './components/auth-error-boundary';
+const FormSection = lazy(async () => import('@/modules/user/features/auth/components/form-section'));
 
 export default function Authentication(): JSX.Element {
   return (
@@ -13,7 +15,9 @@ export default function Authentication(): JSX.Element {
       <UIBackToMain />
       <main>
         <AuthErrorBoundary>
-          <FormSection />
+          <Suspense fallback={<AuthSkeleton />}>
+            <FormSection />
+          </Suspense>
         </AuthErrorBoundary>
       </main>
 
