@@ -1,7 +1,12 @@
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import { BaseAPI, LoginAPI, RegistrationAPI } from '@/modules/user/features/auth/repositories';
+import {
+  BaseAPI,
+  createAuthClients,
+  LoginAPI,
+  RegistrationAPI,
+} from '@/modules/user/features/auth/repositories';
 
 describe('Repositories index integration', () => {
   it('should export BaseAPI class', () => {
@@ -20,5 +25,12 @@ describe('Repositories index integration', () => {
     const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
 
     expect(registrationAPI).toBeInstanceOf(RegistrationAPI);
+  });
+
+  it('should export a factory that creates auth API clients', () => {
+    const clients = createAuthClients();
+
+    expect(clients.loginAPI).toBeInstanceOf(LoginAPI);
+    expect(clients.registrationAPI).toBeInstanceOf(RegistrationAPI);
   });
 });
