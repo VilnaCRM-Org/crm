@@ -1,7 +1,10 @@
-import type { TextFieldProps } from '@mui/material/TextField';
+import type { FormHelperTextProps } from '@mui/material/FormHelperText';
+import type { OutlinedInputProps } from '@mui/material/OutlinedInput';
 import { render } from '@testing-library/react';
-import type { ComponentType, PropsWithChildren, ReactNode } from 'react';
+import type { PropsWithChildren, ReactNode } from 'react';
 import type { Control, FieldValues } from 'react-hook-form';
+
+import UIFormInputField from '@/components/ui-form-input-field';
 
 type ControllerRenderParams = {
   field: {
@@ -20,14 +23,17 @@ type ControllerRenderParams = {
 };
 
 const controllerPropsMock = jest.fn();
-const textFieldMock = jest.fn((props: TextFieldProps) => (
+const outlinedInputMock = jest.fn((props: OutlinedInputProps) => (
   <input
-    data-testid="mui-text-field"
+    data-testid="mui-outlined-input"
     name={props.name}
     onBlur={props.onBlur}
     onChange={props.onChange}
     value={typeof props.value === 'string' ? props.value : ''}
   />
+));
+const formHelperTextMock = jest.fn((props: FormHelperTextProps) => (
+  <div data-testid="mui-form-helper-text">{props.children}</div>
 ));
 
 let controllerRenderParams: ControllerRenderParams = {
@@ -48,12 +54,21 @@ jest.mock('@/components/ui-form-input-field/theme', () => ({
   default: {},
 }));
 
-jest.mock('@mui/material', () => {
-  const actual = jest.requireActual('@mui/material');
+jest.mock('@mui/material/FormHelperText', () => ({
+  __esModule: true,
+  default: (props: FormHelperTextProps): JSX.Element => formHelperTextMock(props),
+}));
+
+jest.mock('@mui/material/OutlinedInput', () => ({
+  __esModule: true,
+  default: (props: OutlinedInputProps): JSX.Element => outlinedInputMock(props),
+}));
+
+jest.mock('@mui/material/styles', () => {
+  const actual = jest.requireActual('@mui/material/styles');
 
   return {
     ...actual,
-    TextField: (props: TextFieldProps): JSX.Element => textFieldMock(props),
     ThemeProvider: ({ children }: PropsWithChildren): ReactNode => children ?? null,
   };
 });
@@ -79,7 +94,8 @@ jest.mock('react-hook-form', () => {
 describe('UIFormInputField controller branches', () => {
   beforeEach(() => {
     controllerPropsMock.mockClear();
-    textFieldMock.mockClear();
+    outlinedInputMock.mockClear();
+    formHelperTextMock.mockClear();
     controllerRenderParams = {
       field: {
         name: 'email',
@@ -95,23 +111,6 @@ describe('UIFormInputField controller branches', () => {
   });
 
   it('uses the defaultValue parameter fallback and normalizes undefined field values to an empty string', async () => {
-    let importedModule: typeof import('@/components/ui-form-input-field') | undefined;
-
-    await jest.isolateModulesAsync(async () => {
-      importedModule = await import('@/components/ui-form-input-field');
-    });
-
-    const UIFormInputField = importedModule?.default as ComponentType<{
-      autoComplete: string;
-      control: Control<FieldValues>;
-      helperText: string;
-      name: string;
-      placeholder: string;
-      rules: Record<string, never>;
-      type: string;
-      defaultValue?: string;
-    }>;
-
     render(
       <UIFormInputField
         autoComplete="email"
@@ -131,9 +130,15 @@ describe('UIFormInputField controller branches', () => {
       })
     );
 
-    const [textFieldProps] = textFieldMock.mock.calls.at(-1) as [TextFieldProps];
+    const [outlinedInputProps] = outlinedInputMock.mock.calls.at(-1) as [OutlinedInputProps];
+    const [formHelperTextProps] = formHelperTextMock.mock.calls.at(-1) as [FormHelperTextProps];
 
-    expect(textFieldProps.value).toBe('');
-    expect(textFieldProps.helperText).toBe('Helper text');
+    expect(outlinedInputProps.value).toBe('');
+    expect(formHelperTextProps).toEqual(
+      expect.objectContaining({
+        children: 'Helper text',
+        error: false,
+      })
+    );
   });
 });

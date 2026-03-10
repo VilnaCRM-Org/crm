@@ -35,8 +35,8 @@ export default class ScenariosBuilder {
       timeUnit: '1s',
       preAllocatedVUs: spikeConfig.vus,
       maxVUs:
-        spikeConfig.maxVus !== undefined && spikeConfig.maxVus !== null
-          ? spikeConfig.maxVus
+        spikeConfig.maxVUs !== undefined && spikeConfig.maxVUs !== null
+          ? spikeConfig.maxVUs
           : spikeConfig.vus,
       stages: [
         { target: spikeConfig.rps, duration: spikeConfig.duration.rise + 's' },
@@ -57,7 +57,7 @@ export default class ScenariosBuilder {
       startRate: 0,
       timeUnit: '1s',
       preAllocatedVUs: config.vus,
-      maxVUs: config.maxVus !== undefined && config.maxVus !== null ? config.maxVus : config.vus,
+      maxVUs: config.maxVUs !== undefined && config.maxVUs !== null ? config.maxVUs : config.vus,
       stages: [
         { target: config.rps, duration: config.duration.rise + 's' },
         { target: config.rps, duration: config.duration.plateau + 's' },

@@ -41,8 +41,8 @@ export default function PasswordField<T extends FieldValues & { password: string
       placeholder={placeholder}
       label={label}
       autoComplete={autoComplete}
+      sx={styles.passwordFieldInput}
       inputSlotProps={{
-        sx: styles.passwordField,
         endAdornment: (
           <InputAdornment position="end" sx={styles.endAdornment}>
             <IconButton

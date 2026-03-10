@@ -75,12 +75,23 @@ export default {
       minWidth: '26.375rem',
     },
   },
-  passwordField: {
+
+  passwordFieldInput: {
     paddingRight: '0.5625rem',
 
+    [`@media (min-width:375px)`]: {
+      minWidth: '19.6875rem',
+    },
+
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      minWidth: '33.75rem',
       paddingRight: '0.875rem',
     },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      minWidth: '26.375rem',
+    },
+
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       paddingRight: '0.9375rem',
     },

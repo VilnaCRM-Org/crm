@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import Authentication from '@/modules/user/features/auth';
@@ -35,7 +35,15 @@ jest.mock('@/modules/user/features/auth/components/form-section', () => ({
 }));
 
 describe('Authentication shell', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
   afterEach(() => {
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
+    jest.useRealTimers();
     jest.restoreAllMocks();
     mockFormSectionDefault.mockReset();
     mockFormSectionDefault.mockImplementation((): never => {
@@ -45,12 +53,12 @@ describe('Authentication shell', () => {
     });
   });
 
-  it('keeps the header and footer visible while the form section is loading', () => {
+  it('keeps the shell chrome visible while the form section is loading', () => {
     render(<Authentication />);
 
-    expect(screen.getByTestId('auth-shell-header')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByTestId('auth-shell-skeleton')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-shell-header')).toBeInTheDocument();
     expect(screen.getByTestId('auth-shell-footer')).toBeInTheDocument();
   });
 

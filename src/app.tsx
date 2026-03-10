@@ -1,11 +1,22 @@
-import React, { useEffect } from 'react';
+import 'reflect-metadata';
+import '@/config/dependency-injection-config';
+
+import CssBaseline from '@mui/material/CssBaseline';
+import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Provider } from 'react-redux';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-import ButtonExample from '@/button-example';
-import Authentication from '@/modules/user/features/auth';
-
 import './index.css';
+import '@/config/fonts/golos.css';
+import '@/config/fonts/inter.css';
+
+import Store from '@/stores';
+import theme from '@/styles/theme';
+
+const Authentication = lazy(async () => import('@/modules/user/features/auth'));
+const ButtonExample = lazy(async () => import('@/button-example'));
 
 const router = createBrowserRouter([
   {
@@ -14,7 +25,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <ButtonExample />,
+    element: (
+      <Suspense fallback={null}>
+        <ButtonExample />
+      </Suspense>
+    ),
   },
 ]);
 
@@ -29,6 +44,18 @@ function App(): React.ReactElement {
     i18n.on?.('languageChanged', applyDir);
     return (): void => i18n.off?.('languageChanged', applyDir);
   }, [i18n]);
-  return <RouterProvider router={router} />;
+
+  return (
+    <StyledEngineProvider injectFirst>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Provider store={Store}>
+          <React.Suspense fallback={null}>
+            <RouterProvider router={router} />
+          </React.Suspense>
+        </Provider>
+      </ThemeProvider>
+    </StyledEngineProvider>
+  );
 }
 export default App;

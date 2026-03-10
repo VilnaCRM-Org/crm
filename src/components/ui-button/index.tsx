@@ -1,13 +1,31 @@
 import { ThemeProvider, Button } from '@mui/material';
 import { ButtonProps } from '@mui/material/Button';
-import { Link as RouterLink } from 'react-router-dom';
-import type { To } from 'react-router-dom';
 
 import Theme from './theme';
 
+type ButtonLinkTarget =
+  | string
+  | {
+      pathname?: string;
+      search?: string;
+      hash?: string;
+    };
+
 interface UiButtonProps extends ButtonProps {
-  to?: To;
+  to?: ButtonLinkTarget;
 }
+
+const resolveLinkTarget = (to?: ButtonLinkTarget): string | undefined => {
+  if (!to) {
+    return undefined;
+  }
+
+  if (typeof to === 'string') {
+    return to;
+  }
+
+  return `${to.pathname ?? ''}${to.search ?? ''}${to.hash ?? ''}` || undefined;
+};
 
 function UIButton({
   to,
@@ -21,14 +39,14 @@ function UIButton({
   disableRipple,
   'aria-label': ariaLabel,
 }: React.PropsWithChildren<UiButtonProps>): React.ReactElement {
-  const linkTarget = to || undefined;
-  const resolvedComponent = component ?? (linkTarget ? RouterLink : 'button');
+  const linkTarget = resolveLinkTarget(to);
+  const resolvedComponent = component ?? (linkTarget ? 'a' : 'button');
 
   return (
     <ThemeProvider theme={Theme}>
       <Button
         component={resolvedComponent}
-        to={linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined}
+        href={linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined}
         type={resolvedComponent === 'button' ? type : undefined}
         disabled={disabled}
         variant={variant}

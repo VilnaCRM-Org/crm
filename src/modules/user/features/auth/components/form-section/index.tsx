@@ -1,12 +1,13 @@
 import UIButton from '@/components/ui-button';
 import { Box } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { lazy, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { LoginForm, RegistrationForm } from './auth-forms';
-import AuthProviderButtons from './components/auth-provider-buttons';
 import styles from './styles';
 import { AuthMode } from './types';
+
+const AuthProviderButtons = lazy(async () => import('./components/auth-provider-buttons'));
 
 export default function FormSection(): JSX.Element {
   const [mode, setMode] = useState<AuthMode>('register');
@@ -20,7 +21,6 @@ export default function FormSection(): JSX.Element {
     <Box component="section" sx={styles.formSection}>
       <Box sx={styles.formWrapper}>
         {mode === 'login' ? <LoginForm /> : <RegistrationForm />}
-
         <AuthProviderButtons />
       </Box>
 

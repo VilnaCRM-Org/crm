@@ -104,6 +104,7 @@ module.exports = {
       from: {},
       to: {
         couldNotResolve: true,
+        pathNot: ['^https?://'],
       },
     },
     {
@@ -311,7 +312,7 @@ module.exports = {
         'The DI container configuration must only be imported by application composition roots.',
       severity: 'error',
       from: {
-        path: '^src/(?!index[.]tsx$|stores/index[.]ts$).+',
+        path: '^src/(?!index[.]tsx$|app[.]tsx$|stores/index[.]ts$).+',
       },
       to: {
         path: '^src/config/dependency-injection-config[.]ts$',

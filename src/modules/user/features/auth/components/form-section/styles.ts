@@ -91,4 +91,26 @@ export default {
       lineHeight: 1.2,
     },
   },
+  deferredProvidersPlaceholder: {
+    marginTop: '1.0625rem',
+    minHeight: '10.25rem',
+
+    [`@media (min-width:375px)`]: {
+      minHeight: '7.5rem',
+    },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      minHeight: '4.5rem',
+    },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      marginTop: '1.5625rem',
+      minHeight: '5rem',
+    },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      marginTop: '0.8755rem',
+      minHeight: '4.25rem',
+    },
+  },
 };

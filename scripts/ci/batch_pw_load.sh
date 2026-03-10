@@ -97,10 +97,25 @@ run_visual_tests_dind() {
 }
 
 run_load_tests_dind() {
+    load_suite="${2:-homepage}"
+    case "$load_suite" in
+        homepage)
+            k6_script="/loadTests/homepage.js"
+            k6_results_file="/loadTests/results/homepage.html"
+            ;;
+        signup)
+            k6_script="/loadTests/signup.js"
+            k6_results_file="/loadTests/results/signup.html"
+            ;;
+        *)
+            echo "Unknown load suite: $load_suite" >&2
+            exit 1
+            ;;
+    esac
     setup_docker_network
     make start-prod
     make build-k6
-    k6_helper_container="crm-k6-helper"
+    k6_helper_container="crm-k6-helper-$load_suite"
     make create-k6-helper-container-dind K6_HELPER_NAME="$k6_helper_container"
     cleanup_helper() {
         docker rm -f "$k6_helper_container" >/dev/null 2>&1 || :
@@ -108,7 +123,10 @@ run_load_tests_dind() {
     trap cleanup_helper EXIT
     docker exec "$k6_helper_container" mkdir -p /loadTests/results
     docker cp "tests/load/." "$k6_helper_container:/loadTests/"
-    if ! make run-load-tests-dind K6_HELPER_NAME="$k6_helper_container"; then
+    if ! make run-load-tests-dind \
+        K6_HELPER_NAME="$k6_helper_container" \
+        K6_TEST_SCRIPT="$k6_script" \
+        K6_RESULTS_FILE="$k6_results_file"; then
         cleanup_helper
         trap - EXIT
         exit 1
@@ -126,7 +144,8 @@ main() {
     fi
     run_e2e_tests_dind "$crm_dir"
     run_visual_tests_dind "$crm_dir"
-    run_load_tests_dind "$crm_dir"
+    run_load_tests_dind "$crm_dir" "homepage"
+    run_load_tests_dind "$crm_dir" "signup"
 }
 
 case "${1:-all}" in
@@ -137,7 +156,10 @@ case "${1:-all}" in
         run_visual_tests_dind "."
         ;;
     test-load)
-        run_load_tests_dind "."
+        run_load_tests_dind "." "homepage"
+        ;;
+    test-load-signup)
+        run_load_tests_dind "." "signup"
         ;;
     *)
         main "$@"

@@ -1,18 +1,60 @@
-import { z } from 'zod';
+export type LoginResponse = {
+  token: string;
+};
 
-export const LoginResponseSchema = z.object({ token: z.string() });
+export type RegistrationResponse = {
+  fullName?: string;
+  email?: string;
+};
 
-export type LoginResponse = z.infer<typeof LoginResponseSchema>;
-
-export const RegistrationResponseSchema = z.object({
-  fullName: z.string().optional(),
-  email: z.string().optional(),
-
-  // TODO: Reintroduce `fullName` and `email` fields once the backend includes them in the response.
-  //       When re-enabled, update client-side validation and field-level error display accordingly.
-  // fullName: z.string().trim().min(1, 'Full name is required'),
-  // email: z.string().trim().email('Invalid email'),
-});
-
-export type RegistrationResponse = z.infer<typeof RegistrationResponseSchema>;
 export type SafeUserInfo = RegistrationResponse;
+
+type ValidationResult<T> = { success: true; data: T } | { success: false; errors: string[] };
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+export const validateLoginResponse = (value: unknown): ValidationResult<LoginResponse> => {
+  if (!isObject(value)) {
+    return { success: false, errors: ['token: expected string'] };
+  }
+
+  if (typeof value.token !== 'string') {
+    return { success: false, errors: ['token: expected string'] };
+  }
+
+  return { success: true, data: { token: value.token } };
+};
+
+export const validateRegistrationResponse = (
+  value: unknown
+): ValidationResult<RegistrationResponse> => {
+  if (!isObject(value)) {
+    return {
+      success: false,
+      errors: ['value: expected object'],
+    };
+  }
+
+  const errors: string[] = [];
+
+  if ('fullName' in value && value.fullName !== undefined && typeof value.fullName !== 'string') {
+    errors.push('fullName: expected string');
+  }
+
+  if ('email' in value && value.email !== undefined && typeof value.email !== 'string') {
+    errors.push('email: expected string');
+  }
+
+  if (errors.length > 0) {
+    return { success: false, errors };
+  }
+
+  return {
+    success: true,
+    data: {
+      ...(typeof value.fullName === 'string' ? { fullName: value.fullName } : {}),
+      ...(typeof value.email === 'string' ? { email: value.email } : {}),
+    },
+  };
+};

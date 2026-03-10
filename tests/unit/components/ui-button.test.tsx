@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
 
 import UIButton from '@/components/ui-button';
 
@@ -9,12 +8,8 @@ describe('UIButton Component', () => {
   });
 
   describe('Rendering as RouterLink', () => {
-    it('should render as RouterLink when to prop is provided', () => {
-      render(
-        <BrowserRouter>
-          <UIButton to="/test-path">Test Link Button</UIButton>
-        </BrowserRouter>
-      );
+    it('should render as link when to prop is provided without requiring router context', () => {
+      render(<UIButton to="/test-path">Test Link Button</UIButton>);
 
       const button = screen.getByRole('link');
       expect(button).toBeInTheDocument();
@@ -24,11 +19,7 @@ describe('UIButton Component', () => {
     });
 
     it('should render with text content when used as link', () => {
-      render(
-        <BrowserRouter>
-          <UIButton to="/home">Go Home</UIButton>
-        </BrowserRouter>
-      );
+      render(<UIButton to="/home">Go Home</UIButton>);
 
       expect(screen.getByText('Go Home')).toBeInTheDocument();
     });
@@ -77,11 +68,9 @@ describe('UIButton Component', () => {
 
     it('should pass through other Button props when used as link', () => {
       render(
-        <BrowserRouter>
-          <UIButton to="/test" disabled>
-            Disabled Link
-          </UIButton>
-        </BrowserRouter>
+        <UIButton to="/test" disabled>
+          Disabled Link
+        </UIButton>
       );
 
       const link = screen.getByRole('link');
@@ -95,6 +84,33 @@ describe('UIButton Component', () => {
 
       const button = screen.getByRole('button');
       expect(button).toHaveClass('MuiButton-root');
+    });
+  });
+
+  describe('Object to prop', () => {
+    it('renders as link when to has only pathname', () => {
+      render(<UIButton to={{ pathname: '/about' }}>About</UIButton>);
+
+      const link = screen.getByRole('link');
+      expect(link).toHaveAttribute('href', '/about');
+    });
+
+    it('concatenates pathname, search, and hash', () => {
+      render(
+        <UIButton to={{ pathname: '/search', search: '?q=hello', hash: '#results' }}>
+          Search
+        </UIButton>
+      );
+
+      const link = screen.getByRole('link');
+      expect(link).toHaveAttribute('href', '/search?q=hello#results');
+    });
+
+    it('renders as button when object to resolves to empty string', () => {
+      render(<UIButton to={{}}>Empty Object</UIButton>);
+
+      const button = screen.getByRole('button');
+      expect(button.tagName.toLowerCase()).toBe('button');
     });
   });
 });
