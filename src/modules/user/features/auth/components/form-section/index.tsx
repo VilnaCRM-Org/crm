@@ -1,21 +1,30 @@
 import UIButton from '@/components/ui-button';
+import useFontsReady from '@/hooks/use-fonts-ready';
 import { Box } from '@mui/material';
-import { lazy, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import AuthSkeleton from '@/modules/user/features/auth/components/auth-skeleton';
+
 import { LoginForm, RegistrationForm } from './auth-forms';
+import AuthProviderButtons from './components/auth-provider-buttons';
 import styles from './styles';
 import { AuthMode } from './types';
 
-const AuthProviderButtons = lazy(async () => import('./components/auth-provider-buttons'));
+const AUTH_CRITICAL_FONTS = ['500 1rem Golos', '600 1rem Golos', '700 1rem Golos'] as const;
 
 export default function FormSection(): JSX.Element {
   const [mode, setMode] = useState<AuthMode>('register');
+  const fontsReady = useFontsReady(AUTH_CRITICAL_FONTS);
   const { t } = useTranslation();
 
   const handleSwitch = useCallback(() => {
     setMode((prev) => (prev === 'login' ? 'register' : 'login'));
   }, []);
+
+  if (!fontsReady) {
+    return <AuthSkeleton />;
+  }
 
   return (
     <Box component="section" sx={styles.formSection}>

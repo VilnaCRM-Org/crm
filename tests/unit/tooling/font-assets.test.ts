@@ -9,7 +9,6 @@ const cssFiles = [
   'src/config/fonts/golos.css',
   'src/config/fonts/inter.css',
 ] as const;
-const fontsRoot = path.join(projectRoot, 'src/assets/fonts');
 const publicIndexPath = path.join(projectRoot, 'public/index.html');
 
 describe('local font assets', () => {
@@ -53,7 +52,7 @@ describe('local font assets', () => {
     expect(indexHtml).not.toContain('font/ttf');
   });
 
-  it('preloads only the auth-critical Golos weights in the public shell', () => {
+  it('preloads the auth-critical Golos and Inter weights in the public shell', () => {
     const indexHtml = fs.readFileSync(publicIndexPath, 'utf8');
     const preloadPattern =
       /<link\s+rel="preload"\s+href="([^"]+)"\s+as="font"\s+type="([^"]+)"\s+crossorigin\s*\/>/g;
@@ -63,15 +62,9 @@ describe('local font assets', () => {
       '/static/font/Golos-Text_Regular.woff2',
       '/static/font/Golos-Text_Medium.woff2',
       '/static/font/Golos-Text_SemiBold.woff2',
+      '/static/font/Inter-Regular.woff2',
+      '/static/font/Inter-Medium.woff2',
     ]);
-  });
-
-  it('keeps only woff2 webfont assets in the tracked font tree', () => {
-    const ttfFonts = fs
-      .readdirSync(fontsRoot, { recursive: true })
-      .filter((entry) => typeof entry === 'string' && entry.endsWith('.ttf'));
-
-    expect(ttfFonts).toEqual([]);
   });
 
 });

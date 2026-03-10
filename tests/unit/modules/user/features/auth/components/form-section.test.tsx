@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
-import { Suspense } from 'react';
 
+import useFontsReady from '@/hooks/use-fonts-ready';
 import FormSection from '@/modules/user/features/auth/components/form-section';
 
 jest.mock('react-i18next', () => ({
@@ -36,36 +36,65 @@ jest.mock('@/modules/user/features/auth/components/form-section/components/auth-
   default: (): ReactElement => <div data-testid="auth-provider-buttons" />,
 }));
 
-describe('FormSection deferred content', () => {
+jest.mock('@/modules/user/features/auth/components/auth-skeleton', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div data-testid="auth-font-skeleton" />,
+}));
+
+jest.mock('@/hooks/use-fonts-ready', () => ({
+  __esModule: true,
+  default: jest.fn(() => true),
+}));
+
+const mockUseFontsReady = useFontsReady as jest.Mock;
+
+describe('FormSection', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    jest.resetAllMocks();
+    mockUseFontsReady.mockReturnValue(true);
   });
 
-  it('resolves the social providers together with the primary form', async () => {
-    render(
-      <Suspense fallback={<div data-testid="form-section-fallback" />}>
-        <FormSection />
-      </Suspense>
-    );
+  it('renders the primary form and social providers when fonts are ready', () => {
+    render(<FormSection />);
 
-    expect(screen.getByTestId('form-section-fallback')).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.getByTestId('registration-form')).toBeInTheDocument();
-    });
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
     expect(screen.getByTestId('auth-provider-buttons')).toBeInTheDocument();
+    expect(screen.queryByTestId('auth-font-skeleton')).not.toBeInTheDocument();
   });
 
-  it('switches to login mode when the switcher button is clicked', async () => {
-    render(
-      <Suspense fallback={<div data-testid="form-section-fallback" />}>
-        <FormSection />
-      </Suspense>
-    );
+  it('keeps the skeleton visible while fonts are loading', () => {
+    mockUseFontsReady.mockReturnValue(false);
+
+    render(<FormSection />);
+
+    expect(screen.getByTestId('auth-font-skeleton')).toBeInTheDocument();
+    expect(screen.queryByTestId('registration-form')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('auth-provider-buttons')).not.toBeInTheDocument();
+  });
+
+  it('reveals the form and providers once the hook reports fonts ready', async () => {
+    mockUseFontsReady.mockReturnValue(false);
+
+    const { rerender } = render(<FormSection />);
+
+    expect(screen.getByTestId('auth-font-skeleton')).toBeInTheDocument();
+
+    mockUseFontsReady.mockReturnValue(true);
+
+    rerender(<FormSection />);
 
     await waitFor(() => {
       expect(screen.getByTestId('registration-form')).toBeInTheDocument();
     });
+
+    expect(screen.getByTestId('auth-provider-buttons')).toBeInTheDocument();
+    expect(screen.queryByTestId('auth-font-skeleton')).not.toBeInTheDocument();
+  });
+
+  it('switches to login mode when the switcher button is clicked', () => {
+    render(<FormSection />);
+
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
 
@@ -74,16 +103,8 @@ describe('FormSection deferred content', () => {
     expect(screen.getByText('sign_up.form.switcher_text_no_account')).toBeInTheDocument();
   });
 
-  it('toggles back to registration mode on a second click', async () => {
-    render(
-      <Suspense fallback={<div data-testid="form-section-fallback" />}>
-        <FormSection />
-      </Suspense>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByTestId('registration-form')).toBeInTheDocument();
-    });
+  it('toggles back to registration mode on a second click', () => {
+    render(<FormSection />);
 
     fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
     fireEvent.click(screen.getByText('sign_up.form.switcher_text_no_account'));
