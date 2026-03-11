@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
-import useFontsReady from '@/hooks/use-fonts-ready';
 import FormSection from '@/modules/user/features/auth/components/form-section';
 
 jest.mock('react-i18next', () => ({
@@ -36,50 +35,19 @@ jest.mock('@/modules/user/features/auth/components/form-section/components/auth-
   default: (): ReactElement => <div data-testid="auth-provider-buttons" />,
 }));
 
-jest.mock('@/modules/user/features/auth/components/auth-skeleton', () => ({
-  __esModule: true,
-  default: (): ReactElement => <div data-testid="auth-font-skeleton" />,
-}));
-
-jest.mock('@/hooks/use-fonts-ready', () => ({
-  __esModule: true,
-  default: jest.fn(() => true),
-}));
-
-const mockUseFontsReady = useFontsReady as jest.Mock;
-
 describe('FormSection', () => {
-  afterEach(() => {
-    jest.resetAllMocks();
-    mockUseFontsReady.mockReturnValue(true);
-  });
-
-  it('renders the primary form and social providers when fonts are ready', () => {
+  it('renders the primary form and social providers immediately', () => {
     render(<FormSection />);
 
     expect(screen.getByTestId('registration-form')).toBeInTheDocument();
     expect(screen.getByTestId('auth-provider-buttons')).toBeInTheDocument();
-    expect(screen.queryByTestId('auth-font-skeleton')).not.toBeInTheDocument();
   });
 
-  it('keeps the skeleton visible while fonts are loading', () => {
-    mockUseFontsReady.mockReturnValue(false);
-
-    render(<FormSection />);
-
-    expect(screen.getByTestId('auth-font-skeleton')).toBeInTheDocument();
-    expect(screen.queryByTestId('registration-form')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('auth-provider-buttons')).not.toBeInTheDocument();
-  });
-
-  it('reveals the form and providers once the hook reports fonts ready', async () => {
-    mockUseFontsReady.mockReturnValue(false);
-
+  it('keeps the current form visible across rerenders', async () => {
     const { rerender } = render(<FormSection />);
 
-    expect(screen.getByTestId('auth-font-skeleton')).toBeInTheDocument();
-
-    mockUseFontsReady.mockReturnValue(true);
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-provider-buttons')).toBeInTheDocument();
 
     rerender(<FormSection />);
 
@@ -88,7 +56,6 @@ describe('FormSection', () => {
     });
 
     expect(screen.getByTestId('auth-provider-buttons')).toBeInTheDocument();
-    expect(screen.queryByTestId('auth-font-skeleton')).not.toBeInTheDocument();
   });
 
   it('switches to login mode when the switcher button is clicked', () => {

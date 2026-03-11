@@ -35,36 +35,19 @@ describe('local font assets', () => {
     }
   });
 
-  it('preloads local fonts as woff2 assets when preload tags are present', () => {
+  it('does not hardcode font preload tags in the public shell', () => {
     const indexHtml = fs.readFileSync(publicIndexPath, 'utf8');
     const preloadPattern =
       /<link\s+rel="preload"\s+href="([^"]+)"\s+as="font"\s+type="([^"]+)"\s+crossorigin\s*\/>/g;
     const preloadMatches = [...indexHtml.matchAll(preloadPattern)];
 
-    expect(preloadMatches.length).toBeGreaterThan(0);
+    expect(preloadMatches).toEqual([]);
+  });
 
-    for (const [, href, type] of preloadMatches) {
-      expect(href.endsWith('.woff2')).toBe(true);
-      expect(type).toBe('font/woff2');
-    }
+  it('does not reference ttf font assets in the public shell', () => {
+    const indexHtml = fs.readFileSync(publicIndexPath, 'utf8');
 
     expect(indexHtml).not.toContain('.ttf');
     expect(indexHtml).not.toContain('font/ttf');
   });
-
-  it('preloads the auth-critical Golos and Inter weights in the public shell', () => {
-    const indexHtml = fs.readFileSync(publicIndexPath, 'utf8');
-    const preloadPattern =
-      /<link\s+rel="preload"\s+href="([^"]+)"\s+as="font"\s+type="([^"]+)"\s+crossorigin\s*\/>/g;
-    const preloadHrefs = [...indexHtml.matchAll(preloadPattern)].map(([, href]) => href);
-
-    expect(preloadHrefs).toEqual([
-      '/static/font/Golos-Text_Regular.woff2',
-      '/static/font/Golos-Text_Medium.woff2',
-      '/static/font/Golos-Text_SemiBold.woff2',
-      '/static/font/Inter-Regular.woff2',
-      '/static/font/Inter-Medium.woff2',
-    ]);
-  });
-
 });
