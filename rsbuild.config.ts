@@ -41,6 +41,7 @@ export default defineConfig({
     buildCache: true,
     printFileSize: true,
     removeConsole: !isDev,
+    preload: true,
     chunkSplit: {
       strategy: 'split-by-experience',
     },
