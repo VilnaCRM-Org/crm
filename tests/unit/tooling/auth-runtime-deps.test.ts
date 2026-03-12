@@ -39,10 +39,10 @@ describe('auth client runtime dependencies', () => {
     expect(uiButton).not.toContain("from 'react-router-dom'");
   });
 
-  it('keeps module federation enabled for future micro frontend integration', () => {
+  it('keeps module federation disabled to prevent async bootstrap waterfall on mobile', () => {
     const rsbuildConfig = readFile('rsbuild.config.ts');
 
-    expect(rsbuildConfig).toContain('@module-federation/rsbuild-plugin');
-    expect(rsbuildConfig).toContain('pluginModuleFederation');
+    expect(rsbuildConfig).not.toContain('@module-federation/rsbuild-plugin');
+    expect(rsbuildConfig).not.toContain('pluginModuleFederation');
   });
 });
