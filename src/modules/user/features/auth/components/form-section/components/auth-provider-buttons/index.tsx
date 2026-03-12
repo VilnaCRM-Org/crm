@@ -1,38 +1,42 @@
 import UIButton from '@/components/ui-button';
 import UiTypography from '@/components/ui-typography';
 import { Box, Divider, ListItem, List, SvgIcon } from '@mui/material';
+import { ThemeProvider } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
 import oauthProviders from './oauth-providers';
 import styles from './styles';
+import Theme from './theme';
 
 export default function AuthProviderButtons(): JSX.Element {
   const { t } = useTranslation();
   return (
-    <Box sx={styles.thirdPartyWrapper}>
-      <Divider role="presentation" sx={styles.divider}>
-        <UiTypography sx={styles.dividerText}>{t('sign_up.socials_main_heading')}</UiTypography>
-      </Divider>
+    <ThemeProvider theme={Theme}>
+      <Box sx={styles.thirdPartyWrapper}>
+        <Divider role="presentation">
+          <UiTypography sx={styles.dividerText}>{t('sign_up.socials_main_heading')}</UiTypography>
+        </Divider>
 
-      <List sx={styles.servicesList}>
-        {oauthProviders.map(({ label, SvgComponent, ariaLabel, onClick }) => (
-          <ListItem disablePadding key={label} sx={styles.servicesItem}>
-            <UIButton
-              variant="outlined"
-              sx={styles.serviceItemButton}
-              onClick={onClick}
-              aria-label={ariaLabel}
-              type="button"
-            >
-              <SvgIcon
-                component={SvgComponent}
-                inheritViewBox
-                sx={styles.serviceItemButtonIcon}
-              />
-            </UIButton>
-          </ListItem>
-        ))}
-      </List>
-    </Box>
+        <List sx={styles.servicesList}>
+          {oauthProviders.map(({ label, SvgComponent, ariaLabel, onClick }) => (
+            <ListItem disablePadding key={label} sx={styles.servicesItem}>
+              <UIButton
+                variant="outlined"
+                sx={styles.serviceItemButton}
+                onClick={onClick}
+                aria-label={ariaLabel}
+                type="button"
+              >
+                <SvgIcon
+                  component={SvgComponent}
+                  inheritViewBox
+                  sx={styles.serviceItemButtonIcon}
+                />
+              </UIButton>
+            </ListItem>
+          ))}
+        </List>
+      </Box>
+    </ThemeProvider>
   );
 }
