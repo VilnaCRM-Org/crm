@@ -1,5 +1,5 @@
 import CssBaseline from '@mui/material/CssBaseline';
-import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import React, { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
@@ -41,14 +41,12 @@ function App(): React.ReactElement {
   }, [i18n]);
 
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <React.Suspense fallback={null}>
-          <RouterProvider router={router} />
-        </React.Suspense>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <React.Suspense fallback={null}>
+        <RouterProvider router={router} />
+      </React.Suspense>
+    </ThemeProvider>
   );
 }
 export default App;

@@ -9,7 +9,20 @@ export default {
       marginTop: '1.5625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      marginTop: '0.8755rem',
+      marginTop: '0.875rem',
+    },
+  },
+  divider: {
+    marginBottom: '0.875rem',
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      marginBottom: '1.5rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      marginBottom: '1.125rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      marginBottom: '1.5rem',
     },
   },
 

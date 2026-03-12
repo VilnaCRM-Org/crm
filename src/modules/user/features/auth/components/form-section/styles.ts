@@ -91,4 +91,19 @@ export default {
       lineHeight: 1.2,
     },
   },
+  formSwitcherError: {
+    marginTop: '1rem',
+    marginBottom: '-0.5rem',
+
+    fontFamily: 'Golos',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    lineHeight: 1.43,
+    color: paletteColors.error.main,
+    textAlign: 'center',
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      marginTop: '1.25rem',
+    },
+  },
 };

@@ -311,4 +311,19 @@ describe('AuthSkeleton spacing parity', () => {
       expect(submitToDividerSkeleton).toBeCloseTo(submitToDividerForm, 2);
     });
   });
+
+  it('matches divider-to-social spacing with the live auth provider section at every breakpoint', () => {
+    const breakpoints: BreakpointName[] = ['base', 'sm', 'md', 'lg', 'xl'];
+    const skeletonDivider = authSkeletonStyles.divider as Record<string, unknown>;
+    const formDivider = authProviderButtonStyles.divider as Record<string, unknown> | undefined;
+
+    expect(formDivider).toBeDefined();
+
+    breakpoints.forEach((breakpoint) => {
+      expect(toRem(valueAt(formDivider!, 'marginBottom', breakpoint))).toBeCloseTo(
+        toRem(valueAt(skeletonDivider, 'marginBottom', breakpoint)),
+        2
+      );
+    });
+  });
 });

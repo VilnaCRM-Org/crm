@@ -60,6 +60,9 @@
   "sign_in": {
     "title": "Authentication",
     "subtitle": "Sign in to your account in two clicks",
+    "errors": {
+      "load_failed": "Couldn't open the sign-in form. Please try again."
+    },
     "form": {
       "password_input": {
         "placeholder": "Enter your password",

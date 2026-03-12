@@ -18,7 +18,6 @@ export default function Authentication(): JSX.Element {
           </Suspense>
         </AuthErrorBoundary>
       </main>
-
       <UIFooter />
     </>
   );

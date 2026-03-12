@@ -1,11 +1,11 @@
 import UIForm from '@/components/ui-form';
 import { useTranslation } from 'react-i18next';
 
-import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
-
 import useRegistrationAuth from '@/modules/user/features/auth/hooks/use-registration-auth';
+import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
 import getSubmitLabelKey from '@/modules/user/features/auth/utils/get-submit-label-key';
 import getRegistrationError from '@/modules/user/features/auth/utils/map-registration-error';
+
 import FormField from '../components/form-field';
 import PasswordField from '../components/password-field';
 import { createValidators } from '../validations';
