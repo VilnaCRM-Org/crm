@@ -26,7 +26,7 @@ ENV PATH="/root/.bun/bin:$PATH"
 
 WORKDIR /app
 
-COPY package.json bun.lock* checkNodeVersion.js ./
+COPY package.json bun.lock* check-node-version.js ./
 RUN bun install --frozen-lockfile
 
 
@@ -52,9 +52,10 @@ RUN apk add --no-cache curl=${CURL_VERSION} && \
     npm install -g serve@14.2.0
 
 RUN mkdir -p /app && chown -R node:node /app
+COPY --chown=node:node serve.json ./serve.json
 COPY --from=build --chown=node:node /app/dist ./dist
 USER node
 
 EXPOSE 3001
 
-CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001"]
+CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]

@@ -12,7 +12,6 @@ var logger = winston.createLogger({
   transports: [new winston.transports.Console()],
 });
 
-/* eslint-disable no-unused-vars */
 function handler(event) {
   var request = event.request;
   var uri = request.uri;
@@ -48,4 +47,8 @@ function handler(event) {
     logger.error('CloudFront Function error:', error);
     return request;
   }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = handler;
 }
