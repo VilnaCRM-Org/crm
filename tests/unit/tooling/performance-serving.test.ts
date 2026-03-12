@@ -35,4 +35,18 @@ describe('performance serving config', () => {
     expect(dockerfile).toContain('COPY --chown=node:node serve.json ./serve.json');
     expect(dockerfile).toContain('"/app/serve.json"');
   });
+
+  it('does not inject preload hints for every async chunk into the HTML shell', () => {
+    const rsbuildConfigSource = readFile('rsbuild.config.ts');
+
+    expect(rsbuildConfigSource).not.toContain('preload: true');
+  });
+
+  it('does not enable global async chunk prefetching for the HTML shell', () => {
+    const rsbuildConfigSource = readFile('rsbuild.config.ts');
+
+    expect(rsbuildConfigSource).not.toContain('prefetch: {');
+    expect(rsbuildConfigSource).not.toContain("type: 'async-chunks'");
+  });
+
 });

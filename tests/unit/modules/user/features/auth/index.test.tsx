@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import Authentication from '@/modules/user/features/auth';
@@ -6,6 +6,15 @@ import Authentication from '@/modules/user/features/auth';
 jest.mock('@/styles/theme', () => ({
   __esModule: true,
   default: {},
+}));
+
+jest.mock('@/stores', () => ({
+  __esModule: true,
+  default: {
+    getState: (): object => ({}),
+    subscribe: (): (() => void) => () => undefined,
+    dispatch: (): void => undefined,
+  },
 }));
 
 jest.mock('@/components/ui-back-to-main', () => ({
@@ -23,43 +32,35 @@ jest.mock('@/modules/user/features/auth/components/auth-skeleton', () => ({
   default: (): ReactElement => <div data-testid="auth-shell-skeleton" />,
 }));
 
-const mockFormSectionDefault = jest.fn((): never => {
-  throw new Promise<void>(() => {
-    // Keep pending to force the suspense fallback.
-  });
-});
+const mockFormSectionDefault = jest.fn(
+  (): ReactElement => <div data-testid="auth-form-section" />
+);
 
 jest.mock('@/modules/user/features/auth/components/form-section', () => ({
   __esModule: true,
-  default: (): never => mockFormSectionDefault(),
+  default: (): ReactElement => mockFormSectionDefault(),
 }));
 
 describe('Authentication shell', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
-
   afterEach(() => {
-    act(() => {
-      jest.runOnlyPendingTimers();
-    });
-    jest.useRealTimers();
     jest.restoreAllMocks();
     mockFormSectionDefault.mockReset();
-    mockFormSectionDefault.mockImplementation((): never => {
-      throw new Promise<void>(() => {
-        // Keep pending to force the suspense fallback.
-      });
-    });
+    mockFormSectionDefault.mockImplementation(
+      (): ReactElement => <div data-testid="auth-form-section" />
+    );
   });
 
-  it('keeps the shell chrome visible while the form section is loading', () => {
+  it('shows the auth skeleton while keeping the shell chrome visible', async () => {
     render(<Authentication />);
 
     expect(screen.getByRole('main')).toBeInTheDocument();
-    expect(screen.getByTestId('auth-shell-skeleton')).toBeInTheDocument();
     expect(screen.getByTestId('auth-shell-header')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-shell-skeleton')).toBeInTheDocument();
     expect(screen.getByTestId('auth-shell-footer')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-form-section')).toBeInTheDocument();
+    });
   });
 
   it('shows the error boundary fallback when the form section throws synchronously', async () => {

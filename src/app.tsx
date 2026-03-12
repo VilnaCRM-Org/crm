@@ -1,18 +1,13 @@
-import 'reflect-metadata';
-import '@/config/dependency-injection-config';
-
 import CssBaseline from '@mui/material/CssBaseline';
 import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
 import React, { Suspense, lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Provider } from 'react-redux';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import './index.css';
 import '@/config/fonts/golos.css';
 import '@/config/fonts/inter.css';
 
-import Store from '@/stores';
 import theme from '@/styles/theme';
 
 const Authentication = lazy(async () => import('@/modules/user/features/auth'));
@@ -49,11 +44,9 @@ function App(): React.ReactElement {
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Provider store={Store}>
-          <React.Suspense fallback={null}>
-            <RouterProvider router={router} />
-          </React.Suspense>
-        </Provider>
+        <React.Suspense fallback={null}>
+          <RouterProvider router={router} />
+        </React.Suspense>
       </ThemeProvider>
     </StyledEngineProvider>
   );

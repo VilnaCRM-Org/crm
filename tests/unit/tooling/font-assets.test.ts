@@ -10,6 +10,12 @@ const cssFiles = [
   'src/config/fonts/inter.css',
 ] as const;
 const publicIndexPath = path.join(projectRoot, 'public/index.html');
+const authCriticalFonts = [
+  'src/assets/fonts/golos/Golos-Text_Regular.woff2',
+  'src/assets/fonts/golos/Golos-Text_Medium.woff2',
+  'src/assets/fonts/golos/Golos-Text_Bold.woff2',
+  'src/assets/fonts/inter/Inter-Medium.woff2',
+] as const;
 
 describe('local font assets', () => {
   it('declares local fonts as woff2 assets', () => {
@@ -49,5 +55,14 @@ describe('local font assets', () => {
 
     expect(indexHtml).not.toContain('.ttf');
     expect(indexHtml).not.toContain('font/ttf');
+  });
+
+  it('keeps auth-critical font transfer within the mobile performance budget', () => {
+    const totalBytes = authCriticalFonts.reduce((sum, relativeFontPath) => {
+      const absoluteFontPath = path.join(projectRoot, relativeFontPath);
+      return sum + fs.statSync(absoluteFontPath).size;
+    }, 0);
+
+    expect(totalBytes).toBeLessThanOrEqual(115000);
   });
 });
