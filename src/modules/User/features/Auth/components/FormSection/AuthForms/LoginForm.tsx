@@ -1,37 +1,33 @@
 import UIForm from '@/components/UIForm';
-import useAppDispatch from '@/stores/hooks';
-import { useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import FormField from '@/modules/User/features/Auth/components/FormSection/components/FormField';
+import PasswordField from '@/modules/User/features/Auth/components/FormSection/components/PasswordField';
+import UserOptions from '@/modules/User/features/Auth/components/FormSection/components/UserOptions';
+import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
+import {
+  selectLoginError,
+  selectLoginLoading,
+  useAuthStore,
+} from '@/modules/User/features/Auth/stores/authStore';
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import { loginUser } from '@/modules/User/store';
-
-import getSubmitLabelKey from '../../../utils/getSubmitLabelKey';
-import FormField from '../components/FormField';
-import PasswordField from '../components/PasswordField';
-import UserOptions from '../components/UserOptions';
-import { createValidators } from '../Validations';
+import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
 
 export default function LoginForm(): JSX.Element {
-  const [error, setError] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
+  const loginUser = useAuthStore((state) => state.loginUser);
+  const isSubmitting = useAuthStore(selectLoginLoading);
+  const storeError = useAuthStore(selectLoginError);
+
+  const error = storeError ? `${t('sign_in.error_prefix')} ${storeError}` : null;
+
+  useEffect(() => (): void => useAuthStore.setState({ loginError: null }), []);
 
   const handleLogin = async (data: LoginUserDto): Promise<void> => {
-    setIsSubmitting(true);
-    setError('');
-
-    try {
-      await dispatch(loginUser(data)).unwrap();
-    } catch (err) {
-      const message = (err as string) || 'auth.errors.unknown';
-      // TODO: replace hardcoded keys/strings with actual `t()` calls when keys are added
-      setError(`Помилка входу: ${message}`);
-    } finally {
-      setIsSubmitting(false);
-    }
+    await loginUser(data);
   };
+
   const validators = createValidators(t);
 
   return (

@@ -1,31 +1,37 @@
 import UIForm from '@/components/UIForm';
-import useAppDispatch, { useAppSelector } from '@/stores/hooks';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import { registerUser } from '@/modules/User/store';
+import FormField from '@/modules/User/features/Auth/components/FormSection/components/FormField';
+import PasswordField from '@/modules/User/features/Auth/components/FormSection/components/PasswordField';
+import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
 import {
-  selectRegistrationError,
-  selectRegistrationLoading,
-} from '@/modules/User/store/registrationSelectors';
-
-import getSubmitLabelKey from '../../../utils/getSubmitLabelKey';
-import getRegistrationError from '../../../utils/mapRegistrationError';
-import FormField from '../components/FormField';
-import PasswordField from '../components/PasswordField';
-import { createValidators } from '../Validations';
+  selectRegisterError,
+  selectRegisterLoading,
+  useAuthStore,
+} from '@/modules/User/features/Auth/stores/authStore';
+import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
+import getRegistrationError from '@/modules/User/features/Auth/utils/mapRegistrationError';
 
 export default function RegistrationForm(): JSX.Element {
-  const dispatch = useAppDispatch();
-  const isSubmitting = useAppSelector(selectRegistrationLoading);
-  const rawError = useAppSelector(selectRegistrationError);
+  const registerUser = useAuthStore((state) => state.registerUser);
+  const isSubmitting = useAuthStore(selectRegisterLoading);
+  const rawError = useAuthStore(selectRegisterError);
   const { t } = useTranslation();
+
+  useEffect(() => (): void => useAuthStore.setState({ registerError: null }), []);
 
   const errorKey = getRegistrationError(rawError);
   const error = errorKey ? t(errorKey) : null;
 
-  const handleRegister = (data: RegisterUserDto): void => {
-    dispatch(registerUser(data));
+  const handleRegister = async (data: RegisterUserDto): Promise<void> => {
+    await registerUser(data);
+
+    const { registerError } = useAuthStore.getState();
+    if (registerError) {
+      throw new Error(registerError);
+    }
   };
   const validators = createValidators(t);
   return (
