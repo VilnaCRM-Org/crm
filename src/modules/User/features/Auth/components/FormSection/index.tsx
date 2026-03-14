@@ -1,4 +1,5 @@
 import UIButton from '@/components/UIButton';
+import loadFonts from '@/utils/loadFonts';
 import { Box } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +9,21 @@ import AuthProviderButtons from './components/AuthProviderButtons';
 import styles from './styles';
 import { AuthMode } from './types';
 
+let fontsLoaded = false;
+const fontsPromise = loadFonts().then(
+  () => {
+    fontsLoaded = true;
+  },
+  // Font loading failure is intentional graceful degradation:
+  // the component renders with system fonts as fallback.
+  () => {
+    fontsLoaded = true;
+  }
+);
+
 export default function FormSection(): JSX.Element {
+  if (!fontsLoaded) throw fontsPromise;
+
   const [mode, setMode] = useState<AuthMode>('register');
   const { t } = useTranslation();
 

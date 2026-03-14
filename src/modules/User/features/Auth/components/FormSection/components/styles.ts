@@ -4,26 +4,12 @@ import { styled } from '@mui/material/styles';
 
 import { ReactComponent as EyeIconOff } from '@/modules/User/features/Auth/assets/eye-off.svg';
 import { ReactComponent as EyeIcon } from '@/modules/User/features/Auth/assets/eye.svg';
+import { fieldGapMargins } from '@/modules/User/features/Auth/components/FormSection/styles';
 
 export default {
   formFieldWrapper: {
     '&:nth-of-type(-n+2)': {
-      marginBottom: '0.5rem',
-
-      [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
-        marginBottom: '1.125rem',
-      },
-
-      [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-        marginBottom: '1.4375rem',
-      },
-
-      [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-        marginBottom: '1.125rem',
-      },
-      [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-        marginBottom: '1rem',
-      },
+      ...fieldGapMargins,
     },
   },
 

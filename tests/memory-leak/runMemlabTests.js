@@ -31,7 +31,7 @@ const consoleMode = 'VERBOSE';
 
   for (const testFilePath of testFilePaths) {
     try {
-      const scenario = require(testFilePath);
+      const { default: scenario } = await import(testFilePath);
       if (!scenario || typeof scenario !== 'object') {
         throw new Error(`Invalid scenario exported from ${testFilePath}: must export an object`);
       }
@@ -41,16 +41,22 @@ const consoleMode = 'VERBOSE';
         );
       }
 
-      const { runResult } = await run({
-        scenario,
-        consoleMode,
-        workDir,
-        skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
-        debug: process.env.MEMLAB_DEBUG === 'true',
-      });
-      const analyzer = new StringAnalysis();
-      await analyze(runResult, analyzer);
-      runResult.cleanup();
+      let runResult;
+      try {
+        ({ runResult } = await run({
+          scenario,
+          consoleMode,
+          workDir,
+          skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
+          debug: process.env.MEMLAB_DEBUG === 'true',
+        }));
+        const analyzer = new StringAnalysis();
+        await analyze(runResult, analyzer);
+      } finally {
+        if (runResult && typeof runResult.cleanup === 'function') {
+          runResult.cleanup();
+        }
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error(`✗ Failed memory leak test: ${testFilePath}`, error);

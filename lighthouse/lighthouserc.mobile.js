@@ -1,9 +1,9 @@
-const { baseUrl } = require('./constants');
+const { pages } = require('./constants');
 
 module.exports = {
   ci: {
     collect: {
-      url: [baseUrl],
+      url: pages,
       numberOfRuns: 3,
       settings: {
         formFactor: 'mobile',

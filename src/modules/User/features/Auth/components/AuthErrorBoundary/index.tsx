@@ -33,7 +33,9 @@ export default class AuthErrorBoundary extends Component<
   public componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const { onError } = this.props;
 
-    if (!onError && process.env.NODE_ENV !== 'production') {
+    if (onError) {
+      onError(error, info);
+    } else if (process.env.NODE_ENV !== 'production') {
       // eslint-disable-next-line no-console
       console.error('AuthErrorBoundary caught an error:', error, info);
     }
@@ -43,6 +45,8 @@ export default class AuthErrorBoundary extends Component<
   public render(): ReactNode {
     const { children, fallback } = this.props;
     const { hasError, error } = this.state;
+    const shouldShowErrorDetails =
+      (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && error;
     const renderedFallback =
       typeof fallback === 'function' ? fallback({ error, reset: this.handleReset }) : fallback;
 
@@ -64,10 +68,10 @@ export default class AuthErrorBoundary extends Component<
           >
             Try again
           </button>
-          {process.env.NODE_ENV === 'development' && error && (
+          {shouldShowErrorDetails && (
             <details style={{ marginTop: '1rem' }}>
               <summary>Error Details</summary>
-              <pre style={{ whiteSpace: 'pre-wrap' }}>{error.message}</pre>
+              <pre style={{ whiteSpace: 'pre-wrap' }}>{error!.message}</pre>
             </details>
           )}
         </div>
