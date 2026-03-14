@@ -1,0 +1,26 @@
+name: dependency cruiser
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  dependency-cruiser:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Start container
+        run: make start
+
+      - name: Run dependency cruiser
+        run: make lint-deps

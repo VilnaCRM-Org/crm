@@ -106,6 +106,17 @@ Linting & Formatting
   make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
 ```
 
+### Dependency rules
+
+We use dependency-cruiser to enforce module boundaries and prevent circular
+dependencies.
+
+- Run locally: `make lint-deps`
+- Config: `.dependency-cruiser.js`
+- Key rules:
+  - Modules cannot import from other modules directly
+  - Shared UI components must not depend on feature modules
+
 Testing
 
 ```bash
@@ -163,6 +174,7 @@ Docker
   make down: stops the Docker containers and removes orphaned containers
   make stop: stops dev container
   make start-prod: builds image and starts the prod container (production mode)
+  make start-prod-clean: force rebuild and recreate all test containers
   make ps: displays currently running Docker containers with their details
   make sh: starts a terminal inside the dev Docker container for manual commands
   make logs: shows all logs of dev container

@@ -3,7 +3,8 @@ import { GraphQLResolveInfo, GraphQLFormattedError } from 'graphql';
 export interface CreateUserInput {
   email: string;
   initials: string;
-  clientMutationId: string;
+  password: string;
+  clientMutationId?: string;
 }
 
 export interface User {

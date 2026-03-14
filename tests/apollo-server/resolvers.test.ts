@@ -18,6 +18,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -38,12 +39,14 @@ describe('resolvers Mutation createUser', () => {
       const input1: CreateUserInput = {
         email: 'user1@example.com',
         initials: 'User One',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-1',
       };
 
       const input2: CreateUserInput = {
         email: 'user2@example.com',
         initials: 'User Two',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-2',
       };
 
@@ -60,6 +63,7 @@ describe('resolvers Mutation createUser', () => {
       const input = {
         email: '',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       } as CreateUserInput;
 
@@ -78,6 +82,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'invalidemail.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -90,6 +95,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -102,6 +108,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test @example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -114,6 +121,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test.user+tag@example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -145,6 +153,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@example.com',
         initials: 'A',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -157,6 +166,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@example.com',
         initials: 'AB',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -168,6 +178,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@example.com',
         initials: 'John Doe Smith',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -176,11 +187,59 @@ describe('resolvers Mutation createUser', () => {
     });
   });
 
+  describe('password validation', () => {
+    it('should throw error for missing password', async () => {
+      const input = {
+        email: 'test@example.com',
+        initials: 'John Doe',
+        password: '',
+        clientMutationId: 'mutation-123',
+      } as CreateUserInput;
+
+      const promise = resolvers.Mutation.createUser(undefined, { input });
+      await expect(promise).rejects.toThrow(GraphQLError);
+      await expect(promise).rejects.toMatchObject({
+        message: 'Password must be between 8 and 64 characters',
+        extensions: {
+          code: 'BAD_REQUEST',
+          http: { status: 400 },
+        },
+      });
+    });
+
+    it('should throw error for password shorter than 8 characters', async () => {
+      const input: CreateUserInput = {
+        email: 'test@example.com',
+        initials: 'John Doe',
+        password: 'Short1',
+        clientMutationId: 'mutation-123',
+      };
+
+      await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toThrow(
+        GraphQLError
+      );
+    });
+
+    it('should throw error for password longer than 64 characters', async () => {
+      const input: CreateUserInput = {
+        email: 'test@example.com',
+        initials: 'John Doe',
+        password: 'A'.repeat(65),
+        clientMutationId: 'mutation-123',
+      };
+
+      await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toThrow(
+        GraphQLError
+      );
+    });
+  });
+
   describe('duplicate email handling', () => {
     it('should throw error when creating user with duplicate email', async () => {
       const input: CreateUserInput = {
         email: 'duplicate@example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-1',
       };
 
@@ -237,6 +296,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -248,6 +308,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -259,11 +320,23 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'custom-mutation-id',
       };
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.clientMutationId).toBe('custom-mutation-id');
+    });
+
+    it('should return empty clientMutationId when not provided', async () => {
+      const input: CreateUserInput = {
+        email: 'test@example.com',
+        initials: 'John Doe',
+        password: 'ValidPass123',
+      } as CreateUserInput;
+
+      const result = await resolvers.Mutation.createUser(undefined, { input });
+      expect(result.clientMutationId).toBe('');
     });
   });
 
@@ -272,6 +345,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'invalid-email',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -284,6 +358,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@example.com',
         initials: 'A',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -306,6 +381,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test@example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -333,6 +409,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: '   ',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -347,6 +424,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'user@mail.example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -358,6 +436,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'user123@example456.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -369,6 +448,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'user..name@example.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -380,6 +460,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test-spaces@example.com',
         initials: '   ',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -392,6 +473,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'test-long@example.com',
         initials: longInitials,
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -403,6 +485,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'unicode@example.com',
         initials: 'Иван Петров',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -414,6 +497,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'special@example.com',
         initials: "O'Brien-Smith",
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -425,6 +509,7 @@ describe('resolvers Mutation createUser', () => {
       const input: CreateUserInput = {
         email: 'user@ex-ample.com',
         initials: 'John Doe',
+        password: 'ValidPass123',
         clientMutationId: 'mutation-123',
       };
 
@@ -438,6 +523,7 @@ describe('resolvers Mutation createUser', () => {
       const inputs = Array.from({ length: 5 }, (_, i) => ({
         email: `user${i}@example.com`,
         initials: `User ${i}`,
+        password: 'ValidPass123',
         clientMutationId: `mutation-${i}`,
       }));
 

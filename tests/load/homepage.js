@@ -1,6 +1,6 @@
 import http from 'k6/http';
 
-import ScenarioUtils from './utils/scenarioUtils.js';
+import ScenarioUtils from './utils/scenario-utils.js';
 import Utils from './utils/utils.js';
 
 const scenarioName = 'homepage';

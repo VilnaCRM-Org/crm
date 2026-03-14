@@ -1,3 +1,5 @@
+import { t } from '../e2e/utils/initialize-localization';
+
 export interface ScreenSize {
   width: number;
   height: number;
@@ -33,12 +35,12 @@ export const screenSizes: ReadonlyArray<ScreenSize> = [
   {
     width: 414,
     height: 915,
-    name: 'largeMobile',
+    name: 'large-mobile',
   },
   {
     width: 412,
     height: 896,
-    name: 'largeMobile2',
+    name: 'large-mobile2',
   },
   {
     width: 393,
@@ -84,9 +86,9 @@ interface PlaceholderFields {
 }
 
 export const placeholders: PlaceholderFields = {
-  name: 'Михайло Светський',
-  email: 'vilnaCRM@gmail.com',
-  password: 'Створіть пароль',
+  name: t('sign_up.form.name_input.placeholder'),
+  email: t('sign_up.form.email_input.placeholder'),
+  password: t('sign_up.form.password_input.placeholder'),
 };
 
 export const PAGES = {

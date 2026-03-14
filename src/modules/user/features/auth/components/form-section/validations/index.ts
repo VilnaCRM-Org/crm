@@ -1,0 +1,31 @@
+import type { TFunction } from 'i18next';
+import type { FieldValues, RegisterOptions, Validate } from 'react-hook-form';
+
+import createEmailValidator from './email';
+import createFullNameValidator from './name';
+import createPasswordValidator from './password';
+
+export type Validators<TFieldValues extends FieldValues> = {
+  email: Validate<string, TFieldValues>;
+  fullName: Validate<string, TFieldValues>;
+  password: Validate<string, TFieldValues>;
+};
+
+export const createValidators = <TFieldValues extends FieldValues>(
+  t: TFunction
+): Validators<TFieldValues> => ({
+  email: createEmailValidator<TFieldValues>(t),
+  fullName: createFullNameValidator<TFieldValues>(t),
+  password: createPasswordValidator<TFieldValues>(t),
+});
+
+export const buildPasswordRules = <TFieldValues extends FieldValues>(
+  t: TFunction
+): RegisterOptions<TFieldValues> => {
+  const validators = createValidators<TFieldValues>(t);
+
+  return {
+    required: t('sign_up.form.password_input.required'),
+    validate: validators.password,
+  };
+};

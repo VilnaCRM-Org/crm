@@ -21,11 +21,12 @@
         "socials_main_heading": "Або",
         "form": {
           "name_input": {
-            "label": "Ваше ім’я та прізвище",
+            "label": "Ваше ім'я та прізвище",
             "placeholder": "Михайло Світський",
             "special_characters_error": "Будь ласка, використовуйте лише літери",
             "required": "Це поле обов'язкове",
-            "full_name_format_error": "Будь ласка, введіть повне ім’я у правильному форматі"
+            "only_spaces_error": "Ім'я не може складатися лише з пробілів",
+            "full_name_format_error": "Будь ласка, введіть повне ім'я у правильному форматі"
           },
           "email_input": {
             "label": "Електронна пошта",
@@ -75,6 +76,42 @@
           "submitting": "Вхід…"
         }
       },
+      "notifications": {
+        "close": "Закрити сповіщення",
+        "success": {
+          "title": "Вітаємо!",
+          "description": "Ви успішно зареєструвались",
+          "button": "Назад",
+          "images": {
+            "confetti": "Веселе і барвисте конфеті",
+            "gears": "Святкові шестерні"
+          }
+        },
+        "error": {
+          "title": "Трапилась помилка",
+          "retry_button": "Спробувати ще раз",
+          "button": "Назад",
+          "images": {
+            "error": "Червоний трикутник з попередженням про помилку."
+          }
+        }
+      },
+      "failure_responses": {
+        "authentication_errors": {
+          "unauthorized_access": "Неавторизований доступ. Будь ласка, увійдіть знову",
+          "access_denied": "Доступ заборонено. У вас немає прав для виконання цієї дії"
+        },
+        "client_errors": {
+          "something_went_wrong": "Щось пішло не так із запитом. Спробуйте ще раз пізніше",
+          "unexpected_error": "Сталася непередбачена помилка. Будь ласка, спробуйте ще раз"
+        },
+        "network_errors": {
+          "network_error": "Помилка мережі. Перевірте з'єднання з інтернетом"
+        },
+        "server_errors": {
+          "server_error": "Внутрішня помилка сервера."
+        }
+      },
       "footer": {
         "logo_alt": "Логотип VilnaCRM",
         "privacy": "Політика конфіденційності",
@@ -104,6 +141,7 @@
             "placeholder": "Mykhailo Svitskyi",
             "special_characters_error": "Please use letters only",
             "required": "This field is required",
+            "only_spaces_error": "Name cannot consist only of spaces",
             "full_name_format_error": "Please enter your full name in the correct format"
           },
           "email_input": {
@@ -135,7 +173,7 @@
           "submit_button": "Sign Up",
           "error_text": "There was an error. Please check again",
           "switcher_text_have_account": "Already have an account?",
-          "switcher_text_no_account": "Don’t have an account yet?"
+          "switcher_text_no_account": "Don't have an account yet?"
         },
         "errors": {
           "email_used": "Email address is already in use",
@@ -152,6 +190,42 @@
           },
           "submit_button": "Sign in",
           "submitting": "Signing in…"
+        }
+      },
+      "notifications": {
+        "close": "Close notification",
+        "success": {
+          "title": "Congratulations!",
+          "description": "You have successfully registered",
+          "button": "Go back",
+          "images": {
+            "confetti": "Cheerful and colorful confetti",
+            "gears": "Decorative celebration gears"
+          }
+        },
+        "error": {
+          "title": "An error occurred",
+          "retry_button": "Try again",
+          "button": "Go back",
+          "images": {
+            "error": "Red triangle with a warning about an error."
+          }
+        }
+      },
+      "failure_responses": {
+        "authentication_errors": {
+          "unauthorized_access": "Unauthorized access. Please log in again",
+          "access_denied": "Access denied. You do not have permission to perform this action"
+        },
+        "client_errors": {
+          "something_went_wrong": "Something went wrong with the request. Try again later",
+          "unexpected_error": "An unexpected error occurred. Please try again"
+        },
+        "network_errors": {
+          "network_error": "Network error. Please check your internet connection"
+        },
+        "server_errors": {
+          "server_error": "Internal Server Error"
         }
       },
       "footer": {

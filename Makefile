@@ -50,7 +50,7 @@ MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
 MEMLEAK_BASE_PATH           = ./tests/memory-leak
 MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
-MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/runMemlabTests.js
+MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/run-memlab-tests.js
 
 MEMLEAK_REMOVE_RESULTS		= rm -rf $(MEMLEAK_RESULTS_DIR)
 MEMLEAK_SETUP 				= \
@@ -103,7 +103,7 @@ STRYKER_CMD_DIND            = $(BUNX_DIND) stryker run
 UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
-STORYBOOK_START             = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
+STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint
 MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
@@ -196,7 +196,10 @@ lint-tsc: ## This command executes Typescript linter
 lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
-lint: lint-eslint lint-tsc lint-md ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
+lint-deps: ## This command executes dependency-cruiser
+	$(BUNX) depcruise src tests
+
+lint: lint-eslint lint-tsc lint-md lint-deps ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
 
 husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	$(BUNX) husky install
@@ -231,6 +234,9 @@ create-network: ## Create the external Docker network if it doesn't exist
 
 start-prod: create-network ## Build image and start container in production mode
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate && make wait-for-prod-health
+
+start-prod-clean: create-network ## Rebuild and recreate all test containers
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build && make wait-for-prod-health
 
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."

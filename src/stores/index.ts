@@ -1,23 +1,19 @@
 import { configureStore } from '@reduxjs/toolkit';
 
-import container from '@/config/DependencyInjectionConfig';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
-import { loginReducer, registrationReducer } from '@/modules/User/store';
-import type { ThunkExtra } from '@/modules/User/store/types';
-
-import devToolsOptions from './devToolsOptions';
+import type { IUserRepository } from '@/modules/user/features/auth/repositories';
+import { loginReducer } from '@/modules/user/store';
+import type { ThunkExtra } from '@/modules/user/store/types';
+import devToolsOptions from '@/stores/dev-tools-options';
 
 const thunkExtraArgument: ThunkExtra = {
-  loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),
-  registrationAPI: container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI),
+  userRepository: container.resolve<IUserRepository>(TOKENS.UserRepository),
 };
 
 export const store = configureStore({
   reducer: {
     auth: loginReducer,
-    registration: registrationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

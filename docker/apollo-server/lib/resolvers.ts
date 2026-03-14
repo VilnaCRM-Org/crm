@@ -3,6 +3,9 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { CreateUserInput, User } from './types';
 
+const MIN_PASSWORD_LENGTH = 8;
+const MAX_PASSWORD_LENGTH = 64;
+
 const validateCreateUserInput = (input: CreateUserInput): void => {
   const emailRegex =
     /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -18,6 +21,19 @@ const validateCreateUserInput = (input: CreateUserInput): void => {
 
   if (!input.initials || input.initials.length < 2) {
     throw new GraphQLError('Invalid initials', {
+      extensions: {
+        code: 'BAD_REQUEST',
+        http: { status: 400 },
+      },
+    });
+  }
+
+  if (
+    !input.password ||
+    input.password.length < MIN_PASSWORD_LENGTH ||
+    input.password.length > MAX_PASSWORD_LENGTH
+  ) {
+    throw new GraphQLError('Password must be between 8 and 64 characters', {
       extensions: {
         code: 'BAD_REQUEST',
         http: { status: 400 },
@@ -66,7 +82,7 @@ export const resolvers = {
           initials: input.initials,
         };
         users.set(newUser.email, newUser);
-        return { user: newUser, clientMutationId: input.clientMutationId };
+        return { user: newUser, clientMutationId: input.clientMutationId || '' };
       } catch (error) {
         console.error('Failed to create user:', error);
         throw new GraphQLError('Internal Server Error: Failed to create user', {
