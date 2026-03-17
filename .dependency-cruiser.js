@@ -399,10 +399,10 @@ module.exports = {
     {
       name: 'tests-top-level-allowed-folders',
       comment:
-        'Tests root may only contain allowed folders: apollo-server, e2e, integration, load, memory-leak, unit, visual.',
+        'Tests root may only contain allowed folders: apollo-server, e2e, integration, load, memory-leak, unit, utils, visual.',
       severity: 'error',
       from: {
-        path: '^tests/(?!apollo-server|e2e|integration|load|memory-leak|unit|visual)[^/]+/',
+        path: '^tests/(?!apollo-server|e2e|integration|load|memory-leak|unit|utils|visual)[^/]+/',
       },
       to: {},
     },
