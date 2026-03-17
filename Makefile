@@ -93,17 +93,21 @@ NETWORK_NAME                = crm-network
 
 BUN                         = $(EXEC_DEV_TTYLESS) bun
 BUNX                        = $(BUN) x
+BUN_DIND                    = bun
+BUNX_DIND                   = $(BUN_DIND) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
 DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev && make wait-for-dev
 BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 
 STRYKER_CMD                 = make start && $(BUNX) stryker run
+STRYKER_CMD_DIND            = $(BUNX_DIND) stryker run
 UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
 STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint
+MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
 LHCI_TARGET_URL             ?= $(REACT_APP_PROD_CONTAINER_API_URL)
 RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
@@ -340,7 +344,7 @@ clean: down ## Clean up only this project's containers, images, and volumes
 
 # DIND (Docker-in-Docker) targets for CI scripts
 build-prod: ## Build production image for dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build prod
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build --no-cache prod
 
 build-k6: ## Build K6 load testing image for dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build k6
@@ -427,7 +431,7 @@ run-integration-tests-dind: ## Run integration tests in temp container for dind
 
 run-mutation-tests-dind: ## Run mutation tests in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" $(STRYKER_CMD)
+	docker exec "$(TEMP_CONTAINER_NAME)" $(STRYKER_CMD_DIND)
 
 run-eslint-tests-dind: ## Run ESLint in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
@@ -439,7 +443,7 @@ run-typescript-tests-dind: ## Run TypeScript check in temp container for dind
 
 run-markdown-lint-tests-dind: ## Run Markdown lint in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" $(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
+	docker exec "$(TEMP_CONTAINER_NAME)" $(MARKDOWNLINT_BIN_DIND) $(MD_LINT_ARGS)
 
 create-k6-helper-container-dind: ## Create K6 helper container for dind load testing
 	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi
