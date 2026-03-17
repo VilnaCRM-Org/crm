@@ -27,8 +27,8 @@ describe('auth test harness wiring', () => {
     const makefile = readFile('Makefile');
 
     expect(workflow).not.toContain('/authentication');
-    expect(constants).toContain('const pages = [baseUrl,');
-    expect(constants).toContain('/authentication`];');
+    expect(constants).toContain('const pages = [`${baseUrl}/authentication`];');
+    expect(constants).not.toContain('const pages = [baseUrl,');
     expect(desktopRc).toContain('const { pages } = require(\'./constants\');');
     expect(desktopRc).toContain('url: pages');
     expect(mobileRc).toContain('const { pages } = require(\'./constants\');');

@@ -22,9 +22,9 @@ describe('lighthouse constants', () => {
     process.env = originalEnv;
   });
 
-  it('expands the base URL from the repo env file into valid Lighthouse pages', () => {
+  it('expands the base URL from the repo env file into the auth Lighthouse page', () => {
     const { pages } = jest.requireActual<{ pages: string[] }>(constantsModulePath);
 
-    expect(pages).toEqual(['http://prod:3001', 'http://prod:3001/authentication']);
+    expect(pages).toEqual(['http://prod:3001/authentication']);
   });
 });

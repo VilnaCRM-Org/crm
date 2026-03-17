@@ -16,11 +16,23 @@ const thunkExtraArgument: ThunkExtra = {
   registrationAPI: container.resolve<RegistrationAPIContract>(TOKENS.RegistrationAPI),
 };
 
+declare global {
+  interface Window {
+    __PRELOADED_AUTH_TOKEN__?: string;
+  }
+}
+
+const preloadedToken =
+  typeof window !== 'undefined' ? window.__PRELOADED_AUTH_TOKEN__ : undefined;
+
 export const store = configureStore({
   reducer: {
     auth: loginReducer,
     registration: registrationReducer,
   },
+  preloadedState: preloadedToken
+    ? { auth: { token: preloadedToken, email: '', loading: false, error: null } }
+    : undefined,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       thunk: {

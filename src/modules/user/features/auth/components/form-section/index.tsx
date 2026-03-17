@@ -20,8 +20,10 @@ export default function FormSection(): JSX.Element {
   const { t } = useTranslation();
 
   const handleSwitcherIntent = useCallback(() => {
-    loadLoginForm().catch(() => undefined);
-  }, []);
+    if (mode === 'register') {
+      loadLoginForm().catch(() => undefined);
+    }
+  }, [mode]);
 
   const handleSwitch = useCallback(() => {
     if (mode === 'login') {

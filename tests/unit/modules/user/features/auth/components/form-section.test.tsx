@@ -48,6 +48,11 @@ jest.mock('@/modules/user/features/auth/components/form-section/auth-forms/regis
   default: (): ReactElement => <div data-testid="registration-form" />,
 }));
 
+jest.mock('@/modules/user/features/auth/components/form-section/auth-forms/login-form', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div data-testid="login-form" />,
+}));
+
 jest.mock('@/modules/user/features/auth/components/form-section/components/auth-provider-buttons', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="auth-provider-buttons" />,

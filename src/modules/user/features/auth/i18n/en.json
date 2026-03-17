@@ -53,6 +53,7 @@
       "switcher_text_no_account": "Don’t have an account yet?"
     },
     "errors": {
+      "load_failed": "Couldn't open the sign-up form. Please try again.",
       "email_used": "Email address is already in use",
       "signup_error": "Registration error. Please try again later"
     }

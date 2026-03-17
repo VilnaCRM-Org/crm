@@ -1,6 +1,7 @@
 import { Page, expect } from '@playwright/test';
 
-import { currentLanguage, ScreenSize, timeoutDuration } from './constants';
+import { seedPreloadedAuthToken } from '../utils/seed-preloaded-auth-token';
+import { currentLanguage, PAGES, ScreenSize, timeoutDuration } from './constants';
 
 const injectedPages = new WeakSet<Page>();
 
@@ -34,6 +35,10 @@ async function takeVisualSnapshot(
       document.head.appendChild(style);
     });
     injectedPages.add(page);
+  }
+
+  if (url === PAGES.HOME) {
+    await seedPreloadedAuthToken(page);
   }
 
   const response = await page.goto(url, { waitUntil: 'domcontentloaded' });
