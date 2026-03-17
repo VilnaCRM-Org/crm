@@ -230,7 +230,7 @@ create-network: ## Create the external Docker network if it doesn't exist
 	@docker network ls | grep -wq $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
 
 start-prod: create-network ## Build image and start container in production mode
-	$(DOCKER_COMPOSE) $(COMMON_HEALTHCHECKS_FILE) $(DOCKER_COMPOSE_TEST_FILE) up -d && make wait-for-prod-health
+	$(DOCKER_COMPOSE) $(COMMON_HEALTHCHECKS_FILE) $(DOCKER_COMPOSE_TEST_FILE) up -d --build && make wait-for-prod-health
 
 start-prod-clean: create-network ## Rebuild and recreate all test containers
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build && make wait-for-prod-health

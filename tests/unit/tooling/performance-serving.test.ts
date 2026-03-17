@@ -12,6 +12,14 @@ const readJson = <T>(relativePath: string): T =>
   JSON.parse(readFile(relativePath)) as T;
 
 describe('performance serving config', () => {
+  it('rebuilds the production image before starting the prod stack', () => {
+    const makefile = readFile('Makefile');
+    const startProdTarget = makefile.match(/start-prod:.*?\n((?:\t.*\n)+)/m)?.[1];
+
+    expect(startProdTarget).toBeDefined();
+    expect(startProdTarget).toContain('up -d --build');
+  });
+
   it('ships immutable cache headers for built static assets', () => {
     const serveConfig = readJson<{
       headers?: Array<{
@@ -47,6 +55,14 @@ describe('performance serving config', () => {
 
     expect(rsbuildConfigSource).not.toContain('prefetch: {');
     expect(rsbuildConfigSource).not.toContain("type: 'async-chunks'");
+  });
+
+  it('duplicates the built HTML shell to 404.html for static website SPA fallbacks', () => {
+    const rsbuildConfigSource = readFile('rsbuild.config.ts');
+
+    expect(rsbuildConfigSource).toContain('404.html');
+    expect(rsbuildConfigSource).toContain('index.html');
+    expect(rsbuildConfigSource).toContain('copyFile');
   });
 
 });

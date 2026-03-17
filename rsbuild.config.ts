@@ -1,3 +1,4 @@
+import { copyFile } from 'fs/promises';
 import * as path from 'path';
 
 import { defineConfig, loadEnv } from '@rsbuild/core';
@@ -7,6 +8,22 @@ import { pluginSvgr } from '@rsbuild/plugin-svgr';
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
 const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
+
+const duplicateSpaFallback = () => ({
+  name: 'duplicate-s3-spa-fallback',
+  apply: 'build' as const,
+  setup(api: {
+    context: { distPath: string };
+    onAfterBuild: (callback: () => Promise<void>) => void;
+  }) {
+    api.onAfterBuild(async () => {
+      const indexHtmlPath = path.join(api.context.distPath, 'index.html');
+      const spaFallbackPath = path.join(api.context.distPath, '404.html');
+
+      await copyFile(indexHtmlPath, spaFallbackPath);
+    });
+  },
+});
 
 export default defineConfig({
   plugins: [
@@ -20,6 +37,7 @@ export default defineConfig({
         svgo: true,
       },
     }),
+    duplicateSpaFallback(),
   ],
   html: {
     template: './public/index.html',
