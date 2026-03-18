@@ -27,6 +27,7 @@ describe('auth test harness wiring', () => {
     const makefile = readFile('Makefile');
 
     expect(workflow).not.toContain('/authentication');
+    // eslint-disable-next-line no-template-curly-in-string
     expect(constants).toContain('const pages = [`${baseUrl}/authentication`];');
     expect(constants).not.toContain('const pages = [baseUrl,');
     expect(desktopRc).toContain('const { pages } = require(\'./constants\');');

@@ -1,5 +1,5 @@
-import { render, screen } from '@testing-library/react';
 import { configureStore } from '@reduxjs/toolkit';
+import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
@@ -12,7 +12,7 @@ jest.mock('@/stores', () => ({
   default: {},
 }));
 
-const makeStore = (token: string | null) =>
+const makeStore = (token: string | null): ReturnType<typeof configureStore> =>
   configureStore({
     reducer: { auth: loginReducer, registration: registrationReducer },
     preloadedState: {
@@ -20,7 +20,7 @@ const makeStore = (token: string | null) =>
     },
   });
 
-const renderWithRouter = (token: string | null) =>
+const renderWithRouter = (token: string | null): ReturnType<typeof render> =>
   render(
     <Provider store={makeStore(token)}>
       <MemoryRouter initialEntries={['/']}>

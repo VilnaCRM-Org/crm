@@ -22,8 +22,9 @@ declare global {
   }
 }
 
+const preloadedAuthTokenKey = '__PRELOADED_AUTH_TOKEN__' as const;
 const preloadedToken =
-  typeof window !== 'undefined' ? window.__PRELOADED_AUTH_TOKEN__ : undefined;
+  typeof window !== 'undefined' ? window[preloadedAuthTokenKey] : undefined;
 
 export const store = configureStore({
   reducer: {

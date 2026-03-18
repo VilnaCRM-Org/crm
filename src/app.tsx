@@ -1,4 +1,4 @@
-import "reflect-metadata"
+import 'reflect-metadata';
 
 import CssBaseline from '@mui/material/CssBaseline';
 import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';

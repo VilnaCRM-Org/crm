@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-import viewports from '../constants/viewports';
 import { seedPreloadedAuthToken } from '../../utils/seed-preloaded-auth-token';
+import viewports from '../constants/viewports';
 
 const backToHomeSpec = {
   href: '/',

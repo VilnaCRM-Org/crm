@@ -2,14 +2,20 @@ import type { Page } from '@playwright/test';
 
 export const PRELOADED_AUTH_TOKEN = 'playwright-preloaded-auth-token';
 
-type PageInitScriptTarget = Pick<Page, 'addInitScript'>;
+type PageRouteTarget = Pick<Page, 'route'>;
 
 export async function seedPreloadedAuthToken(
-  page: PageInitScriptTarget,
+  page: PageRouteTarget,
   token: string = PRELOADED_AUTH_TOKEN
 ): Promise<void> {
-  await page.addInitScript((preloadedAuthToken: string) => {
-    (window as Window & { __PRELOADED_AUTH_TOKEN__?: string }).__PRELOADED_AUTH_TOKEN__ =
-      preloadedAuthToken;
-  }, token);
+  const inlineScript = `<script>window["__PRELOADED_AUTH_TOKEN__"]=${JSON.stringify(token)};</script>`;
+  await page.route('**/*', async (route) => {
+    if (route.request().resourceType() === 'document') {
+      const response = await route.fetch();
+      const body = await response.text();
+      await route.fulfill({ response, body: body.replace('<head>', `<head>${inlineScript}`) });
+    } else {
+      await route.continue();
+    }
+  });
 }

@@ -1,6 +1,7 @@
 import { Page, expect } from '@playwright/test';
 
 import { seedPreloadedAuthToken } from '../utils/seed-preloaded-auth-token';
+
 import { currentLanguage, PAGES, ScreenSize, timeoutDuration } from './constants';
 
 const injectedPages = new WeakSet<Page>();
@@ -13,14 +14,6 @@ async function takeVisualSnapshot(
 ): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
 
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => resolve());
-        });
-      })
-  );
   if (!injectedPages.has(page)) {
     await page.addInitScript(() => {
       if (document.getElementById('__pw-disable-animations')) return;
