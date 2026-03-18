@@ -11,12 +11,12 @@ import './index.css';
 import '@/config/fonts/golos.css';
 import '@/config/fonts/inter.css';
 
-import ButtonExample from '@/button-example';
 import ProtectedRoute from '@/components/protected-route';
 import store from '@/stores';
 import theme from '@/styles/theme';
 
 const Authentication = lazy(async () => import('@/modules/user/features/auth'));
+const ButtonExample = lazy(async () => import('@/button-example'));
 
 const router = createBrowserRouter([
   {

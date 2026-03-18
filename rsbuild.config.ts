@@ -33,11 +33,6 @@ export default defineConfig({
     removeConsole: !isDev,
     chunkSplit: {
       strategy: 'split-by-experience',
-      forceSplitting: {
-        'vendors-mui': /node_modules\/@mui|node_modules\/@emotion/,
-        'vendors-redux': /node_modules\/@reduxjs|node_modules\/redux|node_modules\/immer|node_modules\/reselect|node_modules\/react-redux/,
-        'vendors-i18n': /node_modules\/i18next|node_modules\/react-i18next/,
-      },
     },
   },
   output: {

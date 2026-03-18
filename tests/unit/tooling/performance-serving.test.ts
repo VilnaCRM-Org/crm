@@ -49,4 +49,16 @@ describe('performance serving config', () => {
     expect(rsbuildConfigSource).not.toContain("type: 'async-chunks'");
   });
 
+  it('keeps route-level code splitting in the app shell', () => {
+    const appSource = readFile('src/app.tsx');
+
+    expect(appSource).toContain("import React, { lazy, useEffect } from 'react';");
+    expect(appSource).toContain(
+      "const Authentication = lazy(async () => import('@/modules/user/features/auth'));"
+    );
+    expect(appSource).toContain("const ButtonExample = lazy(async () => import('@/button-example'));");
+    expect(appSource).not.toContain("import Authentication from '@/modules/user/features/auth';");
+    expect(appSource).not.toContain("import ButtonExample from '@/button-example';");
+  });
+
 });
