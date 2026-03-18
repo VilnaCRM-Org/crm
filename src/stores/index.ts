@@ -10,21 +10,14 @@ import type {
 } from '@/modules/user/store/types';
 
 import devToolsOptions from './dev-tools-options';
+import { getPreloadedAuthToken } from './preloaded-auth-token';
 
 const thunkExtraArgument: ThunkExtra = {
   loginAPI: container.resolve<LoginAPIContract>(TOKENS.LoginAPI),
   registrationAPI: container.resolve<RegistrationAPIContract>(TOKENS.RegistrationAPI),
 };
 
-declare global {
-  interface Window {
-    __PRELOADED_AUTH_TOKEN__?: string;
-  }
-}
-
-const preloadedAuthTokenKey = '__PRELOADED_AUTH_TOKEN__' as const;
-const preloadedToken =
-  typeof window !== 'undefined' ? window[preloadedAuthTokenKey] : undefined;
+const preloadedToken = getPreloadedAuthToken();
 
 export const store = configureStore({
   reducer: {

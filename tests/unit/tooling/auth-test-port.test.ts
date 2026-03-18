@@ -24,16 +24,27 @@ describe('auth test harness wiring', () => {
     const constants = readFile('lighthouse/constants.js');
     const desktopRc = readFile('lighthouse/lighthouserc.desktop.js');
     const mobileRc = readFile('lighthouse/lighthouserc.mobile.js');
+    const dockerCompose = readFile('docker-compose.test.yml');
     const makefile = readFile('Makefile');
+    const batchScript = readFile('scripts/ci/batch_lhci_leak.sh');
 
     expect(workflow).not.toContain('/authentication');
     // eslint-disable-next-line no-template-curly-in-string
-    expect(constants).toContain('const pages = [`${baseUrl}/authentication`];');
-    expect(constants).not.toContain('const pages = [baseUrl,');
+    expect(constants).toContain('const pages = [baseUrl, `${baseUrl}/authentication`];');
     expect(desktopRc).toContain('const { pages } = require(\'./constants\');');
     expect(desktopRc).toContain('url: pages');
+    expect(desktopRc).not.toContain('puppeteerScript');
+    expect(desktopRc).not.toContain('puppeteerLaunchOptions');
     expect(mobileRc).toContain('const { pages } = require(\'./constants\');');
     expect(mobileRc).toContain('url: pages');
+    expect(mobileRc).not.toContain('puppeteerScript');
+    expect(mobileRc).not.toContain('puppeteerLaunchOptions');
+    expect(dockerCompose).toContain('REACT_APP_LHCI_PRELOADED_AUTH_TOKEN');
+    expect(dockerCompose).toContain(`${'$'}{LHCI_PRELOADED_AUTH_TOKEN-}`);
+    expect(makefile).toContain('LHCI_PRELOADED_AUTH_TOKEN');
+    expect(makefile).not.toContain('REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(LHCI_PRELOADED_AUTH_TOKEN)');
+    expect(makefile).toContain('make ensure-chromium && make start-prod-clean && $(LHCI)');
+    expect(batchScript).not.toContain('LHCI_PRELOADED_AUTH_TOKEN');
     expect(makefile).not.toContain('--collect.url=$(LHCI_TARGET_URL)');
     expect(makefile).not.toContain('--collect.url=http://localhost:3001');
   });

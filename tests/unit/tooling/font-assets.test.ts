@@ -41,13 +41,15 @@ describe('local font assets', () => {
     }
   });
 
-  it('does not hardcode font preload tags in the public shell', () => {
+  it('only preloads the primary Golos font in the public shell', () => {
     const indexHtml = fs.readFileSync(publicIndexPath, 'utf8');
     const preloadPattern =
       /<link\s+rel="preload"\s+href="([^"]+)"\s+as="font"\s+type="([^"]+)"\s+crossorigin\s*\/>/g;
     const preloadMatches = [...indexHtml.matchAll(preloadPattern)];
 
-    expect(preloadMatches).toEqual([]);
+    expect(preloadMatches).toHaveLength(1);
+    expect(preloadMatches[0][1]).toBe('/Golos-Text_Regular.woff2');
+    expect(preloadMatches[0][2]).toBe('font/woff2');
   });
 
   it('does not reference ttf font assets in the public shell', () => {
