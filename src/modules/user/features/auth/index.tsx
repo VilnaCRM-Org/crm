@@ -1,5 +1,6 @@
 import UIBackToMain from '@/components/ui-back-to-main';
 import UIFooter from '@/components/ui-footer';
+import { Box } from '@mui/material';
 import { lazy, Suspense } from 'react';
 
 import AuthErrorBoundary from '@/modules/user/features/auth/components/auth-error-boundary';
@@ -11,13 +12,15 @@ export default function Authentication(): JSX.Element {
   return (
     <>
       <UIBackToMain />
-      <main>
+      <Box
+        component="main"
+        sx={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <AuthErrorBoundary>
           <Suspense fallback={<AuthSkeleton />}>
             <FormSection />
           </Suspense>
         </AuthErrorBoundary>
-      </main>
+      </Box>
       <UIFooter />
     </>
   );

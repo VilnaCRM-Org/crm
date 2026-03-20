@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-import './index.css';
+import '@/index.css';
 import '@/config/fonts/golos.css';
 import '@/config/fonts/inter.css';
 

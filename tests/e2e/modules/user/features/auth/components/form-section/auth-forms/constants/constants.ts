@@ -13,6 +13,8 @@ export const signUpButton: string = t('sign_up.form.submit_button');
 
 export const requiredNameError: string = t('sign_up.form.name_input.required');
 
+export const successNotificationTitle: string = t('notifications.success.title');
+
 export function generateUserData(): User {
   const firstName: string = faker.helpers.fromRegExp(/[A-Za-zА-Яа-яІіЇїЄєҐґ]{3,10}/);
   const lastName: string = faker.helpers.fromRegExp(/[A-Za-zА-Яа-яІіЇїЄєҐґ]{3,10}/);

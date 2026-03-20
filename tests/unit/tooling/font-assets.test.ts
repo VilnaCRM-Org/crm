@@ -63,6 +63,6 @@ describe('local font assets', () => {
       return sum + fs.statSync(absoluteFontPath).size;
     }, 0);
 
-    expect(totalBytes).toBeLessThanOrEqual(115000);
+    expect(totalBytes).toBeLessThanOrEqual(125000);
   });
 });

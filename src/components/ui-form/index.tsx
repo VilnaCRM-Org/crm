@@ -1,4 +1,3 @@
-import { CircularProgress } from '@mui/material';
 import { ReactNode } from 'react';
 import {
   useForm,
@@ -113,7 +112,6 @@ export default function UIForm<T extends FieldValues>({
         <UIButton type="submit" disabled={submitting} variant="contained" sx={styles.submitButton}>
           {submitLabel}
         </UIButton>
-        {submitting ? <CircularProgress color="primary" size={70} sx={styles.loader} /> : null}
       </form>
     </FormProvider>
   );

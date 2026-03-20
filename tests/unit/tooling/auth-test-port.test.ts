@@ -43,7 +43,7 @@ describe('auth test harness wiring', () => {
     expect(dockerCompose).toContain(`${'$'}{LHCI_PRELOADED_AUTH_TOKEN-}`);
     expect(makefile).toContain('LHCI_PRELOADED_AUTH_TOKEN');
     expect(makefile).not.toContain('REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(LHCI_PRELOADED_AUTH_TOKEN)');
-    expect(makefile).toContain('make ensure-chromium && make start-prod-clean && $(LHCI)');
+    expect(makefile).toContain('make ensure-chromium && make start-prod && $(LHCI)');
     expect(batchScript).not.toContain('LHCI_PRELOADED_AUTH_TOKEN');
     expect(makefile).not.toContain('--collect.url=$(LHCI_TARGET_URL)');
     expect(makefile).not.toContain('--collect.url=http://localhost:3001');

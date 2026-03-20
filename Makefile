@@ -34,7 +34,7 @@ LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gp
 LHCI_PRELOADED_AUTH_TOKEN   ?= lighthouse-preloaded-auth-token
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
 LHCI_CHROME_FLAGS_ARG       = --collect.settings.chromeFlags="$(LHCI_CHROME_FLAGS)"
-LHCI_BUILD_CMD          	= make ensure-chromium && make start-prod-clean && $(LHCI)
+LHCI_BUILD_CMD          	= make ensure-chromium && make start-prod && $(LHCI)
 LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 

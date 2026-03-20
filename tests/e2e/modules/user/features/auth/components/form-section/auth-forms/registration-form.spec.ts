@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 import fillInput from '../../../../../../../utils/fill-input';
 
-import { REGISTRATION_URL, REGISTRATION_API_URL, userData } from './constants/constants';
+import { REGISTRATION_URL, REGISTRATION_API_URL, userData, successNotificationTitle } from './constants/constants';
 import { fillEmailInput, fillInitialsInput, fillPasswordInput } from './utils/fill-form';
 import getFormFields from './utils/get-form-fields';
 import { serverErrorResponse, successResponse } from './utils/responses';
@@ -23,11 +23,7 @@ test.describe('Registration Form', () => {
 
     await signupButton.click();
 
-    await expect(page.locator('[role="alert"]')).not.toBeVisible();
-
-    await expect(initialsInput).toHaveValue('');
-    await expect(emailInput).toHaveValue('');
-    await expect(passwordInput).toHaveValue('');
+    await expect(page.locator(`text=${successNotificationTitle}`)).toBeVisible();
   });
 
   test('should display error messages for invalid inputs', async ({ page }) => {

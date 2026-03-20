@@ -33,6 +33,8 @@ module.exports = {
           '^tests/load/utils/test-data[.]js$', // ad-hoc load-test data generator
           '^storybook-static/', // generated Storybook output
           '^coverage/', // generated coverage reports
+          '^test-results/', // generated Playwright/Jest test artifacts
+          '^playwright-report/', // generated Playwright HTML reports
           '^docker/apollo-server/out/', // generated Apollo transpiled output
         ],
       },

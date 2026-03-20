@@ -36,6 +36,22 @@ jest.mock('@/components/ui-button', () => ({
   },
 }));
 
+jest.mock('@/components/ui-typography', () => ({
+  __esModule: true,
+  default: ({
+    children,
+    component,
+    role,
+  }: {
+    children: ReactElement | string;
+    component?: keyof JSX.IntrinsicElements;
+    role?: string;
+  }): ReactElement => {
+    const Component = component ?? 'span';
+    return <Component role={role}>{children}</Component>;
+  },
+}));
+
 jest.mock('@/modules/user/features/auth/utils/load-login-form', () => ({
   __esModule: true,
   default: jest.fn(async (): Promise<{ default: () => ReactElement }> => ({
@@ -45,7 +61,15 @@ jest.mock('@/modules/user/features/auth/utils/load-login-form', () => ({
 
 jest.mock('@/modules/user/features/auth/components/form-section/auth-forms/registration-form', () => ({
   __esModule: true,
-  default: (): ReactElement => <div data-testid="registration-form" />,
+  default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => (
+    <div data-testid="registration-form">
+      <button
+        type="button"
+        data-testid="trigger-success-view"
+        onClick={() => onViewChange?.('success')}
+      />
+    </div>
+  ),
 }));
 
 jest.mock('@/modules/user/features/auth/components/form-section/auth-forms/login-form', () => ({
@@ -193,5 +217,32 @@ describe('FormSection', () => {
 
     expect(screen.getByTestId('registration-form')).toBeInTheDocument();
     expect(screen.queryByTestId('login-form')).not.toBeInTheDocument();
+  });
+
+  it('marks auth provider buttons as inert when notification view is active', () => {
+    render(<FormSection />);
+
+    expect(screen.getByTestId('auth-provider-buttons-container')).not.toHaveAttribute('inert');
+
+    fireEvent.click(screen.getByTestId('trigger-success-view'));
+
+    expect(screen.getByTestId('auth-provider-buttons-container')).toHaveAttribute('inert');
+  });
+
+  it('clears notification view when switching modes', async () => {
+    render(<FormSection />);
+
+    fireEvent.click(screen.getByTestId('trigger-success-view'));
+    expect(screen.getByTestId('auth-provider-buttons-container')).toHaveAttribute('inert');
+
+    fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('login-form')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText('sign_up.form.switcher_text_no_account'));
+
+    expect(screen.getByTestId('auth-provider-buttons-container')).not.toHaveAttribute('inert');
   });
 });

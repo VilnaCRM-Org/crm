@@ -90,11 +90,4 @@ export default {
       lineHeight: 1,
     },
   },
-  loader: {
-    position: 'absolute',
-    top: '38%',
-    left: '42%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 10,
-  },
 };
