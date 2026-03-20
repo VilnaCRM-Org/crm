@@ -18,6 +18,7 @@ type UseRegistrationFormResult = {
   formKey: number;
   isSubmitting: boolean;
   handleRegister: (data: RegisterUserDto) => void;
+  handleSuccessShown: () => void;
   handleBackToForm: () => void;
   handleRetry: () => void;
 };
@@ -28,7 +29,7 @@ export default function useRegistrationForm(
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
   const user = useAppSelector(selectRegistrationUser);
-  const isSubmitting = useAppSelector(selectRegistrationLoading);
+  const loading = useAppSelector(selectRegistrationLoading);
   const error = useAppSelector(selectRegistrationError);
   const errorKey = getRegistrationError(error);
 
@@ -41,16 +42,16 @@ export default function useRegistrationForm(
   }, [onViewChange, view]);
 
   useEffect(() => {
-    if (user && !isSubmitting) {
+    if (user && !loading) {
       setView('success');
     }
-  }, [user, isSubmitting]);
+  }, [user, loading]);
 
   useEffect(() => {
-    if (error && !isSubmitting) {
+    if (error && !loading) {
       setView('error');
     }
-  }, [error, isSubmitting]);
+  }, [error, loading]);
 
   const handleRegister = useCallback(
     (data: RegisterUserDto): void => {
@@ -62,13 +63,14 @@ export default function useRegistrationForm(
   );
 
   const handleBackToForm = useCallback((): void => {
-    if (view === 'success') {
-      setFormKey((prev) => prev + 1);
-    }
     setView('form');
     dispatch(reset());
     lastSubmittedDataRef.current = null;
-  }, [dispatch, view]);
+  }, [dispatch]);
+
+  const handleSuccessShown = useCallback((): void => {
+    setFormKey((prev) => prev + 1);
+  }, []);
 
   const handleRetry = useCallback((): void => {
     if (!lastSubmittedDataRef.current) return;
@@ -76,12 +78,15 @@ export default function useRegistrationForm(
     dispatch(registerUser(lastSubmittedDataRef.current));
   }, [dispatch]);
 
+  const isSubmitting = loading || (view === 'form' && (user != null || error != null));
+
   return {
     view,
     errorText: errorKey ? t(errorKey) : '',
     formKey,
     isSubmitting,
     handleRegister,
+    handleSuccessShown,
     handleBackToForm,
     handleRetry,
   };

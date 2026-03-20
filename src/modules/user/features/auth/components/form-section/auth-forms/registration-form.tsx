@@ -26,6 +26,7 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
     formKey,
     isSubmitting,
     handleRegister,
+    handleSuccessShown,
     handleBackToForm,
     handleRetry,
   } = useRegistrationForm(onViewChange);
@@ -48,7 +49,7 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
           defaultValues={{ fullName: '', email: '', password: '' }}
           error={null}
           isSubmitting={isSubmitting}
-          resetOnSuccess
+          isSubmitDisabled={view !== 'form'}
           submitLabel={t(getSubmitLabelKey('sign_up', isSubmitting))}
           title={t('sign_up.title')}
           subtitle={t('sign_up.subtitle')}
@@ -83,6 +84,7 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
             view={view}
             errorText={errorText}
             isSubmitting={isSubmitting}
+            onShown={handleSuccessShown}
             onBack={handleBackToForm}
             onRetry={handleRetry}
           />

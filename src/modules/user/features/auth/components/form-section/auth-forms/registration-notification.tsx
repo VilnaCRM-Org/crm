@@ -14,6 +14,7 @@ type RegistrationNotificationProps = {
   view: Exclude<RegistrationView, 'form'>;
   errorText?: string;
   isSubmitting: boolean;
+  onShown?: () => void;
   onBack: () => void;
   onRetry?: () => void;
 };
@@ -24,12 +25,19 @@ export default function RegistrationNotification({
   view,
   errorText,
   isSubmitting,
+  onShown,
   onBack,
   onRetry,
 }: RegistrationNotificationProps): JSX.Element {
   const { t } = useTranslation();
   const [isClosing, setIsClosing] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (view === 'success') {
+      onShown?.();
+    }
+  }, [onShown, view]);
 
   useEffect(
     (): (() => void) => (): void => {
@@ -41,11 +49,16 @@ export default function RegistrationNotification({
   );
 
   const handleBack = useCallback(() => {
+    if (view === 'success') {
+      onBack();
+      return;
+    }
+
     setIsClosing(true);
     closeTimerRef.current = setTimeout(() => {
       onBack();
     }, BACK_CLOSE_ANIMATION_MS);
-  }, [onBack]);
+  }, [onBack, view]);
 
   const errorButtonTextStyles = [styles.messageButtonText, styles.errorButtonMessage];
 

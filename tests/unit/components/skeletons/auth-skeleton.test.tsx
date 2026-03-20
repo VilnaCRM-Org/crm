@@ -48,10 +48,18 @@ describe('AuthSkeleton', () => {
 
       expect(textCalls).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ id: 'auth-skeleton-title' }),
-          expect.objectContaining({ id: 'auth-skeleton-subtitle' }),
-          expect.objectContaining({ id: 'auth-skeleton-subtitle-line2' }),
-          expect.objectContaining({ id: 'auth-skeleton-switcher' }),
+          expect.objectContaining({
+            id: 'auth-skeleton-title',
+          }),
+          expect.objectContaining({
+            id: 'auth-skeleton-subtitle',
+          }),
+          expect.objectContaining({
+            id: 'auth-skeleton-subtitle-line2',
+          }),
+          expect.objectContaining({
+            id: 'auth-skeleton-switcher',
+          }),
         ])
       );
       expect(
@@ -61,7 +69,11 @@ describe('AuthSkeleton', () => {
         inputCalls.filter((props) => props.id?.startsWith('auth-skeleton-input-'))
       ).toHaveLength(3);
       expect(buttonCalls).toEqual(
-        expect.arrayContaining([expect.objectContaining({ id: 'auth-skeleton-submit' })])
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'auth-skeleton-submit',
+          }),
+        ])
       );
       expect(
         blockCalls.filter((props) => props.id?.startsWith('auth-skeleton-social-'))
@@ -69,19 +81,18 @@ describe('AuthSkeleton', () => {
       expect(screen.getByRole('presentation')).toBeInTheDocument();
     });
 
-    it('does not render test-only data attributes in production markup', () => {
+    it('does not pass test-only data attributes to the skeleton building blocks', () => {
       render(<AuthSkeleton />);
 
-      const allProps = [
-        ...(UISkeletonText as unknown as jest.Mock).mock.calls.map(([props]) => props),
-        ...(UISkeletonInput as unknown as jest.Mock).mock.calls.map(([props]) => props),
-        ...(UISkeletonButton as unknown as jest.Mock).mock.calls.map(([props]) => props),
-        ...(UISkeletonBlock as unknown as jest.Mock).mock.calls.map(([props]) => props),
-      ];
+      const textCalls = (UISkeletonText as unknown as jest.Mock).mock.calls.map(([props]) => props);
+      const inputCalls = (UISkeletonInput as unknown as jest.Mock).mock.calls.map(([props]) => props);
+      const buttonCalls = (UISkeletonButton as unknown as jest.Mock).mock.calls.map(([props]) => props);
+      const blockCalls = (UISkeletonBlock as unknown as jest.Mock).mock.calls.map(([props]) => props);
 
-      allProps.forEach((props) => {
-        expect(props['data-testid']).toBeUndefined();
-      });
+      expect(textCalls.every((props) => props['data-testid'] === undefined)).toBe(true);
+      expect(inputCalls.every((props) => props['data-testid'] === undefined)).toBe(true);
+      expect(buttonCalls.every((props) => props['data-testid'] === undefined)).toBe(true);
+      expect(blockCalls.every((props) => props['data-testid'] === undefined)).toBe(true);
     });
   });
 

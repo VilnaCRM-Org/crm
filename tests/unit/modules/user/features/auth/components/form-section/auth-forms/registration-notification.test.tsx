@@ -154,12 +154,42 @@ describe('RegistrationNotification', () => {
     expect(screen.getByLabelText('Registration successful notification')).toBeInTheDocument();
   });
 
-  it('waits for the close animation to finish before calling onBack', () => {
+  it('calls onShown when the success notification renders', () => {
+    const onShown = jest.fn();
+
+    renderWithProviders(
+      <RegistrationNotification
+        view="success"
+        isSubmitting={false}
+        onShown={onShown}
+        onBack={jest.fn()}
+      />,
+      { i18nMock: createI18nMock() }
+    );
+
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onBack immediately for the success notification', () => {
     jest.useFakeTimers();
     const onBack = jest.fn();
 
     renderWithProviders(
       <RegistrationNotification view="success" isSubmitting={false} onBack={onBack} />,
+      { i18nMock: createI18nMock() }
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go back' }));
+
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('waits for the close animation to finish before calling onBack in the error notification', () => {
+    jest.useFakeTimers();
+    const onBack = jest.fn();
+
+    renderWithProviders(
+      <RegistrationNotification view="error" isSubmitting={false} onBack={onBack} />,
       { i18nMock: createI18nMock() }
     );
 
@@ -184,7 +214,7 @@ describe('RegistrationNotification', () => {
     const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
 
     const { unmount } = renderWithProviders(
-      <RegistrationNotification view="success" isSubmitting={false} onBack={onBack} />,
+      <RegistrationNotification view="error" isSubmitting={false} onBack={onBack} />,
       { i18nMock: createI18nMock() }
     );
 

@@ -20,6 +20,7 @@ export interface UIFormProps<T extends FieldValues> {
   children: ReactNode;
   formOptions?: Omit<UseFormProps<T>, 'defaultValues'>;
   isSubmitting?: boolean;
+  isSubmitDisabled?: boolean;
   error?: string | null;
   submitLabel: string;
   title: ReactNode;
@@ -35,6 +36,7 @@ export default function UIForm<T extends FieldValues>({
   children,
   formOptions,
   isSubmitting,
+  isSubmitDisabled = false,
   error,
   submitLabel,
   title,
@@ -45,6 +47,7 @@ export default function UIForm<T extends FieldValues>({
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
+  const submitDisabled = submitting || isSubmitDisabled;
   const {
     clearErrors,
     control,
@@ -109,7 +112,7 @@ export default function UIForm<T extends FieldValues>({
 
         {children}
 
-        <UIButton type="submit" disabled={submitting} variant="contained" sx={styles.submitButton}>
+        <UIButton type="submit" disabled={submitDisabled} variant="contained" sx={styles.submitButton}>
           {submitLabel}
         </UIButton>
       </form>
