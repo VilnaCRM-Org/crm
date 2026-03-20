@@ -57,6 +57,7 @@ export const customColors = {
   text: {
     primary: '#404142',
     secondary: '#969B9D',
+    dark: '#1A1C1E',
   },
   checkbox: {
     main: '#D0D4D8',

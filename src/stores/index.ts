@@ -1,24 +1,24 @@
 import { configureStore } from '@reduxjs/toolkit';
 
-import container from '@/config/DependencyInjectionConfig';
-import TOKENS from '@/config/tokens';
-import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
-import { loginReducer, registrationReducer } from '@/modules/User/store';
-import type { ThunkExtra } from '@/modules/User/store/types';
+import { createAuthClients } from '@/modules/user/features/auth/repositories';
+import { loginReducer, registrationReducer } from '@/modules/user/store';
+import type { ThunkExtra } from '@/modules/user/store/types';
 
-import devToolsOptions from './devToolsOptions';
+import devToolsOptions from './dev-tools-options';
+import { getPreloadedAuthToken } from './preloaded-auth-token';
 
-const thunkExtraArgument: ThunkExtra = {
-  loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),
-  registrationAPI: container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI),
-};
+const thunkExtraArgument: ThunkExtra = createAuthClients();
+
+const preloadedToken = getPreloadedAuthToken();
 
 export const store = configureStore({
   reducer: {
     auth: loginReducer,
     registration: registrationReducer,
   },
+  preloadedState: preloadedToken
+    ? { auth: { token: preloadedToken, email: '', loading: false, error: null } }
+    : undefined,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       thunk: {

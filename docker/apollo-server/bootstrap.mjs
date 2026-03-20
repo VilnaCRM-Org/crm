@@ -21,7 +21,7 @@ const run = (cmd, args, opts = {}) => {
     const nodeExec = process.execPath;
 const commonArgs = process.execArgv ?? [];
 
-    const { done: fetchDone } = run(nodeExec, [...commonArgs, resolve(__dirname, 'out/schemaFetcher.mjs')]);
+    const { done: fetchDone } = run(nodeExec, [...commonArgs, resolve(__dirname, 'out/schema-fetcher.mjs')]);
 await fetchDone;
 
     const { p: serverProc, done: serverDone } = run(nodeExec, [...commonArgs, resolve(__dirname, 'out/server.mjs')]);

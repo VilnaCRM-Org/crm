@@ -4,6 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
       target: production
+      args:
+        REACT_APP_LHCI_PRELOADED_AUTH_TOKEN: ${LHCI_PRELOADED_AUTH_TOKEN-}
     restart: unless-stopped
     ports:
       - '3001:3001'
@@ -61,7 +63,7 @@ services:
     profiles: ["load"]
     build:
       context: .
-      dockerfile: ./tests/load/Dockerfile
+      dockerfile: ./tests/load/dockerfile
     depends_on:
       prod:
         condition: service_healthy

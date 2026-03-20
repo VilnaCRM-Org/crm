@@ -179,7 +179,7 @@ Apollo Server runs in development for local GraphQL API:
 Localization files are auto-generated during build:
 
 - Module i18n files: `src/modules/*/features/*/i18n/{en,uk}.json`
-- Generated via `scripts/localizationGenerator.js`
+- Generated via `scripts/localization-generator.js`
 - Skip generation: `SKIP_LOCALE_GEN=1`
 
 ## Storybook
