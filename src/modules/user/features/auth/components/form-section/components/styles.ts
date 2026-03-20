@@ -28,7 +28,7 @@ export default {
   },
 
   formFieldLabel: {
-    fontFamily: 'Golos, sans-serif',
+    fontFamily: 'Inter, sans-serif',
     fontWeight: 500,
     fontSize: '0.875rem',
     lineHeight: 1.29,
