@@ -21,6 +21,8 @@ describe('auth client runtime dependencies', () => {
 
   it('keeps the browser auth runtime free of redux and dependency injection bootstrapping', () => {
     const clientEntry = readFile('src/index.tsx');
+    const appSource = readFile('src/app.tsx');
+    const storeSource = readFile('src/stores/index.ts');
     const authHook = readFile('src/modules/user/features/auth/hooks/use-auth-store.ts');
     const loginApi = readFile('src/modules/user/features/auth/repositories/login-api.ts');
     const registrationApi = readFile('src/modules/user/features/auth/repositories/registration-api.ts');
@@ -30,6 +32,14 @@ describe('auth client runtime dependencies', () => {
     expect(clientEntry).not.toContain("from 'react-redux'");
     expect(clientEntry).not.toContain("from '@/stores'");
     expect(clientEntry).not.toContain("from '@/config/dependency-injection-config'");
+
+    expect(appSource).not.toContain("import 'reflect-metadata';");
+
+    expect(storeSource).not.toContain("from '@/config/dependency-injection-config'");
+    expect(storeSource).not.toContain("from '@/config/tokens'");
+    expect(storeSource).toContain(
+      "import { createAuthClients } from '@/modules/user/features/auth/repositories';"
+    );
 
     expect(authHook).not.toContain("from '@/stores/hooks'");
     expect(authHook).not.toContain("from '@/stores'");

@@ -14,7 +14,7 @@ export default {
   },
 
   dividerText: {
-    fontFamily: 'Inter, sans-serif',
+    fontFamily: 'Golos, sans-serif',
     fontWeight: 500,
     fontStyle: 'normal',
     fontSize: '0.875rem',

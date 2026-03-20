@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-
 import CssBaseline from '@mui/material/CssBaseline';
 import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
 import React, { lazy, useEffect } from 'react';

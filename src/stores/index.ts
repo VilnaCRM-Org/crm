@@ -1,21 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 
-import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
+import { createAuthClients } from '@/modules/user/features/auth/repositories';
 import { loginReducer, registrationReducer } from '@/modules/user/store';
-import type {
-  LoginAPIContract,
-  RegistrationAPIContract,
-  ThunkExtra,
-} from '@/modules/user/store/types';
+import type { ThunkExtra } from '@/modules/user/store/types';
 
 import devToolsOptions from './dev-tools-options';
 import { getPreloadedAuthToken } from './preloaded-auth-token';
 
-const thunkExtraArgument: ThunkExtra = {
-  loginAPI: container.resolve<LoginAPIContract>(TOKENS.LoginAPI),
-  registrationAPI: container.resolve<RegistrationAPIContract>(TOKENS.RegistrationAPI),
-};
+const thunkExtraArgument: ThunkExtra = createAuthClients();
 
 const preloadedToken = getPreloadedAuthToken();
 

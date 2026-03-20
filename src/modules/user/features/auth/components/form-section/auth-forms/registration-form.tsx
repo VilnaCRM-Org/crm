@@ -1,8 +1,8 @@
 import UIForm from '@/components/ui-form';
 import { Box } from '@mui/material';
+import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import RegistrationNotification from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification';
 import FormField from '@/modules/user/features/auth/components/form-section/components/form-field';
 import PasswordField from '@/modules/user/features/auth/components/form-section/components/password-field';
 import { RegistrationView } from '@/modules/user/features/auth/components/form-section/types';
@@ -10,10 +10,13 @@ import { createValidators } from '@/modules/user/features/auth/components/form-s
 import useRegistrationForm from '@/modules/user/features/auth/hooks/use-registration-form';
 import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
 import getSubmitLabelKey from '@/modules/user/features/auth/utils/get-submit-label-key';
+import loadRegistrationNotification from '@/modules/user/features/auth/utils/load-registration-notification';
 
 type RegistrationFormProps = {
   onViewChange?: (view: RegistrationView) => void;
 };
+
+const RegistrationNotification = lazy(loadRegistrationNotification);
 
 export default function RegistrationForm({ onViewChange }: RegistrationFormProps): JSX.Element {
   const { t } = useTranslation();
@@ -74,15 +77,17 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
         </UIForm>
       </Box>
 
-      {view !== 'form' && (
-        <RegistrationNotification
-          view={view}
-          errorText={errorText}
-          isSubmitting={isSubmitting}
-          onBack={handleBackToForm}
-          onRetry={handleRetry}
-        />
-      )}
+      {view !== 'form' ? (
+        <Suspense fallback={null}>
+          <RegistrationNotification
+            view={view}
+            errorText={errorText}
+            isSubmitting={isSubmitting}
+            onBack={handleBackToForm}
+            onRetry={handleRetry}
+          />
+        </Suspense>
+      ) : null}
     </>
   );
 }

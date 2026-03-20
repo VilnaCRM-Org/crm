@@ -28,7 +28,7 @@ export default {
   },
 
   formFieldLabel: {
-    fontFamily: 'Inter, sans-serif',
+    fontFamily: 'Golos, sans-serif',
     fontWeight: 500,
     fontSize: '0.875rem',
     lineHeight: 1.29,
@@ -55,7 +55,7 @@ export default {
       marginBottom: '0.5625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      fontFamily: 'Inter',
+      fontFamily: 'Golos, sans-serif',
       fontWeight: 500,
       fontSize: '0.875rem',
       lineHeight: 1.2857,
