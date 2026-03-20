@@ -55,7 +55,7 @@ export default {
       marginBottom: '0.5625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      fontFamily: 'Golos, sans-serif',
+      fontFamily: 'Inter',
       fontWeight: 500,
       fontSize: '0.875rem',
       lineHeight: 1.2857,
