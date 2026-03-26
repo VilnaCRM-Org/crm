@@ -1,4 +1,3 @@
-/* eslint-disable react/require-default-props */
 import { CircularProgress } from '@mui/material';
 import { ReactNode } from 'react';
 import {
