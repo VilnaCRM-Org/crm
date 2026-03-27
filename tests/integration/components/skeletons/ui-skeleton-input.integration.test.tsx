@@ -4,6 +4,7 @@ import { render, screen } from '@testing-library/react';
 import React from 'react';
 
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
+import styles from '@/components/skeletons/ui-skeleton-input/styles';
 
 const theme = createTheme();
 
@@ -13,6 +14,11 @@ describe('UISkeletonInput Integration', () => {
 
   const getSkeletonInput = (): HTMLElement =>
     getSkeletonElements().find((element) => element.id === 'skeleton-input') as HTMLElement;
+
+  const getSkeletonPlaceholder = (): HTMLElement =>
+    getSkeletonElements().find(
+      (element) => element.className.includes('ui-skeleton-input__placeholder')
+    ) as HTMLElement;
 
   it('renders with default props', () => {
     expect(React).toBeDefined();
@@ -30,12 +36,14 @@ describe('UISkeletonInput Integration', () => {
     );
 
     expect(getSkeletonInput()).toBeInTheDocument();
-    expect(getSkeletonElements()).toHaveLength(2);
+    expect(getSkeletonPlaceholder()).toBeInTheDocument();
   });
 
   it('renders exactly one inner placeholder child element', () => {
     render(<UISkeletonInput id="skeleton-input" />);
-    expect(getSkeletonElements()).toHaveLength(2);
+
+    expect(getSkeletonInput()).toBeInTheDocument();
+    expect(getSkeletonPlaceholder()).toBeInTheDocument();
   });
 
   it('has no interactive elements during loading', () => {
@@ -48,5 +56,14 @@ describe('UISkeletonInput Integration', () => {
     expect(screen.queryAllByRole('button')).toHaveLength(0);
     expect(screen.queryAllByRole('link')).toHaveLength(0);
     expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+  });
+
+  it('applies static styles when animation is disabled', () => {
+    render(<UISkeletonInput disableAnimation id="skeleton-input" />);
+
+    expect(getSkeletonInput()).toHaveStyle(`background-size: ${styles.staticSkeleton.backgroundSize}`);
+    expect(getSkeletonPlaceholder()).toHaveStyle(
+      `background-size: ${styles.staticSkeleton.backgroundSize}`
+    );
   });
 });

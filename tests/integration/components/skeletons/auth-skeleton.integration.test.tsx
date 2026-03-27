@@ -5,7 +5,7 @@ import React from 'react';
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 
 function getGenericSkeletonElements(): HTMLElement[] {
-  return screen.getAllByRole('generic') as HTMLElement[];
+  return screen.getAllByRole('generic', { hidden: true }) as HTMLElement[];
 }
 
 function getPresentationSkeletonElements(): HTMLElement[] {
@@ -13,8 +13,12 @@ function getPresentationSkeletonElements(): HTMLElement[] {
 }
 
 function assertAuthSkeletonElements(): void {
-  const genericIds = getGenericSkeletonElements().map((element) => element.id);
-  const presentationIds = getPresentationSkeletonElements().map((element) => element.id);
+  const genericIds = getGenericSkeletonElements()
+    .map((element) => element.id)
+    .filter(Boolean);
+  const presentationIds = getPresentationSkeletonElements()
+    .map((element) => element.id)
+    .filter(Boolean);
 
   expect(genericIds).toEqual(
     expect.arrayContaining([
@@ -53,6 +57,13 @@ describe('AuthSkeleton Integration Tests', () => {
     expect(React).toBeDefined();
     render(<AuthSkeleton />);
     assertAuthSkeletonElements();
+  });
+
+  it('renders the full skeleton tree when animation is disabled', () => {
+    render(<AuthSkeleton disableAnimation />);
+
+    assertAuthSkeletonElements();
+    expect(screen.getByRole('region')).toBeInTheDocument();
   });
 
   viewportCases.forEach(({ label, width }) => {

@@ -5,7 +5,10 @@ import React from 'react';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
 
 describe('UISkeletonText Integration', () => {
-  const getSkeletonText = (): HTMLElement => screen.getByRole('generic');
+  const getSkeletonText = (): HTMLElement =>
+    screen
+      .getAllByRole('generic')
+      .find((element) => element.id === 'skeleton-text') as HTMLElement;
 
   it('renders with default size and width', () => {
     expect(React).toBeDefined();
