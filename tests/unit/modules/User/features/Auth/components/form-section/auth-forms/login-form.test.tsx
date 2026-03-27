@@ -117,6 +117,59 @@ describe('LoginForm', () => {
 });
 
 describe('normalizeLoginErrorMessage', () => {
+  it('returns a direct string error when it is non-empty', () => {
+    expect(normalizeLoginErrorMessage('Invalid credentials')).toBe('Invalid credentials');
+  });
+
+  it('returns an Error message when the error is an Error instance', () => {
+    expect(normalizeLoginErrorMessage(new Error('Invalid credentials'))).toBe(
+      'Invalid credentials'
+    );
+  });
+
+  it('falls back to the unknown translation key for non-record values', () => {
+    expect(normalizeLoginErrorMessage(404)).toBe('auth.errors.unknown');
+  });
+
+  it('returns the serialized error message when available', () => {
+    expect(normalizeLoginErrorMessage({ message: 'Serialized credentials error' })).toBe(
+      'Serialized credentials error'
+    );
+  });
+
+  it('returns the nested message field when error.message is an object', () => {
+    expect(
+      normalizeLoginErrorMessage({
+        message: { message: 'Nested message object' },
+      })
+    ).toBe('Nested message object');
+  });
+
+  it('returns the nested displayMessage field when available', () => {
+    expect(
+      normalizeLoginErrorMessage({
+        displayMessage: { message: 'Display message object' },
+      })
+    ).toBe('Display message object');
+  });
+
+  it('returns a direct nested displayMessage string when available', () => {
+    expect(
+      normalizeLoginErrorMessage({
+        displayMessage: 'Display message string',
+      })
+    ).toBe('Display message string');
+  });
+
+  it('skips blank string nested messages and continues to later fallbacks', () => {
+    expect(
+      normalizeLoginErrorMessage({
+        message: '   ',
+        data: { message: 'Data fallback after blank message' },
+      })
+    ).toBe('Data fallback after blank message');
+  });
+
   it('returns the nested data.message value when available', () => {
     expect(normalizeLoginErrorMessage({ data: { message: 'Invalid credentials' } })).toBe(
       'Invalid credentials'
