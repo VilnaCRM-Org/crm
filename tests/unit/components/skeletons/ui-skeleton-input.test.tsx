@@ -4,11 +4,15 @@ import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import styles from '@/components/skeletons/ui-skeleton-input/styles';
 
 describe('UISkeletonInput', () => {
-  const getSkeletonElements = (): HTMLElement[] =>
-    screen.getAllByRole('generic') as HTMLElement[];
+  const getSkeletonElements = (): HTMLElement[] => screen.getAllByRole('generic') as HTMLElement[];
 
   const getSkeletonInput = (): HTMLElement =>
     getSkeletonElements().find((element) => element.id === 'skeleton-input') as HTMLElement;
+
+  const getSkeletonPlaceholder = (): HTMLElement =>
+    getSkeletonElements().find(
+      (element) => element.className.includes('ui-skeleton-input__placeholder')
+    ) as HTMLElement;
 
   it('renders without crashing', () => {
     render(<UISkeletonInput id="skeleton-input" />);
@@ -19,7 +23,8 @@ describe('UISkeletonInput', () => {
   it('renders a container and placeholder child', () => {
     render(<UISkeletonInput id="skeleton-input" />);
 
-    expect(getSkeletonElements()).toHaveLength(2);
+    expect(getSkeletonInput()).toBeInTheDocument();
+    expect(getSkeletonPlaceholder()).toBeInTheDocument();
   });
 
   it('has no interactive elements', () => {
@@ -43,13 +48,14 @@ describe('UISkeletonInput', () => {
 
     rerender(<UISkeletonInput id="skeleton-input" />);
     expect(getSkeletonInput()).toBeInTheDocument();
-    expect(getSkeletonElements()).toHaveLength(2);
+    expect(getSkeletonPlaceholder()).toBeInTheDocument();
   });
 
   it('disables animation styles for both container layers when requested', () => {
     render(<UISkeletonInput disableAnimation id="skeleton-input" />);
 
-    const [container, placeholder] = getSkeletonElements();
+    const container = getSkeletonInput();
+    const placeholder = getSkeletonPlaceholder();
 
     expect(container).toHaveStyle('animation: none');
     expect(container).toHaveStyle(`background-size: ${styles.staticSkeleton.backgroundSize}`);

@@ -9,7 +9,8 @@ jest.mock('@/components/skeletons/ui-skeleton-block/styles', () => ({
 }));
 
 describe('UISkeletonBlock', () => {
-  const getSkeletonBlock = (): HTMLElement => screen.getByRole('generic');
+  const getSkeletonBlock = (): HTMLElement =>
+    screen.getAllByRole('generic').find((element) => element.id === 'skeleton-block') as HTMLElement;
 
   beforeEach(() => {
     jest.clearAllMocks();

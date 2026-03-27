@@ -10,7 +10,8 @@ jest.mock('@/components/skeletons/ui-skeleton-text/styles', () => ({
 }));
 
 describe('UISkeletonText', () => {
-  const getSkeletonText = (): HTMLElement => screen.getByRole('generic');
+  const getSkeletonText = (id: string): HTMLElement =>
+    screen.getAllByRole('generic').find((element) => element.id === id) as HTMLElement;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -19,7 +20,7 @@ describe('UISkeletonText', () => {
   it('uses default size and width when props are omitted', () => {
     render(<UISkeletonText id="ui-skeleton-text" />);
 
-    expect(getSkeletonText()).toHaveAttribute('id', 'ui-skeleton-text');
+    expect(getSkeletonText('ui-skeleton-text')).toHaveAttribute('id', 'ui-skeleton-text');
     expect(getTextSkeletonStyles).toHaveBeenCalledWith('m', '100%');
   });
 
@@ -29,7 +30,7 @@ describe('UISkeletonText', () => {
 
     render(<UISkeletonText size={size} width={width} id="ui-skeleton-text-custom" />);
 
-    expect(getSkeletonText()).toHaveAttribute('id', 'ui-skeleton-text-custom');
+    expect(getSkeletonText('ui-skeleton-text-custom')).toHaveAttribute('id', 'ui-skeleton-text-custom');
     expect(getTextSkeletonStyles).toHaveBeenCalledWith(size, width);
   });
 
@@ -38,26 +39,26 @@ describe('UISkeletonText', () => {
 
     render(<UISkeletonText sx={arraySx} id="ui-skeleton-text-array-sx" />);
 
-    expect(getSkeletonText()).toHaveAttribute('id', 'ui-skeleton-text-array-sx');
+    expect(getSkeletonText('ui-skeleton-text-array-sx')).toHaveAttribute('id', 'ui-skeleton-text-array-sx');
   });
 
   it('accepts a single sx object without wrapping errors', () => {
     render(<UISkeletonText sx={{ mt: 3 }} id="ui-skeleton-text-object-sx" />);
 
-    expect(getSkeletonText()).toHaveAttribute('id', 'ui-skeleton-text-object-sx');
+    expect(getSkeletonText('ui-skeleton-text-object-sx')).toHaveAttribute('id', 'ui-skeleton-text-object-sx');
   });
 
   it('calls style builder with size "s" and provided width', () => {
     render(<UISkeletonText size="s" width="30%" id="ui-skeleton-text-s" />);
 
-    expect(getSkeletonText()).toHaveAttribute('id', 'ui-skeleton-text-s');
+    expect(getSkeletonText('ui-skeleton-text-s')).toHaveAttribute('id', 'ui-skeleton-text-s');
     expect(getTextSkeletonStyles).toHaveBeenCalledWith('s', '30%');
   });
 
   it('calls style builder with size "l" and provided width', () => {
     render(<UISkeletonText size="l" width="80%" id="ui-skeleton-text-l" />);
 
-    expect(getSkeletonText()).toHaveAttribute('id', 'ui-skeleton-text-l');
+    expect(getSkeletonText('ui-skeleton-text-l')).toHaveAttribute('id', 'ui-skeleton-text-l');
     expect(getTextSkeletonStyles).toHaveBeenCalledWith('l', '80%');
   });
 
