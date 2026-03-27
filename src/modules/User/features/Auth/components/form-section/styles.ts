@@ -52,7 +52,7 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       maxWidth: '39.5rem',
 
-      paddingTop: '2.625rem ',
+      paddingTop: '2.625rem',
       paddingLeft: '2.8125rem',
       paddingRight: '2.8125rem',
       paddingBottom: '2.1875rem',

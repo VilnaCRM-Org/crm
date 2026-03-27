@@ -5,7 +5,7 @@ import type { InputProps } from '@mui/material/Input';
 import { InputHTMLAttributes } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
-import styles from './styles';
+import styles from '@/modules/User/features/Auth/components/form-section/components/styles';
 
 export interface FormFieldProps<T extends FieldValues = FieldValues> {
   rules: RegisterOptions<T, Path<T>>;

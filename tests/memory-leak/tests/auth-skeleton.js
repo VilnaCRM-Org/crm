@@ -13,9 +13,10 @@ function handleRequest(req) {
 }
 
 async function action(page) {
+  let shouldCleanup = true;
+
   try {
     await page.setRequestInterception(true);
-
     page.on('request', handleRequest);
 
     await page.evaluate((path) => {
@@ -24,8 +25,14 @@ async function action(page) {
     }, '/authentication');
 
     await page.waitForSelector(authSkeletonSelector, { timeout: 8000 });
+    shouldCleanup = false;
   } catch (error) {
     throw new Error(`Auth skeleton memory leak test failed: ${error.message}`);
+  } finally {
+    if (shouldCleanup) {
+      page.off('request', handleRequest);
+      await page.setRequestInterception(false);
+    }
   }
 }
 

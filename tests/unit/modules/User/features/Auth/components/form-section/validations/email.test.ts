@@ -23,6 +23,7 @@ describe('email validation', () => {
         'user_name@example.com',
         'user-name@example.com',
         'user.name@example.com',
+        'user+tag@example.com',
         'user%test@example.com',
         'user@example-domain.com',
         '123@example.com',
@@ -128,6 +129,10 @@ describe('email validation', () => {
           expect(validators.email(email, emptyUser)).toBe(true);
         }
       );
+
+      it('should return true for an email with a plus alias', () => {
+        expect(validators.email('user+tag@example.com', emptyUser)).toBe(true);
+      });
     });
 
     describe('invalid emails', () => {

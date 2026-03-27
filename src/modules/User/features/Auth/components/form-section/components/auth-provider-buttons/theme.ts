@@ -8,7 +8,7 @@ export default createTheme({
         root: {
           marginBottom: '14px',
 
-          [`@media (max-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+          [`@media (max-width:${breakpointsTheme.breakpoints.values.md - 1}px)`]: {
             marginBottom: '0.875rem',
           },
           '@media (min-width:768px)': {

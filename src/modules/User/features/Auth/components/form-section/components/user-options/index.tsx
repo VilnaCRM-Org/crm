@@ -2,8 +2,11 @@ import UIButton from '@/components/UIButton';
 import { Box, FormControlLabel, Checkbox } from '@mui/material';
 import { useState } from 'react';
 
-import { CheckBoxChecked, CheckBoxIcon } from './checkbox-icons';
-import styles from './styles';
+import {
+  CheckBoxChecked,
+  CheckBoxIcon,
+} from '@/modules/User/features/Auth/components/form-section/components/user-options/checkbox-icons';
+import styles from '@/modules/User/features/Auth/components/form-section/components/user-options/styles';
 
 export default function UserOptions(): JSX.Element {
   const [isChecked, setIsChecked] = useState(false);

@@ -3,7 +3,7 @@ import { Validate, FieldValues } from 'react-hook-form';
 const isBasicEmailFormat = (email: string): boolean => /@/.test(email) && /\./.test(email);
 
 export const isValidEmailFormat = (email: string): boolean =>
-  /^[a-zA-Z0-9]([a-zA-Z0-9._%-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$/.test(
+  /^[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$/.test(
     email
   );
 

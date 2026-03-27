@@ -1,13 +1,16 @@
 import UIButton from '@/components/UIButton';
 import UITypography from '@/components/UITypography';
 import { Box } from '@mui/material';
-import { lazy, startTransition, useCallback, useState } from 'react';
+import { lazy, startTransition, Suspense, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import RegistrationForm from './auth-forms/registration-form';
-import AuthProviderButtons from './components/auth-provider-buttons';
-import styles from './styles';
-import { AuthMode, RegistrationView } from './types';
+import RegistrationForm from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form';
+import AuthProviderButtons from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons';
+import styles from '@/modules/User/features/Auth/components/form-section/styles';
+import {
+  AuthMode,
+  RegistrationView,
+} from '@/modules/User/features/Auth/components/form-section/types';
 
 const loadLoginForm = (): Promise<typeof import('./auth-forms/login-form')> =>
   import('./auth-forms/login-form');
@@ -66,7 +69,9 @@ export default function FormSection(): JSX.Element {
     <Box component="section" sx={styles.formSection}>
       <Box sx={styles.formWrapper}>
         {mode === 'login' ? (
-          <LoginForm />
+          <Suspense fallback={<Box aria-hidden="true" />}>
+            <LoginForm />
+          </Suspense>
         ) : (
           <RegistrationForm onViewChange={handleRegistrationViewChange} />
         )}

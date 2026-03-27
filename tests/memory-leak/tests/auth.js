@@ -18,10 +18,18 @@ async function action(page) {
 }
 
 async function back(page) {
-  await page.evaluate(() => {
-    window.history.pushState({}, '', '/');
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  });
+  try {
+    await page.evaluate(() => {
+      window.history.pushState({}, '', '/');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    await page.waitForFunction(() => window.location.pathname === '/');
+    await page.waitForSelector('button', { timeout: 5000 });
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error);
+    throw new Error(`Auth back navigation failed: ${errMsg}`);
+  }
 }
 
 export default scenarioBuilder.createScenario({ action, back });

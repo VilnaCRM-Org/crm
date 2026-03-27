@@ -36,12 +36,12 @@ export default {
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       fontSize: '1rem',
-      lineHeight: '1.125',
+      lineHeight: 1.125,
 
       marginBottom: '0.5625rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      fontFamily: 'Inter',
+      fontFamily: 'Inter, sans-serif',
       fontWeight: 500,
       fontSize: '0.875rem',
       lineHeight: 1.2857,

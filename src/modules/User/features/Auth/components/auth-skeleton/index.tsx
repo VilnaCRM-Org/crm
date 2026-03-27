@@ -6,9 +6,8 @@ import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 
+import styles from '@/modules/User/features/Auth/components/auth-skeleton/styles';
 import authFormSectionStyles from '@/modules/User/features/Auth/components/form-section/styles';
-
-import styles from './styles';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },
@@ -96,6 +95,7 @@ export default function AuthSkeleton({
 
         <Divider id="auth-skeleton-divider" role="presentation" sx={styles.divider}>
           <UISkeletonText
+            id="auth-skeleton-divider-text"
             size="l"
             sx={[styles.dividerText, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
           />

@@ -8,13 +8,12 @@ function UISkeletonBlock({
   width = '100%',
   height = '3rem',
   borderRadius = '8px',
-  sx,
+  sx = [],
 }: UISkeletonBlockProps): JSX.Element {
+  const additionalSx = Array.isArray(sx) ? sx : [sx];
+
   return (
-    <Box
-      id={id}
-      sx={[getBlockSkeletonStyles(width, height, borderRadius), ...(Array.isArray(sx) ? sx : [sx])]}
-    />
+    <Box id={id} sx={[getBlockSkeletonStyles(width, height, borderRadius), ...additionalSx]} />
   );
 }
 

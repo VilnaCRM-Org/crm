@@ -4,29 +4,30 @@ const AUTH_URL = '/authentication';
 const AUTH_ASYNC_JS_GLOB = '**/static/js/async/*.js';
 
 async function interceptAuthFormChunks(page: Page): Promise<() => Promise<void>> {
-  let applied = false;
-  let releaseDelayedChunk: (() => void) | null = null;
-  let delayedChunkHandled: Promise<void> | null = null;
-  const delayedChunkGate = new Promise<void>((resolve) => {
-    releaseDelayedChunk = resolve;
-  });
+  const pendingRoutes: Array<() => void> = [];
+  const pendingContinuations: Promise<void>[] = [];
 
   await page.route(AUTH_ASYNC_JS_GLOB, async (route) => {
-    if (!applied) {
-      applied = true;
-      delayedChunkHandled = (async (): Promise<void> => {
-        await delayedChunkGate;
-        await route.continue();
-      })();
-      await delayedChunkHandled;
-      return;
-    }
-    await route.continue();
+    let continueRoute!: () => void;
+    const delayedChunkGate = new Promise<void>((resolve) => {
+      continueRoute = resolve;
+    });
+    const continuation = (async (): Promise<void> => {
+      await delayedChunkGate;
+      await route.continue();
+    })();
+
+    pendingRoutes.push(continueRoute);
+    pendingContinuations.push(continuation);
+    await continuation;
   });
 
   return async (): Promise<void> => {
-    releaseDelayedChunk?.();
-    await delayedChunkHandled;
+    const routesToRelease = pendingRoutes.splice(0, pendingRoutes.length);
+    const continuationsToAwait = pendingContinuations.splice(0, pendingContinuations.length);
+
+    routesToRelease.forEach((releaseRoute) => releaseRoute());
+    await Promise.all(continuationsToAwait);
   };
 }
 
@@ -120,6 +121,7 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
       page.on('response', (response) => {
         const status = response.status();
         if (status >= 300 && status < 400) return;
+        // The auth page can trigger an expected 400 during form/bootstrap requests in test mode.
         if (status === 400) return;
         if (!response.ok()) criticalErrors.push(`${status} ${response.url()}`);
       });

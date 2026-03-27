@@ -87,6 +87,125 @@ function renderFormSection(): ReturnType<typeof render> {
   );
 }
 
+function renderIsolatedFormSectionWithLoginModule(
+  loginModuleFactory: () => ReactElement = (): ReactElement => <div data-testid="login-form" />
+): {
+  view: ReturnType<typeof render>;
+  loginModuleLoaded: jest.Mock;
+} {
+  jest.resetModules();
+
+  const loginModuleLoaded = jest.fn();
+
+  jest.doMock('react-i18next', () => ({
+    useTranslation: (): { t: (key: string) => string } => ({
+      t: (key: string): string => key,
+    }),
+  }));
+
+  jest.doMock('@/components/UIButton', () => ({
+    __esModule: true,
+    default: (props: {
+      children: ReactElement | string;
+    } & ButtonHTMLAttributes<HTMLButtonElement>): ReactElement => {
+      const { children, disabled, onClick, onMouseEnter, onFocus, onTouchStart } = props;
+
+      uiButtonMock(props);
+
+      return (
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={onClick}
+          onMouseEnter={onMouseEnter}
+          onFocus={onFocus}
+          onTouchStart={onTouchStart}
+        >
+          {children}
+        </button>
+      );
+    },
+  }));
+
+  jest.doMock('@/components/UITypography', () => ({
+    __esModule: true,
+    default: ({
+      children,
+      role,
+    }: {
+      children: ReactElement | string;
+      role?: string;
+    }): ReactElement => <span role={role}>{children}</span>,
+  }));
+
+  jest.doMock(
+    '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form',
+    () => ({
+      __esModule: true,
+      default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => (
+        <div data-testid="registration-form">
+          <button
+            type="button"
+            data-testid="trigger-success-view"
+            onClick={() => onViewChange?.('success')}
+          />
+        </div>
+      ),
+    })
+  );
+
+  jest.doMock(
+    '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons',
+    () => ({
+      __esModule: true,
+      default: (): ReactElement => <div data-testid="auth-provider-buttons" />,
+    })
+  );
+
+  jest.doMock(
+    '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
+    () => {
+      loginModuleLoaded();
+      return {
+        __esModule: true,
+        default: (): ReactElement => loginModuleFactory(),
+      };
+    }
+  );
+
+  let renderLocal!: typeof render;
+  let SuspenseLocal!: typeof Suspense;
+  let IsolatedFormSection: ComponentType | null = null;
+
+  jest.isolateModules(() => {
+    const ReactLocal = jest.requireActual('react') as typeof import('react');
+    const TestingLibrary = jest.requireActual(
+      '@testing-library/react/pure'
+    ) as typeof import('@testing-library/react/pure');
+
+    renderLocal = TestingLibrary.render;
+    SuspenseLocal = ReactLocal.Suspense;
+    IsolatedFormSection = (
+      jest.requireActual('@/modules/User/features/Auth/components/form-section') as {
+        default: ComponentType;
+      }
+    ).default;
+  });
+
+  if (!IsolatedFormSection) {
+    throw new Error('Failed to load isolated FormSection');
+  }
+
+  const IsolatedFormSectionComponent = IsolatedFormSection as () => JSX.Element;
+  const view = renderLocal(
+    <SuspenseLocal fallback={<div data-testid="form-section-loading" />}>
+      <IsolatedFormSectionComponent />
+    </SuspenseLocal>
+  );
+
+  return { view, loginModuleLoaded };
+}
+
 describe('FormSection', () => {
   afterEach(() => {
     jest.clearAllMocks();
@@ -100,21 +219,34 @@ describe('FormSection', () => {
   });
 
   it('switches to login mode when the switcher button is clicked', async () => {
-    renderFormSection();
+    const { view, loginModuleLoaded } = renderIsolatedFormSectionWithLoginModule();
 
-    fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
+    try {
+      fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
 
-    await waitFor(() => {
-      expect(screen.getByTestId('login-form')).toBeInTheDocument();
-    });
+      await waitFor(() => {
+        expect(screen.getByTestId('login-form')).toBeInTheDocument();
+      });
+      expect(loginModuleLoaded).toHaveBeenCalledTimes(1);
+    } finally {
+      view.unmount();
+    }
   });
 
-  it('preloads the login form on switcher intent while still in register mode', () => {
-    renderFormSection();
+  it('preloads the login form on switcher intent while still in register mode', async () => {
+    const { view, loginModuleLoaded } = renderIsolatedFormSectionWithLoginModule();
 
-    fireEvent.mouseEnter(screen.getByText('sign_up.form.switcher_text_have_account'));
+    try {
+      fireEvent.mouseEnter(screen.getByText('sign_up.form.switcher_text_have_account'));
 
-    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(loginModuleLoaded).toHaveBeenCalledTimes(1);
+      });
+      expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+      expect(screen.queryByTestId('login-form')).not.toBeInTheDocument();
+    } finally {
+      view.unmount();
+    }
   });
 
   it('switches back to registration mode and clears prior login load errors', async () => {
@@ -133,18 +265,35 @@ describe('FormSection', () => {
   });
 
   it('ignores repeated switch clicks while the login transition is marked as loading', async () => {
-    renderFormSection();
+    const { view, loginModuleLoaded } = renderIsolatedFormSectionWithLoginModule();
 
-    fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
+    try {
+      fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
 
-    await waitFor(() => {
-      const disabledRender = uiButtonMock.mock.calls
-        .map(([props]) => props)
-        .find((props) => props.disabled);
+      let disabledRender:
+        | ({
+            disabled?: boolean;
+            onClick?: (event: never) => void;
+          } & Record<string, unknown>)
+        | undefined;
 
-      expect(disabledRender).toBeDefined();
+      await waitFor(() => {
+        disabledRender = uiButtonMock.mock.calls
+          .map(([props]) => props)
+          .find((props) => props.disabled);
+
+        expect(disabledRender).toBeDefined();
+      });
+
+      expect(loginModuleLoaded).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
       disabledRender?.onClick?.({} as never);
-    });
+
+      expect(loginModuleLoaded).toHaveBeenCalledTimes(1);
+    } finally {
+      view.unmount();
+    }
   });
 
   it('marks auth provider buttons as inert when notification view is active', () => {

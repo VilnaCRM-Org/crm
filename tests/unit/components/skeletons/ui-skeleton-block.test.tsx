@@ -51,6 +51,12 @@ describe('UISkeletonBlock', () => {
     expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
   });
 
+  it('renders cleanly when sx is undefined', () => {
+    render(<UISkeletonBlock sx={undefined} id="skeleton-block" />);
+
+    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
+  });
+
   it('has no interactive elements', () => {
     render(<UISkeletonBlock id="skeleton-block" />);
 
