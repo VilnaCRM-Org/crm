@@ -2,7 +2,7 @@ import ScenarioBuilder from '../utils/scenarioBuilder.js';
 
 const scenarioBuilder = new ScenarioBuilder();
 
-const authSkeletonSelector = '[data-testid="auth-skeleton-title"]';
+const authSkeletonSelector = '#auth-skeleton-title';
 
 function handleRequest(req) {
   if (req.url().includes('/static/js/async/')) {

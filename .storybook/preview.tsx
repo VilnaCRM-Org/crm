@@ -11,17 +11,13 @@ const mainLanguage = process.env.REACT_APP_MAIN_LANGUAGE || 'uk';
 const fallbackLanguage = process.env.REACT_APP_FALLBACK_LANGUAGE || 'en';
 
 if (!i18next.isInitialized) {
-  i18next
+  void i18next
     .use(initReactI18next)
     .init({
       resources,
       lng: mainLanguage,
       fallbackLng: fallbackLanguage,
       interpolation: { escapeValue: false },
-    })
-    .catch((error: unknown) => {
-      // eslint-disable-next-line no-console
-      console.error('i18next initialization failed', error);
     });
 }
 
