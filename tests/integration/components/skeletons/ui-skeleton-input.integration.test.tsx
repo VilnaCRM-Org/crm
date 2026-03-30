@@ -15,10 +15,12 @@ describe('UISkeletonInput Integration', () => {
   const getSkeletonInput = (): HTMLElement =>
     getSkeletonElements().find((element) => element.id === 'skeleton-input') as HTMLElement;
 
-  const getSkeletonPlaceholder = (): HTMLElement =>
-    getSkeletonElements().find(
+  const getSkeletonPlaceholders = (): HTMLElement[] =>
+    getSkeletonElements().filter(
       (element) => element.className.includes('ui-skeleton-input__placeholder')
-    ) as HTMLElement;
+    );
+
+  const getSkeletonPlaceholder = (): HTMLElement => getSkeletonPlaceholders()[0] as HTMLElement;
 
   it('renders with default props', () => {
     expect(React).toBeDefined();
@@ -43,7 +45,7 @@ describe('UISkeletonInput Integration', () => {
     render(<UISkeletonInput id="skeleton-input" />);
 
     expect(getSkeletonInput()).toBeInTheDocument();
-    expect(getSkeletonPlaceholder()).toBeInTheDocument();
+    expect(getSkeletonPlaceholders()).toHaveLength(1);
   });
 
   it('has no interactive elements during loading', () => {

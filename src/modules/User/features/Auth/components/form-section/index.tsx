@@ -12,8 +12,8 @@ import {
   RegistrationView,
 } from '@/modules/User/features/Auth/components/form-section/types';
 
-const loadLoginForm = (): Promise<typeof import('./auth-forms/login-form')> =>
-  import('./auth-forms/login-form');
+const loadLoginForm = (): Promise<typeof import('@/modules/User/features/Auth/components/form-section/auth-forms/login-form')> =>
+  import('@/modules/User/features/Auth/components/form-section/auth-forms/login-form');
 const LoginForm = lazy(loadLoginForm);
 
 export default function FormSection(): JSX.Element {
