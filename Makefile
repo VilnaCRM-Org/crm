@@ -33,10 +33,10 @@ CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-
 LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
 LHCI_CHROME_FLAGS_ARG       = --collect.settings.chromeFlags="$(LHCI_CHROME_FLAGS)"
-LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
+LHCI_PRELOADED_AUTH_TOKEN   ?= lighthouse-preloaded-auth-token
 LHCI_BUILD_CMD          	= make ensure-chromium && make start-prod && $(LHCI)
-LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
-LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
+LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
+LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 
 DOCKER_COMPOSE_TEST_FILE    = -f docker-compose.test.yml
 DOCKER_COMPOSE_DEV_FILE     = -f docker-compose.yml
@@ -110,7 +110,6 @@ STORYBOOK_BUILD             = $(BUNX) storybook build
 STORYBOOK_START             = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint
-LHCI_TARGET_URL             ?= $(REACT_APP_PROD_CONTAINER_API_URL)
 RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
 .DEFAULT_GOAL               = help

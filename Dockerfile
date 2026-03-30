@@ -36,6 +36,9 @@ FROM base AS build
 # Ensure Bun binaries are in PATH for this stage
 ENV PATH="/root/.bun/bin:${PATH}"
 
+ARG REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=""
+ENV REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=${REACT_APP_LHCI_PRELOADED_AUTH_TOKEN}
+
 COPY . .
 RUN bun x rsbuild build
 

@@ -8,17 +8,23 @@ import { loginReducer, registrationReducer } from '@/modules/User/store';
 import type { ThunkExtra } from '@/modules/User/store/types';
 
 import devToolsOptions from './devToolsOptions';
+import { getPreloadedAuthToken } from './preloaded-auth-token';
 
 const thunkExtraArgument: ThunkExtra = {
   loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),
   registrationAPI: container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI),
 };
 
+const preloadedToken = getPreloadedAuthToken();
+
 export const store = configureStore({
   reducer: {
     auth: loginReducer,
     registration: registrationReducer,
   },
+  preloadedState: preloadedToken
+    ? { auth: { token: preloadedToken, email: '', loading: false, error: null } }
+    : undefined,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       thunk: {
