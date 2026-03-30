@@ -4,11 +4,12 @@ import { Box } from '@mui/material';
 import { lazy, startTransition, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import loadLoginForm from '../../utils/load-login-form';
+
 import { RegistrationForm } from './AuthForms';
 import AuthProviderButtons from './components/AuthProviderButtons';
 import styles from './styles';
 import { AuthMode } from './types';
-import loadLoginForm from '../../utils/load-login-form';
 
 const LoginForm = lazy(loadLoginForm);
 
