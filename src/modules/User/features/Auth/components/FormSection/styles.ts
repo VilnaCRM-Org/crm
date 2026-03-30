@@ -1,23 +1,37 @@
-import breakpointsTheme from '@/components/UIBreakpoints';
+import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
 export default {
   formSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    flexGrow: 1,
     paddingTop: '0.5rem',
     paddingX: '0.375rem',
     paddingBottom: '1.5rem',
 
     fontFamily: 'Golos',
     backgroundColor: '#FBFBFB',
+    justifyContent: 'center',
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      paddingTop: '8.4375rem',
-      paddingBottom: '8.4375rem',
+      paddingTop: '1.5rem',
+      paddingBottom: '1.5rem',
+    },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height: ${heightBreakpoints.medium}px)`]: {
+      paddingTop: '1rem',
+      paddingBottom: '1rem',
     },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      paddingTop: '3.4375rem',
-      paddingBottom: '3.4375rem',
+      paddingTop: '2rem',
+      paddingBottom: '2rem',
+    },
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px) and (max-height: ${heightBreakpoints.medium}px)`]: {
+      paddingTop: '1rem',
+      paddingBottom: '1rem',
     },
   },
   formWrapper: {
@@ -73,6 +87,21 @@ export default {
       fontWeight: 500,
       fontSize: '0.9375rem',
       lineHeight: 1.2,
+    },
+  },
+  formSwitcherError: {
+    marginTop: '1rem',
+    marginBottom: '-0.5rem',
+
+    fontFamily: 'Golos',
+    fontSize: '0.875rem',
+    fontWeight: 500,
+    lineHeight: 1.43,
+    color: paletteColors.error.main,
+    textAlign: 'center',
+
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+      marginTop: '1.25rem',
     },
   },
 };

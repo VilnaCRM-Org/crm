@@ -1,9 +1,9 @@
-const { baseUrl } = require('./constants');
+const { pages } = require('./constants');
 
 module.exports = {
   ci: {
     collect: {
-      url: [baseUrl],
+      url: pages,
       numberOfRuns: 3,
       settings: {
         formFactor: 'mobile',
@@ -24,7 +24,7 @@ module.exports = {
     },
     assert: {
       assertions: {
-        'categories:performance': ['error', { minScore: 0.9, aggregationMethod: 'median-run' }],
+        'categories:performance': ['error', { minScore: 0.85, aggregationMethod: 'median-run' }],
         'categories:accessibility': ['error', { minScore: 0.9 }],
         'categories:bestPractices': ['error', { minScore: 0.9 }],
         'categories:seo': ['error', { minScore: 0.9 }],

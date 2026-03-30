@@ -1,20 +1,27 @@
-import React, { useEffect } from 'react';
+import React, { lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-import ButtonExample from '@/ButtonExample';
-import Authentication from '@/modules/User/features/Auth';
+import ProtectedRoute from '@/components/protected-route';
 
 import './index.css';
 
+const ButtonExample = lazy(async () => import('@/ButtonExample'));
+const Authentication = lazy(async () => import('@/modules/User/features/Auth'));
+
 const router = createBrowserRouter([
+  {
+    element: <ProtectedRoute />,
+    children: [
+      {
+        path: '/',
+        element: <ButtonExample />,
+      },
+    ],
+  },
   {
     path: '/authentication',
     element: <Authentication />,
-  },
-  {
-    path: '/',
-    element: <ButtonExample />,
   },
 ]);
 
@@ -29,6 +36,10 @@ function App(): React.ReactElement {
     i18n.on?.('languageChanged', applyDir);
     return (): void => i18n.off?.('languageChanged', applyDir);
   }, [i18n]);
-  return <RouterProvider router={router} />;
+  return (
+    <React.Suspense fallback={null}>
+      <RouterProvider router={router} future={{ v7_startTransition: true }} />
+    </React.Suspense>
+  );
 }
 export default App;

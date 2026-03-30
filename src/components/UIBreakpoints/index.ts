@@ -12,4 +12,9 @@ const breakpointsTheme: Theme = createTheme({
   },
 });
 
+export const heightBreakpoints = {
+  compact: 550,
+  medium: 700,
+} as const;
+
 export default breakpointsTheme;
