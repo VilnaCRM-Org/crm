@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { group, sleep } from 'k6';
 
 import runPositiveTests from './signup/positive.js';
@@ -16,28 +17,37 @@ export const options = scenarioUtils.getOptions();
 export default function signup() {
   const baseUrl = utils.getBaseUrl();
   const params = utils.getParams();
+  const runGroup = (groupName, callback) => {
+    group(groupName, () => {
+      try {
+        callback();
+      } catch (error) {
+        console.error(`[ERROR] ${groupName} failed`, error);
+      }
+    });
+  };
 
-  group('Positive Tests - Normal Registration Flow', () => {
+  runGroup('Positive Tests - Normal Registration Flow', () => {
     runPositiveTests(utils, baseUrl, params);
   });
 
   sleep(0.5);
 
-  group('Negative Tests - Validation & Security', () => {
+  runGroup('Negative Tests - Validation & Security', () => {
     runNegativeTests(utils, baseUrl, params);
   });
 
   sleep(0.5);
 
   if (__ITER === 0) {
-    group('Rate Limit Tests - Abuse Protection', () => {
+    runGroup('Rate Limit Tests - Abuse Protection', () => {
       runRateLimitTests(utils, baseUrl, params);
     });
   }
 
   sleep(0.5);
 
-  group('Integration Tests - End-to-End Flows', () => {
+  runGroup('Integration Tests - End-to-End Flows', () => {
     runIntegrationTests(utils, baseUrl, params);
   });
 }

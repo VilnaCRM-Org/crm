@@ -4,6 +4,16 @@ import { sleep } from 'k6';
 
 import TEST_DATA_GENERATORS from '../utils/test-data.js';
 
+function getShortBody(body) {
+  if (body === null || body === undefined) {
+    return '';
+  }
+
+  return typeof body === 'string'
+    ? body.substring(0, 100)
+    : JSON.stringify(body).substring(0, 100);
+}
+
 export default function runRateLimitTests(utils, baseUrl, params) {
   testRapidRequestsSameData(utils, baseUrl, params);
 
@@ -22,9 +32,11 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
   });
 
   const headers = {
+    ...(params.headers || {}),
     'Content-Type': 'application/json',
-    ...params.headers,
   };
+  const restParams = { ...params };
+  delete restParams.headers;
 
   let rateLimitHit = false;
   const maxRequests = 15;
@@ -33,8 +45,8 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
 
   for (let i = 0; i < maxRequests; i += 1) {
     const response = http.post(`${baseUrl}/api/users`, payload, {
+      ...restParams,
       headers,
-      ...params,
     });
 
     if (response.status === 201 || response.status === 200) {
@@ -78,13 +90,13 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
 
       if (res.status >= 500 && res.status < 600) {
         console.error(
-          `[ERROR] Server error during rate limit test: ${res.status} - ${res.body.substring(0, 100)}`
+          `[ERROR] Server error during rate limit test: ${res.status} - ${getShortBody(res.body)}`
         );
         return false;
       }
 
       console.log(
-        `[WARN] Unexpected status during rate limit test: ${res.status} - ${res.body.substring(0, 100)}`
+        `[WARN] Unexpected status during rate limit test: ${res.status} - ${getShortBody(res.body)}`
       );
       return true;
     });
@@ -103,9 +115,11 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
 
 function testRapidRequestsDifferentData(utils, baseUrl, params) {
   const headers = {
+    ...(params.headers || {}),
     'Content-Type': 'application/json',
-    ...params.headers,
   };
+  const restParams = { ...params };
+  delete restParams.headers;
 
   let rateLimitHit = false;
   const maxRequests = 15;
@@ -122,8 +136,8 @@ function testRapidRequestsDifferentData(utils, baseUrl, params) {
     });
 
     const response = http.post(`${baseUrl}/api/users`, payload, {
+      ...restParams,
       headers,
-      ...params,
     });
 
     if (response.status === 201 || response.status === 200) {
@@ -144,7 +158,7 @@ function testRapidRequestsDifferentData(utils, baseUrl, params) {
 
       if (res.status >= 500) {
         console.error(
-          `[ERROR] Server error during bulk registration: ${res.status} - ${res.body.substring(0, 100)}`
+          `[ERROR] Server error during bulk registration: ${res.status} - ${getShortBody(res.body)}`
         );
         return false;
       }

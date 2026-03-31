@@ -53,7 +53,7 @@ describe('validations module exports', () => {
       expect(validators.password('pass', emptyUser)).toBe(
         'sign_up.form.password_input.error_length'
       );
-      expect(validators.password('', emptyUser)).toBe('sign_up.form.password_input.error_required');
+      expect(validators.password('', emptyUser)).toBe('sign_up.form.password_input.required');
     });
   });
 
@@ -100,7 +100,7 @@ describe('validations module exports', () => {
         'sign_up.form.name_input.required'
       );
       expect(validators.password(formData.password, emptyUser)).toBe(
-        'sign_up.form.password_input.error_required'
+        'sign_up.form.password_input.required'
       );
     });
   });

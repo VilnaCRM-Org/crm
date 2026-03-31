@@ -80,7 +80,7 @@ export default function runPositiveTests(utils, baseUrl, params) {
         const body = JSON.parse(res.body);
         return typeof body.message === 'string' || typeof body.error === 'string';
       } catch {
-        return true;
+        return false;
       }
     });
   }

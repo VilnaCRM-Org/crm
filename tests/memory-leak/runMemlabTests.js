@@ -39,7 +39,10 @@ const consoleMode = 'VERBOSE';
       const scenarios = [];
 
       if (testModule && typeof testModule === 'object') {
-        if (typeof testModule.url === 'function' || typeof testModule.url === 'string') {
+        if (
+          (typeof testModule.url === 'function' || typeof testModule.url === 'string') &&
+          typeof testModule.action === 'function'
+        ) {
           scenarios.push({ name: 'default', scenario: testModule });
           logger.debug(`✓ Found default export as scenario`);
         }
@@ -51,7 +54,8 @@ const consoleMode = 'VERBOSE';
             !isScenarioProperty &&
             value &&
             typeof value === 'object' &&
-            (typeof value.url === 'function' || typeof value.url === 'string')
+            (typeof value.url === 'function' || typeof value.url === 'string') &&
+            typeof value.action === 'function'
           ) {
             scenarios.push({ name: key, scenario: value });
             logger.debug(`✓ Found named export: ${key}`);

@@ -75,9 +75,6 @@ export default defineConfig({
     decorators: { version: 'legacy' },
     define: {
       ...publicVars,
-      'process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN': JSON.stringify(
-        process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN ?? ''
-      ),
     },
   },
 });

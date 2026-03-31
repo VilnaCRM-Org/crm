@@ -6,9 +6,9 @@ import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
 import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 import { loginReducer, registrationReducer } from '@/modules/User/store';
 import type { ThunkExtra } from '@/modules/User/store/types';
+import { getPreloadedAuthToken } from '@/stores/preloaded-auth-token';
 
 import devToolsOptions from './devToolsOptions';
-import { getPreloadedAuthToken } from './preloaded-auth-token';
 
 const thunkExtraArgument: ThunkExtra = {
   loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),

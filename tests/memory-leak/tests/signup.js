@@ -8,6 +8,7 @@ const logger = require('../utils/logger');
 const ROUTE_PATH = '/authentication';
 const DEFAULT_TIMEOUT = 5000;
 const NETWORK_IDLE_TIMEOUT = 30000;
+const SIGNUP_SWITCHER_SELECTOR = '[data-testid="signup-switcher"]';
 
 const scenarioBuilder = new ScenarioBuilder(ROUTE_PATH);
 
@@ -34,10 +35,26 @@ async function waitForRegistrationForm(page, timeout = DEFAULT_TIMEOUT) {
   logger.debug('✓ Registration form detected (3+ inputs, has fullName field)');
 }
 
+function generatePassword(length = 12) {
+  const uppercase = faker.string.alpha({ length: 1, casing: 'upper' });
+  const lowercase = faker.string.alpha({ length: 1, casing: 'lower' });
+  const digit = faker.string.numeric(1);
+  const remainingLength = Math.max(length - 3, 0);
+  const remaining = faker.string.alphanumeric(remainingLength);
+  const characters = `${uppercase}${lowercase}${digit}${remaining}`.split('');
+
+  for (let i = characters.length - 1; i > 0; i -= 1) {
+    const randomIndex = faker.number.int({ min: 0, max: i });
+    [characters[i], characters[randomIndex]] = [characters[randomIndex], characters[i]];
+  }
+
+  return characters.join('');
+}
+
 const generateFakeUserData = () => ({
   fullName: faker.person.fullName(),
   email: faker.internet.email(),
-  password: faker.internet.password({ length: 12 }),
+  password: generatePassword(),
 });
 
 async function clearInputField(page, selector) {
@@ -131,17 +148,26 @@ async function completeRegistrationAction(page) {
 
     if (!isRegistrationForm) {
       const switcherText = t('sign_up.form.switcher_text_no_account');
-      await page.waitForFunction(
-        (text) => Array.from(document.querySelectorAll('button')).some((b) => b.textContent.trim().includes(text)),
-        { timeout: DEFAULT_TIMEOUT },
-        switcherText
-      );
-      await page.evaluate((text) => {
-        const btn = Array.from(document.querySelectorAll('button')).find((b) =>
-          b.textContent.trim().includes(text)
+      const switcherByTestId = await page.$(SIGNUP_SWITCHER_SELECTOR);
+
+      if (switcherByTestId) {
+        await page.click(SIGNUP_SWITCHER_SELECTOR);
+      } else {
+        await page.waitForFunction(
+          (text) =>
+            Array.from(document.querySelectorAll('button')).some((b) =>
+              b.textContent.trim().includes(text)
+            ),
+          { timeout: DEFAULT_TIMEOUT },
+          switcherText
         );
-        if (btn) btn.click();
-      }, switcherText);
+        await page.evaluate((text) => {
+          const btn = Array.from(document.querySelectorAll('button')).find((b) =>
+            b.textContent.trim().includes(text)
+          );
+          if (btn) btn.click();
+        }, switcherText);
+      }
       await waitForRegistrationForm(page);
     }
 

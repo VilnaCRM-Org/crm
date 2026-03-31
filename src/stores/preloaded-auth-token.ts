@@ -6,7 +6,7 @@ declare global {
 
 export const preloadedAuthTokenKey = '__PRELOADED_AUTH_TOKEN__' as const;
 
-type PreloadedAuthWindow = Pick<Window, typeof preloadedAuthTokenKey>;
+export type PreloadedAuthWindow = Pick<Window, typeof preloadedAuthTokenKey>;
 
 export function getPreloadedAuthToken(
   currentWindow: PreloadedAuthWindow | undefined = typeof window !== 'undefined'

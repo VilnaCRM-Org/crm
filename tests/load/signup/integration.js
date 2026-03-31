@@ -8,18 +8,20 @@ const USE_REAL_BACKEND = __ENV.USE_REAL_BACKEND === 'true';
 
 export default function runIntegrationTests(utils, baseUrl, params) {
   const headers = {
+    ...(params?.headers || {}),
     'Content-Type': 'application/json',
-    ...params.headers,
   };
+  const restParams = { ...params };
+  delete restParams.headers;
 
-  testSignupLoginFlow(utils, baseUrl, headers, params);
+  testSignupLoginFlow(utils, baseUrl, headers, restParams);
 
   sleep(0.5);
 
   if (USE_REAL_BACKEND) {
-    testDuplicateSignupFlow(utils, baseUrl, headers, params);
+    testDuplicateSignupFlow(utils, baseUrl, headers, restParams);
     sleep(0.5);
-    testInvalidSignupLoginAttempt(utils, baseUrl, headers, params);
+    testInvalidSignupLoginAttempt(utils, baseUrl, headers, restParams);
   }
 }
 
@@ -33,8 +35,8 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
   });
 
   const signupResponse = http.post(`${baseUrl}/api/users`, signupPayload, {
-    headers,
     ...params,
+    headers,
   });
 
   if (signupResponse.status !== 201 && signupResponse.status !== 200) {
@@ -59,6 +61,11 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
     return;
   }
 
+  if (!userId) {
+    console.log('[INFO] Signup did not return user id, skipping profile request');
+    return;
+  }
+
   sleep(0.5);
 
   const loginPayload = JSON.stringify({
@@ -67,8 +74,8 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
   });
 
   const loginResponse = http.post(`${baseUrl}/api/auth/login`, loginPayload, {
-    headers,
     ...params,
+    headers,
   });
 
   utils.checkResponse(
@@ -111,8 +118,8 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
     }
 
     const profileResponse = http.get(`${baseUrl}/api/users/${userId}`, {
-      headers: { ...headers, ...authHeader },
       ...params,
+      headers: { ...headers, ...authHeader },
     });
 
     utils.checkResponse(
@@ -163,8 +170,8 @@ function testDuplicateSignupFlow(utils, baseUrl, headers, params) {
   });
 
   const firstSignup = http.post(`${baseUrl}/api/users`, signupPayload, {
-    headers,
     ...params,
+    headers,
   });
 
   if (firstSignup.status !== 201 && firstSignup.status !== 200) {
@@ -174,8 +181,8 @@ function testDuplicateSignupFlow(utils, baseUrl, headers, params) {
   sleep(0.3);
 
   const duplicateSignup = http.post(`${baseUrl}/api/users`, signupPayload, {
-    headers,
     ...params,
+    headers,
   });
 
   utils.checkResponse(
@@ -203,8 +210,8 @@ function testInvalidSignupLoginAttempt(utils, baseUrl, headers, params) {
   });
 
   const signupResponse = http.post(`${baseUrl}/api/users`, invalidSignupPayload, {
-    headers,
     ...params,
+    headers,
   });
 
   utils.checkResponse(

@@ -24,7 +24,7 @@ const createPasswordValidator =
       numberRequired: t('sign_up.form.password_input.error_numbers'),
       uppercaseRequired: t('sign_up.form.password_input.error_uppercase'),
       lowercaseRequired: t('sign_up.form.password_input.error_lowercase'),
-      fieldRequired: t('sign_up.form.password_input.error_required'),
+      fieldRequired: t('sign_up.form.password_input.required'),
     };
 
     if (!value?.trim()) return messages.fieldRequired;

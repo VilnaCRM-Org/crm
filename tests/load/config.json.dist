@@ -48,19 +48,19 @@
       }
     },
     "signup": {
-      "host": "mockoon",
-      "port": "8080",
+      "host": "prod",
+      "port": "3001",
       "setupTimeoutInMinutes": 10,
       "thresholds": {
         "errorRate": {
-          "smoke": 0.15,
-          "average": 0.20,
+          "smoke": 0.05,
+          "average": 0.10,
           "stress": 0.25,
           "spike": 0.30
         },
         "checkPassRate": {
-          "smoke": 0.85,
-          "average": 0.85,
+          "smoke": 0.95,
+          "average": 0.95,
           "stress": 0.80,
           "spike": 0.75
         }

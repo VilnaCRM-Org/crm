@@ -14,50 +14,26 @@ This command runs all three signup test suites in sequence:
 2. 🛡️ **Negative tests** (`signup-negative.js`) - Validation & security
 3. ⏱️ **Rate limit tests** (`signup-ratelimit.js`) - Abuse protection
 
-## Individual Test Commands
+## Scenario Selection
 
-### Run Only Positive Tests
+Use the single `test-load-signup` Make target and select scenarios with environment variables.
+The Makefile target reads these env vars before invoking k6:
 
-```bash
-make test-load-signup-positive
-```
+- `run_smoke=true`
+- `run_average=true`
+- `run_stress=true`
+- `run_spike=true`
+- `run_ratelimit=true`
 
-Tests the happy path scenarios and normal load patterns.
-
-### Run Only Negative Tests
-
-```bash
-make test-load-signup-negative
-```
-
-Tests:
-
-- Duplicate email registration
-- Invalid email formats
-- Weak passwords
-- Missing required fields
-- SQL injection attempts
-- XSS attack attempts
-
-### Run Only Rate Limit Tests
+Example:
 
 ```bash
-make test-load-signup-ratelimit
+run_smoke=true run_average=false run_stress=false run_spike=false make test-load-signup
 ```
-
-Tests:
-
-- Rapid requests with same data
-- Bulk registration attempts
-- Rate limiting effectiveness
 
 ## Test Results
 
-Results are saved as HTML reports in `tests/load/results/`:
-
-- `signup.html` - Positive test results
-- `signup-negative.html` - Negative test results
-- `signup-ratelimit.html` - Rate limit test results
+Results are saved as a single HTML report in `tests/load/results/signup.html`.
 
 View results by opening the HTML files in a browser:
 
@@ -83,7 +59,7 @@ run_stress=true make test-load-signup
 run_spike=true make test-load-signup
 
 # Run multiple scenarios
-run_smoke=true run_average=true make test-load-signup
+run_smoke=true run_average=true run_ratelimit=true make test-load-signup
 ```
 
 If no environment variables are set, all scenarios run.
@@ -127,8 +103,6 @@ The signup endpoint can have custom host/port settings:
       "setupTimeoutInMinutes": 10,
       "smoke": {},
       "average": {}
-    }
-  }
 }
 ```
 
@@ -186,8 +160,8 @@ To configure endpoint-specific thresholds, add a `thresholds` section in `config
 
 - Includes security tests (SQL injection, XSS) that intentionally send malicious payloads
 - Integration tests with multi-step flows (signup → login → access)
-- Mockoon (schema-based mock) doesn't validate like a real backend
-- Higher failure rates don't indicate problems - they reflect comprehensive testing
+- Signup exercises multiple validation and integration paths under load
+- Higher failure rates don't indicate problems by themselves - they reflect comprehensive testing
 
 ### Threshold Rationale
 
@@ -230,7 +204,7 @@ Check warnings in test output. You may need to:
 
 - Implement or adjust rate limiting in your API
 - Configure appropriate thresholds
-- Check if Mockoon (for signup) has rate limiting enabled
+- Check whether the application under test has rate limiting enabled
 
 ## CI/CD Integration
 
@@ -249,6 +223,6 @@ After running tests, review:
 1. HTML reports for detailed metrics
 2. Console warnings for missing protections
 3. Error rates and response times
-4. Rate limiting effectiveness
+4. Rate-limiting effectiveness
 
 For more information, see `README-IMPROVEMENTS.md`.

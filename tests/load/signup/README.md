@@ -6,7 +6,7 @@ various load conditions.
 
 ## File Structure
 
-```bash
+```json
 signup/
 ├── README.md        # This documentation
 ├── positive.js      # Happy path / normal registration tests
@@ -131,7 +131,7 @@ run_smoke=true run_average=true run_stress=true make test-load-signup
 
 Configuration is managed in `tests/load/config.json.dist` under the `signup` endpoint section:
 
-```bash
+```json
 {
   "signup": {
     "host": "mockoon",
@@ -139,14 +139,14 @@ Configuration is managed in `tests/load/config.json.dist` under the `signup` end
     "setupTimeoutInMinutes": 10,
     "thresholds": {
       "errorRate": {
-        "smoke": 0.15,    // 15% - Higher due to security tests
-        "average": 0.20,  // 20% - Accounts for negative tests
+        "smoke": 0.05,    // 5% - Tight baseline for regressions
+        "average": 0.10,  // 10% - Moderate headroom under sustained load
         "stress": 0.25,   // 25% - Expected under heavy load
         "spike": 0.30     // 30% - Acceptable during traffic bursts
       },
       "checkPassRate": {
-        "smoke": 0.85,    // 85% - Relaxed for comprehensive testing
-        "average": 0.85,  // 85% - Includes integration tests
+        "smoke": 0.95,    // 95% - Tight baseline for regressions
+        "average": 0.95,  // 95% - Strong validation under normal load
         "stress": 0.80,   // 80% - Under heavy load
         "spike": 0.75     // 75% - Sudden traffic impacts
       }
@@ -187,7 +187,6 @@ Configuration is managed in `tests/load/config.json.dist` under the `signup` end
 
 - Tests include intentional security attacks (SQL injection, XSS)
 - Integration tests involve multi-step flows with multiple potential failure points
-- Mockoon doesn't validate like a real backend
 - Comprehensive testing goals differ from pure performance testing
 
 ### Load Test Scenarios
@@ -251,14 +250,14 @@ The test suite uses `TEST_DATA_GENERATORS` from `utils/test-data.js`:
 
 ### Single User Generation
 
-```bash
+```js
 const user = TEST_DATA_GENERATORS.generateUser();
 // Returns: { initials, email, password }
 ```
 
 ### Batch User Generation **[NEW]**
 
-```bash
+```js
 const users = TEST_DATA_GENERATORS.generateUniqueUserBatch(5);
 // Returns array of 5 unique users
 // Each with guaranteed unique email, initials, and password
@@ -371,7 +370,7 @@ Each generated user has:
 
 **Example: Add to `negative.js`**
 
-```bash
+```js
 function testCustomValidation(utils, baseUrl, headers, params) {
   const payload = JSON.stringify({
     initials: 'Test User',
@@ -395,7 +394,7 @@ testCustomValidation(utils, baseUrl, headers, params);
 
 **Example: Add to `integration.js`**
 
-```bash
+```js
 function testSignupEmailVerificationFlow(utils, baseUrl, headers, params) {
   // 1. Register user
   const user = TEST_DATA_GENERATORS.generateUser();
@@ -418,7 +417,7 @@ testSignupEmailVerificationFlow(utils, baseUrl, headers, params);
 2. Export default function with test logic
 3. Update `signup.js` to import and call it:
 
-```bash
+```js
 import runNewTests from './signup/newtest.js';
 
 // In signup() function:

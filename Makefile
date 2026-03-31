@@ -295,8 +295,8 @@ test-load: start-prod wait-for-prod-health prepare-results-dir ## This command e
                        ## using $(PROD_PORT), which maps to the production service in Docker Compose.
 	$(LOAD_TESTS_RUN)
 
-test-load-signup: start-prod wait-for-prod-health prepare-results-dir ## Execute comprehensive signup load tests (all scenarios: positive, negative, rate limit).
-                       ## Use environment variables: run_smoke=true, run_average=true, run_stress=true, run_spike=true.
+test-load-signup: start-prod wait-for-prod-health prepare-results-dir ## Execute comprehensive signup load tests with scenario selection via env vars.
+                       ## Use run_smoke/run_average/run_stress/run_spike/run_ratelimit before invoking this target.
 	$(LOAD_TESTS_RUN_SIGNUP)
 
 lighthouse-desktop: ## Run a Lighthouse audit using desktop viewport settings to evaluate performance and best practices
