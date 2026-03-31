@@ -1,4 +1,3 @@
-import { Box, CircularProgress } from '@mui/material';
 import React, { lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
@@ -9,23 +8,6 @@ import './index.css';
 
 const ButtonExample = lazy(async () => import('@/ButtonExample'));
 const Authentication = lazy(async () => import('@/modules/User/features/Auth'));
-
-function Loading(): React.ReactElement {
-  return (
-    <Box
-      role="status"
-      aria-busy="true"
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      <CircularProgress size={48} />
-    </Box>
-  );
-}
 
 const router = createBrowserRouter([
   {
@@ -55,7 +37,7 @@ function App(): React.ReactElement {
     return (): void => i18n.off?.('languageChanged', applyDir);
   }, [i18n]);
   return (
-    <React.Suspense fallback={<Loading />}>
+    <React.Suspense fallback={null}>
       <RouterProvider router={router} future={{ v7_startTransition: true }} />
     </React.Suspense>
   );
