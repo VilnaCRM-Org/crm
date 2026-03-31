@@ -48,8 +48,8 @@
       }
     },
     "signup": {
-      "host": "prod",
-      "port": "3001",
+      "host": "mockoon",
+      "port": "8080",
       "setupTimeoutInMinutes": 10,
       "thresholds": {
         "errorRate": {
