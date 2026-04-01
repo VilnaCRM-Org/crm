@@ -7,4 +7,11 @@ describe('public index performance safeguards', () => {
 
     expect(html).not.toContain('https://rsms.me/inter/inter.css');
   });
+
+  it('injects the lhci preloaded auth token into the rsbuild client defines', () => {
+    const config = fs.readFileSync(path.resolve(__dirname, '../../../rsbuild.config.ts'), 'utf8');
+
+    expect(config).toContain("'process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN'");
+    expect(config).toContain('process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN ??');
+  });
 });

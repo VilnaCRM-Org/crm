@@ -1,10 +1,11 @@
+import fs from 'fs';
+import path from 'path';
+
 import {
   getPreloadedAuthToken,
   preloadedAuthTokenKey,
   type PreloadedAuthWindow,
 } from '@/stores/preloaded-auth-token';
-import fs from 'fs';
-import path from 'path';
 
 describe('getPreloadedAuthToken', () => {
   it('prefers the token injected on window', () => {
@@ -22,5 +23,40 @@ describe('getPreloadedAuthToken', () => {
     );
 
     expect(source).not.toContain('envToken: string | undefined = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN');
+  });
+
+  it('uses the default process env token when window is unavailable', () => {
+    const originalWindow = global.window;
+    const originalEnvToken = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+
+    Object.defineProperty(global, 'window', {
+      configurable: true,
+      value: undefined,
+    });
+    process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = 'env-token';
+
+    expect(getPreloadedAuthToken()).toBe('env-token');
+
+    Object.defineProperty(global, 'window', {
+      configurable: true,
+      value: originalWindow,
+    });
+    process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = originalEnvToken;
+  });
+
+  it('returns undefined when process.env is unavailable', () => {
+    const originalProcess = global.process;
+
+    Object.defineProperty(global, 'process', {
+      configurable: true,
+      value: {},
+    });
+
+    expect(getPreloadedAuthToken()).toBeUndefined();
+
+    Object.defineProperty(global, 'process', {
+      configurable: true,
+      value: originalProcess,
+    });
   });
 });
