@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import ProtectedRoute from '@/components/protected-route';
+import Authentication from '@/modules/User/features/Auth';
 
 import './index.css';
 
 const ButtonExample = lazy(async () => import('@/ButtonExample'));
-const Authentication = lazy(async () => import('@/modules/User/features/Auth'));
 
 const router = createBrowserRouter([
   {
