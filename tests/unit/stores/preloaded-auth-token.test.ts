@@ -25,6 +25,16 @@ describe('getPreloadedAuthToken', () => {
     expect(source).not.toContain('envToken: string | undefined = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN');
   });
 
+  it('does not gate the default env token behind a runtime process check', () => {
+    const source = fs.readFileSync(
+      path.resolve(__dirname, '../../../src/stores/preloaded-auth-token.ts'),
+      'utf8'
+    );
+
+    expect(source).not.toContain("typeof process === 'undefined'");
+    expect(source).not.toContain("typeof process !== 'undefined'");
+  });
+
   it('uses the default process env token when window is unavailable', () => {
     const originalWindow = global.window;
     const originalEnvToken = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;

@@ -9,11 +9,11 @@ export const preloadedAuthTokenKey = '__PRELOADED_AUTH_TOKEN__' as const;
 export type PreloadedAuthWindow = Pick<Window, typeof preloadedAuthTokenKey>;
 
 function getEnvPreloadedAuthToken(): string | undefined {
-  if (typeof process === 'undefined' || !process.env) {
+  try {
+    return process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+  } catch {
     return undefined;
   }
-
-  return process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
 }
 
 export function getPreloadedAuthToken(
