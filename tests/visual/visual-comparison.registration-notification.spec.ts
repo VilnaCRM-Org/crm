@@ -6,12 +6,13 @@ import {
   userData,
   successNotificationTitle,
 } from '../e2e/modules/User/features/Auth/components/FormSection/AuthForms/constants/constants';
+import getFormFields from '../e2e/modules/User/features/Auth/components/FormSection/AuthForms/utils/getFormFields';
 import {
   successResponse,
   serverErrorResponse,
 } from '../e2e/modules/User/features/Auth/components/FormSection/AuthForms/utils/responses';
-import getFormFields from '../e2e/modules/User/features/Auth/components/FormSection/AuthForms/utils/getFormFields';
 import fillInput from '../e2e/utils/fillInput';
+
 import { currentLanguage, screenSizes } from './constants';
 import getRegistrationNotificationSnapshotName from './getRegistrationNotificationSnapshotName';
 

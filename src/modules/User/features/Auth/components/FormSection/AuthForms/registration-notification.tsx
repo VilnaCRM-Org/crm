@@ -39,10 +39,12 @@ export default function RegistrationNotification({
   const [isClosing, setIsClosing] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const normalizedErrorText = errorText?.trim().toLowerCase();
-  const resolvedErrorText = normalizedErrorText
-    ? GENERIC_REGISTRATION_VALIDATION_ERRORS.has(normalizedErrorText)
+  const mappedErrorText =
+    normalizedErrorText && GENERIC_REGISTRATION_VALIDATION_ERRORS.has(normalizedErrorText)
       ? t('sign_up.errors.signup_error')
-      : errorText
+      : errorText;
+  const resolvedErrorText = normalizedErrorText
+    ? mappedErrorText
     : t('failure_responses.client_errors.something_went_wrong');
 
   useEffect(() => {
