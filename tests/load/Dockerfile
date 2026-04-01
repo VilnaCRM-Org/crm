@@ -1,4 +1,4 @@
-FROM golang:1.24.1-alpine3.21 AS builder
+FROM golang:1.25.8-alpine3.22 AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN xk6 build \
     --with github.com/grafana/xk6-exec@v0.5.0 \
     --with github.com/avitalique/xk6-file@v1.5.0
 
-FROM alpine:3.21
+FROM alpine:3.22
 RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=builder /app/k6 /bin/
