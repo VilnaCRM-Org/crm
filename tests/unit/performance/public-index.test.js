@@ -25,6 +25,25 @@ describe('public index performance safeguards', () => {
     expect(config).toContain('process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN ??');
   });
 
+  it('lazy-loads the authentication route to avoid shipping auth UI in the home bundle', () => {
+    const appSource = fs.readFileSync(path.resolve(__dirname, '../../../src/App.tsx'), 'utf8');
+
+    expect(appSource).toContain("const Authentication = lazy(async () => import('@/modules/User/features/Auth'));");
+    expect(appSource).not.toContain("import Authentication from '@/modules/User/features/Auth';");
+  });
+
+  it('lazy-loads auth provider buttons so they do not block first paint on authentication', () => {
+    const formSectionSource = fs.readFileSync(
+      path.resolve(__dirname, '../../../src/modules/User/features/Auth/components/FormSection/index.tsx'),
+      'utf8'
+    );
+
+    expect(formSectionSource).toContain(
+      "const AuthProviderButtons = lazy(async () => import('./components/AuthProviderButtons'));"
+    );
+    expect(formSectionSource).not.toContain("import AuthProviderButtons from './components/AuthProviderButtons';");
+  });
+
   it('serves immutable cache headers for static assets in production', () => {
     const serveConfig = fs.readFileSync(path.resolve(__dirname, '../../../serve.json'), 'utf8');
 
