@@ -1,4 +1,4 @@
-const { hasValidScenarioHooks } = require('../../../tests/memory-leak/utils/scenarioValidation');
+const { hasValidScenarioHooks } = require('../../memory-leak/utils/scenarioValidation');
 
 describe('hasValidScenarioHooks', () => {
   it('accepts scenarios without a back hook', () => {

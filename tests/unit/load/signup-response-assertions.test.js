@@ -1,6 +1,6 @@
 const {
   hasSuccessfulSignupBody,
-} = require('../../../tests/load/signup/responseAssertions');
+} = require('../../load/signup/responseAssertions');
 
 describe('hasSuccessfulSignupBody', () => {
   it('accepts the current mock fixture response in mock mode', () => {
