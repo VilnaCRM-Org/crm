@@ -39,16 +39,14 @@ export default function useRegistrationForm(
   }, [onViewChange, view]);
 
   useEffect(() => {
-    if (user && !isSubmitting) {
-      setView('success');
+    if (!isSubmitting) {
+      if (user) {
+        setView('success');
+      } else if (error) {
+        setView('error');
+      }
     }
-  }, [user, isSubmitting]);
-
-  useEffect(() => {
-    if (error && !isSubmitting) {
-      setView('error');
-    }
-  }, [error, isSubmitting]);
+  }, [user, error, isSubmitting]);
 
   const handleRegister = useCallback(
     (data: RegisterUserDto): void => {

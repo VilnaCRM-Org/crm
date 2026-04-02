@@ -7,9 +7,8 @@ import { Box, Fade, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { RegistrationView } from '../types';
-
-import styles from './registration-notification.styles';
+import styles from '@/modules/User/features/Auth/components/FormSection/AuthForms/registration-notification.styles';
+import { RegistrationView } from '@/modules/User/features/Auth/components/FormSection/types';
 
 type RegistrationNotificationProps = {
   view: Exclude<RegistrationView, 'form'>;
@@ -20,7 +19,7 @@ type RegistrationNotificationProps = {
   onRetry?: () => void;
 };
 
-const BACK_CLOSE_ANIMATION_MS = 300;
+export const BACK_CLOSE_ANIMATION_MS = 300;
 const GENERIC_REGISTRATION_VALIDATION_ERRORS = new Set([
   'invalid data provided',
   'invalid registration data',
@@ -153,7 +152,7 @@ export default function RegistrationNotification({
           </Box>
 
           <Box sx={styles.messageContainer}>
-            <UiTypography component="h4" sx={styles.successMessageTitle}>
+            <UiTypography component="h4" sx={styles.successMessageTitle} data-testid="success-notification-title">
               {t('notifications.success.title')}
             </UiTypography>
             <UiTypography component="span" sx={styles.successMessageDescription}>

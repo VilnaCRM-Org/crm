@@ -3,7 +3,9 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import localization from '@/i18n/localization.json';
-import RegistrationNotification from '@/modules/User/features/Auth/components/FormSection/AuthForms/registration-notification';
+import RegistrationNotification, {
+  BACK_CLOSE_ANIMATION_MS,
+} from '@/modules/User/features/Auth/components/FormSection/AuthForms/registration-notification';
 
 import renderWithProviders from '../../../../../../../utils/renderWithProviders';
 
@@ -133,7 +135,7 @@ describe('RegistrationNotification', () => {
 
     fireEvent.click(screen.getByText('Назад'));
     expect(onBack).not.toHaveBeenCalled();
-    jest.advanceTimersByTime(300);
+    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
     expect(onBack).toHaveBeenCalledTimes(1);
     jest.useRealTimers();
   });
@@ -152,7 +154,7 @@ describe('RegistrationNotification', () => {
 
     fireEvent.click(screen.getByText('Назад'));
     unmount();
-    jest.advanceTimersByTime(300);
+    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
     expect(onBack).not.toHaveBeenCalled();
     jest.useRealTimers();
   });

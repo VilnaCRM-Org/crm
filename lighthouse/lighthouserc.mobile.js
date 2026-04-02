@@ -24,6 +24,7 @@ module.exports = {
     },
     assert: {
       assertions: {
+        // TODO: temporary relaxation — restore to 0.9 once mobile perf is addressed (@team, re-evaluate by 2026-05-01)
         'categories:performance': ['error', { minScore: 0.85, aggregationMethod: 'median-run' }],
         'categories:accessibility': ['error', { minScore: 0.9 }],
         'categories:bestPractices': ['error', { minScore: 0.9 }],
