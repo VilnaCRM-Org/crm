@@ -25,23 +25,21 @@ describe('public index performance safeguards', () => {
     expect(config).toContain('process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN ??');
   });
 
-  it('lazy-loads the authentication route to avoid shipping auth UI in the home bundle', () => {
+  it('keeps route suspense fallback empty to avoid adding a loading spinner to first paint', () => {
     const appSource = fs.readFileSync(path.resolve(__dirname, '../../../src/App.tsx'), 'utf8');
 
-    expect(appSource).toContain("const Authentication = lazy(async () => import('@/modules/User/features/Auth'));");
-    expect(appSource).not.toContain("import Authentication from '@/modules/User/features/Auth';");
+    expect(appSource).toContain('<React.Suspense fallback={null}>');
+    expect(appSource).not.toContain('CircularProgress');
   });
 
-  it('lazy-loads auth provider buttons so they do not block first paint on authentication', () => {
-    const formSectionSource = fs.readFileSync(
-      path.resolve(__dirname, '../../../src/modules/User/features/Auth/components/FormSection/index.tsx'),
-      'utf8'
-    );
+  it('keeps dependency injection metadata out of the client entry bundle', () => {
+    const entrySource = fs.readFileSync(path.resolve(__dirname, '../../../src/index.tsx'), 'utf8');
+    const storeSource = fs.readFileSync(path.resolve(__dirname, '../../../src/stores/index.ts'), 'utf8');
 
-    expect(formSectionSource).toContain(
-      "const AuthProviderButtons = lazy(async () => import('./components/AuthProviderButtons'));"
-    );
-    expect(formSectionSource).not.toContain("import AuthProviderButtons from './components/AuthProviderButtons';");
+    expect(entrySource).not.toContain("import 'reflect-metadata';");
+    expect(entrySource).not.toContain("import '@/config/DependencyInjectionConfig';");
+    expect(storeSource).not.toContain("from '@/config/DependencyInjectionConfig'");
+    expect(storeSource).not.toContain('container.resolve<');
   });
 
   it('serves immutable cache headers for static assets in production', () => {
