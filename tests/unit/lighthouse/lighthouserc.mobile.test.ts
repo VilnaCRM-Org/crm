@@ -1,4 +1,4 @@
-const mobileConfig = require('../../../lighthouse/lighthouserc.mobile');
+import mobileConfig from '../../../lighthouse/lighthouserc.mobile';
 
 describe('lighthouse mobile config', () => {
   it('keeps the mobile performance threshold strict enough to catch regressions', () => {

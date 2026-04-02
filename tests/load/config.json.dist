@@ -59,8 +59,8 @@
           "spike": 0.30
         },
         "checkPassRate": {
-          "smoke": 0.85,
-          "average": 0.85,
+          "smoke": 0.95,
+          "average": 0.95,
           "stress": 0.80,
           "spike": 0.75
         }

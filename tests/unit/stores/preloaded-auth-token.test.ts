@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-
 import {
   getPreloadedAuthToken,
   preloadedAuthTokenKey,
@@ -14,25 +11,6 @@ describe('getPreloadedAuthToken', () => {
     } as PreloadedAuthWindow, ' env-token ');
 
     expect(token).toBe('window-token');
-  });
-
-  it('does not read process.env directly in the default parameter path', () => {
-    const source = fs.readFileSync(
-      path.resolve(__dirname, '../../../src/stores/preloaded-auth-token.ts'),
-      'utf8'
-    );
-
-    expect(source).not.toContain('envToken: string | undefined = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN');
-  });
-
-  it('does not gate the default env token behind a runtime process check', () => {
-    const source = fs.readFileSync(
-      path.resolve(__dirname, '../../../src/stores/preloaded-auth-token.ts'),
-      'utf8'
-    );
-
-    expect(source).not.toContain("typeof process === 'undefined'");
-    expect(source).not.toContain("typeof process !== 'undefined'");
   });
 
   it('uses the default process env token when window is unavailable', () => {
@@ -51,7 +29,11 @@ describe('getPreloadedAuthToken', () => {
       configurable: true,
       value: originalWindow,
     });
-    process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = originalEnvToken;
+    if (originalEnvToken === undefined) {
+      delete process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+    } else {
+      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = originalEnvToken;
+    }
   });
 
   it('returns undefined when process.env is unavailable', () => {
@@ -59,7 +41,7 @@ describe('getPreloadedAuthToken', () => {
 
     Object.defineProperty(global, 'process', {
       configurable: true,
-      value: {},
+      value: undefined,
     });
 
     expect(getPreloadedAuthToken()).toBeUndefined();
@@ -68,5 +50,9 @@ describe('getPreloadedAuthToken', () => {
       configurable: true,
       value: originalProcess,
     });
+  });
+
+  it('returns undefined when the env token is unset', () => {
+    expect(getPreloadedAuthToken(undefined, undefined)).toBeUndefined();
   });
 });

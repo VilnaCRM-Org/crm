@@ -196,23 +196,14 @@ describe('password validation', () => {
   });
 
   describe('lowercase validation', () => {
-    it('should return lowercase error for password without lowercase', () => {
-      expect(validators.password('PASSWORD1', emptyUser)).toBe(
-        'sign_up.form.password_input.error_lowercase'
-      );
-      expect(validators.password('UPPERCASE123', emptyUser)).toBe(
-        'sign_up.form.password_input.error_lowercase'
-      );
-    });
-
-    it('should return lowercase error for valid length with numbers and uppercase but no lowercase', () => {
-      expect(validators.password('VALIDPASS1', emptyUser)).toBe(
-        'sign_up.form.password_input.error_lowercase'
-      );
-      expect(validators.password('PASSWORD123', emptyUser)).toBe(
-        'sign_up.form.password_input.error_lowercase'
-      );
-    });
+    it.each(['PASSWORD1', 'UPPERCASE123', 'VALIDPASS1', 'PASSWORD123'])(
+      'should return lowercase error for password without lowercase: %s',
+      (password) => {
+        expect(validators.password(password, emptyUser)).toBe(
+          'sign_up.form.password_input.error_lowercase'
+        );
+      }
+    );
 
     it('should accept password with single lowercase letter', () => {
       expect(validators.password('PASSWORd1', emptyUser)).toBe(true);

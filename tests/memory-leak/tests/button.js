@@ -8,6 +8,10 @@ const scenarioBuilder = new ScenarioBuilder();
 
 const signUpButtonSelector = 'button';
 
+async function setup(page) {
+  await page.waitForSelector(signUpButtonSelector, { timeout: 5000 });
+}
+
 async function action(page) {
   try {
     await page.waitForSelector(signUpButtonSelector, { timeout: 5000 });
@@ -17,4 +21,10 @@ async function action(page) {
   }
 }
 
-module.exports = scenarioBuilder.createScenario({ action });
+async function back(page) {
+  // TODO: Keep this as a no-op until the homepage button mutates UI state.
+  // The current ButtonExample click only schedules a console log and leaves the DOM unchanged.
+  await page.waitForSelector(signUpButtonSelector, { timeout: 5000 });
+}
+
+module.exports = scenarioBuilder.createScenario({ setup, action, back });

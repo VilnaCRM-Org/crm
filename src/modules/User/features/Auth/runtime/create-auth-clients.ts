@@ -2,6 +2,7 @@ import API_ENDPOINTS from '@/config/apiConfig';
 import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
 import type HttpsClient from '@/services/HttpsClient/HttpsClient';
 
+import BaseAPI from '@/modules/User/features/Auth/api/BaseAPI';
 import type { RequestOptions } from '@/modules/User/features/Auth/api/types';
 import type {
   LoginResponse,
@@ -11,8 +12,6 @@ import type {
   LoginUserDto,
   RegisterUserDto,
 } from '@/modules/User/features/Auth/types/Credentials';
-
-import BaseAPI from '../api/BaseAPI';
 
 type AuthClients = {
   loginAPI: {
@@ -50,6 +49,10 @@ export default function createAuthClients(): AuthClients {
             options
           );
         } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            throw error;
+          }
+
           throw errorAdapter.toLoginError(error);
         }
       },

@@ -6,6 +6,7 @@ const path = require('node:path');
 const { run, analyze } = require('@memlab/api');
 const { StringAnalysis } = require('@memlab/heap-analysis');
 
+const { hasValidScenarioHooks } = require('./utils/scenarioValidation');
 const { initializeLocalization } = require('./utils/initializeLocalization');
 const logger = require('./utils/logger');
 
@@ -39,10 +40,7 @@ const consoleMode = 'VERBOSE';
       const scenarios = [];
 
       if (testModule && typeof testModule === 'object') {
-        if (
-          (typeof testModule.url === 'function' || typeof testModule.url === 'string') &&
-          typeof testModule.action === 'function'
-        ) {
+        if (hasValidScenarioHooks(testModule)) {
           scenarios.push({ name: 'default', scenario: testModule });
           logger.debug(`✓ Found default export as scenario`);
         }
@@ -54,8 +52,7 @@ const consoleMode = 'VERBOSE';
             !isScenarioProperty &&
             value &&
             typeof value === 'object' &&
-            (typeof value.url === 'function' || typeof value.url === 'string') &&
-            typeof value.action === 'function'
+            hasValidScenarioHooks(value)
           ) {
             scenarios.push({ name: key, scenario: value });
             logger.debug(`✓ Found named export: ${key}`);

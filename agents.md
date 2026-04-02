@@ -10,11 +10,14 @@ see `CLAUDE.md`.
 
 ### First-Time Setup Checklist
 
-1. Verify Node version: `make check-node-version`
-2. Install dependencies: `pnpm install` (or `make install` in Docker)
-3. Set up git hooks: `make husky`
-4. Start development: `make start`
-5. Run initial tests: `make test-unit-all`
+Run every setup and test step through the repository Makefile so contributors and CI use the
+same Docker-backed environment and avoid host-specific drift.
+
+1. Verify Node version in the repo environment: `make check-node-version`
+2. Install dependencies in the dev container: `make install`
+3. Set up git hooks from the repo workflow: `make husky`
+4. Start development in Docker: `make start`
+5. Run initial tests through Docker: `make test-unit-all`
 
 ### Common Agent Tasks
 
@@ -43,10 +46,10 @@ see `CLAUDE.md`.
 
    ```bash
    # Find component usage
-   grep -r "ComponentName" src/
+   rg "ComponentName" src/
 
    # Find API endpoints
-   grep -r "mutation.*Operation" src/
+   rg "mutation.*Operation" src/
    ```
 
 2. **Check test coverage**:
@@ -67,14 +70,18 @@ see `CLAUDE.md`.
 
    ```bash
    # Single test file
-   CI=1 pnpm exec jest tests/unit/path/to/test.test.tsx
+   docker compose exec -T dev env TEST_ENV=client \
+     node ./node_modules/jest/bin/jest.js tests/unit/path/to/test.test.tsx
 
    # Test pattern
-   CI=1 pnpm exec jest --testNamePattern="test name"
+   docker compose exec -T dev env TEST_ENV=client \
+     node ./node_modules/jest/bin/jest.js --testNamePattern="test name"
    ```
 
 4. **Fix and verify** - Ensure no regressions with `make test-unit-all`
-5. **Update snapshots if needed** - `pnpm exec jest -u` (use cautiously)
+5. **Update snapshots if needed** - Run
+   `docker compose exec -T dev env TEST_ENV=client node ./node_modules/jest/bin/jest.js -u`
+   (use cautiously)
 
 ## Code Review Workflow and PR Refactoring
 

@@ -98,7 +98,7 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
       console.log(
         `[WARN] Unexpected status during rate limit test: ${res.status} - ${getShortBody(res.body)}`
       );
-      return true;
+      return false;
     });
   }
 

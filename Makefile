@@ -90,7 +90,7 @@ PLAYWRIGHT_TEST_PORT        ?= 9324
 UI_HOST                     ?= 0.0.0.0
 INSTALL_CHROMIUM            ?= false
 
-MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" -i agents.md "**/*.md"
+MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
 PRETTIER_CMD                = $(BUNX) prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage

@@ -6,8 +6,8 @@ const USE_REAL_BACKEND = __ENV.USE_REAL_BACKEND === 'true';
 
 export default function runNegativeTests(utils, baseUrl, params) {
   const headers = {
-    'Content-Type': 'application/json',
     ...params.headers,
+    'Content-Type': 'application/json',
   };
 
   if (!USE_REAL_BACKEND) {
@@ -29,8 +29,8 @@ function testSQLInjection(utils, baseUrl, headers, params) {
 
   sqlInjectionPayloads.forEach((injection) => {
     const payload = JSON.stringify({
-      fullName: 'Test User',
-      email: `${injection}@example.com`,
+      fullName: injection,
+      email: TEST_DATA_GENERATORS.generateUser().email,
       password: 'TestPassword123!',
     });
 

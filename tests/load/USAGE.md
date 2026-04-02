@@ -103,6 +103,8 @@ The signup endpoint can have custom host/port settings:
       "setupTimeoutInMinutes": 10,
       "smoke": {},
       "average": {}
+    }
+  }
 }
 ```
 
@@ -145,8 +147,8 @@ To configure endpoint-specific thresholds, add a `thresholds` section in `config
           "spike": 0.3
         },
         "checkPassRate": {
-          "smoke": 0.85,
-          "average": 0.85,
+          "smoke": 0.95,
+          "average": 0.95,
           "stress": 0.8,
           "spike": 0.75
         }

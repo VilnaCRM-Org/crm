@@ -13,6 +13,7 @@ test.describe('BackToMain Component E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
     await seedPreloadedAuthToken(page);
     await page.goto('/authentication');
+    await expect(page).toHaveURL(/\/authentication$/);
   });
 
   test.describe('Navigation Functionality', () => {

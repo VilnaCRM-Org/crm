@@ -23,6 +23,7 @@ export default function signup() {
         callback();
       } catch (error) {
         console.error(`[ERROR] ${groupName} failed`, error);
+        throw error;
       }
     });
   };
@@ -39,7 +40,7 @@ export default function signup() {
 
   sleep(0.5);
 
-  if (__ITER === 0) {
+  if (__VU === 1 && __ITER === 0) {
     runGroup('Rate Limit Tests - Abuse Protection', () => {
       runRateLimitTests(utils, baseUrl, params);
     });

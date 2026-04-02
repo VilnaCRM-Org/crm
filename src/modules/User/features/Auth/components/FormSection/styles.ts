@@ -77,7 +77,7 @@ export default {
   },
   formSwitcherError: {
     marginTop: '1rem',
-    marginBottom: '-0.5rem',
+    minHeight: '1.25rem',
 
     fontFamily: 'Golos',
     fontSize: '0.875rem',

@@ -13,10 +13,7 @@ export default class Utils {
       if (endpointConfig.host) finalHost = endpointConfig.host;
       if (endpointConfig.port) finalPort = endpointConfig.port;
     } else if (endpointName) {
-      // eslint-disable-next-line no-console
-      console.warn(
-        `Endpoint '${endpointName}' not found in configuration, using default host/port`
-      );
+      throw new Error(`Endpoint '${endpointName}' not found in configuration`);
     }
 
     this.baseUrl = `${protocol}://${finalHost}${finalPort ? `:${finalPort}` : ''}`;
@@ -63,7 +60,7 @@ export default class Utils {
       throw new Error('checkFunction must be a function');
     }
 
-    check(response, {
+    return check(response, {
       [checkName]: (res) => checkFunction(res),
     });
   }

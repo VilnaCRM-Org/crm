@@ -39,18 +39,18 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
     headers,
   });
 
-  if (signupResponse.status !== 201 && signupResponse.status !== 200) {
+  const signupSucceeded = utils.checkResponse(
+    signupResponse,
+    'integration: signup returns 2xx status (shape-only)',
+    (res) => res.status === 201 || res.status === 200
+  );
+
+  if (!signupSucceeded) {
     console.log(
       `[INFO] Signup failed in integration test (status: ${signupResponse.status}), skipping login test`
     );
     return;
   }
-
-  utils.checkResponse(
-    signupResponse,
-    'integration: signup returns 2xx status (shape-only)',
-    (res) => res.status === 201 || res.status === 200
-  );
 
   let userId;
   try {
@@ -81,7 +81,10 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
   utils.checkResponse(
     loginResponse,
     'integration: login returns valid status (shape-only)',
-    (res) => res.status === 200 || res.status === 201 || (res.status >= 400 && res.status < 500)
+    (res) =>
+      USE_REAL_BACKEND
+        ? res.status === 200 || res.status === 201
+        : res.status === 200 || res.status === 201 || (res.status >= 400 && res.status < 500)
   );
 
   if (loginResponse.status === 200 || loginResponse.status === 201) {
@@ -174,7 +177,13 @@ function testDuplicateSignupFlow(utils, baseUrl, headers, params) {
     headers,
   });
 
-  if (firstSignup.status !== 201 && firstSignup.status !== 200) {
+  if (
+    !utils.checkResponse(
+      firstSignup,
+      'integration: initial signup returns 2xx status before duplicate check',
+      (res) => res.status === 201 || res.status === 200
+    )
+  ) {
     return;
   }
 

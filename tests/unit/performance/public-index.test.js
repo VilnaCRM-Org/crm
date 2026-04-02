@@ -18,11 +18,11 @@ describe('public index performance safeguards', () => {
     expect(html).not.toContain('Bulletproof React Application');
   });
 
-  it('injects the lhci preloaded auth token into the rsbuild client defines', () => {
+  it('does not inline the lhci preloaded auth token into the rsbuild client defines', () => {
     const config = fs.readFileSync(path.resolve(__dirname, '../../../rsbuild.config.ts'), 'utf8');
 
-    expect(config).toContain("'process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN'");
-    expect(config).toContain('process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN ??');
+    expect(config).not.toContain("'process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN'");
+    expect(config).not.toContain('process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN ??');
   });
 
   it('keeps route suspense fallback empty to avoid adding a loading spinner to first paint', () => {

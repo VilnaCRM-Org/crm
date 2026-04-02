@@ -1,7 +1,10 @@
 /* eslint-disable no-console */
 import http from 'k6/http';
 
+import { hasSuccessfulSignupBody } from './responseAssertions.js';
 import TEST_DATA_GENERATORS from '../utils/test-data.js';
+
+const USE_REAL_BACKEND = __ENV.USE_REAL_BACKEND === 'true';
 
 export default function runPositiveTests(utils, baseUrl, params) {
   const userData = TEST_DATA_GENERATORS.generateUser();
@@ -22,13 +25,11 @@ export default function runPositiveTests(utils, baseUrl, params) {
     headers,
   });
 
-  const isSuccess = response.status >= 200 && response.status < 300;
-  const isExpectedClientError = response.status === 400 || response.status === 409;
+  const isSuccess = response.status === 200 || response.status === 201;
   const isServerError = response.status >= 500;
 
   utils.checkResponse(response, 'registration request completed without server error', (res) => {
-    if (res.status >= 200 && res.status < 300) return true;
-    if (res.status === 400 || res.status === 409) return true;
+    if (res.status === 200 || res.status === 201) return true;
 
     if (res.status >= 500) {
       console.error(
@@ -42,7 +43,7 @@ export default function runPositiveTests(utils, baseUrl, params) {
     return false;
   });
 
-  if (!isSuccess && !isExpectedClientError) {
+  if (!isSuccess) {
     if (isServerError) {
       console.error(
         `[ERROR] Server error during registration: ${response.status} - ${(response.body || '').substring(0, 100)}`
@@ -67,18 +68,7 @@ export default function runPositiveTests(utils, baseUrl, params) {
     utils.checkResponse(response, 'success response contains user ID', (res) => {
       try {
         const body = JSON.parse(res.body);
-        return body.id !== undefined && body.id !== null;
-      } catch {
-        return false;
-      }
-    });
-  }
-
-  if (response.status === 400 || response.status === 409) {
-    utils.checkResponse(response, 'error response has valid structure', (res) => {
-      try {
-        const body = JSON.parse(res.body);
-        return typeof body.message === 'string' || typeof body.error === 'string';
+        return hasSuccessfulSignupBody(body, userData.email, USE_REAL_BACKEND);
       } catch {
         return false;
       }
