@@ -1,6 +1,12 @@
 /**
  * TODO: Remove after the final homepage design is implemented.
+ * Opt-in example: only runs when MEMLEAK_INCLUDE_EXAMPLES=true.
  */
+
+if (process.env.MEMLEAK_INCLUDE_EXAMPLES !== 'true') {
+  module.exports = {};
+  return;
+}
 
 const ScenarioBuilder = require('../utils/scenarioBuilder');
 

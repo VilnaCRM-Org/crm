@@ -39,4 +39,17 @@ describe('hasSuccessfulSignupBody', () => {
       )
     ).toBe(false);
   });
+
+  it('rejects empty id even when email matches for real backend', () => {
+    expect(
+      hasSuccessfulSignupBody(
+        {
+          id: '',
+          email: 'test.123@example.com',
+        },
+        'test.123@example.com',
+        true
+      )
+    ).toBe(false);
+  });
 });

@@ -162,21 +162,21 @@ Configuration is managed in `tests/load/config.json.dist` under the `signup` end
       "threshold": 5000,
       "rps": 10,
       "vus": 10,
-      "maxVus": 30,
+      "maxVUs": 30,
       "duration": { "rise": 5, "plateau": 30, "fall": 5 }
     },
     "stress": {
       "threshold": 12000,
       "rps": 50,
       "vus": 50,
-      "maxVus": 150,
+      "maxVUs": 150,
       "duration": { "rise": 5, "plateau": 30, "fall": 5 }
     },
     "spike": {
       "threshold": 25000,
       "rps": 100,
       "vus": 100,
-      "maxVus": 300,
+      "maxVUs": 300,
       "duration": { "rise": 30, "fall": 10 }
     }
   }
@@ -252,7 +252,7 @@ The test suite uses `TEST_DATA_GENERATORS` from `utils/test-data.js`:
 
 ```js
 const user = TEST_DATA_GENERATORS.generateUser();
-// Returns: { initials, email, password }
+// Returns: { name, fullName, email, password }
 ```
 
 ### Batch User Generation **[NEW]**
@@ -312,7 +312,7 @@ Each generated user has:
 
 4. **VUs** - Number of virtual users actively running tests
    - Should match configured scenario values
-   - `Insufficient VUs` warning indicates need for higher `maxVus`
+   - `Insufficient VUs` warning indicates need for higher `maxVUs`
 
 ### Common Issues
 
@@ -331,7 +331,7 @@ Each generated user has:
 **Issue**: `WARN[XXXX] Insufficient VUs, reached X active VUs and cannot initialize more`
 
 - **Cause**: Not enough virtual users allocated for target RPS
-- **Solution**: Increase `maxVus` in config for that scenario
+- **Solution**: Increase `maxVUs` in config for that scenario
 
 **Issue**: High failure rate in signup tests
 

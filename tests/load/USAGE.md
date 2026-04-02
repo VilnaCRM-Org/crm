@@ -8,11 +8,12 @@
 make test-load-signup
 ```
 
-This command runs all three signup test suites in sequence:
+This command runs all four signup test suites in sequence:
 
-1. ✅ **Positive tests** (`signup.js`) - Normal registration flow
-2. 🛡️ **Negative tests** (`signup-negative.js`) - Validation & security
-3. ⏱️ **Rate limit tests** (`signup-ratelimit.js`) - Abuse protection
+1. ✅ **Positive tests** (`positive.js`) - Normal registration flow
+2. 🛡️ **Negative tests** (`negative.js`) - Validation & security
+3. ⏱️ **Rate limit tests** (`ratelimit.js`) - Abuse protection
+4. 🔗 **Integration tests** (`integration.js`) - End-to-end flows
 
 ## Scenario Selection
 

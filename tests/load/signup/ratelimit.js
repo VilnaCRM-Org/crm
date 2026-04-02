@@ -147,7 +147,25 @@ function testRapidRequestsDifferentData(utils, baseUrl, params) {
     }
 
     if (response.status === 429) {
-      rateLimitHit = true;
+      const valid429 = utils.checkResponse(
+        response,
+        'bulk rate limit response has retry-after or message',
+        (res) => {
+          const hasRetryAfter = res.headers['Retry-After'] !== undefined;
+          let hasMessage = false;
+          try {
+            const body = JSON.parse(res.body);
+            hasMessage = typeof body.message === 'string';
+          } catch {
+            // Body might not be JSON
+          }
+          return hasRetryAfter || hasMessage;
+        }
+      );
+
+      if (valid429) {
+        rateLimitHit = true;
+      }
       break;
     }
 

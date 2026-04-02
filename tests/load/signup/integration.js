@@ -57,11 +57,21 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
     const signupBody = JSON.parse(signupResponse.body);
     userId = signupBody.id;
   } catch {
+    if (USE_REAL_BACKEND) {
+      throw new Error(
+        `Real backend returned unparseable signup response (status: ${signupResponse.status}, body: ${String(signupResponse.body).substring(0, 200)})`
+      );
+    }
     console.log('[INFO] Could not parse signup response, skipping login test');
     return;
   }
 
   if (!userId) {
+    if (USE_REAL_BACKEND) {
+      throw new Error(
+        `Real backend signup succeeded (status: ${signupResponse.status}) but response is missing user id (body: ${String(signupResponse.body).substring(0, 200)})`
+      );
+    }
     console.log('[INFO] Signup did not return user id, skipping profile request');
     return;
   }

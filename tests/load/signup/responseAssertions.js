@@ -4,7 +4,7 @@ function hasSuccessfulSignupBody(body, expectedEmail, useRealBackend) {
   }
 
   if (useRealBackend) {
-    return body.id !== undefined && body.id !== null && body.email === expectedEmail;
+    return Boolean(body.id) && body.email === expectedEmail;
   }
 
   return Object.prototype.hasOwnProperty.call(body, 'id');

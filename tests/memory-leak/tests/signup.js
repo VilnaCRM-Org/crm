@@ -135,17 +135,13 @@ const generateFakeUserData = () => ({
 });
 
 async function clearInputField(page, selector) {
-  const input = await page.$(selector);
-  if (input) {
-    await input.click({ clickCount: 3 });
-    await page.evaluate((sel) => {
-      const element = document.querySelector(sel);
-      if (element) {
-        element.value = '';
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    }, selector);
-  }
+  await page.evaluate((sel) => {
+    const element = document.querySelector(sel);
+    if (element) {
+      element.value = '';
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }, selector);
 }
 
 async function fillFormFields(page, selectors, data) {
@@ -166,6 +162,7 @@ async function clearFormFields(page, selectors) {
         await clearInputField(page, selectors[field]);
       } catch (error) {
         logger.warn(`⚠️ Failed to clear field ${field}: ${error.message}`);
+        throw error;
       }
     }
   }
@@ -247,6 +244,7 @@ async function back(page) {
     }
   } catch (error) {
     logger.warn(`⚠️ Back function warning: ${error.message}`);
+    throw error;
   }
 }
 
@@ -306,6 +304,7 @@ async function completeRegistrationBack(page) {
     }
   } catch (error) {
     logger.warn(`⚠️ Complete registration back warning: ${error.message}`);
+    throw error;
   }
 }
 

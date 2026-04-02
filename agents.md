@@ -821,19 +821,8 @@ When creating a new module:
 
 ### Local Development (without Docker)
 
-```bash
-# Install dependencies
-pnpm install
-
-# Start dev server
-CI=1 pnpm start
-
-# Run tests
-CI=1 pnpm test
-
-# Build
-CI=1 pnpm build
-```
+Non-Docker workflows are not supported. All development and testing must use Docker
+via the Makefile targets (see the Docker Development section below).
 
 ### Docker Development (recommended)
 

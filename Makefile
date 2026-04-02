@@ -339,6 +339,19 @@ stop: ## Stop docker
 check-node-version: ## Check if the correct Node.js version is installed
 	$(EXEC_CMD) node checkNodeVersion.js
 
+PR ?=
+FORMAT ?=
+pr-comments: ## Retrieve unresolved PR review comments (PR=<num> FORMAT=<json|markdown>)
+	@if [ -n "$(PR)" ] && [ -n "$(FORMAT)" ]; then \
+		./scripts/get-pr-comments.sh $(PR) $(FORMAT); \
+	elif [ -n "$(PR)" ]; then \
+		./scripts/get-pr-comments.sh $(PR); \
+	elif [ -n "$(FORMAT)" ]; then \
+		./scripts/get-pr-comments.sh $(FORMAT); \
+	else \
+		./scripts/get-pr-comments.sh; \
+	fi
+
 clean: down ## Clean up only this project's containers, images, and volumes
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) down --volumes --remove-orphans --rmi local
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) down --volumes --remove-orphans --rmi local

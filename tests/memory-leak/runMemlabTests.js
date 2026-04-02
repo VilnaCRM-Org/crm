@@ -61,29 +61,30 @@ const consoleMode = 'VERBOSE';
       }
 
       if (scenarios.length === 0) {
-        logger.error(`Available exports: ${JSON.stringify(Object.keys(testModule))}`);
-        throw new Error(`No valid scenarios found in ${testFilePath}`);
-      }
+        logger.info(
+          `⏭️  Skipping ${path.basename(testFilePath)} (no scenarios exported; set MEMLEAK_INCLUDE_EXAMPLES=true to opt in)`
+        );
+      } else {
+        logger.info(`\n📋 Found ${scenarios.length} scenario(s) in ${path.basename(testFilePath)}`);
 
-      logger.info(`\n📋 Found ${scenarios.length} scenario(s) in ${path.basename(testFilePath)}`);
+        for (const { name, scenario } of scenarios) {
+          logger.info(`\n🧪 Running scenario: ${name} from ${path.basename(testFilePath)}`);
+          const { runResult } = await run({
+            scenario,
+            consoleMode,
+            workDir,
+            skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
+            debug: process.env.MEMLAB_DEBUG === 'true',
+          });
+          try {
+            const analyzer = new StringAnalysis();
+            await analyze(runResult, analyzer);
+          } finally {
+            runResult.cleanup();
+          }
 
-      for (const { name, scenario } of scenarios) {
-        logger.info(`\n🧪 Running scenario: ${name} from ${path.basename(testFilePath)}`);
-        const { runResult } = await run({
-          scenario,
-          consoleMode,
-          workDir,
-          skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
-          debug: process.env.MEMLAB_DEBUG === 'true',
-        });
-        try {
-          const analyzer = new StringAnalysis();
-          await analyze(runResult, analyzer);
-        } finally {
-          runResult.cleanup();
+          logger.info(`✅ Completed scenario: ${name}`);
         }
-
-        logger.info(`✅ Completed scenario: ${name}`);
       }
     } catch (error) {
       logger.error(`✗ Failed memory leak test: ${path.basename(testFilePath)}`, error);
