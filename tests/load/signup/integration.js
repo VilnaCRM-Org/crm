@@ -245,8 +245,8 @@ function testInvalidSignupLoginAttempt(utils, baseUrl, headers, params) {
   });
 
   const loginResponse = http.post(`${baseUrl}/api/auth/login`, loginPayload, {
-    headers,
     ...params,
+    headers,
   });
 
   utils.checkResponse(

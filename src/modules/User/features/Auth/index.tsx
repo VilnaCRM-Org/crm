@@ -1,9 +1,8 @@
 import UIFooter from '@/components/UIFooter';
 import BackToMain from '@/modules/BackToMain';
 
+import AuthErrorBoundary from '@/modules/User/features/Auth/components/AuthErrorBoundary';
 import FormSection from '@/modules/User/features/Auth/components/FormSection';
-
-import AuthErrorBoundary from './components/AuthErrorBoundary';
 
 export default function Authentication(): JSX.Element {
   return (

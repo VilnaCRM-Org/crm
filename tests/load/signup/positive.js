@@ -25,9 +25,6 @@ export default function runPositiveTests(utils, baseUrl, params) {
     headers,
   });
 
-  const isSuccess = response.status === 200 || response.status === 201;
-  const isServerError = response.status >= 500;
-
   utils.checkResponse(response, 'registration request completed without server error', (res) => {
     if (res.status === 200 || res.status === 201) return true;
 
@@ -42,18 +39,6 @@ export default function runPositiveTests(utils, baseUrl, params) {
     );
     return false;
   });
-
-  if (!isSuccess) {
-    if (isServerError) {
-      console.error(
-        `[ERROR] Server error during registration: ${response.status} - ${(response.body || '').substring(0, 100)}`
-      );
-    } else {
-      console.log(
-        `[INFO] Unexpected client response: ${response.status} - ${(response.body || '').substring(0, 100)}`
-      );
-    }
-  }
 
   if (response.status === 201 || response.status === 200) {
     utils.checkResponse(response, 'success response has valid JSON body', (res) => {

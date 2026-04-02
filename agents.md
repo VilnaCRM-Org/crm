@@ -560,10 +560,10 @@ export const UIComponentName: React.FC<UIComponentNameProps> = (props) => {
 
    ```bash
    # Client (jsdom environment)
-   CI=1 pnpm exec jest tests/unit/components/
+   docker compose exec -T dev env CI=1 TEST_ENV=client node ./node_modules/jest/bin/jest.js tests/unit/components/
 
    # Server (node environment)
-   CI=1 TEST_ENV=server pnpm exec jest tests/apollo-server/
+   docker compose exec -T dev env CI=1 TEST_ENV=server node ./node_modules/jest/bin/jest.js tests/apollo-server/
    ```
 
 3. **Mock external dependencies**:
@@ -864,8 +864,8 @@ See `.github/workflows/` for configuration
 ### Dependency Audits
 
 ```bash
-pnpm audit
-pnpm audit --fix  # Auto-fix vulnerabilities
+docker compose exec -T dev pnpm audit
+docker compose exec -T dev pnpm audit --fix  # Auto-fix vulnerabilities
 ```
 
 Run monthly or when dependabot alerts

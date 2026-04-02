@@ -55,4 +55,22 @@ describe('getPreloadedAuthToken', () => {
   it('returns undefined when the env token is unset', () => {
     expect(getPreloadedAuthToken(undefined, undefined)).toBeUndefined();
   });
+
+  it('falls back to env token when window token is whitespace-only', () => {
+    const token = getPreloadedAuthToken(
+      { [preloadedAuthTokenKey]: '   ' } as PreloadedAuthWindow,
+      'env-token'
+    );
+
+    expect(token).toBe('env-token');
+  });
+
+  it('returns undefined when both window and env tokens are whitespace-only', () => {
+    const token = getPreloadedAuthToken(
+      { [preloadedAuthTokenKey]: '   ' } as PreloadedAuthWindow,
+      '   '
+    );
+
+    expect(token).toBeUndefined();
+  });
 });

@@ -30,6 +30,8 @@ const consoleMode = 'VERBOSE';
 
   await initializeLocalization();
 
+  let totalScenariosRun = 0;
+
   for (const testFilePath of testFilePaths) {
     try {
       const testModule = require(testFilePath);
@@ -65,6 +67,7 @@ const consoleMode = 'VERBOSE';
           `⏭️  Skipping ${path.basename(testFilePath)} (no scenarios exported; set MEMLEAK_INCLUDE_EXAMPLES=true to opt in)`
         );
       } else {
+        totalScenariosRun += scenarios.length;
         logger.info(`\n📋 Found ${scenarios.length} scenario(s) in ${path.basename(testFilePath)}`);
 
         for (const { name, scenario } of scenarios) {
@@ -90,5 +93,13 @@ const consoleMode = 'VERBOSE';
       logger.error(`✗ Failed memory leak test: ${path.basename(testFilePath)}`, error);
       process.exit(1);
     }
+  }
+
+  if (totalScenariosRun === 0) {
+    logger.warn(
+      '⚠️  No memory leak scenarios were executed. ' +
+        'Set MEMLEAK_INCLUDE_EXAMPLES=true to opt in to example scenarios, ' +
+        'or ensure test files export valid scenarios.'
+    );
   }
 })();

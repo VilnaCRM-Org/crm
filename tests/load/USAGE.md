@@ -109,6 +109,11 @@ The signup endpoint can have custom host/port settings:
 }
 ```
 
+> **Note:** The default `host: "mockoon"` points to the mock server used in CI.
+> Replace `endpoints.signup.host` (and `port`) with your real backend hostname
+> (e.g., `"localhost"` for local testing or your production hostname) when you
+> want load tests to target the actual service instead of the mock.
+
 ## Performance Thresholds
 
 The tests use scenario-specific thresholds following industry best practices:
