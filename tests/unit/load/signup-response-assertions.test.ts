@@ -1,6 +1,4 @@
-const {
-  hasSuccessfulSignupBody,
-} = require('../../load/signup/responseAssertions');
+import { hasSuccessfulSignupBody } from '../../load/signup/responseAssertions';
 
 describe('hasSuccessfulSignupBody', () => {
   it('accepts the current mock fixture response in mock mode', () => {
