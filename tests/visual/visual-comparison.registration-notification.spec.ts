@@ -4,6 +4,7 @@ import {
   REGISTRATION_URL,
   REGISTRATION_API_URL,
   userData,
+  successNotificationTitle,
 } from '../e2e/modules/User/features/Auth/components/FormSection/AuthForms/constants/constants';
 import getFormFields from '../e2e/modules/User/features/Auth/components/FormSection/AuthForms/utils/getFormFields';
 import {
@@ -46,7 +47,7 @@ test.describe.parallel('Registration Notification Visual Tests', () => {
       await fillInput(passwordInput, userData.password);
       await signupButton.click();
 
-      await expect(page.locator('[data-testid="success-notification-title"]')).toBeVisible();
+      await expect(page.locator(`text=${successNotificationTitle}`)).toBeVisible();
       await page.waitForLoadState('networkidle');
 
       await expect(page).toHaveScreenshot(
