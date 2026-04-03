@@ -6,8 +6,14 @@ const AUTH_ASYNC_JS_GLOB = '**/static/js/async/*.js';
 async function interceptAuthFormChunks(page: Page): Promise<() => Promise<void>> {
   const pendingRoutes: Array<() => void> = [];
   const pendingContinuations: Promise<void>[] = [];
+  let released = false;
 
   await page.route(AUTH_ASYNC_JS_GLOB, async (route) => {
+    if (released) {
+      await route.continue();
+      return;
+    }
+
     let continueRoute!: () => void;
     const delayedChunkGate = new Promise<void>((resolve) => {
       continueRoute = resolve;
@@ -23,6 +29,7 @@ async function interceptAuthFormChunks(page: Page): Promise<() => Promise<void>>
   });
 
   return async (): Promise<void> => {
+    released = true;
     const routesToRelease = pendingRoutes.splice(0, pendingRoutes.length);
     const continuationsToAwait = pendingContinuations.splice(0, pendingContinuations.length);
 

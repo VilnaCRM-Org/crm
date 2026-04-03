@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import React from 'react';
 
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
@@ -9,18 +9,25 @@ import styles from '@/components/skeletons/ui-skeleton-input/styles';
 const theme = createTheme();
 
 describe('UISkeletonInput Integration', () => {
-  const getSkeletonElements = (): HTMLElement[] =>
-    screen.getAllByRole('generic') as HTMLElement[];
+  const getSkeletonInput = (): HTMLElement => {
+    const element = document.getElementById('skeleton-input');
+    if (!element) throw new Error('skeleton-input not found');
+    return element;
+  };
 
-  const getSkeletonInput = (): HTMLElement =>
-    getSkeletonElements().find((element) => element.id === 'skeleton-input') as HTMLElement;
+  const getSkeletonElements = (): HTMLElement[] =>
+    within(getSkeletonInput()).getAllByRole('generic') as HTMLElement[];
 
   const getSkeletonPlaceholders = (): HTMLElement[] =>
     getSkeletonElements().filter(
       (element) => element.className.includes('ui-skeleton-input__placeholder')
     );
 
-  const getSkeletonPlaceholder = (): HTMLElement => getSkeletonPlaceholders()[0] as HTMLElement;
+  const getSkeletonPlaceholder = (): HTMLElement => {
+    const placeholder = getSkeletonPlaceholders()[0];
+    if (!placeholder) throw new Error('ui-skeleton-input__placeholder not found');
+    return placeholder;
+  };
 
   it('renders with default props', () => {
     expect(React).toBeDefined();

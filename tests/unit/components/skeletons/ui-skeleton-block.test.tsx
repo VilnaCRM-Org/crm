@@ -9,8 +9,11 @@ jest.mock('@/components/skeletons/ui-skeleton-block/styles', () => ({
 }));
 
 describe('UISkeletonBlock', () => {
-  const getSkeletonBlock = (): HTMLElement =>
-    screen.getAllByRole('generic').find((element) => element.id === 'skeleton-block') as HTMLElement;
+  const getSkeletonBlock = (): HTMLElement => {
+    const element = screen.getAllByRole('generic').find((el) => el.id === 'skeleton-block');
+    if (!element) throw new Error('skeleton-block not found');
+    return element;
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -43,6 +46,7 @@ describe('UISkeletonBlock', () => {
     render(<UISkeletonBlock sx={arraySx} id="skeleton-block" />);
 
     expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
+    expect(getBlockSkeletonStyles).toHaveBeenCalledWith('100%', '3rem', '8px');
   });
 
   it('renders with object sx prop', () => {
