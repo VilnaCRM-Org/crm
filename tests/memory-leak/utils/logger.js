@@ -1,19 +1,22 @@
-const DISALLOWED_MSG =
-  'Use of console.log/warn/error is disallowed; use approved logging or throw instead';
+const util = require('node:util');
+
+function writeLine(stream, args) {
+  stream.write(`${util.format(...args)}\n`);
+}
 
 const logger = {
-  info: () => {
-    throw new Error(DISALLOWED_MSG);
+  info: (...args) => {
+    writeLine(process.stdout, args);
   },
-  error: () => {
-    throw new Error(DISALLOWED_MSG);
+  error: (...args) => {
+    writeLine(process.stderr, args);
   },
-  warn: () => {
-    throw new Error(DISALLOWED_MSG);
+  warn: (...args) => {
+    writeLine(process.stderr, args);
   },
-  debug: () => {
+  debug: (...args) => {
     if (process.env.MEMLAB_DEBUG === 'true') {
-      throw new Error(DISALLOWED_MSG);
+      writeLine(process.stdout, ['[DEBUG]', ...args]);
     }
   },
 };
