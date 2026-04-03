@@ -5,7 +5,7 @@ import runPositiveTests from './signup/positive.js';
 import runNegativeTests from './signup/negative.js';
 import runRateLimitTests from './signup/ratelimit.js';
 import runIntegrationTests from './signup/integration.js';
-import ScenarioUtils from './utils/scenarioUtils.js';
+import ScenarioUtils from './utils/scenario-utils.js';
 import Utils from './utils/utils.js';
 
 const scenarioName = 'signup';

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import http from 'k6/http';
 
-import { hasSuccessfulSignupBody } from './responseAssertions.js';
+import { hasSuccessfulSignupBody } from './response-assertions.js';
 import TEST_DATA_GENERATORS from '../utils/test-data.js';
 
 const USE_REAL_BACKEND = __ENV.USE_REAL_BACKEND === 'true';

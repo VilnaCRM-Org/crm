@@ -1,8 +1,8 @@
 const { t } = require('i18next');
 const { faker } = require('@faker-js/faker');
 
-const verifyPage = require('../utils/verifyPage');
-const ScenarioBuilder = require('../utils/scenarioBuilder');
+const verifyPage = require('../utils/verify-page');
+const ScenarioBuilder = require('../utils/scenario-builder');
 const logger = require('../utils/logger');
 
 const ROUTE_PATH = '/authentication';

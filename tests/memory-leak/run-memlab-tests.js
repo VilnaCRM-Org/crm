@@ -6,7 +6,7 @@ const path = require('node:path');
 const { run, analyze } = require('@memlab/api');
 const { StringAnalysis } = require('@memlab/heap-analysis');
 
-const { hasValidScenarioHooks } = require('./utils/scenarioValidation');
+const { hasValidScenarioHooks } = require('./utils/scenario-validation');
 const { initializeLocalization } = require('./utils/initializeLocalization');
 const logger = require('./utils/logger');
 

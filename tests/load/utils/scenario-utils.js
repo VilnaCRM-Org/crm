@@ -1,5 +1,5 @@
-import ScenariosBuilder from './scenariosBuilder.js';
-import ThresholdsBuilder from './thresholdsBuilder.js';
+import ScenariosBuilder from './scenarios-builder.js';
+import ThresholdsBuilder from './thresholds-builder.js';
 
 export default class ScenarioUtils {
   constructor(utils, scenarioName) {

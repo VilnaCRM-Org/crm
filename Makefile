@@ -50,7 +50,7 @@ MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
 MEMLEAK_BASE_PATH           = ./tests/memory-leak
 MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
-MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/runMemlabTests.js
+MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/run-memlab-tests.js
 
 MEMLEAK_REMOVE_RESULTS		= rm -rf $(MEMLEAK_RESULTS_DIR)
 MEMLEAK_SETUP 				= \

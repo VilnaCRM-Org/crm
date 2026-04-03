@@ -4,7 +4,7 @@
  */
 
 if (process.env.MEMLEAK_INCLUDE_EXAMPLES === 'true') {
-  const ScenarioBuilder = require('../utils/scenarioBuilder');
+  const ScenarioBuilder = require('../utils/scenario-builder');
 
   const scenarioBuilder = new ScenarioBuilder();
 

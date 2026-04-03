@@ -1,4 +1,4 @@
-import { hasSuccessfulSignupBody } from '../../load/signup/responseAssertions';
+import { hasSuccessfulSignupBody } from '../../load/signup/response-assertions';
 
 describe('hasSuccessfulSignupBody', () => {
   it('accepts the current mock fixture response in mock mode', () => {
