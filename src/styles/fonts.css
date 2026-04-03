@@ -3,7 +3,7 @@
   font-display: swap;
   font-weight: 400;
   font-style: normal;
-  src: url('../assets/fonts/golos/Golos-Text_Regular.woff2') format('woff2');
+  src: url('../assets/fonts/golos/golos-text-regular.woff2') format('woff2');
 }
 
 @font-face {
@@ -11,7 +11,7 @@
   font-display: swap;
   font-weight: 500;
   font-style: normal;
-  src: url('../assets/fonts/golos/Golos-Text_Medium.woff2') format('woff2');
+  src: url('../assets/fonts/golos/golos-text-medium.woff2') format('woff2');
 }
 
 @font-face {
@@ -19,7 +19,7 @@
   font-display: swap;
   font-weight: 700;
   font-style: normal;
-  src: url('../assets/fonts/golos/Golos-Text_Bold.woff2') format('woff2');
+  src: url('../assets/fonts/golos/golos-text-bold.woff2') format('woff2');
 }
 
 @font-face {
@@ -27,7 +27,7 @@
   font-display: swap;
   font-weight: 900;
   font-style: normal;
-  src: url('../assets/fonts/golos/Golos-Text_Black.woff2') format('woff2');
+  src: url('../assets/fonts/golos/golos-text-black.woff2') format('woff2');
 }
 
 @font-face {
@@ -35,7 +35,7 @@
   font-display: swap;
   font-weight: 400;
   font-style: normal;
-  src: url('../assets/fonts/inter/Inter-Regular.woff2') format('woff2');
+  src: url('../assets/fonts/inter/inter-regular.woff2') format('woff2');
 }
 
 @font-face {
@@ -43,5 +43,5 @@
   font-display: swap;
   font-weight: 500;
   font-style: normal;
-  src: url('../assets/fonts/inter/Inter-Medium.woff2') format('woff2');
+  src: url('../assets/fonts/inter/inter-medium.woff2') format('woff2');
 }
