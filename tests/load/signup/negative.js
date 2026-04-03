@@ -46,14 +46,35 @@ function testSQLInjection(utils, baseUrl, headers, params) {
 
     if (response.status === 201 || response.status === 200) {
       if (USE_REAL_BACKEND) {
-        utils.checkResponse(response, 'SQL injection sanitized properly', (res) => {
+        utils.checkResponse(response, 'SQL injection response contains user id', (res) => {
           try {
             const body = JSON.parse(res.body);
-            return body.id !== undefined;
+            return !!body.id;
           } catch {
             return false;
           }
         });
+
+        try {
+          const body = JSON.parse(response.body);
+          if (body.id) {
+            const getResponse = http.get(`${baseUrl}/api/users/${body.id}`, options);
+            utils.checkResponse(
+              getResponse,
+              `SQL injection: persisted fullName is sanitized (not raw payload): ${injection.substring(0, 20)}`,
+              (res) => {
+                try {
+                  const user = JSON.parse(res.body);
+                  return user.fullName !== injection;
+                } catch {
+                  return false;
+                }
+              }
+            );
+          }
+        } catch {
+          // body.id already validated by checkResponse above
+        }
       } else {
         // eslint-disable-next-line no-console
         console.log(
