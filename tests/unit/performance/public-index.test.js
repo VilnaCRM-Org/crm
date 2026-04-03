@@ -26,7 +26,7 @@ describe('public index performance safeguards', () => {
   });
 
   it('keeps route suspense fallback empty to avoid adding a loading spinner to first paint', () => {
-    const appSource = fs.readFileSync(path.resolve(__dirname, '../../../src/App.tsx'), 'utf8');
+    const appSource = fs.readFileSync(path.resolve(__dirname, '../../../src/app.tsx'), 'utf8');
 
     expect(appSource).toContain('<React.Suspense fallback={null}>');
     expect(appSource).not.toContain('CircularProgress');
