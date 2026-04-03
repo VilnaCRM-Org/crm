@@ -14,7 +14,7 @@ import {
 import fillInput from '../e2e/utils/fillInput';
 
 import { currentLanguage, screenSizes } from './constants';
-import getRegistrationNotificationSnapshotName from './getRegistrationNotificationSnapshotName';
+import getRegistrationNotificationSnapshotName from './get-registration-notification-snapshot-name';
 
 async function disableAnimations(page: import('@playwright/test').Page): Promise<void> {
   await page.addInitScript(() => {

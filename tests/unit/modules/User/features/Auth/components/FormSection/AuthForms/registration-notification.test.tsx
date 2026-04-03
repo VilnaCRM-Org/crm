@@ -35,6 +35,11 @@ describe('RegistrationNotification', () => {
     view: 'error' as const,
   };
 
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
   it('shows the Ukrainian registration error for the English validation fallback', () => {
     renderWithProviders(
       <RegistrationNotification
@@ -137,7 +142,6 @@ describe('RegistrationNotification', () => {
     expect(onBack).not.toHaveBeenCalled();
     jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
     expect(onBack).toHaveBeenCalledTimes(1);
-    jest.useRealTimers();
   });
 
   it('clears the close timer on unmount', () => {
@@ -156,7 +160,6 @@ describe('RegistrationNotification', () => {
     unmount();
     jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
     expect(onBack).not.toHaveBeenCalled();
-    jest.useRealTimers();
   });
 
   it('renders the retry button and disables it while submitting', () => {

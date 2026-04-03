@@ -1,4 +1,4 @@
-import getRegistrationNotificationSnapshotName from '../../visual/getRegistrationNotificationSnapshotName';
+import getRegistrationNotificationSnapshotName from '../../visual/get-registration-notification-snapshot-name';
 
 describe('getRegistrationNotificationSnapshotName', () => {
   it('uses distinct snapshot names for success and error states on the same screen', () => {

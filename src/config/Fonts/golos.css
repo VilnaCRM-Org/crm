@@ -1,6 +1,6 @@
 @font-face {
   font-family: 'Golos';
-  src: url('../../assets/fonts/golos/Golos-Text_Regular.woff2') format('woff2');
+  src: url('../../assets/fonts/golos/golos-text-regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -8,7 +8,7 @@
 
 @font-face {
   font-family: 'Golos';
-  src: url('../../assets/fonts/golos/Golos-Text_Medium.woff2') format('woff2');
+  src: url('../../assets/fonts/golos/golos-text-medium.woff2') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -16,7 +16,7 @@
 
 @font-face {
   font-family: 'Golos';
-  src: url('../../assets/fonts/golos/Golos-Text_SemiBold.woff2') format('woff2');
+  src: url('../../assets/fonts/golos/golos-text-semi-bold.woff2') format('woff2');
   font-weight: 600;
   font-style: normal;
   font-display: swap;
@@ -24,7 +24,7 @@
 
 @font-face {
   font-family: 'Golos';
-  src: url('../../assets/fonts/golos/Golos-Text_Bold.woff2') format('woff2');
+  src: url('../../assets/fonts/golos/golos-text-bold.woff2') format('woff2');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -32,7 +32,7 @@
 
 @font-face {
   font-family: 'Golos';
-  src: url('../../assets/fonts/golos/Golos-Text_ExtraBold.woff2') format('woff2');
+  src: url('../../assets/fonts/golos/golos-text-extra-bold.woff2') format('woff2');
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -40,7 +40,7 @@
 
 @font-face {
   font-family: 'Golos';
-  src: url('../../assets/fonts/golos/Golos-Text_Black.woff2') format('woff2');
+  src: url('../../assets/fonts/golos/golos-text-black.woff2') format('woff2');
   font-weight: 900;
   font-style: normal;
   font-display: swap;
