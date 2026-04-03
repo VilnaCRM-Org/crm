@@ -10,7 +10,7 @@ const theme = createTheme();
 
 describe('UISkeletonInput Integration', () => {
   const getSkeletonInput = (): HTMLElement => {
-    const element = document.getElementById('skeleton-input');
+    const element = screen.getAllByRole('generic').find((node) => node.id === 'skeleton-input');
     if (!element) throw new Error('skeleton-input not found');
     return element;
   };
