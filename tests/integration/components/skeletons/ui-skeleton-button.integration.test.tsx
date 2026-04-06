@@ -5,10 +5,11 @@ import React from 'react';
 import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 
 describe('UISkeletonButton Integration', () => {
-  const getSkeletonButton = (): HTMLElement =>
-    screen
-      .getAllByRole('generic')
-      .find((element) => element.id === 'skeleton-button') as HTMLElement;
+  const getSkeletonButton = (): HTMLElement => {
+    const el = screen.getAllByRole('generic').find((element) => element.id === 'skeleton-button');
+    if (!el) throw new Error('skeleton-button not found in DOM');
+    return el;
+  };
 
   it('renders with default props', () => {
     expect(React).toBeDefined();

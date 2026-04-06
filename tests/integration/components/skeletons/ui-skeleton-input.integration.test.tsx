@@ -20,7 +20,7 @@ describe('UISkeletonInput Integration', () => {
 
   const getSkeletonPlaceholders = (): HTMLElement[] =>
     getSkeletonElements().filter(
-      (element) => element.className.includes('ui-skeleton-input__placeholder')
+      (element) => element.classList.contains('ui-skeleton-input__placeholder')
     );
 
   const getSkeletonPlaceholder = (): HTMLElement => {

@@ -5,6 +5,7 @@ import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
+import { useTranslation } from 'react-i18next';
 
 import styles from '@/modules/User/features/Auth/components/auth-skeleton/styles';
 import authFormSectionStyles from '@/modules/User/features/Auth/components/FormSection/styles';
@@ -23,6 +24,7 @@ export type AuthSkeletonProps = {
 export default function AuthSkeleton({
   disableAnimation = false,
 }: AuthSkeletonProps): JSX.Element {
+  const { t } = useTranslation();
   const staticSkeletonSx = disableAnimation
     ? {
         animation: 'none',
@@ -33,7 +35,7 @@ export default function AuthSkeleton({
   return (
     <Box
       component="section"
-      aria-label="Loading authentication form"
+      aria-label={t('auth.loadingForm')}
       sx={authFormSectionStyles.formSection}
     >
       <Box

@@ -107,7 +107,7 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
     });
 
     test('should have accessible loading label on skeleton section', async ({ page }) => {
-      const section = page.locator('section[aria-label="Loading authentication form"]');
+      const section = page.locator('section[aria-label="Завантаження форми автентифікації"]');
       await expect(section).toBeVisible({ timeout: 5000 });
     });
 

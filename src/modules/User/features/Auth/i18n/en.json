@@ -7,7 +7,8 @@
     "password": {
       "hide": "Hide password",
       "show": "Show password"
-    }
+    },
+    "loadingForm": "Loading authentication form"
   },
   "sign_up": {
     "title": "Registration",
@@ -62,7 +63,8 @@
     "title": "Authentication",
     "subtitle": "Sign in to your account in two clicks",
     "errors": {
-      "load_failed": "Failed to load sign-in form. Please try again."
+      "load_failed": "Failed to load sign-in form. Please try again.",
+      "login": "Sign in error: {{reason}}"
     },
     "form": {
       "password_input": {

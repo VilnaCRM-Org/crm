@@ -62,7 +62,7 @@ export default function LoginForm(): JSX.Element {
       await dispatch(loginUser(data)).unwrap();
     } catch (err) {
       const message = normalizeLoginErrorMessage(err);
-      setError(`${t('sign_in.errors.login')}: ${t(message)}`);
+      setError(t('sign_in.errors.login', { reason: t(message) }));
     } finally {
       setIsSubmitting(false);
     }
