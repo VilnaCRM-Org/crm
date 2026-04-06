@@ -7,9 +7,9 @@ import {
 } from '@/components/skeletons/ui-skeleton-input/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
 import uiFormStyles from '@/components/UIForm/styles';
-import authProviderButtonStyles from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons/styles';
-import formFieldStyles from '@/modules/User/features/Auth/components/form-section/components/styles';
-import authFormSectionStyles, { fieldGapMargins } from '@/modules/User/features/Auth/components/form-section/styles';
+import authProviderButtonStyles from '@/modules/User/features/Auth/components/FormSection/components/auth-provider-buttons/styles';
+import formFieldStyles from '@/modules/User/features/Auth/components/FormSection/components/styles';
+import authFormSectionStyles, { fieldGapMargins } from '@/modules/User/features/Auth/components/FormSection/styles';
 
 jest.mock('@/modules/User/features/Auth/assets/eye-off.svg', () => ({
   ReactComponent: 'svg',

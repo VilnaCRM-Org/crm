@@ -7,25 +7,48 @@ async function interceptAuthFormChunks(page: Page): Promise<() => Promise<void>>
   const pendingRoutes: Array<() => void> = [];
   const pendingContinuations: Promise<void>[] = [];
   let released = false;
+  let shouldDelayRemainingChunks = false;
+  let routeHandlingChain = Promise.resolve();
 
   await page.route(AUTH_ASYNC_JS_GLOB, async (route) => {
-    if (released) {
-      await route.continue();
-      return;
-    }
+    const handleRoute = async (): Promise<void> => {
+      if (released) {
+        await route.continue();
+        return;
+      }
 
-    let continueRoute!: () => void;
-    const delayedChunkGate = new Promise<void>((resolve) => {
-      continueRoute = resolve;
-    });
-    const continuation = (async (): Promise<void> => {
-      await delayedChunkGate;
-      await route.continue();
-    })();
+      if (shouldDelayRemainingChunks) {
+        let continueRoute!: () => void;
+        const delayedChunkGate = new Promise<void>((resolve) => {
+          continueRoute = resolve;
+        });
+        const continuation = (async (): Promise<void> => {
+          await delayedChunkGate;
+          await route.continue();
+        })();
 
-    pendingRoutes.push(continueRoute);
-    pendingContinuations.push(continuation);
-    await continuation;
+        pendingRoutes.push(continueRoute);
+        pendingContinuations.push(continuation);
+        await continuation;
+        return;
+      }
+
+      await route.continue();
+
+      try {
+        await page.waitForSelector('#auth-skeleton-title', {
+          state: 'visible',
+          timeout: 1000,
+        });
+        shouldDelayRemainingChunks = true;
+      } catch {
+        // Continue releasing chunks until the skeleton is actually visible.
+      }
+    };
+
+    const currentRouteHandling = routeHandlingChain.then(handleRoute);
+    routeHandlingChain = currentRouteHandling.catch(() => undefined);
+    await currentRouteHandling;
   });
 
   return async (): Promise<void> => {
@@ -34,7 +57,7 @@ async function interceptAuthFormChunks(page: Page): Promise<() => Promise<void>>
     const continuationsToAwait = pendingContinuations.splice(0, pendingContinuations.length);
 
     routesToRelease.forEach((releaseRoute) => releaseRoute());
-    await Promise.all(continuationsToAwait);
+    await Promise.all([...continuationsToAwait, routeHandlingChain]);
   };
 }
 

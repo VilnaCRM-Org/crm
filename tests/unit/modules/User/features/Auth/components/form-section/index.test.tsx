@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ButtonHTMLAttributes, ComponentType, ReactElement } from 'react';
 import { Suspense } from 'react';
 
-import FormSection from '@/modules/User/features/Auth/components/form-section';
+import FormSection from '@/modules/User/features/Auth/components/FormSection';
 
 const uiButtonMock = jest.fn();
 
@@ -48,7 +48,7 @@ jest.mock('@/components/UITypography', () => ({
 }));
 
 jest.mock(
-  '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
+  '@/modules/User/features/Auth/components/FormSection/auth-forms/login-form',
   () => ({
     __esModule: true,
     default: (): ReactElement => <div data-testid="login-form" />,
@@ -56,7 +56,7 @@ jest.mock(
 );
 
 jest.mock(
-  '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form',
+  '@/modules/User/features/Auth/components/FormSection/auth-forms/registration-form',
   () => ({
     __esModule: true,
     default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => (
@@ -72,7 +72,7 @@ jest.mock(
 );
 
 jest.mock(
-  '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons',
+  '@/modules/User/features/Auth/components/FormSection/components/auth-provider-buttons',
   () => ({
     __esModule: true,
     default: (): ReactElement => <div data-testid="auth-provider-buttons" />,
@@ -139,7 +139,7 @@ function renderIsolatedFormSectionWithLoginModule(
   }));
 
   jest.doMock(
-    '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form',
+    '@/modules/User/features/Auth/components/FormSection/auth-forms/registration-form',
     () => ({
       __esModule: true,
       default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => (
@@ -155,7 +155,7 @@ function renderIsolatedFormSectionWithLoginModule(
   );
 
   jest.doMock(
-    '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons',
+    '@/modules/User/features/Auth/components/FormSection/components/auth-provider-buttons',
     () => ({
       __esModule: true,
       default: (): ReactElement => <div data-testid="auth-provider-buttons" />,
@@ -163,7 +163,7 @@ function renderIsolatedFormSectionWithLoginModule(
   );
 
   jest.doMock(
-    '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
+    '@/modules/User/features/Auth/components/FormSection/auth-forms/login-form',
     () => {
       loginModuleLoaded();
       return {
@@ -186,7 +186,7 @@ function renderIsolatedFormSectionWithLoginModule(
     renderLocal = TestingLibrary.render;
     SuspenseLocal = ReactLocal.Suspense;
     IsolatedFormSection = (
-      jest.requireActual('@/modules/User/features/Auth/components/form-section') as {
+      jest.requireActual('@/modules/User/features/Auth/components/FormSection') as {
         default: ComponentType;
       }
     ).default;
@@ -353,7 +353,7 @@ describe('FormSection', () => {
     }));
 
     jest.doMock(
-      '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form',
+      '@/modules/User/features/Auth/components/FormSection/auth-forms/registration-form',
       () => ({
         __esModule: true,
         default: (): ReactElement => <div data-testid="registration-form" />,
@@ -361,7 +361,7 @@ describe('FormSection', () => {
     );
 
     jest.doMock(
-      '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons',
+      '@/modules/User/features/Auth/components/FormSection/components/auth-provider-buttons',
       () => ({
         __esModule: true,
         default: (): ReactElement => <div data-testid="auth-provider-buttons" />,
@@ -369,7 +369,7 @@ describe('FormSection', () => {
     );
 
     jest.doMock(
-      '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
+      '@/modules/User/features/Auth/components/FormSection/auth-forms/login-form',
       () => {
         throw new Error('lazy login chunk failed');
       }
@@ -388,7 +388,7 @@ describe('FormSection', () => {
       renderLocal = TestingLibrary.render;
       SuspenseLocal = ReactLocal.Suspense;
       IsolatedFormSection = (
-        jest.requireActual('@/modules/User/features/Auth/components/form-section') as {
+        jest.requireActual('@/modules/User/features/Auth/components/FormSection') as {
           default: ComponentType;
         }
       ).default;
@@ -460,7 +460,7 @@ describe('FormSection', () => {
     }));
 
     jest.doMock(
-      '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form',
+      '@/modules/User/features/Auth/components/FormSection/auth-forms/registration-form',
       () => ({
         __esModule: true,
         default: (): ReactElement => <div data-testid="registration-form" />,
@@ -468,7 +468,7 @@ describe('FormSection', () => {
     );
 
     jest.doMock(
-      '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons',
+      '@/modules/User/features/Auth/components/FormSection/components/auth-provider-buttons',
       () => ({
         __esModule: true,
         default: (): ReactElement => <div data-testid="auth-provider-buttons" />,
@@ -476,7 +476,7 @@ describe('FormSection', () => {
     );
 
     jest.doMock(
-      '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
+      '@/modules/User/features/Auth/components/FormSection/auth-forms/login-form',
       () => {
         throw new Error('preload failed');
       }
@@ -495,7 +495,7 @@ describe('FormSection', () => {
       renderLocal = TestingLibrary.render;
       SuspenseLocal = ReactLocal.Suspense;
       IsolatedFormSection = (
-        jest.requireActual('@/modules/User/features/Auth/components/form-section') as {
+        jest.requireActual('@/modules/User/features/Auth/components/FormSection') as {
           default: ComponentType;
         }
       ).default;

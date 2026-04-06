@@ -5,7 +5,7 @@ import breakpointsTheme from '@/components/UIBreakpoints';
 import formSectionComponentStyles, {
   StyledEyeIcon,
   StyledEyeIconOff,
-} from '@/modules/User/features/Auth/components/form-section/components/styles';
+} from '@/modules/User/features/Auth/components/FormSection/components/styles';
 
 jest.mock('@/modules/User/features/Auth/assets/eye.svg', () => ({
   __esModule: true,

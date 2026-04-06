@@ -61,7 +61,7 @@ services:
     profiles: ["load"]
     build:
       context: .
-      dockerfile: ./tests/load/Dockerfile
+      dockerfile: ./tests/load/dockerfile
     depends_on:
       prod:
         condition: service_healthy
