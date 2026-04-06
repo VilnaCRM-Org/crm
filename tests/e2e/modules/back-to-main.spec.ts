@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 
+import { seedPreloadedAuthToken } from '../../utils/seed-preloaded-auth-token';
 import viewports from '../constants/viewports';
 
 const backToHomeSpec = {
@@ -10,7 +11,9 @@ const backToHomeSpec = {
 
 test.describe('BackToMain Component E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
+    await seedPreloadedAuthToken(page);
     await page.goto('/authentication');
+    await expect(page).toHaveURL(/\/authentication$/);
   });
 
   test.describe('Navigation Functionality', () => {

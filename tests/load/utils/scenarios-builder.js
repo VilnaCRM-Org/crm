@@ -1,3 +1,13 @@
+function resolveMaxVUs(config) {
+  if (config.maxVUs != null) {
+    return config.maxVUs;
+  }
+  if (config.maxVus != null) {
+    return config.maxVus;
+  }
+  return config.vus;
+}
+
 export default class ScenariosBuilder {
   constructor() {
     this.scenarios = {};
@@ -10,10 +20,7 @@ export default class ScenariosBuilder {
       timeUnit: '1s',
       duration: smokeConfig.duration + 's',
       preAllocatedVUs: smokeConfig.vus,
-      maxVUs:
-        smokeConfig.maxVUs !== undefined && smokeConfig.maxVUs !== null
-          ? smokeConfig.maxVUs
-          : smokeConfig.vus,
+      maxVUs: resolveMaxVUs(smokeConfig),
       tags: { test_type: 'smoke' },
     };
 
@@ -34,10 +41,7 @@ export default class ScenariosBuilder {
       startRate: 0,
       timeUnit: '1s',
       preAllocatedVUs: spikeConfig.vus,
-      maxVUs:
-        spikeConfig.maxVus !== undefined && spikeConfig.maxVus !== null
-          ? spikeConfig.maxVus
-          : spikeConfig.vus,
+      maxVUs: resolveMaxVUs(spikeConfig),
       stages: [
         { target: spikeConfig.rps, duration: spikeConfig.duration.rise + 's' },
         { target: 0, duration: spikeConfig.duration.fall + 's' },
@@ -57,7 +61,7 @@ export default class ScenariosBuilder {
       startRate: 0,
       timeUnit: '1s',
       preAllocatedVUs: config.vus,
-      maxVUs: config.maxVus !== undefined && config.maxVus !== null ? config.maxVus : config.vus,
+      maxVUs: resolveMaxVUs(config),
       stages: [
         { target: config.rps, duration: config.duration.rise + 's' },
         { target: config.rps, duration: config.duration.plateau + 's' },

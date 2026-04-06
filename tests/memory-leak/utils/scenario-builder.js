@@ -1,8 +1,3 @@
-/**
- * ScenarioBuilder creates MemLab test scenarios with environment-aware configuration.
- * Handles URL generation, HTTP headers, and scenario composition for memory leak testing.
- */
-
 const getRequiredUrlEnvVars = (nodeEnv) => {
   const envVarMap = {
     production: ['REACT_APP_PROD_CONTAINER_API_URL'],
@@ -12,10 +7,6 @@ const getRequiredUrlEnvVars = (nodeEnv) => {
 };
 
 class ScenarioBuilder {
-  /**
-   * Creates a new ScenarioBuilder instance.
-   * @param {string} [path] - Optional path to append to the base URL
-   */
   constructor(path) {
     this.path = path;
     const requiredEnvVars = [
