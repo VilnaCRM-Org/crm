@@ -37,7 +37,7 @@ export default function RegistrationNotification({
   const { t } = useTranslation();
   const [isClosing, setIsClosing] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const normalizedErrorText = errorText?.trim().toLowerCase();
+  const normalizedErrorText = errorText?.trim().toLowerCase().replace(/\s+/g, ' ');
   const mappedErrorText =
     normalizedErrorText && GENERIC_REGISTRATION_VALIDATION_ERRORS.has(normalizedErrorText)
       ? t('sign_up.errors.signup_error')
@@ -56,6 +56,7 @@ export default function RegistrationNotification({
     (): (() => void) => (): void => {
       if (closeTimerRef.current) {
         clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
       }
     },
     []

@@ -1,6 +1,6 @@
 import UIForm from '@/components/UIForm';
 import { Box } from '@mui/material';
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 
@@ -33,18 +33,18 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
   } = useRegistrationForm(onViewChange);
 
   const validators = createValidators(t);
+  const boxRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (boxRef.current) {
+      if (view !== 'form') boxRef.current.setAttribute('inert', '');
+      else boxRef.current.removeAttribute('inert');
+    }
+  }, [view]);
 
   return (
     <>
-      <Box
-        key={formKey}
-        ref={(el: HTMLDivElement | null) => {
-          if (el) {
-            if (view !== 'form') el.setAttribute('inert', '');
-            else el.removeAttribute('inert');
-          }
-        }}
-      >
+      <Box key={formKey} ref={boxRef}>
         <UIForm<RegisterUserDto>
           onSubmit={handleRegister}
           defaultValues={{ fullName: '', email: '', password: '' }}
