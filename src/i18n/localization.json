@@ -80,6 +80,42 @@
         "logo_alt": "Логотип VilnaCRM",
         "privacy": "Політика конфіденційності",
         "usage_policy": "Умови користування"
+      },
+      "notifications": {
+        "close": "Закрити сповіщення",
+        "success": {
+          "title": "Вітаємо!",
+          "description": "Ви успішно зареєструвалися",
+          "button": "Назад",
+          "images": {
+            "confetti": "Веселе і барвисте конфеті",
+            "gears": "Святкові шестерні"
+          }
+        },
+        "error": {
+          "title": "Трапилась помилка",
+          "retry_button": "Спробувати ще раз",
+          "button": "Назад",
+          "images": {
+            "error": "Червоний трикутник з попередженням про помилку."
+          }
+        }
+      },
+      "failure_responses": {
+        "authentication_errors": {
+          "unauthorized_access": "Неавторизований доступ. Будь ласка, увійдіть знову",
+          "access_denied": "Доступ заборонено. У вас немає прав для виконання цієї дії"
+        },
+        "client_errors": {
+          "something_went_wrong": "Щось пішло не так із запитом. Спробуйте ще раз пізніше",
+          "unexpected_error": "Сталася непередбачена помилка. Будь ласка, спробуйте ще раз"
+        },
+        "network_errors": {
+          "network_error": "Помилка мережі. Перевірте з'єднання з інтернетом"
+        },
+        "server_errors": {
+          "server_error": "Внутрішня помилка сервера."
+        }
       }
     }
   },
@@ -160,6 +196,42 @@
         "logo_alt": "VilnaCRM logo",
         "privacy": "Privacy Policy",
         "usage_policy": "Terms of Use"
+      },
+      "notifications": {
+        "close": "Close notification",
+        "success": {
+          "title": "Congratulations!",
+          "description": "You have successfully registered",
+          "button": "Go back",
+          "images": {
+            "confetti": "Cheerful and colorful confetti",
+            "gears": "Decorative celebration gears"
+          }
+        },
+        "error": {
+          "title": "An error occurred",
+          "retry_button": "Try again",
+          "button": "Go back",
+          "images": {
+            "error": "Red triangle with a warning about an error."
+          }
+        }
+      },
+      "failure_responses": {
+        "authentication_errors": {
+          "unauthorized_access": "Unauthorized access. Please log in again",
+          "access_denied": "Access denied. You do not have permission to perform this action"
+        },
+        "client_errors": {
+          "something_went_wrong": "Something went wrong with the request. Try again later",
+          "unexpected_error": "An unexpected error occurred. Please try again"
+        },
+        "network_errors": {
+          "network_error": "Network error. Please check your internet connection"
+        },
+        "server_errors": {
+          "server_error": "Internal Server Error"
+        }
       }
     }
   }

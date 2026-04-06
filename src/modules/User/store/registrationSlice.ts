@@ -61,6 +61,7 @@ export const registrationSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
         state.retryable = undefined;
         state.user = action.payload;
       })
