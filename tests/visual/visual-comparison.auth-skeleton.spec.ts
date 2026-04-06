@@ -7,24 +7,51 @@ const AUTH_ASYNC_JS_GLOB = '**/static/js/async/*.js';
 async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
 
-  let applied = false;
-  let releaseDelayedChunk: (() => void) | undefined;
-  let delayedChunkHandled: Promise<void> | undefined;
-  const delayedChunkGate = new Promise<void>((resolve) => {
-    releaseDelayedChunk = resolve;
-  });
-  await page.route(AUTH_ASYNC_JS_GLOB, async (route: Route): Promise<void> => {
-    if (!applied) {
-      applied = true;
-      delayedChunkHandled = (async (): Promise<void> => {
-        await delayedChunkGate;
-        await route.continue();
-      })();
-      await delayedChunkHandled;
-      return;
-    }
+  const pendingRoutes: Array<() => void> = [];
+  const pendingContinuations: Promise<void>[] = [];
+  let released = false;
+  let shouldDelayRemainingChunks = false;
+  let routeHandlingChain = Promise.resolve();
 
-    await route.continue();
+  await page.route(AUTH_ASYNC_JS_GLOB, async (route: Route): Promise<void> => {
+    const handleRoute = async (): Promise<void> => {
+      if (released) {
+        await route.continue();
+        return;
+      }
+
+      if (shouldDelayRemainingChunks) {
+        let continueRoute!: () => void;
+        const delayedChunkGate = new Promise<void>((resolve) => {
+          continueRoute = resolve;
+        });
+        const continuation = (async (): Promise<void> => {
+          await delayedChunkGate;
+          await route.continue();
+        })();
+
+        pendingRoutes.push(continueRoute);
+        pendingContinuations.push(continuation);
+        await continuation;
+        return;
+      }
+
+      await route.continue();
+
+      try {
+        await page.waitForSelector('#auth-skeleton-title', {
+          state: 'visible',
+          timeout: 1000,
+        });
+        shouldDelayRemainingChunks = true;
+      } catch {
+        // Keep releasing chunks until the skeleton is actually rendered.
+      }
+    };
+
+    const currentRouteHandling = routeHandlingChain.then(handleRoute);
+    routeHandlingChain = currentRouteHandling.catch(() => undefined);
+    await currentRouteHandling;
   });
 
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
@@ -46,12 +73,9 @@ async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<voi
       timeout: 10000,
     });
   } finally {
-    if (releaseDelayedChunk) {
-      releaseDelayedChunk();
-    }
-    if (delayedChunkHandled) {
-      await delayedChunkHandled;
-    }
+    released = true;
+    pendingRoutes.splice(0, pendingRoutes.length).forEach((releaseRoute) => releaseRoute());
+    await Promise.all([...pendingContinuations.splice(0, pendingContinuations.length), routeHandlingChain]);
     await page.unroute(AUTH_ASYNC_JS_GLOB);
   }
 }

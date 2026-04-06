@@ -6,8 +6,8 @@ import { useTranslation } from 'react-i18next';
 
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
 
-import AuthProviderButtons from './components/auth-provider-buttons';
 import RegistrationForm from './auth-forms/registration-form';
+import AuthProviderButtons from './components/auth-provider-buttons';
 import styles from './styles';
 import { AuthMode, RegistrationView } from './types';
 

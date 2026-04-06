@@ -1,4 +1,4 @@
-import ScenarioBuilder from '../utils/scenarioBuilder.js';
+import ScenarioBuilder from '../utils/scenario-builder.js';
 
 const scenarioBuilder = new ScenarioBuilder();
 
