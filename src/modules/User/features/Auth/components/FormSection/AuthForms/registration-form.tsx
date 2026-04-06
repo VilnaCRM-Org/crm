@@ -3,16 +3,15 @@ import { Box } from '@mui/material';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
+
+import FormField from '@/modules/User/features/Auth/components/FormSection/components/FormField';
+import PasswordField from '@/modules/User/features/Auth/components/FormSection/components/PasswordField';
+import { RegistrationView } from '@/modules/User/features/Auth/components/FormSection/types';
+import { createValidators } from '@/modules/User/features/Auth/components/FormSection/Validations';
+import useRegistrationForm from '@/modules/User/features/Auth/hooks/use-registration-form';
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
-
-import getSubmitLabelKey from '../../../utils/getSubmitLabelKey';
-import loadRegistrationNotification from '../../../utils/load-registration-notification';
-import FormField from '../components/FormField';
-import PasswordField from '../components/PasswordField';
-import { RegistrationView } from '../types';
-import { createValidators } from '../Validations';
-
-import useRegistrationForm from './use-registration-form';
+import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
+import loadRegistrationNotification from '@/modules/User/features/Auth/utils/load-registration-notification';
 
 type RegistrationFormProps = {
   onViewChange?: (view: RegistrationView) => void;

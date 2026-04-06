@@ -133,7 +133,7 @@ export default function RegistrationNotification({
   return (
     <Fade in={!isClosing} timeout={BACK_CLOSE_ANIMATION_MS} appear>
       <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
-        <Box sx={styles.contentBox} aria-label="success">
+        <Box sx={styles.contentBox} aria-label={t('notifications.success.title')}>
           <Box sx={styles.successTopImgBox}>
             <Box
               component={ConfettiImage}
