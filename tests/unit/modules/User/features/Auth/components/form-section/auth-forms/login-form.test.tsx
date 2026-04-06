@@ -11,8 +11,11 @@ const mockFormField = jest.fn();
 const mockUIForm = jest.fn();
 
 jest.mock('react-i18next', () => ({
-  useTranslation: (): { t: (key: string) => string } => ({
-    t: (key: string): string => key,
+  useTranslation: (): { t: (key: string, options?: Record<string, unknown>) => string } => ({
+    t: (key: string, options?: Record<string, unknown>): string => {
+      if (options?.reason !== undefined) return `${key}: ${String(options.reason)}`;
+      return key;
+    },
   }),
 }));
 

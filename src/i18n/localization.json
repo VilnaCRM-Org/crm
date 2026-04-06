@@ -13,7 +13,8 @@
         "password": {
           "hide": "Приховати пароль",
           "show": "Показати пароль"
-        }
+        },
+        "loadingForm": "Завантаження форми автентифікації"
       },
       "sign_up": {
         "title": "Реєстрація",
@@ -67,6 +68,10 @@
       "sign_in": {
         "title": "Аутентифікація",
         "subtitle": "Увійдіть до свого облікового запису у два кліки",
+        "errors": {
+          "load_failed": "Не вдалося завантажити форму входу. Спробуйте ще раз.",
+          "login": "Помилка входу: {{reason}}"
+        },
         "form": {
           "password_input": {
             "placeholder": "Введіть пароль",
@@ -93,7 +98,8 @@
         "password": {
           "hide": "Hide password",
           "show": "Show password"
-        }
+        },
+        "loadingForm": "Loading authentication form"
       },
       "sign_up": {
         "title": "Registration",
@@ -147,6 +153,10 @@
       "sign_in": {
         "title": "Authentication",
         "subtitle": "Sign in to your account in two clicks",
+        "errors": {
+          "load_failed": "Failed to load sign-in form. Please try again.",
+          "login": "Sign in error: {{reason}}"
+        },
         "form": {
           "password_input": {
             "placeholder": "Enter your password",

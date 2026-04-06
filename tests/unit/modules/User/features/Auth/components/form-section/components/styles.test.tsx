@@ -9,12 +9,12 @@ import formSectionComponentStyles, {
 
 jest.mock('@/modules/User/features/Auth/assets/eye.svg', () => ({
   __esModule: true,
-  ReactComponent: () => <svg data-testid="eye-icon" />,
+  ReactComponent: (): JSX.Element => <svg data-testid="eye-icon" />,
 }));
 
 jest.mock('@/modules/User/features/Auth/assets/eye-off.svg', () => ({
   __esModule: true,
-  ReactComponent: () => <svg data-testid="eye-icon-off" />,
+  ReactComponent: (): JSX.Element => <svg data-testid="eye-icon-off" />,
 }));
 
 describe('FormSection component styles', () => {

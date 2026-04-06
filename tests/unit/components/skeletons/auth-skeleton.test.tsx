@@ -2,6 +2,12 @@ import { render, screen } from '@testing-library/react';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 
+jest.mock('react-i18next', () => ({
+  useTranslation: (): { t: (key: string) => string } => ({
+    t: (key: string): string => key,
+  }),
+}));
+
 function getGenericSkeletonIds(): string[] {
   return (screen.getAllByRole('generic') as HTMLElement[]).map((element) => element.id);
 }
@@ -18,7 +24,7 @@ describe('AuthSkeleton Component', () => {
       expect(divider).toBeInTheDocument();
       expect(screen.getByRole('region')).toHaveAttribute(
         'aria-label',
-        'Loading authentication form'
+        'auth.loadingForm'
       );
       expect(getGenericSkeletonIds()).toEqual(
         expect.arrayContaining(['auth-skeleton-title', 'auth-skeleton-submit'])
@@ -68,7 +74,7 @@ describe('AuthSkeleton Component', () => {
     it('should have proper structure for screen readers', () => {
       render(<AuthSkeleton />);
       const section = screen.getByRole('region');
-      expect(section).toHaveAttribute('aria-label', 'Loading authentication form');
+      expect(section).toHaveAttribute('aria-label', 'auth.loadingForm');
       expect(getPresentationSkeletonIds()).toContain('auth-skeleton-divider');
     });
 
