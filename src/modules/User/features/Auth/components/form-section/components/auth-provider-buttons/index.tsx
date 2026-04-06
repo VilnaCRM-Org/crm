@@ -4,9 +4,9 @@ import { Box, Divider, ListItem, List, SvgIcon } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
-import oauthProviders from '@/modules/User/features/Auth/components/FormSection/components/auth-provider-buttons/oauth-providers';
-import styles from '@/modules/User/features/Auth/components/FormSection/components/auth-provider-buttons/styles';
-import Theme from '@/modules/User/features/Auth/components/FormSection/components/auth-provider-buttons/theme';
+import oauthProviders from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons/oauth-providers';
+import styles from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons/styles';
+import Theme from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons/theme';
 
 export default function AuthProviderButtons(): JSX.Element {
   const { t } = useTranslation();

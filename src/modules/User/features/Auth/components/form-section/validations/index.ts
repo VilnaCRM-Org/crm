@@ -1,9 +1,9 @@
 import type { TFunction } from 'i18next';
 import type { Validate, FieldValues } from 'react-hook-form';
 
-import createEmailValidator from '@/modules/User/features/Auth/components/FormSection/validations/email';
-import createFullNameValidator from '@/modules/User/features/Auth/components/FormSection/validations/name';
-import createPasswordValidator from '@/modules/User/features/Auth/components/FormSection/validations/password';
+import createEmailValidator from '@/modules/User/features/Auth/components/form-section/validations/email';
+import createFullNameValidator from '@/modules/User/features/Auth/components/form-section/validations/name';
+import createPasswordValidator from '@/modules/User/features/Auth/components/form-section/validations/password';
 
 export type Validators<TFieldValues extends FieldValues> = {
   email: Validate<string, TFieldValues>;

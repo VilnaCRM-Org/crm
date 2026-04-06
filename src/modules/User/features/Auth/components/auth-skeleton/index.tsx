@@ -8,7 +8,7 @@ import Divider from '@mui/material/Divider';
 import { useTranslation } from 'react-i18next';
 
 import styles from '@/modules/User/features/Auth/components/auth-skeleton/styles';
-import authFormSectionStyles from '@/modules/User/features/Auth/components/FormSection/styles';
+import authFormSectionStyles from '@/modules/User/features/Auth/components/form-section/styles';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },

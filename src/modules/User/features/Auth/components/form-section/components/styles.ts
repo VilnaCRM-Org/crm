@@ -4,7 +4,7 @@ import { styled } from '@mui/material/styles';
 
 import { ReactComponent as EyeIconOff } from '@/modules/User/features/Auth/assets/eye-off.svg';
 import { ReactComponent as EyeIcon } from '@/modules/User/features/Auth/assets/eye.svg';
-import { fieldGapMargins } from '@/modules/User/features/Auth/components/FormSection/styles';
+import { fieldGapMargins } from '@/modules/User/features/Auth/components/form-section/styles';
 
 export default {
   formFieldWrapper: {

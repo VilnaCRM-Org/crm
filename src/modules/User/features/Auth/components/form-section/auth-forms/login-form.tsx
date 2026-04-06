@@ -5,10 +5,10 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 
-import FormField from '@/modules/User/features/Auth/components/FormSection/components/form-field';
-import PasswordField from '@/modules/User/features/Auth/components/FormSection/components/password-field';
-import UserOptions from '@/modules/User/features/Auth/components/FormSection/components/user-options';
-import { createValidators } from '@/modules/User/features/Auth/components/FormSection/validations';
+import FormField from '@/modules/User/features/Auth/components/form-section/components/form-field';
+import PasswordField from '@/modules/User/features/Auth/components/form-section/components/password-field';
+import UserOptions from '@/modules/User/features/Auth/components/form-section/components/user-options';
+import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
 import { loginUser } from '@/modules/User/store';

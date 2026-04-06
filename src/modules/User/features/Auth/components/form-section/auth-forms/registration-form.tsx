@@ -2,10 +2,10 @@ import UIForm from '@/components/UIForm';
 import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 import { useTranslation } from 'react-i18next';
 
-import FormField from '@/modules/User/features/Auth/components/FormSection/components/form-field';
-import PasswordField from '@/modules/User/features/Auth/components/FormSection/components/password-field';
-import { RegistrationView } from '@/modules/User/features/Auth/components/FormSection/types';
-import { createValidators } from '@/modules/User/features/Auth/components/FormSection/validations';
+import FormField from '@/modules/User/features/Auth/components/form-section/components/form-field';
+import PasswordField from '@/modules/User/features/Auth/components/form-section/components/password-field';
+import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
 import getRegistrationError from '@/modules/User/features/Auth/utils/mapRegistrationError';

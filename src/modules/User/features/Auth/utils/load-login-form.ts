@@ -1,13 +1,13 @@
 let loginFormPromise:
-  | Promise<typeof import('@/modules/User/features/Auth/components/FormSection/auth-forms/login-form')>
+  | Promise<typeof import('@/modules/User/features/Auth/components/form-section/auth-forms/login-form')>
   | null = null;
 
 export default function loadLoginForm(): Promise<
-  typeof import('@/modules/User/features/Auth/components/FormSection/auth-forms/login-form')
+  typeof import('@/modules/User/features/Auth/components/form-section/auth-forms/login-form')
 > {
   if (!loginFormPromise) {
     loginFormPromise = import(
-      '@/modules/User/features/Auth/components/FormSection/auth-forms/login-form'
+      '@/modules/User/features/Auth/components/form-section/auth-forms/login-form'
     ).catch((error) => {
       loginFormPromise = null;
       throw error;

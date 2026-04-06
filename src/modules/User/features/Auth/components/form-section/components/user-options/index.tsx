@@ -5,8 +5,8 @@ import { useState } from 'react';
 import {
   CheckBoxChecked,
   CheckBoxIcon,
-} from '@/modules/User/features/Auth/components/FormSection/components/user-options/checkbox-icons';
-import styles from '@/modules/User/features/Auth/components/FormSection/components/user-options/styles';
+} from '@/modules/User/features/Auth/components/form-section/components/user-options/checkbox-icons';
+import styles from '@/modules/User/features/Auth/components/form-section/components/user-options/styles';
 
 export default function UserOptions(): JSX.Element {
   const [isChecked, setIsChecked] = useState(false);

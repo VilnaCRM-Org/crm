@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 
 import LoginForm, {
   normalizeLoginErrorMessage,
-} from '@/modules/User/features/Auth/components/FormSection/auth-forms/login-form';
+} from '@/modules/User/features/Auth/components/form-section/auth-forms/login-form';
 
 const mockDispatch = jest.fn();
 const mockLoginUser = jest.fn();
@@ -34,7 +34,7 @@ jest.mock('@/modules/User/features/Auth/utils/getSubmitLabelKey', () => ({
     `${mode}.${isSubmitting ? 'submitting' : 'submit_button'}`,
 }));
 
-jest.mock('@/modules/User/features/Auth/components/FormSection/components/form-field', () => ({
+jest.mock('@/modules/User/features/Auth/components/form-section/components/form-field', () => ({
   __esModule: true,
   default: (props: {
     label: string;
@@ -47,14 +47,14 @@ jest.mock('@/modules/User/features/Auth/components/FormSection/components/form-f
 }));
 
 jest.mock(
-  '@/modules/User/features/Auth/components/FormSection/components/password-field',
+  '@/modules/User/features/Auth/components/form-section/components/password-field',
   () => ({
     __esModule: true,
     default: (): ReactElement => <div data-testid="password-field" />,
   })
 );
 
-jest.mock('@/modules/User/features/Auth/components/FormSection/components/user-options', () => ({
+jest.mock('@/modules/User/features/Auth/components/form-section/components/user-options', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="user-options" />,
 }));

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ComponentProps } from 'react';
 
-import AuthErrorBoundary from '@/modules/User/features/Auth/components/AuthErrorBoundary';
+import AuthErrorBoundary from '@/modules/User/features/Auth/components/auth-error-boundary';
 
 function ThrowingChild({ shouldThrow }: { shouldThrow: boolean }): JSX.Element {
   if (shouldThrow) throw new Error('test error');

@@ -5,7 +5,7 @@ import {
   shadowPulseAnimation,
 } from '@/components/skeletons/base/styles';
 import breakpointsTheme from '@/components/UIBreakpoints';
-import { fieldGapMargins } from '@/modules/User/features/Auth/components/FormSection/styles';
+import { fieldGapMargins } from '@/modules/User/features/Auth/components/form-section/styles';
 
 const AUTH_SKELETON_TINY_BREAKPOINT = '336px';
 

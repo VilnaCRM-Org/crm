@@ -29,7 +29,7 @@ const mockFormSectionDefault = jest.fn((): never => {
   });
 });
 
-jest.mock('@/modules/User/features/Auth/components/FormSection', () => ({
+jest.mock('@/modules/User/features/Auth/components/form-section', () => ({
   __esModule: true,
   default: (): never => mockFormSectionDefault(),
 }));
