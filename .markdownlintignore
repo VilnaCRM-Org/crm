@@ -4,6 +4,7 @@ playwright-report
 test-results
 lighthouse
 .tmp
+specs/planning-artifacts
 _bmad
 _bmad-output
 build
