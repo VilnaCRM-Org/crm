@@ -13,20 +13,31 @@ date: '2026-03-11T23:33:12+02:00'
 
 # Architecture Decision Document
 
-_This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
+_This document builds collaboratively through step-by-step discovery. Sections are appended as
+we work through each architectural decision together._
 
 ## Project Context Analysis
 
 ### Requirements Overview
 
 **Functional Requirements:**
-The PRD defines 16 functional requirements across five capability areas: quality gate enforcement, contributor validation, CI results reporting, repository policy consistency, and contributor documentation. Architecturally, this is a repository workflow initiative rather than an application-runtime feature. The solution must support one committed policy, one reproducible local execution path, one CI execution path, clear success and failure reporting semantics, and documentation that fits normal contributor workflow.
+The PRD defines 16 functional requirements across five capability areas: quality gate enforcement,
+contributor validation, CI results reporting, repository policy consistency, and contributor
+documentation. Architecturally, this is a repository workflow initiative rather than an
+application-runtime feature. The solution must support one committed policy, one reproducible
+local execution path, one CI execution path, clear success and failure reporting semantics, and
+documentation that fits normal contributor workflow.
 
 **Non-Functional Requirements:**
-The main architectural drivers are reliability, consistency, usability, and operationally acceptable runtime. The design must produce stable pass/fail outcomes for the same code and policy state, keep local and CI evaluations materially aligned, and make both success summaries and failure output understandable without requiring raw tool-internal interpretation.
+The main architectural drivers are reliability, consistency, usability, and operationally
+acceptable runtime. The design must produce stable pass/fail outcomes for the same code and
+policy state, keep local and CI evaluations materially aligned, and make both success summaries
+and failure output understandable without requiring raw tool-internal interpretation.
 
 **Scale & Complexity:**
-This is a low-complexity architectural initiative with medium operational sensitivity. It is a single-slice repository change centered on one required CI check and one local execution path, but it affects every pull request in the governed scope.
+This is a low-complexity architectural initiative with medium operational sensitivity. It is a
+single-slice repository change centered on one required CI check and one local execution path,
+but it affects every pull request in the governed scope.
 
 - Primary domain: developer tooling / CI governance
 - Complexity level: low
@@ -35,7 +46,15 @@ This is a low-complexity architectural initiative with medium operational sensit
 
 ### Technical Constraints & Dependencies
 
-The architecture must respect existing repository conventions that favor `make` as the local entry point and GitHub Actions as the CI orchestration layer. The repository already has a static testing workflow and `make`-based quality commands, so command-source-of-truth and execution-environment parity are key constraints. The governed scope must be defined as supported repository assets within `src/` only. Repository tests, scripts, and configuration remain outside the enforced gate unless a later planning cycle intentionally broadens scope. Successful CI runs must expose actual metric values in job output, while failed runs must expose actionable violation details. Thresholds and governed-scope definitions must be committed in-repo and applied consistently across local and CI execution.
+The architecture must respect existing repository conventions that favor `make` as the local entry
+point and GitHub Actions as the CI orchestration layer. The repository already has a static
+testing workflow and `make`-based quality commands, so command-source-of-truth and
+execution-environment parity are key constraints. The governed scope must be defined as supported
+repository assets within `src/` only. Repository tests, scripts, and configuration remain outside
+the enforced gate unless a later planning cycle intentionally broadens scope. Successful CI runs
+must expose actual metric values in job output, while failed runs must expose actionable violation
+details. Thresholds and governed-scope definitions must be committed in-repo and applied
+consistently across local and CI execution.
 
 ### Cross-Cutting Concerns Identified
 
@@ -52,7 +71,9 @@ The architecture must respect existing repository conventions that favor `make` 
 
 Brownfield repository workflow / CI automation inside an existing Node.js/Bun web repository.
 
-This is not a greenfield application bootstrap decision. The architectural foundation already exists in the `crm` repository. The relevant question is whether to extend that foundation directly or introduce an additional execution wrapper for `rust-code-analysis`.
+This is not a greenfield application bootstrap decision. The architectural foundation already
+exists in the `crm` repository. The relevant question is whether to extend that foundation
+directly or introduce an additional execution wrapper for `rust-code-analysis`.
 
 ### Existing Technical Preferences Identified
 
@@ -60,14 +81,16 @@ The current repository already establishes these technical preferences:
 
 - `make` is the local developer entry point for quality and workflow commands.
 - GitHub Actions is the CI orchestration layer for pull-request quality checks.
-- The repository is primarily TypeScript/TSX/JavaScript, with some CSS and HTML assets plus non-code assets such as Markdown, YAML, shell scripts, and JSON.
+- The repository is primarily TypeScript/TSX/JavaScript, with some CSS and HTML assets plus
+  non-code assets such as Markdown, YAML, shell scripts, and JSON.
 - Contributor workflow documentation already centers on `make` commands.
 
 ### Foundation Options Considered
 
 #### Option 1: Extend the Existing `crm` Repository Foundation
 
-Integrate `rust-code-analysis` into the current `Makefile`, GitHub Actions workflow, and contributor documentation.
+Integrate `rust-code-analysis` into the current `Makefile`, GitHub Actions workflow, and
+contributor documentation.
 
 **What it gives us:**
 
@@ -93,13 +116,19 @@ Introduce a dedicated containerized or otherwise isolated execution wrapper spec
 
 #### Explicitly Rejected: Separate Rust Helper Project
 
-A Rust workspace, helper crate, or custom wrapper project is not justified by this issue. It would introduce a new project boundary without a corresponding product or workflow requirement.
+A Rust workspace, helper crate, or custom wrapper project is not justified by this issue. It
+would introduce a new project boundary without a corresponding product or workflow requirement.
 
 ### Selected Foundation: Existing `crm` Repository Foundation
 
 **Rationale for Selection:**
 
-This initiative does not justify a new starter or wrapper foundation. The repository already has the orchestration primitives required for the change: `make` for local execution and GitHub Actions for pull-request enforcement. Upstream `rust-code-analysis` is already delivered as a CLI, with current Mozilla documentation and releases indicating active support for repository-relevant languages including JavaScript, TypeScript, CSS, and HTML. Reusing the existing repository foundation is the lowest-risk and most maintainable architectural choice.
+This initiative does not justify a new starter or wrapper foundation. The repository already has
+the orchestration primitives required for the change: `make` for local execution and GitHub
+Actions for pull-request enforcement. Upstream `rust-code-analysis` is already delivered as a
+CLI, with current Mozilla documentation and releases indicating active support for
+repository-relevant languages including JavaScript, TypeScript, CSS, and HTML. Reusing the
+existing repository foundation is the lowest-risk and most maintainable architectural choice.
 
 ### Initialization Command
 
@@ -118,24 +147,30 @@ This initiative does not justify a new starter or wrapper foundation. The reposi
 **Governed Scope Baseline:**
 
 - The enforced gate should govern repository assets supported by `rust-code-analysis`.
-- Based on upstream support and the current repository makeup, the likely analyzable scope inside `src/` is TypeScript/TSX, JavaScript, CSS, and HTML-family assets.
-- Repository tests, scripts, configuration, Markdown, YAML, shell scripts, JSON, and binary/media assets remain outside this specific gate unless later evidence shows they are meaningfully supported and the policy is deliberately expanded.
+- Based on upstream support and the current repository makeup, the likely analyzable scope inside
+  `src/` is TypeScript/TSX, JavaScript, CSS, and HTML-family assets.
+- Repository tests, scripts, configuration, Markdown, YAML, shell scripts, JSON, and binary/media
+  assets remain outside this specific gate unless later evidence shows they are meaningfully
+  supported and the policy is deliberately expanded.
 
 **Build Tooling:**
 
 - Extend the existing PR workflow instead of creating a parallel CI orchestration path.
 - Keep `make` as the contributor-facing command source of truth.
-- Keep local and CI invocation materially aligned through the same committed policy and versioned tool assumptions.
+- Keep local and CI invocation materially aligned through the same committed policy and versioned
+  tool assumptions.
 
 **Testing / Quality Integration:**
 
 - Fold `rust-code-analysis` into the repository's existing quality workflow.
-- Use CI job output as the reporting surface for both successful metric summaries and failed policy diagnostics.
+- Use CI job output as the reporting surface for both successful metric summaries and failed
+  policy diagnostics.
 
 **Code Organization:**
 
 - Centralize invocation and committed policy in repository-owned files.
-- Avoid a separate helper project unless a later implementation constraint proves direct integration insufficient.
+- Avoid a separate helper project unless a later implementation constraint proves direct
+  integration insufficient.
 
 **Development Experience:**
 
@@ -148,15 +183,18 @@ This initiative does not justify a new starter or wrapper foundation. The reposi
 ### Decision Priority Analysis
 
 **Critical Decisions (Block Implementation):**
+
 - Tool installation strategy — required before any CI job can run
 - Policy file format & thresholds — required before enforcement logic can be written
 - Make target design — required before CI can invoke the tool
 
 **Important Decisions (Shape Architecture):**
+
 - CI job structure — determines failure signal granularity in PR checks
 - Reporting format — determines contributor experience on failure
 
 **Deferred Decisions (Post-MVP):**
+
 - Threshold tuning — initial values are industry averages; adjust after baseline run
   against existing codebase reveals realistic distribution
 
@@ -176,7 +214,7 @@ This initiative does not justify a new starter or wrapper foundation. The reposi
 - **Committed thresholds:**
 
 | Metric | Threshold | Direction |
-|---|---|---|
+| --- | --- | --- |
 | Cyclomatic Complexity (CC) | 10 | max per function |
 | Cognitive Complexity | 15 | max per function |
 | N-Args | 5 | max parameters |
@@ -191,9 +229,11 @@ This initiative does not justify a new starter or wrapper foundation. The reposi
 
 - **Target name:** `lint-metrics`
 - **Integration:** Added to existing `lint` chain
+
   ```makefile
   lint: lint-eslint lint-tsc lint-md lint-metrics
   ```
+
 - **Rationale:** Single `make lint` entry point covers all quality gates;
   contributors gain one reproducible local validation command
 - **Affects:** `Makefile`, contributor workflow documentation
@@ -221,6 +261,7 @@ This initiative does not justify a new starter or wrapper foundation. The reposi
 ### Decision Impact Analysis
 
 **Implementation Sequence:**
+
 1. Pin tool version and add binary download + cache step to new workflow
 2. Add `lint-metrics` target to Makefile with inline thresholds and `jq` enforcement
 3. Extend `lint` target to include `lint-metrics`
@@ -230,6 +271,7 @@ This initiative does not justify a new starter or wrapper foundation. The reposi
 7. Update contributor documentation with `make lint-metrics` usage
 
 **Cross-Component Dependencies:**
+
 - `rust-code-analysis.yml` depends on binary install step completing before
   `make lint-metrics` runs
 - `lint` target depends on `lint-metrics` being valid and exit-code-correct
@@ -254,12 +296,14 @@ This initiative does not justify a new starter or wrapper foundation. The reposi
 ### Structure Patterns
 
 **Binary Installation:**
+
 - Path: `./bin/rust-code-analysis-cli` (project-local)
 - Directory `bin/` is gitignored
 - CI installs to this path; `make lint-metrics` references `./bin/rust-code-analysis-cli`
 - Cache key in CI: `rust-code-analysis-$(RCA_VERSION)`
 
 **Governed Scope:**
+
 - Analyzed: `src/`
 - Explicitly excluded: `node_modules/`, `dist/`, `coverage/`, `.storybook/`, `tests/`
 - All agents MUST use this exact scope — no ad-hoc path additions
@@ -267,13 +311,15 @@ This initiative does not justify a new starter or wrapper foundation. The reposi
 ### Format Patterns
 
 **Threshold Enforcement:**
+
 - Mode: collect-all-then-fail (never fail-fast)
-- `jq` processes complete JSON output, collects all violations into a list, prints the full violation table, then exits non-zero if any violations exist
+- `jq` processes complete JSON output, collects all violations into a list, prints the full
+  violation table, then exits non-zero if any violations exist
 - Exit code 0 = all metrics within threshold; exit code 1 = one or more violations
 
 **Violation Output Format (stdout + Job Summary):**
 
-```
+```text
 | File | Function | Metric | Value | Threshold |
 |------|----------|--------|-------|-----------|
 | src/foo.ts | myFunc | CC | 14 | max 10 |
@@ -281,7 +327,7 @@ This initiative does not justify a new starter or wrapper foundation. The reposi
 
 **Success Output Format:**
 
-```
+```text
 rust-code-analysis: all metrics within thresholds (CC max=8, MI min=72, ...)
 ```
 
@@ -296,6 +342,7 @@ All agents MUST use this exact conditional — never write unconditionally:
 ```
 
 **Binary Version Pinning:**
+
 - Version is set once as `RCA_VERSION` in the Makefile
 - Never hardcode the version string in more than one place
 - CI cache key and download URL both derive from `$(RCA_VERSION)`
@@ -303,6 +350,7 @@ All agents MUST use this exact conditional — never write unconditionally:
 ### Enforcement Guidelines
 
 **All AI Agents MUST:**
+
 - Install binary to `./bin/rust-code-analysis-cli` — no other path
 - Analyze `src/` only — no other root directories
 - Collect all violations before exiting — never fail-fast
@@ -310,6 +358,7 @@ All agents MUST use this exact conditional — never write unconditionally:
 - Reference `$(RCA_VERSION)` for version — never hardcode inline
 
 **Anti-Patterns:**
+
 - Writing to `$GITHUB_STEP_SUMMARY` without the null-check guard
 - Running `rust-code-analysis-cli` against repo root (picks up `node_modules/`)
 - Installing binary to a system path requiring sudo
@@ -317,44 +366,49 @@ All agents MUST use this exact conditional — never write unconditionally:
 
 ## Project Structure & Boundaries
 
-### Repository Change Delta
+### Target-state Repository Change Delta
+
+(target-state — planning only; none of these files are part of this PR)
 
 This initiative extends the existing `crm` repository. No new project root.
-The complete set of file changes is:
+Planned/target-state file changes include:
 
 **New Files:**
 
-```
+```text
 crm/
 ├── .github/
 │   └── workflows/
-│       └── rust-code-analysis.yml   # New dedicated CI workflow
-└── bin/                              # Gitignored — local binary install dir
-    └── rust-code-analysis-cli        # Downloaded at install/CI time, not committed
+│       └── rust-code-analysis.yml   # Planned: new dedicated CI workflow
+└── bin/                              # Planned: gitignored local binary install dir
+    └── rust-code-analysis-cli        # Planned: downloaded at install/CI time, not committed
 ```
 
-**Modified Files:**
+**Modified Files (planned):**
 
-```
+```text
 crm/
-├── .gitignore                        # Add: /bin/
-├── Makefile                          # Add: RCA_VERSION, lint-metrics target, extend lint
-└── CLAUDE.md                         # Add: rust-code-analysis section under Code Quality
+├── .gitignore                        # Planned addition: /bin/
+├── Makefile                   # Planned: RCA_VERSION, lint-metrics target, extend lint
+└── CLAUDE.md                         # Planned addition: rust-code-analysis section under Code Quality
 ```
 
 ### Architectural Boundaries
 
 **Tool Boundary:**
+
 - `rust-code-analysis-cli` is a pure external CLI dependency
 - The repository owns: version pin (`RCA_VERSION`), thresholds, invocation, reporting
 - The tool owns: metric computation — no custom wrappers or patches
 
 **CI Boundary:**
+
 - `rust-code-analysis.yml` is fully self-contained
 - It does not call other workflows or reuse shared actions from this repo
 - Binary install + cache + `make lint-metrics` are all steps within one job
 
 **Local/CI Parity Boundary:**
+
 - `make lint-metrics` is the single source of truth for invocation
 - CI calls `make lint-metrics` — not raw CLI directly
 - `$GITHUB_STEP_SUMMARY` reporting is the only CI-specific branch
@@ -362,7 +416,7 @@ crm/
 ### Requirements to Structure Mapping
 
 | PRD Capability Area | Files |
-|---|---|
+| --- | --- |
 | Quality gate enforcement | `.github/workflows/rust-code-analysis.yml` |
 | Contributor validation (local) | `Makefile` — `lint-metrics` target |
 | CI results reporting | `Makefile` — `$GITHUB_STEP_SUMMARY` section + workflow job output |
@@ -387,17 +441,19 @@ lint-metrics: ## Run rust-code-analysis complexity gate
 ```
 
 **GitHub Actions Integration:**
+
 - Workflow trigger: `pull_request` → `main`
 - Job name: `rust-code-analysis` (exact match for branch protection required-check)
 - Steps: checkout → install Node → cache binary → install binary → `make lint-metrics`
 
 **Branch Protection Integration:**
+
 - Required status check name: `rust-code-analysis` (matches job name)
 - PRs to `main` are blocked until this check passes
 
 ### Data Flow
 
-```
+```text
 pull_request event
   → rust-code-analysis.yml triggered
     → binary downloaded (or restored from cache)
@@ -436,7 +492,7 @@ operational runtime) are covered by architectural decisions.
 Explicitly pin the download URL template in the architecture to prevent agents
 from constructing it differently:
 
-```
+```text
 https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz
 ```
 
@@ -453,14 +509,14 @@ before running analysis. Contributors should not need a separate install step.
 
 ### Architecture Completeness Checklist
 
-**✅ Requirements Analysis**
+#### ✅ Requirements Analysis
 
 - [x] Project context thoroughly analyzed
 - [x] Scale and complexity assessed (low complexity, medium operational sensitivity)
 - [x] Technical constraints identified (make + GitHub Actions conventions)
 - [x] Cross-cutting concerns mapped
 
-**✅ Architectural Decisions**
+#### ✅ Architectural Decisions
 
 - [x] Critical decisions documented with versions (v0.0.25)
 - [x] Tool installation strategy specified (binary download, project-local)
@@ -468,7 +524,7 @@ before running analysis. Contributors should not need a separate install step.
 - [x] CI structure decided (dedicated workflow, separate required check)
 - [x] Reporting format decided (stdout + Job Summary)
 
-**✅ Implementation Patterns**
+#### ✅ Implementation Patterns
 
 - [x] Naming conventions locked (target, workflow, job, variable names)
 - [x] Binary path locked (`./bin/rust-code-analysis-cli`)
@@ -476,7 +532,7 @@ before running analysis. Contributors should not need a separate install step.
 - [x] Enforcement mode locked (collect-all-then-fail)
 - [x] Local/CI parity pattern locked (`$GITHUB_STEP_SUMMARY` conditional)
 
-**✅ Project Structure**
+#### ✅ Project Structure
 
 - [x] Complete file delta defined (2 new, 2 modified)
 - [x] Component boundaries established (tool / CI / local/CI parity)
