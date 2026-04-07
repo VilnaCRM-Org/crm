@@ -15,12 +15,6 @@ export default class AuthErrorBoundary extends Component<
   AuthErrorBoundaryProps,
   AuthErrorBoundaryState
 > {
-  // eslint-disable-next-line react/static-property-placement
-  public static defaultProps: Partial<AuthErrorBoundaryProps> = {
-    fallback: 'Something went wrong. Please try again later.',
-    onError: undefined,
-  };
-
   constructor(props: AuthErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -35,15 +29,13 @@ export default class AuthErrorBoundary extends Component<
 
     if (onError) {
       onError(error, info);
-    } else if (process.env.NODE_ENV !== 'production') {
-      // eslint-disable-next-line no-console
-      console.error('AuthErrorBoundary caught an error:', error, info);
     }
   }
 
-  // eslint-disable-next-line react/sort-comp
+  public handleReset = (): void => this.setState({ hasError: false, error: undefined });
+
   public render(): ReactNode {
-    const { children, fallback } = this.props;
+    const { children, fallback = 'Something went wrong. Please try again later.' } = this.props;
     const { hasError, error } = this.state;
     const shouldShowErrorDetails =
       (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && error;
@@ -80,6 +72,4 @@ export default class AuthErrorBoundary extends Component<
 
     return children;
   }
-
-  private handleReset = (): void => this.setState({ hasError: false, error: undefined });
 }

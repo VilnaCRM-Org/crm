@@ -14,9 +14,7 @@ export interface FormFieldProps<T extends FieldValues = FieldValues> {
   type: InputHTMLAttributes<HTMLInputElement>['type'];
   label: string;
   autoComplete: string;
-  // eslint-disable-next-line react/require-default-props
   defaultValue?: PathValue<T, Path<T>>;
-  // eslint-disable-next-line react/require-default-props
   inputProps?: InputProps;
 }
 

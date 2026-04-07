@@ -61,28 +61,11 @@ describe('AuthErrorBoundary', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('test error');
   });
 
-  it('suppresses console.error when onError prop is provided', () => {
+  it('calls onError prop when provided', () => {
     const mockOnError = jest.fn();
     renderWithBoundary({ onError: mockOnError });
 
     expect(mockOnError).toHaveBeenCalledWith(
-      expect.any(Error),
-      expect.objectContaining({ componentStack: expect.any(String) })
-    );
-    // eslint-disable-next-line no-console
-    expect(console.error).not.toHaveBeenCalledWith(
-      'AuthErrorBoundary caught an error:',
-      expect.anything(),
-      expect.anything()
-    );
-  });
-
-  it('logs to console.error when no onError in non-production', () => {
-    renderWithBoundary();
-
-    // eslint-disable-next-line no-console
-    expect(console.error).toHaveBeenCalledWith(
-      'AuthErrorBoundary caught an error:',
       expect.any(Error),
       expect.objectContaining({ componentStack: expect.any(String) })
     );
