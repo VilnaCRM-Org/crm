@@ -252,7 +252,8 @@ existing repository foundation is the lowest-risk and most maintainable architec
 
 **Implementation notes — JSON path mapping (v0.0.25):**
 
-The threshold labels above are policy names. Their mapping to actual `rust-code-analysis-cli` JSON paths (verified against v0.0.25 source) is:
+The threshold labels above are policy names. Their mapping to actual
+`rust-code-analysis-cli` JSON paths (verified against v0.0.25 source) is:
 
 | Policy label | Actual jq path |
 | --- | --- |
@@ -280,9 +281,19 @@ The threshold labels above are policy names. Their mapping to actual `rust-code-
 
 **Caveats requiring special handling during implementation:**
 
-- **MI parent key typo:** The JSON parent key is `maintanability_index` (single 'i' — a typo baked into the v0.0.25 serialization). Use this exact spelling in jq.
-- **Class / interface metrics:** `class_*` and `interface_*` metrics (`wmc`, `npm`, `npa`, `coa`, `cda`) are Java-specific in v0.0.25. For TypeScript analysis these fields will likely be zero or absent. A baseline compliance run against the actual codebase is required to confirm which metrics produce non-trivial values before enabling enforcement.
-- **`cloc_ratio` / `blank_ratio`:** These are derived ratios (CLOC ÷ SLOC and BLANK ÷ SLOC). Both raw fields (`cloc`, `blank`, `sloc`) are native output. The range-band syntax (`0.20..0.40`, `<0.10 or >0.60`) requires dedicated jq logic separate from the simple `value > threshold` pattern used for the other metrics. Treat these as review-gate checks rather than hard-fail until the jq implementation is validated.
+- **MI parent key typo:** The JSON parent key is `maintanability_index`
+  (single 'i' — a typo baked into v0.0.25 serialization).
+  Use this exact spelling in jq.
+- **Class / interface metrics:** `class_*` and `interface_*` metrics
+  (`wmc`, `npm`, `npa`, `coa`, `cda`) are Java-specific in v0.0.25.
+  For TypeScript analysis these fields will likely be zero or absent.
+  A baseline compliance run is required to confirm which metrics produce
+  non-trivial values before enabling enforcement.
+- **`cloc_ratio` / `blank_ratio`:** Derived ratios (CLOC ÷ SLOC and
+  BLANK ÷ SLOC). Raw fields (`cloc`, `blank`, `sloc`) are native output.
+  The range-band syntax (`0.20..0.40`, `<0.10 or >0.60`) requires
+  dedicated jq logic separate from the simple `value > threshold` pattern.
+  Treat these as review-gate checks rather than hard-fail until validated.
 
 ### Make Target Design
 
@@ -387,7 +398,8 @@ The threshold labels above are policy names. Their mapping to actual `rust-code-
 **Success Output Format:**
 
 ```text
-rust-code-analysis: all metrics within thresholds (cyclomatic_max=8, cognitive_max=12, mi_visual_studio_min=80, ...)
+rust-code-analysis: all metrics within thresholds
+  (cyclomatic_max=8, cognitive_max=12, mi_visual_studio_min=80, ...)
 ```
 
 ### Process Patterns
