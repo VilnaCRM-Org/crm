@@ -17,9 +17,25 @@
 @font-face {
   font-family: Golos;
   font-display: swap;
+  font-weight: 600;
+  font-style: normal;
+  src: url('../assets/fonts/golos/golos-text-semi-bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Golos;
+  font-display: swap;
   font-weight: 700;
   font-style: normal;
   src: url('../assets/fonts/golos/golos-text-bold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Golos;
+  font-display: swap;
+  font-weight: 800;
+  font-style: normal;
+  src: url('../assets/fonts/golos/golos-text-extra-bold.woff2') format('woff2');
 }
 
 @font-face {
@@ -44,4 +60,12 @@
   font-weight: 500;
   font-style: normal;
   src: url('../assets/fonts/inter/inter-medium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: Inter;
+  font-display: swap;
+  font-weight: 700;
+  font-style: normal;
+  src: url('../assets/fonts/inter/inter-bold.woff2') format('woff2');
 }
