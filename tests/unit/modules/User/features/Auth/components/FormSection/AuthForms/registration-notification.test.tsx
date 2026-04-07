@@ -5,7 +5,7 @@ import { initReactI18next } from 'react-i18next';
 import localization from '@/i18n/localization.json';
 import RegistrationNotification, {
   BACK_CLOSE_ANIMATION_MS,
-} from '@/modules/User/features/Auth/components/FormSection/AuthForms/registration-notification';
+} from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification';
 
 import renderWithProviders from '../../../../../../../utils/renderWithProviders';
 

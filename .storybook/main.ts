@@ -1,3 +1,5 @@
+import path from 'path';
+
 import type { StorybookConfig } from '@storybook/react-webpack5';
 
 const config: StorybookConfig = {
@@ -8,6 +10,11 @@ const config: StorybookConfig = {
     options: {},
   },
   typescript: { check: false },
+  env: (config) => ({
+    ...config,
+    REACT_APP_MAIN_LANGUAGE: process.env.REACT_APP_MAIN_LANGUAGE ?? 'uk',
+    REACT_APP_FALLBACK_LANGUAGE: process.env.REACT_APP_FALLBACK_LANGUAGE ?? 'en',
+  }),
   webpackFinal: async (config) => {
     config.module?.rules?.push({
       test: /\.(ts|tsx)$/,
@@ -30,6 +37,10 @@ const config: StorybookConfig = {
     config.resolve.extensions = Array.from(
       new Set([...(config.resolve.extensions || []), '.ts', '.tsx'])
     );
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': path.resolve(__dirname, '../src'),
+    };
 
     return config;
   },

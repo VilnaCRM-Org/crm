@@ -1,7 +1,7 @@
 import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { RegistrationView } from '@/modules/User/features/Auth/components/FormSection/types';
+import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import { registerUser, reset } from '@/modules/User/store';
 import {
