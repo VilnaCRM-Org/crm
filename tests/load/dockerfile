@@ -18,4 +18,11 @@ RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=builder /app/k6 /bin/
 
+RUN addgroup -g 1000 k6 && adduser -u 1000 -G k6 -D k6 \
+    && chown k6:k6 /bin/k6 \
+    && mkdir -p /loadTests/results \
+    && chown k6:k6 /loadTests/results
+
+USER k6
+
 ENTRYPOINT [ "k6" ]
