@@ -4,12 +4,11 @@ import { Box } from '@mui/material';
 import { lazy, startTransition, Suspense, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import RegistrationForm from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form';
+import AuthProviderButtons from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons';
+import styles from '@/modules/User/features/Auth/components/form-section/styles';
+import { AuthMode, RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
-
-import RegistrationForm from './auth-forms/registration-form';
-import AuthProviderButtons from './components/auth-provider-buttons';
-import styles from './styles';
-import { AuthMode, RegistrationView } from './types';
 
 const LoginForm = lazy(loadLoginForm);
 const LOAD_LOGIN_ERROR_KEY = 'sign_in.errors.load_failed' as const;

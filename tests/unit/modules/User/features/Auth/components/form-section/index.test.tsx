@@ -475,11 +475,13 @@ describe('FormSection', () => {
       })
     );
 
+    const loginFormPreloadSpy = jest.fn(() => {
+      throw new Error('preload failed');
+    });
+
     jest.doMock(
       '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
-      () => {
-        throw new Error('preload failed');
-      }
+      loginFormPreloadSpy
     );
 
     let renderLocal!: typeof render;
@@ -517,7 +519,7 @@ describe('FormSection', () => {
       fireEvent.mouseEnter(screen.getByText('sign_up.form.switcher_text_have_account'));
 
       await waitFor(() => {
-        expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+        expect(loginFormPreloadSpy).toHaveBeenCalled();
       });
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     } finally {

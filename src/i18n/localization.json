@@ -78,7 +78,9 @@
             "label": "Пароль"
           },
           "submit_button": "Увійти до облікового запису",
-          "submitting": "Вхід…"
+          "submitting": "Вхід…",
+          "remember_me": "Запамʼятати мене",
+          "forgot_password": "Забули пароль?"
         }
       },
       "footer": {
@@ -199,7 +201,9 @@
             "label": "Password"
           },
           "submit_button": "Sign in",
-          "submitting": "Signing in…"
+          "submitting": "Signing in…",
+          "remember_me": "Remember me",
+          "forgot_password": "Forgot password?"
         }
       },
       "footer": {

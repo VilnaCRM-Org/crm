@@ -10,8 +10,11 @@ jest.mock('@/components/skeletons/ui-skeleton-text/styles', () => ({
 }));
 
 describe('UISkeletonText', () => {
-  const getSkeletonText = (id: string): HTMLElement =>
-    screen.getAllByRole('generic').find((element) => element.id === id) as HTMLElement;
+  const getSkeletonText = (id: string): HTMLElement => {
+    const element = screen.getAllByRole('generic').find((el) => el.id === id);
+    if (!element) throw new Error(`Skeleton text element with id "${id}" not found`);
+    return element;
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();

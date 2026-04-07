@@ -87,9 +87,7 @@ describe('AuthSkeleton Integration Tests', () => {
 
   describe('Cross-viewport consistency', () => {
     it('should render section across all viewports', () => {
-      const viewports = [375, 768, 1024, 1920];
-
-      viewports.forEach((width) => {
+      viewportCases.map((c) => c.width).forEach((width) => {
         Object.defineProperty(window, 'innerWidth', {
           writable: true,
           configurable: true,
@@ -105,9 +103,7 @@ describe('AuthSkeleton Integration Tests', () => {
     });
 
     it('should maintain accessibility across viewports', () => {
-      const viewports = [375, 768, 1024, 1920];
-
-      viewports.forEach((width) => {
+      viewportCases.map((c) => c.width).forEach((width) => {
         Object.defineProperty(window, 'innerWidth', {
           writable: true,
           configurable: true,

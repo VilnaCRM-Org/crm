@@ -3,10 +3,11 @@ import { render, screen } from '@testing-library/react';
 import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 
 describe('UISkeletonButton', () => {
-  const getSkeletonButton = (): HTMLElement =>
-    screen
-      .getAllByRole('generic')
-      .find((element) => element.id === 'skeleton-button') as HTMLElement;
+  const getSkeletonButton = (): HTMLElement => {
+    const element = screen.getAllByRole('generic').find((el) => el.id === 'skeleton-button');
+    if (!element) throw new Error('Skeleton button element with id "skeleton-button" not found');
+    return element;
+  };
 
   it('renders with default props', () => {
     render(<UISkeletonButton id="skeleton-button" />);

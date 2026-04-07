@@ -72,7 +72,9 @@
         "label": "Password"
       },
       "submit_button": "Sign in",
-      "submitting": "Signing in…"
+      "submitting": "Signing in…",
+      "remember_me": "Remember me",
+      "forgot_password": "Forgot password?"
     }
   },
   "footer": {

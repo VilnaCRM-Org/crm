@@ -32,6 +32,9 @@ export default function AuthSkeleton({
       }
     : undefined;
 
+  const withStaticSx = <T extends object>(baseSx: T): (T | NonNullable<typeof staticSkeletonSx>)[] =>
+    staticSkeletonSx ? [baseSx, staticSkeletonSx] : [baseSx];
+
   return (
     <Box
       component="section"
@@ -39,27 +42,23 @@ export default function AuthSkeleton({
       sx={authFormSectionStyles.formSection}
     >
       <Box
-        sx={[
-          authFormSectionStyles.formWrapper,
-          styles.formWrapperPulse,
-          ...(staticSkeletonSx ? [staticSkeletonSx] : []),
-        ]}
+        sx={withStaticSx({ ...authFormSectionStyles.formWrapper, ...styles.formWrapperPulse })}
       >
         <UISkeletonText
           id="auth-skeleton-title"
           size="l"
-          sx={[styles.titleSkeleton, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+          sx={withStaticSx(styles.titleSkeleton)}
         />
         <Box sx={styles.subtitleWrapper}>
           <UISkeletonText
             id="auth-skeleton-subtitle"
             size="m"
-            sx={[styles.subtitleFirstLine, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+            sx={withStaticSx(styles.subtitleFirstLine)}
           />
           <UISkeletonText
             id="auth-skeleton-subtitle-line2"
             size="m"
-            sx={[styles.subtitleSecondLine, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+            sx={withStaticSx(styles.subtitleSecondLine)}
           />
         </Box>
 
@@ -67,7 +66,7 @@ export default function AuthSkeleton({
           <UISkeletonText
             id="auth-skeleton-field-label-1"
             size="l"
-            sx={[styles.fieldLabel, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+            sx={withStaticSx(styles.fieldLabel)}
           />
           <UISkeletonInput disableAnimation={disableAnimation} id="auth-skeleton-input-1" />
         </Box>
@@ -76,7 +75,7 @@ export default function AuthSkeleton({
           <UISkeletonText
             id="auth-skeleton-field-label-2"
             size="l"
-            sx={[styles.fieldLabel, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+            sx={withStaticSx(styles.fieldLabel)}
           />
           <UISkeletonInput disableAnimation={disableAnimation} id="auth-skeleton-input-2" />
         </Box>
@@ -85,21 +84,21 @@ export default function AuthSkeleton({
           <UISkeletonText
             id="auth-skeleton-field-label-3"
             size="l"
-            sx={[styles.fieldLabel, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+            sx={withStaticSx(styles.fieldLabel)}
           />
           <UISkeletonInput disableAnimation={disableAnimation} id="auth-skeleton-input-3" />
         </Box>
 
         <UISkeletonButton
           id="auth-skeleton-submit"
-          sx={[styles.buttonSkeleton, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+          sx={withStaticSx(styles.buttonSkeleton)}
         />
 
         <Divider id="auth-skeleton-divider" role="presentation" sx={styles.divider}>
           <UISkeletonText
             id="auth-skeleton-divider-text"
             size="l"
-            sx={[styles.dividerText, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+            sx={withStaticSx(styles.dividerText)}
           />
         </Divider>
 
@@ -108,7 +107,7 @@ export default function AuthSkeleton({
             <UISkeletonBlock
               id={`auth-skeleton-social-${button.id}`}
               key={button.id}
-              sx={[styles.socialButton, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+              sx={withStaticSx(styles.socialButton)}
             />
           ))}
         </Box>
@@ -117,7 +116,7 @@ export default function AuthSkeleton({
       <UISkeletonText
         id="auth-skeleton-switcher"
         size="l"
-        sx={[styles.switcherSkeleton, ...(staticSkeletonSx ? [staticSkeletonSx] : [])]}
+        sx={withStaticSx(styles.switcherSkeleton)}
       />
     </Box>
   );

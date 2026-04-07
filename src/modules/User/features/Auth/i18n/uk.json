@@ -72,7 +72,9 @@
         "label": "Пароль"
       },
       "submit_button": "Увійти до облікового запису",
-      "submitting": "Вхід…"
+      "submitting": "Вхід…",
+      "remember_me": "Запамʼятати мене",
+      "forgot_password": "Забули пароль?"
     }
   },
   "footer": {

@@ -5,10 +5,11 @@ import React from 'react';
 import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
 
 describe('UISkeletonBlock Integration', () => {
-  const getSkeletonBlock = (): HTMLElement =>
-    screen
-      .getAllByRole('generic')
-      .find((element) => element.id === 'skeleton-block') as HTMLElement;
+  const getSkeletonBlock = (): HTMLElement => {
+    const element = screen.getAllByRole('generic').find((el) => el.id === 'skeleton-block');
+    if (!element) throw new Error('Skeleton block element with id "skeleton-block" not found');
+    return element;
+  };
 
   it('renders with default props', () => {
     expect(React).toBeDefined();

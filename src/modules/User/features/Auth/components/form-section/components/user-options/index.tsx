@@ -1,6 +1,7 @@
 import UIButton from '@/components/UIButton';
 import { Box, FormControlLabel, Checkbox } from '@mui/material';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   CheckBoxChecked,
@@ -10,12 +11,13 @@ import styles from '@/modules/User/features/Auth/components/form-section/compone
 
 export default function UserOptions(): JSX.Element {
   const [isChecked, setIsChecked] = useState(false);
+  const { t } = useTranslation();
 
   const onChange = (): void => setIsChecked(!isChecked);
   return (
     <Box sx={styles.authOptionsWrapper}>
       <FormControlLabel
-        label="Запамʼятати мене"
+        label={t('sign_in.form.remember_me')}
         sx={styles.rememberMeLabel}
         id="remember-me"
         control={
@@ -30,7 +32,7 @@ export default function UserOptions(): JSX.Element {
       />
 
       <UIButton type="button" variant="text" sx={styles.forgePassword}>
-        Забули пароль?
+        {t('sign_in.form.forgot_password')}
       </UIButton>
     </Box>
   );

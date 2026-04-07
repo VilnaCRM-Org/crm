@@ -70,9 +70,7 @@ describe('UISkeletonInput Integration', () => {
   it('applies static styles when animation is disabled', () => {
     render(<UISkeletonInput disableAnimation id="skeleton-input" />);
 
-    expect(getSkeletonInput()).toHaveStyle(`background-size: ${styles.staticSkeleton.backgroundSize}`);
-    expect(getSkeletonPlaceholder()).toHaveStyle(
-      `background-size: ${styles.staticSkeleton.backgroundSize}`
-    );
+    expect(getSkeletonInput()).toHaveStyle({ backgroundSize: styles.staticSkeleton.backgroundSize });
+    expect(getSkeletonPlaceholder()).toHaveStyle({ backgroundSize: styles.staticSkeleton.backgroundSize });
   });
 });
