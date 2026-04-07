@@ -76,8 +76,8 @@ NFR4: Performance — The check must be operationally acceptable for routine pul
   `rust-code-analysis`, trigger: `pull_request` → `main`.
 - Reporting: stdout violations table + `$GITHUB_STEP_SUMMARY` (null-guarded for local runs).
 - Planned follow-up implementation delta — (not part of this PR): 2 new items: 1 new file
-  (`rust-code-analysis.yml`) and 1 new directory (`bin/`) (gitignored), 2 modified
-  (`Makefile`, `.gitignore`), 1 docs section added.
+  (`.github/workflows/rust-code-analysis.yml`) and 1 new directory (`bin/`) (gitignored),
+  3 modified (`Makefile`, `.gitignore`, `CLAUDE.md`).
 - Baseline compliance run against current `main` required before enabling as required check
   in branch protection.
 - `lint-metrics` added to existing `lint` chain:
@@ -213,7 +213,7 @@ So that the repository enforces code quality policy on all incoming changes with
 
 **Given** a pull request is opened or updated targeting `main`
 **When** GitHub Actions evaluates the event
-**Then** the `rust-code-analysis.yml` workflow is triggered
+**Then** the `.github/workflows/rust-code-analysis.yml` workflow is triggered
 **And** a job named `rust-code-analysis` runs
 
 **Given** the workflow job starts
@@ -248,7 +248,8 @@ So that pull requests to `main` are blocked until the quality gate passes.
 **Then** the output is reviewed and any existing violations are addressed or thresholds adjusted
 before enabling enforcement
 
-**Given** the `rust-code-analysis.yml` workflow has been triggered at least once on `main`
+**Given** the `.github/workflows/rust-code-analysis.yml` workflow has been
+triggered at least once on `main`
 **When** a maintainer opens repository Settings → Branches → branch protection rules for `main`
 **Then** `rust-code-analysis` appears as an available status check
 **And** it is enabled as a required status check

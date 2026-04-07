@@ -201,7 +201,8 @@ existing repository foundation is the lowest-risk and most maintainable architec
 ### Tool Installation
 
 - **Strategy:** Download pre-built binary from GitHub Releases, version-pinned
-- **Version:** v0.0.25 (latest stable, mozilla/rust-code-analysis)
+- **Version:** GitHub release pages use the `v0.0.25` tag prefix, while the
+  Makefile/global `RCA_VERSION` value remains `0.0.25`
 - **Caching:** `actions/cache` keyed on version string to avoid redundant downloads
 - **Rationale:** No Rust toolchain required; fast (~5s); deterministic version
 - **Affects:** `rust-code-analysis.yml` workflow install step
@@ -416,7 +417,8 @@ All agents MUST use this exact conditional — never write unconditionally:
 
 - Version is set once as `RCA_VERSION` in the Makefile
 - Never hardcode the version string in more than one place
-- CI cache key and download URL both derive from `$(RCA_VERSION)`
+- CI cache key derives from `$(RCA_VERSION)`, while GitHub release URLs add the
+  required `v` prefix as `v$(RCA_VERSION)`
 
 ### Enforcement Guidelines
 
@@ -443,6 +445,7 @@ All agents MUST use this exact conditional — never write unconditionally:
 
 This initiative extends the existing `crm` repository. No new project root.
 Planned/target-state file changes include:
+Planned delta totals: 2 new entries and 3 modified files.
 
 **New Files:**
 
@@ -561,7 +564,8 @@ operational runtime) are covered by architectural decisions.
 
 **Important — Release Asset URL Pattern:**
 Explicitly pin the download URL template in the architecture to prevent agents
-from constructing it differently:
+from constructing it differently. GitHub release pages use the `v`-prefixed
+tag, while `RCA_VERSION` remains the unprefixed `0.0.25` value in the Makefile:
 
 ```text
 https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz
@@ -605,7 +609,7 @@ before running analysis. Contributors should not need a separate install step.
 
 #### ✅ Project Structure
 
-- [x] Complete file delta defined (2 new, 2 modified)
+- [x] Complete file delta defined (2 new, 3 modified)
 - [x] Component boundaries established (tool / CI / local/CI parity)
 - [x] Integration points mapped (Makefile → workflow → branch protection)
 - [x] Requirements to structure mapping complete
@@ -619,7 +623,7 @@ locked, patterns unambiguous, and file delta fully specified.
 
 **Key Strengths:**
 
-- Minimal blast radius: 2 new files, 2 modified files
+- Minimal blast radius: 2 new entries, 3 modified files
 - Single source of truth for invocation (`make lint-metrics`) eliminates local/CI drift
 - All potential agent conflict points explicitly locked in patterns section
 - Self-contained CI job with no cross-workflow dependencies
