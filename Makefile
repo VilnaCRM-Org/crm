@@ -33,10 +33,10 @@ CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-
 LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
 LHCI_CHROME_FLAGS_ARG       = --collect.settings.chromeFlags="$(LHCI_CHROME_FLAGS)"
-LHCI_FLAGS                  = --collect.url=$(LHCI_TARGET_URL)
+LHCI_PRELOADED_AUTH_TOKEN   ?= lighthouse-preloaded-auth-token
 LHCI_BUILD_CMD          	= make ensure-chromium && make start-prod && $(LHCI)
-LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
-LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_FLAGS) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
+LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
+LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 
 DOCKER_COMPOSE_TEST_FILE    = -f docker-compose.test.yml
 DOCKER_COMPOSE_DEV_FILE     = -f docker-compose.yml
@@ -50,12 +50,12 @@ MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
 MEMLEAK_BASE_PATH           = ./tests/memory-leak
 MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
-MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/runMemlabTests.js
+MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/run-memlab-tests.js
 
 MEMLEAK_REMOVE_RESULTS		= rm -rf $(MEMLEAK_RESULTS_DIR)
 MEMLEAK_SETUP 				= \
 								echo "🧪 Starting memory leak test environment..."; \
-								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d
+								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d --build
 MEMLEAK_RUN_TESTS			= \
 								echo "🚀 Running memory leak tests..."; \
 								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) node $(MEMLEAK_TEST_SCRIPT) || exit 1
@@ -70,8 +70,15 @@ MEMLEAK_RUN_DOCKER			= \
 
 K6_TEST_SCRIPT              ?= /loadTests/homepage.js
 K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
+K6_SIGNUP_SCRIPT            ?= /loadTests/signup.js
+K6_SIGNUP_RESULTS_FILE		?= /loadTests/results/signup.html
 K6                          = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) --profile load run --rm k6
-LOAD_TESTS_RUN              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)" --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
+K6_RUN_COMMAND              = $(K6) run --summary-trend-stats="avg,min,med,max,p(95),p(99)"
+LOAD_TESTS_RUN              = $(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" $(K6_TEST_SCRIPT)
+LOAD_TESTS_RUN_SIGNUP       = \
+	@echo "🧪 Running comprehensive signup load tests (positive, negative, rate limit)..." && \
+	$(K6_RUN_COMMAND) --out "web-dashboard=period=1s&export=$(K6_SIGNUP_RESULTS_FILE)" $(K6_SIGNUP_SCRIPT) && \
+	echo "✅ All signup tests completed successfully!"
 
 UI_FLAGS                    = --ui-port=$(PLAYWRIGHT_TEST_PORT) --ui-host=$(UI_HOST)
 UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
@@ -92,18 +99,21 @@ NETWORK_NAME                = crm-network
 
 BUN                         = $(EXEC_DEV_TTYLESS) bun
 BUNX                        = $(BUN) x
+BUN_DIND                    = bun
+BUNX_DIND                   = $(BUN_DIND) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
 DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev && make wait-for-dev
 BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 
 STRYKER_CMD                 = make start && $(BUNX) stryker run
+STRYKER_CMD_DIND            = $(BUNX_DIND) stryker run
 UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
-STORYBOOK_START             = $(EXEC_DEV_TTYLESS) $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
+STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint
-LHCI_TARGET_URL             ?= $(REACT_APP_PROD_CONTAINER_API_URL)
+MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
 RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
 .DEFAULT_GOAL               = help
@@ -228,6 +238,9 @@ create-network: ## Create the external Docker network if it doesn't exist
 start-prod: create-network ## Build image and start container in production mode
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate && make wait-for-prod-health
 
+start-prod-clean: create-network ## Force rebuild and recreate all test containers
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build && make wait-for-prod-health
+
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
 	@for i in $$(seq 1 60); do \
@@ -285,6 +298,10 @@ test-load: start-prod wait-for-prod-health prepare-results-dir ## This command e
                        ## using $(PROD_PORT), which maps to the production service in Docker Compose.
 	$(LOAD_TESTS_RUN)
 
+test-load-signup: start-prod wait-for-prod-health prepare-results-dir ## Execute comprehensive signup load tests with scenario selection via env vars.
+                       ## Use run_smoke/run_average/run_stress/run_spike/run_ratelimit before invoking this target.
+	$(LOAD_TESTS_RUN_SIGNUP)
+
 lighthouse-desktop: ## Run a Lighthouse audit using desktop viewport settings to evaluate performance and best practices
 	$(LHCI_DESKTOP)
 
@@ -321,6 +338,19 @@ stop: ## Stop docker
 
 check-node-version: ## Check if the correct Node.js version is installed
 	$(EXEC_CMD) node checkNodeVersion.js
+
+PR ?=
+FORMAT ?=
+pr-comments: ## Retrieve unresolved PR review comments (PR=<num> FORMAT=<json|markdown>)
+	@if [ -n "$(PR)" ] && [ -n "$(FORMAT)" ]; then \
+		./scripts/get-pr-comments.sh $(PR) $(FORMAT); \
+	elif [ -n "$(PR)" ]; then \
+		./scripts/get-pr-comments.sh $(PR); \
+	elif [ -n "$(FORMAT)" ]; then \
+		./scripts/get-pr-comments.sh $(FORMAT); \
+	else \
+		./scripts/get-pr-comments.sh; \
+	fi
 
 clean: down ## Clean up only this project's containers, images, and volumes
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) down --volumes --remove-orphans --rmi local
@@ -415,7 +445,7 @@ run-integration-tests-dind: ## Run integration tests in temp container for dind
 
 run-mutation-tests-dind: ## Run mutation tests in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" $(STRYKER_CMD)
+	docker exec "$(TEMP_CONTAINER_NAME)" $(STRYKER_CMD_DIND)
 
 run-eslint-tests-dind: ## Run ESLint in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
@@ -427,7 +457,7 @@ run-typescript-tests-dind: ## Run TypeScript check in temp container for dind
 
 run-markdown-lint-tests-dind: ## Run Markdown lint in temp container for dind
 	@if [ -z "$(TEMP_CONTAINER_NAME)" ]; then echo "TEMP_CONTAINER_NAME is required"; exit 1; fi
-	docker exec "$(TEMP_CONTAINER_NAME)" $(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
+	docker exec "$(TEMP_CONTAINER_NAME)" $(MARKDOWNLINT_BIN_DIND) $(MD_LINT_ARGS)
 
 create-k6-helper-container-dind: ## Create K6 helper container for dind load testing
 	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi

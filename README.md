@@ -224,6 +224,8 @@ If you're having trouble, head for
 [the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 as it's frequently updated.
 
+- [Architecture Decision Records (ADRs)](docs/adr/README.md)
+
 You can generate complete API-level documentation by running `doc` in the top-level
 folder, and documentation will appear in the `docs` folder, though you'll need to have
 [API-Extractor](https://api-extractor.com/) installed.
