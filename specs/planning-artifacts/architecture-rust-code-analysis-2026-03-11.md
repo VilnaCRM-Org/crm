@@ -568,8 +568,11 @@ from constructing it differently. GitHub release pages use the `v`-prefixed
 tag, while `RCA_VERSION` remains the unprefixed `0.0.25` value in the Makefile:
 
 ```text
-https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz
+https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-linux-cli-x86_64.tar.gz
 ```
+> **Note:** The actual GitHub release asset is named `rust-code-analysis-linux-cli-x86_64.tar.gz`
+> (confirmed via GitHub API). The earlier filename `rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz`
+> does not exist in the v0.0.25 release and will 404.
 
 **Important — Baseline Compliance Run:**
 Before registering the workflow as a required check, run `make lint-metrics`
