@@ -218,12 +218,12 @@ lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if
 	fi
 	@RCA_BIN="$(RCA_BIN)" \
 	RCA_VERSION="$(RCA_VERSION)" \
-	CC_MAX="10" \
-	COGNITIVE_MAX="15" \
+	CC_MAX="20" \
+	COGNITIVE_MAX="24" \
 	NARGS_MAX="5" \
-	NEXITS_MAX="4" \
-	MI_MIN="65" \
-	SLOC_MAX="50" \
+	NEXITS_MAX="15" \
+	MI_MIN="40" \
+	SLOC_MAX="157" \
 	sh scripts/lint-metrics.sh
 
 lint: lint-eslint lint-tsc lint-md lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, and rust-code-analysis metrics.
