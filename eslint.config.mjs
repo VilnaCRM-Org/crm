@@ -11,11 +11,7 @@ const compat = new FlatCompat({
   allConfig: js.configs.all,
 });
 
-const devDependencyPatterns = [
-  'eslint.config.mjs',
-  'jest.setup.ts',
-  'playwright.config.ts',
-  'rsbuild.config.ts',
+const testFilePatterns = [
   '**/*.test.js',
   '**/*.test.jsx',
   '**/*.test.ts',
@@ -26,10 +22,26 @@ const devDependencyPatterns = [
   '**/*.spec.tsx',
   '**/*.integration.test.ts',
   '**/*.integration.test.tsx',
+  'tests/load/**/*.js',
   'tests/**/*.js',
   'tests/**/*.jsx',
   'tests/**/*.ts',
   'tests/**/*.tsx',
+  'tests/integration/**/*.ts',
+  'tests/integration/**/*.tsx',
+];
+
+const devDependencyPatterns = [
+  'eslint.config.mjs',
+  'jest.setup.ts',
+  'playwright.config.ts',
+  'rsbuild.config.ts',
+  ...testFilePatterns.filter(
+    (pattern) =>
+      pattern !== 'tests/load/**/*.js'
+      && pattern !== 'tests/integration/**/*.ts'
+      && pattern !== 'tests/integration/**/*.tsx',
+  ),
 ];
 
 const importNoExtraneousDependenciesOptions = {
@@ -233,25 +245,7 @@ export default [
         },
       },
       {
-        files: [
-          '**/*.test.js',
-          '**/*.test.jsx',
-          '**/*.test.ts',
-          '**/*.test.tsx',
-          '**/*.spec.js',
-          '**/*.spec.jsx',
-          '**/*.spec.ts',
-          '**/*.spec.tsx',
-          '**/*.integration.test.ts',
-          '**/*.integration.test.tsx',
-          'tests/load/**/*.js',
-          'tests/**/*.js',
-          'tests/**/*.jsx',
-          'tests/**/*.ts',
-          'tests/**/*.tsx',
-          'tests/integration/**/*.ts',
-          'tests/integration/**/*.tsx',
-        ],
+        files: testFilePatterns,
         parser: '@typescript-eslint/parser',
         extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
         rules: {

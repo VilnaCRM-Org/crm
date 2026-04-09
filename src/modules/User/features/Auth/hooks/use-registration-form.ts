@@ -10,7 +10,7 @@ import {
   selectRegistrationError,
   selectRegistrationLoading,
   selectRegistrationUser,
-} from '@/modules/User/store/registrationSelectors';
+} from '@/modules/User/store/registration-selectors';
 
 
 type UseRegistrationFormResult = {

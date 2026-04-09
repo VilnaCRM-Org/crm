@@ -1,6 +1,6 @@
 import type { RootState } from '@/stores';
 
-import type { RegistrationState } from './registrationSlice';
+import type { RegistrationState } from './registration-slice';
 
 export const selectRegistrationUser = (state: RootState): RegistrationState['user'] =>
   state.registration.user;
