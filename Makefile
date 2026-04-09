@@ -206,38 +206,25 @@ lint-tsc: ## This command executes Typescript linter
 lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
-lint-metrics: ## Run rust-code-analysis complexity gate
+lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
 	@if [ ! -x "$(RCA_BIN)" ]; then \
-		echo "Installing rust-code-analysis-cli v$(RCA_VERSION)..."; \
+		printf 'Downloading rust-code-analysis-cli v%s...\n' "$(RCA_VERSION)"; \
 		mkdir -p ./bin; \
-		curl -fsSL "https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-linux-cli-x86_64.tar.gz" \
-			-o /tmp/rca.tar.gz && tar -xz -C ./bin -f /tmp/rca.tar.gz && rm -f /tmp/rca.tar.gz; \
+		curl -fsSL \
+			"https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-linux-cli-x86_64.tar.gz" \
+			-o /tmp/rca.tar.gz \
+			&& tar -xz -C ./bin -f /tmp/rca.tar.gz \
+			&& rm -f /tmp/rca.tar.gz; \
 	fi
-	@# Governed scope: src/ only (excludes node_modules/ dist/ coverage/ .storybook/ tests/)
-	@# Thresholds (hard-fail values)
-	@CC_MAX=10                  && \
-	COGNITIVE_MAX=15            && \
-	ABC_MAX=17                  && \
-	NARGS_FUNC_MAX=3            && \
-	NARGS_CLOS_MAX=3            && \
-	NEXITS_MAX=3                && \
-	LLOC_FUNC_MAX=10            && \
-	PLOC_FUNC_MAX=40            && \
-	SLOC_FUNC_MAX=45            && \
-	HLST_VOL_FUNC_MAX=1000      && \
-	HLST_BUG_FUNC_MAX=0.35      && \
-	NOM_FUNC_MAX=10             && \
-	NOM_CLOS_MAX=6              && \
-	NOM_TOT_MAX=15              && \
-	LLOC_FILE_MAX=120           && \
-	PLOC_FILE_MAX=300           && \
-	SLOC_FILE_MAX=350           && \
-	HLST_VOL_FILE_MAX=8000      && \
-	HLST_BUG_FILE_MAX=2.0       && \
-	MI_VS_MIN=70                && \
-	MI_ORIG_MIN=65              && \
-	MI_SEI_MIN=65               && \
-	echo "lint-metrics: thresholds committed (enforcement logic pending Story 1.2)"
+	@RCA_BIN="$(RCA_BIN)" \
+	RCA_VERSION="$(RCA_VERSION)" \
+	CC_MAX="10" \
+	COGNITIVE_MAX="15" \
+	NARGS_MAX="5" \
+	NEXITS_MAX="4" \
+	MI_MIN="65" \
+	SLOC_MAX="50" \
+	sh scripts/lint-metrics.sh
 
 lint: lint-eslint lint-tsc lint-md lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, and rust-code-analysis metrics.
 
