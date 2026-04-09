@@ -3,11 +3,39 @@ import js from '@eslint/js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+const rootDir = path.dirname(fileURLToPath(import.meta.url));
+
 const compat = new FlatCompat({
-  baseDirectory: path.dirname(fileURLToPath(import.meta.url)),
+  baseDirectory: rootDir,
   recommendedConfig: js.configs.recommended,
   allConfig: js.configs.all,
 });
+
+const devDependencyPatterns = [
+  'eslint.config.mjs',
+  'jest.setup.ts',
+  'playwright.config.ts',
+  'rsbuild.config.ts',
+  '**/*.test.js',
+  '**/*.test.jsx',
+  '**/*.test.ts',
+  '**/*.test.tsx',
+  '**/*.spec.js',
+  '**/*.spec.jsx',
+  '**/*.spec.ts',
+  '**/*.spec.tsx',
+  '**/*.integration.test.ts',
+  '**/*.integration.test.tsx',
+  'tests/**/*.js',
+  'tests/**/*.jsx',
+  'tests/**/*.ts',
+  'tests/**/*.tsx',
+];
+
+const importNoExtraneousDependenciesOptions = {
+  devDependencies: devDependencyPatterns,
+  packageDir: [rootDir],
+};
 
 export default [
   ...compat.config({
@@ -31,6 +59,7 @@ export default [
       'eslint.config.mjs',
       'memlab/*',
       'scripts/**',
+      '!scripts/cloudfront_routing.js',
       'checkNodeVersion.js',
       'out/*',
       'docker/*',
@@ -60,7 +89,10 @@ export default [
           'prefer-const': 'off',
           'prefer-destructuring': 'off',
           'no-console': 'warn',
+          'no-unused-vars': 'off',
           strict: ['error', 'global'],
+          '@typescript-eslint/no-require-imports': 'off',
+          '@typescript-eslint/no-unused-vars': 'off',
         },
       },
       {
@@ -70,13 +102,26 @@ export default [
           node: true,
           es6: true,
         },
+        rules: {
+          '@typescript-eslint/no-require-imports': 'off',
+          '@typescript-eslint/no-unused-vars': 'off',
+          '@typescript-eslint/no-var-requires': 'off',
+        },
+      },
+      {
+        files: ['**/*.d.ts'],
+        rules: {
+          '@typescript-eslint/no-require-imports': 'off',
+        },
       },
       {
         files: ['**/*.ts', '**/*.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+        excludedFiles: ['**/*.d.ts'],
         parser: '@typescript-eslint/parser',
         plugins: ['@typescript-eslint', 'eslint-comments'],
         settings: {
           react: { version: 'detect' },
+          'import/internal-regex': '^@/',
           'import/resolver': {
             node: {
               extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'],
@@ -137,11 +182,22 @@ export default [
           'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
           'linebreak-style': ['error', 'unix'],
           'react/prop-types': 'off',
-          'import/no-extraneous-dependencies': 'off',
+          'import/no-extraneous-dependencies': [
+            'error',
+            importNoExtraneousDependenciesOptions,
+          ],
           'import/order': [
             'error',
             {
               groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index', 'object'],
+              pathGroups: [
+                {
+                  pattern: '@/stores/hooks',
+                  group: 'internal',
+                  position: 'before',
+                },
+              ],
+              pathGroupsExcludedImportTypes: ['builtin', 'external', 'object'],
               'newlines-between': 'always',
               alphabetize: { order: 'asc', caseInsensitive: true },
             },
@@ -157,20 +213,7 @@ export default [
           'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
           'jsx-a11y/anchor-is-valid': 'off',
           '@typescript-eslint/no-unused-vars': ['error'],
-          '@typescript-eslint/semi': ['error', 'always'],
-          '@typescript-eslint/member-delimiter-style': [
-            'error',
-            {
-              overrides: {
-                interface: {
-                  multiline: {
-                    delimiter: 'semi',
-                    requireLast: true,
-                  },
-                },
-              },
-            },
-          ],
+          semi: 'off',
           '@typescript-eslint/explicit-member-accessibility': [
             'error',
             {
@@ -191,15 +234,21 @@ export default [
       },
       {
         files: [
-          '**/*.ts',
-          '**/*.js',
+          '**/*.test.js',
+          '**/*.test.jsx',
+          '**/*.test.ts',
+          '**/*.test.tsx',
           '**/*.spec.js',
           '**/*.spec.jsx',
           '**/*.spec.ts',
           '**/*.spec.tsx',
           '**/*.integration.test.ts',
           '**/*.integration.test.tsx',
-          'test/load/**/*.js',
+          'tests/load/**/*.js',
+          'tests/**/*.js',
+          'tests/**/*.jsx',
+          'tests/**/*.ts',
+          'tests/**/*.tsx',
           'tests/integration/**/*.ts',
           'tests/integration/**/*.tsx',
         ],
@@ -216,10 +265,16 @@ export default [
           'no-restricted-globals': 'off',
           'no-undef': 'off',
           'no-use-before-define': 'off',
-          'import/no-extraneous-dependencies': 'off',
+          'import/no-extraneous-dependencies': [
+            'error',
+            importNoExtraneousDependenciesOptions,
+          ],
           'import/no-dynamic-require': 'off',
           'global-require': 'off',
           'no-await-in-loop': 'off',
+          'react/react-in-jsx-scope': 'off',
+          '@typescript-eslint/no-require-imports': 'off',
+          '@typescript-eslint/no-unused-vars': 'off',
           '@typescript-eslint/no-var-requires': 'off',
           'no-unused-vars': 'off',
         },
