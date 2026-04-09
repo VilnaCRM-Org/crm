@@ -36,12 +36,7 @@ const devDependencyPatterns = [
   'jest.setup.ts',
   'playwright.config.ts',
   'rsbuild.config.ts',
-  ...testFilePatterns.filter(
-    (pattern) =>
-      pattern !== 'tests/load/**/*.js'
-      && pattern !== 'tests/integration/**/*.ts'
-      && pattern !== 'tests/integration/**/*.tsx',
-  ),
+  ...testFilePatterns,
 ];
 
 const importNoExtraneousDependenciesOptions = {
@@ -104,6 +99,7 @@ export default [
           'no-unused-vars': 'off',
           strict: ['error', 'global'],
           '@typescript-eslint/no-require-imports': 'off',
+          '@typescript-eslint/no-var-requires': 'off',
           '@typescript-eslint/no-unused-vars': 'off',
         },
       },
@@ -116,8 +112,8 @@ export default [
         },
         rules: {
           '@typescript-eslint/no-require-imports': 'off',
-          '@typescript-eslint/no-unused-vars': 'off',
           '@typescript-eslint/no-var-requires': 'off',
+          '@typescript-eslint/no-unused-vars': 'off',
         },
       },
       {
@@ -127,10 +123,8 @@ export default [
         },
       },
       {
-        files: ['**/*.ts', '**/*.tsx', '**/*.spec.ts', '**/*.spec.tsx'],
+        files: ['**/*.ts', '**/*.tsx'],
         excludedFiles: ['**/*.d.ts'],
-        parser: '@typescript-eslint/parser',
-        plugins: ['@typescript-eslint', 'eslint-comments'],
         settings: {
           react: { version: 'detect' },
           'import/internal-regex': '^@/',
@@ -240,7 +234,6 @@ export default [
           '@typescript-eslint/explicit-module-boundary-types': ['off'],
           '@typescript-eslint/no-empty-function': ['off'],
           '@typescript-eslint/no-explicit-any': 'error',
-          '@typescript-eslint/no-var-requires': ['off'],
           'no-unused-vars': 'off',
         },
       },
@@ -250,7 +243,7 @@ export default [
         extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
         rules: {
           'no-console': 'error',
-          'import/extensions': ['off', 'never', { js: 'never', jsx: 'never' }],
+          'import/extensions': 'off',
           'prefer-template': 'off',
           'no-restricted-syntax': 'off',
           'import/no-unresolved': 'off',
@@ -268,8 +261,8 @@ export default [
           'no-await-in-loop': 'off',
           'react/react-in-jsx-scope': 'off',
           '@typescript-eslint/no-require-imports': 'off',
-          '@typescript-eslint/no-unused-vars': 'off',
           '@typescript-eslint/no-var-requires': 'off',
+          '@typescript-eslint/no-unused-vars': 'off',
           'no-unused-vars': 'off',
         },
       },
