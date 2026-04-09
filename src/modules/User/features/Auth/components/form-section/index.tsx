@@ -1,9 +1,9 @@
-import UIButton from '@/components/UIButton';
-import UITypography from '@/components/UITypography';
 import { Box } from '@mui/material';
 import { lazy, startTransition, Suspense, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import UIButton from '@/components/UIButton';
+import UITypography from '@/components/UITypography';
 import RegistrationForm from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form';
 import AuthProviderButtons from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons';
 import styles from '@/modules/User/features/Auth/components/form-section/styles';

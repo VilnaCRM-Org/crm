@@ -1,5 +1,6 @@
-import breakpointsTheme from '@/components/UIBreakpoints';
 import { createTheme } from '@mui/material';
+
+import breakpointsTheme from '@/components/UIBreakpoints';
 
 export default createTheme({
   components: {

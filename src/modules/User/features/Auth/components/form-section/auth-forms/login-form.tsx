@@ -1,10 +1,10 @@
-import UIForm from '@/components/UIForm';
-import useAppDispatch from '@/stores/hooks';
 import type { SerializedError } from '@reduxjs/toolkit';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import useAppDispatch from '@/stores/hooks';
 
+import UIForm from '@/components/UIForm';
 import FormField from '@/modules/User/features/Auth/components/form-section/components/form-field';
 import PasswordField from '@/modules/User/features/Auth/components/form-section/components/password-field';
 import UserOptions from '@/modules/User/features/Auth/components/form-section/components/user-options';
