@@ -207,7 +207,26 @@ lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
-	@installed_version=""; \
+	@os_name=$$(uname -s 2>/dev/null || echo unknown); \
+	arch_name=$$(uname -m 2>/dev/null || echo unknown); \
+	rca_asset=""; \
+	rca_archive="/tmp/rca-download"; \
+	rca_extract_cmd=""; \
+	case "$$os_name:$$arch_name" in \
+		Linux:x86_64) \
+			rca_asset="rust-code-analysis-linux-cli-x86_64.tar.gz"; \
+			rca_extract_cmd='tar -xz -C ./bin -f '"$$rca_archive"; \
+			;; \
+		MINGW*:x86_64|MSYS*:x86_64|CYGWIN*:x86_64|Windows_NT:x86_64) \
+			rca_asset="rust-code-analysis-win-cli-x86_64.zip"; \
+			rca_extract_cmd='unzip -qo '"$$rca_archive"' -d ./bin'; \
+			;; \
+		*) \
+			printf 'ERROR: rust-code-analysis-cli v%s is not supported on %s/%s\n' "$(RCA_VERSION)" "$$os_name" "$$arch_name" >&2; \
+			exit 1; \
+			;; \
+	esac; \
+	installed_version=""; \
 	if [ -x "$(RCA_BIN)" ]; then \
 		installed_version=$$($(RCA_BIN) --version 2>/dev/null | awk '{print $$NF}' || true); \
 	fi; \
@@ -215,10 +234,14 @@ lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if
 		printf 'Downloading rust-code-analysis-cli v%s...\n' "$(RCA_VERSION)"; \
 		mkdir -p ./bin; \
 		curl -fsSL \
-			"https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-linux-cli-x86_64.tar.gz" \
-			-o /tmp/rca.tar.gz \
-			&& tar -xz -C ./bin -f /tmp/rca.tar.gz \
-			&& rm -f /tmp/rca.tar.gz; \
+			"https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/$$rca_asset" \
+			-o "$$rca_archive" \
+			&& sh -c "$$rca_extract_cmd" \
+			&& rm -f "$$rca_archive"; \
+		if [ ! -x "$(RCA_BIN)" ]; then \
+			printf 'ERROR: rust-code-analysis-cli install did not produce executable at %s\n' "$(RCA_BIN)" >&2; \
+			exit 1; \
+		fi; \
 	fi
 	@RCA_BIN="$(RCA_BIN)" \
 	RCA_VERSION="$(RCA_VERSION)" \

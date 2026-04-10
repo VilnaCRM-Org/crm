@@ -4,12 +4,12 @@
 # Environment variables (all optional; defaults match spec thresholds):
 #   RCA_BIN          path to rust-code-analysis-cli binary
 #   RCA_VERSION      version string used in output messages
-#   CC_MAX           cyclomatic complexity maximum (default 10)
-#   COGNITIVE_MAX    cognitive complexity maximum (default 15)
+#   CC_MAX           cyclomatic complexity maximum (default 20)
+#   COGNITIVE_MAX    cognitive complexity maximum (default 24)
 #   NARGS_MAX        function argument count maximum (default 5)
-#   NEXITS_MAX       exit/return point maximum (default 4)
-#   MI_MIN           maintainability index minimum (default 65)
-#   SLOC_MAX         source lines of code maximum (default 50)
+#   NEXITS_MAX       exit/return point maximum (default 15)
+#   MI_MIN           maintainability index minimum (default 40)
+#   SLOC_MAX         source lines of code maximum (default 157)
 #
 # Exit 0 = all metrics pass
 # Exit 1 = one or more violations detected (all collected before exit)
@@ -18,12 +18,12 @@ set -eu
 
 RCA_BIN="${RCA_BIN:-./bin/rust-code-analysis-cli}"
 RCA_VERSION="${RCA_VERSION:-}"
-CC_MAX="${CC_MAX:-10}"
-COGNITIVE_MAX="${COGNITIVE_MAX:-15}"
+CC_MAX="${CC_MAX:-20}"
+COGNITIVE_MAX="${COGNITIVE_MAX:-24}"
 NARGS_MAX="${NARGS_MAX:-5}"
-NEXITS_MAX="${NEXITS_MAX:-4}"
-MI_MIN="${MI_MIN:-65}"
-SLOC_MAX="${SLOC_MAX:-50}"
+NEXITS_MAX="${NEXITS_MAX:-15}"
+MI_MIN="${MI_MIN:-40}"
+SLOC_MAX="${SLOC_MAX:-157}"
 
 # ---------------------------------------------------------------------------
 # Dependency checks

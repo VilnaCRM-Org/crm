@@ -136,8 +136,8 @@ When `make lint-metrics` finds violations, it prints a table to stdout:
 ```text
 FILE                               FUNCTION        LINE  METRIC    VALUE  LIMIT
 ----------------------------------------------------------------------
-src/services/HttpsClient/foo.ts    processResponse   96  cc         13.0  <=20
-src/modules/User/Bar.tsx           Bar               29  sloc      100.0  <=157
+src/services/HttpsClient/foo.ts    processResponse   96  cc         21.0  <=20
+src/modules/User/Bar.tsx           Bar               29  sloc      158.0  <=157
 ```
 
 Each row means: in `FILE`, the function `FUNCTION` starting at `LINE` has a `METRIC`
