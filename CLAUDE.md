@@ -122,12 +122,12 @@ downloaded automatically to `./bin/` on first run and is gitignored.
 
 | Metric | Threshold | What it measures |
 |--------|-----------|-----------------|
-| Cyclomatic Complexity (CC) | ≤ 20 | Number of independent code paths through a function; high values indicate many branches (if/switch/loops) that are hard to test |
-| Cognitive Complexity | ≤ 24 | How difficult the code is to understand — penalises deeply nested or non-linear control flow more heavily than CC |
-| Function Arguments (NArgs) | ≤ 5 | Number of parameters a function accepts; too many parameters indicate a function is doing too much |
-| Exit Points (NExits) | ≤ 15 | Number of return/throw statements; many exits can make control flow hard to follow |
-| Maintainability Index (MI) | ≥ 40 | Composite score (0–171) combining Halstead volume, cyclomatic complexity, and line count; lower means harder to maintain |
-| Source Lines of Code (SLOC) | ≤ 157 | Executable source lines, excluding blanks and comments; very long functions are hard to review and test |
+| Cyclomatic Complexity (CC) | ≤ 20 | Independent code paths; many branches make testing harder |
+| Cognitive Complexity | ≤ 24 | Control-flow readability, especially nested or non-linear logic |
+| Function Arguments (NArgs) | ≤ 5 | Parameter count; too many usually means too much work |
+| Exit Points (NExits) | ≤ 15 | Return or throw count; many exits make flow harder to follow |
+| Maintainability Index (MI) | ≥ 40 | Composite score from complexity, volume, and size |
+| Source Lines of Code (SLOC) | ≤ 157 | Executable lines; very long functions are harder to test |
 
 **Reading a violation table:**
 
@@ -329,7 +329,9 @@ Uses `.nvmrc` for version pinning (Node 24).
 
 ## BMAD-METHOD Integration
 
-Use `/bmalph` to navigate phases. Use `/bmad-help` to discover all commands. Use `/bmalph-status` for a quick overview. See `_bmad/COMMANDS.md` for a full command reference.
+Use `/bmalph` to navigate phases. Use `/bmad-help` to discover all commands.
+Use `/bmalph-status` for a quick overview. See `_bmad/COMMANDS.md` for the full
+command reference.
 
 ### Phases
 
@@ -337,8 +339,8 @@ Use `/bmalph` to navigate phases. Use `/bmad-help` to discover all commands. Use
 |-------|-------|-------------|
 | 1. Analysis | Understand the problem | `/create-brief`, `/brainstorm-project`, `/market-research` |
 | 2. Planning | Define the solution | `/create-prd`, `/create-ux` |
-| 3. Solutioning | Design the architecture | `/create-architecture`, `/create-epics-stories`, `/implementation-readiness` |
-| 4. Implementation | Build it | `/sprint-planning`, `/create-story`, then `/bmalph-implement` for Ralph |
+| 3. Solutioning | Design the architecture | `/create-architecture`, epics, readiness review |
+| 4. Implementation | Build it | `/sprint-planning`, `/create-story`, then `/bmalph-implement` |
 
 ### Workflow
 
