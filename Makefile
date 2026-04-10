@@ -116,7 +116,13 @@ MARKDOWNLINT_BIN            = $(BUNX) markdownlint
 MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
 
 RCA_VERSION                 = 0.0.25
+UNAME_S                     := $(shell uname -s 2>/dev/null || echo unknown)
+WINDOWS_UNAMES              := MINGW MSYS CYGWIN Windows_NT
+ifeq ($(filter $(WINDOWS_UNAMES),$(UNAME_S) $(OS)),)
 RCA_BIN                     = ./bin/rust-code-analysis-cli
+else
+RCA_BIN                     = ./bin/rust-code-analysis-cli.exe
+endif
 
 RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
@@ -219,7 +225,7 @@ lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if
 			;; \
 		MINGW*:x86_64|MSYS*:x86_64|CYGWIN*:x86_64|Windows_NT:x86_64) \
 			rca_asset="rust-code-analysis-win-cli-x86_64.zip"; \
-			rca_extract_cmd='unzip -qo '"$$rca_archive"' -d ./bin'; \
+			rca_extract_cmd='unzip -j -qo '"$$rca_archive"' -d ./bin'; \
 			;; \
 		*) \
 			printf 'ERROR: rust-code-analysis-cli v%s is not supported on %s/%s\n' "$(RCA_VERSION)" "$$os_name" "$$arch_name" >&2; \
