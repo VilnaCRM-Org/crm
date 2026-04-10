@@ -4,10 +4,6 @@ on:
   pull_request:
     branches: ['main']
 
-env:
-  # Must match RCA_VERSION in Makefile — used as the binary cache key.
-  RCA_VERSION: '0.0.25'
-
 jobs:
   rust-code-analysis:
     runs-on: ubuntu-latest
@@ -15,11 +11,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Read RCA version from Makefile
+        id: read_rca_version
+        run: |
+          rca_version="$(awk -F'= ' '/^RCA_VERSION[[:space:]]*=/{print $2; exit}' Makefile)"
+          echo "rca_version=$rca_version" >> "$GITHUB_OUTPUT"
+
       - name: Cache rust-code-analysis binary
         uses: actions/cache@v4
         with:
           path: ./bin/rust-code-analysis-cli
-          key: rca-${{ env.RCA_VERSION }}-linux-x86_64
+          key: rca-${{ steps.read_rca_version.outputs.rca_version }}-linux-x86_64
 
       - name: Run lint-metrics
         run: make lint-metrics

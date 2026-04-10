@@ -207,7 +207,11 @@ lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
-	@if [ ! -x "$(RCA_BIN)" ]; then \
+	@installed_version=""; \
+	if [ -x "$(RCA_BIN)" ]; then \
+		installed_version=$$($(RCA_BIN) --version 2>/dev/null | awk '{print $$NF}' || true); \
+	fi; \
+	if [ ! -x "$(RCA_BIN)" ] || [ "$$installed_version" != "$(RCA_VERSION)" ]; then \
 		printf 'Downloading rust-code-analysis-cli v%s...\n' "$(RCA_VERSION)"; \
 		mkdir -p ./bin; \
 		curl -fsSL \

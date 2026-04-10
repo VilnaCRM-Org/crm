@@ -83,8 +83,8 @@ jq -rs \
   . as $fn |
   ($fn.metrics.cyclomatic.sum // 0)                                         as $cc     |
   ($fn.metrics.cognitive.sum  // $fn.metrics.cognitive // 0)                as $cog    |
-  ($fn.metrics.nargs.total_functions // 0)                                  as $nargs  |
-  ($fn.metrics.nexits.sum // 0)                                             as $nexits |
+  ($fn.metrics.nargs.functions_max // 0)                                    as $nargs  |
+  ($fn.metrics.nexits.average // 0)                                         as $nexits |
   ($fn.metrics.mi.mi_original // 100)                                       as $mi     |
   ($fn.metrics.loc.sloc // 0)                                               as $sloc   |
   (
@@ -95,9 +95,16 @@ jq -rs \
     (if $mi     < $mi_min     then "\($file.name)|\($fn.name // "<anon>")|\($fn.start_line // 0)|mi|\($mi)|\($mi_min)|>=" else empty end),
     (if $sloc   > $sloc_max   then "\($file.name)|\($fn.name // "<anon>")|\($fn.start_line // 0)|sloc|\($sloc)|\($sloc_max)|<=" else empty end)
   )
-' "$TMP_JSON" >"$TMP_VIOLATIONS" || true
+' "$TMP_JSON" >"$TMP_VIOLATIONS"
 
 VIOLATION_COUNT=$(wc -l <"$TMP_VIOLATIONS" | awk '{print $1}')
+
+MEASURED_CC=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.cyclomatic.sum // 0] | max // 0' "$TMP_JSON")
+MEASURED_COGNITIVE=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | (.metrics.cognitive.sum // .metrics.cognitive // 0)] | max // 0' "$TMP_JSON")
+MEASURED_NARGS=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.nargs.functions_max // 0] | max // 0' "$TMP_JSON")
+MEASURED_NEXITS=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.nexits.average // 0] | max // 0' "$TMP_JSON")
+MEASURED_MI=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.mi.mi_original // 100] | min // 100' "$TMP_JSON")
+MEASURED_SLOC=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.loc.sloc // 0] | max // 0' "$TMP_JSON")
 
 # ---------------------------------------------------------------------------
 # Report and exit
@@ -146,13 +153,13 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   {
     printf '## rust-code-analysis: all checks pass\n\n'
     printf '| Metric | Threshold |\n'
-    printf '|--------|----------|\n'
-    printf '| Cyclomatic Complexity | <=%s |\n'  "$CC_MAX"
-    printf '| Cognitive Complexity  | <=%s |\n'  "$COGNITIVE_MAX"
-    printf '| Function Arguments    | <=%s |\n'  "$NARGS_MAX"
-    printf '| Exit Points           | <=%s |\n'  "$NEXITS_MAX"
-    printf '| Maintainability Index | >=%s |\n'  "$MI_MIN"
-    printf '| Source Lines of Code  | <=%s |\n'  "$SLOC_MAX"
+    printf '|--------|-----------|\n'
+    printf '| Cyclomatic Complexity | <=%s (measured %s) |\n'  "$CC_MAX" "$MEASURED_CC"
+    printf '| Cognitive Complexity  | <=%s (measured %s) |\n'  "$COGNITIVE_MAX" "$MEASURED_COGNITIVE"
+    printf '| Function Arguments    | <=%s (measured %s) |\n'  "$NARGS_MAX" "$MEASURED_NARGS"
+    printf '| Exit Points           | <=%s (measured %s) |\n'  "$NEXITS_MAX" "$MEASURED_NEXITS"
+    printf '| Maintainability Index | >=%s (measured %s) |\n'  "$MI_MIN" "$MEASURED_MI"
+    printf '| Source Lines of Code  | <=%s (measured %s) |\n'  "$SLOC_MAX" "$MEASURED_SLOC"
     printf '\nAll functions in `src/` are within policy thresholds.\n'
   } >>"$GITHUB_STEP_SUMMARY"
 fi
