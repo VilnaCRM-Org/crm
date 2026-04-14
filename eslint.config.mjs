@@ -234,6 +234,10 @@ export default [
         },
       },
       {
+        files: ['**/*.stories.js', '**/*.stories.jsx', '**/*.stories.ts', '**/*.stories.tsx'],
+        extends: ['plugin:storybook/recommended'],
+      },
+      {
         files: testFilePatterns,
         parser: '@typescript-eslint/parser',
         extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
