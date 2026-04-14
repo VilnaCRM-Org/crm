@@ -99,7 +99,6 @@ export default [
           'no-unused-vars': 'off',
           strict: ['error', 'global'],
           '@typescript-eslint/no-require-imports': 'off',
-          '@typescript-eslint/no-var-requires': 'off',
           '@typescript-eslint/no-unused-vars': 'off',
         },
       },
@@ -112,7 +111,6 @@ export default [
         },
         rules: {
           '@typescript-eslint/no-require-imports': 'off',
-          '@typescript-eslint/no-var-requires': 'off',
           '@typescript-eslint/no-unused-vars': 'off',
         },
       },
@@ -261,7 +259,6 @@ export default [
           'no-await-in-loop': 'off',
           'react/react-in-jsx-scope': 'off',
           '@typescript-eslint/no-require-imports': 'off',
-          '@typescript-eslint/no-var-requires': 'off',
           '@typescript-eslint/no-unused-vars': 'off',
           'no-unused-vars': 'off',
         },
