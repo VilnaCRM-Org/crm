@@ -166,7 +166,6 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
 
 function testDuplicateSignupFlow(utils, baseUrl, headers, params) {
   if (!USE_REAL_BACKEND) {
-    // eslint-disable-next-line no-console
     console.log(
       '[SKIP] Duplicate signup test requires real backend (USE_REAL_BACKEND=true). ' +
         'Mockoon is stateless and cannot detect duplicates.'
@@ -213,7 +212,6 @@ function testDuplicateSignupFlow(utils, baseUrl, headers, params) {
 
 function testInvalidSignupLoginAttempt(utils, baseUrl, headers, params) {
   if (!USE_REAL_BACKEND) {
-    // eslint-disable-next-line no-console
     console.log(
       '[SKIP] Invalid signup test requires real backend (USE_REAL_BACKEND=true). ' +
         'Mockoon cannot validate required fields or track state.'

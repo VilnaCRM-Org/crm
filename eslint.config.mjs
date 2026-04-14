@@ -66,7 +66,7 @@ export default [
       'eslint.config.mjs',
       'memlab/*',
       'scripts/**',
-      '!scripts/cloudfront_routing.js',
+      '!scripts/cloudfront-routing.js',
       'checkNodeVersion.js',
       'out/*',
       'docker/*',
@@ -80,7 +80,7 @@ export default [
     ],
     overrides: [
       {
-        files: ['scripts/cloudfront_routing.js'],
+        files: ['scripts/cloudfront-routing.js'],
         env: {
           node: true,
           es6: false,

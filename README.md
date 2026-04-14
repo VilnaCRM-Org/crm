@@ -206,7 +206,7 @@ Adjust scenarios and thresholds in ./test/load/config.json.dist as needed.
 
 This project includes a routing script for managing URLs.
 The routing script maps requests to the correct HTML files, ensuring proper navigation.
-For detailed information, check the [routing script](scripts/cloudfront_routing.js).
+For detailed information, check the [routing script](scripts/cloudfront-routing.js).
 
 ### How It Works
 

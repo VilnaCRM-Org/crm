@@ -1,5 +1,5 @@
 import { Box, FormControlLabel, Checkbox } from '@mui/material';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/UIButton';
@@ -13,7 +13,7 @@ export default function UserOptions(): JSX.Element {
   const [isChecked, setIsChecked] = useState(false);
   const { t } = useTranslation();
 
-  const onChange = (): void => setIsChecked(!isChecked);
+  const onChange = useCallback((): void => setIsChecked((prev) => !prev), []);
   return (
     <Box sx={styles.authOptionsWrapper}>
       <FormControlLabel
