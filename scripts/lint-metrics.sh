@@ -85,7 +85,7 @@ jq -rs \
   ($fn.metrics.cognitive.sum  // $fn.metrics.cognitive // 0)                as $cog    |
   ($fn.metrics.nargs.functions_max // 0)                                    as $nargs  |
   ($fn.metrics.nexits.average // 0)                                         as $nexits |
-  ($fn.metrics.mi.mi_original // 100)                                       as $mi     |
+  ($fn.metrics.maintanability_index.mi_original // 100)                     as $mi     |
   ($fn.metrics.loc.sloc // 0)                                               as $sloc   |
   (
     (if $cc     > $cc_max     then "\($file.name)|\($fn.name // "<anon>")|\($fn.start_line // 0)|cc|\($cc)|\($cc_max)|<=" else empty end),
@@ -103,7 +103,7 @@ MEASURED_CC=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "
 MEASURED_COGNITIVE=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | (.metrics.cognitive.sum // .metrics.cognitive // 0)] | max // 0' "$TMP_JSON")
 MEASURED_NARGS=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.nargs.functions_max // 0] | max // 0' "$TMP_JSON")
 MEASURED_NEXITS=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.nexits.average // 0] | max // 0' "$TMP_JSON")
-MEASURED_MI=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.mi.mi_original // 100] | min // 100' "$TMP_JSON")
+MEASURED_MI=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.maintanability_index.mi_original // 100] | min // 100' "$TMP_JSON")
 MEASURED_SLOC=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.loc.sloc // 0] | max // 0' "$TMP_JSON")
 
 # ---------------------------------------------------------------------------
