@@ -167,9 +167,8 @@ claude-sonnet-4-6
 
 ### Debug Log References
 
-- Architecture doc specified the wrong asset filename
-  (`rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz`); GitHub API
-  confirmed the correct name is
+- Architecture doc specified a non-release Linux asset filename; GitHub API
+  confirmed the correct release asset name is
   `rust-code-analysis-linux-cli-x86_64.tar.gz`. Updated Makefile accordingly.
 
 ### Completion Notes List
