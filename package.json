@@ -73,8 +73,6 @@
     "babel-plugin-transform-typescript-metadata": "^0.3.2",
     "css-loader": "^7.1.2",
     "eslint": "^9.23.0",
-    "eslint-config-airbnb": "^19.0.4",
-    "eslint-config-airbnb-typescript": "^18.0.0",
     "eslint-config-prettier": "^10.1.5",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-eslint-comments": "^3.2.0",

@@ -54,7 +54,7 @@ export default [
     },
     parser: '@typescript-eslint/parser',
     parserOptions: { ecmaVersion: 2022, sourceType: 'module', project: './tsconfig.json' },
-    plugins: ['@typescript-eslint', 'eslint-comments'],
+    plugins: ['@typescript-eslint', 'eslint-comments', 'import'],
     ignorePatterns: [
       'node_modules/*',
       'docker-compose.yml',
@@ -74,8 +74,6 @@ export default [
     ],
     extends: [
       'eslint:recommended',
-      'airbnb',
-      'airbnb/hooks',
       'plugin:@typescript-eslint/recommended',
       'plugin:react/recommended',
       'prettier',
