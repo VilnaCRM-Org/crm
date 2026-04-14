@@ -1,5 +1,21 @@
 ---
-stepsCompleted: ['step-01-init', 'step-02-discovery', 'step-02b-vision', 'step-02c-executive-summary', 'step-03-success', 'step-04-journeys', 'step-05-domain', 'step-06-innovation', 'step-07-project-type', 'step-08-scoping', 'step-09-functional', 'step-10-nonfunctional', 'step-11-polish', 'step-12-complete']
+stepsCompleted:
+  [
+    'step-01-init',
+    'step-02-discovery',
+    'step-02b-vision',
+    'step-02c-executive-summary',
+    'step-03-success',
+    'step-04-journeys',
+    'step-05-domain',
+    'step-06-innovation',
+    'step-07-project-type',
+    'step-08-scoping',
+    'step-09-functional',
+    'step-10-nonfunctional',
+    'step-11-polish',
+    'step-12-complete',
+  ]
 inputDocuments:
   - 'github:VilnaCRM-Org/crm/issues/49'
 workflowType: 'prd'
@@ -12,19 +28,31 @@ classification:
 
 # Product Requirements Document - crm
 
-**Author:** BMad
-**Date:** 2026-04-10
-**Source:** [VilnaCRM-Org/crm#49](https://github.com/VilnaCRM-Org/crm/issues/49)
+**Author:** BMad **Date:** 2026-04-10 **Source:**
+[VilnaCRM-Org/crm#49](https://github.com/VilnaCRM-Org/crm/issues/49)
 
 ## Executive Summary
 
-The CRM frontend project's Makefile is the primary interface between developers and the system — but three of its most critical targets either deliver incomplete results or don't exist. `make start` starts only the frontend dev container, silently omitting Mockoon, leaving developers with a running UI and dead API calls. `make ci` does not exist, meaning there is no single local command that mirrors CI pipeline execution. `make lighthouse-desktop` and `make lighthouse-mobile` both invoke `ensure-chromium` independently, introducing redundant Docker exec overhead on every Lighthouse run even when Chromium is already present in the image.
+The CRM frontend project's Makefile is the primary interface between developers and the system — but
+three of its most critical targets either deliver incomplete results or don't exist. `make start`
+starts only the frontend dev container, silently omitting Mockoon, leaving developers with a running
+UI and dead API calls. `make ci` does not exist, meaning there is no single local command that
+mirrors CI pipeline execution. `make lighthouse-desktop` and `make lighthouse-mobile` both invoke
+`ensure-chromium` independently, introducing redundant Docker exec overhead on every Lighthouse run
+even when Chromium is already present in the image.
 
-This PRD defines three surgical fixes. Taken together, they restore the implicit contract of Makefile targets: a target does exactly what its name says, completely and reliably. The north star metric: a new contributor runs `make start` and has a fully working development environment — frontend and API mock — within 5 minutes.
+This PRD defines three surgical fixes. Taken together, they restore the implicit contract of
+Makefile targets: a target does exactly what its name says, completely and reliably. The north star
+metric: a new contributor runs `make start` and has a fully working development environment —
+frontend and API mock — within 5 minutes.
 
 ### What Makes This Special
 
-Each fix eliminates a category of silent failure invisible until it wastes a developer's time: API calls that go nowhere, CI surprises that only surface on push, and redundant setup steps that accumulate across every performance test run. The "Make targets as contracts" principle, introduced here, provides a decision framework for evaluating all future Makefile changes — not just the three addressed in this PRD.
+Each fix eliminates a category of silent failure invisible until it wastes a developer's time: API
+calls that go nowhere, CI surprises that only surface on push, and redundant setup steps that
+accumulate across every performance test run. The "Make targets as contracts" principle, introduced
+here, provides a decision framework for evaluating all future Makefile changes — not just the three
+addressed in this PRD.
 
 ## Project Classification
 
@@ -37,61 +65,94 @@ Each fix eliminates a category of silent failure invisible until it wastes a dev
 
 ### User Success
 
-- A developer running `make start` gets a fully functional development environment — frontend on port 3000 and Mockoon API mock on port 8080 — both verified healthy before the command exits
-- A developer running `make ci` gets a definitive local pass/fail that matches what GitHub Actions will report — because GitHub Actions itself calls `make ci` as its single source of truth
-- Lighthouse audit runs (`make lighthouse-desktop`, `make lighthouse-mobile`) complete without redundant Chromium installation steps, regardless of whether the base image includes Chromium
+- A developer running `make start` gets a fully functional development environment — frontend on
+  port 3000 and Mockoon API mock on port 8080 — both verified healthy before the command exits
+- A developer running `make ci` gets a definitive local pass/fail that matches what GitHub Actions
+  will report — because GitHub Actions itself calls `make ci` as its single source of truth
+- Lighthouse audit runs (`make lighthouse-desktop`, `make lighthouse-mobile`) complete without
+  redundant Chromium installation steps, regardless of whether the base image includes Chromium
 
 ### Business Success
 
-- CI failures that could have been caught locally are eliminated — `make ci` is the canonical check suite, called by both developers and GitHub Actions
-- New contributors no longer encounter silent API failures from missing Mockoon during their first development session
-- Performance test pipeline time is reduced by removing redundant Docker exec and `apk add` checks on each Lighthouse target invocation
+- CI failures that could have been caught locally are eliminated — `make ci` is the canonical check
+  suite, called by both developers and GitHub Actions
+- New contributors no longer encounter silent API failures from missing Mockoon during their first
+  development session
+- Performance test pipeline time is reduced by removing redundant Docker exec and `apk add` checks
+  on each Lighthouse target invocation
 
 ### Technical Success
 
-- `make start` brings up both `dev` and `mockoon` services with health/readiness checks for each before returning. Mockoon readiness check method (HTTP health endpoint or TCP port probe) to be determined based on Mockoon's capabilities
-- `make ci` runs all CI checks (lint-eslint, lint-tsc, lint-md, test-unit-client, test-unit-server) in parallel and exits non-zero if any check fails. Integration tests (`test-integration`) are **out of scope** for MVP — they can be added post-MVP once `make ci` is stable
-- `make ci` is the single source of truth for CI — GitHub Actions calls `make ci` directly, eliminating drift between local and CI check lists
-- Chromium presence is determined once per Lighthouse flow, not once per Lighthouse target — `ensure-chromium` is called at most once regardless of how many audit targets follow
-- No regression in blast-radius targets: `test-unit-client`, `test-unit-server`, `test-mutation` (depend on `start`); `test-e2e`, `test-visual`, `test-memory-leak`, `test-load`, `lighthouse-desktop`, `lighthouse-mobile` (depend on `start-prod`)
+- `make start` brings up both `dev` and `mockoon` services with health/readiness checks for each
+  before returning. Mockoon readiness check method (HTTP health endpoint or TCP port probe) to be
+  determined based on Mockoon's capabilities
+- `make ci` runs all CI checks (lint-eslint, lint-tsc, lint-md, test-unit-client, test-unit-server)
+  in parallel and exits non-zero if any check fails. Integration tests (`test-integration`) are
+  **out of scope** for MVP — they can be added post-MVP once `make ci` is stable
+- `make ci` is the single source of truth for CI — GitHub Actions calls `make ci` directly,
+  eliminating drift between local and CI check lists
+- Chromium presence is determined once per Lighthouse flow, not once per Lighthouse target —
+  `ensure-chromium` is called at most once regardless of how many audit targets follow
+- No regression in blast-radius targets: `test-unit-client`, `test-unit-server`, `test-mutation`
+  (depend on `start`); `test-e2e`, `test-visual`, `test-memory-leak`, `test-load`,
+  `lighthouse-desktop`, `lighthouse-mobile` (depend on `start-prod`)
 
 ### Measurable Outcomes
 
-- `make start` → both services healthy in <5 minutes on a warm Docker cache. Cold-cache time (first clone) is not targeted but should be documented after implementation for contributor guidance
-- `make ci` → all checks complete, total wall-clock time limited by the slowest parallel job (not the sum of all jobs)
+- `make start` → both services healthy in <5 minutes on a warm Docker cache. Cold-cache time (first
+  clone) is not targeted but should be documented after implementation for contributor guidance
+- `make ci` → all checks complete, total wall-clock time limited by the slowest parallel job (not
+  the sum of all jobs)
 - Lighthouse flow → zero redundant `ensure-chromium` invocations per run
 
 ## User Journeys
 
 ### Journey 1: New Contributor — First Day Setup (Success Path)
 
-**Persona:** Alex, a junior frontend developer joining VilnaCRM as their first open-source contribution. Has Docker installed but has never seen this codebase.
+**Persona:** Alex, a junior frontend developer joining VilnaCRM as their first open-source
+contribution. Has Docker installed but has never seen this codebase.
 
-**Opening Scene:** Alex clones the repo, reads the README, and runs `make start`. They expect a working dev environment — that's what the target name promises.
+**Opening Scene:** Alex clones the repo, reads the README, and runs `make start`. They expect a
+working dev environment — that's what the target name promises.
 
-**Rising Action:** Docker pulls images, builds the dev container, and starts both the frontend dev server and Mockoon API mock. Alex sees health check output in the terminal — both services confirmed healthy. They open `localhost:3000` and the UI loads. They click through the registration form — API calls hit Mockoon on port 8080 and return mock responses. Everything works.
+**Rising Action:** Docker pulls images, builds the dev container, and starts both the frontend dev
+server and Mockoon API mock. Alex sees health check output in the terminal — both services confirmed
+healthy. They open `localhost:3000` and the UI loads. They click through the registration form — API
+calls hit Mockoon on port 8080 and return mock responses. Everything works.
 
-**Climax:** Alex makes their first code change, saves, and sees hot-reload update the browser. The mock API continues responding. There is no moment of confusion, no Slack message asking "why are my API calls failing?"
+**Climax:** Alex makes their first code change, saves, and sees hot-reload update the browser. The
+mock API continues responding. There is no moment of confusion, no Slack message asking "why are my
+API calls failing?"
 
-**Resolution:** Alex's first PR is focused on the actual feature, not on debugging environment setup. Onboarding friction: zero.
+**Resolution:** Alex's first PR is focused on the actual feature, not on debugging environment
+setup. Onboarding friction: zero.
 
-**Reveals requirements for:** Mockoon service in `start` target, health check for Mockoon, clear terminal output showing both services are ready.
+**Reveals requirements for:** Mockoon service in `start` target, health check for Mockoon, clear
+terminal output showing both services are ready.
 
 ---
 
 ### Journey 2: Existing Developer — Pre-Push Validation (Success Path)
 
-**Persona:** Maria, a senior frontend developer who has been burned by CI failures after pushing. She wants confidence before she pushes.
+**Persona:** Maria, a senior frontend developer who has been burned by CI failures after pushing.
+She wants confidence before she pushes.
 
-**Opening Scene:** Maria finishes a feature branch. She's changed TypeScript files, added a component, and updated some markdown docs. Before pushing, she runs `make ci`.
+**Opening Scene:** Maria finishes a feature branch. She's changed TypeScript files, added a
+component, and updated some markdown docs. Before pushing, she runs `make ci`.
 
-**Rising Action:** `make ci` kicks off all checks in parallel — ESLint, TypeScript compiler, markdown lint, unit tests (client and server). Maria sees parallel output indicating all jobs are running. The slowest job (unit tests) takes ~45 seconds. Total wall-clock time equals the slowest job, not the sum.
+**Rising Action:** `make ci` kicks off all checks in parallel — ESLint, TypeScript compiler,
+markdown lint, unit tests (client and server). Maria sees parallel output indicating all jobs are
+running. The slowest job (unit tests) takes ~45 seconds. Total wall-clock time equals the slowest
+job, not the sum.
 
-**Climax:** All checks pass. Maria pushes with confidence. GitHub Actions runs the same `make ci` — identical checks, identical result. No surprises.
+**Climax:** All checks pass. Maria pushes with confidence. GitHub Actions runs the same `make ci` —
+identical checks, identical result. No surprises.
 
-**Resolution:** Maria's PR passes CI on the first attempt. No wasted review cycles, no "CI is red, fixing..." follow-up commits.
+**Resolution:** Maria's PR passes CI on the first attempt. No wasted review cycles, no "CI is red,
+fixing..." follow-up commits.
 
-**Reveals requirements for:** `make ci` target, parallel execution, fail-fast behavior, identical check list between local and CI.
+**Reveals requirements for:** `make ci` target, parallel execution, fail-fast behavior, identical
+check list between local and CI.
 
 ---
 
@@ -101,13 +162,18 @@ Each fix eliminates a category of silent failure invisible until it wastes a dev
 
 **Opening Scene:** A developer pushes a branch. GitHub Actions triggers the CI workflow.
 
-**Rising Action:** The workflow calls `make ci` — the same single command developers run locally. No separate, hand-maintained list of checks in the YAML file. The Makefile is the single source of truth.
+**Rising Action:** The workflow calls `make ci` — the same single command developers run locally. No
+separate, hand-maintained list of checks in the YAML file. The Makefile is the single source of
+truth.
 
-**Climax:** A lint check fails. `make ci` exits non-zero immediately. The GitHub Actions job reports failure with clear output showing which check failed and why.
+**Climax:** A lint check fails. `make ci` exits non-zero immediately. The GitHub Actions job reports
+failure with clear output showing which check failed and why.
 
-**Resolution:** The developer sees the failure, runs `make ci` locally, reproduces it instantly, fixes it, and pushes again. The feedback loop is tight because local and CI are identical.
+**Resolution:** The developer sees the failure, runs `make ci` locally, reproduces it instantly,
+fixes it, and pushes again. The feedback loop is tight because local and CI are identical.
 
-**Reveals requirements for:** `make ci` as single source of truth, non-zero exit on any failure, clear per-check output, GitHub Actions workflow updated to call `make ci`.
+**Reveals requirements for:** `make ci` as single source of truth, non-zero exit on any failure,
+clear per-check output, GitHub Actions workflow updated to call `make ci`.
 
 ---
 
@@ -115,37 +181,48 @@ Each fix eliminates a category of silent failure invisible until it wastes a dev
 
 **Persona:** Dima, a developer running Lighthouse audits to validate performance before a release.
 
-**Opening Scene:** Dima needs desktop and mobile Lighthouse scores. He runs `make lighthouse-desktop` followed by `make lighthouse-mobile`.
+**Opening Scene:** Dima needs desktop and mobile Lighthouse scores. He runs
+`make lighthouse-desktop` followed by `make lighthouse-mobile`.
 
-**Rising Action:** The first target checks for Chromium — it's already baked into the image. The check completes instantly with "Chromium already installed." The audit runs. When `lighthouse-mobile` follows, it does NOT re-run the Chromium check — the flow recognizes it was already verified.
+**Rising Action:** The first target checks for Chromium — it's already baked into the image. The
+check completes instantly with "Chromium already installed." The audit runs. When
+`lighthouse-mobile` follows, it does NOT re-run the Chromium check — the flow recognizes it was
+already verified.
 
-**Climax:** Both audits complete without redundant Docker exec overhead. No wasted time on `apk add` checks for packages already present.
+**Climax:** Both audits complete without redundant Docker exec overhead. No wasted time on `apk add`
+checks for packages already present.
 
-**Resolution:** The Lighthouse pipeline runs measurably faster. The same flow works identically whether Chromium was baked into the image via `INSTALL_CHROMIUM=true` or installed at runtime by `ensure-chromium` — one code path, no duplication.
+**Resolution:** The Lighthouse pipeline runs measurably faster. The same flow works identically
+whether Chromium was baked into the image via `INSTALL_CHROMIUM=true` or installed at runtime by
+`ensure-chromium` — one code path, no duplication.
 
-**Reveals requirements for:** Single `ensure-chromium` invocation per flow, idempotent Chromium detection, consistent behavior across image variants.
+**Reveals requirements for:** Single `ensure-chromium` invocation per flow, idempotent Chromium
+detection, consistent behavior across image variants.
 
 ---
 
 ### Journey Requirements Summary
 
-| Capability | Journeys | Priority |
-|---|---|---|
-| Mockoon in `start` target | Journey 1 | MVP |
-| Mockoon health/readiness check | Journey 1 | MVP |
-| `make ci` parallel execution | Journey 2, 3 | MVP |
-| `make ci` fail-fast with clear output | Journey 2, 3 | MVP |
-| GitHub Actions calls `make ci` (single source of truth) | Journey 3 | MVP |
-| Single `ensure-chromium` per Lighthouse flow | Journey 4 | MVP |
-| Idempotent Chromium detection across image variants | Journey 4 | MVP |
+| Capability                                              | Journeys     | Priority |
+| ------------------------------------------------------- | ------------ | -------- |
+| Mockoon in `start` target                               | Journey 1    | MVP      |
+| Mockoon health/readiness check                          | Journey 1    | MVP      |
+| `make ci` parallel execution                            | Journey 2, 3 | MVP      |
+| `make ci` fail-fast with clear output                   | Journey 2, 3 | MVP      |
+| GitHub Actions calls `make ci` (single source of truth) | Journey 3    | MVP      |
+| Single `ensure-chromium` per Lighthouse flow            | Journey 4    | MVP      |
+| Idempotent Chromium detection across image variants     | Journey 4    | MVP      |
 
 ## Developer Tooling Requirements
 
-All changes are confined to `Makefile`, Docker Compose files, GitHub Actions workflows, and `README.md`. No application code is modified.
+All changes are confined to `Makefile`, Docker Compose files, GitHub Actions workflows, and
+`README.md`. No application code is modified.
 
 ### Parallel Execution Model
 
-Following the [user-service `make ci` pattern](https://github.com/VilnaCRM-Org/user-service/blob/main/Makefile):
+Following the
+[user-service `make ci` pattern](https://github.com/VilnaCRM-Org/user-service/blob/main/Makefile):
+
 - Use `$(MAKE) -j --output-sync=target` for Make-native parallelism
 - Group checks into sequential phases; parallelize within phases
 - Provide sub-targets (`ci-lint`, `ci-tests`, etc.) for composability
@@ -160,15 +237,18 @@ Following the [user-service `make ci` pattern](https://github.com/VilnaCRM-Org/u
 
 ### Implementation Considerations
 
-- `make ci` must work both inside Docker (local dev) and in DIND (GitHub Actions) — follow user-service's `CI=1` conditional pattern if needed
-- Health check for Mockoon: verify whether Mockoon exposes a health endpoint; fall back to TCP port probe if not
+- `make ci` must work both inside Docker (local dev) and in DIND (GitHub Actions) — follow
+  user-service's `CI=1` conditional pattern if needed
+- Health check for Mockoon: verify whether Mockoon exposes a health endpoint; fall back to TCP port
+  probe if not
 - `--output-sync=target` requires GNU Make 4.0+ — verify CI runner Make version
 
 ## Project Scoping & Phased Development
 
 ### MVP Strategy
 
-Problem-solving MVP — fix three specific broken/missing developer workflow targets. Single developer, familiar with Make and Docker Compose. No backend or application code changes.
+Problem-solving MVP — fix three specific broken/missing developer workflow targets. Single
+developer, familiar with Make and Docker Compose. No backend or application code changes.
 
 ### MVP Feature Set (Phase 1)
 
@@ -182,27 +262,37 @@ Problem-solving MVP — fix three specific broken/missing developer workflow tar
 
 These must be resolved before implementation begins:
 
-**1. Mockoon Docker Compose placement**
+#### 1. Mockoon Docker Compose Placement
 
-Mockoon currently lives only in `docker-compose.test.yml`. Since `make start` now needs it, a decision is required:
+Mockoon currently lives only in `docker-compose.test.yml`. Since `make start` now needs it, a
+decision is required:
+
 - Option A: Move Mockoon to `docker-compose.yml`, remove from test file, update all test references
 - Option B: Keep in test file, add `extends` or `-f` include from main compose
 - Option C: Define in main `docker-compose.yml`, reference from test via override
 
-**Blast radius:** `start-prod`, `test-e2e`, `test-visual`, `test-memory-leak` all use `docker-compose.test.yml` where Mockoon currently lives. `patch-prod-mockoon-url` references the Mockoon service. Any move must preserve these paths.
+**Blast radius:** `start-prod`, `test-e2e`, `test-visual`, `test-memory-leak` all use
+`docker-compose.test.yml` where Mockoon currently lives. `patch-prod-mockoon-url` references the
+Mockoon service. Any move must preserve these paths.
 
 **2. `make ci` phase structure**
 
-Flat parallelism is NOT safe. `test-unit-client` and `test-unit-server` both internally call `make start` via the `UNIT_TESTS` variable (`make start && $(EXEC_DEV_TTYLESS) env`). Running them in parallel causes a race condition on Docker container creation. `make ci` MUST use phased execution:
+Flat parallelism is NOT safe. `test-unit-client` and `test-unit-server` both internally call
+`make start` via the `UNIT_TESTS` variable (`make start && $(EXEC_DEV_TTYLESS) env`). Running them
+in parallel causes a race condition on Docker container creation. `make ci` MUST use phased
+execution:
+
 - Phase 1: Start environment (sequential)
 - Phase 2: Lint checks (parallel via `-j`)
-- Phase 3: Test execution against already-running environment (parallel, without re-calling `make start`)
+- Phase 3: Test execution against already-running environment (parallel, without re-calling
+  `make start`)
 
 This requires new sub-targets that execute tests without the `make start` prefix.
 
 ### Delivery Strategy
 
-- Commit 1: `make start` + Mockoon (highest risk — may touch test infrastructure depending on Compose decision; if complex, split into its own PR)
+- Commit 1: `make start` + Mockoon (highest risk — may touch test infrastructure depending on
+  Compose decision; if complex, split into its own PR)
 - Commit 2: `make ci` with phased parallel execution (independent)
 - Commit 3: Chromium deduplication (independent)
 - Commits 2 and 3 are safe regardless of commit 1's complexity
@@ -224,13 +314,21 @@ This requires new sub-targets that execute tests without the `make start` prefix
 ### Risk Mitigation
 
 **Technical Risks:**
-- GNU Make `-j` + `--output-sync` requires Make 4.0+ — **mitigation:** verify CI runner version; Alpine and Ubuntu runners ship Make 4.x+
+
+- GNU Make `-j` + `--output-sync` requires Make 4.0+ — **mitigation:** verify CI runner version;
+  Alpine and Ubuntu runners ship Make 4.x+
 - Mockoon health endpoint may not exist — **mitigation:** fall back to TCP port probe
-- **Race condition in parallel test execution** — `test-unit-client` and `test-unit-server` both call `make start` internally — **mitigation:** `make ci` starts the environment once in a preflight phase, then runs only test commands in parallel
-- Docker Compose reorganization for Mockoon may ripple into `start-prod` and all test targets — **mitigation:** scope the Compose decision upfront; if blast radius is large, isolate into its own PR
+- **Race condition in parallel test execution** — `test-unit-client` and `test-unit-server` both
+  call `make start` internally — **mitigation:** `make ci` starts the environment once in a
+  preflight phase, then runs only test commands in parallel
+- Docker Compose reorganization for Mockoon may ripple into `start-prod` and all test targets —
+  **mitigation:** scope the Compose decision upfront; if blast radius is large, isolate into its own
+  PR
 
 **Resource Risks:**
-- Single developer can deliver all three fixes — if constrained, commits 2 and 3 are fully independent and can ship without commit 1
+
+- Single developer can deliver all three fixes — if constrained, commits 2 and 3 are fully
+  independent and can ship without commit 1
 
 ## Functional Requirements
 
@@ -238,35 +336,46 @@ This requires new sub-targets that execute tests without the `make start` prefix
 
 - FR1: Developer can start a complete development environment with a single `make start` command
 - FR2: `make start` can bring up the frontend dev server and Mockoon API mock server simultaneously
-- FR3: `make start` can verify health/readiness of both dev and Mockoon services before returning control to the developer
+- FR3: `make start` can verify health/readiness of both dev and Mockoon services before returning
+  control to the developer
 - FR4: `make start` can report clear status output indicating which services are healthy and ready
-- FR5: `make start` can fail with non-zero exit and clear error output if any service fails its health check
-- FR6: Developer can access the frontend application on port 3000 with functioning API mock responses on port 8080 after `make start` completes
+- FR5: `make start` can fail with non-zero exit and clear error output if any service fails its
+  health check
+- FR6: Developer can access the frontend application on port 3000 with functioning API mock
+  responses on port 8080 after `make start` completes
 
 ### CI Check Execution
 
 - FR7: Developer can run all CI checks locally with a single `make ci` command
-- FR8: `make ci` can produce consistent, correct results regardless of whether the development environment is already running or not
+- FR8: `make ci` can produce consistent, correct results regardless of whether the development
+  environment is already running or not
 - FR9: `make ci` can reuse an already-running development environment without restarting services
 - FR10: `make ci` can exit with non-zero status if any check fails
 - FR11: Developer can identify which specific check failed and its output from `make ci` results
-- FR12: Developer can run a subset of CI checks via composable sub-targets (e.g., `ci-lint`, `ci-tests`)
+- FR12: Developer can run a subset of CI checks via composable sub-targets (e.g., `ci-lint`,
+  `ci-tests`)
 
 ### CI Pipeline Integration
 
-- FR13: GitHub Actions CI workflow can delegate all check execution to `make ci` without maintaining a separate check list
+- FR13: GitHub Actions CI workflow can delegate all check execution to `make ci` without maintaining
+  a separate check list
 - FR14: `make ci` can produce identical results whether run locally or in GitHub Actions
 
 ### Performance Test Efficiency
 
-- FR15: Lighthouse flow can verify Chromium presence at most once per execution, regardless of how many audit targets follow
-- FR16: `make lighthouse-desktop` and `make lighthouse-mobile` can run sequentially without redundant Chromium setup
-- FR17: Chromium detection can work identically whether Chromium was baked into the Docker image or installed at runtime
+- FR15: Lighthouse flow can verify Chromium presence at most once per execution, regardless of how
+  many audit targets follow
+- FR16: `make lighthouse-desktop` and `make lighthouse-mobile` can run sequentially without
+  redundant Chromium setup
+- FR17: Chromium detection can work identically whether Chromium was baked into the Docker image or
+  installed at runtime
 
 ### Documentation
 
-- FR18: Developer can find documentation for `make start` behavior (both services, health checks) in README
-- FR19: Developer can find documentation for `make ci` usage and its relationship to GitHub Actions in README
+- FR18: Developer can find documentation for `make start` behavior (both services, health checks) in
+  README
+- FR19: Developer can find documentation for `make ci` usage and its relationship to GitHub Actions
+  in README
 - FR20: Developer can discover new/changed targets via `make help` output
 
 ## Non-Functional Requirements
@@ -274,24 +383,35 @@ This requires new sub-targets that execute tests without the `make start` prefix
 ### Performance
 
 - NFR1: `make start` completes with both services healthy in under 5 minutes on a warm Docker cache
-- NFR2: `make ci` total wall-clock time is bounded by the slowest parallel phase, not the sum of all checks
-- NFR3: No Chromium package installation step executes when Chromium is already present in the container — only the presence check runs
+- NFR2: `make ci` total wall-clock time is bounded by the slowest parallel phase, not the sum of all
+  checks
+- NFR3: No Chromium package installation step executes when Chromium is already present in the
+  container — only the presence check runs
 
 ### Reliability
 
-- NFR4: `make ci` produces deterministic results — running it twice on the same code yields the same pass/fail outcome
-- NFR5: `make start` completes successfully regardless of whether services are already running, stopped, or not yet created
-- NFR6: `make ci` completes successfully regardless of whether the development environment is already running, stopped, or not yet created
-- NFR7: Parallel check execution does not introduce flaky failures due to resource contention or race conditions
+- NFR4: `make ci` produces deterministic results — running it twice on the same code yields the same
+  pass/fail outcome
+- NFR5: `make start` completes successfully regardless of whether services are already running,
+  stopped, or not yet created
+- NFR6: `make ci` completes successfully regardless of whether the development environment is
+  already running, stopped, or not yet created
+- NFR7: Parallel check execution does not introduce flaky failures due to resource contention or
+  race conditions
 
 ### Failure Behavior
 
-- NFR8: When a check fails during `make ci`, all checks within the same phase complete before `make ci` reports failure, so developers see all failures in a single run
+- NFR8: When a check fails during `make ci`, all checks within the same phase complete before
+  `make ci` reports failure, so developers see all failures in a single run
 - NFR9: If `make ci` environment setup fails, no subsequent check phases execute
-- NFR10: Developer can determine which checks passed and which failed from `make ci` summary output without reading individual check logs
+- NFR10: Developer can determine which checks passed and which failed from `make ci` summary output
+  without reading individual check logs
 
 ### Compatibility
 
-- NFR11: `make ci` requires only GNU Make 4.0+ (available on Alpine 3.x, Ubuntu 20.04+, and macOS with Homebrew make)
-- NFR12: All new/changed targets work in both local Docker Compose and DIND (Docker-in-Docker) CI environments
-- NFR13: No new host-level dependencies introduced — only Docker, Make, and existing project tooling required
+- NFR11: `make ci` requires only GNU Make 4.0+ (available on Alpine 3.x, Ubuntu 20.04+, and macOS
+  with Homebrew make)
+- NFR12: All new/changed targets work in both local Docker Compose and DIND (Docker-in-Docker) CI
+  environments
+- NFR13: No new host-level dependencies introduced — only Docker, Make, and existing project tooling
+  required

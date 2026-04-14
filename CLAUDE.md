@@ -1,12 +1,13 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this
+repository.
 
 ## Project Overview
 
 Modern SPA template based on React, featuring extensive CI checks, configured testing tools
-(Playwright, Jest), and a modular architecture inspired by bulletproof-react.
-This template is used for all VilnaCRM microservices.
+(Playwright, Jest), and a modular architecture inspired by bulletproof-react. This template is used
+for all VilnaCRM microservices.
 
 ## Tech Stack
 
@@ -17,8 +18,8 @@ This template is used for all VilnaCRM microservices.
 - **i18n**: react-i18next (main language: uk, fallback: en)
 - **Build**: RSBuild (Rspack-based bundler, configured via `rsbuild.config.ts`)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
-- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
-  Bun is used only to manage dependencies using `bun.lock`.
+- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime; Bun is used
+  only to manage dependencies using `bun.lock`.
 - **Node**: >=24.8.0 (enforced via engineStrict)
 
 ## Development Environment
@@ -71,9 +72,8 @@ make test-visual-ui        # Visual tests with UI
 make test-visual-update    # Update visual snapshots
 ```
 
-**Important**: E2E tests use Mockoon to mock API responses.
-The mock server automatically starts via docker-compose.test.yml and serves
-the OpenAPI spec from user-service repository on port 8080.
+**Important**: E2E tests use Mockoon to mock API responses. The mock server automatically starts via
+docker-compose.test.yml and serves the OpenAPI spec from user-service repository on port 8080.
 
 ### Performance Tests
 
@@ -242,7 +242,8 @@ Key variables in `.env`:
    - `ValidationError`, `AuthenticationError`, `ConflictError`
    - Check with `isAPIError()` helper
 
-2. **Form Validation**: Centralized in module features (e.g., `Auth/components/FormSection/Validations/`)
+2. **Form Validation**: Centralized in module features (e.g.,
+   `Auth/components/FormSection/Validations/`)
 
 3. **Routing**: Defined in `App.tsx` using `createBrowserRouter`
 
@@ -266,16 +267,18 @@ Uses `.nvmrc` for version pinning (Node 24).
 
 ## BMAD-METHOD Integration
 
-Use `/bmalph` to navigate phases. Use `/bmad-help` to discover all commands. Use `/bmalph-status` for a quick overview. See `_bmad/COMMANDS.md` for a full command reference.
+Use `/bmalph` to navigate phases. Use `/bmad-help` to discover all commands. Use `/bmalph-status`
+for a quick overview. See `_bmad/COMMANDS.md` for a full command reference.
 
 ### Phases
 
-| Phase | Focus | Key Commands |
-|-------|-------|-------------|
-| 1. Analysis | Understand the problem | `/create-brief`, `/brainstorm-project`, `/market-research` |
-| 2. Planning | Define the solution | `/create-prd`, `/create-ux` |
-| 3. Solutioning | Design the architecture | `/create-architecture`, `/create-epics-stories`, `/implementation-readiness` |
-| 4. Implementation | Build it | `/sprint-planning`, `/create-story`, then `/bmalph-implement` for Ralph |
+- **Analysis:** Understand the problem with `/create-brief`, `/brainstorm-project`,
+  and `/market-research`.
+- **Planning:** Define the solution with `/create-prd` and `/create-ux`.
+- **Solutioning:** Design architecture with `/create-architecture` and
+  `/create-epics-stories`.
+- **Implementation:** Build it with `/sprint-planning`, `/create-story`, and
+  `/bmalph-implement`.
 
 ### Workflow
 
@@ -284,21 +287,21 @@ Use `/bmalph` to navigate phases. Use `/bmad-help` to discover all commands. Use
 
 ### Management Commands
 
-| Command | Description |
-|---------|-------------|
-| `/bmalph-status` | Show current phase, Ralph progress, version info |
-| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop |
-| `/bmalph-upgrade` | Update bundled assets to match current bmalph version |
-| `/bmalph-doctor` | Check project health and report issues |
+| Command             | Description                                           |
+| ------------------- | ----------------------------------------------------- |
+| `/bmalph-status`    | Show current phase, Ralph progress, version info      |
+| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop    |
+| `/bmalph-upgrade`   | Update bundled assets to match current bmalph version |
+| `/bmalph-doctor`    | Check project health and report issues                |
 
 ### Available Agents
 
-| Command | Agent | Role |
-|---------|-------|------|
-| `/analyst` | Analyst | Research, briefs, discovery |
-| `/architect` | Architect | Technical design, architecture |
-| `/pm` | Product Manager | PRDs, epics, stories |
-| `/sm` | Scrum Master | Sprint planning, status, coordination |
-| `/dev` | Developer | Implementation, coding |
-| `/ux-designer` | UX Designer | User experience, wireframes |
-| `/qa` | QA Engineer | Test automation, quality assurance |
+| Command        | Agent           | Role                                  |
+| -------------- | --------------- | ------------------------------------- |
+| `/analyst`     | Analyst         | Research, briefs, discovery           |
+| `/architect`   | Architect       | Technical design, architecture        |
+| `/pm`          | Product Manager | PRDs, epics, stories                  |
+| `/sm`          | Scrum Master    | Sprint planning, status, coordination |
+| `/dev`         | Developer       | Implementation, coding                |
+| `/ux-designer` | UX Designer     | User experience, wireframes           |
+| `/qa`          | QA Engineer     | Test automation, quality assurance    |
