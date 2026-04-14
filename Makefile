@@ -244,8 +244,13 @@ lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if
 			-o "$$rca_archive" \
 			&& sh -c "$$rca_extract_cmd" \
 			&& rm -f "$$rca_archive"; \
-		if [ ! -x "$(RCA_BIN)" ]; then \
-			printf 'ERROR: rust-code-analysis-cli install did not produce executable at %s\n' "$(RCA_BIN)" >&2; \
+		refreshed_version=""; \
+		if [ -x "$(RCA_BIN)" ]; then \
+			refreshed_version=$$($(RCA_BIN) --version 2>/dev/null | awk '{print $$NF}' || true); \
+		fi; \
+		if [ "$$refreshed_version" != "$(RCA_VERSION)" ]; then \
+			printf 'ERROR: rust-code-analysis-cli install produced version "%s", expected "%s" at %s\n' \
+				"$$refreshed_version" "$(RCA_VERSION)" "$(RCA_BIN)" >&2; \
 			exit 1; \
 		fi; \
 	fi

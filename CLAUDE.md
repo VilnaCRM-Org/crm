@@ -104,7 +104,9 @@ Git hooks are managed by Husky. Run `make husky` once after cloning.
 
 ### Code Metrics (rust-code-analysis)
 
-The repository enforces six complexity metrics on every function in `src/` using
+The repository enforces six complexity metrics on every function and closure
+(including anonymous `<anon>` closures) in `src/` using
+[`scripts/lint-metrics.sh`](scripts/lint-metrics.sh) backed by
 [rust-code-analysis](https://github.com/mozilla/rust-code-analysis) v0.0.25.
 The check runs automatically on every pull request targeting `main` and can be run
 locally before pushing.
