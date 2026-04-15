@@ -227,6 +227,10 @@ lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if
 			rca_asset="rust-code-analysis-win-cli-x86_64.zip"; \
 			rca_extract_cmd='unzip -j -qo '"$$rca_archive"' -d ./bin'; \
 			;; \
+		Darwin:*) \
+			printf 'ERROR: rust-code-analysis-cli v%s has no Darwin release asset — run lint-metrics inside Docker (make sh)\n' "$(RCA_VERSION)" >&2; \
+			exit 1; \
+			;; \
 		*) \
 			printf 'ERROR: rust-code-analysis-cli v%s is not supported on %s/%s\n' "$(RCA_VERSION)" "$$os_name" "$$arch_name" >&2; \
 			exit 1; \

@@ -58,7 +58,14 @@ if [ -n "$RCA_VERSION" ]; then VER_LABEL=" v${RCA_VERSION}"; fi
 printf 'lint-metrics: analyzing src/ with rust-code-analysis%s\n' "$VER_LABEL"
 
 # rust-code-analysis-cli outputs NDJSON: one JSON object per file per line
-"$RCA_BIN" -m -O json -p src/ >"$TMP_JSON"
+# Exclude directories outside the governed scope even if they ever appear inside src/
+"$RCA_BIN" -m -O json -p src/ \
+  -X "**/node_modules/**" \
+  -X "**/dist/**" \
+  -X "**/coverage/**" \
+  -X "**/.storybook/**" \
+  -X "**/tests/**" \
+  >"$TMP_JSON"
 
 # ---------------------------------------------------------------------------
 # Violation extraction via jq
@@ -83,7 +90,7 @@ jq -rs \
   . as $fn |
   ($fn.metrics.cyclomatic.sum // 0)                                         as $cc     |
   ($fn.metrics.cognitive.sum  // $fn.metrics.cognitive // 0)                as $cog    |
-  ($fn.metrics.nargs.functions_max // 0)                                    as $nargs  |
+  (if $fn.kind == "closure" then ($fn.metrics.nargs.closures_max // 0) else ($fn.metrics.nargs.functions_max // 0) end) as $nargs  |
   ($fn.metrics.nexits.average // 0)                                         as $nexits |
   ($fn.metrics.maintanability_index.mi_original // 100)                     as $mi     |
   ($fn.metrics.loc.sloc // 0)                                               as $sloc   |
@@ -101,7 +108,7 @@ VIOLATION_COUNT=$(wc -l <"$TMP_VIOLATIONS" | awk '{print $1}')
 
 MEASURED_CC=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.cyclomatic.sum // 0] | max // 0' "$TMP_JSON")
 MEASURED_COGNITIVE=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | (.metrics.cognitive.sum // .metrics.cognitive // 0)] | max // 0' "$TMP_JSON")
-MEASURED_NARGS=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.nargs.functions_max // 0] | max // 0' "$TMP_JSON")
+MEASURED_NARGS=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | (if .kind == "closure" then .metrics.nargs.closures_max // 0 else .metrics.nargs.functions_max // 0 end)] | max // 0' "$TMP_JSON")
 MEASURED_NEXITS=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.nexits.average // 0] | max // 0' "$TMP_JSON")
 MEASURED_MI=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.maintanability_index.mi_original // 100] | min // 100' "$TMP_JSON")
 MEASURED_SLOC=$(jq -rs '[.. | objects | select(.kind? == "function" or .kind? == "closure") | .metrics.loc.sloc // 0] | max // 0' "$TMP_JSON")

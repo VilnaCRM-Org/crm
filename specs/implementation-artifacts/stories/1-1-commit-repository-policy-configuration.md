@@ -177,8 +177,10 @@ claude-sonnet-4-6
   to the Makefile variables block (after `MARKDOWNLINT_BIN_DIND`, line ~118).
 - Added `lint-metrics` target with a binary self-install guard using the
   corrected download URL, a governed scope comment (`src/` only, five
-  exclusions), 21 threshold shell variables (hard-fail values per architecture
-  doc), and placeholder enforcement echo.
+  exclusions), 6 threshold environment variables (CC_MAX, COGNITIVE_MAX,
+  NARGS_MAX, NEXITS_MAX, MI_MIN, SLOC_MAX — values per the implemented policy),
+  and placeholder enforcement echo. The architecture doc lists 21 fine-grained
+  metrics; only the 6 enforced by scripts/lint-metrics.sh are passed here.
 - Extended `lint` chain: `lint: lint-eslint lint-tsc lint-md lint-metrics`.
 - Added `lint-metrics` to `.PHONY`.
 - Added `/bin/` to `.gitignore`.
