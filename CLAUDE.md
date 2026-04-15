@@ -267,8 +267,11 @@ Uses `.nvmrc` for version pinning (Node 24).
 
 ## BMAD-METHOD Integration
 
-Use `/bmalph` to navigate phases. Use `/bmad-help` to discover all commands. Use `/bmalph-status`
-for a quick overview. See `_bmad/COMMANDS.md` for a full command reference.
+Navigate phases with `/bmalph`, discover commands via `/bmad-help`, or check progress with
+`/bmalph-status`. See the generated `_bmad/COMMANDS.md` reference for the full command list.
+Codex skill handlers for BMAD agents and workflows live under `.agents/skills/bmad-*`; bmalph CLI
+commands such as `/bmalph-implement` are listed in `_bmad/COMMANDS.md` with their concrete
+`bmalph ...` invocation.
 
 ### Phases
 
@@ -283,7 +286,13 @@ for a quick overview. See `_bmad/COMMANDS.md` for a full command reference.
 ### Workflow
 
 1. Work through Phases 1-3 using BMAD agents and workflows (interactive, command-driven)
-2. Run `/bmalph-implement` to transition planning artifacts into Ralph format, then start Ralph
+2. Run `/bmalph-implement` to convert BMAD planning artifacts — goals, tasks, timelines, and
+   project configuration from the configured planning artifacts directory — into the Ralph project
+   format. Ralph is the autonomous implementation loop that consumes the generated implementation
+   artifacts, including `sprint-status.yaml` and story files under the configured implementation
+   artifacts directory. Preconditions: complete Phases 1-3, keep BMAD config paths current, and
+   install project dependencies. After conversion, start Ralph with `/bmalph-watch` or
+   `bmalph run`.
 
 ### Management Commands
 

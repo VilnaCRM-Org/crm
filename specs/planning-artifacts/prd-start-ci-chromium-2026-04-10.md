@@ -86,9 +86,17 @@ addressed in this PRD.
 - `make start` brings up both `dev` and `mockoon` services with health/readiness checks for each
   before returning. Mockoon readiness check method (HTTP health endpoint or TCP port probe) to be
   determined based on Mockoon's capabilities
-- `make ci` runs all CI checks (lint-eslint, lint-tsc, lint-md, test-unit-client, test-unit-server)
-  in parallel and exits non-zero if any check fails. Integration tests (`test-integration`) are
-  **out of scope** for MVP — they can be added post-MVP once `make ci` is stable
+- CRM target naming maps to the org-wide pattern as follows: `make ci-pr` is the non-mutation PR
+  battery, `make ci` is the full suite including `test-mutation`, and `make test` is the faster
+  non-mutation developer battery. For this PRD's MVP, the implemented workflow keeps the current
+  diff terminology and wires GitHub Actions to `make ci` for lint-eslint, lint-tsc, lint-md,
+  test-unit-client, and test-unit-server only; implementation must reconcile this with the org-wide
+  naming before enabling `test-mutation` in the full-suite `make ci` path.
+- `make ci` runs the MVP CI checks (lint-eslint, lint-tsc, lint-md, test-unit-client,
+  test-unit-server) in phased parallel execution and exits non-zero if any check fails. Integration
+  tests (`test-integration`) and mutation tests (`test-mutation`) are **out of scope** for MVP —
+  they can be added post-MVP once `make ci` is stable and naming is reconciled with `make ci-pr`
+  and `make test`
 - `make ci` is the single source of truth for CI — GitHub Actions calls `make ci` directly,
   eliminating drift between local and CI check lists
 - Chromium presence is determined once per Lighthouse flow, not once per Lighthouse target —
@@ -203,15 +211,14 @@ detection, consistent behavior across image variants.
 
 ### Journey Requirements Summary
 
-| Capability                                              | Journeys     | Priority |
-| ------------------------------------------------------- | ------------ | -------- |
-| Mockoon in `start` target                               | Journey 1    | MVP      |
-| Mockoon health/readiness check                          | Journey 1    | MVP      |
-| `make ci` parallel execution                            | Journey 2, 3 | MVP      |
-| `make ci` fail-fast with clear output                   | Journey 2, 3 | MVP      |
-| GitHub Actions calls `make ci` (single source of truth) | Journey 3    | MVP      |
-| Single `ensure-chromium` per Lighthouse flow            | Journey 4    | MVP      |
-| Idempotent Chromium detection across image variants     | Journey 4    | MVP      |
+- **Journey 1 / MVP:** Mockoon in `start` target.
+- **Journey 1 / MVP:** Mockoon health/readiness check.
+- **Journey 2, 3 / MVP:** `make ci` parallel execution.
+- **Journey 2, 3 / MVP:** `make ci` fail-fast with clear output.
+- **Journey 2, 3 / MVP:** Composable MVP CI sub-targets (`ci-setup`, `ci-lint`, `ci-test`).
+- **Journey 3 / MVP:** GitHub Actions calls `make ci` as the single source of truth.
+- **Journey 4 / MVP:** Single `ensure-chromium` per Lighthouse flow.
+- **Journey 4 / MVP:** Idempotent Chromium detection across image variants.
 
 ## Developer Tooling Requirements
 
@@ -225,7 +232,8 @@ Following the
 
 - Use `$(MAKE) -j --output-sync=target` for Make-native parallelism
 - Group checks into sequential phases; parallelize within phases
-- Provide sub-targets (`ci-lint`, `ci-tests`, etc.) for composability
+- Provide MVP sub-targets (`ci-setup`, `ci-lint`, `ci-test`) for composability; deeper subset
+  controls remain Post-MVP
 - Consider a `ci-sequential` fallback target for debugging
 
 ### Chromium Deduplication Strategy
@@ -253,10 +261,13 @@ developer, familiar with Make and Docker Compose. No backend or application code
 ### MVP Feature Set (Phase 1)
 
 1. `make start` brings up `dev` + `mockoon`, both health-checked
-2. `make ci` runs lint + unit tests in parallel via `$(MAKE) -j --output-sync=target`
-3. GitHub Actions workflow updated to call `make ci`
-4. `ensure-chromium` invoked at most once per Lighthouse flow
-5. README updated with new target documentation
+2. `make ci` runs lint + unit tests in phased parallel execution via `ci-setup`, `ci-lint`, and
+   `ci-test`
+3. Composable MVP CI sub-targets `ci-setup`, `ci-lint`, and `ci-test` are included; arbitrary
+   subset selection remains Post-MVP
+4. GitHub Actions workflow updated to call `make ci`
+5. `ensure-chromium` invoked at most once per Lighthouse flow
+6. README updated with new target documentation
 
 ### Critical Scoping Decisions
 
@@ -277,17 +288,22 @@ Mockoon service. Any move must preserve these paths.
 
 **2. `make ci` phase structure**
 
-Flat parallelism is NOT safe. `test-unit-client` and `test-unit-server` both internally call
-`make start` via the `UNIT_TESTS` variable (`make start && $(EXEC_DEV_TTYLESS) env`). Running them
-in parallel causes a race condition on Docker container creation. `make ci` MUST use phased
-execution:
+Flat parallelism is NOT safe unless the environment start step is idempotent.
+`test-unit-client` and `test-unit-server` both internally call `make start` via the `UNIT_TESTS`
+variable (`make start && $(EXEC_DEV_TTYLESS) env`). `make start` MUST detect an already-running
+environment (for example by checking expected Docker containers/networks or an equivalent lock) and
+exit no-op when `dev` and `mockoon` are already healthy, so existing `test-unit-client` and
+`test-unit-server` targets remain unchanged and safe for local workflows. `make ci` still MUST use
+phased execution:
 
 - Phase 1: Start environment (sequential)
 - Phase 2: Lint checks (parallel via `-j`)
-- Phase 3: Test execution against already-running environment (parallel, without re-calling
-  `make start`)
+- Phase 3: Test execution against already-running environment (parallel, preferably through
+  CI-specific environment-assuming sub-targets that do not call `make start`)
 
-This requires new sub-targets that execute tests without the `make start` prefix.
+If new no-start sub-targets such as `ci-test-unit-client` and `ci-test-unit-server` are added, they
+are additive CI-specific targets only. Keep the original `test-unit-client` and `test-unit-server`
+targets unchanged, and document the CI-specific/local split in Makefile comments.
 
 ### Delivery Strategy
 
@@ -352,8 +368,8 @@ This requires new sub-targets that execute tests without the `make start` prefix
 - FR9: `make ci` can reuse an already-running development environment without restarting services
 - FR10: `make ci` can exit with non-zero status if any check fails
 - FR11: Developer can identify which specific check failed and its output from `make ci` results
-- FR12: Developer can run a subset of CI checks via composable sub-targets (e.g., `ci-lint`,
-  `ci-tests`)
+- FR12: Developer can run MVP CI phases via composable sub-targets (`ci-setup`, `ci-lint`,
+  `ci-test`). Fine-grained configurable subsets such as arbitrary target selection are Post-MVP.
 
 ### CI Pipeline Integration
 
@@ -377,6 +393,11 @@ This requires new sub-targets that execute tests without the `make start` prefix
 - FR19: Developer can find documentation for `make ci` usage and its relationship to GitHub Actions
   in README
 - FR20: Developer can discover new/changed targets via `make help` output
+- FR21: README and matching `docs/` guidance describe the new `make ci` target and its relationship
+  to GitHub Actions, the changed `make start` behavior and health-check expectations, and the
+  `make help` output entries for new/changed targets.
+- FR22: Developer migration documentation explains how to transition from the old `make start`
+  behavior to the new `make start` flow with Mockoon readiness, and how CI now invokes `make ci`.
 
 ## Non-Functional Requirements
 

@@ -202,7 +202,7 @@ reference both compose files but limit the services it starts:
 ```makefile
 start-prod: create-network
     $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) \
-        $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate prod mockoon
+        $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate prod mockoon playwright
     make wait-for-prod-health
 ```
 
@@ -734,12 +734,25 @@ table provides explicit no-go list for implementation agents.
 
 1. **`ci-setup` network prerequisite** — fixed above; `create-network` added as prerequisite.
 2. **`start-prod` service list** — fixed above; `playwright` added.
-3. **Branch protection rules** — `static-testing.yml` and `unit-testing.yml` must only be retired
-   _after_ GitHub branch protection required checks are updated from job names `static`/`unit` to
-   `ci`. Deleting without updating will either block merges or silently remove PR protection.
-4. **External integration audit** — before retiring old workflows, audit any tools keying off
-   `static`/`unit` job names (Codecov coverage reports, status check configurations, Dependabot,
-   etc.) and update their references to `ci`.
+3. **Branch protection rules** — blocking production migration prerequisite. Before retiring
+   `static-testing.yml` and `unit-testing.yml`, complete this mandatory pre-flight sequence:
+   1. Deploy `ci.yml` and confirm the workflow emits the `ci` job.
+   2. Update GitHub branch protection required checks from old job names to the new job name:
+      `static` → `ci` and `unit` → `ci`.
+   3. Verify branch protection settings show `ci` as the required check and no longer require
+      `static` or `unit`.
+   4. Audit external integrations that may key off `static` or `unit`, including Codecov,
+      Dependabot, status-check configurations, and release automation; update references to `ci`
+      or document why no update is required.
+   5. Run an implementable verification step before deletion, for example
+      `scripts/verify-branch-protection-ci-check.sh`, that fails unless branch protection required
+      checks include `ci` and no longer include `static` or `unit`.
+   6. Only after successful verification, remove or retire `static-testing.yml` and
+      `unit-testing.yml`.
+   Deleting the workflows before this checklist passes will either block merges or silently remove
+   PR protection.
+4. **External integration audit** — covered by the mandatory branch-protection pre-flight sequence
+   above; do not treat it as optional cleanup after workflow retirement.
 5. **`ci.yml` full YAML** — skeleton shown in architecture; implementation agent completes trigger,
    runner, Node setup, following the pattern of existing workflows.
 6. **`CONTRIBUTING.md` content** — described but not fully detailed; implementation agent follows

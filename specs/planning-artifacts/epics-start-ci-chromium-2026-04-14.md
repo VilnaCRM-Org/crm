@@ -22,28 +22,37 @@ from the PRD, UX Design if it exists, and Architecture requirements into impleme
 
 ### Functional Requirements
 
-FR1: Developer can start a complete development environment with a single `make start` command. FR2:
-`make start` can bring up the frontend dev server and Mockoon API mock server simultaneously. FR3:
-`make start` can verify health/readiness of both dev and Mockoon services before returning control
-to the developer. FR4: `make start` can report clear status output indicating which services are
-healthy and ready. FR5: `make start` can fail with non-zero exit and clear error output if any
-service fails its health check. FR6: Developer can access the frontend application on port 3000 with
-functioning API mock responses on port 8080 after `make start` completes. FR7: Developer can run all
-CI checks locally with a single `make ci` command. FR8: `make ci` can produce consistent, correct
-results regardless of whether the development environment is already running or not. FR9: `make ci`
-can reuse an already-running development environment without restarting services. FR10: `make ci`
-can exit with non-zero status if any check fails. FR11: Developer can identify which specific check
-failed and its output from `make ci` results. FR12: Developer can run a subset of CI checks via
-composable sub-targets such as `ci-lint` and `ci-tests`. FR13: GitHub Actions CI workflow can
-delegate all check execution to `make ci` without maintaining a separate check list. FR14: `make ci`
-can produce identical results whether run locally or in GitHub Actions. FR15: Lighthouse flow can
-verify Chromium presence at most once per execution, regardless of how many audit targets follow.
-FR16: `make lighthouse-desktop` and `make lighthouse-mobile` can run sequentially without redundant
-Chromium setup. FR17: Chromium detection can work identically whether Chromium was baked into the
-Docker image or installed at runtime. FR18: Developer can find documentation for `make start`
-behavior, including both services and health checks, in README. FR19: Developer can find
-documentation for `make ci` usage and its relationship to GitHub Actions in README. FR20: Developer
-can discover new/changed targets via `make help` output.
+- FR1: Developer can start a complete development environment with a single `make start` command.
+- FR2: `make start` can bring up the frontend dev server and Mockoon API mock server simultaneously.
+- FR3: `make start` can verify health/readiness of both dev and Mockoon services before returning
+  control to the developer.
+- FR4: `make start` can report clear status output indicating which services are healthy and ready.
+- FR5: `make start` can fail with non-zero exit and clear error output if any service fails its
+  health check.
+- FR6: Developer can access the frontend application on port 3000 with functioning API mock
+  responses on port 8080 after `make start` completes.
+- FR7: Developer can run all CI checks locally with a single `make ci` command.
+- FR8: `make ci` can produce consistent, correct results regardless of whether the development
+  environment is already running or not.
+- FR9: `make ci` can reuse an already-running development environment without restarting services.
+- FR10: `make ci` can exit with non-zero status if any check fails.
+- FR11: Developer can identify which specific check failed and its output from `make ci` results.
+- FR12: Developer can run MVP CI phases via composable sub-targets `ci-setup`, `ci-lint`, and
+  `ci-test`.
+- FR13: GitHub Actions CI workflow can delegate all check execution to `make ci` without maintaining
+  a separate check list.
+- FR14: `make ci` can produce identical results whether run locally or in GitHub Actions.
+- FR15: Lighthouse flow can verify Chromium presence at most once per execution, regardless of how
+  many audit targets follow.
+- FR16: `make lighthouse-desktop` and `make lighthouse-mobile` can run sequentially without
+  redundant Chromium setup.
+- FR17: Chromium detection can work identically whether Chromium was baked into the Docker image or
+  installed at runtime.
+- FR18: Developer can find documentation for `make start` behavior, including both services and
+  health checks, in README.
+- FR19: Developer can find documentation for `make ci` usage and its relationship to GitHub Actions
+  in README.
+- FR20: Developer can discover new/changed targets via `make help` output.
 
 ### NonFunctional Requirements
 
@@ -117,17 +126,26 @@ No UX Design document was found for the selected start-ci-chromium scope.
 
 ### FR Coverage Map
 
-FR1: Epic 1 - Complete Local Development Startup FR2: Epic 1 - Complete Local Development Startup
-FR3: Epic 1 - Complete Local Development Startup FR4: Epic 1 - Complete Local Development Startup
-FR5: Epic 1 - Complete Local Development Startup FR6: Epic 1 - Complete Local Development Startup
-FR7: Epic 2 - Local CI Parity Command FR8: Epic 2 - Local CI Parity Command FR9: Epic 2 - Local CI
-Parity Command FR10: Epic 2 - Local CI Parity Command FR11: Epic 2 - Local CI Parity Command FR12:
-Epic 2 - Local CI Parity Command FR13: Epic 3 - GitHub Actions CI Single Source of Truth FR14: Epic
-2 - Local CI Parity Command FR15: Epic 4 - Efficient Lighthouse Chromium Setup FR16: Epic 4 -
-Efficient Lighthouse Chromium Setup FR17: Epic 4 - Efficient Lighthouse Chromium Setup FR18: Epic
-5 - Developer Workflow Documentation and Discoverability FR19: Epic 5 - Developer Workflow
-Documentation and Discoverability FR20: Epic 5 - Developer Workflow Documentation and
-Discoverability
+- FR1: Epic 1 - Complete Local Development Startup
+- FR2: Epic 1 - Complete Local Development Startup
+- FR3: Epic 1 - Complete Local Development Startup
+- FR4: Epic 1 - Complete Local Development Startup
+- FR5: Epic 1 - Complete Local Development Startup
+- FR6: Epic 1 - Complete Local Development Startup
+- FR7: Epic 2 - Local CI Parity Command
+- FR8: Epic 2 - Local CI Parity Command
+- FR9: Epic 2 - Local CI Parity Command
+- FR10: Epic 2 - Local CI Parity Command
+- FR11: Epic 2 - Local CI Parity Command
+- FR12: Epic 2 - Local CI Parity Command
+- FR13: Epic 3 - GitHub Actions CI Single Source of Truth
+- FR14: Epic 2 - Local CI Parity Command
+- FR15: Epic 4 - Efficient Lighthouse Chromium Setup
+- FR16: Epic 4 - Efficient Lighthouse Chromium Setup
+- FR17: Epic 4 - Efficient Lighthouse Chromium Setup
+- FR18: Epic 5 - Developer Workflow Documentation and Discoverability
+- FR19: Epic 5 - Developer Workflow Documentation and Discoverability
+- FR20: Epic 5 - Developer Workflow Documentation and Discoverability
 
 ## Epic List
 
@@ -210,7 +228,9 @@ do not regress.
 composes `docker-compose.yml`, `docker-compose.test.yml`, and `common-healthchecks.yml` **And** it
 starts explicit services `prod mockoon playwright` **And** it uses `--no-recreate` for idempotency
 **And** it still runs `wait-for-prod-health` **And** `start-prod` dependent targets retain access to
-`prod`, `mockoon`, and `playwright`.
+`prod`, `mockoon`, and `playwright` **And** `start-prod` always uses `--no-recreate`; CI freshness
+is handled by `ci-setup` with `CI=1` and `--build`, while production-like test targets prioritize
+idempotent reuse of the already-running `prod`, `mockoon`, and `playwright` services.
 
 ## Epic 2 Stories: Local CI Parity Command
 
@@ -264,7 +284,10 @@ So that I get a definitive local CI result before pushing.
 the phases run sequentially as setup, lint, test **And** the top-level `ci` target is not
 parallelized **And** if setup fails, lint and test phases do not run **And** if any lint or test
 target fails, `make ci` exits non-zero **And** `ci-lint` and `ci-test` remain directly runnable
-composable sub-targets **And** the top-level Makefile `export` directive remains intact.
+composable sub-targets **And** the top-level Makefile `export` directive remains intact **And**
+after `make ci` completes, whether successful or failed, the top-level target prints a concise
+NFR10 / Story 2.4 summary showing pass/fail status for each sub-target: `ci-setup`, `ci-lint`, and
+`ci-test`.
 
 ## Epic 3 Stories: GitHub Actions CI Single Source of Truth
 
@@ -295,7 +318,10 @@ are handled, So that CI consolidation does not break merges or silently remove p
 new CI job name before retirement **And** external job-name references are audited for `static` and
 `unit` **And** any references in status checks, coverage integrations, or automation are updated or
 explicitly documented as not applicable **And** the retirement happens only after the new `make ci`
-workflow is available.
+workflow is available **And** the maintainer owning branch protection runs the new CI workflow, or
+inspects the compiled GitHub Actions job names, and records that the emitted job name exactly
+matches the updated branch protection required-check string (`ci`) before `static-testing.yml` and
+`unit-testing.yml` are retired.
 
 ## Epic 4 Stories: Efficient Lighthouse Chromium Setup
 
