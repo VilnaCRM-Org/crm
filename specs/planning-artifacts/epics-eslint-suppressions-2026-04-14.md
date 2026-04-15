@@ -13,7 +13,8 @@ inputDocuments:
 
 ## Overview
 
-This document provides the complete epic and story breakdown for crm, decomposing the requirements from the PRD and Architecture requirements into implementable stories.
+This document provides the complete epic and story breakdown for crm, decomposing the requirements
+from the PRD and Architecture requirements into implementable stories.
 
 ## Requirements Inventory
 
@@ -33,15 +34,23 @@ FR11: The command returns a passing status when no suppression directives are fo
 FR12: Contributors can use the command output as a cleanup queue.
 FR13: Contributors can establish the current suppression inventory before cleanup.
 FR14: Contributors can inspect known affected files from the issue during cleanup.
-FR15: Contributors can remove suppression comments by applying code, test, or lint-configuration fixes.
+FR15: Contributors can remove suppression comments by applying code, test, or
+      lint-configuration fixes.
 FR16: Contributors can re-run the inventory after cleanup to see the remaining suppression set.
-FR17: Maintainers can see the remaining suppression count and rationale if zero suppressions is not achieved.
-FR18: Maintainers can identify whether the suppression check is standalone or part of the broader lint workflow.
-FR19: Maintainers can run the suppression check directly regardless of whether it is wired into an aggregate lint target.
-FR20: Maintainers can validate the aggregate lint workflow if the suppression check is wired into it.
-FR21: Reviewers can use the inventory output to identify suppression directives in pull request review.
-FR22: Maintainers can use before/after inventory evidence to decide whether future enforcement should happen through local checks, `make lint`, or CI.
-FR23: Maintainers can distinguish accepted remaining baseline suppressions from newly introduced suppression debt.
+FR17: Maintainers can see the remaining suppression count and rationale if zero suppressions
+      is not achieved.
+FR18: Maintainers can identify whether the suppression check is standalone or part of the
+      broader lint workflow.
+FR19: Maintainers can run the suppression check directly regardless of whether it is wired
+      into an aggregate lint target.
+FR20: Maintainers can validate the aggregate lint workflow if the suppression check is wired
+      into it.
+FR21: Reviewers can use the inventory output to identify suppression directives in pull
+      request review.
+FR22: Maintainers can use before/after inventory evidence to decide whether future enforcement
+      should happen through local checks, `make lint`, or CI.
+FR23: Maintainers can distinguish accepted remaining baseline suppressions from newly
+      introduced suppression debt.
 FR24: Maintainers can verify that all required suppression directive variants are detected.
 FR25: Maintainers can verify command behavior when suppressions are present.
 FR26: Maintainers can verify command behavior when no suppressions are present.
@@ -49,32 +58,46 @@ FR27: Maintainers can verify that relevant existing lint checks remain usable af
 
 ### NonFunctional Requirements
 
-NFR1: The suppression inventory command must produce deterministic results when run repeatedly against the same repository state.
+NFR1: The suppression inventory command must produce deterministic results when run repeatedly
+      against the same repository state.
 NFR2: The command must report each in-scope suppression directive occurrence once.
-NFR3: The command must preserve correct exit-code behavior: non-zero when suppressions are present and zero when none are present.
-NFR4: The command must avoid false positives from dependency folders, build outputs, generated artifacts, and documentation examples unless intentionally included.
-NFR5: The Make target must be placed near related lint targets so maintainers can discover and update it consistently.
-NFR6: The command implementation must be simple enough for repository maintainers to understand without introducing a new dedicated toolchain.
-NFR7: Scan scope and workflow placement must be clear from the implementation or adjacent Makefile documentation.
-NFR8: The target must run from the repository root using the existing local development environment assumptions.
+NFR3: The command must preserve correct exit-code behavior: non-zero when suppressions are
+      present and zero when none are present.
+NFR4: The command must avoid false positives from dependency folders, build outputs, generated
+      artifacts, and documentation examples unless intentionally included.
+NFR5: The Make target must be placed near related lint targets so maintainers can discover and
+      update it consistently.
+NFR6: The command implementation must be simple enough for repository maintainers to
+      understand without introducing a new dedicated toolchain.
+NFR7: Scan scope and workflow placement must be clear from the implementation or adjacent
+      Makefile documentation.
+NFR8: The target must run from the repository root using the existing local development
+      environment assumptions.
 NFR9: The implementation should prefer tools already used or expected in the repository workflow.
 NFR10: Command output must be readable by a developer during local cleanup.
 NFR11: Command output must include enough file and line context to support pull request review.
-NFR12: Failure output must make it clear that remaining ESLint suppression directives caused the failure.
+NFR12: Failure output must make it clear that remaining ESLint suppression directives caused
+       the failure.
 NFR13: Verification must prove detection of all required directive variants.
 NFR14: Verification must prove both match-present and no-match exit-code behavior.
-NFR15: Verification must confirm relevant existing lint checks remain usable after suppression cleanup.
+NFR15: Verification must confirm relevant existing lint checks remain usable after
+       suppression cleanup.
 
 ### Additional Requirements
 
 - Add `lint-eslint-suppressions` directly to `Makefile` near existing lint targets.
-- Keep the MVP implementation in `Makefile`; do not add a helper script unless the recipe becomes difficult to maintain.
-- Keep `lint-eslint-suppressions` standalone during MVP; do not wire it into aggregate `make lint` before baseline agreement.
-- Use GNU grep-compatible shell commands for recursive matching, line-number output, and directory exclusions.
+- Keep the MVP implementation in `Makefile`; do not add a helper script unless the recipe becomes
+  difficult to maintain.
+- Keep `lint-eslint-suppressions` standalone during MVP; do not wire it into aggregate `make lint`
+  before baseline agreement.
+- Use GNU grep-compatible shell commands for recursive matching, line-number output, and directory
+  exclusions.
 - Define `ESLINT_SUPPRESSION_PATTERN` and `ESLINT_SUPPRESSION_SCAN_PATHS` Make variables.
-- Use the locked directive pattern shape: `eslint-(disable-next-line|disable-line|disable|enable)([^[:alnum:]_-]|$$)`.
+- Use the locked directive pattern shape:
+  `eslint-(disable-next-line|disable-line|disable|enable)([^[:alnum:]_-]|$$)`.
 - Use allowlist-first scan paths: `src tests scripts .eslintrc.js`.
-- Exclude `.git`, `node_modules`, `dist`, `coverage`, `test-results`, `playwright-report`, `storybook-static`, `out`, `specs`, and `docs` as backup protection.
+- Exclude `.git`, `node_modules`, `dist`, `coverage`, `test-results`, `playwright-report`,
+  `storybook-static`, `out`, `specs`, and `docs` as backup protection.
 - Emit grep-style output: `path:line:matched text`.
 - Print a short success message when no suppression directives are found.
 - Print a short failure message after matches when suppression directives remain.
@@ -82,7 +105,8 @@ NFR15: Verification must confirm relevant existing lint checks remain usable aft
 - Preserve overrideability of `ESLINT_SUPPRESSION_SCAN_PATHS` for controlled verification.
 - Run the target before cleanup and after cleanup, recording before/after suppression counts.
 - Remove suppressions only through behavior-preserving code, test, or lint-configuration fixes.
-- If zero suppressions is not achieved, record the remaining count and rationale as an explicit baseline decision.
+- If zero suppressions is not achieved, record the remaining count and rationale as an explicit
+  baseline decision.
 - Verify a controlled positive fixture containing all four directive forms.
 - Verify a controlled negative fixture containing no directive forms.
 - Run the target against the real repository scan scope.
@@ -92,7 +116,8 @@ NFR15: Verification must confirm relevant existing lint checks remain usable aft
 
 ### UX Design Requirements
 
-No UX design document was provided or discovered. This is a repository developer-tooling change with no UI surface.
+No UX design document was provided or discovered. This is a repository developer-tooling change with
+no UI surface.
 
 ### FR Coverage Map
 
@@ -126,27 +151,34 @@ FR27: Epic 2 - Existing lint checks verified after cleanup.
 
 ## Epic List
 
-### Epic 1: Find ESLint Suppression Debt
+### Epic 1 Summary: Find ESLint Suppression Debt
 
-Developers can run one repo-root Make target that scans the intended repository scope, reports every ESLint suppression directive once with file/line output, and returns the correct pass/fail status.
+Developers can run one repo-root Make target that scans the intended repository scope, reports every
+ESLint suppression directive once with file/line output, and returns the correct pass/fail status.
 
-**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR19, FR24, FR25, FR26
+**FRs covered:** FR1, FR2, FR3, FR4, FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR19, FR24, FR25,
+FR26
 
-### Epic 2: Clean Up and Baseline Suppressions
+### Epic 2 Summary: Clean Up and Baseline Suppressions
 
-Developers can use the new inventory to capture current suppression debt, fix safe suppressions through code/test/config changes, rerun the inventory, and record any remaining baseline intentionally.
+Developers can use the new inventory to capture current suppression debt, fix safe suppressions
+through code/test/config changes, rerun the inventory, and record any remaining baseline
+intentionally.
 
 **FRs covered:** FR13, FR14, FR15, FR16, FR17, FR23, FR27
 
-### Epic 3: Prepare Suppression Policy Decisions
+### Epic 3 Summary: Prepare Suppression Policy Decisions
 
-Maintainers and reviewers can use the command output and baseline evidence to decide whether the check stays standalone, joins `make lint`, or later moves into CI without disrupting the current lint workflow.
+Maintainers and reviewers can use the command output and baseline evidence to decide whether the
+check stays standalone, joins `make lint`, or later moves into CI without disrupting the current
+lint workflow.
 
 **FRs covered:** FR18, FR20, FR21, FR22
 
 ## Epic 1: Find ESLint Suppression Debt
 
-Developers can run one repo-root Make target that scans the intended repository scope, reports every ESLint suppression directive once with file/line output, and returns the correct pass/fail status.
+Developers can run one repo-root Make target that scans the intended repository scope, reports every
+ESLint suppression directive once with file/line output, and returns the correct pass/fail status.
 
 ### Story 1.1: Add Standalone Suppression Inventory Target
 
@@ -166,7 +198,8 @@ So that I can inventory ESLint suppression directives without constructing my ow
 **Given** the suppression inventory target exists
 **When** it runs with default settings
 **Then** it scans `src`, `tests`, `scripts`, and `.eslintrc.js`
-**And** it excludes `.git`, `node_modules`, `dist`, `coverage`, `test-results`, `playwright-report`, `storybook-static`, `out`, `specs`, and `docs`.
+**And** it excludes `.git`, `node_modules`, `dist`, `coverage`, `test-results`, `playwright-report`,
+`storybook-static`, `out`, `specs`, and `docs`.
 
 **Given** the Makefile implementation is reviewed
 **When** the suppression policy is inspected
@@ -212,24 +245,29 @@ So that it can be trusted locally and later considered for enforcement.
 
 **Acceptance Criteria:**
 
-**Given** `ESLINT_SUPPRESSION_SCAN_PATHS` points to a controlled fixture containing all four directive variants
+**Given** `ESLINT_SUPPRESSION_SCAN_PATHS` points to a controlled fixture containing all four
+directive variants
 **When** `make lint-eslint-suppressions ESLINT_SUPPRESSION_SCAN_PATHS=<positive-fixture>` runs
 **Then** the command exits non-zero
 **And** the output includes all four directive variants.
 
-**Given** `ESLINT_SUPPRESSION_SCAN_PATHS` points to a controlled fixture with no ESLint suppression directives
+**Given** `ESLINT_SUPPRESSION_SCAN_PATHS` points to a controlled fixture with no ESLint suppression
+directives
 **When** `make lint-eslint-suppressions ESLINT_SUPPRESSION_SCAN_PATHS=<negative-fixture>` runs
 **Then** the command exits zero
 **And** the output includes a short success message.
 
 **Given** grep encounters a scan error other than no matches
-**When** `make lint-eslint-suppressions ESLINT_SUPPRESSION_SCAN_PATHS=tmp/missing-eslint-suppression-fixture` runs with that path absent
+**When** `make lint-eslint-suppressions
+ESLINT_SUPPRESSION_SCAN_PATHS=tmp/missing-eslint-suppression-fixture` runs with that path absent
 **Then** the target exits non-zero
 **And** the implementation does not mask the error with unconditional success behavior.
 
 ## Epic 2: Clean Up and Baseline Suppressions
 
-Developers can use the new inventory to capture current suppression debt, fix safe suppressions through code/test/config changes, rerun the inventory, and record any remaining baseline intentionally.
+Developers can use the new inventory to capture current suppression debt, fix safe suppressions
+through code/test/config changes, rerun the inventory, and record any remaining baseline
+intentionally.
 
 ### Story 2.1: Capture Current Suppression Inventory
 
@@ -242,15 +280,19 @@ So that I know the exact current suppression set I am working from.
 **Acceptance Criteria:**
 
 **Given** `lint-eslint-suppressions` exists
-**When** a contributor runs `make lint-eslint-suppressions` against the default scan scope before cleanup
+**When** a contributor runs `make lint-eslint-suppressions` against the default scan scope before
+cleanup
 **Then** the command reports the current in-scope ESLint suppression directives
-**And** the contributor records the before-cleanup suppression count in `specs/implementation-artifacts/eslint-suppressions-baseline.md`.
+**And** the contributor records the before-cleanup suppression count in
+`specs/implementation-artifacts/eslint-suppressions-baseline.md`.
 
 **Given** the command reports suppression locations
 **When** the contributor reviews the output
-**Then** known affected files from `scripts`, `src`, and `tests` are identified for cleanup inspection
+**Then** known affected files from `scripts`, `src`, and `tests` are identified for cleanup
+inspection
 **And** `.eslintrc.js` is treated as scan scope, not assumed to contain a current suppression
-**And** the inventory is grouped by tooling, source, and test area in `specs/implementation-artifacts/eslint-suppressions-baseline.md`.
+**And** the inventory is grouped by tooling, source, and test area in
+`specs/implementation-artifacts/eslint-suppressions-baseline.md`.
 
 ### Story 2.2: Clean Up Tooling Suppressions From the Recorded Inventory
 
@@ -262,20 +304,23 @@ So that repository automation improves without mixing tooling cleanup with sourc
 
 **Acceptance Criteria:**
 
-**Given** Story 2.1 recorded the before-cleanup inventory in `specs/implementation-artifacts/eslint-suppressions-baseline.md`
+**Given** Story 2.1 recorded the before-cleanup inventory in
+`specs/implementation-artifacts/eslint-suppressions-baseline.md`
 **When** the contributor starts tooling cleanup
 **Then** only suppression entries under `scripts` or `.eslintrc.js` are in scope for this story
 **And** suppressions under `src` and `tests` are deferred to their dedicated cleanup stories.
 
 **Given** a tooling suppression comment from the recorded inventory is inspected
-**When** the underlying lint issue can be fixed safely with code, test, or lint-configuration changes
+**When** the underlying lint issue can be fixed safely with code, test, or lint-configuration
+changes
 **Then** the suppression comment is removed
 **And** the related behavior remains equivalent.
 
 **Given** a tooling suppression comment from the recorded inventory is inspected
 **When** removing it would require unrelated redesign or risky behavioral changes
 **Then** the suppression is left in place for the MVP baseline
-**And** the rationale is recorded in `specs/implementation-artifacts/eslint-suppressions-baseline.md`.
+**And** the rationale is recorded in
+`specs/implementation-artifacts/eslint-suppressions-baseline.md`.
 
 **Given** cleanup changes are made in tooling files
 **When** relevant existing lint checks are run
@@ -293,24 +338,29 @@ So that repository automation improves without mixing tooling cleanup with sourc
 
 As a contributor,
 I want to remove safe ESLint suppressions from source files identified in the recorded inventory,
-So that application code quality improves without bundling source cleanup with tooling or test changes.
+So that application code quality improves without bundling source cleanup with tooling or test
+changes.
 
 **Acceptance Criteria:**
 
-**Given** Story 2.1 recorded the before-cleanup inventory in `specs/implementation-artifacts/eslint-suppressions-baseline.md`
+**Given** Story 2.1 recorded the before-cleanup inventory in
+`specs/implementation-artifacts/eslint-suppressions-baseline.md`
 **When** the contributor starts source cleanup
 **Then** only suppression entries under `src` are in scope for this story
 **And** suppressions under `scripts`, `.eslintrc.js`, and `tests` are out of scope.
 
 **Given** a source suppression comment from the recorded inventory is inspected
-**When** the underlying lint issue can be fixed safely with code, test, or lint-configuration changes
+**When** the underlying lint issue can be fixed safely with code, test, or lint-configuration
+changes
 **Then** the suppression comment is removed
 **And** the related behavior remains equivalent.
 
 **Given** a source suppression comment from the recorded inventory is inspected
-**When** removing it would require component redesign, state-management migration, UI behavior changes, or other risky unrelated work
+**When** removing it would require component redesign, state-management migration, UI behavior
+changes, or other risky unrelated work
 **Then** the suppression is left in place for the MVP baseline
-**And** the rationale is recorded in `specs/implementation-artifacts/eslint-suppressions-baseline.md`.
+**And** the rationale is recorded in
+`specs/implementation-artifacts/eslint-suppressions-baseline.md`.
 
 **Given** cleanup changes are made in source files
 **When** relevant existing lint checks are run
@@ -332,7 +382,8 @@ So that test quality improves without mixing test cleanup with source or tooling
 
 **Acceptance Criteria:**
 
-**Given** Story 2.1 recorded the before-cleanup inventory in `specs/implementation-artifacts/eslint-suppressions-baseline.md`
+**Given** Story 2.1 recorded the before-cleanup inventory in
+`specs/implementation-artifacts/eslint-suppressions-baseline.md`
 **When** the contributor starts test cleanup
 **Then** only suppression entries under `tests` are in scope for this story
 **And** suppressions under `scripts`, `.eslintrc.js`, and `src` are out of scope.
@@ -345,7 +396,8 @@ So that test quality improves without mixing test cleanup with source or tooling
 **Given** a test suppression comment from the recorded inventory is inspected
 **When** removing it would require unrelated test redesign or risky behavioral changes
 **Then** the suppression is left in place for the MVP baseline
-**And** the rationale is recorded in `specs/implementation-artifacts/eslint-suppressions-baseline.md`.
+**And** the rationale is recorded in
+`specs/implementation-artifacts/eslint-suppressions-baseline.md`.
 
 **Given** cleanup changes are made in test files
 **When** relevant existing lint checks are run
@@ -370,15 +422,18 @@ So that accepted baseline suppressions are distinguishable from future suppressi
 **Given** cleanup work is complete
 **When** a contributor reruns `make lint-eslint-suppressions` against the default scan scope
 **Then** the after-cleanup suppression inventory is captured
-**And** the after-cleanup count is recorded in `specs/implementation-artifacts/eslint-suppressions-baseline.md`.
+**And** the after-cleanup count is recorded in
+`specs/implementation-artifacts/eslint-suppressions-baseline.md`.
 
 **Given** no suppressions remain after cleanup
 **When** the contributor records the result
-**Then** `specs/implementation-artifacts/eslint-suppressions-baseline.md` states that the repository reached a zero-suppression baseline.
+**Then** `specs/implementation-artifacts/eslint-suppressions-baseline.md` states that the repository
+reached a zero-suppression baseline.
 
 **Given** suppressions remain after cleanup
 **When** the contributor records the result
-**Then** `specs/implementation-artifacts/eslint-suppressions-baseline.md` lists or summarizes the remaining suppressions by tooling, source, and test area
+**Then** `specs/implementation-artifacts/eslint-suppressions-baseline.md` lists or summarizes the
+remaining suppressions by tooling, source, and test area
 **And** it includes rationale for why they are accepted or deferred.
 
 **Given** future contributors review the baseline record
@@ -387,7 +442,9 @@ So that accepted baseline suppressions are distinguishable from future suppressi
 
 ## Epic 3: Prepare Suppression Policy Decisions
 
-Maintainers and reviewers can use the command output and baseline evidence to decide whether the check stays standalone, joins `make lint`, or later moves into CI without disrupting the current lint workflow.
+Maintainers and reviewers can use the command output and baseline evidence to decide whether the
+check stays standalone, joins `make lint`, or later moves into CI without disrupting the current
+lint workflow.
 
 ### Story 3.1: Document Standalone Workflow Placement
 
@@ -402,7 +459,8 @@ So that contributors understand whether it is standalone or part of broader lint
 **Given** the MVP suppression inventory target is implemented
 **When** a maintainer reviews the Makefile or implementation notes
 **Then** it is clear that `lint-eslint-suppressions` is standalone during MVP
-**And** aggregate `make lint` remains unchanged unless a later baseline decision explicitly changes it.
+**And** aggregate `make lint` remains unchanged unless a later baseline decision explicitly changes
+it.
 
 **Given** a contributor wants to run the suppression check directly
 **When** they run `make lint-eslint-suppressions`
@@ -436,9 +494,11 @@ So that reviewers can use the MVP output without relying on future policy assump
 
 **Given** the artifact records the current baseline
 **When** reviewers need to evaluate suppression debt in this MVP or a later pull request
-**Then** the artifact provides the command used, scan scope, before/after counts, and remaining baseline entries or zero-baseline statement.
+**Then** the artifact provides the command used, scan scope, before/after counts, and remaining
+baseline entries or zero-baseline statement.
 
 **Given** the repository has not reached an agreed baseline
 **When** maintainers review MVP completion
-**Then** `specs/implementation-artifacts/eslint-suppressions-baseline.md` records that future enforcement options are deferred
+**Then** `specs/implementation-artifacts/eslint-suppressions-baseline.md` records that future
+enforcement options are deferred
 **And** no story requires CI enforcement or aggregate lint wiring as part of the MVP.

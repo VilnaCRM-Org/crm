@@ -16,20 +16,34 @@ date: '2026-04-14T22:48:18+03:00'
 
 # Architecture Decision Document
 
-_This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
+_This document builds collaboratively through step-by-step discovery. Sections are appended as we
+work through each architectural decision together._
 
 ## Project Context Analysis
 
 ### Requirements Overview
 
 **Functional Requirements:**
-The PRD defines 27 functional requirements across five capability areas: suppression inventory, command outcome signaling, cleanup workflow, lint workflow placement, review/governance support, and verification support. Architecturally, this is a repository developer-tooling initiative rather than a runtime CRM feature. The solution must provide one contributor-facing Make target, deterministic detection of the four required ESLint directive forms, duplicate-free file/line reporting, clear exit status semantics, and enough implementation evidence for maintainers to decide whether the check remains standalone or joins the broader lint workflow.
+The PRD defines 27 functional requirements across five capability areas: suppression inventory,
+command outcome signaling, cleanup workflow, lint workflow placement, review/governance support, and
+verification support. Architecturally, this is a repository developer-tooling initiative rather than
+a runtime CRM feature. The solution must provide one contributor-facing Make target, deterministic
+detection of the four required ESLint directive forms, duplicate-free file/line reporting, clear
+exit status semantics, and enough implementation evidence for maintainers to decide whether the
+check remains standalone or joins the broader lint workflow.
 
 **Non-Functional Requirements:**
-The main architectural drivers are reliability, maintainability, portability, usability, and verification quality. The target must produce stable results for the same repository state, avoid generated/vendor/documentation noise unless intentionally included, remain understandable to maintainers, run from the repository root using existing development assumptions, and provide readable failure output that is useful during cleanup and review.
+The main architectural drivers are reliability, maintainability, portability, usability, and
+verification quality. The target must produce stable results for the same repository state, avoid
+generated/vendor/documentation noise unless intentionally included, remain understandable to
+maintainers, run from the repository root using existing development assumptions, and provide
+readable failure output that is useful during cleanup and review.
 
 **Scale & Complexity:**
-This is a low-complexity brownfield enhancement with medium workflow sensitivity. The implementation footprint should stay small, but the check's exit-code behavior and scan boundaries need to be precise because they directly affect contributor workflow and possible future lint or CI enforcement.
+This is a low-complexity brownfield enhancement with medium workflow sensitivity. The implementation
+footprint should stay small, but the check's exit-code behavior and scan boundaries need to be
+precise because they directly affect contributor workflow and possible future lint or CI
+enforcement.
 
 - Primary domain: developer tooling / repository lint-quality workflow
 - Complexity level: low
@@ -37,11 +51,21 @@ This is a low-complexity brownfield enhancement with medium workflow sensitivity
 
 ### Technical Constraints & Dependencies
 
-The architecture must fit the existing Make-based repository workflow and avoid a new dedicated toolchain unless implementation evidence clearly justifies it. The target name is fixed by the PRD as `lint-eslint-suppressions` and should be placed near existing lint targets. The scan must cover `eslint-disable`, `eslint-disable-next-line`, `eslint-disable-line`, and `eslint-enable` while reporting each directive occurrence once, avoiding duplicate matches from overlapping patterns.
+The architecture must fit the existing Make-based repository workflow and avoid a new dedicated
+toolchain unless implementation evidence clearly justifies it. The target name is fixed by the PRD
+as `lint-eslint-suppressions` and should be placed near existing lint targets. The scan must cover
+`eslint-disable`, `eslint-disable-next-line`, `eslint-disable-line`, and `eslint-enable` while
+reporting each directive occurrence once, avoiding duplicate matches from overlapping patterns.
 
-Scan boundaries must include intended source, test, and repository tooling files, while excluding dependency folders, build outputs, generated artifacts, and documentation examples unless explicitly brought into scope. Any suppression cleanup must preserve behavior by using code fixes, test fixes, or lint-configuration fixes rather than blind comment deletion. If the target is wired into `make lint`, the aggregate lint workflow must remain runnable and verified.
+Scan boundaries must include intended source, test, and repository tooling files, while excluding
+dependency folders, build outputs, generated artifacts, and documentation examples unless explicitly
+brought into scope. Any suppression cleanup must preserve behavior by using code fixes, test fixes,
+or lint-configuration fixes rather than blind comment deletion. If the target is wired into `make
+lint`, the aggregate lint workflow must remain runnable and verified.
 
-The loaded ADRs establish a general repository preference for pragmatic, low-boilerplate choices that align with existing tooling and module boundaries. They do not impose direct implementation constraints on this Makefile lint-quality change.
+The loaded ADRs establish a general repository preference for pragmatic, low-boilerplate choices
+that align with existing tooling and module boundaries. They do not impose direct implementation
+constraints on this Makefile lint-quality change.
 
 ### Cross-Cutting Concerns Identified
 
@@ -58,9 +82,13 @@ The loaded ADRs establish a general repository preference for pragmatic, low-boi
 
 ### Primary Technology Domain
 
-Brownfield repository developer tooling / lint-quality workflow inside an existing TypeScript/React CRM repository.
+Brownfield repository developer tooling / lint-quality workflow inside an existing TypeScript/React
+CRM repository.
 
-This is not a greenfield application, CLI package, backend service, or UI module. The architectural foundation already exists: repository tasks are exposed through `Makefile`, linting is already organized around `lint-eslint`, `lint-tsc`, `lint-md`, and aggregate `lint`, and CI workflows invoke Make targets directly.
+This is not a greenfield application, CLI package, backend service, or UI module. The architectural
+foundation already exists: repository tasks are exposed through `Makefile`, linting is already
+organized around `lint-eslint`, `lint-tsc`, `lint-md`, and aggregate `lint`, and CI workflows invoke
+Make targets directly.
 
 ### Starter Options Considered
 
@@ -111,9 +139,16 @@ Use `rg` as the search engine for the target.
 
 **Rationale for Selection:**
 
-No external starter template should be used. This is a narrow brownfield repository-tooling change, and the existing Makefile already provides the correct architectural foundation. The target should be implemented directly in the Makefile unless the final command becomes complex enough to justify a small helper script.
+No external starter template should be used. This is a narrow brownfield repository-tooling change,
+and the existing Makefile already provides the correct architectural foundation. The target should
+be implemented directly in the Makefile unless the final command becomes complex enough to justify a
+small helper script.
 
-For the scan engine, prefer tools already available in the repository execution environment. GNU grep is sufficient for MVP detection because it supports recursive search, line-number output, extended regular expressions, and directory exclusions. ripgrep remains a reasonable future optimization only if the repository explicitly standardizes it in the dev container or dependency setup.
+For the scan engine, prefer tools already available in the repository execution environment. GNU
+grep is sufficient for MVP detection because it supports recursive search, line-number output,
+extended regular expressions, and directory exclusions. ripgrep remains a reasonable future
+optimization only if the repository explicitly standardizes it in the dev container or dependency
+setup.
 
 **Initialization Command:**
 
@@ -125,22 +160,28 @@ For the scan engine, prefer tools already available in the repository execution 
 **Architectural Decisions Provided by Existing Foundation:**
 
 **Language & Runtime:**
-Preserve the existing TypeScript/React/Bun repository runtime. The suppression check is a Make target, not a new application runtime.
+Preserve the existing TypeScript/React/Bun repository runtime. The suppression check is a Make
+target, not a new application runtime.
 
 **Styling Solution:**
 Not applicable. This is not a UI feature.
 
 **Build Tooling:**
-Use the existing Makefile command surface. Place `lint-eslint-suppressions` near `lint-eslint`, `lint-tsc`, `lint-md`, and `lint`.
+Use the existing Makefile command surface. Place `lint-eslint-suppressions` near `lint-eslint`,
+`lint-tsc`, `lint-md`, and `lint`.
 
 **Testing Framework:**
-Verification should use Make-target execution and controlled fixture or temporary-file cases to prove detection and exit-code behavior. Existing lint checks remain the regression surface for cleanup safety.
+Verification should use Make-target execution and controlled fixture or temporary-file cases to
+prove detection and exit-code behavior. Existing lint checks remain the regression surface for
+cleanup safety.
 
 **Code Organization:**
-Keep the MVP in `Makefile`. Introduce a helper script only if the final recipe becomes difficult to read or maintain.
+Keep the MVP in `Makefile`. Introduce a helper script only if the final recipe becomes difficult to
+read or maintain.
 
 **Development Experience:**
-Contributors run one repo-root command: `make lint-eslint-suppressions`. The target should print file/line matches and a clear failure message when suppressions remain.
+Contributors run one repo-root command: `make lint-eslint-suppressions`. The target should print
+file/line matches and a clear failure message when suppressions remain.
 
 ## Core Architectural Decisions
 
@@ -164,63 +205,82 @@ Contributors run one repo-root command: `make lint-eslint-suppressions`. The tar
 **Deferred Decisions (Post-MVP):**
 
 - CI enforcement: defer until the repository reaches an agreed suppression baseline
-- Aggregate `make lint` wiring: defer until the standalone target proves stable and the suppression baseline is agreed
-- ESLint configuration hardening for future suppressions: defer until inventory and cleanup evidence exists
+- Aggregate `make lint` wiring: defer until the standalone target proves stable and the
+  suppression baseline is agreed
+- ESLint configuration hardening for future suppressions: defer until inventory and cleanup
+  evidence exists
 - Helper script extraction: defer unless the Make recipe becomes difficult to maintain
 
 ### Data Architecture
 
-Not applicable. This change does not introduce persistent data, schema changes, migrations, caching, or runtime data flow.
+Not applicable. This change does not introduce persistent data, schema changes, migrations, caching,
+or runtime data flow.
 
 ### Authentication & Security
 
 No authentication or authorization architecture changes are required.
 
-Security-relevant decision: the scan must avoid dependency folders, build outputs, generated artifacts, reports, planning artifacts, and documentation examples so the command reports repository-owned suppression debt rather than third-party, generated, or example text.
+Security-relevant decision: the scan must avoid dependency folders, build outputs, generated
+artifacts, reports, planning artifacts, and documentation examples so the command reports
+repository-owned suppression debt rather than third-party, generated, or example text.
 
 ### API & Communication Patterns
 
-Not applicable. This change does not introduce API surfaces, network communication, service boundaries, or external integrations.
+Not applicable. This change does not introduce API surfaces, network communication, service
+boundaries, or external integrations.
 
 ### Frontend Architecture
 
 No frontend runtime architecture changes are required.
 
-Suppression cleanup may touch frontend, test, story, or tooling files, but those changes must be local lint-quality fixes rather than component architecture changes.
+Suppression cleanup may touch frontend, test, story, or tooling files, but those changes must be
+local lint-quality fixes rather than component architecture changes.
 
 ### Infrastructure & Deployment
 
 #### Make Target Placement
 
-- **Decision:** Add `lint-eslint-suppressions` directly to `Makefile` near `lint-eslint`, `lint-tsc`, `lint-md`, and `lint`.
-- **Rationale:** The repository already uses Make as the contributor command surface. Keeping the target near related lint commands makes it discoverable and avoids introducing a new tool boundary.
+- **Decision:** Add `lint-eslint-suppressions` directly to `Makefile` near `lint-eslint`,
+  `lint-tsc`, `lint-md`, and `lint`.
+- **Rationale:** The repository already uses Make as the contributor command surface. Keeping the
+  target near related lint commands makes it discoverable and avoids introducing a new tool
+  boundary.
 - **Affects:** `Makefile`
 
 #### Scan Engine
 
 - **Decision:** Use GNU grep-compatible shell commands for MVP detection.
-- **Rationale:** The required behavior is recursive text inventory with file/line output and exclusions. GNU grep provides the required primitives without adding a new runtime dependency. `rg` remains acceptable only if the repository explicitly standardizes it in the execution environment.
+- **Rationale:** The required behavior is recursive text inventory with file/line output and
+  exclusions. GNU grep provides the required primitives without adding a new runtime dependency.
+  `rg` remains acceptable only if the repository explicitly standardizes it in the execution
+  environment.
 - **Affects:** `Makefile`, verification commands
 
 #### Make Variables
 
-- **Decision:** Define the suppression policy through Make variables so implementation and verification can reuse the same values.
+- **Decision:** Define the suppression policy through Make variables so implementation and
+  verification can reuse the same values.
 - **Required variables:**
   - `ESLINT_SUPPRESSION_PATTERN`
   - `ESLINT_SUPPRESSION_SCAN_PATHS`
-- **Rationale:** Named variables make the policy visible, reduce duplicated shell text, and let verification override scan paths for controlled positive and negative cases.
+- **Rationale:** Named variables make the policy visible, reduce duplicated shell text, and let
+  verification override scan paths for controlled positive and negative cases.
 - **Affects:** `Makefile`, verification workflow
 
 #### Directive Matching
 
-- **Decision:** Use one non-overlapping expression that matches only the four required directive tokens: `eslint-disable`, `eslint-disable-next-line`, `eslint-disable-line`, and `eslint-enable`.
+- **Decision:** Use one non-overlapping expression that matches only the four required directive
+  tokens: `eslint-disable`, `eslint-disable-next-line`, `eslint-disable-line`, and
+  `eslint-enable`.
 - **Locked pattern shape:**
 
   ```makefile
   ESLINT_SUPPRESSION_PATTERN = eslint-(disable-next-line|disable-line|disable|enable)([^[:alnum:]_-]|$$)
   ```
 
-- **Rationale:** The PRD requires each directive occurrence to be reported once. Ordering the longer `eslint-disable-*` forms before the broader `eslint-disable` token avoids duplicate or partial matching.
+- **Rationale:** The PRD requires each directive occurrence to be reported once. Ordering the
+  longer `eslint-disable-*` forms before the broader `eslint-disable` token avoids duplicate or
+  partial matching.
 - **Affects:** `lint-eslint-suppressions` recipe
 
 #### Scan Scope
@@ -232,51 +292,69 @@ Suppression cleanup may touch frontend, test, story, or tooling files, but those
   ESLINT_SUPPRESSION_SCAN_PATHS = src tests scripts .eslintrc.js
   ```
 
-- **Required backup exclusions:** `.git`, `node_modules`, `dist`, `coverage`, `test-results`, `playwright-report`, `storybook-static`, `out`, `specs`, `docs`.
-- **Rationale:** The PRD wants source, test, and tooling suppressions, but not documentation examples or generated/vendor noise. An allowlist-first scope gives AI implementers less room to accidentally scan planning documents or generated reports.
+- **Required backup exclusions:** `.git`, `node_modules`, `dist`, `coverage`, `test-results`,
+  `playwright-report`, `storybook-static`, `out`, `specs`, `docs`.
+- **Rationale:** The PRD wants source, test, and tooling suppressions, but not documentation
+  examples or generated/vendor noise. An allowlist-first scope gives AI implementers less room to
+  accidentally scan planning documents or generated reports.
 - **Affects:** `lint-eslint-suppressions` recipe
 
 #### Output Format
 
 - **Decision:** Emit grep-style file/line output: `path:line:matched text`.
 - **Rationale:** This is compact, editor-friendly, and directly usable as a cleanup queue.
-- **Failure message:** Include a short final message explaining that ESLint suppression directives remain.
+- **Failure message:** Include a short final message explaining that ESLint suppression directives
+  remain.
 - **Success message:** Print a short success message when no suppressions are found.
 - **Affects:** developer UX, review workflow
 
 #### Exit-Code Behavior
 
-- **Decision:** Exit non-zero when any suppression directive is found; exit zero when none are found.
-- **Rationale:** This is the core contract that lets contributors and maintainers use the target as an enforcement-ready signal.
+- **Decision:** Exit non-zero when any suppression directive is found; exit zero when none are
+  found.
+- **Rationale:** This is the core contract that lets contributors and maintainers use the target
+  as an enforcement-ready signal.
 - **Affects:** local workflow, future aggregate lint/CI wiring
 
 #### Lint Workflow Placement
 
 - **Decision:** Keep `lint-eslint-suppressions` standalone for the initial implementation.
-- **Rationale:** Current inventory shows existing suppressions across source, scripts, and tests. Wiring the target into aggregate `make lint` before cleanup/baseline agreement would make the normal lint workflow fail immediately and reduce adoption. The target should create visible cleanup pressure first; enforcement through `make lint` or CI is a later baseline decision.
+- **Rationale:** Current inventory shows existing suppressions across source, scripts, and tests.
+  Wiring the target into aggregate `make lint` before cleanup/baseline agreement would make the
+  normal lint workflow fail immediately and reduce adoption. The target should create visible
+  cleanup pressure first; enforcement through `make lint` or CI is a later baseline decision.
 - **Affects:** `Makefile`, future CI policy
 
 #### Cleanup Baseline
 
-- **Decision:** Run the target before cleanup and after cleanup. If zero suppressions is not achieved, record the remaining count and rationale as an explicit baseline decision.
-- **Rationale:** Remaining suppressions should be visible policy debt, not hidden implementation residue.
+- **Decision:** Run the target before cleanup and after cleanup. If zero suppressions is not
+  achieved, record the remaining count and rationale as an explicit baseline decision.
+- **Rationale:** Remaining suppressions should be visible policy debt, not hidden implementation
+  residue.
 - **Affects:** implementation notes, review handoff
 
 #### Verification Strategy
 
-- **Decision:** Verify the target with controlled positive and negative cases plus real repository execution.
-- **Positive case:** Override `ESLINT_SUPPRESSION_SCAN_PATHS` to scan a controlled fixture containing all four directives and prove each is detected.
-- **Negative case:** Override `ESLINT_SUPPRESSION_SCAN_PATHS` to scan a controlled fixture with no directives and prove the target exits zero.
-- **Repository case:** Run the target against the real repo and confirm the output/exit behavior matches remaining suppressions.
+- **Decision:** Verify the target with controlled positive and negative cases plus real repository
+  execution.
+- **Positive case:** Override `ESLINT_SUPPRESSION_SCAN_PATHS` to scan a controlled fixture
+  containing all four directives and prove each is detected.
+- **Negative case:** Override `ESLINT_SUPPRESSION_SCAN_PATHS` to scan a controlled fixture with no
+  directives and prove the target exits zero.
+- **Repository case:** Run the target against the real repo and confirm the output/exit behavior
+  matches remaining suppressions.
 - **Regression case:** Run relevant existing lint checks after suppression cleanup.
-- **Rationale:** Testing only against the current repository cannot prove the no-match path while suppressions remain. Overrideable scan paths give implementation agents a deterministic way to validate both exit-code branches.
+- **Rationale:** Testing only against the current repository cannot prove the no-match path while
+  suppressions remain. Overrideable scan paths give implementation agents a deterministic way to
+  validate both exit-code branches.
 - **Affects:** implementation validation
 
 ### Decision Impact Analysis
 
 **Implementation Sequence:**
 
-1. Add `ESLINT_SUPPRESSION_PATTERN`, `ESLINT_SUPPRESSION_SCAN_PATHS`, and `lint-eslint-suppressions` near existing lint targets in `Makefile`.
+1. Add `ESLINT_SUPPRESSION_PATTERN`, `ESLINT_SUPPRESSION_SCAN_PATHS`, and
+   `lint-eslint-suppressions` near existing lint targets in `Makefile`.
 2. Implement duplicate-free directive matching using the locked pattern shape.
 3. Implement allowlist-first scan scope with backup exclusions.
 4. Keep the target standalone; do not add it to aggregate `lint` during MVP.
@@ -291,7 +369,8 @@ Suppression cleanup may touch frontend, test, story, or tooling files, but those
 
 - Future aggregate `make lint` wiring depends on suppression baseline status.
 - Future CI enforcement depends on the standalone target being stable and not noisy.
-- Cleanup changes depend on existing ESLint behavior and should not be replaced by blind comment deletion.
+- Cleanup changes depend on existing ESLint behavior and should not be replaced by blind comment
+  deletion.
 - Scan-scope changes affect review/governance usefulness and must remain explicit.
 - Verification depends on scan paths being overrideable from Make invocation.
 
@@ -325,7 +404,8 @@ Not applicable. No API changes are part of this architecture.
 - Pattern variable MUST be `ESLINT_SUPPRESSION_PATTERN`.
 - Scan path variable MUST be `ESLINT_SUPPRESSION_SCAN_PATHS`.
 - If a grep argument variable is introduced, it MUST be named `ESLINT_SUPPRESSION_GREP_ARGS`.
-- Do not introduce alternate names such as `lint-no-eslint-disable`, `NO_ESLINT_PATTERN`, or `SUPPRESSION_PATHS`.
+- Do not introduce alternate names such as `lint-no-eslint-disable`, `NO_ESLINT_PATTERN`, or
+  `SUPPRESSION_PATHS`.
 
 ### Structure Patterns
 
@@ -340,8 +420,10 @@ Not applicable. No API changes are part of this architecture.
 **File Structure Patterns:**
 
 - No new committed source file is required for MVP.
-- Temporary verification fixtures should be created outside committed source paths or in an ignored temporary path.
-- Do not place verification fixtures under `src`, `tests`, `docs`, or `specs` as permanent files unless a later test strategy explicitly requires it.
+- Temporary verification fixtures should be created outside committed source paths or in an
+  ignored temporary path.
+- Do not place verification fixtures under `src`, `tests`, `docs`, or `specs` as permanent files
+  unless a later test strategy explicitly requires it.
 
 ### Format Patterns
 
@@ -354,8 +436,10 @@ Not applicable. No data exchange formats are introduced.
 **Command Output Format:**
 
 - Match output MUST use grep-style file/line format: `path:line:matched text`.
-- Success output MUST be a short explicit message, for example: `No ESLint suppression directives found.`
-- Failure output MUST include a short explicit message after matches, for example: `ESLint suppression directives remain. Remove them or document the accepted baseline.`
+- Success output MUST be a short explicit message, for example: `No ESLint suppression directives
+  found.`
+- Failure output MUST include a short explicit message after matches, for example: `ESLint
+  suppression directives remain. Remove them or document the accepted baseline.`
 - Do not output JSON, Markdown tables, or custom multi-column formats for MVP.
 
 ### Communication Patterns
@@ -380,8 +464,10 @@ Not applicable. No UI loading state changes are part of this architecture.
 
 **Verification Patterns:**
 
-- Positive verification MUST override `ESLINT_SUPPRESSION_SCAN_PATHS` to point at a controlled fixture containing all four directive forms.
-- Negative verification MUST override `ESLINT_SUPPRESSION_SCAN_PATHS` to point at a controlled fixture containing no directive forms.
+- Positive verification MUST override `ESLINT_SUPPRESSION_SCAN_PATHS` to point at a controlled
+  fixture containing all four directive forms.
+- Negative verification MUST override `ESLINT_SUPPRESSION_SCAN_PATHS` to point at a controlled
+  fixture containing no directive forms.
 - Repository verification MUST run the default target against the real scan scope.
 - If cleanup changes are made, relevant existing lint checks MUST be run afterward.
 
@@ -406,7 +492,8 @@ Not applicable. No UI loading state changes are part of this architecture.
 - Run controlled positive and negative verification cases.
 - Run the target against the real repository.
 - Record before/after suppression counts during cleanup.
-- Do not wire the target into `make lint` unless a later baseline decision changes this architecture.
+- Do not wire the target into `make lint` unless a later baseline decision changes this
+  architecture.
 
 ### Pattern Examples
 
@@ -417,7 +504,7 @@ ESLINT_SUPPRESSION_PATTERN = eslint-(disable-next-line|disable-line|disable|enab
 ESLINT_SUPPRESSION_SCAN_PATHS = src tests scripts .eslintrc.js
 
 lint-eslint-suppressions: ## Report ESLint suppression directives
-	@...
+    @...
 ```
 
 ```bash
@@ -443,8 +530,8 @@ Target-state repository delta for this architecture:
 
 ```text
 crm/
-├── Makefile                         # Modified: add suppression scan variables and lint-eslint-suppressions target
-├── .eslintrc.js                     # In scan scope; may be modified only if cleanup requires lint-config fixes
+├── Makefile                         # Modified: add suppression scan target and variables
+├── .eslintrc.js                     # In scan scope; modify only for lint-config fixes
 ├── scripts/                         # In scan scope for repository tooling suppressions
 │   └── cloudfront_routing.js        # Existing known suppression location
 ├── src/                             # In scan scope for source/story suppressions
@@ -467,10 +554,13 @@ No new runtime directory, package, CI workflow, or helper script is required for
 Not applicable. No API boundary changes are introduced.
 
 **Component Boundaries:**
-The target may reveal suppressions in React components and stories, but cleanup must stay local to the lint issue being fixed. This architecture does not authorize component redesign, state-management migration, or UI behavior changes.
+The target may reveal suppressions in React components and stories, but cleanup must stay local to
+the lint issue being fixed. This architecture does not authorize component redesign,
+state-management migration, or UI behavior changes.
 
 **Service Boundaries:**
-The target may reveal suppressions in services such as error handling, but cleanup must preserve service behavior and existing public contracts.
+The target may reveal suppressions in services such as error handling, but cleanup must preserve
+service behavior and existing public contracts.
 
 **Data Boundaries:**
 Not applicable. No data access, storage, schema, cache, or persistence boundaries are introduced.
@@ -487,7 +577,8 @@ Not applicable. No data access, storage, schema, cache, or persistence boundarie
 **Suppression Inventory (FR1-FR8):**
 
 - Lives in `Makefile`
-- Implemented by `ESLINT_SUPPRESSION_PATTERN`, `ESLINT_SUPPRESSION_SCAN_PATHS`, optional `ESLINT_SUPPRESSION_GREP_ARGS`, and `lint-eslint-suppressions`
+- Implemented by `ESLINT_SUPPRESSION_PATTERN`, `ESLINT_SUPPRESSION_SCAN_PATHS`, optional
+  `ESLINT_SUPPRESSION_GREP_ARGS`, and `lint-eslint-suppressions`
 
 **Command Outcome Signaling (FR9-FR12):**
 
@@ -497,7 +588,8 @@ Not applicable. No data access, storage, schema, cache, or persistence boundarie
 **Cleanup Workflow (FR13-FR17):**
 
 - Lives across existing affected files in `src`, `tests`, `scripts`, and possibly `.eslintrc.js`
-- Cleanup changes must fix underlying lint issues or lint configuration rather than blindly deleting comments
+- Cleanup changes must fix underlying lint issues or lint configuration rather than blindly
+  deleting comments
 
 **Lint Workflow Placement (FR18-FR20):**
 
@@ -518,7 +610,8 @@ Not applicable. No data access, storage, schema, cache, or persistence boundarie
 ### Integration Points
 
 **Internal Communication:**
-No runtime internal communication is introduced. The only internal integration is Make target composition. During MVP, `lint-eslint-suppressions` is directly invokable and not wired into `lint`.
+No runtime internal communication is introduced. The only internal integration is Make target
+composition. During MVP, `lint-eslint-suppressions` is directly invokable and not wired into `lint`.
 
 **External Integrations:**
 No external services or third-party APIs are introduced.
@@ -540,7 +633,8 @@ make lint-eslint-suppressions
 **Configuration Files:**
 
 - `Makefile`: owns command implementation and scan policy variables.
-- `.eslintrc.js`: remains ordinary ESLint configuration; modify only when a suppression can be safely removed by lint-config correction.
+- `.eslintrc.js`: remains ordinary ESLint configuration; modify only when a suppression can be
+  safely removed by lint-config correction.
 
 **Source Organization:**
 
@@ -550,7 +644,8 @@ make lint-eslint-suppressions
 **Test Organization:**
 
 - Existing `tests` layout remains unchanged.
-- Temporary controlled verification fixtures should not become permanent test files unless a later story explicitly adds automated tests for the Make target.
+- Temporary controlled verification fixtures should not become permanent test files unless a later
+  story explicitly adds automated tests for the Make target.
 
 **Asset Organization:**
 Not applicable. No asset changes are part of this architecture.
@@ -577,30 +672,45 @@ No deployment changes are required.
 ### Coherence Validation ✅
 
 **Decision Compatibility:**
-All decisions form a coherent repository-tooling architecture. The Makefile-first foundation aligns with the PRD's required public interface, the standalone MVP placement aligns with the current known suppression inventory, and the allowlist-first scan scope prevents documentation/planning examples from polluting real suppression results.
+All decisions form a coherent repository-tooling architecture. The Makefile-first foundation aligns
+with the PRD's required public interface, the standalone MVP placement aligns with the current known
+suppression inventory, and the allowlist-first scan scope prevents documentation/planning examples
+from polluting real suppression results.
 
-GNU grep-compatible matching works with the chosen output and exit-code contract. The overrideable `ESLINT_SUPPRESSION_SCAN_PATHS` variable supports both production scanning and deterministic verification fixtures.
+GNU grep-compatible matching works with the chosen output and exit-code contract. The overrideable
+`ESLINT_SUPPRESSION_SCAN_PATHS` variable supports both production scanning and deterministic
+verification fixtures.
 
 **Pattern Consistency:**
-The implementation patterns support the core decisions directly. Naming is locked through `lint-eslint-suppressions`, `ESLINT_SUPPRESSION_PATTERN`, and `ESLINT_SUPPRESSION_SCAN_PATHS`. Output, scan scope, and exit-code behavior are specified enough to prevent agent drift.
+The implementation patterns support the core decisions directly. Naming is locked through
+`lint-eslint-suppressions`, `ESLINT_SUPPRESSION_PATTERN`, and `ESLINT_SUPPRESSION_SCAN_PATHS`.
+Output, scan scope, and exit-code behavior are specified enough to prevent agent drift.
 
 **Structure Alignment:**
-The target-state structure is intentionally small and matches the brownfield scope. `Makefile` owns the command, existing `src`, `tests`, and `scripts` files are scan targets and cleanup surfaces, and no new runtime package, helper script, CI workflow, or source directory is required for MVP.
+The target-state structure is intentionally small and matches the brownfield scope. `Makefile` owns
+the command, existing `src`, `tests`, and `scripts` files are scan targets and cleanup surfaces, and
+no new runtime package, helper script, CI workflow, or source directory is required for MVP.
 
 ### Requirements Coverage Validation ✅
 
 **Epic/Feature Coverage:**
-No epics were loaded for this PRD. Feature coverage is mapped through the PRD's functional requirement categories.
+No epics were loaded for this PRD. Feature coverage is mapped through the PRD's functional
+requirement categories.
 
 **Functional Requirements Coverage:**
 All 27 functional requirements are architecturally supported:
 
-- FR1-FR8 suppression inventory: covered by Make target, pattern variable, scan paths, and output format.
-- FR9-FR12 command outcome signaling: covered by explicit grep exit-code handling and success/failure messages.
-- FR13-FR17 cleanup workflow: covered by before/after inventory, behavior-preserving cleanup boundaries, and baseline recording.
-- FR18-FR20 lint workflow placement: covered by standalone MVP placement and future aggregate-lint decision point.
+- FR1-FR8 suppression inventory: covered by Make target, pattern variable, scan paths, and output
+  format.
+- FR9-FR12 command outcome signaling: covered by explicit grep exit-code handling and
+  success/failure messages.
+- FR13-FR17 cleanup workflow: covered by before/after inventory, behavior-preserving cleanup
+  boundaries, and baseline recording.
+- FR18-FR20 lint workflow placement: covered by standalone MVP placement and future aggregate-lint
+  decision point.
 - FR21-FR23 review/governance support: covered by grep-style file/line output and baseline evidence.
-- FR24-FR27 verification support: covered by controlled positive/negative fixture strategy, repository execution, and existing lint regression checks.
+- FR24-FR27 verification support: covered by controlled positive/negative fixture strategy,
+  repository execution, and existing lint regression checks.
 
 **Non-Functional Requirements Coverage:**
 All 15 NFRs are addressed:
@@ -609,18 +719,22 @@ All 15 NFRs are addressed:
 - Maintainability: Makefile-local implementation with named variables and no new dependency.
 - Portability: GNU grep-compatible approach using existing repository assumptions.
 - Usability: grep-style file/line output and clear success/failure messages.
-- Verification quality: controlled fixture strategy proves all directive variants and both exit-code paths.
+- Verification quality: controlled fixture strategy proves all directive variants and both
+  exit-code paths.
 
 ### Implementation Readiness Validation ✅
 
 **Decision Completeness:**
-All implementation-blocking decisions are documented: target placement, scan engine, variables, pattern, scan scope, output, exit behavior, workflow placement, cleanup baseline, and verification.
+All implementation-blocking decisions are documented: target placement, scan engine, variables,
+pattern, scan scope, output, exit behavior, workflow placement, cleanup baseline, and verification.
 
 **Structure Completeness:**
-The structure is complete for the selected scope. The architecture intentionally defines a change delta rather than a new project tree because this is a brownfield Makefile tooling enhancement.
+The structure is complete for the selected scope. The architecture intentionally defines a change
+delta rather than a new project tree because this is a brownfield Makefile tooling enhancement.
 
 **Pattern Completeness:**
-Potential agent conflict points are covered: variable names, target placement, scan paths, grep behavior, output format, verification fixtures, and lint wiring.
+Potential agent conflict points are covered: variable names, target placement, scan paths, grep
+behavior, output format, verification fixtures, and lint wiring.
 
 ### Gap Analysis Results
 
@@ -629,7 +743,9 @@ None.
 
 **Important Gaps:**
 
-- `.eslintrc.js` is included as tooling configuration scope, but current known suppressions are in `scripts`, `src`, and `tests`. Implementers should not assume `.eslintrc.js` currently contains a suppression; it is included to keep root ESLint tooling policy visible if one appears there.
+- `.eslintrc.js` is included as tooling configuration scope, but current known suppressions are in
+  `scripts`, `src`, and `tests`. Implementers should not assume `.eslintrc.js` currently contains
+  a suppression; it is included to keep root ESLint tooling policy visible if one appears there.
 
 **Nice-to-Have Gaps:**
 
@@ -639,7 +755,9 @@ None.
 
 ### Validation Issues Addressed
 
-The only validation refinement is scan-scope wording: `.eslintrc.js` is part of the tooling configuration scan scope, not a known suppression location. Known current suppression locations are `scripts`, `src`, and `tests`.
+The only validation refinement is scan-scope wording: `.eslintrc.js` is part of the tooling
+configuration scan scope, not a known suppression location. Known current suppression locations are
+`scripts`, `src`, and `tests`.
 
 ### Architecture Completeness Checklist
 
@@ -675,7 +793,9 @@ The only validation refinement is scan-scope wording: `.eslintrc.js` is part of 
 
 **Overall Status:** READY FOR IMPLEMENTATION
 
-**Confidence Level:** High, because the change is narrow, the Makefile boundary is clear, and the highest-risk behaviors are explicitly locked: scan scope, duplicate-free matching, and exit-code semantics.
+**Confidence Level:** High, because the change is narrow, the Makefile boundary is clear, and the
+highest-risk behaviors are explicitly locked: scan scope, duplicate-free matching, and exit-code
+semantics.
 
 **Key Strengths:**
 
@@ -705,4 +825,6 @@ The only validation refinement is scan-scope wording: `.eslintrc.js` is part of 
 - Record before/after suppression counts during cleanup.
 
 **First Implementation Priority:**
-Add `ESLINT_SUPPRESSION_PATTERN`, `ESLINT_SUPPRESSION_SCAN_PATHS`, optional grep args, and `lint-eslint-suppressions` to `Makefile` near existing lint targets. Verify the target with controlled positive and negative scan paths before cleanup work.
+Add `ESLINT_SUPPRESSION_PATTERN`, `ESLINT_SUPPRESSION_SCAN_PATHS`, optional grep args, and
+`lint-eslint-suppressions` to `Makefile` near existing lint targets. Verify the target with
+controlled positive and negative scan paths before cleanup work.
