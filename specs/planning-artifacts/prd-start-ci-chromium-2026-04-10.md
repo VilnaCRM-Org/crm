@@ -86,17 +86,16 @@ addressed in this PRD.
 - `make start` brings up both `dev` and `mockoon` services with health/readiness checks for each
   before returning. Mockoon readiness check method (HTTP health endpoint or TCP port probe) to be
   determined based on Mockoon's capabilities
-- CRM target naming maps to the org-wide pattern as follows: `make ci-pr` is the non-mutation PR
-  battery, `make ci` is the full suite including `test-mutation`, and `make test` is the faster
-  non-mutation developer battery. For this PRD's MVP, the implemented workflow keeps the current
-  diff terminology and wires GitHub Actions to `make ci` for lint-eslint, lint-tsc, lint-md,
-  test-unit-client, and test-unit-server only; implementation must reconcile this with the org-wide
-  naming before enabling `test-mutation` in the full-suite `make ci` path.
+- **MVP (now):** `make ci` is the canonical non-mutation PR/local CI battery. It runs
+  lint-eslint, lint-tsc, lint-md, test-unit-client, and test-unit-server, and GitHub Actions calls
+  this exact target.
+- **Target state (later):** keep `make ci` as the PR/local CI contract, add `make ci-full` for the
+  broader suite that includes `test-integration` and `test-mutation`, and keep `make test` as the
+  faster developer test battery.
 - `make ci` runs the MVP CI checks (lint-eslint, lint-tsc, lint-md, test-unit-client,
   test-unit-server) in phased parallel execution and exits non-zero if any check fails. Integration
   tests (`test-integration`) and mutation tests (`test-mutation`) are **out of scope** for MVP —
-  they can be added post-MVP once `make ci` is stable and naming is reconciled with `make ci-pr`
-  and `make test`
+  they can be added post-MVP via a distinct `make ci-full` target once `make ci` is stable
 - `make ci` is the single source of truth for CI — GitHub Actions calls `make ci` directly,
   eliminating drift between local and CI check lists
 - Chromium presence is determined once per Lighthouse flow, not once per Lighthouse target —
@@ -109,8 +108,8 @@ addressed in this PRD.
 
 - `make start` → both services healthy in <5 minutes on a warm Docker cache. Cold-cache time (first
   clone) is not targeted but should be documented after implementation for contributor guidance
-- `make ci` → all checks complete, total wall-clock time limited by the slowest parallel job (not
-  the sum of all jobs)
+- `make ci` → all MVP checks complete; each parallel phase is limited by its slowest check rather
+  than the sum of all checks in that phase
 - Lighthouse flow → zero redundant `ensure-chromium` invocations per run
 
 ## User Journeys
@@ -148,10 +147,9 @@ She wants confidence before she pushes.
 **Opening Scene:** Maria finishes a feature branch. She's changed TypeScript files, added a
 component, and updated some markdown docs. Before pushing, she runs `make ci`.
 
-**Rising Action:** `make ci` kicks off all checks in parallel — ESLint, TypeScript compiler,
-markdown lint, unit tests (client and server). Maria sees parallel output indicating all jobs are
-running. The slowest job (unit tests) takes ~45 seconds. Total wall-clock time equals the slowest
-job, not the sum.
+**Rising Action:** `make ci` starts the environment, then runs lint checks in parallel, then unit
+tests (client and server) in parallel. Maria sees grouped output for each phase. Total wall-clock
+time is bounded by the slowest parallel phase, not the sum of every individual check.
 
 **Climax:** All checks pass. Maria pushes with confidence. GitHub Actions runs the same `make ci` —
 identical checks, identical result. No surprises.
@@ -159,8 +157,8 @@ identical checks, identical result. No surprises.
 **Resolution:** Maria's PR passes CI on the first attempt. No wasted review cycles, no "CI is red,
 fixing..." follow-up commits.
 
-**Reveals requirements for:** `make ci` target, parallel execution, fail-fast behavior, identical
-check list between local and CI.
+**Reveals requirements for:** `make ci` target, parallel execution, full-phase completion before
+failure reporting, identical check list between local and CI.
 
 ---
 
@@ -174,8 +172,8 @@ check list between local and CI.
 separate, hand-maintained list of checks in the YAML file. The Makefile is the single source of
 truth.
 
-**Climax:** A lint check fails. `make ci` exits non-zero immediately. The GitHub Actions job reports
-failure with clear output showing which check failed and why.
+**Climax:** A lint check fails. `make ci` lets the current lint phase finish, then exits non-zero.
+The GitHub Actions job reports failure with clear output showing which checks failed and why.
 
 **Resolution:** The developer sees the failure, runs `make ci` locally, reproduces it instantly,
 fixes it, and pushes again. The feedback loop is tight because local and CI are identical.
@@ -214,7 +212,8 @@ detection, consistent behavior across image variants.
 - **Journey 1 / MVP:** Mockoon in `start` target.
 - **Journey 1 / MVP:** Mockoon health/readiness check.
 - **Journey 2, 3 / MVP:** `make ci` parallel execution.
-- **Journey 2, 3 / MVP:** `make ci` fail-fast with clear output.
+- **Journey 2, 3 / MVP:** `make ci` completes each active phase before reporting failure, with
+  clear output.
 - **Journey 2, 3 / MVP:** Composable MVP CI sub-targets (`ci-setup`, `ci-lint`, `ci-test`).
 - **Journey 3 / MVP:** GitHub Actions calls `make ci` as the single source of truth.
 - **Journey 4 / MVP:** Single `ensure-chromium` per Lighthouse flow.
@@ -315,7 +314,7 @@ targets unchanged, and document the CI-specific/local split in Makefile comments
 
 ### Post-MVP Features (Phase 2)
 
-- Add `test-integration` to `make ci`
+- Add `test-integration` to `make ci-full`
 - Configurable `CI_TARGETS` env var for running subsets locally
 - `ci-sequential` fallback target (following user-service pattern)
 - Unified health-check utility across all wait targets
@@ -362,7 +361,7 @@ targets unchanged, and document the CI-specific/local split in Makefile comments
 
 ### CI Check Execution
 
-- FR7: Developer can run all CI checks locally with a single `make ci` command
+- FR7: Developer can run all MVP CI checks locally with a single `make ci` command
 - FR8: `make ci` can produce consistent, correct results regardless of whether the development
   environment is already running or not
 - FR9: `make ci` can reuse an already-running development environment without restarting services
@@ -404,8 +403,8 @@ targets unchanged, and document the CI-specific/local split in Makefile comments
 ### Performance
 
 - NFR1: `make start` completes with both services healthy in under 5 minutes on a warm Docker cache
-- NFR2: `make ci` total wall-clock time is bounded by the slowest parallel phase, not the sum of all
-  checks
+- NFR2: `make ci` uses sequential setup, lint, and test phases; each parallel check phase is bounded
+  by its slowest check, not the sum of all checks in that phase
 - NFR3: No Chromium package installation step executes when Chromium is already present in the
   container — only the presence check runs
 

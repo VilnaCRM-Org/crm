@@ -20,9 +20,9 @@ work through each architectural decision together._
 
 ### Requirements Overview
 
-**Functional Requirements:** 20 FRs across five capability areas: development environment setup
+**Functional Requirements:** 22 FRs across five capability areas: development environment setup
 (FR1–FR6), CI check execution (FR7–FR12), CI pipeline integration (FR13–FR14), performance test
-efficiency (FR15–FR17), and documentation (FR18–FR20). The scope is confined to Makefile targets,
+efficiency (FR15–FR17), and documentation (FR18–FR22). The scope is confined to Makefile targets,
 Docker Compose files, and GitHub Actions workflows — no application code is modified.
 Architecturally this is a repository workflow initiative: three targeted fixes that restore the
 implicit contract that a Make target does exactly what its name says, completely and reliably.
@@ -232,10 +232,12 @@ from standalone developer-facing targets.
 **Phase structure:**
 
 ```makefile
-# Phases run sequentially by default (left-to-right prerequisite order).
-# Do NOT add -j here — lint and test phases must start after setup completes,
-# and test phase requires lint to have finished to surface all failures cleanly.
-ci: ci-setup ci-lint ci-test
+# Phases run sequentially by recipe order. Do NOT express these as
+# prerequisites; GNU Make may run prerequisites in parallel under -j.
+ci:
+    $(MAKE) ci-setup
+    $(MAKE) ci-lint
+    $(MAKE) ci-test
 
 ci-setup:
 ifeq ($(CI),1)
@@ -539,8 +541,9 @@ ci-test-unit-client:
   `PROD_PORT`.
 - Do not use shell syntax like `${MOCKOON_PORT:-8080}`. Use `$(MOCKOON_PORT)`
   Make expansion.
-- Do not run top-level `ci: ci-setup ci-lint ci-test` with `-j`. Keep top-level
-  CI phases sequential.
+- Do not express top-level CI phases as `ci: ci-setup ci-lint ci-test`; GNU Make
+  may run prerequisites in parallel under `-j`. Keep top-level CI phases
+  sequential with explicit recipe calls.
 - Do not add services to the wrong compose file. Follow compose file boundary
   rules.
 - Do not use a `wait-on` probe without a timeout. Always pass `--timeout 60000`.
@@ -557,7 +560,7 @@ ci-test-unit-client:
 - **CI pipeline integration (FR13-FR14):** `.github/workflows/ci.yml` and
   `Makefile`.
 - **Performance test efficiency (FR15-FR17):** `Makefile`.
-- **Documentation (FR18-FR20):** `README.md` and new `CONTRIBUTING.md`.
+- **Documentation (FR18-FR22):** `README.md` and new `CONTRIBUTING.md`.
 
 ---
 
@@ -574,7 +577,7 @@ crm/
 │   │   ├── MODIFY: start-prod          (add dev compose + explicit services)
 │   │   └── ADD: wait-for-mockoon       (TCP probe via wait-on)
 │   ├── CI section (NEW)
-│   │   ├── ADD: ci                     (phase orchestrator: ci-setup ci-lint ci-test)
+│   │   ├── ADD: ci                     (sequential recipe calls: ci-setup, ci-lint, ci-test)
 │   │   ├── ADD: ci-setup               (env bring-up with CI=1 conditional)
 │   │   ├── ADD: ci-lint                (parallel: lint-eslint lint-tsc lint-md)
 │   │   ├── ADD: ci-test                (parallel: ci-test-unit-client ci-test-unit-server)
@@ -717,7 +720,7 @@ endif
 
 ### Requirements Coverage Validation ✅
 
-All 20 functional requirements and 13 non-functional requirements are architecturally supported. See
+All 22 functional requirements and 13 non-functional requirements are architecturally supported. See
 Decision Impact Analysis and File Change Map for requirement-to-implementation traceability.
 
 ### Implementation Readiness Validation ✅
@@ -762,7 +765,7 @@ table provides explicit no-go list for implementation agents.
 
 #### Requirements Analysis
 
-- [x] Project context thoroughly analyzed (20 FRs, 13 NFRs across 5 categories)
+- [x] Project context thoroughly analyzed (22 FRs, 13 NFRs across 5 categories)
 - [x] Scale and complexity assessed (Low — brownfield infrastructure tooling)
 - [x] Technical constraints identified (GNU Make 4.0+, Docker Compose topology, DIND)
 - [x] Cross-cutting concerns mapped (6 concerns, all addressed)
