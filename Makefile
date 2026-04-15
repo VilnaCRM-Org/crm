@@ -114,12 +114,22 @@ STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint
 MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
+
+RCA_VERSION                 = 0.0.25
+UNAME_S                     := $(shell uname -s 2>/dev/null || echo unknown)
+WINDOWS_UNAMES              := MINGW MSYS CYGWIN Windows_NT
+ifeq ($(filter $(WINDOWS_UNAMES),$(UNAME_S) $(OS)),)
+RCA_BIN                     = ./bin/rust-code-analysis-cli
+else
+RCA_BIN                     = ./bin/rust-code-analysis-cli.exe
+endif
+
 RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
-.PHONY: clean lint
+.PHONY: clean lint lint-metrics
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -202,7 +212,59 @@ lint-tsc: ## This command executes Typescript linter
 lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
-lint: lint-eslint lint-tsc lint-md ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
+lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
+	@os_name=$$(uname -s 2>/dev/null || echo unknown); \
+	arch_name=$$(uname -m 2>/dev/null || echo unknown); \
+	rca_asset=""; \
+	rca_archive="/tmp/rca-download"; \
+	rca_extract_cmd=""; \
+	case "$$os_name:$$arch_name" in \
+		Linux:x86_64) \
+			rca_asset="rust-code-analysis-linux-cli-x86_64.tar.gz"; \
+			rca_extract_cmd='tar -xz -C ./bin -f '"$$rca_archive"; \
+			;; \
+		MINGW*:x86_64|MSYS*:x86_64|CYGWIN*:x86_64|Windows_NT:x86_64) \
+			rca_asset="rust-code-analysis-win-cli-x86_64.zip"; \
+			rca_extract_cmd='unzip -j -qo '"$$rca_archive"' -d ./bin'; \
+			;; \
+		*) \
+			printf 'ERROR: rust-code-analysis-cli v%s is not supported on %s/%s\n' "$(RCA_VERSION)" "$$os_name" "$$arch_name" >&2; \
+			exit 1; \
+			;; \
+	esac; \
+	installed_version=""; \
+	if [ -x "$(RCA_BIN)" ]; then \
+		installed_version=$$($(RCA_BIN) --version 2>/dev/null | awk '{print $$NF}' || true); \
+	fi; \
+	if [ ! -x "$(RCA_BIN)" ] || [ "$$installed_version" != "$(RCA_VERSION)" ]; then \
+		printf 'Downloading rust-code-analysis-cli v%s...\n' "$(RCA_VERSION)"; \
+		mkdir -p ./bin; \
+		curl -fsSL \
+			"https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/$$rca_asset" \
+			-o "$$rca_archive" \
+			&& sh -c "$$rca_extract_cmd" \
+			&& rm -f "$$rca_archive"; \
+		refreshed_version=""; \
+		if [ -x "$(RCA_BIN)" ]; then \
+			refreshed_version=$$($(RCA_BIN) --version 2>/dev/null | awk '{print $$NF}' || true); \
+		fi; \
+		if [ "$$refreshed_version" != "$(RCA_VERSION)" ]; then \
+			printf 'ERROR: rust-code-analysis-cli install produced version "%s", expected "%s" at %s\n' \
+				"$$refreshed_version" "$(RCA_VERSION)" "$(RCA_BIN)" >&2; \
+			exit 1; \
+		fi; \
+	fi
+	@RCA_BIN="$(RCA_BIN)" \
+	RCA_VERSION="$(RCA_VERSION)" \
+	CC_MAX="20" \
+	COGNITIVE_MAX="24" \
+	NARGS_MAX="5" \
+	NEXITS_MAX="15" \
+	MI_MIN="40" \
+	SLOC_MAX="157" \
+	sh scripts/lint-metrics.sh
+
+lint: lint-eslint lint-tsc lint-md lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, and rust-code-analysis metrics.
 
 husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	$(BUNX) husky install

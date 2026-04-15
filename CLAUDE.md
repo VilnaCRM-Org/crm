@@ -96,10 +96,75 @@ make lint           # Run all linters
 make lint-eslint    # ESLint
 make lint-tsc       # TypeScript
 make lint-md        # Markdown
+make lint-metrics   # rust-code-analysis complexity gate (see below)
 make format         # Prettier
 ```
 
 Git hooks are managed by Husky. Run `make husky` once after cloning.
+
+### Code Metrics (rust-code-analysis)
+
+The repository enforces six complexity metrics on every function and closure
+(including anonymous `<anon>` closures) in `src/` using
+[`scripts/lint-metrics.sh`](scripts/lint-metrics.sh) backed by
+[rust-code-analysis](https://github.com/mozilla/rust-code-analysis) v0.0.25.
+The check runs automatically on every pull request targeting `main` and can be run
+locally before pushing.
+
+**Run locally:**
+
+```bash
+make lint-metrics
+```
+
+No extra setup is needed beyond the standard repository requirements. The binary is
+downloaded automatically to `./bin/` on first run and is gitignored.
+
+**Enforced metrics and thresholds:**
+
+| Metric | Threshold | What it measures |
+|--------|-----------|-----------------|
+| Cyclomatic Complexity (CC) | ≤ 20 | Independent code paths; many branches make testing harder |
+| Cognitive Complexity | ≤ 24 | Control-flow readability, especially nested or non-linear logic |
+| Function Arguments (NArgs) | ≤ 5 | Parameter count; too many usually means too much work |
+| Exit Points (NExits) | ≤ 15 | Return or throw count; many exits make flow harder to follow |
+| Maintainability Index (MI) | ≥ 40 | Composite score from complexity, volume, and size |
+| Source Lines of Code (SLOC) | ≤ 157 | Executable lines; very long functions are harder to test |
+
+**Reading a violation table:**
+
+When `make lint-metrics` finds violations, it prints a table to stdout:
+
+```text
+FILE                               FUNCTION        LINE  METRIC    VALUE  LIMIT
+----------------------------------------------------------------------
+src/services/HttpsClient/foo.ts    processResponse   96  cc         21.0  <=20
+src/modules/User/Bar.tsx           Bar               29  sloc      158.0  <=157
+```
+
+Each row means: in `FILE`, the function `FUNCTION` starting at `LINE` has a `METRIC`
+value of `VALUE`, which exceeds the policy `LIMIT`. Fix the function in the named
+file to bring it within the threshold.
+
+**Common remediation patterns:**
+
+- **CC / Cognitive too high**: extract complex branches into well-named helper functions;
+  replace switch-case chains with lookup maps where possible.
+- **NArgs too high**: group related parameters into a single options object.
+- **NExits too high**: consolidate early returns; consider a single normalised return at
+  the end of the function.
+- **MI too low**: the function is doing too much — split it, add documentation, or simplify
+  the logic.
+- **SLOC too high**: split the function into smaller, single-responsibility helpers.
+
+**Passing Job Summary (CI):**
+
+When all metrics pass on a pull request, the GitHub Actions job writes a summary table
+to the workflow's Job Summary showing the enforced thresholds and confirming all
+functions in `src/` are within policy.
+
+> **IDE / editor integration** is out of scope — use `make lint-metrics` from the
+> terminal as the authoritative check.
 
 ## Architecture
 
@@ -263,3 +328,44 @@ make check-node-version
 ```
 
 Uses `.nvmrc` for version pinning (Node 24).
+
+## BMAD-METHOD Integration
+
+Navigate phases with `/bmalph`. Try `/bmad-help` to discover all commands,
+or run `/bmalph-status` for a quick overview. See `_bmad/COMMANDS.md` for the full
+command reference.
+
+### Phases
+
+| Phase | Focus | Key Commands |
+|-------|-------|-------------|
+| 1. Analysis | Understand the problem | `/create-brief`, `/brainstorm-project`, `/market-research` |
+| 2. Planning | Define the solution | `/create-prd`, `/create-ux` |
+| 3. Solutioning | Design the architecture | `/create-architecture`, epics, readiness review |
+| 4. Implementation | Build it | `/sprint-planning`, `/create-story`, then `/bmalph-implement` |
+
+### Workflow
+
+1. Work through Phases 1-3 using BMAD agents and workflows (interactive, command-driven)
+2. Run `/bmalph-implement` to transition planning artifacts into Ralph format, then start Ralph
+
+### Management Commands
+
+| Command | Description |
+|---------|-------------|
+| `/bmalph-status` | Show current phase, Ralph progress, version info |
+| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop |
+| `/bmalph-upgrade` | Update bundled assets to match current bmalph version |
+| `/bmalph-doctor` | Check project health and report issues |
+
+### Available Agents
+
+| Command | Agent | Role |
+|---------|-------|------|
+| `/analyst` | Analyst | Research, briefs, discovery |
+| `/architect` | Architect | Technical design, architecture |
+| `/pm` | Product Manager | PRDs, epics, stories |
+| `/sm` | Scrum Master | Sprint planning, status, coordination |
+| `/dev` | Developer | Implementation, coding |
+| `/ux-designer` | UX Designer | User experience, wireframes |
+| `/qa` | QA Engineer | Test automation, quality assurance |

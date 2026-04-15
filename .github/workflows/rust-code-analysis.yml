@@ -1,0 +1,27 @@
+name: rust-code-analysis
+
+on:
+  pull_request:
+    branches: ['main']
+
+jobs:
+  rust-code-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read RCA version from Makefile
+        id: read_rca_version
+        run: |
+          rca_version="$(awk -F'= ' '/^RCA_VERSION[[:space:]]*=/{print $2; exit}' Makefile)"
+          echo "rca_version=$rca_version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache rust-code-analysis binary
+        uses: actions/cache@v4
+        with:
+          path: ./bin/rust-code-analysis-cli
+          key: rca-${{ steps.read_rca_version.outputs.rca_version }}-linux-x86_64
+
+      - name: Run lint-metrics
+        run: make lint-metrics

@@ -65,7 +65,10 @@ NFR4: Performance — The check must be operationally acceptable for routine pul
 - Tool: `rust-code-analysis-cli` v0.0.25, downloaded to `./bin/` (gitignored),
   self-installing in `lint-metrics` target if absent.
 - Download URL pattern:
-  `https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz`
+  `https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-linux-cli-x86_64.tar.gz`
+  (actual GitHub release asset name:
+  `rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz` does not exist in
+  v0.0.25)
 - Version pinned via `RCA_VERSION = 0.0.25` in Makefile — single source of truth.
 - Thresholds inline in Makefile: CC max 10, Cognitive Complexity max 15, NArgs max 5,
   NExits max 4, MI min 65, SLOC max 50.
