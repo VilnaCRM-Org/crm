@@ -11,7 +11,7 @@ import {
   useController,
 } from 'react-hook-form';
 
-import theme from './Theme';
+import theme from '@/components/UIFormInputField/Theme';
 
 type CustomTextField<T extends FieldValues> = TextFieldProps & {
   control: Control<T>;
