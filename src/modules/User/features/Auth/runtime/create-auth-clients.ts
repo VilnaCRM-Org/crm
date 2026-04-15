@@ -1,7 +1,4 @@
 import API_ENDPOINTS from '@/config/apiConfig';
-import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
-import type HttpsClient from '@/services/HttpsClient/HttpsClient';
-
 import BaseAPI from '@/modules/User/features/Auth/api/BaseAPI';
 import type { RequestOptions } from '@/modules/User/features/Auth/api/types';
 import type {
@@ -12,6 +9,8 @@ import type {
   LoginUserDto,
   RegisterUserDto,
 } from '@/modules/User/features/Auth/types/Credentials';
+import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
+import type HttpsClient from '@/services/HttpsClient/HttpsClient';
 
 type AuthClients = {
   loginAPI: {

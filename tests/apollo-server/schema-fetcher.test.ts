@@ -595,7 +595,6 @@ describe('schemaFetcher', () => {
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const mockConsoleTransport = jest.fn();
       const mockFileTransport = jest.fn(() => {
-        // eslint-disable-next-line no-throw-literal
         throw 'String error message';
       });
 

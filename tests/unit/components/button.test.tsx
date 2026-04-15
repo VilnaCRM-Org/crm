@@ -2,9 +2,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 import { Button } from '../../../src/components/Button';
 
+function noop(): void {}
+
 describe('Button component', () => {
   it('renders with label', () => {
-    render(<Button label="Click me" variant="primary" onClick={() => {}} />);
+    render(<Button label="Click me" variant="primary" onClick={noop} />);
     expect(screen.getByText('Click me')).toBeInTheDocument();
   });
 

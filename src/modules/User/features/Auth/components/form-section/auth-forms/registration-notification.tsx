@@ -1,12 +1,12 @@
+import { Box, Fade, Typography } from '@mui/material';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.svg';
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/UIButton';
 import UiTypography from '@/components/UITypography';
-import { Box, Fade, Typography } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-
 import styles from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification.styles';
 import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 

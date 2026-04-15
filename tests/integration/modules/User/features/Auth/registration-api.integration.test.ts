@@ -5,7 +5,7 @@ import API_ENDPOINTS from '@/config/apiConfig';
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import { ConflictError } from '@/modules/User/features/Auth/api/ApiErrors';
-import RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
+import RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
 
 import server from '../../../../mocks/server';
 

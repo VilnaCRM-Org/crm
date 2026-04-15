@@ -1,6 +1,6 @@
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
-import { useState } from 'react';
+import { MouseEvent, useCallback, useState } from 'react';
 import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -25,7 +25,10 @@ export default function PasswordField<T extends FieldValues & { password: string
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
 
-  const handleClickShowPassword = (): void => setShowPassword((prev) => !prev);
+  const handleClickShowPassword = useCallback((): void => setShowPassword((prev) => !prev), []);
+  const handleMouseDown = useCallback((e: MouseEvent<HTMLButtonElement>): void => {
+    e.preventDefault();
+  }, []);
 
   const passwordName = 'password' as Path<T>;
   const passwordDefaultValue = '' as PathValue<T, Path<T>>;
@@ -49,7 +52,7 @@ export default function PasswordField<T extends FieldValues & { password: string
           <InputAdornment position="end" sx={styles.endAdornment}>
             <IconButton
               onClick={handleClickShowPassword}
-              onMouseDown={(e) => e.preventDefault()}
+              onMouseDown={handleMouseDown}
               aria-label={showPassword ? t('auth.password.hide') : t('auth.password.show')}
               aria-pressed={showPassword}
               edge="end"

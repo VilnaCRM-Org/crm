@@ -1,10 +1,10 @@
-import UIForm from '@/components/UIForm';
-import useAppDispatch from '@/stores/hooks';
 import type { SerializedError } from '@reduxjs/toolkit';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import useAppDispatch from '@/stores/hooks';
 
+import UIForm from '@/components/UIForm';
 import FormField from '@/modules/User/features/Auth/components/form-section/components/form-field';
 import PasswordField from '@/modules/User/features/Auth/components/form-section/components/password-field';
 import UserOptions from '@/modules/User/features/Auth/components/form-section/components/user-options';
@@ -54,7 +54,7 @@ export default function LoginForm(): JSX.Element {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
-  const handleLogin = async (data: LoginUserDto): Promise<void> => {
+  const handleLogin = useCallback(async (data: LoginUserDto): Promise<void> => {
     setIsSubmitting(true);
     setError('');
 
@@ -66,7 +66,7 @@ export default function LoginForm(): JSX.Element {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [dispatch, t]);
   const validators = createValidators(t);
 
   return (

@@ -1,6 +1,0 @@
-scripts/
-checkNodeVersion.js
-
-out/
-docker/
-playwright-report/

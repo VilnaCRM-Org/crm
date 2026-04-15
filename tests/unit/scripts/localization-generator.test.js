@@ -122,7 +122,7 @@ describe('LocalizationGenerator', () => {
         ],
         'src/modules/feature1': [directoryEntry('somefile.txt', false)],
       };
-      fs.existsSync.mockImplementation((dir) => true);
+      fs.existsSync.mockImplementation(() => true);
       mockReaddirWithStructure(mockDirectoryStructure);
       const result = generator.getFeaturePaths();
       expect(result).toEqual([path.join('src', 'modules', 'i18n')]);
@@ -426,9 +426,8 @@ describe('LocalizationGenerator', () => {
         },
       };
 
-      jest.spyOn(generator, 'getLocalizationFromFolder').mockImplementation((folder) => {
-        return mockLocalizationData[folder] || {};
-      });
+      jest.spyOn(generator, 'getLocalizationFromFolder')
+          .mockImplementation((folder) => mockLocalizationData[folder] || {});
 
       const writeSpy = jest.spyOn(generator, 'writeLocalizationFile').mockImplementation(() => {});
 

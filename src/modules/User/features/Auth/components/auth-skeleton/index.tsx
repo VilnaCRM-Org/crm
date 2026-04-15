@@ -1,12 +1,12 @@
 
-import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
-import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
-import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
-import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import { useTranslation } from 'react-i18next';
 
+import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
+import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
+import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
+import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
 import styles from '@/modules/User/features/Auth/components/auth-skeleton/styles';
 import authFormSectionStyles from '@/modules/User/features/Auth/components/form-section/styles';
 
