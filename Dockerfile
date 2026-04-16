@@ -9,6 +9,7 @@ RUN apk add --no-cache \
     bash=5.2.37-r0 \
     curl=${CURL_VERSION} \
     g++=14.2.0-r4 \
+    jq=1.7.1-r0 \
     make=4.4.1-r2 \
     python3=3.12.13-r0 && \
     if [ "$INSTALL_CHROMIUM" = "true" ]; then \

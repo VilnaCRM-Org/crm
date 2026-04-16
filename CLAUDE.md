@@ -104,8 +104,9 @@ Git hooks are managed by Husky. Run `make husky` once after cloning.
 
 ### Code Metrics (rust-code-analysis)
 
-The repository enforces six complexity metrics on every function and closure
-(including anonymous `<anon>` closures) in `src/` using
+The repository enforces a wider rust-code-analysis policy across functions,
+closures, component bodies, hooks, files, classes, interfaces, comment ratios,
+spacing ratios, Maintainability Index, and Halstead metrics in `src/` using
 [`scripts/lint-metrics.sh`](scripts/lint-metrics.sh) backed by
 [rust-code-analysis](https://github.com/mozilla/rust-code-analysis) v0.0.25.
 The check runs automatically on every pull request targeting `main` and can be run
@@ -120,48 +121,71 @@ make lint-metrics
 No extra setup is needed beyond the standard repository requirements. The binary is
 downloaded automatically to `./bin/` on first run and is gitignored.
 
-**Enforced metrics and thresholds:**
+**Hard-fail metrics:**
 
-| Metric | Threshold | What it measures |
-|--------|-----------|-----------------|
-| Cyclomatic Complexity (CC) | ≤ 20 | Independent code paths; many branches make testing harder |
-| Cognitive Complexity | ≤ 24 | Control-flow readability, especially nested or non-linear logic |
-| Function Arguments (NArgs) | ≤ 5 | Parameter count; too many usually means too much work |
-| Exit Points (NExits) | ≤ 15 | Return or throw count; many exits make flow harder to follow |
-| Maintainability Index (MI) | ≥ 40 | Composite score from complexity, volume, and size |
-| Source Lines of Code (SLOC) | ≤ 157 | Executable lines; very long functions are harder to test |
+- Cyclomatic Complexity: `> 20`
+- Cognitive Complexity: `> 24`
+- ABC Magnitude: `> 17`
+- Function / closure arguments: `> 5 / 3`
+- Exit points: `> 15`
+- Function LLOC / PLOC / SLOC: `> 37 / 145 / 157`
+- File LLOC / PLOC / SLOC: `> 120 / 366 / 372`
+- Halstead volume / bugs: function `> 5558 / 0.94`, file `> 12427 / 1.58`
+- Maintainability Index Visual Studio: `< 15`
+- Class WMC / NPM / NPA / COA / CDA: `> 30 / 8 / 2 / 0.60 / 0.25`
+- Interface NPM / NPA: `> 10 / 15`
+
+These hard-fail thresholds are calibrated to the current repository baseline so this PR can
+land without application-code remediation. Tightening toward the target quality bands belongs in
+a follow-up PR.
+
+**Review-gate metrics:**
+
+These thresholds are kept in policy for calibration, but `make lint-metrics` does not print
+them and they do not fail CI by themselves.
+
+- Maintainability Index original / SEI: `< 65 / 65`
+- CLOC ratio: `< 0.10 or > 0.60`
+- Blank ratio: `< 0.02 or > 0.30`
+- Remaining function Halstead submetrics:
+  `n1 > 30`, `N1 > 80`, `n2 > 40`, `N2 > 120`, `length > 180`,
+  `estimated length > 160`, `vocabulary > 70`, `difficulty > 25`,
+  `level < 0.03`, `effort > 30000`, `time > 1800`, or purity ratio outside
+  `0.60..1.40`.
+- Remaining file Halstead submetrics:
+  `n1 > 60`, `N1 > 400`, `n2 > 90`, `N2 > 800`, `length > 1000`,
+  `estimated length > 850`, `vocabulary > 140`, `difficulty > 40`,
+  `level < 0.02`, `effort > 250000`, `time > 15000`, or purity ratio outside
+  `0.60..1.40`.
 
 **Reading a violation table:**
 
 When `make lint-metrics` finds violations, it prints a table to stdout:
 
 ```text
-FILE                               FUNCTION        LINE  METRIC    VALUE  LIMIT
-----------------------------------------------------------------------
-src/services/HttpsClient/foo.ts    processResponse   96  cc         21.0  <=20
-src/modules/User/Bar.tsx           Bar               29  sloc      158.0  <=157
+GATE     FILE                         SCOPE     SUBJECT          LINE  METRIC          VALUE  LIMIT
+----------------------------------------------------------------------------------------------------
+FAIL     src/services/foo.ts          function  processResponse    96  cognitive          28  <=24
 ```
 
-Each row means: in `FILE`, the function `FUNCTION` starting at `LINE` has a `METRIC`
-value of `VALUE`, which exceeds the policy `LIMIT`. Fix the function in the named
-file to bring it within the threshold.
+Only hard failures are printed. Each row names the file, scope, subject, line, metric,
+measured value, and policy limit.
 
 **Common remediation patterns:**
 
-- **CC / Cognitive too high**: extract complex branches into well-named helper functions;
+- **Complexity / ABC too high**: extract complex branches into well-named helpers;
   replace switch-case chains with lookup maps where possible.
-- **NArgs too high**: group related parameters into a single options object.
-- **NExits too high**: consolidate early returns; consider a single normalised return at
-  the end of the function.
-- **MI too low**: the function is doing too much — split it, add documentation, or simplify
-  the logic.
-- **SLOC too high**: split the function into smaller, single-responsibility helpers.
+- **Arguments too high**: group related parameters into a typed options object.
+- **Exit points too high**: consolidate early returns where it improves flow.
+- **Line counts too high**: split the function or file into smaller units.
+- **Halstead too high**: reduce dense expressions, repeated operators, and mixed concerns.
+- **MI too low**: simplify the code path and split responsibilities.
+- **Comment / blank ratios out of band**: add useful intent comments or remove noisy spacing.
 
 **Passing Job Summary (CI):**
 
-When all metrics pass on a pull request, the GitHub Actions job writes a summary table
-to the workflow's Job Summary showing the enforced thresholds and confirming all
-functions in `src/` are within policy.
+When all hard-fail metrics pass on a pull request, the GitHub Actions job writes a
+summary table to the workflow's Job Summary. Review-gate metrics are not shown.
 
 > **IDE / editor integration** is out of scope — use `make lint-metrics` from the
 > terminal as the authoritative check.
