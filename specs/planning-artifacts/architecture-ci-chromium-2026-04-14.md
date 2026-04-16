@@ -832,8 +832,10 @@ independent changes.
 
 - Follow all architectural decisions exactly as documented — especially the `playwright` service in
   `start-prod`, `create-network` in `ci-setup`, and the `CI=1` conditional
-- Do not remove the top-level `export` directive from the Makefile — it is load-bearing for the
-  `CI=1` conditional
+- Do not remove the top-level `export` directive from the Makefile — it propagates Make variables
+  (including those loaded from `.env*` files) into recipe subprocesses; GNU Make reads `CI` from the
+  environment automatically so `ifeq ($(CI),1)` works regardless, but recipe commands still need
+  `export` to see those variables
 - Update GitHub branch protection rules before retiring old workflows
 - Audit external tool job-name references before retiring `static-testing.yml` and
   `unit-testing.yml`

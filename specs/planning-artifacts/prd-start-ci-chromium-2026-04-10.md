@@ -145,7 +145,7 @@ terminal output showing both services are ready.
 She wants confidence before she pushes.
 
 **Opening Scene:** Maria finishes a feature branch. She's changed TypeScript files, added a
-component, and updated some markdown docs. Before pushing, she runs `make ci`.
+component, and updated some Markdown docs. Before pushing, she runs `make ci`.
 
 **Rising Action:** `make ci` starts the environment, then runs lint checks in parallel, then unit
 tests (client and server) in parallel. Maria sees grouped output for each phase. Total wall-clock
@@ -221,8 +221,8 @@ detection, consistent behavior across image variants.
 
 ## Developer Tooling Requirements
 
-All changes are confined to `Makefile`, Docker Compose files, GitHub Actions workflows, and
-`README.md`. No application code is modified.
+All changes are confined to `Makefile`, Docker Compose files, GitHub Actions workflows, `README.md`,
+and `CONTRIBUTING.md`. No application code is modified.
 
 ### Parallel Execution Model
 
