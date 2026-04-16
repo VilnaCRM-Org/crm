@@ -678,11 +678,13 @@ Make prerequisite. `start-prod` now uses both compose files to bring up `prod` a
 
 No check list in the YAML. The Makefile is the single source of truth.
 
-**`CI=1` relies on top-level `export`:** The Makefile has `export` on line 9, which causes all Make
-variables to be exported as environment variables to sub-processes, and symmetrically makes all
-environment variables visible as Make variables. The `ifeq ($(CI),1)` conditional in `ci-setup`
-depends on this directive being present. It is load-bearing — removing it would silently break the
-CI/local conditional without any error.
+**Top-level `export` and the `CI=1` conditional:** The Makefile has `export` on line 9. GNU Make
+reads environment variables automatically — no `export` directive is needed for `ifeq ($(CI),1)` to
+see the `CI` variable set in the calling shell or GitHub Actions environment. What `export` does is
+cause Make variables (including those loaded from the `-include`d `.env*` files) to be passed down
+as environment variables to recipe subprocesses. Removing `export` would not break the conditional
+itself, but it would stop Make variables from being visible to the shell commands inside recipe
+bodies.
 
 ## Architecture Validation Results
 

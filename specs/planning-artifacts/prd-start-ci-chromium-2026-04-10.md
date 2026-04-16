@@ -398,6 +398,36 @@ targets unchanged, and document the CI-specific/local split in Makefile comments
 - FR22: Developer migration documentation explains how to transition from the old `make start`
   behavior to the new `make start` flow with Mockoon readiness, and how CI now invokes `make ci`.
 
+## Traceability Matrix
+
+The table below maps each functional requirement to its implementing Epic and Story IDs so reviewers
+can verify end-to-end coverage.
+
+| FR | Epic | Stories | Coverage |
+| -- | ---- | ------- | -------- |
+| FR1 | EPIC-1 | 1.2 | Single `make start` starts both services |
+| FR2 | EPIC-1 | 1.1, 1.2 | Mockoon moved, then co-started with frontend |
+| FR3 | EPIC-1 | 1.3 | `wait-for-dev` and `wait-for-mockoon` gate return |
+| FR4 | EPIC-1 | 1.3 | Readiness and waiting messages print per service |
+| FR5 | EPIC-1 | 1.3 | Timeout exits non-zero with failure message |
+| FR6 | EPIC-1 | 1.2 | Frontend and Mockoon ports work after start |
+| FR7 | EPIC-2 | 2.4 | Top-level `make ci` orchestration target |
+| FR8 | EPIC-2 | 2.1, 2.4 | `ci-setup` handles any prior service state |
+| FR9 | EPIC-2 | 2.1 | `--no-recreate` reuses running services locally |
+| FR10 | EPIC-2 | 2.4 | Failing phases propagate non-zero exit |
+| FR11 | EPIC-2 | 2.2, 2.3 | `--output-sync=target` groups per-check output |
+| FR12 | EPIC-2 | 2.1, 2.2, 2.3 | `ci-setup`, `ci-lint`, `ci-test` are runnable |
+| FR13 | EPIC-3 | 3.1 | GitHub Actions delegates to `make ci` |
+| FR14 | EPIC-2 | 2.1, 2.4 | Local and GitHub Actions use the same code path |
+| FR15 | EPIC-4 | 4.1 | `lighthouse-setup` runs at most once per Make |
+| FR16 | EPIC-4 | 4.2 | Desktop and mobile depend on `lighthouse-setup` |
+| FR17 | EPIC-4 | 4.1 | Chromium detection handles both image variants |
+| FR18 | EPIC-5 | 5.1 | README documents `make start` and health checks |
+| FR19 | EPIC-5 | 5.2 | Docs link `make ci` to GitHub Actions |
+| FR20 | EPIC-5 | 5.3 | `make help` exposes new and changed targets |
+| FR21 | EPIC-5 | 5.1, 5.2, 5.3 | README and docs cover start, ci, and help |
+| FR22 | EPIC-5 | 5.4 | CONTRIBUTING covers start and CI migration |
+
 ## Non-Functional Requirements
 
 ### Performance
