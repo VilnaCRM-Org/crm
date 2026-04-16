@@ -1,12 +1,13 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this
+repository.
 
 ## Project Overview
 
 Modern SPA template based on React, featuring extensive CI checks, configured testing tools
-(Playwright, Jest), and a modular architecture inspired by bulletproof-react.
-This template is used for all VilnaCRM microservices.
+(Playwright, Jest), and a modular architecture inspired by bulletproof-react. This template is used
+for all VilnaCRM microservices.
 
 ## Tech Stack
 
@@ -17,8 +18,8 @@ This template is used for all VilnaCRM microservices.
 - **i18n**: react-i18next (main language: uk, fallback: en)
 - **Build**: RSBuild (Rspack-based bundler, configured via `rsbuild.config.ts`)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
-- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
-  Bun is used only to manage dependencies using `bun.lock`.
+- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime; Bun is used
+  only to manage dependencies using `bun.lock`.
 - **Node**: >=24.8.0 (enforced via engineStrict)
 
 ## Development Environment
@@ -71,9 +72,8 @@ make test-visual-ui        # Visual tests with UI
 make test-visual-update    # Update visual snapshots
 ```
 
-**Important**: E2E tests use Mockoon to mock API responses.
-The mock server automatically starts via docker-compose.test.yml and serves
-the OpenAPI spec from user-service repository on port 8080.
+**Important**: E2E tests use Mockoon to mock API responses. The mock server automatically starts via
+docker-compose.test.yml and serves the OpenAPI spec from user-service repository on port 8080.
 
 ### Performance Tests
 
@@ -242,7 +242,8 @@ Key variables in `.env`:
    - `ValidationError`, `AuthenticationError`, `ConflictError`
    - Check with `isAPIError()` helper
 
-2. **Form Validation**: Centralized in module features (e.g., `Auth/components/FormSection/Validations/`)
+2. **Form Validation**: Centralized in module features (e.g.,
+   `Auth/components/FormSection/Validations/`)
 
 3. **Routing**: Defined in `App.tsx` using `createBrowserRouter`
 
