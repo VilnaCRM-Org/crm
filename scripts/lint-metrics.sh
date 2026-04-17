@@ -5,42 +5,54 @@
 # Exit 1 = one or more hard-fail violations detected
 #
 # Review-gate metrics are calculated internally but not printed and do not block CI.
-# Hard-fail defaults are calibrated to the current repository baseline for this PR.
-# Tighten them with the code-remediation follow-up PR.
+# Hard-fail thresholds are supplied by Makefile so local and CI paths share one
+# policy source.
 
 set -eu
 
 RCA_BIN="${RCA_BIN:-./bin/rust-code-analysis-cli}"
 RCA_VERSION="${RCA_VERSION:-}"
 
+require_env() {
+  name=$1
+  value=$2
+
+  if [ -z "$value" ]; then
+    printf 'ERROR: %s must be set by Makefile or environment\n' "$name" >&2
+    exit 1
+  fi
+
+  printf '%s' "$value"
+}
+
 # Hard-fail thresholds.
-CYCLOMATIC_MAX="${CYCLOMATIC_MAX:-${CC_MAX:-20}}"
-COGNITIVE_MAX="${COGNITIVE_MAX:-24}"
-ABC_MAGNITUDE_MAX="${ABC_MAGNITUDE_MAX:-17}"
-NARGS_FUNCTION_MAX="${NARGS_FUNCTION_MAX:-5}"
-NARGS_CLOSURE_MAX="${NARGS_CLOSURE_MAX:-3}"
-NEXITS_MAX="${NEXITS_MAX:-15}"
-LLOC_FUNCTION_MAX="${LLOC_FUNCTION_MAX:-37}"
-PLOC_FUNCTION_MAX="${PLOC_FUNCTION_MAX:-145}"
-SLOC_FUNCTION_MAX="${SLOC_FUNCTION_MAX:-157}"
-HALSTEAD_VOLUME_FUNCTION_MAX="${HALSTEAD_VOLUME_FUNCTION_MAX:-5558}"
-HALSTEAD_BUGS_FUNCTION_MAX="${HALSTEAD_BUGS_FUNCTION_MAX:-0.94}"
-NOM_FUNCTIONS_FILE_MAX="${NOM_FUNCTIONS_FILE_MAX:-10}"
-NOM_CLOSURES_FILE_MAX="${NOM_CLOSURES_FILE_MAX:-9}"
-NOM_TOTAL_FILE_MAX="${NOM_TOTAL_FILE_MAX:-15}"
-LLOC_FILE_MAX="${LLOC_FILE_MAX:-120}"
-PLOC_FILE_MAX="${PLOC_FILE_MAX:-366}"
-SLOC_FILE_MAX="${SLOC_FILE_MAX:-372}"
-HALSTEAD_VOLUME_FILE_MAX="${HALSTEAD_VOLUME_FILE_MAX:-12427}"
-HALSTEAD_BUGS_FILE_MAX="${HALSTEAD_BUGS_FILE_MAX:-1.58}"
-MI_VISUAL_STUDIO_MIN="${MI_VISUAL_STUDIO_MIN:-15}"
-CLASS_WMC_MAX="${CLASS_WMC_MAX:-30}"
-CLASS_NPM_MAX="${CLASS_NPM_MAX:-8}"
-CLASS_NPA_MAX="${CLASS_NPA_MAX:-2}"
-CLASS_COA_MAX="${CLASS_COA_MAX:-0.60}"
-CLASS_CDA_MAX="${CLASS_CDA_MAX:-0.25}"
-INTERFACE_NPM_MAX="${INTERFACE_NPM_MAX:-10}"
-INTERFACE_NPA_MAX="${INTERFACE_NPA_MAX:-15}"
+CYCLOMATIC_MAX="$(require_env CYCLOMATIC_MAX "${CYCLOMATIC_MAX:-${CC_MAX:-}}")"
+COGNITIVE_MAX="$(require_env COGNITIVE_MAX "${COGNITIVE_MAX:-}")"
+ABC_MAGNITUDE_MAX="$(require_env ABC_MAGNITUDE_MAX "${ABC_MAGNITUDE_MAX:-}")"
+NARGS_FUNCTION_MAX="$(require_env NARGS_FUNCTION_MAX "${NARGS_FUNCTION_MAX:-}")"
+NARGS_CLOSURE_MAX="$(require_env NARGS_CLOSURE_MAX "${NARGS_CLOSURE_MAX:-}")"
+NEXITS_MAX="$(require_env NEXITS_MAX "${NEXITS_MAX:-}")"
+LLOC_FUNCTION_MAX="$(require_env LLOC_FUNCTION_MAX "${LLOC_FUNCTION_MAX:-}")"
+PLOC_FUNCTION_MAX="$(require_env PLOC_FUNCTION_MAX "${PLOC_FUNCTION_MAX:-}")"
+SLOC_FUNCTION_MAX="$(require_env SLOC_FUNCTION_MAX "${SLOC_FUNCTION_MAX:-}")"
+HALSTEAD_VOLUME_FUNCTION_MAX="$(require_env HALSTEAD_VOLUME_FUNCTION_MAX "${HALSTEAD_VOLUME_FUNCTION_MAX:-}")"
+HALSTEAD_BUGS_FUNCTION_MAX="$(require_env HALSTEAD_BUGS_FUNCTION_MAX "${HALSTEAD_BUGS_FUNCTION_MAX:-}")"
+NOM_FUNCTIONS_FILE_MAX="$(require_env NOM_FUNCTIONS_FILE_MAX "${NOM_FUNCTIONS_FILE_MAX:-}")"
+NOM_CLOSURES_FILE_MAX="$(require_env NOM_CLOSURES_FILE_MAX "${NOM_CLOSURES_FILE_MAX:-}")"
+NOM_TOTAL_FILE_MAX="$(require_env NOM_TOTAL_FILE_MAX "${NOM_TOTAL_FILE_MAX:-}")"
+LLOC_FILE_MAX="$(require_env LLOC_FILE_MAX "${LLOC_FILE_MAX:-}")"
+PLOC_FILE_MAX="$(require_env PLOC_FILE_MAX "${PLOC_FILE_MAX:-}")"
+SLOC_FILE_MAX="$(require_env SLOC_FILE_MAX "${SLOC_FILE_MAX:-}")"
+HALSTEAD_VOLUME_FILE_MAX="$(require_env HALSTEAD_VOLUME_FILE_MAX "${HALSTEAD_VOLUME_FILE_MAX:-}")"
+HALSTEAD_BUGS_FILE_MAX="$(require_env HALSTEAD_BUGS_FILE_MAX "${HALSTEAD_BUGS_FILE_MAX:-}")"
+MI_VISUAL_STUDIO_MIN="$(require_env MI_VISUAL_STUDIO_MIN "${MI_VISUAL_STUDIO_MIN:-}")"
+CLASS_WMC_MAX="$(require_env CLASS_WMC_MAX "${CLASS_WMC_MAX:-}")"
+CLASS_NPM_MAX="$(require_env CLASS_NPM_MAX "${CLASS_NPM_MAX:-}")"
+CLASS_NPA_MAX="$(require_env CLASS_NPA_MAX "${CLASS_NPA_MAX:-}")"
+CLASS_COA_MAX="$(require_env CLASS_COA_MAX "${CLASS_COA_MAX:-}")"
+CLASS_CDA_MAX="$(require_env CLASS_CDA_MAX "${CLASS_CDA_MAX:-}")"
+INTERFACE_NPM_MAX="$(require_env INTERFACE_NPM_MAX "${INTERFACE_NPM_MAX:-}")"
+INTERFACE_NPA_MAX="$(require_env INTERFACE_NPA_MAX "${INTERFACE_NPA_MAX:-}")"
 
 # Review-gate thresholds.
 MI_ORIGINAL_MIN="${MI_ORIGINAL_MIN:-65}"
@@ -88,9 +100,9 @@ if [ ! -x "$RCA_BIN" ]; then
   exit 1
 fi
 
-TMP_JSON=$(mktemp /tmp/rca-analysis.XXXXXX)
-TMP_FINDINGS=$(mktemp /tmp/rca-findings.XXXXXX)
-TMP_SUMMARY=$(mktemp /tmp/rca-summary.XXXXXX)
+TMP_JSON=$(mktemp "${TMPDIR:-/tmp}/rca-analysis.XXXXXX")
+TMP_FINDINGS=$(mktemp "${TMPDIR:-/tmp}/rca-findings.XXXXXX")
+TMP_SUMMARY=$(mktemp "${TMPDIR:-/tmp}/rca-summary.XXXXXX")
 
 cleanup() { rm -f "$TMP_JSON" "$TMP_FINDINGS" "$TMP_SUMMARY"; }
 trap cleanup EXIT INT TERM
