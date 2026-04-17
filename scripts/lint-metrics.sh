@@ -175,6 +175,10 @@ jq -rs -r \
     if $value == null then empty
     elif ($value < $min) then row($severity; $file; $scope; $subject; $line; $metric; $value; ">=\($min)")
     else empty end;
+  def number_or_null($value):
+    if ($value | type) == "number" then $value
+    elif ($value | type) == "string" then ($value | tonumber? // null)
+    else null end;
   def range($severity; $file; $scope; $subject; $line; $metric; $value; $min; $max):
     if $value == null then empty
     elif ($value < $min or $value > $max) then row($severity; $file; $scope; $subject; $line; $metric; $value; "\($min)..\($max)")
@@ -188,7 +192,7 @@ jq -rs -r \
     ($fn.name // "<anon>") as $name |
     ($fn.start_line // 0) as $line |
     gt("FAIL"; $path; $fn.kind; $name; $line; "cyclomatic"; $fn.metrics.cyclomatic.sum; $cyclomatic_max),
-    gt("FAIL"; $path; $fn.kind; $name; $line; "cognitive"; ($fn.metrics.cognitive.sum // $fn.metrics.cognitive); $cognitive_max),
+    gt("FAIL"; $path; $fn.kind; $name; $line; "cognitive"; ($fn.metrics.cognitive as $cognitive | number_or_null($cognitive.sum?) // number_or_null($cognitive) // 0); $cognitive_max),
     gt("FAIL"; $path; $fn.kind; $name; $line; "abc"; $fn.metrics.abc.magnitude; $abc_magnitude_max),
     (if $fn.kind == "closure"
       then gt("FAIL"; $path; "closure"; $name; $line; "nargs_closure"; $fn.metrics.nargs.closures_max; $nargs_closure_max)
@@ -273,8 +277,12 @@ jq -rs -r \
   def fns: [$files[] | .. | objects | select(.kind? == "function" or .kind? == "closure")];
   def maxv($xs): ($xs | max // 0);
   def minv($xs): ($xs | min // 0);
+  def number_or_null($value):
+    if ($value | type) == "number" then $value
+    elif ($value | type) == "string" then ($value | tonumber? // null)
+    else null end;
   "Cyclomatic Complexity|hard|<=\($cyclomatic_max)|\(maxv([fns[] | .metrics.cyclomatic.sum // 0]))",
-  "Cognitive Complexity|hard|<=\($cognitive_max)|\(maxv([fns[] | (.metrics.cognitive.sum // .metrics.cognitive // 0)]))",
+  "Cognitive Complexity|hard|<=\($cognitive_max)|\(maxv([fns[] | (.metrics.cognitive as $cognitive | number_or_null($cognitive.sum?) // number_or_null($cognitive) // 0)]))",
   "ABC Magnitude|hard|<=\($abc_magnitude_max)|\(maxv([fns[] | .metrics.abc.magnitude // 0]))",
   "Function Arguments|hard|<=\($nargs_function_max)|\(maxv([fns[] | select(.kind == "function") | .metrics.nargs.functions_max // 0]))",
   "Closure Arguments|hard|<=\($nargs_closure_max)|\(maxv([fns[] | select(.kind == "closure") | .metrics.nargs.closures_max // 0]))",
