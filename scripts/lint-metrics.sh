@@ -306,6 +306,7 @@ append_summary_table() {
     printf '| Metric | Gate | Threshold | Measured |\n'
     printf '|--------|------|-----------|----------|\n'
     while IFS='|' read -r metric gate threshold measured; do
+      [ "$gate" = "review" ] && continue
       printf '| %s | %s | `%s` | %s |\n' "$metric" "$gate" "$threshold" "$measured"
     done <"$TMP_SUMMARY"
   } >>"$GITHUB_STEP_SUMMARY"
