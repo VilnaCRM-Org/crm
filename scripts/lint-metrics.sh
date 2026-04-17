@@ -272,7 +272,8 @@ jq -rs -r \
   --argjson cloc_ratio_min "$CLOC_RATIO_MIN" \
   --argjson cloc_ratio_max "$CLOC_RATIO_MAX" \
   --argjson blank_ratio_min "$BLANK_RATIO_MIN" \
-  --argjson blank_ratio_max "$BLANK_RATIO_MAX" '
+  --argjson blank_ratio_max "$BLANK_RATIO_MAX" \
+  --argjson interface_npa_max "$INTERFACE_NPA_MAX" '
   . as $files |
   def fns: [$files[] | .. | objects | select(.kind? == "function" or .kind? == "closure")];
   def maxv($xs): ($xs | max // 0);
@@ -294,7 +295,7 @@ jq -rs -r \
   "Function Halstead Bugs|hard|<=\($halstead_bugs_function_max)|\(maxv([fns[] | .metrics.halstead.bugs // 0]))",
   "CLOC Ratio|review|\($cloc_ratio_min)..\($cloc_ratio_max)|\(maxv([$files[] | if ((.metrics.loc.sloc // 0) > 0) then ((.metrics.loc.cloc // 0) / .metrics.loc.sloc) else empty end]))",
   "Blank Ratio|review|\($blank_ratio_min)..\($blank_ratio_max)|\(maxv([$files[] | if ((.metrics.loc.sloc // 0) > 0) then ((.metrics.loc.blank // 0) / .metrics.loc.sloc) else empty end]))",
-  "Interface Public Attributes|hard|see policy|\(maxv([$files[] | .metrics.npa.interfaces // 0]))"
+  "Interface Public Attributes|hard|<=\($interface_npa_max)|\(maxv([$files[] | .metrics.npa.interfaces // 0]))"
 ' "$TMP_JSON" >"$TMP_SUMMARY"
 
 print_findings() {
