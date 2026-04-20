@@ -86,13 +86,13 @@ starter/wrapper boundary for dev-mode Playwright execution.
 ### Current-Version Context
 
 Current registry and documentation checks confirm that maintained greenfield starters exist, but
-they solve the wrong problem for this PRD. As of 2026-04-16, registry checks showed `@rsbuild/core`
-latest `1.7.5`, `create-rsbuild` latest `1.7.0`, `@playwright/test` latest `1.59.1`, and the `bun`
-npm package latest `1.3.12`. The repository currently pins `@rsbuild/core` `1.6.15`,
+they solve the wrong problem for this architecture document. As of 2026-04-16, registry checks
+showed `@rsbuild/core` latest `1.7.5`, `create-rsbuild` latest `1.7.0`, `@playwright/test` latest
+`1.59.1`, and the `bun` npm package latest `1.3.12`. The repository currently pins `@rsbuild/core` `1.6.15`,
 `@playwright/test` `^1.57.0`, and `bun@1.3.5`.
 
 The architecture does not require a version upgrade. Version changes would increase blast radius and
-are outside this PRD's additive orchestration scope.
+are outside this architecture document's additive orchestration scope.
 
 ### Starter Options Considered
 
@@ -461,7 +461,8 @@ implementation recipe.
 
 ### Complete Project Directory Structure
 
-Target-state repository change delta only; this PRD does not introduce a new project root.
+Target-state repository change delta only; this architecture document does not introduce a new
+project root.
 
 ```text
 crm/
