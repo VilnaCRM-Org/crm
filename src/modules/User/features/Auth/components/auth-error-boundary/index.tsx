@@ -11,6 +11,50 @@ interface AuthErrorBoundaryProps {
   onError?: (error: Error, info: React.ErrorInfo) => void;
 }
 
+const DEFAULT_FALLBACK: ReactNode = 'Something went wrong. Please try again later.';
+
+const shouldShowErrorDetails = (error: Error | undefined): error is Error =>
+  Boolean(error) && (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test');
+
+function ErrorDetails({ error }: { error: Error }): JSX.Element {
+  return (
+    <details style={{ marginTop: '1rem' }}>
+      <summary>Error Details</summary>
+      <pre style={{ whiteSpace: 'pre-wrap' }}>{error.message}</pre>
+    </details>
+  );
+}
+
+function FallbackContainer({
+  fallback,
+  error,
+  onReset,
+}: {
+  fallback: ReactNode;
+  error?: Error;
+  onReset: () => void;
+}): JSX.Element {
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+      data-testid="auth-error-boundary-fallback"
+    >
+      {fallback}
+      <button
+        type="button"
+        data-testid="auth-error-boundary-try-again"
+        onClick={onReset}
+        style={{ marginTop: '1rem' }}
+      >
+        Try again
+      </button>
+      {shouldShowErrorDetails(error) && <ErrorDetails error={error} />}
+    </div>
+  );
+}
+
 export default class AuthErrorBoundary extends Component<
   AuthErrorBoundaryProps,
   AuthErrorBoundaryState
@@ -26,50 +70,17 @@ export default class AuthErrorBoundary extends Component<
 
   public componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const { onError } = this.props;
-
-    if (onError) {
-      onError(error, info);
-    }
+    onError?.(error, info);
   }
 
   public handleReset = (): void => this.setState({ hasError: false, error: undefined });
 
   public render(): ReactNode {
-    const { children, fallback = 'Something went wrong. Please try again later.' } = this.props;
+    const { children, fallback = DEFAULT_FALLBACK } = this.props;
     const { hasError, error } = this.state;
-    const shouldShowErrorDetails =
-      (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && error;
-    const renderedFallback =
+    if (!hasError) return children;
+    const rendered =
       typeof fallback === 'function' ? fallback({ error, reset: this.handleReset }) : fallback;
-
-    if (hasError) {
-      return (
-        <div
-          role="alert"
-          aria-live="assertive"
-          aria-atomic="true"
-          data-testid="auth-error-boundary-fallback"
-        >
-          {renderedFallback}
-
-          <button
-            type="button"
-            data-testid="auth-error-boundary-try-again"
-            onClick={this.handleReset}
-            style={{ marginTop: '1rem' }}
-          >
-            Try again
-          </button>
-          {shouldShowErrorDetails && (
-            <details style={{ marginTop: '1rem' }}>
-              <summary>Error Details</summary>
-              <pre style={{ whiteSpace: 'pre-wrap' }}>{error!.message}</pre>
-            </details>
-          )}
-        </div>
-      );
-    }
-
-    return children;
+    return <FallbackContainer fallback={rendered} error={error} onReset={this.handleReset} />;
   }
 }

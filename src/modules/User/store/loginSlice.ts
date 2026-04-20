@@ -1,6 +1,6 @@
 import { UiError, ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { ActionReducerMapBuilder, createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 import { LoginResponseSchema, type LoginResponse } from '../features/Auth/types/ApiResponses';
 import { LoginUserDto } from '../features/Auth/types/Credentials';
@@ -9,6 +9,22 @@ import { ThunkExtra } from './types';
 
 type LoginSuccessPayload = LoginResponse & { email: string };
 
+function parseLoginResponse(
+  apiResponse: unknown,
+  email: string
+): { ok: true; value: LoginSuccessPayload } | { ok: false; error: UiError } {
+  const parsed = LoginResponseSchema.safeParse(apiResponse);
+  if (!parsed.success) {
+    const displayMessage = parsed.error.issues.map((i) => i.message).join('; ');
+    return { ok: false, error: { displayMessage, retryable: true } };
+  }
+  return { ok: true, value: { email: email.toLowerCase(), ...parsed.data } };
+}
+
+function toUiError(err: unknown): UiError {
+  return ErrorHandler.handleAuthError(ErrorParser.parseHttpError(err));
+}
+
 export const loginUser = createAsyncThunk<
   LoginSuccessPayload,
   LoginUserDto,
@@ -16,19 +32,10 @@ export const loginUser = createAsyncThunk<
 >('auth/loginUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.loginAPI.login(credentials, { signal });
-    const parsed = LoginResponseSchema.safeParse(apiResponse);
-
-    if (!parsed.success) {
-      const displayMessage = parsed.error.issues.map((i) => i.message).join('; ');
-      return rejectWithValue({ displayMessage, retryable: true });
-    }
-
-    return { email: credentials.email.toLowerCase(), ...parsed.data };
+    const result = parseLoginResponse(apiResponse, credentials.email);
+    return result.ok ? result.value : rejectWithValue(result.error);
   } catch (err) {
-    const parsedError = ErrorParser.parseHttpError(err);
-    const apiError = ErrorHandler.handleAuthError(parsedError);
-
-    return rejectWithValue(apiError);
+    return rejectWithValue(toUiError(err));
   }
 });
 
@@ -45,6 +52,35 @@ const initialState: LoginState = {
   error: null,
 };
 
+function handlePending(state: LoginState): void {
+  state.loading = true;
+  state.error = null;
+}
+
+function handleFulfilled(
+  state: LoginState,
+  action: PayloadAction<LoginSuccessPayload>
+): void {
+  state.loading = false;
+  state.email = action.payload.email;
+  state.token = action.payload.token;
+}
+
+function handleRejected(
+  state: LoginState,
+  action: ReturnType<typeof loginUser.rejected>
+): void {
+  state.loading = false;
+  state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
+}
+
+function buildExtraReducers(builder: ActionReducerMapBuilder<LoginState>): void {
+  builder
+    .addCase(loginUser.pending, handlePending)
+    .addCase(loginUser.fulfilled, handleFulfilled)
+    .addCase(loginUser.rejected, handleRejected);
+}
+
 export const loginSlice = createSlice({
   name: 'auth',
   initialState,
@@ -56,22 +92,7 @@ export const loginSlice = createSlice({
       state.loading = false;
     },
   },
-  extraReducers: (builder) => {
-    builder
-      .addCase(loginUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.email = action.payload.email;
-        state.token = action.payload.token;
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
-      });
-  },
+  extraReducers: buildExtraReducers,
 });
 
 export const { logout } = loginSlice.actions;

@@ -1,0 +1,48 @@
+import type { TFunction } from 'i18next';
+
+import FormField from '@/modules/User/features/Auth/components/form-section/components/form-field';
+import PasswordField from '@/modules/User/features/Auth/components/form-section/components/password-field';
+import type { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
+import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+
+type Validators = ReturnType<typeof createValidators>;
+
+export default function RegistrationFormFields({
+  t,
+  validators,
+}: {
+  t: TFunction;
+  validators: Validators;
+}): JSX.Element {
+  return (
+    <>
+      <FormField<RegisterUserDto>
+        name="fullName"
+        label={t('sign_up.form.name_input.label')}
+        placeholder={t('sign_up.form.name_input.placeholder')}
+        type="text"
+        autoComplete="off"
+        rules={{
+          required: t('sign_up.form.name_input.required'),
+          validate: validators.fullName,
+        }}
+      />
+      <FormField<RegisterUserDto>
+        name="email"
+        label={t('sign_up.form.email_input.label')}
+        placeholder={t('sign_up.form.email_input.placeholder')}
+        type="email"
+        autoComplete="off"
+        rules={{
+          required: t('sign_up.form.email_input.required'),
+          validate: validators.email,
+        }}
+      />
+      <PasswordField<RegisterUserDto>
+        placeholder={t('sign_up.form.password_input.placeholder')}
+        label={t('sign_up.form.password_input.label')}
+        autoComplete="off"
+      />
+    </>
+  );
+}

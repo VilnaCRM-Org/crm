@@ -7,20 +7,22 @@ export const isValidEmailFormat = (email: string): boolean =>
     email
   );
 
-/**
- * Factory to create email validator
- */
+type Rule = { check: (email: string) => boolean; messageKey: string };
+
+const emailRules: Rule[] = [
+  { check: (v) => v.length > 0, messageKey: 'sign_up.form.email_input.required' },
+  { check: isBasicEmailFormat, messageKey: 'sign_up.form.email_input.email_format_error' },
+  { check: isValidEmailFormat, messageKey: 'sign_up.form.email_input.invalid_message' },
+];
+
+function runEmailValidation(trimmed: string, t: (key: string) => string): string | true {
+  const failed = emailRules.find((r) => !r.check(trimmed));
+  return failed ? t(failed.messageKey) : true;
+}
+
 const createEmailValidator =
   <TFieldValues extends FieldValues>(t: (key: string) => string): Validate<string, TFieldValues> =>
-  (email: string) => {
-    const trimmed = email?.trim() || '';
+  (email: string) =>
+    runEmailValidation(email?.trim() || '', t);
 
-    if (!trimmed) return t('sign_up.form.email_input.required');
-
-    if (!isBasicEmailFormat(trimmed)) return t('sign_up.form.email_input.email_format_error');
-
-    if (!isValidEmailFormat(trimmed)) return t('sign_up.form.email_input.invalid_message');
-
-    return true;
-  };
 export default createEmailValidator;

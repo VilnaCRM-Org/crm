@@ -1,100 +1,43 @@
 import { DevToolsEnhancerOptions, AnyAction } from '@reduxjs/toolkit';
 
-const SENSITIVE_KEYS_LOWER = new Set([
-  'password',
-  'confirmpassword',
-  'currentpassword',
-  'newpassword',
-  'token',
-  'accesstoken',
-  'refreshtoken',
-  'idtoken',
-  'apikey',
-  'clientsecret',
-  'secret',
+import deepRedact from './devToolsRedaction';
 
-  'authorization',
-  'auth',
-  'jwt',
-  'bearer',
-  'cookie',
-  'set-cookie',
-  'x-auth-token',
-  'csrf',
-  'xsrf',
-  'session',
-]);
+const META_FIELDS = ['arg', 'headers', 'request'] as const;
 
-const isPlainObject = (val: unknown): val is Record<string, unknown> => {
-  if (val === null || typeof val !== 'object') return false;
-  const proto = Object.getPrototypeOf(val);
-  return proto === Object.prototype || proto === null;
-};
-
-const isSensitiveKey = (k: string): boolean => {
-  const lower = k.toLowerCase();
-  if (SENSITIVE_KEYS_LOWER.has(lower)) return true;
-  return (
-    lower.includes('token') ||
-    lower.includes('secret') ||
-    lower.includes('pass') ||
-    /(^|[-_])(api|x-?api|access|private|client)?key$/.test(lower) ||
-    lower.includes('auth')
-  );
-};
-function deepRedact<T>(input: T): T {
-  if (input instanceof Map) {
-    return new Map(Array.from(input.entries(), ([k, v]) => [k, deepRedact(v)])) as unknown as T;
+function sanitizeMeta(meta: unknown): { meta: Record<string, unknown> | undefined; changed: boolean } {
+  if (!meta || typeof meta !== 'object') return { meta: meta as undefined, changed: false };
+  const m = { ...(meta as Record<string, unknown>) };
+  let changed = false;
+  for (const field of META_FIELDS) {
+    const value = m[field];
+    if (value && typeof value === 'object') {
+      m[field] = deepRedact(value);
+      changed = true;
+    }
   }
-  if (input instanceof Set) {
-    return new Set(Array.from(input.values(), (v) => deepRedact(v))) as unknown as T;
-  }
-  if (Array.isArray(input)) return input.map(deepRedact) as unknown as T;
-  if (!isPlainObject(input)) return input as T;
-  return Object.fromEntries(
-    Object.entries(input as Record<string, unknown>).map(([k, v]) => [
-      k,
-      isSensitiveKey(k) ? '***' : deepRedact(v),
-    ])
-  ) as T;
+  return { meta: changed ? m : (meta as Record<string, unknown>), changed };
 }
 
-const devToolsOptions: DevToolsEnhancerOptions = {
-  actionSanitizer: <A extends AnyAction>(action: A): A => {
-    let changed = false;
-    let nextMeta = action.meta as Record<string, unknown> | undefined;
-    if (nextMeta && typeof nextMeta === 'object') {
-      const m: Record<string, unknown> = { ...nextMeta };
-      if (m.arg && typeof m.arg === 'object') {
-        m.arg = deepRedact(m.arg);
-        changed = true;
-      }
-      if (m.headers && typeof m.headers === 'object') {
-        m.headers = deepRedact(m.headers);
-        changed = true;
-      }
-      if (m.request && typeof m.request === 'object') {
-        m.request = deepRedact(m.request);
-        changed = true;
-      }
-      if (changed) nextMeta = m;
-    }
-    const ap = (action as A & { payload?: unknown }).payload;
-    const nextPayload = ap && typeof ap === 'object' ? deepRedact(ap) : ap;
-    const payloadChanged = nextPayload !== ap;
-    return changed || payloadChanged
-      ? ({ ...action, meta: nextMeta, payload: nextPayload } as A)
-      : action;
-  },
-  stateSanitizer: <S>(state: S): S => {
-    if (!state || typeof state !== 'object') return state;
+function sanitizePayload(payload: unknown): { payload: unknown; changed: boolean } {
+  if (!payload || typeof payload !== 'object') return { payload, changed: false };
+  const next = deepRedact(payload);
+  return { payload: next, changed: next !== payload };
+}
 
-    const stateObj = state as S & { auth?: unknown };
-    return {
-      ...stateObj,
-      auth: stateObj.auth ? deepRedact(stateObj.auth) : undefined,
-    };
-  },
-};
+function actionSanitizer<A extends AnyAction>(action: A): A {
+  const { meta, changed: metaChanged } = sanitizeMeta(action.meta);
+  const original = (action as A & { payload?: unknown }).payload;
+  const { payload, changed: payloadChanged } = sanitizePayload(original);
+  if (!metaChanged && !payloadChanged) return action;
+  return { ...action, meta, payload } as A;
+}
+
+function stateSanitizer<S>(state: S): S {
+  if (!state || typeof state !== 'object') return state;
+  const stateObj = state as S & { auth?: unknown };
+  return { ...stateObj, auth: stateObj.auth ? deepRedact(stateObj.auth) : undefined };
+}
+
+const devToolsOptions: DevToolsEnhancerOptions = { actionSanitizer, stateSanitizer };
 
 export default devToolsOptions;

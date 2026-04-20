@@ -35,47 +35,54 @@ class ApiErrorAdapter extends BaseAPI {
   }
 }
 
-export default function createAuthClients(): AuthClients {
-  const httpsClient: HttpsClient = new FetchHttpsClient();
-  const errorAdapter = new ApiErrorAdapter();
+const isAbortError = (error: unknown): boolean =>
+  error instanceof Error && error.name === 'AbortError';
 
+async function runAuthCall<T>(fn: () => Promise<T>, toError: (e: unknown) => Error): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    if (isAbortError(error)) throw error;
+    throw toError(error);
+  }
+}
+
+function buildLoginAPI(
+  httpsClient: HttpsClient,
+  errorAdapter: ApiErrorAdapter
+): AuthClients['loginAPI'] {
   return {
-    loginAPI: {
-      async login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse> {
-        try {
-          return await httpsClient.post<LoginUserDto, LoginResponse>(
-            API_ENDPOINTS.LOGIN,
-            credentials,
-            options
-          );
-        } catch (error) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            throw error;
-          }
+    login: (credentials, options) =>
+      runAuthCall(
+        () => httpsClient.post<LoginUserDto, LoginResponse>(API_ENDPOINTS.LOGIN, credentials, options),
+        (e) => errorAdapter.toLoginError(e)
+      ),
+  };
+}
 
-          throw errorAdapter.toLoginError(error);
-        }
-      },
-    },
-    registrationAPI: {
-      async register(
-        credentials: RegisterUserDto,
-        options?: RequestOptions
-      ): Promise<RegistrationResponse> {
-        try {
-          return await httpsClient.post<RegisterUserDto, RegistrationResponse>(
+function buildRegistrationAPI(
+  httpsClient: HttpsClient,
+  errorAdapter: ApiErrorAdapter
+): AuthClients['registrationAPI'] {
+  return {
+    register: (credentials, options) =>
+      runAuthCall(
+        () =>
+          httpsClient.post<RegisterUserDto, RegistrationResponse>(
             API_ENDPOINTS.REGISTER,
             credentials,
             options
-          );
-        } catch (error) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            throw error;
-          }
+          ),
+        (e) => errorAdapter.toRegistrationError(e)
+      ),
+  };
+}
 
-          throw errorAdapter.toRegistrationError(error);
-        }
-      },
-    },
+export default function createAuthClients(): AuthClients {
+  const httpsClient: HttpsClient = new FetchHttpsClient();
+  const errorAdapter = new ApiErrorAdapter();
+  return {
+    loginAPI: buildLoginAPI(httpsClient, errorAdapter),
+    registrationAPI: buildRegistrationAPI(httpsClient, errorAdapter),
   };
 }

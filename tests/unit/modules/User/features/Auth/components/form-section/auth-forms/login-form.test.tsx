@@ -130,6 +130,10 @@ describe('normalizeLoginErrorMessage', () => {
     );
   });
 
+  it('returns the unknown translation key when an Error message is blank', () => {
+    expect(normalizeLoginErrorMessage(new Error('   '))).toBe('auth.errors.unknown');
+  });
+
   it('falls back to the unknown translation key for non-record values', () => {
     expect(normalizeLoginErrorMessage(404)).toBe('auth.errors.unknown');
   });

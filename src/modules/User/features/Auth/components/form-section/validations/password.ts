@@ -1,14 +1,6 @@
 import type { TFunction } from 'i18next';
 import { FieldValues, Validate } from 'react-hook-form';
 
-const isLengthValid = (value: string): boolean => value.length >= 8 && value.length <= 64;
-
-const hasNumber = (value: string): boolean => /[0-9]/.test(value);
-
-const hasUppercase = (value: string): boolean => /\p{Lu}/u.test(value);
-
-const hasLowercase = (value: string): boolean => /\p{Ll}/u.test(value);
-
 type ValidationPswdMessageKey =
   | 'invalidLength'
   | 'numberRequired'
@@ -16,24 +8,37 @@ type ValidationPswdMessageKey =
   | 'lowercaseRequired'
   | 'fieldRequired';
 
+type Rule = { check: (value: string) => boolean; key: ValidationPswdMessageKey };
+
+const rules: Rule[] = [
+  { check: (v) => v.length >= 8 && v.length <= 64, key: 'invalidLength' },
+  { check: (v) => /[0-9]/.test(v), key: 'numberRequired' },
+  { check: (v) => /\p{Lu}/u.test(v), key: 'uppercaseRequired' },
+  { check: (v) => /\p{Ll}/u.test(v), key: 'lowercaseRequired' },
+];
+
+function buildMessages(t: TFunction): Record<ValidationPswdMessageKey, string> {
+  return {
+    invalidLength: t('sign_up.form.password_input.error_length'),
+    numberRequired: t('sign_up.form.password_input.error_numbers'),
+    uppercaseRequired: t('sign_up.form.password_input.error_uppercase'),
+    lowercaseRequired: t('sign_up.form.password_input.error_lowercase'),
+    fieldRequired: t('sign_up.form.password_input.required'),
+  };
+}
+
+function runValidation(
+  value: string,
+  messages: Record<ValidationPswdMessageKey, string>
+): string | true {
+  if (!value?.trim()) return messages.fieldRequired;
+  const failed = rules.find((r) => !r.check(value));
+  return failed ? messages[failed.key] : true;
+}
+
 const createPasswordValidator =
   <TFieldValues extends FieldValues>(t: TFunction): Validate<string, TFieldValues> =>
-  (value: string) => {
-    const messages: Record<ValidationPswdMessageKey, string> = {
-      invalidLength: t('sign_up.form.password_input.error_length'),
-      numberRequired: t('sign_up.form.password_input.error_numbers'),
-      uppercaseRequired: t('sign_up.form.password_input.error_uppercase'),
-      lowercaseRequired: t('sign_up.form.password_input.error_lowercase'),
-      fieldRequired: t('sign_up.form.password_input.required'),
-    };
-
-    if (!value?.trim()) return messages.fieldRequired;
-    if (!isLengthValid(value)) return messages.invalidLength;
-    if (!hasNumber(value)) return messages.numberRequired;
-    if (!hasUppercase(value)) return messages.uppercaseRequired;
-    if (!hasLowercase(value)) return messages.lowercaseRequired;
-
-    return true;
-  };
+  (value: string) =>
+    runValidation(value, buildMessages(t));
 
 export default createPasswordValidator;
