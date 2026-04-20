@@ -11,24 +11,38 @@ user_name: 'platform-team'
 date: '2026-04-16'
 ---
 
-<!-- markdownlint-disable -->
-
 # Architecture Decision Document
 
-_This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
+_This document builds collaboratively through step-by-step discovery. Sections are appended as we
+work through each architectural decision together._
 
 ## Project Context Analysis
 
 ### Requirements Overview
 
 **Functional Requirements:**
-The PRD defines 29 functional requirements across nine capability areas: dev-mode Playwright execution, file/glob targeting, interactive debug support, browser provisioning, visual baseline management, Playwright configuration branching, Docker Compose network topology, backwards compatibility/discoverability, and operator feedback. Architecturally, this is a repository workflow initiative centered on the Makefile as the public API, Docker Compose as the runtime boundary, and Playwright configuration as the single source of test-run behavior. The implementation must provide fast e2e and visual test entry points from the `dev` container without changing the existing production-parity Playwright targets.
+The PRD defines 29 functional requirements across nine capability areas: dev-mode Playwright
+execution, file/glob targeting, interactive debug support, browser provisioning, visual baseline
+management, Playwright configuration branching, Docker Compose network topology, backwards
+compatibility/discoverability, and operator feedback. Architecturally, this is a repository workflow
+initiative centered on the Makefile as the public API, Docker Compose as the runtime boundary, and
+Playwright configuration as the single source of test-run behavior. The implementation must provide
+fast e2e and visual test entry points from the `dev` container without changing the existing
+production-parity Playwright targets.
 
 **Non-Functional Requirements:**
-The main architectural drivers are feedback-loop performance, additive compatibility, deterministic local behavior, and clear failure diagnostics. The headline SLO is a single-file e2e run under 30 seconds when `dev` is already healthy and browsers are installed. The default dev image must not grow when browser bundling is disabled, existing Playwright Makefile targets must remain byte-identical, and `PLAYWRIGHT_DEV_MODE` must stay scoped to the new recipes so IDE, CI, shell, and production-parity workflows keep their current behavior.
+The main architectural drivers are feedback-loop performance, additive compatibility, deterministic
+local behavior, and clear failure diagnostics. The headline SLO is a single-file e2e run under 30
+seconds when `dev` is already healthy and browsers are installed. The default dev image must not
+grow when browser bundling is disabled, existing Playwright Makefile targets must remain
+byte-identical, and `PLAYWRIGHT_DEV_MODE` must stay scoped to the new recipes so IDE, CI, shell, and
+production-parity workflows keep their current behavior.
 
 **Scale & Complexity:**
-This is a low-complexity brownfield developer-tool change with medium consistency sensitivity. It touches orchestration and configuration rather than application source code. The design needs enough structure to prevent agents from choosing different Makefile helper patterns, browser-install flows, baseline directories, or network wiring.
+This is a low-complexity brownfield developer-tool change with medium consistency sensitivity. It
+touches orchestration and configuration rather than application source code. The design needs enough
+structure to prevent agents from choosing different Makefile helper patterns, browser-install flows,
+baseline directories, or network wiring.
 
 - Primary domain: developer tooling / test orchestration
 - Complexity level: low
@@ -36,7 +50,13 @@ This is a low-complexity brownfield developer-tool change with medium consistenc
 
 ### Technical Constraints & Dependencies
 
-The solution must fit the existing GNU Make, Docker Compose v2, Bun, and Playwright setup. The new public surface is limited to Make targets and documented variables. The `dev` container hosts Playwright execution, `mockoon` provides the mock backend, and Chromium browser availability is either opt-in at image build time or installed idempotently after the fact. The existing production-parity targets remain the CI-grade path and must not be edited. Playwright config divergence must be expressed through environment branching in the single existing config file, not by creating a second config artifact.
+The solution must fit the existing GNU Make, Docker Compose v2, Bun, and Playwright setup. The new
+public surface is limited to Make targets and documented variables. The `dev` container hosts
+Playwright execution, `mockoon` provides the mock backend, and Chromium browser availability is
+either opt-in at image build time or installed idempotently after the fact. The existing
+production-parity targets remain the CI-grade path and must not be edited. Playwright config
+divergence must be expressed through environment branching in the single existing config file, not
+by creating a second config artifact.
 
 ### Cross-Cutting Concerns Identified
 
@@ -46,8 +66,10 @@ The solution must fit the existing GNU Make, Docker Compose v2, Bun, and Playwri
 - TTY-aware execution for Playwright Inspector and `page.pause()`
 - Separate dev visual baselines with explicit smoke-level semantics
 - Opt-in browser installation and image-size containment
-- Surgical Docker network wiring so `dev` can reach `mockoon` while `prod` and `playwright` remain isolated
-- Clear precondition checks and remediation messages for missing browsers, unhealthy dev server, unreachable mockoon, or zero matched specs
+- Surgical Docker network wiring so `dev` can reach `mockoon` while `prod` and `playwright` remain
+  isolated
+- Clear precondition checks and remediation messages for missing browsers, unhealthy dev server,
+  unreachable mockoon, or zero matched specs
 - Documentation and `make help` output that make the dev/prod distinction hard to miss
 
 ## Starter Template Evaluation
@@ -56,19 +78,28 @@ The solution must fit the existing GNU Make, Docker Compose v2, Bun, and Playwri
 
 Brownfield repository workflow / test orchestration inside an existing Rsbuild React application.
 
-This is not a greenfield application bootstrap decision. The architectural foundation already exists in the `crm` repository: React 18, TypeScript, Rsbuild, Bun, Docker Compose, GNU Make, and Playwright. The relevant decision is whether to extend that foundation directly or introduce a new starter/wrapper boundary for dev-mode Playwright execution.
+This is not a greenfield application bootstrap decision. The architectural foundation already exists
+in the `crm` repository: React 18, TypeScript, Rsbuild, Bun, Docker Compose, GNU Make, and
+Playwright. The relevant decision is whether to extend that foundation directly or introduce a new
+starter/wrapper boundary for dev-mode Playwright execution.
 
 ### Current-Version Context
 
-Current registry and documentation checks confirm that maintained greenfield starters exist, but they solve the wrong problem for this PRD. As of 2026-04-16, registry checks showed `@rsbuild/core` latest `1.7.5`, `create-rsbuild` latest `1.7.0`, `@playwright/test` latest `1.59.1`, and the `bun` npm package latest `1.3.12`. The repository currently pins `@rsbuild/core` `1.6.15`, `@playwright/test` `^1.57.0`, and `bun@1.3.5`.
+Current registry and documentation checks confirm that maintained greenfield starters exist, but
+they solve the wrong problem for this PRD. As of 2026-04-16, registry checks showed `@rsbuild/core`
+latest `1.7.5`, `create-rsbuild` latest `1.7.0`, `@playwright/test` latest `1.59.1`, and the `bun`
+npm package latest `1.3.12`. The repository currently pins `@rsbuild/core` `1.6.15`,
+`@playwright/test` `^1.57.0`, and `bun@1.3.5`.
 
-The architecture does not require a version upgrade. Version changes would increase blast radius and are outside this PRD's additive orchestration scope.
+The architecture does not require a version upgrade. Version changes would increase blast radius and
+are outside this PRD's additive orchestration scope.
 
 ### Starter Options Considered
 
 #### Option 1: Extend the Existing `crm` Repository Foundation
 
-Add the new dev-mode Playwright targets, browser provisioning, config branching, and mockoon network wiring directly to the existing Makefile, Dockerfile, Compose, and Playwright config.
+Add the new dev-mode Playwright targets, browser provisioning, config branching, and mockoon network
+wiring directly to the existing Makefile, Dockerfile, Compose, and Playwright config.
 
 **What it gives us:**
 
@@ -115,15 +146,24 @@ Create a new Docker Compose service or wrapper dedicated to dev-mode Playwright 
 ### Selected Starter: Existing `crm` Repository Foundation
 
 **Rationale for Selection:**
-Use the existing `crm` repository and its current Docker Compose `dev` service as the only execution foundation. The required behavior is orchestration-only: additive Makefile targets should run Playwright from inside the already-running `dev` container, without changing application source, introducing a new Playwright dev service, or altering the current production-parity Playwright path.
+Use the existing `crm` repository and its current Docker Compose `dev` service as the only execution
+foundation. The required behavior is orchestration-only: additive Makefile targets should run
+Playwright from inside the already-running `dev` container, without changing application source,
+introducing a new Playwright dev service, or altering the current production-parity Playwright path.
 
-This choice preserves the PRD's containment goals: the existing five Playwright targets remain byte-identical, browser installation stays explicit and opt-in, `PLAYWRIGHT_DEV_MODE` is confined to recipe scope, and dev-mode visual baselines remain separate smoke-level feedback rather than the canonical visual regression pipeline.
+This choice preserves the PRD's containment goals: the existing five Playwright targets remain
+byte-identical, browser installation stays explicit and opt-in, `PLAYWRIGHT_DEV_MODE` is confined to
+recipe scope, and dev-mode visual baselines remain separate smoke-level feedback rather than the
+canonical visual regression pipeline.
 
 **Rejected Foundation Paths:**
 
-- `create-rsbuild`: rejected because no app bootstrap, framework migration, or source-tree refresh is required.
-- Dedicated Playwright dev service: rejected because it duplicates runtime state, adds lifecycle and image maintenance, and weakens the requirement to run from the existing `dev` container.
-- Separate Playwright config file: rejected because the PRD requires one config with scoped environment branching.
+- `create-rsbuild`: rejected because no app bootstrap, framework migration, or source-tree refresh
+  is required.
+- Dedicated Playwright dev service: rejected because it duplicates runtime state, adds lifecycle and
+  image maintenance, and weakens the requirement to run from the existing `dev` container.
+- Separate Playwright config file: rejected because the PRD requires one config with scoped
+  environment branching.
 
 **Initialization Command:**
 
@@ -135,33 +175,49 @@ This choice preserves the PRD's containment goals: the existing five Playwright 
 ### Architectural Decisions Provided by Starter
 
 **Language & Runtime:**
-Preserve the current TypeScript/React runtime and Bun-managed dependency installation. Do not upgrade or repin framework/runtime versions as part of this architecture; version upgrades are outside the PRD scope.
+Preserve the current TypeScript/React runtime and Bun-managed dependency installation. Do not
+upgrade or repin framework/runtime versions as part of this architecture; version upgrades are
+outside the PRD scope.
 
 **Styling Solution:**
-No styling foundation changes. Visual-regression support must work with the app's existing CSS/MUI/Rsbuild pipeline and must separate dev snapshots from production snapshots rather than changing component styling infrastructure.
+No styling foundation changes. Visual-regression support must work with the app's existing
+CSS/MUI/Rsbuild pipeline and must separate dev snapshots from production snapshots rather than
+changing component styling infrastructure.
 
 **Build Tooling:**
-Preserve Rsbuild as the dev and production build tool. Dev-mode Playwright targets run against the existing `rsbuild dev` server in the `dev` container. Production-parity Playwright targets continue to run against the existing production build path.
+Preserve Rsbuild as the dev and production build tool. Dev-mode Playwright targets run against the
+existing `rsbuild dev` server in the `dev` container. Production-parity Playwright targets continue
+to run against the existing production build path.
 
 **Testing Framework:**
-Preserve Playwright as the e2e and visual test runner. Add dev-mode invocation paths and config branching inside the existing `playwright.config.ts`; do not fork Playwright config into a second file.
+Preserve Playwright as the e2e and visual test runner. Add dev-mode invocation paths and config
+branching inside the existing `playwright.config.ts`; do not fork Playwright config into a second
+file.
 
 **Code Organization:**
-Keep all orchestration in existing repository-owned files: `Makefile`, `Dockerfile`, Docker Compose files, `playwright.config.ts`, `README.md`, and `CLAUDE.md`. Do not add a new package, service directory, or wrapper project.
+Keep all orchestration in existing repository-owned files: `Makefile`, `Dockerfile`, Docker Compose
+files, `playwright.config.ts`, `README.md`, and `CLAUDE.md`. Do not add a new package, service
+directory, or wrapper project.
 
 **Development Experience:**
-Use Makefile targets as the public interface. Browser installation remains opt-in and idempotent. Debug execution must use TTY-capable Docker Compose exec behavior, while non-debug targets can reuse the existing TTY-less helper pattern.
+Use Makefile targets as the public interface. Browser installation remains opt-in and idempotent.
+Debug execution must use TTY-capable Docker Compose exec behavior, while non-debug targets can reuse
+the existing TTY-less helper pattern.
 
 ### Implementation Guardrails
 
-- Existing targets `test-e2e`, `test-e2e-ui`, `test-visual`, `test-visual-ui`, and `test-visual-update` are frozen byte-identical.
+- Existing targets `test-e2e`, `test-e2e-ui`, `test-visual`, `test-visual-ui`, and
+  `test-visual-update` are frozen byte-identical.
 - The `dev` container means the existing Docker Compose `dev` service, not a new service or profile.
-- `PLAYWRIGHT_DEV_MODE` must be set only inside the new Make recipes to avoid leakage into IDE, CI, shell, and non-dev workflows.
-- Browser installation must remain opt-in through the Docker build arg or `ensure-playwright-browsers`.
+- `PLAYWRIGHT_DEV_MODE` must be set only inside the new Make recipes to avoid leakage into IDE, CI,
+  shell, and non-dev workflows.
+- Browser installation must remain opt-in through the Docker build arg or
+  `ensure-playwright-browsers`.
 - Missing browser/runtime prerequisites must fail with clear remediation, not trigger hidden setup.
 - Dev visual baselines must never share the production baseline path.
 - New target command wiring should be inspectable with `make -n` before full browser execution.
-- Implementation verification must include idempotent `ensure-playwright-browsers` behavior and no application-source changes.
+- Implementation verification must include idempotent `ensure-playwright-browsers` behavior and no
+  application-source changes.
 
 ## Core Architectural Decisions
 
@@ -169,20 +225,26 @@ Use Makefile targets as the public interface. Browser installation remains opt-i
 
 **Critical Decisions (Block Implementation):**
 
-- Makefile target contract: add `test-e2e-dev`, `test-visual-dev`, `test-e2e-dev-debug`, and `ensure-playwright-browsers` without editing the five existing Playwright targets.
+- Makefile target contract: add `test-e2e-dev`, `test-visual-dev`, `test-e2e-dev-debug`, and
+  `ensure-playwright-browsers` without editing the five existing Playwright targets.
 - Execution environment: run dev-mode Playwright from the existing Docker Compose `dev` service.
 - Browser scope: dev-mode runs are Chromium-only because browser provisioning is Chromium-only.
-- Playwright config branching: use the existing `playwright.config.ts` with recipe-scoped `PLAYWRIGHT_DEV_MODE=1`.
-- Visual baseline separation: implement dev snapshot separation through Playwright `snapshotPathTemplate`, not a second config file.
-- Debug execution: use TTY-capable `docker compose exec` for `test-e2e-dev-debug`; do not use TTY-less helpers.
-- Network boundary: make `mockoon` reachable from `dev` while preserving or correcting the intended prod/playwright isolation boundary.
+- Playwright config branching: use the existing `playwright.config.ts` with recipe-scoped
+  `PLAYWRIGHT_DEV_MODE=1`.
+- Visual baseline separation: implement dev snapshot separation through Playwright
+  `snapshotPathTemplate`, not a second config file.
+- Debug execution: use TTY-capable `docker compose exec` for `test-e2e-dev-debug`; do not use
+  TTY-less helpers.
+- Network boundary: make `mockoon` reachable from `dev` while preserving or correcting the intended
+  prod/playwright isolation boundary.
 
 **Important Decisions (Shape Architecture):**
 
 - Browser installation remains explicit and opt-in.
 - Missing prerequisites fail fast with remediation text.
 - Trace viewer uses `PLAYWRIGHT_TRACE_PORT`, default `9323`.
-- README, `CLAUDE.md`, and `make help` must label visual dev snapshots as smoke-level and non-CI-gating.
+- README, `CLAUDE.md`, and `make help` must label visual dev snapshots as smoke-level and
+  non-CI-gating.
 
 **Deferred Decisions (Post-MVP):**
 
@@ -196,23 +258,36 @@ Use Makefile targets as the public interface. Browser installation remains opt-i
 
 ### Data Architecture
 
-No application data architecture changes. Test artifacts, traces, reports, and visual snapshots are the only persisted outputs. Dev visual baselines must live outside the production snapshot path and must be treated as advisory developer feedback.
+No application data architecture changes. Test artifacts, traces, reports, and visual snapshots are
+the only persisted outputs. Dev visual baselines must live outside the production snapshot path and
+must be treated as advisory developer feedback.
 
 ### Authentication & Security
 
-No new auth, secrets, credentials, or tokens are introduced. `PLAYWRIGHT_DEV_MODE` must be set only inside new Make recipes so dev-mode behavior does not leak into shells, CI, VS Code Playwright extension runs, or production-parity targets. Browser downloads occur only through explicit opt-in paths.
+No new auth, secrets, credentials, or tokens are introduced. `PLAYWRIGHT_DEV_MODE` must be set only
+inside new Make recipes so dev-mode behavior does not leak into shells, CI, VS Code Playwright
+extension runs, or production-parity targets. Browser downloads occur only through explicit opt-in
+paths.
 
 ### API & Communication Patterns
 
-No API contract changes. Dev-mode Playwright targets use the running dev server as base URL and the existing `mockoon` service as the mock backend. The implementation must verify current Compose topology before edits; if prod/playwright are already exposed on `crm-network`, align the final topology with FR21-FR22 without changing existing production-parity target behavior.
+No API contract changes. Dev-mode Playwright targets use the running dev server as base URL and the
+existing `mockoon` service as the mock backend. The implementation must verify current Compose
+topology before edits; if prod/playwright are already exposed on `crm-network`, align the final
+topology with FR21-FR22 without changing existing production-parity target behavior.
 
 ### Frontend Architecture
 
-No React, routing, state, component, or styling architecture changes. Dev-vs-prod behavior belongs in Playwright configuration only. In dev mode, `projects` should reduce to a Chromium dev project/tag so the installed browser set matches execution. Production mode keeps the existing multi-browser projects unchanged.
+No React, routing, state, component, or styling architecture changes. Dev-vs-prod behavior belongs
+in Playwright configuration only. In dev mode, `projects` should reduce to a Chromium dev
+project/tag so the installed browser set matches execution. Production mode keeps the existing
+multi-browser projects unchanged.
 
 ### Infrastructure & Deployment
 
-Use GNU Make as the public interface. Use the existing Docker Compose `dev` service as the execution environment. Add Dockerfile support for `INSTALL_PLAYWRIGHT_BROWSERS=false` by default and an idempotent `ensure-playwright-browsers` target. Do not wire any dev-mode target into CI.
+Use GNU Make as the public interface. Use the existing Docker Compose `dev` service as the execution
+environment. Add Dockerfile support for `INSTALL_PLAYWRIGHT_BROWSERS=false` by default and an
+idempotent `ensure-playwright-browsers` target. Do not wire any dev-mode target into CI.
 
 ### Decision Impact Analysis
 
@@ -242,7 +317,9 @@ Use GNU Make as the public interface. Use the existing Docker Compose `dev` serv
 ### Pattern Categories Defined
 
 **Critical Conflict Points Identified:**
-9 areas where AI agents could make incompatible choices: Makefile placement, target naming, container env injection, `FILE` forwarding, browser provisioning, Playwright dev-mode branching, visual snapshot pathing, debug TTY behavior, and Compose network changes.
+9 areas where AI agents could make incompatible choices: Makefile placement, target naming,
+container env injection, `FILE` forwarding, browser provisioning, Playwright dev-mode branching,
+visual snapshot pathing, debug TTY behavior, and Compose network changes.
 
 ### Naming Patterns
 
@@ -250,8 +327,10 @@ Use GNU Make as the public interface. Use the existing Docker Compose `dev` serv
 
 - Targets: `test-e2e-dev`, `test-visual-dev`, `test-e2e-dev-debug`, `ensure-playwright-browsers`
 - Variables: uppercase snake_case near related Playwright/Docker variables
-- Required new variables: `EXEC_DEV_TTY`, `RUN_E2E_DEV`, `RUN_VISUAL_DEV`, `PLAYWRIGHT_TRACE_PORT ?= 9323`
-- Do not rename existing variables such as `RUN_E2E`, `RUN_VISUAL`, `PLAYWRIGHT_TEST_CMD`, or `EXEC_DEV_TTYLESS`
+- Required new variables: `EXEC_DEV_TTY`, `RUN_E2E_DEV`, `RUN_VISUAL_DEV`, `PLAYWRIGHT_TRACE_PORT ?=
+  9323`
+- Do not rename existing variables such as `RUN_E2E`, `RUN_VISUAL`, `PLAYWRIGHT_TEST_CMD`, or
+  `EXEC_DEV_TTYLESS`
 
 **Playwright Naming Conventions:**
 
@@ -263,7 +342,8 @@ Use GNU Make as the public interface. Use the existing Docker Compose `dev` serv
 
 **Project Organization:**
 
-- Modify only orchestration/documentation files: `Makefile`, `Dockerfile`, Compose files, `playwright.config.ts`, `README.md`, `CLAUDE.md`
+- Modify only orchestration/documentation files: `Makefile`, `Dockerfile`, Compose files,
+  `playwright.config.ts`, `README.md`, `CLAUDE.md`
 - Do not change application files under `src/`
 - Do not add a new Playwright config file, package, service directory, or wrapper project
 - Add new Makefile variables near existing Playwright/Docker variables
@@ -281,24 +361,26 @@ Use GNU Make as the public interface. Use the existing Docker Compose `dev` serv
 
 **Container Environment Format:**
 
-Set `PLAYWRIGHT_DEV_MODE` inside the `dev` container command, not as a host-side prefix before `docker compose exec`.
+Set `PLAYWRIGHT_DEV_MODE` inside the `dev` container command, not as a host-side prefix before
+`docker compose exec`.
 
 Acceptable patterns:
 
-```make
+```makefile
 $(EXEC_DEV_TTYLESS) env PLAYWRIGHT_DEV_MODE=1 bun x playwright test ...
 $(EXEC_DEV_TTY) env PLAYWRIGHT_DEV_MODE=1 bun x playwright test ...
 ```
 
 Do not rely on:
 
-```make
+```makefile
 PLAYWRIGHT_DEV_MODE=1 $(BUNX) playwright test ...
 ```
 
 **FILE Forwarding Format:**
 
-Do not append raw unquoted `$(FILE)` directly to the Playwright command. Use a shell conditional or equivalent pattern that preserves quoted globs and treats omitted `FILE` as "run all."
+Do not append raw unquoted `$(FILE)` directly to the Playwright command. Use a shell conditional or
+equivalent pattern that preserves quoted globs and treats omitted `FILE` as "run all."
 
 Example intent:
 
@@ -322,7 +404,8 @@ fi
 
 **Documentation Labels:**
 
-Use the phrase "dev-mode visual snapshots are smoke-level and not CI-gating" in README/CLAUDE guidance and `test-visual-dev` help text where space allows.
+Use the phrase "dev-mode visual snapshots are smoke-level and not CI-gating" in README/CLAUDE
+guidance and `test-visual-dev` help text where space allows.
 
 ### Process Patterns
 
@@ -373,7 +456,8 @@ Use the phrase "dev-mode visual snapshots are smoke-level and not CI-gating" in 
 
 ## Project Structure & Boundaries
 
-This section defines where changes may happen and which files own each boundary. It is not an implementation recipe.
+This section defines where changes may happen and which files own each boundary. It is not an
+implementation recipe.
 
 ### Complete Project Directory Structure
 
@@ -384,7 +468,7 @@ crm/
 ├── Makefile                         # Execution owner: new dev-mode target wiring
 ├── Dockerfile                       # Provisioning owner: opt-in browser install arg
 ├── docker-compose.yml               # Runtime owner: existing dev service, trace port if required
-├── playwright.config.ts             # Test config owner: dev-mode branch, Chromium dev project, dev snapshot path
+├── playwright.config.ts             # Config: dev branch, Chromium project, snapshot path
 ├── README.md                        # Operator docs: examples and visual-dev semantics
 ├── CLAUDE.md                        # Agent/developer docs: workflow and guardrails
 ├── tests/
@@ -397,27 +481,33 @@ crm/
     └── workflows/                   # No dev-mode target wiring
 ```
 
-`docker-compose.test.yml` is not part of the primary target-state structure. Touch it only if implementation verification proves a concrete network gap that cannot be resolved through the existing `docker-compose.yml` `dev` service path. Any such change must preserve existing production-parity target behavior.
+`docker-compose.test.yml` is not part of the primary target-state structure. Touch it only if
+implementation verification proves a concrete network gap that cannot be resolved through the
+existing `docker-compose.yml` `dev` service path. Any such change must preserve existing
+production-parity target behavior.
 
 ### Ownership Map
 
 | File / Area | Owns | Must Not Own |
 |---|---|---|
-| `Makefile` | Public target names, command wiring, `FILE` handling, container env injection, precondition messages | App behavior, Playwright project definitions, hidden browser install side effects |
-| `Dockerfile` | `INSTALL_PLAYWRIGHT_BROWSERS=false` default and opt-in Chromium install path | Default browser bundling, target invocation behavior |
-| `docker-compose.yml` | Existing `dev` service runtime boundary and trace port exposure if required | New Playwright service, production-parity test orchestration |
-| `playwright.config.ts` | `PLAYWRIGHT_DEV_MODE` branch, dev baseURL, Chromium-only dev project, dev snapshot path | Separate config file, Makefile command branching, app source config |
-| `tests/visual/__snapshots__-dev/` | Advisory fast-fail dev visual snapshots | Production visual baselines |
-| `README.md` / `CLAUDE.md` | Operator and AI-agent guidance | Functional architecture or runtime behavior |
+| `Makefile` | Targets, wiring, `FILE`, env, preconditions | App, PW projects, hidden installs |
+| `Dockerfile` | `INSTALL_PLAYWRIGHT_BROWSERS=false`; opt-in | Default bundling, target invocation |
+| `docker-compose.yml` | `dev` runtime; trace port if needed | New PW service, prod orchestration |
+| `playwright.config.ts` | `PLAYWRIGHT_DEV_MODE` branch, snapshot path | Separate config file |
+| `tests/visual/__snapshots__-dev/` | Advisory dev snapshots | Production visual baselines |
+| `README.md` / `CLAUDE.md` | Operator and agent guidance | Functional architecture or runtime |
 | `.github/workflows/` | Existing CI only | Dev-mode target wiring |
 
 ### Architectural Boundaries
 
 **Execution Boundary:**
-Dev-mode runs execute only through the existing `dev` service plus `mockoon`. They do not route through `prod` or the `playwright` service.
+Dev-mode runs execute only through the existing `dev` service plus `mockoon`. They do not route
+through `prod` or the `playwright` service.
 
 **API Boundaries:**
-No API contracts change. Dev-mode Playwright talks to the dev server and the existing mock backend only. Application API clients, GraphQL/Apollo code, and backend mocks remain outside this architecture except for Mockoon reachability.
+No API contracts change. Dev-mode Playwright talks to the dev server and the existing mock backend
+only. Application API clients, GraphQL/Apollo code, and backend mocks remain outside this
+architecture except for Mockoon reachability.
 
 **Component Boundaries:**
 No React component, routing, state, or styling boundaries change. `src/` is out of scope.
@@ -431,7 +521,8 @@ No React component, routing, state, or styling boundaries change. `src/` is out 
 - No new `playwright-dev` or equivalent service
 
 **Data Boundaries:**
-Only generated test artifacts are affected. Production visual snapshots and dev visual snapshots must be separate. Trace/report artifacts stay in existing ignored Playwright output paths.
+Only generated test artifacts are affected. Production visual snapshots and dev visual snapshots
+must be separate. Trace/report artifacts stay in existing ignored Playwright output paths.
 
 ### Boundary Map
 
@@ -546,12 +637,12 @@ tests/visual/__snapshots__-dev/
 
 | Flow | Verification Command / Check | Expected Boundary |
 |---|---|---|
-| Command wiring | `make -n test-e2e-dev FILE=tests/e2e/<spec>.ts` | Uses `dev`; does not call `start-prod` |
-| Dev e2e run | `make test-e2e-dev FILE=tests/e2e/<spec>.ts` | `PLAYWRIGHT_DEV_MODE` inside container |
-| Dev visual run | `make test-visual-dev FILE=tests/visual/<spec>.ts` | Writes/reads dev snapshot path only |
+| Command wiring | `make -n test-e2e-dev FILE=tests/e2e/<spec>.ts` | Uses `dev`; not `start-prod` |
+| Dev e2e run | `make test-e2e-dev FILE=tests/e2e/<spec>.ts` | `PLAYWRIGHT_DEV_MODE` in container |
+| Dev visual run | `make test-visual-dev FILE=tests/visual/<spec>.ts` | Dev snapshot path only |
 | Debug run | `make test-e2e-dev-debug FILE=tests/e2e/<spec>.ts` | TTY allocated; `FILE` required |
-| Browser setup | `make ensure-playwright-browsers` twice | Second run exits clean without redownload |
-| Production parity | `make test-e2e` / `make test-visual` | Existing target bodies and paths unchanged |
+| Browser setup | `make ensure-playwright-browsers` twice | Second run clean, no redownload |
+| Production parity | `make test-e2e` / `make test-visual` | Existing bodies and paths unchanged |
 | CI scope | inspect `.github/workflows/` diff | No dev-mode target wiring |
 
 ### File Organization Patterns
@@ -582,17 +673,21 @@ tests/visual/__snapshots__-dev/
 ### Development Workflow Integration
 
 **Development Server Structure:**
-`make start` remains the way to bring up the `dev` service. Dev-mode Playwright targets depend on `start`, not `start-prod`.
+`make start` remains the way to bring up the `dev` service. Dev-mode Playwright targets depend on
+`start`, not `start-prod`.
 
 **Build Process Structure:**
-Default dev image build remains browser-free. Browser-enabled dev image build is opt-in through `INSTALL_PLAYWRIGHT_BROWSERS=true`.
+Default dev image build remains browser-free. Browser-enabled dev image build is opt-in through
+`INSTALL_PLAYWRIGHT_BROWSERS=true`.
 
 **Deployment Structure:**
-No deployment or CI structure changes. Dev-mode targets are local-only and must not be added to GitHub Actions.
+No deployment or CI structure changes. Dev-mode targets are local-only and must not be added to
+GitHub Actions.
 
 ### Do Not Change
 
-- Do not edit the bodies of `test-e2e`, `test-e2e-ui`, `test-visual`, `test-visual-ui`, or `test-visual-update`.
+- Do not edit the bodies of `test-e2e`, `test-e2e-ui`, `test-visual`, `test-visual-ui`, or
+  `test-visual-update`.
 - Do not add a new Compose service.
 - Do not edit application source under `src/`.
 - Do not add CI wiring for dev-mode targets.
@@ -604,13 +699,25 @@ No deployment or CI structure changes. Dev-mode targets are local-only and must 
 ### Coherence Validation
 
 **Decision Compatibility:**
-The architecture is coherent: all decisions point to a narrow brownfield orchestration change. The selected foundation, Makefile public surface, existing `dev` service execution anchor, single `playwright.config.ts`, Chromium-only dev mode, opt-in browser provisioning, and advisory dev snapshot path all reinforce the same goal: fast local Playwright feedback without changing the production-parity path.
+The architecture is coherent: all decisions point to a narrow brownfield orchestration change. The
+selected foundation, Makefile public surface, existing `dev` service execution anchor, single
+`playwright.config.ts`, Chromium-only dev mode, opt-in browser provisioning, and advisory dev
+snapshot path all reinforce the same goal: fast local Playwright feedback without changing the
+production-parity path.
 
 **Pattern Consistency:**
-Implementation patterns support the architectural decisions. Target names, variable names, container-internal env injection, TTY-vs-TTY-less execution, `FILE` handling, and dev snapshot pathing are all locked enough to prevent common agent drift. The anti-pattern list directly blocks the highest-risk variants: new service, second Playwright config, shared visual baselines, hidden browser install, and MVP scope expansion.
+Implementation patterns support the architectural decisions. Target names, variable names,
+container-internal env injection, TTY-vs-TTY-less execution, `FILE` handling, and dev snapshot
+pathing are all locked enough to prevent common agent drift. The anti-pattern list directly blocks
+the highest-risk variants: new service, second Playwright config, shared visual baselines, hidden
+browser install, and MVP scope expansion.
 
 **Structure Alignment:**
-The project structure supports the architecture. Functional ownership is limited to `Makefile`, `Dockerfile`, `docker-compose.yml`, and `playwright.config.ts`; documentation ownership is separate in `README.md` and `CLAUDE.md`; test artifacts are isolated under `tests/visual/__snapshots__-dev/`. The structure explicitly excludes `src/`, `.github/workflows/`, new Compose services, and new config roots.
+The project structure supports the architecture. Functional ownership is limited to `Makefile`,
+`Dockerfile`, `docker-compose.yml`, and `playwright.config.ts`; documentation ownership is separate
+in `README.md` and `CLAUDE.md`; test artifacts are isolated under `tests/visual/__snapshots__-dev/`.
+The structure explicitly excludes `src/`, `.github/workflows/`, new Compose services, and new config
+roots.
 
 ### Requirements Coverage Validation
 
@@ -620,26 +727,41 @@ All 29 functional requirements are architecturally supported.
 - FR1-FR4: covered by dev-mode Makefile targets depending on `start` and the existing `dev` service.
 - FR5-FR8: covered by scoped `FILE` forwarding rules.
 - FR9-FR12: covered by `test-e2e-dev-debug`, TTY execution, and `PLAYWRIGHT_TRACE_PORT`.
-- FR13-FR15: covered by opt-in Dockerfile browser install and idempotent `ensure-playwright-browsers`.
+- FR13-FR15: covered by opt-in Dockerfile browser install and idempotent
+  `ensure-playwright-browsers`.
 - FR16-FR18: covered by dev snapshot separation and fast-fail/advisory visual checks.
-- FR19-FR20: covered by single-config `PLAYWRIGHT_DEV_MODE` branching and container-internal env injection.
-- FR21-FR22: covered by the network boundary requirement and explicit implementation audit of current Compose topology.
-- FR23-FR25: covered by frozen existing Playwright targets, new `make help` entries, and README examples.
-- FR26-FR29: covered by precondition messaging, preserved Playwright exit codes, trace port default, and missing-browser remediation.
+- FR19-FR20: covered by single-config `PLAYWRIGHT_DEV_MODE` branching and container-internal env
+  injection.
+- FR21-FR22: covered by the network boundary requirement and explicit implementation audit of
+  current Compose topology.
+- FR23-FR25: covered by frozen existing Playwright targets, new `make help` entries, and README
+  examples.
+- FR26-FR29: covered by precondition messaging, preserved Playwright exit codes, trace port default,
+  and missing-browser remediation.
 
 **Non-Functional Requirements Coverage:**
-The architecture addresses all relevant NFR categories. Performance is supported by avoiding `start-prod` and running in the already-running `dev` service. Reliability is supported by clear prerequisite boundaries and native Playwright exit codes. Maintainability is supported by one config file, additive targets, and no app-source changes. Portability is supported by existing Make/Docker Compose conventions. Security is supported by no new secrets and explicit browser-download opt-in. Integration compatibility is supported by recipe/container-scoped dev mode and no CI wiring.
+The architecture addresses all relevant NFR categories. Performance is supported by avoiding
+`start-prod` and running in the already-running `dev` service. Reliability is supported by clear
+prerequisite boundaries and native Playwright exit codes. Maintainability is supported by one config
+file, additive targets, and no app-source changes. Portability is supported by existing Make/Docker
+Compose conventions. Security is supported by no new secrets and explicit browser-download opt-in.
+Integration compatibility is supported by recipe/container-scoped dev mode and no CI wiring.
 
 ### Implementation Readiness Validation
 
 **Decision Completeness:**
-Critical decisions are documented with names, files, and boundaries. Current-version research was performed for Rsbuild, Playwright, and Bun; no version upgrade is required by this architecture.
+Critical decisions are documented with names, files, and boundaries. Current-version research was
+performed for Rsbuild, Playwright, and Bun; no version upgrade is required by this architecture.
 
 **Structure Completeness:**
-The target-state file tree is specific and minimal. It separates execution files, artifact paths, documentation files, and excluded areas. Ownership and verification maps give implementers enough direction to avoid reinterpreting scope.
+The target-state file tree is specific and minimal. It separates execution files, artifact paths,
+documentation files, and excluded areas. Ownership and verification maps give implementers enough
+direction to avoid reinterpreting scope.
 
 **Pattern Completeness:**
-The highest-risk implementation conflict points are covered: target placement, env injection, `FILE` forwarding, browser install behavior, dev project selection, snapshot pathing, debug TTY allocation, network boundaries, and CI exclusion.
+The highest-risk implementation conflict points are covered: target placement, env injection, `FILE`
+forwarding, browser install behavior, dev project selection, snapshot pathing, debug TTY allocation,
+network boundaries, and CI exclusion.
 
 ### Gap Analysis Results
 
@@ -648,30 +770,37 @@ None blocking implementation.
 
 **Important Validation Notes:**
 
-- Current Compose topology must be audited during implementation. If `prod` or `playwright` are already exposed on `crm-network`, align the final topology with FR21-FR22 without breaking existing production-parity targets.
-- `snapshotPathTemplate` implementation must be verified against the repo's current visual snapshot naming pattern before accepting dev baselines.
+- Current Compose topology must be audited during implementation. If `prod` or `playwright` are
+  already exposed on `crm-network`, align the final topology with FR21-FR22 without breaking
+  existing production-parity targets.
+- `snapshotPathTemplate` implementation must be verified against the repo's current visual snapshot
+  naming pattern before accepting dev baselines.
 - `PLAYWRIGHT_DEV_MODE` must be proven inside the container, not just in the host Make process.
 - `ensure-playwright-browsers` idempotency must be verified by running it twice.
 
 **Nice-to-Have Gaps:**
 
-- A future implementation plan can add exact shell snippets for `FILE` forwarding and browser readiness checks.
+- A future implementation plan can add exact shell snippets for `FILE` forwarding and browser
+  readiness checks.
 - A future story can add dev snapshot cleanup if advisory baselines accumulate.
 
 ### Validation Issues Addressed
 
-Party Mode review identified structure drift risks in Step 6. These were addressed by removing `docker-compose.test.yml` from the primary target file tree, adding an ownership map, adding a verification map, separating documentation from functional ownership, and adding a "Do Not Change" invariant block.
+Party Mode review identified structure drift risks in Step 6. These were addressed by removing
+`docker-compose.test.yml` from the primary target file tree, adding an ownership map, adding a
+verification map, separating documentation from functional ownership, and adding a "Do Not Change"
+invariant block.
 
 ### Architecture Completeness Checklist
 
-**Requirements Analysis**
+#### Requirements Analysis
 
 - [x] Project context thoroughly analyzed
 - [x] Scale and complexity assessed
 - [x] Technical constraints identified
 - [x] Cross-cutting concerns mapped
 
-**Architectural Decisions**
+#### Architectural Decisions
 
 - [x] Critical decisions documented
 - [x] Existing technology stack preserved
@@ -679,14 +808,14 @@ Party Mode review identified structure drift risks in Step 6. These were address
 - [x] Performance and feedback-loop considerations addressed
 - [x] Deferred scope explicitly listed
 
-**Implementation Patterns**
+#### Implementation Patterns
 
 - [x] Naming conventions established
 - [x] Structure patterns defined
 - [x] Container env and debug process patterns specified
 - [x] Anti-patterns documented
 
-**Project Structure**
+#### Project Structure
 
 - [x] Target-state file structure defined
 - [x] Ownership boundaries established
@@ -698,7 +827,8 @@ Party Mode review identified structure drift risks in Step 6. These were address
 
 **Overall Status:** READY FOR IMPLEMENTATION
 
-**Confidence Level:** High, with one implementation audit item around current Compose network topology.
+**Confidence Level:** High, with one implementation audit item around current Compose network
+topology.
 
 **Key Strengths:**
 
@@ -727,4 +857,6 @@ Party Mode review identified structure drift risks in Step 6. These were address
 - Treat dev visual snapshots as advisory fast-fail checks, not canonical baselines.
 
 **First Implementation Priority:**
-Add the Makefile helper variables and new target skeletons adjacent to the existing Playwright targets, then verify with `make -n` that the dev-mode targets route through `dev` and not `start-prod`.
+Add the Makefile helper variables and new target skeletons adjacent to the existing Playwright
+targets, then verify with `make -n` that the dev-mode targets route through `dev` and not
+`start-prod`.
