@@ -1,6 +1,6 @@
 import { DevToolsEnhancerOptions, AnyAction } from '@reduxjs/toolkit';
 
-import deepRedact from './devToolsRedaction';
+import deepRedact from './dev-tools-redaction';
 
 const META_FIELDS = ['arg', 'headers', 'request'] as const;
 

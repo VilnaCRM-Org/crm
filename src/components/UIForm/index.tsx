@@ -1,9 +1,7 @@
-/* eslint-disable react/require-default-props */
 import { CircularProgress } from '@mui/material';
 import { ReactNode } from 'react';
 import {
   useForm,
-  FormProvider,
   SubmitHandler,
   FieldValues,
   DefaultValues,
@@ -15,6 +13,7 @@ import UIButton from '@/components/UIButton';
 
 import UITypography from '../UITypography';
 
+import FormProviderBridge from './form-provider-bridge';
 import styles from './styles';
 
 export interface UIFormProps<T extends FieldValues> {
@@ -58,16 +57,6 @@ type FormBodyProps<T extends FieldValues> = {
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;
-};
-
-type ResolvedFormProps<T extends FieldValues> = Omit<
-  UIFormProps<T>,
-  'showTitle' | 'showSubtitle' | 'resetOnSuccess' | 'isSubmitDisabled'
-> & {
-  showTitle: boolean;
-  showSubtitle: boolean;
-  resetOnSuccess: boolean;
-  isSubmitDisabled: boolean;
 };
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
@@ -165,45 +154,42 @@ function FormBody<T extends FieldValues>({
   );
 }
 
-function resolveFormProps<T extends FieldValues>({
-  showTitle = true,
-  showSubtitle = true,
-  resetOnSuccess = false,
-  isSubmitDisabled = false,
-  ...props
-}: UIFormProps<T>): ResolvedFormProps<T> {
-  return { ...props, showTitle, showSubtitle, resetOnSuccess, isSubmitDisabled };
-}
-
-export default function UIForm<T extends FieldValues>(props: UIFormProps<T>): JSX.Element {
-  const resolved = resolveFormProps(props);
-  const { defaultValues, formOptions } = resolved;
+export default function UIForm<T extends FieldValues>({
+  onSubmit,
+  defaultValues,
+  children,
+  formOptions = {}, isSubmitting = undefined, error = null,
+  submitLabel,
+  title,
+  subtitle = null,
+  showTitle = true, showSubtitle = true,
+  resetOnSuccess = false, isSubmitDisabled = false,
+}: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
-  const submitting = resolved.isSubmitting ?? methods.formState.isSubmitting;
+  const submitting = isSubmitting ?? methods.formState.isSubmitting;
   const handleSubmit = buildSubmitHandler({
-    onSubmit: resolved.onSubmit,
+    onSubmit,
     methods,
     defaultValues,
-    resetOnSuccess: resolved.resetOnSuccess,
+    resetOnSuccess,
   });
 
   return (
-    // eslint-disable-next-line react/jsx-props-no-spreading
-    <FormProvider {...methods}>
+    <FormProviderBridge methods={methods}>
       <FormBody
         methods={methods}
         handleSubmit={handleSubmit}
-        error={resolved.error}
-        title={resolved.title}
-        subtitle={resolved.subtitle}
-        showTitle={resolved.showTitle}
-        showSubtitle={resolved.showSubtitle}
+        error={error}
+        title={title}
+        subtitle={subtitle}
+        showTitle={showTitle}
+        showSubtitle={showSubtitle}
         submitting={submitting}
-        isSubmitDisabled={resolved.isSubmitDisabled}
-        submitLabel={resolved.submitLabel}
+        isSubmitDisabled={isSubmitDisabled}
+        submitLabel={submitLabel}
       >
-        {resolved.children}
+        {children}
       </FormBody>
-    </FormProvider>
+    </FormProviderBridge>
   );
 }
