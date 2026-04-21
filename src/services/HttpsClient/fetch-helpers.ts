@@ -1,7 +1,7 @@
-import { HttpError } from './HttpError';
-import { RequestMethod } from './HttpsClient';
-import ResponseMessages from './responseMessages';
-import throwIfHttpError from './throwIfHttpError';
+import { HttpError } from '@/services/HttpsClient/HttpError';
+import { RequestMethod } from '@/services/HttpsClient/HttpsClient';
+import ResponseMessages from '@/services/HttpsClient/responseMessages';
+import throwIfHttpError from '@/services/HttpsClient/throw-if-http-error';
 
 const NO_BODY_STATUSES = new Set([204, 205, 304]);
 

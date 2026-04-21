@@ -1,5 +1,7 @@
-import ApiStatusErrorFactory, { HttpErrorLike } from './api-status-error-factory';
-import { ApiError, ApiErrorCodes } from './ApiErrors';
+import ApiStatusErrorFactory, {
+  type HttpErrorLike,
+} from '@/modules/User/features/Auth/api/api-status-error-factory';
+import { ApiError, ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors';
 
 const NETWORK_KEYWORDS = [
   'failed to fetch',
@@ -27,13 +29,24 @@ export default class ApiErrorFactory {
 
   public static fromGenericError(error: Error, context: string): ApiError {
     if (ApiErrorFactory.isAbortError(error))
-      return new ApiError('Request canceled.', ApiErrorCodes.CANCELLED, undefined, error);
+      return new ApiError({
+        message: 'Request canceled.',
+        code: ApiErrorCodes.CANCELLED,
+        cause: error,
+      });
     if (ApiErrorFactory.isNetworkMessage(error.message)) return ApiErrorFactory.networkError(error);
-    return new ApiError(`${context} failed. Please try again.`, ApiErrorCodes.UNKNOWN);
+    return new ApiError({
+      message: `${context} failed. Please try again.`,
+      code: ApiErrorCodes.UNKNOWN,
+      cause: error,
+    });
   }
 
   public static fromUnknownError(context: string): ApiError {
-    return new ApiError(`${context} failed. Please try again.`, ApiErrorCodes.UNKNOWN);
+    return new ApiError({
+      message: `${context} failed. Please try again.`,
+      code: ApiErrorCodes.UNKNOWN,
+    });
   }
 
   private static fromStatusError(error: HttpErrorLike, context: string): ApiError {
@@ -56,11 +69,10 @@ export default class ApiErrorFactory {
   }
 
   private static networkError(error: unknown): ApiError {
-    return new ApiError(
-      'Network error. Please check your connection.',
-      ApiErrorCodes.NETWORK,
-      undefined,
-      error
-    );
+    return new ApiError({
+      message: 'Network error. Please check your connection.',
+      code: ApiErrorCodes.NETWORK,
+      cause: error,
+    });
   }
 }

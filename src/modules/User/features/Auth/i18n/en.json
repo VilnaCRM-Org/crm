@@ -4,6 +4,11 @@
     "back_to_main": "Back to homepage"
   },
   "auth": {
+    "error": {
+      "default": "Something went wrong. Please try again later.",
+      "details": "Error Details",
+      "tryAgain": "Try again"
+    },
     "password": {
       "hide": "Hide password",
       "show": "Show password"

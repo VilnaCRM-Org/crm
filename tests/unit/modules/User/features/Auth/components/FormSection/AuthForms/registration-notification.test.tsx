@@ -1,5 +1,6 @@
 import { screen, fireEvent } from '@testing-library/react';
 import i18n from 'i18next';
+import React, { act } from 'react';
 import { initReactI18next } from 'react-i18next';
 
 import localization from '@/i18n/localization.json';
@@ -111,6 +112,37 @@ describe('RegistrationNotification', () => {
     expect(onShown).toHaveBeenCalledTimes(1);
   });
 
+  it('calls onShown only once while success view stays mounted across rerenders', () => {
+    const onShown = jest.fn();
+    const onBack = jest.fn();
+    function RerenderHarness(): JSX.Element {
+      const [, setCounter] = React.useState(0);
+      return (
+        <>
+          <button type="button" onClick={() => setCounter((value) => value + 1)}>
+            rerender
+          </button>
+          <RegistrationNotification
+            key="notification"
+            isSubmitting={false}
+            onBack={onBack}
+            view="success"
+            onShown={onShown}
+          />
+        </>
+      );
+    }
+
+    renderWithProviders(
+      <RerenderHarness />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'rerender' }));
+
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+
   it('calls onBack immediately when back is clicked in success view', () => {
     const onBack = jest.fn();
     renderWithProviders(
@@ -140,7 +172,9 @@ describe('RegistrationNotification', () => {
 
     fireEvent.click(screen.getByText('Назад'));
     expect(onBack).not.toHaveBeenCalled();
-    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
@@ -158,7 +192,9 @@ describe('RegistrationNotification', () => {
 
     fireEvent.click(screen.getByText('Назад'));
     unmount();
-    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
     expect(onBack).not.toHaveBeenCalled();
   });
 

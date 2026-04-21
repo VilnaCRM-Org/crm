@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 
 import Authentication from '@/modules/User/features/Auth';
 
-jest.mock('@/styles/theme', () => ({
+jest.mock('@/styles/Theme', () => ({
   __esModule: true,
   default: {},
 }));

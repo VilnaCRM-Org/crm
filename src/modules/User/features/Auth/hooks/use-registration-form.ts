@@ -7,7 +7,7 @@ import {
   selectRegistrationError,
   selectRegistrationLoading,
   selectRegistrationUser,
-} from '@/modules/User/store/registrationSelectors';
+} from '@/modules/User/store/registration-selectors';
 
 import useRegistrationHandlers from './use-registration-handlers';
 import useRegistrationViewSync from './use-registration-view-sync';
@@ -35,7 +35,9 @@ export default function useRegistrationForm(
   const [formKey, setFormKey] = useState(0);
   const lastSubmittedDataRef = useRef<RegisterUserDto | null>(null);
 
-  useEffect(() => onViewChange?.(view), [onViewChange, view]);
+  useEffect(() => {
+    onViewChange?.(view);
+  }, [onViewChange, view]);
   useRegistrationViewSync({ user, error, isSubmitting, setView });
 
   const handlers = useRegistrationHandlers({

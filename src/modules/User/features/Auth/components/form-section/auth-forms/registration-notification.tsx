@@ -1,5 +1,5 @@
 import { Box, Fade } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 
 import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 
@@ -19,10 +19,27 @@ type RegistrationNotificationProps = {
 
 export const BACK_CLOSE_ANIMATION_MS = 300;
 
+function isSuccessView(view: string): boolean {
+  return view === 'success';
+}
+
+function markShown(
+  calledRef: MutableRefObject<boolean>,
+  onShown?: () => void
+): boolean {
+  if (calledRef.current) return calledRef.current;
+  onShown?.();
+  return true;
+}
+
 function useShownCallback(view: string, onShown?: () => void): void {
+  const calledRef = useRef(false);
+  const successView = isSuccessView(view);
+
   useEffect(() => {
-    if (view === 'success') onShown?.();
-  }, [onShown, view]);
+    if (!successView) { calledRef.current = false; return; }
+    calledRef.current = markShown(calledRef, onShown);
+  }, [onShown, successView]);
 }
 
 export default function RegistrationNotification({
@@ -40,7 +57,7 @@ export default function RegistrationNotification({
   useShownCallback(view, onShown);
 
   const handleBack = useCallback(() => {
-    if (view === 'success') {
+    if (isSuccessView(view)) {
       onBack();
       return;
     }

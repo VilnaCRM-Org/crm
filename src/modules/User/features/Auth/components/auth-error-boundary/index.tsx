@@ -1,4 +1,6 @@
+import styled from '@emotion/styled';
 import React, { Component, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface AuthErrorBoundaryState {
   hasError: boolean;
@@ -11,17 +13,31 @@ interface AuthErrorBoundaryProps {
   onError?: (error: Error, info: React.ErrorInfo) => void;
 }
 
-const DEFAULT_FALLBACK: ReactNode = 'Something went wrong. Please try again later.';
+const DEFAULT_FALLBACK_KEY = 'auth.error.default';
 
 const shouldShowErrorDetails = (error: Error | undefined): error is Error =>
   Boolean(error) && (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test');
 
+const DetailsContainer = styled('details')({
+  marginTop: '1rem',
+});
+
+const SummaryStyled = styled('summary')({
+  cursor: 'pointer',
+});
+
+const RetryButton = styled('button')({
+  marginTop: '1rem',
+});
+
 function ErrorDetails({ error }: { error: Error }): JSX.Element {
+  const { t } = useTranslation();
+
   return (
-    <details style={{ marginTop: '1rem' }}>
-      <summary>Error Details</summary>
+    <DetailsContainer>
+      <SummaryStyled>{t('auth.error.details')}</SummaryStyled>
       <pre style={{ whiteSpace: 'pre-wrap' }}>{error.message}</pre>
-    </details>
+    </DetailsContainer>
   );
 }
 
@@ -34,6 +50,9 @@ function FallbackContainer({
   error?: Error;
   onReset: () => void;
 }): JSX.Element {
+  const { t } = useTranslation();
+  const resolvedFallback = fallback === DEFAULT_FALLBACK_KEY ? t(DEFAULT_FALLBACK_KEY) : fallback;
+
   return (
     <div
       role="alert"
@@ -41,15 +60,14 @@ function FallbackContainer({
       aria-atomic="true"
       data-testid="auth-error-boundary-fallback"
     >
-      {fallback}
-      <button
+      {resolvedFallback}
+      <RetryButton
         type="button"
         data-testid="auth-error-boundary-try-again"
         onClick={onReset}
-        style={{ marginTop: '1rem' }}
       >
-        Try again
-      </button>
+        {t('auth.error.tryAgain')}
+      </RetryButton>
       {shouldShowErrorDetails(error) && <ErrorDetails error={error} />}
     </div>
   );
@@ -76,7 +94,7 @@ export default class AuthErrorBoundary extends Component<
   public handleReset = (): void => this.setState({ hasError: false, error: undefined });
 
   public render(): ReactNode {
-    const { children, fallback = DEFAULT_FALLBACK } = this.props;
+    const { children, fallback = DEFAULT_FALLBACK_KEY } = this.props;
     const { hasError, error } = this.state;
     if (!hasError) return children;
     const rendered =

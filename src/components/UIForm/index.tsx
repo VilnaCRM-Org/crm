@@ -10,8 +10,7 @@ import {
 } from 'react-hook-form';
 
 import UIButton from '@/components/UIButton';
-
-import UITypography from '../UITypography';
+import UITypography from '@/components/UITypography';
 
 import FormProviderBridge from './form-provider-bridge';
 import styles from './styles';

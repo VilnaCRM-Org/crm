@@ -301,7 +301,7 @@ lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if
 	PLOC_FILE_MAX="300" \
 	SLOC_FILE_MAX="350" \
 	HALSTEAD_VOLUME_FILE_MAX="8000" \
-	HALSTEAD_BUGS_FILE_MAX="2.0" \
+	HALSTEAD_BUGS_FILE_MAX="1.58" \
 	MI_VISUAL_STUDIO_MIN="20" \
 	MI_ORIGINAL_MIN="65" \
 	MI_SEI_MIN="65" \

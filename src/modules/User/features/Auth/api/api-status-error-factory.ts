@@ -60,7 +60,13 @@ export default class ApiStatusErrorFactory {
 
   public static fromHttpError(error: HttpErrorLike, context: string): ApiError {
     const spec = STATUS_ERROR_SPECS[error.status];
-    if (!spec) return new ApiError(`${context} failed`, ApiErrorCodes.UNKNOWN, error.status, error);
+    if (!spec)
+      return new ApiError({
+        message: `${context} failed`,
+        code: ApiErrorCodes.UNKNOWN,
+        status: error.status,
+        cause: error,
+      });
     return new ApiStatusErrorFactory(spec, error, context).toApiError();
   }
 
@@ -76,16 +82,21 @@ export default class ApiStatusErrorFactory {
 
   private toKnownApiError(spec: Extract<StatusErrorSpec, { kind: 'api' }>): ApiError {
     const message = spec.status === 404 ? `${this.context} ${spec.message}` : spec.message;
-    return new ApiError(message, spec.code, spec.status, this.error);
+    return new ApiError({
+      message,
+      code: spec.code,
+      status: spec.status,
+      cause: this.error,
+    });
   }
 
   private toServiceUnavailableError(): ApiError {
-    return new ApiError(
-      'Service unavailable. Please try again later.',
-      ApiErrorCodes.SERVER,
-      this.error.status,
-      this.error
-    );
+    return new ApiError({
+      message: 'Service unavailable. Please try again later.',
+      code: ApiErrorCodes.SERVER,
+      status: this.error.status,
+      cause: this.error,
+    });
   }
 
   private toValidationError(

@@ -1,5 +1,6 @@
 import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints';
 import { paletteColors } from '@/styles/colors';
+import type { Theme } from '@mui/material/styles';
 
 export const compactViewport = `@media (max-width:${breakpointsTheme.breakpoints.values.sm - 1}px) and (max-height:${heightBreakpoints.compact}px)`;
 
@@ -24,14 +25,15 @@ export const notificationSection = {
   zIndex: 1000,
 } as const;
 
-export const messageButtonText = {
-  fontWeight: 500,
+export const messageButtonText = (theme: Theme): Theme['typography']['button'] & Record<string, unknown> => ({
+  ...theme.typography.button,
+  fontFamily: theme.typography.fontFamily,
   fontSize: '0.9375rem',
   lineHeight: '1.125rem',
-  fontFamily: 'Golos, sans-serif',
-  [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-    fontWeight: 600,
+  fontWeight: 500,
+  [theme.breakpoints.up('md')]: {
     fontSize: '1.125rem',
     lineHeight: '1.35rem',
+    fontWeight: 600,
   },
-} as const;
+});

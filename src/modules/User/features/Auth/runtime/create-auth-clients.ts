@@ -1,8 +1,8 @@
 import API_ENDPOINTS from '@/config/apiConfig';
-import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
+import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
 import type HttpsClient from '@/services/HttpsClient/HttpsClient';
 
-import BaseAPI from '@/modules/User/features/Auth/api/BaseAPI';
+import BaseAPI from '@/modules/User/features/Auth/api/base-api';
 import type { RequestOptions } from '@/modules/User/features/Auth/api/types';
 import type {
   LoginResponse,

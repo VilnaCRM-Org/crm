@@ -7,7 +7,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function trimmedString(value: unknown): string | null {
-  return typeof value === 'string' && value.trim() ? value : null;
+  const s = typeof value === 'string' && value.trim() ? value.trim() : null;
+  return s;
 }
 
 function getNestedMessage(value: unknown): string | null {

@@ -124,6 +124,10 @@ describe('normalizeLoginErrorMessage', () => {
     expect(normalizeLoginErrorMessage('Invalid credentials')).toBe('Invalid credentials');
   });
 
+  it('returns a trimmed direct string error when it contains surrounding whitespace', () => {
+    expect(normalizeLoginErrorMessage('  Invalid credentials  ')).toBe('Invalid credentials');
+  });
+
   it('returns an Error message when the error is an Error instance', () => {
     expect(normalizeLoginErrorMessage(new Error('Invalid credentials'))).toBe(
       'Invalid credentials'
