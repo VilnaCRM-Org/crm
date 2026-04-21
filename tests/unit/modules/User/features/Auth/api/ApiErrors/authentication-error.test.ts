@@ -1,5 +1,5 @@
 import ApiError from '@/modules/User/features/Auth/api/ApiErrors/api-error';
-import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors/ApiErrorCodes';
+import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors/api-error-codes';
 import AuthenticationError from '@/modules/User/features/Auth/api/ApiErrors/authentication-error';
 
 describe('AuthenticationError', () => {

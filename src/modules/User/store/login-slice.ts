@@ -35,6 +35,9 @@ export const loginUser = createAsyncThunk<
     const result = parseLoginResponse(apiResponse, credentials.email);
     return result.ok ? result.value : rejectWithValue(result.error);
   } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw err;
+    }
     return rejectWithValue(toUiError(err));
   }
 });
@@ -71,6 +74,7 @@ function handleRejected(
   action: ReturnType<typeof loginUser.rejected>
 ): void {
   state.loading = false;
+  if (action.meta.aborted) return;
   state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
 }
 

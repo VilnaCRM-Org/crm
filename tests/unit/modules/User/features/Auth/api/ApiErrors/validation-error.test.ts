@@ -1,7 +1,7 @@
 /** @jest-environment jsdom */
 
 import ApiError from '@/modules/User/features/Auth/api/ApiErrors/api-error';
-import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors/ApiErrorCodes';
+import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors/api-error-codes';
 import ValidationError from '@/modules/User/features/Auth/api/ApiErrors/validation-error';
 
 describe('ValidationError', () => {

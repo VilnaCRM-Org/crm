@@ -5,13 +5,20 @@ import throwIfHttpError from '@/services/HttpsClient/throw-if-http-error';
 
 const NO_BODY_STATUSES = new Set([204, 205, 304]);
 
-function isBinaryBody(body: unknown): boolean {
-  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
-  const isBlob = typeof Blob !== 'undefined' && body instanceof Blob;
-  const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && body instanceof ArrayBuffer;
-  const isReadableStream =
-    typeof ReadableStream !== 'undefined' && body instanceof ReadableStream;
-  return isFormData || isBlob || isArrayBuffer || isReadableStream || typeof body === 'string';
+function getBodyInitCtors(): Array<new (...args: never[]) => object> {
+  const out: Array<new (...args: never[]) => object> = [];
+  const g = globalThis as Record<string, unknown>;
+  for (const name of ['FormData', 'Blob', 'ArrayBuffer', 'URLSearchParams', 'ReadableStream']) {
+    const ctor = g[name];
+    if (typeof ctor === 'function') out.push(ctor as new (...args: never[]) => object);
+  }
+  return out;
+}
+
+function isBodyInit(body: unknown): boolean {
+  if (typeof body === 'string') return true;
+  for (const ctor of getBodyInitCtors()) if (body instanceof ctor) return true;
+  return typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(body);
 }
 
 function createHeaders(
@@ -19,7 +26,14 @@ function createHeaders(
   customHeaders?: Record<string, string>
 ): Record<string, string> {
   const headers: Record<string, string> = { Accept: 'application/json', ...customHeaders };
-  if (contentType && !('Content-Type' in headers)) headers['Content-Type'] = contentType;
+  let hasContentType = false;
+  for (const name of Object.keys(headers)) {
+    if (name.toLowerCase() === 'content-type') {
+      hasContentType = true;
+      break;
+    }
+  }
+  if (contentType && !hasContentType) headers['Content-Type'] = contentType;
   return headers;
 }
 
@@ -29,7 +43,7 @@ export function createRequestConfig(
   headers: Record<string, string> | undefined
 ): RequestInit {
   const hasBody = body !== undefined;
-  const isJsonBody = hasBody && !isBinaryBody(body);
+  const isJsonBody = hasBody && !isBodyInit(body);
   const config: RequestInit = {
     method,
     headers: createHeaders(isJsonBody ? 'application/json' : undefined, headers),
@@ -70,7 +84,12 @@ export async function processResponse<T>(response: Response): Promise<T> {
 }
 
 export function rethrowOrWrap(err: unknown): never {
-  if (err instanceof Error && err.name === 'AbortError') throw err;
+  const isAbort =
+    typeof err === 'object' &&
+    err !== null &&
+    'name' in err &&
+    (err as { name?: unknown }).name === 'AbortError';
+  if (isAbort) throw err;
   if (err instanceof HttpError) throw err;
   throw new HttpError({ status: 0, message: ResponseMessages.NETWORK_ERROR, cause: err });
 }

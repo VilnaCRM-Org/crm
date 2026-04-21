@@ -1,4 +1,3 @@
-import { injectable } from 'tsyringe';
 
 import {
   createRequestConfig as buildRequestConfig,
@@ -20,7 +19,6 @@ interface RequestArgs {
   options?: RequestOptions;
 }
 
-@injectable()
 export default class FetchHttpsClient implements HttpsClient {
   public get<T>(url: string, options?: RequestOptions): Promise<T> {
     return this.request<T>({ url, method: 'GET', options });

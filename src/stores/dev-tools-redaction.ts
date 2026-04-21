@@ -23,7 +23,8 @@ const SENSITIVE_KEYS_LOWER = new Set([
   'session',
 ]);
 
-const SENSITIVE_SUBSTRINGS = ['token', 'secret', 'pass', 'auth'];
+const SENSITIVE_SUBSTRINGS = ['token', 'secret'];
+const SENSITIVE_TOKEN_RE = /(^|[-_])(password|passwd|passcode|auth|authz|authn)($|[-_])/;
 const KEY_SUFFIX_RE = /(^|[-_])(api|x-?api|access|private|client)?key$/;
 
 function isPlainObject(val: unknown): val is Record<string, unknown> {
@@ -38,7 +39,7 @@ function isSensitiveKey(k: string): boolean {
   for (const substring of SENSITIVE_SUBSTRINGS) {
     if (lower.includes(substring)) return true;
   }
-  return KEY_SUFFIX_RE.test(lower);
+  return SENSITIVE_TOKEN_RE.test(lower) || KEY_SUFFIX_RE.test(lower);
 }
 
 function redactMap<T>(

@@ -1,5 +1,5 @@
 import ApiError from './api-error';
-import { ApiErrorCodes } from './ApiErrorCodes';
+import { ApiErrorCodes } from './api-error-codes';
 
 export type ValidationErrorOptions = Readonly<{
   message?: string;

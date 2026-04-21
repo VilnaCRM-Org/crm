@@ -14,26 +14,22 @@ const NETWORK_KEYWORDS = [
   'econnrefused',
   'enetunreach',
   'ehostunreach',
-  'ecanceled',
-  'canceled',
-  'cancelled',
   'err_network',
 ];
 
+const CANCELLATION_KEYWORDS = ['abort', 'aborted', 'ecanceled', 'canceled', 'cancelled'];
+
 export default class ApiErrorFactory {
   public static fromHttpError(error: HttpErrorLike, context: string): ApiError {
+    if (ApiErrorFactory.isCancellationMessage(error.message))
+      return ApiErrorFactory.cancelledError(error);
     if (error.status === 0 || ApiErrorFactory.isNetworkMessage(error.message))
       return ApiErrorFactory.networkError(error);
     return ApiErrorFactory.fromStatusError(error, context);
   }
 
   public static fromGenericError(error: Error, context: string): ApiError {
-    if (ApiErrorFactory.isAbortError(error))
-      return new ApiError({
-        message: 'Request canceled.',
-        code: ApiErrorCodes.CANCELLED,
-        cause: error,
-      });
+    if (ApiErrorFactory.isAbortError(error)) return ApiErrorFactory.cancelledError(error);
     if (ApiErrorFactory.isNetworkMessage(error.message)) return ApiErrorFactory.networkError(error);
     return new ApiError({
       message: `${context} failed. Please try again.`,
@@ -55,8 +51,16 @@ export default class ApiErrorFactory {
 
   private static isAbortError(err: Error): boolean {
     const name = err.name?.toLowerCase?.() ?? '';
-    const msg = err.message?.toLowerCase?.() ?? '';
-    return name === 'aborterror' || msg.includes('abort');
+    return name === 'aborterror' || ApiErrorFactory.isCancellationMessage(err.message);
+  }
+
+  private static isCancellationMessage(message: string): boolean {
+    if (!message) return false;
+    const normalized = message.toLowerCase();
+    for (const keyword of CANCELLATION_KEYWORDS) {
+      if (normalized.includes(keyword)) return true;
+    }
+    return false;
   }
 
   private static isNetworkMessage(message: string): boolean {
@@ -72,6 +76,14 @@ export default class ApiErrorFactory {
     return new ApiError({
       message: 'Network error. Please check your connection.',
       code: ApiErrorCodes.NETWORK,
+      cause: error,
+    });
+  }
+
+  private static cancelledError(error: unknown): ApiError {
+    return new ApiError({
+      message: 'Request canceled.',
+      code: ApiErrorCodes.CANCELLED,
       cause: error,
     });
   }

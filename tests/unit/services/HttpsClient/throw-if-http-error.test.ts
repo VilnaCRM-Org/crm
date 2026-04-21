@@ -296,7 +296,7 @@ describe('throwIfHttpError', () => {
           expect(error.cause).toBeDefined();
           expect((error.cause as ErrorCause).url).toBe('https://api.example.com/test');
           expect((error.cause as ErrorCause).contentType).toBe('application/json');
-          expect((error.cause as ErrorCause).body).toEqual({ error: 'details' });
+          expect((error.cause as ErrorCause).body).toBe(JSON.stringify({ error: 'details' }));
         }
       }
     });
@@ -603,7 +603,7 @@ describe('throwIfHttpError', () => {
           expect(error.message).toBe('Email is invalid');
           expect(error.status).toBe(422);
           const body = (error.cause as ErrorCause | undefined)?.body;
-          expect(typeof body === 'object' && body !== null && 'fields' in body).toBe(true);
+          expect(typeof body === 'string' && body.includes('"fields"')).toBe(true);
         }
       }
     });
@@ -672,7 +672,7 @@ describe('throwIfHttpError', () => {
         expect(error).toBeInstanceOf(HttpError);
         if (error instanceof HttpError) {
           expect(error.message).toBe('500 Internal Server Error');
-          expect((error.cause as ErrorCause).body).toBe('');
+          expect((error.cause as ErrorCause).body).toBeUndefined();
         }
       }
     });

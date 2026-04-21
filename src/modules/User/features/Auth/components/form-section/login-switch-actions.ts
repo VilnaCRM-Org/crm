@@ -16,17 +16,37 @@ export type SwitchDeps = {
   setLoadLoginError: (v: LoadLoginErrorKey) => void;
 };
 
+let activeLoginSwitchId = 0;
+
 export function switchToRegister(deps: SwitchDeps): void {
+  activeLoginSwitchId += 1;
   deps.setLoadLoginError(null);
   deps.setMode('register');
 }
 
+function applyLoginSwitchResult(
+  deps: SwitchDeps,
+  requestId: number,
+  outcome: 'loaded' | 'failed'
+): void {
+  if (requestId !== activeLoginSwitchId) return;
+  if (outcome === 'loaded') startTransition(() => deps.setMode('login'));
+  else deps.setLoadLoginError(LOAD_LOGIN_ERROR_KEY);
+}
+
+function finishLoginSwitch(deps: SwitchDeps, requestId: number): void {
+  if (requestId !== activeLoginSwitchId) return;
+  deps.setIsLoadingLogin(false);
+}
+
 export function switchToLogin(deps: SwitchDeps): void {
   if (deps.isLoadingLogin) return;
+  activeLoginSwitchId += 1;
+  const requestId = activeLoginSwitchId;
   deps.setLoadLoginError(null);
   deps.setIsLoadingLogin(true);
   loadLoginForm()
-    .then(() => startTransition(() => deps.setMode('login')))
-    .catch(() => deps.setLoadLoginError(LOAD_LOGIN_ERROR_KEY))
-    .finally(() => deps.setIsLoadingLogin(false));
+    .then(() => applyLoginSwitchResult(deps, requestId, 'loaded'))
+    .catch(() => applyLoginSwitchResult(deps, requestId, 'failed'))
+    .finally(() => finishLoginSwitch(deps, requestId));
 }

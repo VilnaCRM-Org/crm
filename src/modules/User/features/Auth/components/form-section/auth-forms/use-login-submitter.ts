@@ -21,9 +21,12 @@ type SubmitLoginContext = {
   t: TFunction;
 };
 
+const I18N_KEY_RE = /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/i;
+
 function setLoginFailure(ctx: SubmitLoginContext, err: unknown): void {
   const message = normalizeLoginErrorMessage(err);
-  ctx.setError(ctx.t('sign_in.errors.login', { reason: ctx.t(message) }));
+  const reason = I18N_KEY_RE.test(message) ? ctx.t(message) : message;
+  ctx.setError(ctx.t('sign_in.errors.login', { reason }));
 }
 
 async function submitLogin(ctx: SubmitLoginContext): Promise<void> {

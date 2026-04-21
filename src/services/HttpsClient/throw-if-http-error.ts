@@ -1,23 +1,32 @@
 import { HttpError } from './HttpError';
 
+const MAX_ERROR_BODY_CHARS = 500;
+
 interface JsonWithMessage {
   message?: string;
 }
 
 interface ExtractedBody {
   message: string | null;
-  body: unknown;
+  body: string | undefined;
+}
+
+function truncate(value: string): string {
+  return value.slice(0, MAX_ERROR_BODY_CHARS);
 }
 
 async function extractJsonBody(clone: Response): Promise<ExtractedBody> {
   const data = (await clone.json().catch(() => undefined)) as JsonWithMessage | undefined;
-  return { message: data?.message ? data.message.slice(0, 500) : null, body: data };
+  const message = typeof data?.message === 'string' ? truncate(data.message) : null;
+  const body = data === undefined ? undefined : truncate(JSON.stringify(data));
+  return { message, body };
 }
 
 async function extractTextBody(clone: Response, ct: string): Promise<ExtractedBody> {
   const text = await clone.text().catch(() => '');
-  const message = ct.includes('text/plain') && text ? text.slice(0, 500) : null;
-  return { message, body: text };
+  const body = text ? truncate(text) : undefined;
+  const message = ct.includes('text/plain') && body ? body : null;
+  return { message, body };
 }
 
 async function extractBody(res: Response): Promise<ExtractedBody> {

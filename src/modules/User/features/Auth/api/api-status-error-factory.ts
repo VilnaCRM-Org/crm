@@ -71,13 +71,18 @@ export default class ApiStatusErrorFactory {
   }
 
   private toApiError(): ApiError {
-    let result = this.toServiceUnavailableError();
-    if (this.spec.kind === 'validation') result = this.toValidationError(this.spec);
-    else if (this.spec.kind === 'auth') result = new AuthenticationError();
-    else if (this.spec.kind === 'api') result = this.toKnownApiError(this.spec);
-    else if (this.spec.kind === 'conflict')
-      result = new ConflictError(`${this.context} conflict. Resource already exists.`);
-    return result;
+    const { spec } = this;
+    if (spec.kind === 'validation') return this.toValidationError(spec);
+    if (spec.kind === 'api') return this.toKnownApiError(spec);
+    return this.toSimpleApiError(spec.kind);
+  }
+
+  private toSimpleApiError(kind: 'auth' | 'conflict' | 'service'): ApiError {
+    if (kind === 'auth') return new AuthenticationError();
+    if (kind === 'conflict')
+      return new ConflictError(`${this.context} conflict. Resource already exists.`);
+    const exhaustive: 'service' = kind;
+    return exhaustive === 'service' ? this.toServiceUnavailableError() : exhaustive;
   }
 
   private toKnownApiError(spec: Extract<StatusErrorSpec, { kind: 'api' }>): ApiError {
@@ -93,7 +98,7 @@ export default class ApiStatusErrorFactory {
   private toServiceUnavailableError(): ApiError {
     return new ApiError({
       message: 'Service unavailable. Please try again later.',
-      code: ApiErrorCodes.SERVER,
+      code: ApiErrorCodes.SERVICE_UNAVAILABLE,
       status: this.error.status,
       cause: this.error,
     });

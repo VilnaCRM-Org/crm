@@ -18,9 +18,9 @@ describe('ApiStatusErrorFactory', () => {
     [422, ValidationError, ApiErrorCodes.VALIDATION, 'Unprocessable profile data'],
     [429, ApiError, ApiErrorCodes.RATE_LIMITED, 'Too many requests. Please slow down.'],
     [500, ApiError, ApiErrorCodes.SERVER, 'Server error. Please try again later.'],
-    [502, ApiError, ApiErrorCodes.SERVER, 'Service unavailable. Please try again later.'],
-    [503, ApiError, ApiErrorCodes.SERVER, 'Service unavailable. Please try again later.'],
-    [504, ApiError, ApiErrorCodes.SERVER, 'Service unavailable. Please try again later.'],
+    [502, ApiError, ApiErrorCodes.SERVICE_UNAVAILABLE, 'Service unavailable. Please try again later.'],
+    [503, ApiError, ApiErrorCodes.SERVICE_UNAVAILABLE, 'Service unavailable. Please try again later.'],
+    [504, ApiError, ApiErrorCodes.SERVICE_UNAVAILABLE, 'Service unavailable. Please try again later.'],
   ])(
     'maps HTTP %i to the expected API error',
     (status, expectedType, expectedCode, expectedMessage) => {
