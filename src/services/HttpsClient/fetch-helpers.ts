@@ -21,19 +21,21 @@ function isBodyInit(body: unknown): boolean {
   return typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(body);
 }
 
+function hasHeader(headers: Record<string, string>, target: string): boolean {
+  const normalized = target.toLowerCase();
+  for (const name of Object.keys(headers)) {
+    if (name.toLowerCase() === normalized) return true;
+  }
+  return false;
+}
+
 function createHeaders(
   contentType: string | undefined,
   customHeaders?: Record<string, string>
 ): Record<string, string> {
-  const headers: Record<string, string> = { Accept: 'application/json', ...customHeaders };
-  let hasContentType = false;
-  for (const name of Object.keys(headers)) {
-    if (name.toLowerCase() === 'content-type') {
-      hasContentType = true;
-      break;
-    }
-  }
-  if (contentType && !hasContentType) headers['Content-Type'] = contentType;
+  const headers: Record<string, string> = { ...customHeaders };
+  if (!hasHeader(headers, 'accept')) headers.Accept = 'application/json';
+  if (contentType && !hasHeader(headers, 'content-type')) headers['Content-Type'] = contentType;
   return headers;
 }
 
@@ -70,7 +72,7 @@ async function parseJsonBody<T>(response: Response, status: number): Promise<T> 
 
 async function readNonJsonBody<T>(response: Response, status: number): Promise<T> {
   const text = await response.text().catch(() => '');
-  if (!text) return undefined as T;
+  if (!text || text.trim().length === 0) return undefined as T;
   throw new HttpError({ status, message: ResponseMessages.RESPONSE_NOT_JSON, cause: response });
 }
 

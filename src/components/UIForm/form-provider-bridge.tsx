@@ -10,7 +10,7 @@ export default function FormProviderBridge<T extends FieldValues>({
   methods,
   children,
 }: FormProviderBridgeProps<T>): JSX.Element {
-  // Forwards every UseFormReturn field so FormProvider types stay satisfied across react-hook-form v7.49+.
+  // Forwards every UseFormReturn field so FormProvider types stay satisfied across react-hook-form v7.57+ (subscribe support).
   return (
     <FormProvider
       watch={methods.watch}

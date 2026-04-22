@@ -2,10 +2,9 @@ import { UiError, ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
 import { ActionReducerMapBuilder, createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-import { LoginResponseSchema, type LoginResponse } from '../features/Auth/types/ApiResponses';
-import { LoginUserDto } from '../features/Auth/types/Credentials';
-
-import { ThunkExtra } from './types';
+import { LoginResponseSchema, type LoginResponse } from '@/modules/User/features/Auth/types/ApiResponses';
+import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import { ThunkExtra } from '@/modules/User/store/types';
 
 type LoginSuccessPayload = LoginResponse & { email: string };
 
@@ -16,7 +15,7 @@ function parseLoginResponse(
   const parsed = LoginResponseSchema.safeParse(apiResponse);
   if (!parsed.success) {
     const displayMessage = parsed.error.issues.map((i) => i.message).join('; ');
-    return { ok: false, error: { displayMessage, retryable: true } };
+    return { ok: false, error: { displayMessage, retryable: false } };
   }
   return { ok: true, value: { email: email.toLowerCase(), ...parsed.data } };
 }
