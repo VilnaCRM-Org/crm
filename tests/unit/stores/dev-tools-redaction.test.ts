@@ -33,4 +33,16 @@ describe('deepRedact', () => {
     expect(listed.authToken).toBe('***');
     expect(setValue.authToken).toBe('***');
   });
+
+  it('redacts sensitive values stored under sensitive map keys', () => {
+    const redacted = deepRedact(
+      new Map<unknown, unknown>([
+        ['password', 'hidden-password'],
+        ['profile', { token: 'secret-token' }],
+      ])
+    );
+
+    expect(redacted.get('password')).toBe('***');
+    expect(redacted.get('profile')).toEqual({ token: '***' });
+  });
 });

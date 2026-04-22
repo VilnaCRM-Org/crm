@@ -1,28 +1,15 @@
-import { UiError, ErrorHandler } from '@/services/error';
-import { ErrorParser } from '@/utils/error';
+import type { UiError } from '@/services/error';
 import { createSlice, createAsyncThunk, PayloadAction, ActionReducerMapBuilder } from '@reduxjs/toolkit';
 
-import { RegistrationResponseSchema, SafeUserInfo } from '../features/Auth/types/ApiResponses';
+import { SafeUserInfo } from '../features/Auth/types/ApiResponses';
 import { RegisterUserDto } from '../features/Auth/types/Credentials';
 
+import AuthUiErrorMapper from './auth-ui-error-mapper';
+import RegistrationResponseMapper from './registration-response-mapper';
 import { ThunkExtra } from './types';
 
-function parseRegistrationResponse(
-  apiResponse: unknown
-): { ok: true; value: SafeUserInfo } | { ok: false; error: UiError } {
-  const parsed = RegistrationResponseSchema.safeParse(apiResponse);
-  if (!parsed.success) {
-    const displayMessage = parsed.error.issues
-      .map((i) => `${i.path.join('.')}: ${i.message}`)
-      .join('\n');
-    return { ok: false, error: { displayMessage, retryable: false } };
-  }
-  return { ok: true, value: parsed.data };
-}
-
-function toUiError(err: unknown): UiError {
-  return ErrorHandler.handleAuthError(ErrorParser.parseHttpError(err));
-}
+const registrationResponseMapper = new RegistrationResponseMapper();
+const authUiErrorMapper = new AuthUiErrorMapper();
 
 export const registerUser = createAsyncThunk<
   SafeUserInfo,
@@ -31,10 +18,14 @@ export const registerUser = createAsyncThunk<
 >('registration/registerUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.registrationAPI.register(credentials, { signal });
-    const result = parseRegistrationResponse(apiResponse);
+    const result = registrationResponseMapper.map(apiResponse);
     return result.ok ? result.value : rejectWithValue(result.error);
   } catch (err) {
-    return rejectWithValue(toUiError(err));
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw err;
+    }
+
+    return rejectWithValue(authUiErrorMapper.map(err));
   }
 });
 

@@ -3,11 +3,14 @@ import type { LoginResponse, RegistrationResponse } from '@/modules/User/feature
 import type { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 type LoginApiClient = {
-  login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse>;
+  login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse | undefined>;
 };
 
 type RegistrationApiClient = {
-  register(credentials: RegisterUserDto, options?: RequestOptions): Promise<RegistrationResponse>;
+  register(
+    credentials: RegisterUserDto,
+    options?: RequestOptions
+  ): Promise<RegistrationResponse | undefined>;
 };
 
 export type ThunkExtra = {

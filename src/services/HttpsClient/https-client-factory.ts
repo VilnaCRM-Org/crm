@@ -1,4 +1,4 @@
-import HttpsClient from '@/services/HttpsClient/HttpsClient';
+import HttpsClient from '@/services/HttpsClient/https-client';
 
 export default class HttpClientFactory {
   private clientConstructors = new Map<string, new () => HttpsClient>();

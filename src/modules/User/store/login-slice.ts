@@ -1,28 +1,13 @@
-import { UiError, ErrorHandler } from '@/services/error';
-import { ErrorParser } from '@/utils/error';
+import { type UiError } from '@/services/error';
 import { ActionReducerMapBuilder, createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-import { LoginResponseSchema, type LoginResponse } from '@/modules/User/features/Auth/types/ApiResponses';
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import AuthUiErrorMapper from '@/modules/User/store/auth-ui-error-mapper';
+import LoginResponseMapper, { type LoginSuccessPayload } from '@/modules/User/store/login-response-mapper';
 import { ThunkExtra } from '@/modules/User/store/types';
 
-type LoginSuccessPayload = LoginResponse & { email: string };
-
-function parseLoginResponse(
-  apiResponse: unknown,
-  email: string
-): { ok: true; value: LoginSuccessPayload } | { ok: false; error: UiError } {
-  const parsed = LoginResponseSchema.safeParse(apiResponse);
-  if (!parsed.success) {
-    const displayMessage = parsed.error.issues.map((i) => i.message).join('; ');
-    return { ok: false, error: { displayMessage, retryable: false } };
-  }
-  return { ok: true, value: { email: email.toLowerCase(), ...parsed.data } };
-}
-
-function toUiError(err: unknown): UiError {
-  return ErrorHandler.handleAuthError(ErrorParser.parseHttpError(err));
-}
+const loginResponseMapper = new LoginResponseMapper();
+const authUiErrorMapper = new AuthUiErrorMapper();
 
 export const loginUser = createAsyncThunk<
   LoginSuccessPayload,
@@ -31,13 +16,13 @@ export const loginUser = createAsyncThunk<
 >('auth/loginUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.loginAPI.login(credentials, { signal });
-    const result = parseLoginResponse(apiResponse, credentials.email);
+    const result = loginResponseMapper.map(apiResponse, credentials.email);
     return result.ok ? result.value : rejectWithValue(result.error);
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
       throw err;
     }
-    return rejectWithValue(toUiError(err));
+    return rejectWithValue(authUiErrorMapper.map(err));
   }
 });
 

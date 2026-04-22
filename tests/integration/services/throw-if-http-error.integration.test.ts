@@ -89,15 +89,21 @@ describe('throwIfHttpError Coverage Tests', () => {
       }),
     } as unknown as Response;
 
-    await expect(throwIfHttpError(mockResponse)).rejects.toMatchObject({
-      status: 422,
-      message: jsonBody.message,
-      cause: {
-        url: 'http://localhost/api/test',
-        contentType: 'application/json',
-        body: jsonBody,
-      },
-    });
+    try {
+      await throwIfHttpError(mockResponse);
+      fail('Should have thrown HttpError');
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpError);
+      if (error instanceof HttpError) {
+        expect(error.status).toBe(422);
+        expect(error.message).toBe(jsonBody.message);
+        expect(error.cause).toEqual({
+          url: 'http://localhost/api/test',
+          contentType: 'application/json',
+          body: JSON.stringify(jsonBody),
+        });
+      }
+    }
   });
 
   it('should handle missing content-type header', async () => {

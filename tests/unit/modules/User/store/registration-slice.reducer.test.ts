@@ -78,7 +78,9 @@ describe('registrationSlice reducer and thunk coverage', () => {
     const state = store.getState().registration;
     expect(state.loading).toBe(false);
     expect(state.user).toBeNull();
-    expect(state.error).toContain('fullName');
+    expect(state.error).toBe(
+      'There was a problem with the provided information. Please check your input.'
+    );
     expect(state.retryable).toBe(false);
   });
 

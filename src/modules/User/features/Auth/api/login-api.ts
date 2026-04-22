@@ -1,24 +1,28 @@
 import API_ENDPOINTS from '@/config/apiConfig';
 import TOKENS from '@/config/tokens';
-import type HttpsClient from '@/services/HttpsClient/HttpsClient';
-import { injectable, inject } from 'tsyringe';
+import type HttpsClient from '@/services/HttpsClient/https-client';
+import { inject, injectable } from 'tsyringe';
 
 import type { LoginResponse } from '../types/ApiResponses';
 import { LoginUserDto } from '../types/Credentials';
 
+import ApiErrorConverter from './api-error-converter';
 import BaseAPI from './base-api';
 import { RequestOptions } from './types';
 
 @injectable()
 export default class LoginAPI extends BaseAPI {
   constructor(
-    @inject(TOKENS.HttpsClient)
-    private readonly httpsClient: HttpsClient
+    @inject(TOKENS.HttpsClient) private readonly httpsClient: HttpsClient,
+    @inject(TOKENS.ApiErrorConverter) apiErrorConverter: ApiErrorConverter
   ) {
-    super();
+    super(apiErrorConverter);
   }
 
-  public async login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse> {
+  public async login(
+    credentials: LoginUserDto,
+    options?: RequestOptions
+  ): Promise<LoginResponse | undefined> {
     try {
       return await this.httpsClient.post<LoginUserDto, LoginResponse>(
         API_ENDPOINTS.LOGIN,
