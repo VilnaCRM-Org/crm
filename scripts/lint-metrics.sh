@@ -332,6 +332,15 @@ append_summary_table() {
   } >>"$GITHUB_STEP_SUMMARY"
 }
 
+print_summary_stdout() {
+  printf '%-28s  %-6s  %-16s  %s\n' "METRIC" "GATE" "THRESHOLD" "MEASURED"
+  printf '%0.s-' $(seq 1 78) && printf '\n'
+  while IFS='|' read -r metric gate threshold measured; do
+    [ "$gate" = "review" ] && continue
+    printf '%-28s  %-6s  %-16s  %s\n' "$metric" "$gate" "$threshold" "$measured"
+  done <"$TMP_SUMMARY"
+}
+
 if [ "$FAIL_COUNT" -gt 0 ]; then
   printf '\n'
   printf 'rust-code-analysis: %d hard violation(s) found\n\n' "$FAIL_COUNT"
@@ -359,6 +368,8 @@ fi
 
 printf '\n'
 printf 'rust-code-analysis: all hard checks pass\n\n'
+print_summary_stdout
+printf '\n'
 
 printf 'Scope: src/ | hard-fail policy thresholds enforced.\n'
 

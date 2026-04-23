@@ -10,8 +10,9 @@ so that all contributors and CI execution paths evaluate against identical polic
 
 ## Acceptance Criteria
 
-1. `RCA_VERSION = 0.0.25` and `RCA_BIN = ./bin/rust-code-analysis-cli` are defined as variables
-   in the repository `Makefile`.
+1. `RCA_VERSION = 0.0.25` and `RCA_BIN` are defined as variables in the repository
+   `Makefile`. `RCA_BIN` uses the project-local path `./bin/rust-code-analysis-cli`, with a
+   Windows `.exe` suffix on Windows hosts.
 2. The hard-fail and review-gate threshold values currently enforced by
    `scripts/lint-metrics.sh` are present in the Makefile `lint-metrics` target recipe.
 3. `/bin/` is listed as an ignored entry in `.gitignore` and the `./bin/` directory is not
@@ -25,7 +26,8 @@ so that all contributors and CI execution paths evaluate against identical polic
 
 - [x] Task 1: Add RCA variables to Makefile (AC: 1, 4)
   - [x] 1.1 Add `RCA_VERSION = 0.0.25` near the top of the Makefile variables block
-  - [x] 1.2 Add `RCA_BIN = ./bin/rust-code-analysis-cli` adjacent to `RCA_VERSION`
+  - [x] 1.2 Add `RCA_BIN` adjacent to `RCA_VERSION`, using the project-local binary path
+        and a Windows `.exe` suffix on Windows hosts
   - [x] 1.3 Verify `RCA_VERSION` is assigned exactly once in the Makefile
 
 - [x] Task 2: Add `lint-metrics` target skeleton with governed scope and thresholds (AC: 2, 5)
@@ -78,6 +80,7 @@ Note: `v` prefix is added to the tag (`v0.0.25`) while `RCA_VERSION` stays `0.0.
 hardcode the version string elsewhere.
 
 **Binary install path:** `./bin/rust-code-analysis-cli` — project-local, gitignored.
+On Windows hosts the executed path is `./bin/rust-code-analysis-cli.exe`.
 
 - Never install to a system path (no `sudo`).
 - `bin/` directory is created on first install; it must be gitignored via
@@ -188,8 +191,9 @@ claude-sonnet-4-6
   `rust-code-analysis-win-cli-x86_64.zip`; it does not use `web-0.0.25`.
 - Current Makefile implementation passes the full hard-fail and review-gate threshold set to
   `scripts/lint-metrics.sh`.
-- Current `scripts/lint-metrics.sh` defaults match that same full policy set and prints only
-  blocking hard failures.
+- Current `scripts/lint-metrics.sh` requires hard-fail thresholds from the Makefile policy
+  source, keeps review-gate defaults for non-blocking metrics, and prints passing hard-fail
+  metric values on success.
 - Extended `lint` chain: `lint: lint-eslint lint-tsc lint-md lint-metrics`.
 - Added `lint-metrics` to `.PHONY`.
 - Added `/bin/` to `.gitignore`.

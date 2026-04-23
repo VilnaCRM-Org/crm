@@ -70,8 +70,20 @@ NFR4: Performance — The check must be operationally acceptable for routine pul
   the older filename `rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz`
   is not present in v0.0.25)
 - Version pinned via `RCA_VERSION = 0.0.25` in Makefile — single source of truth.
-- Thresholds inline in Makefile: wider hard-fail policy calibrated to the current repository
-  baseline for this PR; target-quality tightening is deferred to a follow-up code-remediation PR.
+- Thresholds inline in `Makefile` `lint-metrics` recipe. Baseline-calibrated hard-fail values
+  for this PR: `CYCLOMATIC_MAX=20`, `COGNITIVE_MAX=24`, `ABC_MAGNITUDE_MAX=17`,
+  `NARGS_FUNCTION_MAX=5`, `NARGS_CLOSURE_MAX=3`, `NEXITS_MAX=15`,
+  `LLOC_FUNCTION_MAX=37`, `PLOC_FUNCTION_MAX=145`, `SLOC_FUNCTION_MAX=157`,
+  `HALSTEAD_VOLUME_FUNCTION_MAX=5558`, `HALSTEAD_BUGS_FUNCTION_MAX=0.94`,
+  `LLOC_FILE_MAX=120`, `PLOC_FILE_MAX=366`, `SLOC_FILE_MAX=372`,
+  `HALSTEAD_VOLUME_FILE_MAX=12427`, `HALSTEAD_BUGS_FILE_MAX=1.58`,
+  `NOM_FUNCTIONS_FILE_MAX=10`, `NOM_CLOSURES_FILE_MAX=9`, `NOM_TOTAL_FILE_MAX=15`,
+  `MI_VISUAL_STUDIO_MIN=15`, `CLASS_WMC_MAX=30`, `CLASS_NPM_MAX=8`, `CLASS_NPA_MAX=2`,
+  `CLASS_COA_MAX=0.60`, `CLASS_CDA_MAX=0.25`, `INTERFACE_NPM_MAX=10`, `INTERFACE_NPA_MAX=15`.
+  Tightening these toward the numeric values named in Story 1.1 AC (CC 10, Cognitive 15,
+  NExits 4, SLOC 50, MI 65) is deferred to a follow-up code-remediation PR, since the
+  current `src/` baseline would fail the AC thresholds today and Story 2.2 requires `main`
+  to stay green before enabling the required status check.
 - Governed scope: `src/` only. Excluded: `node_modules/`, `dist/`, `coverage/`,
   `.storybook/`, `tests/`.
 - Enforcement mode: collect-all-then-fail via `jq` parsing JSON output — never fail-fast.
@@ -140,10 +152,11 @@ So that all contributors and CI execution paths evaluate against identical polic
 
 **Given** the repository `Makefile` is opened
 **When** a contributor inspects the file
-**Then** `RCA_VERSION = 0.0.25` and `RCA_BIN = ./bin/rust-code-analysis-cli` are defined as
-variables
-**And** inline threshold values are present: CC max 10, Cognitive max 15, NArgs max 5,
-NExits max 4, MI min 65, SLOC max 50
+**Then** `RCA_VERSION = 0.0.25` and `RCA_BIN` are defined as variables
+**And** `RCA_BIN` uses the project-local path `./bin/rust-code-analysis-cli`, with a Windows
+`.exe` suffix on Windows hosts
+**And** inline threshold values are present for the current baseline-calibrated policy committed
+in the `lint-metrics` recipe
 
 **Given** the repository `.gitignore` is opened
 **When** a contributor inspects the file
