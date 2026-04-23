@@ -48,7 +48,7 @@ intervention.
 - [x] Task 4: Run the repository-owned quality gate (AC: 5, 6, 7)
   - [x] 4.1 Add a workflow step that runs `make lint-metrics`
   - [x] 4.2 Rely on the Makefile and `scripts/lint-metrics.sh` for scope, thresholds, exit code,
-    stdout reporting, and Job Summary output
+        stdout reporting, and Job Summary output
 
 - [x] Task 5: Verification (AC: 1-8)
   - [x] 5.1 Confirm workflow trigger is `pull_request` to `main`

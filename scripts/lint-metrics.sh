@@ -104,8 +104,7 @@ TMP_JSON=$(mktemp "${TMPDIR:-/tmp}/rca-analysis.XXXXXX")
 TMP_FINDINGS=$(mktemp "${TMPDIR:-/tmp}/rca-findings.XXXXXX")
 TMP_SUMMARY=$(mktemp "${TMPDIR:-/tmp}/rca-summary.XXXXXX")
 
-cleanup() { rm -f "$TMP_JSON" "$TMP_FINDINGS" "$TMP_SUMMARY"; }
-trap cleanup EXIT INT TERM
+trap 'rm -f "$TMP_JSON" "$TMP_FINDINGS" "$TMP_SUMMARY"' EXIT INT TERM
 
 VER_LABEL=""
 if [ -n "$RCA_VERSION" ]; then VER_LABEL=" v${RCA_VERSION}"; fi
@@ -328,7 +327,7 @@ append_summary_table() {
     printf '|--------|------|-----------|----------|\n'
     while IFS='|' read -r metric gate threshold measured; do
       [ "$gate" = "review" ] && continue
-      printf '| %s | %s | `%s` | %s |\n' "$metric" "$gate" "$threshold" "$measured"
+      printf "| %s | %s | \`%s\` | %s |\n" "$metric" "$gate" "$threshold" "$measured"
     done <"$TMP_SUMMARY"
   } >>"$GITHUB_STEP_SUMMARY"
 }
@@ -346,7 +345,7 @@ if [ "$FAIL_COUNT" -gt 0 ]; then
       printf '|------|------|-------|---------|------|--------|-------|-------|\n'
       while IFS='|' read -r severity file scope subject line metric value limit; do
         [ "$severity" = "FAIL" ] || continue
-        printf '| %s | `%s` | %s | `%s` | %s | %s | %s | `%s` |\n' \
+        printf "| %s | \`%s\` | %s | \`%s\` | %s | %s | %s | \`%s\` |\n" \
           "$severity" "$file" "$scope" "$subject" "$line" "$metric" "$value" "$limit"
       done <"$TMP_FINDINGS"
       printf '\n'
@@ -368,7 +367,7 @@ if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
     printf '## rust-code-analysis: all hard checks pass\n\n'
   } >>"$GITHUB_STEP_SUMMARY"
   append_summary_table
-  printf '\nAll hard-fail metrics in `src/` are within policy thresholds.\n' >>"$GITHUB_STEP_SUMMARY"
+  printf "\nAll hard-fail metrics in \`src/\` are within policy thresholds.\n" >>"$GITHUB_STEP_SUMMARY"
 fi
 
 exit 0
