@@ -76,6 +76,10 @@ fi
 
 sh -c "$extract_cmd"
 
+if [ -f "$RCA_BIN" ]; then
+  chmod +x "$RCA_BIN"
+fi
+
 refreshed_version=""
 if [ -x "$RCA_BIN" ]; then
   refreshed_version=$("$RCA_BIN" --version 2>/dev/null | awk '{print $NF}' || true)
