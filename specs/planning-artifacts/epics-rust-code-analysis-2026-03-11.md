@@ -2,8 +2,8 @@
 stepsCompleted: [1, 2, 3, 4]
 status: 'complete'
 inputDocuments:
-  - "specs/planning-artifacts/prd-rust-code-analysis-2026-03-11.md"
-  - "specs/planning-artifacts/architecture-rust-code-analysis-2026-03-11.md"
+  - 'specs/planning-artifacts/prd-rust-code-analysis-2026-03-11.md'
+  - 'specs/planning-artifacts/architecture-rust-code-analysis-2026-03-11.md'
 ---
 
 # crm - Epic Breakdown

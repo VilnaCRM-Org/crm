@@ -361,12 +361,12 @@ command reference.
 
 ### Phases
 
-| Phase | Focus | Key Commands |
-|-------|-------|-------------|
-| 1. Analysis | Understand the problem | `/create-brief`, `/brainstorm-project`, `/market-research` |
-| 2. Planning | Define the solution | `/create-prd`, `/create-ux` |
-| 3. Solutioning | Design the architecture | `/create-architecture`, epics, readiness review |
-| 4. Implementation | Build it | `/sprint-planning`, `/create-story`, then `/bmalph-implement` |
+| Phase             | Focus                   | Key Commands                                                  |
+| ----------------- | ----------------------- | ------------------------------------------------------------- |
+| 1. Analysis       | Understand the problem  | `/create-brief`, `/brainstorm-project`, `/market-research`    |
+| 2. Planning       | Define the solution     | `/create-prd`, `/create-ux`                                   |
+| 3. Solutioning    | Design the architecture | `/create-architecture`, epics, readiness review               |
+| 4. Implementation | Build it                | `/sprint-planning`, `/create-story`, then `/bmalph-implement` |
 
 ### Workflow
 
@@ -375,21 +375,21 @@ command reference.
 
 ### Management Commands
 
-| Command | Description |
-|---------|-------------|
-| `/bmalph-status` | Show current phase, Ralph progress, version info |
-| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop |
-| `/bmalph-upgrade` | Update bundled assets to match current bmalph version |
-| `/bmalph-doctor` | Check project health and report issues |
+| Command             | Description                                           |
+| ------------------- | ----------------------------------------------------- |
+| `/bmalph-status`    | Show current phase, Ralph progress, version info      |
+| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop    |
+| `/bmalph-upgrade`   | Update bundled assets to match current bmalph version |
+| `/bmalph-doctor`    | Check project health and report issues                |
 
 ### Available Agents
 
-| Command | Agent | Role |
-|---------|-------|------|
-| `/analyst` | Analyst | Research, briefs, discovery |
-| `/architect` | Architect | Technical design, architecture |
-| `/pm` | Product Manager | PRDs, epics, stories |
-| `/sm` | Scrum Master | Sprint planning, status, coordination |
-| `/dev` | Developer | Implementation, coding |
-| `/ux-designer` | UX Designer | User experience, wireframes |
-| `/qa` | QA Engineer | Test automation, quality assurance |
+| Command        | Agent           | Role                                  |
+| -------------- | --------------- | ------------------------------------- |
+| `/analyst`     | Analyst         | Research, briefs, discovery           |
+| `/architect`   | Architect       | Technical design, architecture        |
+| `/pm`          | Product Manager | PRDs, epics, stories                  |
+| `/sm`          | Scrum Master    | Sprint planning, status, coordination |
+| `/dev`         | Developer       | Implementation, coding                |
+| `/ux-designer` | UX Designer     | User experience, wireframes           |
+| `/qa`          | QA Engineer     | Test automation, quality assurance    |

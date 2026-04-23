@@ -4,12 +4,18 @@ on:
   pull_request:
     branches: ['main']
 
+permissions: {}
+
 jobs:
   rust-code-analysis:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Read RCA version from Makefile
         id: read_rca_version
