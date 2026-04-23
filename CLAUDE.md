@@ -361,12 +361,15 @@ command reference.
 
 ### Phases
 
-| Phase             | Focus                   | Key Commands                                                  |
-| ----------------- | ----------------------- | ------------------------------------------------------------- |
-| 1. Analysis       | Understand the problem  | `/create-brief`, `/brainstorm-project`, `/market-research`    |
-| 2. Planning       | Define the solution     | `/create-prd`, `/create-ux`                                   |
-| 3. Solutioning    | Design the architecture | `/create-architecture`, epics, readiness review               |
-| 4. Implementation | Build it                | `/sprint-planning`, `/create-story`, then `/bmalph-implement` |
+| Phase | Focus | Key Commands |
+| ----- | ----- | ------------ |
+| 1. Analysis | Understand the problem | `/create-brief`, `/brainstorm-project`,
+`/market-research` |
+| 2. Planning | Define the solution | `/create-prd`, `/create-ux` |
+| 3. Solutioning | Design the architecture | `/create-architecture`,
+epics, readiness review |
+| 4. Implementation | Build it | `/sprint-planning`, `/create-story`,
+then `/bmalph-implement` |
 
 ### Workflow
 
