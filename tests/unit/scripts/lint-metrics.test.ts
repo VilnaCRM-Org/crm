@@ -2,6 +2,7 @@ import { execFileSync } from 'child_process';
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
+import { parse } from 'yaml';
 
 const repoRoot = path.resolve(__dirname, '../../..');
 const lintMetricsScript = path.join(repoRoot, 'scripts/lint-metrics.sh');
@@ -146,13 +147,11 @@ describe('scripts/lint-metrics.sh', () => {
   });
 
   it('keeps the rca service independent from the external app network', () => {
-    const dockerCompose = readFileSync(dockerComposePath, 'utf8');
-
-    expect(dockerCompose).toContain('  rca:\n');
-    expect(dockerCompose).not.toContain(
-      '  rca:\n    profiles: [tools]\n    build:\n      context: .\n' +
-        '      target: rca\n    volumes:\n      - .:/app\n' +
-        '    networks:\n      - crm-network\n'
-    );
+    const compose = parse(readFileSync(dockerComposePath, 'utf8'));
+    const rca = compose?.services?.rca;
+    expect(rca).toBeDefined();
+    const networks = rca?.networks ?? [];
+    const names = Array.isArray(networks) ? networks : Object.keys(networks);
+    expect(names).not.toContain('crm-network');
   });
 });

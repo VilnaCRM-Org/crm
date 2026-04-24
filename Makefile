@@ -217,7 +217,10 @@ lint-md: ## This command executes Markdown linter
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm rca make lint-metrics-run
 
-# Baseline-calibrated values for this PR; tighten with code remediation in the next PR.
+# Direct-invoke target used by the rca container (always Linux) via make lint-metrics,
+# and usable directly on Linux hosts. The Darwin guard below applies only to direct
+# invocation; Mac contributors get full enforcement through the Docker path above.
+# Baseline-calibrated thresholds; tighten with code remediation in the next PR.
 lint-metrics-run:
 	@os_name=$$(uname -s 2>/dev/null || echo unknown); \
 	if [ "$$os_name" = "Darwin" ]; then \
