@@ -216,6 +216,7 @@ lint-md: ## This command executes Markdown linter
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
 	@if [ -n "$$GITHUB_STEP_SUMMARY" ]; then \
+		: > "$$GITHUB_STEP_SUMMARY" 2>/dev/null || touch "$$GITHUB_STEP_SUMMARY"; \
 		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
 			-e GITHUB_STEP_SUMMARY="$$GITHUB_STEP_SUMMARY" \
 			-v "$$GITHUB_STEP_SUMMARY:$$GITHUB_STEP_SUMMARY" \
