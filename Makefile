@@ -279,29 +279,30 @@ lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if
 			exit 1; \
 		fi; \
 	fi
-# Baseline-calibrated values for this PR; tighten with code remediation in the next PR.
+# Hard-fail thresholds aligned with target quality bands from
+# specs/planning-artifacts/architecture-rust-code-analysis-2026-03-11.md.
 	@RCA_BIN="$(RCA_BIN)" \
 	RCA_VERSION="$(RCA_VERSION)" \
-	CYCLOMATIC_MAX="20" \
-	COGNITIVE_MAX="24" \
+	CYCLOMATIC_MAX="10" \
+	COGNITIVE_MAX="15" \
 	ABC_MAGNITUDE_MAX="17" \
-	NARGS_FUNCTION_MAX="5" \
+	NARGS_FUNCTION_MAX="3" \
 	NARGS_CLOSURE_MAX="3" \
-	NEXITS_MAX="15" \
-	LLOC_FUNCTION_MAX="37" \
-	PLOC_FUNCTION_MAX="145" \
-	SLOC_FUNCTION_MAX="157" \
-	HALSTEAD_VOLUME_FUNCTION_MAX="5558" \
-	HALSTEAD_BUGS_FUNCTION_MAX="0.94" \
+	NEXITS_MAX="3" \
+	LLOC_FUNCTION_MAX="10" \
+	PLOC_FUNCTION_MAX="40" \
+	SLOC_FUNCTION_MAX="45" \
+	HALSTEAD_VOLUME_FUNCTION_MAX="1000" \
+	HALSTEAD_BUGS_FUNCTION_MAX="0.35" \
 	NOM_FUNCTIONS_FILE_MAX="10" \
-	NOM_CLOSURES_FILE_MAX="9" \
+	NOM_CLOSURES_FILE_MAX="6" \
 	NOM_TOTAL_FILE_MAX="15" \
 	LLOC_FILE_MAX="120" \
-	PLOC_FILE_MAX="366" \
-	SLOC_FILE_MAX="372" \
-	HALSTEAD_VOLUME_FILE_MAX="12427" \
+	PLOC_FILE_MAX="300" \
+	SLOC_FILE_MAX="350" \
+	HALSTEAD_VOLUME_FILE_MAX="8000" \
 	HALSTEAD_BUGS_FILE_MAX="1.58" \
-	MI_VISUAL_STUDIO_MIN="15" \
+	MI_VISUAL_STUDIO_MIN="20" \
 	MI_ORIGINAL_MIN="65" \
 	MI_SEI_MIN="65" \
 	CLASS_WMC_MAX="30" \

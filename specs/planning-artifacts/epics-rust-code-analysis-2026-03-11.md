@@ -2,8 +2,8 @@
 stepsCompleted: [1, 2, 3, 4]
 status: 'complete'
 inputDocuments:
-  - "specs/planning-artifacts/prd-rust-code-analysis-2026-03-11.md"
-  - "specs/planning-artifacts/architecture-rust-code-analysis-2026-03-11.md"
+  - 'specs/planning-artifacts/prd-rust-code-analysis-2026-03-11.md'
+  - 'specs/planning-artifacts/architecture-rust-code-analysis-2026-03-11.md'
 ---
 
 # crm - Epic Breakdown
@@ -70,8 +70,11 @@ NFR4: Performance — The check must be operationally acceptable for routine pul
   the older filename `rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz`
   is not present in v0.0.25)
 - Version pinned via `RCA_VERSION = 0.0.25` in Makefile — single source of truth.
-- Thresholds inline in Makefile: wider hard-fail policy calibrated to the current repository
-  baseline for this PR; target-quality tightening is deferred to a follow-up code-remediation PR.
+- Thresholds inline in Makefile. Current blocking hard-fail thresholds are:
+  CC max 10, Cognitive max 15, ABC max 17, NArgs max 3 (functions and closures),
+  NExits max 3, Function SLOC max 45, File SLOC max 350, MI min 65 (Original/SEI) and
+  20 (Visual Studio). Review-gate metrics remain advisory/soft enforcement and are
+  documented for reviewer attention rather than merge blocking.
 - Governed scope: `src/` only. Excluded: `node_modules/`, `dist/`, `coverage/`,
   `.storybook/`, `tests/`.
 - Enforcement mode: collect-all-then-fail via `jq` parsing JSON output — never fail-fast.
@@ -142,8 +145,8 @@ So that all contributors and CI execution paths evaluate against identical polic
 **When** a contributor inspects the file
 **Then** `RCA_VERSION = 0.0.25` and `RCA_BIN = ./bin/rust-code-analysis-cli` are defined as
 variables
-**And** inline threshold values are present: CC max 10, Cognitive max 15, NArgs max 5,
-NExits max 4, MI min 65, SLOC max 50
+**And** inline threshold values are present: CC max 10, Cognitive max 15, NArgs max 3,
+NExits max 3, MI min 65, Function SLOC max 45, File SLOC max 350
 
 **Given** the repository `.gitignore` is opened
 **When** a contributor inspects the file
@@ -286,6 +289,16 @@ raw tool internals.
 and why
 **And** the hard-fail and review-gate metric sets are listed with their thresholds and a
 plain-language description of what each group measures
+**And** documentation defines review-gate metrics as advisory checks that request reviewer
+attention without blocking merges, while hard-fail metrics are blocking checks that fail CI
+
+Hard-fail metrics: blocking enforcement. Exceeding one fails `make lint-metrics` and the
+GitHub Actions check, so the pull request cannot merge until the violation is resolved or
+the threshold policy changes.
+
+Review-gate metrics: advisory/soft enforcement. They are documented threshold bands for
+reviewer attention and discussion, but exceeding one does not fail `make lint-metrics` or
+block merges by itself.
 
 **Given** a contributor wants to run the check locally
 **When** they follow the documentation

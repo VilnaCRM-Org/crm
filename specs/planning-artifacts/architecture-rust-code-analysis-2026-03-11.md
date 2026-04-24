@@ -4,7 +4,7 @@ lastStep: 8
 status: 'complete'
 completedAt: '2026-03-18'
 inputDocuments:
-  - "specs/planning-artifacts/prd-rust-code-analysis-2026-03-11.md"
+  - 'specs/planning-artifacts/prd-rust-code-analysis-2026-03-11.md'
 workflowType: 'architecture'
 project_name: 'crm'
 user_name: 'platform-team'
@@ -214,39 +214,39 @@ existing repository foundation is the lowest-risk and most maintainable architec
   per-function results and exits non-zero on any threshold breach
 - **Committed thresholds:**
 
-| Metric | Target | Hard fail |
-| --- | ---: | ---: |
-| cyclomatic_max | 8 | 10 |
-| cognitive_max | 12 | 15 |
-| abc_magnitude_max | 15 | 17 |
-| nargs_function_max | 2 | 3 |
-| nargs_closure_max | 2 | 3 |
-| nexits_max | 2 | 3 |
-| lloc_function_max | 8 | 10 |
-| ploc_function_max | 30 | 40 |
-| sloc_function_max | 35 | 45 |
-| halstead_volume_function_max | 800 | 1000 |
-| halstead_bugs_function_max | 0.20 | 0.35 |
-| nom_functions_file_max | 8 | 10 |
-| nom_closures_file_max | 4 | 6 |
-| nom_total_file_max | 12 | 15 |
-| lloc_file_max | 100 | 120 |
-| ploc_file_max | 250 | 300 |
-| sloc_file_max | 300 | 350 |
-| halstead_volume_file_max | 6000 | 8000 |
-| halstead_bugs_file_max | 1.0 | 2.0 |
-| mi_visual_studio_min | 80 | 70 |
-| mi_original_min | 85 | 65 |
-| mi_sei_min | 85 | 65 |
-| class_wmc_max | 20 | 30 |
-| class_npm_max | 6 | 8 |
-| class_npa_max | 0 | 2 |
-| class_coa_max | 0.50 | 0.60 |
-| class_cda_max | 0.10 | 0.25 |
-| interface_npm_max | 8 | 10 |
-| interface_npa_max | 10 | 15 |
-| cloc_ratio | 0.20..0.40 | <0.10 or >0.60 |
-| blank_ratio | 0.05..0.20 | <0.02 or >0.30 |
+| Metric                       |     Target |      Hard fail |
+| ---------------------------- | ---------: | -------------: |
+| cyclomatic_max               |          8 |             10 |
+| cognitive_max                |         12 |             15 |
+| abc_magnitude_max            |         15 |             17 |
+| nargs_function_max           |          2 |              3 |
+| nargs_closure_max            |          2 |              3 |
+| nexits_max                   |          2 |              3 |
+| lloc_function_max            |          8 |             10 |
+| ploc_function_max            |         30 |             40 |
+| sloc_function_max            |         35 |             45 |
+| halstead_volume_function_max |        800 |           1000 |
+| halstead_bugs_function_max   |       0.20 |           0.35 |
+| nom_functions_file_max       |          8 |             10 |
+| nom_closures_file_max        |          4 |              6 |
+| nom_total_file_max           |         12 |             15 |
+| lloc_file_max                |        100 |            120 |
+| ploc_file_max                |        250 |            300 |
+| sloc_file_max                |        300 |            350 |
+| halstead_volume_file_max     |       6000 |           8000 |
+| halstead_bugs_file_max       |        1.0 |            2.0 |
+| mi_visual_studio_min         |         80 |             70 |
+| mi_original_min              |         85 |             65 |
+| mi_sei_min                   |         85 |             65 |
+| class_wmc_max                |         20 |             30 |
+| class_npm_max                |          6 |              8 |
+| class_npa_max                |          0 |              2 |
+| class_coa_max                |       0.50 |           0.60 |
+| class_cda_max                |       0.10 |           0.25 |
+| interface_npm_max            |          8 |             10 |
+| interface_npa_max            |         10 |             15 |
+| cloc_ratio                   | 0.20..0.40 | <0.10 or >0.60 |
+| blank_ratio                  | 0.05..0.20 | <0.02 or >0.30 |
 
 - **Rationale:** Industry-average values; tunable after baseline run
 - **Affects:** `lint-metrics` Makefile target; `rust-code-analysis.yml`
@@ -256,29 +256,29 @@ existing repository foundation is the lowest-risk and most maintainable architec
 The threshold labels above are policy names. Their mapping to actual
 `rust-code-analysis-cli` JSON paths (verified against v0.0.25 source) is:
 
-| Policy label | Actual jq path |
-| --- | --- |
-| `cyclomatic_max` | `.metrics.cyclomatic.sum` (per function FuncSpace) |
-| `cognitive_max` | `.metrics.cognitive.sum` |
-| `abc_magnitude_max` | `.metrics.abc.magnitude` — no standalone `abc_magnitude` field exists |
-| `nargs_function_max` | `.metrics.nargs.functions_max` |
-| `nargs_closure_max` | `.metrics.nargs.closures_max` |
-| `nexits_max` | `.metrics.nexits.average` |
-| `lloc_*` / `ploc_*` / `sloc_*` | `.metrics.loc.lloc` / `.metrics.loc.ploc` / `.metrics.loc.sloc` |
-| `halstead_volume_*` / `halstead_bugs_*` | `.metrics.halstead.volume` / `.metrics.halstead.bugs` |
-| `nom_functions_*` / `nom_closures_*` | `.metrics.nom.functions` / `.metrics.nom.closures` |
-| `mi_visual_studio_min` | `.metrics.maintanability_index.mi_visual_studio` |
-| `mi_original_min` | `.metrics.maintanability_index.mi_original` |
-| `mi_sei_min` | `.metrics.maintanability_index.mi_sei` |
-| `class_wmc_max` | `.metrics.wmc.classes_sum` |
-| `class_npm_max` | `.metrics.npm.classes` |
-| `class_npa_max` | `.metrics.npa.classes` |
-| `class_coa_max` | `.metrics.npm.classes_average` |
-| `class_cda_max` | `.metrics.npa.classes_average` |
-| `interface_npm_max` | `.metrics.npm.interfaces` |
-| `interface_npa_max` | `.metrics.npa.interfaces` |
-| `cloc_ratio` | derived: `.metrics.loc.cloc / .metrics.loc.sloc` |
-| `blank_ratio` | derived: `.metrics.loc.blank / .metrics.loc.sloc` |
+| Policy label                            | Actual jq path                                                        |
+| --------------------------------------- | --------------------------------------------------------------------- |
+| `cyclomatic_max`                        | `.metrics.cyclomatic.sum` (per function FuncSpace)                    |
+| `cognitive_max`                         | `.metrics.cognitive.sum`                                              |
+| `abc_magnitude_max`                     | `.metrics.abc.magnitude` — no standalone `abc_magnitude` field exists |
+| `nargs_function_max`                    | `.metrics.nargs.functions_max`                                        |
+| `nargs_closure_max`                     | `.metrics.nargs.closures_max`                                         |
+| `nexits_max`                            | `.metrics.nexits.average`                                             |
+| `lloc_*` / `ploc_*` / `sloc_*`          | `.metrics.loc.lloc` / `.metrics.loc.ploc` / `.metrics.loc.sloc`       |
+| `halstead_volume_*` / `halstead_bugs_*` | `.metrics.halstead.volume` / `.metrics.halstead.bugs`                 |
+| `nom_functions_*` / `nom_closures_*`    | `.metrics.nom.functions` / `.metrics.nom.closures`                    |
+| `mi_visual_studio_min`                  | `.metrics.maintanability_index.mi_visual_studio`                      |
+| `mi_original_min`                       | `.metrics.maintanability_index.mi_original`                           |
+| `mi_sei_min`                            | `.metrics.maintanability_index.mi_sei`                                |
+| `class_wmc_max`                         | `.metrics.wmc.classes_sum`                                            |
+| `class_npm_max`                         | `.metrics.npm.classes`                                                |
+| `class_npa_max`                         | `.metrics.npa.classes`                                                |
+| `class_coa_max`                         | `.metrics.npm.classes_average`                                        |
+| `class_cda_max`                         | `.metrics.npa.classes_average`                                        |
+| `interface_npm_max`                     | `.metrics.npm.interfaces`                                             |
+| `interface_npa_max`                     | `.metrics.npa.interfaces`                                             |
+| `cloc_ratio`                            | derived: `.metrics.loc.cloc / .metrics.loc.sloc`                      |
+| `blank_ratio`                           | derived: `.metrics.loc.blank / .metrics.loc.sloc`                     |
 
 **Caveats requiring special handling during implementation:**
 
@@ -489,13 +489,13 @@ crm/
 
 ### Requirements to Structure Mapping
 
-| PRD Capability Area | Files |
-| --- | --- |
-| Quality gate enforcement | `.github/workflows/rust-code-analysis.yml` |
-| Contributor validation (local) | `Makefile` — `lint-metrics` target |
-| CI results reporting | `Makefile` — `$GITHUB_STEP_SUMMARY` section + workflow job output |
-| Repository policy consistency | `Makefile` — `RCA_VERSION` + inline thresholds |
-| Contributor documentation | `CLAUDE.md` — new section under Code Quality |
+| PRD Capability Area            | Files                                                             |
+| ------------------------------ | ----------------------------------------------------------------- |
+| Quality gate enforcement       | `.github/workflows/rust-code-analysis.yml`                        |
+| Contributor validation (local) | `Makefile` — `lint-metrics` target                                |
+| CI results reporting           | `Makefile` — `$GITHUB_STEP_SUMMARY` section + workflow job output |
+| Repository policy consistency  | `Makefile` — `RCA_VERSION` + inline thresholds                    |
+| Contributor documentation      | `CLAUDE.md` — new section under Code Quality                      |
 
 ### Integration Points
 

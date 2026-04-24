@@ -4,6 +4,19 @@ import { ComponentProps } from 'react';
 
 import AuthErrorBoundary from '@/modules/User/features/Auth/components/auth-error-boundary';
 
+jest.mock('react-i18next', () => ({
+  useTranslation: (): { t: (key: string) => string } => ({
+    t: (key: string): string =>
+      (
+        {
+          'auth.error.default': 'Something went wrong. Please try again later.',
+          'auth.error.details': 'Error Details',
+          'auth.error.tryAgain': 'Try again',
+        } as Record<string, string>
+      )[key] ?? key,
+  }),
+}));
+
 function ThrowingChild({ shouldThrow }: { shouldThrow: boolean }): JSX.Element {
   if (shouldThrow) throw new Error('test error');
   return <div data-testid="child">OK</div>;

@@ -124,10 +124,18 @@ describe('normalizeLoginErrorMessage', () => {
     expect(normalizeLoginErrorMessage('Invalid credentials')).toBe('Invalid credentials');
   });
 
+  it('returns a trimmed direct string error when it contains surrounding whitespace', () => {
+    expect(normalizeLoginErrorMessage('  Invalid credentials  ')).toBe('Invalid credentials');
+  });
+
   it('returns an Error message when the error is an Error instance', () => {
     expect(normalizeLoginErrorMessage(new Error('Invalid credentials'))).toBe(
       'Invalid credentials'
     );
+  });
+
+  it('returns the unknown translation key when an Error message is blank', () => {
+    expect(normalizeLoginErrorMessage(new Error('   '))).toBe('auth.errors.unknown');
   });
 
   it('falls back to the unknown translation key for non-record values', () => {

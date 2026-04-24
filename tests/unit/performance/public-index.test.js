@@ -37,8 +37,8 @@ describe('public index performance safeguards', () => {
     const storeSource = fs.readFileSync(path.resolve(__dirname, '../../../src/stores/index.ts'), 'utf8');
 
     expect(entrySource).not.toContain("import 'reflect-metadata';");
-    expect(entrySource).not.toContain("import '@/config/DependencyInjectionConfig';");
-    expect(storeSource).not.toContain("from '@/config/DependencyInjectionConfig'");
+    expect(entrySource).not.toContain("import '@/config/dependency-injection-config';");
+    expect(storeSource).not.toContain("from '@/config/dependency-injection-config'");
     expect(storeSource).not.toContain('container.resolve<');
   });
 

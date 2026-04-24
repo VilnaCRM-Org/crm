@@ -123,21 +123,20 @@ downloaded automatically to `./bin/` on first run and is gitignored.
 
 **Hard-fail metrics:**
 
-- Cyclomatic Complexity: `> 20`
-- Cognitive Complexity: `> 24`
+- Cyclomatic Complexity: `> 10`
+- Cognitive Complexity: `> 15`
 - ABC Magnitude: `> 17`
-- Function / closure arguments: `> 5 / 3`
-- Exit points: `> 15`
-- Function LLOC / PLOC / SLOC: `> 37 / 145 / 157`
-- File LLOC / PLOC / SLOC: `> 120 / 366 / 372`
-- Halstead volume / bugs: function `> 5558 / 0.94`, file `> 12427 / 1.58`
-- Maintainability Index Visual Studio: `< 15`
+- Function / closure arguments: `> 3 / 3`
+- Exit points: `> 3`
+- Function LLOC / PLOC / SLOC: `> 10 / 40 / 45`
+- File LLOC / PLOC / SLOC: `> 120 / 300 / 350`
+- Halstead volume / bugs: function `> 1000 / 0.35`, file `> 8000 / 1.58`
+- Maintainability Index Visual Studio: `< 20`
 - Class WMC / NPM / NPA / COA / CDA: `> 30 / 8 / 2 / 0.60 / 0.25`
 - Interface NPM / NPA: `> 10 / 15`
 
-These hard-fail thresholds are calibrated to the current repository baseline so this PR can
-land without application-code remediation. Tightening toward the target quality bands belongs in
-a follow-up PR.
+Thresholds have been tightened toward the target quality bands documented in the
+architecture spec, and the application-code remediation landed as part of this PR.
 
 **Review-gate metrics:**
 
@@ -361,12 +360,12 @@ command reference.
 
 ### Phases
 
-| Phase | Focus | Key Commands |
-|-------|-------|-------------|
-| 1. Analysis | Understand the problem | `/create-brief`, `/brainstorm-project`, `/market-research` |
-| 2. Planning | Define the solution | `/create-prd`, `/create-ux` |
-| 3. Solutioning | Design the architecture | `/create-architecture`, epics, readiness review |
-| 4. Implementation | Build it | `/sprint-planning`, `/create-story`, then `/bmalph-implement` |
+| Phase             | Focus                   | Key Commands                                                  |
+| ----------------- | ----------------------- | ------------------------------------------------------------- |
+| 1. Analysis       | Understand the problem  | `/create-brief`, `/brainstorm-project`, `/market-research`    |
+| 2. Planning       | Define the solution     | `/create-prd`, `/create-ux`                                   |
+| 3. Solutioning    | Design the architecture | `/create-architecture`, epics, readiness review               |
+| 4. Implementation | Build it                | `/sprint-planning`, `/create-story`, then `/bmalph-implement` |
 
 ### Workflow
 
@@ -375,21 +374,21 @@ command reference.
 
 ### Management Commands
 
-| Command | Description |
-|---------|-------------|
-| `/bmalph-status` | Show current phase, Ralph progress, version info |
-| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop |
-| `/bmalph-upgrade` | Update bundled assets to match current bmalph version |
-| `/bmalph-doctor` | Check project health and report issues |
+| Command             | Description                                           |
+| ------------------- | ----------------------------------------------------- |
+| `/bmalph-status`    | Show current phase, Ralph progress, version info      |
+| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop    |
+| `/bmalph-upgrade`   | Update bundled assets to match current bmalph version |
+| `/bmalph-doctor`    | Check project health and report issues                |
 
 ### Available Agents
 
-| Command | Agent | Role |
-|---------|-------|------|
-| `/analyst` | Analyst | Research, briefs, discovery |
-| `/architect` | Architect | Technical design, architecture |
-| `/pm` | Product Manager | PRDs, epics, stories |
-| `/sm` | Scrum Master | Sprint planning, status, coordination |
-| `/dev` | Developer | Implementation, coding |
-| `/ux-designer` | UX Designer | User experience, wireframes |
-| `/qa` | QA Engineer | Test automation, quality assurance |
+| Command        | Agent           | Role                                  |
+| -------------- | --------------- | ------------------------------------- |
+| `/analyst`     | Analyst         | Research, briefs, discovery           |
+| `/architect`   | Architect       | Technical design, architecture        |
+| `/pm`          | Product Manager | PRDs, epics, stories                  |
+| `/sm`          | Scrum Master    | Sprint planning, status, coordination |
+| `/dev`         | Developer       | Implementation, coding                |
+| `/ux-designer` | UX Designer     | User experience, wireframes           |
+| `/qa`          | QA Engineer     | Test automation, quality assurance    |

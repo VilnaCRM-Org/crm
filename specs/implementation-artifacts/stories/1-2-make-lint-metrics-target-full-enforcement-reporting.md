@@ -35,20 +35,20 @@ so that I can identify and fix every issue in a single local run before pushing.
   - [x] 1.2 Select the supported Linux and Windows release assets for v`$(RCA_VERSION)`
   - [x] 1.3 Reject unsupported Darwin and unknown platform combinations with actionable errors
   - [x] 1.4 Download release assets from the pinned `v$(RCA_VERSION)` URL with `curl -fsSL`,
-    then verify the downloaded asset with SHA256 before extraction. Expected hashes for
-    `v$(RCA_VERSION)`:
+        then verify the downloaded asset with SHA256 before extraction. Expected hashes for
+        `v$(RCA_VERSION)`:
     - `rust-code-analysis-linux-cli-x86_64.tar.gz`:
       `9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894`
     - `rust-code-analysis-win-cli-x86_64.zip`:
       `592e9adb0cd66c333043addd8beaa04ea692a4d531e3b6dc54a2de1f27159623`
   - [x] 1.5 Run `sha256sum` or an equivalent checksum command against the downloaded release
-    asset, fail if it does not match the expected hash, then extract the binary into `./bin/`
-    and verify the installed version equals `$(RCA_VERSION)`
+        asset, fail if it does not match the expected hash, then extract the binary into `./bin/`
+        and verify the installed version equals `$(RCA_VERSION)`
 
 - [x] Task 2: Implement governed-scope analysis (AC: 2)
   - [x] 2.1 Invoke `rust-code-analysis-cli` against `src/`
   - [x] 2.2 Pass exclusions for `node_modules/`, `dist/`, `coverage/`, `.storybook/`, and
-    `tests/`
+        `tests/`
   - [x] 2.3 Write analyzer output to a temporary NDJSON file
   - [x] 2.4 Clean up temporary files on all exit paths
 
@@ -56,11 +56,11 @@ so that I can identify and fix every issue in a single local run before pushing.
   - [x] 3.1 Use `jq -rs` to process complete NDJSON output before deciding pass/fail
   - [x] 3.2 Detect function and closure spaces recursively
   - [x] 3.3 Enforce the wider hard-fail policy for complexity, ABC, arguments, exits,
-    function/file size, Halstead volume/bugs, MI Visual Studio, class metrics, and interface
-    metrics
+        function/file size, Halstead volume/bugs, MI Visual Studio, class metrics, and interface
+        metrics
   - [x] 3.4 Keep review-gate metrics non-blocking and silent
   - [x] 3.5 Read MI from `metrics.mi` with fallback to the historical
-    `maintanability_index` key
+        `maintanability_index` key
   - [x] 3.6 Emit all findings to a temporary findings file before exiting
 
 - [x] Task 4: Implement stdout and CI reporting (AC: 3, 4, 5, 6)
@@ -68,7 +68,7 @@ so that I can identify and fix every issue in a single local run before pushing.
   - [x] 4.2 Print a local success summary with scope and thresholds on pass
   - [x] 4.3 Write a Markdown violation table to `$GITHUB_STEP_SUMMARY` only when set
   - [x] 4.4 Write a Markdown success table with measured values to `$GITHUB_STEP_SUMMARY`
-    only when set
+        only when set
   - [x] 4.5 Exit `1` only after all violations are reported
 
 - [x] Task 5: Preserve `make lint` integration (AC: 7)
