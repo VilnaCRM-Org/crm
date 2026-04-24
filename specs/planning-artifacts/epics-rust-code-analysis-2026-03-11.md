@@ -153,8 +153,8 @@ So that all contributors and CI execution paths evaluate against identical polic
 **Given** the repository `Makefile` is opened
 **When** a contributor inspects the file
 **Then** `RCA_VERSION = 0.0.25` and `RCA_BIN` are defined as variables
-**And** `RCA_BIN` uses the project-local path `./bin/rust-code-analysis-cli`, with a Windows
-`.exe` suffix on Windows hosts
+**And** `RCA_BIN` uses the project-local path `./bin/rust-code-analysis-cli`
+(the gate runs in the Dockerized Linux `rca` service, so no host-OS suffix applies)
 **And** inline threshold values are present for the current baseline-calibrated policy committed
 in the `lint-metrics` recipe
 

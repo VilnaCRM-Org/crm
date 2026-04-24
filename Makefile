@@ -215,7 +215,14 @@ lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm rca make lint-metrics-run
+	@if [ -n "$$GITHUB_STEP_SUMMARY" ]; then \
+		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+			-e GITHUB_STEP_SUMMARY="$$GITHUB_STEP_SUMMARY" \
+			-v "$$GITHUB_STEP_SUMMARY:$$GITHUB_STEP_SUMMARY" \
+			rca make lint-metrics-run; \
+	else \
+		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm rca make lint-metrics-run; \
+	fi
 
 # Direct-invoke target used by the rca container (always Linux) via make lint-metrics,
 # and usable directly on Linux hosts. The Darwin guard below applies only to direct
