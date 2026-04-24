@@ -70,4 +70,18 @@ describe('DevToolsOptionsFactory', () => {
   it('returns primitive state values unchanged', () => {
     expect(options.stateSanitizer?.('idle', 0)).toBe('idle');
   });
+
+  it('leaves auth as undefined when it is absent from state', () => {
+    const state = { registration: { error: null } };
+    expect(options.stateSanitizer?.(state, 0)).toEqual({ registration: { error: null }, auth: undefined });
+  });
+
+  it('returns original action unchanged when meta fields are non-object scalars', () => {
+    const action = {
+      type: 'noop',
+      meta: { arg: 'plain-string', headers: 42, request: null },
+    };
+    const result = options.actionSanitizer?.(action, 0);
+    expect(result).toBe(action);
+  });
 });

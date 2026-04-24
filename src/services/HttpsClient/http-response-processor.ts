@@ -29,7 +29,10 @@ export default class HttpResponseProcessor {
 
   private async parseJsonBody<T>(response: Response, status: number): Promise<T | undefined> {
     try {
-      const raw = await response.clone().text().catch(() => '');
+      const raw = await response
+        .clone()
+        .text()
+        .catch(() => '');
       if (!raw || raw.trim().length === 0) {
         return undefined;
       }

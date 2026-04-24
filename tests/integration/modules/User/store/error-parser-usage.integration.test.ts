@@ -81,7 +81,9 @@ describe('ErrorParser Integration Coverage', () => {
     });
 
     it('should parse unknown error types', async () => {
-      server.use(rest.post(API_ENDPOINTS.LOGIN, () => Promise.reject(new Error('Unexpected error'))));
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, () => Promise.reject(new Error('Unexpected error')))
+      );
 
       await store.dispatch(loginUser({ email: 'test@test.com', password: 'pass' }));
       expect(store.getState().auth.error).toBeTruthy();

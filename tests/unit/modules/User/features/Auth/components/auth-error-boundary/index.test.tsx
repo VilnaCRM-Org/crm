@@ -8,11 +8,11 @@ jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({
     t: (key: string): string =>
       (
-        {
+        ({
           'auth.error.default': 'Something went wrong. Please try again later.',
           'auth.error.details': 'Error Details',
           'auth.error.tryAgain': 'Try again',
-        } as Record<string, string>
+        }) as Record<string, string>
       )[key] ?? key,
   }),
 }));

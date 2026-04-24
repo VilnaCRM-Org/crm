@@ -1,9 +1,16 @@
 import { type UiError } from '@/services/error';
-import { ActionReducerMapBuilder, createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import {
+  ActionReducerMapBuilder,
+  createAsyncThunk,
+  createSlice,
+  PayloadAction,
+} from '@reduxjs/toolkit';
 
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import AuthUiErrorMapper from '@/modules/User/store/auth-ui-error-mapper';
-import LoginResponseMapper, { type LoginSuccessPayload } from '@/modules/User/store/login-response-mapper';
+import LoginResponseMapper, {
+  type LoginSuccessPayload,
+} from '@/modules/User/store/login-response-mapper';
 import { ThunkExtra } from '@/modules/User/store/types';
 
 const loginResponseMapper = new LoginResponseMapper();
@@ -44,19 +51,13 @@ function handlePending(state: LoginState): void {
   state.error = null;
 }
 
-function handleFulfilled(
-  state: LoginState,
-  action: PayloadAction<LoginSuccessPayload>
-): void {
+function handleFulfilled(state: LoginState, action: PayloadAction<LoginSuccessPayload>): void {
   state.loading = false;
   state.email = action.payload.email;
   state.token = action.payload.token;
 }
 
-function handleRejected(
-  state: LoginState,
-  action: ReturnType<typeof loginUser.rejected>
-): void {
+function handleRejected(state: LoginState, action: ReturnType<typeof loginUser.rejected>): void {
   state.loading = false;
   if (action.meta.aborted) return;
   state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';

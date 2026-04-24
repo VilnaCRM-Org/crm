@@ -34,6 +34,12 @@ describe('deepRedact', () => {
     expect(setValue.authToken).toBe('***');
   });
 
+  it('returns class instances unchanged when they are not plain objects', () => {
+    const date = new Date('2024-01-01T00:00:00Z');
+    const result = deepRedact({ ts: date });
+    expect((result as { ts: Date }).ts).toBe(date);
+  });
+
   it('redacts sensitive values stored under sensitive map keys', () => {
     const redacted = deepRedact(
       new Map<unknown, unknown>([

@@ -15,12 +15,7 @@ interface Props {
 function ConfettiTop({ label }: { label: string }): JSX.Element {
   return (
     <Box sx={styles.successTopImgBox}>
-      <Box
-        component={ConfettiImage}
-        role="img"
-        aria-label={label}
-        sx={styles.successTopConfetti}
-      />
+      <Box component={ConfettiImage} role="img" aria-label={label} sx={styles.successTopConfetti} />
     </Box>
   );
 }

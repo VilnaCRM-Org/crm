@@ -25,9 +25,10 @@ export const notificationSection = {
   zIndex: 1000,
 } as const;
 
-export const messageButtonText = (theme: Theme): Theme['typography']['button'] & Record<string, unknown> => ({
-  ...theme.typography.button,
-  fontFamily: theme.typography.fontFamily,
+export const messageButtonText = (
+  theme: Theme
+): Theme['typography']['button'] & Record<string, unknown> => ({
+  fontFamily: 'Golos, sans-serif',
   fontSize: '0.9375rem',
   lineHeight: '1.125rem',
   fontWeight: 500,

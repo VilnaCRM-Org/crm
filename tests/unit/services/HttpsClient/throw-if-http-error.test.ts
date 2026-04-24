@@ -5,10 +5,12 @@ interface ErrorCause {
   [key: string]: unknown;
   url?: string;
   contentType?: string;
-  body?: string | {
-    [key: string]: unknown;
-    fields?: Record<string, unknown>;
-  };
+  body?:
+    | string
+    | {
+        [key: string]: unknown;
+        fields?: Record<string, unknown>;
+      };
 }
 
 // Mock Response for testing

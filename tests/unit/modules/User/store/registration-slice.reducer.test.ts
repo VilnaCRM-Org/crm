@@ -148,6 +148,21 @@ describe('registrationSlice reducer and thunk coverage', () => {
     expect(state.retryable).toBeUndefined();
   });
 
+  it('re-throws AbortError thrown directly inside the thunk catch block', async () => {
+    const store = createStore();
+    const abortError = new Error('The operation was aborted');
+    abortError.name = 'AbortError';
+    (registrationAPI.register as jest.Mock).mockRejectedValue(abortError);
+
+    await expect(
+      store.dispatch(registerUser({ email: 'abort@test.com', password: 'pass', fullName: 'Abort' }))
+    ).resolves.toMatchObject({ error: expect.objectContaining({ name: 'AbortError' }) });
+
+    const state = store.getState().registration;
+    expect(state.loading).toBe(false);
+    expect(state.error).toBeNull();
+  });
+
   it('handles aborted rejection without overriding error', async () => {
     const store = createStore();
     (registrationAPI.register as jest.Mock).mockImplementation(async () => {

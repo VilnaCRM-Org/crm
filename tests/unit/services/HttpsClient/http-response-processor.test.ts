@@ -1,8 +1,12 @@
-/** @jest-environment jsdom */
+/** @jest-environment @stryker-mutator/jest-runner/jest-env/jsdom */
 
 import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
 
-function createResponse(status: number, body?: unknown, contentType = 'application/json'): Response {
+function createResponse(
+  status: number,
+  body?: unknown,
+  contentType = 'application/json'
+): Response {
   return {
     ok: status >= 200 && status < 300,
     status,
@@ -21,5 +25,15 @@ describe('HttpResponseProcessor', () => {
     const processor = new HttpResponseProcessor();
 
     await expect(processor.process(createResponse(204, undefined, ''))).resolves.toBeUndefined();
+  });
+
+  it('uses an injected HttpErrorStatusGuard', async () => {
+    const guard = { assertOk: jest.fn().mockResolvedValue(undefined) };
+    const processor = new HttpResponseProcessor(guard as never);
+    const response = createResponse(204, undefined, '');
+
+    await processor.process(response);
+
+    expect(guard.assertOk).toHaveBeenCalledWith(response);
   });
 });

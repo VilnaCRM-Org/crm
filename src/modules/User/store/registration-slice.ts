@@ -1,5 +1,10 @@
 import type { UiError } from '@/services/error';
-import { createSlice, createAsyncThunk, PayloadAction, ActionReducerMapBuilder } from '@reduxjs/toolkit';
+import {
+  createSlice,
+  createAsyncThunk,
+  PayloadAction,
+  ActionReducerMapBuilder,
+} from '@reduxjs/toolkit';
 
 import { SafeUserInfo } from '../features/Auth/types/ApiResponses';
 import { RegisterUserDto } from '../features/Auth/types/Credentials';
@@ -49,10 +54,7 @@ function handlePending(state: RegistrationState): void {
   state.user = null;
 }
 
-function handleFulfilled(
-  state: RegistrationState,
-  action: PayloadAction<SafeUserInfo>
-): void {
+function handleFulfilled(state: RegistrationState, action: PayloadAction<SafeUserInfo>): void {
   state.loading = false;
   state.error = null;
   state.retryable = undefined;

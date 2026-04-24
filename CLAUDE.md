@@ -369,8 +369,10 @@ command reference.
 
 ### Workflow
 
-1. Work through Phases 1-3 using BMAD agents and workflows (interactive, command-driven)
-2. Run `/bmalph-implement` to transition planning artifacts into Ralph format, then start Ralph
+1. Work through Phases 1-3 using BMAD agents and workflows
+   (interactive, command-driven)
+2. Run `/bmalph-implement` to transition planning artifacts into Ralph format,
+   then start Ralph
 
 ### Management Commands
 

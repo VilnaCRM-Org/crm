@@ -23,10 +23,7 @@ function isSuccessView(view: string): boolean {
   return view === 'success';
 }
 
-function markShown(
-  calledRef: MutableRefObject<boolean>,
-  onShown?: () => void
-): boolean {
+function markShown(calledRef: MutableRefObject<boolean>, onShown?: () => void): boolean {
   if (calledRef.current) return calledRef.current;
   onShown?.();
   return true;
@@ -37,7 +34,10 @@ function useShownCallback(view: string, onShown?: () => void): void {
   const successView = isSuccessView(view);
 
   useEffect(() => {
-    if (!successView) { calledRef.current = false; return; }
+    if (!successView) {
+      calledRef.current = false;
+      return;
+    }
     calledRef.current = markShown(calledRef, onShown);
   }, [onShown, successView]);
 }

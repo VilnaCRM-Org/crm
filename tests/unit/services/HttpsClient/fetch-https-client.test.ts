@@ -1,4 +1,4 @@
-/** @jest-environment jsdom */
+/** @jest-environment @stryker-mutator/jest-runner/jest-env/jsdom */
 
 import 'reflect-metadata';
 
@@ -684,6 +684,31 @@ describe('FetchHttpsClient', () => {
 
       const callArgs = mockFetch.mock.calls[0][1];
       expect(callArgs.headers.Accept).toBe('application/json');
+    });
+  });
+
+  describe('injected dependencies', () => {
+    it('delegates to the injected requestConfigBuilder and responseProcessor', async () => {
+      const mockProcessor = { process: jest.fn().mockResolvedValue({ injected: true }) };
+      const mockBuilder = {
+        create: jest.fn().mockReturnValue({ method: 'GET', headers: { Accept: 'application/json' } }),
+      };
+      const mockHandler = {
+        throwAbortError: jest.fn(),
+        rethrowOrWrap: jest.fn(),
+      };
+      const customClient = new FetchHttpsClient(
+        mockBuilder as never,
+        mockProcessor as never,
+        mockHandler as never
+      );
+      mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
+
+      const result = await customClient.get('/api/test');
+
+      expect(mockBuilder.create).toHaveBeenCalled();
+      expect(mockProcessor.process).toHaveBeenCalled();
+      expect(result).toEqual({ injected: true });
     });
   });
 

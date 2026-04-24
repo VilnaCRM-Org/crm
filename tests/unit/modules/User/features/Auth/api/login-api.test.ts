@@ -14,11 +14,7 @@ describe('LoginAPI', () => {
     const api = new LoginAPI(httpsClient, { convert: jest.fn() } as never);
 
     await expect(api.login(credentials)).resolves.toEqual({ token: 'abc123' });
-    expect(httpsClient.post).toHaveBeenCalledWith(
-      expect.any(String),
-      credentials,
-      undefined
-    );
+    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, undefined);
   });
 
   it('maps non-API failures through BaseAPI handling', async () => {
@@ -26,10 +22,9 @@ describe('LoginAPI', () => {
       post: jest.fn().mockRejectedValue(new Error('network down')),
     } as unknown as HttpsClient;
     const converted = new ApiError({ message: 'Converted', code: 'CONVERTED' });
-    const api = new LoginAPI(
-      httpsClient,
-      { convert: jest.fn().mockReturnValue(converted) } as never
-    );
+    const api = new LoginAPI(httpsClient, {
+      convert: jest.fn().mockReturnValue(converted),
+    } as never);
 
     await expect(api.login(credentials)).rejects.toBe(converted);
   });

@@ -85,9 +85,7 @@ function FormHeader({
           {title}
         </UITypography>
       )}
-      {showSubtitle && subtitle && (
-        <UITypography sx={styles.formSubtitle}>{subtitle}</UITypography>
-      )}
+      {showSubtitle && subtitle && <UITypography sx={styles.formSubtitle}>{subtitle}</UITypography>}
     </>
   );
 }
@@ -157,12 +155,16 @@ export default function UIForm<T extends FieldValues>({
   onSubmit,
   defaultValues,
   children,
-  formOptions = {}, isSubmitting = undefined, error = null,
+  formOptions = {},
+  isSubmitting = undefined,
+  error = null,
   submitLabel,
   title,
   subtitle = null,
-  showTitle = true, showSubtitle = true,
-  resetOnSuccess = false, isSubmitDisabled = false,
+  showTitle = true,
+  showSubtitle = true,
+  resetOnSuccess = false,
+  isSubmitDisabled = false,
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;

@@ -12,7 +12,9 @@ describe('RegistrationAPI', () => {
 
   it('returns the underlying client response on success', async () => {
     const httpsClient = {
-      post: jest.fn().mockResolvedValue({ email: credentials.email, fullName: credentials.fullName }),
+      post: jest
+        .fn()
+        .mockResolvedValue({ email: credentials.email, fullName: credentials.fullName }),
     } as unknown as HttpsClient;
 
     const api = new RegistrationAPI(httpsClient, { convert: jest.fn() } as never);
@@ -21,11 +23,7 @@ describe('RegistrationAPI', () => {
       email: credentials.email,
       fullName: credentials.fullName,
     });
-    expect(httpsClient.post).toHaveBeenCalledWith(
-      expect.any(String),
-      credentials,
-      undefined
-    );
+    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, undefined);
   });
 
   it('rethrows AbortError without converting it', async () => {
@@ -46,10 +44,9 @@ describe('RegistrationAPI', () => {
       post: jest.fn().mockRejectedValue(new Error('network down')),
     } as unknown as HttpsClient;
     const converted = new ApiError({ message: 'Converted', code: 'CONVERTED' });
-    const api = new RegistrationAPI(
-      httpsClient,
-      { convert: jest.fn().mockReturnValue(converted) } as never
-    );
+    const api = new RegistrationAPI(httpsClient, {
+      convert: jest.fn().mockReturnValue(converted),
+    } as never);
 
     await expect(api.register(credentials)).rejects.toBe(converted);
   });

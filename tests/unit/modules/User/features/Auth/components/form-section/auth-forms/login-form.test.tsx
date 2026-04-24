@@ -46,13 +46,10 @@ jest.mock('@/modules/User/features/Auth/components/form-section/components/form-
   },
 }));
 
-jest.mock(
-  '@/modules/User/features/Auth/components/form-section/components/password-field',
-  () => ({
-    __esModule: true,
-    default: (): ReactElement => <div data-testid="password-field" />,
-  })
-);
+jest.mock('@/modules/User/features/Auth/components/form-section/components/password-field', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div data-testid="password-field" />,
+}));
 
 jest.mock('@/modules/User/features/Auth/components/form-section/components/user-options', () => ({
   __esModule: true,
@@ -114,6 +111,21 @@ describe('LoginForm', () => {
     await waitFor(() => {
       expect(screen.getByTestId('form-error')).toHaveTextContent(
         'sign_in.errors.login: Invalid credentials'
+      );
+    });
+  });
+
+  it('translates the error reason when it matches an i18n key pattern', async () => {
+    mockDispatch.mockReturnValue({
+      unwrap: () => Promise.reject(new Error('')),
+    });
+
+    render(<LoginForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('form-error')).toHaveTextContent(
+        'sign_in.errors.login: auth.errors.unknown'
       );
     });
   });

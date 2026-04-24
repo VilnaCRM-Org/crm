@@ -49,9 +49,10 @@ export class DevToolsOptionsFactory {
     };
   }
 
-  private sanitizeMeta(
-    meta: unknown
-  ): { meta: Record<string, unknown> | undefined; changed: boolean } {
+  private sanitizeMeta(meta: unknown): {
+    meta: Record<string, unknown> | undefined;
+    changed: boolean;
+  } {
     if (!meta || typeof meta !== 'object') return { meta: meta as undefined, changed: false };
     const nextMeta = { ...(meta as Record<string, unknown>) };
     let changed = false;
@@ -74,9 +75,7 @@ export class DevToolsOptionsFactory {
     return { payload: sanitizedPayload, changed: sanitizedPayload !== payload };
   }
 
-  private getSanitizedMetaField(
-    value: unknown
-  ): { value: unknown; changed: boolean } {
+  private getSanitizedMetaField(value: unknown): { value: unknown; changed: boolean } {
     if (!value || typeof value !== 'object') {
       return { value, changed: false };
     }

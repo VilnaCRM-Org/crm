@@ -16,10 +16,7 @@ describe('LoginResponseMapper', () => {
   });
 
   it('keeps the normalized email when the raw payload also contains email-like data', () => {
-    const result = mapper.map(
-      { token: 'abc123', email: 'SERVER@EXAMPLE.COM' },
-      'USER@EXAMPLE.COM'
-    );
+    const result = mapper.map({ token: 'abc123', email: 'SERVER@EXAMPLE.COM' }, 'USER@EXAMPLE.COM');
 
     expect(result).toEqual({
       ok: true,

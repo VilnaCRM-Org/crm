@@ -86,11 +86,7 @@ describe('RegistrationNotification', () => {
 
   it('renders the success notification', () => {
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={jest.fn()}
-        view="success"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -110,6 +106,37 @@ describe('RegistrationNotification', () => {
     );
 
     expect(onShown).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not call the new onShown when callback reference changes while view stays success', () => {
+    const onShown1 = jest.fn();
+    const onShown2 = jest.fn();
+    const onBack = jest.fn();
+
+    function RerenderHarness(): JSX.Element {
+      const [idx, setIdx] = React.useState(0);
+      const onShown = idx === 0 ? onShown1 : onShown2;
+      return (
+        <>
+          <button type="button" onClick={() => setIdx(1)}>
+            switch-callback
+          </button>
+          <RegistrationNotification
+            key="notification"
+            isSubmitting={false}
+            onBack={onBack}
+            view="success"
+            onShown={onShown}
+          />
+        </>
+      );
+    }
+
+    renderWithProviders(<RerenderHarness />, { i18nMock: createUkrainianI18n() });
+    expect(onShown1).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'switch-callback' }));
+    expect(onShown2).not.toHaveBeenCalled();
   });
 
   it('calls onShown only once while success view stays mounted across rerenders', () => {
@@ -133,10 +160,7 @@ describe('RegistrationNotification', () => {
       );
     }
 
-    renderWithProviders(
-      <RerenderHarness />,
-      { i18nMock: createUkrainianI18n() }
-    );
+    renderWithProviders(<RerenderHarness />, { i18nMock: createUkrainianI18n() });
 
     fireEvent.click(screen.getByRole('button', { name: 'rerender' }));
 
@@ -146,11 +170,7 @@ describe('RegistrationNotification', () => {
   it('calls onBack immediately when back is clicked in success view', () => {
     const onBack = jest.fn();
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={onBack}
-        view="success"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="success" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -162,11 +182,7 @@ describe('RegistrationNotification', () => {
     jest.useFakeTimers();
     const onBack = jest.fn();
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={onBack}
-        view="error"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -182,11 +198,7 @@ describe('RegistrationNotification', () => {
     jest.useFakeTimers();
     const onBack = jest.fn();
     const { unmount } = renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={onBack}
-        view="error"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -202,12 +214,7 @@ describe('RegistrationNotification', () => {
     const onRetry = jest.fn();
 
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting
-        onBack={jest.fn()}
-        onRetry={onRetry}
-        view="error"
-      />,
+      <RegistrationNotification isSubmitting onBack={jest.fn()} onRetry={onRetry} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 

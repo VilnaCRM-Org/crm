@@ -61,11 +61,7 @@ function FallbackContainer({
       data-testid="auth-error-boundary-fallback"
     >
       {resolvedFallback}
-      <RetryButton
-        type="button"
-        data-testid="auth-error-boundary-try-again"
-        onClick={onReset}
-      >
+      <RetryButton type="button" data-testid="auth-error-boundary-try-again" onClick={onReset}>
         {t('auth.error.tryAgain')}
       </RetryButton>
       {shouldShowErrorDetails(error) && <ErrorDetails error={error} />}

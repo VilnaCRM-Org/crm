@@ -1,4 +1,4 @@
-/** @jest-environment jsdom */
+/** @jest-environment @stryker-mutator/jest-runner/jest-env/jsdom */
 
 import ApiError from '@/modules/User/features/Auth/api/ApiErrors/api-error';
 import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors/api-error-codes';
