@@ -26,8 +26,6 @@ services:
       target: rca
     volumes:
       - .:/app
-    networks:
-      - crm-network
 
 networks:
   crm-network:
