@@ -356,8 +356,7 @@ Uses `.nvmrc` for version pinning (Node 24).
 ## BMAD-METHOD Integration
 
 Navigate phases with `/bmalph`. Try `/bmad-help` to discover all commands,
-or run `/bmalph-status` for a quick overview. See `_bmad/COMMANDS.md` for the full
-command reference.
+or run `/bmalph-status` for a quick overview.
 
 ### Phases
 

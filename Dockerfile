@@ -44,6 +44,24 @@ COPY . .
 RUN bun x rsbuild build
 
 
+# -------- rust-code-analysis Stage --------
+FROM public.ecr.aws/docker/library/debian:bookworm-slim AS rca
+
+SHELL ["/bin/sh", "-c"]
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      curl \
+      jq \
+      make \
+      tar \
+      unzip && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+
 # -------- Production Image --------
 FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21  AS production
 

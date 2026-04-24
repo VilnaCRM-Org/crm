@@ -19,6 +19,15 @@ services:
       start_period: 90s
     networks:
       - crm-network
+  rca:
+    profiles: [tools]
+    build:
+      context: .
+      target: rca
+    volumes:
+      - .:/app
+    networks:
+      - crm-network
 
 networks:
   crm-network:

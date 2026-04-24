@@ -26,6 +26,8 @@ require_env() {
 }
 
 # Hard-fail thresholds.
+RCA_SCOPE="$(require_env RCA_SCOPE "${RCA_SCOPE:-}")"
+RCA_EXCLUDES="$(require_env RCA_EXCLUDES "${RCA_EXCLUDES:-}")"
 CYCLOMATIC_MAX="$(require_env CYCLOMATIC_MAX "${CYCLOMATIC_MAX:-${CC_MAX:-}}")"
 COGNITIVE_MAX="$(require_env COGNITIVE_MAX "${COGNITIVE_MAX:-}")"
 ABC_MAGNITUDE_MAX="$(require_env ABC_MAGNITUDE_MAX "${ABC_MAGNITUDE_MAX:-}")"
@@ -108,17 +110,16 @@ trap 'rm -f "$TMP_JSON" "$TMP_FINDINGS" "$TMP_SUMMARY"' EXIT INT TERM
 
 VER_LABEL=""
 if [ -n "$RCA_VERSION" ]; then VER_LABEL=" v${RCA_VERSION}"; fi
-printf 'lint-metrics: analyzing src/ with rust-code-analysis%s\n' "$VER_LABEL"
+printf 'lint-metrics: analyzing %s with rust-code-analysis%s\n' "$RCA_SCOPE" "$VER_LABEL"
 
-"$RCA_BIN" -m -O json -p src/ \
-  -X "**/node_modules/**" \
-  -X "**/dist/**" \
-  -X "**/coverage/**" \
-  -X "**/.storybook/**" \
-  -X "**/tests/**" \
-  >"$TMP_JSON"
+set -- -m -O json -p "$RCA_SCOPE"
+for exclude_pattern in $RCA_EXCLUDES; do
+  set -- "$@" -X "$exclude_pattern"
+done
 
-jq -rs -r \
+"$RCA_BIN" "$@" >"$TMP_JSON"
+
+jq -rs \
   --argjson cyclomatic_max "$CYCLOMATIC_MAX" \
   --argjson cognitive_max "$COGNITIVE_MAX" \
   --argjson abc_magnitude_max "$ABC_MAGNITUDE_MAX" \
@@ -268,7 +269,7 @@ jq -rs -r \
 
 FAIL_COUNT=$(awk -F'|' '$1 == "FAIL" { count++ } END { print count + 0 }' "$TMP_FINDINGS")
 
-jq -rs -r \
+jq -rs \
   --argjson cyclomatic_max "$CYCLOMATIC_MAX" \
   --argjson cognitive_max "$COGNITIVE_MAX" \
   --argjson abc_magnitude_max "$ABC_MAGNITUDE_MAX" \
@@ -313,7 +314,7 @@ print_findings() {
   findings_file=$1
   printf '%-7s  %-48s  %-9s  %-28s  %4s  %-42s  %10s  %-12s\n' \
     "GATE" "FILE" "SCOPE" "SUBJECT" "LINE" "METRIC" "VALUE" "LIMIT"
-  printf '%0.s-' $(seq 1 176) && printf '\n'
+  printf '%*s\n' 176 '' | tr ' ' '-'
   while IFS='|' read -r severity file scope subject line metric value limit; do
     [ "$severity" = "FAIL" ] || continue
     printf '%-7s  %-48s  %-9s  %-28s  %4s  %-42s  %10s  %-12s\n' \
@@ -326,7 +327,9 @@ append_summary_table() {
     printf '| Metric | Gate | Threshold | Measured |\n'
     printf '|--------|------|-----------|----------|\n'
     while IFS='|' read -r metric gate threshold measured; do
-      [ "$gate" = "review" ] && continue
+      if [ "$gate" = "review" ]; then
+        continue
+      fi
       printf "| %s | %s | \`%s\` | %s |\n" "$metric" "$gate" "$threshold" "$measured"
     done <"$TMP_SUMMARY"
   } >>"$GITHUB_STEP_SUMMARY"
@@ -334,9 +337,11 @@ append_summary_table() {
 
 print_summary_stdout() {
   printf '%-28s  %-6s  %-16s  %s\n' "METRIC" "GATE" "THRESHOLD" "MEASURED"
-  printf '%0.s-' $(seq 1 78) && printf '\n'
+  printf '%*s\n' 78 '' | tr ' ' '-'
   while IFS='|' read -r metric gate threshold measured; do
-    [ "$gate" = "review" ] && continue
+    if [ "$gate" = "review" ]; then
+      continue
+    fi
     printf '%-28s  %-6s  %-16s  %s\n' "$metric" "$gate" "$threshold" "$measured"
   done <"$TMP_SUMMARY"
 }
@@ -371,14 +376,14 @@ printf 'rust-code-analysis: all hard checks pass\n\n'
 print_summary_stdout
 printf '\n'
 
-printf 'Scope: src/ | hard-fail policy thresholds enforced.\n'
+printf 'Scope: %s | hard-fail policy thresholds enforced.\n' "$RCA_SCOPE"
 
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   {
     printf '## rust-code-analysis: all hard checks pass\n\n'
   } >>"$GITHUB_STEP_SUMMARY"
   append_summary_table
-  printf "\nAll hard-fail metrics in \`src/\` are within policy thresholds.\n" >>"$GITHUB_STEP_SUMMARY"
+  printf "\nAll hard-fail metrics in \`%s\` are within policy thresholds.\n" "$RCA_SCOPE" >>"$GITHUB_STEP_SUMMARY"
 fi
 
 exit 0

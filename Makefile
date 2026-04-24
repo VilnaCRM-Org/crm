@@ -116,6 +116,8 @@ MARKDOWNLINT_BIN            = $(BUNX) markdownlint
 MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
 
 RCA_VERSION                 = 0.0.25
+RCA_SCOPE                   = src/
+RCA_EXCLUDES                = **/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/**
 UNAME_S                     := $(shell uname -s 2>/dev/null || echo unknown)
 WINDOWS_UNAMES              := MINGW% MSYS% CYGWIN% Windows_NT
 ifeq ($(filter $(WINDOWS_UNAMES),$(UNAME_S) $(OS)),)
@@ -128,8 +130,8 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
-.PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
-.PHONY: clean lint lint-metrics
+.PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
+.PHONY: clean lint lint-metrics lint-metrics-run
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -213,17 +215,21 @@ lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm rca $(MAKE) lint-metrics-run
+
+# Baseline-calibrated values for this PR; tighten with code remediation in the next PR.
+lint-metrics-run:
 	@os_name=$$(uname -s 2>/dev/null || echo unknown); \
 	if [ "$$os_name" = "Darwin" ]; then \
 		printf 'lint-metrics: skipped on Darwin (rust-code-analysis-cli v%s has no macOS release asset).\n' "$(RCA_VERSION)"; \
 		printf '  The authoritative check runs in CI on pull requests targeting main.\n'; \
 		exit 0; \
 	fi; \
-	RCA_BIN="$(RCA_BIN)" RCA_VERSION="$(RCA_VERSION)" sh scripts/install-rca.sh
-# Baseline-calibrated values for this PR; tighten with code remediation in the next PR.
-	@if [ "$$(uname -s 2>/dev/null || echo unknown)" = "Darwin" ]; then exit 0; fi; \
+	RCA_BIN="$(RCA_BIN)" RCA_VERSION="$(RCA_VERSION)" sh scripts/install-rca.sh || exit 1; \
 	RCA_BIN="$(RCA_BIN)" \
 	RCA_VERSION="$(RCA_VERSION)" \
+	RCA_SCOPE="$(RCA_SCOPE)" \
+	RCA_EXCLUDES="$(RCA_EXCLUDES)" \
 	CYCLOMATIC_MAX="20" \
 	COGNITIVE_MAX="24" \
 	ABC_MAGNITUDE_MAX="17" \
