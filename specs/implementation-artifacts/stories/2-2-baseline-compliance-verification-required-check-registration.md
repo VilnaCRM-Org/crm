@@ -1,6 +1,6 @@
 # Story 2.2: Baseline Compliance Verification and Required Check Registration
 
-Status: ready-for-review
+Status: done
 
 ## Story
 

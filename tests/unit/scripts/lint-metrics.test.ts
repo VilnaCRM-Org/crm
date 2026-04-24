@@ -132,6 +132,7 @@ describe('scripts/lint-metrics.sh', () => {
         RCA_BIN: createFakeRcaBinary(tempDir),
       },
       encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'inherit'],
     });
 
     expect(output).toContain('rust-code-analysis: all hard checks pass');

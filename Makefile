@@ -215,7 +215,7 @@ lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm rca $(MAKE) lint-metrics-run
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm rca make lint-metrics-run
 
 # Baseline-calibrated values for this PR; tighten with code remediation in the next PR.
 lint-metrics-run:

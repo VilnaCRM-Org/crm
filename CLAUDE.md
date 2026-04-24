@@ -118,8 +118,9 @@ locally before pushing.
 make lint-metrics
 ```
 
-No extra setup is needed beyond the standard repository requirements. The binary is
-downloaded automatically to `./bin/` on first run and is gitignored.
+Requires a running Docker daemon (the gate runs inside the `rca` compose service).
+The `rust-code-analysis-cli` binary is downloaded automatically into `./bin/` on first run
+and is gitignored.
 
 **Hard-fail metrics:**
 
