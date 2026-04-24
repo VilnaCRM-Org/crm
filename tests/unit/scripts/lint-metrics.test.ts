@@ -141,9 +141,7 @@ describe('scripts/lint-metrics.sh', () => {
   });
 
   it('is listed in the required-check registration story file list', () => {
-    expect(readFileSync(storyPath, 'utf8')).toContain(
-      'tests/unit/scripts/lint-metrics.test.ts'
-    );
+    expect(readFileSync(storyPath, 'utf8')).toContain('tests/unit/scripts/lint-metrics.test.ts');
   });
 
   it('keeps the rca service independent from the external app network', () => {
@@ -151,7 +149,9 @@ describe('scripts/lint-metrics.sh', () => {
 
     expect(dockerCompose).toContain('  rca:\n');
     expect(dockerCompose).not.toContain(
-      '  rca:\n    profiles: [tools]\n    build:\n      context: .\n      target: rca\n    volumes:\n      - .:/app\n    networks:\n      - crm-network\n'
+      '  rca:\n    profiles: [tools]\n    build:\n      context: .\n' +
+        '      target: rca\n    volumes:\n      - .:/app\n' +
+        '    networks:\n      - crm-network\n'
     );
   });
 });

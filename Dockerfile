@@ -45,7 +45,7 @@ RUN bun x rsbuild build
 
 
 # -------- rust-code-analysis Stage --------
-FROM public.ecr.aws/docker/library/debian:bookworm-slim AS rca
+FROM public.ecr.aws/docker/library/debian:12-slim AS rca
 
 SHELL ["/bin/sh", "-c"]
 

@@ -113,9 +113,11 @@ if [ -n "$RCA_VERSION" ]; then VER_LABEL=" v${RCA_VERSION}"; fi
 printf 'lint-metrics: analyzing %s with rust-code-analysis%s\n' "$RCA_SCOPE" "$VER_LABEL"
 
 set -- -m -O json -p "$RCA_SCOPE"
+set -f
 for exclude_pattern in $RCA_EXCLUDES; do
   set -- "$@" -X "$exclude_pattern"
 done
+set +f
 
 "$RCA_BIN" "$@" >"$TMP_JSON"
 
