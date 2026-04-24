@@ -8,7 +8,8 @@ const lintMetricsScript = path.join(repoRoot, 'scripts/lint-metrics.sh');
 const dockerComposePath = path.join(repoRoot, 'docker-compose.yml');
 const storyPath = path.join(
   repoRoot,
-  'specs/implementation-artifacts/stories/2-2-baseline-compliance-verification-required-check-registration.md'
+  'specs/implementation-artifacts/stories/' +
+    '2-2-baseline-compliance-verification-required-check-registration.md'
 );
 
 const baseEnv = {
@@ -140,13 +141,17 @@ describe('scripts/lint-metrics.sh', () => {
   });
 
   it('is listed in the required-check registration story file list', () => {
-    expect(readFileSync(storyPath, 'utf8')).toContain('tests/unit/scripts/lint-metrics.test.ts');
+    expect(readFileSync(storyPath, 'utf8')).toContain(
+      'tests/unit/scripts/lint-metrics.test.ts'
+    );
   });
 
   it('keeps the rca service independent from the external app network', () => {
     const dockerCompose = readFileSync(dockerComposePath, 'utf8');
 
     expect(dockerCompose).toContain('  rca:\n');
-    expect(dockerCompose).not.toContain('  rca:\n    profiles: [tools]\n    build:\n      context: .\n      target: rca\n    volumes:\n      - .:/app\n    networks:\n      - crm-network\n');
+    expect(dockerCompose).not.toContain(
+      '  rca:\n    profiles: [tools]\n    build:\n      context: .\n      target: rca\n    volumes:\n      - .:/app\n    networks:\n      - crm-network\n'
+    );
   });
 });
