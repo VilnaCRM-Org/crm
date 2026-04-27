@@ -213,7 +213,7 @@ lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if
 	@summary_path="$$GITHUB_STEP_SUMMARY"; \
 	if [ -n "$$summary_path" ]; then \
 		summary_dir=$$(dirname "$$summary_path"); \
-		if { [ -e "$$summary_path" ] && [ -w "$$summary_path" ]; } || { [ ! -e "$$summary_path" ] && [ -w "$$summary_dir" ]; }; then \
+		if { [ -e "$$summary_path" ] && [ ! -d "$$summary_path" ] && [ -w "$$summary_path" ]; } || { [ ! -e "$$summary_path" ] && [ -w "$$summary_dir" ]; }; then \
 			: > "$$summary_path" 2>/dev/null || touch "$$summary_path"; \
 			$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
 				-e GITHUB_STEP_SUMMARY="$$summary_path" \
