@@ -65,11 +65,12 @@ ADD \
     https://github.com/mozilla/rust-code-analysis/releases/download/v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz \
     /tmp/rca.tar.gz
 
-RUN printf '%s  %s\n' "${RCA_SHA256}" "/tmp/rca.tar.gz" | sha256sum -c - && \
+RUN printf '%s  %s\n' "${RCA_SHA256}" "/tmp/rca.tar.gz" > /tmp/rca.tar.gz.sha256 && \
+    sha256sum -c /tmp/rca.tar.gz.sha256 && \
     tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz && \
     chmod +x /usr/local/bin/rust-code-analysis-cli && \
     /usr/local/bin/rust-code-analysis-cli --version && \
-    rm /tmp/rca.tar.gz
+    rm /tmp/rca.tar.gz /tmp/rca.tar.gz.sha256
 
 ENV RCA_BIN=/usr/local/bin/rust-code-analysis-cli
 
