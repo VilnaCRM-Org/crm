@@ -119,7 +119,7 @@ RCA_VERSION                 = 0.0.25
 RCA_SCOPE                   = src/
 RCA_EXCLUDES                = **/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/**
 METRICS_POLICY_PATH         = config/metrics-policy.json
-RCA_BIN                     = /usr/local/bin/rust-code-analysis-cli
+RCA_BIN                     = ./bin/rust-code-analysis-cli
 
 RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
@@ -210,14 +210,23 @@ lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
-	@if [ -n "$$GITHUB_STEP_SUMMARY" ]; then \
-		: > "$$GITHUB_STEP_SUMMARY" 2>/dev/null || touch "$$GITHUB_STEP_SUMMARY"; \
-		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
-			-e GITHUB_STEP_SUMMARY="$$GITHUB_STEP_SUMMARY" \
-			-v "$$GITHUB_STEP_SUMMARY:$$GITHUB_STEP_SUMMARY" \
-			rca make lint-metrics-run; \
+	@summary_path="$$GITHUB_STEP_SUMMARY"; \
+	if [ -n "$$summary_path" ]; then \
+		summary_dir=$$(dirname "$$summary_path"); \
+		if { [ -e "$$summary_path" ] && [ -w "$$summary_path" ]; } || { [ ! -e "$$summary_path" ] && [ -w "$$summary_dir" ]; }; then \
+			: > "$$summary_path" 2>/dev/null || touch "$$summary_path"; \
+			$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+				-e GITHUB_STEP_SUMMARY="$$summary_path" \
+				-v "$$summary_path:$$summary_path" \
+				rca make lint-metrics-run RCA_BIN=/usr/local/bin/rust-code-analysis-cli; \
+		else \
+			printf 'WARNING: GITHUB_STEP_SUMMARY is not writable, skipping summary mount: %s\n' "$$summary_path" >&2; \
+			$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+				rca make lint-metrics-run RCA_BIN=/usr/local/bin/rust-code-analysis-cli; \
+		fi; \
 	else \
-		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm rca make lint-metrics-run; \
+		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+			rca make lint-metrics-run RCA_BIN=/usr/local/bin/rust-code-analysis-cli; \
 	fi
 
 # Direct-invoke target used by the rca container (always Linux) via make lint-metrics.

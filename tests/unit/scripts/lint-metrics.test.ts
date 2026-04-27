@@ -81,9 +81,11 @@ const fakeRcaOutput = {
   ],
 };
 
-const createFakeRcaBinary = (directory: string): string => {
+const createFakeRcaBinary = (directory: string, output: unknown = fakeRcaOutput): string => {
   const binaryPath = path.join(directory, 'fake-rca');
-  writeFileSync(binaryPath, `#!/bin/sh\nprintf '%s\\n' '${JSON.stringify(fakeRcaOutput)}'\n`);
+  const outputPath = path.join(directory, 'fake-rca.json');
+  writeFileSync(outputPath, `${JSON.stringify(output)}\n`);
+  writeFileSync(binaryPath, `#!/bin/sh\ncat "${outputPath}"\n`);
   chmodSync(binaryPath, 0o755);
   return binaryPath;
 };
@@ -118,7 +120,9 @@ describe('scripts/lint-metrics.sh', () => {
   });
 
   it('fails early with a jq-specific error before validating the policy JSON', () => {
-    expect(() => {
+    let thrownError: unknown;
+
+    try {
       execFileSync('/bin/sh', [lintMetricsScript], {
         cwd: repoRoot,
         env: {
@@ -129,7 +133,37 @@ describe('scripts/lint-metrics.sh', () => {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
       });
-    }).toThrow(/ERROR: jq is required by lint-metrics but was not found in PATH/);
+    } catch (error) {
+      thrownError = error;
+    }
+
+    expect(thrownError).toBeDefined();
+
+    const stderr =
+      thrownError && typeof thrownError === 'object' && 'stderr' in thrownError
+        ? String(thrownError.stderr)
+        : '';
+
+    expect(stderr).toMatch(/ERROR: jq is required by lint-metrics but was not found in PATH/);
+  });
+
+  it('fails when the analyzer exits successfully but produces no JSON objects', () => {
+    const emptyBinaryPath = path.join(tempDir, 'fake-rca-empty');
+    writeFileSync(emptyBinaryPath, '#!/bin/sh\nexit 0\n');
+    chmodSync(emptyBinaryPath, 0o755);
+
+    expect(() => {
+      execFileSync('/bin/sh', [lintMetricsScript], {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          ...baseEnv,
+          RCA_BIN: emptyBinaryPath,
+        },
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    }).toThrow(/ERROR: rust-code-analysis produced no JSON output objects/);
   });
 
   it('is listed in the required-check registration story file list', () => {
