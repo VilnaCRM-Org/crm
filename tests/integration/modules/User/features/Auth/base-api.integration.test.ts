@@ -150,6 +150,15 @@ describe('BaseAPI Integration', () => {
         expect(result.code).toBe(ApiErrorCodes.NETWORK);
       });
 
+      it('should return Cancelled Error for HttpError with cancellation message', () => {
+        const httpError = new HttpError({ status: 499, message: 'Request was cancelled' });
+        const result = api.testHandleApiError(httpError, 'Request');
+
+        expect(result).toBeInstanceOf(ApiError);
+        expect(result.message).toBe('Request canceled.');
+        expect(result.code).toBe(ApiErrorCodes.CANCELLED);
+      });
+
       it('should return Unknown Error for unhandled status codes', () => {
         const httpError = new HttpError({ status: 418, message: "I'm a teapot" });
         const result = api.testHandleApiError(httpError, 'Request');
@@ -334,6 +343,17 @@ describe('BaseAPI Integration', () => {
 
         expect(result).toBeInstanceOf(ApiError);
         expect(result.message).toBe('Operation failed. Please try again.');
+      });
+    });
+
+    describe('ApiError passthrough', () => {
+      it('returns ApiError directly without re-wrapping it', () => {
+        const original = new ApiError({
+          message: 'Already an ApiError',
+          code: ApiErrorCodes.UNKNOWN,
+        });
+        const result = api.testHandleApiError(original, 'test');
+        expect(result).toBe(original);
       });
     });
 
