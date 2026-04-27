@@ -140,11 +140,11 @@ fi
 
 ### Project Structure Notes
 
-- **Files modified:** `Makefile`
-- **Files created:** `scripts/lint-metrics.sh`, `scripts/install-rca.sh`
+- **Files modified:** `Makefile`, `Dockerfile`
+- **Files created:** `scripts/lint-metrics.sh`, `config/metrics-policy.json`, `config/metrics-policy.schema.json`
 - **No application source changes** are required for this story.
-- `scripts/lint-metrics.sh` is the enforcement script; the Makefile owns installation and
-  passes threshold environment variables into the script.
+- `scripts/lint-metrics.sh` is the enforcement script; it reads thresholds from `config/metrics-policy.json`.
+- RCA binary installation is performed at Docker image build time in the `rca` Dockerfile stage.
 
 ### Testing Approach
 
@@ -197,7 +197,8 @@ claude-sonnet-4-6
 - `Makefile`
 - `Dockerfile`
 - `scripts/lint-metrics.sh`
-- `scripts/install-rca.sh`
+- `config/metrics-policy.json`
+- `config/metrics-policy.schema.json`
 - `specs/implementation-artifacts/stories/1-2-make-lint-metrics-target-full-enforcement-reporting.md`
 
 ### Change Log

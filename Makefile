@@ -118,13 +118,8 @@ MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
 RCA_VERSION                 = 0.0.25
 RCA_SCOPE                   = src/
 RCA_EXCLUDES                = **/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/**
-UNAME_S                     := $(shell uname -s 2>/dev/null || echo unknown)
-WINDOWS_UNAMES              := MINGW% MSYS% CYGWIN% Windows_NT
-ifeq ($(filter $(WINDOWS_UNAMES),$(UNAME_S) $(OS)),)
-RCA_BIN                     = ./bin/rust-code-analysis-cli
-else
-RCA_BIN                     = ./bin/rust-code-analysis-cli.exe
-endif
+METRICS_POLICY_PATH         = config/metrics-policy.json
+RCA_BIN                     = /usr/local/bin/rust-code-analysis-cli
 
 RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
@@ -225,81 +220,15 @@ lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if
 		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm rca make lint-metrics-run; \
 	fi
 
-# Direct-invoke target used by the rca container (always Linux) via make lint-metrics,
-# and usable directly on Linux hosts. The Darwin guard below applies only to direct
-# invocation; Mac contributors get full enforcement through the Docker path above.
-# Baseline-calibrated thresholds; tighten with code remediation in the next PR.
+# Direct-invoke target used by the rca container (always Linux) via make lint-metrics.
+# The rca Docker image has rust-code-analysis-cli pre-installed; thresholds are read
+# from METRICS_POLICY_PATH (config/metrics-policy.json).
 lint-metrics-run:
-	@os_name=$$(uname -s 2>/dev/null || echo unknown); \
-	if [ "$$os_name" = "Darwin" ]; then \
-		printf 'lint-metrics: skipped on Darwin (rust-code-analysis-cli v%s has no macOS release asset).\n' "$(RCA_VERSION)"; \
-		printf '  The authoritative check runs in CI on pull requests targeting main.\n'; \
-		exit 0; \
-	fi; \
-	RCA_BIN="$(RCA_BIN)" RCA_VERSION="$(RCA_VERSION)" sh scripts/install-rca.sh || exit 1; \
-	RCA_BIN="$(RCA_BIN)" \
+	@RCA_BIN="$(RCA_BIN)" \
 	RCA_VERSION="$(RCA_VERSION)" \
 	RCA_SCOPE="$(RCA_SCOPE)" \
 	RCA_EXCLUDES="$(RCA_EXCLUDES)" \
-	CYCLOMATIC_MAX="20" \
-	COGNITIVE_MAX="24" \
-	ABC_MAGNITUDE_MAX="17" \
-	NARGS_FUNCTION_MAX="5" \
-	NARGS_CLOSURE_MAX="3" \
-	NEXITS_MAX="15" \
-	LLOC_FUNCTION_MAX="37" \
-	PLOC_FUNCTION_MAX="145" \
-	SLOC_FUNCTION_MAX="157" \
-	HALSTEAD_VOLUME_FUNCTION_MAX="5558" \
-	HALSTEAD_BUGS_FUNCTION_MAX="0.94" \
-	NOM_FUNCTIONS_FILE_MAX="10" \
-	NOM_CLOSURES_FILE_MAX="9" \
-	NOM_TOTAL_FILE_MAX="15" \
-	LLOC_FILE_MAX="120" \
-	PLOC_FILE_MAX="366" \
-	SLOC_FILE_MAX="372" \
-	HALSTEAD_VOLUME_FILE_MAX="12427" \
-	HALSTEAD_BUGS_FILE_MAX="1.58" \
-	MI_VISUAL_STUDIO_MIN="15" \
-	MI_ORIGINAL_MIN="65" \
-	MI_SEI_MIN="65" \
-	CLASS_WMC_MAX="30" \
-	CLASS_NPM_MAX="8" \
-	CLASS_NPA_MAX="2" \
-	CLASS_COA_MAX="0.60" \
-	CLASS_CDA_MAX="0.25" \
-	INTERFACE_NPM_MAX="10" \
-	INTERFACE_NPA_MAX="15" \
-	CLOC_RATIO_MIN="0.10" \
-	CLOC_RATIO_MAX="0.60" \
-	BLANK_RATIO_MIN="0.02" \
-	BLANK_RATIO_MAX="0.30" \
-	HALSTEAD_N1_FUNCTION_MAX="30" \
-	HALSTEAD_N1_TOTAL_FUNCTION_MAX="80" \
-	HALSTEAD_N2_FUNCTION_MAX="40" \
-	HALSTEAD_N2_TOTAL_FUNCTION_MAX="120" \
-	HALSTEAD_LENGTH_FUNCTION_MAX="180" \
-	HALSTEAD_ESTIMATED_LENGTH_FUNCTION_MAX="160" \
-	HALSTEAD_VOCABULARY_FUNCTION_MAX="70" \
-	HALSTEAD_DIFFICULTY_FUNCTION_MAX="25" \
-	HALSTEAD_LEVEL_FUNCTION_MIN="0.03" \
-	HALSTEAD_EFFORT_FUNCTION_MAX="30000" \
-	HALSTEAD_TIME_FUNCTION_MAX="1800" \
-	HALSTEAD_PURITY_RATIO_FUNCTION_MIN="0.60" \
-	HALSTEAD_PURITY_RATIO_FUNCTION_MAX="1.40" \
-	HALSTEAD_N1_FILE_MAX="60" \
-	HALSTEAD_N1_TOTAL_FILE_MAX="400" \
-	HALSTEAD_N2_FILE_MAX="90" \
-	HALSTEAD_N2_TOTAL_FILE_MAX="800" \
-	HALSTEAD_LENGTH_FILE_MAX="1000" \
-	HALSTEAD_ESTIMATED_LENGTH_FILE_MAX="850" \
-	HALSTEAD_VOCABULARY_FILE_MAX="140" \
-	HALSTEAD_DIFFICULTY_FILE_MAX="40" \
-	HALSTEAD_LEVEL_FILE_MIN="0.02" \
-	HALSTEAD_EFFORT_FILE_MAX="250000" \
-	HALSTEAD_TIME_FILE_MAX="15000" \
-	HALSTEAD_PURITY_RATIO_FILE_MIN="0.60" \
-	HALSTEAD_PURITY_RATIO_FILE_MAX="1.40" \
+	METRICS_POLICY="$(METRICS_POLICY_PATH)" \
 	sh scripts/lint-metrics.sh
 
 lint: lint-eslint lint-tsc lint-md lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, and rust-code-analysis metrics.
