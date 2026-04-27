@@ -7,6 +7,7 @@ import { parse } from 'yaml';
 const repoRoot = path.resolve(__dirname, '../../..');
 const lintMetricsScript = path.join(repoRoot, 'scripts/lint-metrics.sh');
 const dockerComposePath = path.join(repoRoot, 'docker-compose.yml');
+const metricsPolicy = path.join(repoRoot, 'config/metrics-policy.json');
 const storyPath = path.join(
   repoRoot,
   'specs/implementation-artifacts/stories/' +
@@ -17,33 +18,7 @@ const baseEnv = {
   RCA_VERSION: '0.0.25',
   RCA_SCOPE: 'src/',
   RCA_EXCLUDES: '**/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/**',
-  CYCLOMATIC_MAX: '20',
-  COGNITIVE_MAX: '24',
-  ABC_MAGNITUDE_MAX: '17',
-  NARGS_FUNCTION_MAX: '5',
-  NARGS_CLOSURE_MAX: '3',
-  NEXITS_MAX: '15',
-  LLOC_FUNCTION_MAX: '37',
-  PLOC_FUNCTION_MAX: '145',
-  SLOC_FUNCTION_MAX: '157',
-  HALSTEAD_VOLUME_FUNCTION_MAX: '5558',
-  HALSTEAD_BUGS_FUNCTION_MAX: '0.94',
-  NOM_FUNCTIONS_FILE_MAX: '10',
-  NOM_CLOSURES_FILE_MAX: '9',
-  NOM_TOTAL_FILE_MAX: '15',
-  LLOC_FILE_MAX: '120',
-  PLOC_FILE_MAX: '366',
-  SLOC_FILE_MAX: '372',
-  HALSTEAD_VOLUME_FILE_MAX: '12427',
-  HALSTEAD_BUGS_FILE_MAX: '1.58',
-  MI_VISUAL_STUDIO_MIN: '15',
-  CLASS_WMC_MAX: '30',
-  CLASS_NPM_MAX: '8',
-  CLASS_NPA_MAX: '2',
-  CLASS_COA_MAX: '0.60',
-  CLASS_CDA_MAX: '0.25',
-  INTERFACE_NPM_MAX: '10',
-  INTERFACE_NPA_MAX: '15',
+  METRICS_POLICY: metricsPolicy,
 };
 
 const fakeRcaOutput = {
@@ -140,6 +115,21 @@ describe('scripts/lint-metrics.sh', () => {
     expect(output).toContain('Cyclomatic Complexity');
     expect(output).toContain('Interface Public Attributes');
     expect(output).toContain('Scope: src/ | hard-fail policy thresholds enforced.');
+  });
+
+  it('fails early with a jq-specific error before validating the policy JSON', () => {
+    expect(() => {
+      execFileSync('/bin/sh', [lintMetricsScript], {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          ...baseEnv,
+          PATH: tempDir,
+        },
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    }).toThrow(/ERROR: jq is required by lint-metrics but was not found in PATH/);
   });
 
   it('is listed in the required-check registration story file list', () => {

@@ -5,95 +5,116 @@
 # Exit 1 = one or more hard-fail violations detected
 #
 # Review-gate metrics are calculated internally but not printed and do not block CI.
-# Hard-fail thresholds are supplied by Makefile so local and CI paths share one
-# policy source.
+# Hard-fail thresholds are read from METRICS_POLICY (JSON config file) so the policy
+# is kept in a single versioned source with schema validation.
 
 set -eu
+
+if ! command -v jq >/dev/null 2>&1; then
+  printf 'ERROR: jq is required by lint-metrics but was not found in PATH\n' >&2
+  exit 1
+fi
 
 RCA_BIN="${RCA_BIN:-./bin/rust-code-analysis-cli}"
 RCA_VERSION="${RCA_VERSION:-}"
 
-require_env() {
-  name=$1
-  value=$2
+if [ -z "${METRICS_POLICY:-}" ]; then
+  printf 'ERROR: METRICS_POLICY must be set to the path of the JSON policy file\n' >&2
+  exit 1
+fi
 
-  if [ -z "$value" ]; then
-    printf 'ERROR: %s must be set by Makefile or environment\n' "$name" >&2
+if [ ! -f "$METRICS_POLICY" ]; then
+  printf 'ERROR: METRICS_POLICY file not found: %s\n' "$METRICS_POLICY" >&2
+  exit 1
+fi
+
+if ! jq empty "$METRICS_POLICY" 2>/dev/null; then
+  printf 'ERROR: METRICS_POLICY is not valid JSON: %s\n' "$METRICS_POLICY" >&2
+  exit 1
+fi
+
+required_hard_keys="cyclomatic_max cognitive_max abc_magnitude_max nargs_function_max \
+nargs_closure_max nexits_max lloc_function_max ploc_function_max sloc_function_max \
+halstead_volume_function_max halstead_bugs_function_max nom_functions_file_max \
+nom_closures_file_max nom_total_file_max lloc_file_max ploc_file_max sloc_file_max \
+halstead_volume_file_max halstead_bugs_file_max mi_visual_studio_min class_wmc_max \
+class_npm_max class_npa_max class_coa_max class_cda_max interface_npm_max interface_npa_max"
+
+for key in $required_hard_keys; do
+  if ! jq -e ".hard.${key} | numbers" "$METRICS_POLICY" >/dev/null 2>&1; then
+    printf 'ERROR: missing or non-numeric key .hard.%s in %s\n' "$key" "$METRICS_POLICY" >&2
     exit 1
   fi
+done
 
-  printf '%s' "$value"
-}
+# Hard-fail thresholds loaded from JSON config.
+CYCLOMATIC_MAX=$(jq -r '.hard.cyclomatic_max' "$METRICS_POLICY")
+COGNITIVE_MAX=$(jq -r '.hard.cognitive_max' "$METRICS_POLICY")
+ABC_MAGNITUDE_MAX=$(jq -r '.hard.abc_magnitude_max' "$METRICS_POLICY")
+NARGS_FUNCTION_MAX=$(jq -r '.hard.nargs_function_max' "$METRICS_POLICY")
+NARGS_CLOSURE_MAX=$(jq -r '.hard.nargs_closure_max' "$METRICS_POLICY")
+NEXITS_MAX=$(jq -r '.hard.nexits_max' "$METRICS_POLICY")
+LLOC_FUNCTION_MAX=$(jq -r '.hard.lloc_function_max' "$METRICS_POLICY")
+PLOC_FUNCTION_MAX=$(jq -r '.hard.ploc_function_max' "$METRICS_POLICY")
+SLOC_FUNCTION_MAX=$(jq -r '.hard.sloc_function_max' "$METRICS_POLICY")
+HALSTEAD_VOLUME_FUNCTION_MAX=$(jq -r '.hard.halstead_volume_function_max' "$METRICS_POLICY")
+HALSTEAD_BUGS_FUNCTION_MAX=$(jq -r '.hard.halstead_bugs_function_max' "$METRICS_POLICY")
+NOM_FUNCTIONS_FILE_MAX=$(jq -r '.hard.nom_functions_file_max' "$METRICS_POLICY")
+NOM_CLOSURES_FILE_MAX=$(jq -r '.hard.nom_closures_file_max' "$METRICS_POLICY")
+NOM_TOTAL_FILE_MAX=$(jq -r '.hard.nom_total_file_max' "$METRICS_POLICY")
+LLOC_FILE_MAX=$(jq -r '.hard.lloc_file_max' "$METRICS_POLICY")
+PLOC_FILE_MAX=$(jq -r '.hard.ploc_file_max' "$METRICS_POLICY")
+SLOC_FILE_MAX=$(jq -r '.hard.sloc_file_max' "$METRICS_POLICY")
+HALSTEAD_VOLUME_FILE_MAX=$(jq -r '.hard.halstead_volume_file_max' "$METRICS_POLICY")
+HALSTEAD_BUGS_FILE_MAX=$(jq -r '.hard.halstead_bugs_file_max' "$METRICS_POLICY")
+MI_VISUAL_STUDIO_MIN=$(jq -r '.hard.mi_visual_studio_min' "$METRICS_POLICY")
+CLASS_WMC_MAX=$(jq -r '.hard.class_wmc_max' "$METRICS_POLICY")
+CLASS_NPM_MAX=$(jq -r '.hard.class_npm_max' "$METRICS_POLICY")
+CLASS_NPA_MAX=$(jq -r '.hard.class_npa_max' "$METRICS_POLICY")
+CLASS_COA_MAX=$(jq -r '.hard.class_coa_max' "$METRICS_POLICY")
+CLASS_CDA_MAX=$(jq -r '.hard.class_cda_max' "$METRICS_POLICY")
+INTERFACE_NPM_MAX=$(jq -r '.hard.interface_npm_max' "$METRICS_POLICY")
+INTERFACE_NPA_MAX=$(jq -r '.hard.interface_npa_max' "$METRICS_POLICY")
 
-# Hard-fail thresholds.
-RCA_SCOPE="$(require_env RCA_SCOPE "${RCA_SCOPE:-}")"
-RCA_EXCLUDES="$(require_env RCA_EXCLUDES "${RCA_EXCLUDES:-}")"
-CYCLOMATIC_MAX="$(require_env CYCLOMATIC_MAX "${CYCLOMATIC_MAX:-${CC_MAX:-}}")"
-COGNITIVE_MAX="$(require_env COGNITIVE_MAX "${COGNITIVE_MAX:-}")"
-ABC_MAGNITUDE_MAX="$(require_env ABC_MAGNITUDE_MAX "${ABC_MAGNITUDE_MAX:-}")"
-NARGS_FUNCTION_MAX="$(require_env NARGS_FUNCTION_MAX "${NARGS_FUNCTION_MAX:-}")"
-NARGS_CLOSURE_MAX="$(require_env NARGS_CLOSURE_MAX "${NARGS_CLOSURE_MAX:-}")"
-NEXITS_MAX="$(require_env NEXITS_MAX "${NEXITS_MAX:-}")"
-LLOC_FUNCTION_MAX="$(require_env LLOC_FUNCTION_MAX "${LLOC_FUNCTION_MAX:-}")"
-PLOC_FUNCTION_MAX="$(require_env PLOC_FUNCTION_MAX "${PLOC_FUNCTION_MAX:-}")"
-SLOC_FUNCTION_MAX="$(require_env SLOC_FUNCTION_MAX "${SLOC_FUNCTION_MAX:-}")"
-HALSTEAD_VOLUME_FUNCTION_MAX="$(require_env HALSTEAD_VOLUME_FUNCTION_MAX "${HALSTEAD_VOLUME_FUNCTION_MAX:-}")"
-HALSTEAD_BUGS_FUNCTION_MAX="$(require_env HALSTEAD_BUGS_FUNCTION_MAX "${HALSTEAD_BUGS_FUNCTION_MAX:-}")"
-NOM_FUNCTIONS_FILE_MAX="$(require_env NOM_FUNCTIONS_FILE_MAX "${NOM_FUNCTIONS_FILE_MAX:-}")"
-NOM_CLOSURES_FILE_MAX="$(require_env NOM_CLOSURES_FILE_MAX "${NOM_CLOSURES_FILE_MAX:-}")"
-NOM_TOTAL_FILE_MAX="$(require_env NOM_TOTAL_FILE_MAX "${NOM_TOTAL_FILE_MAX:-}")"
-LLOC_FILE_MAX="$(require_env LLOC_FILE_MAX "${LLOC_FILE_MAX:-}")"
-PLOC_FILE_MAX="$(require_env PLOC_FILE_MAX "${PLOC_FILE_MAX:-}")"
-SLOC_FILE_MAX="$(require_env SLOC_FILE_MAX "${SLOC_FILE_MAX:-}")"
-HALSTEAD_VOLUME_FILE_MAX="$(require_env HALSTEAD_VOLUME_FILE_MAX "${HALSTEAD_VOLUME_FILE_MAX:-}")"
-HALSTEAD_BUGS_FILE_MAX="$(require_env HALSTEAD_BUGS_FILE_MAX "${HALSTEAD_BUGS_FILE_MAX:-}")"
-MI_VISUAL_STUDIO_MIN="$(require_env MI_VISUAL_STUDIO_MIN "${MI_VISUAL_STUDIO_MIN:-}")"
-CLASS_WMC_MAX="$(require_env CLASS_WMC_MAX "${CLASS_WMC_MAX:-}")"
-CLASS_NPM_MAX="$(require_env CLASS_NPM_MAX "${CLASS_NPM_MAX:-}")"
-CLASS_NPA_MAX="$(require_env CLASS_NPA_MAX "${CLASS_NPA_MAX:-}")"
-CLASS_COA_MAX="$(require_env CLASS_COA_MAX "${CLASS_COA_MAX:-}")"
-CLASS_CDA_MAX="$(require_env CLASS_CDA_MAX "${CLASS_CDA_MAX:-}")"
-INTERFACE_NPM_MAX="$(require_env INTERFACE_NPM_MAX "${INTERFACE_NPM_MAX:-}")"
-INTERFACE_NPA_MAX="$(require_env INTERFACE_NPA_MAX "${INTERFACE_NPA_MAX:-}")"
+# Review-gate thresholds loaded from JSON config (fall back to defaults if section absent).
+MI_ORIGINAL_MIN=$(jq -r '.review.mi_original_min // 65' "$METRICS_POLICY")
+MI_SEI_MIN=$(jq -r '.review.mi_sei_min // 65' "$METRICS_POLICY")
+CLOC_RATIO_MIN=$(jq -r '.review.cloc_ratio_min // 0.10' "$METRICS_POLICY")
+CLOC_RATIO_MAX=$(jq -r '.review.cloc_ratio_max // 0.60' "$METRICS_POLICY")
+BLANK_RATIO_MIN=$(jq -r '.review.blank_ratio_min // 0.02' "$METRICS_POLICY")
+BLANK_RATIO_MAX=$(jq -r '.review.blank_ratio_max // 0.30' "$METRICS_POLICY")
 
-# Review-gate thresholds.
-MI_ORIGINAL_MIN="${MI_ORIGINAL_MIN:-65}"
-MI_SEI_MIN="${MI_SEI_MIN:-65}"
-CLOC_RATIO_MIN="${CLOC_RATIO_MIN:-0.10}"
-CLOC_RATIO_MAX="${CLOC_RATIO_MAX:-0.60}"
-BLANK_RATIO_MIN="${BLANK_RATIO_MIN:-0.02}"
-BLANK_RATIO_MAX="${BLANK_RATIO_MAX:-0.30}"
+HALSTEAD_N1_FUNCTION_MAX=$(jq -r '.review.halstead_n1_function_max // 30' "$METRICS_POLICY")
+HALSTEAD_N1_TOTAL_FUNCTION_MAX=$(jq -r '.review.halstead_n1_total_function_max // 80' "$METRICS_POLICY")
+HALSTEAD_N2_FUNCTION_MAX=$(jq -r '.review.halstead_n2_function_max // 40' "$METRICS_POLICY")
+HALSTEAD_N2_TOTAL_FUNCTION_MAX=$(jq -r '.review.halstead_n2_total_function_max // 120' "$METRICS_POLICY")
+HALSTEAD_LENGTH_FUNCTION_MAX=$(jq -r '.review.halstead_length_function_max // 180' "$METRICS_POLICY")
+HALSTEAD_ESTIMATED_LENGTH_FUNCTION_MAX=$(jq -r '.review.halstead_estimated_length_function_max // 160' "$METRICS_POLICY")
+HALSTEAD_VOCABULARY_FUNCTION_MAX=$(jq -r '.review.halstead_vocabulary_function_max // 70' "$METRICS_POLICY")
+HALSTEAD_DIFFICULTY_FUNCTION_MAX=$(jq -r '.review.halstead_difficulty_function_max // 25' "$METRICS_POLICY")
+HALSTEAD_LEVEL_FUNCTION_MIN=$(jq -r '.review.halstead_level_function_min // 0.03' "$METRICS_POLICY")
+HALSTEAD_EFFORT_FUNCTION_MAX=$(jq -r '.review.halstead_effort_function_max // 30000' "$METRICS_POLICY")
+HALSTEAD_TIME_FUNCTION_MAX=$(jq -r '.review.halstead_time_function_max // 1800' "$METRICS_POLICY")
+HALSTEAD_PURITY_RATIO_FUNCTION_MIN=$(jq -r '.review.halstead_purity_ratio_function_min // 0.60' "$METRICS_POLICY")
+HALSTEAD_PURITY_RATIO_FUNCTION_MAX=$(jq -r '.review.halstead_purity_ratio_function_max // 1.40' "$METRICS_POLICY")
 
-HALSTEAD_N1_FUNCTION_MAX="${HALSTEAD_N1_FUNCTION_MAX:-30}"
-HALSTEAD_N1_TOTAL_FUNCTION_MAX="${HALSTEAD_N1_TOTAL_FUNCTION_MAX:-80}"
-HALSTEAD_N2_FUNCTION_MAX="${HALSTEAD_N2_FUNCTION_MAX:-40}"
-HALSTEAD_N2_TOTAL_FUNCTION_MAX="${HALSTEAD_N2_TOTAL_FUNCTION_MAX:-120}"
-HALSTEAD_LENGTH_FUNCTION_MAX="${HALSTEAD_LENGTH_FUNCTION_MAX:-180}"
-HALSTEAD_ESTIMATED_LENGTH_FUNCTION_MAX="${HALSTEAD_ESTIMATED_LENGTH_FUNCTION_MAX:-160}"
-HALSTEAD_VOCABULARY_FUNCTION_MAX="${HALSTEAD_VOCABULARY_FUNCTION_MAX:-70}"
-HALSTEAD_DIFFICULTY_FUNCTION_MAX="${HALSTEAD_DIFFICULTY_FUNCTION_MAX:-25}"
-HALSTEAD_LEVEL_FUNCTION_MIN="${HALSTEAD_LEVEL_FUNCTION_MIN:-0.03}"
-HALSTEAD_EFFORT_FUNCTION_MAX="${HALSTEAD_EFFORT_FUNCTION_MAX:-30000}"
-HALSTEAD_TIME_FUNCTION_MAX="${HALSTEAD_TIME_FUNCTION_MAX:-1800}"
-HALSTEAD_PURITY_RATIO_FUNCTION_MIN="${HALSTEAD_PURITY_RATIO_FUNCTION_MIN:-0.60}"
-HALSTEAD_PURITY_RATIO_FUNCTION_MAX="${HALSTEAD_PURITY_RATIO_FUNCTION_MAX:-1.40}"
+HALSTEAD_N1_FILE_MAX=$(jq -r '.review.halstead_n1_file_max // 60' "$METRICS_POLICY")
+HALSTEAD_N1_TOTAL_FILE_MAX=$(jq -r '.review.halstead_n1_total_file_max // 400' "$METRICS_POLICY")
+HALSTEAD_N2_FILE_MAX=$(jq -r '.review.halstead_n2_file_max // 90' "$METRICS_POLICY")
+HALSTEAD_N2_TOTAL_FILE_MAX=$(jq -r '.review.halstead_n2_total_file_max // 800' "$METRICS_POLICY")
+HALSTEAD_LENGTH_FILE_MAX=$(jq -r '.review.halstead_length_file_max // 1000' "$METRICS_POLICY")
+HALSTEAD_ESTIMATED_LENGTH_FILE_MAX=$(jq -r '.review.halstead_estimated_length_file_max // 850' "$METRICS_POLICY")
+HALSTEAD_VOCABULARY_FILE_MAX=$(jq -r '.review.halstead_vocabulary_file_max // 140' "$METRICS_POLICY")
+HALSTEAD_DIFFICULTY_FILE_MAX=$(jq -r '.review.halstead_difficulty_file_max // 40' "$METRICS_POLICY")
+HALSTEAD_LEVEL_FILE_MIN=$(jq -r '.review.halstead_level_file_min // 0.02' "$METRICS_POLICY")
+HALSTEAD_EFFORT_FILE_MAX=$(jq -r '.review.halstead_effort_file_max // 250000' "$METRICS_POLICY")
+HALSTEAD_TIME_FILE_MAX=$(jq -r '.review.halstead_time_file_max // 15000' "$METRICS_POLICY")
+HALSTEAD_PURITY_RATIO_FILE_MIN=$(jq -r '.review.halstead_purity_ratio_file_min // 0.60' "$METRICS_POLICY")
+HALSTEAD_PURITY_RATIO_FILE_MAX=$(jq -r '.review.halstead_purity_ratio_file_max // 1.40' "$METRICS_POLICY")
 
-HALSTEAD_N1_FILE_MAX="${HALSTEAD_N1_FILE_MAX:-60}"
-HALSTEAD_N1_TOTAL_FILE_MAX="${HALSTEAD_N1_TOTAL_FILE_MAX:-400}"
-HALSTEAD_N2_FILE_MAX="${HALSTEAD_N2_FILE_MAX:-90}"
-HALSTEAD_N2_TOTAL_FILE_MAX="${HALSTEAD_N2_TOTAL_FILE_MAX:-800}"
-HALSTEAD_LENGTH_FILE_MAX="${HALSTEAD_LENGTH_FILE_MAX:-1000}"
-HALSTEAD_ESTIMATED_LENGTH_FILE_MAX="${HALSTEAD_ESTIMATED_LENGTH_FILE_MAX:-850}"
-HALSTEAD_VOCABULARY_FILE_MAX="${HALSTEAD_VOCABULARY_FILE_MAX:-140}"
-HALSTEAD_DIFFICULTY_FILE_MAX="${HALSTEAD_DIFFICULTY_FILE_MAX:-40}"
-HALSTEAD_LEVEL_FILE_MIN="${HALSTEAD_LEVEL_FILE_MIN:-0.02}"
-HALSTEAD_EFFORT_FILE_MAX="${HALSTEAD_EFFORT_FILE_MAX:-250000}"
-HALSTEAD_TIME_FILE_MAX="${HALSTEAD_TIME_FILE_MAX:-15000}"
-HALSTEAD_PURITY_RATIO_FILE_MIN="${HALSTEAD_PURITY_RATIO_FILE_MIN:-0.60}"
-HALSTEAD_PURITY_RATIO_FILE_MAX="${HALSTEAD_PURITY_RATIO_FILE_MAX:-1.40}"
-
-if ! command -v jq >/dev/null 2>&1; then
-  printf 'ERROR: jq is required by lint-metrics but was not found in PATH\n' >&2
+RCA_SCOPE="${RCA_SCOPE:-src/}"
+if [ -z "${RCA_EXCLUDES:-}" ]; then
+  printf 'ERROR: RCA_EXCLUDES must be set by Makefile or environment\n' >&2
   exit 1
 fi
 
@@ -351,6 +372,9 @@ print_summary_stdout() {
 if [ "$FAIL_COUNT" -gt 0 ]; then
   printf '\n'
   printf 'rust-code-analysis: %d hard violation(s) found\n\n' "$FAIL_COUNT"
+  printf 'All measured metrics:\n\n'
+  print_summary_stdout
+  printf '\nViolations:\n\n'
   print_findings "$TMP_FINDINGS"
   printf '\n'
 
