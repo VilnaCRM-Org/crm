@@ -55,18 +55,17 @@ SHELL ["/bin/sh", "-c"]
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       ca-certificates \
-      curl \
       jq \
       make \
       tar \
       unzip && \
     rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL \
-      "https://github.com/mozilla/rust-code-analysis/releases/download/v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz" \
-      -o /tmp/rca.tar.gz && \
-    echo "${RCA_SHA256}  /tmp/rca.tar.gz" | sha256sum -c - && \
-    tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz && \
+ADD --checksum=sha256:${RCA_SHA256} \
+    https://github.com/mozilla/rust-code-analysis/releases/download/v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz \
+    /tmp/rca.tar.gz
+
+RUN tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz && \
     chmod +x /usr/local/bin/rust-code-analysis-cli && \
     /usr/local/bin/rust-code-analysis-cli --version && \
     rm /tmp/rca.tar.gz

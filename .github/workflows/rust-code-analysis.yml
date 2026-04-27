@@ -18,17 +18,5 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Read RCA version from Makefile
-        id: read_rca_version
-        run: |
-          rca_version="$(awk -F'= ' '/^RCA_VERSION[[:space:]]*=/{print $2; exit}' Makefile)"
-          echo "rca_version=$rca_version" >> "$GITHUB_OUTPUT"
-
-      - name: Cache rust-code-analysis binary
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
-        with:
-          path: ./bin/rust-code-analysis-cli
-          key: rca-${{ steps.read_rca_version.outputs.rca_version }}-linux-x86_64
-
       - name: Run lint-metrics
         run: make lint-metrics
