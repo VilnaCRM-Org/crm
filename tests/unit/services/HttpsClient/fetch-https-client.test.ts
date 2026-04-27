@@ -691,7 +691,9 @@ describe('FetchHttpsClient', () => {
     it('delegates to the injected requestConfigBuilder and responseProcessor', async () => {
       const mockProcessor = { process: jest.fn().mockResolvedValue({ injected: true }) };
       const mockBuilder = {
-        create: jest.fn().mockReturnValue({ method: 'GET', headers: { Accept: 'application/json' } }),
+        create: jest
+          .fn()
+          .mockReturnValue({ method: 'GET', headers: { Accept: 'application/json' } }),
       };
       const mockHandler = {
         throwAbortError: jest.fn(),

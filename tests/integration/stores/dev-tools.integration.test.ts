@@ -138,7 +138,7 @@ describe('DevToolsRedactor Integration', () => {
 
     it('returns a bare class instance without redacting it', () => {
       class Foo {
-        secret = 'not-redacted';
+        public secret = 'not-redacted';
       }
       const foo = new Foo();
       const result = redactor.deepRedact(foo);
@@ -210,9 +210,7 @@ describe('DevToolsOptionsFactory Integration', () => {
     it('redacts sensitive meta.arg field', () => {
       const action = { type: 'auth/login', meta: { arg: { password: 'secret' } } };
       const result = options.actionSanitizer?.(action, 0);
-      expect(
-        ((result as typeof action).meta.arg as Record<string, unknown>).password
-      ).toBe('***');
+      expect(((result as typeof action).meta.arg as Record<string, unknown>).password).toBe('***');
     });
 
     it('redacts sensitive meta.headers field', () => {
@@ -226,9 +224,9 @@ describe('DevToolsOptionsFactory Integration', () => {
     it('redacts sensitive meta.request field', () => {
       const action = { type: 'auth/login', meta: { request: { apikey: 'key123' } } };
       const result = options.actionSanitizer?.(action, 0);
-      expect(
-        ((result as typeof action).meta.request as Record<string, unknown>).apikey
-      ).toBe('***');
+      expect(((result as typeof action).meta.request as Record<string, unknown>).apikey).toBe(
+        '***'
+      );
     });
 
     it('returns original action when meta is a non-object scalar', () => {

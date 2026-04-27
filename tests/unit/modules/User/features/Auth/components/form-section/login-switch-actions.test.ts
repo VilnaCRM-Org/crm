@@ -1,25 +1,51 @@
+import { act } from 'react';
+
 import {
+  LOAD_LOGIN_ERROR_KEY,
   switchToLogin,
   switchToRegister,
-  LOAD_LOGIN_ERROR_KEY,
   type SwitchDeps,
 } from '@/modules/User/features/Auth/components/form-section/login-switch-actions';
+import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
+
+jest.mock('react', () => {
+  const actual = jest.requireActual('react') as typeof import('react');
+
+  return {
+    ...actual,
+    startTransition: (callback: () => void): void => {
+      callback();
+    },
+  };
+});
 
 jest.mock('@/modules/User/features/Auth/utils/load-login-form');
-
-import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
 
 const makeDeps = (overrides?: Partial<SwitchDeps>): SwitchDeps => ({
   isLoadingLogin: false,
   mode: 'register',
+  loginSwitchRequest: { current: 0 },
   setMode: jest.fn(),
   setIsLoadingLogin: jest.fn(),
   setLoadLoginError: jest.fn(),
   ...overrides,
 });
 
+const makeSameInstanceDeps = (
+  shared: Pick<
+    SwitchDeps,
+    'loginSwitchRequest' | 'setMode' | 'setIsLoadingLogin' | 'setLoadLoginError'
+  >,
+  overrides?: Partial<SwitchDeps>
+): SwitchDeps => ({
+  isLoadingLogin: false,
+  mode: 'register',
+  ...shared,
+  ...overrides,
+});
+
 describe('switchToRegister', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => jest.resetAllMocks());
 
   it('clears the load error and switches mode to register', () => {
     const deps = makeDeps();
@@ -30,7 +56,7 @@ describe('switchToRegister', () => {
 });
 
 describe('switchToLogin', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => jest.resetAllMocks());
 
   it('does nothing when login is already loading', () => {
     const deps = makeDeps({ isLoadingLogin: true });
@@ -65,15 +91,21 @@ describe('switchToLogin', () => {
     expect(deps.setIsLoadingLogin).toHaveBeenCalledWith(false);
   });
 
-  it('discards the success result from a superseded switchToLogin call', async () => {
+  it('discards the success result from a superseded switchToLogin call in the same instance', async () => {
     let resolveFirst!: () => void;
     const firstLoad = new Promise<void>((r) => {
       resolveFirst = r;
     });
     (loadLoginForm as jest.Mock).mockReturnValueOnce(firstLoad).mockResolvedValueOnce(undefined);
 
-    const staleDeps = makeDeps();
-    const freshDeps = makeDeps();
+    const shared = {
+      loginSwitchRequest: { current: 0 },
+      setMode: jest.fn(),
+      setIsLoadingLogin: jest.fn(),
+      setLoadLoginError: jest.fn(),
+    };
+    const staleDeps = makeSameInstanceDeps(shared);
+    const freshDeps = makeSameInstanceDeps(shared);
 
     switchToLogin(staleDeps);
     switchToRegister(freshDeps);
@@ -87,15 +119,21 @@ describe('switchToLogin', () => {
     expect(staleDeps.setIsLoadingLogin).not.toHaveBeenCalledWith(false);
   });
 
-  it('discards the failure result from a superseded switchToLogin call', async () => {
+  it('discards the failure result from a superseded switchToLogin call in the same instance', async () => {
     let rejectFirst!: (e: Error) => void;
     const firstLoad = new Promise<void>((_, r) => {
       rejectFirst = r;
     });
     (loadLoginForm as jest.Mock).mockReturnValueOnce(firstLoad);
 
-    const staleDeps = makeDeps();
-    const freshDeps = makeDeps();
+    const shared = {
+      loginSwitchRequest: { current: 0 },
+      setMode: jest.fn(),
+      setIsLoadingLogin: jest.fn(),
+      setLoadLoginError: jest.fn(),
+    };
+    const staleDeps = makeSameInstanceDeps(shared);
+    const freshDeps = makeSameInstanceDeps(shared);
 
     switchToLogin(staleDeps);
     switchToRegister(freshDeps);
@@ -107,5 +145,27 @@ describe('switchToLogin', () => {
 
     expect(staleDeps.setLoadLoginError).not.toHaveBeenCalledWith(LOAD_LOGIN_ERROR_KEY);
     expect(staleDeps.setIsLoadingLogin).not.toHaveBeenCalledWith(false);
+  });
+
+  it('does not let a different instance cancel an in-flight login switch', async () => {
+    let resolveFirst!: () => void;
+    const firstLoad = new Promise<void>((r) => {
+      resolveFirst = r;
+    });
+    (loadLoginForm as jest.Mock).mockReturnValueOnce(firstLoad);
+
+    const firstInstance = makeDeps();
+    const secondInstance = makeDeps();
+
+    switchToLogin(firstInstance);
+    switchToRegister(secondInstance);
+
+    await act(async () => {
+      resolveFirst();
+      await firstLoad;
+    });
+
+    expect(firstInstance.setMode).toHaveBeenCalledWith('login');
+    expect(firstInstance.setIsLoadingLogin).toHaveBeenCalledWith(false);
   });
 });

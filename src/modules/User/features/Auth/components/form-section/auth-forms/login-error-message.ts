@@ -24,7 +24,7 @@ function directStringExtractor(error: unknown): string | null {
 }
 
 function errorInstanceExtractor(error: unknown): string | null {
-  return error instanceof Error ? error.message.trim() || UNKNOWN_KEY : null;
+  return error instanceof Error ? trimmedString(error.message) : null;
 }
 
 function serializedExtractor(error: unknown): string | null {

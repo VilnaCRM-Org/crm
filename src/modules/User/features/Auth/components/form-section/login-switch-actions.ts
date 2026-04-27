@@ -11,15 +11,15 @@ export type LoadLoginErrorKey = typeof LOAD_LOGIN_ERROR_KEY | null;
 export type SwitchDeps = {
   isLoadingLogin: boolean;
   mode: AuthMode;
+  loginSwitchRequest: { current: number };
   setMode: (m: AuthMode) => void;
   setIsLoadingLogin: (v: boolean) => void;
   setLoadLoginError: (v: LoadLoginErrorKey) => void;
 };
 
-let activeLoginSwitchId = 0;
-
 export function switchToRegister(deps: SwitchDeps): void {
-  activeLoginSwitchId += 1;
+  const { loginSwitchRequest } = deps;
+  loginSwitchRequest.current += 1;
   deps.setLoadLoginError(null);
   deps.setMode('register');
 }
@@ -29,20 +29,21 @@ function applyLoginSwitchResult(
   requestId: number,
   outcome: 'loaded' | 'failed'
 ): void {
-  if (requestId !== activeLoginSwitchId) return;
+  if (requestId !== deps.loginSwitchRequest.current) return;
   if (outcome === 'loaded') startTransition(() => deps.setMode('login'));
   else deps.setLoadLoginError(LOAD_LOGIN_ERROR_KEY);
 }
 
 function finishLoginSwitch(deps: SwitchDeps, requestId: number): void {
-  if (requestId !== activeLoginSwitchId) return;
+  if (requestId !== deps.loginSwitchRequest.current) return;
   deps.setIsLoadingLogin(false);
 }
 
 export function switchToLogin(deps: SwitchDeps): void {
   if (deps.isLoadingLogin) return;
-  activeLoginSwitchId += 1;
-  const requestId = activeLoginSwitchId;
+  const { loginSwitchRequest } = deps;
+  loginSwitchRequest.current += 1;
+  const requestId = loginSwitchRequest.current;
   deps.setLoadLoginError(null);
   deps.setIsLoadingLogin(true);
   loadLoginForm()

@@ -110,6 +110,7 @@ export default class ApiStatusErrorFactory {
     return new ValidationError({
       message: `${spec.prefix} ${this.context.toLowerCase()} data`,
       status: spec.status,
+      cause: this.error,
     });
   }
 }

@@ -20,7 +20,13 @@ describe('HttpErrorStatusGuard', () => {
 
   it('throws HttpError for a non-ok response', async () => {
     const guard = new HttpErrorStatusGuard();
-    const response = { ok: false, status: 400, statusText: 'Bad Request', url: '/test', headers: new Headers() } as Response;
+    const response = {
+      ok: false,
+      status: 400,
+      statusText: 'Bad Request',
+      url: '/test',
+      headers: new Headers(),
+    } as Response;
     await expect(guard.assertOk(response)).rejects.toThrow(HttpError);
   });
 

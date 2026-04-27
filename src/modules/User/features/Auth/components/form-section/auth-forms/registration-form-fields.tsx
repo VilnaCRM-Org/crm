@@ -21,7 +21,7 @@ export default function RegistrationFormFields({
         label={t('sign_up.form.name_input.label')}
         placeholder={t('sign_up.form.name_input.placeholder')}
         type="text"
-        autoComplete="off"
+        autoComplete="name"
         rules={{
           required: t('sign_up.form.name_input.required'),
           validate: validators.fullName,
@@ -32,7 +32,7 @@ export default function RegistrationFormFields({
         label={t('sign_up.form.email_input.label')}
         placeholder={t('sign_up.form.email_input.placeholder')}
         type="email"
-        autoComplete="off"
+        autoComplete="email"
         rules={{
           required: t('sign_up.form.email_input.required'),
           validate: validators.email,
@@ -41,7 +41,7 @@ export default function RegistrationFormFields({
       <PasswordField<RegisterUserDto>
         placeholder={t('sign_up.form.password_input.placeholder')}
         label={t('sign_up.form.password_input.label')}
-        autoComplete="off"
+        autoComplete="new-password"
       />
     </>
   );

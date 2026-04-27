@@ -168,12 +168,7 @@ export default function UIForm<T extends FieldValues>({
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
-  const handleSubmit = buildSubmitHandler({
-    onSubmit,
-    methods,
-    defaultValues,
-    resetOnSuccess,
-  });
+  const handleSubmit = buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess });
 
   return (
     <FormProviderBridge methods={methods}>

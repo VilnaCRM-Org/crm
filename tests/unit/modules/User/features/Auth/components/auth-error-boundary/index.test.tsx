@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ComponentProps } from 'react';
 
+import localization from '@/i18n/localization.json';
 import AuthErrorBoundary from '@/modules/User/features/Auth/components/auth-error-boundary';
 
 jest.mock('react-i18next', () => ({
@@ -112,5 +113,15 @@ describe('AuthErrorBoundary', () => {
 
     expect(screen.getByText('Error Details')).toBeInTheDocument();
     expect(screen.getByText('test error')).toBeInTheDocument();
+  });
+
+  it('ships the default auth error translations in localization resources', () => {
+    expect(localization.en.translation.auth.error.default).toBeTruthy();
+    expect(localization.en.translation.auth.error.details).toBeTruthy();
+    expect(localization.en.translation.auth.error.tryAgain).toBeTruthy();
+
+    expect(localization.uk.translation.auth.error.default).toBeTruthy();
+    expect(localization.uk.translation.auth.error.details).toBeTruthy();
+    expect(localization.uk.translation.auth.error.tryAgain).toBeTruthy();
   });
 });

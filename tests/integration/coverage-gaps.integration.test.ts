@@ -1,17 +1,21 @@
 import { configureStore, type ThunkDispatch, type UnknownAction } from '@reduxjs/toolkit';
 
+import ApiStatusErrorFactory from '@/modules/User/features/Auth/api/api-status-error-factory';
 import LoginAPI from '@/modules/User/features/Auth/api/login-api';
 import RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
-import ApiStatusErrorFactory from '@/modules/User/features/Auth/api/api-status-error-factory';
-import { loginReducer, loginUser, type LoginState } from '@/modules/User/store/login-slice';
-import { registrationReducer, registerUser, type RegistrationState } from '@/modules/User/store/registration-slice';
-import type { ThunkExtra } from '@/modules/User/store/types';
 import AuthUiErrorMapper from '@/modules/User/store/auth-ui-error-mapper';
-import { HttpError } from '@/services/HttpsClient/HttpError';
+import { loginReducer, loginUser, type LoginState } from '@/modules/User/store/login-slice';
+import {
+  registrationReducer,
+  registerUser,
+  type RegistrationState,
+} from '@/modules/User/store/registration-slice';
+import type { ThunkExtra } from '@/modules/User/store/types';
 import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
 import HttpErrorResponseParser from '@/services/HttpsClient/http-error-response-parser';
 import HttpErrorStatusGuard from '@/services/HttpsClient/http-error-status-guard';
 import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
+import { HttpError } from '@/services/HttpsClient/HttpError';
 import { DevToolsOptionsFactory } from '@/stores/dev-tools-options';
 import deepRedact, { DevToolsRedactor } from '@/stores/dev-tools-redaction';
 
@@ -23,6 +27,18 @@ type LoginStore = {
 type RegistrationStore = {
   dispatch: ThunkDispatch<{ registration: RegistrationState }, ThunkExtra, UnknownAction>;
   getState: () => { registration: RegistrationState };
+};
+
+type ApiStatusErrorFactoryCtor = new (
+  spec: { kind: 'service' },
+  error: { status: number; message: string },
+  context: string
+) => object;
+
+type ImportCase = {
+  modulePath: string;
+  mockPath: string;
+  mockFactory: () => Record<string, undefined | true>;
 };
 
 const abortError = Object.assign(new Error('The operation was aborted'), { name: 'AbortError' });
@@ -49,9 +65,9 @@ describe('Integration Coverage Gaps', () => {
     const loginApi = new LoginAPI(httpsClient as never, apiErrorConverter as never);
     const registrationApi = new RegistrationAPI(httpsClient as never, apiErrorConverter as never);
 
-    await expect(
-      loginApi.login({ email: 'user@test.com', password: 'pass' })
-    ).resolves.toEqual({ token: 'token-123' });
+    await expect(loginApi.login({ email: 'user@test.com', password: 'pass' })).resolves.toEqual({
+      token: 'token-123',
+    });
     await expect(
       registrationApi.register({
         email: 'user@test.com',
@@ -80,6 +96,12 @@ describe('Integration Coverage Gaps', () => {
     );
 
     expect(loginResult.type).toBe(loginUser.rejected.type);
+    expect(loginUser.rejected.match(loginResult)).toBe(true);
+
+    if (!loginUser.rejected.match(loginResult)) {
+      throw new Error(`Expected rejected login result, received ${loginResult.type}`);
+    }
+
     expect(loginResult.error.name).toBe('AbortError');
 
     const registrationStore = configureStore({
@@ -104,6 +126,12 @@ describe('Integration Coverage Gaps', () => {
     );
 
     expect(registrationResult.type).toBe(registerUser.rejected.type);
+    expect(registerUser.rejected.match(registrationResult)).toBe(true);
+
+    if (!registerUser.rejected.match(registrationResult)) {
+      throw new Error(`Expected rejected registration result, received ${registrationResult.type}`);
+    }
+
     expect(registrationResult.error.name).toBe('AbortError');
   });
 
@@ -172,18 +200,24 @@ describe('Integration Coverage Gaps', () => {
   });
 
   it('covers defensive branches in api status conversion', () => {
-    const factory = new (ApiStatusErrorFactory as any)(
+    const FactoryCtor = ApiStatusErrorFactory as unknown as ApiStatusErrorFactoryCtor;
+    const factory = new FactoryCtor(
       { kind: 'service' },
       { status: 503, message: 'Service unavailable' },
       'Registration'
     );
+    const toSimpleApiError = Reflect.get(factory, 'toSimpleApiError') as (
+      kind: 'unexpected-kind'
+    ) => unknown;
 
-    expect(factory.toSimpleApiError('unexpected-kind')).toBe('unexpected-kind');
+    expect(toSimpleApiError.call(factory, 'unexpected-kind')).toBe('unexpected-kind');
   });
 
   it('uses injected redaction helpers and default exports', () => {
     const redactor = {
-      deepRedact: jest.fn().mockImplementation((value: unknown) => ({ ...(value as object), token: '***' })),
+      deepRedact: jest
+        .fn()
+        .mockImplementation((value: unknown) => ({ ...(value as object), token: '***' })),
     };
     const options = new DevToolsOptionsFactory(redactor as never).create();
 
@@ -194,7 +228,11 @@ describe('Integration Coverage Gaps', () => {
     expect(deepRedact({ token: 'secret' })).toEqual({ token: '***' });
 
     const devToolsRedactor = new DevToolsRedactor();
-    expect((devToolsRedactor as any).isPlainObject(null)).toBe(false);
+    const isPlainObject = Reflect.get(devToolsRedactor, 'isPlainObject') as (
+      value: unknown
+    ) => boolean;
+
+    expect(isPlainObject.call(devToolsRedactor, null)).toBe(false);
   });
 
   it('constructs HttpError with parsed fallback data', async () => {
@@ -213,26 +251,35 @@ describe('Integration Coverage Gaps', () => {
   });
 
   it('covers metadata fallback branches when reflected constructor types are unavailable', () => {
-    const importCases = [
+    const importCases: ImportCase[] = [
       {
         modulePath: '@/modules/User/features/Auth/api/login-api',
         mockPath: '@/modules/User/features/Auth/api/api-error-converter',
-        mockFactory: () => ({ __esModule: true, default: undefined }),
+        mockFactory: (): Record<string, undefined | true> => ({
+          __esModule: true,
+          default: undefined,
+        }),
       },
       {
         modulePath: '@/modules/User/features/Auth/api/registration-api',
         mockPath: '@/modules/User/features/Auth/api/api-error-converter',
-        mockFactory: () => ({ __esModule: true, default: undefined }),
+        mockFactory: (): Record<string, undefined | true> => ({
+          __esModule: true,
+          default: undefined,
+        }),
       },
       {
         modulePath: '@/modules/User/store/auth-ui-error-mapper',
         mockPath: '@/utils/error/error-parser',
-        mockFactory: () => ({ __esModule: true, default: undefined }),
+        mockFactory: (): Record<string, undefined | true> => ({
+          __esModule: true,
+          default: undefined,
+        }),
       },
       {
         modulePath: '@/services/HttpsClient/fetch-https-client',
         mockPath: '@/services/HttpsClient/fetch-helpers',
-        mockFactory: () => ({
+        mockFactory: (): Record<string, undefined | true> => ({
           __esModule: true,
           HttpRequestConfigBuilder: undefined,
           HttpResponseProcessor: undefined,
@@ -242,12 +289,18 @@ describe('Integration Coverage Gaps', () => {
       {
         modulePath: '@/services/HttpsClient/http-error-status-guard',
         mockPath: '@/services/HttpsClient/http-error-response-parser',
-        mockFactory: () => ({ __esModule: true, default: undefined }),
+        mockFactory: (): Record<string, undefined | true> => ({
+          __esModule: true,
+          default: undefined,
+        }),
       },
       {
         modulePath: '@/services/HttpsClient/http-response-processor',
         mockPath: '@/services/HttpsClient/http-error-status-guard',
-        mockFactory: () => ({ __esModule: true, default: undefined }),
+        mockFactory: (): Record<string, undefined | true> => ({
+          __esModule: true,
+          default: undefined,
+        }),
       },
     ];
 
@@ -261,13 +314,18 @@ describe('Integration Coverage Gaps', () => {
     }
 
     jest.isolateModules(() => {
-      jest.doMock('@/stores/dev-tools-redaction', () => ({
-        __esModule: true,
-        DevToolsRedactor: undefined,
-        default: undefined,
-      }));
+      jest.doMock(
+        '@/stores/dev-tools-redaction',
+        (): Record<string, undefined | true> => ({
+          __esModule: true,
+          DevToolsRedactor: undefined,
+          default: undefined,
+        })
+      );
 
-      expect(() => require('@/stores/dev-tools-options')).toThrow('DevToolsRedactor is not a constructor');
+      expect(() => require('@/stores/dev-tools-options')).toThrow(
+        'DevToolsRedactor is not a constructor'
+      );
       jest.dontMock('@/stores/dev-tools-redaction');
     });
   });

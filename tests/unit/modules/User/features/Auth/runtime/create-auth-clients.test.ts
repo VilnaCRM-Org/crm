@@ -21,8 +21,10 @@ describe('createAuthClients', () => {
     const loginAPI = { login: jest.fn() } as unknown as LoginAPI;
     const registrationAPI = { register: jest.fn() } as unknown as RegistrationAPI;
     const resolve = jest.fn().mockReturnValueOnce(loginAPI).mockReturnValueOnce(registrationAPI);
-    const container = { resolve } as Pick<DependencyContainer, 'resolve'> as DependencyContainer;
-    const clients = createAuthClients(container);
+    const dependencyContainer = {
+      resolve,
+    } as Pick<DependencyContainer, 'resolve'> as DependencyContainer;
+    const clients = createAuthClients(dependencyContainer);
 
     expect(resolve).toHaveBeenNthCalledWith(1, TOKENS.LoginAPI);
     expect(resolve).toHaveBeenNthCalledWith(2, TOKENS.RegistrationAPI);

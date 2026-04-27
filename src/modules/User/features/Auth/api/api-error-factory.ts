@@ -23,7 +23,8 @@ export default class ApiErrorFactory {
   public static fromHttpError(error: HttpErrorLike, context: string): ApiError {
     if (ApiErrorFactory.isCancellationMessage(error.message))
       return ApiErrorFactory.cancelledError(error);
-    if (error.status === 0 || ApiErrorFactory.isNetworkMessage(error.message))
+    if (error.status === 0) return ApiErrorFactory.networkError(error);
+    if (!error.status && ApiErrorFactory.isNetworkMessage(error.message))
       return ApiErrorFactory.networkError(error);
     return ApiErrorFactory.fromStatusError(error, context);
   }

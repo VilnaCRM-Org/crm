@@ -150,6 +150,22 @@ describe('normalizeLoginErrorMessage', () => {
     expect(normalizeLoginErrorMessage(new Error('   '))).toBe('auth.errors.unknown');
   });
 
+  it('falls through to displayMessage on custom Error objects when the Error message is blank', () => {
+    const error = Object.assign(new Error('   '), {
+      displayMessage: 'Display message object',
+    });
+
+    expect(normalizeLoginErrorMessage(error)).toBe('Display message object');
+  });
+
+  it('falls through to data.message on custom Error objects when the Error message is blank', () => {
+    const error = Object.assign(new Error('   '), {
+      data: { message: 'Invalid credentials' },
+    });
+
+    expect(normalizeLoginErrorMessage(error)).toBe('Invalid credentials');
+  });
+
   it('falls back to the unknown translation key for non-record values', () => {
     expect(normalizeLoginErrorMessage(404)).toBe('auth.errors.unknown');
   });

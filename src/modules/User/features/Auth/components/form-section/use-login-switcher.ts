@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
 
@@ -25,6 +25,7 @@ export default function useLoginSwitcher(): LoginSwitcher {
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
   const [loadLoginError, setLoadLoginError] = useState<LoadLoginErrorKey>(null);
   const [mode, setMode] = useState<AuthMode>('register');
+  const loginSwitchRequest = useRef(0);
 
   const handleSwitcherIntent = useCallback(() => {
     if (mode === 'register') loadLoginForm().catch(() => undefined);
@@ -34,6 +35,7 @@ export default function useLoginSwitcher(): LoginSwitcher {
     const deps: SwitchDeps = {
       isLoadingLogin,
       mode,
+      loginSwitchRequest,
       setMode,
       setIsLoadingLogin,
       setLoadLoginError,

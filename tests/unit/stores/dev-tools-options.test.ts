@@ -73,7 +73,10 @@ describe('DevToolsOptionsFactory', () => {
 
   it('leaves auth as undefined when it is absent from state', () => {
     const state = { registration: { error: null } };
-    expect(options.stateSanitizer?.(state, 0)).toEqual({ registration: { error: null }, auth: undefined });
+    expect(options.stateSanitizer?.(state, 0)).toEqual({
+      registration: { error: null },
+      auth: undefined,
+    });
   });
 
   it('returns original action unchanged when meta fields are non-object scalars', () => {
