@@ -61,12 +61,12 @@ RUN apt-get update && \
       unzip && \
     rm -rf /var/lib/apt/lists/*
 
-# hadolint ignore=DL1000
-ADD --checksum=sha256:${RCA_SHA256} \
+ADD \
     https://github.com/mozilla/rust-code-analysis/releases/download/v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz \
     /tmp/rca.tar.gz
 
-RUN tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz && \
+RUN printf '%s  %s\n' "${RCA_SHA256}" "/tmp/rca.tar.gz" | sha256sum -c - && \
+    tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz && \
     chmod +x /usr/local/bin/rust-code-analysis-cli && \
     /usr/local/bin/rust-code-analysis-cli --version && \
     rm /tmp/rca.tar.gz
