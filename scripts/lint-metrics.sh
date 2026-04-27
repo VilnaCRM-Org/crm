@@ -33,13 +33,6 @@ if ! jq empty "$METRICS_POLICY" 2>/dev/null; then
   exit 1
 fi
 
-required_hard_keys="cyclomatic_max cognitive_max abc_magnitude_max nargs_function_max \
-nargs_closure_max nexits_max lloc_function_max ploc_function_max sloc_function_max \
-halstead_volume_function_max halstead_bugs_function_max nom_functions_file_max \
-nom_closures_file_max nom_total_file_max lloc_file_max ploc_file_max sloc_file_max \
-halstead_volume_file_max halstead_bugs_file_max mi_visual_studio_min class_wmc_max \
-class_npm_max class_npa_max class_coa_max class_cda_max interface_npm_max interface_npa_max"
-
 threshold_assignments=$(
   jq -re '
     def hard_number($key):

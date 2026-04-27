@@ -64,7 +64,11 @@ describe('metrics policy schema', () => {
       'halstead_purity_ratio_function_min',
       'halstead_purity_ratio_function_max'
     );
-    expectReviewRangePairOrder(policy.review, 'halstead_purity_ratio_file_min', 'halstead_purity_ratio_file_max');
+    expectReviewRangePairOrder(
+      policy.review,
+      'halstead_purity_ratio_file_min',
+      'halstead_purity_ratio_file_max'
+    );
   });
 
   it('does not dereference review thresholds when the review block is omitted', () => {
@@ -76,7 +80,11 @@ describe('metrics policy schema', () => {
         'halstead_purity_ratio_function_min',
         'halstead_purity_ratio_function_max'
       );
-      expectReviewRangePairOrder(undefined, 'halstead_purity_ratio_file_min', 'halstead_purity_ratio_file_max');
+      expectReviewRangePairOrder(
+        undefined,
+        'halstead_purity_ratio_file_min',
+        'halstead_purity_ratio_file_max'
+      );
     }).not.toThrow();
   });
 });

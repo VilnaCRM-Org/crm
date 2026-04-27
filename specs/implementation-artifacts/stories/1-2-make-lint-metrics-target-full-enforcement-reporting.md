@@ -34,7 +34,8 @@ so that I can identify and fix every issue in a single local run before pushing.
   - [x] 1.2 Download the Linux release asset during the `rca` Dockerfile stage
   - [x] 1.3 Verify the downloaded archive with SHA256 in the Docker image build
   - [x] 1.4 Extract the binary into `/usr/local/bin/` in the `rca` image and verify the version
-  - [x] 1.5 Keep the contributor entry point as `make lint-metrics -> docker compose run --rm rca make lint-metrics-run`
+  - [x] 1.5 Keep the contributor entry point as
+        `make lint-metrics -> docker compose run --rm rca make lint-metrics-run`
 
 - [x] Task 2: Implement governed-scope analysis (AC: 2)
   - [x] 2.1 Invoke `rust-code-analysis-cli` against `src/`
