@@ -1,10 +1,10 @@
 import { injectable } from 'tsyringe';
 
-import { HttpError } from '@/services/HttpsClient/HttpError';
 import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
 import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
-import ResponseMessages from '@/services/HttpsClient/responseMessages';
+import { HttpError } from '@/services/HttpsClient/HttpError';
 import HttpsClient, { RequestMethod } from '@/services/HttpsClient/https-client';
+import ResponseMessages from '@/services/HttpsClient/responseMessages';
 
 interface RequestOptions {
   headers?: Record<string, string>;

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+
 import * as AuthForms from '@/modules/User/features/Auth/components/form-section/auth-forms';
 
 const { RegistrationFormFields } = AuthForms;

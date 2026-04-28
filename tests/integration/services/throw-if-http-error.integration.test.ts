@@ -1,6 +1,6 @@
 import '../setup';
-import { HttpError } from '@/services/HttpsClient/HttpError';
 import { throwIfHttpError } from '@/services/HttpsClient/http-response-processor';
+import { HttpError } from '@/services/HttpsClient/HttpError';
 
 describe('throwIfHttpError Coverage Tests', () => {
   it('should handle errors during body extraction (catch block coverage)', async () => {

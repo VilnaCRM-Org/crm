@@ -1,5 +1,5 @@
-import { HttpError } from '@/services/HttpsClient/HttpError';
 import { throwIfHttpError } from '@/services/HttpsClient/http-response-processor';
+import { HttpError } from '@/services/HttpsClient/HttpError';
 
 interface ErrorCause {
   [key: string]: unknown;

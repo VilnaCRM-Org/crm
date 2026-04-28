@@ -710,15 +710,7 @@ describe('FetchHttpsClient', () => {
           .fn()
           .mockReturnValue({ method: 'GET', headers: { Accept: 'application/json' } }),
       };
-      const mockHandler = {
-        throwAbortError: jest.fn(),
-        rethrowOrWrap: jest.fn(),
-      };
-      const customClient = new FetchHttpsClient(
-        mockBuilder as never,
-        mockProcessor as never,
-        mockHandler as never
-      );
+      const customClient = new FetchHttpsClient(mockBuilder as never, mockProcessor as never);
       mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
       const result = await customClient.get('/api/test');

@@ -146,7 +146,6 @@ describe('Integration Coverage Gaps', () => {
     expect(responseProcessor.process).toHaveBeenCalled();
     global.fetch = originalFetch;
 
-    const parser = { parse: jest.fn().mockResolvedValue({ message: 'Denied', body: 'body' }) };
     const guard = new HttpErrorResponseParser();
     jest.spyOn(guard, 'parse').mockResolvedValue({ message: 'Denied', body: 'body' });
 
@@ -228,7 +227,6 @@ describe('Integration Coverage Gaps', () => {
   });
 
   it('constructs HttpError with parsed fallback data', async () => {
-    const parser = { parse: jest.fn().mockResolvedValue({ message: null, body: 'problem' }) };
     const guard = new HttpErrorResponseParser();
     jest.spyOn(guard, 'parse').mockResolvedValue({ message: null, body: 'problem' });
 
