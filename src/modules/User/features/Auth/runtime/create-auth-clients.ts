@@ -1,81 +1,16 @@
-import API_ENDPOINTS from '@/config/apiConfig';
-import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
-import type HttpsClient from '@/services/HttpsClient/HttpsClient';
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
+import type { DependencyContainer } from 'tsyringe';
 
-import BaseAPI from '@/modules/User/features/Auth/api/BaseAPI';
-import type { RequestOptions } from '@/modules/User/features/Auth/api/types';
-import type {
-  LoginResponse,
-  RegistrationResponse,
-} from '@/modules/User/features/Auth/types/ApiResponses';
-import type {
-  LoginUserDto,
-  RegisterUserDto,
-} from '@/modules/User/features/Auth/types/Credentials';
+import type LoginAPI from '@/modules/User/features/Auth/api/login-api';
+import type RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
+import type { ThunkExtra } from '@/modules/User/store/types';
 
-type AuthClients = {
-  loginAPI: {
-    login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse>;
-  };
-  registrationAPI: {
-    register(
-      credentials: RegisterUserDto,
-      options?: RequestOptions
-    ): Promise<RegistrationResponse>;
-  };
-};
-
-class ApiErrorAdapter extends BaseAPI {
-  public toLoginError(error: unknown): Error {
-    return this.handleApiError(error, 'Login');
-  }
-
-  public toRegistrationError(error: unknown): Error {
-    return this.handleApiError(error, 'Registration');
-  }
-}
-
-export default function createAuthClients(): AuthClients {
-  const httpsClient: HttpsClient = new FetchHttpsClient();
-  const errorAdapter = new ApiErrorAdapter();
-
+export default function createAuthClients(
+  dependencyContainer: DependencyContainer = container
+): ThunkExtra {
   return {
-    loginAPI: {
-      async login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse> {
-        try {
-          return await httpsClient.post<LoginUserDto, LoginResponse>(
-            API_ENDPOINTS.LOGIN,
-            credentials,
-            options
-          );
-        } catch (error) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            throw error;
-          }
-
-          throw errorAdapter.toLoginError(error);
-        }
-      },
-    },
-    registrationAPI: {
-      async register(
-        credentials: RegisterUserDto,
-        options?: RequestOptions
-      ): Promise<RegistrationResponse> {
-        try {
-          return await httpsClient.post<RegisterUserDto, RegistrationResponse>(
-            API_ENDPOINTS.REGISTER,
-            credentials,
-            options
-          );
-        } catch (error) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            throw error;
-          }
-
-          throw errorAdapter.toRegistrationError(error);
-        }
-      },
-    },
+    loginAPI: dependencyContainer.resolve<LoginAPI>(TOKENS.LoginAPI),
+    registrationAPI: dependencyContainer.resolve<RegistrationAPI>(TOKENS.RegistrationAPI),
   };
 }

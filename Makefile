@@ -116,20 +116,17 @@ MARKDOWNLINT_BIN            = $(BUNX) markdownlint
 MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
 
 RCA_VERSION                 = 0.0.25
-UNAME_S                     := $(shell uname -s 2>/dev/null || echo unknown)
-WINDOWS_UNAMES              := MINGW MSYS CYGWIN Windows_NT
-ifeq ($(filter $(WINDOWS_UNAMES),$(UNAME_S) $(OS)),)
+RCA_SCOPE                   = src/
+RCA_EXCLUDES                = **/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/**
+METRICS_POLICY_PATH         = config/metrics-policy.json
 RCA_BIN                     = ./bin/rust-code-analysis-cli
-else
-RCA_BIN                     = ./bin/rust-code-analysis-cli.exe
-endif
 
 RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
-.PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
-.PHONY: clean lint lint-metrics
+.PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
+.PHONY: clean lint lint-metrics lint-metrics-run
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -213,134 +210,34 @@ lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
-	@os_name=$$(uname -s 2>/dev/null || echo unknown); \
-	arch_name=$$(uname -m 2>/dev/null || echo unknown); \
-	rca_asset=""; \
-	rca_archive="/tmp/rca-download"; \
-	rca_extract_cmd=""; \
-	rca_expected_sha256=""; \
-	case "$$os_name:$$arch_name" in \
-		Linux:x86_64) \
-			rca_asset="rust-code-analysis-linux-cli-x86_64.tar.gz"; \
-			rca_extract_cmd='tar -xz -C ./bin -f '"$$rca_archive"; \
-			rca_expected_sha256="9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894"; \
-			;; \
-		MINGW*:x86_64|MSYS*:x86_64|CYGWIN*:x86_64|Windows_NT:x86_64) \
-			rca_asset="rust-code-analysis-win-cli-x86_64.zip"; \
-			rca_extract_cmd='unzip -j -qo '"$$rca_archive"' -d ./bin'; \
-			rca_expected_sha256="592e9adb0cd66c333043addd8beaa04ea692a4d531e3b6dc54a2de1f27159623"; \
-			;; \
-		Darwin:*) \
-			printf 'ERROR: rust-code-analysis-cli v%s has no Darwin release asset — run lint-metrics inside Docker (make sh)\n' "$(RCA_VERSION)" >&2; \
-			exit 1; \
-			;; \
-		*) \
-			printf 'ERROR: rust-code-analysis-cli v%s is not supported on %s/%s\n' "$(RCA_VERSION)" "$$os_name" "$$arch_name" >&2; \
-			exit 1; \
-			;; \
-	esac; \
-	installed_version=""; \
-	if [ -x "$(RCA_BIN)" ]; then \
-		installed_version=$$($(RCA_BIN) --version 2>/dev/null | awk '{print $$NF}' || true); \
-	fi; \
-	if [ ! -x "$(RCA_BIN)" ] || [ "$$installed_version" != "$(RCA_VERSION)" ]; then \
-		printf 'Downloading rust-code-analysis-cli v%s...\n' "$(RCA_VERSION)"; \
-		mkdir -p ./bin; \
-		curl -fsSL \
-			"https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/$$rca_asset" \
-			-o "$$rca_archive" || { \
-				printf 'ERROR: failed to download %s\n' "$$rca_asset" >&2; \
-				rm -f "$$rca_archive"; \
-				exit 1; \
-			}; \
-		if command -v sha256sum >/dev/null 2>&1; then \
-			actual_sha256=$$(sha256sum "$$rca_archive" | awk '{print $$1}'); \
-		elif command -v shasum >/dev/null 2>&1; then \
-			actual_sha256=$$(shasum -a 256 "$$rca_archive" | awk '{print $$1}'); \
+	@summary_path="$$GITHUB_STEP_SUMMARY"; \
+	if [ -n "$$summary_path" ]; then \
+		summary_dir=$$(dirname "$$summary_path"); \
+		if { [ -e "$$summary_path" ] && [ ! -d "$$summary_path" ] && [ -w "$$summary_path" ]; } || { [ ! -e "$$summary_path" ] && [ -w "$$summary_dir" ]; }; then \
+			: > "$$summary_path" 2>/dev/null || touch "$$summary_path"; \
+			$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+				-e GITHUB_STEP_SUMMARY="$$summary_path" \
+				-v "$$summary_path:$$summary_path" \
+				rca make lint-metrics-run RCA_BIN=/usr/local/bin/rust-code-analysis-cli; \
 		else \
-			printf 'ERROR: neither sha256sum nor shasum available to verify %s\n' "$$rca_asset" >&2; \
-			rm -f "$$rca_archive"; \
-			exit 1; \
+			printf 'WARNING: GITHUB_STEP_SUMMARY is not writable, skipping summary mount: %s\n' "$$summary_path" >&2; \
+			$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+				rca make lint-metrics-run RCA_BIN=/usr/local/bin/rust-code-analysis-cli; \
 		fi; \
-		if [ "$$actual_sha256" != "$$rca_expected_sha256" ]; then \
-			printf 'ERROR: SHA256 mismatch for %s\n  expected: %s\n  actual:   %s\n' \
-				"$$rca_asset" "$$rca_expected_sha256" "$$actual_sha256" >&2; \
-			rm -f "$$rca_archive"; \
-			exit 1; \
-		fi; \
-		sh -c "$$rca_extract_cmd" && rm -f "$$rca_archive"; \
-		refreshed_version=""; \
-		if [ -x "$(RCA_BIN)" ]; then \
-			refreshed_version=$$($(RCA_BIN) --version 2>/dev/null | awk '{print $$NF}' || true); \
-		fi; \
-		if [ "$$refreshed_version" != "$(RCA_VERSION)" ]; then \
-			printf 'ERROR: rust-code-analysis-cli install produced version "%s", expected "%s" at %s\n' \
-				"$$refreshed_version" "$(RCA_VERSION)" "$(RCA_BIN)" >&2; \
-			exit 1; \
-		fi; \
+	else \
+		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+			rca make lint-metrics-run RCA_BIN=/usr/local/bin/rust-code-analysis-cli; \
 	fi
-# Baseline-calibrated values for this PR; tighten with code remediation in the next PR.
+
+# Direct-invoke target used by the rca container (always Linux) via make lint-metrics.
+# The rca Docker image has rust-code-analysis-cli pre-installed; thresholds are read
+# from METRICS_POLICY_PATH (config/metrics-policy.json).
+lint-metrics-run:
 	@RCA_BIN="$(RCA_BIN)" \
 	RCA_VERSION="$(RCA_VERSION)" \
-	CYCLOMATIC_MAX="20" \
-	COGNITIVE_MAX="24" \
-	ABC_MAGNITUDE_MAX="17" \
-	NARGS_FUNCTION_MAX="5" \
-	NARGS_CLOSURE_MAX="3" \
-	NEXITS_MAX="15" \
-	LLOC_FUNCTION_MAX="37" \
-	PLOC_FUNCTION_MAX="145" \
-	SLOC_FUNCTION_MAX="157" \
-	HALSTEAD_VOLUME_FUNCTION_MAX="5558" \
-	HALSTEAD_BUGS_FUNCTION_MAX="0.94" \
-	NOM_FUNCTIONS_FILE_MAX="10" \
-	NOM_CLOSURES_FILE_MAX="9" \
-	NOM_TOTAL_FILE_MAX="15" \
-	LLOC_FILE_MAX="120" \
-	PLOC_FILE_MAX="366" \
-	SLOC_FILE_MAX="372" \
-	HALSTEAD_VOLUME_FILE_MAX="12427" \
-	HALSTEAD_BUGS_FILE_MAX="1.58" \
-	MI_VISUAL_STUDIO_MIN="15" \
-	MI_ORIGINAL_MIN="65" \
-	MI_SEI_MIN="65" \
-	CLASS_WMC_MAX="30" \
-	CLASS_NPM_MAX="8" \
-	CLASS_NPA_MAX="2" \
-	CLASS_COA_MAX="0.60" \
-	CLASS_CDA_MAX="0.25" \
-	INTERFACE_NPM_MAX="10" \
-	INTERFACE_NPA_MAX="15" \
-	CLOC_RATIO_MIN="0.10" \
-	CLOC_RATIO_MAX="0.60" \
-	BLANK_RATIO_MIN="0.02" \
-	BLANK_RATIO_MAX="0.30" \
-	HALSTEAD_N1_FUNCTION_MAX="30" \
-	HALSTEAD_N1_TOTAL_FUNCTION_MAX="80" \
-	HALSTEAD_N2_FUNCTION_MAX="40" \
-	HALSTEAD_N2_TOTAL_FUNCTION_MAX="120" \
-	HALSTEAD_LENGTH_FUNCTION_MAX="180" \
-	HALSTEAD_ESTIMATED_LENGTH_FUNCTION_MAX="160" \
-	HALSTEAD_VOCABULARY_FUNCTION_MAX="70" \
-	HALSTEAD_DIFFICULTY_FUNCTION_MAX="25" \
-	HALSTEAD_LEVEL_FUNCTION_MIN="0.03" \
-	HALSTEAD_EFFORT_FUNCTION_MAX="30000" \
-	HALSTEAD_TIME_FUNCTION_MAX="1800" \
-	HALSTEAD_PURITY_RATIO_FUNCTION_MIN="0.60" \
-	HALSTEAD_PURITY_RATIO_FUNCTION_MAX="1.40" \
-	HALSTEAD_N1_FILE_MAX="60" \
-	HALSTEAD_N1_TOTAL_FILE_MAX="400" \
-	HALSTEAD_N2_FILE_MAX="90" \
-	HALSTEAD_N2_TOTAL_FILE_MAX="800" \
-	HALSTEAD_LENGTH_FILE_MAX="1000" \
-	HALSTEAD_ESTIMATED_LENGTH_FILE_MAX="850" \
-	HALSTEAD_VOCABULARY_FILE_MAX="140" \
-	HALSTEAD_DIFFICULTY_FILE_MAX="40" \
-	HALSTEAD_LEVEL_FILE_MIN="0.02" \
-	HALSTEAD_EFFORT_FILE_MAX="250000" \
-	HALSTEAD_TIME_FILE_MAX="15000" \
-	HALSTEAD_PURITY_RATIO_FILE_MIN="0.60" \
-	HALSTEAD_PURITY_RATIO_FILE_MAX="1.40" \
+	RCA_SCOPE="$(RCA_SCOPE)" \
+	RCA_EXCLUDES="$(RCA_EXCLUDES)" \
+	METRICS_POLICY="$(METRICS_POLICY_PATH)" \
 	sh scripts/lint-metrics.sh
 
 lint: lint-eslint lint-tsc lint-md lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, and rust-code-analysis metrics.

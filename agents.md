@@ -513,7 +513,7 @@ const moduleSlice = createSlice({
 ```typescript
 // Check error type
 import { isAPIError } from '@/modules/User/features/Auth/api/ApiErrors';
-import { ValidationError } from '@/modules/User/features/Auth/api/ApiErrors/ValidationError';
+import { ValidationError } from '@/modules/User/features/Auth/api/ApiErrors/validation-error';
 
 if (isAPIError(error)) {
   if (error instanceof ValidationError) {
