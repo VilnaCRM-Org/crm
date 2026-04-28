@@ -5,7 +5,7 @@ import UiTypography from '@/components/UITypography';
 import { Box, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-import styles from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification.success-styles';
+import styles from './registration-notification.success-styles';
 
 interface Props {
   isClosing: boolean;

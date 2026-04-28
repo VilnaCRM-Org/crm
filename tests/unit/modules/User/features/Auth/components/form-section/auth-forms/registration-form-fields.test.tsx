@@ -1,14 +1,10 @@
 import { render, screen } from '@testing-library/react';
+import * as AuthForms from '@/modules/User/features/Auth/components/form-section/auth-forms';
 
-import RegistrationFormFields from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form-fields';
+const { RegistrationFormFields } = AuthForms;
 
 const mockFormField = jest.fn(
-  (props: {
-    name: string;
-    label: string;
-    autoComplete: string;
-    type: string;
-  }): JSX.Element => {
+  (props: { name: string; label: string; autoComplete: string; type: string }): JSX.Element => {
     const { name, label, autoComplete, type } = props;
 
     return (
@@ -24,21 +20,22 @@ const mockFormField = jest.fn(
 
 jest.mock(
   '@/modules/User/features/Auth/components/form-section/components/form-field',
-  () => (props: { name: string; label: string; autoComplete: string; type: string }): JSX.Element =>
-    mockFormField(props)
+  () =>
+    (props: { name: string; label: string; autoComplete: string; type: string }): JSX.Element =>
+      mockFormField(props)
 );
 
-const mockPasswordField = jest.fn(
-  (props: { label: string; autoComplete: string }): JSX.Element => {
-    const { label, autoComplete } = props;
+const mockPasswordField = jest.fn((props: { label: string; autoComplete: string }): JSX.Element => {
+  const { label, autoComplete } = props;
 
-    return <input aria-label={label} data-testid="field-password" autoComplete={autoComplete} />;
-  }
-);
+  return <input aria-label={label} data-testid="field-password" autoComplete={autoComplete} />;
+});
 
 jest.mock(
   '@/modules/User/features/Auth/components/form-section/components/password-field',
-  () => (props: { label: string; autoComplete: string }): JSX.Element => mockPasswordField(props)
+  () =>
+    (props: { label: string; autoComplete: string }): JSX.Element =>
+      mockPasswordField(props)
 );
 
 const t = (key: string): string => key;
@@ -60,10 +57,7 @@ describe('RegistrationFormFields', () => {
 
     expect(screen.getByTestId('field-fullName')).toHaveAttribute('autocomplete', 'name');
     expect(screen.getByTestId('field-email')).toHaveAttribute('autocomplete', 'email');
-    expect(screen.getByTestId('field-password')).toHaveAttribute(
-      'autocomplete',
-      'new-password'
-    );
+    expect(screen.getByTestId('field-password')).toHaveAttribute('autocomplete', 'new-password');
 
     expect(mockFormField).toHaveBeenNthCalledWith(
       1,

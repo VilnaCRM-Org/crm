@@ -91,7 +91,7 @@ describe('switchToLogin', () => {
     expect(deps.setIsLoadingLogin).toHaveBeenCalledWith(false);
   });
 
-  it('discards the success result from a superseded switchToLogin call in the same instance', async () => {
+  it('discards a superseded switchToLogin success in the same instance', async () => {
     let resolveFirst!: () => void;
     const firstLoad = new Promise<void>((r) => {
       resolveFirst = r;
@@ -119,7 +119,7 @@ describe('switchToLogin', () => {
     expect(staleDeps.setIsLoadingLogin).not.toHaveBeenCalledWith(false);
   });
 
-  it('discards the failure result from a superseded switchToLogin call in the same instance', async () => {
+  it('discards a superseded switchToLogin failure in the same instance', async () => {
     let rejectFirst!: (e: Error) => void;
     const firstLoad = new Promise<void>((_, r) => {
       rejectFirst = r;

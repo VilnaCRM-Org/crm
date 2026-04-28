@@ -112,7 +112,7 @@ describe('LoginAPI Integration', () => {
       );
     });
 
-    it('should handle 408 timeout as the network fallback observed in this MSW integration', async () => {
+    it('should treat 408 timeout as the MSW network fallback', async () => {
       // In this fetch+MSW integration setup, 408 responses surface as a fetch-level
       // failure (`net::ERR_FAILED`) instead of reaching LoginAPI as an HTTP status.
       // This test verifies the current fallback path exposed to LoginAPI consumers.
@@ -175,7 +175,7 @@ describe('LoginAPI Integration', () => {
       );
     });
 
-    it('should handle 504 gateway timeout as the network fallback observed in this MSW integration', async () => {
+    it('should treat 504 gateway timeout as the MSW network fallback', async () => {
       // In this fetch+MSW integration setup, 504 responses surface as a fetch-level
       // failure (`net::ERR_FAILED`) instead of reaching LoginAPI as an HTTP status.
       // This test verifies the current fallback path exposed to LoginAPI consumers.

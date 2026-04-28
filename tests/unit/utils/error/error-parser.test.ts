@@ -172,7 +172,10 @@ describe('ErrorParser', () => {
       });
 
       it('should handle ApiError with Unicode characters', () => {
-        const apiError = new ApiError({ message: 'Помилка автентифікації', code: 'AUTH_ERROR_UA' });
+        const apiError = new ApiError({
+          message: 'Помилка автентифікації',
+          code: 'AUTH_ERROR_UA',
+        });
         const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
         expect(result).toEqual({

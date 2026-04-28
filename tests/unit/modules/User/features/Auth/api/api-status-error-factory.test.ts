@@ -68,14 +68,17 @@ describe('ApiStatusErrorFactory', () => {
     expect(result.status).toBe(422);
   });
 
-  it.each([400, 422] as const)('preserves the original cause on HTTP %i validation mappings', status => {
-    const httpError = { status, message: 'Invalid payload' };
+  it.each([400, 422] as const)(
+    'preserves the original cause on HTTP %i validation mappings',
+    (status) => {
+      const httpError = { status, message: 'Invalid payload' };
 
-    const result = ApiStatusErrorFactory.fromHttpError(httpError, 'Profile');
+      const result = ApiStatusErrorFactory.fromHttpError(httpError, 'Profile');
 
-    expect(result).toBeInstanceOf(ValidationError);
-    expect(result.cause).toBe(httpError);
-  });
+      expect(result).toBeInstanceOf(ValidationError);
+      expect(result.cause).toBe(httpError);
+    }
+  );
 
   it('falls back to an unknown ApiError for unmapped statuses', () => {
     const httpError = { status: 418, message: 'Teapot' };

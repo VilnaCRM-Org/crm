@@ -2,7 +2,12 @@ import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints'
 import { paletteColors } from '@/styles/colors';
 import type { Theme } from '@mui/material/styles';
 
-export const compactViewport = `@media (max-width:${breakpointsTheme.breakpoints.values.sm - 1}px) and (max-height:${heightBreakpoints.compact}px)`;
+const compactMaxWidth = breakpointsTheme.breakpoints.values.sm - 1;
+
+export const compactViewport = [
+  `@media (max-width:${compactMaxWidth}px)`,
+  `(max-height:${heightBreakpoints.compact}px)`,
+].join(' and ');
 
 export const centeredColumnFlex = {
   display: 'flex',

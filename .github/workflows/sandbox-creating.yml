@@ -8,6 +8,8 @@ env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
   PR_NUMBER: ${{ github.event.pull_request.number }}
+  PROD_AWS_ACCOUNT_ID: ${{ vars.PROD_AWS_ACCOUNT_ID }}
+  SANDBOX_CREATION_TRIGGER_ROLE: sandbox-crm-creation-trigger-role
 
 permissions:
   id-token: write
@@ -24,7 +26,7 @@ jobs:
             echo "::error::AWS_REGION is not set"
             exit 1
           fi
-          if [ -z "${{ vars.PROD_AWS_ACCOUNT_ID }}" ]; then
+          if [ -z "${PROD_AWS_ACCOUNT_ID}" ]; then
             echo "::error::PROD_AWS_ACCOUNT_ID is not set"
             exit 1
           fi
@@ -37,14 +39,22 @@ jobs:
             exit 1
           fi
 
+      - name: Build Sandbox Role ARN
+        run: |
+          role_arn="arn:aws:iam::${PROD_AWS_ACCOUNT_ID}:role/${SANDBOX_CREATION_TRIGGER_ROLE}"
+          echo "SANDBOX_CREATION_TRIGGER_ROLE_ARN=${role_arn}" >> "${GITHUB_ENV}"
+
       - name: Configure AWS Credentials (Sandbox Creation Trigger Role)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{vars.PROD_AWS_ACCOUNT_ID}}:role/sandbox-crm-creation-trigger-role
+          role-to-assume: ${{ env.SANDBOX_CREATION_TRIGGER_ROLE_ARN }}
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Start Pipeline Execution
         run: |
           aws codepipeline start-pipeline-execution --name "sandbox-crm-creation" \
-            --variables "name=BRANCH_NAME,value=${BRANCH_NAME}" "name=PR_NUMBER,value=${PR_NUMBER}" "name=IS_PULL_REQUEST,value=1"
+            --variables \
+            "name=BRANCH_NAME,value=${BRANCH_NAME}" \
+            "name=PR_NUMBER,value=${PR_NUMBER}" \
+            "name=IS_PULL_REQUEST,value=1"

@@ -108,7 +108,7 @@ describe('RegistrationNotification', () => {
     expect(onShown).toHaveBeenCalledTimes(1);
   });
 
-  it('does not call the new onShown when callback reference changes while view stays success', () => {
+  it('does not rerun onShown when the callback changes in success view', () => {
     const onShown1 = jest.fn();
     const onShown2 = jest.fn();
     const onBack = jest.fn();
