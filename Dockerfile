@@ -64,7 +64,9 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends "$@" && \
     rm -rf /var/lib/apt/lists/* && \
     if [ "${TARGETARCH}" = "amd64" ]; then \
-      curl --retry 5 --retry-delay 2 -fsSL "https://github.com/mozilla/rust-code-analysis/releases/download/v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz" -o /tmp/rca.tar.gz && \
+      rca_tarball_url="https://github.com/mozilla/rust-code-analysis/releases/download/"\
+"v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz" && \
+      curl --retry 5 --retry-delay 2 -fsSL "$rca_tarball_url" -o /tmp/rca.tar.gz && \
       printf '%s  %s\n' "${RCA_SHA256}" "/tmp/rca.tar.gz" > /tmp/rca.tar.gz.sha256 && \
       sha256sum -c /tmp/rca.tar.gz.sha256 && \
       tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz; \
