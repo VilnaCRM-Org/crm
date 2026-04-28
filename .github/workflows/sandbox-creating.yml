@@ -2,13 +2,12 @@ name: sandbox
 
 on:
   pull_request:
-    types: [opened]
-  push:
-    branches-ignore: [main]
+    types: [opened, reopened, synchronize]
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  PR_NUMBER: ${{ github.event.pull_request.number }}
 
 permissions:
   id-token: write
@@ -17,6 +16,7 @@ permissions:
 
 jobs:
   check-tokens:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Validate AWS Region
@@ -107,56 +107,19 @@ jobs:
           fi
 
   deploy:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     needs: [check-tokens]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::${{vars.PROD_AWS_ACCOUNT_ID}}:role/github-actions-crm-role
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Retrieve GitHub Token from Secrets Manager
+      - name: Validate PR Number
         run: |
-          SECRET_ID=$(aws secretsmanager list-secrets \
-            --region "${AWS_REGION}" \
-            --query "SecretList[?starts_with(Name, 'crm-github-token-') && DeletionDate==null].Name | [0]" \
-            --output text)
-
-          if [ -z "$SECRET_ID" ] || [ "$SECRET_ID" = "None" ]; then
-            echo "No active secret found with prefix 'crm-github-token-'"
+          if [ -z "${PR_NUMBER}" ] || [ "${PR_NUMBER}" = "null" ]; then
+            echo "::error::PR_NUMBER is not set"
             exit 1
           fi
-
-          GITHUB_TOKEN=$(aws secretsmanager get-secret-value \
-            --region "${AWS_REGION}" \
-            --secret-id "$SECRET_ID" \
-            --query "SecretString" \
-            --output text | jq -r '.token')
-
-          if [ -z "$GITHUB_TOKEN" ]; then
-            echo "Error: Unable to extract GitHub token from secret"
-            exit 1
-          fi
-
-          echo "GITHUB_TOKEN=${GITHUB_TOKEN}" >> $GITHUB_ENV
-
-      - name: Get PR Number
-        id: get_pr_number
-        run: |
-          RESPONSE=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls?head=${GITHUB_REPOSITORY_OWNER}:${GITHUB_REF_NAME}")
-
-          if [ $? -ne 0 ]; then
-            echo "::error::Failed to retrieve PR number: ${PR_NUMBER}"
-            exit 1
-          fi
-          PR_NUMBER=$(echo "$RESPONSE" | jq -r '.[0].number')
-          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials (Sandbox Creation Trigger Role)
         uses: aws-actions/configure-aws-credentials@v4
