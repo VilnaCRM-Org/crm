@@ -54,12 +54,12 @@ ARG TARGETARCH
 SHELL ["/bin/sh", "-c"]
 
 RUN set -eux; \
-    packages='ca-certificates jq make tar unzip'; \
+    set -- ca-certificates jq make tar unzip; \
     if [ "${TARGETARCH}" != "amd64" ]; then \
-      packages="${packages} build-essential cargo"; \
+      set -- "$@" build-essential cargo; \
     fi; \
     apt-get update && \
-    apt-get install -y --no-install-recommends ${packages} && \
+    apt-get install -y --no-install-recommends "$@" && \
     rm -rf /var/lib/apt/lists/*
 
 ADD \
