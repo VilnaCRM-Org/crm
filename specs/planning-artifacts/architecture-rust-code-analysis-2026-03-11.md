@@ -256,10 +256,10 @@ existing repository foundation is the lowest-risk and most maintainable architec
 The threshold labels above are policy names. Their mapping to actual
 `rust-code-analysis-cli` JSON paths (verified against v0.0.25 source) is:
 
-- `cyclomatic_max`: `.metrics.cyclomatic.sum` (per function `FuncSpace`)
+- `cyclomatic_max`: `.metrics.cyclomatic.sum` (per-function `FuncSpace`)
 - `cognitive_max`: `.metrics.cognitive.sum`
 - `abc_magnitude_max`: `.metrics.abc.magnitude`
-  no standalone `abc_magnitude` field exists
+  There is no standalone `abc_magnitude` field.
 - `nargs_function_max`: `.metrics.nargs.functions_max`
 - `nargs_closure_max`: `.metrics.nargs.closures_max`
 - `nexits_max`: `.metrics.nexits.average`
@@ -279,8 +279,8 @@ The threshold labels above are policy names. Their mapping to actual
 - `class_cda_max`: `.metrics.npa.classes_average`
 - `interface_npm_max`: `.metrics.npm.interfaces`
 - `interface_npa_max`: `.metrics.npa.interfaces`
-- `cloc_ratio`: derived from `.metrics.loc.cloc / .metrics.loc.sloc`
-- `blank_ratio`: derived from `.metrics.loc.blank / .metrics.loc.sloc`
+- `cloc_ratio`: derived as `.metrics.loc.cloc / .metrics.loc.sloc`
+- `blank_ratio`: derived as `.metrics.loc.blank / .metrics.loc.sloc`
 
 **Caveats requiring special handling during implementation:**
 
@@ -494,27 +494,29 @@ crm/
 - Quality gate enforcement:
   `.github/workflows/rust-code-analysis.yml`
 - Contributor validation (local):
-  `Makefile` via the `lint-metrics` target
+  `Makefile` and the `lint-metrics` target
 - CI results reporting:
-  `Makefile` via the `$GITHUB_STEP_SUMMARY` section and workflow job output
+  `Makefile`, specifically the `$GITHUB_STEP_SUMMARY` section and workflow output
 - Repository policy consistency:
-  `Makefile` via `RCA_VERSION` and inline thresholds
+  `Makefile`, specifically `RCA_VERSION` and `METRICS_POLICY_PATH`, plus
+  `config/metrics-policy.json` for the committed thresholds
 - Contributor documentation:
-  `CLAUDE.md` under the Code Quality section
+  `CLAUDE.md`, under the Code Quality section
 
 ### Integration Points
 
 **Makefile Integration:**
 
 ```makefile
-RCA_VERSION = 0.0.25
-RCA_BIN     = ./bin/rust-code-analysis-cli
+RCA_VERSION         = 0.0.25
+RCA_BIN             = ./bin/rust-code-analysis-cli
+METRICS_POLICY_PATH = config/metrics-policy.json
 
 lint: lint-eslint lint-tsc lint-md lint-metrics
 
 lint-metrics: ## Run rust-code-analysis complexity gate
-    @...download or verify binary...
-    @...run against src/, collect violations via jq...
+    @...run the dockerized rca tool image...
+    @...invoke make lint-metrics-run with METRICS_POLICY_PATH...
     @...write $GITHUB_STEP_SUMMARY if in CI...
     @...exit 1 if violations found...
 ```
@@ -653,5 +655,6 @@ locked, patterns unambiguous, and file delta fully specified.
 - Run baseline compliance check before enabling as required check
 
 **First Implementation Step:**
-Add `RCA_VERSION`, `RCA_BIN`, and `lint-metrics` target to `Makefile`;
-add `/bin/` to `.gitignore`; verify local run passes before creating CI workflow.
+Add `RCA_VERSION`, `RCA_BIN`, `METRICS_POLICY_PATH`, and `lint-metrics` targets to
+`Makefile`; add `config/metrics-policy{,.schema}.json`; add `/bin/` to `.gitignore`;
+verify local run passes before creating the CI workflow.

@@ -44,6 +44,39 @@ COPY . .
 RUN bun x rsbuild build
 
 
+# -------- rust-code-analysis Stage --------
+FROM public.ecr.aws/docker/library/debian:12-slim AS rca
+
+ARG RCA_VERSION=0.0.25
+ARG RCA_SHA256=9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894
+
+SHELL ["/bin/sh", "-c"]
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      ca-certificates \
+      jq \
+      make \
+      tar \
+      unzip && \
+    rm -rf /var/lib/apt/lists/*
+
+ADD \
+    https://github.com/mozilla/rust-code-analysis/releases/download/v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz \
+    /tmp/rca.tar.gz
+
+RUN printf '%s  %s\n' "${RCA_SHA256}" "/tmp/rca.tar.gz" > /tmp/rca.tar.gz.sha256 && \
+    sha256sum -c /tmp/rca.tar.gz.sha256 && \
+    tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz && \
+    chmod +x /usr/local/bin/rust-code-analysis-cli && \
+    /usr/local/bin/rust-code-analysis-cli --version && \
+    rm /tmp/rca.tar.gz /tmp/rca.tar.gz.sha256
+
+ENV RCA_BIN=/usr/local/bin/rust-code-analysis-cli
+
+WORKDIR /app
+
+
 # -------- Production Image --------
 FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21  AS production
 

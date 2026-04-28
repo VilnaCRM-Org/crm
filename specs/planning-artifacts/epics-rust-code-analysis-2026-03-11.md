@@ -70,11 +70,17 @@ NFR4: Performance — The check must be operationally acceptable for routine pul
   the older filename `rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz`
   is not present in v0.0.25)
 - Version pinned via `RCA_VERSION = 0.0.25` in Makefile — single source of truth.
-- Thresholds inline in Makefile. Current blocking hard-fail thresholds are:
-  CC max 10, Cognitive max 15, ABC max 17, NArgs max 3 (functions and closures),
-  NExits max 3, Function SLOC max 45, File SLOC max 350, MI min 65 (Original/SEI) and
-  20 (Visual Studio). Review-gate metrics remain advisory/soft enforcement and are
-  documented for reviewer attention rather than merge blocking.
+- Thresholds are committed in `config/metrics-policy.json` and wired through `Makefile`.
+  Current hard-fail values for this branch: `CYCLOMATIC_MAX=10`, `COGNITIVE_MAX=15`,
+  `ABC_MAGNITUDE_MAX=17`, `NARGS_FUNCTION_MAX=3`, `NARGS_CLOSURE_MAX=3`, `NEXITS_MAX=3`,
+  `LLOC_FUNCTION_MAX=10`, `PLOC_FUNCTION_MAX=40`, `SLOC_FUNCTION_MAX=45`,
+  `HALSTEAD_VOLUME_FUNCTION_MAX=1000`, `HALSTEAD_BUGS_FUNCTION_MAX=0.35`,
+  `LLOC_FILE_MAX=120`, `PLOC_FILE_MAX=300`, `SLOC_FILE_MAX=350`,
+  `HALSTEAD_VOLUME_FILE_MAX=8000`, `HALSTEAD_BUGS_FILE_MAX=1.58`,
+  `NOM_FUNCTIONS_FILE_MAX=10`, `NOM_CLOSURES_FILE_MAX=6`, `NOM_TOTAL_FILE_MAX=15`,
+  `MI_VISUAL_STUDIO_MIN=20`, `CLASS_WMC_MAX=30`, `CLASS_NPM_MAX=8`, `CLASS_NPA_MAX=2`,
+  `CLASS_COA_MAX=0.60`, `CLASS_CDA_MAX=0.25`, `INTERFACE_NPM_MAX=10`,
+  `INTERFACE_NPA_MAX=15`.
 - Governed scope: `src/` only. Excluded: `node_modules/`, `dist/`, `coverage/`,
   `.storybook/`, `tests/`.
 - Enforcement mode: collect-all-then-fail via `jq` parsing JSON output — never fail-fast.
@@ -143,10 +149,13 @@ So that all contributors and CI execution paths evaluate against identical polic
 
 **Given** the repository `Makefile` is opened
 **When** a contributor inspects the file
-**Then** `RCA_VERSION = 0.0.25` and `RCA_BIN = ./bin/rust-code-analysis-cli` are defined as
-variables
-**And** inline threshold values are present: CC max 10, Cognitive max 15, NArgs max 3,
-NExits max 3, MI min 65, Function SLOC max 45, File SLOC max 350
+**Then** `RCA_VERSION = 0.0.25` and `RCA_BIN` are defined as variables
+**And** `RCA_BIN` uses the project-local path `./bin/rust-code-analysis-cli`
+(the gate runs in the Dockerized Linux `rca` service, so no host-OS suffix applies;
+on Windows hosts invoking `lint-metrics-run` directly, `RCA_BIN` resolves to
+`./bin/rust-code-analysis-cli.exe`)
+**And** `METRICS_POLICY_PATH = config/metrics-policy.json` is defined in the `Makefile`
+**And** the committed metrics policy contains the current tightened hard-fail thresholds
 
 **Given** the repository `.gitignore` is opened
 **When** a contributor inspects the file
@@ -289,16 +298,6 @@ raw tool internals.
 and why
 **And** the hard-fail and review-gate metric sets are listed with their thresholds and a
 plain-language description of what each group measures
-**And** documentation defines review-gate metrics as advisory checks that request reviewer
-attention without blocking merges, while hard-fail metrics are blocking checks that fail CI
-
-Hard-fail metrics: blocking enforcement. Exceeding one fails `make lint-metrics` and the
-GitHub Actions check, so the pull request cannot merge until the violation is resolved or
-the threshold policy changes.
-
-Review-gate metrics: advisory/soft enforcement. They are documented threshold bands for
-reviewer attention and discussion, but exceeding one does not fail `make lint-metrics` or
-block merges by itself.
 
 **Given** a contributor wants to run the check locally
 **When** they follow the documentation

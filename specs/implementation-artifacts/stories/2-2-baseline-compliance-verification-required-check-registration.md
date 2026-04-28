@@ -1,6 +1,6 @@
 # Story 2.2: Baseline Compliance Verification and Required Check Registration
 
-Status: ready-for-review
+Status: done
 
 ## Story
 
@@ -151,7 +151,7 @@ claude-sonnet-4-6
 - `Makefile`
 - `Dockerfile`
 - `scripts/lint-metrics.sh`
-- `tests/unit/scripts/lintMetrics.test.ts`
+- `tests/unit/scripts/lint-metrics.test.ts`
 - `.github/workflows/rust-code-analysis.yml`
 - `specs/planning-artifacts/epics-rust-code-analysis-2026-03-11.md`
 - `specs/implementation-artifacts/stories/1-1-commit-repository-policy-configuration.md`
