@@ -1,22 +1,26 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import TOKENS from '@/config/tokens';
 import { HttpError } from '@/services/HttpsClient/HttpError';
 import ResponseMessages from '@/services/HttpsClient/responseMessages';
 
-import HttpErrorStatusGuard from './http-error-status-guard';
+import HttpErrorResponseParser from './http-error-response-parser';
 
 const NO_BODY_STATUSES = new Set([204, 205, 304]);
 
 @injectable()
 export default class HttpResponseProcessor {
-  private readonly httpErrorStatusGuard: HttpErrorStatusGuard;
+  private readonly httpErrorResponseParser: HttpErrorResponseParser;
 
-  constructor(httpErrorStatusGuard: HttpErrorStatusGuard = new HttpErrorStatusGuard()) {
-    this.httpErrorStatusGuard = httpErrorStatusGuard;
+  constructor(
+    @inject(TOKENS.HttpErrorResponseParser)
+    httpErrorResponseParser: HttpErrorResponseParser = new HttpErrorResponseParser()
+  ) {
+    this.httpErrorResponseParser = httpErrorResponseParser;
   }
 
   public async process<T>(response: Response): Promise<T | undefined> {
-    await this.httpErrorStatusGuard.assertOk(response);
+    await throwIfHttpError(response, this.httpErrorResponseParser);
     if (NO_BODY_STATUSES.has(response.status)) {
       return undefined;
     }
@@ -51,4 +55,11 @@ export default class HttpResponseProcessor {
 
     throw new HttpError({ status, message: ResponseMessages.RESPONSE_NOT_JSON, cause: response });
   }
+}
+
+export async function throwIfHttpError(
+  response: Response,
+  httpErrorResponseParser: HttpErrorResponseParser = new HttpErrorResponseParser()
+): Promise<void> {
+  await httpErrorResponseParser.assertOk(response);
 }

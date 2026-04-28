@@ -1,5 +1,7 @@
 import { injectable } from 'tsyringe';
 
+import { HttpError } from '@/services/HttpsClient/HttpError';
+
 const MAX_ERROR_BODY_CHARS = 500;
 
 interface JsonWithMessage {
@@ -13,6 +15,25 @@ export interface ExtractedBody {
 
 @injectable()
 export default class HttpErrorResponseParser {
+  public async assertOk(response: Response): Promise<void> {
+    if (response.ok || response.status === 304) {
+      return;
+    }
+
+    const fallback = `${response.status} ${response.statusText}`;
+    const { message, body } = await this.parse(response);
+
+    throw new HttpError({
+      status: response.status,
+      message: message ?? fallback,
+      cause: {
+        url: response.url,
+        contentType: response.headers.get('content-type') ?? undefined,
+        body,
+      },
+    });
+  }
+
   public async parse(response: Response): Promise<ExtractedBody> {
     const contentType = (response.headers.get('content-type') || '').toLowerCase();
 

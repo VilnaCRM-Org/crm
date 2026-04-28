@@ -1,14 +1,14 @@
-import ApiErrorConverter from './api-error-converter';
+import ApiErrorFactory from './api-error-factory';
 import { ApiError } from './ApiErrors';
 
 export default class BaseAPI {
-  private readonly apiErrorConverter: ApiErrorConverter;
+  private readonly apiErrorFactory: ApiErrorFactory;
 
-  constructor(apiErrorConverter: ApiErrorConverter = new ApiErrorConverter()) {
-    this.apiErrorConverter = apiErrorConverter;
+  constructor(apiErrorFactory: ApiErrorFactory = new ApiErrorFactory()) {
+    this.apiErrorFactory = apiErrorFactory;
   }
 
   protected handleApiError(error: unknown, context: string): ApiError {
-    return error instanceof ApiError ? error : this.apiErrorConverter.convert(error, context);
+    return error instanceof ApiError ? error : this.apiErrorFactory.convert(error, context);
   }
 }

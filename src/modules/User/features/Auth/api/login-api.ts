@@ -6,7 +6,7 @@ import { inject, injectable } from 'tsyringe';
 import type { LoginResponse } from '../types/ApiResponses';
 import { LoginUserDto } from '../types/Credentials';
 
-import ApiErrorConverter from './api-error-converter';
+import ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
 import { RequestOptions } from './types';
 
@@ -14,9 +14,9 @@ import { RequestOptions } from './types';
 export default class LoginAPI extends BaseAPI {
   constructor(
     @inject(TOKENS.HttpsClient) private readonly httpsClient: HttpsClient,
-    @inject(TOKENS.ApiErrorConverter) apiErrorConverter: ApiErrorConverter
+    @inject(TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory
   ) {
-    super(apiErrorConverter);
+    super(apiErrorFactory);
   }
 
   public async login(

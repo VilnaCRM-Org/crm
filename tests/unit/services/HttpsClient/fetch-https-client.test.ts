@@ -57,6 +57,21 @@ describe('FetchHttpsClient', () => {
   });
 
   describe('GET requests', () => {
+    it('uses the default response processor when only a request builder is injected', async () => {
+      const requestConfigBuilder = {
+        create: jest.fn().mockReturnValue({
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+          },
+        }),
+      };
+      const builderOnlyClient = new FetchHttpsClient(requestConfigBuilder as never);
+      mockFetch.mockResolvedValue(createMockResponse(200, { ok: true }));
+
+      await expect(builderOnlyClient.get('/api/test')).resolves.toEqual({ ok: true });
+    });
+
     it('should make successful GET request', async () => {
       const responseData = { id: 1, name: 'Test' };
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));

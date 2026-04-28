@@ -7,7 +7,7 @@ import type { RegisterUserDto } from '@/modules/User/features/Auth/types/Credent
 
 import type { RegistrationResponse } from '../types/ApiResponses';
 
-import ApiErrorConverter from './api-error-converter';
+import ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
 import { RequestOptions } from './types';
 
@@ -15,9 +15,9 @@ import { RequestOptions } from './types';
 export default class RegistrationAPI extends BaseAPI {
   constructor(
     @inject(TOKENS.HttpsClient) private readonly httpsClient: HttpsClient,
-    @inject(TOKENS.ApiErrorConverter) apiErrorConverter: ApiErrorConverter
+    @inject(TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory
   ) {
-    super(apiErrorConverter);
+    super(apiErrorFactory);
   }
 
   public async register(

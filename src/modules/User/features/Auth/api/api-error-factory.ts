@@ -2,6 +2,7 @@ import ApiStatusErrorFactory, {
   type HttpErrorLike,
 } from '@/modules/User/features/Auth/api/api-status-error-factory';
 import { ApiError, ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors';
+import { isHttpError } from '@/services/HttpsClient/HttpError';
 
 const NETWORK_KEYWORDS = [
   'failed to fetch',
@@ -20,13 +21,23 @@ const NETWORK_KEYWORDS = [
 const CANCELLATION_KEYWORDS = ['abort', 'aborted', 'ecanceled', 'canceled', 'cancelled'];
 
 export default class ApiErrorFactory {
+  public convert(error: unknown, context: string): ApiError {
+    if (isHttpError(error)) return ApiErrorFactory.fromHttpError(error, context);
+    if (error instanceof Error) return ApiErrorFactory.fromGenericError(error, context);
+    return ApiErrorFactory.fromUnknownError(context);
+  }
+
   public static fromHttpError(error: HttpErrorLike, context: string): ApiError {
-    if (ApiErrorFactory.isCancellationMessage(error.message))
+    const isNetworkStatus =
+      error.status === 0 || (!error.status && ApiErrorFactory.isNetworkMessage(error.message));
+
+    if (ApiErrorFactory.isCancellationMessage(error.message)) {
       return ApiErrorFactory.cancelledError(error);
-    if (error.status === 0) return ApiErrorFactory.networkError(error);
-    if (!error.status && ApiErrorFactory.isNetworkMessage(error.message))
-      return ApiErrorFactory.networkError(error);
-    return ApiErrorFactory.fromStatusError(error, context);
+    }
+
+    return isNetworkStatus
+      ? ApiErrorFactory.networkError(error)
+      : ApiErrorFactory.fromStatusError(error, context);
   }
 
   public static fromGenericError(error: Error, context: string): ApiError {

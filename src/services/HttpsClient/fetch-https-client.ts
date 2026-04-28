@@ -1,10 +1,9 @@
 import { injectable } from 'tsyringe';
 
-import {
-  HttpRequestConfigBuilder,
-  HttpResponseProcessor,
-  HttpTransportErrorHandler,
-} from '@/services/HttpsClient/fetch-helpers';
+import { HttpError } from '@/services/HttpsClient/HttpError';
+import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
+import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
+import ResponseMessages from '@/services/HttpsClient/responseMessages';
 import HttpsClient, { RequestMethod } from '@/services/HttpsClient/https-client';
 
 interface RequestOptions {
@@ -25,16 +24,12 @@ export default class FetchHttpsClient implements HttpsClient {
 
   private readonly responseProcessor: HttpResponseProcessor;
 
-  private readonly transportErrorHandler: HttpTransportErrorHandler;
-
   constructor(
     requestConfigBuilder: HttpRequestConfigBuilder = new HttpRequestConfigBuilder(),
-    responseProcessor: HttpResponseProcessor = new HttpResponseProcessor(),
-    transportErrorHandler: HttpTransportErrorHandler = new HttpTransportErrorHandler()
+    responseProcessor: HttpResponseProcessor = new HttpResponseProcessor()
   ) {
     this.requestConfigBuilder = requestConfigBuilder;
     this.responseProcessor = responseProcessor;
-    this.transportErrorHandler = transportErrorHandler;
   }
 
   public get<T>(url: string, options?: RequestOptions): Promise<T | undefined> {
@@ -66,14 +61,38 @@ export default class FetchHttpsClient implements HttpsClient {
   }
 
   private async request<R>({ url, method, body, options }: RequestArgs): Promise<R | undefined> {
-    if (options?.signal?.aborted) this.transportErrorHandler.throwAbortError();
+    if (options?.signal?.aborted) throwAbortError();
     const config = this.createRequestConfig(method, body, options?.headers);
     if (options?.signal) config.signal = options.signal;
     try {
       const response = await fetch(url, config);
       return await this.responseProcessor.process<R>(response);
     } catch (err) {
-      return this.transportErrorHandler.rethrowOrWrap(err);
+      return rethrowOrWrapTransportError(err);
     }
   }
+}
+
+function throwAbortError(): never {
+  const abortError = new Error('The operation was aborted');
+  abortError.name = 'AbortError';
+  throw abortError;
+}
+
+function rethrowOrWrapTransportError(error: unknown): never {
+  const isAbortError =
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    (error as { name?: unknown }).name === 'AbortError';
+
+  if (isAbortError) {
+    throw error;
+  }
+
+  if (error instanceof HttpError) {
+    throw error;
+  }
+
+  throw new HttpError({ status: 0, message: ResponseMessages.NETWORK_ERROR, cause: error });
 }

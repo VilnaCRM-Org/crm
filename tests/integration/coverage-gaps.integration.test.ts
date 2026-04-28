@@ -13,7 +13,6 @@ import {
 import type { ThunkExtra } from '@/modules/User/store/types';
 import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
 import HttpErrorResponseParser from '@/services/HttpsClient/http-error-response-parser';
-import HttpErrorStatusGuard from '@/services/HttpsClient/http-error-status-guard';
 import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
 import { HttpError } from '@/services/HttpsClient/HttpError';
 import { DevToolsOptionsFactory } from '@/stores/dev-tools-options';
@@ -138,15 +137,7 @@ describe('Integration Coverage Gaps', () => {
   it('handles explicit collaborators in HTTP helpers', async () => {
     const responseProcessor = { process: jest.fn().mockResolvedValue({ ok: true }) };
     const requestConfigBuilder = { create: jest.fn().mockReturnValue({ method: 'GET' }) };
-    const transportErrorHandler = {
-      throwAbortError: jest.fn(),
-      rethrowOrWrap: jest.fn(),
-    };
-    const client = new FetchHttpsClient(
-      requestConfigBuilder as never,
-      responseProcessor as never,
-      transportErrorHandler as never
-    );
+    const client = new FetchHttpsClient(requestConfigBuilder as never, responseProcessor as never);
     const originalFetch = global.fetch;
     global.fetch = jest.fn().mockResolvedValue({ status: 200 } as Response);
 
@@ -156,7 +147,8 @@ describe('Integration Coverage Gaps', () => {
     global.fetch = originalFetch;
 
     const parser = { parse: jest.fn().mockResolvedValue({ message: 'Denied', body: 'body' }) };
-    const guard = new HttpErrorStatusGuard(parser as never);
+    const guard = new HttpErrorResponseParser();
+    jest.spyOn(guard, 'parse').mockResolvedValue({ message: 'Denied', body: 'body' });
 
     await expect(
       guard.assertOk({
@@ -237,7 +229,8 @@ describe('Integration Coverage Gaps', () => {
 
   it('constructs HttpError with parsed fallback data', async () => {
     const parser = { parse: jest.fn().mockResolvedValue({ message: null, body: 'problem' }) };
-    const guard = new HttpErrorStatusGuard(parser as never);
+    const guard = new HttpErrorResponseParser();
+    jest.spyOn(guard, 'parse').mockResolvedValue({ message: null, body: 'problem' });
 
     await expect(
       guard.assertOk({
@@ -254,7 +247,7 @@ describe('Integration Coverage Gaps', () => {
     const importCases: ImportCase[] = [
       {
         modulePath: '@/modules/User/features/Auth/api/login-api',
-        mockPath: '@/modules/User/features/Auth/api/api-error-converter',
+        mockPath: '@/modules/User/features/Auth/api/api-error-factory',
         mockFactory: (): Record<string, undefined | true> => ({
           __esModule: true,
           default: undefined,
@@ -262,7 +255,7 @@ describe('Integration Coverage Gaps', () => {
       },
       {
         modulePath: '@/modules/User/features/Auth/api/registration-api',
-        mockPath: '@/modules/User/features/Auth/api/api-error-converter',
+        mockPath: '@/modules/User/features/Auth/api/api-error-factory',
         mockFactory: (): Record<string, undefined | true> => ({
           __esModule: true,
           default: undefined,
@@ -278,17 +271,15 @@ describe('Integration Coverage Gaps', () => {
       },
       {
         modulePath: '@/services/HttpsClient/fetch-https-client',
-        mockPath: '@/services/HttpsClient/fetch-helpers',
+        mockPath: '@/services/HttpsClient/http-request-config-builder',
         mockFactory: (): Record<string, undefined | true> => ({
           __esModule: true,
-          HttpRequestConfigBuilder: undefined,
-          HttpResponseProcessor: undefined,
-          HttpTransportErrorHandler: undefined,
+          default: undefined,
         }),
       },
       {
-        modulePath: '@/services/HttpsClient/http-error-status-guard',
-        mockPath: '@/services/HttpsClient/http-error-response-parser',
+        modulePath: '@/services/HttpsClient/fetch-https-client',
+        mockPath: '@/services/HttpsClient/http-response-processor',
         mockFactory: (): Record<string, undefined | true> => ({
           __esModule: true,
           default: undefined,
@@ -296,7 +287,7 @@ describe('Integration Coverage Gaps', () => {
       },
       {
         modulePath: '@/services/HttpsClient/http-response-processor',
-        mockPath: '@/services/HttpsClient/http-error-status-guard',
+        mockPath: '@/services/HttpsClient/http-error-response-parser',
         mockFactory: (): Record<string, undefined | true> => ({
           __esModule: true,
           default: undefined,
