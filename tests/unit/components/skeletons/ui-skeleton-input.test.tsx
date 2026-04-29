@@ -10,8 +10,8 @@ describe('UISkeletonInput', () => {
     getSkeletonElements().find((element) => element.id === 'skeleton-input') as HTMLElement;
 
   const getSkeletonPlaceholder = (): HTMLElement =>
-    getSkeletonElements().find(
-      (element) => element.className.includes('ui-skeleton-input__placeholder')
+    getSkeletonElements().find((element) =>
+      element.className.includes('ui-skeleton-input__placeholder')
     ) as HTMLElement;
 
   it('renders without crashing', () => {

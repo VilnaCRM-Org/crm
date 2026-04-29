@@ -46,13 +46,10 @@ jest.mock('@/modules/User/features/Auth/components/form-section/components/form-
   },
 }));
 
-jest.mock(
-  '@/modules/User/features/Auth/components/form-section/components/password-field',
-  () => ({
-    __esModule: true,
-    default: (): ReactElement => <div data-testid="password-field" />,
-  })
-);
+jest.mock('@/modules/User/features/Auth/components/form-section/components/password-field', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div data-testid="password-field" />,
+}));
 
 jest.mock('@/modules/User/features/Auth/components/form-section/components/user-options', () => ({
   __esModule: true,

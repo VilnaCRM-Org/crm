@@ -52,9 +52,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 RUN apk add --no-cache curl=${CURL_VERSION} && \
-    npm install -g serve@14.2.0
-
-RUN mkdir -p /app && chown -R node:node /app
+    npm install -g serve@14.2.0 && \
+    mkdir -p /app && chown -R node:node /app
 COPY --chown=node:node serve.json ./serve.json
 COPY --from=build --chown=node:node /app/dist ./dist
 USER node

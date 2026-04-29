@@ -16,27 +16,16 @@ if [ ! -f "common-healthchecks.yml" ]; then
     COMMON_HEALTHCHECKS_FILE=""
 fi
 
-# Build docker compose args safely for POSIX sh
-COMPOSE_ARGS=""
+COMPOSE_ARGS=()
 if [ -n "$COMMON_HEALTHCHECKS_FILE" ] && [ -s "$COMMON_HEALTHCHECKS_FILE" ]; then
-    COMPOSE_ARGS="$COMPOSE_ARGS -f $COMMON_HEALTHCHECKS_FILE"
+    COMPOSE_ARGS+=(-f "$COMMON_HEALTHCHECKS_FILE")
 fi
-COMPOSE_ARGS="$COMPOSE_ARGS -f $DOCKER_COMPOSE_TEST_FILE"
+COMPOSE_ARGS+=(-f "$DOCKER_COMPOSE_TEST_FILE")
 
-# Ensure required compose env vars have sane defaults for healthchecks
 REACT_APP_MOCKOON_PORT=${REACT_APP_MOCKOON_PORT:-"8080"}
 GRAPHQL_PORT=${GRAPHQL_PORT:-"4000"}
 GRAPHQL_API_PATH=${GRAPHQL_API_PATH:-"graphql"}
 export REACT_APP_MOCKOON_PORT GRAPHQL_PORT GRAPHQL_API_PATH REACT_APP_PROD_PORT
-
-:
-
-PLAYWRIGHT_ENV_FLAGS="\
-    -e REACT_APP_MAIN_LANGUAGE=uk \
-    -e REACT_APP_FALLBACK_LANGUAGE=en \
-    -e REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME=no-aws-header-name \
-    -e REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE=no-aws-header-value \
-    -e REACT_APP_GRAPHQL_API_URL=http://apollo:4000/graphql"
 
 setup_docker_network() {
     docker network create "$NETWORK_NAME" 2>/dev/null || :
@@ -45,14 +34,13 @@ setup_docker_network() {
 start_prod_dind() {
     setup_docker_network
     make build-prod
-    docker compose ${COMPOSE_ARGS} up -d --wait prod
+    docker compose "${COMPOSE_ARGS[@]}" up -d --wait prod
 }
 
 run_e2e_tests_dind() {
     setup_docker_network
     make start-prod
-    # Stream source using tar to avoid docker cp EOF/tar issues; exclude heavy/transient dirs
-    docker compose ${COMPOSE_ARGS} exec -T playwright mkdir -p /app
+    docker compose "${COMPOSE_ARGS[@]}" exec -T playwright mkdir -p /app
     if ! tar -cf - \
         --exclude="./.git" \
         --exclude="./node_modules" \
@@ -62,21 +50,19 @@ run_e2e_tests_dind() {
         --exclude="./playwright-report" \
         --exclude="./test-results" \
         ./ \
-        | docker compose ${COMPOSE_ARGS} exec -T playwright sh -lc 'tar -xf - -C /app'; then
+        | docker compose "${COMPOSE_ARGS[@]}" exec -T playwright sh -lc 'tar -xf - -C /app'; then
         exit 1
     fi
-    PROD_URL="http://prod:3001"
     make test-e2e
     mkdir -p playwright-report test-results
-    docker compose ${COMPOSE_ARGS} cp "playwright:/app/playwright-report/." "playwright-report/" 2>/dev/null || :
-    docker compose ${COMPOSE_ARGS} cp "playwright:/app/test-results/." "test-results/" 2>/dev/null || :
+    docker compose "${COMPOSE_ARGS[@]}" cp "playwright:/app/playwright-report/." "playwright-report/" 2>/dev/null || :
+    docker compose "${COMPOSE_ARGS[@]}" cp "playwright:/app/test-results/." "test-results/" 2>/dev/null || :
 }
 
 run_visual_tests_dind() {
     setup_docker_network
     make start-prod
-    # Stream source using tar to avoid docker cp EOF/tar issues; exclude heavy/transient dirs
-    docker compose ${COMPOSE_ARGS} exec -T playwright mkdir -p /app
+    docker compose "${COMPOSE_ARGS[@]}" exec -T playwright mkdir -p /app
     if ! tar -cf - \
         --exclude="./.git" \
         --exclude="./node_modules" \
@@ -86,14 +72,13 @@ run_visual_tests_dind() {
         --exclude="./playwright-report" \
         --exclude="./test-results" \
         ./ \
-        | docker compose ${COMPOSE_ARGS} exec -T playwright sh -lc 'tar -xf - -C /app'; then
+        | docker compose "${COMPOSE_ARGS[@]}" exec -T playwright sh -lc 'tar -xf - -C /app'; then
         exit 1
     fi
-    PROD_URL="http://prod:3001"
     make test-visual
     mkdir -p playwright-report test-results
-    docker compose ${COMPOSE_ARGS} cp "playwright:/app/playwright-report/." "playwright-report/" 2>/dev/null || :
-    docker compose ${COMPOSE_ARGS} cp "playwright:/app/test-results/." "test-results/" 2>/dev/null || :
+    docker compose "${COMPOSE_ARGS[@]}" cp "playwright:/app/playwright-report/." "playwright-report/" 2>/dev/null || :
+    docker compose "${COMPOSE_ARGS[@]}" cp "playwright:/app/test-results/." "test-results/" 2>/dev/null || :
 }
 
 run_load_tests_dind() {

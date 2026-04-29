@@ -1,4 +1,3 @@
-
 import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
 import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
@@ -21,9 +20,7 @@ export type AuthSkeletonProps = {
   disableAnimation?: boolean;
 };
 
-export default function AuthSkeleton({
-  disableAnimation = false,
-}: AuthSkeletonProps): JSX.Element {
+export default function AuthSkeleton({ disableAnimation = false }: AuthSkeletonProps): JSX.Element {
   const { t } = useTranslation();
   const staticSkeletonSx = disableAnimation
     ? {
@@ -32,7 +29,9 @@ export default function AuthSkeleton({
       }
     : undefined;
 
-  const withStaticSx = <T extends object>(baseSx: T): (T | NonNullable<typeof staticSkeletonSx>)[] =>
+  const withStaticSx = <T extends object>(
+    baseSx: T
+  ): (T | NonNullable<typeof staticSkeletonSx>)[] =>
     staticSkeletonSx ? [baseSx, staticSkeletonSx] : [baseSx];
 
   return (
@@ -41,14 +40,8 @@ export default function AuthSkeleton({
       aria-label={t('auth.loadingForm')}
       sx={authFormSectionStyles.formSection}
     >
-      <Box
-        sx={withStaticSx({ ...authFormSectionStyles.formWrapper, ...styles.formWrapperPulse })}
-      >
-        <UISkeletonText
-          id="auth-skeleton-title"
-          size="l"
-          sx={withStaticSx(styles.titleSkeleton)}
-        />
+      <Box sx={withStaticSx({ ...authFormSectionStyles.formWrapper, ...styles.formWrapperPulse })}>
+        <UISkeletonText id="auth-skeleton-title" size="l" sx={withStaticSx(styles.titleSkeleton)} />
         <Box sx={styles.subtitleWrapper}>
           <UISkeletonText
             id="auth-skeleton-subtitle"
@@ -89,10 +82,7 @@ export default function AuthSkeleton({
           <UISkeletonInput disableAnimation={disableAnimation} id="auth-skeleton-input-3" />
         </Box>
 
-        <UISkeletonButton
-          id="auth-skeleton-submit"
-          sx={withStaticSx(styles.buttonSkeleton)}
-        />
+        <UISkeletonButton id="auth-skeleton-submit" sx={withStaticSx(styles.buttonSkeleton)} />
 
         <Divider id="auth-skeleton-divider" role="presentation" sx={styles.divider}>
           <UISkeletonText

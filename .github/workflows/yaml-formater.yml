@@ -4,9 +4,15 @@ on:
   pull_request:
     branches: ['main']
 
+permissions: {}
+
 jobs:
   yamlfmt:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-       - uses: actions/checkout@v4
-       - uses: norwd/fmtya@v1
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+      - uses: norwd/fmtya@11c4eb4d55f8a465564cbef9aabb3e149d4a6247 # v1

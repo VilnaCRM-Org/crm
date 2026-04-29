@@ -9,7 +9,9 @@ import breakpointsTheme from '@/components/UIBreakpoints';
 import uiFormStyles from '@/components/UIForm/styles';
 import authProviderButtonStyles from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons/styles';
 import formFieldStyles from '@/modules/User/features/Auth/components/form-section/components/styles';
-import authFormSectionStyles, { fieldGapMargins } from '@/modules/User/features/Auth/components/form-section/styles';
+import authFormSectionStyles, {
+  fieldGapMargins,
+} from '@/modules/User/features/Auth/components/form-section/styles';
 
 jest.mock('@/modules/User/features/Auth/assets/eye-off.svg', () => ({
   ReactComponent: 'svg',
@@ -256,12 +258,14 @@ describe('AuthSkeleton spacing parity', () => {
     );
 
     expect(toRem(authSkeletonStyles.fieldLabel.height as string)).toBeCloseTo(baseLabelHeight, 2);
-    expect(
-      toRem((authSkeletonStyles.fieldLabel[mdKey] as { height: string }).height)
-    ).toBeCloseTo(mdLabelHeight, 2);
-    expect(
-      toRem((authSkeletonStyles.fieldLabel[lgKey] as { height: string }).height)
-    ).toBeCloseTo(lgLabelHeight, 2);
+    expect(toRem((authSkeletonStyles.fieldLabel[mdKey] as { height: string }).height)).toBeCloseTo(
+      mdLabelHeight,
+      2
+    );
+    expect(toRem((authSkeletonStyles.fieldLabel[lgKey] as { height: string }).height)).toBeCloseTo(
+      lgLabelHeight,
+      2
+    );
   });
 
   it('keeps vertical spacing increments equal to auth form blocks at every breakpoint', () => {
