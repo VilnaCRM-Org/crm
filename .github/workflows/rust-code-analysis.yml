@@ -1,0 +1,22 @@
+name: rust-code-analysis
+
+on:
+  pull_request:
+    branches: ['main']
+
+permissions: {}
+
+jobs:
+  rust-code-analysis:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+
+      - name: Run lint-metrics
+        run: make lint-metrics
