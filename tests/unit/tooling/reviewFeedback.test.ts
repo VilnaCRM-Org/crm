@@ -31,7 +31,9 @@ describe('review feedback regressions', () => {
   it('Apollo bootstrap treats expected termination signals as graceful exits', () => {
     const bootstrap = readFile('docker/apollo-server/bootstrap.mjs');
 
-    expect(bootstrap).toContain("const gracefulSignals = new Set(['SIGINT', 'SIGTERM', 'SIGQUIT'])");
+    expect(bootstrap).toContain(
+      "const gracefulSignals = new Set(['SIGINT', 'SIGTERM', 'SIGQUIT'])"
+    );
     expect(bootstrap).toContain('code === 0 || gracefulSignals.has(signal)');
     expect(bootstrap).toContain('return res()');
   });
