@@ -6,6 +6,7 @@ on:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
+  PROD_AWS_ACCOUNT_ID: ${{ vars.PROD_AWS_ACCOUNT_ID }}
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
   PR_NUMBER: ${{ github.event.pull_request.number }}
 
@@ -24,7 +25,7 @@ jobs:
             echo "::error::AWS_REGION is not set"
             exit 1
           fi
-          if [ -z "${{ vars.PROD_AWS_ACCOUNT_ID }}" ]; then
+          if [ -z "${PROD_AWS_ACCOUNT_ID}" ]; then
             echo "::error::PROD_AWS_ACCOUNT_ID is not set"
             exit 1
           fi
@@ -40,7 +41,7 @@ jobs:
       - name: Configure AWS Credentials (Sandbox Creation Trigger Role)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{vars.PROD_AWS_ACCOUNT_ID}}:role/sandbox-crm-creation-trigger-role
+          role-to-assume: arn:aws:iam::${{ env.PROD_AWS_ACCOUNT_ID }}:role/sandbox-crm-creation-trigger-role
           role-session-name: GitHub_to_AWS_via_FederatedOIDC
           aws-region: ${{ env.AWS_REGION }}
 
