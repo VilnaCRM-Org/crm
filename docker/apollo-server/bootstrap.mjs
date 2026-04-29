@@ -12,9 +12,8 @@ const run = (cmd, args, opts = {}) => {
     p.on('exit', (code, signal) => {
       if (code === 0 || gracefulSignals.has(signal)) return res();
       const target = args?.[args.length - 1] ?? '';
-      rej(
-        new Error(`${cmd} ${target} exited with code ${code}${signal ? `, signal ${signal}` : ''}`)
-      );
+      const signalMessage = signal ? `, signal ${signal}` : '';
+      rej(new Error(`${cmd} ${target} exited with code ${code}${signalMessage}`));
     });
     p.on('error', rej);
   });

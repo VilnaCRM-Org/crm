@@ -15,11 +15,12 @@ describe('review feedback regressions', () => {
     expect(preview).not.toContain('void i18next.use(initReactI18next).init');
   });
 
-  it('Mockoon Dockerfile downloads the spec with retries, auth support, and checksum validation', () => {
+  it('Mockoon Dockerfile downloads the spec with retries and checksum validation', () => {
     const dockerfile = readFile('Mockoon.Dockerfile');
 
     expect(dockerfile).not.toMatch(/^ADD\s+https:/m);
-    expect(dockerfile).toContain('ARG GITHUB_TOKEN');
+    expect(dockerfile).not.toContain('ARG GITHUB_TOKEN');
+    expect(dockerfile).toContain('--mount=type=secret,id=GITHUB_TOKEN');
     expect(dockerfile).toContain('ARG OPENAPI_SPEC_SHA256');
     expect(dockerfile).toContain('curl --fail --show-error --location');
     expect(dockerfile).toContain('--retry 5');
