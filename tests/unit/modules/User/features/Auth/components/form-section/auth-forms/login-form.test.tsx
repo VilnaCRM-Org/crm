@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import LoginForm, {
@@ -60,6 +60,7 @@ jest.mock('@/components/UIForm', () => ({
   __esModule: true,
   default: (props: {
     error: string;
+    isSubmitting: boolean;
     onSubmit: (data: { email: string; password: string }) => Promise<void>;
     children: ReactElement[];
   }): ReactElement => {
@@ -131,14 +132,34 @@ describe('LoginForm', () => {
   });
 
   it('ignores serialized abort-shaped rejections from unwrap', async () => {
+    let rejectSubmit: (reason?: unknown) => void = () => undefined;
+    const abortLikeError = Object.assign(new Error('The operation was aborted'), {
+      name: 'AbortError',
+    });
+
     mockDispatch.mockReturnValue({
-      unwrap: () => Promise.reject({ name: 'AbortError', message: 'The operation was aborted' }),
+      unwrap: () =>
+        new Promise((_, reject) => {
+          rejectSubmit = reject;
+        }),
     });
 
     render(<LoginForm />);
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-      await Promise.resolve();
+
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(mockUIForm).toHaveBeenLastCalledWith(
+        expect.objectContaining({ error: '', isSubmitting: true })
+      );
+    });
+
+    rejectSubmit(abortLikeError);
+
+    await waitFor(() => {
+      expect(mockUIForm).toHaveBeenLastCalledWith(
+        expect.objectContaining({ error: '', isSubmitting: false })
+      );
     });
 
     expect(screen.getByTestId('form-error')).toHaveTextContent('');
