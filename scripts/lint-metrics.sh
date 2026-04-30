@@ -5,93 +5,169 @@
 # Exit 1 = one or more hard-fail violations detected
 #
 # Review-gate metrics are calculated internally but not printed and do not block CI.
-# Hard-fail thresholds are supplied by Makefile so local and CI paths share one
-# policy source.
+# Hard-fail thresholds are read from METRICS_POLICY (JSON config file) so the policy
+# is kept in a single versioned source with schema validation.
 
 set -eu
+
+if ! command -v jq >/dev/null 2>&1; then
+  printf 'ERROR: jq is required by lint-metrics but was not found in PATH\n' >&2
+  exit 1
+fi
 
 RCA_BIN="${RCA_BIN:-./bin/rust-code-analysis-cli}"
 RCA_VERSION="${RCA_VERSION:-}"
 
-require_env() {
-  name=$1
-  value=$2
+if [ -z "${METRICS_POLICY:-}" ]; then
+  printf 'ERROR: METRICS_POLICY must be set to the path of the JSON policy file\n' >&2
+  exit 1
+fi
 
-  if [ -z "$value" ]; then
-    printf 'ERROR: %s must be set by Makefile or environment\n' "$name" >&2
-    exit 1
-  fi
+if [ ! -f "$METRICS_POLICY" ]; then
+  printf 'ERROR: METRICS_POLICY file not found: %s\n' "$METRICS_POLICY" >&2
+  exit 1
+fi
 
-  printf '%s' "$value"
+if ! jq empty "$METRICS_POLICY" 2>/dev/null; then
+  printf 'ERROR: METRICS_POLICY is not valid JSON: %s\n' "$METRICS_POLICY" >&2
+  exit 1
+fi
+
+METRICS_POLICY_SCHEMA="${METRICS_POLICY_SCHEMA:-config/metrics-policy.schema.json}"
+
+if [ ! -f "$METRICS_POLICY_SCHEMA" ]; then
+  printf 'ERROR: METRICS_POLICY_SCHEMA file not found: %s\n' "$METRICS_POLICY_SCHEMA" >&2
+  exit 1
+fi
+
+if ! jq empty "$METRICS_POLICY_SCHEMA" 2>/dev/null; then
+  printf 'ERROR: METRICS_POLICY_SCHEMA is not valid JSON: %s\n' "$METRICS_POLICY_SCHEMA" >&2
+  exit 1
+fi
+
+schema_errors=$(
+  jq -r --slurpfile policy "$METRICS_POLICY" '
+    . as $schema | $policy[0] as $p |
+    [
+      ( $p | keys[] as $k | select($schema.properties[$k] == null)
+        | "unknown top-level key: \($k)" ),
+      ( $schema.required[]? as $req | select(($p | has($req)) | not)
+        | "missing required top-level key: \($req)" ),
+      ( $schema.properties | to_entries[] as $section
+        | $p[$section.key] as $block
+        | select($block != null)
+        | if (($block | type) != "object") then
+            "non-object section: \($section.key): got \($block | type)"
+          else
+            ( ( $section.value.required[]? as $req
+                | select(($block | has($req)) | not)
+                | "missing required key: \($section.key).\($req)" ),
+              ( $block | keys[] as $k
+                | select($section.value.properties[$k] == null)
+                | "unknown key: \($section.key).\($k)" ),
+              ( $block | to_entries[] as $e
+                | $section.value.properties[$e.key] as $prop
+                | select($prop != null)
+                | ( select(($e.value | type) != "number")
+                    | "non-numeric value for \($section.key).\($e.key): got \($e.value | type)" ),
+                  ( select(($e.value | type) == "number")
+                    | ( select($prop.minimum != null and $e.value < $prop.minimum)
+                        | "\($section.key).\($e.key)=\($e.value) below minimum \($prop.minimum)" ),
+                      ( select($prop.maximum != null and $e.value > $prop.maximum)
+                        | "\($section.key).\($e.key)=\($e.value) above maximum \($prop.maximum)" )
+                  )
+              )
+            )
+          end
+      )
+    ] | .[]
+  ' "$METRICS_POLICY_SCHEMA"
+)
+
+if [ -n "$schema_errors" ]; then
+  printf 'ERROR: METRICS_POLICY does not satisfy schema (%s):\n' "$METRICS_POLICY_SCHEMA" >&2
+  printf '%s\n' "$schema_errors" | sed 's/^/  - /' >&2
+  exit 1
+fi
+
+threshold_assignments=$(
+  jq -re '
+    def hard_number($key):
+      .hard[$key] | if type == "number" then . else error("missing or non-numeric key .hard." + $key) end;
+    def review_number($key; $default):
+      (.review[$key] // $default) | if type == "number" then . else error("non-numeric key .review." + $key) end;
+
+    [
+      "CYCLOMATIC_MAX=\(hard_number("cyclomatic_max") | @sh)",
+      "COGNITIVE_MAX=\(hard_number("cognitive_max") | @sh)",
+      "ABC_MAGNITUDE_MAX=\(hard_number("abc_magnitude_max") | @sh)",
+      "NARGS_FUNCTION_MAX=\(hard_number("nargs_function_max") | @sh)",
+      "NARGS_CLOSURE_MAX=\(hard_number("nargs_closure_max") | @sh)",
+      "NEXITS_MAX=\(hard_number("nexits_max") | @sh)",
+      "LLOC_FUNCTION_MAX=\(hard_number("lloc_function_max") | @sh)",
+      "PLOC_FUNCTION_MAX=\(hard_number("ploc_function_max") | @sh)",
+      "SLOC_FUNCTION_MAX=\(hard_number("sloc_function_max") | @sh)",
+      "HALSTEAD_VOLUME_FUNCTION_MAX=\(hard_number("halstead_volume_function_max") | @sh)",
+      "HALSTEAD_BUGS_FUNCTION_MAX=\(hard_number("halstead_bugs_function_max") | @sh)",
+      "NOM_FUNCTIONS_FILE_MAX=\(hard_number("nom_functions_file_max") | @sh)",
+      "NOM_CLOSURES_FILE_MAX=\(hard_number("nom_closures_file_max") | @sh)",
+      "NOM_TOTAL_FILE_MAX=\(hard_number("nom_total_file_max") | @sh)",
+      "LLOC_FILE_MAX=\(hard_number("lloc_file_max") | @sh)",
+      "PLOC_FILE_MAX=\(hard_number("ploc_file_max") | @sh)",
+      "SLOC_FILE_MAX=\(hard_number("sloc_file_max") | @sh)",
+      "HALSTEAD_VOLUME_FILE_MAX=\(hard_number("halstead_volume_file_max") | @sh)",
+      "HALSTEAD_BUGS_FILE_MAX=\(hard_number("halstead_bugs_file_max") | @sh)",
+      "MI_VISUAL_STUDIO_MIN=\(hard_number("mi_visual_studio_min") | @sh)",
+      "CLASS_WMC_MAX=\(hard_number("class_wmc_max") | @sh)",
+      "CLASS_NPM_MAX=\(hard_number("class_npm_max") | @sh)",
+      "CLASS_NPA_MAX=\(hard_number("class_npa_max") | @sh)",
+      "CLASS_COA_MAX=\(hard_number("class_coa_max") | @sh)",
+      "CLASS_CDA_MAX=\(hard_number("class_cda_max") | @sh)",
+      "INTERFACE_NPM_MAX=\(hard_number("interface_npm_max") | @sh)",
+      "INTERFACE_NPA_MAX=\(hard_number("interface_npa_max") | @sh)",
+      "MI_ORIGINAL_MIN=\(review_number("mi_original_min"; 65) | @sh)",
+      "MI_SEI_MIN=\(review_number("mi_sei_min"; 65) | @sh)",
+      "CLOC_RATIO_MIN=\(review_number("cloc_ratio_min"; 0.10) | @sh)",
+      "CLOC_RATIO_MAX=\(review_number("cloc_ratio_max"; 0.60) | @sh)",
+      "BLANK_RATIO_MIN=\(review_number("blank_ratio_min"; 0.02) | @sh)",
+      "BLANK_RATIO_MAX=\(review_number("blank_ratio_max"; 0.30) | @sh)",
+      "HALSTEAD_N1_FUNCTION_MAX=\(review_number("halstead_n1_function_max"; 30) | @sh)",
+      "HALSTEAD_N1_TOTAL_FUNCTION_MAX=\(review_number("halstead_n1_total_function_max"; 80) | @sh)",
+      "HALSTEAD_N2_FUNCTION_MAX=\(review_number("halstead_n2_function_max"; 40) | @sh)",
+      "HALSTEAD_N2_TOTAL_FUNCTION_MAX=\(review_number("halstead_n2_total_function_max"; 120) | @sh)",
+      "HALSTEAD_LENGTH_FUNCTION_MAX=\(review_number("halstead_length_function_max"; 180) | @sh)",
+      "HALSTEAD_ESTIMATED_LENGTH_FUNCTION_MAX=\(review_number("halstead_estimated_length_function_max"; 160) | @sh)",
+      "HALSTEAD_VOCABULARY_FUNCTION_MAX=\(review_number("halstead_vocabulary_function_max"; 70) | @sh)",
+      "HALSTEAD_DIFFICULTY_FUNCTION_MAX=\(review_number("halstead_difficulty_function_max"; 25) | @sh)",
+      "HALSTEAD_LEVEL_FUNCTION_MIN=\(review_number("halstead_level_function_min"; 0.03) | @sh)",
+      "HALSTEAD_EFFORT_FUNCTION_MAX=\(review_number("halstead_effort_function_max"; 30000) | @sh)",
+      "HALSTEAD_TIME_FUNCTION_MAX=\(review_number("halstead_time_function_max"; 1800) | @sh)",
+      "HALSTEAD_PURITY_RATIO_FUNCTION_MIN=\(review_number("halstead_purity_ratio_function_min"; 0.60) | @sh)",
+      "HALSTEAD_PURITY_RATIO_FUNCTION_MAX=\(review_number("halstead_purity_ratio_function_max"; 1.40) | @sh)",
+      "HALSTEAD_N1_FILE_MAX=\(review_number("halstead_n1_file_max"; 60) | @sh)",
+      "HALSTEAD_N1_TOTAL_FILE_MAX=\(review_number("halstead_n1_total_file_max"; 400) | @sh)",
+      "HALSTEAD_N2_FILE_MAX=\(review_number("halstead_n2_file_max"; 90) | @sh)",
+      "HALSTEAD_N2_TOTAL_FILE_MAX=\(review_number("halstead_n2_total_file_max"; 800) | @sh)",
+      "HALSTEAD_LENGTH_FILE_MAX=\(review_number("halstead_length_file_max"; 1000) | @sh)",
+      "HALSTEAD_ESTIMATED_LENGTH_FILE_MAX=\(review_number("halstead_estimated_length_file_max"; 850) | @sh)",
+      "HALSTEAD_VOCABULARY_FILE_MAX=\(review_number("halstead_vocabulary_file_max"; 140) | @sh)",
+      "HALSTEAD_DIFFICULTY_FILE_MAX=\(review_number("halstead_difficulty_file_max"; 40) | @sh)",
+      "HALSTEAD_LEVEL_FILE_MIN=\(review_number("halstead_level_file_min"; 0.02) | @sh)",
+      "HALSTEAD_EFFORT_FILE_MAX=\(review_number("halstead_effort_file_max"; 250000) | @sh)",
+      "HALSTEAD_TIME_FILE_MAX=\(review_number("halstead_time_file_max"; 15000) | @sh)",
+      "HALSTEAD_PURITY_RATIO_FILE_MIN=\(review_number("halstead_purity_ratio_file_min"; 0.60) | @sh)",
+      "HALSTEAD_PURITY_RATIO_FILE_MAX=\(review_number("halstead_purity_ratio_file_max"; 1.40) | @sh)"
+    ] | .[]
+  ' "$METRICS_POLICY"
+) || {
+  printf 'ERROR: failed to read threshold values from %s\n' "$METRICS_POLICY" >&2
+  exit 1
 }
+eval "$threshold_assignments"
 
-# Hard-fail thresholds.
-CYCLOMATIC_MAX="$(require_env CYCLOMATIC_MAX "${CYCLOMATIC_MAX:-${CC_MAX:-}}")"
-COGNITIVE_MAX="$(require_env COGNITIVE_MAX "${COGNITIVE_MAX:-}")"
-ABC_MAGNITUDE_MAX="$(require_env ABC_MAGNITUDE_MAX "${ABC_MAGNITUDE_MAX:-}")"
-NARGS_FUNCTION_MAX="$(require_env NARGS_FUNCTION_MAX "${NARGS_FUNCTION_MAX:-}")"
-NARGS_CLOSURE_MAX="$(require_env NARGS_CLOSURE_MAX "${NARGS_CLOSURE_MAX:-}")"
-NEXITS_MAX="$(require_env NEXITS_MAX "${NEXITS_MAX:-}")"
-LLOC_FUNCTION_MAX="$(require_env LLOC_FUNCTION_MAX "${LLOC_FUNCTION_MAX:-}")"
-PLOC_FUNCTION_MAX="$(require_env PLOC_FUNCTION_MAX "${PLOC_FUNCTION_MAX:-}")"
-SLOC_FUNCTION_MAX="$(require_env SLOC_FUNCTION_MAX "${SLOC_FUNCTION_MAX:-}")"
-HALSTEAD_VOLUME_FUNCTION_MAX="$(require_env HALSTEAD_VOLUME_FUNCTION_MAX "${HALSTEAD_VOLUME_FUNCTION_MAX:-}")"
-HALSTEAD_BUGS_FUNCTION_MAX="$(require_env HALSTEAD_BUGS_FUNCTION_MAX "${HALSTEAD_BUGS_FUNCTION_MAX:-}")"
-NOM_FUNCTIONS_FILE_MAX="$(require_env NOM_FUNCTIONS_FILE_MAX "${NOM_FUNCTIONS_FILE_MAX:-}")"
-NOM_CLOSURES_FILE_MAX="$(require_env NOM_CLOSURES_FILE_MAX "${NOM_CLOSURES_FILE_MAX:-}")"
-NOM_TOTAL_FILE_MAX="$(require_env NOM_TOTAL_FILE_MAX "${NOM_TOTAL_FILE_MAX:-}")"
-LLOC_FILE_MAX="$(require_env LLOC_FILE_MAX "${LLOC_FILE_MAX:-}")"
-PLOC_FILE_MAX="$(require_env PLOC_FILE_MAX "${PLOC_FILE_MAX:-}")"
-SLOC_FILE_MAX="$(require_env SLOC_FILE_MAX "${SLOC_FILE_MAX:-}")"
-HALSTEAD_VOLUME_FILE_MAX="$(require_env HALSTEAD_VOLUME_FILE_MAX "${HALSTEAD_VOLUME_FILE_MAX:-}")"
-HALSTEAD_BUGS_FILE_MAX="$(require_env HALSTEAD_BUGS_FILE_MAX "${HALSTEAD_BUGS_FILE_MAX:-}")"
-MI_VISUAL_STUDIO_MIN="$(require_env MI_VISUAL_STUDIO_MIN "${MI_VISUAL_STUDIO_MIN:-}")"
-CLASS_WMC_MAX="$(require_env CLASS_WMC_MAX "${CLASS_WMC_MAX:-}")"
-CLASS_NPM_MAX="$(require_env CLASS_NPM_MAX "${CLASS_NPM_MAX:-}")"
-CLASS_NPA_MAX="$(require_env CLASS_NPA_MAX "${CLASS_NPA_MAX:-}")"
-CLASS_COA_MAX="$(require_env CLASS_COA_MAX "${CLASS_COA_MAX:-}")"
-CLASS_CDA_MAX="$(require_env CLASS_CDA_MAX "${CLASS_CDA_MAX:-}")"
-INTERFACE_NPM_MAX="$(require_env INTERFACE_NPM_MAX "${INTERFACE_NPM_MAX:-}")"
-INTERFACE_NPA_MAX="$(require_env INTERFACE_NPA_MAX "${INTERFACE_NPA_MAX:-}")"
-
-# Review-gate thresholds.
-MI_ORIGINAL_MIN="${MI_ORIGINAL_MIN:-65}"
-MI_SEI_MIN="${MI_SEI_MIN:-65}"
-CLOC_RATIO_MIN="${CLOC_RATIO_MIN:-0.10}"
-CLOC_RATIO_MAX="${CLOC_RATIO_MAX:-0.60}"
-BLANK_RATIO_MIN="${BLANK_RATIO_MIN:-0.02}"
-BLANK_RATIO_MAX="${BLANK_RATIO_MAX:-0.30}"
-
-HALSTEAD_N1_FUNCTION_MAX="${HALSTEAD_N1_FUNCTION_MAX:-30}"
-HALSTEAD_N1_TOTAL_FUNCTION_MAX="${HALSTEAD_N1_TOTAL_FUNCTION_MAX:-80}"
-HALSTEAD_N2_FUNCTION_MAX="${HALSTEAD_N2_FUNCTION_MAX:-40}"
-HALSTEAD_N2_TOTAL_FUNCTION_MAX="${HALSTEAD_N2_TOTAL_FUNCTION_MAX:-120}"
-HALSTEAD_LENGTH_FUNCTION_MAX="${HALSTEAD_LENGTH_FUNCTION_MAX:-180}"
-HALSTEAD_ESTIMATED_LENGTH_FUNCTION_MAX="${HALSTEAD_ESTIMATED_LENGTH_FUNCTION_MAX:-160}"
-HALSTEAD_VOCABULARY_FUNCTION_MAX="${HALSTEAD_VOCABULARY_FUNCTION_MAX:-70}"
-HALSTEAD_DIFFICULTY_FUNCTION_MAX="${HALSTEAD_DIFFICULTY_FUNCTION_MAX:-25}"
-HALSTEAD_LEVEL_FUNCTION_MIN="${HALSTEAD_LEVEL_FUNCTION_MIN:-0.03}"
-HALSTEAD_EFFORT_FUNCTION_MAX="${HALSTEAD_EFFORT_FUNCTION_MAX:-30000}"
-HALSTEAD_TIME_FUNCTION_MAX="${HALSTEAD_TIME_FUNCTION_MAX:-1800}"
-HALSTEAD_PURITY_RATIO_FUNCTION_MIN="${HALSTEAD_PURITY_RATIO_FUNCTION_MIN:-0.60}"
-HALSTEAD_PURITY_RATIO_FUNCTION_MAX="${HALSTEAD_PURITY_RATIO_FUNCTION_MAX:-1.40}"
-
-HALSTEAD_N1_FILE_MAX="${HALSTEAD_N1_FILE_MAX:-60}"
-HALSTEAD_N1_TOTAL_FILE_MAX="${HALSTEAD_N1_TOTAL_FILE_MAX:-400}"
-HALSTEAD_N2_FILE_MAX="${HALSTEAD_N2_FILE_MAX:-90}"
-HALSTEAD_N2_TOTAL_FILE_MAX="${HALSTEAD_N2_TOTAL_FILE_MAX:-800}"
-HALSTEAD_LENGTH_FILE_MAX="${HALSTEAD_LENGTH_FILE_MAX:-1000}"
-HALSTEAD_ESTIMATED_LENGTH_FILE_MAX="${HALSTEAD_ESTIMATED_LENGTH_FILE_MAX:-850}"
-HALSTEAD_VOCABULARY_FILE_MAX="${HALSTEAD_VOCABULARY_FILE_MAX:-140}"
-HALSTEAD_DIFFICULTY_FILE_MAX="${HALSTEAD_DIFFICULTY_FILE_MAX:-40}"
-HALSTEAD_LEVEL_FILE_MIN="${HALSTEAD_LEVEL_FILE_MIN:-0.02}"
-HALSTEAD_EFFORT_FILE_MAX="${HALSTEAD_EFFORT_FILE_MAX:-250000}"
-HALSTEAD_TIME_FILE_MAX="${HALSTEAD_TIME_FILE_MAX:-15000}"
-HALSTEAD_PURITY_RATIO_FILE_MIN="${HALSTEAD_PURITY_RATIO_FILE_MIN:-0.60}"
-HALSTEAD_PURITY_RATIO_FILE_MAX="${HALSTEAD_PURITY_RATIO_FILE_MAX:-1.40}"
-
-if ! command -v jq >/dev/null 2>&1; then
-  printf 'ERROR: jq is required by lint-metrics but was not found in PATH\n' >&2
+RCA_SCOPE="${RCA_SCOPE:-src/}"
+if [ -z "${RCA_EXCLUDES:-}" ]; then
+  printf 'ERROR: RCA_EXCLUDES must be set by Makefile or environment\n' >&2
   exit 1
 fi
 
@@ -104,22 +180,27 @@ TMP_JSON=$(mktemp "${TMPDIR:-/tmp}/rca-analysis.XXXXXX")
 TMP_FINDINGS=$(mktemp "${TMPDIR:-/tmp}/rca-findings.XXXXXX")
 TMP_SUMMARY=$(mktemp "${TMPDIR:-/tmp}/rca-summary.XXXXXX")
 
-cleanup() { rm -f "$TMP_JSON" "$TMP_FINDINGS" "$TMP_SUMMARY"; }
-trap cleanup EXIT INT TERM
+trap 'rm -f "$TMP_JSON" "$TMP_FINDINGS" "$TMP_SUMMARY"' EXIT INT TERM
 
 VER_LABEL=""
 if [ -n "$RCA_VERSION" ]; then VER_LABEL=" v${RCA_VERSION}"; fi
-printf 'lint-metrics: analyzing src/ with rust-code-analysis%s\n' "$VER_LABEL"
+printf 'lint-metrics: analyzing %s with rust-code-analysis%s\n' "$RCA_SCOPE" "$VER_LABEL"
 
-"$RCA_BIN" -m -O json -p src/ \
-  -X "**/node_modules/**" \
-  -X "**/dist/**" \
-  -X "**/coverage/**" \
-  -X "**/.storybook/**" \
-  -X "**/tests/**" \
-  >"$TMP_JSON"
+set -- -m -O json -p "$RCA_SCOPE"
+set -f
+for exclude_pattern in $RCA_EXCLUDES; do
+  set -- "$@" -X "$exclude_pattern"
+done
+set +f
 
-jq -rs -r \
+"$RCA_BIN" "$@" >"$TMP_JSON"
+
+if [ ! -s "$TMP_JSON" ] || ! jq -e -s 'length > 0 and all(.[]; type == "object")' "$TMP_JSON" >/dev/null 2>&1; then
+  printf 'ERROR: rust-code-analysis produced no JSON output objects; check %s and the analyzer invocation\n' "$TMP_JSON" >&2
+  exit 1
+fi
+
+jq -rs \
   --argjson cyclomatic_max "$CYCLOMATIC_MAX" \
   --argjson cognitive_max "$COGNITIVE_MAX" \
   --argjson abc_magnitude_max "$ABC_MAGNITUDE_MAX" \
@@ -269,7 +350,7 @@ jq -rs -r \
 
 FAIL_COUNT=$(awk -F'|' '$1 == "FAIL" { count++ } END { print count + 0 }' "$TMP_FINDINGS")
 
-jq -rs -r \
+jq -rs \
   --argjson cyclomatic_max "$CYCLOMATIC_MAX" \
   --argjson cognitive_max "$COGNITIVE_MAX" \
   --argjson abc_magnitude_max "$ABC_MAGNITUDE_MAX" \
@@ -314,7 +395,7 @@ print_findings() {
   findings_file=$1
   printf '%-7s  %-48s  %-9s  %-28s  %4s  %-42s  %10s  %-12s\n' \
     "GATE" "FILE" "SCOPE" "SUBJECT" "LINE" "METRIC" "VALUE" "LIMIT"
-  printf '%0.s-' $(seq 1 176) && printf '\n'
+  printf '%*s\n' 176 '' | tr ' ' '-'
   while IFS='|' read -r severity file scope subject line metric value limit; do
     [ "$severity" = "FAIL" ] || continue
     printf '%-7s  %-48s  %-9s  %-28s  %4s  %-42s  %10s  %-12s\n' \
@@ -327,16 +408,32 @@ append_summary_table() {
     printf '| Metric | Gate | Threshold | Measured |\n'
     printf '|--------|------|-----------|----------|\n'
     while IFS='|' read -r metric gate threshold measured; do
-      [ "$gate" = "review" ] && continue
-      printf '| %s | %s | `%s` | %s |\n' "$metric" "$gate" "$threshold" "$measured"
+      if [ "$gate" = "review" ]; then
+        continue
+      fi
+      printf "| %s | %s | \`%s\` | %s |\n" "$metric" "$gate" "$threshold" "$measured"
     done <"$TMP_SUMMARY"
   } >>"$GITHUB_STEP_SUMMARY"
+}
+
+print_summary_stdout() {
+  printf '%-28s  %-6s  %-16s  %s\n' "METRIC" "GATE" "THRESHOLD" "MEASURED"
+  printf '%*s\n' 78 '' | tr ' ' '-'
+  while IFS='|' read -r metric gate threshold measured; do
+    if [ "$gate" = "review" ]; then
+      continue
+    fi
+    printf '%-28s  %-6s  %-16s  %s\n' "$metric" "$gate" "$threshold" "$measured"
+  done <"$TMP_SUMMARY"
 }
 
 if [ "$FAIL_COUNT" -gt 0 ]; then
   printf '\n'
   printf 'rust-code-analysis: %d hard violation(s) found\n\n' "$FAIL_COUNT"
-  print_findings "$TMP_FINDINGS"
+  printf 'Selected measured metrics:\n\n'
+  print_summary_stdout || true
+  printf '\nViolations:\n\n'
+  print_findings "$TMP_FINDINGS" || true
   printf '\n'
 
   if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
@@ -346,11 +443,11 @@ if [ "$FAIL_COUNT" -gt 0 ]; then
       printf '|------|------|-------|---------|------|--------|-------|-------|\n'
       while IFS='|' read -r severity file scope subject line metric value limit; do
         [ "$severity" = "FAIL" ] || continue
-        printf '| %s | `%s` | %s | `%s` | %s | %s | %s | `%s` |\n' \
+        printf "| %s | \`%s\` | %s | \`%s\` | %s | %s | %s | \`%s\` |\n" \
           "$severity" "$file" "$scope" "$subject" "$line" "$metric" "$value" "$limit"
       done <"$TMP_FINDINGS"
       printf '\n'
-    } >>"$GITHUB_STEP_SUMMARY"
+    } >>"$GITHUB_STEP_SUMMARY" || true
   fi
 
   printf 'lint-metrics FAILED: %d hard violation(s) - fix the above before pushing\n' \
@@ -360,15 +457,17 @@ fi
 
 printf '\n'
 printf 'rust-code-analysis: all hard checks pass\n\n'
+print_summary_stdout || true
+printf '\n'
 
-printf 'Scope: src/ | hard-fail policy thresholds enforced.\n'
+printf 'Scope: %s | selected hard-fail policy thresholds shown; all hard-fail thresholds enforced.\n' "$RCA_SCOPE"
 
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   {
     printf '## rust-code-analysis: all hard checks pass\n\n'
-  } >>"$GITHUB_STEP_SUMMARY"
-  append_summary_table
-  printf '\nAll hard-fail metrics in `src/` are within policy thresholds.\n' >>"$GITHUB_STEP_SUMMARY"
+  } >>"$GITHUB_STEP_SUMMARY" || true
+  append_summary_table || true
+  printf "\nAll hard-fail metrics in \`%s\` are within policy thresholds.\n" "$RCA_SCOPE" >>"$GITHUB_STEP_SUMMARY" || true
 fi
 
 exit 0

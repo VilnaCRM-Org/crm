@@ -1,16 +1,17 @@
 import UIForm from '@/components/UIForm';
-import { Box } from '@mui/material';
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import type { TFunction } from 'i18next';
+import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import FormField from '@/modules/User/features/Auth/components/form-section/components/form-field';
-import PasswordField from '@/modules/User/features/Auth/components/form-section/components/password-field';
-import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import InertBox from '@/modules/User/features/Auth/components/form-section/inert-box';
+import type { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
 import useRegistrationForm from '@/modules/User/features/Auth/hooks/use-registration-form';
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
 import loadRegistrationNotification from '@/modules/User/features/Auth/utils/load-registration-notification';
+
+import RegistrationFormFields from './registration-form-fields';
 
 type RegistrationFormProps = {
   onViewChange?: (view: RegistrationView) => void;
@@ -18,78 +19,67 @@ type RegistrationFormProps = {
 
 const RegistrationNotification = lazy(loadRegistrationNotification);
 
+const DEFAULT_VALUES: RegisterUserDto = { fullName: '', email: '', password: '' };
+
+type RegistrationFormState = ReturnType<typeof useRegistrationForm>;
+type Validators = ReturnType<typeof createValidators>;
+
+function RegistrationFormPanel({
+  form,
+  t,
+  validators,
+}: {
+  form: RegistrationFormState;
+  t: TFunction;
+  validators: Validators;
+}): JSX.Element {
+  return (
+    <InertBox id={`reg-form-${form.formKey}`} inert={form.view !== 'form'}>
+      <UIForm<RegisterUserDto>
+        onSubmit={form.handleRegister}
+        defaultValues={DEFAULT_VALUES}
+        error={null}
+        isSubmitting={form.isSubmitting}
+        isSubmitDisabled={form.view !== 'form'}
+        submitLabel={t(getSubmitLabelKey('sign_up', form.isSubmitting))}
+        title={t('sign_up.title')}
+        subtitle={t('sign_up.subtitle')}
+      >
+        <RegistrationFormFields t={t} validators={validators} />
+      </UIForm>
+    </InertBox>
+  );
+}
+
+function RegistrationNotificationPanel({
+  form,
+}: {
+  form: RegistrationFormState;
+}): JSX.Element | null {
+  if (form.view === 'form') return null;
+  return (
+    <Suspense fallback={null}>
+      <RegistrationNotification
+        view={form.view}
+        errorText={form.errorText}
+        isSubmitting={form.isSubmitting}
+        onShown={form.handleSuccessShown}
+        onBack={form.handleBackToForm}
+        onRetry={form.handleRetry}
+      />
+    </Suspense>
+  );
+}
+
 export default function RegistrationForm({ onViewChange }: RegistrationFormProps): JSX.Element {
   const { t } = useTranslation();
-  const {
-    view,
-    errorText,
-    formKey,
-    isSubmitting,
-    handleRegister,
-    handleSuccessShown,
-    handleBackToForm,
-    handleRetry,
-  } = useRegistrationForm(onViewChange);
-
+  const form = useRegistrationForm(onViewChange);
   const validators = createValidators(t);
-  const boxRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (boxRef.current) {
-      if (view !== 'form') boxRef.current.setAttribute('inert', '');
-      else boxRef.current.removeAttribute('inert');
-    }
-  }, [view]);
 
   return (
     <>
-      <Box key={formKey} ref={boxRef}>
-        <UIForm<RegisterUserDto>
-          onSubmit={handleRegister}
-          defaultValues={{ fullName: '', email: '', password: '' }}
-          error={null}
-          isSubmitting={isSubmitting}
-          isSubmitDisabled={view !== 'form'}
-          submitLabel={t(getSubmitLabelKey('sign_up', isSubmitting))}
-          title={t('sign_up.title')}
-          subtitle={t('sign_up.subtitle')}
-        >
-          <FormField<RegisterUserDto>
-            name="fullName"
-            label={t('sign_up.form.name_input.label')}
-            placeholder={t('sign_up.form.name_input.placeholder')}
-            type="text"
-            autoComplete="off"
-            rules={{ required: t('sign_up.form.name_input.required'), validate: validators.fullName }}
-          />
-          <FormField<RegisterUserDto>
-            name="email"
-            label={t('sign_up.form.email_input.label')}
-            placeholder={t('sign_up.form.email_input.placeholder')}
-            type="email"
-            autoComplete="off"
-            rules={{ required: t('sign_up.form.email_input.required'), validate: validators.email }}
-          />
-          <PasswordField<RegisterUserDto>
-            placeholder={t('sign_up.form.password_input.placeholder')}
-            label={t('sign_up.form.password_input.label')}
-            autoComplete="off"
-          />
-        </UIForm>
-      </Box>
-
-      {view !== 'form' ? (
-        <Suspense fallback={null}>
-          <RegistrationNotification
-            view={view}
-            errorText={errorText}
-            isSubmitting={isSubmitting}
-            onShown={handleSuccessShown}
-            onBack={handleBackToForm}
-            onRetry={handleRetry}
-          />
-        </Suspense>
-      ) : null}
+      <RegistrationFormPanel form={form} t={t} validators={validators} />
+      <RegistrationNotificationPanel form={form} />
     </>
   );
 }

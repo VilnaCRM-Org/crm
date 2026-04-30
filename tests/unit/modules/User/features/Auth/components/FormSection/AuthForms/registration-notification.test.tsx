@@ -1,5 +1,6 @@
 import { screen, fireEvent } from '@testing-library/react';
 import i18n from 'i18next';
+import React, { act } from 'react';
 import { initReactI18next } from 'react-i18next';
 
 import localization from '@/i18n/localization.json';
@@ -85,11 +86,7 @@ describe('RegistrationNotification', () => {
 
   it('renders the success notification', () => {
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={jest.fn()}
-        view="success"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -111,14 +108,69 @@ describe('RegistrationNotification', () => {
     expect(onShown).toHaveBeenCalledTimes(1);
   });
 
+  it('does not rerun onShown when the callback changes in success view', () => {
+    const onShown1 = jest.fn();
+    const onShown2 = jest.fn();
+    const onBack = jest.fn();
+
+    function RerenderHarness(): JSX.Element {
+      const [idx, setIdx] = React.useState(0);
+      const onShown = idx === 0 ? onShown1 : onShown2;
+      return (
+        <>
+          <button type="button" onClick={() => setIdx(1)}>
+            switch-callback
+          </button>
+          <RegistrationNotification
+            key="notification"
+            isSubmitting={false}
+            onBack={onBack}
+            view="success"
+            onShown={onShown}
+          />
+        </>
+      );
+    }
+
+    renderWithProviders(<RerenderHarness />, { i18nMock: createUkrainianI18n() });
+    expect(onShown1).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'switch-callback' }));
+    expect(onShown2).not.toHaveBeenCalled();
+  });
+
+  it('calls onShown only once while success view stays mounted across rerenders', () => {
+    const onShown = jest.fn();
+    const onBack = jest.fn();
+    function RerenderHarness(): JSX.Element {
+      const [, setCounter] = React.useState(0);
+      return (
+        <>
+          <button type="button" onClick={() => setCounter((value) => value + 1)}>
+            rerender
+          </button>
+          <RegistrationNotification
+            key="notification"
+            isSubmitting={false}
+            onBack={onBack}
+            view="success"
+            onShown={onShown}
+          />
+        </>
+      );
+    }
+
+    renderWithProviders(<RerenderHarness />, { i18nMock: createUkrainianI18n() });
+
+    fireEvent.click(screen.getByRole('button', { name: 'rerender' }));
+
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+
   it('calls onBack immediately when back is clicked in success view', () => {
     const onBack = jest.fn();
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={onBack}
-        view="success"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="success" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -130,17 +182,15 @@ describe('RegistrationNotification', () => {
     jest.useFakeTimers();
     const onBack = jest.fn();
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={onBack}
-        view="error"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 
     fireEvent.click(screen.getByText('Назад'));
     expect(onBack).not.toHaveBeenCalled();
-    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
@@ -148,17 +198,15 @@ describe('RegistrationNotification', () => {
     jest.useFakeTimers();
     const onBack = jest.fn();
     const { unmount } = renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={onBack}
-        view="error"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 
     fireEvent.click(screen.getByText('Назад'));
     unmount();
-    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
     expect(onBack).not.toHaveBeenCalled();
   });
 
@@ -166,12 +214,7 @@ describe('RegistrationNotification', () => {
     const onRetry = jest.fn();
 
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting
-        onBack={jest.fn()}
-        onRetry={onRetry}
-        view="error"
-      />,
+      <RegistrationNotification isSubmitting onBack={jest.fn()} onRetry={onRetry} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 
