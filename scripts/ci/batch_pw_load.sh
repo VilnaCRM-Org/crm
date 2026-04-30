@@ -11,9 +11,12 @@ PROD_CONTAINER_NAME=${PROD_CONTAINER_NAME:-"prod"}
 PLAYWRIGHT_CONTAINER_NAME=${PLAYWRIGHT_CONTAINER_NAME:-"playwright"}
 DOCKER_COMPOSE_DEV_FILE=${DOCKER_COMPOSE_DEV_FILE:-"docker-compose.yml"}
 DOCKER_COMPOSE_TEST_FILE=${DOCKER_COMPOSE_TEST_FILE:-"docker-compose.test.yml"}
-COMMON_HEALTHCHECKS_FILE=${COMMON_HEALTHCHECKS_FILE:-"common-healthchecks.yml"}
-if [ ! -f "common-healthchecks.yml" ]; then
-    COMMON_HEALTHCHECKS_FILE=""
+if [ -z "${COMMON_HEALTHCHECKS_FILE:-}" ]; then
+    if [ -f "common-healthchecks.yml" ]; then
+        COMMON_HEALTHCHECKS_FILE="common-healthchecks.yml"
+    else
+        COMMON_HEALTHCHECKS_FILE=""
+    fi
 fi
 
 COMPOSE_ARGS=()
