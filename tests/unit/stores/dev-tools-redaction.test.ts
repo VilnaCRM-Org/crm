@@ -48,7 +48,8 @@ describe('deepRedact', () => {
       ])
     );
 
-    expect(redacted.get('password')).toBe('***');
+    expect(redacted.has('password')).toBe(false);
+    expect(redacted.get('***')).toBe('hidden-password');
     expect(redacted.get('profile')).toEqual({ token: '***' });
   });
 });

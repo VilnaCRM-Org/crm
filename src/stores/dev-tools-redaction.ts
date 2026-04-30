@@ -82,12 +82,9 @@ export class DevToolsRedactor {
     cache.set(input, output);
 
     for (const [key, value] of input.entries()) {
-      output.set(
-        key,
-        typeof key === 'string' && this.isSensitiveKey(key)
-          ? '***'
-          : this.deepRedact(value, seen, cache)
-      );
+      const sensitiveKey = typeof key === 'string' && this.isSensitiveKey(key);
+      const redactedKey = sensitiveKey ? '***' : key;
+      output.set(redactedKey, this.deepRedact(value, seen, cache));
     }
 
     return output as unknown as T;

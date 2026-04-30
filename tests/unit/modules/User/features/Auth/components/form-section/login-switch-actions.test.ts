@@ -51,6 +51,7 @@ describe('switchToRegister', () => {
     const deps = makeDeps();
     switchToRegister(deps);
     expect(deps.setLoadLoginError).toHaveBeenCalledWith(null);
+    expect(deps.setIsLoadingLogin).toHaveBeenCalledWith(false);
     expect(deps.setMode).toHaveBeenCalledWith('register');
   });
 });
@@ -116,7 +117,7 @@ describe('switchToLogin', () => {
     await Promise.resolve();
 
     expect(staleDeps.setMode).not.toHaveBeenCalledWith('login');
-    expect(staleDeps.setIsLoadingLogin).not.toHaveBeenCalledWith(false);
+    expect(staleDeps.setIsLoadingLogin.mock.calls).toEqual([[true], [false]]);
   });
 
   it('discards a superseded switchToLogin failure in the same instance', async () => {
@@ -144,7 +145,7 @@ describe('switchToLogin', () => {
     await Promise.resolve();
 
     expect(staleDeps.setLoadLoginError).not.toHaveBeenCalledWith(LOAD_LOGIN_ERROR_KEY);
-    expect(staleDeps.setIsLoadingLogin).not.toHaveBeenCalledWith(false);
+    expect(staleDeps.setIsLoadingLogin.mock.calls).toEqual([[true], [false]]);
   });
 
   it('does not let a different instance cancel an in-flight login switch', async () => {

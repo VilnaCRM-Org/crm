@@ -21,6 +21,7 @@ export function switchToRegister(deps: SwitchDeps): void {
   const { loginSwitchRequest } = deps;
   loginSwitchRequest.current += 1;
   deps.setLoadLoginError(null);
+  deps.setIsLoadingLogin(false);
   deps.setMode('register');
 }
 

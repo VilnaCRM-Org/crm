@@ -35,6 +35,9 @@ async function submitLogin(ctx: SubmitLoginContext): Promise<void> {
   try {
     await ctx.dispatch(loginUser(ctx.data)).unwrap();
   } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return;
+    }
     setLoginFailure(ctx, err);
   } finally {
     ctx.setIsSubmitting(false);

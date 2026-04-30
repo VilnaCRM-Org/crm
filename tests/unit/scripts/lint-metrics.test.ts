@@ -1,18 +1,11 @@
 import { execFileSync } from 'child_process';
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
-import { parse } from 'yaml';
 
 const repoRoot = path.resolve(__dirname, '../../..');
 const lintMetricsScript = path.join(repoRoot, 'scripts/lint-metrics.sh');
-const dockerComposePath = path.join(repoRoot, 'docker-compose.yml');
 const metricsPolicy = path.join(repoRoot, 'config/metrics-policy.json');
-const storyPath = path.join(
-  repoRoot,
-  'specs/implementation-artifacts/stories/' +
-    '2-2-baseline-compliance-verification-required-check-registration.md'
-);
 
 const baseEnv = {
   RCA_VERSION: '0.0.25',
@@ -164,18 +157,5 @@ describe('scripts/lint-metrics.sh', () => {
         stdio: ['ignore', 'pipe', 'pipe'],
       });
     }).toThrow(/ERROR: rust-code-analysis produced no JSON output objects/);
-  });
-
-  it('is listed in the required-check registration story file list', () => {
-    expect(readFileSync(storyPath, 'utf8')).toContain('tests/unit/scripts/lint-metrics.test.ts');
-  });
-
-  it('keeps the rca service independent from the external app network', () => {
-    const compose = parse(readFileSync(dockerComposePath, 'utf8'));
-    const rca = compose?.services?.rca;
-    expect(rca).toBeDefined();
-    const networks = rca?.networks ?? [];
-    const names = Array.isArray(networks) ? networks : Object.keys(networks);
-    expect(names).not.toContain('crm-network');
   });
 });

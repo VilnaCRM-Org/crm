@@ -10,13 +10,15 @@ export default class HttpRequestConfigBuilder {
     headers: Record<string, string> | undefined
   ): RequestInit {
     const hasBody = body !== undefined && body !== null;
-    const isJsonBody = hasBody && !this.isBodyInit(body);
+    const normalizedMethod = String(method).toUpperCase();
+    const canSendBody = normalizedMethod !== 'GET' && normalizedMethod !== 'HEAD';
+    const isJsonBody = hasBody && canSendBody && !this.isBodyInit(body);
     const config: RequestInit = {
       method,
       headers: this.createHeaders(isJsonBody ? 'application/json' : undefined, headers),
     };
 
-    if (hasBody) {
+    if (hasBody && canSendBody) {
       config.body = isJsonBody ? JSON.stringify(body) : (body as BodyInit);
     }
 
