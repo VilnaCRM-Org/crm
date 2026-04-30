@@ -10,16 +10,20 @@ import theme from '../src/styles/theme';
 const mainLanguage = process.env.REACT_APP_MAIN_LANGUAGE || 'uk';
 const fallbackLanguage = process.env.REACT_APP_FALLBACK_LANGUAGE || 'en';
 
-if (!i18next.isInitialized) {
-  void i18next
-    .use(initReactI18next)
-    .init({
-      resources,
-      lng: mainLanguage,
-      fallbackLng: fallbackLanguage,
-      interpolation: { escapeValue: false },
-    });
-}
+export const i18nInitPromise = i18next.isInitialized
+  ? Promise.resolve()
+  : i18next
+      .use(initReactI18next)
+      .init({
+        resources,
+        lng: mainLanguage,
+        fallbackLng: fallbackLanguage,
+        interpolation: { escapeValue: false },
+      })
+      .catch((error) => {
+        console.error('Failed to initialize Storybook i18n', error);
+        throw error;
+      });
 
 const customViewports: typeof INITIAL_VIEWPORTS = {
   xs: {
@@ -64,6 +68,12 @@ const preview: Preview = {
   initialGlobals: {
     viewport: { value: 'lg', isRotated: false },
   },
+  loaders: [
+    async () => {
+      await i18nInitPromise;
+      return {};
+    },
+  ],
   decorators: [
     (Story) => (
       <ThemeProvider theme={theme}>

@@ -8,16 +8,23 @@ on:
       - '**.png'
       - '**.webp'
 
+permissions: {}
+
 jobs:
   build:
     if: github.event.pull_request.head.repo.full_name == github.repository
     name: calibreapp/image-actions
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
 
       - name: Compress Images
-        uses: calibreapp/image-actions@main
+        uses: calibreapp/image-actions@e2cc8db5d49c849e00844dfebf01438318e96fa2 # main
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}

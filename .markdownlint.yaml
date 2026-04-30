@@ -190,7 +190,8 @@ MD039: true
 # MD040/fenced-code-language - Fenced code blocks should have a language specified
 MD040:
   # List of languages
-  allowed_languages: ['bash', 'ts', 'typescript', 'js', 'javascript', 'json', 'yaml', 'sh', 'text', 'makefile']
+  allowed_languages:
+    ['bash', 'ts', 'typescript', 'js', 'javascript', 'json', 'yaml', 'sh', 'text', 'makefile']
   # Require language only
   language_only: false
 

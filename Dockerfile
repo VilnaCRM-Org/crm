@@ -10,7 +10,7 @@ RUN apk add --no-cache \
     curl=${CURL_VERSION} \
     g++=14.2.0-r4 \
     make=4.4.1-r2 \
-    python3=3.12.12-r0 && \
+    python3=3.12.13-r0 && \
     if [ "$INSTALL_CHROMIUM" = "true" ]; then \
       apk add --no-cache \
         chromium=136.0.7103.113-r0 \
@@ -52,9 +52,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 RUN apk add --no-cache curl=${CURL_VERSION} && \
-    npm install -g serve@14.2.0
-
-RUN mkdir -p /app && chown -R node:node /app
+    npm install -g serve@14.2.0 && \
+    mkdir -p /app && chown -R node:node /app
 COPY --chown=node:node serve.json ./serve.json
 COPY --from=build --chown=node:node /app/dist ./dist
 USER node
