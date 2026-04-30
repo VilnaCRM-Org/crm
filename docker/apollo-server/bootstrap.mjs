@@ -33,7 +33,7 @@ await fetchDone;
 const { p: serverProc, done: serverDone } = run(
   nodeExec,
   [...commonArgs, resolve(__dirname, 'out/server.mjs')],
-  { treatSignalsAsSuccess: true },
+  { treatSignalsAsSuccess: true }
 );
 for (const sig of ['SIGINT', 'SIGTERM', 'SIGQUIT']) {
   process.on(sig, () => serverProc.kill(sig));
