@@ -118,9 +118,8 @@ locally before pushing.
 make lint-metrics
 ```
 
-Requires a running Docker daemon (the gate runs inside the `rca` compose service).
-The `rust-code-analysis-cli` binary is downloaded automatically into `./bin/` on first run
-and is gitignored.
+No extra setup is needed beyond the standard repository requirements. The binary is
+downloaded automatically to `./bin/` on first run and is gitignored.
 
 **Hard-fail metrics:**
 
@@ -357,22 +356,17 @@ Uses `.nvmrc` for version pinning (Node 24).
 ## BMAD-METHOD Integration
 
 Navigate phases with `/bmalph`. Try `/bmad-help` to discover all commands,
-or run `/bmalph-status` for a quick overview.
+or run `/bmalph-status` for a quick overview. See `_bmad/COMMANDS.md` for the full
+command reference.
 
 ### Phases
 
-1. Analysis
-   Focus: understand the problem.
-   Key commands: `/create-brief`, `/brainstorm-project`, `/market-research`.
-2. Planning
-   Focus: define the solution.
-   Key commands: `/create-prd`, `/create-ux`.
-3. Solutioning
-   Focus: design the architecture.
-   Key commands: `/create-architecture`, epics, readiness review.
-4. Implementation
-   Focus: build it.
-   Key commands: `/sprint-planning`, `/create-story`, then `/bmalph-implement`.
+| Phase | Focus | Key Commands |
+|-------|-------|-------------|
+| 1. Analysis | Understand the problem | `/create-brief`, `/brainstorm-project`, `/market-research` |
+| 2. Planning | Define the solution | `/create-prd`, `/create-ux` |
+| 3. Solutioning | Design the architecture | `/create-architecture`, epics, readiness review |
+| 4. Implementation | Build it | `/sprint-planning`, `/create-story`, then `/bmalph-implement` |
 
 ### Workflow
 
@@ -381,21 +375,21 @@ or run `/bmalph-status` for a quick overview.
 
 ### Management Commands
 
-| Command             | Description                                           |
-| ------------------- | ----------------------------------------------------- |
-| `/bmalph-status`    | Show current phase, Ralph progress, version info      |
-| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop    |
-| `/bmalph-upgrade`   | Update bundled assets to match current bmalph version |
-| `/bmalph-doctor`    | Check project health and report issues                |
+| Command | Description |
+|---------|-------------|
+| `/bmalph-status` | Show current phase, Ralph progress, version info |
+| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop |
+| `/bmalph-upgrade` | Update bundled assets to match current bmalph version |
+| `/bmalph-doctor` | Check project health and report issues |
 
 ### Available Agents
 
-| Command        | Agent           | Role                                  |
-| -------------- | --------------- | ------------------------------------- |
-| `/analyst`     | Analyst         | Research, briefs, discovery           |
-| `/architect`   | Architect       | Technical design, architecture        |
-| `/pm`          | Product Manager | PRDs, epics, stories                  |
-| `/sm`          | Scrum Master    | Sprint planning, status, coordination |
-| `/dev`         | Developer       | Implementation, coding                |
-| `/ux-designer` | UX Designer     | User experience, wireframes           |
-| `/qa`          | QA Engineer     | Test automation, quality assurance    |
+| Command | Agent | Role |
+|---------|-------|------|
+| `/analyst` | Analyst | Research, briefs, discovery |
+| `/architect` | Architect | Technical design, architecture |
+| `/pm` | Product Manager | PRDs, epics, stories |
+| `/sm` | Scrum Master | Sprint planning, status, coordination |
+| `/dev` | Developer | Implementation, coding |
+| `/ux-designer` | UX Designer | User experience, wireframes |
+| `/qa` | QA Engineer | Test automation, quality assurance |

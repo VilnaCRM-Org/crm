@@ -1,6 +1,6 @@
 # Story 2.2: Baseline Compliance Verification and Required Check Registration
 
-Status: done
+Status: ready-for-review
 
 ## Story
 
@@ -34,22 +34,22 @@ so that pull requests to `main` are blocked until the quality gate passes.
 
 - [x] Task 2: Preserve baseline policy in committed configuration (AC: 2)
   - [x] 2.1 Update `Makefile` threshold environment values passed into
-        `scripts/lint-metrics.sh`
+    `scripts/lint-metrics.sh`
   - [x] 2.2 Update `scripts/lint-metrics.sh` default threshold values and comments
   - [x] 2.3 Update planning/story documentation where it names the current enforced policy
 
 - [x] Task 3: Prepare required-check registration (AC: 3, 4)
   - [x] 3.1 Confirm the workflow job key remains exactly `rust-code-analysis`
   - [x] 3.2 Confirm `.github/workflows/rust-code-analysis.yml` is committed and can run on
-        pull requests to `main`
+    pull requests to `main`
   - [x] 3.3 Document that GitHub branch protection must use the check named
-        `rust-code-analysis`
+    `rust-code-analysis`
   - [x] 3.4 Confirm code-side readiness for enabling `rust-code-analysis` after the workflow
-        appears in GitHub branch protection settings
+    appears in GitHub branch protection settings
 
 - [x] Task 4: Verify pass/fail behavior (AC: 5, 6)
   - [x] 4.1 Confirm threshold violations make `scripts/lint-metrics.sh` exit `1` after
-        printing all violations
+    printing all violations
   - [x] 4.2 Confirm passing metrics make `scripts/lint-metrics.sh` exit `0`
   - [x] 4.3 Confirm CI invokes the same `make lint-metrics` command used locally
 
@@ -151,7 +151,7 @@ claude-sonnet-4-6
 - `Makefile`
 - `Dockerfile`
 - `scripts/lint-metrics.sh`
-- `tests/unit/scripts/lint-metrics.test.ts`
+- `tests/unit/scripts/lintMetrics.test.ts`
 - `.github/workflows/rust-code-analysis.yml`
 - `specs/planning-artifacts/epics-rust-code-analysis-2026-03-11.md`
 - `specs/implementation-artifacts/stories/1-1-commit-repository-policy-configuration.md`
