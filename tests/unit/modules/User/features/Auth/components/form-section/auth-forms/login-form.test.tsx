@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import LoginForm, {
@@ -136,11 +136,12 @@ describe('LoginForm', () => {
     });
 
     render(<LoginForm />);
-    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('form-error')).toHaveTextContent('');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+      await Promise.resolve();
     });
+
+    expect(screen.getByTestId('form-error')).toHaveTextContent('');
   });
 });
 
