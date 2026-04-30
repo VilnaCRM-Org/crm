@@ -129,6 +129,19 @@ describe('LoginForm', () => {
       );
     });
   });
+
+  it('ignores serialized abort-shaped rejections from unwrap', async () => {
+    mockDispatch.mockReturnValue({
+      unwrap: () => Promise.reject({ name: 'AbortError', message: 'The operation was aborted' }),
+    });
+
+    render(<LoginForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('form-error')).toHaveTextContent('');
+    });
+  });
 });
 
 describe('normalizeLoginErrorMessage', () => {

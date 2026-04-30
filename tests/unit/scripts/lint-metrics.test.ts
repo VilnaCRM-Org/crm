@@ -109,7 +109,9 @@ describe('scripts/lint-metrics.sh', () => {
     expect(output).toContain('rust-code-analysis: all hard checks pass');
     expect(output).toContain('Cyclomatic Complexity');
     expect(output).toContain('Interface Public Attributes');
-    expect(output).toContain('Scope: src/ | hard-fail policy thresholds enforced.');
+    expect(output).toContain(
+      'Scope: src/ | selected hard-fail policy thresholds shown; all hard-fail thresholds enforced.'
+    );
   });
 
   it('fails early with a jq-specific error before validating the policy JSON', () => {
@@ -157,5 +159,38 @@ describe('scripts/lint-metrics.sh', () => {
         stdio: ['ignore', 'pipe', 'pipe'],
       });
     }).toThrow(/ERROR: rust-code-analysis produced no JSON output objects/);
+  });
+
+  it('fails with a schema error when a policy section is not an object', () => {
+    const malformedPolicyPath = path.join(tempDir, 'metrics-policy.json');
+    writeFileSync(malformedPolicyPath, JSON.stringify({ hard: 1, review: {} }));
+
+    let thrownError: unknown;
+
+    try {
+      execFileSync('/bin/sh', [lintMetricsScript], {
+        cwd: repoRoot,
+        env: {
+          ...process.env,
+          ...baseEnv,
+          METRICS_POLICY: malformedPolicyPath,
+          RCA_BIN: createFakeRcaBinary(tempDir),
+        },
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch (error) {
+      thrownError = error;
+    }
+
+    expect(thrownError).toBeDefined();
+
+    const stderr =
+      thrownError && typeof thrownError === 'object' && 'stderr' in thrownError
+        ? String(thrownError.stderr)
+        : '';
+
+    expect(stderr).toContain('ERROR: METRICS_POLICY does not satisfy schema');
+    expect(stderr).toContain('non-object section: hard: got number');
   });
 });

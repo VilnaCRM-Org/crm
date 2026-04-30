@@ -23,6 +23,19 @@ type SubmitLoginContext = {
 
 const I18N_KEY_RE = /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/i;
 
+function isAbortLike(err: unknown): boolean {
+  if (!err || typeof err !== 'object') {
+    return false;
+  }
+
+  const maybeError = err as { name?: unknown; code?: unknown; message?: unknown };
+  return (
+    maybeError.name === 'AbortError' ||
+    maybeError.code === 'ABORT_ERR' ||
+    maybeError.message === 'The operation was aborted'
+  );
+}
+
 function setLoginFailure(ctx: SubmitLoginContext, err: unknown): void {
   const message = normalizeLoginErrorMessage(err);
   const reason = I18N_KEY_RE.test(message) ? ctx.t(message) : message;
@@ -35,7 +48,7 @@ async function submitLogin(ctx: SubmitLoginContext): Promise<void> {
   try {
     await ctx.dispatch(loginUser(ctx.data)).unwrap();
   } catch (err) {
-    if (err instanceof Error && err.name === 'AbortError') {
+    if (isAbortLike(err)) {
       return;
     }
     setLoginFailure(ctx, err);

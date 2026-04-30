@@ -49,7 +49,7 @@ describe('deepRedact', () => {
     );
 
     expect(redacted.has('password')).toBe(false);
-    expect(redacted.get('***')).toBe('hidden-password');
+    expect(redacted.get('***')).toBe('***');
     expect(redacted.get('profile')).toEqual({ token: '***' });
   });
 });
