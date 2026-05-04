@@ -1,17 +1,15 @@
-import UIForm from '@/components/UIForm';
-import useAppDispatch from '@/stores/hooks';
+import UIForm from '@/components/ui-form';
 import type { SerializedError } from '@reduxjs/toolkit';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-
 
 import FormField from '@/modules/User/features/Auth/components/form-section/components/form-field';
 import PasswordField from '@/modules/User/features/Auth/components/form-section/components/password-field';
 import UserOptions from '@/modules/User/features/Auth/components/form-section/components/user-options';
 import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
-import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
-import { loginUser } from '@/modules/User/store';
+import useAuthStore from '@/modules/User/features/Auth/hooks';
+import { LoginUserDto } from '@/modules/User/features/Auth/types/credentials';
+import getSubmitLabelKey from '@/modules/User/features/Auth/utils/get-submit-label-key';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
@@ -52,14 +50,14 @@ export default function LoginForm(): JSX.Element {
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation();
-  const dispatch = useAppDispatch();
+  const { login } = useAuthStore();
 
   const handleLogin = async (data: LoginUserDto): Promise<void> => {
     setIsSubmitting(true);
     setError('');
 
     try {
-      await dispatch(loginUser(data)).unwrap();
+      await login(data);
     } catch (err) {
       const message = normalizeLoginErrorMessage(err);
       setError(t('sign_in.errors.login', { reason: t(message) }));

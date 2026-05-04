@@ -4,7 +4,7 @@ import {
   ConflictError,
   ValidationError,
   ApiErrorCodes,
-} from '@/modules/user/types/api-errors';
+} from '@/modules/User/types/api-errors';
 import buildApiUrl from '@/utils/url-builder';
 
 describe('API Errors and URL Builder Integration', () => {

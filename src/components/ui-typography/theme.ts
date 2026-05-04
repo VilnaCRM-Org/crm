@@ -1,7 +1,7 @@
 import { Theme, createTheme } from '@mui/material';
 import { CSSProperties } from '@mui/material/styles';
 
-import colorTheme from '../UIColorTheme';
+import colorTheme from '../ui-color-theme';
 
 const hStyles: CSSProperties = {
   color: colorTheme.palette.darkPrimary.main,

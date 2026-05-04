@@ -8,10 +8,10 @@ import { BrowserRouter } from 'react-router-dom';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import i18n from '@/i18n';
-import type LoginAPI from '@/modules/user/features/auth/repositories/login-api';
-import type RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
-import { loginReducer, registrationReducer } from '@/modules/user/store';
-import type { ThunkExtra } from '@/modules/user/store/types';
+import type LoginAPI from '@/modules/User/features/Auth/repositories/login-api';
+import type RegistrationAPI from '@/modules/User/features/Auth/repositories/registration-api';
+import { loginReducer, registrationReducer } from '@/modules/User/store';
+import type { ThunkExtra } from '@/modules/User/store/types';
 import type { RootState } from '@/stores';
 
 type TestRootState = {

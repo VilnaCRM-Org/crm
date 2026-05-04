@@ -4,8 +4,8 @@ import { Provider } from 'react-redux';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import ProtectedRoute from '@/components/protected-route';
-import { loginReducer } from '@/modules/user/store/login-slice';
-import { registrationReducer } from '@/modules/user/store/registration-slice';
+import { loginReducer } from '@/modules/User/store/login-slice';
+import { registrationReducer } from '@/modules/User/store/registration-slice';
 
 jest.mock('@/stores', () => ({
   __esModule: true,

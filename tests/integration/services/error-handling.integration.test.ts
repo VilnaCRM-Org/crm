@@ -5,7 +5,7 @@ import {
   ConflictError,
   ValidationError,
   ApiErrorCodes,
-} from '@/modules/user/types/api-errors';
+} from '@/modules/User/types/api-errors';
 import { ErrorHandler } from '@/services/error/error-handler';
 import ErrorParser from '@/utils/error/error-parser';
 

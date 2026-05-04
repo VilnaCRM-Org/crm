@@ -1,6 +1,6 @@
-import UIForm from '@/components/UIForm';
+import UIForm from '@/components/ui-form';
 import { Box } from '@mui/material';
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import FormField from '@/modules/User/features/Auth/components/form-section/components/form-field';
@@ -8,9 +8,10 @@ import PasswordField from '@/modules/User/features/Auth/components/form-section/
 import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
 import useRegistrationForm from '@/modules/User/features/Auth/hooks/use-registration-form';
-import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
+import { RegisterUserDto } from '@/modules/User/features/Auth/types/credentials';
+import getSubmitLabelKey from '@/modules/User/features/Auth/utils/get-submit-label-key';
 import loadRegistrationNotification from '@/modules/User/features/Auth/utils/load-registration-notification';
+
 
 type RegistrationFormProps = {
   onViewChange?: (view: RegistrationView) => void;
@@ -32,18 +33,18 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
   } = useRegistrationForm(onViewChange);
 
   const validators = createValidators(t);
-  const boxRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (boxRef.current) {
-      if (view !== 'form') boxRef.current.setAttribute('inert', '');
-      else boxRef.current.removeAttribute('inert');
-    }
-  }, [view]);
 
   return (
     <>
-      <Box key={formKey} ref={boxRef}>
+      <Box
+        key={formKey}
+        ref={(el: HTMLDivElement | null) => {
+          if (el) {
+            if (view !== 'form') el.setAttribute('inert', '');
+            else el.removeAttribute('inert');
+          }
+        }}
+      >
         <UIForm<RegisterUserDto>
           onSubmit={handleRegister}
           defaultValues={{ fullName: '', email: '', password: '' }}
@@ -60,7 +61,10 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
             placeholder={t('sign_up.form.name_input.placeholder')}
             type="text"
             autoComplete="off"
-            rules={{ required: t('sign_up.form.name_input.required'), validate: validators.fullName }}
+            rules={{
+              required: t('sign_up.form.name_input.required'),
+              validate: validators.fullName,
+            }}
           />
           <FormField<RegisterUserDto>
             name="email"

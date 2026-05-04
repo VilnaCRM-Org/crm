@@ -271,7 +271,8 @@ module.exports = {
     },
     {
       name: 'no-store-direct-http-client',
-      comment: 'Module store must use repositories (or hooks) instead of HTTP client services directly.',
+      comment:
+        'Module store must use repositories (or hooks) instead of HTTP client services directly.',
       severity: 'error',
       from: {
         path: '^src/modules/[^/]+/store/',
@@ -409,22 +410,12 @@ module.exports = {
       to: {},
     },
     {
-      name: 'no-uppercase-paths',
+      name: 'tests-module-name-pascal-case',
       comment:
-        'All source paths must be lowercase and kebab-case. Uppercase letters in file or directory names break consistency across the project.',
+        'Test module names under tests/{e2e,integration,unit}/modules must be PascalCase.',
       severity: 'error',
       from: {
-        path: '.*[A-Z].*',
-      },
-      to: {},
-    },
-    {
-      name: 'tests-module-name-lowercase',
-      comment:
-        'Test module names under tests/{e2e,integration,unit}/modules must be lowercase kebab-case.',
-      severity: 'error',
-      from: {
-        path: '^tests/(?:e2e|integration|unit)/modules/(?![a-z0-9-]+/)[^/]+/',
+        path: '^tests/(?:e2e|integration|unit)/modules/(?![A-Z][A-Za-z0-9]*/)[^/]+/',
       },
       to: {},
     },
@@ -434,16 +425,16 @@ module.exports = {
         'Test module root may only contain allowed folders: features, helpers, lib, repositories, store.',
       severity: 'error',
       from: {
-        path: '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/(?!features|helpers|lib|repositories|store)[^/]+/',
+        path: '^tests/(?:e2e|integration|unit)/modules/[^/]+/(?!features|helpers|lib|repositories|store)[^/]+/',
       },
       to: {},
     },
     {
-      name: 'tests-feature-name-lowercase',
-      comment: 'Test feature names under tests/*/modules/*/features must be lowercase kebab-case.',
+      name: 'tests-feature-name-pascal-case',
+      comment: 'Test feature names under tests/*/modules/*/features must be PascalCase.',
       severity: 'error',
       from: {
-        path: '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/features/(?![a-z0-9-]+/)[^/]+/',
+        path: '^tests/(?:e2e|integration|unit)/modules/[^/]+/features/(?![A-Z][A-Za-z0-9]*/)[^/]+/',
       },
       to: {},
     },
@@ -453,25 +444,25 @@ module.exports = {
         'Test feature root may only contain allowed folders: assets, components, hooks, i18n, repositories, routes, types, utils.',
       severity: 'error',
       from: {
-        path: '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/features/[a-z0-9-]+/(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/',
+        path: '^tests/(?:e2e|integration|unit)/modules/[^/]+/features/[^/]+/(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/',
       },
       to: {},
     },
     {
-      name: 'src-module-name-kebab-case',
-      comment: 'Module names under src/modules must be lowercase kebab-case.',
+      name: 'src-module-name-pascal-case',
+      comment: 'Module names under src/modules must be PascalCase.',
       severity: 'error',
       from: {
-        path: '^src/modules/(?![a-z0-9-]+/)[^/]+/',
+        path: '^src/modules/(?![A-Z][A-Za-z0-9]*/)[^/]+/',
       },
       to: {},
     },
     {
-      name: 'src-feature-name-kebab-case',
-      comment: 'Feature names under src/modules/*/features must be lowercase kebab-case.',
+      name: 'src-feature-name-pascal-case',
+      comment: 'Feature names under src/modules/*/features must be PascalCase.',
       severity: 'error',
       from: {
-        path: '^src/modules/[a-z0-9-]+/features/(?![a-z0-9-]+/)[^/]+/',
+        path: '^src/modules/[^/]+/features/(?![A-Z][A-Za-z0-9]*/)[^/]+/',
       },
       to: {},
     },

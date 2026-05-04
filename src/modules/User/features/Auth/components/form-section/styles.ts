@@ -35,20 +35,22 @@ export default {
       paddingBottom: '1.5rem',
     },
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height: ${heightBreakpoints.medium}px)`]: {
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height: ${heightBreakpoints.medium}px)`]:
+      {
+        paddingTop: '1rem',
+        paddingBottom: '1rem',
+      },
 
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
       paddingTop: '2rem',
       paddingBottom: '2rem',
     },
 
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px) and (max-height: ${heightBreakpoints.medium}px)`]: {
-      paddingTop: '1rem',
-      paddingBottom: '1rem',
-    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px) and (max-height: ${heightBreakpoints.medium}px)`]:
+      {
+        paddingTop: '1rem',
+        paddingBottom: '1rem',
+      },
   },
   formWrapper: {
     position: 'relative',
@@ -76,6 +78,9 @@ export default {
       maxWidth: '31.375rem',
       padding: '2.1rem 2.4375rem 1.9375rem',
     },
+  },
+  formWrapperWithNotification: {
+    overflow: 'hidden',
   },
   formSwitcherButton: {
     display: 'block',

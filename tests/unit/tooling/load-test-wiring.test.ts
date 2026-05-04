@@ -11,9 +11,7 @@ const readFile = (relativePath: string): string =>
 describe('load test wiring', () => {
   it('parameterizes the dind k6 runner instead of hardcoding homepage assets', () => {
     const makefile = readFile('Makefile');
-    const dindTarget = makefile.match(
-      /run-load-tests-dind:.*?\n((?:\t.*\n)+)/m
-    )?.[1];
+    const dindTarget = makefile.match(/run-load-tests-dind:.*?\n((?:\t.*\n)+)/m)?.[1];
 
     expect(dindTarget).toBeDefined();
     expect(dindTarget).toContain('export=$(K6_RESULTS_FILE)');

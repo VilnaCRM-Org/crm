@@ -1,11 +1,16 @@
 import UIFormInputField from '@/components/ui-form-input-field';
 import UITypography from '@/components/ui-typography';
-import { Grid } from '@mui/material';
-import type { OutlinedInputProps } from '@mui/material/OutlinedInput';
-import { InputHTMLAttributes } from 'react';
+import { Grid, type SxProps, type Theme } from '@mui/material';
+import { InputHTMLAttributes, ReactNode } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
+
 import styles from '@/modules/User/features/Auth/components/form-section/components/styles';
+
+export interface FormFieldInputSlotProps {
+  startAdornment?: ReactNode;
+  endAdornment?: ReactNode;
+}
 
 export interface FormFieldProps<T extends FieldValues = FieldValues> {
   rules?: RegisterOptions<T, Path<T>>;
@@ -15,7 +20,8 @@ export interface FormFieldProps<T extends FieldValues = FieldValues> {
   label: string;
   autoComplete: string;
   defaultValue?: PathValue<T, Path<T>>;
-  inputProps?: InputProps;
+  inputSlotProps?: FormFieldInputSlotProps;
+  sx?: SxProps<Theme>;
 }
 
 export default function FormField<T extends FieldValues>({

@@ -10,7 +10,7 @@ services:
     ports:
       - '3001:3001'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3001"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -43,7 +43,8 @@ services:
     ports:
       - '4000:4000'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${GRAPHQL_PORT:-4000}/${GRAPHQL_API_PATH:-graphql}"]
+      test:
+        ['CMD', 'curl', '-f', 'http://localhost:${GRAPHQL_PORT:-4000}/${GRAPHQL_API_PATH:-graphql}']
     networks:
       - crm-network
 
@@ -52,15 +53,15 @@ services:
       context: .
       dockerfile: Mockoon.Dockerfile
     ports:
-      - "${MOCKOON_PORT:-8080}:${MOCKOON_PORT:-8080}"
+      - '${MOCKOON_PORT:-8080}:${MOCKOON_PORT:-8080}'
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "http://localhost:${MOCKOON_PORT:-8080}/api/users", "-O", "-"]
+      test: ['CMD', 'wget', '-q', 'http://localhost:${MOCKOON_PORT:-8080}/api/users', '-O', '-']
     networks:
       - crm-network
 
   k6:
-    profiles: ["load"]
+    profiles: ['load']
     build:
       context: .
       dockerfile: ./tests/load/dockerfile
@@ -71,7 +72,6 @@ services:
       - ./tests/load:/loadTests
     networks:
       - crm-network
-
 
 networks:
   crm-network:

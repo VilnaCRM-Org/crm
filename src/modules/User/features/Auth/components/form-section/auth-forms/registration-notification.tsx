@@ -1,8 +1,8 @@
 import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.svg';
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
-import UIButton from '@/components/UIButton';
-import UiTypography from '@/components/UITypography';
+import UIButton from '@/components/ui-button';
+import UiTypography from '@/components/ui-typography';
 import { Box, Fade, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -134,7 +134,7 @@ export default function RegistrationNotification({
   return (
     <Fade in={!isClosing} timeout={BACK_CLOSE_ANIMATION_MS} appear>
       <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
-        <Box sx={styles.contentBox} aria-label={t('notifications.success.title')}>
+        <Box sx={styles.contentBox} aria-label={t('notifications.success.aria_label')}>
           <Box sx={styles.successTopImgBox}>
             <Box
               component={ConfettiImage}
@@ -153,7 +153,7 @@ export default function RegistrationNotification({
           </Box>
 
           <Box sx={styles.messageContainer}>
-            <UiTypography component="h4" sx={styles.successMessageTitle} data-testid="success-notification-title">
+            <UiTypography component="h4" sx={styles.successMessageTitle}>
               {t('notifications.success.title')}
             </UiTypography>
             <UiTypography component="span" sx={styles.successMessageDescription}>

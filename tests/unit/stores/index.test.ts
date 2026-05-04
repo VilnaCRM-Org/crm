@@ -21,10 +21,7 @@ describe('store preloaded auth token', () => {
 
   it('prefers the window token when it is present', () => {
     expect(
-      getPreloadedAuthToken(
-        { __PRELOADED_AUTH_TOKEN__: 'window-token' } as Window,
-        'env-token'
-      )
+      getPreloadedAuthToken({ __PRELOADED_AUTH_TOKEN__: 'window-token' } as Window, 'env-token')
     ).toBe('window-token');
   });
 
@@ -35,7 +32,9 @@ describe('store preloaded auth token', () => {
   });
 
   it('returns undefined when neither source provides a token', () => {
-    expect(getPreloadedAuthToken({ __PRELOADED_AUTH_TOKEN__: '' } as Window, '   ')).toBeUndefined();
+    expect(
+      getPreloadedAuthToken({ __PRELOADED_AUTH_TOKEN__: '' } as Window, '   ')
+    ).toBeUndefined();
   });
 
   it('returns undefined when envToken is undefined', () => {

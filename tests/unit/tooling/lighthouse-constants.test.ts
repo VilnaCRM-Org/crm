@@ -27,5 +27,4 @@ describe('lighthouse constants', () => {
 
     expect(pages).toEqual(['http://prod:3001', 'http://prod:3001/authentication']);
   });
-
 });

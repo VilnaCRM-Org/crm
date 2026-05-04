@@ -12,7 +12,9 @@ function getDuplicatePathPairs(rootDir: string): string[] {
 
   function walk(currentDir: string): void {
     const entries = fs.readdirSync(currentDir, { withFileTypes: true });
-    const directoryNames = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+    const directoryNames = entries
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
     const groups = new Map<string, string[]>();
 
     for (const directoryName of directoryNames) {
@@ -28,9 +30,7 @@ function getDuplicatePathPairs(rootDir: string): string[] {
         const hasUppercase = siblingNames.some((name) => /[A-Z]/.test(name));
 
         if (hasKebabCase && hasUppercase) {
-          duplicates.push(
-            `${currentDir}: ${siblingNames.sort().join(', ')}`
-          );
+          duplicates.push(`${currentDir}: ${siblingNames.sort().join(', ')}`);
         }
       }
     }

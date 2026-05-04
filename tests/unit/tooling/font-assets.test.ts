@@ -5,10 +5,7 @@ import path from 'path';
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
-const cssFiles = [
-  'src/config/fonts/golos.css',
-  'src/config/fonts/inter.css',
-] as const;
+const cssFiles = ['src/config/fonts/golos.css', 'src/config/fonts/inter.css'] as const;
 const publicIndexPath = path.join(projectRoot, 'public/index.html');
 const authCriticalFonts = [
   'src/assets/fonts/golos/Golos-Text_Regular.woff2',

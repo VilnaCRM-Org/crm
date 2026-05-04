@@ -8,8 +8,7 @@ const projectRoot = path.resolve(__dirname, '..', '..', '..');
 const readFile = (relativePath: string): string =>
   fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
 
-const readJson = <T>(relativePath: string): T =>
-  JSON.parse(readFile(relativePath)) as T;
+const readJson = <T>(relativePath: string): T => JSON.parse(readFile(relativePath)) as T;
 
 describe('auth test harness wiring', () => {
   it('includes auth load testing in the CI workflow matrix', () => {
@@ -31,18 +30,20 @@ describe('auth test harness wiring', () => {
     expect(workflow).not.toContain('/authentication');
     // eslint-disable-next-line no-template-curly-in-string
     expect(constants).toContain('const pages = [baseUrl, `${baseUrl}/authentication`];');
-    expect(desktopRc).toContain('const { pages } = require(\'./constants\');');
+    expect(desktopRc).toContain("const { pages } = require('./constants');");
     expect(desktopRc).toContain('url: pages');
     expect(desktopRc).not.toContain('puppeteerScript');
     expect(desktopRc).not.toContain('puppeteerLaunchOptions');
-    expect(mobileRc).toContain('const { pages } = require(\'./constants\');');
+    expect(mobileRc).toContain("const { pages } = require('./constants');");
     expect(mobileRc).toContain('url: pages');
     expect(mobileRc).not.toContain('puppeteerScript');
     expect(mobileRc).not.toContain('puppeteerLaunchOptions');
     expect(dockerCompose).toContain('REACT_APP_LHCI_PRELOADED_AUTH_TOKEN');
     expect(dockerCompose).toContain(`${'$'}{LHCI_PRELOADED_AUTH_TOKEN-}`);
     expect(makefile).toContain('LHCI_PRELOADED_AUTH_TOKEN');
-    expect(makefile).not.toContain('REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(LHCI_PRELOADED_AUTH_TOKEN)');
+    expect(makefile).not.toContain(
+      'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(LHCI_PRELOADED_AUTH_TOKEN)'
+    );
     expect(makefile).toContain('make ensure-chromium && make start-prod && $(LHCI)');
     expect(batchScript).not.toContain('LHCI_PRELOADED_AUTH_TOKEN');
     expect(makefile).not.toContain('--collect.url=$(LHCI_TARGET_URL)');

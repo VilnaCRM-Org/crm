@@ -30,6 +30,15 @@ export default class AuthErrorBoundary extends Component<
     if (onError) {
       onError(error, info);
     }
+
+    if (process.env.NODE_ENV !== 'production') {
+      const resolvedConsole = Reflect.get(globalThis, 'console') as
+        | { error: (...args: unknown[]) => void }
+        | undefined;
+      if (resolvedConsole) {
+        resolvedConsole.error('AuthErrorBoundary caught an error:', error, info);
+      }
+    }
   }
 
   public handleReset = (): void => this.setState({ hasError: false, error: undefined });
@@ -40,9 +49,7 @@ export default class AuthErrorBoundary extends Component<
     const shouldShowErrorDetails =
       (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && error;
     const renderedFallback =
-      typeof fallback === 'function'
-        ? fallback({ error, reset: handleReset })
-        : (fallback ?? 'Something went wrong. Please try again later.');
+      typeof fallback === 'function' ? fallback({ error, reset: this.handleReset }) : fallback;
 
     if (hasError) {
       return (
@@ -57,7 +64,7 @@ export default class AuthErrorBoundary extends Component<
           <button
             type="button"
             data-testid="auth-error-boundary-try-again"
-            onClick={handleReset}
+            onClick={this.handleReset}
             style={{ marginTop: '1rem' }}
           >
             Try again

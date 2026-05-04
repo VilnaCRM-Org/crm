@@ -1,4 +1,7 @@
-import { PRELOADED_AUTH_TOKEN, seedPreloadedAuthToken } from '../../utils/seed-preloaded-auth-token';
+import {
+  PRELOADED_AUTH_TOKEN,
+  seedPreloadedAuthToken,
+} from '../../utils/seed-preloaded-auth-token';
 
 describe('seedPreloadedAuthToken', () => {
   it('registers a route handler that injects the auth token into document HTML', async () => {

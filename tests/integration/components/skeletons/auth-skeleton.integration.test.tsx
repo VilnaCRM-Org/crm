@@ -87,37 +87,41 @@ describe('AuthSkeleton Integration Tests', () => {
 
   describe('Cross-viewport consistency', () => {
     it('should render section across all viewports', () => {
-      viewportCases.map((c) => c.width).forEach((width) => {
-        Object.defineProperty(window, 'innerWidth', {
-          writable: true,
-          configurable: true,
-          value: width,
-        });
-        window.dispatchEvent(new Event('resize'));
+      viewportCases
+        .map((c) => c.width)
+        .forEach((width) => {
+          Object.defineProperty(window, 'innerWidth', {
+            writable: true,
+            configurable: true,
+            value: width,
+          });
+          window.dispatchEvent(new Event('resize'));
 
-        const { unmount } = render(<AuthSkeleton />);
-        const section = screen.getByRole('region');
-        expect(section).toBeInTheDocument();
-        unmount();
-      });
+          const { unmount } = render(<AuthSkeleton />);
+          const section = screen.getByRole('region');
+          expect(section).toBeInTheDocument();
+          unmount();
+        });
     });
 
     it('should maintain accessibility across viewports', () => {
-      viewportCases.map((c) => c.width).forEach((width) => {
-        Object.defineProperty(window, 'innerWidth', {
-          writable: true,
-          configurable: true,
-          value: width,
-        });
-        window.dispatchEvent(new Event('resize'));
+      viewportCases
+        .map((c) => c.width)
+        .forEach((width) => {
+          Object.defineProperty(window, 'innerWidth', {
+            writable: true,
+            configurable: true,
+            value: width,
+          });
+          window.dispatchEvent(new Event('resize'));
 
-        const { unmount } = render(<AuthSkeleton />);
-        const buttons = screen.queryAllByRole('button');
-        const links = screen.queryAllByRole('link');
-        expect(buttons).toHaveLength(0);
-        expect(links).toHaveLength(0);
-        unmount();
-      });
+          const { unmount } = render(<AuthSkeleton />);
+          const buttons = screen.queryAllByRole('button');
+          const links = screen.queryAllByRole('link');
+          expect(buttons).toHaveLength(0);
+          expect(links).toHaveLength(0);
+          unmount();
+        });
     });
   });
 });

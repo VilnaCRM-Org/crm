@@ -1,4 +1,4 @@
-import ApiError from '@/modules/user/types/api-errors/api-error';
+import ApiError from '@/modules/User/types/api-errors/api-error';
 
 import ParsedError from './types';
 

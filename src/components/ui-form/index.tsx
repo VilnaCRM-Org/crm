@@ -28,7 +28,6 @@ export interface UIFormProps<T extends FieldValues> {
   showTitle?: boolean;
   showSubtitle?: boolean;
   resetOnSuccess?: boolean;
-  isSubmitDisabled?: boolean;
 }
 
 export default function UIForm<T extends FieldValues>({
@@ -45,7 +44,6 @@ export default function UIForm<T extends FieldValues>({
   showTitle = true,
   showSubtitle = true,
   resetOnSuccess = false,
-  isSubmitDisabled = false,
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
@@ -114,7 +112,12 @@ export default function UIForm<T extends FieldValues>({
 
         {children}
 
-        <UIButton type="submit" disabled={submitting || isSubmitDisabled} variant="contained" sx={styles.submitButton}>
+        <UIButton
+          type="submit"
+          disabled={submitDisabled}
+          variant="contained"
+          sx={styles.submitButton}
+        >
           {submitLabel}
         </UIButton>
       </form>

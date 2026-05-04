@@ -8,8 +8,8 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 
 import enTranslations from '@/i18n/localization.json';
-import { loginReducer, type LoginState } from '@/modules/user/store/login-slice';
-import { registrationReducer } from '@/modules/user/store/registration-slice';
+import { loginReducer, type LoginState } from '@/modules/User/store/login-slice';
+import { registrationReducer } from '@/modules/User/store/registration-slice';
 
 export const testI18n = i18n.createInstance();
 

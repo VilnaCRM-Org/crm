@@ -1,6 +1,6 @@
 import '../../setup';
-import { ApiErrorCodes } from '@/modules/user/types/api-errors';
-import ApiError from '@/modules/user/types/api-errors/api-error';
+import { ApiErrorCodes } from '@/modules/User/types/api-errors';
+import ApiError from '@/modules/User/types/api-errors/api-error';
 import ErrorParser from '@/utils/error/error-parser';
 import type ParsedError from '@/utils/error/types';
 
