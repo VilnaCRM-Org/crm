@@ -62,7 +62,7 @@ export default {
 
     '& .MuiTypography-root': {
       fontWeight: 500,
-      fontFamily: theme.typography.fontFamily || 'Golos',
+      fontFamily: theme.typography.fontFamily,
       fontSize: '1rem',
       lineHeight: '1.125rem',
       letterSpacing: '0',

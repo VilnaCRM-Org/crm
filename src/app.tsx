@@ -1,8 +1,10 @@
 import React, { lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Provider } from 'react-redux';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 import ProtectedRoute from '@/components/protected-route';
+import store from '@/stores';
 
 import './index.css';
 
@@ -37,9 +39,11 @@ function App(): React.ReactElement {
     return (): void => i18n.off?.('languageChanged', applyDir);
   }, [i18n]);
   return (
-    <React.Suspense fallback={null}>
-      <RouterProvider router={router} future={{ v7_startTransition: true }} />
-    </React.Suspense>
+    <Provider store={store}>
+      <React.Suspense fallback={null}>
+        <RouterProvider router={router} future={{ v7_startTransition: true }} />
+      </React.Suspense>
+    </Provider>
   );
 }
 export default App;

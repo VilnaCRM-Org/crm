@@ -4,7 +4,8 @@
 import '../../../../utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-import type { ComponentType, LazyExoticComponent } from 'react';
+
+import Authentication from '@/modules/User/features/Auth';
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({
@@ -22,21 +23,19 @@ jest.mock('@/assets/icons/logo/vilna-logo.svg', () => ({
   ReactComponent: 'svg',
 }));
 
+jest.mock('@/modules/User/features/Auth/components/form-section', () => {
+  const pendingFormSectionPromise = new Promise<void>(() => {});
+
+  return {
+    __esModule: true,
+    default: (): null => {
+      throw pendingFormSectionPromise;
+    },
+  };
+});
+
 describe('Authentication shell', () => {
-  it('renders the shell chrome and loading fallback on initial mount', async () => {
-    const react = await import('react');
-    const PendingFormSection = (): never => {
-      throw new Promise<void>((): void => {
-        // keep pending to force suspense fallback
-      });
-    };
-
-    jest.spyOn(react, 'lazy').mockImplementation(
-      (): LazyExoticComponent<ComponentType> =>
-        PendingFormSection as unknown as LazyExoticComponent<ComponentType>
-    );
-
-    const { default: Authentication } = await import('@/modules/User/features/Auth');
+  it('renders the shell chrome and loading fallback on initial mount', () => {
     const view = render(<Authentication />);
 
     expect(view.getByLabelText('Back')).toBeInTheDocument();
@@ -46,6 +45,5 @@ describe('Authentication shell', () => {
     expect(view.getByLabelText('footer.usage_policy')).toBeInTheDocument();
 
     view.unmount();
-    jest.restoreAllMocks();
   });
 });

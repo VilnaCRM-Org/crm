@@ -1,6 +1,23 @@
-import { JSDOM } from 'jsdom';
+import { TextDecoder, TextEncoder } from 'node:util';
+
+if (typeof globalThis.TextEncoder === 'undefined') {
+  Object.defineProperty(globalThis, 'TextEncoder', {
+    configurable: true,
+    value: TextEncoder,
+    writable: true,
+  });
+}
+
+if (typeof globalThis.TextDecoder === 'undefined') {
+  Object.defineProperty(globalThis, 'TextDecoder', {
+    configurable: true,
+    value: TextDecoder,
+    writable: true,
+  });
+}
 
 if (typeof document === 'undefined') {
+  const { JSDOM } = require('jsdom') as typeof import('jsdom');
   const { window } = new JSDOM('<!doctype html><html><body></body></html>', {
     url: 'http://localhost/',
   });
