@@ -1,8 +1,9 @@
 import { TFunction } from 'i18next';
 
-import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
+import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
 
 import emptyUser from './constants';
+
 
 jest.mock('i18next', () => ({
   t: (key: string): string => key,
@@ -53,7 +54,7 @@ describe('validations module exports', () => {
       expect(validators.password('pass', emptyUser)).toBe(
         'sign_up.form.password_input.error_length'
       );
-      expect(validators.password('', emptyUser)).toBe('sign_up.form.password_input.error_required');
+      expect(validators.password('', emptyUser)).toBe('sign_up.form.password_input.required');
     });
   });
 
@@ -100,7 +101,7 @@ describe('validations module exports', () => {
         'sign_up.form.name_input.required'
       );
       expect(validators.password(formData.password, emptyUser)).toBe(
-        'sign_up.form.password_input.error_required'
+        'sign_up.form.password_input.required'
       );
     });
   });

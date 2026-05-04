@@ -1,14 +1,14 @@
+/* eslint-disable no-console */
 import { group, sleep } from 'k6';
 
-import runIntegrationTests from './signup/integration.js';
-import runNegativeTests from './signup/negative.js';
 import runPositiveTests from './signup/positive.js';
+import runNegativeTests from './signup/negative.js';
 import runRateLimitTests from './signup/ratelimit.js';
+import runIntegrationTests from './signup/integration.js';
 import ScenarioUtils from './utils/scenario-utils.js';
 import Utils from './utils/utils.js';
 
 const scenarioName = 'signup';
-
 const utils = new Utils(scenarioName);
 const scenarioUtils = new ScenarioUtils(utils, scenarioName);
 
@@ -17,28 +17,38 @@ export const options = scenarioUtils.getOptions();
 export default function signup() {
   const baseUrl = utils.getBaseUrl();
   const params = utils.getParams();
+  const runGroup = (groupName, callback) => {
+    group(groupName, () => {
+      try {
+        callback();
+      } catch (error) {
+        console.error(`[ERROR] ${groupName} failed`, error);
+        throw error;
+      }
+    });
+  };
 
-  group('Positive Tests - Registration Flow', () => {
+  runGroup('Positive Tests - Normal Registration Flow', () => {
     runPositiveTests(utils, baseUrl, params);
   });
 
   sleep(0.5);
 
-  group('Negative Tests - Validation & Security', () => {
+  runGroup('Negative Tests - Validation & Security', () => {
     runNegativeTests(utils, baseUrl, params);
   });
 
   sleep(0.5);
 
-  if (__ITER === 0) {
-    group('Rate Limit Tests - Abuse Protection', () => {
+  if (__VU === 1 && __ITER === 0) {
+    runGroup('Rate Limit Tests - Abuse Protection', () => {
       runRateLimitTests(utils, baseUrl, params);
     });
-
-    sleep(0.5);
   }
 
-  group('Integration Tests - Signup API Behaviour', () => {
+  sleep(0.5);
+
+  runGroup('Integration Tests - End-to-End Flows', () => {
     runIntegrationTests(utils, baseUrl, params);
   });
 }

@@ -1,17 +1,10 @@
 /* eslint-disable no-console */
 import http from 'k6/http';
 
+import { hasSuccessfulSignupBody } from './response-assertions.js';
 import TEST_DATA_GENERATORS from '../utils/test-data.js';
 
-function buildRequestOptions(params) {
-  return {
-    ...params,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(params.headers || {}),
-    },
-  };
-}
+const USE_REAL_BACKEND = __ENV.USE_REAL_BACKEND === 'true';
 
 export default function runPositiveTests(utils, baseUrl, params) {
   const userData = TEST_DATA_GENERATORS.generateUser();
@@ -22,11 +15,18 @@ export default function runPositiveTests(utils, baseUrl, params) {
     password: userData.password,
   });
 
-  const response = http.post(`${baseUrl}/api/users`, payload, buildRequestOptions(params));
+  const headers = {
+    'Content-Type': 'application/json',
+    ...params.headers,
+  };
+
+  const response = http.post(`${baseUrl}/api/users`, payload, {
+    ...params,
+    headers,
+  });
 
   utils.checkResponse(response, 'registration request completed without server error', (res) => {
-    if (res.status >= 200 && res.status < 300) return true;
-    if (res.status === 400 || res.status === 409) return true;
+    if (res.status === 200 || res.status === 201) return true;
 
     if (res.status >= 500) {
       console.error(
@@ -34,14 +34,13 @@ export default function runPositiveTests(utils, baseUrl, params) {
       );
       return false;
     }
-
     console.log(
       `[WARN] Unexpected status during signup: ${res.status} - ${(res.body || '').substring(0, 100)}`
     );
     return false;
   });
 
-  if (response.status === 200 || response.status === 201) {
+  if (response.status === 201 || response.status === 200) {
     utils.checkResponse(response, 'success response has valid JSON body', (res) => {
       try {
         const body = JSON.parse(res.body);
@@ -51,23 +50,12 @@ export default function runPositiveTests(utils, baseUrl, params) {
       }
     });
 
-    utils.checkResponse(response, 'success response contains user data shape', (res) => {
+    utils.checkResponse(response, 'success response contains user ID', (res) => {
       try {
         const body = JSON.parse(res.body);
-        return body.id !== undefined || body.message !== undefined || body.email !== undefined;
+        return hasSuccessfulSignupBody(body, userData.email, USE_REAL_BACKEND);
       } catch {
         return false;
-      }
-    });
-  }
-
-  if (response.status === 400 || response.status === 409) {
-    utils.checkResponse(response, 'error response has valid structure', (res) => {
-      try {
-        const body = JSON.parse(res.body);
-        return typeof body.message === 'string' || typeof body.error === 'string';
-      } catch {
-        return true;
       }
     });
   }

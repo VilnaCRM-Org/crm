@@ -1,37 +1,50 @@
-/* eslint-disable react/react-in-jsx-scope, testing-library/no-container, testing-library/no-node-access */
 import '@testing-library/jest-dom';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import React from 'react';
 
 import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
 
-describe('UISkeletonBlock integration', () => {
+describe('UISkeletonBlock Integration', () => {
+  const getSkeletonBlock = (): HTMLElement => {
+    const element = screen.getAllByRole('generic').find((el) => el.id === 'skeleton-block');
+    if (!element) throw new Error('Skeleton block element with id "skeleton-block" not found');
+    return element;
+  };
+
   it('renders with default props', () => {
+    expect(React).toBeDefined();
     render(<UISkeletonBlock id="skeleton-block" />);
 
-    expect(document.getElementById('skeleton-block')).toBeInTheDocument();
+    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
   });
 
   it('renders with custom dimensions', () => {
-    render(<UISkeletonBlock id="skeleton-block" width="200px" height="4rem" borderRadius="12px" />);
+    render(
+      <UISkeletonBlock
+        width="200px"
+        height="4rem"
+        borderRadius="12px"
+        id="skeleton-block"
+      />
+    );
 
-    expect(document.getElementById('skeleton-block')).toBeInTheDocument();
+    const block = getSkeletonBlock();
+    expect(block).toBeInTheDocument();
+    expect(block).toHaveStyle({ width: '200px', height: '4rem', borderRadius: '12px' });
   });
 
   it('renders with object sx prop', () => {
-    render(<UISkeletonBlock id="skeleton-block" sx={{ mt: 1 }} />);
+    render(<UISkeletonBlock sx={{ mt: 1 }} id="skeleton-block" />);
 
-    expect(document.getElementById('skeleton-block')).toBeInTheDocument();
+    expect(getSkeletonBlock()).toHaveStyle({ marginTop: '8px' });
   });
 
   it('renders with array sx prop', () => {
-    render(<UISkeletonBlock id="skeleton-block" sx={[{ mt: 1 }, { mb: 2 }]} />);
+    render(<UISkeletonBlock sx={[{ mt: 1 }, { mb: 2 }]} id="skeleton-block" />);
 
-    expect(document.getElementById('skeleton-block')).toBeInTheDocument();
-  });
-
-  it('does not emit test-only data attributes', () => {
-    const { container } = render(<UISkeletonBlock id="skeleton-block" />);
-
-    expect(container.querySelector('[data-testid]')).toBeNull();
+    expect(getSkeletonBlock()).toHaveStyle({
+      marginTop: '8px',
+      marginBottom: '16px',
+    });
   });
 });

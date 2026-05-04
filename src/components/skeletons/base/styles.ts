@@ -26,8 +26,11 @@ export const shimmerGradient = `linear-gradient(
 )`;
 
 export const SMALL_MOBILE_BREAKPOINT = 375;
+
 export const SMALL_MOBILE_BREAKPOINT_UPPER = SMALL_MOBILE_BREAKPOINT + 1;
+
 export const SKELETON_BORDER_RADIUS = '57px';
+
 export const SKELETON_BORDER_COLOR = '#E1E7EA';
 
 export const baseSkeletonStyle = {

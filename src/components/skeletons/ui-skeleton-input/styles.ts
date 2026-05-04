@@ -2,14 +2,26 @@ import { type Theme } from '@mui/material/styles';
 import { type SystemStyleObject } from '@mui/system';
 
 import { SMALL_MOBILE_BREAKPOINT, baseSkeletonStyle } from '@/components/skeletons/base/styles';
-import breakpointsTheme from '@/components/ui-breakpoints';
+import breakpointsTheme from '@/components/UIBreakpoints';
+
+export const BASE_INPUT_HEIGHT = 3;
+export const MD_INPUT_HEIGHT = 4.9375;
+export const XL_INPUT_HEIGHT = 4;
+
+export const SKELETON_INPUT_OUTER_BACKGROUND = 'linear-gradient(#fff, #fff)';
+export const SKELETON_INPUT_BORDER_GRADIENT =
+  'linear-gradient(90deg, rgba(211, 216, 224, 0.78) 0%, rgba(211, 216, 224, 0.598958) 49.13%, rgba(211, 216, 224, 0) 100%)';
 
 export default {
+  staticSkeleton: {
+    animation: 'none',
+    backgroundSize: '100% 100%',
+  },
   inputContainer: (theme: Theme): SystemStyleObject<Theme> => ({
     position: 'relative',
     boxSizing: 'border-box',
     borderRadius: '0.5rem',
-    height: 'clamp(3rem, 4vw, 4rem)',
+    height: `clamp(${BASE_INPUT_HEIGHT}rem, 4vw, ${XL_INPUT_HEIGHT}rem)`,
     width: '100%',
     ...baseSkeletonStyle,
     '&::after': {
@@ -23,14 +35,14 @@ export default {
       minWidth: '19.6875rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      height: '4.9375rem',
+      height: `${MD_INPUT_HEIGHT}rem`,
       minWidth: '33.75rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       minWidth: '26.375rem',
     },
     [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
-      maxHeight: '4rem',
+      maxHeight: `${XL_INPUT_HEIGHT}rem`,
     },
   }),
   inputPlaceholder: {

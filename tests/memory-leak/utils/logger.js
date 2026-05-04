@@ -1,29 +1,24 @@
-/* eslint-disable no-console */
+const util = require('node:util');
 
-function formatError(error) {
-  if (error instanceof Error) {
-    return error.stack || error.message;
-  }
-
-  return String(error);
+function writeLine(stream, args) {
+  stream.write(`${util.format(...args)}\n`);
 }
 
-module.exports = {
-  info: (...args) => console.log(...args),
-  warn: (...args) => console.warn(...args),
-  debug: (...args) => {
-    if (process.env.MEMLAB_DEBUG === 'true') {
-      console.log('[DEBUG]', ...args);
-    }
+const logger = {
+  info: (...args) => {
+    writeLine(process.stdout, args);
   },
   error: (...args) => {
-    if (args.length > 1) {
-      const output = [args[0], formatError(args[1]), ...args.slice(2)];
-
-      console.error(...output);
-      return;
+    writeLine(process.stderr, args);
+  },
+  warn: (...args) => {
+    writeLine(process.stderr, args);
+  },
+  debug: (...args) => {
+    if (process.env.MEMLAB_DEBUG === 'true') {
+      writeLine(process.stdout, ['[DEBUG]', ...args]);
     }
-
-    console.error(...args);
   },
 };
+
+module.exports = logger;

@@ -54,14 +54,14 @@
       "thresholds": {
         "errorRate": {
           "smoke": 0.15,
-          "average": 0.2,
+          "average": 0.20,
           "stress": 0.25,
-          "spike": 0.3
+          "spike": 0.30
         },
         "checkPassRate": {
-          "smoke": 0.85,
-          "average": 0.85,
-          "stress": 0.8,
+          "smoke": 0.95,
+          "average": 0.95,
+          "stress": 0.80,
           "spike": 0.75
         }
       },

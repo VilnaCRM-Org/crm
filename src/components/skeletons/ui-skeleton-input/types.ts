@@ -1,5 +1,6 @@
-// UISkeletonInput intentionally keeps a fixed API surface: layout overrides stay
-// inside the shared styles so consumers do not customize the placeholder shell.
+// sx is intentionally omitted: UISkeletonInput has fixed structural styling
+// and does not expose customization via sx, unlike UISkeletonBlock/UISkeletonButton.
 export interface UISkeletonInputProps {
+  disableAnimation?: boolean;
   id?: string;
 }

@@ -4,13 +4,16 @@ export default class Utils {
   constructor(endpointName = null) {
     const config = this.getConfig();
     const { protocol, host, port, params } = config;
+
     let finalHost = host;
     let finalPort = port;
 
-    if (endpointName && config.endpoints?.[endpointName]) {
+    if (endpointName && config.endpoints && config.endpoints[endpointName]) {
       const endpointConfig = config.endpoints[endpointName];
       if (endpointConfig.host) finalHost = endpointConfig.host;
       if (endpointConfig.port) finalPort = endpointConfig.port;
+    } else if (endpointName) {
+      throw new Error(`Endpoint '${endpointName}' not found in configuration`);
     }
 
     this.baseUrl = `${protocol}://${finalHost}${finalPort ? `:${finalPort}` : ''}`;
@@ -57,7 +60,7 @@ export default class Utils {
       throw new Error('checkFunction must be a function');
     }
 
-    check(response, {
+    return check(response, {
       [checkName]: (res) => checkFunction(res),
     });
   }

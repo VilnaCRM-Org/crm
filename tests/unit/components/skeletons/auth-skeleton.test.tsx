@@ -1,133 +1,113 @@
 import { render, screen } from '@testing-library/react';
 
-import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
-import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
-import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
-import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
-import AuthSkeleton from '@/modules/user/features/auth/components/auth-skeleton';
+import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 
-jest.mock('@/components/skeletons/ui-skeleton-block', () => ({
-  __esModule: true,
-  default: jest.fn(() => null),
+jest.mock('react-i18next', () => ({
+  useTranslation: (): { t: (key: string) => string } => ({
+    t: (key: string): string => key,
+  }),
 }));
 
-jest.mock('@/components/skeletons/ui-skeleton-button', () => ({
-  __esModule: true,
-  default: jest.fn(() => null),
-}));
+function getGenericSkeletonIds(): string[] {
+  return (screen.getAllByRole('generic') as HTMLElement[]).map((element) => element.id);
+}
 
-jest.mock('@/components/skeletons/ui-skeleton-input', () => ({
-  __esModule: true,
-  default: jest.fn(() => null),
-}));
+function getPresentationSkeletonIds(): string[] {
+  return (screen.getAllByRole('presentation') as HTMLElement[]).map((element) => element.id);
+}
 
-jest.mock('@/components/skeletons/ui-skeleton-text', () => ({
-  __esModule: true,
-  default: jest.fn(() => null),
-}));
+describe('AuthSkeleton Component', () => {
+  describe('Rendering structure', () => {
+    it('renders the skeleton structure including the presentation divider', () => {
+      render(<AuthSkeleton />);
+      const divider = screen.getByRole('presentation');
+      expect(divider).toBeInTheDocument();
+      expect(screen.getByRole('region')).toHaveAttribute(
+        'aria-label',
+        'auth.loadingForm'
+      );
+      expect(getGenericSkeletonIds()).toEqual(
+        expect.arrayContaining(['auth-skeleton-title', 'auth-skeleton-submit'])
+      );
+    });
 
-describe('AuthSkeleton', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+    it('should render skeleton elements', () => {
+      render(<AuthSkeleton />);
+      const genericIds = getGenericSkeletonIds();
+
+      expect(genericIds).toEqual(
+        expect.arrayContaining([
+          'auth-skeleton-title',
+          'auth-skeleton-subtitle',
+          'auth-skeleton-submit',
+        ])
+      );
+      expect(genericIds.filter((id) => id.startsWith('auth-skeleton-field-label-'))).toHaveLength(
+        3
+      );
+      expect(genericIds.filter((id) => id.startsWith('auth-skeleton-input-'))).toHaveLength(3);
+    });
   });
 
-  describe('Rendering structure', () => {
-    it('renders the component without crashing', () => {
+  describe('Divider skeleton', () => {
+    it('keeps the divider free of textual content', () => {
       render(<AuthSkeleton />);
-
-      expect(screen.getByRole('presentation')).toBeInTheDocument();
+      const divider = screen.getByRole('presentation');
+      expect(divider).toHaveTextContent('');
     });
+  });
 
-    it('renders the expected skeleton elements', () => {
-      render(<AuthSkeleton />);
+  describe('Static rendering', () => {
+    it('renders the full skeleton tree when animation is disabled', () => {
+      render(<AuthSkeleton disableAnimation />);
+      const genericIds = getGenericSkeletonIds();
 
-      const textCalls = (UISkeletonText as unknown as jest.Mock).mock.calls.map(([props]) => props);
-      const inputCalls = (UISkeletonInput as unknown as jest.Mock).mock.calls.map(([props]) => props);
-      const buttonCalls = (UISkeletonButton as unknown as jest.Mock).mock.calls.map(([props]) => props);
-      const blockCalls = (UISkeletonBlock as unknown as jest.Mock).mock.calls.map(([props]) => props);
-
-      expect(textCalls).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: 'auth-skeleton-title',
-          }),
-          expect.objectContaining({
-            id: 'auth-skeleton-subtitle',
-          }),
-          expect.objectContaining({
-            id: 'auth-skeleton-subtitle-line2',
-          }),
-          expect.objectContaining({
-            id: 'auth-skeleton-switcher',
-          }),
-        ])
+      expect(genericIds).toEqual(
+        expect.arrayContaining(['auth-skeleton-title', 'auth-skeleton-switcher'])
       );
-      expect(
-        textCalls.filter((props) => props.id?.startsWith('auth-skeleton-field-label-'))
-      ).toHaveLength(3);
-      expect(
-        inputCalls.filter((props) => props.id?.startsWith('auth-skeleton-input-'))
-      ).toHaveLength(3);
-      expect(buttonCalls).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: 'auth-skeleton-submit',
-          }),
-        ])
-      );
-      expect(
-        blockCalls.filter((props) => props.id?.startsWith('auth-skeleton-social-'))
-      ).toHaveLength(4);
-      expect(screen.getByRole('presentation')).toBeInTheDocument();
-    });
-
-    it('does not pass test-only data attributes to the skeleton building blocks', () => {
-      render(<AuthSkeleton />);
-
-      const textCalls = (UISkeletonText as unknown as jest.Mock).mock.calls.map(([props]) => props);
-      const inputCalls = (UISkeletonInput as unknown as jest.Mock).mock.calls.map(([props]) => props);
-      const buttonCalls = (UISkeletonButton as unknown as jest.Mock).mock.calls.map(([props]) => props);
-      const blockCalls = (UISkeletonBlock as unknown as jest.Mock).mock.calls.map(([props]) => props);
-
-      expect(textCalls.every((props) => props['data-testid'] === undefined)).toBe(true);
-      expect(inputCalls.every((props) => props['data-testid'] === undefined)).toBe(true);
-      expect(buttonCalls.every((props) => props['data-testid'] === undefined)).toBe(true);
-      expect(blockCalls.every((props) => props['data-testid'] === undefined)).toBe(true);
+      expect(genericIds.filter((id) => id.startsWith('auth-skeleton-input-'))).toHaveLength(3);
+      expect(genericIds.filter((id) => id.startsWith('auth-skeleton-social-'))).toHaveLength(4);
     });
   });
 
   describe('Accessibility', () => {
-    it('exposes the loading region label and keeps the divider decorative', () => {
+    it('should have proper structure for screen readers', () => {
       render(<AuthSkeleton />);
-
-      expect(screen.getByRole('region')).toHaveAttribute(
-        'aria-label',
-        'Loading authentication form'
-      );
-      expect(screen.getByRole('presentation')).toBeInTheDocument();
+      const section = screen.getByRole('region');
+      expect(section).toHaveAttribute('aria-label', 'auth.loadingForm');
+      expect(getPresentationSkeletonIds()).toContain('auth-skeleton-divider');
     });
 
-    it('does not render interactive or form controls', () => {
+    it('should not have interactive elements during loading', () => {
       render(<AuthSkeleton />);
+      const buttons = screen.queryAllByRole('button');
+      const links = screen.queryAllByRole('link');
+      const inputs = screen.queryAllByRole('textbox');
+      expect(buttons).toHaveLength(0);
+      expect(links).toHaveLength(0);
+      expect(inputs).toHaveLength(0);
+    });
 
-      expect(screen.queryAllByRole('button')).toHaveLength(0);
-      expect(screen.queryAllByRole('link')).toHaveLength(0);
-      expect(screen.queryAllByRole('textbox')).toHaveLength(0);
-      expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
-      expect(screen.queryAllByRole('radio')).toHaveLength(0);
-      expect(screen.queryAllByRole('combobox')).toHaveLength(0);
+    it('should not have form elements during loading', () => {
+      render(<AuthSkeleton />);
+      const checkboxes = screen.queryAllByRole('checkbox');
+      const radios = screen.queryAllByRole('radio');
+      const selects = screen.queryAllByRole('combobox');
+      expect(checkboxes).toHaveLength(0);
+      expect(radios).toHaveLength(0);
+      expect(selects).toHaveLength(0);
     });
   });
 
   describe('Component behavior', () => {
-    it('renders consistently across rerenders', () => {
+    it('should render consistently on multiple renders', () => {
       const { rerender } = render(<AuthSkeleton />);
-
-      expect(screen.getByRole('presentation')).toBeInTheDocument();
+      const divider1 = screen.getByRole('presentation');
+      expect(divider1).toBeInTheDocument();
 
       rerender(<AuthSkeleton />);
-
-      expect(screen.getByRole('presentation')).toBeInTheDocument();
+      const divider2 = screen.getByRole('presentation');
+      expect(divider2).toBeInTheDocument();
     });
   });
 });

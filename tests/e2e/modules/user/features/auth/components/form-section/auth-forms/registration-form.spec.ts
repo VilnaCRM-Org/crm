@@ -1,10 +1,15 @@
 import { test, expect } from '@playwright/test';
 
-import fillInput from '../../../../../../../utils/fill-input';
+import fillInput from '../../../../../../../utils/fillInput';
 
-import { REGISTRATION_URL, REGISTRATION_API_URL, userData, successNotificationTitle } from './constants/constants';
-import { fillEmailInput, fillInitialsInput, fillPasswordInput } from './utils/fill-form';
-import getFormFields from './utils/get-form-fields';
+import {
+  REGISTRATION_URL,
+  REGISTRATION_API_URL,
+  successNotificationTitle,
+  userData,
+} from './constants/constants';
+import { fillEmailInput, fillInitialsInput, fillPasswordInput } from './utils/fillForm';
+import getFormFields from './utils/getFormFields';
 import { serverErrorResponse, successResponse } from './utils/responses';
 
 test.describe('Registration Form', () => {

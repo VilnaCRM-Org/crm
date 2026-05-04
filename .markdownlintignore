@@ -4,6 +4,11 @@ playwright-report
 test-results
 lighthouse
 .tmp
-
 _bmad
 _bmad-output
+build
+storybook-static
+lhci-reports-desktop
+lhci-reports-mobile
+reports
+tmp-lhci

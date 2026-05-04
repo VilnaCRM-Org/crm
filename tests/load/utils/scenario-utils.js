@@ -5,16 +5,17 @@ export default class ScenarioUtils {
   constructor(utils, scenarioName) {
     this.utils = utils;
     this.config = utils.getConfig();
-    this.endpointConfig = this.config.endpoints[scenarioName];
+    this.scenarioName = scenarioName;
 
     const requiredScenarios = ['smoke', 'average', 'stress', 'spike'];
     const missing = requiredScenarios.filter(
       (type) => !this.config.endpoints[scenarioName] || !this.config.endpoints[scenarioName][type]
     );
     if (missing.length > 0) {
-      throw new Error(`Missing scenario configurations: ${missing.join(', ')}`);
+      throw new Error(`Missing scenario configurations for ${this.scenarioName}: ${missing.join(', ')}`);
     }
 
+    this.endpointConfig = this.config.endpoints[scenarioName];
     this.smokeConfig = this.endpointConfig.smoke;
     this.averageConfig = this.endpointConfig.average;
     this.stressConfig = this.endpointConfig.stress;

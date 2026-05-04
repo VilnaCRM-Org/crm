@@ -38,7 +38,7 @@ export const screenSizes: ReadonlyArray<ScreenSize> = [
   {
     width: 412,
     height: 896,
-    name: 'large-mobile2',
+    name: 'large-mobile-2',
   },
   {
     width: 393,

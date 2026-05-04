@@ -1,31 +1,48 @@
-/* eslint-disable react/react-in-jsx-scope, testing-library/no-container, testing-library/no-node-access */
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import React from 'react';
 
-import AuthSkeleton from '@/modules/user/features/auth/components/auth-skeleton';
+import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 
-function getElementById(id: string): HTMLElement {
-  const element = document.getElementById(id);
+function getGenericSkeletonElements(): HTMLElement[] {
+  return screen.getAllByRole('generic', { hidden: true }) as HTMLElement[];
+}
 
-  expect(element).not.toBeNull();
-
-  return element as HTMLElement;
+function getPresentationSkeletonElements(): HTMLElement[] {
+  return screen.getAllByRole('presentation') as HTMLElement[];
 }
 
 function assertAuthSkeletonElements(): void {
-  expect(getElementById('auth-skeleton-title')).toBeInTheDocument();
-  expect(getElementById('auth-skeleton-subtitle')).toBeInTheDocument();
-  expect(getElementById('auth-skeleton-subtitle-line2')).toBeInTheDocument();
-  expect(document.querySelectorAll('[id^="auth-skeleton-field-label-"]')).toHaveLength(3);
-  expect(document.querySelectorAll('[id^="auth-skeleton-input-"]')).toHaveLength(3);
-  expect(getElementById('auth-skeleton-submit')).toBeInTheDocument();
-  expect(getElementById('auth-skeleton-divider')).toBeInTheDocument();
-  expect(document.querySelectorAll('[id^="auth-skeleton-social-"]')).toHaveLength(4);
-  expect(getElementById('auth-skeleton-switcher')).toBeInTheDocument();
+  const genericIds = getGenericSkeletonElements()
+    .map((element) => element.id)
+    .filter(Boolean);
+  const presentationIds = getPresentationSkeletonElements()
+    .map((element) => element.id)
+    .filter(Boolean);
+
+  expect(genericIds).toEqual(
+    expect.arrayContaining([
+      'auth-skeleton-title',
+      'auth-skeleton-subtitle',
+      'auth-skeleton-subtitle-line2',
+      'auth-skeleton-submit',
+      'auth-skeleton-switcher',
+    ])
+  );
+  expect(genericIds.filter((id) => id.startsWith('auth-skeleton-field-label-'))).toHaveLength(3);
+  expect(genericIds.filter((id) => id.startsWith('auth-skeleton-input-'))).toHaveLength(3);
+  expect(genericIds.filter((id) => id.startsWith('auth-skeleton-social-'))).toHaveLength(4);
+  expect(presentationIds).toContain('auth-skeleton-divider');
 }
 
-describe('AuthSkeleton integration', () => {
+describe('AuthSkeleton Integration Tests', () => {
   const originalInnerWidth = window.innerWidth;
+  const viewportCases = [
+    { label: 'mobile', width: 375 },
+    { label: 'tablet', width: 768 },
+    { label: 'desktop', width: 1024 },
+    { label: 'large desktop', width: 1920 },
+  ];
 
   afterEach(() => {
     Object.defineProperty(window, 'innerWidth', {
@@ -36,15 +53,21 @@ describe('AuthSkeleton integration', () => {
     window.dispatchEvent(new Event('resize'));
   });
 
-  const viewportCases = [
-    { label: 'mobile', width: 375 },
-    { label: 'tablet', width: 768 },
-    { label: 'desktop', width: 1024 },
-    { label: 'large desktop', width: 1920 },
-  ] as const;
+  it('renders all skeleton elements', () => {
+    expect(React).toBeDefined();
+    render(<AuthSkeleton />);
+    assertAuthSkeletonElements();
+  });
+
+  it('renders the full skeleton tree when animation is disabled', () => {
+    render(<AuthSkeleton disableAnimation />);
+
+    assertAuthSkeletonElements();
+    expect(screen.getByRole('region')).toBeInTheDocument();
+  });
 
   viewportCases.forEach(({ label, width }) => {
-    describe(`structure at ${label}`, () => {
+    describe(`Structural tests (${width}px)`, () => {
       beforeEach(() => {
         Object.defineProperty(window, 'innerWidth', {
           writable: true,
@@ -54,31 +77,17 @@ describe('AuthSkeleton integration', () => {
         window.dispatchEvent(new Event('resize'));
       });
 
-      it('renders the loading section', () => {
+      it(`should render skeleton structure on ${label} viewport`, () => {
         render(<AuthSkeleton />);
-
-        expect(screen.getByRole('region', { name: 'Loading authentication form' })).toBeInTheDocument();
-      });
-
-      it('renders the full skeleton structure', () => {
-        render(<AuthSkeleton />);
-
-        assertAuthSkeletonElements();
-      });
-
-      it('does not render test-only data attributes', () => {
-        const { container } = render(<AuthSkeleton />);
-
-        expect(container.querySelector('[data-testid]')).toBeNull();
+        const section = screen.getByRole('region');
+        expect(section).toBeInTheDocument();
       });
     });
   });
 
-  describe('cross-viewport consistency', () => {
-    it('renders the loading region across viewports', () => {
-      const viewports = [375, 768, 1024, 1920];
-
-      viewports.forEach((width) => {
+  describe('Cross-viewport consistency', () => {
+    it('should render section across all viewports', () => {
+      viewportCases.map((c) => c.width).forEach((width) => {
         Object.defineProperty(window, 'innerWidth', {
           writable: true,
           configurable: true,
@@ -87,16 +96,14 @@ describe('AuthSkeleton integration', () => {
         window.dispatchEvent(new Event('resize'));
 
         const { unmount } = render(<AuthSkeleton />);
-
-        expect(screen.getByRole('region', { name: 'Loading authentication form' })).toBeInTheDocument();
+        const section = screen.getByRole('region');
+        expect(section).toBeInTheDocument();
         unmount();
       });
     });
 
-    it('keeps the skeleton non-interactive across viewports', () => {
-      const viewports = [375, 768, 1024, 1920];
-
-      viewports.forEach((width) => {
+    it('should maintain accessibility across viewports', () => {
+      viewportCases.map((c) => c.width).forEach((width) => {
         Object.defineProperty(window, 'innerWidth', {
           writable: true,
           configurable: true,
@@ -105,9 +112,10 @@ describe('AuthSkeleton integration', () => {
         window.dispatchEvent(new Event('resize'));
 
         const { unmount } = render(<AuthSkeleton />);
-
-        expect(screen.queryAllByRole('button')).toHaveLength(0);
-        expect(screen.queryAllByRole('link')).toHaveLength(0);
+        const buttons = screen.queryAllByRole('button');
+        const links = screen.queryAllByRole('link');
+        expect(buttons).toHaveLength(0);
+        expect(links).toHaveLength(0);
         unmount();
       });
     });

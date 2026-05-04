@@ -1,70 +1,41 @@
-const ScenarioBuilder = require('../utils/scenario-builder');
+import ScenarioBuilder from '../utils/scenario-builder.js';
 
-const scenarioBuilder = new ScenarioBuilder();
+// Baseline is a non-matching route so no auth components are mounted.
+// action() navigates to /authentication, triggering the AuthSkeleton → FormSection
+// transition. back() returns to the baseline so MemLab can detect any objects
+// retained from the skeleton's lifecycle.
+const scenarioBuilder = new ScenarioBuilder('/__memlab_away__');
 
-const authSkeletonSelector = '#auth-skeleton-title';
-const authRouteShellChunks = 2;
-const lazyChunkDelayMs = 2000;
-const preloadedAuthToken = 'memlab-preloaded-auth-token';
-
-let lazyChunkCount = 0;
-
-function isLazyChunkRequest(url) {
-  return /\/static\/js\/.*\.js$/.test(url) && !/\/static\/js\/(?:main|runtime)/.test(url);
-}
-
-function handleRequest(req) {
-  if (isLazyChunkRequest(req.url())) {
-    lazyChunkCount += 1;
-
-    if (lazyChunkCount > authRouteShellChunks) {
-      setTimeout(() => {
-        req.continue().catch(() => {});
-      }, lazyChunkDelayMs);
-      return;
-    }
-
-    req.continue().catch(() => {});
-    return;
-  }
-
-  req.continue().catch(() => {});
-}
-
-async function beforeInitialPageLoad(page) {
-  await scenarioBuilder.beforeInitialPageLoad(page);
-  await page.evaluateOnNewDocument((token) => {
-    Object.defineProperty(window, '__PRELOADED_AUTH_TOKEN__', {
-      value: token,
-      configurable: true,
-    });
-  }, preloadedAuthToken);
-}
+const authFormSelector = 'form, [role="form"]';
 
 async function action(page) {
   try {
-    lazyChunkCount = 0;
-    await page.setRequestInterception(true);
-    page.on('request', handleRequest);
-
-    await page.evaluate((path) => {
-      window.history.pushState({}, '', path);
+    await page.evaluate(() => {
+      window.history.pushState({}, '', '/authentication');
       window.dispatchEvent(new PopStateEvent('popstate'));
-    }, '/authentication');
+    });
 
-    await page.waitForSelector(authSkeletonSelector, { timeout: 8000 });
+    // Wait for FormSection to finish loading (skeleton has come and gone).
+    await page.waitForSelector(authFormSelector, { timeout: 15000 });
   } catch (error) {
     throw new Error(`Auth skeleton memory leak test failed: ${error.message}`);
   }
 }
 
 async function back(page) {
-  page.off('request', handleRequest);
-  await page.setRequestInterception(false);
-  await page.evaluate(() => {
-    window.history.pushState({}, '', '/');
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  });
+  try {
+    await page.evaluate(() => {
+      window.history.pushState({}, '', '/__memlab_away__');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    await page.waitForFunction(
+      () => !document.querySelector('form') && !document.querySelector('[role="form"]'),
+      { timeout: 5000 }
+    );
+  } catch (error) {
+    throw new Error(`Auth skeleton back navigation failed: ${error.message}`);
+  }
 }
 
-module.exports = scenarioBuilder.createScenario({ beforeInitialPageLoad, action, back });
+export default scenarioBuilder.createScenario({ action, back });

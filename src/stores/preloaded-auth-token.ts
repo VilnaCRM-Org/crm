@@ -6,14 +6,24 @@ declare global {
 
 export const preloadedAuthTokenKey = '__PRELOADED_AUTH_TOKEN__' as const;
 
-type PreloadedAuthWindow = Pick<Window, typeof preloadedAuthTokenKey>;
+export type PreloadedAuthWindow = Pick<Window, typeof preloadedAuthTokenKey>;
+
+function getEnvPreloadedAuthToken(): string | undefined {
+  try {
+    return process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+  } catch {
+    return undefined;
+  }
+}
 
 export function getPreloadedAuthToken(
-  currentWindow: PreloadedAuthWindow | undefined =
-    typeof window !== 'undefined' ? window : undefined,
-  envToken: string | undefined = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN
+  currentWindow: PreloadedAuthWindow | undefined = typeof window !== 'undefined'
+    ? window
+    : undefined,
+  envToken: string | undefined = getEnvPreloadedAuthToken()
 ): string | undefined {
   const preloadedEnvToken = envToken?.trim() || undefined;
+  const trimmedWindowToken = currentWindow?.[preloadedAuthTokenKey]?.trim() || undefined;
 
-  return currentWindow?.[preloadedAuthTokenKey] || preloadedEnvToken;
+  return trimmedWindowToken || preloadedEnvToken;
 }

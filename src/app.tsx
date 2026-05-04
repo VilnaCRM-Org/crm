@@ -1,20 +1,13 @@
-import CssBaseline from '@mui/material/CssBaseline';
-import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
 import React, { lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Provider } from 'react-redux';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-import '@/index.css';
-import '@/config/fonts/golos.css';
-import '@/config/fonts/inter.css';
-
 import ProtectedRoute from '@/components/protected-route';
-import store from '@/stores';
-import theme from '@/styles/theme';
 
-const Authentication = lazy(async () => import('@/modules/user/features/auth'));
-const ButtonExample = lazy(async () => import('@/button-example'));
+import './index.css';
+
+const ButtonExample = lazy(async () => import('@/ButtonExample'));
+const Authentication = lazy(async () => import('@/modules/User/features/Auth'));
 
 const router = createBrowserRouter([
   {
@@ -43,18 +36,10 @@ function App(): React.ReactElement {
     i18n.on?.('languageChanged', applyDir);
     return (): void => i18n.off?.('languageChanged', applyDir);
   }, [i18n]);
-
   return (
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Provider store={store}>
-          <React.Suspense fallback={null}>
-            <RouterProvider router={router} future={{ v7_startTransition: true }} />
-          </React.Suspense>
-        </Provider>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <React.Suspense fallback={null}>
+      <RouterProvider router={router} future={{ v7_startTransition: true }} />
+    </React.Suspense>
   );
 }
 export default App;

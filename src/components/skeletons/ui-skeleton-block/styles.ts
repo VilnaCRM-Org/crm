@@ -1,16 +1,12 @@
-import { baseSkeletonStyle } from '@/components/skeletons/base/styles';
+import type { SxProps, Theme } from '@mui/material';
 
-type StylesObject = typeof baseSkeletonStyle & {
-  width: string | number;
-  height: string | number;
-  borderRadius: string | number;
-};
+import { baseSkeletonStyle } from '@/components/skeletons/base/styles';
 
 export default function getBlockSkeletonStyles(
   width: string | number,
   height: string | number,
   borderRadius: string | number
-): StylesObject {
+): SxProps<Theme> {
   return {
     ...baseSkeletonStyle,
     width,

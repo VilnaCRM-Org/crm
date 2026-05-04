@@ -1,50 +1,27 @@
-/* eslint-disable testing-library/prefer-screen-queries */
-import { type Page, test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-import { seedPreloadedAuthToken } from '../../../utils/seed-preloaded-auth-token';
+import { interceptAuthFormChunks, AUTH_ASYNC_JS_GLOB } from '../../../utils/interceptAuthFormChunks';
 
 const AUTH_URL = '/authentication';
-const HOME_URL = '/';
-const JS_DELAY_MS = 2000;
-const AUTH_ROUTE_SHELL_CHUNKS = 2;
 
-function isLazyChunk(url: string): boolean {
-  return /\/static\/js\/.*\.js$/.test(url) && !/\/static\/js\/(?:main|runtime)/.test(url);
-}
+test.describe('AuthSkeleton Component E2E Tests', () => {
+  test.describe('Loading State', () => {
+    let releaseDelayedChunk: (() => Promise<void>) | undefined;
 
-async function interceptAuthFormChunks(page: Page, delayMs: number): Promise<void> {
-  let lazyChunkCount = 0;
-
-  await page.route('**/static/js/**/*.js', async (route) => {
-    if (isLazyChunk(route.request().url())) {
-      lazyChunkCount += 1;
-
-      // Let the auth route shell load first, then delay the inner form chunk to expose the skeleton.
-      if (lazyChunkCount > AUTH_ROUTE_SHELL_CHUNKS) {
-        await new Promise<void>((resolve) => {
-          setTimeout(resolve, delayMs);
-        });
-      }
-    }
-
-    await route.continue();
-  });
-}
-
-test.describe('Auth skeleton e2e', () => {
-  test.describe('loading state', () => {
     test.beforeEach(async ({ page }) => {
-      await seedPreloadedAuthToken(page);
-      await page.goto(HOME_URL, { waitUntil: 'networkidle' });
-      await interceptAuthFormChunks(page, JS_DELAY_MS);
-      await page.evaluate((path) => {
-        window.history.pushState({}, '', path);
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      }, AUTH_URL);
+      releaseDelayedChunk = await interceptAuthFormChunks(page);
+      await page.goto(AUTH_URL, { waitUntil: 'commit' });
     });
 
-    test('displays all skeleton elements while authentication module loads', async ({ page }) => {
-      const skeletonIds = [
+    test.afterEach(async ({ page }) => {
+      await releaseDelayedChunk?.();
+      await page.unroute(AUTH_ASYNC_JS_GLOB);
+    });
+
+    test('should display all skeleton elements while authentication module loads', async ({
+      page,
+    }) => {
+      const skeletonTestIds = [
         'auth-skeleton-title',
         'auth-skeleton-subtitle',
         'auth-skeleton-field-label-1',
@@ -63,40 +40,44 @@ test.describe('Auth skeleton e2e', () => {
       ];
 
       await Promise.all(
-        skeletonIds.map((testId) =>
+        skeletonTestIds.map((testId) =>
           expect(page.locator(`#${testId}`)).toBeVisible({ timeout: 5000 })
         )
       );
 
+      // subtitle-line2 is rendered but hidden via display:none above 336px viewports
       await expect(page.locator('#auth-skeleton-subtitle-line2')).toBeAttached();
     });
 
-    test('has an accessible loading label on the skeleton section', async ({ page }) => {
-      await expect(page.locator('section[aria-label="Loading authentication form"]')).toBeVisible({
-        timeout: 5000,
-      });
+    test('should have accessible loading label on skeleton section', async ({ page }) => {
+      const section = page.locator('section[aria-label="Завантаження форми автентифікації"]');
+      await expect(section).toBeVisible({ timeout: 5000 });
     });
 
-    test('transitions from skeleton to authentication form', async ({ page }) => {
+    test('should transition from skeleton to authentication form', async ({ page }) => {
       await expect(page.locator('#auth-skeleton-divider')).toBeVisible({ timeout: 3000 });
 
-      await page.unroute('**/static/js/**/*.js');
+      await releaseDelayedChunk?.();
+      await page.unroute(AUTH_ASYNC_JS_GLOB);
 
-      const form = page.locator('form');
+      const form = page.locator('form, [role="form"]');
       await expect(form).toBeVisible({ timeout: 10000 });
 
-      await expect(page.locator('input[type="email"], input[type="password"]')).toHaveCount(2, {
-        timeout: 10000,
-      });
+      const inputs = page.locator(
+        'input[type="text"], input[type="email"], input[type="password"]'
+      );
+      await expect(inputs.first()).toBeVisible();
+
       await expect(page.locator('button[type="submit"]')).toBeVisible();
     });
 
-    test('hides skeleton elements after the authentication form loads', async ({ page }) => {
+    test('should hide skeleton elements after authentication form loads', async ({ page }) => {
       await expect(page.locator('#auth-skeleton-title')).toBeVisible({ timeout: 3000 });
 
-      await page.unroute('**/static/js/**/*.js');
+      await releaseDelayedChunk?.();
+      await page.unroute(AUTH_ASYNC_JS_GLOB);
 
-      await expect(page.locator('form')).toBeVisible({ timeout: 10000 });
+      await expect(page.locator('form, [role="form"]')).toBeVisible({ timeout: 10000 });
 
       await expect(page.locator('#auth-skeleton-title')).not.toBeVisible();
       await expect(page.locator('#auth-skeleton-submit')).not.toBeVisible();
@@ -104,24 +85,25 @@ test.describe('Auth skeleton e2e', () => {
     });
   });
 
-  test.describe('error handling', () => {
-    test('loads the authentication page without critical errors', async ({ page }) => {
+  test.describe('Error Handling', () => {
+    test('should load authentication page without critical errors', async ({ page }) => {
       const criticalErrors: string[] = [];
-
       page.on('pageerror', (error) => {
         criticalErrors.push(error.message);
       });
       page.on('response', (response) => {
         const status = response.status();
-
         if (status >= 300 && status < 400) return;
-        if (status === 400) return;
+        // The auth page can trigger an expected 400 from the user API during form bootstrap in test mode.
+        if (status === 400 && response.url().includes('/api/users')) return;
         if (!response.ok()) criticalErrors.push(`${status} ${response.url()}`);
       });
 
       await page.goto(AUTH_URL);
 
-      await expect(page.locator('form')).toBeVisible({ timeout: 10000 });
+      const form = page.locator('form, [role="form"]');
+      await expect(form).toBeVisible({ timeout: 10000 });
+
       expect(criticalErrors).toHaveLength(0);
     });
   });

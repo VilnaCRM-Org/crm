@@ -12,6 +12,7 @@ export const placeholderPassword: string = t('sign_up.form.password_input.placeh
 export const signUpButton: string = t('sign_up.form.submit_button');
 
 export const requiredNameError: string = t('sign_up.form.name_input.required');
+export const successNotificationTitle: string = t('notifications.success.title');
 
 export const successNotificationTitle: string = t('notifications.success.title');
 

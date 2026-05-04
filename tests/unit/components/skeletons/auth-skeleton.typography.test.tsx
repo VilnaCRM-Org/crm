@@ -1,12 +1,14 @@
 import { render } from '@testing-library/react';
 
+import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
-import breakpointsTheme from '@/components/ui-breakpoints';
-import AuthSkeleton from '@/modules/user/features/auth/components/auth-skeleton';
+import breakpointsTheme from '@/components/UIBreakpoints';
 
 jest.mock('@/components/skeletons/ui-skeleton-text', () => ({
   __esModule: true,
-  default: jest.fn((props: { id?: string }) => <div id={props.id} />),
+  default: jest.fn((props: { id?: string }) => (
+    <div id={props.id ?? 'skeleton-text'} />
+  )),
 }));
 
 describe('AuthSkeleton typography parity', () => {
@@ -19,17 +21,16 @@ describe('AuthSkeleton typography parity', () => {
 
     expect(titleSkeleton).toBeDefined();
     expect(subtitleSkeleton).toBeDefined();
+    if (!titleSkeleton || !subtitleSkeleton) {
+      throw new Error('Missing expected skeleton text calls');
+    }
 
-    const definedTitleSkeleton = titleSkeleton!;
-    const definedSubtitleSkeleton = subtitleSkeleton!;
-
-    expect(definedTitleSkeleton).toEqual(
+    expect(titleSkeleton).toEqual(
       expect.objectContaining({
         size: 'l',
       })
     );
-    expect(definedTitleSkeleton.width).toBeUndefined();
-
+    const titleSx = titleSkeleton.sx;
     const titleSxExpected = {
       width: '7.5rem',
       height: '1.375rem',
@@ -40,22 +41,18 @@ describe('AuthSkeleton typography parity', () => {
         marginBottom: '0.9375rem',
       }),
     };
-
-    if (Array.isArray(definedTitleSkeleton.sx)) {
-      expect(definedTitleSkeleton.sx).toEqual(
-        expect.arrayContaining([expect.objectContaining(titleSxExpected)])
-      );
+    if (Array.isArray(titleSx)) {
+      expect(titleSx).toEqual(expect.arrayContaining([expect.objectContaining(titleSxExpected)]));
     } else {
-      expect(definedTitleSkeleton.sx).toEqual(expect.objectContaining(titleSxExpected));
+      expect(titleSx).toEqual(expect.objectContaining(titleSxExpected));
     }
 
-    expect(definedSubtitleSkeleton).toEqual(
+    expect(subtitleSkeleton).toEqual(
       expect.objectContaining({
         size: 'm',
       })
     );
-    expect(definedSubtitleSkeleton.width).toBeUndefined();
-
+    const subtitleSx = subtitleSkeleton.sx;
     const subtitleSxExpected = {
       width: '17.25rem',
       height: '1.5625rem',
@@ -64,13 +61,12 @@ describe('AuthSkeleton typography parity', () => {
         width: '18.5rem',
       }),
     };
-
-    if (Array.isArray(definedSubtitleSkeleton.sx)) {
-      expect(definedSubtitleSkeleton.sx).toEqual(
+    if (Array.isArray(subtitleSx)) {
+      expect(subtitleSx).toEqual(
         expect.arrayContaining([expect.objectContaining(subtitleSxExpected)])
       );
     } else {
-      expect(definedSubtitleSkeleton.sx).toEqual(expect.objectContaining(subtitleSxExpected));
+      expect(subtitleSx).toEqual(expect.objectContaining(subtitleSxExpected));
     }
   });
 });

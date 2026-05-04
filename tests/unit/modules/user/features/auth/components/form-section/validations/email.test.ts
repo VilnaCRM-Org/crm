@@ -1,9 +1,11 @@
 import { TFunction } from 'i18next';
 
-import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
-import { isValidEmailFormat } from '@/modules/user/features/auth/components/form-section/validations/email';
+
+import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
+import { isValidEmailFormat } from '@/modules/User/features/Auth/components/form-section/validations/email';
 
 import emptyUser from './constants';
+
 
 jest.mock('i18next', () => ({
   t: (key: string): string => key,
@@ -23,6 +25,7 @@ describe('email validation', () => {
         'user_name@example.com',
         'user-name@example.com',
         'user.name@example.com',
+        'user+tag@example.com',
         'user%test@example.com',
         'user@example-domain.com',
         '123@example.com',
@@ -128,6 +131,10 @@ describe('email validation', () => {
           expect(validators.email(email, emptyUser)).toBe(true);
         }
       );
+
+      it('should return true for an email with a plus alias', () => {
+        expect(validators.email('user+tag@example.com', emptyUser)).toBe(true);
+      });
     });
 
     describe('invalid emails', () => {

@@ -13,7 +13,8 @@
         "password": {
           "hide": "Приховати пароль",
           "show": "Показати пароль"
-        }
+        },
+        "loadingForm": "Завантаження форми автентифікації"
       },
       "sign_up": {
         "title": "Реєстрація",
@@ -40,7 +41,8 @@
             "required": "Це поле обов'язкове",
             "error_length": "Будь ласка, введіть від 8 до 64 символів",
             "error_numbers": "Будь ласка, додайте принаймні одну цифру",
-            "error_uppercase": "Будь ласка, додайте принаймні одну велику літеру"
+            "error_uppercase": "Будь ласка, додайте принаймні одну велику літеру",
+            "error_lowercase": "Будь ласка, додайте принаймні одну малу літеру"
           },
           "password_tip": {
             "alt": "Іконка підказки пароля",
@@ -68,7 +70,8 @@
         "title": "Аутентифікація",
         "subtitle": "Увійдіть до свого облікового запису у два кліки",
         "errors": {
-          "load_failed": "Не вдалося відкрити форму входу. Спробуйте ще раз."
+          "load_failed": "Не вдалося завантажити форму входу. Спробуйте ще раз.",
+          "login": "Помилка входу: {{reason}}"
         },
         "form": {
           "password_input": {
@@ -76,7 +79,9 @@
             "label": "Пароль"
           },
           "submit_button": "Увійти до облікового запису",
-          "submitting": "Вхід…"
+          "submitting": "Вхід…",
+          "remember_me": "Запамʼятати мене",
+          "forgot_password": "Забули пароль?"
         }
       },
       "notifications": {
@@ -120,6 +125,42 @@
         "logo_alt": "Логотип VilnaCRM",
         "privacy": "Політика конфіденційності",
         "usage_policy": "Умови користування"
+      },
+      "notifications": {
+        "close": "Закрити сповіщення",
+        "success": {
+          "title": "Вітаємо!",
+          "description": "Ви успішно зареєструвалися",
+          "button": "Назад",
+          "images": {
+            "confetti": "Веселе і барвисте конфеті",
+            "gears": "Святкові шестерні"
+          }
+        },
+        "error": {
+          "title": "Трапилась помилка",
+          "retry_button": "Спробувати ще раз",
+          "button": "Назад",
+          "images": {
+            "error": "Червоний трикутник з попередженням про помилку."
+          }
+        }
+      },
+      "failure_responses": {
+        "authentication_errors": {
+          "unauthorized_access": "Неавторизований доступ. Будь ласка, увійдіть знову",
+          "access_denied": "Доступ заборонено. У вас немає прав для виконання цієї дії"
+        },
+        "client_errors": {
+          "something_went_wrong": "Щось пішло не так із запитом. Спробуйте ще раз пізніше",
+          "unexpected_error": "Сталася непередбачена помилка. Будь ласка, спробуйте ще раз"
+        },
+        "network_errors": {
+          "network_error": "Помилка мережі. Перевірте з'єднання з інтернетом"
+        },
+        "server_errors": {
+          "server_error": "Внутрішня помилка сервера."
+        }
       }
     }
   },
@@ -133,7 +174,8 @@
         "password": {
           "hide": "Hide password",
           "show": "Show password"
-        }
+        },
+        "loadingForm": "Loading authentication form"
       },
       "sign_up": {
         "title": "Registration",
@@ -160,7 +202,8 @@
             "required": "This field is required",
             "error_length": "Please enter a password between 8 and 64 characters",
             "error_numbers": "Please include at least one digit",
-            "error_uppercase": "Please include at least one uppercase letter"
+            "error_uppercase": "Please include at least one uppercase letter",
+            "error_lowercase": "Please include at least one lowercase letter"
           },
           "password_tip": {
             "alt": "Password tip icon",
@@ -188,7 +231,8 @@
         "title": "Authentication",
         "subtitle": "Sign in to your account in two clicks",
         "errors": {
-          "load_failed": "Couldn't open the sign-in form. Please try again."
+          "load_failed": "Failed to load sign-in form. Please try again.",
+          "login": "Sign in error: {{reason}}"
         },
         "form": {
           "password_input": {
@@ -196,7 +240,9 @@
             "label": "Password"
           },
           "submit_button": "Sign in",
-          "submitting": "Signing in…"
+          "submitting": "Signing in…",
+          "remember_me": "Remember me",
+          "forgot_password": "Forgot password?"
         }
       },
       "notifications": {
@@ -240,6 +286,42 @@
         "logo_alt": "VilnaCRM logo",
         "privacy": "Privacy Policy",
         "usage_policy": "Terms of Use"
+      },
+      "notifications": {
+        "close": "Close notification",
+        "success": {
+          "title": "Congratulations!",
+          "description": "You have successfully registered",
+          "button": "Go back",
+          "images": {
+            "confetti": "Cheerful and colorful confetti",
+            "gears": "Decorative celebration gears"
+          }
+        },
+        "error": {
+          "title": "An error occurred",
+          "retry_button": "Try again",
+          "button": "Go back",
+          "images": {
+            "error": "Red triangle with a warning about an error."
+          }
+        }
+      },
+      "failure_responses": {
+        "authentication_errors": {
+          "unauthorized_access": "Unauthorized access. Please log in again",
+          "access_denied": "Access denied. You do not have permission to perform this action"
+        },
+        "client_errors": {
+          "something_went_wrong": "Something went wrong with the request. Try again later",
+          "unexpected_error": "An unexpected error occurred. Please try again"
+        },
+        "network_errors": {
+          "network_error": "Network error. Please check your internet connection"
+        },
+        "server_errors": {
+          "server_error": "Internal Server Error"
+        }
       }
     }
   }

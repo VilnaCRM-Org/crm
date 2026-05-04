@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 
 import getTextSkeletonStyles from '@/components/skeletons/ui-skeleton-text/styles';
-import type { UISkeletonTextProps } from '@/components/skeletons/ui-skeleton-text/types';
+import { UISkeletonTextProps } from '@/components/skeletons/ui-skeleton-text/types';
 
 function UISkeletonText({
   id,
@@ -10,10 +10,7 @@ function UISkeletonText({
   sx = [],
 }: UISkeletonTextProps): JSX.Element {
   return (
-    <Box
-      id={id}
-      sx={[getTextSkeletonStyles(size, width), ...(Array.isArray(sx) ? sx : [sx])]}
-    />
+    <Box id={id} sx={[getTextSkeletonStyles(size, width), ...(Array.isArray(sx) ? sx : [sx])]} />
   );
 }
 
