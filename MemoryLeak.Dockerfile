@@ -4,7 +4,7 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 RUN apk add --no-cache \
     bash=5.2.37-r0 \
-    ca-certificates=20250911-r0 \
+    ca-certificates=20260413-r0  \
     chromium=136.0.7103.113-r0 \
     curl=8.14.1-r2 \
     dbus=1.14.10-r4 \
@@ -33,7 +33,7 @@ WORKDIR /app
 
 FROM base AS build
 
-COPY package.json bun.lock* checkNodeVersion.js .env ./
+COPY package.json bun.lock* check-node-version.js .env ./
 RUN bun install
 
 
@@ -43,7 +43,7 @@ WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 
 COPY tests/memory-leak tests/memory-leak
-COPY src/config/i18nConfig.js ./src/config/i18nConfig.js
+COPY src/config/i18n-config.js ./src/config/i18n-config.js
 COPY src/i18n/localization.json ./src/i18n/localization.json
 
 CMD ["sleep","infinity"]

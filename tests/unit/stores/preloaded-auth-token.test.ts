@@ -6,9 +6,12 @@ import {
 
 describe('getPreloadedAuthToken', () => {
   it('prefers the token injected on window', () => {
-    const token = getPreloadedAuthToken({
-      [preloadedAuthTokenKey]: ' window-token ',
-    } as PreloadedAuthWindow, ' env-token ');
+    const token = getPreloadedAuthToken(
+      {
+        [preloadedAuthTokenKey]: ' window-token ',
+      } as PreloadedAuthWindow,
+      ' env-token '
+    );
 
     expect(token).toBe('window-token');
   });

@@ -33,7 +33,10 @@ describe('UISkeletonText', () => {
 
     render(<UISkeletonText size={size} width={width} id="ui-skeleton-text-custom" />);
 
-    expect(getSkeletonText('ui-skeleton-text-custom')).toHaveAttribute('id', 'ui-skeleton-text-custom');
+    expect(getSkeletonText('ui-skeleton-text-custom')).toHaveAttribute(
+      'id',
+      'ui-skeleton-text-custom'
+    );
     expect(getTextSkeletonStyles).toHaveBeenCalledWith(size, width);
   });
 
@@ -42,13 +45,19 @@ describe('UISkeletonText', () => {
 
     render(<UISkeletonText sx={arraySx} id="ui-skeleton-text-array-sx" />);
 
-    expect(getSkeletonText('ui-skeleton-text-array-sx')).toHaveAttribute('id', 'ui-skeleton-text-array-sx');
+    expect(getSkeletonText('ui-skeleton-text-array-sx')).toHaveAttribute(
+      'id',
+      'ui-skeleton-text-array-sx'
+    );
   });
 
   it('accepts a single sx object without wrapping errors', () => {
     render(<UISkeletonText sx={{ mt: 3 }} id="ui-skeleton-text-object-sx" />);
 
-    expect(getSkeletonText('ui-skeleton-text-object-sx')).toHaveAttribute('id', 'ui-skeleton-text-object-sx');
+    expect(getSkeletonText('ui-skeleton-text-object-sx')).toHaveAttribute(
+      'id',
+      'ui-skeleton-text-object-sx'
+    );
   });
 
   it('calls style builder with size "s" and provided width', () => {

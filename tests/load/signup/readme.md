@@ -139,16 +139,16 @@ Configuration is managed in `tests/load/config.json.dist` under the `signup` end
     "setupTimeoutInMinutes": 10,
     "thresholds": {
       "errorRate": {
-        "smoke": 0.15,    // 15% - Includes security and integration checks
-        "average": 0.20,  // 20% - Accounts for sustained multi-step flows
-        "stress": 0.25,   // 25% - Expected under heavy load
-        "spike": 0.30     // 30% - Acceptable during traffic bursts
+        "smoke": 0.15, // 15% - Includes security and integration checks
+        "average": 0.2, // 20% - Accounts for sustained multi-step flows
+        "stress": 0.25, // 25% - Expected under heavy load
+        "spike": 0.3 // 30% - Acceptable during traffic bursts
       },
       "checkPassRate": {
-        "smoke": 0.95,    // 95% - Restored after fixing mock fixture assertion mismatch
-        "average": 0.95,  // 95% - Restored after fixing mock fixture assertion mismatch
-        "stress": 0.80,   // 80% - Under heavy load
-        "spike": 0.75     // 75% - Sudden traffic impacts
+        "smoke": 0.95, // 95% - Restored after fixing mock fixture assertion mismatch
+        "average": 0.95, // 95% - Restored after fixing mock fixture assertion mismatch
+        "stress": 0.8, // 80% - Under heavy load
+        "spike": 0.75 // 75% - Sudden traffic impacts
       }
     },
     "smoke": {
