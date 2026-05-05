@@ -1,15 +1,16 @@
 import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
-import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import { RegisterUserDto } from '@/modules/User/features/Auth/types/credentials';
+import getRegistrationError from '@/modules/User/features/Auth/utils/map-registration-error';
 import { registerUser, reset } from '@/modules/User/store';
 import {
   selectRegistrationError,
   selectRegistrationLoading,
   selectRegistrationUser,
-} from '@/modules/User/store/registrationSelectors';
-
+} from '@/modules/User/store/registration-selectors';
 
 type UseRegistrationFormResult = {
   view: RegistrationView;
@@ -26,9 +27,11 @@ export default function useRegistrationForm(
   onViewChange?: (view: RegistrationView) => void
 ): UseRegistrationFormResult {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation();
   const user = useAppSelector(selectRegistrationUser);
-  const isSubmitting = useAppSelector(selectRegistrationLoading);
+  const loading = useAppSelector(selectRegistrationLoading);
   const error = useAppSelector(selectRegistrationError);
+  const errorKey = getRegistrationError(error);
 
   const [view, setView] = useState<RegistrationView>('form');
   const [formKey, setFormKey] = useState(0);
@@ -39,14 +42,16 @@ export default function useRegistrationForm(
   }, [onViewChange, view]);
 
   useEffect(() => {
-    if (!isSubmitting) {
-      if (user) {
-        setView('success');
-      } else if (error) {
-        setView('error');
-      }
+    if (user && !loading) {
+      setView('success');
     }
-  }, [user, error, isSubmitting]);
+  }, [user, loading]);
+
+  useEffect(() => {
+    if (error && !loading) {
+      setView('error');
+    }
+  }, [error, loading]);
 
   const handleRegister = useCallback(
     (data: RegisterUserDto): void => {
@@ -73,9 +78,11 @@ export default function useRegistrationForm(
     dispatch(registerUser(lastSubmittedDataRef.current));
   }, [dispatch]);
 
+  const isSubmitting = loading || (view === 'form' && (user != null || error != null));
+
   return {
     view,
-    errorText: error ?? '',
+    errorText: errorKey ? t(errorKey) : '',
     formKey,
     isSubmitting,
     handleRegister,

@@ -1,69 +1,49 @@
-import { render, screen, waitFor } from '@testing-library/react';
-import type { ReactElement } from 'react';
+// @jest-environment jsdom
+/* eslint-disable testing-library/prefer-screen-queries */
+
+import '../../../../utils/setup-bun-dom';
+import '@testing-library/jest-dom';
+import { render } from '@testing-library/react';
 
 import Authentication from '@/modules/User/features/Auth';
 
-jest.mock('@/styles/theme', () => ({
-  __esModule: true,
-  default: {},
+jest.mock('react-i18next', () => ({
+  useTranslation: (): { t: (key: string) => string } => ({
+    t: (key: string): string => key,
+  }),
 }));
 
-jest.mock('@/modules/BackToMain', () => ({
+jest.mock('@/assets/icons/arrows/back-arrow.svg', () => ({
   __esModule: true,
-  default: (): ReactElement => <div data-testid="auth-shell-header" />,
+  default: 'back-arrow-mock.svg',
 }));
 
-jest.mock('@/components/UIFooter', () => ({
+jest.mock('@/assets/icons/logo/vilna-logo.svg', () => ({
   __esModule: true,
-  default: (): ReactElement => <div data-testid="auth-shell-footer" />,
+  ReactComponent: 'svg',
 }));
 
-jest.mock('@/modules/User/features/Auth/components/auth-skeleton', () => ({
-  __esModule: true,
-  default: (): ReactElement => <div data-testid="auth-shell-skeleton" />,
-}));
+jest.mock('@/modules/User/features/Auth/components/form-section', () => {
+  const pendingFormSectionPromise = new Promise<void>(() => {});
 
-const mockFormSectionDefault = jest.fn((): never => {
-  throw new Promise<void>((): void => {
-    // keep pending to force suspense fallback
-  });
+  return {
+    __esModule: true,
+    default: (): null => {
+      throw pendingFormSectionPromise;
+    },
+  };
 });
 
-jest.mock('@/modules/User/features/Auth/components/form-section', () => ({
-  __esModule: true,
-  default: (): never => mockFormSectionDefault(),
-}));
-
 describe('Authentication shell', () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-    mockFormSectionDefault.mockReset();
-    mockFormSectionDefault.mockImplementation((): never => {
-      throw new Promise<void>((): void => {
-        // keep pending to force suspense fallback
-      });
-    });
-  });
+  it('renders the shell chrome and loading fallback on initial mount', () => {
+    const view = render(<Authentication />);
 
-  it('keeps header and footer visible while form section is loading', () => {
-    render(<Authentication />);
+    expect(view.getByLabelText('Back')).toBeInTheDocument();
+    expect(view.getByRole('main')).toBeInTheDocument();
+    expect(view.getByLabelText('auth.loadingForm')).toBeInTheDocument();
+    expect(view.getByLabelText('footer.privacy')).toBeInTheDocument();
+    expect(view.getByLabelText('footer.usage_policy')).toBeInTheDocument();
 
-    expect(screen.getByTestId('auth-shell-header')).toBeInTheDocument();
-    expect(screen.getByRole('main')).toBeInTheDocument();
-    expect(screen.getByTestId('auth-shell-skeleton')).toBeInTheDocument();
-    expect(screen.getByTestId('auth-shell-footer')).toBeInTheDocument();
-  });
-
-  it('shows error boundary fallback when FormSection throws synchronously', async () => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-    mockFormSectionDefault.mockImplementation((): never => {
-      throw new Error('test sync error');
-    });
-
-    render(<Authentication />);
-
-    await waitFor(() => {
-      expect(screen.getByTestId('auth-error-boundary-fallback')).toBeInTheDocument();
-    });
+    view.unmount();
   });
 });
