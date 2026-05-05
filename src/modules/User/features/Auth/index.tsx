@@ -6,7 +6,6 @@ import { lazy, Suspense } from 'react';
 import AuthErrorBoundary from '@/modules/User/features/Auth/components/auth-error-boundary';
 import AuthSkeleton from '@/modules/User/features/Auth/components/auth-skeleton';
 
-
 const FormSection = lazy(
   async () => import('@/modules/User/features/Auth/components/form-section')
 );

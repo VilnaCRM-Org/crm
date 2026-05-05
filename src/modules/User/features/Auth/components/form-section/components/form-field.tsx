@@ -4,7 +4,6 @@ import { Grid, type SxProps, type Theme } from '@mui/material';
 import { InputHTMLAttributes, ReactNode } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
-
 import styles from '@/modules/User/features/Auth/components/form-section/components/styles';
 
 export interface FormFieldInputSlotProps {

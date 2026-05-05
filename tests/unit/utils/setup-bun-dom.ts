@@ -50,9 +50,9 @@ if (typeof document === 'undefined') {
     }
   }
 
-  globalThis.requestAnimationFrame ??= ((callback: FrameRequestCallback): number =>
-    setTimeout(() => callback(Date.now()), 0) as unknown as number);
-  globalThis.cancelAnimationFrame ??= ((handle: number): void => {
+  globalThis.requestAnimationFrame ??= (callback: FrameRequestCallback): number =>
+    setTimeout(() => callback(Date.now()), 0) as unknown as number;
+  globalThis.cancelAnimationFrame ??= (handle: number): void => {
     clearTimeout(handle);
-  });
+  };
 }

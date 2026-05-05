@@ -6,9 +6,8 @@ import '@testing-library/jest-dom';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import { act, type ButtonHTMLAttributes, type ReactElement } from 'react';
 
-type LoginFormModule = typeof import(
-  '@/modules/User/features/Auth/components/form-section/auth-forms/login-form'
-);
+type LoginFormModule =
+  typeof import('@/modules/User/features/Auth/components/form-section/auth-forms/login-form');
 
 const uiButtonMock = jest.fn();
 const mockLoginFormDefault = (): ReactElement => <div data-testid="login-form" />;
@@ -103,13 +102,12 @@ jest.mock(
   })
 );
 
-let FormSection!: typeof import('@/modules/User/features/Auth/components/form-section')['default'];
+let FormSection!: (typeof import('@/modules/User/features/Auth/components/form-section'))['default'];
 
 describe('FormSection', () => {
   beforeAll(async () => {
-    ({ default: FormSection } = await import(
-      '../../../../../../../src/modules/User/features/Auth/components/form-section'
-    ));
+    ({ default: FormSection } =
+      await import('../../../../../../../src/modules/User/features/Auth/components/form-section'));
   });
 
   afterEach(() => {

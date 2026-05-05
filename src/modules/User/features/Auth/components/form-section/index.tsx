@@ -13,7 +13,6 @@ import {
 } from '@/modules/User/features/Auth/components/form-section/types';
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
 
-
 const LoginForm = lazy(loadLoginForm);
 
 export default function FormSection(): JSX.Element {

@@ -7,7 +7,6 @@ import formSectionComponentStyles, {
   StyledEyeIconOff,
 } from '@/modules/User/features/Auth/components/form-section/components/styles';
 
-
 jest.mock('@/modules/User/features/Auth/assets/eye.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg data-testid="eye-icon" />,

@@ -411,8 +411,7 @@ module.exports = {
     },
     {
       name: 'tests-module-name-pascal-case',
-      comment:
-        'Test module names under tests/{e2e,integration,unit}/modules must be PascalCase.',
+      comment: 'Test module names under tests/{e2e,integration,unit}/modules must be PascalCase.',
       severity: 'error',
       from: {
         path: '^tests/(?:e2e|integration|unit)/modules/(?![A-Z][A-Za-z0-9]*/)[^/]+/',

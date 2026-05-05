@@ -48,11 +48,7 @@ function UIButton({
     </Button>
   );
 
-  return (
-    <ThemeProvider theme={Theme}>
-      {React.cloneElement(baseButton, rest)}
-    </ThemeProvider>
-  );
+  return <ThemeProvider theme={Theme}>{React.cloneElement(baseButton, rest)}</ThemeProvider>;
 }
 UIButton.displayName = 'UIButton';
 export default UIButton;

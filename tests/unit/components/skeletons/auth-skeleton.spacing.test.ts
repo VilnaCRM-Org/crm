@@ -13,7 +13,6 @@ import authFormSectionStyles, {
   fieldGapMargins,
 } from '@/modules/User/features/Auth/components/form-section/styles';
 
-
 jest.mock('@/modules/User/features/Auth/assets/eye-off.svg', () => ({
   ReactComponent: 'svg',
 }));

@@ -1,7 +1,6 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { createTheme } from '@mui/material';
 
-
 export default createTheme({
   components: {
     MuiDivider: {

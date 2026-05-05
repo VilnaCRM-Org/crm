@@ -20,9 +20,7 @@ export interface AuthSkeletonProps {
   disableAnimation?: boolean;
 }
 
-export default function AuthSkeleton({
-  disableAnimation = false,
-}: AuthSkeletonProps): JSX.Element {
+export default function AuthSkeleton({ disableAnimation = false }: AuthSkeletonProps): JSX.Element {
   const { t } = useTranslation();
   const staticSkeletonSx = disableAnimation
     ? {

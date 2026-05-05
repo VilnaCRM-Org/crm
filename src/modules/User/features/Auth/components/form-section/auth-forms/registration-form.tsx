@@ -12,7 +12,6 @@ import { RegisterUserDto } from '@/modules/User/features/Auth/types/credentials'
 import getSubmitLabelKey from '@/modules/User/features/Auth/utils/get-submit-label-key';
 import loadRegistrationNotification from '@/modules/User/features/Auth/utils/load-registration-notification';
 
-
 type RegistrationFormProps = {
   onViewChange?: (view: RegistrationView) => void;
 };

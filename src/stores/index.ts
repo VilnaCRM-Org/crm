@@ -6,7 +6,6 @@ import type { ThunkExtra } from '@/modules/User/store/types';
 import devToolsOptions from '@/stores/dev-tools-options';
 import { getPreloadedAuthToken } from '@/stores/preloaded-auth-token';
 
-
 const thunkExtraArgument: ThunkExtra = createAuthClients();
 
 const preloadedToken = getPreloadedAuthToken();

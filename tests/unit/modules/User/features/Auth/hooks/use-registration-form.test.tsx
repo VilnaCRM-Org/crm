@@ -71,9 +71,7 @@ jest.mock('@/modules/User/store', () => ({
   reset: resetMock,
 }));
 
-let useRegistrationForm!: typeof import(
-  '@/modules/User/features/Auth/hooks/use-registration-form'
-)['default'];
+let useRegistrationForm!: (typeof import('@/modules/User/features/Auth/hooks/use-registration-form'))['default'];
 
 function Capture({
   onRender,
@@ -100,9 +98,8 @@ function Capture({
 
 describe('useRegistrationForm', () => {
   beforeAll(async () => {
-    ({ default: useRegistrationForm } = await import(
-      '@/modules/User/features/Auth/hooks/use-registration-form'
-    ));
+    ({ default: useRegistrationForm } =
+      await import('@/modules/User/features/Auth/hooks/use-registration-form'));
   });
 
   beforeEach(() => {

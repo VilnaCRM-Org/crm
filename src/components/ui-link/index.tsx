@@ -5,9 +5,5 @@ import * as React from 'react';
 import Theme from '@/components/ui-link/theme';
 
 export default function UILink(props: LinkProps): JSX.Element {
-  return (
-    <ThemeProvider theme={Theme}>
-      {React.cloneElement(<Link />, props)}
-    </ThemeProvider>
-  );
+  return <ThemeProvider theme={Theme}>{React.cloneElement(<Link />, props)}</ThemeProvider>;
 }
