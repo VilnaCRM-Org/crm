@@ -93,7 +93,6 @@ export default function UIForm<T extends FieldValues>({
       watch={watch}
     >
       <form noValidate onSubmit={formHandleSubmit(handleSubmit)}>
-        {/* TODO: Implement correct error handling (replace temporary inline error display). Update tests */}
         {error && (
           <UITypography role="alert" aria-live="polite" sx={{ color: 'red', marginBottom: '1rem' }}>
             {error}

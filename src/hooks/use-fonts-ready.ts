@@ -12,6 +12,15 @@ function areFontsReady(fontFaceSet: FontFaceSet, fonts: readonly string[]): bool
   return fonts.every((font) => fontFaceSet.check(font));
 }
 
+function transitionFontsReady(
+  setFontsReady: React.Dispatch<React.SetStateAction<boolean>>,
+  value: boolean
+): void {
+  startTransition(() => {
+    setFontsReady(value);
+  });
+}
+
 export default function useFontsReady(fonts: readonly string[]): boolean {
   const [fontsReady, setFontsReady] = useState(() => {
     const fontFaceSet = getFontFaceSet();
@@ -21,29 +30,30 @@ export default function useFontsReady(fonts: readonly string[]): boolean {
 
   useEffect(() => {
     const fontFaceSet = getFontFaceSet();
-    let isMounted = true;
 
     if (!fontFaceSet) {
       return undefined;
     }
 
+    let isMounted = true;
+    const updateFontsReady = (value: boolean): void => {
+      if (!isMounted) {
+        return;
+      }
+
+      transitionFontsReady(setFontsReady, value);
+    };
+
     if (areFontsReady(fontFaceSet, fonts)) {
-      startTransition(() => setFontsReady(true));
-      return undefined;
-    }
-
-    setFontsReady(false);
-    Promise.all(fonts.map((font) => fontFaceSet.load(font)))
-      .catch(() => undefined)
-      .finally(() => {
-        if (!isMounted) {
-          return;
-        }
-
-        startTransition(() => {
-          setFontsReady(true);
+      updateFontsReady(true);
+    } else {
+      setFontsReady(false);
+      Promise.all(fonts.map((font) => fontFaceSet.load(font)))
+        .catch(() => undefined)
+        .finally(() => {
+          updateFontsReady(true);
         });
-      });
+    }
 
     return (): void => {
       isMounted = false;

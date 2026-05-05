@@ -5,7 +5,8 @@ module.exports = {
       severity: 'error',
       comment:
         'This dependency is part of a circular relationship. You might want to revise ' +
-        'your solution (i.e. use dependency inversion, make sure the modules have a single responsibility) ',
+        'your solution (i.e. use dependency inversion, make sure the modules have a ' +
+        'single responsibility) ',
       from: {},
       to: {
         circular: true,
@@ -26,9 +27,12 @@ module.exports = {
           '(^|/)[.][^/]+[.](?:js|cjs|mjs|ts|cts|mts|json)$', // dot files
           '[.]d[.]ts$', // TypeScript declaration files
           '(^|/)tsconfig[.]json$', // TypeScript config
-          '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // build configs
-          '(^|/)(?:commitlint|stryker)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$', // tooling configs
-          '(^|/)__mocks__/.*[.](?:js|cjs|mjs|ts|cts|mts|jsx|tsx)$', // test/runtime manual mocks
+          // build configs
+          '(^|/)(?:babel|webpack)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$',
+          // tooling configs
+          '(^|/)(?:commitlint|stryker)[.]config[.](?:js|cjs|mjs|ts|cts|mts|json)$',
+          // test/runtime manual mocks
+          '(^|/)__mocks__/.*[.](?:js|cjs|mjs|ts|cts|mts|jsx|tsx)$',
           '^src/index[.]tsx$', // app entrypoint
           '^tests/load/utils/test-data[.]js$', // ad-hoc load-test data generator
           '^storybook-static/', // generated Storybook output
@@ -43,7 +47,8 @@ module.exports = {
     {
       name: 'no-deprecated-core',
       comment:
-        'A module depends on a node core module that has been deprecated. Find an alternative - these are ' +
+        'A module depends on a node core module that has been deprecated. Find an ' +
+        'alternative - these are ' +
         "bound to exist - node doesn't deprecate lightly.",
       severity: 'warn',
       from: {},
@@ -76,7 +81,8 @@ module.exports = {
     {
       name: 'not-to-deprecated',
       comment:
-        'This module uses a (version of an) npm module that has been deprecated. Either upgrade to a later ' +
+        'This module uses a (version of an) npm module that has been deprecated. ' +
+        'Either upgrade to a later ' +
         'version of that module, or find an alternative. Deprecated modules are a security risk.',
       severity: 'warn',
       from: {},
@@ -88,9 +94,12 @@ module.exports = {
       name: 'no-non-package-json',
       severity: 'error',
       comment:
-        "This module depends on an npm package that isn't in the 'dependencies' section of your package.json. " +
-        "That's problematic as the package either (1) won't be available on live (2 - worse) will be " +
-        'available on live with an non-guaranteed version. Fix it by adding the package to the dependencies ' +
+        "This module depends on an npm package that isn't in the 'dependencies' " +
+        'section of your package.json. ' +
+        "That's problematic as the package either (1) won't be available on live " +
+        '(2 - worse) will be ' +
+        'available on live with an non-guaranteed version. Fix it by adding the ' +
+        'package to the dependencies ' +
         'in your package.json.',
       from: {},
       to: {
@@ -100,8 +109,10 @@ module.exports = {
     {
       name: 'not-to-unresolvable',
       comment:
-        "This module depends on a module that cannot be found ('resolved to disk'). If it's an npm " +
-        'module: add it to your package.json. In all other cases you likely already know what to do.',
+        "This module depends on a module that cannot be found ('resolved to disk'). " +
+        "If it's an npm " +
+        'module: add it to your package.json. ' +
+        'In all other cases you likely already know what to do.',
       severity: 'error',
       from: {},
       to: {
@@ -127,8 +138,10 @@ module.exports = {
     {
       name: 'not-to-test',
       comment:
-        "This module depends on code within a folder that should only contain tests. As tests don't " +
-        "implement functionality this is odd. Either you're writing a test outside the test folder " +
+        "This module depends on code within a folder that should only contain tests. " +
+        "As tests don't " +
+        'implement functionality this is odd. ' +
+        "Either you're writing a test outside the test folder " +
         "or there's something in the test folder that isn't a test.",
       severity: 'error',
       from: {
@@ -141,8 +154,10 @@ module.exports = {
     {
       name: 'not-to-spec',
       comment:
-        'This module depends on a spec (test) file. The responsibility of a spec file is to test code. ' +
-        "If there's something in a spec that's of use to other modules, it doesn't have that single " +
+        'This module depends on a spec (test) file. The responsibility of a spec ' +
+        'file is to test code. ' +
+        "If there's something in a spec that's of use to other modules, it doesn't " +
+        'have that single ' +
         'responsibility anymore. Factor it out into (e.g.) a separate utility/ helper or a mock.',
       severity: 'error',
       from: {},
@@ -155,8 +170,10 @@ module.exports = {
       severity: 'error',
       comment:
         "This module depends on an npm package from the 'devDependencies' section of your " +
-        'package.json. It looks like something that ships to production, though. To prevent problems ' +
-        "with npm packages that aren't there on production declare it (only!) in the 'dependencies'" +
+        'package.json. It looks like something that ships to production, though. ' +
+        'To prevent problems ' +
+        "with npm packages that aren't there on production declare it (only!) in the " +
+        "'dependencies'" +
         'section of your package.json. If this module is development only - add it to the ' +
         'from.pathNot re of the not-to-dev-dep rule in the dependency-cruiser configuration',
       from: {
@@ -175,7 +192,8 @@ module.exports = {
       severity: 'info',
       comment:
         'This module depends on an npm package that is declared as an optional dependency ' +
-        "in your package.json. As this makes sense in limited situations only, it's flagged here. " +
+        "in your package.json. As this makes sense in limited situations only, it's " +
+        'flagged here. ' +
         'If you use an optional dependency here by design - add an exception to your' +
         'dependency-cruiser configuration.',
       from: {},
@@ -229,13 +247,16 @@ module.exports = {
         pathNot: '^src/modules/[^/]+/features/[^/]+/repositories/',
       },
       to: {
-        path: '^src/modules/[^/]+/features/[^/]+/repositories/(?!index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$).+',
+        path:
+          '^src/modules/[^/]+/features/[^/]+/repositories/' +
+          '(?!index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$).+',
       },
     },
     {
       name: 'no-repositories-to-ui-hooks',
       comment:
-        'Repositories are data-access layer and must not depend on feature UI/hooks/routes or module app-layer folders.',
+        'Repositories are data-access layer and must not depend on feature ' +
+        'UI/hooks/routes or module app-layer folders.',
       severity: 'error',
       from: {
         path: '^src/modules/([^/]+)/features/([^/]+)/repositories/',
@@ -250,10 +271,14 @@ module.exports = {
     {
       name: 'feature-hooks-file-convention',
       comment:
-        'Feature hooks folder should only expose index files and use-* hooks (bulletproof-react convention).',
+        'Feature hooks folder should only expose index files and use-* hooks ' +
+        '(bulletproof-react convention).',
       severity: 'error',
       from: {
-        path: '^src/modules/[^/]+/features/[^/]+/hooks/(?!index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$|use-[a-z0-9-]+[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$).+',
+        path:
+          '^src/modules/[^/]+/features/[^/]+/hooks/' +
+          '(?!index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$|' +
+          'use-[a-z0-9-]+[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$).+',
       },
       to: {},
     },
@@ -284,7 +309,8 @@ module.exports = {
     {
       name: 'no-feature-ui-to-services',
       comment:
-        'Feature UI layers (components/hooks/routes) must not depend on low-level services directly.',
+        'Feature UI layers (components/hooks/routes) must not depend on ' +
+        'low-level services directly.',
       severity: 'error',
       from: {
         path: '^src/modules/[^/]+/features/[^/]+/(components|hooks|routes)/',
@@ -296,7 +322,8 @@ module.exports = {
     {
       name: 'no-tsyringe-outside-di-and-repositories',
       comment:
-        'tsyringe usage is restricted to composition root and repositories to keep DI boundaries explicit.',
+        'tsyringe usage is restricted to composition root and repositories to ' +
+        'keep DI boundaries explicit.',
       severity: 'error',
       from: {
         path: '^src/',
@@ -324,7 +351,8 @@ module.exports = {
     {
       name: 'no-cross-feature-imports',
       comment:
-        'Features within a module must not import from sibling features. Use the module-level shared layers (hooks, lib, store, types, utils) instead.',
+        'Features within a module must not import from sibling features. Use ' +
+        'the module-level shared layers (hooks, lib, store, types, utils) instead.',
       severity: 'error',
       from: {
         path: '^src/modules/([^/]+)/features/([^/]+)/',
@@ -336,7 +364,8 @@ module.exports = {
     {
       name: 'no-components-to-repositories',
       comment:
-        'Components must not import repositories directly. Use hooks as the mediator between UI and data-access layers.',
+        'Components must not import repositories directly. Use hooks as the ' +
+        'mediator between UI and data-access layers.',
       severity: 'error',
       from: {
         path: '^src/modules/[^/]+/features/[^/]+/components/',
@@ -348,7 +377,8 @@ module.exports = {
     {
       name: 'no-components-to-store',
       comment:
-        'Feature components must not import from the module store directly. Use hooks to access store state and dispatch.',
+        'Feature components must not import from the module store directly. Use ' +
+        'hooks to access store state and dispatch.',
       severity: 'error',
       from: {
         path: '^src/modules/[^/]+/features/[^/]+/components/',
@@ -382,7 +412,8 @@ module.exports = {
     {
       name: 'module-allowed-folders',
       comment:
-        'Module root may only contain allowed folders: config, features, hooks, lib, store, types, utils.',
+        'Module root may only contain allowed folders: config, features, hooks, ' +
+        'lib, store, types, utils.',
       severity: 'error',
       from: {
         path: '^src/modules/[^/]+/(?!config|features|hooks|lib|store|types|utils)[^/]+/',
@@ -392,17 +423,21 @@ module.exports = {
     {
       name: 'feature-allowed-folders',
       comment:
-        'Feature root may only contain allowed folders: assets, components, hooks, i18n, repositories, routes, types, utils.',
+        'Feature root may only contain allowed folders: assets, components, ' +
+        'hooks, i18n, repositories, routes, types, utils.',
       severity: 'error',
       from: {
-        path: '^src/modules/[^/]+/features/[^/]+/(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/',
+        path:
+          '^src/modules/[^/]+/features/[^/]+/' +
+          '(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/',
       },
       to: {},
     },
     {
       name: 'tests-top-level-allowed-folders',
       comment:
-        'Tests root may only contain allowed folders: apollo-server, e2e, integration, load, memory-leak, unit, visual.',
+        'Tests root may only contain allowed folders: apollo-server, e2e, ' +
+        'integration, load, memory-leak, unit, visual.',
       severity: 'error',
       from: {
         path: '^tests/(?!apollo-server|e2e|integration|load|memory-leak|unit|utils|visual)[^/]+/',
@@ -421,10 +456,13 @@ module.exports = {
     {
       name: 'tests-module-allowed-folders',
       comment:
-        'Test module root may only contain allowed folders: features, helpers, lib, repositories, store.',
+        'Test module root may only contain allowed folders: features, helpers, ' +
+        'lib, repositories, store.',
       severity: 'error',
       from: {
-        path: '^tests/(?:e2e|integration|unit)/modules/[^/]+/(?!features|helpers|lib|repositories|store)[^/]+/',
+        path:
+          '^tests/(?:e2e|integration|unit)/modules/[^/]+/' +
+          '(?!features|helpers|lib|repositories|store)[^/]+/',
       },
       to: {},
     },
@@ -440,10 +478,13 @@ module.exports = {
     {
       name: 'tests-feature-allowed-folders',
       comment:
-        'Test feature root may only contain allowed folders: assets, components, hooks, i18n, repositories, routes, types, utils.',
+        'Test feature root may only contain allowed folders: assets, components, ' +
+        'hooks, i18n, repositories, routes, types, utils.',
       severity: 'error',
       from: {
-        path: '^tests/(?:e2e|integration|unit)/modules/[^/]+/features/[^/]+/(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/',
+        path:
+          '^tests/(?:e2e|integration|unit)/modules/[^/]+/features/[^/]+/' +
+          '(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/',
       },
       to: {},
     },
@@ -502,7 +543,8 @@ module.exports = {
       },
       archi: {
         collapsePattern:
-          '^(?:packages|src|lib(s?)|app(s?)|bin|test(s?)|spec(s?))/[^/]+|node_modules/(?:@[^/]+/[^/]+|[^/]+)',
+          '^(?:packages|src|lib(s?)|app(s?)|bin|test(s?)|spec(s?))/[^/]+' +
+          '|node_modules/(?:@[^/]+/[^/]+|[^/]+)',
       },
       text: {
         highlightFocused: true,
