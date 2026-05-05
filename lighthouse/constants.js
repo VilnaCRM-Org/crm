@@ -10,9 +10,9 @@ const rawBaseUrl =
   process.env.REACT_APP_PROD_HOST_API_URL ||
   'http://localhost:3001';
 
-const baseUrl = rawBaseUrl.replace(/\/+$/, '') || '/';
+const baseUrl = rawBaseUrl.replace(/\/+$/, '');
 
-const pages = [baseUrl, `${baseUrl}/authentication`];
+const pages = [baseUrl || '/', `${baseUrl}/authentication`];
 
 module.exports = {
   baseUrl,

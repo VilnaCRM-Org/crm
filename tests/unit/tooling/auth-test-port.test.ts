@@ -29,7 +29,7 @@ describe('auth test harness wiring', () => {
 
     expect(workflow).not.toContain('/authentication');
     // eslint-disable-next-line no-template-curly-in-string
-    expect(constants).toContain('const pages = [baseUrl, `${baseUrl}/authentication`];');
+    expect(constants).toContain('const pages = [baseUrl || \'/\', `${baseUrl}/authentication`];');
     expect(desktopRc).toContain("const { pages } = require('./constants');");
     expect(desktopRc).toContain('url: pages');
     expect(desktopRc).not.toContain('puppeteerScript');

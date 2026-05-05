@@ -307,11 +307,11 @@ export default {
       color: paletteColors.background.default,
       boxShadow: 'none',
       '&:hover, &:focus-visible': {
-        color: '#FFFFFF',
+        color: paletteColors.background.default,
         boxShadow: '0px 4px 7px 0px rgba(116, 134, 151, 0.17)',
       },
       '&:active': {
-        color: '#FFFFFF',
+        color: paletteColors.background.default,
         boxShadow: '0px 4px 7px 0px rgba(71, 85, 99, 0.21)',
       },
       '&.Mui-disabled': {

@@ -30,7 +30,7 @@ window.history.pushState({}, '', '/authentication');
 
 if (typeof Request === 'undefined') {
   // React Router expects the Fetch API request primitive during router setup.
-  globalThis.Request = NodeFetchRequest;
+  globalThis.Request = NodeFetchRequest as unknown as typeof Request;
 }
 
 jest.mock('../../src/index.css', () => ({}));
@@ -63,7 +63,7 @@ jest.mock('@/modules/User/features/Auth', () => ({
   default: (): JSX.Element => <div>authentication page</div>,
 }));
 
-const App = require('@/app').default as typeof import('@/app').default;
+const App = jest.requireActual<typeof import('@/app')>('@/app').default;
 
 describe('App', () => {
   beforeEach(() => {

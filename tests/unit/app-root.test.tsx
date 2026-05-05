@@ -27,7 +27,7 @@ const mockStore = {
 window.history.pushState({}, '', '/');
 
 if (typeof Request === 'undefined') {
-  globalThis.Request = NodeFetchRequest;
+  globalThis.Request = NodeFetchRequest as unknown as typeof Request;
 }
 
 jest.mock('../../src/index.css', () => ({}));
@@ -60,7 +60,7 @@ jest.mock('@/modules/User/features/Auth', () => ({
   default: (): JSX.Element => <div>authentication page</div>,
 }));
 
-const App = require('@/app').default as typeof import('@/app').default;
+const App = jest.requireActual<typeof import('@/app')>('@/app').default;
 
 describe('App root route', () => {
   it('renders the button example page through the protected outlet', async () => {

@@ -23,24 +23,32 @@ export default function useFontsReady(fonts: readonly string[]): boolean {
     const fontFaceSet = getFontFaceSet();
     let isMounted = true;
 
-    if (fontFaceSet && !fontsReady) {
-      Promise.all(fonts.map((font) => fontFaceSet.load(font)))
-        .catch(() => undefined)
-        .finally(() => {
-          if (!isMounted) {
-            return;
-          }
-
-          startTransition(() => {
-            setFontsReady(true);
-          });
-        });
+    if (!fontFaceSet) {
+      return undefined;
     }
+
+    if (areFontsReady(fontFaceSet, fonts)) {
+      startTransition(() => setFontsReady(true));
+      return undefined;
+    }
+
+    setFontsReady(false);
+    Promise.all(fonts.map((font) => fontFaceSet.load(font)))
+      .catch(() => undefined)
+      .finally(() => {
+        if (!isMounted) {
+          return;
+        }
+
+        startTransition(() => {
+          setFontsReady(true);
+        });
+      });
 
     return (): void => {
       isMounted = false;
     };
-  }, [fonts, fontsReady]);
+  }, [fonts]);
 
   return fontsReady;
 }

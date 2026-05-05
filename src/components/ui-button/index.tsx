@@ -1,5 +1,6 @@
 import { ThemeProvider, Button } from '@mui/material';
 import { ButtonProps } from '@mui/material/Button';
+import * as React from 'react';
 
 import Theme from './theme';
 
@@ -32,31 +33,24 @@ function UIButton({
   children,
   type = 'button',
   component,
-  disabled,
-  variant,
-  sx,
-  onClick,
-  disableRipple,
-  'aria-label': ariaLabel,
+  ...rest
 }: React.PropsWithChildren<UiButtonProps>): React.ReactElement {
   const linkTarget = resolveLinkTarget(to);
   const resolvedComponent = component ?? (linkTarget ? 'a' : 'button');
 
+  const baseButton = (
+    <Button
+      component={resolvedComponent}
+      href={linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined}
+      type={resolvedComponent === 'button' ? type : undefined}
+    >
+      {children}
+    </Button>
+  );
+
   return (
     <ThemeProvider theme={Theme}>
-      <Button
-        component={resolvedComponent}
-        href={linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined}
-        type={resolvedComponent === 'button' ? type : undefined}
-        disabled={disabled}
-        variant={variant}
-        sx={sx}
-        onClick={onClick}
-        disableRipple={disableRipple}
-        aria-label={ariaLabel}
-      >
-        {children}
-      </Button>
+      {React.cloneElement(baseButton, rest)}
     </ThemeProvider>
   );
 }

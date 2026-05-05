@@ -51,12 +51,12 @@ export default function FormSection(): JSX.Element {
         });
       })
       .catch(() => {
-        setLoadLoginError(t('sign_in.errors.load_failed'));
+        setLoadLoginError('sign_in.errors.load_failed');
       })
       .finally(() => {
         setIsLoadingLogin(false);
       });
-  }, [isLoadingLogin, mode, t]);
+  }, [isLoadingLogin, mode]);
 
   const handleRegistrationViewChange = useCallback((view: RegistrationView) => {
     setRegistrationView(view);
@@ -89,7 +89,7 @@ export default function FormSection(): JSX.Element {
 
       {loadLoginError ? (
         <UITypography role="alert" sx={styles.formSwitcherError}>
-          {loadLoginError}
+          {t(loadLoginError)}
         </UITypography>
       ) : null}
 
