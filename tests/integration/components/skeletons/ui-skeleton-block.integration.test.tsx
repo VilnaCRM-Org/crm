@@ -19,14 +19,7 @@ describe('UISkeletonBlock Integration', () => {
   });
 
   it('renders with custom dimensions', () => {
-    render(
-      <UISkeletonBlock
-        width="200px"
-        height="4rem"
-        borderRadius="12px"
-        id="skeleton-block"
-      />
-    );
+    render(<UISkeletonBlock width="200px" height="4rem" borderRadius="12px" id="skeleton-block" />);
 
     const block = getSkeletonBlock();
     expect(block).toBeInTheDocument();

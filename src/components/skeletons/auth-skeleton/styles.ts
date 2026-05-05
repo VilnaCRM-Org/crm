@@ -4,12 +4,79 @@ import {
   SMALL_MOBILE_BREAKPOINT_UPPER,
   shadowPulseAnimation,
 } from '@/components/skeletons/base/styles';
-import breakpointsTheme from '@/components/UIBreakpoints';
-import { fieldGapMargins } from '@/modules/User/features/Auth/components/form-section/styles';
+import breakpointsTheme, { heightBreakpoints } from '@/components/ui-breakpoints';
+import { customColors, paletteColors } from '@/styles/colors';
+
+const fieldGapMargins = {
+  marginBottom: '0.5rem',
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+    marginBottom: '1.125rem',
+  },
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    marginBottom: '1.4375rem',
+  },
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+    marginBottom: '1.125rem',
+  },
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+    marginBottom: '1rem',
+  },
+};
 
 const AUTH_SKELETON_TINY_BREAKPOINT = '336px';
 
 export default {
+  formSection: {
+    display: 'flex',
+    flexDirection: 'column',
+    flexGrow: 1,
+    paddingTop: '0.5rem',
+    paddingX: '0.375rem',
+    paddingBottom: '1.5rem',
+    fontFamily: 'Golos',
+    backgroundColor: '#FBFBFB',
+    justifyContent: 'center',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      paddingTop: '1.5rem',
+      paddingBottom: '1.5rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height: ${heightBreakpoints.medium}px)`]:
+      {
+        paddingTop: '1rem',
+        paddingBottom: '1rem',
+      },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      paddingTop: '2rem',
+      paddingBottom: '2rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px) and (max-height: ${heightBreakpoints.medium}px)`]:
+      {
+        paddingTop: '1rem',
+        paddingBottom: '1rem',
+      },
+  },
+  formWrapper: {
+    position: 'relative',
+    width: '100%',
+    padding: '1.5rem 1.5rem 1.375rem',
+    margin: '0 auto',
+    backgroundColor: paletteColors.background.default,
+    border: `1px solid ${paletteColors.border.default}`,
+    borderRadius: '16px',
+    boxShadow: `0px 7px 40px 0px ${paletteColors.shadow.subtle}`,
+    maxWidth: '22.6875rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      maxWidth: '39.5rem',
+      paddingTop: '2.625rem',
+      paddingLeft: '2.8125rem',
+      paddingRight: '2.8125rem',
+      paddingBottom: '2.1875rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      maxWidth: '31.375rem',
+      padding: '2.1rem 2.4375rem 1.9375rem',
+    },
+  },
   formWrapperPulse: {
     animation: `${shadowPulseAnimation} 1.5s ease-in-out infinite alternate`,
   },
@@ -168,6 +235,7 @@ export default {
     marginLeft: 'auto',
     marginRight: 'auto',
     height: '1.125rem',
+    color: customColors.text.secondary,
     [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
       marginTop: '2.75rem',
       height: '1.35rem',

@@ -1,6 +1,5 @@
-import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints';
+import breakpointsTheme, { heightBreakpoints } from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
-
 
 const compactViewport = `@media (max-width:${breakpointsTheme.breakpoints.values.sm - 1}px) and (max-height:${heightBreakpoints.compact}px)`;
 
@@ -196,24 +195,24 @@ export default {
     textTransform: 'none',
     boxShadow: 'none',
     whiteSpace: 'nowrap',
-    color: paletteColors.background.default,
+    color: '#FFFFFF',
     '&:visited, &:hover, &:active, &:focus-visible': {
-      color: paletteColors.background.default,
+      color: '#FFFFFF',
     },
     '&.MuiButton-contained': {
       padding: '1rem 1.438rem',
-      color: paletteColors.background.default,
+      color: '#FFFFFF',
       '&:hover, &:focus-visible': {
-        color: paletteColors.background.default,
+        color: '#FFFFFF',
         boxShadow: '0px 4px 7px 0px rgba(116, 134, 151, 0.17)',
       },
       '&:active': {
-        color: paletteColors.background.default,
+        color: '#FFFFFF',
         boxShadow: '0px 4px 7px 0px rgba(71, 85, 99, 0.21)',
       },
     },
     '& .MuiTypography-root': {
-      color: paletteColors.background.default,
+      color: '#FFFFFF',
     },
     '@media (min-width: 375px)': {
       minWidth: '301px',
@@ -242,9 +241,10 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       paddingTop: '4.25rem',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height:${heightBreakpoints.medium}px)`]: {
-      paddingTop: '1rem',
-    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height:${heightBreakpoints.medium}px)`]:
+      {
+        paddingTop: '1rem',
+      },
     [compactViewport]: {
       paddingTop: '0.25rem',
     },

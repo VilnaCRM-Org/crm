@@ -22,10 +22,7 @@ describe('AuthSkeleton Component', () => {
       render(<AuthSkeleton />);
       const divider = screen.getByRole('presentation');
       expect(divider).toBeInTheDocument();
-      expect(screen.getByRole('region')).toHaveAttribute(
-        'aria-label',
-        'auth.loadingForm'
-      );
+      expect(screen.getByRole('region')).toHaveAttribute('aria-label', 'auth.loadingForm');
       expect(getGenericSkeletonIds()).toEqual(
         expect.arrayContaining(['auth-skeleton-title', 'auth-skeleton-submit'])
       );

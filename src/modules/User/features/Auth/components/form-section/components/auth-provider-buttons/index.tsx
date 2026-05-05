@@ -1,5 +1,5 @@
-import UIButton from '@/components/UIButton';
-import UiTypography from '@/components/UITypography';
+import UIButton from '@/components/ui-button';
+import UiTypography from '@/components/ui-typography';
 import { Box, Divider, ListItem, List, SvgIcon } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';

@@ -19,8 +19,8 @@ describe('UISkeletonInput Integration', () => {
     within(getSkeletonInput()).getAllByRole('generic') as HTMLElement[];
 
   const getSkeletonPlaceholders = (): HTMLElement[] =>
-    getSkeletonElements().filter(
-      (element) => element.classList.contains('ui-skeleton-input__placeholder')
+    getSkeletonElements().filter((element) =>
+      element.classList.contains('ui-skeleton-input__placeholder')
     );
 
   const getSkeletonPlaceholder = (): HTMLElement => {
@@ -70,7 +70,11 @@ describe('UISkeletonInput Integration', () => {
   it('applies static styles when animation is disabled', () => {
     render(<UISkeletonInput disableAnimation id="skeleton-input" />);
 
-    expect(getSkeletonInput()).toHaveStyle({ backgroundSize: styles.staticSkeleton.backgroundSize });
-    expect(getSkeletonPlaceholder()).toHaveStyle({ backgroundSize: styles.staticSkeleton.backgroundSize });
+    expect(getSkeletonInput()).toHaveStyle({
+      backgroundSize: styles.staticSkeleton.backgroundSize,
+    });
+    expect(getSkeletonPlaceholder()).toHaveStyle({
+      backgroundSize: styles.staticSkeleton.backgroundSize,
+    });
   });
 });

@@ -1,4 +1,4 @@
-import buildApiUrl from '@/utils/urlBuilder';
+import buildApiUrl from '@/utils/url-builder';
 import type { ComponentType, SVGProps } from 'react';
 
 import { ReactComponent as Facebook } from '@/modules/User/features/Auth/assets/social-links/facebook-color.svg';

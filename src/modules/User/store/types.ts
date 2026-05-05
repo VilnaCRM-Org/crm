@@ -1,16 +1,19 @@
-import type { RequestOptions } from '@/modules/User/features/Auth/api/types';
-import type { LoginResponse, RegistrationResponse } from '@/modules/User/features/Auth/types/ApiResponses';
-import type { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import type { LoginResponse, RegistrationResponse } from '../features/Auth/types/api-responses';
+import type { LoginUserDto, RegisterUserDto } from '../features/Auth/types/credentials';
 
-type LoginApiClient = {
+type RequestOptions = {
+  signal?: AbortSignal;
+};
+
+export interface LoginAPIContract {
   login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse>;
-};
+}
 
-type RegistrationApiClient = {
+export interface RegistrationAPIContract {
   register(credentials: RegisterUserDto, options?: RequestOptions): Promise<RegistrationResponse>;
-};
+}
 
 export type ThunkExtra = {
-  loginAPI: LoginApiClient;
-  registrationAPI: RegistrationApiClient;
+  loginAPI: LoginAPIContract;
+  registrationAPI: RegistrationAPIContract;
 };
