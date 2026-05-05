@@ -1,5 +1,3 @@
-/* eslint-disable react/require-default-props */
-import { CircularProgress } from '@mui/material';
 import { ReactNode } from 'react';
 import {
   useForm,
@@ -10,9 +8,9 @@ import {
   UseFormProps,
 } from 'react-hook-form';
 
-import UIButton from '@/components/UIButton';
+import UIButton from '@/components/ui-button';
 
-import UITypography from '../UITypography';
+import UITypography from '../ui-typography';
 
 import styles from './styles';
 
@@ -22,6 +20,7 @@ export interface UIFormProps<T extends FieldValues> {
   children: ReactNode;
   formOptions?: Omit<UseFormProps<T>, 'defaultValues'>;
   isSubmitting?: boolean;
+  isSubmitDisabled?: boolean;
   error?: string | null;
   submitLabel: string;
   title: ReactNode;
@@ -29,7 +28,6 @@ export interface UIFormProps<T extends FieldValues> {
   showTitle?: boolean;
   showSubtitle?: boolean;
   resetOnSuccess?: boolean;
-  isSubmitDisabled?: boolean;
 }
 
 export default function UIForm<T extends FieldValues>({
@@ -38,6 +36,7 @@ export default function UIForm<T extends FieldValues>({
   children,
   formOptions,
   isSubmitting,
+  isSubmitDisabled = false,
   error,
   submitLabel,
   title,
@@ -45,10 +44,28 @@ export default function UIForm<T extends FieldValues>({
   showTitle = true,
   showSubtitle = true,
   resetOnSuccess = false,
-  isSubmitDisabled = false,
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
+  const submitDisabled = submitting || isSubmitDisabled;
+  const {
+    clearErrors,
+    control,
+    formState,
+    getFieldState,
+    getValues,
+    handleSubmit: formHandleSubmit,
+    register,
+    reset,
+    resetField,
+    setError,
+    setFocus,
+    setValue,
+    subscribe,
+    trigger,
+    unregister,
+    watch,
+  } = methods;
 
   const handleSubmit: SubmitHandler<T> = async (data) => {
     await onSubmit(data);
@@ -57,10 +74,25 @@ export default function UIForm<T extends FieldValues>({
     }
   };
   return (
-    // eslint-disable-next-line react/jsx-props-no-spreading
-    <FormProvider {...methods}>
-      <form noValidate onSubmit={methods.handleSubmit(handleSubmit)}>
-        {/* TODO: Implement correct error handling (replace temporary inline error display). Update tests */}
+    <FormProvider
+      clearErrors={clearErrors}
+      control={control}
+      formState={formState}
+      getFieldState={getFieldState}
+      getValues={getValues}
+      handleSubmit={formHandleSubmit}
+      register={register}
+      reset={reset}
+      resetField={resetField}
+      setError={setError}
+      setFocus={setFocus}
+      setValue={setValue}
+      subscribe={subscribe}
+      trigger={trigger}
+      unregister={unregister}
+      watch={watch}
+    >
+      <form noValidate onSubmit={formHandleSubmit(handleSubmit)}>
         {error && (
           <UITypography role="alert" aria-live="polite" sx={{ color: 'red', marginBottom: '1rem' }}>
             {error}
@@ -79,10 +111,14 @@ export default function UIForm<T extends FieldValues>({
 
         {children}
 
-        <UIButton type="submit" disabled={submitting || isSubmitDisabled} variant="contained" sx={styles.submitButton}>
+        <UIButton
+          type="submit"
+          disabled={submitDisabled}
+          variant="contained"
+          sx={styles.submitButton}
+        >
           {submitLabel}
         </UIButton>
-        {submitting ? <CircularProgress color="primary" size={70} sx={styles.loader} /> : null}
       </form>
     </FormProvider>
   );
