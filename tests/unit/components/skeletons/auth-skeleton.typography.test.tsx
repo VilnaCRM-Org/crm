@@ -2,13 +2,11 @@ import { render } from '@testing-library/react';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
-import breakpointsTheme from '@/components/UIBreakpoints';
+import breakpointsTheme from '@/components/ui-breakpoints';
 
 jest.mock('@/components/skeletons/ui-skeleton-text', () => ({
   __esModule: true,
-  default: jest.fn((props: { id?: string }) => (
-    <div id={props.id ?? 'skeleton-text'} />
-  )),
+  default: jest.fn((props: { id?: string }) => <div id={props.id ?? 'skeleton-text'} />),
 }));
 
 describe('AuthSkeleton typography parity', () => {

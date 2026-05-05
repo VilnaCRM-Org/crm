@@ -1,21 +1,26 @@
-import UIFormInputField from '@/components/UIFormInputField';
-import UITypography from '@/components/UITypography';
-import { Grid } from '@mui/material';
-import type { InputProps } from '@mui/material/Input';
-import { InputHTMLAttributes } from 'react';
+import UIFormInputField from '@/components/ui-form-input-field';
+import UITypography from '@/components/ui-typography';
+import { Grid, type SxProps, type Theme } from '@mui/material';
+import { InputHTMLAttributes, ReactNode } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
 import styles from '@/modules/User/features/Auth/components/form-section/components/styles';
 
+export interface FormFieldInputSlotProps {
+  startAdornment?: ReactNode;
+  endAdornment?: ReactNode;
+}
+
 export interface FormFieldProps<T extends FieldValues = FieldValues> {
-  rules: RegisterOptions<T, Path<T>>;
+  rules?: RegisterOptions<T, Path<T>>;
   name: Path<T>;
   placeholder: string;
   type: InputHTMLAttributes<HTMLInputElement>['type'];
   label: string;
   autoComplete: string;
   defaultValue?: PathValue<T, Path<T>>;
-  inputProps?: InputProps;
+  inputSlotProps?: FormFieldInputSlotProps;
+  sx?: SxProps<Theme>;
 }
 
 export default function FormField<T extends FieldValues>({
@@ -26,7 +31,8 @@ export default function FormField<T extends FieldValues>({
   type,
   label,
   autoComplete,
-  inputProps = {},
+  inputSlotProps,
+  sx = styles.formFieldInput,
 }: FormFieldProps<T>): JSX.Element {
   const { control } = useFormContext<T>();
 
@@ -43,8 +49,9 @@ export default function FormField<T extends FieldValues>({
         placeholder={placeholder}
         type={type}
         autoComplete={autoComplete}
-        sx={styles.formFieldInput}
-        InputProps={inputProps}
+        endAdornment={inputSlotProps?.endAdornment}
+        startAdornment={inputSlotProps?.startAdornment}
+        sx={sx}
       />
     </Grid>
   );

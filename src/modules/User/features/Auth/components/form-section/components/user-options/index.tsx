@@ -1,4 +1,4 @@
-import UIButton from '@/components/UIButton';
+import UIButton from '@/components/ui-button';
 import { Box, FormControlLabel, Checkbox } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';

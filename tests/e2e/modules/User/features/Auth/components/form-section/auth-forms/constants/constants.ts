@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
 
-import { t } from '../../../../../../../../utils/initializeLocalization';
+import { t } from '../../../../../../../../utils/initialize-localization';
 import { ExpectationEmail, ExpectationsPassword, User } from '../types';
 
 export const REGISTRATION_URL = '/authentication';

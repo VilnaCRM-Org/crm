@@ -1,21 +1,23 @@
-import UIButton from '@/components/UIButton';
-import UITypography from '@/components/UITypography';
+import UIButton from '@/components/ui-button';
+import UITypography from '@/components/ui-typography';
 import { Box } from '@mui/material';
-import { lazy, startTransition, Suspense, useCallback, useState } from 'react';
+import { lazy, startTransition, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import RegistrationForm from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form';
 import AuthProviderButtons from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons';
 import styles from '@/modules/User/features/Auth/components/form-section/styles';
-import { AuthMode, RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import {
+  AuthMode,
+  RegistrationView,
+} from '@/modules/User/features/Auth/components/form-section/types';
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
 
 const LoginForm = lazy(loadLoginForm);
-const LOAD_LOGIN_ERROR_KEY = 'sign_in.errors.load_failed' as const;
 
 export default function FormSection(): JSX.Element {
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);
-  const [loadLoginError, setLoadLoginError] = useState<typeof LOAD_LOGIN_ERROR_KEY | null>(null);
+  const [loadLoginError, setLoadLoginError] = useState<string | null>(null);
   const [mode, setMode] = useState<AuthMode>('register');
   const [registrationView, setRegistrationView] = useState<RegistrationView>('form');
   const { t } = useTranslation();
@@ -28,7 +30,6 @@ export default function FormSection(): JSX.Element {
 
   const handleSwitch = useCallback(() => {
     setRegistrationView('form');
-
     if (mode === 'login') {
       setLoadLoginError(null);
       setMode('register');
@@ -49,7 +50,7 @@ export default function FormSection(): JSX.Element {
         });
       })
       .catch(() => {
-        setLoadLoginError(LOAD_LOGIN_ERROR_KEY);
+        setLoadLoginError('sign_in.errors.load_failed');
       })
       .finally(() => {
         setIsLoadingLogin(false);
@@ -64,24 +65,20 @@ export default function FormSection(): JSX.Element {
 
   return (
     <Box component="section" sx={styles.formSection}>
-      <Box sx={styles.formWrapper}>
+      <Box sx={[styles.formWrapper, showNotification ? styles.formWrapperWithNotification : {}]}>
         {mode === 'login' ? (
-          <Suspense fallback={<Box aria-hidden="true" />}>
-            <LoginForm />
-          </Suspense>
+          <LoginForm />
         ) : (
           <RegistrationForm onViewChange={handleRegistrationViewChange} />
         )}
 
         <Box
           id="auth-provider-buttons-container"
+          data-testid="auth-provider-buttons-container"
           ref={(el: HTMLDivElement | null) => {
             if (el) {
-              if (showNotification) {
-                el.setAttribute('inert', '');
-              } else {
-                el.removeAttribute('inert');
-              }
+              if (showNotification) el.setAttribute('inert', '');
+              else el.removeAttribute('inert');
             }
           }}
         >
@@ -102,7 +99,6 @@ export default function FormSection(): JSX.Element {
         onFocus={handleSwitcherIntent}
         onTouchStart={handleSwitcherIntent}
         disabled={isLoadingLogin}
-        data-testid="signup-switcher"
       >
         {mode === 'login'
           ? t('sign_up.form.switcher_text_no_account')

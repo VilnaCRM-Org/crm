@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import fillInput from '../../../../../../../utils/fillInput';
+import fillInput from '../../../../../../../utils/fill-input';
 
 import {
   REGISTRATION_URL,
@@ -8,8 +8,8 @@ import {
   successNotificationTitle,
   userData,
 } from './constants/constants';
-import { fillEmailInput, fillInitialsInput, fillPasswordInput } from './utils/fillForm';
-import getFormFields from './utils/getFormFields';
+import { fillEmailInput, fillInitialsInput, fillPasswordInput } from './utils/fill-form';
+import getFormFields from './utils/get-form-fields';
 import { serverErrorResponse, successResponse } from './utils/responses';
 
 test.describe('Registration Form', () => {

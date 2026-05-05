@@ -1,4 +1,4 @@
-import breakpointsTheme from '@/components/UIBreakpoints';
+import breakpointsTheme from '@/components/ui-breakpoints';
 
 export default {
   formTitle: {
@@ -89,12 +89,5 @@ export default {
       fontSize: '1.125rem',
       lineHeight: 1,
     },
-  },
-  loader: {
-    position: 'absolute',
-    top: '38%',
-    left: '42%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 10,
   },
 };
