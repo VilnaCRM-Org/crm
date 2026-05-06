@@ -8,12 +8,12 @@ jest.mock('@/styles/theme', () => ({
   default: {},
 }));
 
-jest.mock('@/modules/BackToMain', () => ({
+jest.mock('@/components/ui-back-to-main', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="auth-shell-header" />,
 }));
 
-jest.mock('@/components/UIFooter', () => ({
+jest.mock('@/components/ui-footer', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="auth-shell-footer" />,
 }));

@@ -4,12 +4,10 @@ import { useState } from 'react';
 import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-
 import FormField from '@/modules/user/features/auth/components/form-section/components/form-field';
 import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
 
 import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
-
 
 type PasswordFieldProps = {
   placeholder: string;

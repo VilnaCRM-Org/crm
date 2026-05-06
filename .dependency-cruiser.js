@@ -138,7 +138,7 @@ module.exports = {
     {
       name: 'not-to-test',
       comment:
-        "This module depends on code within a folder that should only contain tests. " +
+        'This module depends on code within a folder that should only contain tests. ' +
         "As tests don't " +
         'implement functionality this is odd. ' +
         "Either you're writing a test outside the test folder " +

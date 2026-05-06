@@ -4,7 +4,6 @@ import { createValidators } from '@/modules/user/features/auth/components/form-s
 
 import emptyUser from './constants';
 
-
 jest.mock('i18next', () => ({
   t: (key: string): string => key,
 }));

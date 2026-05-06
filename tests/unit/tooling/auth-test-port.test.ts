@@ -18,9 +18,7 @@ describe('auth test harness wiring', () => {
     expect(workflow).toContain('label: signup');
   });
 
-  it(
-    'includes auth performance coverage in the Lighthouse config instead of the CI workflow',
-    () => {
+  it('includes auth performance coverage in the Lighthouse config instead of the CI workflow', () => {
     const workflow = readFile('.github/workflows/performance-testing.yml');
     const constants = readFile('lighthouse/constants.js');
     const desktopRc = readFile('lighthouse/lighthouserc.desktop.js');
@@ -50,8 +48,7 @@ describe('auth test harness wiring', () => {
     expect(batchScript).not.toContain('LHCI_PRELOADED_AUTH_TOKEN');
     expect(makefile).not.toContain('--collect.url=$(LHCI_TARGET_URL)');
     expect(makefile).not.toContain('--collect.url=http://localhost:3001');
-    }
-  );
+  });
 
   it('ships auth-specific load and memory leak entry points', () => {
     expect(fs.existsSync(path.join(projectRoot, 'tests/load/signup.js'))).toBe(true);

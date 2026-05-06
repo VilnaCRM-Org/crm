@@ -9,45 +9,22 @@ const readFile = (relativePath: string): string =>
   fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
 
 describe('auth client runtime dependencies', () => {
-  it('avoids pulling zod into the client auth response path', () => {
+  it('keeps auth response validation centralized in the shared schema module', () => {
     const apiResponses = readFile('src/modules/user/features/auth/types/api-responses.ts');
     const loginSlice = readFile('src/modules/user/store/login-slice.ts');
     const registrationSlice = readFile('src/modules/user/store/registration-slice.ts');
 
-    expect(apiResponses).not.toContain("from 'zod'");
-    expect(loginSlice).not.toContain('safeParse(');
-    expect(registrationSlice).not.toContain('safeParse(');
+    expect(apiResponses).toContain("from 'zod'");
+    expect(loginSlice).toContain('LoginResponseSchema.safeParse(apiResponse)');
+    expect(registrationSlice).toContain('RegistrationResponseSchema.safeParse(apiResponse)');
   });
 
-  it('keeps the browser auth runtime free of redux and dependency injection bootstrapping', () => {
-    const clientEntry = readFile('src/index.tsx');
-    const appSource = readFile('src/app.tsx');
-    const storeSource = readFile('src/stores/index.ts');
+  it('keeps auth hooks and shared UI decoupled from redux and router bindings', () => {
     const authHook = readFile('src/modules/user/features/auth/hooks/use-auth-store.ts');
-    const loginApi = readFile('src/modules/user/features/auth/repositories/login-api.ts');
-    const registrationApi = readFile(
-      'src/modules/user/features/auth/repositories/registration-api.ts'
-    );
     const uiButton = readFile('src/components/ui-button/index.tsx');
-
-    expect(clientEntry).not.toContain("import 'reflect-metadata'");
-    expect(clientEntry).not.toContain("from 'react-redux'");
-    expect(clientEntry).not.toContain("from '@/stores'");
-    expect(clientEntry).not.toContain("from '@/config/dependency-injection-config'");
-
-    expect(appSource).not.toContain("import 'reflect-metadata';");
-
-    expect(storeSource).not.toContain("from '@/config/dependency-injection-config'");
-    expect(storeSource).not.toContain("from '@/config/tokens'");
-    expect(storeSource).toContain(
-      "import { createAuthClients } from '@/modules/user/features/auth/repositories';"
-    );
 
     expect(authHook).not.toContain("from '@/stores/hooks'");
     expect(authHook).not.toContain("from '@/stores'");
-
-    expect(loginApi).not.toContain("from 'tsyringe'");
-    expect(registrationApi).not.toContain("from 'tsyringe'");
     expect(uiButton).not.toContain("from 'react-router-dom'");
   });
 

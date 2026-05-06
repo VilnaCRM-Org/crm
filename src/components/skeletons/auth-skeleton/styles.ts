@@ -5,9 +5,25 @@ import {
   shadowPulseAnimation,
 } from '@/components/skeletons/base/styles';
 import breakpointsTheme from '@/components/ui-breakpoints';
-import { fieldGapMargins } from '@/modules/user/features/auth/components/form-section/styles';
+import { paletteColors } from '@/styles/colors';
 
 const AUTH_SKELETON_TINY_BREAKPOINT = '336px';
+
+const fieldGapMargins = {
+  marginBottom: '0.5rem',
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`]: {
+    marginBottom: '1.125rem',
+  },
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+    marginBottom: '1.4375rem',
+  },
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
+    marginBottom: '1.125rem',
+  },
+  [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+    marginBottom: '1rem',
+  },
+};
 
 export default {
   formWrapperPulse: {
@@ -177,6 +193,43 @@ export default {
       marginTop: '1.5rem',
       height: '1.125rem',
       width: '14rem',
+    },
+  },
+  formSection: {
+    paddingTop: '0.5rem',
+    paddingX: '0.375rem',
+    paddingBottom: '1.5rem',
+    fontFamily: 'Golos',
+    backgroundColor: '#FBFBFB',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      paddingTop: '8.4375rem',
+      paddingBottom: '8.4375rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      paddingTop: '3.4375rem',
+      paddingBottom: '3.4375rem',
+    },
+  },
+  formWrapper: {
+    position: 'relative',
+    width: '100%',
+    padding: '1.5rem 1.5rem 1.375rem',
+    margin: '0 auto',
+    backgroundColor: paletteColors.background.default,
+    border: `1px solid ${paletteColors.border.default}`,
+    borderRadius: '16px',
+    boxShadow: `0px 7px 40px 0px ${paletteColors.shadow.subtle}`,
+    maxWidth: '22.6875rem',
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
+      maxWidth: '39.5rem',
+      paddingTop: '2.625rem',
+      paddingLeft: '2.8125rem',
+      paddingRight: '2.8125rem',
+      paddingBottom: '2.1875rem',
+    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.xl}px)`]: {
+      maxWidth: '31.375rem',
+      padding: '2.1rem 2.4375rem 1.9375rem',
     },
   },
 };

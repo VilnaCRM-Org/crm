@@ -8,8 +8,6 @@ export default function renderWithTheme<Props extends object>(
   props: Props
 ): JSX.Element {
   return (
-    <ThemeProvider theme={theme}>
-      {React.createElement<Props>(Component, props)}
-    </ThemeProvider>
+    <ThemeProvider theme={theme}>{React.createElement<Props>(Component, props)}</ThemeProvider>
   );
 }

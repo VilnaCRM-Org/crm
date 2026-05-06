@@ -46,7 +46,11 @@ export default function UIForm<T extends FieldValues>({
   resetOnSuccess = false,
   isSubmitDisabled = false,
 }: UIFormProps<T>): JSX.Element {
-  const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
+  const methods = useForm<T>({
+    mode: 'onTouched',
+    defaultValues,
+    ...formOptions,
+  });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
 
   const handleSubmit: SubmitHandler<T> = async (data) => {
@@ -78,7 +82,12 @@ export default function UIForm<T extends FieldValues>({
 
         {children}
 
-        <UIButton type="submit" disabled={submitting || isSubmitDisabled} variant="contained" sx={styles.submitButton}>
+        <UIButton
+          type="submit"
+          disabled={submitting || isSubmitDisabled}
+          variant="contained"
+          sx={styles.submitButton}
+        >
           {submitLabel}
         </UIButton>
         {submitting ? <CircularProgress color="primary" size={70} sx={styles.loader} /> : null}

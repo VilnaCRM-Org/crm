@@ -85,11 +85,7 @@ describe('RegistrationNotification', () => {
 
   it('renders the success notification', () => {
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={jest.fn()}
-        view="success"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -114,11 +110,7 @@ describe('RegistrationNotification', () => {
   it('calls onBack immediately when back is clicked in success view', () => {
     const onBack = jest.fn();
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={onBack}
-        view="success"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="success" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -130,11 +122,7 @@ describe('RegistrationNotification', () => {
     jest.useFakeTimers();
     const onBack = jest.fn();
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={onBack}
-        view="error"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -148,11 +136,7 @@ describe('RegistrationNotification', () => {
     jest.useFakeTimers();
     const onBack = jest.fn();
     const { unmount } = renderWithProviders(
-      <RegistrationNotification
-        isSubmitting={false}
-        onBack={onBack}
-        view="error"
-      />,
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 
@@ -166,12 +150,7 @@ describe('RegistrationNotification', () => {
     const onRetry = jest.fn();
 
     renderWithProviders(
-      <RegistrationNotification
-        isSubmitting
-        onBack={jest.fn()}
-        onRetry={onRetry}
-        view="error"
-      />,
+      <RegistrationNotification isSubmitting onBack={jest.fn()} onRetry={onRetry} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 

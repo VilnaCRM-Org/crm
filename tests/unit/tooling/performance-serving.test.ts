@@ -67,7 +67,8 @@ describe('performance serving config', () => {
       'src/modules/user/features/auth/components/form-section/auth-forms/registration-form.tsx'
     );
 
-    expect(registrationFormSource).toContain("import { lazy, Suspense } from 'react';");
+    expect(registrationFormSource).toContain('import { lazy, Suspense');
+    expect(registrationFormSource).toContain("from 'react';");
     expect(registrationFormSource).toContain(
       "import loadRegistrationNotification from '@/modules/user/features/auth/utils/load-registration-notification';"
     );

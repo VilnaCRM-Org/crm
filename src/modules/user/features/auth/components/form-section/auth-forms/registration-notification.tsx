@@ -153,7 +153,11 @@ export default function RegistrationNotification({
           </Box>
 
           <Box sx={styles.messageContainer}>
-            <UiTypography component="h4" sx={styles.successMessageTitle} data-testid="success-notification-title">
+            <UiTypography
+              component="h4"
+              sx={styles.successMessageTitle}
+              data-testid="success-notification-title"
+            >
               {t('notifications.success.title')}
             </UiTypography>
             <UiTypography component="span" sx={styles.successMessageDescription}>
