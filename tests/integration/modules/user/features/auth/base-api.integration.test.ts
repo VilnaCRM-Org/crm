@@ -1,4 +1,5 @@
 import '../../../../setup';
+import BaseAPI from '@/modules/user/features/auth/repositories/base-api';
 import {
   ApiError,
   AuthenticationError,
@@ -6,7 +7,6 @@ import {
   ValidationError,
   ApiErrorCodes,
 } from '@/modules/user/types/api-errors';
-import BaseAPI from '@/modules/user/features/auth/repositories/base-api';
 import { HttpError } from '@/services/https-client/http-error';
 
 // Test class that extends BaseAPI to expose the protected method

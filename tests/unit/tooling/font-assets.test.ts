@@ -5,13 +5,13 @@ import path from 'path';
 
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
-const cssFiles = ['src/config/fonts/golos.css', 'src/config/fonts/inter.css'] as const;
+const cssFiles = ['src/styles/fonts.css'] as const;
 const publicIndexPath = path.join(projectRoot, 'public/index.html');
 const authCriticalFonts = [
-  'src/assets/fonts/golos/Golos-Text_Regular.woff2',
-  'src/assets/fonts/golos/Golos-Text_Medium.woff2',
-  'src/assets/fonts/golos/Golos-Text_Bold.woff2',
-  'src/assets/fonts/inter/Inter-Medium.woff2',
+  'src/assets/fonts/golos/golos-text-regular.woff2',
+  'src/assets/fonts/golos/golos-text-medium.woff2',
+  'src/assets/fonts/golos/golos-text-bold.woff2',
+  'src/assets/fonts/inter/inter-medium.woff2',
 ] as const;
 
 describe('local font assets', () => {
