@@ -1,17 +1,11 @@
 import UIFormInputField from '@/components/ui-form-input-field';
 import UITypography from '@/components/ui-typography';
 import { Grid } from '@mui/material';
-import type { OutlinedInputProps } from '@mui/material/OutlinedInput';
+import type { InputProps } from '@mui/material/Input';
 import { InputHTMLAttributes } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
 import styles from '@/modules/user/features/auth/components/form-section/components/styles';
-
-type InputAdornmentProps = {
-  endAdornment?: OutlinedInputProps['endAdornment'];
-  startAdornment?: OutlinedInputProps['startAdornment'];
-  sx?: OutlinedInputProps['sx'];
-};
 
 export interface FormFieldProps<T extends FieldValues = FieldValues> {
   rules: RegisterOptions<T, Path<T>>;
@@ -21,7 +15,7 @@ export interface FormFieldProps<T extends FieldValues = FieldValues> {
   label: string;
   autoComplete: string;
   defaultValue?: PathValue<T, Path<T>>;
-  inputProps?: InputAdornmentProps;
+  inputProps?: InputProps;
 }
 
 export default function FormField<T extends FieldValues>({
@@ -35,7 +29,6 @@ export default function FormField<T extends FieldValues>({
   inputProps = {},
 }: FormFieldProps<T>): JSX.Element {
   const { control } = useFormContext<T>();
-  const { endAdornment, startAdornment, sx: inputSx } = inputProps;
 
   return (
     <Grid container flexDirection="column" sx={styles.formFieldWrapper}>
@@ -50,9 +43,8 @@ export default function FormField<T extends FieldValues>({
         placeholder={placeholder}
         type={type}
         autoComplete={autoComplete}
-        sx={inputSx ?? styles.formFieldInput}
-        endAdornment={endAdornment}
-        startAdornment={startAdornment}
+        sx={styles.formFieldInput}
+        InputProps={inputProps}
       />
     </Grid>
   );
