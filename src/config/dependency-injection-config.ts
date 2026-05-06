@@ -1,7 +1,7 @@
 import { container, instanceCachingFactory } from 'tsyringe';
 
 import TOKENS from '@/config/tokens';
-import { LoginAPI, RegistrationAPI } from '@/modules/User/features/Auth/repositories';
+import { LoginAPI, RegistrationAPI } from '@/modules/user/features/auth/repositories';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import HttpsClient from '@/services/https-client/https-client';
 

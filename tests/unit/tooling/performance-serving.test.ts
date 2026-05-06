@@ -53,29 +53,29 @@ describe('performance serving config', () => {
 
     expect(appSource).toContain("import React, { lazy, useEffect } from 'react';");
     expect(appSource).toContain(
-      "const Authentication = lazy(async () => import('@/modules/User/features/Auth'));"
+      "const Authentication = lazy(async () => import('@/modules/user/features/auth'));"
     );
     expect(appSource).toContain(
       "const ButtonExample = lazy(async () => import('@/button-example'));"
     );
-    expect(appSource).not.toContain("import Authentication from '@/modules/User/features/Auth';");
+    expect(appSource).not.toContain("import Authentication from '@/modules/user/features/auth';");
     expect(appSource).not.toContain("import ButtonExample from '@/button-example';");
   });
 
   it('keeps registration notifications out of the initial auth form chunk', () => {
     const registrationFormSource = readFile(
-      'src/modules/User/features/Auth/components/form-section/auth-forms/registration-form.tsx'
+      'src/modules/user/features/auth/components/form-section/auth-forms/registration-form.tsx'
     );
 
     expect(registrationFormSource).toContain("import { lazy, Suspense } from 'react';");
     expect(registrationFormSource).toContain(
-      "import loadRegistrationNotification from '@/modules/User/features/Auth/utils/load-registration-notification';"
+      "import loadRegistrationNotification from '@/modules/user/features/auth/utils/load-registration-notification';"
     );
     expect(registrationFormSource).toContain(
       'const RegistrationNotification = lazy(loadRegistrationNotification);'
     );
     expect(registrationFormSource).not.toContain(
-      "import RegistrationNotification from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification';"
+      "import RegistrationNotification from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification';"
     );
   });
 });

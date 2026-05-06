@@ -10,9 +10,9 @@ const readFile = (relativePath: string): string =>
 
 describe('auth client runtime dependencies', () => {
   it('avoids pulling zod into the client auth response path', () => {
-    const apiResponses = readFile('src/modules/User/features/Auth/types/api-responses.ts');
-    const loginSlice = readFile('src/modules/User/store/login-slice.ts');
-    const registrationSlice = readFile('src/modules/User/store/registration-slice.ts');
+    const apiResponses = readFile('src/modules/user/features/auth/types/api-responses.ts');
+    const loginSlice = readFile('src/modules/user/store/login-slice.ts');
+    const registrationSlice = readFile('src/modules/user/store/registration-slice.ts');
 
     expect(apiResponses).not.toContain("from 'zod'");
     expect(loginSlice).not.toContain('safeParse(');
@@ -23,10 +23,10 @@ describe('auth client runtime dependencies', () => {
     const clientEntry = readFile('src/index.tsx');
     const appSource = readFile('src/app.tsx');
     const storeSource = readFile('src/stores/index.ts');
-    const authHook = readFile('src/modules/User/features/Auth/hooks/use-auth-store.ts');
-    const loginApi = readFile('src/modules/User/features/Auth/repositories/login-api.ts');
+    const authHook = readFile('src/modules/user/features/auth/hooks/use-auth-store.ts');
+    const loginApi = readFile('src/modules/user/features/auth/repositories/login-api.ts');
     const registrationApi = readFile(
-      'src/modules/User/features/Auth/repositories/registration-api.ts'
+      'src/modules/user/features/auth/repositories/registration-api.ts'
     );
     const uiButton = readFile('src/components/ui-button/index.tsx');
 
@@ -40,7 +40,7 @@ describe('auth client runtime dependencies', () => {
     expect(storeSource).not.toContain("from '@/config/dependency-injection-config'");
     expect(storeSource).not.toContain("from '@/config/tokens'");
     expect(storeSource).toContain(
-      "import { createAuthClients } from '@/modules/User/features/Auth/repositories';"
+      "import { createAuthClients } from '@/modules/user/features/auth/repositories';"
     );
 
     expect(authHook).not.toContain("from '@/stores/hooks'");

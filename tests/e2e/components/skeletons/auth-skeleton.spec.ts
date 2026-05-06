@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import { interceptAuthFormChunks, AUTH_ASYNC_JS_GLOB } from '../../../utils/interceptAuthFormChunks';
+import { interceptAuthFormChunks, AUTH_ASYNC_JS_GLOB } from '../../../utils/intercept-auth-form-chunks';
 
 const AUTH_URL = '/authentication';
 

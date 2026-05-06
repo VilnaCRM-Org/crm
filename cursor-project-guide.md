@@ -355,7 +355,7 @@ touch src/modules/MyModule/features/MyFeature/i18n/uk.json
 touch src/modules/MyModule/features/MyFeature/api/MyFeatureAPI.ts
 
 # 4. Register in DI container
-# Edit src/config/DependencyInjectionConfig.ts
+# Edit src/config/dependency-injection-config.ts
 # Add token to src/config/tokens.ts
 
 # 5. Create Redux slice
