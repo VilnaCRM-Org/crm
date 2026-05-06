@@ -5,13 +5,13 @@ import {
   REGISTRATION_API_URL,
   userData,
   successNotificationTitle,
-} from '../e2e/modules/User/features/Auth/components/FormSection/AuthForms/constants/constants';
-import getFormFields from '../e2e/modules/User/features/Auth/components/FormSection/AuthForms/utils/getFormFields';
+} from '../e2e/modules/user/features/auth/components/form-section/auth-forms/constants/constants';
+import getFormFields from '../e2e/modules/user/features/auth/components/form-section/auth-forms/utils/get-form-fields';
 import {
   successResponse,
   serverErrorResponse,
-} from '../e2e/modules/User/features/Auth/components/FormSection/AuthForms/utils/responses';
-import fillInput from '../e2e/utils/fillInput';
+} from '../e2e/modules/user/features/auth/components/form-section/auth-forms/utils/responses';
+import fillInput from '../e2e/utils/fill-input';
 
 import { currentLanguage, screenSizes } from './constants';
 import getRegistrationNotificationSnapshotName from './get-registration-notification-snapshot-name';

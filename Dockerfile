@@ -10,7 +10,7 @@ RUN apk add --no-cache \
     curl=${CURL_VERSION} \
     g++=14.2.0-r4 \
     make=4.4.1-r2 \
-    python3=3.12.12-r0 && \
+    python3=3.12.13-r0 && \
     if [ "$INSTALL_CHROMIUM" = "true" ]; then \
       apk add --no-cache \
         chromium=136.0.7103.113-r0 \
@@ -26,7 +26,7 @@ ENV PATH="/root/.bun/bin:$PATH"
 
 WORKDIR /app
 
-COPY package.json bun.lock* checkNodeVersion.js ./
+COPY package.json bun.lock* check-node-version.js ./
 RUN bun install --frozen-lockfile
 
 
@@ -35,6 +35,8 @@ FROM base AS build
 
 # Ensure Bun binaries are in PATH for this stage
 ENV PATH="/root/.bun/bin:${PATH}"
+ARG REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=""
+ENV REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=${REACT_APP_LHCI_PRELOADED_AUTH_TOKEN}
 
 ARG REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=""
 ENV REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=${REACT_APP_LHCI_PRELOADED_AUTH_TOKEN}

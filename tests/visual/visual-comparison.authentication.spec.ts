@@ -1,7 +1,7 @@
 import { test } from '@playwright/test';
 
 import { PAGES, screenSizes } from './constants';
-import takeVisualSnapshot from './takeVisualSnapshot';
+import takeVisualSnapshot from './take-visual-snapshot';
 
 test.describe.parallel('Auth Visual Tests', () => {
   for (const screen of screenSizes) {

@@ -1,23 +1,23 @@
 ---
 stepsCompleted:
-  - "step-01-init.md"
-  - "step-02-discovery.md"
-  - "step-03-success.md"
-  - "step-04-journeys.md"
-  - "step-05-domain.md"
-  - "step-06-innovation.md"
-  - "step-07-project-type.md"
-  - "step-08-scoping.md"
-  - "step-09-functional.md"
-  - "step-10-nonfunctional.md"
-  - "step-11-complete.md"
+  - 'step-01-init.md'
+  - 'step-02-discovery.md'
+  - 'step-03-success.md'
+  - 'step-04-journeys.md'
+  - 'step-05-domain.md'
+  - 'step-06-innovation.md'
+  - 'step-07-project-type.md'
+  - 'step-08-scoping.md'
+  - 'step-09-functional.md'
+  - 'step-10-nonfunctional.md'
+  - 'step-11-complete.md'
 inputDocuments:
-  - "https://github.com/VilnaCRM-Org/crm/issues/18"
-  - "README.md"
-  - "CONTRIBUTING.md"
-  - ".github/workflows/static-testing.yml"
-  - "package.json"
-  - "Makefile"
+  - 'https://github.com/VilnaCRM-Org/crm/issues/18'
+  - 'README.md'
+  - 'CONTRIBUTING.md'
+  - '.github/workflows/static-testing.yml'
+  - 'package.json'
+  - 'Makefile'
 workflowType: 'prd'
 documentCounts:
   briefCount: 0
@@ -25,10 +25,10 @@ documentCounts:
   brainstormingCount: 0
   projectDocsCount: 5
 classification:
-  projectType: "developer_tool"
-  domain: "general"
-  complexity: "low"
-  projectContext: "brownfield"
+  projectType: 'developer_tool'
+  domain: 'general'
+  complexity: 'low'
+  projectContext: 'brownfield'
 ---
 
 # Product Requirements Document - rust-code-analysis CI check for crm

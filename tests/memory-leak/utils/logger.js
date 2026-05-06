@@ -1,22 +1,29 @@
 const util = require('node:util');
 
-function writeLine(stream, args) {
-  stream.write(`${util.format(...args)}\n`);
+function serializeArgs(args) {
+  return args.map((arg) => (arg instanceof Error ? util.format(arg) : arg));
+}
+
+function emit(method, args) {
+  const target = globalThis.console;
+  if (target && typeof target[method] === 'function') {
+    target[method](...serializeArgs(args));
+  }
 }
 
 const logger = {
   info: (...args) => {
-    writeLine(process.stdout, args);
+    emit('log', args);
   },
   error: (...args) => {
-    writeLine(process.stderr, args);
+    emit('error', args);
   },
   warn: (...args) => {
-    writeLine(process.stderr, args);
+    emit('warn', args);
   },
   debug: (...args) => {
     if (process.env.MEMLAB_DEBUG === 'true') {
-      writeLine(process.stdout, ['[DEBUG]', ...args]);
+      emit('debug', ['[DEBUG]', ...args]);
     }
   },
 };

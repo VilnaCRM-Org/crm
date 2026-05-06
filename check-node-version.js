@@ -1,0 +1,37 @@
+#!/usr/bin/env node
+const { execSync } = require('child_process');
+const semver = require('semver');
+const { engines } = require('./package.json');
+
+const writeStdout = (message) => process.stdout.write(`${message}\n`);
+const writeStderr = (message) => process.stderr.write(`${message}\n`);
+
+const checkRuntime = (name, currentVersion, requiredRange) => {
+  const normalized = semver.coerce(currentVersion)?.version;
+
+  if (!normalized || !semver.satisfies(normalized, requiredRange)) {
+    writeStderr(
+      `Required ${name} version ${requiredRange} not satisfied. Current version: ${currentVersion}`
+    );
+    process.exit(1);
+  }
+
+  writeStdout(`${name} version ${currentVersion} satisfies requirement ${requiredRange}`);
+};
+
+checkRuntime('Node', process.version, engines.node);
+
+if (engines.bun) {
+  let bunVersion = process.versions?.bun;
+
+  if (!bunVersion) {
+    try {
+      bunVersion = execSync('bun --version', { encoding: 'utf-8' }).trim();
+    } catch (error) {
+      writeStderr('Bun is required but not installed or not available in PATH.');
+      process.exit(1);
+    }
+  }
+
+  checkRuntime('Bun', bunVersion, engines.bun);
+}

@@ -31,6 +31,7 @@ CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
 # Alpine 3.21 package pins (verified 2026-01-05); update when base image bumps
 CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-r4 freetype=2.13.3-r0 harfbuzz=9.0.0-r1 nss=3.109-r0
 LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new
+LHCI_PRELOADED_AUTH_TOKEN   ?= lighthouse-preloaded-auth-token
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
 LHCI_CHROME_FLAGS_ARG       = --collect.settings.chromeFlags="$(LHCI_CHROME_FLAGS)"
 LHCI_PRELOADED_AUTH_TOKEN   ?= lighthouse-preloaded-auth-token
@@ -202,7 +203,10 @@ lint-tsc: ## This command executes Typescript linter
 lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
-lint: lint-eslint lint-tsc lint-md ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
+lint-deps: ## This command executes dependency-cruiser
+	$(BUNX) depcruise .
+
+lint: lint-eslint lint-tsc lint-md lint-deps ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
 
 husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	$(BUNX) husky install
@@ -337,7 +341,7 @@ stop: ## Stop docker
 	$(DOCKER_COMPOSE) stop
 
 check-node-version: ## Check if the correct Node.js version is installed
-	$(EXEC_CMD) node checkNodeVersion.js
+	$(EXEC_CMD) node check-node-version.js
 
 PR ?=
 FORMAT ?=
@@ -358,7 +362,7 @@ clean: down ## Clean up only this project's containers, images, and volumes
 
 # DIND (Docker-in-Docker) targets for CI scripts
 build-prod: ## Build production image for dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build prod
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build --no-cache prod
 
 build-k6: ## Build K6 load testing image for dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build k6
@@ -382,7 +386,7 @@ lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
 			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
 		fi; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse desktop config not found"; exit 1; }; \
-		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001 $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
+		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules LHCI_TARGET_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
 
 lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5'
@@ -394,7 +398,7 @@ lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
 		fi; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse mobile config not found"; exit 1; }; \
-		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules REACT_APP_PROD_HOST_API_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH --collect.url=http://localhost:3001 $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
+		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules LHCI_TARGET_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
 
 patch-prod-mockoon-url: ## Rewrite localhost Mockoon URLs inside the prod bundle to use container host
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc '\
@@ -472,5 +476,5 @@ create-k6-helper-container-dind: ## Create K6 helper container for dind load tes
 run-load-tests-dind: ## Run load tests in K6 helper container for dind
 	@if [ -z "$(K6_HELPER_NAME)" ]; then echo "K6_HELPER_NAME is required"; exit 1; fi
 	docker exec "$(K6_HELPER_NAME)" k6 run --summary-trend-stats="avg,min,med,max,p(95),p(99)" \
-		--out "web-dashboard=period=1s&export=/loadTests/results/homepage.html" \
-		/loadTests/homepage.js
+		--out "web-dashboard=period=1s&export=$(K6_RESULTS_FILE)" \
+		$(K6_TEST_SCRIPT)

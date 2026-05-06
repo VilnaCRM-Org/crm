@@ -5,17 +5,19 @@ import {
   MD_INPUT_HEIGHT,
   XL_INPUT_HEIGHT,
 } from '@/components/skeletons/ui-skeleton-input/styles';
-import breakpointsTheme from '@/components/UIBreakpoints';
-import uiFormStyles from '@/components/UIForm/styles';
-import authProviderButtonStyles from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons/styles';
-import formFieldStyles from '@/modules/User/features/Auth/components/form-section/components/styles';
-import authFormSectionStyles, { fieldGapMargins } from '@/modules/User/features/Auth/components/form-section/styles';
+import breakpointsTheme from '@/components/ui-breakpoints';
+import uiFormStyles from '@/components/ui-form/styles';
+import authProviderButtonStyles from '@/modules/user/features/auth/components/form-section/components/auth-provider-buttons/styles';
+import formFieldStyles from '@/modules/user/features/auth/components/form-section/components/styles';
+import authFormSectionStyles, {
+  fieldGapMargins,
+} from '@/modules/user/features/auth/components/form-section/styles';
 
-jest.mock('@/modules/User/features/Auth/assets/eye-off.svg', () => ({
+jest.mock('@/modules/user/features/auth/assets/eye-off.svg', () => ({
   ReactComponent: 'svg',
 }));
 
-jest.mock('@/modules/User/features/Auth/assets/eye.svg', () => ({
+jest.mock('@/modules/user/features/auth/assets/eye.svg', () => ({
   ReactComponent: 'svg',
 }));
 
@@ -256,12 +258,14 @@ describe('AuthSkeleton spacing parity', () => {
     );
 
     expect(toRem(authSkeletonStyles.fieldLabel.height as string)).toBeCloseTo(baseLabelHeight, 2);
-    expect(
-      toRem((authSkeletonStyles.fieldLabel[mdKey] as { height: string }).height)
-    ).toBeCloseTo(mdLabelHeight, 2);
-    expect(
-      toRem((authSkeletonStyles.fieldLabel[lgKey] as { height: string }).height)
-    ).toBeCloseTo(lgLabelHeight, 2);
+    expect(toRem((authSkeletonStyles.fieldLabel[mdKey] as { height: string }).height)).toBeCloseTo(
+      mdLabelHeight,
+      2
+    );
+    expect(toRem((authSkeletonStyles.fieldLabel[lgKey] as { height: string }).height)).toBeCloseTo(
+      lgLabelHeight,
+      2
+    );
   });
 
   it('keeps vertical spacing increments equal to auth form blocks at every breakpoint', () => {

@@ -129,7 +129,7 @@ src/
 
 The project uses tsyringe for DI:
 
-1. Services are registered in `src/config/DependencyInjectionConfig.ts`
+1. Services are registered in `src/config/dependency-injection-config.ts`
 2. Tokens are defined in `src/config/tokens.ts`
 3. Import `reflect-metadata` at app entry point (already done in `src/index.tsx`)
 4. Use `@injectable()` decorator on classes
@@ -149,8 +149,8 @@ const thunkExtraArgument: ThunkExtra = {
 Use `@/` prefix for all imports:
 
 ```bash
-import Component from '@/components/UIButton';
-import { LoginAPI } from '@/modules/User/features/Auth/api';
+import Component from '@/components/ui-button';
+import { LoginAPI } from '@/modules/user/features/auth/api';
 ```
 
 Configured in:
@@ -179,7 +179,7 @@ Apollo Server runs in development for local GraphQL API:
 Localization files are auto-generated during build:
 
 - Module i18n files: `src/modules/*/features/*/i18n/{en,uk}.json`
-- Generated via `scripts/localizationGenerator.js`
+- Generated via `scripts/localization-generator.js`
 - Skip generation: `SKIP_LOCALE_GEN=1`
 
 ## Storybook
@@ -238,11 +238,11 @@ Key variables in `.env`:
 
 ## Important Patterns
 
-1. **API Error Handling**: Use typed API errors in `src/modules/User/features/Auth/api/ApiErrors/`
+1. **API Error Handling**: Use typed API errors in `src/modules/user/features/auth/api/api-errors/`
    - `ValidationError`, `AuthenticationError`, `ConflictError`
    - Check with `isAPIError()` helper
 
-2. **Form Validation**: Centralized in module features (e.g., `Auth/components/FormSection/Validations/`)
+2. **Form Validation**: Centralized in module features (e.g., `Auth/components/form-section/Validations/`)
 
 3. **Routing**: Defined in `App.tsx` using `createBrowserRouter`
 
