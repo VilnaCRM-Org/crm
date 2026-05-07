@@ -416,7 +416,7 @@ module.exports = {
         'lib, store, types, utils.',
       severity: 'error',
       from: {
-        path: '^src/modules/[^/]+/(?!config|features|hooks|lib|store|types|utils)[^/]+/',
+        path: '^src/modules/[^/]+/(?!(?:config|features|hooks|lib|store|types|utils)/)[^/]+/',
       },
       to: {},
     },
@@ -429,7 +429,7 @@ module.exports = {
       from: {
         path:
           '^src/modules/[^/]+/features/[^/]+/' +
-          '(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/',
+          '(?!(?:assets|components|hooks|i18n|repositories|routes|types|utils)/)[^/]+/',
       },
       to: {},
     },
@@ -440,14 +440,14 @@ module.exports = {
         'integration, load, memory-leak, unit, visual.',
       severity: 'error',
       from: {
-        path: '^tests/(?!apollo-server|e2e|integration|load|memory-leak|unit|utils|visual)[^/]+/',
+        path: '^tests/(?!(?:apollo-server|e2e|integration|load|memory-leak|unit|utils|visual)/)[^/]+/',
       },
       to: {},
     },
     {
       name: 'no-uppercase-paths',
       comment:
-        'All source paths must be lowercase and kebab-case. Uppercase letters in file or directory names break consistency across the project.',
+        'All source paths must be lowercase. Uppercase letters in file or directory names break consistency across the project.',
       severity: 'error',
       from: {
         path: '.*[A-Z].*',

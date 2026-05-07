@@ -575,8 +575,7 @@ from constructing it differently. GitHub release pages use the `v`-prefixed
 tag, while `RCA_VERSION` remains the unprefixed `0.0.25` value in the Makefile:
 
 ```text
-https://github.com/mozilla/rust-code-analysis/releases/download/
-v$(RCA_VERSION)/rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz
+https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz
 ```
 
 **Important — Baseline Compliance Run:**

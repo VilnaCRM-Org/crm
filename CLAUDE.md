@@ -150,7 +150,7 @@ Use `@/` prefix for all imports:
 
 ```bash
 import Component from '@/components/ui-button';
-import { LoginAPI } from '@/modules/user/features/auth/api';
+import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
 ```
 
 Configured in:
@@ -238,11 +238,11 @@ Key variables in `.env`:
 
 ## Important Patterns
 
-1. **API Error Handling**: Use typed API errors in `src/modules/user/features/auth/api/api-errors/`
+1. **API Error Handling**: Use typed API errors in `src/modules/user/types/api-errors/`
    - `ValidationError`, `AuthenticationError`, `ConflictError`
    - Check with `isAPIError()` helper
 
-2. **Form Validation**: Centralized in module features (e.g., `Auth/components/form-section/Validations/`)
+2. **Form Validation**: Centralized in module features (e.g., `auth/components/form-section/validations/`)
 
 3. **Routing**: Defined in `App.tsx` using `createBrowserRouter`
 

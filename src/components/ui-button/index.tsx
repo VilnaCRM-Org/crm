@@ -30,12 +30,13 @@ const resolveLinkTarget = (to?: ButtonLinkTarget): string | undefined => {
 
 function UIButton({
   to,
+  href,
   children,
   type = 'button',
   component,
   ...rest
 }: React.PropsWithChildren<UiButtonProps>): React.ReactElement {
-  const linkTarget = resolveLinkTarget(to);
+  const linkTarget = resolveLinkTarget(to) ?? href;
   const resolvedComponent = component ?? (linkTarget ? 'a' : 'button');
 
   const baseButton = (

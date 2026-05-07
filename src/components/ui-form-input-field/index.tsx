@@ -26,7 +26,7 @@ type CustomTextField<T extends FieldValues> = TextFieldProps & {
 export default function UIFormInputField<T extends FieldValues>({
   control,
   rules,
-  defaultValue = undefined,
+  defaultValue,
   name,
   sx,
   ...props
@@ -36,13 +36,13 @@ export default function UIFormInputField<T extends FieldValues>({
       <Controller
         name={name}
         control={control}
-        defaultValue={defaultValue as PathValue<T, Path<T>>}
+        {...(defaultValue !== undefined ? { defaultValue } : {})}
         rules={rules}
-        render={({ field, fieldState }): React.ReactElement => (
+        render={({ field: { ref, ...field }, fieldState }): React.ReactElement => (
           <TextField
             {...props}
             {...field}
-            inputRef={field.ref}
+            inputRef={ref}
             error={fieldState.invalid}
             helperText={fieldState.error?.message ?? props.helperText}
             sx={sx}
