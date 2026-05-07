@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 
-import UiTypography from '@/components/UITypography';
+import UiTypography from '@/components/ui-typography';
 
 describe('UiTypography', () => {
   it('renders a paragraph by default when no component prop is provided', () => {

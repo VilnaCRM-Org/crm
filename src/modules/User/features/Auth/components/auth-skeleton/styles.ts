@@ -4,7 +4,7 @@ import {
   SMALL_MOBILE_BREAKPOINT_UPPER,
   shadowPulseAnimation,
 } from '@/components/skeletons/base/styles';
-import breakpointsTheme from '@/components/UIBreakpoints';
+import breakpointsTheme from '@/components/ui-breakpoints';
 
 import { fieldGapMargins } from '@/modules/User/features/Auth/components/form-section/styles';
 

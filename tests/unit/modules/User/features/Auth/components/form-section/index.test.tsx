@@ -12,7 +12,7 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@/components/UIButton', () => ({
+jest.mock('@/components/ui-button', () => ({
   __esModule: true,
   default: (props: {
     children: ReactElement | string;
@@ -36,7 +36,7 @@ jest.mock('@/components/UIButton', () => ({
   },
 }));
 
-jest.mock('@/components/UITypography', () => ({
+jest.mock('@/components/ui-typography', () => ({
   __esModule: true,
   default: ({
     children,
@@ -103,7 +103,7 @@ function renderIsolatedFormSectionWithLoginModule(
     }),
   }));
 
-  jest.doMock('@/components/UIButton', () => ({
+  jest.doMock('@/components/ui-button', () => ({
     __esModule: true,
     default: (props: {
       children: ReactElement | string;
@@ -127,7 +127,7 @@ function renderIsolatedFormSectionWithLoginModule(
     },
   }));
 
-  jest.doMock('@/components/UITypography', () => ({
+  jest.doMock('@/components/ui-typography', () => ({
     __esModule: true,
     default: ({
       children,
@@ -319,7 +319,7 @@ describe('FormSection', () => {
       }),
     }));
 
-    jest.doMock('@/components/UIButton', () => ({
+    jest.doMock('@/components/ui-button', () => ({
       __esModule: true,
       default: (props: {
         children: ReactElement | string;
@@ -341,7 +341,7 @@ describe('FormSection', () => {
       },
     }));
 
-    jest.doMock('@/components/UITypography', () => ({
+    jest.doMock('@/components/ui-typography', () => ({
       __esModule: true,
       default: ({
         children,
@@ -426,7 +426,7 @@ describe('FormSection', () => {
       }),
     }));
 
-    jest.doMock('@/components/UIButton', () => ({
+    jest.doMock('@/components/ui-button', () => ({
       __esModule: true,
       default: (props: {
         children: ReactElement | string;
@@ -448,7 +448,7 @@ describe('FormSection', () => {
       },
     }));
 
-    jest.doMock('@/components/UITypography', () => ({
+    jest.doMock('@/components/ui-typography', () => ({
       __esModule: true,
       default: ({
         children,

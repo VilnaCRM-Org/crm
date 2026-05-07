@@ -1,5 +1,5 @@
-import UIButton from '@/components/UIButton';
-import UITypography from '@/components/UITypography';
+import UIButton from '@/components/ui-button';
+import UITypography from '@/components/ui-typography';
 import { Box } from '@mui/material';
 import { lazy, startTransition, Suspense, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';

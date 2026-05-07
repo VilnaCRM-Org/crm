@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-import fillInput from '../../../../../../../utils/fillInput';
+import fillInput from '../../../../../../../utils/fill-input';
 
 import {
   REGISTRATION_URL,

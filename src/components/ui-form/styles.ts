@@ -1,4 +1,4 @@
-import breakpointsTheme from '@/components/UIBreakpoints';
+import breakpointsTheme from '@/components/ui-breakpoints';
 
 export default {
   formTitle: {

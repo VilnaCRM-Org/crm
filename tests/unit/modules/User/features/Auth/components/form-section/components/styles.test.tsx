@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { render, screen } from '@testing-library/react';
 
-import breakpointsTheme from '@/components/UIBreakpoints';
+import breakpointsTheme from '@/components/ui-breakpoints';
 import formSectionComponentStyles, {
   StyledEyeIcon,
   StyledEyeIconOff,

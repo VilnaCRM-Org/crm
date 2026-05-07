@@ -1,4 +1,4 @@
-import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints';
+import breakpointsTheme, { heightBreakpoints } from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
 

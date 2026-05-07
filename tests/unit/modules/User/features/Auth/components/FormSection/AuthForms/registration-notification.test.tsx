@@ -7,7 +7,7 @@ import RegistrationNotification, {
   BACK_CLOSE_ANIMATION_MS,
 } from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification';
 
-import renderWithProviders from '../../../../../../../utils/renderWithProviders';
+import renderWithProviders from '../../../../../../../utils/render-with-providers';
 
 jest.mock('@/assets/notification/confetti.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/notification/error.svg', () => ({ ReactComponent: 'svg' }));

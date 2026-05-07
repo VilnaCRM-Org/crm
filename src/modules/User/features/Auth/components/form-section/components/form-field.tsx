@@ -1,5 +1,5 @@
-import UIFormInputField from '@/components/UIFormInputField';
-import UITypography from '@/components/UITypography';
+import UIFormInputField from '@/components/ui-form-input-field';
+import UITypography from '@/components/ui-typography';
 import { Grid } from '@mui/material';
 import type { InputProps } from '@mui/material/Input';
 import { InputHTMLAttributes } from 'react';

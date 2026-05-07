@@ -1,6 +1,6 @@
 import { createTheme } from '@mui/material';
 
-import breakpointsTheme from '@/components/UIBreakpoints';
+import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 import theme from '@/styles/theme';
 

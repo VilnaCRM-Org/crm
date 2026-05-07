@@ -5,8 +5,7 @@ import LoginForm, {
   normalizeLoginErrorMessage,
 } from '@/modules/User/features/Auth/components/form-section/auth-forms/login-form';
 
-const mockDispatch = jest.fn();
-const mockLoginUser = jest.fn();
+const mockLogin = jest.fn();
 const mockFormField = jest.fn();
 const mockUIForm = jest.fn();
 
@@ -19,16 +18,12 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@/stores/hooks', () => ({
+jest.mock('@/modules/User/features/Auth/hooks/use-auth-store', () => ({
   __esModule: true,
-  default: (): typeof mockDispatch => mockDispatch,
+  default: (): { login: typeof mockLogin } => ({ login: mockLogin }),
 }));
 
-jest.mock('@/modules/User/store', () => ({
-  loginUser: (...args: unknown[]): unknown => mockLoginUser(...args),
-}));
-
-jest.mock('@/modules/User/features/Auth/utils/getSubmitLabelKey', () => ({
+jest.mock('@/modules/User/features/Auth/utils/get-submit-label-key', () => ({
   __esModule: true,
   default: (mode: string, isSubmitting: boolean): string =>
     `${mode}.${isSubmitting ? 'submitting' : 'submit_button'}`,
@@ -59,7 +54,7 @@ jest.mock('@/modules/User/features/Auth/components/form-section/components/user-
   default: (): ReactElement => <div data-testid="user-options" />,
 }));
 
-jest.mock('@/components/UIForm', () => ({
+jest.mock('@/components/ui-form', () => ({
   __esModule: true,
   default: (props: {
     error: string;
@@ -86,7 +81,7 @@ jest.mock('@/components/UIForm', () => ({
 describe('LoginForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockLoginUser.mockImplementation((payload: unknown) => payload);
+    mockLogin.mockResolvedValue({ token: 'tok', email: 'user@example.com' });
   });
 
   it('uses sign-in translations for the email field', () => {
@@ -104,9 +99,7 @@ describe('LoginForm', () => {
   });
 
   it('shows a translated login error prefix with a normalized message', async () => {
-    mockDispatch.mockReturnValue({
-      unwrap: () => Promise.reject(new Error('Invalid credentials')),
-    });
+    mockLogin.mockRejectedValue(new Error('Invalid credentials'));
 
     render(<LoginForm />);
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));

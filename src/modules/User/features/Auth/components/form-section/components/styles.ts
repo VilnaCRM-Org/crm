@@ -1,4 +1,4 @@
-import breakpointsTheme from '@/components/UIBreakpoints';
+import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors } from '@/styles/colors';
 import { styled } from '@mui/material/styles';
 
