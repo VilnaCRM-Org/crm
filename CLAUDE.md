@@ -123,21 +123,21 @@ downloaded automatically to `./bin/` on first run and is gitignored.
 
 **Hard-fail metrics:**
 
-- Cyclomatic Complexity: `> 20`
-- Cognitive Complexity: `> 24`
+- Cyclomatic Complexity: `> 10`
+- Cognitive Complexity: `> 15`
 - ABC Magnitude: `> 17`
-- Function / closure arguments: `> 5 / 3`
-- Exit points: `> 15`
-- Function LLOC / PLOC / SLOC: `> 37 / 145 / 157`
-- File LLOC / PLOC / SLOC: `> 120 / 366 / 372`
-- Halstead volume / bugs: function `> 5558 / 0.94`, file `> 12427 / 1.58`
-- Maintainability Index Visual Studio: `< 15`
+- Function / closure arguments: `> 3 / 3`
+- Exit points: `> 3`
+- Function LLOC / PLOC / SLOC: `> 10 / 40 / 45`
+- File LLOC / PLOC / SLOC: `> 120 / 300 / 350`
+- Halstead volume / bugs: function `> 1000 / 0.35`, file `> 8000 / 1.58`
+- Maintainability Index Visual Studio: `< 20`
 - Class WMC / NPM / NPA / COA / CDA: `> 30 / 8 / 2 / 0.60 / 0.25`
 - Interface NPM / NPA: `> 10 / 15`
 
-These hard-fail thresholds are calibrated to the current repository baseline so this PR can
-land without application-code remediation. Tightening toward the target quality bands belongs in
-a follow-up PR.
+These hard-fail thresholds are tightened toward the target quality bands. The authoritative
+source is `config/metrics-policy.json`; this table mirrors it for quick reference and must be
+kept in sync when the policy changes.
 
 **Review-gate metrics:**
 

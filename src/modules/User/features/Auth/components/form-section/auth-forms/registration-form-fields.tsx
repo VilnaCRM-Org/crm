@@ -4,7 +4,7 @@ import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials'
 
 import FormField from '../components/form-field';
 import PasswordField from '../components/password-field';
-import type { createValidators } from '../validations';
+import { createValidators } from '../validations';
 
 type Validators = ReturnType<typeof createValidators>;
 
