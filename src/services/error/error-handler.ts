@@ -66,10 +66,10 @@ const errorMap: Record<ErrorCode, UiError> = {
 };
 
 export class ErrorHandler {
-  private static logger: ErrorLogger | undefined;
+  private static logger: ErrorLogger = console;
 
   public static setLogger(logger?: ErrorLogger): void {
-    ErrorHandler.logger = logger;
+    ErrorHandler.logger = logger ?? console;
   }
 
   public static handleAuthError(error: ParsedError): UiError {
@@ -82,6 +82,6 @@ export class ErrorHandler {
   }
 
   public static handle(error: unknown): void {
-    ErrorHandler.logger?.error('[ErrorHandler]', error);
+    ErrorHandler.logger.error('[ErrorHandler]', error);
   }
 }

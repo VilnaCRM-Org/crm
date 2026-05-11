@@ -566,9 +566,15 @@ describe('ErrorHandler', () => {
       expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', arrayError);
     });
 
-    it('safely no-ops when no logger is configured', () => {
-      expect(() => ErrorHandler.handle(new Error('No console'))).not.toThrow();
+    it('falls back to console when no logger is configured', () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const error = new Error('No console');
+
+      expect(() => ErrorHandler.handle(error)).not.toThrow();
+      expect(consoleSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
       expect(logger.error).not.toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
     });
   });
 });

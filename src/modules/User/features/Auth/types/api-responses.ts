@@ -16,7 +16,7 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 
 export const validateLoginResponse = (value: unknown): ValidationResult<LoginResponse> => {
   if (!isObject(value)) {
-    return { success: false, errors: ['token: expected string'] };
+    return { success: false, errors: ['value: expected object'] };
   }
 
   if (typeof value.token !== 'string') {
