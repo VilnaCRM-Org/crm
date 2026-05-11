@@ -6,9 +6,7 @@ import breakpointsTheme from '@/components/ui-breakpoints';
 
 jest.mock('@/components/skeletons/ui-skeleton-text', () => ({
   __esModule: true,
-  default: jest.fn((props: { id?: string }) => (
-    <div id={props.id ?? 'skeleton-text'} />
-  )),
+  default: jest.fn((props: { id?: string }) => <div id={props.id ?? 'skeleton-text'} />),
 }));
 
 describe('AuthSkeleton typography parity', () => {

@@ -10,9 +10,9 @@ const readFile = (relativePath: string): string =>
 
 describe('auth client runtime dependencies', () => {
   it('keeps auth response validation centralized in the shared schema module', () => {
-    const apiResponses = readFile('src/modules/User/features/Auth/types/api-responses.ts');
-    const loginSlice = readFile('src/modules/User/store/login-slice.ts');
-    const registrationSlice = readFile('src/modules/User/store/registration-slice.ts');
+    const apiResponses = readFile('src/modules/user/features/auth/types/api-responses.ts');
+    const loginSlice = readFile('src/modules/user/store/login-slice.ts');
+    const registrationSlice = readFile('src/modules/user/store/registration-slice.ts');
 
     expect(apiResponses).toContain('validateLoginResponse');
     expect(apiResponses).toContain('validateRegistrationResponse');
@@ -21,7 +21,7 @@ describe('auth client runtime dependencies', () => {
   });
 
   it('keeps auth hooks and shared UI decoupled from redux and router bindings', () => {
-    const authHook = readFile('src/modules/User/features/Auth/hooks/use-auth-store.ts');
+    const authHook = readFile('src/modules/user/features/auth/hooks/use-auth-store.ts');
     const uiButton = readFile('src/components/ui-button/index.tsx');
 
     expect(authHook).not.toContain("from '@/stores/hooks'");
