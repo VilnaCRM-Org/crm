@@ -42,16 +42,20 @@ function setLoginFailure(ctx: SubmitLoginContext, err: unknown): void {
   ctx.setError(ctx.t('sign_in.errors.login', { reason }));
 }
 
+function handleSubmitError(ctx: SubmitLoginContext, err: unknown): void {
+  if (isAbortLike(err)) {
+    return;
+  }
+  setLoginFailure(ctx, err);
+}
+
 async function submitLogin(ctx: SubmitLoginContext): Promise<void> {
   ctx.setIsSubmitting(true);
   ctx.setError('');
   try {
     await ctx.dispatch(loginUser(ctx.data)).unwrap();
   } catch (err) {
-    if (isAbortLike(err)) {
-      return;
-    }
-    setLoginFailure(ctx, err);
+    handleSubmitError(ctx, err);
   } finally {
     ctx.setIsSubmitting(false);
   }
