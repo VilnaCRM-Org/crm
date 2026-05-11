@@ -6,13 +6,11 @@ import {
 export const isAbortError = (error: unknown): boolean =>
   error instanceof Error && error.name === 'AbortError';
 
-export const isUiError = (error: unknown): error is UiError =>
-  typeof error === 'object' &&
-  error !== null &&
-  'displayMessage' in error &&
-  typeof (error as { displayMessage: unknown }).displayMessage === 'string' &&
-  'retryable' in error &&
-  typeof (error as { retryable: unknown }).retryable === 'boolean';
+export const isUiError = (error: unknown): error is UiError => {
+  if (typeof error !== 'object' || error === null) return false;
+  const candidate = error as { displayMessage?: unknown; retryable?: unknown };
+  return typeof candidate.displayMessage === 'string' && typeof candidate.retryable === 'boolean';
+};
 
 export function toUiError(error: unknown): UiError {
   return isUiError(error) ? error : handleAuthError(error);

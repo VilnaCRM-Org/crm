@@ -48,7 +48,7 @@ describe('useAuthStore', () => {
     registerMock.mockReset();
   });
 
-  it('tracks registration loading locally and clears the error after a successful registration', async () => {
+  it('tracks registration loading and clears the error after a successful register', async () => {
     const deferred = createDeferred<{ email: string; fullName: string }>();
     registerMock.mockReturnValue(deferred.promise);
 
