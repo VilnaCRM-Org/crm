@@ -22,8 +22,10 @@ jest.mock('@/modules/user/features/auth/repositories', () => ({
 }));
 
 const mockedCreateAuthClients = createAuthClients as jest.MockedFunction<typeof createAuthClients>;
-const registerThunkTestName =
-  'configures thunk extraArgument so auth thunks receive ' + 'the registration API client';
+const registerThunkTestName = [
+  'configures thunk extraArgument so auth thunks receive',
+  'the registration API client',
+].join(' ');
 
 function makeHttpsClientMock(): HttpsClient {
   return {
