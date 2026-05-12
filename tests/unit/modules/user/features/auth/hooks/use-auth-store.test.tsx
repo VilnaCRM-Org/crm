@@ -167,6 +167,29 @@ describe('useAuthStore', () => {
     expect(result.current.registrationError).toBeNull();
   });
 
+  it('rethrows AbortError-like objects without converting them', async () => {
+    const abortError = { name: 'AbortError' };
+    registerMock.mockRejectedValue(abortError);
+
+    const { result } = renderHook(() => useAuthStore());
+
+    let caughtError: unknown;
+    await act(async () => {
+      try {
+        await result.current.register({
+          fullName: 'Ada Lovelace',
+          email: 'ada@example.com',
+          password: 'Password1',
+        });
+      } catch (e) {
+        caughtError = e;
+      }
+    });
+
+    expect(caughtError).toBe(abortError);
+    expect(result.current.registrationError).toBeNull();
+  });
+
   it('rethrows login AbortError without converting it', async () => {
     const abortError = new Error('The user aborted a request.');
     abortError.name = 'AbortError';
@@ -303,7 +326,13 @@ describe('useAuthStore', () => {
         .catch(() => {});
     });
 
+    const loginSignal = loginMock.mock.calls[0]?.[1]?.signal;
+    const registerSignal = registerMock.mock.calls[0]?.[1]?.signal;
+
     unmount();
+
+    expect(loginSignal?.aborted).toBe(true);
+    expect(registerSignal?.aborted).toBe(true);
   });
 
   it('sets registrationError when API returns a non-object response', async () => {
@@ -329,6 +358,35 @@ describe('useAuthStore', () => {
       retryable: false,
     });
     expect(result.current.registrationError).toBe('value: expected object');
+    expect(result.current.registrationLoading).toBe(false);
+  });
+
+  it('persists registrationError when the API already throws a UiError', async () => {
+    registerMock.mockRejectedValue({
+      displayMessage: 'Registration failed. Try again.',
+      retryable: true,
+    });
+
+    const { result } = renderHook(() => useAuthStore());
+
+    let caughtError: unknown;
+    await act(async () => {
+      try {
+        await result.current.register({
+          fullName: 'Ada Lovelace',
+          email: 'ada@example.com',
+          password: 'Password1',
+        });
+      } catch (e) {
+        caughtError = e;
+      }
+    });
+
+    expect(caughtError).toEqual({
+      displayMessage: 'Registration failed. Try again.',
+      retryable: true,
+    });
+    expect(result.current.registrationError).toBe('Registration failed. Try again.');
     expect(result.current.registrationLoading).toBe(false);
   });
 });

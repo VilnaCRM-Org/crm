@@ -3,11 +3,14 @@ import {
   seedPreloadedAuthToken,
 } from '../../utils/seed-preloaded-auth-token';
 
+type PageRouteTarget = Parameters<typeof seedPreloadedAuthToken>[0];
+
 describe('seedPreloadedAuthToken', () => {
   it('registers a route handler that injects the auth token into document HTML', async () => {
     const route = jest.fn().mockResolvedValue(undefined);
+    const page = { route: route as PageRouteTarget['route'] };
 
-    await seedPreloadedAuthToken({ route } as never);
+    await seedPreloadedAuthToken(page);
 
     expect(route).toHaveBeenCalledTimes(1);
     const [, handler] = route.mock.calls[0] as [unknown, (r: unknown) => Promise<void>];
@@ -26,6 +29,7 @@ describe('seedPreloadedAuthToken', () => {
 
     await handler(mockRoute);
 
+    expect(fulfill).toHaveBeenCalledTimes(1);
     const [options] = fulfill.mock.calls[0] as [{ body: string }];
 
     expect(options.body).toContain('__PRELOADED_AUTH_TOKEN__');
@@ -34,8 +38,9 @@ describe('seedPreloadedAuthToken', () => {
 
   it('passes non-document requests through without modification', async () => {
     const route = jest.fn().mockResolvedValue(undefined);
+    const page = { route: route as PageRouteTarget['route'] };
 
-    await seedPreloadedAuthToken({ route } as never);
+    await seedPreloadedAuthToken(page);
 
     const [, handler] = route.mock.calls[0] as [unknown, (r: unknown) => Promise<void>];
     const continueRoute = jest.fn().mockResolvedValue(undefined);

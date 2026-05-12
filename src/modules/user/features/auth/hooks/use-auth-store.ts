@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
 
-import { createAuthClients } from '../repositories';
-import type { SafeUserInfo } from '../types/api-responses';
-import type { LoginUserDto, RegisterUserDto } from '../types/credentials';
-
-import useLoginRequest from './use-login-request';
-import useRegistrationRequest from './use-registration-request';
+import useLoginRequest from '@/modules/user/features/auth/hooks/use-login-request';
+import useRegistrationRequest from '@/modules/user/features/auth/hooks/use-registration-request';
+import { createAuthClients } from '@/modules/user/features/auth/repositories';
+import type { SafeUserInfo } from '@/modules/user/features/auth/types/api-responses';
+import type {
+  LoginUserDto,
+  RegisterUserDto,
+} from '@/modules/user/features/auth/types/credentials';
 
 type UseAuthStoreResult = {
   registrationError: string | null;

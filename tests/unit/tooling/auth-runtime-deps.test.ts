@@ -16,8 +16,8 @@ describe('auth client runtime dependencies', () => {
 
     expect(apiResponses).toContain('validateLoginResponse');
     expect(apiResponses).toContain('validateRegistrationResponse');
-    expect(loginSlice).toContain('validateLoginResponse(apiResponse)');
-    expect(registrationSlice).toContain('validateRegistrationResponse(apiResponse)');
+    expect(loginSlice).toMatch(/validateLoginResponse\(\s*apiResponse\s*\)/);
+    expect(registrationSlice).toMatch(/validateRegistrationResponse\(\s*apiResponse\s*\)/);
   });
 
   it('keeps auth hooks and shared UI decoupled from redux and router bindings', () => {

@@ -65,6 +65,7 @@ export default function useRegistrationRequest(
       }
 
       if (isUiError(error)) {
+        setRegistrationError(error.displayMessage);
         throw error;
       }
 

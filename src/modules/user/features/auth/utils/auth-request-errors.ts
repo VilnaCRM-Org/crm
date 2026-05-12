@@ -4,7 +4,10 @@ import {
 } from '@/modules/user/features/auth/utils/handle-auth-error';
 
 export const isAbortError = (error: unknown): boolean =>
-  error instanceof Error && error.name === 'AbortError';
+  typeof error === 'object' &&
+  error !== null &&
+  'name' in error &&
+  (error as { name?: unknown }).name === 'AbortError';
 
 export const isUiError = (error: unknown): error is UiError => {
   if (typeof error !== 'object' || error === null) return false;

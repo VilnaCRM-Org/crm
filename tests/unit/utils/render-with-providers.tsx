@@ -8,8 +8,13 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 
 import enTranslations from '@/i18n/localization.json';
+import { createAuthClients } from '@/modules/user/features/auth/repositories';
 import { loginReducer, type LoginState } from '@/modules/user/store/login-slice';
-import { registrationReducer } from '@/modules/user/store/registration-slice';
+import {
+  registrationReducer,
+  type RegistrationState,
+} from '@/modules/user/store/registration-slice';
+import type { ThunkExtra } from '@/modules/user/store/types';
 
 export const testI18n = i18n.createInstance();
 
@@ -41,12 +46,16 @@ export const testTheme = createTheme({
 interface RenderOptions {
   theme?: Theme;
   i18nMock?: I18nType;
-  preloadedState?: { auth?: Partial<LoginState> };
+  preloadedState?: {
+    auth?: Partial<LoginState>;
+    registration?: Partial<RegistrationState>;
+  };
 }
 const renderWithProviders = (
   component: React.ReactElement,
   { theme = testTheme, i18nMock = testI18n, preloadedState }: RenderOptions = {}
 ): RenderResult => {
+  const thunkExtraArgument: ThunkExtra = createAuthClients();
   const testStore = configureStore({
     reducer: {
       auth: loginReducer,
@@ -60,7 +69,19 @@ const renderWithProviders = (
         error: null,
         ...preloadedState?.auth,
       },
+      registration: {
+        user: null,
+        loading: false,
+        error: null,
+        ...preloadedState?.registration,
+      },
     },
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        thunk: {
+          extraArgument: thunkExtraArgument,
+        },
+      }),
   });
 
   return render(
