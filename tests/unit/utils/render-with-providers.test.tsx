@@ -2,10 +2,7 @@ import { waitFor } from '@testing-library/react';
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 
-import {
-  createAuthClients,
-  type AuthClients,
-} from '@/modules/user/features/auth/repositories';
+import { createAuthClients, type AuthClients } from '@/modules/user/features/auth/repositories';
 import { registerUser } from '@/modules/user/store/registration-slice';
 
 import renderWithProviders from './render-with-providers';

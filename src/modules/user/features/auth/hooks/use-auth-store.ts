@@ -4,10 +4,7 @@ import useLoginRequest from '@/modules/user/features/auth/hooks/use-login-reques
 import useRegistrationRequest from '@/modules/user/features/auth/hooks/use-registration-request';
 import { createAuthClients } from '@/modules/user/features/auth/repositories';
 import type { SafeUserInfo } from '@/modules/user/features/auth/types/api-responses';
-import type {
-  LoginUserDto,
-  RegisterUserDto,
-} from '@/modules/user/features/auth/types/credentials';
+import type { LoginUserDto, RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
 
 type UseAuthStoreResult = {
   registrationError: string | null;
