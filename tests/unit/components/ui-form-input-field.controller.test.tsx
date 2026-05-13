@@ -100,13 +100,11 @@ describe('UIFormInputField controller branches', () => {
     };
   });
 
-  it(
-    'omits defaultValue from Controller when none is provided and forwards helperText to TextField',
-    () => {
-      render(
-        <UIFormInputField
-          autoComplete="email"
-          control={{} as Control<FieldValues>}
+  it('omits defaultValue from Controller when none is provided and forwards helperText to TextField', () => {
+    render(
+      <UIFormInputField
+        autoComplete="email"
+        control={{} as Control<FieldValues>}
         helperText="Helper text"
         name="email"
         placeholder="Email"
@@ -115,9 +113,7 @@ describe('UIFormInputField controller branches', () => {
       />
     );
 
-    const [controllerProps] = controllerPropsMock.mock.calls.at(-1) as [
-      Record<string, unknown>,
-    ];
+    const [controllerProps] = controllerPropsMock.mock.calls.at(-1) as [Record<string, unknown>];
 
     expect(controllerProps).toEqual(
       expect.objectContaining({
@@ -130,8 +126,7 @@ describe('UIFormInputField controller branches', () => {
 
     expect(textFieldProps.helperText).toBe('Helper text');
     expect(textFieldProps.error).toBe(false);
-    }
-  );
+  });
 
   it('forwards defaultValue to Controller when provided', () => {
     render(
@@ -146,9 +141,7 @@ describe('UIFormInputField controller branches', () => {
       />
     );
 
-    const [controllerProps] = controllerPropsMock.mock.calls.at(-1) as [
-      Record<string, unknown>,
-    ];
+    const [controllerProps] = controllerPropsMock.mock.calls.at(-1) as [Record<string, unknown>];
 
     expect(controllerProps).toEqual(
       expect.objectContaining({

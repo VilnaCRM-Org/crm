@@ -102,9 +102,7 @@ jest.mock(
   })
 );
 
-let FormSection!: (
-  typeof import('@/modules/user/features/auth/components/form-section')
-)['default'];
+let FormSection!: (typeof import('@/modules/user/features/auth/components/form-section'))['default'];
 
 describe('FormSection', () => {
   beforeAll(async () => {
@@ -158,10 +156,8 @@ describe('FormSection', () => {
     expect(view.getByText('sign_up.form.switcher_text_no_account')).toBeInTheDocument();
   });
 
-  it(
-    'disables the switcher and ignores repeated clicks while the login form is loading',
-    async () => {
-      let resolveLoginForm: ((value: LoginFormModule) => void) | undefined;
+  it('disables the switcher and ignores repeated clicks while the login form is loading', async () => {
+    let resolveLoginForm: ((value: LoginFormModule) => void) | undefined;
 
     loadLoginFormMock.mockImplementationOnce(
       () =>
@@ -197,8 +193,7 @@ describe('FormSection', () => {
     await waitFor(() => {
       expect(view.getByTestId('login-form')).toBeInTheDocument();
     });
-    }
-  );
+  });
 
   it('triggers prefetch on switcher hover', () => {
     const view = render(<FormSection />);
@@ -239,10 +234,8 @@ describe('FormSection', () => {
     expect(view.queryByTestId('login-form')).not.toBeInTheDocument();
   });
 
-  it(
-    'shows an inline error and keeps registration visible when the login form fails to load',
-    async () => {
-      loadLoginFormMock.mockRejectedValueOnce(new Error('chunk load failed'));
+  it('shows an inline error and keeps registration visible when the login form fails to load', async () => {
+    loadLoginFormMock.mockRejectedValueOnce(new Error('chunk load failed'));
 
     const view = render(<FormSection />);
 
@@ -254,8 +247,7 @@ describe('FormSection', () => {
 
     expect(view.getByTestId('registration-form')).toBeInTheDocument();
     expect(view.queryByTestId('login-form')).not.toBeInTheDocument();
-    }
-  );
+  });
 
   it('marks auth provider buttons as inert when notification view is active', () => {
     const view = render(<FormSection />);

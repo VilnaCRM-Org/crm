@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 
-import RegistrationForm from '@auth/components/form-section/auth-forms/registration-form';
+import RegistrationForm from '@/modules/user/features/auth/components/form-section/auth-forms/registration-form';
 
 type FormState = {
   view: 'form' | 'success' | 'error';
