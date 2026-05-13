@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 
-import RegistrationForm from '@/modules/user/features/auth/components/form-section/auth-forms/registration-form';
+import RegistrationForm from
+  '@/modules/user/features/auth/components/form-section/auth-forms/registration-form';
 
 type MockHookResult = {
   view: 'form' | 'error' | 'success';
