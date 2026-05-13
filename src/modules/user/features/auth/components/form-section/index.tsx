@@ -114,6 +114,9 @@ export default function FormSection(): JSX.Element {
   const { mode, isLoadingLogin, loadLoginError, handleSwitcherIntent, handleSwitch } =
     useLoginSwitcher();
   const { t } = useTranslation();
+  const handleRegistrationViewChange = useCallback((view: RegistrationView) => {
+    setRegistrationView(view);
+  }, []);
 
   const onSwitch = useCallback(() => {
     setRegistrationView('form');
@@ -125,8 +128,12 @@ export default function FormSection(): JSX.Element {
   return (
     <Box component="section" sx={styles.formSection}>
       <Box sx={styles.formWrapper}>
-        <AuthBody mode={mode} onViewChange={setRegistrationView} />
-        <InertBox id="auth-provider-buttons-container" inert={showNotification}>
+        <AuthBody mode={mode} onViewChange={handleRegistrationViewChange} />
+        <InertBox
+          id="auth-provider-buttons-container"
+          data-testid="auth-provider-buttons-container"
+          inert={showNotification}
+        >
           <AuthProviderButtons />
         </InertBox>
       </Box>

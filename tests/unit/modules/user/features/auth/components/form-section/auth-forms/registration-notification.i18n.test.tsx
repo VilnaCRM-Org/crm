@@ -29,6 +29,8 @@ const createUkrainianI18n = (): ReturnType<typeof i18n.createInstance> => {
   return instance;
 };
 
+const ukrainianTranslation = localization.uk.translation;
+
 describe('RegistrationNotification', () => {
   const baseProps = {
     isSubmitting: false,
@@ -52,7 +54,9 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByText('Помилка реєстрації. Спробуйте пізніше')).toBeInTheDocument();
+    expect(
+      screen.getByText(ukrainianTranslation.sign_up.errors.signup_error)
+    ).toBeInTheDocument();
   });
 
   it('keeps custom backend error text when it is not the generic validation fallback', () => {
@@ -80,7 +84,9 @@ describe('RegistrationNotification', () => {
     );
 
     expect(
-      screen.getByText('Щось пішло не так із запитом. Спробуйте ще раз пізніше')
+      screen.getByText(
+        ukrainianTranslation.failure_responses.client_errors.something_went_wrong
+      )
     ).toBeInTheDocument();
   });
 
