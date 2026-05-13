@@ -78,6 +78,7 @@ export default function FormSection(): JSX.Element {
 
         <Box
           id="auth-provider-buttons-container"
+          data-testid="auth-provider-buttons-container"
           ref={(el: HTMLDivElement | null) => {
             if (el) {
               if (showNotification) {

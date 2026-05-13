@@ -1,5 +1,6 @@
 import { screen, fireEvent } from '@testing-library/react';
 import i18n from 'i18next';
+import { act } from 'react';
 import { initReactI18next } from 'react-i18next';
 
 import localization from '@/i18n/localization.json';
@@ -128,7 +129,9 @@ describe('RegistrationNotification', () => {
 
     fireEvent.click(screen.getByText('Назад'));
     expect(onBack).not.toHaveBeenCalled();
-    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
@@ -142,7 +145,9 @@ describe('RegistrationNotification', () => {
 
     fireEvent.click(screen.getByText('Назад'));
     unmount();
-    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
     expect(onBack).not.toHaveBeenCalled();
   });
 
