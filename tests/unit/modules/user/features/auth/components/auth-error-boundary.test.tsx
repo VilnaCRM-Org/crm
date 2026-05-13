@@ -94,14 +94,12 @@ describe('AuthErrorBoundary', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it(
-    'supports fallback render functions and wires the reset handler to the try again button',
-    () => {
-      const fallbackRenderer = jest.fn(
-        ({ error }: { error?: Error; reset: () => void }): ReactElement => (
-          <span>{error?.message}</span>
-        )
-      );
+  it('supports fallback render functions and wires the reset handler to the try again button', () => {
+    const fallbackRenderer = jest.fn(
+      ({ error }: { error?: Error; reset: () => void }): ReactElement => (
+        <span>{error?.message}</span>
+      )
+    );
     const error = new Error('resettable error');
     const boundary = new AuthErrorBoundary({
       children: <SafeChild />,
@@ -129,6 +127,5 @@ describe('AuthErrorBoundary', () => {
     reset?.();
 
     expect(setStateSpy).toHaveBeenCalledWith({ hasError: false, error: undefined });
-    }
-  );
+  });
 });
