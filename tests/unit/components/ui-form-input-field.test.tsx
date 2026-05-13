@@ -1,22 +1,18 @@
-import type { FormHelperTextProps } from '@mui/material/FormHelperText';
-import type { OutlinedInputProps } from '@mui/material/OutlinedInput';
+import type { TextFieldProps } from '@mui/material/TextField';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { PropsWithChildren, ReactNode } from 'react';
 import { useForm, type Mode, type RegisterOptions } from 'react-hook-form';
 
 import UIFormInputField from '@/components/ui-form-input-field';
 
-const outlinedInputMock = jest.fn((props: OutlinedInputProps) => (
+const textFieldMock = jest.fn((props: TextFieldProps) => (
   <input
-    data-testid="mui-outlined-input"
+    data-testid="mui-text-field"
     name={props.name}
     onBlur={props.onBlur}
     onChange={props.onChange}
     value={typeof props.value === 'string' ? props.value : ''}
   />
-));
-const formHelperTextMock = jest.fn((props: FormHelperTextProps) => (
-  <div data-testid="mui-form-helper-text">{props.children}</div>
 ));
 
 jest.mock('@/components/ui-form-input-field/theme', () => ({
@@ -24,14 +20,9 @@ jest.mock('@/components/ui-form-input-field/theme', () => ({
   default: {},
 }));
 
-jest.mock('@mui/material/FormHelperText', () => ({
+jest.mock('@mui/material/TextField', () => ({
   __esModule: true,
-  default: (props: FormHelperTextProps): JSX.Element => formHelperTextMock(props),
-}));
-
-jest.mock('@mui/material/OutlinedInput', () => ({
-  __esModule: true,
-  default: (props: OutlinedInputProps): JSX.Element => outlinedInputMock(props),
+  default: (props: TextFieldProps): JSX.Element => textFieldMock(props),
 }));
 
 jest.mock('@mui/material/styles', () => {
@@ -45,18 +36,18 @@ jest.mock('@mui/material/styles', () => {
 
 function FormInputFieldHarness({
   defaultValue,
-  endAdornment,
+  inputProps,
   helperText,
   mode,
   rules = {},
   sx,
 }: {
   defaultValue?: string;
-  endAdornment?: OutlinedInputProps['endAdornment'];
+  inputProps?: TextFieldProps['InputProps'];
   helperText?: string;
   mode?: Mode;
   rules?: RegisterOptions<{ email: string }, 'email'>;
-  sx?: OutlinedInputProps['sx'];
+  sx?: TextFieldProps['sx'];
 }): JSX.Element {
   const { control } = useForm<{ email: string }>({
     defaultValues:
@@ -73,7 +64,7 @@ function FormInputFieldHarness({
       autoComplete="email"
       control={control}
       defaultValue={defaultValue}
-      endAdornment={endAdornment}
+      InputProps={inputProps}
       helperText={helperText}
       name="email"
       placeholder="Email"
@@ -86,63 +77,53 @@ function FormInputFieldHarness({
 
 describe('UIFormInputField', () => {
   beforeEach(() => {
-    outlinedInputMock.mockClear();
-    formHelperTextMock.mockClear();
+    textFieldMock.mockClear();
   });
 
-  it('forwards endAdornment and sx onto OutlinedInput directly', () => {
+  it('forwards InputProps and sx onto TextField directly', () => {
     const endAdornment = <span>Password toggle</span>;
-    const sx: OutlinedInputProps['sx'] = { px: 2 };
+    const sx: TextFieldProps['sx'] = { px: 2 };
 
-    render(<FormInputFieldHarness endAdornment={endAdornment} sx={sx} />);
+    render(<FormInputFieldHarness inputProps={{ endAdornment }} sx={sx} />);
 
-    expect(outlinedInputMock).toHaveBeenCalled();
+    expect(textFieldMock).toHaveBeenCalled();
 
-    const [outlinedInputProps] = outlinedInputMock.mock.calls.at(-1) as [OutlinedInputProps];
+    const [textFieldProps] = textFieldMock.mock.calls.at(-1) as [TextFieldProps];
 
-    expect(outlinedInputProps).toEqual(
+    expect(textFieldProps).toEqual(
       expect.objectContaining({
-        endAdornment,
+        InputProps: { endAdornment },
         sx,
       })
     );
-    expect(outlinedInputProps).not.toHaveProperty('slotProps');
   });
 
-  it('falls back to an empty string value when the field default is undefined', () => {
+  it('passes the field value through to TextField when no default is provided', () => {
     render(<FormInputFieldHarness defaultValue={undefined} helperText="Helper text" />);
 
-    expect(outlinedInputMock).toHaveBeenCalled();
+    expect(textFieldMock).toHaveBeenCalled();
 
-    const [outlinedInputProps] = outlinedInputMock.mock.calls.at(-1) as [OutlinedInputProps];
+    const [textFieldProps] = textFieldMock.mock.calls.at(-1) as [TextFieldProps];
 
-    expect(outlinedInputProps.value).toBe('');
-    expect(outlinedInputProps).not.toHaveProperty('slotProps');
-    const [formHelperTextProps] = formHelperTextMock.mock.calls.at(-1) as [FormHelperTextProps];
-
-    expect(formHelperTextProps).toEqual(
-      expect.objectContaining({
-        children: 'Helper text',
-        error: false,
-      })
-    );
+    expect(textFieldProps.helperText).toBe('Helper text');
+    expect(textFieldProps.error).toBe(false);
   });
 
-  it('omits aria-describedby and FormHelperText when helperText is not provided', () => {
+  it('passes undefined helperText to TextField when none is provided', () => {
     render(<FormInputFieldHarness helperText={undefined} />);
 
-    expect(outlinedInputMock).toHaveBeenCalled();
+    expect(textFieldMock).toHaveBeenCalled();
 
-    const [outlinedInputProps] = outlinedInputMock.mock.calls.at(-1) as [OutlinedInputProps];
+    const [textFieldProps] = textFieldMock.mock.calls.at(-1) as [TextFieldProps];
 
-    expect(outlinedInputProps['aria-describedby']).toBeUndefined();
-    expect(formHelperTextMock).not.toHaveBeenCalled();
+    expect(textFieldProps.helperText).toBeUndefined();
   });
 
   it('prefers the validation error message over the fallback helper text', async () => {
     render(
       <FormInputFieldHarness
         defaultValue=""
+        helperText="Helper text"
         mode="onBlur"
         rules={{
           required: 'Email is required',
@@ -150,21 +131,16 @@ describe('UIFormInputField', () => {
       />
     );
 
-    fireEvent.blur(screen.getByTestId('mui-outlined-input'));
+    fireEvent.blur(screen.getByTestId('mui-text-field'));
 
     await waitFor(() => {
-      const [outlinedInputProps] = outlinedInputMock.mock.calls.at(-1) as [OutlinedInputProps];
+      const [textFieldProps] = textFieldMock.mock.calls.at(-1) as [TextFieldProps];
 
-      expect(outlinedInputProps.error).toBe(true);
+      expect(textFieldProps.helperText).toBe('Email is required');
     });
 
-    const [formHelperTextProps] = formHelperTextMock.mock.calls.at(-1) as [FormHelperTextProps];
+    const [textFieldProps] = textFieldMock.mock.calls.at(-1) as [TextFieldProps];
 
-    expect(formHelperTextProps).toEqual(
-      expect.objectContaining({
-        children: 'Email is required',
-        error: true,
-      })
-    );
+    expect(textFieldProps.error).toBe(true);
   });
 });
