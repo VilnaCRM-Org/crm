@@ -1,5 +1,4 @@
-import type { FormHelperTextProps } from '@mui/material/FormHelperText';
-import type { OutlinedInputProps } from '@mui/material/OutlinedInput';
+import type { TextFieldProps } from '@mui/material/TextField';
 import { render } from '@testing-library/react';
 import type { PropsWithChildren, ReactNode } from 'react';
 import type { Control, FieldValues } from 'react-hook-form';
@@ -23,17 +22,14 @@ type ControllerRenderParams = {
 };
 
 const controllerPropsMock = jest.fn();
-const outlinedInputMock = jest.fn((props: OutlinedInputProps) => (
+const textFieldMock = jest.fn((props: TextFieldProps) => (
   <input
-    data-testid="mui-outlined-input"
+    data-testid="mui-text-field"
     name={props.name}
     onBlur={props.onBlur}
     onChange={props.onChange}
     value={typeof props.value === 'string' ? props.value : ''}
   />
-));
-const formHelperTextMock = jest.fn((props: FormHelperTextProps) => (
-  <div data-testid="mui-form-helper-text">{props.children}</div>
 ));
 
 let controllerRenderParams: ControllerRenderParams = {
@@ -54,14 +50,9 @@ jest.mock('@/components/ui-form-input-field/theme', () => ({
   default: {},
 }));
 
-jest.mock('@mui/material/FormHelperText', () => ({
+jest.mock('@mui/material/TextField', () => ({
   __esModule: true,
-  default: (props: FormHelperTextProps): JSX.Element => formHelperTextMock(props),
-}));
-
-jest.mock('@mui/material/OutlinedInput', () => ({
-  __esModule: true,
-  default: (props: OutlinedInputProps): JSX.Element => outlinedInputMock(props),
+  default: (props: TextFieldProps): JSX.Element => textFieldMock(props),
 }));
 
 jest.mock('@mui/material/styles', () => {
@@ -94,8 +85,7 @@ jest.mock('react-hook-form', () => {
 describe('UIFormInputField controller branches', () => {
   beforeEach(() => {
     controllerPropsMock.mockClear();
-    outlinedInputMock.mockClear();
-    formHelperTextMock.mockClear();
+    textFieldMock.mockClear();
     controllerRenderParams = {
       field: {
         name: 'email',
@@ -110,11 +100,13 @@ describe('UIFormInputField controller branches', () => {
     };
   });
 
-  it('uses the defaultValue parameter fallback and normalizes undefined field values to an empty string', async () => {
-    render(
-      <UIFormInputField
-        autoComplete="email"
-        control={{} as Control<FieldValues>}
+  it(
+    'omits defaultValue from Controller when none is provided and forwards helperText to TextField',
+    () => {
+      render(
+        <UIFormInputField
+          autoComplete="email"
+          control={{} as Control<FieldValues>}
         helperText="Helper text"
         name="email"
         placeholder="Email"
@@ -123,21 +115,45 @@ describe('UIFormInputField controller branches', () => {
       />
     );
 
-    expect(controllerPropsMock).toHaveBeenCalledWith(
+    const [controllerProps] = controllerPropsMock.mock.calls.at(-1) as [
+      Record<string, unknown>,
+    ];
+
+    expect(controllerProps).toEqual(
       expect.objectContaining({
-        defaultValue: undefined,
         name: 'email',
       })
     );
+    expect(controllerProps).not.toHaveProperty('defaultValue');
 
-    const [outlinedInputProps] = outlinedInputMock.mock.calls.at(-1) as [OutlinedInputProps];
-    const [formHelperTextProps] = formHelperTextMock.mock.calls.at(-1) as [FormHelperTextProps];
+    const [textFieldProps] = textFieldMock.mock.calls.at(-1) as [TextFieldProps];
 
-    expect(outlinedInputProps.value).toBe('');
-    expect(formHelperTextProps).toEqual(
+    expect(textFieldProps.helperText).toBe('Helper text');
+    expect(textFieldProps.error).toBe(false);
+    }
+  );
+
+  it('forwards defaultValue to Controller when provided', () => {
+    render(
+      <UIFormInputField
+        autoComplete="email"
+        control={{} as Control<FieldValues>}
+        defaultValue="seed@example.com"
+        name="email"
+        placeholder="Email"
+        rules={{}}
+        type="email"
+      />
+    );
+
+    const [controllerProps] = controllerPropsMock.mock.calls.at(-1) as [
+      Record<string, unknown>,
+    ];
+
+    expect(controllerProps).toEqual(
       expect.objectContaining({
-        children: 'Helper text',
-        error: false,
+        defaultValue: 'seed@example.com',
+        name: 'email',
       })
     );
   });

@@ -54,9 +54,7 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(
-      screen.getByText(ukrainianTranslation.sign_up.errors.signup_error)
-    ).toBeInTheDocument();
+    expect(screen.getByText(ukrainianTranslation.sign_up.errors.signup_error)).toBeInTheDocument();
   });
 
   it('keeps custom backend error text when it is not the generic validation fallback', () => {
@@ -84,9 +82,7 @@ describe('RegistrationNotification', () => {
     );
 
     expect(
-      screen.getByText(
-        ukrainianTranslation.failure_responses.client_errors.something_went_wrong
-      )
+      screen.getByText(ukrainianTranslation.failure_responses.client_errors.something_went_wrong)
     ).toBeInTheDocument();
   });
 
