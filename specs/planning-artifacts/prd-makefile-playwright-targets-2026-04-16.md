@@ -595,9 +595,15 @@ test-e2e-dev-debug` halts at a `page.pause()`.
 
 ### Env Var Scoping Guarantee
 
-`PLAYWRIGHT_DEV_MODE` is set **only in recipe scope** of the `-dev`
-targets, e.g. `PLAYWRIGHT_DEV_MODE=1 $(BUNX) playwright test ...`. It
-must not be set:
+`PLAYWRIGHT_DEV_MODE` is set **only by the `-dev` targets**, and it must
+be injected **into the container** via the `docker compose exec -e`
+flag, e.g. `$(DOCKER_COMPOSE) exec -T -e PLAYWRIGHT_DEV_MODE=1 dev bun x
+playwright test ...`. It must **not** be written as a host-side shell
+prefix on the exec command (`PLAYWRIGHT_DEV_MODE=1 $(BUNX) playwright
+test ...`) — that only sets the variable for the host `docker compose`
+process and never reaches the Playwright runner inside `dev`, since
+`docker compose exec` starts a fresh process with its own environment.
+It must not be set:
 
 - as a Dockerfile `ENV`,
 - in a `docker-compose.yml` `environment:` stanza,
