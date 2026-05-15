@@ -14,7 +14,7 @@ function makeSubmitHandler(
   onSubmit: (data: { email: string; password: string }) => Promise<void>
 ): () => void {
   return (): void => {
-    onSubmit({ email: 'user@example.com', password: 'secret123' });
+    void onSubmit({ email: 'user@example.com', password: 'secret123' });
   };
 }
 
