@@ -7,7 +7,10 @@ import UITypography from '@/components/UITypography';
 import RegistrationForm from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form';
 import AuthProviderButtons from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons';
 import styles from '@/modules/User/features/Auth/components/form-section/styles';
-import { AuthMode, RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import {
+  AuthMode,
+  RegistrationView,
+} from '@/modules/User/features/Auth/components/form-section/types';
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
 
 const LoginForm = lazy(loadLoginForm);
@@ -62,15 +65,18 @@ export default function FormSection(): JSX.Element {
 
   const showNotification = mode === 'register' && registrationView !== 'form';
 
-  const containerRef = useCallback((el: HTMLDivElement | null): void => {
-    if (el) {
-      if (showNotification) {
-        el.setAttribute('inert', '');
-      } else {
-        el.removeAttribute('inert');
+  const containerRef = useCallback(
+    (el: HTMLDivElement | null): void => {
+      if (el) {
+        if (showNotification) {
+          el.setAttribute('inert', '');
+        } else {
+          el.removeAttribute('inert');
+        }
       }
-    }
-  }, [showNotification]);
+    },
+    [showNotification]
+  );
 
   return (
     <Box component="section" sx={styles.formSection}>
@@ -83,10 +89,7 @@ export default function FormSection(): JSX.Element {
           <RegistrationForm onViewChange={handleRegistrationViewChange} />
         )}
 
-        <Box
-          id="auth-provider-buttons-container"
-          ref={containerRef}
-        >
+        <Box id="auth-provider-buttons-container" ref={containerRef}>
           <AuthProviderButtons />
         </Box>
       </Box>

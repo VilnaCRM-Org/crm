@@ -60,7 +60,10 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
             placeholder={t('sign_up.form.name_input.placeholder')}
             type="text"
             autoComplete="off"
-            rules={{ required: t('sign_up.form.name_input.required'), validate: validators.fullName }}
+            rules={{
+              required: t('sign_up.form.name_input.required'),
+              validate: validators.fullName,
+            }}
           />
           <FormField<RegisterUserDto>
             name="email"

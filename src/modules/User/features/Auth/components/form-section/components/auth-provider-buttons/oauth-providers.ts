@@ -1,4 +1,3 @@
-
 import type { ComponentType, SVGProps } from 'react';
 
 import { ReactComponent as Facebook } from '@/modules/User/features/Auth/assets/social-links/facebook-color.svg';
@@ -17,8 +16,7 @@ type OAuthService = (typeof PROVIDERS)[number]['key'];
 
 function signInWithProvider(service: OAuthService): void {
   if (typeof window === 'undefined') return;
-  // TODO: Implement actual OAuth authentication
-  //  example:
+
   const url = buildApiUrl(`/auth/${encodeURIComponent(service)}`);
   const win = window.open(url, '_blank', 'noopener,noreferrer');
 

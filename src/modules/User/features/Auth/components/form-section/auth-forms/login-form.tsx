@@ -54,19 +54,22 @@ export default function LoginForm(): JSX.Element {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
-  const handleLogin = useCallback(async (data: LoginUserDto): Promise<void> => {
-    setIsSubmitting(true);
-    setError('');
+  const handleLogin = useCallback(
+    async (data: LoginUserDto): Promise<void> => {
+      setIsSubmitting(true);
+      setError('');
 
-    try {
-      await dispatch(loginUser(data)).unwrap();
-    } catch (err) {
-      const message = normalizeLoginErrorMessage(err);
-      setError(t('sign_in.errors.login', { reason: t(message) }));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [dispatch, t]);
+      try {
+        await dispatch(loginUser(data)).unwrap();
+      } catch (err) {
+        const message = normalizeLoginErrorMessage(err);
+        setError(t('sign_in.errors.login', { reason: t(message) }));
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [dispatch, t]
+  );
   const validators = createValidators(t);
 
   return (

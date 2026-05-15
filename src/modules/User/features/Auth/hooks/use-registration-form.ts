@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import useAppDispatch, { useAppSelector } from '@/stores/hooks';
@@ -11,7 +10,6 @@ import {
   selectRegistrationLoading,
   selectRegistrationUser,
 } from '@/modules/User/store/registration-selectors';
-
 
 type UseRegistrationFormResult = {
   view: RegistrationView;

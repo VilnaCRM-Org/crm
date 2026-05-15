@@ -1,6 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const LocalizationGenerator = require('../../../scripts/localizationGenerator');
+import fs from 'fs';
+import path from 'path';
+
+import LocalizationGenerator from '../../../scripts/localizationGenerator';
 
 jest.mock('fs');
 
@@ -89,12 +90,12 @@ describe('LocalizationGenerator', () => {
       };
       mockReaddirWithStructure(mockStructure);
       const result = generator.getFeaturePaths();
-      expect(result.sort()).toEqual(
+      expect(result.sort((left, right) => left.localeCompare(right))).toEqual(
         [
           path.join('src', 'modules', 'feature1', 'i18n'),
           path.join('src', 'modules', 'feature2', 'subfeature', 'i18n'),
           path.join('src', 'modules', 'feature3', 'nested', 'deeper', 'i18n'),
-        ].sort()
+        ].sort((left, right) => left.localeCompare(right))
       );
     });
 
@@ -345,8 +346,8 @@ describe('LocalizationGenerator', () => {
       });
 
       // Verify security properties are not present
-      expect(Object.prototype.hasOwnProperty.call(result, '__proto__')).toBe(false);
-      expect(Object.prototype.hasOwnProperty.call(result, 'constructor')).toBe(false);
+      expect(Object.hasOwn(result, '__proto__')).toBe(false);
+      expect(Object.hasOwn(result, 'constructor')).toBe(false);
     });
 
     it('should handle arrays as primitive values', () => {
@@ -426,8 +427,9 @@ describe('LocalizationGenerator', () => {
         },
       };
 
-      jest.spyOn(generator, 'getLocalizationFromFolder')
-          .mockImplementation((folder) => mockLocalizationData[folder] || {});
+      jest
+        .spyOn(generator, 'getLocalizationFromFolder')
+        .mockImplementation((folder) => mockLocalizationData[folder] || {});
 
       const writeSpy = jest.spyOn(generator, 'writeLocalizationFile').mockImplementation(() => {});
 

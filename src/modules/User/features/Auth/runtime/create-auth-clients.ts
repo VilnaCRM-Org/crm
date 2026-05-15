@@ -5,10 +5,7 @@ import type {
   LoginResponse,
   RegistrationResponse,
 } from '@/modules/User/features/Auth/types/ApiResponses';
-import type {
-  LoginUserDto,
-  RegisterUserDto,
-} from '@/modules/User/features/Auth/types/Credentials';
+import type { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import FetchHttpsClient from '@/services/HttpsClient/FetchHttpsClient';
 import type HttpsClient from '@/services/HttpsClient/HttpsClient';
 
@@ -17,10 +14,7 @@ type AuthClients = {
     login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse>;
   };
   registrationAPI: {
-    register(
-      credentials: RegisterUserDto,
-      options?: RequestOptions
-    ): Promise<RegistrationResponse>;
+    register(credentials: RegisterUserDto, options?: RequestOptions): Promise<RegistrationResponse>;
   };
 };
 

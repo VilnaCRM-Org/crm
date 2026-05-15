@@ -184,10 +184,7 @@ export default [
           'no-multiple-empty-lines': [2, { max: 2, maxEOF: 0 }],
           'linebreak-style': ['error', 'unix'],
           'react/prop-types': 'off',
-          'import/no-extraneous-dependencies': [
-            'error',
-            importNoExtraneousDependenciesOptions,
-          ],
+          'import/no-extraneous-dependencies': ['error', importNoExtraneousDependenciesOptions],
           'import/order': [
             'error',
             {
@@ -240,7 +237,11 @@ export default [
       {
         files: testFilePatterns,
         parser: '@typescript-eslint/parser',
-        extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:react-hooks/recommended'],
+        extends: [
+          'eslint:recommended',
+          'plugin:react/recommended',
+          'plugin:react-hooks/recommended',
+        ],
         rules: {
           'no-console': 'error',
           'import/extensions': 'off',
@@ -252,10 +253,7 @@ export default [
           'no-restricted-globals': 'off',
           'no-undef': 'off',
           'no-use-before-define': 'off',
-          'import/no-extraneous-dependencies': [
-            'error',
-            importNoExtraneousDependenciesOptions,
-          ],
+          'import/no-extraneous-dependencies': ['error', importNoExtraneousDependenciesOptions],
           'import/no-dynamic-require': 'off',
           'global-require': 'off',
           'no-await-in-loop': 'off',

@@ -54,13 +54,10 @@ jest.mock('@/modules/User/features/Auth/components/form-section/components/form-
   },
 }));
 
-jest.mock(
-  '@/modules/User/features/Auth/components/form-section/components/password-field',
-  () => ({
-    __esModule: true,
-    default: (): ReactElement => <div data-testid="password-field" />,
-  })
-);
+jest.mock('@/modules/User/features/Auth/components/form-section/components/password-field', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div data-testid="password-field" />,
+}));
 
 jest.mock('@/modules/User/features/Auth/components/form-section/components/user-options', () => ({
   __esModule: true,
@@ -77,10 +74,7 @@ jest.mock('@/components/UIForm', () => ({
     mockUIForm(props);
     return (
       <div>
-        <button
-          type="button"
-          onClick={makeSubmitHandler(props.onSubmit)}
-        >
+        <button type="button" onClick={makeSubmitHandler(props.onSubmit)}>
           submit
         </button>
         <div data-testid="form-error">{props.error}</div>
