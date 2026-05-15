@@ -560,7 +560,10 @@ ci-test-unit-client:
 - **CI pipeline integration (FR13-FR14):** `.github/workflows/ci.yml` and
   `Makefile`.
 - **Performance test efficiency (FR15-FR17):** `Makefile`.
-- **Documentation (FR18-FR22):** `README.md` and new `CONTRIBUTING.md`.
+- **Documentation (FR18-FR22):** `README.md` and new `CONTRIBUTING.md`. FR21's `docs/` clause is
+  intentionally satisfied by `README.md` and `CONTRIBUTING.md` — the configured `docs/`
+  project-knowledge directory is not used for this initiative. FR22 migration documentation lives
+  in `README.md` and/or `CONTRIBUTING.md` (Epic 5 Story 5.5).
 
 ---
 
@@ -754,8 +757,8 @@ table provides explicit no-go list for implementation agents.
       checks include `ci` and no longer include `static` or `unit`.
    6. Only after successful verification, remove or retire `static-testing.yml` and
       `unit-testing.yml`.
-   Deleting the workflows before this checklist passes will either block merges or silently remove
-   PR protection.
+      Deleting the workflows before this checklist passes will either block merges or silently remove
+      PR protection.
 4. **External integration audit** — covered by the mandatory branch-protection pre-flight sequence
    above; do not treat it as optional cleanup after workflow retirement.
 5. **`ci.yml` full YAML** — skeleton shown in architecture; implementation agent completes trigger,

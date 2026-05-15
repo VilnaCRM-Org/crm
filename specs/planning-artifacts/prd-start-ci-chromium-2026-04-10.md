@@ -306,11 +306,19 @@ targets unchanged, and document the CI-specific/local split in Makefile comments
 
 ### Delivery Strategy
 
-- Commit 1: `make start` + Mockoon (highest risk — may touch test infrastructure depending on
-  Compose decision; if complex, split into its own PR)
-- Commit 2: `make ci` with phased parallel execution (independent)
-- Commit 3: Chromium deduplication (independent)
-- Commits 2 and 3 are safe regardless of commit 1's complexity
+This sequence mirrors the Architecture's Implementation Sequence: commit 1 (Epic 1) is a hard
+predecessor for commits 2 and 3.
+
+- Commit 1 (Epic 1): Mockoon Compose move + updated `make start` + `wait-for-mockoon` + corrected
+  `start-prod` (highest risk — touches test infrastructure via the Compose decision; if complex,
+  split into its own PR)
+- Commit 2 (Epic 2): `make ci` with phased parallel execution — **depends on commit 1.** `ci-setup`
+  runs `up -d dev mockoon` and `wait-for-mockoon` against the dev compose file, which requires the
+  Mockoon-in-dev-compose move (Story 1.1) and the `wait-for-mockoon` target (Story 1.3)
+- Commit 3 (Epic 4): Chromium deduplication — **depends on commit 1.** `lighthouse-setup` depends
+  on the corrected `start-prod` (Story 1.4)
+- Commits 2 and 3 are independent of each other, but neither is independent of commit 1; do not
+  sequence them before Epic 1 lands. (Epic 3 depends on commit 2; Epic 5 docs ship last.)
 
 ### Post-MVP Features (Phase 2)
 
@@ -342,8 +350,9 @@ targets unchanged, and document the CI-specific/local split in Makefile comments
 
 **Resource Risks:**
 
-- Single developer can deliver all three fixes — if constrained, commits 2 and 3 are fully
-  independent and can ship without commit 1
+- Single developer can deliver all three fixes — but commits 2 and 3 cannot ship without commit 1
+  (Epic 2's `ci-setup` and Epic 4's `lighthouse-setup` both depend on Epic 1). If constrained,
+  ship commit 1 first; commits 2 and 3 can then proceed in parallel
 
 ## Functional Requirements
 
@@ -392,9 +401,10 @@ targets unchanged, and document the CI-specific/local split in Makefile comments
 - FR19: Developer can find documentation for `make ci` usage and its relationship to GitHub Actions
   in README
 - FR20: Developer can discover new/changed targets via `make help` output
-- FR21: README and matching `docs/` guidance describe the new `make ci` target and its relationship
-  to GitHub Actions, the changed `make start` behavior and health-check expectations, and the
-  `make help` output entries for new/changed targets.
+- FR21: README and CONTRIBUTING describe the new `make ci` target and its relationship to GitHub
+  Actions, the changed `make start` behavior and health-check expectations, and the `make help`
+  output entries for new/changed targets. The configured `docs/` project-knowledge directory is
+  intentionally not used for this initiative — README and CONTRIBUTING fully satisfy FR21.
 - FR22: Developer migration documentation explains how to transition from the old `make start`
   behavior to the new `make start` flow with Mockoon readiness, and how CI now invokes `make ci`.
 
@@ -403,30 +413,30 @@ targets unchanged, and document the CI-specific/local split in Makefile comments
 The table below maps each functional requirement to its implementing Epic and Story IDs so reviewers
 can verify end-to-end coverage.
 
-| FR | Epic | Stories | Coverage |
-| -- | ---- | ------- | -------- |
-| FR1 | EPIC-1 | 1.2 | Single `make start` starts both services |
-| FR2 | EPIC-1 | 1.1, 1.2 | Mockoon moved, then co-started with frontend |
-| FR3 | EPIC-1 | 1.3 | `wait-for-dev` and `wait-for-mockoon` gate return |
-| FR4 | EPIC-1 | 1.3 | Readiness and waiting messages print per service |
-| FR5 | EPIC-1 | 1.3 | Timeout exits non-zero with failure message |
-| FR6 | EPIC-1 | 1.2 | Frontend and Mockoon ports work after start |
-| FR7 | EPIC-2 | 2.4 | Top-level `make ci` orchestration target |
-| FR8 | EPIC-2 | 2.1, 2.4 | `ci-setup` handles any prior service state |
-| FR9 | EPIC-2 | 2.1 | `--no-recreate` reuses running services locally |
-| FR10 | EPIC-2 | 2.4 | Failing phases propagate non-zero exit |
-| FR11 | EPIC-2 | 2.2, 2.3 | `--output-sync=target` groups per-check output |
-| FR12 | EPIC-2 | 2.1, 2.2, 2.3 | `ci-setup`, `ci-lint`, `ci-test` are runnable |
-| FR13 | EPIC-3 | 3.1 | GitHub Actions delegates to `make ci` |
-| FR14 | EPIC-2 | 2.1, 2.4 | Local and GitHub Actions use the same code path |
-| FR15 | EPIC-4 | 4.1 | `lighthouse-setup` runs at most once per Make |
-| FR16 | EPIC-4 | 4.2 | Desktop and mobile depend on `lighthouse-setup` |
-| FR17 | EPIC-4 | 4.1 | Chromium detection handles both image variants |
-| FR18 | EPIC-5 | 5.1 | README documents `make start` and health checks |
-| FR19 | EPIC-5 | 5.2 | Docs link `make ci` to GitHub Actions |
-| FR20 | EPIC-5 | 5.3 | `make help` exposes new and changed targets |
-| FR21 | EPIC-5 | 5.1, 5.2, 5.3 | README and docs cover start, ci, and help |
-| FR22 | EPIC-5 | 5.4 | CONTRIBUTING covers start and CI migration |
+| FR   | Epic   | Stories       | Coverage                                          |
+| ---- | ------ | ------------- | ------------------------------------------------- |
+| FR1  | EPIC-1 | 1.2           | Single `make start` starts both services          |
+| FR2  | EPIC-1 | 1.1, 1.2      | Mockoon moved, then co-started with frontend      |
+| FR3  | EPIC-1 | 1.3           | `wait-for-dev` and `wait-for-mockoon` gate return |
+| FR4  | EPIC-1 | 1.3           | Readiness and waiting messages print per service  |
+| FR5  | EPIC-1 | 1.3           | Timeout exits non-zero with failure message       |
+| FR6  | EPIC-1 | 1.2           | Frontend and Mockoon ports work after start       |
+| FR7  | EPIC-2 | 2.4           | Top-level `make ci` orchestration target          |
+| FR8  | EPIC-2 | 2.1, 2.4      | `ci-setup` handles any prior service state        |
+| FR9  | EPIC-2 | 2.1           | `--no-recreate` reuses running services locally   |
+| FR10 | EPIC-2 | 2.4           | Failing phases propagate non-zero exit            |
+| FR11 | EPIC-2 | 2.2, 2.3      | `--output-sync=target` groups per-check output    |
+| FR12 | EPIC-2 | 2.1, 2.2, 2.3 | `ci-setup`, `ci-lint`, `ci-test` are runnable     |
+| FR13 | EPIC-3 | 3.1           | GitHub Actions delegates to `make ci`             |
+| FR14 | EPIC-2 | 2.1, 2.4      | Local and GitHub Actions use the same code path   |
+| FR15 | EPIC-4 | 4.1           | `lighthouse-setup` runs at most once per Make     |
+| FR16 | EPIC-4 | 4.2           | Desktop and mobile depend on `lighthouse-setup`   |
+| FR17 | EPIC-4 | 4.1           | Chromium detection handles both image variants    |
+| FR18 | EPIC-5 | 5.1           | README documents `make start` and health checks   |
+| FR19 | EPIC-5 | 5.2           | Docs link `make ci` to GitHub Actions             |
+| FR20 | EPIC-5 | 5.3           | `make help` exposes new and changed targets       |
+| FR21 | EPIC-5 | 5.1, 5.2, 5.3 | README and CONTRIBUTING cover start, ci, and help |
+| FR22 | EPIC-5 | 5.5           | Migration guide: old→new start, CI via make ci    |
 
 ## Non-Functional Requirements
 

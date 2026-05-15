@@ -31,7 +31,7 @@ from the PRD, UX Design if it exists, and Architecture requirements into impleme
   health check.
 - FR6: Developer can access the frontend application on port 3000 with functioning API mock
   responses on port 8080 after `make start` completes.
-- FR7: Developer can run all CI checks locally with a single `make ci` command.
+- FR7: Developer can run all MVP CI checks locally with a single `make ci` command.
 - FR8: `make ci` can produce consistent, correct results regardless of whether the development
   environment is already running or not.
 - FR9: `make ci` can reuse an already-running development environment without restarting services.
@@ -53,6 +53,12 @@ from the PRD, UX Design if it exists, and Architecture requirements into impleme
 - FR19: Developer can find documentation for `make ci` usage and its relationship to GitHub Actions
   in README.
 - FR20: Developer can discover new/changed targets via `make help` output.
+- FR21: README and CONTRIBUTING describe the new `make ci` target and its relationship to GitHub
+  Actions, the changed `make start` behavior and health-check expectations, and the `make help`
+  output entries for new/changed targets. The configured `docs/` project-knowledge directory is
+  intentionally not used for this initiative — README and CONTRIBUTING fully satisfy FR21.
+- FR22: Developer migration documentation explains how to transition from the old `make start`
+  behavior to the new `make start` flow with Mockoon readiness, and how CI now invokes `make ci`.
 
 ### NonFunctional Requirements
 
@@ -146,6 +152,8 @@ No UX Design document was found for the selected start-ci-chromium scope.
 - FR18: Epic 5 - Developer Workflow Documentation and Discoverability
 - FR19: Epic 5 - Developer Workflow Documentation and Discoverability
 - FR20: Epic 5 - Developer Workflow Documentation and Discoverability
+- FR21: Epic 5 - Developer Workflow Documentation and Discoverability
+- FR22: Epic 5 - Developer Workflow Documentation and Discoverability
 
 ## Epic List
 
@@ -173,7 +181,8 @@ shared setup path. **FRs covered:** FR15, FR16, FR17
 ### Epic 5: Developer Workflow Documentation and Discoverability
 
 Developers can understand the new `make start`, `make ci`, GNU Make prerequisite, and changed
-targets through README, CONTRIBUTING, and `make help`. **FRs covered:** FR18, FR19, FR20
+targets through README, CONTRIBUTING, and `make help`. **FRs covered:** FR18, FR19, FR20, FR21,
+FR22
 
 ## Epic 1 Stories: Complete Local Development Startup
 
@@ -424,3 +433,20 @@ changes preserve predictable developer workflows.
 it calls out environment-owning versus environment-assuming target conventions **And** it tells
 contributors to keep public target help text current **And** it tells contributors to include
 readiness checks for environment-owning startup targets.
+
+### Story 5.5: Document the make start / CI Migration Path
+
+As an existing contributor, I want migration documentation for the changed `make start` behavior and
+the new CI command, So that my existing mental model, local scripts, and aliases do not silently
+break after this initiative lands.
+
+**Acceptance Criteria:**
+
+**Given** `make start` previously started only the frontend dev container **When** the migration
+documentation is added **Then** it describes the old `make start` behavior (frontend only) versus
+the new behavior (frontend + Mockoon, both readiness-checked) **And** it states the new Mockoon
+readiness expectation on port 8080 **And** it explains that CI checks are now invoked via `make ci`
+rather than the previous separate workflow check lists **And** it tells contributors to drop or
+update any local scripts or aliases that assumed the old single-service `make start` **And** the
+migration content lives in README and/or CONTRIBUTING (the configured `docs/` directory is
+intentionally not used for this initiative).
