@@ -52,12 +52,7 @@ const importNoExtraneousDependenciesOptions = {
 const tsGlobs = ['**/*.ts', '**/*.tsx'];
 const jsGlobs = ['**/*.js', '**/*.jsx'];
 const jsxGlobs = ['**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx'];
-const storyGlobs = [
-  '**/*.stories.js',
-  '**/*.stories.jsx',
-  '**/*.stories.ts',
-  '**/*.stories.tsx',
-];
+const storyGlobs = ['**/*.stories.js', '**/*.stories.jsx', '**/*.stories.ts', '**/*.stories.tsx'];
 
 export default [
   {
@@ -181,10 +176,7 @@ export default [
       'max-len': ['error', { code: 150 }],
       'eslint-comments/disable-enable-pair': 'off',
       'no-restricted-imports': ['error', { patterns: ['@/features/*/*'] }],
-      'no-param-reassign': [
-        'error',
-        { props: true, ignorePropertyModificationsFor: ['state'] },
-      ],
+      'no-param-reassign': ['error', { props: true, ignorePropertyModificationsFor: ['state'] }],
       'no-extra-semi': 'off',
       'class-methods-use-this': 'off',
       quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
