@@ -4,7 +4,7 @@ lastStep: 8
 status: 'complete'
 completedAt: '2026-04-16'
 inputDocuments:
-  - "specs/planning-artifacts/prd-makefile-playwright-targets-2026-04-16.md"
+  - 'specs/planning-artifacts/prd-makefile-playwright-targets-2026-04-16.md'
 workflowType: 'architecture'
 project_name: 'crm'
 user_name: 'platform-team'
@@ -328,7 +328,7 @@ visual snapshot pathing, debug TTY behavior, and Compose network changes.
 - Targets: `test-e2e-dev`, `test-visual-dev`, `test-e2e-dev-debug`, `ensure-playwright-browsers`
 - Variables: uppercase snake_case near related Playwright/Docker variables
 - Required new variables: `EXEC_DEV_TTY`, `RUN_E2E_DEV`, `RUN_VISUAL_DEV`, `PLAYWRIGHT_TRACE_PORT ?=
-  9323`
+9323`
 - Do not rename existing variables such as `RUN_E2E`, `RUN_VISUAL`, `PLAYWRIGHT_TEST_CMD`, or
   `EXEC_DEV_TTYLESS`
 
@@ -489,15 +489,15 @@ production-parity target behavior.
 
 ### Ownership Map
 
-| File / Area | Owns | Must Not Own |
-|---|---|---|
-| `Makefile` | Targets, wiring, `FILE`, env, preconditions | App, PW projects, hidden installs |
-| `Dockerfile` | `INSTALL_PLAYWRIGHT_BROWSERS=false`; opt-in | Default bundling, target invocation |
-| `docker-compose.yml` | `dev` runtime; trace port if needed | New PW service, prod orchestration |
-| `playwright.config.ts` | `PLAYWRIGHT_DEV_MODE` branch, snapshot path | Separate config file |
-| `tests/visual/__snapshots__-dev/` | Advisory dev snapshots | Production visual baselines |
-| `README.md` / `CLAUDE.md` | Operator and agent guidance | Functional architecture or runtime |
-| `.github/workflows/` | Existing CI only | Dev-mode target wiring |
+| File / Area               | Owns                                | Must Not Own                   |
+| ------------------------- | ----------------------------------- | ------------------------------ |
+| `Makefile`                | Targets, `FILE`, env, preconditions | App, PW projects, hidden setup |
+| `Dockerfile`              | `INSTALL_PLAYWRIGHT_BROWSERS=false` | Default bundling, target calls |
+| `docker-compose.yml`      | `dev` runtime; trace port if needed | PW service, prod orchestration |
+| `playwright.config.ts`    | `PLAYWRIGHT_DEV_MODE` snapshot path | Separate config file           |
+| `__snapshots__-dev/`      | Advisory dev snapshots              | Production visual baselines    |
+| `README.md` / `CLAUDE.md` | Operator and agent guidance         | Functional arch or runtime     |
+| `.github/workflows/`      | Existing CI only                    | Dev-mode target wiring         |
 
 ### Architectural Boundaries
 
@@ -636,15 +636,15 @@ tests/visual/__snapshots__-dev/
 
 ### Verification Map
 
-| Flow | Verification Command / Check | Expected Boundary |
-|---|---|---|
-| Command wiring | `make -n test-e2e-dev FILE=tests/e2e/<spec>.ts` | Uses `dev`; not `start-prod` |
-| Dev e2e run | `make test-e2e-dev FILE=tests/e2e/<spec>.ts` | `PLAYWRIGHT_DEV_MODE` in container |
-| Dev visual run | `make test-visual-dev FILE=tests/visual/<spec>.ts` | Dev snapshot path only |
-| Debug run | `make test-e2e-dev-debug FILE=tests/e2e/<spec>.ts` | TTY allocated; `FILE` required |
-| Browser setup | `make ensure-playwright-browsers` twice | Second run clean, no redownload |
-| Production parity | `make test-e2e` / `make test-visual` | Existing bodies and paths unchanged |
-| CI scope | inspect `.github/workflows/` diff | No dev-mode target wiring |
+| Flow              | Verification Command / Check          | Expected Boundary                  |
+| ----------------- | ------------------------------------- | ---------------------------------- |
+| Command wiring    | `make -n test-e2e-dev FILE=<spec>`    | Uses `dev`; not `start-prod`       |
+| Dev e2e run       | `make test-e2e-dev FILE=<spec>`       | `PLAYWRIGHT_DEV_MODE` in container |
+| Dev visual run    | `make test-visual-dev FILE=<spec>`    | Dev snapshot path only             |
+| Debug run         | `make test-e2e-dev-debug FILE=<spec>` | TTY allocated; `FILE` required     |
+| Browser setup     | `make ensure-playwright-browsers` x2  | Second run clean, no redownload    |
+| Production parity | `make test-e2e` / `make test-visual`  | Existing bodies/paths unchanged    |
+| CI scope          | inspect `.github/workflows/` diff     | No dev-mode target wiring          |
 
 ### File Organization Patterns
 

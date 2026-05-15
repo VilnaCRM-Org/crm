@@ -187,15 +187,15 @@ revenue. Success looks like:
 
 ### Measurable Outcomes
 
-| Metric | Target | Measurement |
-|---|---|---|
-| Single-test runtime (`dev` already up) | < 30 s end-to-end | Wall-clock of `make test-e2e-dev FILE=<one-spec>` |
-| First-run warm-up (`dev` built, browsers installing) | < 3 min | Wall-clock from `make build-dev-playwright` to first passing test |
-| Dev image size delta (browsers off) | 0 MB | `docker image inspect` before/after PR |
-| Dev image size delta (browsers on, build arg set) | < 350 MB | `docker image inspect` with `INSTALL_PLAYWRIGHT_BROWSERS=true` |
-| Existing `test-e2e` / `test-visual` runtime | ± 0 % vs. pre-PR baseline | CI timing on `main` before/after merge |
-| `make help` discoverability | Both `-dev` targets appear with `##` descriptions | Output inspection |
-| README single-file example | Present and copy-pasteable | Doc review |
+| Metric                                               | Target                                            | Measurement                                                       |
+| ---------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------- |
+| Single-test runtime (`dev` already up)               | < 30 s end-to-end                                 | Wall-clock of `make test-e2e-dev FILE=<one-spec>`                 |
+| First-run warm-up (`dev` built, browsers installing) | < 3 min                                           | Wall-clock from `make build-dev-playwright` to first passing test |
+| Dev image size delta (browsers off)                  | 0 MB                                              | `docker image inspect` before/after PR                            |
+| Dev image size delta (browsers on, build arg set)    | < 350 MB                                          | `docker image inspect` with `INSTALL_PLAYWRIGHT_BROWSERS=true`    |
+| Existing `test-e2e` / `test-visual` runtime          | ± 0 % vs. pre-PR baseline                         | CI timing on `main` before/after merge                            |
+| `make help` discoverability                          | Both `-dev` targets appear with `##` descriptions | Output inspection                                                 |
+| README single-file example                           | Present and copy-pasteable                        | Doc review                                                        |
 
 ## Scope & Roadmap
 
@@ -226,16 +226,16 @@ save it.
 
 **Must-have capabilities:**
 
-| #  | Capability                                                                                                                                                          |
-| -- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M1 | `test-e2e-dev` target, optional `FILE=path/to/test.spec.ts`                                                                                                         |
-| M2 | `test-visual-dev` target, optional `FILE=path/to/test.spec.ts`                                                                                                      |
-| M3 | `test-e2e-dev-debug` target (TTY-enabled, maps `PLAYWRIGHT_TRACE_PORT`)                                                                                             |
-| M4 | `ensure-playwright-browsers` target + Dockerfile build arg `INSTALL_PLAYWRIGHT_BROWSERS` (default `false`)                                                          |
-| M5 | `playwright.config.ts` branches on `PLAYWRIGHT_DEV_MODE=1` (baseURL, snapshot dir, project tag)                                                                     |
-| M6 | `mockoon` service declared on external `crm-network` in `docker-compose.yml` — only `mockoon` bridges; `prod` and `playwright` stay isolated                        |
-| M7 | README section + Makefile inline help for new targets                                                                                                               |
-| M8 | 5 existing Playwright targets (`test-e2e`, `test-e2e-ui`, `test-visual`, `test-visual-ui`, `test-visual-update`) remain **byte-identical** — template-sync contract |
+| #   | Capability                                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M1  | `test-e2e-dev` target, optional `FILE=path/to/test.spec.ts`                                                                                                         |
+| M2  | `test-visual-dev` target, optional `FILE=path/to/test.spec.ts`                                                                                                      |
+| M3  | `test-e2e-dev-debug` target (TTY-enabled, maps `PLAYWRIGHT_TRACE_PORT`)                                                                                             |
+| M4  | `ensure-playwright-browsers` target + Dockerfile build arg `INSTALL_PLAYWRIGHT_BROWSERS` (default `false`)                                                          |
+| M5  | `playwright.config.ts` branches on `PLAYWRIGHT_DEV_MODE=1` (baseURL, snapshot dir, project tag)                                                                     |
+| M6  | `mockoon` service declared on external `crm-network` in `docker-compose.yml` — only `mockoon` bridges; `prod` and `playwright` stay isolated                        |
+| M7  | README section + Makefile inline help for new targets                                                                                                               |
+| M8  | 5 existing Playwright targets (`test-e2e`, `test-e2e-ui`, `test-visual`, `test-visual-ui`, `test-visual-update`) remain **byte-identical** — template-sync contract |
 
 ### Post-MVP Features
 
@@ -435,19 +435,19 @@ closed.
 
 Mapped across the four journeys, the required capabilities are:
 
-| Capability | Journey(s) |
-|---|---|
-| `test-e2e-dev` target with `FILE=` parameter | 1, 2 |
-| `test-visual-dev` target with separate baseline directory | 3 |
-| Dev container has Playwright browsers available (gated build arg) | 1, 3, 4 |
-| `ensure-playwright-browsers` one-time-setup target | 1, 4 |
-| Dev container reaches `mockoon` on the network | 1, 2 |
-| Playwright debug surfaces work from within dev (`--debug`, trace view) | 2 |
-| Clear failure output & docs for dev-baseline adoption | 3 |
-| `make help` surfaces new targets with `##` descriptions | 4 |
-| Additive-only — no regression in existing targets | 1, 4 |
-| README + `CLAUDE.md` documentation refresh | 3, 4 |
-| Single-test < 30s SLO holds | 1, 2, 3 |
+| Capability                                                             | Journey(s) |
+| ---------------------------------------------------------------------- | ---------- |
+| `test-e2e-dev` target with `FILE=` parameter                           | 1, 2       |
+| `test-visual-dev` target with separate baseline directory              | 3          |
+| Dev container has Playwright browsers available (gated build arg)      | 1, 3, 4    |
+| `ensure-playwright-browsers` one-time-setup target                     | 1, 4       |
+| Dev container reaches `mockoon` on the network                         | 1, 2       |
+| Playwright debug surfaces work from within dev (`--debug`, trace view) | 2          |
+| Clear failure output & docs for dev-baseline adoption                  | 3          |
+| `make help` surfaces new targets with `##` descriptions                | 4          |
+| Additive-only — no regression in existing targets                      | 1, 4       |
+| README + `CLAUDE.md` documentation refresh                             | 3, 4       |
+| Single-test < 30s SLO holds                                            | 1, 2, 3    |
 
 ## Developer-Tool Specific Requirements
 
@@ -585,13 +585,13 @@ existing `EXEC_DEV_TTYLESS = docker compose exec -T` pattern:
   TTY allocation. Using `$(EXEC_DEV_TTYLESS)` for the debug target
   produces an empty Inspector window.
 - **Implementation rule:** `test-e2e-dev-debug` uses `docker compose
-  exec` **without** `-T` (allocate TTY), and must **not** use the
+exec` **without** `-T` (allocate TTY), and must **not** use the
   `$(EXEC_DEV_TTYLESS)` or `$(BUNX)` helpers — both are TTY-less.
 - Trace viewer (`playwright show-trace`) listens on port 9323 by
   default. The `dev` service exposes `PLAYWRIGHT_TRACE_PORT`
   (default `9323`) to the host so the developer can open
   `http://localhost:9323` in their browser after `FILE=...
-  test-e2e-dev-debug` halts at a `page.pause()`.
+test-e2e-dev-debug` halts at a `page.pause()`.
 
 ### Env Var Scoping Guarantee
 
@@ -644,7 +644,7 @@ make ensure-playwright-browsers
   `EXEC_DEV_TTYLESS`, `BUNX`, and `PLAYWRIGHT_TEST` variables are all
   TTY-less. `test-e2e-dev-debug` requires a TTY and must bypass these
   helpers. A fresh variable (`EXEC_DEV_TTY = $(DOCKER_COMPOSE) exec
-  dev`) is appropriate.
+dev`) is appropriate.
 - **IDE compatibility guardrail:** `PLAYWRIGHT_DEV_MODE` is
   recipe-scoped only (see "Env Var Scoping Guarantee" above).
 - **No speculative pass-through variables.** A generic `PW_ARGS` or
