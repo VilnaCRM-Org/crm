@@ -55,6 +55,9 @@ export default [
     parser: '@typescript-eslint/parser',
     parserOptions: { ecmaVersion: 2022, sourceType: 'module', project: './tsconfig.json' },
     plugins: ['@typescript-eslint', 'eslint-comments', 'import'],
+    settings: {
+      react: { version: 'detect' },
+    },
     ignorePatterns: [
       'node_modules/*',
       'docker-compose.yml',
@@ -122,7 +125,6 @@ export default [
         files: ['**/*.ts', '**/*.tsx'],
         excludedFiles: ['**/*.d.ts'],
         settings: {
-          react: { version: 'detect' },
           'import/internal-regex': '^@/',
           'import/resolver': {
             node: {

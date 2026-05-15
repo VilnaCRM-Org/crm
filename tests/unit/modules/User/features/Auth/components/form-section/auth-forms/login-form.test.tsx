@@ -1,5 +1,4 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import React from 'react';
 import type { ReactElement } from 'react';
 
 import LoginForm, {

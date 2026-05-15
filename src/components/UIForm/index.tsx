@@ -59,7 +59,6 @@ export default function UIForm<T extends FieldValues>({
     // eslint-disable-next-line react/jsx-props-no-spreading
     <FormProvider {...methods}>
       <form noValidate onSubmit={methods.handleSubmit(handleSubmit)}>
-        {/* TODO: Implement correct error handling (replace temporary inline error display). Update tests */}
         {error && (
           <UITypography role="alert" aria-live="polite" sx={{ color: 'red', marginBottom: '1rem' }}>
             {error}

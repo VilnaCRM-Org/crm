@@ -23,7 +23,13 @@ function getMappedUri(uri) {
 }
 
 function logRoutingError(error) {
-  return error;
+  if (
+    typeof process !== 'undefined' &&
+    process.stderr &&
+    typeof process.stderr.write === 'function'
+  ) {
+    process.stderr.write('CloudFront Function error: ' + String(error) + '\n');
+  }
 }
 
 function handler(event) {

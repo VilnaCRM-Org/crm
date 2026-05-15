@@ -1,5 +1,5 @@
 import { Box, FormControlLabel, Checkbox } from '@mui/material';
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/UIButton';

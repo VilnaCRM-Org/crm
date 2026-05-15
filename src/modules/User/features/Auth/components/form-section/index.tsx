@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import React, { lazy, startTransition, Suspense, useCallback, useState } from 'react';
+import { lazy, startTransition, Suspense, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/UIButton';
