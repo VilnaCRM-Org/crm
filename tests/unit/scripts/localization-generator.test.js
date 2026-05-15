@@ -1,9 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-
-import LocalizationGenerator from '../../../scripts/localizationGenerator';
-
 jest.mock('fs');
+
+const fs = module.require('fs');
+const path = module.require('path');
+const LocalizationGenerator = module.require('../../../scripts/localizationGenerator');
 
 const directoryEntry = (name, isDir) => ({
   name,
