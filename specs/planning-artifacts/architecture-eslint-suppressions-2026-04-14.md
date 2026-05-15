@@ -4,10 +4,10 @@ lastStep: 8
 status: 'complete'
 completedAt: '2026-04-14T23:05:23+03:00'
 inputDocuments:
-  - "specs/planning-artifacts/prd-eslint-suppressions-2026-04-14.md"
-  - "docs/adr/README.md"
-  - "docs/adr/001-module-federation-vs-single-spa.md"
-  - "docs/adr/002-zustand-over-redux.md"
+  - 'specs/planning-artifacts/prd-eslint-suppressions-2026-04-14.md'
+  - 'docs/adr/README.md'
+  - 'docs/adr/001-module-federation-vs-single-spa.md'
+  - 'docs/adr/002-zustand-over-redux.md'
 workflowType: 'architecture'
 project_name: 'crm'
 user_name: 'BMad'
@@ -437,9 +437,9 @@ Not applicable. No data exchange formats are introduced.
 
 - Match output MUST use grep-style file/line format: `path:line:matched text`.
 - Success output MUST be a short explicit message, for example: `No ESLint suppression directives
-  found.`
+found.`
 - Failure output MUST include a short explicit message after matches, for example: `ESLint
-  suppression directives remain. Remove them or document the accepted baseline.`
+suppression directives remain. Remove them or document the accepted baseline.`
 - Do not output JSON, Markdown tables, or custom multi-column formats for MVP.
 
 ### Communication Patterns

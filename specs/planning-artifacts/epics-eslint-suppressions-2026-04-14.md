@@ -35,22 +35,22 @@ FR12: Contributors can use the command output as a cleanup queue.
 FR13: Contributors can establish the current suppression inventory before cleanup.
 FR14: Contributors can inspect known affected files from the issue during cleanup.
 FR15: Contributors can remove suppression comments by applying code, test, or
-      lint-configuration fixes.
+lint-configuration fixes.
 FR16: Contributors can re-run the inventory after cleanup to see the remaining suppression set.
 FR17: Maintainers can see the remaining suppression count and rationale if zero suppressions
-      is not achieved.
+is not achieved.
 FR18: Maintainers can identify whether the suppression check is standalone or part of the
-      broader lint workflow.
+broader lint workflow.
 FR19: Maintainers can run the suppression check directly regardless of whether it is wired
-      into an aggregate lint target.
+into an aggregate lint target.
 FR20: Maintainers can validate the aggregate lint workflow if the suppression check is wired
-      into it.
+into it.
 FR21: Reviewers can use the inventory output to identify suppression directives in pull
-      request review.
+request review.
 FR22: Maintainers can use before/after inventory evidence to decide whether future enforcement
-      should happen through local checks, `make lint`, or CI.
+should happen through local checks, `make lint`, or CI.
 FR23: Maintainers can distinguish accepted remaining baseline suppressions from newly
-      introduced suppression debt.
+introduced suppression debt.
 FR24: Maintainers can verify that all required suppression directive variants are detected.
 FR25: Maintainers can verify command behavior when suppressions are present.
 FR26: Maintainers can verify command behavior when no suppressions are present.
@@ -59,29 +59,29 @@ FR27: Maintainers can verify that relevant existing lint checks remain usable af
 ### NonFunctional Requirements
 
 NFR1: The suppression inventory command must produce deterministic results when run repeatedly
-      against the same repository state.
+against the same repository state.
 NFR2: The command must report each in-scope suppression directive occurrence once.
 NFR3: The command must preserve correct exit-code behavior: non-zero when suppressions are
-      present and zero when none are present.
+present and zero when none are present.
 NFR4: The command must avoid false positives from dependency folders, build outputs, generated
-      artifacts, and documentation examples unless intentionally included.
+artifacts, and documentation examples unless intentionally included.
 NFR5: The Make target must be placed near related lint targets so maintainers can discover and
-      update it consistently.
+update it consistently.
 NFR6: The command implementation must be simple enough for repository maintainers to
-      understand without introducing a new dedicated toolchain.
+understand without introducing a new dedicated toolchain.
 NFR7: Scan scope and workflow placement must be clear from the implementation or adjacent
-      Makefile documentation.
+Makefile documentation.
 NFR8: The target must run from the repository root using the existing local development
-      environment assumptions.
+environment assumptions.
 NFR9: The implementation should prefer tools already used or expected in the repository workflow.
 NFR10: Command output must be readable by a developer during local cleanup.
 NFR11: Command output must include enough file and line context to support pull request review.
 NFR12: Failure output must make it clear that remaining ESLint suppression directives caused
-       the failure.
+the failure.
 NFR13: Verification must prove detection of all required directive variants.
 NFR14: Verification must prove both match-present and no-match exit-code behavior.
 NFR15: Verification must confirm relevant existing lint checks remain usable after
-       suppression cleanup.
+suppression cleanup.
 
 ### Additional Requirements
 
