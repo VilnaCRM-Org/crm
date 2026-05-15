@@ -1,5 +1,4 @@
 import type { Logger } from 'winston';
-import * as winston from 'winston';
 
 jest.mock('node:fs', () => ({
   promises: {
@@ -105,6 +104,10 @@ function createWinstonModuleMock(
       File: mockFileTransport,
     },
   };
+}
+
+function getWinstonModuleMock(): ReturnType<typeof createWinstonModuleMock> {
+  return jest.requireMock('winston') as ReturnType<typeof createWinstonModuleMock>;
 }
 
 function throwUnknownValue(value: unknown): never {
@@ -526,11 +529,11 @@ describe('schemaFetcher', () => {
 
       // First call creates the logger
       await getFetchAndSaveSchema()(TEST_DIR);
-      const firstCallCount = jest.mocked(winston.createLogger).mock.calls.length;
+      const firstCallCount = getWinstonModuleMock().createLogger.mock.calls.length;
 
       // Second call should reuse the logger
       await getFetchAndSaveSchema()(TEST_DIR);
-      const secondCallCount = jest.mocked(winston.createLogger).mock.calls.length;
+      const secondCallCount = getWinstonModuleMock().createLogger.mock.calls.length;
 
       // Logger should only be created once
       expect(secondCallCount).toBe(firstCallCount);
@@ -559,7 +562,7 @@ describe('schemaFetcher', () => {
 
       expect(logger).toBeDefined();
       // Verify logger was created with the custom log level
-      expect(winston.createLogger).toHaveBeenCalledWith(
+      expect(getWinstonModuleMock().createLogger).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'debug',
         })
@@ -575,7 +578,7 @@ describe('schemaFetcher', () => {
 
       expect(logger).toBeDefined();
       // Verify logger was created with the default log level 'info'
-      expect(winston.createLogger).toHaveBeenCalledWith(
+      expect(getWinstonModuleMock().createLogger).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'info',
         })
@@ -603,7 +606,10 @@ describe('schemaFetcher', () => {
       expect(logger).toBeDefined();
       expect(mockFileTransport).toHaveBeenCalled();
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Logger file transport could not be initialized (File transport initialization failed), using console only.'
+        [
+          'Logger file transport could not be initialized',
+          '(File transport initialization failed), using console only.',
+        ].join(' ')
       );
 
       consoleWarnSpy.mockRestore();
@@ -629,7 +635,10 @@ describe('schemaFetcher', () => {
       expect(logger).toBeDefined();
       expect(mockFileTransport).toHaveBeenCalled();
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Logger file transport could not be initialized (String error message), using console only.'
+        [
+          'Logger file transport could not be initialized',
+          '(String error message), using console only.',
+        ].join(' ')
       );
 
       consoleWarnSpy.mockRestore();

@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import React, { lazy, Suspense } from 'react';
 
 import UIFooter from '@/components/UIFooter';
 import BackToMain from '@/modules/BackToMain';

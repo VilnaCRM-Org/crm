@@ -1,5 +1,5 @@
 import { Box, Fade, Typography } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.svg';

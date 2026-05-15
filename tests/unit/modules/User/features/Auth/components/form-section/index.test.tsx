@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ButtonHTMLAttributes, ComponentType, ReactElement } from 'react';
-import { Suspense } from 'react';
+import React, { Suspense } from 'react';
 
 import FormSection from '@/modules/User/features/Auth/components/form-section';
 

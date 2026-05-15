@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import React, { lazy, Suspense, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/UIForm';

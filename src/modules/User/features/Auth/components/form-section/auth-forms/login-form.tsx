@@ -1,5 +1,5 @@
 import type { SerializedError } from '@reduxjs/toolkit';
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import useAppDispatch from '@/stores/hooks';
