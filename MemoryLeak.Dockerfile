@@ -4,7 +4,7 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 RUN apk add --no-cache \
     bash=5.2.37-r0 \
-    ca-certificates=20250911-r0 \
+    ca-certificates=20260413-r0 \
     chromium=136.0.7103.113-r0 \
     curl=8.14.1-r2 \
     dbus=1.14.10-r4 \
