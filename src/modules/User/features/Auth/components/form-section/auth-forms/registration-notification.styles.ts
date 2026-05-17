@@ -1,14 +1,7 @@
 import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
-const compactViewport = [
-  `@media (max-width:${breakpointsTheme.breakpoints.values.sm - 1}px)`,
-  `and (max-height:${heightBreakpoints.compact}px)`,
-].join(' ');
-const mediumHeightDesktopViewport = [
-  `@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`,
-  `and (max-height:${heightBreakpoints.medium}px)`,
-].join(' ');
+const compactViewport = `@media (max-width:${breakpointsTheme.breakpoints.values.sm - 1}px) and (max-height:${heightBreakpoints.compact}px)`;
 
 const centeredColumnFlex = {
   display: 'flex',
@@ -248,7 +241,7 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       paddingTop: '4.25rem',
     },
-    [mediumHeightDesktopViewport]: {
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height:${heightBreakpoints.medium}px)`]: {
       paddingTop: '1rem',
     },
     [compactViewport]: {
