@@ -1,5 +1,8 @@
 import type { RequestOptions } from '@/modules/User/features/Auth/api/types';
-import type { LoginResponse, RegistrationResponse } from '@/modules/User/features/Auth/types/ApiResponses';
+import type {
+  LoginResponse,
+  RegistrationResponse,
+} from '@/modules/User/features/Auth/types/ApiResponses';
 import type { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 type LoginApiClient = {

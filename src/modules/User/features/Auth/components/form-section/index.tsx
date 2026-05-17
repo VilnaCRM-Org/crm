@@ -7,7 +7,10 @@ import { useTranslation } from 'react-i18next';
 import RegistrationForm from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form';
 import AuthProviderButtons from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons';
 import styles from '@/modules/User/features/Auth/components/form-section/styles';
-import { AuthMode, RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import {
+  AuthMode,
+  RegistrationView,
+} from '@/modules/User/features/Auth/components/form-section/types';
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
 
 const LoginForm = lazy(loadLoginForm);

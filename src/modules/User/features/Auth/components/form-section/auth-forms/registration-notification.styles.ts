@@ -1,7 +1,6 @@
 import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
-
 const compactViewport = `@media (max-width:${breakpointsTheme.breakpoints.values.sm - 1}px) and (max-height:${heightBreakpoints.compact}px)`;
 
 const centeredColumnFlex = {

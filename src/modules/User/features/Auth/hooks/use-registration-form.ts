@@ -10,7 +10,6 @@ import {
   selectRegistrationUser,
 } from '@/modules/User/store/registrationSelectors';
 
-
 type UseRegistrationFormResult = {
   view: RegistrationView;
   errorText: string;

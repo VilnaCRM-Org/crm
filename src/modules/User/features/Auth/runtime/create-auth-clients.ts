@@ -8,20 +8,14 @@ import type {
   LoginResponse,
   RegistrationResponse,
 } from '@/modules/User/features/Auth/types/ApiResponses';
-import type {
-  LoginUserDto,
-  RegisterUserDto,
-} from '@/modules/User/features/Auth/types/Credentials';
+import type { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 
 type AuthClients = {
   loginAPI: {
     login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse>;
   };
   registrationAPI: {
-    register(
-      credentials: RegisterUserDto,
-      options?: RequestOptions
-    ): Promise<RegistrationResponse>;
+    register(credentials: RegisterUserDto, options?: RequestOptions): Promise<RegistrationResponse>;
   };
 };
 
