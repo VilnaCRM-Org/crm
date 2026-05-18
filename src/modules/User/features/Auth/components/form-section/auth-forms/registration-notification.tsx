@@ -208,6 +208,7 @@ export default function RegistrationNotification({
     setIsClosing(true);
     closeTimerRef.current = setTimeout(() => {
       onBack();
+      closeTimerRef.current = null;
     }, BACK_CLOSE_ANIMATION_MS);
   }, [onBack, view]);
 
