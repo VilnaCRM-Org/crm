@@ -1,5 +1,7 @@
 import '../setup';
 import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
+import HttpErrorResponseParser from '@/services/HttpsClient/http-error-response-parser';
+import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
 import { HttpError } from '@/services/HttpsClient/HttpError';
 
 describe('FetchHttpsClient Response Processing Coverage', () => {
@@ -168,6 +170,63 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
       const result = await client.get('/test');
       expect(result).toBeUndefined();
+    });
+
+    it('uses default helpers when optional constructor dependencies are undefined', async () => {
+      const processorOnlyClient = new FetchHttpsClient(undefined, {
+        process: jest.fn().mockResolvedValue({ ok: true }),
+      } as never);
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
+
+      await expect(processorOnlyClient.get('/test')).resolves.toEqual({ ok: true });
+
+      const processor = new HttpResponseProcessor(undefined);
+      await expect(
+        processor.process({
+          ok: true,
+          status: 204,
+          headers: new Headers(),
+        } as Response)
+      ).resolves.toBeUndefined();
+    });
+
+    it('returns an empty parsed error payload when cloning the response fails', async () => {
+      const parser = new HttpErrorResponseParser();
+
+      await expect(
+        parser.parse({
+          headers: { get: () => 'application/json' },
+          clone: () => {
+            throw new Error('clone failed');
+          },
+        } as unknown as Response)
+      ).resolves.toEqual({ message: null, body: undefined });
+    });
+
+    it('loads HTTP helpers when reflected constructor types are unavailable', () => {
+      for (const mockPath of [
+        '@/services/HttpsClient/http-request-config-builder',
+        '@/services/HttpsClient/http-response-processor',
+      ]) {
+        jest.isolateModules(() => {
+          jest.doMock(mockPath, () => ({ __esModule: true, default: undefined }));
+
+          expect(require('@/services/HttpsClient/fetch-https-client')).toBeDefined();
+
+          jest.dontMock(mockPath);
+        });
+      }
+
+      jest.isolateModules(() => {
+        jest.doMock('@/services/HttpsClient/http-error-response-parser', () => ({
+          __esModule: true,
+          default: undefined,
+        }));
+
+        expect(require('@/services/HttpsClient/http-response-processor')).toBeDefined();
+
+        jest.dontMock('@/services/HttpsClient/http-error-response-parser');
+      });
     });
   });
 

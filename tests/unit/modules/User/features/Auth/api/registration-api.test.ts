@@ -26,6 +26,18 @@ describe('RegistrationAPI', () => {
     expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, undefined);
   });
 
+  it('passes request options to the underlying client', async () => {
+    const httpsClient = {
+      post: jest.fn().mockResolvedValue(undefined),
+    } as unknown as HttpsClient;
+    const api = new RegistrationAPI(httpsClient, { convert: jest.fn() } as never);
+    const options = { signal: new AbortController().signal };
+
+    await expect(api.register(credentials, options)).resolves.toBeUndefined();
+
+    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, options);
+  });
+
   it('rethrows AbortError without converting it', async () => {
     const abortError = new Error('The operation was aborted');
     abortError.name = 'AbortError';

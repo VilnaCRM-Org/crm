@@ -71,6 +71,36 @@ describe('DevToolsOptionsFactory', () => {
     expect(options.stateSanitizer?.('idle', 0)).toBe('idle');
   });
 
+  it('uses an injected redactor for state sanitization', () => {
+    const redactor = {
+      deepRedact: jest
+        .fn()
+        .mockImplementation((value: unknown) => ({ ...(value as object), token: '***' })),
+    };
+    const injectedOptions = new DevToolsOptionsFactory(redactor as never).create();
+
+    expect(injectedOptions.stateSanitizer?.({ auth: { token: 'secret' } }, 0)).toEqual({
+      auth: { token: '***' },
+    });
+    expect(redactor.deepRedact).toHaveBeenCalledWith({ token: 'secret' });
+  });
+
+  it('throws when the reflected redactor constructor type is unavailable', () => {
+    jest.isolateModules(() => {
+      jest.doMock('@/stores/dev-tools-redaction', () => ({
+        __esModule: true,
+        DevToolsRedactor: undefined,
+        default: undefined,
+      }));
+
+      expect(() => require('@/stores/dev-tools-options')).toThrow(
+        'DevToolsRedactor is not a constructor'
+      );
+
+      jest.dontMock('@/stores/dev-tools-redaction');
+    });
+  });
+
   it('leaves auth as undefined when it is absent from state', () => {
     const state = { registration: { error: null } };
     expect(options.stateSanitizer?.(state, 0)).toEqual({

@@ -1,10 +1,13 @@
 import '../setup';
+import ApiErrorFactory from '@/modules/User/features/Auth/api/api-error-factory';
+import ApiStatusErrorFactory from '@/modules/User/features/Auth/api/api-status-error-factory';
 import {
   AuthenticationError,
   ConflictError,
   ValidationError,
   ApiErrorCodes,
 } from '@/modules/User/features/Auth/api/ApiErrors';
+import AuthUiErrorMapper from '@/modules/User/store/auth-ui-error-mapper';
 import buildApiUrl from '@/utils/urlBuilder';
 
 describe('API Errors and URL Builder Integration', () => {
@@ -98,6 +101,78 @@ describe('API Errors and URL Builder Integration', () => {
       expect(error.status).toBe(422);
       expect(error.cause).toBe(cause);
       expect(error.name).toBe('ValidationError');
+    });
+  });
+
+  describe('ApiErrorFactory defensive branches', () => {
+    it('maps status-less network HTTP errors by message content', () => {
+      expect(
+        ApiErrorFactory.fromHttpError(
+          { status: undefined as unknown as number, message: 'network unavailable' },
+          'Login'
+        ).code
+      ).toBe(ApiErrorCodes.NETWORK);
+    });
+
+    it('keeps the simple status fallback branch covered', () => {
+      const FactoryCtor = ApiStatusErrorFactory as unknown as new (
+        spec: { kind: 'service' },
+        error: { status: number; message: string },
+        context: string
+      ) => object;
+      const factory = new FactoryCtor({ kind: 'service' }, { status: 503, message: '' }, 'Login');
+      const toSimpleApiError = Reflect.get(factory, 'toSimpleApiError') as (
+        kind: 'unexpected'
+      ) => unknown;
+
+      expect(toSimpleApiError.call(factory, 'unexpected')).toBe('unexpected');
+    });
+
+    it('uses the default auth UI error parser when no parser is injected', () => {
+      const mapper = new AuthUiErrorMapper(undefined);
+
+      expect(mapper.map(new Error('Network error')).displayMessage).toBeTruthy();
+    });
+
+    it('uses an injected auth UI error parser when provided', () => {
+      const parser = {
+        parseHttpError: jest.fn().mockReturnValue({ code: 'HTTP_401', message: 'Unauthorized' }),
+      };
+      const mapper = new AuthUiErrorMapper(parser as never);
+
+      expect(mapper.map(new Error('ignored'))).toEqual({
+        displayMessage: 'Unauthorized',
+        retryable: false,
+      });
+      expect(parser.parseHttpError).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    it('loads the auth UI mapper when the reflected parser type is unavailable', () => {
+      jest.isolateModules(() => {
+        jest.doMock('@/utils/error/error-parser', () => ({ __esModule: true, default: undefined }));
+
+        expect(require('@/modules/User/store/auth-ui-error-mapper')).toBeDefined();
+
+        jest.dontMock('@/utils/error/error-parser');
+      });
+    });
+
+    it('loads auth API modules when reflected constructor types are unavailable', () => {
+      for (const modulePath of [
+        '@/modules/User/features/Auth/api/login-api',
+        '@/modules/User/features/Auth/api/registration-api',
+      ]) {
+        jest.isolateModules(() => {
+          jest.doMock('@/modules/User/features/Auth/api/api-error-factory', () => ({
+            __esModule: true,
+            default: undefined,
+          }));
+
+          expect(require(modulePath)).toBeDefined();
+
+          jest.dontMock('@/modules/User/features/Auth/api/api-error-factory');
+        });
+      }
     });
   });
 

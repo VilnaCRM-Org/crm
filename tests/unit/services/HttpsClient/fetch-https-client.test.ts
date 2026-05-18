@@ -719,6 +719,37 @@ describe('FetchHttpsClient', () => {
       expect(mockProcessor.process).toHaveBeenCalled();
       expect(result).toEqual({ injected: true });
     });
+
+    it('uses the default request builder when only a response processor is injected', async () => {
+      const mockProcessor = { process: jest.fn().mockResolvedValue({ ok: true }) };
+      const customClient = new FetchHttpsClient(undefined, mockProcessor as never);
+      mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
+
+      await expect(customClient.get('/api/test')).resolves.toEqual({ ok: true });
+
+      expect(mockFetch).toHaveBeenCalledWith('/api/test', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+      expect(mockProcessor.process).toHaveBeenCalled();
+    });
+
+    it('loads when reflected helper constructor types are unavailable', () => {
+      for (const mockPath of [
+        '@/services/HttpsClient/http-request-config-builder',
+        '@/services/HttpsClient/http-response-processor',
+      ]) {
+        jest.isolateModules(() => {
+          jest.doMock(mockPath, () => ({ __esModule: true, default: undefined }));
+
+          expect(require('@/services/HttpsClient/fetch-https-client')).toBeDefined();
+
+          jest.dontMock(mockPath);
+        });
+      }
+    });
   });
 
   describe('edge cases', () => {

@@ -131,6 +131,23 @@ describe('LoginForm', () => {
     });
   });
 
+  it('handles non-object submit failures through the translated error path', async () => {
+    mockDispatch.mockReturnValue({
+      // Rejecting with a non-Error primitive is the scenario under test.
+      // eslint-disable-next-line prefer-promise-reject-errors
+      unwrap: () => Promise.reject(404),
+    });
+
+    render(<LoginForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('form-error')).toHaveTextContent(
+        'sign_in.errors.login: auth.errors.unknown'
+      );
+    });
+  });
+
   it('ignores serialized abort-shaped rejections from unwrap', async () => {
     let rejectSubmit: (reason?: unknown) => void = () => undefined;
     const abortLikeError = Object.assign(new Error('The operation was aborted'), {
@@ -163,6 +180,37 @@ describe('LoginForm', () => {
     });
 
     expect(screen.getByTestId('form-error')).toHaveTextContent('');
+  });
+
+  it('exposes auth form barrel exports', () => {
+    jest.isolateModules(() => {
+      jest.doMock(
+        '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
+        () => ({ __esModule: true, default: 'LoginForm' })
+      );
+      jest.doMock(
+        '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form',
+        () => ({ __esModule: true, default: 'RegistrationForm' })
+      );
+      jest.doMock(
+        '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form-fields',
+        () => ({ __esModule: true, default: 'RegistrationFormFields' })
+      );
+
+      // eslint-disable-next-line global-require -- jest.isolateModules requires a synchronous require
+      const authForms = require('@/modules/User/features/Auth/components/form-section/auth-forms');
+      expect(authForms.LoginForm).toBe('LoginForm');
+      expect(authForms.RegistrationForm).toBe('RegistrationForm');
+      expect(authForms.RegistrationFormFields).toBe('RegistrationFormFields');
+
+      jest.dontMock('@/modules/User/features/Auth/components/form-section/auth-forms/login-form');
+      jest.dontMock(
+        '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form'
+      );
+      jest.dontMock(
+        '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form-fields'
+      );
+    });
   });
 });
 

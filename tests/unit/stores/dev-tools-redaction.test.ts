@@ -1,4 +1,4 @@
-import deepRedact from '@/stores/dev-tools-redaction';
+import deepRedact, { DevToolsRedactor } from '@/stores/dev-tools-redaction';
 
 describe('deepRedact', () => {
   it('redacts sensitive fields inside circular objects without overflowing', () => {
@@ -38,6 +38,13 @@ describe('deepRedact', () => {
     const date = new Date('2024-01-01T00:00:00Z');
     const result = deepRedact({ ts: date });
     expect((result as { ts: Date }).ts).toBe(date);
+  });
+
+  it('identifies null as a non-plain object in the redactor guard', () => {
+    const redactor = new DevToolsRedactor();
+    const isPlainObject = Reflect.get(redactor, 'isPlainObject') as (value: unknown) => boolean;
+
+    expect(isPlainObject.call(redactor, null)).toBe(false);
   });
 
   it('redacts sensitive values stored under sensitive map keys', () => {

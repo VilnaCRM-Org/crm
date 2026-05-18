@@ -77,3 +77,25 @@ describe('getPreloadedAuthToken', () => {
     expect(token).toBeUndefined();
   });
 });
+
+describe('store hook exports', () => {
+  it('wraps react-redux hooks with typed exports', () => {
+    const mockUseDispatch = jest.fn();
+    const mockUseSelector = jest.fn();
+
+    jest.isolateModules(() => {
+      jest.doMock('react-redux', () => ({
+        useDispatch: (): typeof mockUseDispatch => mockUseDispatch,
+        useSelector: (...args: unknown[]): unknown => mockUseSelector(...args),
+      }));
+
+      const hooks = require('@/stores/hooks');
+
+      expect(hooks.default()).toBe(mockUseDispatch);
+      hooks.useAppSelector('selector');
+      expect(mockUseSelector).toHaveBeenCalledWith('selector');
+
+      jest.dontMock('react-redux');
+    });
+  });
+});

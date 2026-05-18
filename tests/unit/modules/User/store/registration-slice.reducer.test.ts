@@ -1,7 +1,18 @@
 import { configureStore, type ThunkDispatch, type UnknownAction } from '@reduxjs/toolkit';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import React from 'react';
 
 import type LoginAPI from '@/modules/User/features/Auth/api/login-api';
 import type RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
+import type { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import useRegistrationForm from '@/modules/User/features/Auth/hooks/use-registration-form';
+import type { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import {
+  selectRegistrationError,
+  selectRegistrationLoading,
+  selectRegistrationRetryable,
+  selectRegistrationUser,
+} from '@/modules/User/store/registration-selectors';
 import {
   registrationReducer,
   registerUser,
@@ -11,10 +22,37 @@ import type { ThunkExtra } from '@/modules/User/store/types';
 import { ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
 
+const mockDispatch = jest.fn();
+let mockState: {
+  registration: {
+    user: unknown;
+    loading: boolean;
+    error: string | null;
+    retryable: boolean;
+  };
+};
+
+jest.mock('@/stores/hooks', () => ({
+  __esModule: true,
+  default: (): typeof mockDispatch => mockDispatch,
+  useAppSelector: (selector: (state: typeof mockState) => unknown): unknown => selector(mockState),
+}));
+
 type TestStore = {
   dispatch: ThunkDispatch<{ registration: RegistrationState }, ThunkExtra, UnknownAction>;
   getState: () => { registration: RegistrationState };
 };
+
+let latestForm: ReturnType<typeof useRegistrationForm>;
+
+function RegistrationHookProbe({
+  onViewChange,
+}: {
+  onViewChange?: (view: RegistrationView) => void;
+}): JSX.Element {
+  latestForm = useRegistrationForm(onViewChange);
+  return React.createElement('div', { 'data-testid': 'view' }, latestForm.view);
+}
 
 describe('registrationSlice reducer and thunk coverage', () => {
   const loginAPI = { login: jest.fn() } as unknown as LoginAPI;
@@ -181,5 +219,91 @@ describe('registrationSlice reducer and thunk coverage', () => {
     const state = store.getState().registration;
     expect(state.loading).toBe(false);
     expect(state.error).toBeNull();
+  });
+});
+
+describe('useRegistrationForm', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockState = {
+      registration: {
+        user: null,
+        loading: false,
+        error: null,
+        retryable: true,
+      },
+    };
+  });
+
+  it('syncs view changes and exposes registration handlers', async () => {
+    const onViewChange = jest.fn();
+    const data: RegisterUserDto = {
+      fullName: '  Test User  ',
+      email: 'user@test.com',
+      password: 'secret',
+    };
+
+    const view = render(React.createElement(RegistrationHookProbe, { onViewChange }));
+
+    expect(screen.getByTestId('view')).toHaveTextContent('form');
+    expect(onViewChange).toHaveBeenCalledWith('form');
+
+    act(() => latestForm.handleRetry());
+    expect(mockDispatch).not.toHaveBeenCalled();
+
+    act(() => latestForm.handleRegister(data));
+    expect(mockDispatch).toHaveBeenCalledTimes(1);
+
+    act(() => latestForm.handleRetry());
+    expect(mockDispatch).toHaveBeenCalledTimes(3);
+
+    act(() => latestForm.handleSuccessShown());
+    expect(latestForm.formKey).toBe(1);
+
+    act(() => latestForm.handleBackToForm());
+    expect(mockDispatch).toHaveBeenCalledTimes(4);
+
+    mockState = {
+      registration: {
+        user: { email: 'user@test.com' },
+        loading: false,
+        error: null,
+        retryable: false,
+      },
+    };
+    view.rerender(React.createElement(RegistrationHookProbe, { onViewChange }));
+    await waitFor(() => expect(screen.getByTestId('view')).toHaveTextContent('success'));
+
+    mockState = {
+      registration: {
+        user: null,
+        loading: false,
+        error: 'Registration failed',
+        retryable: true,
+      },
+    };
+    view.rerender(React.createElement(RegistrationHookProbe, { onViewChange }));
+    await waitFor(() => expect(screen.getByTestId('view')).toHaveTextContent('error'));
+    expect(latestForm.errorText).toBe('Registration failed');
+
+    mockState.registration.loading = true;
+    view.rerender(React.createElement(RegistrationHookProbe));
+    expect(screen.getByTestId('view')).toHaveTextContent('error');
+  });
+
+  it('selects every registration state field', () => {
+    mockState = {
+      registration: {
+        user: { email: 'user@test.com' },
+        loading: true,
+        error: 'Problem',
+        retryable: false,
+      },
+    };
+
+    expect(selectRegistrationUser(mockState as never)).toEqual({ email: 'user@test.com' });
+    expect(selectRegistrationLoading(mockState as never)).toBe(true);
+    expect(selectRegistrationError(mockState as never)).toBe('Problem');
+    expect(selectRegistrationRetryable(mockState as never)).toBe(false);
   });
 });

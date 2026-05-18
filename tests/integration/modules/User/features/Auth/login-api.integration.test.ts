@@ -112,10 +112,7 @@ describe('LoginAPI Integration', () => {
       );
     });
 
-    it('should treat 408 timeout as the MSW network fallback', async () => {
-      // In this fetch+MSW integration setup, 408 responses surface as a fetch-level
-      // failure (`net::ERR_FAILED`) instead of reaching LoginAPI as an HTTP status.
-      // This test verifies the current fallback path exposed to LoginAPI consumers.
+    it('should throw ApiError for 408 timeout', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(408), ctx.json({ message: 'Request timeout' }))
@@ -123,7 +120,7 @@ describe('LoginAPI Integration', () => {
       );
 
       await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Network error. Please check your connection.'
+        'Request timed out. Please try again.'
       );
     });
 
@@ -175,10 +172,7 @@ describe('LoginAPI Integration', () => {
       );
     });
 
-    it('should treat 504 gateway timeout as the MSW network fallback', async () => {
-      // In this fetch+MSW integration setup, 504 responses surface as a fetch-level
-      // failure (`net::ERR_FAILED`) instead of reaching LoginAPI as an HTTP status.
-      // This test verifies the current fallback path exposed to LoginAPI consumers.
+    it('should throw ApiError for 504 gateway timeout', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(504), ctx.json({ message: 'Gateway timeout' }))
@@ -186,7 +180,7 @@ describe('LoginAPI Integration', () => {
       );
 
       await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Network error. Please check your connection.'
+        'Service unavailable. Please try again later.'
       );
     });
 

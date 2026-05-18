@@ -69,6 +69,31 @@ describe('Registration Slice Aborted Action Tests', () => {
     expect(state.error).toBeNull();
   });
 
+  it('should preserve AbortError thrown directly by the registration API', async () => {
+    const abortError = Object.assign(new Error('The operation was aborted'), {
+      name: 'AbortError',
+    });
+    const directAbortStore = configureStore({
+      reducer: { registration: registrationReducer },
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+          thunk: {
+            extraArgument: {
+              loginAPI: { login: jest.fn() },
+              registrationAPI: { register: jest.fn().mockRejectedValue(abortError) },
+            } satisfies ThunkExtra,
+          },
+        }),
+    }) as TestStore;
+
+    const result = await directAbortStore.dispatch(
+      registerUser({ email: 'test@test.com', password: 'pass', fullName: 'Test' })
+    );
+
+    expect(result).toMatchObject({ error: expect.objectContaining({ name: 'AbortError' }) });
+    expect(directAbortStore.getState().registration.error).toBeNull();
+  });
+
   it('should parse errors without displayMessage field', async () => {
     server.use(
       rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>

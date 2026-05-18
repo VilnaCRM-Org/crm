@@ -1,6 +1,6 @@
 import '../setup';
 import { DevToolsOptionsFactory } from '@/stores/dev-tools-options';
-import { DevToolsRedactor } from '@/stores/dev-tools-redaction';
+import deepRedact, { DevToolsRedactor } from '@/stores/dev-tools-redaction';
 
 describe('DevToolsRedactor Integration', () => {
   let redactor: DevToolsRedactor;
@@ -28,6 +28,16 @@ describe('DevToolsRedactor Integration', () => {
 
     it('returns booleans unchanged', () => {
       expect(redactor.deepRedact(true)).toBe(true);
+    });
+
+    it('identifies null as a non-plain object in the redactor guard', () => {
+      const isPlainObject = Reflect.get(redactor, 'isPlainObject') as (value: unknown) => boolean;
+
+      expect(isPlainObject.call(redactor, null)).toBe(false);
+    });
+
+    it('redacts through the default deepRedact export', () => {
+      expect(deepRedact({ token: 'secret' })).toEqual({ token: '***' });
     });
   });
 
@@ -102,7 +112,8 @@ describe('DevToolsRedactor Integration', () => {
         ['username', 'alice'],
       ]);
       const result = redactor.deepRedact(map);
-      expect(result.get('password')).toBe('***');
+      expect(result.has('password')).toBe(false);
+      expect(result.get('***')).toBe('***');
       expect(result.get('username')).toBe('alice');
     });
 
@@ -268,6 +279,22 @@ describe('DevToolsOptionsFactory Integration', () => {
       const state = { auth: { token: 'secret' }, ui: { theme: 'dark' } };
       const result = options.stateSanitizer?.(state, 0) as typeof state;
       expect(result.ui.theme).toBe('dark');
+    });
+  });
+
+  it('throws when the reflected redactor constructor type is unavailable', () => {
+    jest.isolateModules(() => {
+      jest.doMock('@/stores/dev-tools-redaction', () => ({
+        __esModule: true,
+        DevToolsRedactor: undefined,
+        default: undefined,
+      }));
+
+      expect(() => require('@/stores/dev-tools-options')).toThrow(
+        'DevToolsRedactor is not a constructor'
+      );
+
+      jest.dontMock('@/stores/dev-tools-redaction');
     });
   });
 });

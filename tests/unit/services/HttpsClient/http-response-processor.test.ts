@@ -29,6 +29,12 @@ describe('HttpResponseProcessor', () => {
     await expect(processor.process(createResponse(204, undefined, ''))).resolves.toBeUndefined();
   });
 
+  it('uses the default response parser when constructed with undefined', async () => {
+    const processor = new HttpResponseProcessor(undefined);
+
+    await expect(processor.process(createResponse(204, undefined, ''))).resolves.toBeUndefined();
+  });
+
   it('uses an injected HttpErrorStatusGuard', async () => {
     const parser = { assertOk: jest.fn().mockResolvedValue(undefined) };
     const processor = new HttpResponseProcessor(parser as never);
@@ -37,6 +43,19 @@ describe('HttpResponseProcessor', () => {
     await processor.process(response);
 
     expect(parser.assertOk).toHaveBeenCalledWith(response);
+  });
+
+  it('loads when the reflected parser constructor type is unavailable', () => {
+    jest.isolateModules(() => {
+      jest.doMock('@/services/HttpsClient/http-error-response-parser', () => ({
+        __esModule: true,
+        default: undefined,
+      }));
+
+      expect(require('@/services/HttpsClient/http-response-processor')).toBeDefined();
+
+      jest.dontMock('@/services/HttpsClient/http-error-response-parser');
+    });
   });
 });
 

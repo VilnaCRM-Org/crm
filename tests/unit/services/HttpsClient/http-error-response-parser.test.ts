@@ -40,4 +40,25 @@ describe('HttpErrorResponseParser', () => {
     await expect(parser.assertOk(response)).rejects.toThrow(HttpError);
     expect(parseSpy).toHaveBeenCalledWith(response);
   });
+
+  it('uses response fallback data when parsed error text is empty', async () => {
+    const parser = new HttpErrorResponseParser();
+    jest.spyOn(parser, 'parse').mockResolvedValue({ message: null, body: 'problem' });
+    const response = makeResponse(false, 500, 'Server Error');
+
+    await expect(parser.assertOk(response)).rejects.toMatchObject({ status: 500 });
+  });
+
+  it('returns an empty parsed payload when cloning the response fails', async () => {
+    const parser = new HttpErrorResponseParser();
+
+    await expect(
+      parser.parse({
+        headers: { get: () => 'application/json' },
+        clone: () => {
+          throw new Error('clone failed');
+        },
+      } as unknown as Response)
+    ).resolves.toEqual({ message: null, body: undefined });
+  });
 });
