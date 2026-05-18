@@ -27,12 +27,12 @@ const GENERIC_REGISTRATION_VALIDATION_ERRORS = new Set([
 ]);
 const ERROR_BUTTON_TEXT_STYLES = [styles.messageButtonText, styles.errorButtonMessage];
 
-type ErrorNotificationProps = {
+type ErrorNotificationProps = Pick<
+  RegistrationNotificationProps,
+  'isSubmitting' | 'onBack' | 'onRetry'
+> & {
   resolvedErrorText: string;
-  isSubmitting: boolean;
   isClosing: boolean;
-  onRetry?: () => void;
-  onBack: () => void;
 };
 
 function ErrorNotification({
