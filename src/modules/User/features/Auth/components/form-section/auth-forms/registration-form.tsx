@@ -34,7 +34,7 @@ function RegistrationFormPanel({
   validators: Validators;
 }): JSX.Element {
   return (
-    <InertBox id={`reg-form-${form.formKey}`} inert={form.view !== 'form'}>
+    <InertBox key={form.formKey} id={`reg-form-${form.formKey}`} inert={form.view !== 'form'}>
       <UIForm<RegisterUserDto>
         onSubmit={form.handleRegister}
         defaultValues={DEFAULT_VALUES}

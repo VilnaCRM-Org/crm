@@ -37,6 +37,10 @@ const errorMap: Record<ErrorCode, UiError> = {
     displayMessage: 'Internal server error',
     retryable: true,
   },
+  SERVICE_UNAVAILABLE_ERROR: {
+    displayMessage: 'Service unavailable. Please try again later.',
+    retryable: true,
+  },
   NETWORK_ERROR: {
     displayMessage: 'Network error. Please check your connection.',
     retryable: true,
