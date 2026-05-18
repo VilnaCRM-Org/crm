@@ -14,9 +14,11 @@ jest.mock('react-i18next', () => ({
 
 jest.mock('@/components/UIButton', () => ({
   __esModule: true,
-  default: (props: {
-    children: ReactElement | string;
-  } & ButtonHTMLAttributes<HTMLButtonElement>): ReactElement => {
+  default: (
+    props: {
+      children: ReactElement | string;
+    } & ButtonHTMLAttributes<HTMLButtonElement>
+  ): ReactElement => {
     const { children, disabled, onClick, onMouseEnter, onFocus, onTouchStart } = props;
 
     uiButtonMock(props);
@@ -47,13 +49,10 @@ jest.mock('@/components/UITypography', () => ({
   }): ReactElement => <span role={role}>{children}</span>,
 }));
 
-jest.mock(
-  '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
-  () => ({
-    __esModule: true,
-    default: (): ReactElement => <div data-testid="login-form" />,
-  })
-);
+jest.mock('@/modules/User/features/Auth/components/form-section/auth-forms/login-form', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div data-testid="login-form" />,
+}));
 
 jest.mock(
   '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form',
@@ -105,9 +104,11 @@ function renderIsolatedFormSectionWithLoginModule(
 
   jest.doMock('@/components/UIButton', () => ({
     __esModule: true,
-    default: (props: {
-      children: ReactElement | string;
-    } & ButtonHTMLAttributes<HTMLButtonElement>): ReactElement => {
+    default: (
+      props: {
+        children: ReactElement | string;
+      } & ButtonHTMLAttributes<HTMLButtonElement>
+    ): ReactElement => {
       const { children, disabled, onClick, onMouseEnter, onFocus, onTouchStart } = props;
 
       uiButtonMock(props);
@@ -162,16 +163,13 @@ function renderIsolatedFormSectionWithLoginModule(
     })
   );
 
-  jest.doMock(
-    '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
-    () => {
-      loginModuleLoaded();
-      return {
-        __esModule: true,
-        default: (): ReactElement => loginModuleFactory(),
-      };
-    }
-  );
+  jest.doMock('@/modules/User/features/Auth/components/form-section/auth-forms/login-form', () => {
+    loginModuleLoaded();
+    return {
+      __esModule: true,
+      default: (): ReactElement => loginModuleFactory(),
+    };
+  });
 
   let renderLocal!: typeof render;
   let SuspenseLocal!: typeof Suspense;
@@ -298,11 +296,9 @@ describe('FormSection', () => {
 
   it('marks auth provider buttons as inert when notification view is active', () => {
     renderFormSection();
-    const authProviderContainer = (
-      screen
-        .getAllByRole('generic')
-        .find((element) => element.id === 'auth-provider-buttons-container') as HTMLElement
-    );
+    const authProviderContainer = screen
+      .getAllByRole('generic')
+      .find((element) => element.id === 'auth-provider-buttons-container') as HTMLElement;
 
     expect(authProviderContainer).not.toHaveAttribute('inert');
 
@@ -321,9 +317,11 @@ describe('FormSection', () => {
 
     jest.doMock('@/components/UIButton', () => ({
       __esModule: true,
-      default: (props: {
-        children: ReactElement | string;
-      } & ButtonHTMLAttributes<HTMLButtonElement>): ReactElement => {
+      default: (
+        props: {
+          children: ReactElement | string;
+        } & ButtonHTMLAttributes<HTMLButtonElement>
+      ): ReactElement => {
         const { children, disabled, onClick, onMouseEnter, onFocus, onTouchStart } = props;
 
         return (
@@ -428,9 +426,11 @@ describe('FormSection', () => {
 
     jest.doMock('@/components/UIButton', () => ({
       __esModule: true,
-      default: (props: {
-        children: ReactElement | string;
-      } & ButtonHTMLAttributes<HTMLButtonElement>): ReactElement => {
+      default: (
+        props: {
+          children: ReactElement | string;
+        } & ButtonHTMLAttributes<HTMLButtonElement>
+      ): ReactElement => {
         const { children, disabled, onClick, onMouseEnter, onFocus, onTouchStart } = props;
 
         return (

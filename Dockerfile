@@ -49,28 +49,33 @@ FROM public.ecr.aws/docker/library/debian:12-slim AS rca
 
 ARG RCA_VERSION=0.0.25
 ARG RCA_SHA256=9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894
+ARG TARGETARCH
 
 SHELL ["/bin/sh", "-c"]
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      ca-certificates \
-      jq \
-      make \
-      tar \
-      unzip && \
-    rm -rf /var/lib/apt/lists/*
-
-ADD \
-    https://github.com/mozilla/rust-code-analysis/releases/download/v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz \
-    /tmp/rca.tar.gz
-
-RUN printf '%s  %s\n' "${RCA_SHA256}" "/tmp/rca.tar.gz" > /tmp/rca.tar.gz.sha256 && \
-    sha256sum -c /tmp/rca.tar.gz.sha256 && \
-    tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz && \
+RUN set -eux; \
+    set -- ca-certificates jq make tar unzip; \
+    if [ "${TARGETARCH}" = "amd64" ]; then \
+      set -- "$@" curl; \
+    else \
+      set -- "$@" build-essential cargo; \
+    fi; \
+    apt-get update && \
+    apt-get install -y --no-install-recommends "$@" && \
+    rm -rf /var/lib/apt/lists/* && \
+    if [ "${TARGETARCH}" = "amd64" ]; then \
+      rca_tarball_url="https://github.com/mozilla/rust-code-analysis/releases/download/"\
+"v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz" && \
+      curl --retry 5 --retry-delay 2 -fsSL "$rca_tarball_url" -o /tmp/rca.tar.gz && \
+      printf '%s  %s\n' "${RCA_SHA256}" "/tmp/rca.tar.gz" > /tmp/rca.tar.gz.sha256 && \
+      sha256sum -c /tmp/rca.tar.gz.sha256 && \
+      tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz; \
+    else \
+      cargo install --locked --version "${RCA_VERSION}" rust-code-analysis-cli --root /usr/local; \
+    fi && \
     chmod +x /usr/local/bin/rust-code-analysis-cli && \
     /usr/local/bin/rust-code-analysis-cli --version && \
-    rm /tmp/rca.tar.gz /tmp/rca.tar.gz.sha256
+    rm -f /tmp/rca.tar.gz /tmp/rca.tar.gz.sha256
 
 ENV RCA_BIN=/usr/local/bin/rust-code-analysis-cli
 
@@ -86,9 +91,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 RUN apk add --no-cache curl=${CURL_VERSION} && \
-    npm install -g serve@14.2.0
-
-RUN mkdir -p /app && chown -R node:node /app
+    npm install -g serve@14.2.0 && \
+    mkdir -p /app && chown -R node:node /app
 COPY --chown=node:node serve.json ./serve.json
 COPY --from=build --chown=node:node /app/dist ./dist
 USER node

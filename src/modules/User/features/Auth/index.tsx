@@ -1,4 +1,3 @@
-
 import UIFooter from '@/components/UIFooter';
 import BackToMain from '@/modules/BackToMain';
 import { lazy, Suspense } from 'react';

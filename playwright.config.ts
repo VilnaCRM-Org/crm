@@ -9,6 +9,12 @@ const cdHeaderName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME?.tr
 const cdHeaderValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE?.trim();
 const baseURL = process.env.REACT_APP_PROD_CONTAINER_API_URL || 'http://localhost:3001';
 
+// Snapshot path: relies on Playwright defaults, which match the repo convention
+// of `{spec-file-name}-snapshots/{snapshot-name}-{projectName}-{platform}.png`.
+// Snapshot names passed to `toHaveScreenshot('<locale>-<screen-name>')` produce
+// files like `uk-desktop-chromium-linux.png` — Playwright auto-appends
+// `-{projectName}-{platform}`. Any future override (e.g. dev-mode) must preserve
+// this pattern so existing recorded snapshots resolve correctly.
 export default defineConfig({
   testMatch: ['**/*.spec.ts'],
   fullyParallel: true,
