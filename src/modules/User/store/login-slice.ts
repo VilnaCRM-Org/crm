@@ -1,3 +1,5 @@
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
 import { type UiError } from '@/services/error';
 import {
   ActionReducerMapBuilder,
@@ -13,8 +15,8 @@ import LoginResponseMapper, {
 } from '@/modules/User/store/login-response-mapper';
 import { ThunkExtra } from '@/modules/User/store/types';
 
-const loginResponseMapper = new LoginResponseMapper();
-const authUiErrorMapper = new AuthUiErrorMapper();
+const loginResponseMapper = container.resolve<LoginResponseMapper>(TOKENS.LoginResponseMapper);
+const authUiErrorMapper = container.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper);
 
 export const loginUser = createAsyncThunk<
   LoginSuccessPayload,

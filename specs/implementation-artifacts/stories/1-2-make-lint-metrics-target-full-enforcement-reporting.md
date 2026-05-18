@@ -88,6 +88,14 @@ so that I can identify and fix every issue in a single local run before pushing.
 **Single invocation path:** `make lint-metrics` is the contributor-facing and CI-facing
 entry point. CI must not call `rust-code-analysis-cli` directly.
 
+**Docker-first execution (policy alignment):** Per the repository Docker-only policy
+(see `CLAUDE.md`), `make lint-metrics` runs inside the `rca` Docker Compose service. The
+binary-install guard in AC 1 and Task 1 (the `./bin/rust-code-analysis-cli` download,
+checksum, and version check) executes _inside that container_ against the bind-mounted
+`./bin/` directory — it is not a host-side install. The Darwin path (lines 99-100) likewise
+directs contributors to the Docker workflow rather than a host binary. No host installation
+of `rust-code-analysis-cli` is expected or required.
+
 **Tool version and install path:**
 
 - `RCA_VERSION = 0.0.25` remains the only version assignment in the Makefile.

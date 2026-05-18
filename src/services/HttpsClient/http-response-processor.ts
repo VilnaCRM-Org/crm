@@ -1,10 +1,9 @@
 import { inject, injectable } from 'tsyringe';
 
 import TOKENS from '@/config/tokens';
+import HttpErrorResponseParser from '@/services/HttpsClient/http-error-response-parser';
 import { HttpError } from '@/services/HttpsClient/HttpError';
 import ResponseMessages from '@/services/HttpsClient/responseMessages';
-
-import HttpErrorResponseParser from './http-error-response-parser';
 
 const NO_BODY_STATUSES = new Set([204, 205, 304]);
 

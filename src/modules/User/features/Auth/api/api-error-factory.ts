@@ -1,4 +1,5 @@
 import { isHttpError } from '@/services/HttpsClient/HttpError';
+import { injectable } from 'tsyringe';
 
 import ApiStatusErrorFactory, {
   type HttpErrorLike,
@@ -21,6 +22,7 @@ const NETWORK_KEYWORDS = [
 
 const CANCELLATION_KEYWORDS = ['abort', 'aborted', 'ecanceled', 'canceled', 'cancelled'];
 
+@injectable()
 export default class ApiErrorFactory {
   public static fromHttpError(error: HttpErrorLike, context: string): ApiError {
     const isNetworkStatus =

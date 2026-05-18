@@ -126,7 +126,9 @@ export class DevToolsRedactor {
     seen: WeakSet<object>,
     cache: WeakMap<object, unknown>
   ): T {
-    const output: Record<string, unknown> = {};
+    // Null-prototype output so an own `__proto__` key in `input` cannot
+    // pollute the prototype chain via the assignment below.
+    const output: Record<string, unknown> = Object.create(null);
     cache.set(input, output);
 
     for (const [key, value] of Object.entries(input)) {

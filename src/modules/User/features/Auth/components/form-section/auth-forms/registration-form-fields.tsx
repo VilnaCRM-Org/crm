@@ -1,10 +1,9 @@
 import type { TFunction } from 'i18next';
 
+import FormField from '@/modules/User/features/Auth/components/form-section/components/form-field';
+import PasswordField from '@/modules/User/features/Auth/components/form-section/components/password-field';
+import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
-
-import FormField from '../components/form-field';
-import PasswordField from '../components/password-field';
-import { createValidators } from '../validations';
 
 type Validators = ReturnType<typeof createValidators>;
 

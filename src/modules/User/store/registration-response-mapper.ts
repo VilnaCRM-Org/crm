@@ -18,9 +18,11 @@ export default class RegistrationResponseMapper {
   public map(apiResponse: unknown): RegistrationResponseMappingResult {
     const parsed = RegistrationResponseSchema.safeParse(apiResponse);
     if (!parsed.success) {
-      // Keep detailed validation diagnostics in logs while returning a safe user message.
+      // Log only a non-PII summary; schema errors can echo user-provided values.
       // eslint-disable-next-line no-console
-      console.error('Registration response validation failed', parsed.error);
+      console.error('Registration response validation failed', {
+        issueCount: parsed.error.issues.length,
+      });
       return {
         ok: false,
         error: {
