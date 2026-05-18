@@ -1,6 +1,7 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import { UiError, ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import { RegistrationResponseSchema, SafeUserInfo } from '../features/Auth/types/ApiResponses';
 import { RegisterUserDto } from '../features/Auth/types/Credentials';

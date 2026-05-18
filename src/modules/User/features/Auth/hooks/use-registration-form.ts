@@ -1,5 +1,6 @@
-import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 
 import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
@@ -8,7 +9,7 @@ import {
   selectRegistrationError,
   selectRegistrationLoading,
   selectRegistrationUser,
-} from '@/modules/User/store/registrationSelectors';
+} from '@/modules/User/store/registration-selectors';
 
 type UseRegistrationFormResult = {
   view: RegistrationView;

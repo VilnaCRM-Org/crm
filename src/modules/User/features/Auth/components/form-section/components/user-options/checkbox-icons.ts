@@ -1,5 +1,6 @@
-import { customColors } from '@/styles/colors';
 import { styled } from '@mui/material/styles';
+
+import { customColors } from '@/styles/colors';
 
 export const CheckBoxIcon = styled('span')(() => ({
   width: '1.25rem',

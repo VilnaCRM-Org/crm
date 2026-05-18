@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
+import localization from '@/i18n/localization.json';
 import LoginForm, {
   normalizeLoginErrorMessage,
 } from '@/modules/User/features/Auth/components/form-section/auth-forms/login-form';
@@ -9,13 +10,30 @@ const mockDispatch = jest.fn();
 const mockLoginUser = jest.fn();
 const mockFormField = jest.fn();
 const mockUIForm = jest.fn();
+const enTranslations = localization.en.translation;
+
+function mockTranslate(key: string, options?: Record<string, unknown>): string {
+  const value = key.split('.').reduce<unknown>((current, segment) => {
+    if (typeof current !== 'object' || current === null) return undefined;
+    return (current as Record<string, unknown>)[segment];
+  }, enTranslations);
+
+  if (typeof value !== 'string') return key;
+  if (options?.reason !== undefined) return value.replace('{{reason}}', String(options.reason));
+  return value;
+}
+
+function makeSubmitHandler(
+  onSubmit: (data: { email: string; password: string }) => Promise<void>
+): () => void {
+  return (): void => {
+    void onSubmit({ email: 'user@example.com', password: 'secret123' });
+  };
+}
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string, options?: Record<string, unknown>) => string } => ({
-    t: (key: string, options?: Record<string, unknown>): string => {
-      if (options?.reason !== undefined) return `${key}: ${String(options.reason)}`;
-      return key;
-    },
+    t: mockTranslate,
   }),
 }));
 
@@ -31,7 +49,7 @@ jest.mock('@/modules/User/store', () => ({
 jest.mock('@/modules/User/features/Auth/utils/getSubmitLabelKey', () => ({
   __esModule: true,
   default: (mode: string, isSubmitting: boolean): string =>
-    `${mode}.${isSubmitting ? 'submitting' : 'submit_button'}`,
+    `${mode}.form.${isSubmitting ? 'submitting' : 'submit_button'}`,
 }));
 
 jest.mock('@/modules/User/features/Auth/components/form-section/components/form-field', () => ({
@@ -64,13 +82,9 @@ jest.mock('@/components/UIForm', () => ({
     children: ReactElement[];
   }): ReactElement => {
     mockUIForm(props);
-
     return (
       <div>
-        <button
-          type="button"
-          onClick={() => props.onSubmit({ email: 'user@example.com', password: 'secret123' })}
-        >
+        <button type="button" onClick={makeSubmitHandler(props.onSubmit)}>
           submit
         </button>
         <div data-testid="form-error">{props.error}</div>
@@ -91,10 +105,10 @@ describe('LoginForm', () => {
 
     expect(mockFormField).toHaveBeenCalledWith(
       expect.objectContaining({
-        label: 'sign_in.form.email_input.label',
-        placeholder: 'sign_in.form.email_input.placeholder',
+        label: 'Email',
+        placeholder: 'Enter your email',
         rules: expect.objectContaining({
-          required: 'sign_in.form.email_input.required',
+          required: 'This field is required',
         }),
       })
     );
@@ -110,7 +124,7 @@ describe('LoginForm', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('form-error')).toHaveTextContent(
-        'sign_in.errors.login: Invalid credentials'
+        'Sign in error: Invalid credentials'
       );
     });
   });

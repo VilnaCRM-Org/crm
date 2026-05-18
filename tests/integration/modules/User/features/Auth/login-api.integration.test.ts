@@ -5,7 +5,7 @@ import API_ENDPOINTS from '@/config/apiConfig';
 import container from '@/config/DependencyInjectionConfig';
 import TOKENS from '@/config/tokens';
 import { AuthenticationError } from '@/modules/User/features/Auth/api/ApiErrors';
-import LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
+import LoginAPI from '@/modules/User/features/Auth/api/login-api';
 
 import server from '../../../../mocks/server';
 

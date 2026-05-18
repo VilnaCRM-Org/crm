@@ -132,6 +132,23 @@ describe('RegistrationNotification', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
+  it('only calls onBack once when back is clicked rapidly in error view', () => {
+    jest.useFakeTimers();
+    const onBack = jest.fn();
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    const backButton = screen.getByText('Назад');
+    fireEvent.click(backButton);
+    fireEvent.click(backButton);
+    fireEvent.click(backButton);
+
+    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
   it('clears the close timer on unmount', () => {
     jest.useFakeTimers();
     const onBack = jest.fn();
