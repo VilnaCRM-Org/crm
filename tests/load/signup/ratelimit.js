@@ -9,9 +9,7 @@ function getShortBody(body) {
     return '';
   }
 
-  return typeof body === 'string'
-    ? body.substring(0, 100)
-    : JSON.stringify(body).substring(0, 100);
+  return typeof body === 'string' ? body.substring(0, 100) : JSON.stringify(body).substring(0, 100);
 }
 
 export default function runRateLimitTests(utils, baseUrl, params) {

@@ -27,14 +27,7 @@ describe('UISkeletonBlock', () => {
   });
 
   it('renders with custom dimensions and borderRadius', () => {
-    render(
-      <UISkeletonBlock
-        width="200px"
-        height="4rem"
-        borderRadius="12px"
-        id="skeleton-block"
-      />
-    );
+    render(<UISkeletonBlock width="200px" height="4rem" borderRadius="12px" id="skeleton-block" />);
 
     expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
     expect(getBlockSkeletonStyles).toHaveBeenCalledWith('200px', '4rem', '12px');

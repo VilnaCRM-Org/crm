@@ -1,11 +1,9 @@
 import { TFunction } from 'i18next';
 
-
 import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
 import { isValidEmailFormat } from '@/modules/User/features/Auth/components/form-section/validations/email';
 
 import emptyUser from './constants';
-
 
 jest.mock('i18next', () => ({
   t: (key: string): string => key,

@@ -22,7 +22,7 @@ const expectReviewRangePairOrder = (
     | 'blank_ratio_max'
     | 'halstead_purity_ratio_function_max'
     | 'halstead_purity_ratio_file_max'
-) => {
+): void => {
   if (!review) {
     return;
   }

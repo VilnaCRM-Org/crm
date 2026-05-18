@@ -12,7 +12,9 @@ export default class ScenarioUtils {
       (type) => !this.config.endpoints[scenarioName] || !this.config.endpoints[scenarioName][type]
     );
     if (missing.length > 0) {
-      throw new Error(`Missing scenario configurations for ${this.scenarioName}: ${missing.join(', ')}`);
+      throw new Error(
+        `Missing scenario configurations for ${this.scenarioName}: ${missing.join(', ')}`
+      );
     }
 
     this.endpointConfig = this.config.endpoints[scenarioName];

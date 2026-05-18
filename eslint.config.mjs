@@ -69,7 +69,6 @@ export default [
       'eslint.config.mjs',
       'memlab/**',
       'scripts/**',
-      '!scripts/cloudfront-routing.js',
       'checkNodeVersion.js',
       'out/**',
       'docker/**',
@@ -228,26 +227,6 @@ export default [
       globals: { ...globals.node, ...globals.browser, ...globals.jest },
     },
     rules: {
-      '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
-    },
-  },
-
-  // CloudFront routing runs as a classic ES5 script in Lambda@Edge.
-  {
-    files: ['scripts/cloudfront-routing.js'],
-    languageOptions: {
-      ecmaVersion: 5,
-      sourceType: 'script',
-      globals: { ...globals.node },
-    },
-    rules: {
-      'no-var': 'off',
-      'prefer-const': 'off',
-      'prefer-destructuring': 'off',
-      'no-console': 'warn',
-      'no-unused-vars': 'off',
-      strict: ['error', 'global'],
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
     },

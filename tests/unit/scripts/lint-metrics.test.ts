@@ -1,7 +1,12 @@
+/**
+ * @jest-environment node
+ */
+
 import { execFileSync } from 'child_process';
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
+
 import { parse } from 'yaml';
 
 const repoRoot = path.resolve(__dirname, '../../..');

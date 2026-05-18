@@ -1,5 +1,5 @@
 x-healthcheck-default: &healthcheck-default
-  test: ["CMD", "true"]
+  test: ['CMD', 'true']
   interval: 10s
   timeout: 5s
   retries: 3

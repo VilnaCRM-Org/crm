@@ -13,7 +13,9 @@ describe('signup load configuration', () => {
     try {
       config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     } catch (error) {
-      throw new Error(`Failed to read or parse signup load config at ${configPath}: ${error.message}`);
+      throw new Error(
+        `Failed to read or parse signup load config at ${configPath}: ${error.message}`
+      );
     }
 
     expect(config.endpoints.signup).toMatchObject({
