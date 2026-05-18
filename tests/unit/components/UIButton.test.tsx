@@ -73,9 +73,7 @@ const baseRegistrationFormState = {
 function NameInput(): JSX.Element {
   const { register } = useFormContext<{ name: string }>();
   const { name, onChange, onBlur, ref } = register('name');
-  return (
-    <input aria-label="Name" name={name} onChange={onChange} onBlur={onBlur} ref={ref} />
-  );
+  return <input aria-label="Name" name={name} onChange={onChange} onBlur={onBlur} ref={ref} />;
 }
 
 describe('UIButton Component', () => {
@@ -217,7 +215,9 @@ describe('RegistrationForm and UserOptions components', () => {
     expect(checkbox).not.toBeChecked();
     fireEvent.click(checkbox);
     expect(checkbox).toBeChecked();
-    expect(screen.getByRole('button', { name: 'sign_in.form.forgot_password' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'sign_in.form.forgot_password' })
+    ).toBeInTheDocument();
   });
 
   it('loads and caches the lazy registration notification module', async () => {
@@ -236,9 +236,8 @@ describe('RegistrationForm and UserOptions components', () => {
         throw new Error('load failed');
       }
     );
-    const { default: loadNotification } = await import(
-      '@/modules/User/features/Auth/utils/load-registration-notification'
-    );
+    const { default: loadNotification } =
+      await import('@/modules/User/features/Auth/utils/load-registration-notification');
 
     await expect(loadNotification()).rejects.toThrow('load failed');
     await expect(loadNotification()).rejects.toThrow('load failed');

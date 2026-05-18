@@ -1,12 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 
 import LoginResponseMapper from '@/modules/User/store/login-response-mapper';
-import {
-  loginReducer,
-  loginUser,
-  logout,
-  type LoginState,
-} from '@/modules/User/store/login-slice';
+import { loginReducer, loginUser, logout, type LoginState } from '@/modules/User/store/login-slice';
 import type { ThunkExtra } from '@/modules/User/store/types';
 
 type LoginStore = {
