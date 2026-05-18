@@ -148,11 +148,12 @@ fi
 
 ### Project Structure Notes
 
-- **Files modified:** `Makefile`
+- **Files modified:** `Makefile`, `Dockerfile`
 - **Files created:** `scripts/lint-metrics.sh`
 - **No application source changes** are required for this story.
 - `scripts/lint-metrics.sh` is the enforcement script; the Makefile owns installation and
-  passes threshold environment variables into the script.
+  passes threshold environment variables into the script, and the Dockerfile provisions the
+  `rca` image with the required tooling.
 
 ### Testing Approach
 
@@ -205,8 +206,6 @@ claude-sonnet-4-6
 - `Makefile`
 - `Dockerfile`
 - `scripts/lint-metrics.sh`
-- `tests/unit/scripts/lintMetrics.test.ts`
-- `specs/implementation-artifacts/stories/1-2-make-lint-metrics-target-full-enforcement-reporting.md`
 
 ### Change Log
 
