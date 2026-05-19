@@ -9,6 +9,13 @@ const mockDispatch = jest.fn();
 const mockLoginUser = jest.fn();
 const mockFormField = jest.fn();
 const mockUIForm = jest.fn();
+const submitCredentials = { email: 'user@example.com', password: 'secret123' } as const;
+
+let submitLoginForm: (() => Promise<void>) | null = null;
+
+function handleMockSubmitClick(): void {
+  void submitLoginForm?.();
+}
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string, options?: Record<string, unknown>) => string } => ({
@@ -64,13 +71,11 @@ jest.mock('@/components/ui-form', () => ({
     children: ReactElement[];
   }): ReactElement => {
     mockUIForm(props);
+    submitLoginForm = (): Promise<void> => props.onSubmit(submitCredentials);
 
     return (
       <div>
-        <button
-          type="button"
-          onClick={() => props.onSubmit({ email: 'user@example.com', password: 'secret123' })}
-        >
+        <button type="button" onClick={handleMockSubmitClick}>
           submit
         </button>
         <div data-testid="form-error">{props.error}</div>
@@ -83,6 +88,7 @@ jest.mock('@/components/ui-form', () => ({
 describe('LoginForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    submitLoginForm = null;
     mockLoginUser.mockImplementation((payload: unknown) => payload);
   });
 

@@ -5,6 +5,11 @@ import { Suspense } from 'react';
 import FormSection from '@/modules/user/features/auth/components/form-section';
 
 const uiButtonMock = jest.fn();
+let triggerRegistrationSuccessView: (() => void) | null = null;
+
+function handleTriggerRegistrationSuccess(): void {
+  triggerRegistrationSuccessView?.();
+}
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({
@@ -58,15 +63,18 @@ jest.mock(
   '@/modules/user/features/auth/components/form-section/auth-forms/registration-form',
   () => ({
     __esModule: true,
-    default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => (
-      <div data-testid="registration-form">
-        <button
-          type="button"
-          data-testid="trigger-success-view"
-          onClick={() => onViewChange?.('success')}
-        />
-      </div>
-    ),
+    default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => {
+      triggerRegistrationSuccessView = (): void => onViewChange?.('success');
+      return (
+        <div data-testid="registration-form">
+          <button
+            type="button"
+            data-testid="trigger-success-view"
+            onClick={handleTriggerRegistrationSuccess}
+          />
+        </div>
+      );
+    },
   })
 );
 
@@ -143,15 +151,18 @@ function renderIsolatedFormSectionWithLoginModule(
     '@/modules/user/features/auth/components/form-section/auth-forms/registration-form',
     () => ({
       __esModule: true,
-      default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => (
-        <div data-testid="registration-form">
-          <button
-            type="button"
-            data-testid="trigger-success-view"
-            onClick={() => onViewChange?.('success')}
-          />
-        </div>
-      ),
+      default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => {
+        triggerRegistrationSuccessView = (): void => onViewChange?.('success');
+        return (
+          <div data-testid="registration-form">
+            <button
+              type="button"
+              data-testid="trigger-success-view"
+              onClick={handleTriggerRegistrationSuccess}
+            />
+          </div>
+        );
+      },
     })
   );
 
@@ -207,6 +218,7 @@ function renderIsolatedFormSectionWithLoginModule(
 describe('FormSection', () => {
   afterEach(() => {
     jest.clearAllMocks();
+    triggerRegistrationSuccessView = null;
   });
 
   it('renders the registration form and auth providers by default', () => {
