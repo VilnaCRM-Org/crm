@@ -29,7 +29,9 @@ describe('auth test harness wiring', () => {
 
     expect(workflow).not.toContain('/authentication');
 
-    expect(constants).toContain("const normalizedBaseUrl = baseUrl === '/' ? '/' : baseUrl.replace(");
+    expect(constants).toContain(
+      "const normalizedBaseUrl = baseUrl === '/' ? '/' : baseUrl.replace("
+    );
     expect(constants).toContain('normalizedBaseUrl,');
     expect(constants).toContain(
       "normalizedBaseUrl === '/' ? '/authentication' : `${normalizedBaseUrl}/authentication`,"

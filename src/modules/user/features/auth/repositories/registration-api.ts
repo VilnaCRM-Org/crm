@@ -5,7 +5,6 @@ import TOKENS from '@/config/tokens';
 import type { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
 import type HttpsClient from '@/services/https-client/https-client';
 
-
 import type { RegistrationResponse } from '../types/api-responses';
 
 import BaseAPI from './base-api';
