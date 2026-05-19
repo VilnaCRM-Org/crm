@@ -62,14 +62,15 @@ export default class FetchHttpsClient implements HttpsClient {
   ): RequestInit {
     const hasBody = body !== undefined;
 
-    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
-    const isBlob = typeof Blob !== 'undefined' && body instanceof Blob;
-    const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && body instanceof ArrayBuffer;
-    const isReadableStream =
-      typeof ReadableStream !== 'undefined' && body instanceof ReadableStream;
-    const isString = typeof body === 'string';
-    const isJsonBody =
-      hasBody && !isFormData && !isBlob && !isArrayBuffer && !isReadableStream && !isString;
+    const hasGlobal = (name: string): boolean =>
+      typeof (globalThis as Record<string, unknown>)[name] !== 'undefined';
+    const isNonJsonBodyType =
+      (hasGlobal('FormData') && body instanceof FormData) ||
+      (hasGlobal('Blob') && body instanceof Blob) ||
+      (hasGlobal('ArrayBuffer') && body instanceof ArrayBuffer) ||
+      (hasGlobal('ReadableStream') && body instanceof ReadableStream) ||
+      typeof body === 'string';
+    const isJsonBody = hasBody && !isNonJsonBodyType;
 
     const config: RequestInit = {
       method,

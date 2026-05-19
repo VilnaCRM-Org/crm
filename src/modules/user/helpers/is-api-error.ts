@@ -3,15 +3,13 @@ interface APIError {
   message: string;
 }
 
+const hasStringProp = (obj: Record<string, unknown>, key: string): boolean =>
+  key in obj && typeof obj[key] === 'string';
+
 function isAPIError(err: unknown): err is APIError {
-  return (
-    typeof err === 'object' &&
-    err !== null &&
-    'code' in err &&
-    typeof (err as Record<string, unknown>).code === 'string' &&
-    'message' in err &&
-    typeof (err as Record<string, unknown>).message === 'string'
-  );
+  if (typeof err !== 'object' || err === null) return false;
+  const record = err as Record<string, unknown>;
+  return hasStringProp(record, 'code') && hasStringProp(record, 'message');
 }
 
 export default isAPIError;
