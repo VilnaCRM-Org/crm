@@ -1,9 +1,9 @@
-import breakpointsTheme from '@/components/ui-breakpoints';
 import {
   fieldGapMargins as sharedFieldGapMargins,
   formSection as sharedFormSection,
   formWrapper as sharedFormWrapper,
 } from '@/components/skeletons/base/auth-form-shared-styles';
+import breakpointsTheme from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
 // Re-exported for existing consumers (form-section/components/styles.ts).
