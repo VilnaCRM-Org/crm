@@ -1,7 +1,6 @@
 import { Box, Fade } from '@mui/material';
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 
-
 import RegistrationErrorView from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-error-view';
 import RegistrationSuccessView from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-success-view';
 import useCloseTimer from '@/modules/User/features/Auth/components/form-section/auth-forms/use-registration-close-timer';

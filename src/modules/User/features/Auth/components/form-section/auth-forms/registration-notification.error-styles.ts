@@ -7,7 +7,6 @@ import {
 } from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification.shared-styles';
 import { customColors, paletteColors } from '@/styles/colors';
 
-
 const mediumHeightDesktopViewport = [
   `@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`,
   `(max-height:${heightBreakpoints.medium}px)`,

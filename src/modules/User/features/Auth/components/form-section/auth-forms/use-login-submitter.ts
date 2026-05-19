@@ -7,7 +7,6 @@ import normalizeLoginErrorMessage from '@/modules/User/features/Auth/components/
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import { loginUser } from '@/modules/User/store';
 
-
 type LoginSubmitter = {
   error: string;
   isSubmitting: boolean;

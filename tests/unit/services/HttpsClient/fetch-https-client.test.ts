@@ -3,9 +3,9 @@
 import 'reflect-metadata';
 
 import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
-import { HttpError } from '@/services/HttpsClient/HttpError';
 import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
 import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
+import { HttpError } from '@/services/HttpsClient/HttpError';
 import ResponseMessages from '@/services/HttpsClient/responseMessages';
 
 function createMockResponse(

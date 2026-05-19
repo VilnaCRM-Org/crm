@@ -11,7 +11,9 @@ import InertBox from '@/modules/User/features/Auth/components/form-section/inert
 import styles from '@/modules/User/features/Auth/components/form-section/styles';
 import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 import type { AuthMode } from '@/modules/User/features/Auth/components/form-section/types';
-import useLoginSwitcher, { type LoadLoginErrorKey } from '@/modules/User/features/Auth/components/form-section/use-login-switcher';
+import useLoginSwitcher, {
+  type LoadLoginErrorKey,
+} from '@/modules/User/features/Auth/components/form-section/use-login-switcher';
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
 
 const LoginForm = lazy(loadLoginForm);

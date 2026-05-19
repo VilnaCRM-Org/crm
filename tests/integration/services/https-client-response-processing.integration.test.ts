@@ -215,6 +215,26 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       );
     });
 
+    it('handles a non-Error value thrown while cloning the response', async () => {
+      const parser = new HttpErrorResponseParser();
+      const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+      const thrown: unknown = 'string failure';
+
+      await expect(
+        parser.parse({
+          headers: { get: () => 'text/plain' },
+          clone: () => {
+            throw thrown;
+          },
+        } as unknown as Response)
+      ).resolves.toEqual({ message: 'string failure', body: undefined });
+
+      expect(debugSpy).toHaveBeenCalledWith(
+        'Failed to parse HTTP error response',
+        expect.objectContaining({ message: 'string failure', stack: undefined })
+      );
+    });
+
     it('loads HTTP helpers when reflected constructor types are unavailable', () => {
       for (const mockPath of [
         '@/services/HttpsClient/http-request-config-builder',

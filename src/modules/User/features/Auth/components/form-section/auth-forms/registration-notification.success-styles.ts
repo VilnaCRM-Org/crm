@@ -6,7 +6,6 @@ import {
 } from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification.shared-styles';
 import { customColors, paletteColors } from '@/styles/colors';
 
-
 const contentBox = {
   zIndex: 3,
   width: '100%',

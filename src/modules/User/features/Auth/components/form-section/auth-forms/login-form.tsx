@@ -8,7 +8,6 @@ import { createValidators } from '@/modules/User/features/Auth/components/form-s
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
 
-
 export { normalizeLoginErrorMessage };
 
 const LOGIN_DEFAULTS: LoginUserDto = { email: '', password: '' };
