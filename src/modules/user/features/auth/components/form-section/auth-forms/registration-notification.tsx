@@ -55,7 +55,7 @@ function resolveErrorText(
   fallbackErrorText: string
 ): string {
   const normalizedErrorText = errorText?.trim().toLowerCase().replace(/\s+/g, ' ');
-  if (!normalizedErrorText) {
+  if (!errorText || !normalizedErrorText) {
     return fallbackErrorText;
   }
 
