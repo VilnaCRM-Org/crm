@@ -139,7 +139,6 @@ describe('LoginForm', () => {
   it('handles non-object submit failures through the translated error path', async () => {
     mockDispatch.mockReturnValue({
       // Rejecting with a non-Error primitive is the scenario under test.
-       
       unwrap: () => Promise.reject(404),
     });
 
@@ -202,7 +201,6 @@ describe('LoginForm', () => {
         () => ({ __esModule: true, default: 'RegistrationFormFields' })
       );
 
-       
       const authForms = require('@/modules/User/features/Auth/components/form-section/auth-forms');
       expect(authForms.LoginForm).toBe('LoginForm');
       expect(authForms.RegistrationForm).toBe('RegistrationForm');

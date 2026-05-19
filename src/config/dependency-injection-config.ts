@@ -33,9 +33,15 @@ container.registerSingleton<HttpErrorResponseParser>(
   TOKENS.HttpErrorResponseParser,
   HttpErrorResponseParser
 );
-container.registerSingleton<HttpResponseProcessor>(TOKENS.HttpResponseProcessor, HttpResponseProcessor);
+container.registerSingleton<HttpResponseProcessor>(
+  TOKENS.HttpResponseProcessor,
+  HttpResponseProcessor
+);
 container.registerSingleton<DevToolsRedactor>(TOKENS.DevToolsRedactor, DevToolsRedactor);
-container.registerSingleton<DevToolsOptionsFactory>(TOKENS.DevToolsOptionsFactory, DevToolsOptionsFactory);
+container.registerSingleton<DevToolsOptionsFactory>(
+  TOKENS.DevToolsOptionsFactory,
+  DevToolsOptionsFactory
+);
 container.registerSingleton<HttpsClient>(TOKENS.HttpsClient, FetchHttpsClient);
 container.registerSingleton<RegistrationAPI>(TOKENS.RegistrationAPI, RegistrationAPI);
 container.registerSingleton<LoginAPI>(TOKENS.LoginAPI, LoginAPI);

@@ -145,10 +145,7 @@ describe('RegistrationNotification', () => {
     const onBack = jest.fn();
     function RerenderHarness(): JSX.Element {
       const [, setCounter] = React.useState(0);
-      const handleRerender = React.useCallback(
-        (): void => setCounter((value) => value + 1),
-        []
-      );
+      const handleRerender = React.useCallback((): void => setCounter((value) => value + 1), []);
       return (
         <>
           <button type="button" onClick={handleRerender}>
