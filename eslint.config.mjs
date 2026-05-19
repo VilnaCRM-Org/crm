@@ -15,6 +15,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
+const tsconfigPath = path.join(rootDir, 'tsconfig.json');
 
 const testFilePatterns = [
   '**/*.test.js',
@@ -46,6 +47,11 @@ const devDependencyPatterns = [
 
 const importNoExtraneousDependenciesOptions = {
   devDependencies: devDependencyPatterns,
+  packageDir: [rootDir],
+};
+
+const testImportNoExtraneousDependenciesOptions = {
+  devDependencies: true,
   packageDir: [rootDir],
 };
 
@@ -138,7 +144,7 @@ export default [
       parser: tsParser,
       ecmaVersion: 2022,
       sourceType: 'module',
-      parserOptions: { project: './tsconfig.json' },
+      parserOptions: { project: tsconfigPath },
       globals: { ...globals.node, ...globals.browser, ...globals.jest },
     },
     plugins: {
@@ -152,7 +158,7 @@ export default [
       'import/internal-regex': '^@/',
       'import/resolver': {
         node: { extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'] },
-        typescript: { project: './tsconfig.json', alwaysTryTypes: true },
+        typescript: { project: tsconfigPath, alwaysTryTypes: true },
       },
     },
     rules: {
@@ -266,7 +272,7 @@ export default [
       'no-restricted-globals': 'off',
       'no-undef': 'off',
       'no-use-before-define': 'off',
-      'import/no-extraneous-dependencies': ['error', importNoExtraneousDependenciesOptions],
+      'import/no-extraneous-dependencies': ['error', testImportNoExtraneousDependenciesOptions],
       'import/no-dynamic-require': 'off',
       'global-require': 'off',
       'no-await-in-loop': 'off',

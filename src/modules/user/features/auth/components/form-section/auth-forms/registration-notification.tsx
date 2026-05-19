@@ -61,7 +61,7 @@ function resolveErrorText(
 
   return GENERIC_REGISTRATION_VALIDATION_ERRORS.has(normalizedErrorText)
     ? signupErrorText
-    : errorText ?? fallbackErrorText;
+    : errorText;
 }
 
 function ErrorNotificationContent({

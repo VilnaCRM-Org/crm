@@ -83,6 +83,22 @@ describe('RegistrationNotification', () => {
     ).toBeInTheDocument();
   });
 
+  it('falls back to the default localized error when the error text is only whitespace', () => {
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={baseProps.isSubmitting}
+        onBack={baseProps.onBack}
+        view={baseProps.view}
+        errorText="   "
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(
+      screen.getByText('Щось пішло не так із запитом. Спробуйте ще раз пізніше')
+    ).toBeInTheDocument();
+  });
+
   it('renders the success notification', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
