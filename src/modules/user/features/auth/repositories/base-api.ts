@@ -54,24 +54,72 @@ export default class BaseAPI {
   }
 
   private mapHttpStatusToError(status: number, context: string, error: unknown): ApiError {
-    const byStatus: Record<number, () => ApiError> = {
-      400: () => new ValidationError({ message: `Invalid ${context.toLowerCase()} data`, status: 400 }),
-      401: () => new AuthenticationError(),
-      403: () => new ApiError('Forbidden', ApiErrorCodes.FORBIDDEN, 403, error),
-      404: () => new ApiError(`${context} not found`, ApiErrorCodes.NOT_FOUND, 404, error),
-      408: () => new ApiError('Request timed out. Please try again.', ApiErrorCodes.TIMEOUT, 408, error),
-      422: () => new ValidationError({ message: `Unprocessable ${context.toLowerCase()} data`, status: 422 }),
-      429: () => new ApiError('Too many requests. Please slow down.', ApiErrorCodes.RATE_LIMITED, 429, error),
-      409: () => new ConflictError(`${context} conflict. Resource already exists.`),
-      502: () => new ApiError('Service unavailable. Please try again later.', ApiErrorCodes.SERVER, status, error),
-      503: () => new ApiError('Service unavailable. Please try again later.', ApiErrorCodes.SERVER, status, error),
-      504: () => new ApiError('Service unavailable. Please try again later.', ApiErrorCodes.SERVER, status, error),
-      500: () => new ApiError('Server error. Please try again later.', ApiErrorCodes.SERVER, 500, error),
-    };
-    const factory = byStatus[status];
-    return factory
-      ? factory()
-      : new ApiError(`${context} failed`, ApiErrorCodes.UNKNOWN, status, error);
+    let mappedError: ApiError;
+
+    switch (status) {
+      case 400:
+        mappedError = new ValidationError({
+          message: `Invalid ${context.toLowerCase()} data`,
+          status: 400,
+        });
+        break;
+      case 401:
+        mappedError = new AuthenticationError();
+        break;
+      case 403:
+        mappedError = new ApiError('Forbidden', ApiErrorCodes.FORBIDDEN, 403, error);
+        break;
+      case 404:
+        mappedError = new ApiError(`${context} not found`, ApiErrorCodes.NOT_FOUND, 404, error);
+        break;
+      case 408:
+        mappedError = new ApiError(
+          'Request timed out. Please try again.',
+          ApiErrorCodes.TIMEOUT,
+          408,
+          error
+        );
+        break;
+      case 409:
+        mappedError = new ConflictError(`${context} conflict. Resource already exists.`);
+        break;
+      case 422:
+        mappedError = new ValidationError({
+          message: `Unprocessable ${context.toLowerCase()} data`,
+          status: 422,
+        });
+        break;
+      case 429:
+        mappedError = new ApiError(
+          'Too many requests. Please slow down.',
+          ApiErrorCodes.RATE_LIMITED,
+          429,
+          error
+        );
+        break;
+      case 500:
+        mappedError = new ApiError(
+          'Server error. Please try again later.',
+          ApiErrorCodes.SERVER,
+          500,
+          error
+        );
+        break;
+      case 502:
+      case 503:
+      case 504:
+        mappedError = new ApiError(
+          'Service unavailable. Please try again later.',
+          ApiErrorCodes.SERVER,
+          status,
+          error
+        );
+        break;
+      default:
+        mappedError = new ApiError(`${context} failed`, ApiErrorCodes.UNKNOWN, status, error);
+    }
+
+    return mappedError;
   }
 
   private isAbortError(err: Error): boolean {

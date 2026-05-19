@@ -88,10 +88,7 @@ export default function FormSection(): JSX.Element {
           <RegistrationForm onViewChange={handleRegistrationViewChange} />
         )}
 
-        <Box
-          id="auth-provider-buttons-container"
-          ref={setProviderButtonsInert}
-        >
+        <Box id="auth-provider-buttons-container" ref={setProviderButtonsInert}>
           <AuthProviderButtons />
         </Box>
       </Box>

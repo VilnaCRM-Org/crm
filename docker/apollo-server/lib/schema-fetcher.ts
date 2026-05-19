@@ -61,10 +61,7 @@ function resolveSchemaConfig(outputDir: string): SchemaFetchConfig {
   return { SCHEMA_URL, MAX_RETRIES, TIMEOUT_MS, OUTPUT_FILE };
 }
 
-async function attemptSchemaFetch(
-  config: SchemaFetchConfig,
-  outputDir: string
-): Promise<void> {
+async function attemptSchemaFetch(config: SchemaFetchConfig, outputDir: string): Promise<void> {
   const controller: AbortController = new AbortController();
   const timeoutId: NodeJS.Timeout = setTimeout(() => controller.abort(), config.TIMEOUT_MS);
 
@@ -94,55 +91,93 @@ async function attemptSchemaFetch(
   await fsPromises.writeFile(config.OUTPUT_FILE, data, 'utf-8');
 }
 
-export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
-  const config = resolveSchemaConfig(outputDir);
-  const schemaLogger: Logger = getLogger(outputDir);
+function shouldFetchSchema(config: SchemaFetchConfig, schemaLogger: Logger): boolean {
+  if (config.SCHEMA_URL) {
+    return true;
+  }
 
-  if (!config.SCHEMA_URL) {
-    schemaLogger.error('GRAPHQL_SCHEMA_URL is not set. Skipping schema fetch.');
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('GRAPHQL_SCHEMA_URL is required in production environment');
-    }
+  schemaLogger.error('GRAPHQL_SCHEMA_URL is not set. Skipping schema fetch.');
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('GRAPHQL_SCHEMA_URL is required in production environment');
+  }
+
+  return false;
+}
+
+function getRetryBackoffTime(retries: number): number {
+  return Math.min(1000 * 2 ** retries, 10000);
+}
+
+async function waitForRetryDelay(
+  retries: number,
+  maxRetries: number,
+  schemaLogger: Logger
+): Promise<void> {
+  if (retries === 0) {
     return;
   }
 
-  let retries: number = 0;
+  const backoffTime: number = getRetryBackoffTime(retries);
+  schemaLogger.info(`Retry attempt ${retries}/${maxRetries} after ${backoffTime}ms`);
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, backoffTime);
+  });
+}
+
+function logFetchAttempt(config: SchemaFetchConfig, retries: number, schemaLogger: Logger): void {
+  schemaLogger.info(
+    `Fetching GraphQL schema from: ${config.SCHEMA_URL}... (Attempt ${retries + 1}/${config.MAX_RETRIES})`
+  );
+}
+
+function normalizeSchemaFetchError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
+}
+
+function logSchemaFetchError(error: Error, schemaLogger: Logger): void {
+  if (error.name === 'AbortError') {
+    schemaLogger.error('Schema fetch timeout after configured time');
+    return;
+  }
+
+  schemaLogger.error(`Schema fetch failed: ${error.message}`);
+}
+
+async function fetchSchemaWithRetries(
+  config: SchemaFetchConfig,
+  outputDir: string,
+  schemaLogger: Logger
+): Promise<Error | null> {
+  let retries = 0;
   let lastError: Error | null = null;
 
   while (retries < config.MAX_RETRIES) {
-    if (retries > 0) {
-      const backoffTime: number = Math.min(1000 * 2 ** retries, 10000);
-      schemaLogger.info(`Retry attempt ${retries}/${config.MAX_RETRIES} after ${backoffTime}ms`);
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, backoffTime);
-      });
-    }
-
-    schemaLogger.info(
-      `Fetching GraphQL schema from: ${config.SCHEMA_URL}... (Attempt ${retries + 1}/${config.MAX_RETRIES})`
-    );
+    await waitForRetryDelay(retries, config.MAX_RETRIES, schemaLogger);
+    logFetchAttempt(config, retries, schemaLogger);
 
     try {
       await attemptSchemaFetch(config, outputDir);
       schemaLogger.info(`Schema successfully saved to: ${config.OUTPUT_FILE}`);
-      return;
+      return null;
     } catch (error) {
-      const normalizedError: Error = error instanceof Error ? error : new Error(String(error));
-      lastError = normalizedError;
+      lastError = normalizeSchemaFetchError(error);
+      logSchemaFetchError(lastError, schemaLogger);
       retries += 1;
-
-      if (normalizedError.name === 'AbortError') {
-        schemaLogger.error('Schema fetch timeout after configured time');
-      } else {
-        schemaLogger.error(`Schema fetch failed: ${normalizedError.message}`);
-      }
-
-      if (retries >= config.MAX_RETRIES) {
-        break;
-      }
     }
   }
 
+  return lastError;
+}
+
+export async function fetchAndSaveSchema(outputDir: string): Promise<void> {
+  const config = resolveSchemaConfig(outputDir);
+  const schemaLogger: Logger = getLogger(outputDir);
+
+  if (!shouldFetchSchema(config, schemaLogger)) {
+    return;
+  }
+
+  const lastError = await fetchSchemaWithRetries(config, outputDir, schemaLogger);
   handleFinalError(lastError, schemaLogger, outputDir);
 }
 

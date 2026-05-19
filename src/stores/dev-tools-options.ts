@@ -59,9 +59,10 @@ function deepRedact<T>(input: T): T {
 
 const REDACTABLE_META_KEYS = ['arg', 'headers', 'request'] as const;
 
-function redactActionMeta(
-  meta: Record<string, unknown> | undefined
-): { meta: Record<string, unknown> | undefined; changed: boolean } {
+function redactActionMeta(meta: Record<string, unknown> | undefined): {
+  meta: Record<string, unknown> | undefined;
+  changed: boolean;
+} {
   if (!meta || typeof meta !== 'object') {
     return { meta, changed: false };
   }
