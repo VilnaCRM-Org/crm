@@ -7,11 +7,26 @@ import {
 } from '@/modules/user/types/api-errors';
 import { isHttpError } from '@/services/https-client/http-error';
 
-
 export default class BaseAPI {
+  private static readonly NETWORK_ERROR_KEYWORDS = [
+    'failed to fetch',
+    'network',
+    'connection',
+    'timeout',
+    'cors',
+    'econnreset',
+    'enotfound',
+    'econnrefused',
+    'enetunreach',
+    'ehostunreach',
+    'ecanceled',
+    'canceled',
+    'cancelled',
+    'err_network',
+  ];
+
   protected handleApiError(error: unknown, context: string): ApiError {
     if (isHttpError(error)) {
-      // Check if it's a network error (status 0)
       if (error.status === 0 || this.isNetworkError(error.message)) {
         return new ApiError(
           'Network error. Please check your connection.',
@@ -20,59 +35,7 @@ export default class BaseAPI {
           error
         );
       }
-
-      switch (error.status) {
-        case 400:
-          return new ValidationError({
-            message: `Invalid ${context.toLowerCase()} data`,
-            status: 400,
-          });
-        case 401:
-          return new AuthenticationError();
-        case 403:
-          return new ApiError('Forbidden', ApiErrorCodes.FORBIDDEN, 403, error);
-        case 404:
-          return new ApiError(`${context} not found`, ApiErrorCodes.NOT_FOUND, 404, error);
-        case 408:
-          return new ApiError(
-            'Request timed out. Please try again.',
-            ApiErrorCodes.TIMEOUT,
-            408,
-            error
-          );
-        case 422:
-          return new ValidationError({
-            message: `Unprocessable ${context.toLowerCase()} data`,
-            status: 422,
-          });
-        case 429:
-          return new ApiError(
-            'Too many requests. Please slow down.',
-            ApiErrorCodes.RATE_LIMITED,
-            429,
-            error
-          );
-        case 409:
-          return new ConflictError(`${context} conflict. Resource already exists.`);
-        case 502:
-        case 503:
-        case 504:
-          return new ApiError(
-            'Service unavailable. Please try again later.',
-            ApiErrorCodes.SERVER,
-            error.status,
-            error
-          );
-        case 500:
-          return new ApiError(
-            'Server error. Please try again later.',
-            ApiErrorCodes.SERVER,
-            500,
-            error
-          );
-        default:
-          return new ApiError(`${context} failed`, ApiErrorCodes.UNKNOWN, error.status, error);
-      }
+      return this.mapHttpStatusToError(error.status, context, error);
     }
 
     if (error instanceof Error && this.isAbortError(error)) {
@@ -90,6 +53,27 @@ export default class BaseAPI {
     return new ApiError(`${context} failed. Please try again.`, ApiErrorCodes.UNKNOWN);
   }
 
+  private mapHttpStatusToError(status: number, context: string, error: unknown): ApiError {
+    const byStatus: Record<number, () => ApiError> = {
+      400: () => new ValidationError({ message: `Invalid ${context.toLowerCase()} data`, status: 400 }),
+      401: () => new AuthenticationError(),
+      403: () => new ApiError('Forbidden', ApiErrorCodes.FORBIDDEN, 403, error),
+      404: () => new ApiError(`${context} not found`, ApiErrorCodes.NOT_FOUND, 404, error),
+      408: () => new ApiError('Request timed out. Please try again.', ApiErrorCodes.TIMEOUT, 408, error),
+      422: () => new ValidationError({ message: `Unprocessable ${context.toLowerCase()} data`, status: 422 }),
+      429: () => new ApiError('Too many requests. Please slow down.', ApiErrorCodes.RATE_LIMITED, 429, error),
+      409: () => new ConflictError(`${context} conflict. Resource already exists.`),
+      502: () => new ApiError('Service unavailable. Please try again later.', ApiErrorCodes.SERVER, status, error),
+      503: () => new ApiError('Service unavailable. Please try again later.', ApiErrorCodes.SERVER, status, error),
+      504: () => new ApiError('Service unavailable. Please try again later.', ApiErrorCodes.SERVER, status, error),
+      500: () => new ApiError('Server error. Please try again later.', ApiErrorCodes.SERVER, 500, error),
+    };
+    const factory = byStatus[status];
+    return factory
+      ? factory()
+      : new ApiError(`${context} failed`, ApiErrorCodes.UNKNOWN, status, error);
+  }
+
   private isAbortError(err: Error): boolean {
     const name = err.name?.toLowerCase?.() ?? '';
     const msg = err.message?.toLowerCase?.() ?? '';
@@ -99,21 +83,6 @@ export default class BaseAPI {
   private isNetworkError(message: string): boolean {
     if (!message) return false;
     const m = message.toLowerCase();
-    return (
-      m.includes('failed to fetch') ||
-      m.includes('network') ||
-      m.includes('connection') ||
-      m.includes('timeout') ||
-      m.includes('cors') ||
-      m.includes('econnreset') ||
-      m.includes('enotfound') ||
-      m.includes('econnrefused') ||
-      m.includes('enetunreach') ||
-      m.includes('ehostunreach') ||
-      m.includes('ecanceled') ||
-      m.includes('canceled') ||
-      m.includes('cancelled') ||
-      m.includes('err_network')
-    );
+    return BaseAPI.NETWORK_ERROR_KEYWORDS.some((keyword) => m.includes(keyword));
   }
 }
