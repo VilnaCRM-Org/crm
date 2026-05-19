@@ -48,16 +48,14 @@ function SubtitleBlock({ wrap }: { wrap: Wrap }): JSX.Element {
 }
 
 function SkeletonField({
-  id,
-  wrap,
-  disableAnimation,
-  containerSx,
+  field,
+  options,
 }: {
-  id: number;
-  wrap: Wrap;
-  disableAnimation: boolean;
-  containerSx: typeof styles.fieldContainer | typeof styles.lastFieldContainer;
+  field: (typeof FIELD_CONFIGS)[number];
+  options: { wrap: Wrap; disableAnimation: boolean };
 }): JSX.Element {
+  const { id, containerSx } = field;
+  const { wrap, disableAnimation } = options;
   return (
     <Box sx={containerSx}>
       <UISkeletonText
@@ -94,13 +92,7 @@ function SkeletonFields({
   return (
     <>
       {FIELD_CONFIGS.map((field) => (
-        <SkeletonField
-          key={field.id}
-          id={field.id}
-          wrap={wrap}
-          disableAnimation={disableAnimation}
-          containerSx={field.containerSx}
-        />
+        <SkeletonField key={field.id} field={field} options={{ wrap, disableAnimation }} />
       ))}
     </>
   );
