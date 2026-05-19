@@ -1,5 +1,6 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
+import TOKENS from '@/config/tokens';
 import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
 import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
 import { HttpError } from '@/services/HttpsClient/HttpError';
@@ -25,8 +26,8 @@ export default class FetchHttpsClient implements HttpsClient {
   private readonly responseProcessor: HttpResponseProcessor;
 
   constructor(
-    requestConfigBuilder: HttpRequestConfigBuilder = new HttpRequestConfigBuilder(),
-    responseProcessor: HttpResponseProcessor = new HttpResponseProcessor()
+    @inject(TOKENS.HttpRequestConfigBuilder) requestConfigBuilder: HttpRequestConfigBuilder,
+    @inject(TOKENS.HttpResponseProcessor) responseProcessor: HttpResponseProcessor
   ) {
     this.requestConfigBuilder = requestConfigBuilder;
     this.responseProcessor = responseProcessor;

@@ -10,6 +10,7 @@ const TOKENS = Object.freeze({
   HttpRequestConfigBuilder: Symbol('HttpRequestConfigBuilder'),
   HttpResponseProcessor: Symbol('HttpResponseProcessor'),
   HttpErrorResponseParser: Symbol('HttpErrorResponseParser'),
+  HttpClientFactory: Symbol('HttpClientFactory'),
   DevToolsRedactor: Symbol('DevToolsRedactor'),
   DevToolsOptionsFactory: Symbol('DevToolsOptionsFactory'),
 } as const);

@@ -7,13 +7,12 @@ import UIButton from '@/components/UIButton';
 import UITypography from '@/components/UITypography';
 import RegistrationForm from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form';
 import AuthProviderButtons from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons';
+import InertBox from '@/modules/User/features/Auth/components/form-section/inert-box';
 import styles from '@/modules/User/features/Auth/components/form-section/styles';
 import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import type { AuthMode } from '@/modules/User/features/Auth/components/form-section/types';
+import useLoginSwitcher, { type LoadLoginErrorKey } from '@/modules/User/features/Auth/components/form-section/use-login-switcher';
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
-
-import InertBox from './inert-box';
-import type { AuthMode } from './types';
-import useLoginSwitcher, { type LoadLoginErrorKey } from './use-login-switcher';
 
 const LoginForm = lazy(loadLoginForm);
 

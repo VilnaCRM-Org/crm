@@ -49,8 +49,9 @@ describe('HttpErrorResponseParser', () => {
     await expect(parser.assertOk(response)).rejects.toMatchObject({ status: 500 });
   });
 
-  it('returns an empty parsed payload when cloning the response fails', async () => {
+  it('returns a readable parsed payload when cloning the response fails', async () => {
     const parser = new HttpErrorResponseParser();
+    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
     await expect(
       parser.parse({
@@ -59,6 +60,14 @@ describe('HttpErrorResponseParser', () => {
           throw new Error('clone failed');
         },
       } as unknown as Response)
-    ).resolves.toEqual({ message: null, body: undefined });
+    ).resolves.toEqual({ message: 'clone failed', body: undefined });
+
+    expect(debugSpy).toHaveBeenCalledWith(
+      'Failed to parse HTTP error response',
+      expect.objectContaining({
+        message: 'clone failed',
+      })
+    );
+    debugSpy.mockRestore();
   });
 });

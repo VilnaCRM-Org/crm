@@ -4,6 +4,8 @@ import 'reflect-metadata';
 
 import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
 import { HttpError } from '@/services/HttpsClient/HttpError';
+import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
+import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
 import ResponseMessages from '@/services/HttpsClient/responseMessages';
 
 function createMockResponse(
@@ -39,13 +41,19 @@ const createErrorResponse = (status: number, statusText: string, url: string): R
     headers: new Headers(),
     json: async () => ({}),
   }) as unknown as Response;
+
+const createClient = (
+  requestConfigBuilder: HttpRequestConfigBuilder = new HttpRequestConfigBuilder(),
+  responseProcessor: HttpResponseProcessor = new HttpResponseProcessor()
+): FetchHttpsClient => new FetchHttpsClient(requestConfigBuilder, responseProcessor);
+
 describe('FetchHttpsClient', () => {
   const originalFetch = global.fetch;
   let client: FetchHttpsClient;
   let mockFetch: jest.Mock;
 
   beforeEach(() => {
-    client = new FetchHttpsClient();
+    client = createClient();
     mockFetch = jest.fn();
     global.fetch = mockFetch as unknown as typeof fetch;
   });
@@ -57,7 +65,7 @@ describe('FetchHttpsClient', () => {
   });
 
   describe('GET requests', () => {
-    it('uses the default response processor when only a request builder is injected', async () => {
+    it('uses an injected request builder with an explicit response processor', async () => {
       const requestConfigBuilder = {
         create: jest.fn().mockReturnValue({
           method: 'GET',
@@ -66,7 +74,10 @@ describe('FetchHttpsClient', () => {
           },
         }),
       };
-      const builderOnlyClient = new FetchHttpsClient(requestConfigBuilder as never);
+      const builderOnlyClient = createClient(
+        requestConfigBuilder as never,
+        new HttpResponseProcessor()
+      );
       mockFetch.mockResolvedValue(createMockResponse(200, { ok: true }));
 
       await expect(builderOnlyClient.get('/api/test')).resolves.toEqual({ ok: true });
@@ -720,9 +731,9 @@ describe('FetchHttpsClient', () => {
       expect(result).toEqual({ injected: true });
     });
 
-    it('uses the default request builder when only a response processor is injected', async () => {
+    it('uses an injected response processor with an explicit request builder', async () => {
       const mockProcessor = { process: jest.fn().mockResolvedValue({ ok: true }) };
-      const customClient = new FetchHttpsClient(undefined, mockProcessor as never);
+      const customClient = createClient(new HttpRequestConfigBuilder(), mockProcessor as never);
       mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
       await expect(customClient.get('/api/test')).resolves.toEqual({ ok: true });

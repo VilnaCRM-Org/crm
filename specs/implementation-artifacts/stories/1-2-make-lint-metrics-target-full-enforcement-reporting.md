@@ -162,7 +162,7 @@ application runtime behavior:
 
 - `make lint-metrics` validates the analyzer path, jq enforcement, stdout reporting, and local
   `$GITHUB_STEP_SUMMARY` null handling.
-- `tests/unit/scripts/lintMetrics.test.ts` validates hard-fail findings, silent review-gate
+- `tests/unit/scripts/lint-metrics.test.ts` validates hard-fail findings, silent review-gate
   behavior, and passing CI summary output with a fake RCA binary.
 - `make lint` validates chain integration.
 - The project convention is to run `make` commands in the Docker dev container when host tools
@@ -201,7 +201,7 @@ claude-sonnet-4-6
 - Implemented local stdout reporting and guarded GitHub Job Summary reporting.
 - Confirmed `lint` includes `lint-metrics`.
 
-### File List
+### File List (implementation files only; tests listed in Testing Approach)
 
 - `Makefile`
 - `Dockerfile`

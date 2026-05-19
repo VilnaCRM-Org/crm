@@ -229,11 +229,13 @@ describe('ApiError', () => {
       // @ts-expect-error intentionally removing to cover fallback path
       Error.captureStackTrace = undefined;
 
-      const error = new ApiError({ message: 'Stack fallback', code: 'TEST_CODE' });
+      try {
+        const error = new ApiError({ message: 'Stack fallback', code: 'TEST_CODE' });
 
-      expect(error.stack).toBeDefined();
-
-      Error.captureStackTrace = originalCapture;
+        expect(error.stack).toBeDefined();
+      } finally {
+        Error.captureStackTrace = originalCapture;
+      }
     });
 
     it('should handle various HTTP status codes', () => {

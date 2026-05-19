@@ -1,5 +1,8 @@
+import { injectable } from 'tsyringe';
+
 import HttpsClient from '@/services/HttpsClient/https-client';
 
+@injectable()
 export default class HttpClientFactory {
   private clientConstructors = new Map<string, new () => HttpsClient>();
 

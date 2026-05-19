@@ -1,3 +1,4 @@
+import API_ENDPOINTS from '@/config/apiConfig';
 import { ApiError } from '@/modules/User/features/Auth/api/ApiErrors';
 import RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
 
@@ -23,7 +24,7 @@ describe('RegistrationAPI', () => {
       email: credentials.email,
       fullName: credentials.fullName,
     });
-    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, undefined);
+    expect(httpsClient.post).toHaveBeenCalledWith(API_ENDPOINTS.REGISTER, credentials, undefined);
   });
 
   it('passes request options to the underlying client', async () => {
@@ -35,7 +36,7 @@ describe('RegistrationAPI', () => {
 
     await expect(api.register(credentials, options)).resolves.toBeUndefined();
 
-    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, options);
+    expect(httpsClient.post).toHaveBeenCalledWith(API_ENDPOINTS.REGISTER, credentials, options);
   });
 
   it('rethrows AbortError without converting it', async () => {

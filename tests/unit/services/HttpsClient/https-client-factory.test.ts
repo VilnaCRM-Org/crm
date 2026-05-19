@@ -1,3 +1,5 @@
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
 import HttpsClient from '@/services/HttpsClient/https-client';
 import HttpClientFactory from '@/services/HttpsClient/https-client-factory';
 
@@ -13,20 +15,20 @@ const createMockClient = (options: MockClientOptions = {}): new () => HttpsClien
       return returnValue as T;
     }
 
-    public async post<T, R>(url: string, data: T): Promise<R> {
-      return (url && data ? returnValue : returnValue) as R;
+    public async post<T, R>(_url: string, _data: T): Promise<R> {
+      return returnValue as R;
     }
 
-    public async patch<T, R>(url: string, data: T): Promise<R> {
-      return (url && data ? returnValue : returnValue) as R;
+    public async patch<T, R>(_url: string, _data: T): Promise<R> {
+      return returnValue as R;
     }
 
-    public async put<T, R>(url: string, data: T): Promise<R> {
-      return (url && data ? returnValue : returnValue) as R;
+    public async put<T, R>(_url: string, _data: T): Promise<R> {
+      return returnValue as R;
     }
 
-    public async delete<T, R>(url: string, data?: T): Promise<R> {
-      return (url || data ? returnValue : returnValue) as R;
+    public async delete<T, R>(_url: string, _data?: T): Promise<R> {
+      return returnValue as R;
     }
   };
 };
@@ -39,6 +41,14 @@ describe('HttpClientFactory', () => {
 
   beforeEach(() => {
     factory = new HttpClientFactory();
+  });
+
+  describe('dependency injection', () => {
+    it('should resolve from the DI container', () => {
+      const resolvedFactory = container.resolve<HttpClientFactory>(TOKENS.HttpClientFactory);
+
+      expect(resolvedFactory).toBeInstanceOf(HttpClientFactory);
+    });
   });
 
   describe('registerClient', () => {
@@ -155,7 +165,7 @@ describe('HttpClientFactory', () => {
       expect(instance1a).not.toBe(instance2a);
     });
 
-    it('should create new instance after re-registration', () => {
+    it('should return cached instance after re-registration', () => {
       factory.registerClient('mock', MockHttpsClient);
       const client1 = factory.initiateClient('mock');
 

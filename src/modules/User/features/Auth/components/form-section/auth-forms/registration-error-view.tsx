@@ -1,4 +1,5 @@
 import { Box, Typography } from '@mui/material';
+import type { SxProps, Theme } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
@@ -32,7 +33,7 @@ function ErrorActionButton({
   onClick,
   label,
 }: {
-  sx: object | object[];
+  sx: SxProps<Theme>;
   variant: 'contained' | 'outlined';
   disabled: boolean;
   onClick: () => void;

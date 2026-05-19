@@ -1,4 +1,6 @@
 import '../setup';
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
 import ApiErrorFactory from '@/modules/User/features/Auth/api/api-error-factory';
 import ApiStatusErrorFactory from '@/modules/User/features/Auth/api/api-status-error-factory';
 import {
@@ -128,8 +130,8 @@ describe('API Errors and URL Builder Integration', () => {
       expect(toSimpleApiError.call(factory, 'unexpected')).toBe('unexpected');
     });
 
-    it('uses the default auth UI error parser when no parser is injected', () => {
-      const mapper = new AuthUiErrorMapper(undefined);
+    it('uses the registered auth UI error parser when resolved from DI', () => {
+      const mapper = container.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper);
 
       expect(mapper.map(new Error('Network error')).displayMessage).toBeTruthy();
     });

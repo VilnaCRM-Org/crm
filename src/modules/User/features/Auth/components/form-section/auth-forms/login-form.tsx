@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/UIForm';
+import normalizeLoginErrorMessage from '@/modules/User/features/Auth/components/form-section/auth-forms/login-error-message';
+import LoginFormFields from '@/modules/User/features/Auth/components/form-section/auth-forms/login-form-fields';
+import useLoginSubmitter from '@/modules/User/features/Auth/components/form-section/auth-forms/use-login-submitter';
 import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
 
-import normalizeLoginErrorMessage from './login-error-message';
-import LoginFormFields from './login-form-fields';
-import useLoginSubmitter from './use-login-submitter';
 
 export { normalizeLoginErrorMessage };
 

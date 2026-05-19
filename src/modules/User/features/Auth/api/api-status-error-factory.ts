@@ -4,7 +4,7 @@ import {
   AuthenticationError,
   ConflictError,
   ValidationError,
-} from './ApiErrors';
+} from '@/modules/User/features/Auth/api/ApiErrors';
 
 export type HttpErrorLike = { status: number; message: string };
 

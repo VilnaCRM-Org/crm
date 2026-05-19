@@ -1,12 +1,12 @@
 import { Box, Fade } from '@mui/material';
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 
-import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 
-import RegistrationErrorView from './registration-error-view';
-import RegistrationSuccessView from './registration-success-view';
-import useCloseTimer from './use-registration-close-timer';
-import useResolvedErrorText from './use-resolved-error-text';
+import RegistrationErrorView from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-error-view';
+import RegistrationSuccessView from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-success-view';
+import useCloseTimer from '@/modules/User/features/Auth/components/form-section/auth-forms/use-registration-close-timer';
+import useResolvedErrorText from '@/modules/User/features/Auth/components/form-section/auth-forms/use-resolved-error-text';
+import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 
 type RegistrationNotificationProps = {
   view: Exclude<RegistrationView, 'form'>;

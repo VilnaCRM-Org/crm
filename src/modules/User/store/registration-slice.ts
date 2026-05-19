@@ -5,17 +5,17 @@ import {
   ActionReducerMapBuilder,
 } from '@reduxjs/toolkit';
 
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
+import { SafeUserInfo } from '@/modules/User/features/Auth/types/ApiResponses';
+import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import AuthUiErrorMapper from '@/modules/User/store/auth-ui-error-mapper';
+import RegistrationResponseMapper from '@/modules/User/store/registration-response-mapper';
+import { ThunkExtra } from '@/modules/User/store/types';
 import type { UiError } from '@/services/error';
 
-import { SafeUserInfo } from '../features/Auth/types/ApiResponses';
-import { RegisterUserDto } from '../features/Auth/types/Credentials';
-
-import AuthUiErrorMapper from './auth-ui-error-mapper';
-import RegistrationResponseMapper from './registration-response-mapper';
-import { ThunkExtra } from './types';
-
 const registrationResponseMapper = new RegistrationResponseMapper();
-const authUiErrorMapper = new AuthUiErrorMapper();
+const authUiErrorMapper = container.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper);
 
 export const registerUser = createAsyncThunk<
   SafeUserInfo,

@@ -8,7 +8,7 @@ import ErrorParser from '@/utils/error/error-parser';
 export default class AuthUiErrorMapper {
   private readonly errorParser: ErrorParser;
 
-  constructor(@inject(TOKENS.ErrorParser) errorParser: ErrorParser = new ErrorParser()) {
+  constructor(@inject(TOKENS.ErrorParser) errorParser: ErrorParser) {
     this.errorParser = errorParser;
   }
 

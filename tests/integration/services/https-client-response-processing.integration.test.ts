@@ -1,15 +1,19 @@
 import '../setup';
 import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
 import HttpErrorResponseParser from '@/services/HttpsClient/http-error-response-parser';
+import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
 import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
 import { HttpError } from '@/services/HttpsClient/HttpError';
+
+const createClient = (): FetchHttpsClient =>
+  new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
 
 describe('FetchHttpsClient Response Processing Coverage', () => {
   let client: FetchHttpsClient;
   const originalFetch = global.fetch;
 
   beforeEach(() => {
-    client = new FetchHttpsClient();
+    client = createClient();
   });
 
   afterEach(() => {
@@ -172,8 +176,8 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       expect(result).toBeUndefined();
     });
 
-    it('uses default helpers when optional constructor dependencies are undefined', async () => {
-      const processorOnlyClient = new FetchHttpsClient(undefined, {
+    it('supports explicit client dependencies and the response processor parser fallback', async () => {
+      const processorOnlyClient = new FetchHttpsClient(new HttpRequestConfigBuilder(), {
         process: jest.fn().mockResolvedValue({ ok: true }),
       } as never);
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
@@ -190,8 +194,9 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       ).resolves.toBeUndefined();
     });
 
-    it('returns an empty parsed error payload when cloning the response fails', async () => {
+    it('returns a readable parsed error payload when cloning the response fails', async () => {
       const parser = new HttpErrorResponseParser();
+      const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
       await expect(
         parser.parse({
@@ -200,7 +205,14 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
             throw new Error('clone failed');
           },
         } as unknown as Response)
-      ).resolves.toEqual({ message: null, body: undefined });
+      ).resolves.toEqual({ message: 'clone failed', body: undefined });
+
+      expect(debugSpy).toHaveBeenCalledWith(
+        'Failed to parse HTTP error response',
+        expect.objectContaining({
+          message: 'clone failed',
+        })
+      );
     });
 
     it('loads HTTP helpers when reflected constructor types are unavailable', () => {

@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 
 import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import useRegistrationHandlers from '@/modules/User/features/Auth/hooks/use-registration-handlers';
+import useRegistrationViewSync from '@/modules/User/features/Auth/hooks/use-registration-view-sync';
 import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import {
   selectRegistrationError,
@@ -10,8 +12,6 @@ import {
   selectRegistrationUser,
 } from '@/modules/User/store/registration-selectors';
 
-import useRegistrationHandlers from './use-registration-handlers';
-import useRegistrationViewSync from './use-registration-view-sync';
 
 type UseRegistrationFormResult = {
   view: RegistrationView;

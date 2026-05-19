@@ -1,12 +1,16 @@
 import { ReadableStream } from 'node:stream/web';
 
 import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
+import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
+import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
 import { HttpError, isHttpError } from '@/services/HttpsClient/HttpError';
 import ResponseMessages from '@/services/HttpsClient/responseMessages';
 
 const TEST_URL = 'http://localhost:8080/api/test';
 
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+const createClient = (): FetchHttpsClient =>
+  new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
 
 describe('FetchHttpsClient Integration', () => {
   let client: FetchHttpsClient;
@@ -20,7 +24,7 @@ describe('FetchHttpsClient Integration', () => {
   });
 
   beforeEach(() => {
-    client = new FetchHttpsClient();
+    client = createClient();
     mockFetch.mockClear();
   });
 
@@ -422,16 +426,10 @@ describe('FetchHttpsClient Integration', () => {
 
       mockFetch.mockResolvedValueOnce(mockResponse);
 
-      try {
-        await client.get(TEST_URL);
-        fail('Should have thrown an error');
-      } catch (error) {
-        expect(isHttpError(error)).toBe(true);
-        if (isHttpError(error)) {
-          expect(error.status).toBe(500);
-          expect(error.message).toContain('500');
-        }
-      }
+      const request = client.get(TEST_URL);
+
+      await expect(request).rejects.toMatchObject({ status: 500 });
+      await expect(request).rejects.toThrow(/500/);
     });
   });
 

@@ -10,6 +10,7 @@ import LoginResponseMapper from '@/modules/User/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/User/store/registration-response-mapper';
 import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
 import HttpErrorResponseParser from '@/services/HttpsClient/http-error-response-parser';
+import HttpClientFactory from '@/services/HttpsClient/https-client-factory';
 import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
 import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
 import HttpsClient from '@/services/HttpsClient/https-client';
@@ -37,6 +38,7 @@ container.registerSingleton<HttpResponseProcessor>(
   TOKENS.HttpResponseProcessor,
   HttpResponseProcessor
 );
+container.registerSingleton<HttpClientFactory>(TOKENS.HttpClientFactory, HttpClientFactory);
 container.registerSingleton<DevToolsRedactor>(TOKENS.DevToolsRedactor, DevToolsRedactor);
 container.registerSingleton<DevToolsOptionsFactory>(
   TOKENS.DevToolsOptionsFactory,

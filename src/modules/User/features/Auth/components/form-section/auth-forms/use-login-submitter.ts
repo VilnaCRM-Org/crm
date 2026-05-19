@@ -3,10 +3,10 @@ import { Dispatch, SetStateAction, useCallback, useState } from 'react';
 
 import useAppDispatch from '@/stores/hooks';
 
+import normalizeLoginErrorMessage from '@/modules/User/features/Auth/components/form-section/auth-forms/login-error-message';
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import { loginUser } from '@/modules/User/store';
 
-import normalizeLoginErrorMessage from './login-error-message';
 
 type LoginSubmitter = {
   error: string;

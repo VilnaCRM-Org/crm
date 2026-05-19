@@ -2,8 +2,7 @@ import { AnyAction, DevToolsEnhancerOptions } from '@reduxjs/toolkit';
 import { inject, injectable } from 'tsyringe';
 
 import TOKENS from '@/config/tokens';
-
-import { DevToolsRedactor } from './dev-tools-redaction';
+import { DevToolsRedactor } from '@/stores/dev-tools-redaction';
 
 const META_FIELDS = ['arg', 'headers', 'request'] as const;
 

@@ -43,8 +43,16 @@ export default class HttpErrorResponseParser {
       }
 
       return await this.extractTextBody(response.clone(), contentType);
-    } catch {
-      return { message: null, body: undefined };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      // eslint-disable-next-line no-console
+      console.debug('Failed to parse HTTP error response', {
+        message,
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      return { message, body: undefined };
     }
   }
 

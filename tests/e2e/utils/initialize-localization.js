@@ -3,8 +3,10 @@ import { initReactI18next } from 'react-i18next';
 
 import i18nConfig from '../../../src/config/i18n-config';
 
-i18n.use(initReactI18next).init(i18nConfig);
+export const ready = i18n.use(initReactI18next).init(i18nConfig);
 
-export const { t } = i18n;
+export { i18n };
 
-export default i18n.t;
+export const t = i18n.t.bind(i18n);
+
+export default t;
