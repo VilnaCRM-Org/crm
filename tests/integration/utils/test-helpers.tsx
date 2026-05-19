@@ -1,4 +1,4 @@
-/* eslint-disable import/no-self-import, import/no-relative-packages, import/order */
+/* eslint-disable import/order */
 import React from 'react';
 import { combineReducers, configureStore, type EnhancedStore } from '@reduxjs/toolkit';
 import { render, RenderOptions } from '@testing-library/react';

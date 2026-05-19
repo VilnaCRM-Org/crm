@@ -107,19 +107,26 @@ BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run -
 
 STRYKER_CMD                 = make start && $(BUNX) stryker run
 STRYKER_CMD_DIND            = $(BUNX_DIND) stryker run
-UNIT_TESTS                  = make start && $(EXEC_DEV_TTYLESS) env
+UNIT_TESTS                  = $(MAKE) ensure-dev && $(EXEC_DEV_TTYLESS) env
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
 STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint
 MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
+
+RCA_VERSION                 = 0.0.25
+RCA_SCOPE                   = src/
+RCA_EXCLUDES                = **/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/**
+METRICS_POLICY_PATH         = config/metrics-policy.json
+RCA_BIN                     = ./bin/rust-code-analysis-cli
+
 RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
-.PHONY: $(filter-out node_modules,$(MAKECMDGOALS)) lint
-.PHONY: clean lint
+.PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
+.PHONY: clean lint lint-metrics lint-metrics-run
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -137,6 +144,13 @@ help:
 
 start: create-network ## Start the application
 	$(DEV_CMD)
+
+ensure-dev: ## Start dev only when it is not already running
+	@if $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) ps --status running --services | grep -qx dev; then \
+		echo "✅ Dev service is already running."; \
+	else \
+		$(MAKE) start; \
+	fi
 
 WAIT_FOR_DEV_MAX_TRIES     ?= 150
 WAIT_FOR_DEV_SLEEP         ?= 2
@@ -203,9 +217,40 @@ lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint-deps: ## This command executes dependency-cruiser
-	$(BUNX) depcruise .
+	$(BUNX) depcruise --exclude '^\.stryker-tmp/' .
 
-lint: lint-eslint lint-tsc lint-md lint-deps ## Runs all linters: ESLint, TypeScript, and Markdown linters in sequence.
+lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
+	@summary_path="$$GITHUB_STEP_SUMMARY"; \
+	if [ -n "$$summary_path" ]; then \
+		summary_dir=$$(dirname "$$summary_path"); \
+		if { [ -e "$$summary_path" ] && [ ! -d "$$summary_path" ] && [ -w "$$summary_path" ]; } || { [ ! -e "$$summary_path" ] && [ -w "$$summary_dir" ]; }; then \
+			: > "$$summary_path" 2>/dev/null || touch "$$summary_path"; \
+			$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+				-e GITHUB_STEP_SUMMARY="$$summary_path" \
+				-v "$$summary_path:$$summary_path" \
+				rca make lint-metrics-run RCA_BIN=/usr/local/bin/rust-code-analysis-cli; \
+		else \
+			printf 'WARNING: GITHUB_STEP_SUMMARY is not writable, skipping summary mount: %s\n' "$$summary_path" >&2; \
+			$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+				rca make lint-metrics-run RCA_BIN=/usr/local/bin/rust-code-analysis-cli; \
+		fi; \
+	else \
+		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm \
+			rca make lint-metrics-run RCA_BIN=/usr/local/bin/rust-code-analysis-cli; \
+	fi
+
+# Direct-invoke target used by the rca container (always Linux) via make lint-metrics.
+# The rca Docker image has rust-code-analysis-cli pre-installed; thresholds are read
+# from METRICS_POLICY_PATH (config/metrics-policy.json).
+lint-metrics-run:
+	@RCA_BIN="$(RCA_BIN)" \
+	RCA_VERSION="$(RCA_VERSION)" \
+	RCA_SCOPE="$(RCA_SCOPE)" \
+	RCA_EXCLUDES="$(RCA_EXCLUDES)" \
+	METRICS_POLICY="$(METRICS_POLICY_PATH)" \
+	sh scripts/lint-metrics.sh
+
+lint: lint-eslint lint-tsc lint-md lint-deps lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, dependency-cruiser, and rust-code-analysis metrics.
 
 husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	$(BUNX) husky install

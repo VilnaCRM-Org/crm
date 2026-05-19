@@ -1,10 +1,10 @@
-import buildApiUrl from '@/utils/url-builder';
 import type { ComponentType, SVGProps } from 'react';
 
 import { ReactComponent as Facebook } from '@/modules/user/features/auth/assets/social-links/facebook-color.svg';
 import { ReactComponent as GitHub } from '@/modules/user/features/auth/assets/social-links/github-color.svg';
 import { ReactComponent as Google } from '@/modules/user/features/auth/assets/social-links/google-color.svg';
 import { ReactComponent as Twitter } from '@/modules/user/features/auth/assets/social-links/twitter-color.svg';
+import buildApiUrl from '@/utils/url-builder';
 
 const PROVIDERS = [
   { key: 'google', label: 'Google', SvgComponent: Google },

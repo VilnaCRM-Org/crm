@@ -1,12 +1,12 @@
+import { Box, Fade, Typography } from '@mui/material';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+
 import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.svg';
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/ui-button';
 import UiTypography from '@/components/ui-typography';
-import { Box, Fade, Typography } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-
 import styles from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification.styles';
 import { RegistrationView } from '@/modules/user/features/auth/components/form-section/types';
 
@@ -79,54 +79,41 @@ export default function RegistrationNotification({
   if (view === 'error') {
     return (
       <Fade in={!isClosing} timeout={BACK_CLOSE_ANIMATION_MS} appear>
-        <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
-          <Box sx={styles.contentBoxError}>
-            <Box sx={styles.imageWrapperError}>
-              <Box
-                component={ErrorImage}
-                role="img"
-                aria-label={t('notifications.error.images.error')}
-                sx={styles.errorImage}
-              />
-            </Box>
+          <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
+            <Box sx={styles.contentBoxError}>
+              <Box sx={styles.imageWrapperError}>
+                <Box component={ErrorImage} role="img" aria-label={t('notifications.error.images.error')} sx={styles.errorImage} />
+              </Box>
 
-            <Box sx={styles.messageContainerError}>
-              <UiTypography component="h4" sx={styles.messageTitle}>
-                {t('notifications.error.title')}
-              </UiTypography>
-              <UiTypography component="span" sx={styles.messageDescription}>
-                {resolvedErrorText}
-              </UiTypography>
+              <Box sx={styles.messageContainerError}>
+                <UiTypography component="h4" sx={styles.messageTitle}>{t('notifications.error.title')}</UiTypography>
+                <UiTypography component="span" sx={styles.messageDescription}>{resolvedErrorText}</UiTypography>
 
-              <Box sx={styles.buttonsBox}>
-                {onRetry != null ? (
+                <Box sx={styles.buttonsBox}>
+                  {onRetry != null ? (
+                    <UIButton
+                      sx={styles.errorButton}
+                      variant="contained"
+                      type="button"
+                      disabled={isSubmitting || isClosing}
+                      onClick={onRetry}
+                    >
+                      <Typography component="span" sx={errorButtonTextStyles}>{t('notifications.error.retry_button')}</Typography>
+                    </UIButton>
+                  ) : null}
                   <UIButton
-                    sx={styles.errorButton}
-                    variant="contained"
+                    sx={[styles.errorButton, styles.errorButtonSecondary]}
+                    variant="outlined"
                     type="button"
-                    disabled={isSubmitting || isClosing}
-                    onClick={onRetry}
+                    disabled={isClosing}
+                    onClick={handleBack}
                   >
-                    <Typography component="span" sx={errorButtonTextStyles}>
-                      {t('notifications.error.retry_button')}
-                    </Typography>
+                    <Typography component="span" sx={errorButtonTextStyles}>{t('notifications.error.button')}</Typography>
                   </UIButton>
-                ) : null}
-                <UIButton
-                  sx={[styles.errorButton, styles.errorButtonSecondary]}
-                  variant="outlined"
-                  type="button"
-                  disabled={isClosing}
-                  onClick={handleBack}
-                >
-                  <Typography component="span" sx={errorButtonTextStyles}>
-                    {t('notifications.error.button')}
-                  </Typography>
-                </UIButton>
+                </Box>
               </Box>
             </Box>
           </Box>
-        </Box>
       </Fade>
     );
   }
@@ -136,20 +123,10 @@ export default function RegistrationNotification({
       <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
         <Box sx={styles.contentBox} aria-label={t('notifications.success.title')}>
           <Box sx={styles.successTopImgBox}>
-            <Box
-              component={ConfettiImage}
-              role="img"
-              aria-label={t('notifications.success.images.confetti')}
-              sx={styles.successTopConfetti}
-            />
+            <Box component={ConfettiImage} role="img" aria-label={t('notifications.success.images.confetti')} sx={styles.successTopConfetti} />
           </Box>
           <Box sx={styles.gears}>
-            <Box
-              component={SettingsImage}
-              role="img"
-              aria-label={t('notifications.success.images.gears')}
-              sx={styles.successGears}
-            />
+            <Box component={SettingsImage} role="img" aria-label={t('notifications.success.images.gears')} sx={styles.successGears} />
           </Box>
 
           <Box sx={styles.messageContainer}>

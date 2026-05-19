@@ -4,17 +4,20 @@ const dotenvExpand = require('dotenv-expand');
 
 dotenvExpand.expand(dotenv.config({ path: resolve(__dirname, '../.env') }));
 
-const rawBaseUrl =
+const baseUrl =
   process.env.LHCI_TARGET_URL ||
   process.env.REACT_APP_PROD_CONTAINER_API_URL ||
   process.env.REACT_APP_PROD_HOST_API_URL ||
   'http://localhost:3001';
 
-const baseUrl = rawBaseUrl.replace(/\/+$/, '');
+const normalizedBaseUrl = baseUrl === '/' ? '/' : baseUrl.replace(/\/+$/, '');
 
-const pages = [baseUrl || '/', `${baseUrl}/authentication`];
+const pages = [
+  normalizedBaseUrl,
+  normalizedBaseUrl === '/' ? '/authentication' : `${normalizedBaseUrl}/authentication`,
+];
 
 module.exports = {
-  baseUrl,
+  baseUrl: normalizedBaseUrl,
   pages,
 };

@@ -1,5 +1,6 @@
-import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 import { useCallback, useEffect, useRef, useState } from 'react';
+
+import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 
 import { RegistrationView } from '@/modules/user/features/auth/components/form-section/types';
 import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';

@@ -1,10 +1,10 @@
-import UIFormInputField from '@/components/ui-form-input-field';
-import UITypography from '@/components/ui-typography';
 import { Grid } from '@mui/material';
 import type { InputProps } from '@mui/material/Input';
 import { InputHTMLAttributes } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
+import UIFormInputField from '@/components/ui-form-input-field';
+import UITypography from '@/components/ui-typography';
 import styles from '@/modules/user/features/auth/components/form-section/components/styles';
 
 export interface FormFieldProps<T extends FieldValues = FieldValues> {

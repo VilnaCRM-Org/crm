@@ -52,11 +52,66 @@ interface SchemaFetcherModule {
 type ProcessExitCode = string | number | null | undefined;
 
 function getSchemaFetcherModule(): SchemaFetcherModule {
-  return require('../../docker/apollo-server/lib/schema-fetcher') as SchemaFetcherModule;
+  return jest.requireActual('../../docker/apollo-server/lib/schema-fetcher') as SchemaFetcherModule;
 }
 
 function getFetchAndSaveSchema(): (outputDir: string) => Promise<void> {
   return getSchemaFetcherModule().fetchAndSaveSchema;
+}
+
+function throwProcessExit(code?: ProcessExitCode): never {
+  throw new Error(`process.exit called with code ${code}`);
+}
+
+function mockFetchTimeout(): void {
+  (fetch as jest.Mock).mockImplementation((_url, opts: { signal?: AbortSignal }) => {
+    return new Promise((_resolve, reject) => {
+      const onAbort = (): void => {
+        const err = new Error('Aborted');
+        err.name = 'AbortError';
+        reject(err);
+      };
+
+      opts?.signal?.addEventListener('abort', onAbort, { once: true });
+    });
+  });
+}
+
+function createMockedLogger(): { info: jest.Mock; error: jest.Mock } {
+  return {
+    info: jest.fn(),
+    error: jest.fn(),
+  };
+}
+
+function createWinstonModuleMock(
+  mockConsoleTransport: jest.Mock,
+  mockFileTransport: jest.Mock
+): {
+  createLogger: jest.Mock;
+  format: { combine: jest.Mock; timestamp: jest.Mock; json: jest.Mock };
+  transports: { Console: jest.Mock; File: jest.Mock };
+} {
+  return {
+    createLogger: jest.fn(createMockedLogger),
+    format: {
+      combine: jest.fn(),
+      timestamp: jest.fn(),
+      json: jest.fn(),
+    },
+    transports: {
+      Console: mockConsoleTransport,
+      File: mockFileTransport,
+    },
+  };
+}
+
+function getWinstonModuleMock(): ReturnType<typeof createWinstonModuleMock> {
+  return jest.requireMock('winston') as ReturnType<typeof createWinstonModuleMock>;
+}
+
+function throwUnknownValue(value: unknown): never {
+  throw value;
 }
 
 beforeEach(() => {
@@ -64,7 +119,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   jest.useFakeTimers();
 
-  fsPromises = require('node:fs').promises;
+  fsPromises = jest.requireMock('node:fs').promises as typeof fsPromises;
 });
 
 afterEach(() => {
@@ -158,7 +213,7 @@ describe('schemaFetcher', () => {
 
       const dirError = new Error('Directory exists') as Error & { code: 'EEXIST' };
       dirError.code = 'EEXIST';
-      (fsPromises.mkdir as jest.Mock).mockRejectedValueOnce(dirError);
+      fsPromises.mkdir.mockRejectedValueOnce(dirError);
 
       await getFetchAndSaveSchema()(TEST_DIR);
 
@@ -166,11 +221,9 @@ describe('schemaFetcher', () => {
     });
 
     it('should throw error for non-EEXIST directory creation error', async () => {
-      const processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
-        code?: ProcessExitCode
-      ) => {
-        throw new Error(`process.exit called with code ${code}`);
-      }) as (code?: ProcessExitCode) => never);
+      const processExitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation((code?: ProcessExitCode) => throwProcessExit(code));
 
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
@@ -181,7 +234,7 @@ describe('schemaFetcher', () => {
 
       const dirError = new Error('Permission denied') as NodeJS.ErrnoException;
       dirError.code = 'EACCES';
-      (fsPromises.mkdir as jest.Mock).mockRejectedValue(dirError);
+      fsPromises.mkdir.mockRejectedValue(dirError);
 
       const p = getFetchAndSaveSchema()(TEST_DIR);
       const timerPromise = jest.runAllTimersAsync();
@@ -191,11 +244,9 @@ describe('schemaFetcher', () => {
     }, 10000);
 
     it('should throw error when directory creation fails without code property', async () => {
-      const processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
-        code?: ProcessExitCode
-      ) => {
-        throw new Error(`process.exit called with code ${code}`);
-      }) as (code?: ProcessExitCode) => never);
+      const processExitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation((code?: ProcessExitCode) => throwProcessExit(code));
 
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
@@ -205,7 +256,7 @@ describe('schemaFetcher', () => {
       });
 
       const dirError = new Error('Unknown filesystem error');
-      (fsPromises.mkdir as jest.Mock).mockRejectedValue(dirError);
+      fsPromises.mkdir.mockRejectedValue(dirError);
 
       const p = getFetchAndSaveSchema()(TEST_DIR);
       const timerPromise = jest.runAllTimersAsync();
@@ -215,11 +266,9 @@ describe('schemaFetcher', () => {
     }, 10000);
 
     it('should throw error when directory creation fails with null error', async () => {
-      const processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((
-        code?: ProcessExitCode
-      ) => {
-        throw new Error(`process.exit called with code ${code}`);
-      }) as (code?: ProcessExitCode) => never);
+      const processExitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation((code?: ProcessExitCode) => throwProcessExit(code));
 
       process.env.NODE_ENV = 'production';
       const mockSchema = 'type Query { hello: String }';
@@ -228,7 +277,7 @@ describe('schemaFetcher', () => {
         text: jest.fn().mockResolvedValue(mockSchema),
       });
 
-      (fsPromises.mkdir as jest.Mock).mockRejectedValue(null);
+      fsPromises.mkdir.mockRejectedValue(null);
 
       const p = getFetchAndSaveSchema()(TEST_DIR);
       const timerPromise = jest.runAllTimersAsync();
@@ -260,17 +309,7 @@ describe('schemaFetcher', () => {
     it('should handle fetch timeout', async () => {
       process.env.GRAPHQL_TIMEOUT_MS = '100';
 
-      (fetch as jest.Mock).mockImplementation(
-        (_url, opts: { signal?: AbortSignal }) =>
-          new Promise((_resolve, reject) => {
-            const onAbort = (): void => {
-              const err = new Error('Aborted');
-              err.name = 'AbortError';
-              reject(err);
-            };
-            opts?.signal?.addEventListener('abort', onAbort, { once: true });
-          })
-      );
+      mockFetchTimeout();
 
       const p = getFetchAndSaveSchema()(TEST_DIR);
       await jest.runAllTimersAsync();
@@ -490,11 +529,11 @@ describe('schemaFetcher', () => {
 
       // First call creates the logger
       await getFetchAndSaveSchema()(TEST_DIR);
-      const firstCallCount = jest.mocked(require('winston').createLogger).mock.calls.length;
+      const firstCallCount = getWinstonModuleMock().createLogger.mock.calls.length;
 
       // Second call should reuse the logger
       await getFetchAndSaveSchema()(TEST_DIR);
-      const secondCallCount = jest.mocked(require('winston').createLogger).mock.calls.length;
+      const secondCallCount = getWinstonModuleMock().createLogger.mock.calls.length;
 
       // Logger should only be created once
       expect(secondCallCount).toBe(firstCallCount);
@@ -518,13 +557,12 @@ describe('schemaFetcher', () => {
       jest.resetModules(); // Reset to clear cached logger
       process.env.GRAPHQL_LOG_LEVEL = 'debug';
 
-      const { getLogger } = require('../../docker/apollo-server/lib/schema-fetcher');
+      const { getLogger } = getSchemaFetcherModule();
       const logger = getLogger(TEST_DIR);
 
       expect(logger).toBeDefined();
       // Verify logger was created with the custom log level
-      const winston = require('winston');
-      expect(winston.createLogger).toHaveBeenCalledWith(
+      expect(getWinstonModuleMock().createLogger).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'debug',
         })
@@ -535,13 +573,12 @@ describe('schemaFetcher', () => {
       jest.resetModules(); // Reset to clear cached logger
       delete process.env.GRAPHQL_LOG_LEVEL;
 
-      const { getLogger } = require('../../docker/apollo-server/lib/schema-fetcher');
+      const { getLogger } = getSchemaFetcherModule();
       const logger = getLogger(TEST_DIR);
 
       expect(logger).toBeDefined();
       // Verify logger was created with the default log level 'info'
-      const winston = require('winston');
-      expect(winston.createLogger).toHaveBeenCalledWith(
+      expect(getWinstonModuleMock().createLogger).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'info',
         })
@@ -558,30 +595,21 @@ describe('schemaFetcher', () => {
         throw new Error('File transport initialization failed');
       });
 
-      jest.doMock('winston', () => ({
-        createLogger: jest.fn(() => ({
-          info: jest.fn(),
-          error: jest.fn(),
-        })),
-        format: {
-          combine: jest.fn(),
-          timestamp: jest.fn(),
-          json: jest.fn(),
-        },
-        transports: {
-          Console: mockConsoleTransport,
-          File: mockFileTransport,
-        },
-      }));
+      jest.doMock('winston', () =>
+        createWinstonModuleMock(mockConsoleTransport, mockFileTransport)
+      );
 
-      const { getLogger } = require('../../docker/apollo-server/lib/schema-fetcher');
+      const { getLogger } = getSchemaFetcherModule();
 
       const logger = getLogger(TEST_DIR);
 
       expect(logger).toBeDefined();
       expect(mockFileTransport).toHaveBeenCalled();
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Logger file transport could not be initialized (File transport initialization failed), using console only.'
+        [
+          'Logger file transport could not be initialized',
+          '(File transport initialization failed), using console only.',
+        ].join(' ')
       );
 
       consoleWarnSpy.mockRestore();
@@ -594,34 +622,23 @@ describe('schemaFetcher', () => {
 
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
       const mockConsoleTransport = jest.fn();
-      const mockFileTransport = jest.fn(() => {
-        throw String('String error message');
-      });
+      const mockFileTransport = jest.fn(() => throwUnknownValue('String error message'));
 
-      jest.doMock('winston', () => ({
-        createLogger: jest.fn(() => ({
-          info: jest.fn(),
-          error: jest.fn(),
-        })),
-        format: {
-          combine: jest.fn(),
-          timestamp: jest.fn(),
-          json: jest.fn(),
-        },
-        transports: {
-          Console: mockConsoleTransport,
-          File: mockFileTransport,
-        },
-      }));
+      jest.doMock('winston', () =>
+        createWinstonModuleMock(mockConsoleTransport, mockFileTransport)
+      );
 
-      const { getLogger } = require('../../docker/apollo-server/lib/schema-fetcher');
+      const { getLogger } = getSchemaFetcherModule();
 
       const logger = getLogger(TEST_DIR);
 
       expect(logger).toBeDefined();
       expect(mockFileTransport).toHaveBeenCalled();
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        'Logger file transport could not be initialized (String error message), using console only.'
+        [
+          'Logger file transport could not be initialized',
+          '(String error message), using console only.',
+        ].join(' ')
       );
 
       consoleWarnSpy.mockRestore();
@@ -633,9 +650,9 @@ describe('schemaFetcher', () => {
     let processExitSpy: jest.SpyInstance<never, [code?: ProcessExitCode], unknown>;
 
     beforeEach(() => {
-      processExitSpy = jest.spyOn(process, 'exit').mockImplementation(((code?: ProcessExitCode) => {
-        throw new Error(`process.exit called with code ${code}`);
-      }) as (code?: ProcessExitCode) => never);
+      processExitSpy = jest
+        .spyOn(process, 'exit')
+        .mockImplementation((code?: ProcessExitCode) => throwProcessExit(code));
     });
 
     afterEach(() => {
@@ -742,7 +759,7 @@ describe('schemaFetcher', () => {
 
     it('should succeed when schema fetch works and leave lastError unset', async () => {
       const pathLib = jest.requireActual<typeof import('path')>('path');
-      const fsMock = require('node:fs') as unknown as {
+      const fsMock = jest.requireMock('node:fs') as {
         promises: { writeFile: jest.Mock; mkdir: jest.Mock };
       };
       fsMock.promises.writeFile.mockResolvedValue(undefined);

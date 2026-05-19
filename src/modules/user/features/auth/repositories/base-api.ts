@@ -1,5 +1,3 @@
-import { isHttpError } from '@/services/https-client/http-error';
-
 import {
   ApiError,
   ValidationError,
@@ -7,6 +5,8 @@ import {
   ConflictError,
   ApiErrorCodes,
 } from '@/modules/user/types/api-errors';
+import { isHttpError } from '@/services/https-client/http-error';
+
 
 export default class BaseAPI {
   protected handleApiError(error: unknown, context: string): ApiError {

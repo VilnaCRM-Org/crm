@@ -1,7 +1,7 @@
-import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 
 import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
 import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
+import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 
 export type AuthClients = {
   loginAPI: LoginAPI;

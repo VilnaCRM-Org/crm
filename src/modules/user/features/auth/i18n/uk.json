@@ -67,6 +67,11 @@
       "login": "Помилка входу: {{reason}}"
     },
     "form": {
+      "email_input": {
+        "placeholder": "Введіть електронну пошту",
+        "label": "Електронна пошта",
+        "required": "Це поле обов'язкове"
+      },
       "password_input": {
         "placeholder": "Введіть пароль",
         "label": "Пароль"
