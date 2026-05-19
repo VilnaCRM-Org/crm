@@ -65,6 +65,18 @@ export default function FormSection(): JSX.Element {
 
   const showNotification = mode === 'register' && registrationView !== 'form';
 
+  const setProviderButtonsInert = useCallback(
+    (el: HTMLDivElement | null): void => {
+      if (!el) return;
+      if (showNotification) {
+        el.setAttribute('inert', '');
+      } else {
+        el.removeAttribute('inert');
+      }
+    },
+    [showNotification]
+  );
+
   return (
     <Box component="section" sx={styles.formSection}>
       <Box sx={styles.formWrapper}>
@@ -78,15 +90,7 @@ export default function FormSection(): JSX.Element {
 
         <Box
           id="auth-provider-buttons-container"
-          ref={(el: HTMLDivElement | null) => {
-            if (el) {
-              if (showNotification) {
-                el.setAttribute('inert', '');
-              } else {
-                el.removeAttribute('inert');
-              }
-            }
-          }}
+          ref={setProviderButtonsInert}
         >
           <AuthProviderButtons />
         </Box>
