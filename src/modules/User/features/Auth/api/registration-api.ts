@@ -1,9 +1,10 @@
-import API_ENDPOINTS from '@/config/apiConfig';
-import TOKENS from '@/config/tokens';
-import type HttpsClient from '@/services/HttpsClient/https-client';
 import { inject, injectable } from 'tsyringe';
 
+import API_ENDPOINTS from '@/config/apiConfig';
+import TOKENS from '@/config/tokens';
 import type { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import type HttpsClient from '@/services/HttpsClient/https-client';
+
 
 import type { RegistrationResponse } from '../types/ApiResponses';
 

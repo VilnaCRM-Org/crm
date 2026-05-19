@@ -1,6 +1,7 @@
-import useAppDispatch from '@/stores/hooks';
 import type { TFunction } from 'i18next';
 import { Dispatch, SetStateAction, useCallback, useState } from 'react';
+
+import useAppDispatch from '@/stores/hooks';
 
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import { loginUser } from '@/modules/User/store';

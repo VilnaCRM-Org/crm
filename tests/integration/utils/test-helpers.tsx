@@ -1,7 +1,6 @@
-/* eslint-disable import/no-self-import, import/no-relative-packages, import/order */
-import React from 'react';
 import { combineReducers, configureStore, type EnhancedStore } from '@reduxjs/toolkit';
 import { render, RenderOptions } from '@testing-library/react';
+import React from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';

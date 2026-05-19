@@ -1,7 +1,7 @@
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import type { TFunction } from 'i18next';
-import { useState } from 'react';
+import { type MouseEvent, useCallback, useState } from 'react';
 import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -16,6 +16,10 @@ type PasswordFieldProps = {
   autoComplete: string;
 };
 
+function preventMouseDown(event: MouseEvent<HTMLButtonElement>): void {
+  event.preventDefault();
+}
+
 function PasswordVisibilityButton({
   show,
   onToggle,
@@ -29,7 +33,7 @@ function PasswordVisibilityButton({
     <InputAdornment position="end" sx={styles.endAdornment}>
       <IconButton
         onClick={onToggle}
-        onMouseDown={(e) => e.preventDefault()}
+        onMouseDown={preventMouseDown}
         aria-label={show ? t('auth.password.hide') : t('auth.password.show')}
         aria-pressed={show}
         edge="end"
@@ -48,7 +52,7 @@ export default function PasswordField<T extends FieldValues & { password: string
 }: PasswordFieldProps): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
-  const toggle = (): void => setShowPassword((prev) => !prev);
+  const toggle = useCallback((): void => setShowPassword((prev) => !prev), []);
   const validators = createValidators(t);
 
   return (

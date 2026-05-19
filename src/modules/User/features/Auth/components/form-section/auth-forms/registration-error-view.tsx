@@ -1,8 +1,9 @@
+import { Box, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import UIButton from '@/components/UIButton';
 import UiTypography from '@/components/UITypography';
-import { Box, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
 
 import styles from './registration-notification.error-styles';
 

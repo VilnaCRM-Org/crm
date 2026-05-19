@@ -1,6 +1,3 @@
-import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
-import { type UiError } from '@/services/error';
 import {
   ActionReducerMapBuilder,
   createAsyncThunk,
@@ -8,12 +5,15 @@ import {
   PayloadAction,
 } from '@reduxjs/toolkit';
 
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import AuthUiErrorMapper from '@/modules/User/store/auth-ui-error-mapper';
 import LoginResponseMapper, {
   type LoginSuccessPayload,
 } from '@/modules/User/store/login-response-mapper';
 import { ThunkExtra } from '@/modules/User/store/types';
+import { type UiError } from '@/services/error';
 
 const loginResponseMapper = container.resolve<LoginResponseMapper>(TOKENS.LoginResponseMapper);
 const authUiErrorMapper = container.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper);

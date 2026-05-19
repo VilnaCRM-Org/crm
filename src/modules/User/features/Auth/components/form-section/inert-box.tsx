@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import type { ReactNode } from 'react';
+import { type ReactNode, useCallback } from 'react';
 
 interface InertBoxProps {
   id: string;
@@ -14,8 +14,13 @@ function applyInert(el: HTMLDivElement | null, inert: boolean): void {
 }
 
 export default function InertBox({ id, inert, children }: InertBoxProps): JSX.Element {
+  const setInertRef = useCallback(
+    (el: HTMLDivElement | null): void => applyInert(el, inert),
+    [inert]
+  );
+
   return (
-    <Box id={id} ref={(el: HTMLDivElement | null) => applyInert(el, inert)}>
+    <Box id={id} ref={setInertRef}>
       {children}
     </Box>
   );

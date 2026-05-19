@@ -1,6 +1,6 @@
-import UIForm from '@/components/UIForm';
 import { useTranslation } from 'react-i18next';
 
+import UIForm from '@/components/UIForm';
 import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
 import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';

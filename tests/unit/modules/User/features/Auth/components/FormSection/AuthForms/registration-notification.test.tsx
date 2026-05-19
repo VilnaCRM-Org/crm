@@ -116,9 +116,10 @@ describe('RegistrationNotification', () => {
     function RerenderHarness(): JSX.Element {
       const [idx, setIdx] = React.useState(0);
       const onShown = idx === 0 ? onShown1 : onShown2;
+      const handleSwitch = React.useCallback((): void => setIdx(1), []);
       return (
         <>
-          <button type="button" onClick={() => setIdx(1)}>
+          <button type="button" onClick={handleSwitch}>
             switch-callback
           </button>
           <RegistrationNotification
@@ -144,9 +145,13 @@ describe('RegistrationNotification', () => {
     const onBack = jest.fn();
     function RerenderHarness(): JSX.Element {
       const [, setCounter] = React.useState(0);
+      const handleRerender = React.useCallback(
+        (): void => setCounter((value) => value + 1),
+        []
+      );
       return (
         <>
-          <button type="button" onClick={() => setCounter((value) => value + 1)}>
+          <button type="button" onClick={handleRerender}>
             rerender
           </button>
           <RegistrationNotification
@@ -191,6 +196,23 @@ describe('RegistrationNotification', () => {
     act(() => {
       jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
     });
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('only calls onBack once when back is clicked rapidly in error view', () => {
+    jest.useFakeTimers();
+    const onBack = jest.fn();
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    const backButton = screen.getByText('Назад');
+    fireEvent.click(backButton);
+    fireEvent.click(backButton);
+    fireEvent.click(backButton);
+
+    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 

@@ -72,6 +72,11 @@
       "login": "Sign in error: {{reason}}"
     },
     "form": {
+      "email_input": {
+        "placeholder": "Enter your email",
+        "label": "Email",
+        "required": "This field is required"
+      },
       "password_input": {
         "placeholder": "Enter your password",
         "label": "Password"

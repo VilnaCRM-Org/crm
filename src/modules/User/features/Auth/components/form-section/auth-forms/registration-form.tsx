@@ -1,8 +1,8 @@
-import UIForm from '@/components/UIForm';
 import type { TFunction } from 'i18next';
 import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import UIForm from '@/components/UIForm';
 import InertBox from '@/modules/User/features/Auth/components/form-section/inert-box';
 import type { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
 import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';

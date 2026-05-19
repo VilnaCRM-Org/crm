@@ -10,6 +10,14 @@ const mockLoginUser = jest.fn();
 const mockFormField = jest.fn();
 const mockUIForm = jest.fn();
 
+function makeSubmitHandler(
+  onSubmit: (data: { email: string; password: string }) => Promise<void>
+): () => void {
+  return (): void => {
+    void onSubmit({ email: 'user@example.com', password: 'secret123' });
+  };
+}
+
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string, options?: Record<string, unknown>) => string } => ({
     t: (key: string, options?: Record<string, unknown>): string => {
@@ -68,10 +76,7 @@ jest.mock('@/components/UIForm', () => ({
 
     return (
       <div>
-        <button
-          type="button"
-          onClick={() => props.onSubmit({ email: 'user@example.com', password: 'secret123' })}
-        >
+        <button type="button" onClick={makeSubmitHandler(props.onSubmit)}>
           submit
         </button>
         <div data-testid="form-error">{props.error}</div>
@@ -134,7 +139,7 @@ describe('LoginForm', () => {
   it('handles non-object submit failures through the translated error path', async () => {
     mockDispatch.mockReturnValue({
       // Rejecting with a non-Error primitive is the scenario under test.
-      // eslint-disable-next-line prefer-promise-reject-errors
+       
       unwrap: () => Promise.reject(404),
     });
 
@@ -197,7 +202,7 @@ describe('LoginForm', () => {
         () => ({ __esModule: true, default: 'RegistrationFormFields' })
       );
 
-      // eslint-disable-next-line global-require -- jest.isolateModules requires a synchronous require
+       
       const authForms = require('@/modules/User/features/Auth/components/form-section/auth-forms');
       expect(authForms.LoginForm).toBe('LoginForm');
       expect(authForms.RegistrationForm).toBe('RegistrationForm');

@@ -6,6 +6,14 @@ import FormSection from '@/modules/User/features/Auth/components/form-section';
 
 const uiButtonMock = jest.fn();
 
+function makeViewChangeHandler(onViewChange?: (view: string) => void): (() => void) | undefined {
+  return onViewChange
+    ? (): void => {
+        onViewChange('success');
+      }
+    : undefined;
+}
+
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({
     t: (key: string): string => key,
@@ -63,7 +71,7 @@ jest.mock(
         <button
           type="button"
           data-testid="trigger-success-view"
-          onClick={() => onViewChange?.('success')}
+          onClick={makeViewChangeHandler(onViewChange)}
         />
       </div>
     ),
@@ -148,7 +156,7 @@ function renderIsolatedFormSectionWithLoginModule(
           <button
             type="button"
             data-testid="trigger-success-view"
-            onClick={() => onViewChange?.('success')}
+            onClick={makeViewChangeHandler(onViewChange)}
           />
         </div>
       ),

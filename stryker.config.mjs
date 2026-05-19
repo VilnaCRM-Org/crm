@@ -18,6 +18,7 @@ const config = {
     'coverage',
     'tests/memory-leak/results/**',
     '.junie/',
+    '.qlty/',
   ],
   thresholds: { high: 100, break: 2.17 }, // TODO: Update `break` to 90 once full test coverage is implemented
 };

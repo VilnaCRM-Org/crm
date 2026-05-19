@@ -1,6 +1,7 @@
+import type { Theme } from '@mui/material/styles';
+
 import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints';
 import { paletteColors } from '@/styles/colors';
-import type { Theme } from '@mui/material/styles';
 
 const compactMaxWidth = breakpointsTheme.breakpoints.values.sm - 1;
 

@@ -1,9 +1,10 @@
+import { Box, Typography } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+
 import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/UIButton';
 import UiTypography from '@/components/UITypography';
-import { Box, Typography } from '@mui/material';
-import { useTranslation } from 'react-i18next';
 
 import styles from './registration-notification.success-styles';
 

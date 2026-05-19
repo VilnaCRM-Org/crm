@@ -533,7 +533,6 @@ crm/
 ├── Makefile                         # Modified: add suppression scan target and variables
 ├── .eslintrc.js                     # In scan scope; modify only for lint-config fixes
 ├── scripts/                         # In scan scope for repository tooling suppressions
-│   └── cloudfront_routing.js        # Existing known suppression location
 ├── src/                             # In scan scope for source/story suppressions
 │   ├── ButtonExample.tsx            # Existing known suppression location
 │   ├── services/

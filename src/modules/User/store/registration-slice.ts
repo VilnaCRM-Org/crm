@@ -1,10 +1,11 @@
-import type { UiError } from '@/services/error';
 import {
   createSlice,
   createAsyncThunk,
   PayloadAction,
   ActionReducerMapBuilder,
 } from '@reduxjs/toolkit';
+
+import type { UiError } from '@/services/error';
 
 import { SafeUserInfo } from '../features/Auth/types/ApiResponses';
 import { RegisterUserDto } from '../features/Auth/types/Credentials';
