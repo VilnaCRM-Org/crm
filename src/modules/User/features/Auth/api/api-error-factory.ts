@@ -1,9 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import { isHttpError } from '@/services/HttpsClient/HttpError';
-import ApiStatusErrorFactory, {
-  type HttpErrorLike,
-} from '@auth/api/api-status-error-factory';
+import ApiStatusErrorFactory, { type HttpErrorLike } from '@auth/api/api-status-error-factory';
 import { ApiError, ApiErrorCodes } from '@auth/api/ApiErrors';
 
 const NETWORK_KEYWORDS = [

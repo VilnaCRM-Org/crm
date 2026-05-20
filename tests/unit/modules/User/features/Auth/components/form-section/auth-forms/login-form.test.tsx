@@ -1,9 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
-import LoginForm, {
-  LoginErrorMessageNormalizer,
-} from '@/modules/User/features/Auth/components/form-section/auth-forms/login-form';
+import LoginForm, { LoginErrorMessageNormalizer } from '@auth-forms/login-form';
 
 const normalizeLoginErrorMessage = (error: unknown): string =>
   new LoginErrorMessageNormalizer().normalize(error);
@@ -191,31 +189,24 @@ describe('LoginForm', () => {
 
   it('exposes auth form barrel exports', () => {
     jest.isolateModules(() => {
-      jest.doMock(
-        '@/modules/User/features/Auth/components/form-section/auth-forms/login-form',
-        () => ({ __esModule: true, default: 'LoginForm' })
-      );
-      jest.doMock(
-        '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form',
-        () => ({ __esModule: true, default: 'RegistrationForm' })
-      );
-      jest.doMock(
-        '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form-fields',
-        () => ({ __esModule: true, default: 'RegistrationFormFields' })
-      );
+      jest.doMock('@auth-forms/login-form', () => ({ __esModule: true, default: 'LoginForm' }));
+      jest.doMock('@auth-forms/registration-form', () => ({
+        __esModule: true,
+        default: 'RegistrationForm',
+      }));
+      jest.doMock('@auth-forms/registration-form-fields', () => ({
+        __esModule: true,
+        default: 'RegistrationFormFields',
+      }));
 
       const authForms = require('@/modules/User/features/Auth/components/form-section/auth-forms');
       expect(authForms.LoginForm).toBe('LoginForm');
       expect(authForms.RegistrationForm).toBe('RegistrationForm');
       expect(authForms.RegistrationFormFields).toBe('RegistrationFormFields');
 
-      jest.dontMock('@/modules/User/features/Auth/components/form-section/auth-forms/login-form');
-      jest.dontMock(
-        '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form'
-      );
-      jest.dontMock(
-        '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form-fields'
-      );
+      jest.dontMock('@auth-forms/login-form');
+      jest.dontMock('@auth-forms/registration-form');
+      jest.dontMock('@auth-forms/registration-form-fields');
     });
   });
 });

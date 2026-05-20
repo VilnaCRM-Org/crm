@@ -3,7 +3,6 @@ import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/UIForm';
-import RegistrationFormFields from '@auth/components/form-section/auth-forms/registration-form-fields';
 import InertBox from '@auth/components/form-section/inert-box';
 import type { RegistrationView } from '@auth/components/form-section/types';
 import { createValidators } from '@auth/components/form-section/validations';
@@ -11,6 +10,7 @@ import useRegistrationForm from '@auth/hooks/use-registration-form';
 import { RegisterUserDto } from '@auth/types/Credentials';
 import getSubmitLabelKey from '@auth/utils/getSubmitLabelKey';
 import loadRegistrationNotification from '@auth/utils/load-registration-notification';
+import RegistrationFormFields from '@auth-forms/registration-form-fields';
 
 type RegistrationFormProps = {
   onViewChange?: (view: RegistrationView) => void;

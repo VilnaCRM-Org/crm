@@ -4,7 +4,7 @@ import {
   compactViewport,
   messageButtonText,
   notificationSection,
-} from '@auth/components/form-section/auth-forms/registration-notification.shared-styles';
+} from '@auth-forms/registration-notification.shared-styles';
 
 const contentBox = {
   zIndex: 3,

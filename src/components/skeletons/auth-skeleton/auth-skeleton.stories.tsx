@@ -28,7 +28,8 @@ export const Default: Story = {
     docs: {
       description: {
         story:
-          'Loading skeleton for authentication forms. Responsive design adapts to different screen sizes. ' +
+          'Loading skeleton for authentication forms. ' +
+          'Responsive design adapts to different screen sizes. ' +
           'Use Canvas mode and the viewport toolbar to test different breakpoints ' +
           '(XS/320px, SM/480px, MD/768px, LG/1024px, XL/1440px).',
       },

@@ -6,7 +6,7 @@ import { initReactI18next } from 'react-i18next';
 import localization from '@/i18n/localization.json';
 import RegistrationNotification, {
   BACK_CLOSE_ANIMATION_MS,
-} from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification';
+} from '@auth-forms/registration-notification';
 
 import renderWithProviders from '../../../../../../../utils/renderWithProviders';
 
@@ -28,6 +28,11 @@ const createUkrainianI18n = (): ReturnType<typeof i18n.createInstance> => {
 
   return instance;
 };
+
+const VALIDATION_FALLBACK_HEAD = 'Помилка реєстрації.';
+const VALIDATION_FALLBACK_TAIL = 'Спробуйте пізніше';
+const DEFAULT_ERROR_HEAD = 'Щось пішло не так із запитом.';
+const DEFAULT_ERROR_TAIL = 'Спробуйте ще раз пізніше';
 
 describe('RegistrationNotification', () => {
   const baseProps = {
@@ -52,7 +57,8 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByText('Помилка реєстрації. Спробуйте пізніше')).toBeInTheDocument();
+    const validationFallback = `${VALIDATION_FALLBACK_HEAD} ${VALIDATION_FALLBACK_TAIL}`;
+    expect(screen.getByText(validationFallback)).toBeInTheDocument();
   });
 
   it('keeps custom backend error text when it is not the generic validation fallback', () => {
@@ -79,9 +85,8 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(
-      screen.getByText('Щось пішло не так із запитом. Спробуйте ще раз пізніше')
-    ).toBeInTheDocument();
+    const defaultLocalizedError = `${DEFAULT_ERROR_HEAD} ${DEFAULT_ERROR_TAIL}`;
+    expect(screen.getByText(defaultLocalizedError)).toBeInTheDocument();
   });
 
   it('renders the success notification', () => {

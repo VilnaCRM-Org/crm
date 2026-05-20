@@ -4,10 +4,10 @@ import { BrowserRouter } from 'react-router-dom';
 
 import UIButton from '@/components/UIButton';
 import UIForm from '@/components/UIForm';
-import RegistrationForm from '@auth/components/form-section/auth-forms/registration-form';
 import UserOptions from '@auth/components/form-section/components/user-options';
 import type { RegistrationView } from '@auth/components/form-section/types';
 import loadRegistrationNotification from '@auth/utils/load-registration-notification';
+import RegistrationForm from '@auth-forms/registration-form';
 
 const mockUseRegistrationForm = jest.fn();
 const mockRegistrationNotification = jest.fn();
@@ -21,43 +21,37 @@ jest.mock('@/modules/User/features/Auth/hooks/use-registration-form', () => ({
   default: (...args: unknown[]): unknown => mockUseRegistrationForm(...args),
 }));
 
-jest.mock(
-  '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification',
-  () => ({
-    __esModule: true,
-    default: (props: {
-      view: RegistrationView;
-      errorText: string;
-      isSubmitting: boolean;
-      onShown: () => void;
-      onBack: () => void;
-      onRetry: () => void;
-    }): JSX.Element => {
-      mockRegistrationNotification(props);
-      return (
-        <div data-testid="registration-notification">
-          <button type="button" onClick={props.onShown}>
-            shown
-          </button>
-          <button type="button" onClick={props.onBack}>
-            back
-          </button>
-          <button type="button" onClick={props.onRetry}>
-            retry
-          </button>
-        </div>
-      );
-    },
-  })
-);
+jest.mock('@auth-forms/registration-notification', () => ({
+  __esModule: true,
+  default: (props: {
+    view: RegistrationView;
+    errorText: string;
+    isSubmitting: boolean;
+    onShown: () => void;
+    onBack: () => void;
+    onRetry: () => void;
+  }): JSX.Element => {
+    mockRegistrationNotification(props);
+    return (
+      <div data-testid="registration-notification">
+        <button type="button" onClick={props.onShown}>
+          shown
+        </button>
+        <button type="button" onClick={props.onBack}>
+          back
+        </button>
+        <button type="button" onClick={props.onRetry}>
+          retry
+        </button>
+      </div>
+    );
+  },
+}));
 
-jest.mock(
-  '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form-fields',
-  () => ({
-    __esModule: true,
-    default: (): JSX.Element => <div data-testid="registration-fields" />,
-  })
-);
+jest.mock('@auth-forms/registration-form-fields', () => ({
+  __esModule: true,
+  default: (): JSX.Element => <div data-testid="registration-fields" />,
+}));
 
 const baseRegistrationFormState = {
   view: 'form' as RegistrationView,
@@ -230,21 +224,16 @@ describe('RegistrationForm and UserOptions components', () => {
 
   it('resets the lazy registration notification cache after a failed import', async () => {
     jest.resetModules();
-    jest.doMock(
-      '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification',
-      () => {
-        throw new Error('load failed');
-      }
-    );
+    jest.doMock('@auth-forms/registration-notification', () => {
+      throw new Error('load failed');
+    });
     const { default: loadNotification } =
       await import('@/modules/User/features/Auth/utils/load-registration-notification');
 
     await expect(loadNotification()).rejects.toThrow('load failed');
     await expect(loadNotification()).rejects.toThrow('load failed');
 
-    jest.dontMock(
-      '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification'
-    );
+    jest.dontMock('@auth-forms/registration-notification');
   });
 });
 
