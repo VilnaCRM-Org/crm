@@ -1,4 +1,4 @@
-import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import { RegisterUserDto } from '@auth/types/Credentials';
 
 const emptyUser: RegisterUserDto = {} as RegisterUserDto;
 

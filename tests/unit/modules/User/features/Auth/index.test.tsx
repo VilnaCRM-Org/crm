@@ -18,7 +18,7 @@ jest.mock('@/components/UIFooter', () => ({
   default: (): ReactElement => <div data-testid="auth-shell-footer" />,
 }));
 
-jest.mock('@/modules/User/features/Auth/components/auth-skeleton', () => ({
+jest.mock('@auth/components/auth-skeleton', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="auth-shell-skeleton" />,
 }));
@@ -29,7 +29,7 @@ const mockFormSectionDefault = jest.fn((): never => {
   });
 });
 
-jest.mock('@/modules/User/features/Auth/components/form-section', () => ({
+jest.mock('@auth/components/form-section', () => ({
   __esModule: true,
   default: (): never => mockFormSectionDefault(),
 }));

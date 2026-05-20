@@ -1,6 +1,6 @@
 import { Locator, Page, expect } from '@playwright/test';
 
-import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import { RegisterUserDto } from '@auth/types/Credentials';
 
 import {
   placeholderInitials,

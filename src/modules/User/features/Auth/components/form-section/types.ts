@@ -1,4 +1,4 @@
-import { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import { LoginUserDto, RegisterUserDto } from '@auth/types/Credentials';
 
 export type AuthMode = 'login' | 'register';
 export type RegistrationView = 'form' | 'success' | 'error';

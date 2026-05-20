@@ -49,4 +49,7 @@ jobs:
       - name: Start Pipeline Execution
         run: |
           aws codepipeline start-pipeline-execution --name "sandbox-crm-creation" \
-            --variables "name=BRANCH_NAME,value=${BRANCH_NAME}" "name=PR_NUMBER,value=${PR_NUMBER}" "name=IS_PULL_REQUEST,value=1"
+            --variables \
+            "name=BRANCH_NAME,value=${BRANCH_NAME}" \
+            "name=PR_NUMBER,value=${PR_NUMBER}" \
+            "name=IS_PULL_REQUEST,value=1"

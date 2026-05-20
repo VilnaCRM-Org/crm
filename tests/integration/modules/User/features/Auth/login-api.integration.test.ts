@@ -2,10 +2,10 @@ import { rest } from 'msw';
 
 import '../../../../setup';
 import API_ENDPOINTS from '@/config/apiConfig';
-import container from '@/config/DependencyInjectionConfig';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import { AuthenticationError } from '@/modules/User/features/Auth/api/ApiErrors';
-import LoginAPI from '@/modules/User/features/Auth/api/login-api';
+import { AuthenticationError } from '@auth/api/ApiErrors';
+import LoginAPI from '@auth/api/login-api';
 
 import server from '../../../../mocks/server';
 
@@ -112,19 +112,15 @@ describe('LoginAPI Integration', () => {
       );
     });
 
-    it('should handle 408 timeout (MSW limitation: triggers network error)', async () => {
-      // Note: MSW has a limitation where certain status codes (408, 504) trigger
-      // network errors instead of returning the status code. Our code correctly
-      // handles this as a network error, which is appropriate fallback behavior.
+    it('should throw ApiError for 408 timeout', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(408), ctx.json({ message: 'Request timeout' }))
         )
       );
 
-      // MSW triggers network error for 408, our code handles it correctly
       await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Network error. Please check your connection.'
+        'Request timed out. Please try again.'
       );
     });
 
@@ -176,19 +172,15 @@ describe('LoginAPI Integration', () => {
       );
     });
 
-    it('should handle 504 gateway timeout (MSW limitation: triggers network error)', async () => {
-      // Note: MSW has a limitation where certain status codes (408, 504) trigger
-      // network errors instead of returning the status code. Our code correctly
-      // handles this as a network error, which is appropriate fallback behavior.
+    it('should throw ApiError for 504 gateway timeout', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(504), ctx.json({ message: 'Gateway timeout' }))
         )
       );
 
-      // MSW triggers network error for 504, our code handles it correctly
       await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Network error. Please check your connection.'
+        'Service unavailable. Please try again later.'
       );
     });
 

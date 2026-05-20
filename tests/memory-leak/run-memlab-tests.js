@@ -7,7 +7,7 @@ const { run, analyze } = require('@memlab/api');
 const { StringAnalysis } = require('@memlab/heap-analysis');
 
 const { hasValidScenarioHooks } = require('./utils/scenario-validation');
-const { initializeLocalization } = require('./utils/initializeLocalization');
+const { initializeLocalization } = require('./utils/initialize-localization');
 const logger = require('./utils/logger');
 
 const memoryLeakDir = path.join('.', 'tests', 'memory-leak');
