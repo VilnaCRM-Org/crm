@@ -38,8 +38,6 @@ make lighthouse-desktop
 make lighthouse-mobile
 ```
 
-All shell commands issued by Codex in this repository must be prefixed with `rtk`.
-
 ## Skill Layout
 
 - `.agents/skills/bmad-*`: BMAD agents, planning workflows, and interactive methods.

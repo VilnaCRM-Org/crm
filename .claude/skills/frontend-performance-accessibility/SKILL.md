@@ -41,7 +41,8 @@ make lighthouse-desktop
 make lighthouse-mobile
 ```
 
-Run the subset that matches the change, then finish with `make lint`.
+Run the subset that matches the change, then finish with `make format` followed
+by `make lint`.
 
 ## Supporting Files
 

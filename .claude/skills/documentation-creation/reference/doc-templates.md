@@ -2,7 +2,7 @@
 
 ## Feature README
 
-```markdown
+````markdown
 # Feature Name
 
 ## Purpose
@@ -21,7 +21,7 @@ What user workflow this feature supports.
 make test-unit-client
 make lint
 ```
-```
+````
 
 ## Skill Reference
 
