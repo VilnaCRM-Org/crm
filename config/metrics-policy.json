@@ -23,7 +23,7 @@
     "class_wmc_max": 30,
     "class_npm_max": 8,
     "class_npa_max": 2,
-    "class_coa_max": 0.60,
+    "class_coa_max": 0.6,
     "class_cda_max": 0.25,
     "interface_npm_max": 10,
     "interface_npa_max": 15
@@ -31,10 +31,10 @@
   "review": {
     "mi_original_min": 65,
     "mi_sei_min": 65,
-    "cloc_ratio_min": 0.10,
-    "cloc_ratio_max": 0.60,
+    "cloc_ratio_min": 0.1,
+    "cloc_ratio_max": 0.6,
     "blank_ratio_min": 0.02,
-    "blank_ratio_max": 0.30,
+    "blank_ratio_max": 0.3,
     "halstead_n1_function_max": 30,
     "halstead_n1_total_function_max": 80,
     "halstead_n2_function_max": 40,
@@ -46,8 +46,8 @@
     "halstead_level_function_min": 0.03,
     "halstead_effort_function_max": 30000,
     "halstead_time_function_max": 1800,
-    "halstead_purity_ratio_function_min": 0.60,
-    "halstead_purity_ratio_function_max": 1.40,
+    "halstead_purity_ratio_function_min": 0.6,
+    "halstead_purity_ratio_function_max": 1.4,
     "halstead_n1_file_max": 60,
     "halstead_n1_total_file_max": 400,
     "halstead_n2_file_max": 90,
@@ -59,7 +59,7 @@
     "halstead_level_file_min": 0.02,
     "halstead_effort_file_max": 250000,
     "halstead_time_file_max": 15000,
-    "halstead_purity_ratio_file_min": 0.60,
-    "halstead_purity_ratio_file_max": 1.40
+    "halstead_purity_ratio_file_min": 0.6,
+    "halstead_purity_ratio_file_max": 1.4
   }
 }

@@ -115,7 +115,7 @@ function SuccessNotification({ isClosing, onBack }: SuccessNotificationProps): J
               component={ConfettiImage}
               role="img"
               aria-label={t('notifications.success.images.confetti')}
-              sx={styles.successTopConfetti}
+              sx={styles.successConfetti}
             />
           </Box>
           <Box sx={styles.gears}>
@@ -155,7 +155,7 @@ function SuccessNotification({ isClosing, onBack }: SuccessNotificationProps): J
           </Box>
 
           <Box sx={styles.bottomImgBox}>
-            <Box component={ConfettiImage} aria-hidden="true" sx={styles.successBottomConfetti} />
+            <Box component={ConfettiImage} aria-hidden="true" sx={styles.successConfetti} />
           </Box>
         </Box>
       </Box>

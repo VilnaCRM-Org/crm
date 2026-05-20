@@ -57,7 +57,7 @@ export default {
       transform: 'scale(1)',
     },
   },
-  successTopConfetti: {
+  successConfetti: {
     display: 'block',
   },
   bottomImgBox: {
@@ -80,9 +80,6 @@ export default {
       bottom: '0.1rem',
       transform: 'rotate(-180deg) scale(1)',
     },
-  },
-  successBottomConfetti: {
-    display: 'block',
   },
   gears: {
     position: 'absolute',
@@ -241,9 +238,10 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       paddingTop: '4.25rem',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height:${heightBreakpoints.medium}px)`]: {
-      paddingTop: '1rem',
-    },
+    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height:${heightBreakpoints.medium}px)`]:
+      {
+        paddingTop: '1rem',
+      },
     [compactViewport]: {
       paddingTop: '0.25rem',
     },
