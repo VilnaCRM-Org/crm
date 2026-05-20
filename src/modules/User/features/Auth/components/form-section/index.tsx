@@ -5,16 +5,16 @@ import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/UIButton';
 import UITypography from '@/components/UITypography';
-import RegistrationForm from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form';
-import AuthProviderButtons from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons';
-import InertBox from '@/modules/User/features/Auth/components/form-section/inert-box';
-import styles from '@/modules/User/features/Auth/components/form-section/styles';
-import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
-import type { AuthMode } from '@/modules/User/features/Auth/components/form-section/types';
+import RegistrationForm from '@auth/components/form-section/auth-forms/registration-form';
+import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
+import InertBox from '@auth/components/form-section/inert-box';
+import styles from '@auth/components/form-section/styles';
+import { RegistrationView } from '@auth/components/form-section/types';
+import type { AuthMode } from '@auth/components/form-section/types';
 import useLoginSwitcher, {
   type LoadLoginErrorKey,
-} from '@/modules/User/features/Auth/components/form-section/use-login-switcher';
-import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
+} from '@auth/components/form-section/use-login-switcher';
+import loadLoginForm from '@auth/utils/load-login-form';
 
 const LoginForm = lazy(loadLoginForm);
 

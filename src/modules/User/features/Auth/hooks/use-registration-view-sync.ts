@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import { RegistrationView } from '@auth/components/form-section/types';
 
 interface Params {
   user: unknown;

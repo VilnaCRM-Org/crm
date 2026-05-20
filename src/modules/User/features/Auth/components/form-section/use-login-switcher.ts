@@ -1,16 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 
-import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
-
-import {
-  switchToLogin,
-  switchToRegister,
+import LoginSwitchController, {
   type LoadLoginErrorKey,
   type SwitchDeps,
-} from './login-switch-actions';
-import type { AuthMode } from './types';
+} from '@auth/components/form-section/login-switch-actions';
+import type { AuthMode } from '@auth/components/form-section/types';
+import loadLoginForm from '@auth/utils/load-login-form';
 
-export type { LoadLoginErrorKey } from './login-switch-actions';
+export type { LoadLoginErrorKey } from '@auth/components/form-section/login-switch-actions';
 
 export interface LoginSwitcher {
   mode: AuthMode;
@@ -40,8 +37,9 @@ export default function useLoginSwitcher(): LoginSwitcher {
       setIsLoadingLogin,
       setLoadLoginError,
     };
-    if (mode === 'login') switchToRegister(deps);
-    else switchToLogin(deps);
+    const controller = new LoginSwitchController(deps);
+    if (mode === 'login') controller.switchToRegister();
+    else controller.switchToLogin();
   }, [isLoadingLogin, mode]);
 
   return { mode, isLoadingLogin, loadLoginError, setMode, handleSwitcherIntent, handleSwitch };

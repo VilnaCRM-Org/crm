@@ -109,7 +109,7 @@ describe('Login Slice Coverage Tests', () => {
   });
 
   describe('direct reducer and thunk branches', () => {
-    it('handles fulfilled, rejected, thrown, aborted, and logout flows with injected APIs', async () => {
+    it('handles fulfilled/rejected/thrown/aborted/logout flows with injected APIs', async () => {
       const successStore = configureStore({
         reducer: { auth: loginReducer },
         middleware: (getDefaultMiddleware) =>

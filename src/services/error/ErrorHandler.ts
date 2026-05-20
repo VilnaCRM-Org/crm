@@ -1,6 +1,5 @@
+import { ERROR_CODES, type ErrorCode } from '@/services/error/errorCodes';
 import ParsedError from '@/utils/error/types';
-
-import { ERROR_CODES, type ErrorCode } from './errorCodes';
 
 export interface UiError {
   readonly displayMessage: string;

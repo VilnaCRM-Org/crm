@@ -4,9 +4,12 @@ import {
   AuthenticationError,
   ConflictError,
   ValidationError,
-} from '@/modules/User/features/Auth/api/ApiErrors';
+} from '@auth/api/ApiErrors';
 
-export type HttpErrorLike = { status: number; message: string };
+export interface HttpErrorLike {
+  status: number;
+  message: string;
+}
 
 type StatusErrorSpec =
   | { kind: 'validation'; status: 400 | 422; prefix: 'Invalid' | 'Unprocessable' }

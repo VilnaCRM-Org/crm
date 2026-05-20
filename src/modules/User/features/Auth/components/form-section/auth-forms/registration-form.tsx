@@ -3,15 +3,14 @@ import { lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/UIForm';
-import InertBox from '@/modules/User/features/Auth/components/form-section/inert-box';
-import type { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
-import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
-import useRegistrationForm from '@/modules/User/features/Auth/hooks/use-registration-form';
-import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
-import loadRegistrationNotification from '@/modules/User/features/Auth/utils/load-registration-notification';
-
-import RegistrationFormFields from './registration-form-fields';
+import RegistrationFormFields from '@auth/components/form-section/auth-forms/registration-form-fields';
+import InertBox from '@auth/components/form-section/inert-box';
+import type { RegistrationView } from '@auth/components/form-section/types';
+import { createValidators } from '@auth/components/form-section/validations';
+import useRegistrationForm from '@auth/hooks/use-registration-form';
+import { RegisterUserDto } from '@auth/types/Credentials';
+import getSubmitLabelKey from '@auth/utils/getSubmitLabelKey';
+import loadRegistrationNotification from '@auth/utils/load-registration-notification';
 
 type RegistrationFormProps = {
   onViewChange?: (view: RegistrationView) => void;

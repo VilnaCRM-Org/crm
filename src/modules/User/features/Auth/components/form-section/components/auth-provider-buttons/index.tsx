@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/UIButton';
 import UiTypography from '@/components/UITypography';
-import oauthProviders from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons/oauth-providers';
-import styles from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons/styles';
-import Theme from '@/modules/User/features/Auth/components/form-section/components/auth-provider-buttons/theme';
+import oauthProviders from '@auth/components/form-section/components/auth-provider-buttons/oauth-providers';
+import styles from '@auth/components/form-section/components/auth-provider-buttons/styles';
+import Theme from '@auth/components/form-section/components/auth-provider-buttons/theme';
 
 export default function AuthProviderButtons(): JSX.Element {
   const { t } = useTranslation();

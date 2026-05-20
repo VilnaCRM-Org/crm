@@ -4,10 +4,10 @@ import { BrowserRouter } from 'react-router-dom';
 
 import UIButton from '@/components/UIButton';
 import UIForm from '@/components/UIForm';
-import RegistrationForm from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-form';
-import UserOptions from '@/modules/User/features/Auth/components/form-section/components/user-options';
-import type { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
-import loadRegistrationNotification from '@/modules/User/features/Auth/utils/load-registration-notification';
+import RegistrationForm from '@auth/components/form-section/auth-forms/registration-form';
+import UserOptions from '@auth/components/form-section/components/user-options';
+import type { RegistrationView } from '@auth/components/form-section/types';
+import loadRegistrationNotification from '@auth/utils/load-registration-notification';
 
 const mockUseRegistrationForm = jest.fn();
 const mockRegistrationNotification = jest.fn();

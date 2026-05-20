@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/UIForm';
-import normalizeLoginErrorMessage from '@/modules/User/features/Auth/components/form-section/auth-forms/login-error-message';
-import LoginFormFields from '@/modules/User/features/Auth/components/form-section/auth-forms/login-form-fields';
-import useLoginSubmitter from '@/modules/User/features/Auth/components/form-section/auth-forms/use-login-submitter';
-import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
-import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
+import LoginErrorMessageNormalizer from '@auth/components/form-section/auth-forms/login-error-message';
+import LoginFormFields from '@auth/components/form-section/auth-forms/login-form-fields';
+import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
+import { createValidators } from '@auth/components/form-section/validations';
+import { LoginUserDto } from '@auth/types/Credentials';
+import getSubmitLabelKey from '@auth/utils/getSubmitLabelKey';
 
-export { normalizeLoginErrorMessage };
+export { LoginErrorMessageNormalizer };
 
 const LOGIN_DEFAULTS: LoginUserDto = { email: '', password: '' };
 

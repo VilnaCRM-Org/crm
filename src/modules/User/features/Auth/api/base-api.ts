@@ -1,5 +1,5 @@
-import ApiErrorFactory from '@/modules/User/features/Auth/api/api-error-factory';
-import { ApiError } from '@/modules/User/features/Auth/api/ApiErrors';
+import ApiErrorFactory from '@auth/api/api-error-factory';
+import { ApiError } from '@auth/api/ApiErrors';
 
 export default class BaseAPI {
   private readonly apiErrorFactory: ApiErrorFactory;

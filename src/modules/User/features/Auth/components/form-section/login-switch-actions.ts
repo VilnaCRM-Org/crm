@@ -1,53 +1,55 @@
 import { startTransition } from 'react';
 
-import type { AuthMode } from '@/modules/User/features/Auth/components/form-section/types';
-import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
+import type { AuthMode } from '@auth/components/form-section/types';
+import loadLoginForm from '@auth/utils/load-login-form';
 
 export const LOAD_LOGIN_ERROR_KEY = 'sign_in.errors.load_failed' as const;
 
 export type LoadLoginErrorKey = typeof LOAD_LOGIN_ERROR_KEY | null;
 
-export type SwitchDeps = {
+export interface SwitchDeps {
   isLoadingLogin: boolean;
   mode: AuthMode;
   loginSwitchRequest: { current: number };
   setMode: (m: AuthMode) => void;
   setIsLoadingLogin: (v: boolean) => void;
   setLoadLoginError: (v: LoadLoginErrorKey) => void;
-};
-
-export function switchToRegister(deps: SwitchDeps): void {
-  const { loginSwitchRequest } = deps;
-  loginSwitchRequest.current += 1;
-  deps.setLoadLoginError(null);
-  deps.setIsLoadingLogin(false);
-  deps.setMode('register');
 }
 
-function applyLoginSwitchResult(
-  deps: SwitchDeps,
-  requestId: number,
-  outcome: 'loaded' | 'failed'
-): void {
-  if (requestId !== deps.loginSwitchRequest.current) return;
-  if (outcome === 'loaded') startTransition(() => deps.setMode('login'));
-  else deps.setLoadLoginError(LOAD_LOGIN_ERROR_KEY);
-}
+export default class LoginSwitchController {
+  constructor(private readonly deps: SwitchDeps) {}
 
-function finishLoginSwitch(deps: SwitchDeps, requestId: number): void {
-  if (requestId !== deps.loginSwitchRequest.current) return;
-  deps.setIsLoadingLogin(false);
-}
+  public switchToRegister(): void {
+    const { deps } = this;
+    deps.loginSwitchRequest.current += 1;
+    deps.setLoadLoginError(null);
+    deps.setIsLoadingLogin(false);
+    deps.setMode('register');
+  }
 
-export function switchToLogin(deps: SwitchDeps): void {
-  if (deps.isLoadingLogin) return;
-  const { loginSwitchRequest } = deps;
-  loginSwitchRequest.current += 1;
-  const requestId = loginSwitchRequest.current;
-  deps.setLoadLoginError(null);
-  deps.setIsLoadingLogin(true);
-  loadLoginForm()
-    .then(() => applyLoginSwitchResult(deps, requestId, 'loaded'))
-    .catch(() => applyLoginSwitchResult(deps, requestId, 'failed'))
-    .finally(() => finishLoginSwitch(deps, requestId));
+  public switchToLogin(): void {
+    const { deps } = this;
+    if (deps.isLoadingLogin) return;
+    deps.loginSwitchRequest.current += 1;
+    const requestId = deps.loginSwitchRequest.current;
+    deps.setLoadLoginError(null);
+    deps.setIsLoadingLogin(true);
+    loadLoginForm()
+      .then(() => this.applyLoginSwitchResult(requestId, 'loaded'))
+      .catch(() => this.applyLoginSwitchResult(requestId, 'failed'))
+      .finally(() => this.finishLoginSwitch(requestId));
+  }
+
+  private applyLoginSwitchResult(requestId: number, outcome: 'loaded' | 'failed'): void {
+    const { deps } = this;
+    if (requestId !== deps.loginSwitchRequest.current) return;
+    if (outcome === 'loaded') startTransition(() => deps.setMode('login'));
+    else deps.setLoadLoginError(LOAD_LOGIN_ERROR_KEY);
+  }
+
+  private finishLoginSwitch(requestId: number): void {
+    const { deps } = this;
+    if (requestId !== deps.loginSwitchRequest.current) return;
+    deps.setIsLoadingLogin(false);
+  }
 }

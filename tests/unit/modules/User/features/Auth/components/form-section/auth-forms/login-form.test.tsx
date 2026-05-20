@@ -2,8 +2,11 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import LoginForm, {
-  normalizeLoginErrorMessage,
+  LoginErrorMessageNormalizer,
 } from '@/modules/User/features/Auth/components/form-section/auth-forms/login-form';
+
+const normalizeLoginErrorMessage = (error: unknown): string =>
+  new LoginErrorMessageNormalizer().normalize(error);
 
 const mockDispatch = jest.fn();
 const mockLoginUser = jest.fn();

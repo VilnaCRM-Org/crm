@@ -1,2 +1,2 @@
-export { default as LoginAPI } from './login-api';
-export { default as RegistrationAPI } from './registration-api';
+export { default as LoginAPI } from '@auth/api/login-api';
+export { default as RegistrationAPI } from '@auth/api/registration-api';

@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 
 import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 
-import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
-import useRegistrationHandlers from '@/modules/User/features/Auth/hooks/use-registration-handlers';
-import useRegistrationViewSync from '@/modules/User/features/Auth/hooks/use-registration-view-sync';
-import { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import {
   selectRegistrationError,
   selectRegistrationLoading,
   selectRegistrationUser,
 } from '@/modules/User/store/registration-selectors';
+import { RegistrationView } from '@auth/components/form-section/types';
+import useRegistrationHandlers from '@auth/hooks/use-registration-handlers';
+import useRegistrationViewSync from '@auth/hooks/use-registration-view-sync';
+import { RegisterUserDto } from '@auth/types/Credentials';
 
 type UseRegistrationFormResult = {
   view: RegistrationView;

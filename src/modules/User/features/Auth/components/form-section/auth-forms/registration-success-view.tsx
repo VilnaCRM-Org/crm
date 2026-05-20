@@ -5,7 +5,7 @@ import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/UIButton';
 import UiTypography from '@/components/UITypography';
-import styles from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification.success-styles';
+import styles from '@auth/components/form-section/auth-forms/registration-notification.success-styles';
 
 interface Props {
   isClosing: boolean;

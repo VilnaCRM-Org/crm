@@ -1,5 +1,5 @@
-import ApiError from '@/modules/User/features/Auth/api/ApiErrors/api-error';
-import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors/api-error-codes';
+import ApiError from '@auth/api/ApiErrors/api-error';
+import { ApiErrorCodes } from '@auth/api/ApiErrors/api-error-codes';
 
 export default class AuthenticationError extends ApiError {
   constructor(message = 'Invalid credentials') {

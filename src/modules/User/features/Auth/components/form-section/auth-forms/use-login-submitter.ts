@@ -3,9 +3,9 @@ import { Dispatch, SetStateAction, useCallback, useState } from 'react';
 
 import useAppDispatch from '@/stores/hooks';
 
-import normalizeLoginErrorMessage from '@/modules/User/features/Auth/components/form-section/auth-forms/login-error-message';
-import { LoginUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import { loginUser } from '@/modules/User/store';
+import LoginErrorMessageNormalizer from '@auth/components/form-section/auth-forms/login-error-message';
+import { LoginUserDto } from '@auth/types/Credentials';
 
 type LoginSubmitter = {
   error: string;
@@ -22,6 +22,7 @@ type SubmitLoginContext = {
 };
 
 const I18N_KEY_RE = /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/i;
+const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();
 
 function isAbortLike(err: unknown): boolean {
   if (!err || typeof err !== 'object') {
@@ -37,7 +38,7 @@ function isAbortLike(err: unknown): boolean {
 }
 
 function setLoginFailure(ctx: SubmitLoginContext, err: unknown): void {
-  const message = normalizeLoginErrorMessage(err);
+  const message = loginErrorMessageNormalizer.normalize(err);
   const reason = I18N_KEY_RE.test(message) ? ctx.t(message) : message;
   ctx.setError(ctx.t('sign_in.errors.login', { reason }));
 }

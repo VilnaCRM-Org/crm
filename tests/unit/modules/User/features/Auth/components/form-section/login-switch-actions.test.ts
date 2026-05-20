@@ -1,12 +1,14 @@
 import { act } from 'react';
 
-import {
+import LoginSwitchController, {
   LOAD_LOGIN_ERROR_KEY,
-  switchToLogin,
-  switchToRegister,
   type SwitchDeps,
 } from '@/modules/User/features/Auth/components/form-section/login-switch-actions';
 import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
+
+const switchToRegister = (deps: SwitchDeps): void =>
+  new LoginSwitchController(deps).switchToRegister();
+const switchToLogin = (deps: SwitchDeps): void => new LoginSwitchController(deps).switchToLogin();
 
 jest.mock('react', () => {
   const actual = jest.requireActual('react') as typeof import('react');

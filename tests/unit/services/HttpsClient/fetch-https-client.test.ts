@@ -502,7 +502,7 @@ describe('FetchHttpsClient', () => {
       expect(result).toBeUndefined();
     });
 
-    it('should return undefined for response with no content-type header and empty body', async () => {
+    it('returns undefined for response with no content-type header and empty body', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         status: 204,

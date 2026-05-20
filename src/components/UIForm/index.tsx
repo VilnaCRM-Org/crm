@@ -10,10 +10,9 @@ import {
 } from 'react-hook-form';
 
 import UIButton from '@/components/UIButton';
+import FormProviderBridge from '@/components/UIForm/form-provider-bridge';
+import styles from '@/components/UIForm/styles';
 import UITypography from '@/components/UITypography';
-
-import FormProviderBridge from './form-provider-bridge';
-import styles from './styles';
 
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
