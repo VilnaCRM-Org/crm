@@ -45,3 +45,9 @@ Choose the smallest useful set, then run the full gate before committing:
 - [ ] Focused tests ran for changed behavior.
 - [ ] `make lint` passed or any blocker is documented.
 - [ ] `git status --short` shows only intended files.
+
+## Line Length Disclosure
+
+Before presenting changes, check changed text files for lines longer than 100 characters.
+If any exist, tell the user each `path:line` and measured character count.
+Treat this as disclosure, not failure, unless a project gate fails.

@@ -37,6 +37,12 @@ Use the existing K6 variables in the Makefile:
 Run the smallest scenario that exercises the changed flow, then inspect the K6
 summary and generated HTML result.
 
+## Line Length Disclosure
+
+Before presenting changes, check changed text files for lines longer than 100 characters.
+If any exist, tell the user each `path:line` and measured character count.
+Treat this as disclosure, not failure, unless a project gate fails.
+
 ## Supporting Files
 
 - [examples/homepage-flow.js](examples/homepage-flow.js): minimal page-load K6

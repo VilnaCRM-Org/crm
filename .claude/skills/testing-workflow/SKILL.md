@@ -34,3 +34,9 @@ description: Use when selecting, running, or triaging frontend test suites.
 - Keep Mockoon and Apollo mock behavior explicit in test setup.
 - Update visual snapshots only after inspecting the diff.
 - Add regression coverage for bug fixes before changing behavior.
+
+## Line Length Disclosure
+
+Before presenting changes, check changed text files for lines longer than 100 characters.
+If any exist, tell the user each `path:line` and measured character count.
+Treat this as disclosure, not failure, unless a project gate fails.

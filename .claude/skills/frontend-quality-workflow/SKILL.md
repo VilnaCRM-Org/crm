@@ -49,6 +49,12 @@ Qlty configuration.
 - Split complex components, hooks, and helpers instead of lowering metrics policy.
 - Re-run the failing check after each focused fix.
 
+## Line Length Disclosure
+
+Before presenting changes, check changed text files for lines longer than 100 characters.
+If any exist, tell the user each `path:line` and measured character count.
+Treat this as disclosure, not failure, unless a project gate fails.
+
 ## Supporting Files
 
 - [reference/formatting-tools.md](reference/formatting-tools.md): Prettier and

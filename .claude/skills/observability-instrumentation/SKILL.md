@@ -35,6 +35,12 @@ make lint
 Use browser verification for runtime-only telemetry paths when unit tests cannot
 prove the integration.
 
+## Line Length Disclosure
+
+Before presenting changes, check changed text files for lines longer than 100 characters.
+If any exist, tell the user each `path:line` and measured character count.
+Treat this as disclosure, not failure, unless a project gate fails.
+
 ## Supporting Files
 
 - [examples/frontend-error-boundary.md](examples/frontend-error-boundary.md):

@@ -43,6 +43,12 @@ For visible layout changes, also run:
 make test-visual
 ```
 
+## Line Length Disclosure
+
+Before presenting changes, check changed text files for lines longer than 100 characters.
+If any exist, tell the user each `path:line` and measured character count.
+Treat this as disclosure, not failure, unless a project gate fails.
+
 ## Supporting Files
 
 - [examples/mui-feature-component.md](examples/mui-feature-component.md): MUI

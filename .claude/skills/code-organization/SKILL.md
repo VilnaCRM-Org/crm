@@ -57,6 +57,12 @@ Use `src/components/UI*` only for reusable UI building blocks.
 - Components that mix data fetching, layout, validation, and presentation when
   a hook or child component would make the boundary clearer.
 
+## Line Length Disclosure
+
+Before presenting changes, check changed text files for lines longer than 100 characters.
+If any exist, tell the user each `path:line` and measured character count.
+Treat this as disclosure, not failure, unless a project gate fails.
+
 ## Supporting Files
 
 - [examples/organization-fixes.md](examples/organization-fixes.md): concrete

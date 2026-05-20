@@ -35,6 +35,12 @@ make lint-md
 
 Run `make lint` as the final gate when docs are part of a code change.
 
+## Line Length Disclosure
+
+Before presenting changes, check changed text files for lines longer than 100 characters.
+If any exist, tell the user each `path:line` and measured character count.
+Treat this as disclosure, not failure, unless a project gate fails.
+
 ## Supporting Files
 
 - [examples/README.md](examples/README.md): examples of feature and skill docs.

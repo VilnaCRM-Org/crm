@@ -42,3 +42,9 @@ suite and should not be used as a mutating formatter.
 | User journey                  | `make test-e2e`                                       |
 | Visual layout                 | `make test-visual`                                    |
 | Bundle or runtime performance | `make lighthouse-desktop` or `make lighthouse-mobile` |
+
+## Line Length Disclosure
+
+Before presenting changes, check changed text files for lines longer than 100 characters.
+If any exist, tell the user each `path:line` and measured character count.
+Treat this as disclosure, not failure, unless a project gate fails.
