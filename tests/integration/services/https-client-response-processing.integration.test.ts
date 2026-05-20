@@ -176,7 +176,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       expect(result).toBeUndefined();
     });
 
-    it('supports explicit client dependencies and the response processor parser fallback', async () => {
+    it('supports explicit client deps and the response processor parser fallback', async () => {
       const processorOnlyClient = new FetchHttpsClient(new HttpRequestConfigBuilder(), {
         process: jest.fn().mockResolvedValue({ ok: true }),
       } as never);
