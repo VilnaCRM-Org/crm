@@ -18,4 +18,4 @@ Update docs that mention:
 - `make lint-metrics`
 - Qlty or Prettier behavior
 
-Finish with `make lint-md`, then `make lint` for code changes.
+Finish with `make format`, then `make lint-md`, then `make lint` for code changes.

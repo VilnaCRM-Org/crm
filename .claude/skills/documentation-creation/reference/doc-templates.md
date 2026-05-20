@@ -19,6 +19,7 @@ What user workflow this feature supports.
 
 ```bash
 make test-unit-client
+make format
 make lint
 ```
 ````

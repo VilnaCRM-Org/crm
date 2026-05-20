@@ -15,11 +15,15 @@ make format
 The current Makefile expects `qlty` on `PATH`. If it is missing, install the CLI:
 
 ```bash
-command -v qlty >/dev/null || curl https://qlty.sh | sh
+command -v qlty >/dev/null || {
+  curl -fsSL https://qlty.sh -o /tmp/qlty-install.sh
+  sh /tmp/qlty-install.sh
+}
 ```
 
-After installing, open a new shell or export the installer path so `make
-fmt-qlty` can find `qlty`.
+Inspect `/tmp/qlty-install.sh` before executing if you have not run it
+recently. After installing, open a new shell or export the installer path so
+`make fmt-qlty` can find `qlty`.
 
 Do not run `qlty init` or stage `.qlty/qlty.toml` as part of formatting unless
 the task explicitly asks to add repository Qlty configuration.

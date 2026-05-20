@@ -2,8 +2,9 @@ import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints'
 import { customColors, paletteColors } from '@/styles/colors';
 
 const widthBreakpoints = breakpointsTheme.breakpoints.values;
-const compactViewport = `@media (max-width:${widthBreakpoints.sm - 1}px) and (max-height:${heightBreakpoints.compact}px)`;
-const mediumLandscapeViewport = `@media (min-width:${widthBreakpoints.md}px) and (max-height:${heightBreakpoints.medium}px)`;
+const mq = (w: string, h: number): string => `@media (${w}) and (max-height:${h}px)`;
+const compactViewport = mq(`max-width:${widthBreakpoints.sm - 1}px`, heightBreakpoints.compact);
+const mediumLandscapeViewport = mq(`min-width:${widthBreakpoints.md}px`, heightBreakpoints.medium);
 
 const centeredColumnFlex = {
   display: 'flex',

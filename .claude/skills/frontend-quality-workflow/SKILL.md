@@ -23,7 +23,10 @@ If `make fmt-qlty` fails because `qlty` is not installed, install the Qlty CLI
 first:
 
 ```bash
-command -v qlty >/dev/null || curl https://qlty.sh | sh
+command -v qlty >/dev/null || {
+  curl -fsSL https://qlty.sh -o /tmp/qlty-install.sh
+  sh /tmp/qlty-install.sh
+}
 ```
 
 Then ensure `qlty` is on `PATH` and rerun `make fmt-qlty`. Do not run
