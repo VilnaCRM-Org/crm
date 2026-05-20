@@ -2,9 +2,8 @@ import type { Dispatch, SetStateAction, MutableRefObject } from 'react';
 import { useCallback } from 'react';
 
 import { registerUser, reset } from '@/modules/User/store';
-
-import { RegistrationView } from '../components/form-section/types';
-import { RegisterUserDto } from '../types/Credentials';
+import { RegistrationView } from '@auth/components/form-section/types';
+import { RegisterUserDto } from '@auth/types/Credentials';
 
 const incrementKey = (prev: number): number => prev + 1;
 const normalize = (data: RegisterUserDto): RegisterUserDto => ({

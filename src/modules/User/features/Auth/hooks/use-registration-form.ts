@@ -7,9 +7,8 @@ import {
   selectRegistrationLoading,
   selectRegistrationUser,
 } from '@/modules/User/store/registration-selectors';
-
-import { RegistrationView } from '../components/form-section/types';
-import { RegisterUserDto } from '../types/Credentials';
+import { RegistrationView } from '@auth/components/form-section/types';
+import { RegisterUserDto } from '@auth/types/Credentials';
 
 import useRegistrationHandlers from './use-registration-handlers';
 import useRegistrationViewSync from './use-registration-view-sync';

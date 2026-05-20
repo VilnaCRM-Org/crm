@@ -1,7 +1,7 @@
 import { Box, Fade } from '@mui/material';
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 
-import { RegistrationView } from '../types';
+import { RegistrationView } from '@auth/components/form-section/types';
 
 import RegistrationErrorView from './registration-error-view';
 import RegistrationSuccessView from './registration-success-view';
