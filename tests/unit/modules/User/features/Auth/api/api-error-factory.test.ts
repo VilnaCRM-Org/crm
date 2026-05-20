@@ -1,7 +1,7 @@
-import ApiErrorFactory from '@/modules/User/features/Auth/api/api-error-factory';
-import ApiStatusErrorFactory from '@/modules/User/features/Auth/api/api-status-error-factory';
-import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors';
 import { HttpError } from '@/services/HttpsClient/HttpError';
+import ApiErrorFactory from '@auth/api/api-error-factory';
+import ApiStatusErrorFactory from '@auth/api/api-status-error-factory';
+import { ApiErrorCodes } from '@auth/api/ApiErrors';
 
 describe('ApiErrorFactory', () => {
   it('keeps the defensive simple-error fallback branch covered', () => {
@@ -19,19 +19,16 @@ describe('ApiErrorFactory', () => {
   });
 
   it('loads auth API modules when reflected constructor types are unavailable', () => {
-    for (const modulePath of [
-      '@/modules/User/features/Auth/api/login-api',
-      '@/modules/User/features/Auth/api/registration-api',
-    ]) {
+    for (const modulePath of ['@auth/api/login-api', '@auth/api/registration-api']) {
       jest.isolateModules(() => {
-        jest.doMock('@/modules/User/features/Auth/api/api-error-factory', () => ({
+        jest.doMock('@auth/api/api-error-factory', () => ({
           __esModule: true,
           default: undefined,
         }));
 
         expect(require(modulePath)).toBeDefined();
 
-        jest.dontMock('@/modules/User/features/Auth/api/api-error-factory');
+        jest.dontMock('@auth/api/api-error-factory');
       });
     }
   });

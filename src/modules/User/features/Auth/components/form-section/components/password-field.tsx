@@ -5,12 +5,10 @@ import { type MouseEvent, useCallback, useState } from 'react';
 import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import FormField from '@auth/components/form-section/components/form-field';
-import styles, {
-  StyledEyeIcon,
-  StyledEyeIconOff,
-} from '@auth/components/form-section/components/styles';
-import { createValidators } from '@auth/components/form-section/validations';
+import { createValidators } from '../validations';
+
+import FormField from './form-field';
+import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
 
 type PasswordFieldProps = {
   placeholder: string;

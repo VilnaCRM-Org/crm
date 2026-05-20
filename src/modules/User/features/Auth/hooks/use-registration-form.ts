@@ -7,10 +7,12 @@ import {
   selectRegistrationLoading,
   selectRegistrationUser,
 } from '@/modules/User/store/registration-selectors';
-import { RegistrationView } from '@auth/components/form-section/types';
-import useRegistrationHandlers from '@auth/hooks/use-registration-handlers';
-import useRegistrationViewSync from '@auth/hooks/use-registration-view-sync';
-import { RegisterUserDto } from '@auth/types/Credentials';
+
+import { RegistrationView } from '../components/form-section/types';
+import { RegisterUserDto } from '../types/Credentials';
+
+import useRegistrationHandlers from './use-registration-handlers';
+import useRegistrationViewSync from './use-registration-view-sync';
 
 type UseRegistrationFormResult = {
   view: RegistrationView;

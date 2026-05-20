@@ -2,7 +2,7 @@
 
 import { render, screen } from '@testing-library/react';
 
-import * as AuthForms from '@/modules/User/features/Auth/components/form-section/auth-forms';
+import * as AuthForms from '@auth/components/form-section/auth-forms';
 
 const { RegistrationFormFields } = AuthForms;
 
@@ -22,7 +22,7 @@ const mockFormField = jest.fn(
 );
 
 jest.mock(
-  '@/modules/User/features/Auth/components/form-section/components/form-field',
+  '@auth/components/form-section/components/form-field',
   () =>
     (props: { name: string; label: string; autoComplete: string; type: string }): JSX.Element =>
       mockFormField(props)
@@ -35,7 +35,7 @@ const mockPasswordField = jest.fn((props: { label: string; autoComplete: string 
 });
 
 jest.mock(
-  '@/modules/User/features/Auth/components/form-section/components/password-field',
+  '@auth/components/form-section/components/password-field',
   () =>
     (props: { label: string; autoComplete: string }): JSX.Element =>
       mockPasswordField(props)

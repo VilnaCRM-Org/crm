@@ -1,11 +1,12 @@
 import breakpointsTheme, { heightBreakpoints } from '@/components/UIBreakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
+
 import {
   centeredColumnFlex,
   compactViewport,
   messageButtonText,
   notificationSection,
-} from '@auth-forms/registration-notification.shared-styles';
+} from './registration-notification.shared-styles';
 
 const mediumHeightDesktopViewport = [
   `@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`,

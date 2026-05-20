@@ -1,10 +1,11 @@
 import type { TFunction } from 'i18next';
 
-import FormField from '@auth/components/form-section/components/form-field';
-import PasswordField from '@auth/components/form-section/components/password-field';
-import UserOptions from '@auth/components/form-section/components/user-options';
-import { createValidators } from '@auth/components/form-section/validations';
 import { LoginUserDto } from '@auth/types/Credentials';
+
+import FormField from '../components/form-field';
+import PasswordField from '../components/password-field';
+import UserOptions from '../components/user-options';
+import { createValidators } from '../validations';
 
 type Props = {
   t: TFunction;

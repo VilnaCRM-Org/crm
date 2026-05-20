@@ -1,7 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
-import LoginForm, { LoginErrorMessageNormalizer } from '@auth-forms/login-form';
+import LoginForm, {
+  LoginErrorMessageNormalizer,
+} from '@auth/components/form-section/auth-forms/login-form';
 
 const normalizeLoginErrorMessage = (error: unknown): string =>
   new LoginErrorMessageNormalizer().normalize(error);
@@ -37,13 +39,13 @@ jest.mock('@/modules/User/store', () => ({
   loginUser: (...args: unknown[]): unknown => mockLoginUser(...args),
 }));
 
-jest.mock('@/modules/User/features/Auth/utils/getSubmitLabelKey', () => ({
+jest.mock('@auth/utils/getSubmitLabelKey', () => ({
   __esModule: true,
   default: (mode: string, isSubmitting: boolean): string =>
     `${mode}.${isSubmitting ? 'submitting' : 'submit_button'}`,
 }));
 
-jest.mock('@/modules/User/features/Auth/components/form-section/components/form-field', () => ({
+jest.mock('@auth/components/form-section/components/form-field', () => ({
   __esModule: true,
   default: (props: {
     label: string;
@@ -55,12 +57,12 @@ jest.mock('@/modules/User/features/Auth/components/form-section/components/form-
   },
 }));
 
-jest.mock('@/modules/User/features/Auth/components/form-section/components/password-field', () => ({
+jest.mock('@auth/components/form-section/components/password-field', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="password-field" />,
 }));
 
-jest.mock('@/modules/User/features/Auth/components/form-section/components/user-options', () => ({
+jest.mock('@auth/components/form-section/components/user-options', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="user-options" />,
 }));
@@ -189,24 +191,27 @@ describe('LoginForm', () => {
 
   it('exposes auth form barrel exports', () => {
     jest.isolateModules(() => {
-      jest.doMock('@auth-forms/login-form', () => ({ __esModule: true, default: 'LoginForm' }));
-      jest.doMock('@auth-forms/registration-form', () => ({
+      jest.doMock('@auth/components/form-section/auth-forms/login-form', () => ({
+        __esModule: true,
+        default: 'LoginForm',
+      }));
+      jest.doMock('@auth/components/form-section/auth-forms/registration-form', () => ({
         __esModule: true,
         default: 'RegistrationForm',
       }));
-      jest.doMock('@auth-forms/registration-form-fields', () => ({
+      jest.doMock('@auth/components/form-section/auth-forms/registration-form-fields', () => ({
         __esModule: true,
         default: 'RegistrationFormFields',
       }));
 
-      const authForms = require('@/modules/User/features/Auth/components/form-section/auth-forms');
+      const authForms = require('@auth/components/form-section/auth-forms');
       expect(authForms.LoginForm).toBe('LoginForm');
       expect(authForms.RegistrationForm).toBe('RegistrationForm');
       expect(authForms.RegistrationFormFields).toBe('RegistrationFormFields');
 
-      jest.dontMock('@auth-forms/login-form');
-      jest.dontMock('@auth-forms/registration-form');
-      jest.dontMock('@auth-forms/registration-form-fields');
+      jest.dontMock('@auth/components/form-section/auth-forms/login-form');
+      jest.dontMock('@auth/components/form-section/auth-forms/registration-form');
+      jest.dontMock('@auth/components/form-section/auth-forms/registration-form-fields');
     });
   });
 });

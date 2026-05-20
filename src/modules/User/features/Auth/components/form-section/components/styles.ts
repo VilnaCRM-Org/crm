@@ -4,7 +4,8 @@ import breakpointsTheme from '@/components/UIBreakpoints';
 import { customColors } from '@/styles/colors';
 import { ReactComponent as EyeIconOff } from '@auth/assets/eye-off.svg';
 import { ReactComponent as EyeIcon } from '@auth/assets/eye.svg';
-import { fieldGapMargins } from '@auth/components/form-section/styles';
+
+import { fieldGapMargins } from '../styles';
 
 export default {
   formFieldWrapper: {

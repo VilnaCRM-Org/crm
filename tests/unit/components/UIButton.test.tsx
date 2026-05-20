@@ -4,10 +4,10 @@ import { BrowserRouter } from 'react-router-dom';
 
 import UIButton from '@/components/UIButton';
 import UIForm from '@/components/UIForm';
+import RegistrationForm from '@auth/components/form-section/auth-forms/registration-form';
 import UserOptions from '@auth/components/form-section/components/user-options';
 import type { RegistrationView } from '@auth/components/form-section/types';
 import loadRegistrationNotification from '@auth/utils/load-registration-notification';
-import RegistrationForm from '@auth-forms/registration-form';
 
 const mockUseRegistrationForm = jest.fn();
 const mockRegistrationNotification = jest.fn();
@@ -16,12 +16,12 @@ jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({ t: (key: string): string => key }),
 }));
 
-jest.mock('@/modules/User/features/Auth/hooks/use-registration-form', () => ({
+jest.mock('@auth/hooks/use-registration-form', () => ({
   __esModule: true,
   default: (...args: unknown[]): unknown => mockUseRegistrationForm(...args),
 }));
 
-jest.mock('@auth-forms/registration-notification', () => ({
+jest.mock('@auth/components/form-section/auth-forms/registration-notification', () => ({
   __esModule: true,
   default: (props: {
     view: RegistrationView;
@@ -48,7 +48,7 @@ jest.mock('@auth-forms/registration-notification', () => ({
   },
 }));
 
-jest.mock('@auth-forms/registration-form-fields', () => ({
+jest.mock('@auth/components/form-section/auth-forms/registration-form-fields', () => ({
   __esModule: true,
   default: (): JSX.Element => <div data-testid="registration-fields" />,
 }));
@@ -224,16 +224,16 @@ describe('RegistrationForm and UserOptions components', () => {
 
   it('resets the lazy registration notification cache after a failed import', async () => {
     jest.resetModules();
-    jest.doMock('@auth-forms/registration-notification', () => {
+    jest.doMock('@auth/components/form-section/auth-forms/registration-notification', () => {
       throw new Error('load failed');
     });
     const { default: loadNotification } =
-      await import('@/modules/User/features/Auth/utils/load-registration-notification');
+      await import('@auth/utils/load-registration-notification');
 
     await expect(loadNotification()).rejects.toThrow('load failed');
     await expect(loadNotification()).rejects.toThrow('load failed');
 
-    jest.dontMock('@auth-forms/registration-notification');
+    jest.dontMock('@auth/components/form-section/auth-forms/registration-notification');
   });
 });
 

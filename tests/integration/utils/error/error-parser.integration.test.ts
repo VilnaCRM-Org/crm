@@ -1,8 +1,8 @@
 import '../../setup';
-import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors';
-import ApiError from '@/modules/User/features/Auth/api/ApiErrors/api-error';
 import ErrorParser from '@/utils/error/error-parser';
 import type ParsedError from '@/utils/error/types';
+import { ApiErrorCodes } from '@auth/api/ApiErrors';
+import ApiError from '@auth/api/ApiErrors/api-error';
 
 describe('ErrorParser Integration', () => {
   describe('parseHttpError method', () => {

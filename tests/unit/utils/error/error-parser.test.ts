@@ -1,6 +1,6 @@
-import ApiError from '@/modules/User/features/Auth/api/ApiErrors/api-error';
 import ErrorParser from '@/utils/error/error-parser';
 import ParsedError from '@/utils/error/types';
+import ApiError from '@auth/api/ApiErrors/api-error';
 
 import MockResponse from './MockResponse';
 

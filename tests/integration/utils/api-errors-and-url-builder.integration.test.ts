@@ -1,16 +1,16 @@
 import '../setup';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import ApiErrorFactory from '@/modules/User/features/Auth/api/api-error-factory';
-import ApiStatusErrorFactory from '@/modules/User/features/Auth/api/api-status-error-factory';
+import AuthUiErrorMapper from '@/modules/User/store/auth-ui-error-mapper';
+import buildApiUrl from '@/utils/urlBuilder';
+import ApiErrorFactory from '@auth/api/api-error-factory';
+import ApiStatusErrorFactory from '@auth/api/api-status-error-factory';
 import {
   AuthenticationError,
   ConflictError,
   ValidationError,
   ApiErrorCodes,
-} from '@/modules/User/features/Auth/api/ApiErrors';
-import AuthUiErrorMapper from '@/modules/User/store/auth-ui-error-mapper';
-import buildApiUrl from '@/utils/urlBuilder';
+} from '@auth/api/ApiErrors';
 
 describe('API Errors and URL Builder Integration', () => {
   describe('ApiError Constructors', () => {
@@ -160,19 +160,16 @@ describe('API Errors and URL Builder Integration', () => {
     });
 
     it('loads auth API modules when reflected constructor types are unavailable', () => {
-      for (const modulePath of [
-        '@/modules/User/features/Auth/api/login-api',
-        '@/modules/User/features/Auth/api/registration-api',
-      ]) {
+      for (const modulePath of ['@auth/api/login-api', '@auth/api/registration-api']) {
         jest.isolateModules(() => {
-          jest.doMock('@/modules/User/features/Auth/api/api-error-factory', () => ({
+          jest.doMock('@auth/api/api-error-factory', () => ({
             __esModule: true,
             default: undefined,
           }));
 
           expect(require(modulePath)).toBeDefined();
 
-          jest.dontMock('@/modules/User/features/Auth/api/api-error-factory');
+          jest.dontMock('@auth/api/api-error-factory');
         });
       }
     });

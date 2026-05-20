@@ -1,7 +1,8 @@
 import { startTransition } from 'react';
 
-import type { AuthMode } from '@auth/components/form-section/types';
 import loadLoginForm from '@auth/utils/load-login-form';
+
+import type { AuthMode } from './types';
 
 export const LOAD_LOGIN_ERROR_KEY = 'sign_in.errors.load_failed' as const;
 

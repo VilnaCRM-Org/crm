@@ -1,7 +1,7 @@
 import { TFunction } from 'i18next';
 
-import { createValidators } from '@/modules/User/features/Auth/components/form-section/validations';
-import { fullNameValidators } from '@/modules/User/features/Auth/components/form-section/validations/name';
+import { createValidators } from '@auth/components/form-section/validations';
+import { fullNameValidators } from '@auth/components/form-section/validations/name';
 
 import emptyUser from './constants';
 

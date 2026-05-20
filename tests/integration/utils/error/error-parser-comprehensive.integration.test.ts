@@ -1,6 +1,6 @@
 import '../../setup';
-import ApiError from '@/modules/User/features/Auth/api/ApiErrors/api-error';
 import { ErrorParser } from '@/utils/error';
+import ApiError from '@auth/api/ApiErrors/api-error';
 
 describe('ErrorParser Comprehensive Coverage', () => {
   describe('parseHttpError - Response instances', () => {

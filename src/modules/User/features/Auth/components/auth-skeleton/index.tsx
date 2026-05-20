@@ -6,8 +6,10 @@ import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
 import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
-import styles from '@auth/components/auth-skeleton/styles';
-import authFormSectionStyles from '@auth/components/form-section/styles';
+
+import authFormSectionStyles from '../form-section/styles';
+
+import styles from './styles';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },

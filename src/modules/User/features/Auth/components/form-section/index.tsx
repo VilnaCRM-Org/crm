@@ -5,16 +5,15 @@ import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/UIButton';
 import UITypography from '@/components/UITypography';
-import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
-import InertBox from '@auth/components/form-section/inert-box';
-import styles from '@auth/components/form-section/styles';
-import { RegistrationView } from '@auth/components/form-section/types';
-import type { AuthMode } from '@auth/components/form-section/types';
-import useLoginSwitcher, {
-  type LoadLoginErrorKey,
-} from '@auth/components/form-section/use-login-switcher';
 import loadLoginForm from '@auth/utils/load-login-form';
-import RegistrationForm from '@auth-forms/registration-form';
+
+import RegistrationForm from './auth-forms/registration-form';
+import AuthProviderButtons from './components/auth-provider-buttons';
+import InertBox from './inert-box';
+import styles from './styles';
+import { RegistrationView } from './types';
+import type { AuthMode } from './types';
+import useLoginSwitcher, { type LoadLoginErrorKey } from './use-login-switcher';
 
 const LoginForm = lazy(loadLoginForm);
 

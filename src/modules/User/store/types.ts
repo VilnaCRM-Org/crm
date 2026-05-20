@@ -1,9 +1,6 @@
-import type { RequestOptions } from '@/modules/User/features/Auth/api/types';
-import type {
-  LoginResponse,
-  RegistrationResponse,
-} from '@/modules/User/features/Auth/types/ApiResponses';
-import type { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import type { RequestOptions } from '@auth/api/types';
+import type { LoginResponse, RegistrationResponse } from '@auth/types/ApiResponses';
+import type { LoginUserDto, RegisterUserDto } from '@auth/types/Credentials';
 
 interface LoginApiClient {
   login(credentials: LoginUserDto, options?: RequestOptions): Promise<LoginResponse | undefined>;

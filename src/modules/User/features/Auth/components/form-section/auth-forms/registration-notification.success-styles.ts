@@ -1,10 +1,11 @@
 import breakpointsTheme from '@/components/UIBreakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
+
 import {
   compactViewport,
   messageButtonText,
   notificationSection,
-} from '@auth-forms/registration-notification.shared-styles';
+} from './registration-notification.shared-styles';
 
 const contentBox = {
   zIndex: 3,

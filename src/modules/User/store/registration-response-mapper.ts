@@ -1,10 +1,7 @@
 import { injectable } from 'tsyringe';
 
-import {
-  RegistrationResponseSchema,
-  type SafeUserInfo,
-} from '@/modules/User/features/Auth/types/ApiResponses';
 import type { UiError } from '@/services/error';
+import { RegistrationResponseSchema, type SafeUserInfo } from '@auth/types/ApiResponses';
 
 export type RegistrationResponseMappingResult =
   | { ok: true; value: SafeUserInfo }

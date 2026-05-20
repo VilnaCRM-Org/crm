@@ -51,10 +51,6 @@ export default defineConfig({
         alias: {
           '@': path.resolve(__dirname, 'src'),
           '@auth': path.resolve(__dirname, 'src/modules/User/features/Auth'),
-          '@auth-forms': path.resolve(
-            __dirname,
-            'src/modules/User/features/Auth/components/form-section/auth-forms'
-          ),
         },
       },
       experiments: {

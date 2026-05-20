@@ -2,11 +2,6 @@ import { configureStore, type ThunkDispatch, type UnknownAction } from '@reduxjs
 import { act, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 
-import type LoginAPI from '@/modules/User/features/Auth/api/login-api';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
-import type { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
-import useRegistrationForm from '@/modules/User/features/Auth/hooks/use-registration-form';
-import type { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
 import {
   selectRegistrationError,
   selectRegistrationLoading,
@@ -21,6 +16,11 @@ import {
 import type { ThunkExtra } from '@/modules/User/store/types';
 import { ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
+import type LoginAPI from '@auth/api/login-api';
+import type RegistrationAPI from '@auth/api/registration-api';
+import type { RegistrationView } from '@auth/components/form-section/types';
+import useRegistrationForm from '@auth/hooks/use-registration-form';
+import type { RegisterUserDto } from '@auth/types/Credentials';
 
 const mockDispatch = jest.fn();
 let mockState: {

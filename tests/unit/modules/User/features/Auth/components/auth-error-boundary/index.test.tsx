@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { ComponentProps } from 'react';
 
 import localization from '@/i18n/localization.json';
-import AuthErrorBoundary from '@/modules/User/features/Auth/components/auth-error-boundary';
+import AuthErrorBoundary from '@auth/components/auth-error-boundary';
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({

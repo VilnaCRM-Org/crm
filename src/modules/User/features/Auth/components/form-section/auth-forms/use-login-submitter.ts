@@ -5,7 +5,8 @@ import useAppDispatch from '@/stores/hooks';
 
 import { loginUser } from '@/modules/User/store';
 import { LoginUserDto } from '@auth/types/Credentials';
-import LoginErrorMessageNormalizer from '@auth-forms/login-error-message';
+
+import LoginErrorMessageNormalizer from './login-error-message';
 
 type LoginSubmitter = {
   error: string;

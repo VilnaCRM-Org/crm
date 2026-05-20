@@ -1,13 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 
+import loadLoginForm from '@auth/utils/load-login-form';
+
 import LoginSwitchController, {
   type LoadLoginErrorKey,
   type SwitchDeps,
-} from '@auth/components/form-section/login-switch-actions';
-import type { AuthMode } from '@auth/components/form-section/types';
-import loadLoginForm from '@auth/utils/load-login-form';
+} from './login-switch-actions';
+import type { AuthMode } from './types';
 
-export type { LoadLoginErrorKey } from '@auth/components/form-section/login-switch-actions';
+export type { LoadLoginErrorKey } from './login-switch-actions';
 
 export interface LoginSwitcher {
   mode: AuthMode;

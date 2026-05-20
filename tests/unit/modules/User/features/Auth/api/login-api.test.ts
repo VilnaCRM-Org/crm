@@ -1,7 +1,7 @@
 // @jest-environment jsdom
 
-import { ApiError } from '@/modules/User/features/Auth/api/ApiErrors';
-import LoginAPI from '@/modules/User/features/Auth/api/login-api';
+import { ApiError } from '@auth/api/ApiErrors';
+import LoginAPI from '@auth/api/login-api';
 
 type HttpsClient = import('@/services/HttpsClient/https-client').default;
 

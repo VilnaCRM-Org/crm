@@ -1,11 +1,11 @@
-import ApiStatusErrorFactory from '@/modules/User/features/Auth/api/api-status-error-factory';
+import ApiStatusErrorFactory from '@auth/api/api-status-error-factory';
 import {
   ApiError,
   ApiErrorCodes,
   AuthenticationError,
   ConflictError,
   ValidationError,
-} from '@/modules/User/features/Auth/api/ApiErrors';
+} from '@auth/api/ApiErrors';
 
 describe('ApiStatusErrorFactory', () => {
   it.each([

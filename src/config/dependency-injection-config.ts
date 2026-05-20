@@ -3,8 +3,6 @@ import 'reflect-metadata';
 import { container } from 'tsyringe';
 
 import TOKENS from '@/config/tokens';
-import { LoginAPI, RegistrationAPI } from '@/modules/User/features/Auth/api';
-import ApiErrorFactory from '@/modules/User/features/Auth/api/api-error-factory';
 import AuthUiErrorMapper from '@/modules/User/store/auth-ui-error-mapper';
 import LoginResponseMapper from '@/modules/User/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/User/store/registration-response-mapper';
@@ -17,6 +15,8 @@ import HttpClientFactory from '@/services/HttpsClient/https-client-factory';
 import { DevToolsOptionsFactory } from '@/stores/dev-tools-options';
 import { DevToolsRedactor } from '@/stores/dev-tools-redaction';
 import ErrorParser from '@/utils/error/error-parser';
+import { LoginAPI, RegistrationAPI } from '@auth/api';
+import ApiErrorFactory from '@auth/api/api-error-factory';
 
 container.registerSingleton<ApiErrorFactory>(TOKENS.ApiErrorFactory, ApiErrorFactory);
 container.registerSingleton<ErrorParser>(TOKENS.ErrorParser, ErrorParser);

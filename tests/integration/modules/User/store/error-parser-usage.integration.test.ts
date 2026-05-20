@@ -5,8 +5,6 @@ import '../../../setup';
 import API_ENDPOINTS from '@/config/apiConfig';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import type LoginAPI from '@/modules/User/features/Auth/api/login-api';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
 import { loginReducer, loginUser, type LoginState } from '@/modules/User/store/login-slice';
 import {
   registrationReducer,
@@ -14,6 +12,8 @@ import {
   type RegistrationState,
 } from '@/modules/User/store/registration-slice';
 import type { ThunkExtra } from '@/modules/User/store/types';
+import type LoginAPI from '@auth/api/login-api';
+import type RegistrationAPI from '@auth/api/registration-api';
 
 import server from '../../../mocks/server';
 

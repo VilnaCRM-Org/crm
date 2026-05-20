@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
 
-import createAuthClients from '@/modules/User/features/Auth/runtime/create-auth-clients';
 import { loginReducer, registrationReducer } from '@/modules/User/store';
 import devToolsOptions from '@/stores/dev-tools-options';
 import { getPreloadedAuthToken } from '@/stores/preloaded-auth-token';
+import createAuthClients from '@auth/runtime/create-auth-clients';
 
 const thunkExtraArgument = createAuthClients();
 

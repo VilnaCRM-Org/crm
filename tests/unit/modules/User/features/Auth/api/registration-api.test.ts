@@ -1,6 +1,6 @@
 import API_ENDPOINTS from '@/config/apiConfig';
-import { ApiError } from '@/modules/User/features/Auth/api/ApiErrors';
-import RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
+import { ApiError } from '@auth/api/ApiErrors';
+import RegistrationAPI from '@auth/api/registration-api';
 
 type HttpsClient = import('@/services/HttpsClient/https-client').default;
 

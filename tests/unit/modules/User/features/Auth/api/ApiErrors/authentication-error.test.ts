@@ -1,6 +1,6 @@
-import ApiError from '@/modules/User/features/Auth/api/ApiErrors/api-error';
-import { ApiErrorCodes } from '@/modules/User/features/Auth/api/ApiErrors/api-error-codes';
-import AuthenticationError from '@/modules/User/features/Auth/api/ApiErrors/authentication-error';
+import ApiError from '@auth/api/ApiErrors/api-error';
+import { ApiErrorCodes } from '@auth/api/ApiErrors/api-error-codes';
+import AuthenticationError from '@auth/api/ApiErrors/authentication-error';
 
 describe('AuthenticationError', () => {
   describe('constructor', () => {

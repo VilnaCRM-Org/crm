@@ -4,8 +4,8 @@ import '../../../../setup';
 import API_ENDPOINTS from '@/config/apiConfig';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import { ConflictError } from '@/modules/User/features/Auth/api/ApiErrors';
-import RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
+import { ConflictError } from '@auth/api/ApiErrors';
+import RegistrationAPI from '@auth/api/registration-api';
 
 import server from '../../../../mocks/server';
 

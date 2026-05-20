@@ -1,5 +1,5 @@
-export { default as ApiError } from '@auth/api/ApiErrors/api-error';
-export { default as ValidationError } from '@auth/api/ApiErrors/validation-error';
-export { default as AuthenticationError } from '@auth/api/ApiErrors/authentication-error';
-export { default as ConflictError } from '@auth/api/ApiErrors/conflict-error';
-export { ApiErrorCodes } from '@auth/api/ApiErrors/api-error-codes';
+export { default as ApiError } from './api-error';
+export { default as ValidationError } from './validation-error';
+export { default as AuthenticationError } from './authentication-error';
+export { default as ConflictError } from './conflict-error';
+export { ApiErrorCodes } from './api-error-codes';

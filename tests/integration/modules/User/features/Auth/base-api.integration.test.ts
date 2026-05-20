@@ -1,13 +1,13 @@
 import '../../../../setup';
+import { HttpError } from '@/services/HttpsClient/HttpError';
 import {
   ApiError,
   AuthenticationError,
   ConflictError,
   ValidationError,
   ApiErrorCodes,
-} from '@/modules/User/features/Auth/api/ApiErrors';
-import BaseAPI from '@/modules/User/features/Auth/api/base-api';
-import { HttpError } from '@/services/HttpsClient/HttpError';
+} from '@auth/api/ApiErrors';
+import BaseAPI from '@auth/api/base-api';
 
 // Test class that extends BaseAPI to expose the protected method
 class TestAPI extends BaseAPI {

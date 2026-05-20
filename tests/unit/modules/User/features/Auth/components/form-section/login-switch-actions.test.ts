@@ -3,8 +3,8 @@ import { act } from 'react';
 import LoginSwitchController, {
   LOAD_LOGIN_ERROR_KEY,
   type SwitchDeps,
-} from '@/modules/User/features/Auth/components/form-section/login-switch-actions';
-import loadLoginForm from '@/modules/User/features/Auth/utils/load-login-form';
+} from '@auth/components/form-section/login-switch-actions';
+import loadLoginForm from '@auth/utils/load-login-form';
 
 const switchToRegister = (deps: SwitchDeps): void =>
   new LoginSwitchController(deps).switchToRegister();
@@ -21,7 +21,7 @@ jest.mock('react', () => {
   };
 });
 
-jest.mock('@/modules/User/features/Auth/utils/load-login-form');
+jest.mock('@auth/utils/load-login-form');
 
 const makeDeps = (overrides?: Partial<SwitchDeps>): SwitchDeps => ({
   isLoadingLogin: false,

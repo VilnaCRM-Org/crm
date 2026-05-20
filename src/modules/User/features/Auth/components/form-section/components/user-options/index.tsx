@@ -3,11 +3,9 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/UIButton';
-import {
-  CheckBoxChecked,
-  CheckBoxIcon,
-} from '@auth/components/form-section/components/user-options/checkbox-icons';
-import styles from '@auth/components/form-section/components/user-options/styles';
+
+import { CheckBoxChecked, CheckBoxIcon } from './checkbox-icons';
+import styles from './styles';
 
 export default function UserOptions(): JSX.Element {
   const [isChecked, setIsChecked] = useState(false);

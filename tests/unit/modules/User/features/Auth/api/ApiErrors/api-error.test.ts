@@ -1,4 +1,4 @@
-import ApiError from '@/modules/User/features/Auth/api/ApiErrors/api-error';
+import ApiError from '@auth/api/ApiErrors/api-error';
 
 describe('ApiError', () => {
   describe('constructor', () => {

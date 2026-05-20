@@ -1,10 +1,7 @@
 import { injectable } from 'tsyringe';
 
-import {
-  LoginResponseSchema,
-  type LoginResponse,
-} from '@/modules/User/features/Auth/types/ApiResponses';
 import type { UiError } from '@/services/error';
+import { LoginResponseSchema, type LoginResponse } from '@auth/types/ApiResponses';
 
 export type LoginSuccessPayload = LoginResponse & { email: string };
 

@@ -236,14 +236,30 @@ const thunkExtraArgument: ThunkExtra = {
 
 ### Path Aliases
 
-Use `@/` prefix for all imports:
+This project follows the Bulletproof React import convention:
 
-```bash
-import Component from '@/components/UIButton';
-import { LoginAPI } from '@/modules/User/features/Auth/api';
+- `./X` for same-folder imports
+- `@/...` for cross-folder / cross-feature imports
+- Avoid deep relative chains like `../../../X` — reach for an alias instead
+
+```ts
+// Cross-feature: use the @/ alias
+import { Button } from '@/components/UIButton';
+
+// Same folder: use a relative import
+import { CommentsList } from './comments-list';
+
+// Within the Auth feature (any depth): use the @auth alias
+import { LoginAPI } from '@auth/api';
 ```
 
-Configured in:
+In addition to the project-wide `@/`, the Auth feature has its own scoped
+alias `@auth/* → src/modules/User/features/Auth/*` so deeply nested imports
+into Auth stay readable and within the 100-character soft line limit. Use
+`@auth/...` whenever the target lives under `src/modules/User/features/Auth/`,
+regardless of whether the importer is inside or outside the feature.
+
+Both aliases are configured in:
 
 - `tsconfig.paths.json` for TypeScript
 - `rsbuild.config.ts` for RSBuild

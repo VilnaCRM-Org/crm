@@ -1,6 +1,6 @@
-import ApiErrorFactory from '@/modules/User/features/Auth/api/api-error-factory';
-import { ApiError } from '@/modules/User/features/Auth/api/ApiErrors';
-import BaseAPI from '@/modules/User/features/Auth/api/base-api';
+import ApiErrorFactory from '@auth/api/api-error-factory';
+import { ApiError } from '@auth/api/ApiErrors';
+import BaseAPI from '@auth/api/base-api';
 
 class TestAPI extends BaseAPI {
   public exposeHandleApiError(error: unknown, context: string): ApiError {

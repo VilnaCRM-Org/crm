@@ -4,7 +4,7 @@ import {
   AuthenticationError,
   ConflictError,
   ValidationError,
-} from '@auth/api/ApiErrors';
+} from './ApiErrors';
 
 export interface HttpErrorLike {
   status: number;

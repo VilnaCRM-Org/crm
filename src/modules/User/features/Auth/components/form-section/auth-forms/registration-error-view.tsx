@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import UIButton from '@/components/UIButton';
 import UiTypography from '@/components/UITypography';
-import styles from '@auth-forms/registration-notification.error-styles';
+
+import styles from './registration-notification.error-styles';
 
 interface Props {
   resolvedErrorText: string;
