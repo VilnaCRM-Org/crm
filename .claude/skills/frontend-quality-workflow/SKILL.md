@@ -24,8 +24,10 @@ first:
 
 ```bash
 command -v qlty >/dev/null || {
-  curl -fsSL https://qlty.sh -o /tmp/qlty-install.sh
-  sh /tmp/qlty-install.sh
+  installer="$(mktemp)" \
+    && curl -fsSL https://qlty.sh -o "$installer" \
+    && sh "$installer"
+  rm -f "$installer"
 }
 ```
 
