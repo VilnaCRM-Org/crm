@@ -1,8 +1,8 @@
-import UIForm from '@/components/ui-form';
 import type { SerializedError } from '@reduxjs/toolkit';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import UIForm from '@/components/ui-form';
 import FormField from '@/modules/user/features/auth/components/form-section/components/form-field';
 import PasswordField from '@/modules/user/features/auth/components/form-section/components/password-field';
 import UserOptions from '@/modules/user/features/auth/components/form-section/components/user-options';
@@ -30,20 +30,16 @@ export const normalizeLoginErrorMessage = (error: unknown): string => {
   if (!isRecord(error)) return 'auth.errors.unknown';
 
   const serializedError = error as SerializedError;
-  if (typeof serializedError.message === 'string' && serializedError.message.trim()) {
-    return serializedError.message;
-  }
+  const candidates: Array<string | null> = [
+    typeof serializedError.message === 'string' && serializedError.message.trim()
+      ? serializedError.message
+      : null,
+    getNestedMessage(error.message),
+    getNestedMessage(error.displayMessage),
+    getNestedMessage(error.data),
+  ];
 
-  const directMessage = getNestedMessage(error.message);
-  if (directMessage) return directMessage;
-
-  const displayMessage = getNestedMessage(error.displayMessage);
-  if (displayMessage) return displayMessage;
-
-  const dataMessage = getNestedMessage(error.data);
-  if (dataMessage) return dataMessage;
-
-  return 'auth.errors.unknown';
+  return candidates.find((c): c is string => Boolean(c)) ?? 'auth.errors.unknown';
 };
 
 export default function LoginForm(): JSX.Element {
@@ -52,19 +48,22 @@ export default function LoginForm(): JSX.Element {
   const { t } = useTranslation();
   const { login } = useAuthStore();
 
-  const handleLogin = async (data: LoginUserDto): Promise<void> => {
-    setIsSubmitting(true);
-    setError('');
+  const handleLogin = useCallback(
+    async (data: LoginUserDto): Promise<void> => {
+      setIsSubmitting(true);
+      setError('');
 
-    try {
-      await login(data);
-    } catch (err) {
-      const message = normalizeLoginErrorMessage(err);
-      setError(t('sign_in.errors.login', { reason: t(message) }));
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+      try {
+        await login(data);
+      } catch (err) {
+        const message = normalizeLoginErrorMessage(err);
+        setError(t('sign_in.errors.login', { reason: t(message) }));
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [login, t]
+  );
   const validators = createValidators(t);
 
   return (

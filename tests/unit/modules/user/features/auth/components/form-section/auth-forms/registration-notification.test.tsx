@@ -83,6 +83,22 @@ describe('RegistrationNotification', () => {
     ).toBeInTheDocument();
   });
 
+  it('falls back to the default localized error when the error text is only whitespace', () => {
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={baseProps.isSubmitting}
+        onBack={baseProps.onBack}
+        view={baseProps.view}
+        errorText="   "
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(
+      screen.getByText('Щось пішло не так із запитом. Спробуйте ще раз пізніше')
+    ).toBeInTheDocument();
+  });
+
   it('renders the success notification', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
@@ -128,6 +144,23 @@ describe('RegistrationNotification', () => {
 
     fireEvent.click(screen.getByText('Назад'));
     expect(onBack).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('only calls onBack once when back is clicked rapidly in error view', () => {
+    jest.useFakeTimers();
+    const onBack = jest.fn();
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    const backButton = screen.getByText('Назад');
+    fireEvent.click(backButton);
+    fireEvent.click(backButton);
+    fireEvent.click(backButton);
+
     jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
     expect(onBack).toHaveBeenCalledTimes(1);
   });

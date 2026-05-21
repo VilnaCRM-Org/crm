@@ -27,7 +27,7 @@ if (engines.bun) {
   if (!bunVersion) {
     try {
       bunVersion = execSync('bun --version', { encoding: 'utf-8' }).trim();
-    } catch (error) {
+    } catch {
       writeStderr('Bun is required but not installed or not available in PATH.');
       process.exit(1);
     }

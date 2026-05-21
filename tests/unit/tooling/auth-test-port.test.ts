@@ -28,8 +28,15 @@ describe('auth test harness wiring', () => {
     const batchScript = readFile('scripts/ci/batch_lhci_leak.sh');
 
     expect(workflow).not.toContain('/authentication');
-    // eslint-disable-next-line no-template-curly-in-string
-    expect(constants).toContain("const pages = [baseUrl || '/', `${baseUrl}/authentication`];");
+
+    expect(constants).toContain(
+      "const normalizedBaseUrl = baseUrl === '/' ? '/' : baseUrl.replace("
+    );
+    expect(constants).toContain('normalizedBaseUrl,');
+    expect(constants).toContain(
+      "normalizedBaseUrl === '/' ? '/authentication' : `${normalizedBaseUrl}/authentication`,"
+    );
+    expect(constants).toContain('baseUrl: normalizedBaseUrl');
     expect(desktopRc).toContain("const { pages } = require('./constants');");
     expect(desktopRc).toContain('url: pages');
     expect(desktopRc).not.toContain('puppeteerScript');

@@ -101,8 +101,7 @@ contributor documentation.
 
 #### Option 2: Add a Dedicated Execution Wrapper
 
-Introduce a dedicated containerized or otherwise isolated execution wrapper
-specifically for `rust-code-analysis`.
+Introduce a dedicated containerized or otherwise isolated execution wrapper specifically for `rust-code-analysis`.
 
 **What it gives us:**
 
@@ -257,19 +256,19 @@ existing repository foundation is the lowest-risk and most maintainable architec
 The threshold labels above are policy names. Their mapping to actual
 `rust-code-analysis-cli` JSON paths (verified against v0.0.25 source) is:
 
-- `cyclomatic_max`: `.metrics.cyclomatic.sum` (per function `FuncSpace`)
+- `cyclomatic_max`: `.metrics.cyclomatic.sum` (per-function `FuncSpace`)
 - `cognitive_max`: `.metrics.cognitive.sum`
 - `abc_magnitude_max`: `.metrics.abc.magnitude`
-  No standalone `abc_magnitude` field exists.
+  There is no standalone `abc_magnitude` field.
 - `nargs_function_max`: `.metrics.nargs.functions_max`
 - `nargs_closure_max`: `.metrics.nargs.closures_max`
 - `nexits_max`: `.metrics.nexits.average`
-- `lloc_*` / `ploc_*` / `sloc_*`: `.metrics.loc.lloc` / `.metrics.loc.ploc` /
-  `.metrics.loc.sloc`
-- `halstead_volume_*` / `halstead_bugs_*`: `.metrics.halstead.volume` /
-  `.metrics.halstead.bugs`
-- `nom_functions_*` / `nom_closures_*`: `.metrics.nom.functions` /
-  `.metrics.nom.closures`
+- `lloc_*` / `ploc_*` / `sloc_*`:
+  `.metrics.loc.lloc` / `.metrics.loc.ploc` / `.metrics.loc.sloc`
+- `halstead_volume_*` / `halstead_bugs_*`:
+  `.metrics.halstead.volume` / `.metrics.halstead.bugs`
+- `nom_functions_*` / `nom_closures_*`:
+  `.metrics.nom.functions` / `.metrics.nom.closures`
 - `mi_visual_studio_min`: `.metrics.maintanability_index.mi_visual_studio`
 - `mi_original_min`: `.metrics.maintanability_index.mi_original`
 - `mi_sei_min`: `.metrics.maintanability_index.mi_sei`
@@ -467,8 +466,7 @@ crm/
 crm/
 ├── .gitignore                        # Planned addition: /bin/
 ├── Makefile                   # Planned: RCA_VERSION, lint-metrics target, extend lint
-└── CLAUDE.md                         # Planned addition: rust-code-analysis
-                                     section under Code Quality
+└── CLAUDE.md                         # Planned addition: rust-code-analysis section under Code Quality
 ```
 
 ### Architectural Boundaries
@@ -493,16 +491,16 @@ crm/
 
 ### Requirements to Structure Mapping
 
-- `Quality gate enforcement`:
+- Quality gate enforcement:
   `.github/workflows/rust-code-analysis.yml`
-- `Contributor validation (local)`:
-  `Makefile` via the `lint-metrics` target
-- `CI results reporting`:
-  `Makefile` via the `$GITHUB_STEP_SUMMARY` section and workflow job output
-- `Repository policy consistency`:
-  `Makefile` via `RCA_VERSION` and inline thresholds
-- `Contributor documentation`:
-  `CLAUDE.md` under the Code Quality section
+- Contributor validation (local):
+  `Makefile` and the `lint-metrics` target
+- CI results reporting:
+  `Makefile`, specifically the `$GITHUB_STEP_SUMMARY` section and workflow output
+- Repository policy consistency:
+  `Makefile`, specifically `RCA_VERSION` and inline thresholds
+- Contributor documentation:
+  `CLAUDE.md`, under the Code Quality section
 
 ### Integration Points
 
@@ -575,8 +573,12 @@ from constructing it differently. GitHub release pages use the `v`-prefixed
 tag, while `RCA_VERSION` remains the unprefixed `0.0.25` value in the Makefile:
 
 ```text
-https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz
+https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-linux-cli-x86_64.tar.gz
 ```
+
+> **Note:** The actual GitHub release asset is named `rust-code-analysis-linux-cli-x86_64.tar.gz`
+> (confirmed via GitHub API). The earlier filename `rust-code-analysis-cli-x86_64-unknown-linux-gnu.tar.gz`
+> does not exist in the v0.0.25 release and will 404.
 
 **Important — Baseline Compliance Run:**
 Before registering the workflow as a required check, run `make lint-metrics`

@@ -1,8 +1,8 @@
-import UIForm from '@/components/ui-form';
 import { Box } from '@mui/material';
 import { lazy, Suspense, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import UIForm from '@/components/ui-form';
 import FormField from '@/modules/user/features/auth/components/form-section/components/form-field';
 import PasswordField from '@/modules/user/features/auth/components/form-section/components/password-field';
 import { RegistrationView } from '@/modules/user/features/auth/components/form-section/types';

@@ -31,16 +31,14 @@ const isPlainObject = (val: unknown): val is Record<string, unknown> => {
   return proto === Object.prototype || proto === null;
 };
 
+const SENSITIVE_KEY_SUBSTRINGS = ['token', 'secret', 'pass', 'auth'] as const;
+const SENSITIVE_KEY_PATTERN = /(^|[-_])(api|x-?api|access|private|client)?key$/;
+
 const isSensitiveKey = (k: string): boolean => {
   const lower = k.toLowerCase();
   if (SENSITIVE_KEYS_LOWER.has(lower)) return true;
-  return (
-    lower.includes('token') ||
-    lower.includes('secret') ||
-    lower.includes('pass') ||
-    /(^|[-_])(api|x-?api|access|private|client)?key$/.test(lower) ||
-    lower.includes('auth')
-  );
+  if (SENSITIVE_KEY_SUBSTRINGS.some((s) => lower.includes(s))) return true;
+  return SENSITIVE_KEY_PATTERN.test(lower);
 };
 function deepRedact<T>(input: T): T {
   if (input instanceof Map) {
@@ -59,26 +57,32 @@ function deepRedact<T>(input: T): T {
   ) as T;
 }
 
+const REDACTABLE_META_KEYS = ['arg', 'headers', 'request'] as const;
+
+function redactActionMeta(meta: Record<string, unknown> | undefined): {
+  meta: Record<string, unknown> | undefined;
+  changed: boolean;
+} {
+  if (!meta || typeof meta !== 'object') {
+    return { meta, changed: false };
+  }
+  const next: Record<string, unknown> = { ...meta };
+  let changed = false;
+  for (const key of REDACTABLE_META_KEYS) {
+    const value = next[key];
+    if (value && typeof value === 'object') {
+      next[key] = deepRedact(value);
+      changed = true;
+    }
+  }
+  return { meta: changed ? next : meta, changed };
+}
+
 const devToolsOptions: DevToolsEnhancerOptions = {
   actionSanitizer: <A extends AnyAction>(action: A): A => {
-    let changed = false;
-    let nextMeta = action.meta as Record<string, unknown> | undefined;
-    if (nextMeta && typeof nextMeta === 'object') {
-      const m: Record<string, unknown> = { ...nextMeta };
-      if (m.arg && typeof m.arg === 'object') {
-        m.arg = deepRedact(m.arg);
-        changed = true;
-      }
-      if (m.headers && typeof m.headers === 'object') {
-        m.headers = deepRedact(m.headers);
-        changed = true;
-      }
-      if (m.request && typeof m.request === 'object') {
-        m.request = deepRedact(m.request);
-        changed = true;
-      }
-      if (changed) nextMeta = m;
-    }
+    const { meta: nextMeta, changed } = redactActionMeta(
+      action.meta as Record<string, unknown> | undefined
+    );
     const ap = (action as A & { payload?: unknown }).payload;
     const nextPayload = ap && typeof ap === 'object' ? deepRedact(ap) : ap;
     const payloadChanged = nextPayload !== ap;

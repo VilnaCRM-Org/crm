@@ -1,12 +1,13 @@
 import { waitFor } from '@testing-library/react';
 import { useEffect } from 'react';
 
+import useAppDispatch from '@/stores/hooks';
+
 import { createAuthClients, type AuthClients } from '@/modules/user/features/auth/repositories';
 import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
 import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
 import { registerUser } from '@/modules/user/store/registration-slice';
 import type HttpsClient from '@/services/https-client/https-client';
-import useAppDispatch from '@/stores/hooks';
 
 import renderWithProviders from './render-with-providers';
 

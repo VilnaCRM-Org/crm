@@ -4,7 +4,7 @@ SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
 RUN apk add --no-cache \
     bash=5.2.37-r0 \
-    ca-certificates=20260413-r0  \
+    ca-certificates=20260413-r0 \
     chromium=136.0.7103.113-r0 \
     curl=8.14.1-r2 \
     dbus=1.14.10-r4 \
@@ -33,7 +33,7 @@ WORKDIR /app
 
 FROM base AS build
 
-COPY package.json bun.lock* check-node-version.js ./
+COPY package.json bun.lock* check-node-version.js .env ./
 RUN bun install
 
 

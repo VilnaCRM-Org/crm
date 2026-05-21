@@ -57,9 +57,7 @@ export default {
       transform: 'scale(1)',
     },
   },
-  successTopConfetti: {
-    display: 'block',
-  },
+  successTopConfetti: { display: 'block' },
   bottomImgBox: {
     position: 'absolute',
     bottom: '-0.78rem',
@@ -81,9 +79,7 @@ export default {
       transform: 'rotate(-180deg) scale(1)',
     },
   },
-  successBottomConfetti: {
-    display: 'block',
-  },
+  successBottomConfetti: { display: 'block' },
   gears: {
     position: 'absolute',
     left: '50%',
@@ -366,7 +362,5 @@ export default {
       lineHeight: '21.6px',
     },
   },
-  errorButtonSecondary: {
-    marginTop: '0.5rem',
-  },
+  errorButtonSecondary: { marginTop: '0.5rem' },
 } as const;

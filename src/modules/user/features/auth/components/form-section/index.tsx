@@ -1,9 +1,9 @@
-import UIButton from '@/components/ui-button';
-import UITypography from '@/components/ui-typography';
 import { Box } from '@mui/material';
 import { lazy, startTransition, Suspense, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import UIButton from '@/components/ui-button';
+import UITypography from '@/components/ui-typography';
 import RegistrationForm from '@/modules/user/features/auth/components/form-section/auth-forms/registration-form';
 import AuthProviderButtons from '@/modules/user/features/auth/components/form-section/components/auth-provider-buttons';
 import styles from '@/modules/user/features/auth/components/form-section/styles';
@@ -65,6 +65,18 @@ export default function FormSection(): JSX.Element {
 
   const showNotification = mode === 'register' && registrationView !== 'form';
 
+  const setProviderButtonsInert = useCallback(
+    (el: HTMLDivElement | null): void => {
+      if (!el) return;
+      if (showNotification) {
+        el.setAttribute('inert', '');
+      } else {
+        el.removeAttribute('inert');
+      }
+    },
+    [showNotification]
+  );
+
   return (
     <Box component="section" sx={styles.formSection}>
       <Box sx={styles.formWrapper}>
@@ -76,18 +88,7 @@ export default function FormSection(): JSX.Element {
           <RegistrationForm onViewChange={handleRegistrationViewChange} />
         )}
 
-        <Box
-          id="auth-provider-buttons-container"
-          ref={(el: HTMLDivElement | null) => {
-            if (el) {
-              if (showNotification) {
-                el.setAttribute('inert', '');
-              } else {
-                el.removeAttribute('inert');
-              }
-            }
-          }}
-        >
+        <Box id="auth-provider-buttons-container" ref={setProviderButtonsInert}>
           <AuthProviderButtons />
         </Box>
       </Box>

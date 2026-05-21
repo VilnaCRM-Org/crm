@@ -1,5 +1,3 @@
-import { ErrorHandler, UiError } from '@/services/error';
-import { ErrorParser } from '@/utils/error';
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import {
@@ -7,6 +5,8 @@ import {
   type SafeUserInfo,
 } from '@/modules/user/features/auth/types/api-responses';
 import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
+import { ErrorHandler, UiError } from '@/services/error';
+import { ErrorParser } from '@/utils/error';
 
 import { ThunkExtra } from './types';
 

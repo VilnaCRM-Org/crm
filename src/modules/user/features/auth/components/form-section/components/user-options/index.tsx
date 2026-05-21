@@ -1,8 +1,8 @@
-import UIButton from '@/components/ui-button';
 import { Box, FormControlLabel, Checkbox } from '@mui/material';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import UIButton from '@/components/ui-button';
 import {
   CheckBoxChecked,
   CheckBoxIcon,
@@ -13,7 +13,9 @@ export default function UserOptions(): JSX.Element {
   const [isChecked, setIsChecked] = useState(false);
   const { t } = useTranslation();
 
-  const onChange = (): void => setIsChecked(!isChecked);
+  const handleCheckboxChange = useCallback((): void => {
+    setIsChecked((prev) => !prev);
+  }, []);
   return (
     <Box sx={styles.authOptionsWrapper}>
       <FormControlLabel
@@ -23,7 +25,7 @@ export default function UserOptions(): JSX.Element {
         control={
           <Checkbox
             checked={isChecked}
-            onChange={onChange}
+            onChange={handleCheckboxChange}
             icon={<CheckBoxIcon />}
             checkedIcon={<CheckBoxChecked />}
             sx={styles.rememberMeCheckbox}

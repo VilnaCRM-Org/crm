@@ -27,13 +27,17 @@ const createPasswordValidator =
       fieldRequired: t('sign_up.form.password_input.required'),
     };
 
-    if (!value?.trim()) return messages.fieldRequired;
-    if (!isLengthValid(value)) return messages.invalidLength;
-    if (!hasNumber(value)) return messages.numberRequired;
-    if (!hasUppercase(value)) return messages.uppercaseRequired;
-    if (!hasLowercase(value)) return messages.lowercaseRequired;
+    const safe = value ?? '';
+    const rules: Array<{ valid: boolean; message: string }> = [
+      { valid: Boolean(value?.trim()), message: messages.fieldRequired },
+      { valid: isLengthValid(safe), message: messages.invalidLength },
+      { valid: hasNumber(safe), message: messages.numberRequired },
+      { valid: hasUppercase(safe), message: messages.uppercaseRequired },
+      { valid: hasLowercase(safe), message: messages.lowercaseRequired },
+    ];
 
-    return true;
+    const failed = rules.find((rule) => !rule.valid);
+    return failed ? failed.message : true;
   };
 
 export default createPasswordValidator;

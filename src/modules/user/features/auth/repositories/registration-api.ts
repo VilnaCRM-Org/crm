@@ -1,7 +1,6 @@
 import API_ENDPOINTS from '@/config/api-config';
-import type HttpsClient from '@/services/https-client/https-client';
-
 import type { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
+import type HttpsClient from '@/services/https-client/https-client';
 
 import type { RegistrationResponse } from '../types/api-responses';
 
