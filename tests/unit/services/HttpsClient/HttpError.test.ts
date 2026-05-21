@@ -45,13 +45,14 @@ describe('HttpError', () => {
 
     it('should still build stack when captureStackTrace is unavailable', () => {
       const originalCapture = Error.captureStackTrace;
-      // @ts-expect-error intentional removal for branch coverage
-      Error.captureStackTrace = undefined;
-
-      const error = new HttpError({ status: 500, message: 'Stackless' });
-      expect(error.stack).toBeDefined();
-
-      Error.captureStackTrace = originalCapture;
+      try {
+        // @ts-expect-error intentional removal for branch coverage
+        Error.captureStackTrace = undefined;
+        const error = new HttpError({ status: 500, message: 'Stackless' });
+        expect(error.stack).toBeDefined();
+      } finally {
+        Error.captureStackTrace = originalCapture;
+      }
     });
 
     it('should create error with cause as string', () => {

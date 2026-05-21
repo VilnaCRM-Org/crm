@@ -1,4 +1,6 @@
 import '../setup';
+import container from '@/config/DependencyInjectionConfig';
+import TOKENS from '@/config/tokens';
 import { ErrorHandler } from '@/services/error';
 
 describe('ErrorHandler Coverage Tests', () => {
@@ -75,5 +77,11 @@ describe('ErrorHandler Coverage Tests', () => {
     expect(consoleSpy).toHaveBeenCalledTimes(3);
 
     consoleSpy.mockRestore();
+  });
+
+  it('should resolve ErrorHandler from the dependency injection container', () => {
+    const errorHandler = container.resolve<ErrorHandler>(TOKENS.ErrorHandler);
+
+    expect(errorHandler).toBeInstanceOf(ErrorHandler);
   });
 });

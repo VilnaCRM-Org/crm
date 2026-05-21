@@ -8,7 +8,6 @@ export default async function throwIfHttpError(res: Response): Promise<void> {
   if (res.ok || res.status === 304) return;
 
   let msg = `${res.status} ${res.statusText}`;
-  let body: unknown;
 
   try {
     const ct = (res.headers.get('content-type') || '').toLowerCase();
@@ -16,7 +15,6 @@ export default async function throwIfHttpError(res: Response): Promise<void> {
 
     if (ct.includes('json')) {
       const data = await clonedRes.json().catch(() => undefined);
-      body = data;
 
       const jsonData = data as JsonWithMessage | undefined;
       if (jsonData?.message) {
@@ -24,7 +22,6 @@ export default async function throwIfHttpError(res: Response): Promise<void> {
       }
     } else {
       const text = await clonedRes.text().catch(() => '');
-      body = text;
       if (ct.includes('text/plain') && text) msg = text.slice(0, 500);
     }
   } catch {
@@ -37,7 +34,6 @@ export default async function throwIfHttpError(res: Response): Promise<void> {
     cause: {
       url: res.url,
       contentType: res.headers.get('content-type') ?? undefined,
-      body,
     },
   });
 }

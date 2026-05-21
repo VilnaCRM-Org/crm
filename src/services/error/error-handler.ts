@@ -1,3 +1,5 @@
+import { injectable } from 'tsyringe';
+
 import ParsedError from '@/utils/error/types';
 
 import { ERROR_CODES, type ErrorCode } from './error-codes';
@@ -63,6 +65,7 @@ const errorMap: Record<ErrorCode, UiError> = {
   },
 };
 
+@injectable()
 export class ErrorHandler {
   public static handleAuthError(error: ParsedError): UiError {
     return (
@@ -76,5 +79,13 @@ export class ErrorHandler {
   public static handle(error: unknown): void {
     // eslint-disable-next-line no-console
     console.error('[ErrorHandler]', error);
+  }
+
+  public handleAuthError(error: ParsedError): UiError {
+    return ErrorHandler.handleAuthError(error);
+  }
+
+  public handle(error: unknown): void {
+    ErrorHandler.handle(error);
   }
 }

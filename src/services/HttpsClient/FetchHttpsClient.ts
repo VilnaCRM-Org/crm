@@ -61,15 +61,7 @@ export default class FetchHttpsClient implements HttpsClient {
     headers?: Record<string, string>
   ): RequestInit {
     const hasBody = body !== undefined;
-
-    const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
-    const isBlob = typeof Blob !== 'undefined' && body instanceof Blob;
-    const isArrayBuffer = typeof ArrayBuffer !== 'undefined' && body instanceof ArrayBuffer;
-    const isReadableStream =
-      typeof ReadableStream !== 'undefined' && body instanceof ReadableStream;
-    const isString = typeof body === 'string';
-    const isJsonBody =
-      hasBody && !isFormData && !isBlob && !isArrayBuffer && !isReadableStream && !isString;
+    const isJsonBody = hasBody && !this.isNonJsonBody(body);
 
     const config: RequestInit = {
       method,
@@ -81,6 +73,18 @@ export default class FetchHttpsClient implements HttpsClient {
     return config;
   }
 
+  private isNonJsonBody(body: unknown): boolean {
+    if (typeof body === 'string') return true;
+    if (typeof FormData !== 'undefined' && body instanceof FormData) return true;
+    if (typeof Blob !== 'undefined' && body instanceof Blob) return true;
+    if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) return true;
+    if (typeof ArrayBuffer !== 'undefined') {
+      if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) return true;
+    }
+    if (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream) return true;
+    return false;
+  }
+
   private createHeaders(
     contentType?: string,
     customHeaders?: Record<string, string>
@@ -89,7 +93,8 @@ export default class FetchHttpsClient implements HttpsClient {
       Accept: 'application/json',
       ...customHeaders,
     };
-    if (contentType && !('Content-Type' in headers)) headers['Content-Type'] = contentType;
+    const hasContentType = Object.keys(headers).some((key) => key.toLowerCase() === 'content-type');
+    if (contentType && !hasContentType) headers['Content-Type'] = contentType;
     return headers;
   }
 

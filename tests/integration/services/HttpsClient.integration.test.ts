@@ -7,6 +7,7 @@ import ResponseMessages from '@/services/HttpsClient/responseMessages';
 const TEST_URL = 'http://localhost:8080/api/test';
 
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+const originalFetch = global.fetch;
 
 describe('FetchHttpsClient Integration', () => {
   let client: FetchHttpsClient;
@@ -16,6 +17,7 @@ describe('FetchHttpsClient Integration', () => {
   });
 
   afterAll(() => {
+    global.fetch = originalFetch;
     jest.restoreAllMocks();
   });
 
