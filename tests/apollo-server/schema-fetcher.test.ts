@@ -52,7 +52,7 @@ interface SchemaFetcherModule {
 type ProcessExitCode = string | number | null | undefined;
 
 function getSchemaFetcherModule(): SchemaFetcherModule {
-  return jest.requireActual('../../docker/apollo-server/lib/schemaFetcher') as SchemaFetcherModule;
+  return jest.requireActual('../../docker/apollo-server/lib/schema-fetcher') as SchemaFetcherModule;
 }
 
 function getFetchAndSaveSchema(): (outputDir: string) => Promise<void> {

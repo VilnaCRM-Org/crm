@@ -51,7 +51,7 @@ const config: Config = {
       ? ['<rootDir>/docker/apollo-server/lib/**/*.{ts,mts}', '!**/*.d.ts']
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
-          '<rootDir>/scripts/localizationGenerator.js',
+          '<rootDir>/scripts/localization-generator.js',
           '!<rootDir>/src/**/types/**',
           '!<rootDir>/src/**/types.ts',
           '!<rootDir>/src/**/theme.ts',

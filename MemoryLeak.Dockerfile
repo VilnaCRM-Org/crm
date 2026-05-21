@@ -33,7 +33,7 @@ WORKDIR /app
 
 FROM base AS build
 
-COPY package.json bun.lock* checkNodeVersion.js .env ./
+COPY package.json bun.lock* check-node-version.js .env ./
 RUN bun install
 
 
@@ -43,7 +43,7 @@ WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
 
 COPY tests/memory-leak tests/memory-leak
-COPY src/config/i18nConfig.js ./src/config/i18nConfig.js
+COPY src/config/i18n-config.js ./src/config/i18n-config.js
 COPY src/i18n/localization.json ./src/i18n/localization.json
 
 CMD ["sleep","infinity"]

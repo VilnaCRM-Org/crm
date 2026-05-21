@@ -1,7 +1,7 @@
 import { rest } from 'msw';
 import { setupServer } from 'msw/node';
 
-import API_ENDPOINTS from '@/config/apiConfig';
+import API_ENDPOINTS from '@/config/api-config';
 
 const handlers = [
   rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
