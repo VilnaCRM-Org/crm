@@ -27,9 +27,8 @@ export function getLogger(outputDir?: string): Logger {
   try {
     transportList.push(new transports.File({ filename: LOG_FILE_PATH }));
   } catch (e) {
-    console.warn(
-      `Logger file transport could not be initialized (${e instanceof Error ? e.message : String(e)}), using console only.`
-    );
+    const reason = e instanceof Error ? e.message : String(e);
+    console.warn(`Logger file transport could not be initialized (${reason}), using console only.`);
   }
   const newLogger = createLogger({
     level: LOG_LEVEL,
@@ -125,9 +124,8 @@ async function waitForRetryDelay(
 }
 
 function logFetchAttempt(config: SchemaFetchConfig, retries: number, schemaLogger: Logger): void {
-  schemaLogger.info(
-    `Fetching GraphQL schema from: ${config.SCHEMA_URL}... (Attempt ${retries + 1}/${config.MAX_RETRIES})`
-  );
+  const attempt = `${retries + 1}/${config.MAX_RETRIES}`;
+  schemaLogger.info(`Fetching GraphQL schema from: ${config.SCHEMA_URL}... (Attempt ${attempt})`);
 }
 
 function normalizeSchemaFetchError(error: unknown): Error {

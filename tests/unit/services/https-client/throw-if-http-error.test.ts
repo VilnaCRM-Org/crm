@@ -257,7 +257,9 @@ describe('throwIfHttpError', () => {
       expect(error.cause).toBeDefined();
       expect(cause.url).toBe('https://api.example.com/test');
       expect(cause.contentType).toBe('application/json');
-      expect(cause.body).toEqual({ error: 'details' });
+      expect(cause.bodyPreview).toBe('{"error":"details"}');
+      expect(cause.bodyLength).toBe('{"error":"details"}'.length);
+      expect(cause).not.toHaveProperty('body');
     });
 
     it('should not include text body in cause for text/plain', async () => {
@@ -465,12 +467,15 @@ describe('throwIfHttpError', () => {
       );
 
       const error = await expectHttpError(response);
-      expect(error.message).toBe('Email is invalid');
-      expect(error.status).toBe(422);
-      expect((error.cause as ErrorCause).body).toEqual({
+      const expectedBody = JSON.stringify({
         message: 'Email is invalid',
         fields: { email: 'Invalid format' },
       });
+      expect(error.message).toBe('Email is invalid');
+      expect(error.status).toBe(422);
+      expect((error.cause as ErrorCause).bodyPreview).toBe(expectedBody);
+      expect((error.cause as ErrorCause).bodyLength).toBe(expectedBody.length);
+      expect(error.cause as ErrorCause).not.toHaveProperty('body');
     });
 
     it('should handle authentication error', async () => {
@@ -504,6 +509,40 @@ describe('throwIfHttpError', () => {
 
       const error = await expectHttpError(response);
       expect(error.cause as ErrorCause).not.toHaveProperty('body');
+    });
+
+    it('uses the raw value when a JSON response body is a primitive string', async () => {
+      class StringJsonResponse extends MockResponse {
+        public async json(): Promise<unknown> {
+          return 'plain-json-string';
+        }
+      }
+
+      const response = new StringJsonResponse('plain-json-string', {
+        status: 500,
+        headers: { 'content-type': 'application/json' },
+      }) as unknown as Response;
+
+      const error = await expectHttpError(response);
+      const cause = error.cause as ErrorCause;
+      expect(cause.bodyPreview).toBe('plain-json-string');
+      expect(cause.bodyLength).toBe('plain-json-string'.length);
+    });
+
+    it('falls back to String(data) when the response body cannot be JSON-serialized', async () => {
+      const circular: Record<string, unknown> = { name: 'loop' };
+      circular.self = circular;
+
+      const response = new MockResponse(circular, {
+        status: 500,
+        headers: { 'content-type': 'application/json' },
+      }) as unknown as Response;
+
+      const error = await expectHttpError(response);
+      const cause = error.cause as ErrorCause;
+      expect(typeof cause.bodyPreview).toBe('string');
+      expect(cause.bodyPreview).toBe(String(circular).slice(0, 200));
+      expect(cause.bodyLength).toBe(String(circular).length);
     });
 
     it('should handle text/plain without message when text is empty', async () => {

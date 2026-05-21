@@ -74,15 +74,22 @@ export default class FetchHttpsClient implements HttpsClient {
   }
 
   private isNonJsonBody(body: unknown): boolean {
-    if (typeof body === 'string') return true;
-    if (typeof FormData !== 'undefined' && body instanceof FormData) return true;
-    if (typeof Blob !== 'undefined' && body instanceof Blob) return true;
-    if (typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams) return true;
-    if (typeof ArrayBuffer !== 'undefined') {
-      if (body instanceof ArrayBuffer || ArrayBuffer.isView(body)) return true;
-    }
-    if (typeof ReadableStream !== 'undefined' && body instanceof ReadableStream) return true;
-    return false;
+    const isInstanceOfGlobal = (ctor: string): boolean => {
+      const globalCtor = (globalThis as Record<string, unknown>)[ctor];
+      return typeof globalCtor === 'function' && body instanceof (globalCtor as new () => unknown);
+    };
+    const isBinaryBuffer =
+      typeof ArrayBuffer !== 'undefined' &&
+      (body instanceof ArrayBuffer || ArrayBuffer.isView(body));
+
+    return (
+      typeof body === 'string' ||
+      isInstanceOfGlobal('FormData') ||
+      isInstanceOfGlobal('Blob') ||
+      isInstanceOfGlobal('URLSearchParams') ||
+      isInstanceOfGlobal('ReadableStream') ||
+      isBinaryBuffer
+    );
   }
 
   private createHeaders(

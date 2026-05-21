@@ -319,7 +319,8 @@ describe('name validation', () => {
         expect(validators.fullName('Марія Коваленко', emptyUser)).toBe(true);
         expect(validators.fullName('Євген Шевченко', emptyUser)).toBe(true);
         expect(validators.fullName('Ірина Мельник', emptyUser)).toBe(true);
-        expect(validators.fullName('Ґрунтовський Олександр', emptyUser)).toBe(true);
+        const ukrName = 'Ґрунтовський Олександр';
+        expect(validators.fullName(ukrName, emptyUser)).toBe(true);
       });
 
       it('should handle names with hyphens', () => {

@@ -1,4 +1,4 @@
-// @jest-environment node
+// @jest-environment @stryker-mutator/jest-runner/jest-env/node
 
 describe('memory leak logger', () => {
   it('preserves extra context arguments when logging errors', () => {
