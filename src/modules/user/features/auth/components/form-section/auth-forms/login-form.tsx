@@ -7,7 +7,7 @@ import FormField from '@/modules/user/features/auth/components/form-section/comp
 import PasswordField from '@/modules/user/features/auth/components/form-section/components/password-field';
 import UserOptions from '@/modules/user/features/auth/components/form-section/components/user-options';
 import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
-import useLoginRequest from '@/modules/user/features/auth/hooks';
+import useAuthStore from '@/modules/user/features/auth/hooks/use-auth-store';
 import { LoginUserDto } from '@/modules/user/features/auth/types/credentials';
 import getSubmitLabelKey from '@/modules/user/features/auth/utils/get-submit-label-key';
 
@@ -46,7 +46,7 @@ export default function LoginForm(): JSX.Element {
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { t } = useTranslation();
-  const { login } = useLoginRequest();
+  const { login } = useAuthStore();
 
   const handleLogin = useCallback(
     async (data: LoginUserDto): Promise<void> => {

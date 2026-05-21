@@ -2,10 +2,10 @@ import '../../../../setup';
 import BaseAPI from '@/modules/user/features/auth/repositories/base-api';
 import {
   ApiError,
+  ApiErrorCodes,
   AuthenticationError,
   ConflictError,
   ValidationError,
-  ApiErrorCodes,
 } from '@/modules/user/types/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
 

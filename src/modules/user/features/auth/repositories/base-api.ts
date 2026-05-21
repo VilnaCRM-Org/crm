@@ -128,8 +128,8 @@ export default class BaseAPI {
     return name === 'aborterror' || msg.includes('abort');
   }
 
-  private isNetworkError(message: string): boolean {
-    if (!message) return false;
+  private isNetworkError(message: unknown): boolean {
+    if (typeof message !== 'string' || !message) return false;
     const m = message.toLowerCase();
     return BaseAPI.NETWORK_ERROR_KEYWORDS.some((keyword) => m.includes(keyword));
   }

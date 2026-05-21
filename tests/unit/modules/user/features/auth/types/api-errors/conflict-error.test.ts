@@ -122,10 +122,10 @@ describe('ConflictError', () => {
       expect(error.stack).toContain('Custom conflict error');
     });
 
-    it('should include ConflictError in stack', () => {
+    it('should omit ConflictError constructor frames from stack', () => {
       const error = new ConflictError();
 
-      expect(error.stack).toContain('ConflictError');
+      expect(error.stack).not.toContain('ConflictError');
     });
   });
 

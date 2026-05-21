@@ -5,17 +5,9 @@ import LoginForm, {
   normalizeLoginErrorMessage,
 } from '@/modules/user/features/auth/components/form-section/auth-forms/login-form';
 
-const mockDispatch = jest.fn();
-const mockLoginUser = jest.fn();
+const mockLogin = jest.fn();
 const mockFormField = jest.fn();
 const mockUIForm = jest.fn();
-const submitCredentials = { email: 'user@example.com', password: 'secret123' } as const;
-
-let submitLoginForm: (() => Promise<void>) | null = null;
-
-function handleMockSubmitClick(): void {
-  void submitLoginForm?.();
-}
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string, options?: Record<string, unknown>) => string } => ({
@@ -26,13 +18,9 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@/stores/hooks', () => ({
+jest.mock('@/modules/user/features/auth/hooks/use-auth-store', () => ({
   __esModule: true,
-  default: (): typeof mockDispatch => mockDispatch,
-}));
-
-jest.mock('@/modules/user/store', () => ({
-  loginUser: (...args: unknown[]): unknown => mockLoginUser(...args),
+  default: (): { login: typeof mockLogin } => ({ login: mockLogin }),
 }));
 
 jest.mock('@/modules/user/features/auth/utils/get-submit-label-key', () => ({
@@ -71,11 +59,13 @@ jest.mock('@/components/ui-form', () => ({
     children: ReactElement[];
   }): ReactElement => {
     mockUIForm(props);
-    submitLoginForm = (): Promise<void> => props.onSubmit(submitCredentials);
 
     return (
       <div>
-        <button type="button" onClick={handleMockSubmitClick}>
+        <button
+          type="button"
+          onClick={() => props.onSubmit({ email: 'user@example.com', password: 'secret123' })}
+        >
           submit
         </button>
         <div data-testid="form-error">{props.error}</div>
@@ -88,8 +78,7 @@ jest.mock('@/components/ui-form', () => ({
 describe('LoginForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    submitLoginForm = null;
-    mockLoginUser.mockImplementation((payload: unknown) => payload);
+    mockLogin.mockResolvedValue({ token: 'tok', email: 'user@example.com' });
   });
 
   it('uses sign-in translations for the email field', () => {
@@ -107,9 +96,7 @@ describe('LoginForm', () => {
   });
 
   it('shows a translated login error prefix with a normalized message', async () => {
-    mockDispatch.mockReturnValue({
-      unwrap: () => Promise.reject(new Error('Invalid credentials')),
-    });
+    mockLogin.mockRejectedValue(new Error('Invalid credentials'));
 
     render(<LoginForm />);
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));

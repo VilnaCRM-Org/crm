@@ -66,17 +66,21 @@ describe('performance serving config', () => {
     const registrationFormSource = readFile(
       'src/modules/user/features/auth/components/form-section/auth-forms/registration-form.tsx'
     );
+    const registrationNotificationImportPattern = new RegExp(
+      [
+        `import loadRegistrationNotification from ['"][^'"]*`,
+        String.raw`\/utils\/load-registration-notification['"];`,
+      ].join('')
+    );
 
     expect(registrationFormSource).toContain('import { lazy, Suspense');
     expect(registrationFormSource).toContain("from 'react';");
-    expect(registrationFormSource).toContain(
-      "import loadRegistrationNotification from '@/modules/user/features/auth/utils/load-registration-notification';"
-    );
+    expect(registrationFormSource).toMatch(registrationNotificationImportPattern);
     expect(registrationFormSource).toContain(
       'const RegistrationNotification = lazy(loadRegistrationNotification);'
     );
-    expect(registrationFormSource).not.toContain(
-      "import RegistrationNotification from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification';"
+    expect(registrationFormSource).not.toMatch(
+      /import RegistrationNotification from ['"][^'"]*registration-notification['"];/
     );
   });
 });

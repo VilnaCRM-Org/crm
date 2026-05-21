@@ -14,9 +14,10 @@ describe('auth client runtime dependencies', () => {
     const loginSlice = readFile('src/modules/user/store/login-slice.ts');
     const registrationSlice = readFile('src/modules/user/store/registration-slice.ts');
 
-    expect(apiResponses).toContain("from 'zod'");
-    expect(loginSlice).toContain('LoginResponseSchema.safeParse(apiResponse)');
-    expect(registrationSlice).toContain('RegistrationResponseSchema.safeParse(apiResponse)');
+    expect(apiResponses).toContain('validateLoginResponse');
+    expect(apiResponses).toContain('validateRegistrationResponse');
+    expect(loginSlice).toMatch(/validateLoginResponse\(\s*apiResponse\s*\)/);
+    expect(registrationSlice).toMatch(/validateRegistrationResponse\(\s*apiResponse\s*\)/);
   });
 
   it('keeps auth hooks and shared UI decoupled from redux and router bindings', () => {

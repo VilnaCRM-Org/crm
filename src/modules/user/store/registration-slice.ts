@@ -1,10 +1,12 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-import { UiError, ErrorHandler } from '@/services/error';
+import {
+  validateRegistrationResponse,
+  type SafeUserInfo,
+} from '@/modules/user/features/auth/types/api-responses';
+import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
+import { ErrorHandler, UiError } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
-
-import { RegistrationResponseSchema, SafeUserInfo } from '../features/auth/types/api-responses';
-import { RegisterUserDto } from '../features/auth/types/credentials';
 
 import { ThunkExtra } from './types';
 
@@ -16,11 +18,9 @@ export const registerUser = createAsyncThunk<
   try {
     const apiResponse = await extra.registrationAPI.register(credentials, { signal });
 
-    const parsed = RegistrationResponseSchema.safeParse(apiResponse);
+    const parsed = validateRegistrationResponse(apiResponse);
     if (!parsed.success) {
-      const displayMessage = parsed.error.issues
-        .map((i) => `${i.path.join('.')}: ${i.message}`)
-        .join('\n');
+      const displayMessage = parsed.errors.join('\n');
       return rejectWithValue({ displayMessage, retryable: false });
     }
 

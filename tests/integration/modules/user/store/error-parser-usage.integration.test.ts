@@ -28,7 +28,7 @@ type RegistrationTestStore = {
 };
 
 describe('ErrorParser Integration Coverage', () => {
-  describe('via loginSlice', () => {
+  describe('via login-slice', () => {
     let store: LoginTestStore;
 
     beforeEach(() => {
@@ -88,7 +88,7 @@ describe('ErrorParser Integration Coverage', () => {
     });
   });
 
-  describe('via registrationSlice', () => {
+  describe('via registration-slice', () => {
     let store: RegistrationTestStore;
 
     beforeEach(() => {

@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import useAppDispatch, { useAppSelector } from '@/stores/hooks';
 
 import { RegistrationView } from '@/modules/user/features/auth/components/form-section/types';
 import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
+import getRegistrationError from '@/modules/user/features/auth/utils/map-registration-error';
 import { registerUser, reset } from '@/modules/user/store';
 import {
   selectRegistrationError,
@@ -26,9 +28,11 @@ export default function useRegistrationForm(
   onViewChange?: (view: RegistrationView) => void
 ): UseRegistrationFormResult {
   const dispatch = useAppDispatch();
+  const { t } = useTranslation();
   const user = useAppSelector(selectRegistrationUser);
-  const isSubmitting = useAppSelector(selectRegistrationLoading);
+  const loading = useAppSelector(selectRegistrationLoading);
   const error = useAppSelector(selectRegistrationError);
+  const errorKey = getRegistrationError(error);
 
   const [view, setView] = useState<RegistrationView>('form');
   const [formKey, setFormKey] = useState(0);
@@ -39,14 +43,16 @@ export default function useRegistrationForm(
   }, [onViewChange, view]);
 
   useEffect(() => {
-    if (!isSubmitting) {
-      if (user) {
-        setView('success');
-      } else if (error) {
-        setView('error');
-      }
+    if (user && !loading) {
+      setView('success');
     }
-  }, [user, error, isSubmitting]);
+  }, [user, loading]);
+
+  useEffect(() => {
+    if (error && !loading) {
+      setView('error');
+    }
+  }, [error, loading]);
 
   const handleRegister = useCallback(
     (data: RegisterUserDto): void => {
@@ -73,9 +79,11 @@ export default function useRegistrationForm(
     dispatch(registerUser(lastSubmittedDataRef.current));
   }, [dispatch]);
 
+  const isSubmitting = loading || (view === 'form' && (user != null || error != null));
+
   return {
     view,
-    errorText: error ?? '',
+    errorText: errorKey ? t(errorKey) : '',
     formKey,
     isSubmitting,
     handleRegister,
