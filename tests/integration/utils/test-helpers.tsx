@@ -1,17 +1,18 @@
+/* eslint-disable import/order */
+import React from 'react';
 import { combineReducers, configureStore, type EnhancedStore } from '@reduxjs/toolkit';
 import { render, RenderOptions } from '@testing-library/react';
-import React from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
-import container from '@/config/DependencyInjectionConfig';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import i18n from '@/i18n';
-import type LoginAPI from '@/modules/User/features/Auth/api/login-api';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
-import { loginReducer, registrationReducer } from '@/modules/User/store';
-import type { ThunkExtra } from '@/modules/User/store/types';
+import type LoginAPI from '@/modules/user/features/auth/repositories/login-api';
+import type RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
+import { loginReducer, registrationReducer } from '@/modules/user/store';
+import type { ThunkExtra } from '@/modules/user/store/types';
 import type { RootState } from '@/stores';
 
 type TestRootState = {

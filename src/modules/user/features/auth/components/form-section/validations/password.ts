@@ -1,0 +1,43 @@
+import type { TFunction } from 'i18next';
+import { FieldValues, Validate } from 'react-hook-form';
+
+const isLengthValid = (value: string): boolean => value.length >= 8 && value.length <= 64;
+
+const hasNumber = (value: string): boolean => /[0-9]/.test(value);
+
+const hasUppercase = (value: string): boolean => /\p{Lu}/u.test(value);
+
+const hasLowercase = (value: string): boolean => /\p{Ll}/u.test(value);
+
+type ValidationPswdMessageKey =
+  | 'invalidLength'
+  | 'numberRequired'
+  | 'uppercaseRequired'
+  | 'lowercaseRequired'
+  | 'fieldRequired';
+
+const createPasswordValidator =
+  <TFieldValues extends FieldValues>(t: TFunction): Validate<string, TFieldValues> =>
+  (value: string) => {
+    const messages: Record<ValidationPswdMessageKey, string> = {
+      invalidLength: t('sign_up.form.password_input.error_length'),
+      numberRequired: t('sign_up.form.password_input.error_numbers'),
+      uppercaseRequired: t('sign_up.form.password_input.error_uppercase'),
+      lowercaseRequired: t('sign_up.form.password_input.error_lowercase'),
+      fieldRequired: t('sign_up.form.password_input.required'),
+    };
+
+    const safe = value ?? '';
+    const rules: Array<{ valid: boolean; message: string }> = [
+      { valid: Boolean(value?.trim()), message: messages.fieldRequired },
+      { valid: isLengthValid(safe), message: messages.invalidLength },
+      { valid: hasNumber(safe), message: messages.numberRequired },
+      { valid: hasUppercase(safe), message: messages.uppercaseRequired },
+      { valid: hasLowercase(safe), message: messages.lowercaseRequired },
+    ];
+
+    const failed = rules.find((rule) => !rule.valid);
+    return failed ? failed.message : true;
+  };
+
+export default createPasswordValidator;
