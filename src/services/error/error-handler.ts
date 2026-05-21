@@ -1,5 +1,3 @@
-import { injectable } from 'tsyringe';
-
 import ParsedError from '@/utils/error/types';
 
 import { ERROR_CODES, type ErrorCode } from './error-codes';
@@ -65,7 +63,6 @@ const errorMap: Record<ErrorCode, UiError> = {
   },
 };
 
-@injectable()
 export class ErrorHandler {
   public static handleAuthError(error: ParsedError): UiError {
     return (
