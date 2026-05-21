@@ -1,7 +1,14 @@
 import breakpointsTheme, { heightBreakpoints } from '@/components/ui-breakpoints';
 import { customColors, paletteColors } from '@/styles/colors';
 
-const compactViewport = `@media (max-width:${breakpointsTheme.breakpoints.values.sm - 1}px) and (max-height:${heightBreakpoints.compact}px)`;
+const compactViewportMaxWidth = breakpointsTheme.breakpoints.values.sm - 1;
+const compactViewport =
+  `@media (max-width:${compactViewportMaxWidth}px) and ` +
+  `(max-height:${heightBreakpoints.compact}px)`;
+
+const mdMin = breakpointsTheme.breakpoints.values.md;
+const mdMaxHeight = heightBreakpoints.medium;
+const mediumViewport = `@media (min-width:${mdMin}px) and (max-height:${mdMaxHeight}px)`;
 
 const centeredColumnFlex = {
   display: 'flex',
@@ -237,10 +244,9 @@ export default {
     [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
       paddingTop: '4.25rem',
     },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px) and (max-height:${heightBreakpoints.medium}px)`]:
-      {
-        paddingTop: '1rem',
-      },
+    [mediumViewport]: {
+      paddingTop: '1rem',
+    },
     [compactViewport]: {
       paddingTop: '0.25rem',
     },

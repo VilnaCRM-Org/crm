@@ -257,7 +257,7 @@ describe('throwIfHttpError', () => {
       expect(error.cause).toBeDefined();
       expect(cause.url).toBe('https://api.example.com/test');
       expect(cause.contentType).toBe('application/json');
-      expect(cause).not.toHaveProperty('body');
+      expect(cause.body).toEqual({ error: 'details' });
     });
 
     it('should not include text body in cause for text/plain', async () => {
@@ -467,7 +467,10 @@ describe('throwIfHttpError', () => {
       const error = await expectHttpError(response);
       expect(error.message).toBe('Email is invalid');
       expect(error.status).toBe(422);
-      expect(error.cause as ErrorCause).not.toHaveProperty('body');
+      expect((error.cause as ErrorCause).body).toEqual({
+        message: 'Email is invalid',
+        fields: { email: 'Invalid format' },
+      });
     });
 
     it('should handle authentication error', async () => {

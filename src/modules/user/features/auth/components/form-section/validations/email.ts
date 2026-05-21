@@ -2,10 +2,11 @@ import { Validate, FieldValues } from 'react-hook-form';
 
 const isBasicEmailFormat = (email: string): boolean => /@/.test(email) && /\./.test(email);
 
-export const isValidEmailFormat = (email: string): boolean =>
-  /^[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?@[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}$/.test(
-    email
-  );
+const EMAIL_LOCAL_PART = String.raw`[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?`;
+const EMAIL_DOMAIN_PART = String.raw`[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}`;
+const EMAIL_FORMAT_REGEX = new RegExp(`^${EMAIL_LOCAL_PART}@${EMAIL_DOMAIN_PART}$`);
+
+export const isValidEmailFormat = (email: string): boolean => EMAIL_FORMAT_REGEX.test(email);
 
 /**
  * Factory to create email validator

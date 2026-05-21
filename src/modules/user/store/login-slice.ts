@@ -1,6 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-import { LoginResponseSchema, type LoginResponse } from '@/modules/user/features/auth/types/api-responses';
+import {
+  LoginResponseSchema,
+  type LoginResponse,
+} from '@/modules/user/features/auth/types/api-responses';
 import { LoginUserDto } from '@/modules/user/features/auth/types/credentials';
 import { ThunkExtra } from '@/modules/user/store/types';
 import { UiError, ErrorHandler } from '@/services/error';

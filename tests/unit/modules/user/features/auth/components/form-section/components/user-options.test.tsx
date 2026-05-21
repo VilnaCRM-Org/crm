@@ -1,6 +1,6 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
-import UserOptions from '@/modules/user/features/auth/components/form-section/components/user-options';
+import UserOptions from '@auth/components/form-section/components/user-options';
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({
@@ -16,6 +16,21 @@ describe('UserOptions', () => {
     expect(
       screen.queryByRole('button', { name: 'sign_in.form.forgot_password' })
     ).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'sign_in.form.forgot_password' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'sign_in.form.forgot_password' })
+    ).not.toBeInTheDocument();
+  });
+
+  it('toggles the remember-me checkbox state on click', () => {
+    render(<UserOptions />);
+
+    const checkbox = screen.getByRole('checkbox');
+    expect(checkbox).not.toBeChecked();
+
+    fireEvent.click(checkbox);
+    expect(checkbox).toBeChecked();
+
+    fireEvent.click(checkbox);
+    expect(checkbox).not.toBeChecked();
   });
 });

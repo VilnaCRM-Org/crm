@@ -472,7 +472,7 @@ describe('FetchHttpsClient', () => {
       expect(result).toBeUndefined();
     });
 
-    it('should return undefined for response with no content-type header and empty body', async () => {
+    it('returns undefined when response has no content-type header and empty body', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         status: 204,
@@ -693,7 +693,7 @@ describe('FetchHttpsClient', () => {
       expect(callArgs.headers['Content-Type']).toBe('application/json');
     });
 
-    it('should not add JSON Content-Type when a custom content-type header uses different casing', () => {
+    it('skips adding JSON Content-Type when a custom content-type uses different casing', () => {
       const customHeaders = { 'content-type': 'application/merge-patch+json' };
       const config = (
         client as unknown as {

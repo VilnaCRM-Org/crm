@@ -318,7 +318,7 @@ describe('password validation', () => {
       );
     });
 
-    it('should return number error when length is valid but no number, no uppercase, and all lowercase', () => {
+    it('returns number error when length is valid but missing number/uppercase/lowercase', () => {
       expect(validators.password('password', emptyUser)).toBe(
         'sign_up.form.password_input.error_numbers'
       );
@@ -336,7 +336,7 @@ describe('password validation', () => {
       );
     });
 
-    it('should return lowercase error when length, number, and uppercase are valid but no lowercase', () => {
+    it('returns lowercase error when length/number/uppercase are valid but no lowercase', () => {
       expect(validators.password('PASSWORD1', emptyUser)).toBe(
         'sign_up.form.password_input.error_lowercase'
       );

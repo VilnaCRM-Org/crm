@@ -25,8 +25,7 @@ const SENSITIVE_KEYS_LOWER = new Set([
   'session',
 ]);
 
-const isPlainObject = (val: unknown): val is Record<string, unknown> => {
-  if (val === null || typeof val !== 'object') return false;
+const isPlainObject = (val: object): val is Record<string, unknown> => {
   const proto = Object.getPrototypeOf(val);
   return proto === Object.prototype || proto === null;
 };

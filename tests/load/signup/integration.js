@@ -47,7 +47,8 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
 
   if (!signupSucceeded) {
     console.log(
-      `[INFO] Signup failed in integration test (status: ${signupResponse.status}), skipping login test`
+      `[INFO] Signup failed in integration test ` +
+        `(status: ${signupResponse.status}), skipping login test`
     );
     return;
   }
@@ -58,8 +59,10 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
     userId = signupBody.id;
   } catch {
     if (USE_REAL_BACKEND) {
+      const snippet = String(signupResponse.body).substring(0, 200);
       throw new Error(
-        `Real backend returned unparseable signup response (status: ${signupResponse.status}, body: ${String(signupResponse.body).substring(0, 200)})`
+        `Real backend returned unparseable signup response ` +
+          `(status: ${signupResponse.status}, body: ${snippet})`
       );
     }
     console.log('[INFO] Could not parse signup response, skipping login test');
@@ -68,8 +71,10 @@ function testSignupLoginFlow(utils, baseUrl, headers, params) {
 
   if (!userId) {
     if (USE_REAL_BACKEND) {
+      const snippet = String(signupResponse.body).substring(0, 200);
       throw new Error(
-        `Real backend signup succeeded (status: ${signupResponse.status}) but response is missing user id (body: ${String(signupResponse.body).substring(0, 200)})`
+        `Real backend signup succeeded (status: ${signupResponse.status}) ` +
+          `but response is missing user id (body: ${snippet})`
       );
     }
     console.log('[INFO] Signup did not return user id, skipping profile request');

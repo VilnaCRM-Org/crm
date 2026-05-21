@@ -557,4 +557,30 @@ describe('ErrorHandler', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', arrayError);
     });
   });
+
+  describe('instance methods', () => {
+    it('should delegate handleAuthError to static implementation', () => {
+      const handler = new ErrorHandler();
+      const error: ParsedError = {
+        code: ERROR_CODES.AUTH_INVALID,
+        message: 'Auth failed',
+      };
+
+      expect(handler.handleAuthError(error)).toEqual({
+        displayMessage: 'Invalid credentials',
+        retryable: false,
+      });
+    });
+
+    it('should delegate handle to static implementation', () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const handler = new ErrorHandler();
+      const error = new Error('instance test');
+
+      handler.handle(error);
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+      consoleErrorSpy.mockRestore();
+    });
+  });
 });

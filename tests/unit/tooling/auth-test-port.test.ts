@@ -18,7 +18,7 @@ describe('auth test harness wiring', () => {
     expect(workflow).toContain('label: signup');
   });
 
-  it('includes auth performance coverage in the Lighthouse config instead of the CI workflow', () => {
+  it('includes auth performance coverage in the Lighthouse config, not the CI workflow', () => {
     const workflow = readFile('.github/workflows/performance-testing.yml');
     const constants = readFile('lighthouse/constants.js');
     const desktopRc = readFile('lighthouse/lighthouserc.desktop.js');

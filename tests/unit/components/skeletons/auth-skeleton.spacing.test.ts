@@ -7,17 +7,15 @@ import {
 } from '@/components/skeletons/ui-skeleton-input/styles';
 import breakpointsTheme from '@/components/ui-breakpoints';
 import uiFormStyles from '@/components/ui-form/styles';
-import authProviderButtonStyles from '@/modules/user/features/auth/components/form-section/components/auth-provider-buttons/styles';
-import formFieldStyles from '@/modules/user/features/auth/components/form-section/components/styles';
-import authFormSectionStyles, {
-  fieldGapMargins,
-} from '@/modules/user/features/auth/components/form-section/styles';
+import providerStyles from '@auth/components/form-section/components/auth-provider-buttons/styles';
+import formFieldStyles from '@auth/components/form-section/components/styles';
+import authFormSectionStyles, { fieldGapMargins } from '@auth/components/form-section/styles';
 
-jest.mock('@/modules/user/features/auth/assets/eye-off.svg', () => ({
+jest.mock('@auth/assets/eye-off.svg', () => ({
   ReactComponent: 'svg',
 }));
 
-jest.mock('@/modules/user/features/auth/assets/eye.svg', () => ({
+jest.mock('@auth/assets/eye.svg', () => ({
   ReactComponent: 'svg',
 }));
 
@@ -333,7 +331,7 @@ describe('AuthSkeleton spacing parity', () => {
         effectiveHeight(formSubmit, breakpoint) +
         toRem(
           valueAt(
-            authProviderButtonStyles.thirdPartyWrapper as Record<string, unknown>,
+            providerStyles.thirdPartyWrapper as Record<string, unknown>,
             'marginTop',
             breakpoint
           )

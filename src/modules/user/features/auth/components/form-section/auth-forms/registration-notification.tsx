@@ -7,8 +7,9 @@ import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/ui-button';
 import UiTypography from '@/components/ui-typography';
-import styles from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification.styles';
-import { RegistrationView } from '@/modules/user/features/auth/components/form-section/types';
+import { RegistrationView } from '@auth/components/form-section/types';
+
+import styles from './registration-notification.styles';
 
 type RegistrationNotificationProps = {
   view: Exclude<RegistrationView, 'form'>;
