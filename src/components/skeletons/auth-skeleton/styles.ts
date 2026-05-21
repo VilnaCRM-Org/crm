@@ -1,11 +1,15 @@
 import {
+  fieldGapMargins,
+  formSection,
+  formWrapper,
+} from '@/components/skeletons/base/auth-form-shared-styles';
+import {
   SKELETON_BORDER_COLOR,
   SMALL_MOBILE_BREAKPOINT,
   SMALL_MOBILE_BREAKPOINT_UPPER,
   shadowPulseAnimation,
 } from '@/components/skeletons/base/styles';
-import breakpointsTheme from '@/components/UIBreakpoints';
-import { fieldGapMargins } from '@/modules/User/features/Auth/components/form-section/styles';
+import breakpointsTheme from '@/components/ui-breakpoints';
 
 const AUTH_SKELETON_TINY_BREAKPOINT = '336px';
 
@@ -179,4 +183,6 @@ export default {
       width: '14rem',
     },
   },
+  formSection,
+  formWrapper,
 };

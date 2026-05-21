@@ -2,9 +2,6 @@ function resolveMaxVUs(config) {
   if (config.maxVUs != null) {
     return config.maxVUs;
   }
-  if (config.maxVus != null) {
-    return config.maxVus;
-  }
   return config.vus;
 }
 

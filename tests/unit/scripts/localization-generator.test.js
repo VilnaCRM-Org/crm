@@ -1,8 +1,8 @@
-jest.mock('fs');
+const fs = require('fs');
+const path = require('path');
+const LocalizationGenerator = require('../../../scripts/localization-generator');
 
-const fs = module.require('fs');
-const path = module.require('path');
-const LocalizationGenerator = module.require('../../../scripts/localizationGenerator');
+jest.mock('fs');
 
 const directoryEntry = (name, isDir) => ({
   name,
@@ -89,12 +89,12 @@ describe('LocalizationGenerator', () => {
       };
       mockReaddirWithStructure(mockStructure);
       const result = generator.getFeaturePaths();
-      expect(result.sort((left, right) => left.localeCompare(right))).toEqual(
+      expect(result.sort()).toEqual(
         [
           path.join('src', 'modules', 'feature1', 'i18n'),
           path.join('src', 'modules', 'feature2', 'subfeature', 'i18n'),
           path.join('src', 'modules', 'feature3', 'nested', 'deeper', 'i18n'),
-        ].sort((left, right) => left.localeCompare(right))
+        ].sort()
       );
     });
 
@@ -122,7 +122,7 @@ describe('LocalizationGenerator', () => {
         ],
         'src/modules/feature1': [directoryEntry('somefile.txt', false)],
       };
-      fs.existsSync.mockImplementation(() => true);
+      fs.existsSync.mockImplementation((dir) => true);
       mockReaddirWithStructure(mockDirectoryStructure);
       const result = generator.getFeaturePaths();
       expect(result).toEqual([path.join('src', 'modules', 'i18n')]);
@@ -345,8 +345,8 @@ describe('LocalizationGenerator', () => {
       });
 
       // Verify security properties are not present
-      expect(Object.hasOwn(result, '__proto__')).toBe(false);
-      expect(Object.hasOwn(result, 'constructor')).toBe(false);
+      expect(Object.prototype.hasOwnProperty.call(result, '__proto__')).toBe(false);
+      expect(Object.prototype.hasOwnProperty.call(result, 'constructor')).toBe(false);
     });
 
     it('should handle arrays as primitive values', () => {
@@ -426,9 +426,9 @@ describe('LocalizationGenerator', () => {
         },
       };
 
-      jest
-        .spyOn(generator, 'getLocalizationFromFolder')
-        .mockImplementation((folder) => mockLocalizationData[folder] || {});
+      jest.spyOn(generator, 'getLocalizationFromFolder').mockImplementation((folder) => {
+        return mockLocalizationData[folder] || {};
+      });
 
       const writeSpy = jest.spyOn(generator, 'writeLocalizationFile').mockImplementation(() => {});
 

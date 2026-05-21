@@ -6,9 +6,9 @@ import dotenv, { DotenvConfigOutput } from 'dotenv';
 import dotenvExpand from 'dotenv-expand';
 import { GraphQLError } from 'graphql';
 
-import { formatError } from './formatError';
+import { formatError } from './format-error';
 import { resolvers } from './resolvers';
-import { cleanupResources, handleServerFailure, shouldShutdown } from './shutdownFunctions';
+import { cleanupResources, handleServerFailure, shouldShutdown } from './shutdown-functions';
 
 const env: DotenvConfigOutput = dotenv.config();
 dotenvExpand.expand(env);
