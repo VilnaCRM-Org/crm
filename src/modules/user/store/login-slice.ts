@@ -1,12 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
+import { LoginResponseSchema, type LoginResponse } from '@/modules/user/features/auth/types/api-responses';
+import { LoginUserDto } from '@/modules/user/features/auth/types/credentials';
+import { ThunkExtra } from '@/modules/user/store/types';
 import { UiError, ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
-
-import { LoginResponseSchema, type LoginResponse } from '../features/auth/types/api-responses';
-import { LoginUserDto } from '../features/auth/types/credentials';
-
-import { ThunkExtra } from './types';
 
 type LoginSuccessPayload = LoginResponse & { email: string };
 

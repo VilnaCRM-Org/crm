@@ -2,7 +2,6 @@ import { Box, FormControlLabel, Checkbox } from '@mui/material';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import UIButton from '@/components/ui-button';
 import {
   CheckBoxChecked,
   CheckBoxIcon,
@@ -32,10 +31,6 @@ export default function UserOptions(): JSX.Element {
           />
         }
       />
-
-      <UIButton type="button" variant="text" sx={styles.forgePassword}>
-        {t('sign_in.form.forgot_password')}
-      </UIButton>
     </Box>
   );
 }

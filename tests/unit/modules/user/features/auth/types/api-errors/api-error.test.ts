@@ -31,6 +31,7 @@ describe('ApiError', () => {
       expect(error.status).toBe(500);
       expect(error.cause).toBe(cause);
       expect(error.name).toBe('ApiError');
+      expect((error as Error & { cause?: unknown }).cause).toBe(cause);
     });
 
     it('should create error with empty message', () => {
@@ -169,7 +170,9 @@ describe('ApiError', () => {
       const json = JSON.stringify(error);
       expect(json).toBeDefined();
       const parsed = JSON.parse(json);
-      expect(parsed.cause).toEqual(cause);
+      expect(error.cause).toEqual(cause);
+      expect((error as Error & { cause?: unknown }).cause).toEqual(cause);
+      expect(parsed.cause).toBeUndefined();
     });
   });
 
@@ -207,12 +210,13 @@ describe('ApiError', () => {
       const originalCapture = Error.captureStackTrace;
       // @ts-expect-error intentionally removing to cover fallback path
       Error.captureStackTrace = undefined;
+      try {
+        const error = new ApiError('Stack fallback', 'TEST_CODE');
 
-      const error = new ApiError('Stack fallback', 'TEST_CODE');
-
-      expect(error.stack).toBeDefined();
-
-      Error.captureStackTrace = originalCapture;
+        expect(error.stack).toBeDefined();
+      } finally {
+        Error.captureStackTrace = originalCapture;
+      }
     });
 
     it('should handle various HTTP status codes', () => {

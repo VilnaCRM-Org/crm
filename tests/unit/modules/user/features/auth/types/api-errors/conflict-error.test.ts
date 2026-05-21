@@ -10,7 +10,7 @@ describe('ConflictError', () => {
       expect(error.message).toBe('Resource already exists');
       expect(error.code).toBe(ApiErrorCodes.CONFLICT);
       expect(error.status).toBe(409);
-      expect(error.name).toBe('ApiError'); // ConflictError doesn't override name
+      expect(error.name).toBe('ConflictError');
     });
 
     it('should create error with custom message', () => {
@@ -19,7 +19,7 @@ describe('ConflictError', () => {
       expect(error.message).toBe('Email already registered');
       expect(error.code).toBe(ApiErrorCodes.CONFLICT);
       expect(error.status).toBe(409);
-      expect(error.name).toBe('ApiError'); // ConflictError doesn't override name
+      expect(error.name).toBe('ConflictError');
     });
 
     it('should create error with empty message', () => {
@@ -84,7 +84,7 @@ describe('ConflictError', () => {
     it('should have name from parent class', () => {
       const error = new ConflictError();
 
-      expect(error.name).toBe('ApiError'); // Inherits from ApiError
+      expect(error.name).toBe('ConflictError');
     });
 
     it('should have code property set correctly', () => {
@@ -280,8 +280,7 @@ describe('ConflictError', () => {
       const conflictError = new ConflictError();
       const apiError = new ApiError('Test', 'CODE');
 
-      // ConflictError inherits name from ApiError
-      expect(conflictError.name).toBe('ApiError');
+      expect(conflictError.name).toBe('ConflictError');
       expect(apiError.name).toBe('ApiError');
     });
 
