@@ -472,7 +472,7 @@ describe('FetchHttpsClient', () => {
       expect(result).toBeUndefined();
     });
 
-    it('should return undefined for response with no content-type header and empty body', async () => {
+    it('returns undefined when response has no content-type header and empty body', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         status: 204,
@@ -615,6 +615,40 @@ describe('FetchHttpsClient', () => {
       });
     });
 
+    it('should handle URLSearchParams body without JSON headers or serialization', async () => {
+      const params = new URLSearchParams({ filter: 'active' });
+      const responseData = { success: true };
+
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
+
+      await client.post('/api/search', params);
+
+      expect(mockFetch).toHaveBeenCalledWith('/api/search', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+        body: params,
+      });
+    });
+
+    it('should handle typed array body without JSON headers or serialization', async () => {
+      const payload = new Uint8Array([1, 2, 3]);
+      const responseData = { success: true };
+
+      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
+
+      await client.post('/api/binary', payload);
+
+      expect(mockFetch).toHaveBeenCalledWith('/api/binary', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+        body: payload,
+      });
+    });
+
     it('should handle ReadableStream body', async () => {
       const originalReadableStream = global.ReadableStream;
       try {
@@ -657,6 +691,23 @@ describe('FetchHttpsClient', () => {
 
       const callArgs = mockFetch.mock.calls[0][1];
       expect(callArgs.headers['Content-Type']).toBe('application/json');
+    });
+
+    it('skips adding JSON Content-Type when a custom content-type uses different casing', () => {
+      const customHeaders = { 'content-type': 'application/merge-patch+json' };
+      const config = (
+        client as unknown as {
+          createRequestConfig: (
+            method: string,
+            body?: unknown,
+            headers?: Record<string, string>
+          ) => RequestInit;
+        }
+      ).createRequestConfig('PATCH', { sample: true }, customHeaders);
+
+      const headers = (config.headers as Record<string, string>) || {};
+      expect(headers['content-type']).toBe('application/merge-patch+json');
+      expect(headers['Content-Type']).toBeUndefined();
     });
 
     it('should not set Content-Type for FormData', async () => {

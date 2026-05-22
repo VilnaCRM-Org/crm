@@ -3,13 +3,13 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
-import FormField from '@/modules/user/features/auth/components/form-section/components/form-field';
-import PasswordField from '@/modules/user/features/auth/components/form-section/components/password-field';
-import UserOptions from '@/modules/user/features/auth/components/form-section/components/user-options';
-import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
-import useAuthStore from '@/modules/user/features/auth/hooks/use-auth-store';
-import { LoginUserDto } from '@/modules/user/features/auth/types/credentials';
-import getSubmitLabelKey from '@/modules/user/features/auth/utils/get-submit-label-key';
+import FormField from '@auth/components/form-section/components/form-field';
+import PasswordField from '@auth/components/form-section/components/password-field';
+import UserOptions from '@auth/components/form-section/components/user-options';
+import { createValidators } from '@auth/components/form-section/validations';
+import useAuthStore from '@auth/hooks/use-auth-store';
+import { LoginUserDto } from '@auth/types/credentials';
+import getSubmitLabelKey from '@auth/utils/get-submit-label-key';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;

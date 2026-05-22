@@ -84,4 +84,12 @@ export class ErrorHandler {
   public static handle(error: unknown): void {
     ErrorHandler.logger.error('[ErrorHandler]', error);
   }
+
+  public handleAuthError(error: ParsedError): UiError {
+    return ErrorHandler.handleAuthError(error);
+  }
+
+  public handle(error: unknown): void {
+    ErrorHandler.handle(error);
+  }
 }

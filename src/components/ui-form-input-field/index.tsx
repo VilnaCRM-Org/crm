@@ -1,7 +1,6 @@
-/* eslint-disable react/jsx-props-no-spreading */
 import { TextField, ThemeProvider } from '@mui/material';
 import { TextFieldProps } from '@mui/material/TextField';
-import React, { useCallback } from 'react';
+import React from 'react';
 import {
   Control,
   Controller,
@@ -38,18 +37,18 @@ export default function UIFormInputField<T extends FieldValues>({
   sx,
   ...props
 }: CustomTextField<T>): React.ReactElement {
-  const renderField = useCallback(
-    ({ field: { ref, ...field }, fieldState }: RenderFieldArgs<T>): React.ReactElement => (
-      <TextField
-        {...props}
-        {...field}
-        inputRef={ref}
-        error={fieldState.invalid}
-        helperText={fieldState.error?.message ?? props.helperText}
-        sx={sx}
-      />
-    ),
-    [props, sx]
+  const renderField = ({
+    field: { ref, ...field },
+    fieldState,
+  }: RenderFieldArgs<T>): React.ReactElement => (
+    <TextField
+      {...props}
+      {...field}
+      inputRef={ref}
+      error={fieldState.invalid}
+      helperText={fieldState.error?.message ?? props.helperText}
+      sx={sx}
+    />
   );
 
   return (
@@ -57,7 +56,7 @@ export default function UIFormInputField<T extends FieldValues>({
       <Controller
         name={name}
         control={control}
-        {...(defaultValue !== undefined ? { defaultValue } : {})}
+        defaultValue={defaultValue}
         rules={rules}
         render={renderField}
       />

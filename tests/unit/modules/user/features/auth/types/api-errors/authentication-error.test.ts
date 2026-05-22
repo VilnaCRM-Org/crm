@@ -10,7 +10,7 @@ describe('AuthenticationError', () => {
       expect(error.message).toBe('Invalid credentials');
       expect(error.code).toBe(ApiErrorCodes.AUTH);
       expect(error.status).toBe(401);
-      expect(error.name).toBe('ApiError'); // AuthenticationError doesn't override name
+      expect(error.name).toBe('AuthenticationError');
     });
 
     it('should create error with custom message', () => {
@@ -19,7 +19,7 @@ describe('AuthenticationError', () => {
       expect(error.message).toBe('User not found');
       expect(error.code).toBe(ApiErrorCodes.AUTH);
       expect(error.status).toBe(401);
-      expect(error.name).toBe('ApiError'); // AuthenticationError doesn't override name
+      expect(error.name).toBe('AuthenticationError');
     });
 
     it('should create error with empty message', () => {
@@ -84,7 +84,7 @@ describe('AuthenticationError', () => {
     it('should have name from parent class', () => {
       const error = new AuthenticationError();
 
-      expect(error.name).toBe('ApiError'); // Inherits from ApiError
+      expect(error.name).toBe('AuthenticationError');
     });
 
     it('should have code property set correctly', () => {
@@ -139,8 +139,9 @@ describe('AuthenticationError', () => {
 
     it('should omit AuthenticationError constructor frames from stack', () => {
       const error = new AuthenticationError();
+      const frames = (error.stack ?? '').split('\n').slice(1).join('\n');
 
-      expect(error.stack).not.toContain('AuthenticationError');
+      expect(frames).not.toMatch(/at new AuthenticationError\b/);
     });
   });
 
@@ -297,8 +298,7 @@ describe('AuthenticationError', () => {
       const authError = new AuthenticationError();
       const apiError = new ApiError('Test', 'CODE');
 
-      // AuthenticationError inherits name from ApiError
-      expect(authError.name).toBe('ApiError');
+      expect(authError.name).toBe('AuthenticationError');
       expect(apiError.name).toBe('ApiError');
     });
 

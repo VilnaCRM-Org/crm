@@ -25,8 +25,7 @@ const SENSITIVE_KEYS_LOWER = new Set([
   'session',
 ]);
 
-const isPlainObject = (val: unknown): val is Record<string, unknown> => {
-  if (val === null || typeof val !== 'object') return false;
+const isPlainObject = (val: object): val is Record<string, unknown> => {
   const proto = Object.getPrototypeOf(val);
   return proto === Object.prototype || proto === null;
 };
@@ -40,19 +39,30 @@ const isSensitiveKey = (k: string): boolean => {
   if (SENSITIVE_KEY_SUBSTRINGS.some((s) => lower.includes(s))) return true;
   return SENSITIVE_KEY_PATTERN.test(lower);
 };
-function deepRedact<T>(input: T): T {
+function deepRedact<T>(input: T, seen = new WeakSet<object>()): T {
+  if (!input || typeof input !== 'object') return input;
+  if (seen.has(input)) return '[Circular]' as unknown as T;
+
   if (input instanceof Map) {
-    return new Map(Array.from(input.entries(), ([k, v]) => [k, deepRedact(v)])) as unknown as T;
+    seen.add(input);
+    return new Map(
+      Array.from(input.entries(), ([k, v]) => [k, deepRedact(v, seen)])
+    ) as unknown as T;
   }
   if (input instanceof Set) {
-    return new Set(Array.from(input.values(), (v) => deepRedact(v))) as unknown as T;
+    seen.add(input);
+    return new Set(Array.from(input.values(), (v) => deepRedact(v, seen))) as unknown as T;
   }
-  if (Array.isArray(input)) return input.map(deepRedact) as unknown as T;
+  if (Array.isArray(input)) {
+    seen.add(input);
+    return input.map((value) => deepRedact(value, seen)) as unknown as T;
+  }
   if (!isPlainObject(input)) return input as T;
+  seen.add(input);
   return Object.fromEntries(
     Object.entries(input as Record<string, unknown>).map(([k, v]) => [
       k,
-      isSensitiveKey(k) ? '***' : deepRedact(v),
+      isSensitiveKey(k) ? '***' : deepRedact(v, seen),
     ])
   ) as T;
 }

@@ -264,15 +264,37 @@ describe('shutdownFunctions', () => {
     });
 
     it('should exit even if cleanup fails', async () => {
+      const original = global.setTimeout;
+      let callCount = 0;
+      const setTimeoutSpy = jest
+        .spyOn(global, 'setTimeout')
+        .mockImplementation(
+          <TArgs extends unknown[]>(
+            fn: (...args: TArgs) => void,
+            delay?: number
+          ): ReturnType<typeof setTimeout> => {
+            callCount += 1;
+            if (callCount === 1) {
+              throw new Error('Forced cleanup failure');
+            }
+            return original(fn, delay) as unknown as ReturnType<typeof setTimeout>;
+          }
+        );
+
       try {
         const failurePromise = handleServerFailure();
         jest.runAllTimers();
         await failurePromise;
       } catch (error) {
         // Expected
+      } finally {
+        setTimeoutSpy.mockRestore();
       }
 
-      // Process.exit should be called in finally block
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Cleanup failed during server failure:',
+        expect.any(Error)
+      );
       expect(processExitSpy).toHaveBeenCalled();
     });
 

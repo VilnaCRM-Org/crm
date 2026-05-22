@@ -1,5 +1,5 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
-import { customColors, paletteColors } from '@/styles/colors';
+import { customColors } from '@/styles/colors';
 
 export default {
   authOptionsWrapper: {
@@ -43,29 +43,5 @@ export default {
   rememberMeCheckbox: {
     padding: 0,
     marginRight: '0.8125rem',
-  },
-
-  forgePassword: {
-    padding: 0,
-
-    fontFamily: `Inter, sans-serif`,
-    fontStyle: 'normal',
-    fontWeight: 500,
-    fontSize: '0.9375rem',
-    lineHeight: 1.2,
-    letterSpacing: 0,
-    textTransform: 'none',
-    color: paletteColors.primary.main,
-
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.md}px)`]: {
-      fontWeight: 600,
-      fontSize: '1.125rem',
-      lineHeight: 1,
-    },
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      fontWeight: 500,
-      fontSize: '0.9375rem',
-      lineHeight: 1.2,
-    },
   },
 };

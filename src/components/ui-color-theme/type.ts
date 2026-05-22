@@ -17,6 +17,9 @@ declare module '@mui/material/styles' {
       decorative: {
         divider: string;
       };
+      text: {
+        disabled: string;
+      };
     };
   }
 
@@ -33,10 +36,10 @@ declare module '@mui/material/styles' {
       shadow?: {
         subtle?: string;
       };
-      decorative: {
+      decorative?: {
         divider?: string;
       };
-      text: {
+      text?: {
         disabled?: string;
       };
     };

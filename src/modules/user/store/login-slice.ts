@@ -5,10 +5,10 @@ import {
   type LoginResponse,
 } from '@/modules/user/features/auth/types/api-responses';
 import { LoginUserDto } from '@/modules/user/features/auth/types/credentials';
-import { ErrorHandler, UiError } from '@/services/error';
+import { ThunkExtra } from '@/modules/user/store/types';
+import { UiError, ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
 
-import { ThunkExtra } from './types';
 
 type LoginSuccessPayload = LoginResponse & { email: string };
 

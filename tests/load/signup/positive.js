@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import http from 'k6/http';
 
 import { hasSuccessfulSignupBody } from './response-assertions.js';
@@ -34,9 +33,8 @@ export default function runPositiveTests(utils, baseUrl, params) {
       );
       return false;
     }
-    console.log(
-      `[WARN] Unexpected status during signup: ${res.status} - ${(res.body || '').substring(0, 100)}`
-    );
+    const snippet = (res.body || '').substring(0, 100);
+    console.log(`[WARN] Unexpected status during signup: ${res.status} - ${snippet}`);
     return false;
   });
 

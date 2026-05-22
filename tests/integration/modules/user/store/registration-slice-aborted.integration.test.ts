@@ -60,7 +60,11 @@ describe('Registration Slice Aborted Action Tests', () => {
 
     promise.abort();
 
-    await promise.catch(() => {});
+    const result = await promise;
+    expect(result.meta.requestStatus).toBe('rejected');
+    if (result.meta.requestStatus === 'rejected') {
+      expect(result.meta.aborted).toBe(true);
+    }
 
     const state = store.getState().registration;
 

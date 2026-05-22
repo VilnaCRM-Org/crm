@@ -1,6 +1,9 @@
 import { createTheme } from '@mui/material';
 
+import breakpointsTheme from '@/components/ui-breakpoints';
 import { paletteColors } from '@/styles/colors';
+
+const { lg } = breakpointsTheme.breakpoints.values;
 
 export default createTheme({
   components: {
@@ -31,7 +34,7 @@ export default createTheme({
           padding: '17px 38px',
           borderRadius: '12px',
           borderColor: '#E1E7EA',
-          '@media (max-width: 1024px)': {
+          [`@media (max-width: ${lg}px)`]: {
             padding: '26px 52px',
           },
           '@media (max-width: 375px)': {

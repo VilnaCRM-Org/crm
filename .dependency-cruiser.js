@@ -440,14 +440,17 @@ module.exports = {
         'integration, load, memory-leak, unit, visual.',
       severity: 'error',
       from: {
-        path: '^tests/(?!(?:apollo-server|e2e|integration|load|memory-leak|unit|utils|visual)/)[^/]+/',
+        path:
+          '^tests/(?!(?:apollo-server|e2e|integration|' +
+          'load|memory-leak|unit|utils|visual)/)[^/]+/',
       },
       to: {},
     },
     {
       name: 'no-uppercase-paths',
       comment:
-        'All source paths must be lowercase. Uppercase letters in file or directory names break consistency across the project.',
+        'All source paths must be lowercase. Uppercase letters in file or directory ' +
+        'names break consistency across the project.',
       severity: 'error',
       from: {
         path: '.*[A-Z].*',
@@ -457,7 +460,8 @@ module.exports = {
     {
       name: 'tests-module-name-lowercase',
       comment:
-        'Test module names under tests/{e2e,integration,unit}/modules must be lowercase kebab-case.',
+        'Test module names under tests/{e2e,integration,unit}/modules ' +
+        'must be lowercase kebab-case.',
       severity: 'error',
       from: {
         path: '^tests/(?:e2e|integration|unit)/modules/(?![a-z0-9-]+/)[^/]+/',
@@ -471,7 +475,9 @@ module.exports = {
         'lib, repositories, store.',
       severity: 'error',
       from: {
-        path: '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/(?!features|helpers|lib|repositories|store)[^/]+/',
+        path:
+          '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/' +
+          '(?!features|helpers|lib|repositories|store)[^/]+/',
       },
       to: {},
     },

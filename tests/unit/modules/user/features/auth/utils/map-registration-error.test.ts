@@ -22,7 +22,7 @@ describe('mapRegistrationError', () => {
         expect(getRegistrationError('Email already exists')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
-      it('should return EMAIL_ALREADY_USED_KEY for error with "email" and "exists" (case insensitive)', () => {
+      it('returns EMAIL_ALREADY_USED_KEY for "email" and "exists" (case insensitive)', () => {
         expect(getRegistrationError('EMAIL ALREADY EXISTS')).toBe(EMAIL_ALREADY_USED_KEY);
         expect(getRegistrationError('Email Already Exists')).toBe(EMAIL_ALREADY_USED_KEY);
         expect(getRegistrationError('email already exists')).toBe(EMAIL_ALREADY_USED_KEY);
@@ -33,7 +33,7 @@ describe('mapRegistrationError', () => {
         expect(getRegistrationError('This email exists in system')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
-      it('should return EMAIL_ALREADY_USED_KEY for error with keywords separated by other words', () => {
+      it('returns EMAIL_ALREADY_USED_KEY when keywords are separated by other words', () => {
         expect(getRegistrationError('The email address already exists in our database')).toBe(
           EMAIL_ALREADY_USED_KEY
         );
@@ -140,7 +140,7 @@ describe('mapRegistrationError', () => {
         );
       });
 
-      it('should return EMAIL_ALREADY_USED_KEY for strings with newlines containing both keywords', () => {
+      it('returns EMAIL_ALREADY_USED_KEY for newlines containing both keywords', () => {
         expect(getRegistrationError('Email\nalready\nexists')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 

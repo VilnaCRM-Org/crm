@@ -1,5 +1,6 @@
 import { HttpError } from './http-error';
 import HttpsClient, { RequestMethod } from './https-client';
+import isNonJsonBody from './is-non-json-body';
 import ResponseMessages from './response-messages';
 import throwIfHttpError from './throw-if-http-error';
 
@@ -61,23 +62,7 @@ export default class FetchHttpsClient implements HttpsClient {
     headers?: Record<string, string>
   ): RequestInit {
     const hasBody = body !== undefined;
-
-    let isNonJsonBodyType = typeof body === 'string';
-
-    if (!isNonJsonBodyType && typeof FormData !== 'undefined') {
-      isNonJsonBodyType = body instanceof FormData;
-    }
-    if (!isNonJsonBodyType && typeof Blob !== 'undefined') {
-      isNonJsonBodyType = body instanceof Blob;
-    }
-    if (!isNonJsonBodyType && typeof ArrayBuffer !== 'undefined') {
-      isNonJsonBodyType = body instanceof ArrayBuffer;
-    }
-    if (!isNonJsonBodyType && typeof ReadableStream !== 'undefined') {
-      isNonJsonBodyType = body instanceof ReadableStream;
-    }
-
-    const isJsonBody = hasBody && !isNonJsonBodyType;
+    const isJsonBody = hasBody && !isNonJsonBody(body);
 
     const config: RequestInit = {
       method,
@@ -97,7 +82,8 @@ export default class FetchHttpsClient implements HttpsClient {
       Accept: 'application/json',
       ...customHeaders,
     };
-    if (contentType && !('Content-Type' in headers)) headers['Content-Type'] = contentType;
+    const hasContentType = Object.keys(headers).some((key) => key.toLowerCase() === 'content-type');
+    if (contentType && !hasContentType) headers['Content-Type'] = contentType;
     return headers;
   }
 

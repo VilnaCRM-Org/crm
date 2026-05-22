@@ -5,8 +5,8 @@ export default class ApiError extends Error {
     public readonly status?: number,
     public readonly cause?: unknown
   ) {
-    super(message);
-    this.name = 'ApiError';
+    super(message, cause !== undefined ? { cause } : undefined);
+    this.name = new.target.name;
 
     Object.setPrototypeOf(this, new.target.prototype);
 

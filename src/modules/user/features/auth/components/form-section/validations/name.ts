@@ -3,9 +3,9 @@ import { FieldValues, Validate } from 'react-hook-form';
 const MAX_FULL_NAME_LENGTH = 255;
 const ALLOWED_NAME_CHARACTERS = '[A-Za-zА-Яа-яІіЇїЄєҐґ]';
 const NAME_SEPARATORS = `[\\s'-]`;
-const SINGLE_NAME_PATTERN = `${ALLOWED_NAME_CHARACTERS}+`;
-const NAME_WITH_SEPARATORS_PATTERN = `${SINGLE_NAME_PATTERN}(?:${NAME_SEPARATORS}${SINGLE_NAME_PATTERN})*`;
-const FULL_NAME_PATTERN = `${SINGLE_NAME_PATTERN}(?:${NAME_SEPARATORS}${SINGLE_NAME_PATTERN})+`;
+const NAME = `${ALLOWED_NAME_CHARACTERS}+`;
+const NAME_WITH_SEPARATORS_PATTERN = `${NAME}(?:${NAME_SEPARATORS}${NAME})*`;
+const FULL_NAME_PATTERN = `${NAME}(?:${NAME_SEPARATORS}${NAME})+`;
 
 type ValidationFunction = (value: string) => boolean;
 type ValidationKeys = 'isLettersOnly' | 'isFormatted' | 'isEmpty';

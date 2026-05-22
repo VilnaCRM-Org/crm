@@ -376,7 +376,8 @@ describe('ValidationError', () => {
       const json = JSON.stringify(error);
       expect(json).toBeDefined();
       const parsed = JSON.parse(json);
-      expect(parsed.cause).toEqual(cause);
+      expect(error.cause).toEqual(cause);
+      expect(parsed.cause).toBeUndefined();
     });
   });
 });

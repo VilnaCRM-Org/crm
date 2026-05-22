@@ -4,14 +4,12 @@ import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
-import RegistrationForm from '@/modules/user/features/auth/components/form-section/auth-forms/registration-form';
-import AuthProviderButtons from '@/modules/user/features/auth/components/form-section/components/auth-provider-buttons';
-import styles from '@/modules/user/features/auth/components/form-section/styles';
-import {
-  AuthMode,
-  RegistrationView,
-} from '@/modules/user/features/auth/components/form-section/types';
-import loadLoginForm from '@/modules/user/features/auth/utils/load-login-form';
+import RegistrationForm from '@auth/components/form-section/auth-forms/registration-form';
+import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
+import loadLoginForm from '@auth/utils/load-login-form';
+
+import styles from './styles';
+import { AuthMode, RegistrationView } from './types';
 
 const LoginForm = lazy(loadLoginForm);
 const LOAD_LOGIN_ERROR_KEY = 'sign_in.errors.load_failed' as const;

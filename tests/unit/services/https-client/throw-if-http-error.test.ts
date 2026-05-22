@@ -5,10 +5,6 @@ interface ErrorCause {
   [key: string]: unknown;
   url?: string;
   contentType?: string;
-  body?: {
-    [key: string]: unknown;
-    fields?: Record<string, unknown>;
-  };
 }
 
 // Mock Response for testing
@@ -67,6 +63,16 @@ const createMockResponse = (
   body: unknown,
   init: { status: number; statusText?: string; headers?: Record<string, string> }
 ): Response => new Response(body as BodyInit, init);
+
+async function expectHttpError(response: Response): Promise<HttpError> {
+  try {
+    await throwIfHttpError(response);
+  } catch (error) {
+    expect(error).toBeInstanceOf(HttpError);
+    return error as HttpError;
+  }
+  throw new Error('Expected throwIfHttpError to throw');
+}
 
 describe('throwIfHttpError', () => {
   describe('successful responses', () => {
@@ -169,14 +175,8 @@ describe('throwIfHttpError', () => {
     it('should use default message format for no body', async () => {
       const response = createMockResponse(null, { status: 404, statusText: 'Not Found' });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('404 Not Found');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('404 Not Found');
     });
 
     it('should extract message from JSON response body', async () => {
@@ -185,14 +185,8 @@ describe('throwIfHttpError', () => {
         { status: 400, statusText: 'Bad Request', headers: { 'content-type': 'application/json' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('Custom error message');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('Custom error message');
     });
 
     it('should extract message from text/plain response', async () => {
@@ -202,14 +196,8 @@ describe('throwIfHttpError', () => {
         headers: { 'content-type': 'text/plain' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('Plain text error message');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('Plain text error message');
     });
 
     it('should truncate very long JSON message to 500 characters', async () => {
@@ -219,15 +207,9 @@ describe('throwIfHttpError', () => {
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message.length).toBe(500);
-          expect(error.message).toBe(longMessage.slice(0, 500));
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message.length).toBe(500);
+      expect(error.message).toBe(longMessage.slice(0, 500));
     });
 
     it('should truncate very long text message to 500 characters', async () => {
@@ -237,14 +219,8 @@ describe('throwIfHttpError', () => {
         headers: { 'content-type': 'text/plain' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message.length).toBe(500);
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message.length).toBe(500);
     });
 
     it('should use status text when message is not in JSON body', async () => {
@@ -253,14 +229,8 @@ describe('throwIfHttpError', () => {
         { status: 400, statusText: 'Bad Request', headers: { 'content-type': 'application/json' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('400 Bad Request');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('400 Bad Request');
     });
 
     it('should ignore non-text content types', async () => {
@@ -270,14 +240,8 @@ describe('throwIfHttpError', () => {
         headers: { 'content-type': 'application/octet-stream' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('400 Bad Request');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('400 Bad Request');
     });
   });
 
@@ -288,33 +252,24 @@ describe('throwIfHttpError', () => {
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.cause).toBeDefined();
-          expect((error.cause as ErrorCause).url).toBe('https://api.example.com/test');
-          expect((error.cause as ErrorCause).contentType).toBe('application/json');
-          expect((error.cause as ErrorCause).body).toEqual({ error: 'details' });
-        }
-      }
+      const error = await expectHttpError(response);
+      const cause = error.cause as ErrorCause;
+      expect(error.cause).toBeDefined();
+      expect(cause.url).toBe('https://api.example.com/test');
+      expect(cause.contentType).toBe('application/json');
+      expect(cause.bodyPreview).toBe('{"error":"details"}');
+      expect(cause.bodyLength).toBe('{"error":"details"}'.length);
+      expect(cause).not.toHaveProperty('body');
     });
 
-    it('should include text body in cause for text/plain', async () => {
+    it('should not include text body in cause for text/plain', async () => {
       const response = createMockResponse('Error text', {
         status: 500,
         headers: { 'content-type': 'text/plain' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect((error.cause as ErrorCause).body).toBe('Error text');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.cause as ErrorCause).not.toHaveProperty('body');
     });
 
     it('should include contentType in cause', async () => {
@@ -323,27 +278,15 @@ describe('throwIfHttpError', () => {
         headers: { 'content-type': 'application/json' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect((error.cause as ErrorCause).contentType).toBe('application/json');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect((error.cause as ErrorCause).contentType).toBe('application/json');
     });
 
     it('should handle missing content-type header', async () => {
       const response = createMockResponse(null, { status: 404 });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect((error.cause as ErrorCause).contentType).toBeUndefined();
-        }
-      }
+      const error = await expectHttpError(response);
+      expect((error.cause as ErrorCause).contentType).toBeUndefined();
     });
   });
 
@@ -360,14 +303,8 @@ describe('throwIfHttpError', () => {
         throw new Error('Invalid JSON');
       };
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('400 Bad Request');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('400 Bad Request');
     });
 
     it('should handle JSON response that returns undefined from catch', async () => {
@@ -382,15 +319,9 @@ describe('throwIfHttpError', () => {
         throw new Error('JSON parse failed');
       };
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('400 Bad Request');
-          expect((error.cause as ErrorCause).body).toBeUndefined();
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('400 Bad Request');
+      expect(error.cause as ErrorCause).not.toHaveProperty('body');
     });
 
     it('should handle undefined JSON data without message property', async () => {
@@ -403,32 +334,20 @@ describe('throwIfHttpError', () => {
       // json() returns undefined
       response.json = async (): Promise<unknown> => undefined;
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('400 Bad Request');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('400 Bad Request');
     });
 
-    it('should set body to text for non-JSON content types', async () => {
+    it('should omit body for non-JSON content types', async () => {
       const response = createMockResponse('Some error text', {
         status: 500,
         statusText: 'Server Error',
         headers: { 'content-type': 'application/xml' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('500 Server Error');
-          expect((error.cause as ErrorCause).body).toBe('Some error text');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('500 Server Error');
+      expect(error.cause as ErrorCause).not.toHaveProperty('body');
     });
 
     it('should handle text() errors gracefully', async () => {
@@ -443,14 +362,8 @@ describe('throwIfHttpError', () => {
         throw new Error('Cannot read text');
       };
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('500 Server Error');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('500 Server Error');
     });
 
     it('should handle empty text response', async () => {
@@ -460,14 +373,8 @@ describe('throwIfHttpError', () => {
         headers: { 'content-type': 'text/plain' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('400 Bad Request');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('400 Bad Request');
     });
 
     it('should handle undefined message in JSON', async () => {
@@ -476,14 +383,8 @@ describe('throwIfHttpError', () => {
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('400 ');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('400 ');
     });
 
     it('should handle null message in JSON', async () => {
@@ -492,14 +393,8 @@ describe('throwIfHttpError', () => {
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('400 ');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('400 ');
     });
 
     it('should handle non-string message in JSON', async () => {
@@ -508,14 +403,8 @@ describe('throwIfHttpError', () => {
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('400 ');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('400 ');
     });
 
     it('should handle content-type with charset', async () => {
@@ -524,14 +413,8 @@ describe('throwIfHttpError', () => {
         { status: 400, headers: { 'content-type': 'application/json; charset=utf-8' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('Error');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('Error');
     });
 
     it('should handle case-insensitive content-type', async () => {
@@ -540,14 +423,8 @@ describe('throwIfHttpError', () => {
         { status: 400, headers: { 'content-type': 'APPLICATION/JSON' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('Error');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('Error');
     });
   });
 
@@ -577,14 +454,8 @@ describe('throwIfHttpError', () => {
     it('should include correct status in thrown error', async () => {
       const response = createMockResponse(null, { status: 418, statusText: "I'm a teapot" });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.status).toBe(418);
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.status).toBe(418);
     });
   });
 
@@ -595,16 +466,16 @@ describe('throwIfHttpError', () => {
         { status: 422, headers: { 'content-type': 'application/json' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('Email is invalid');
-          expect(error.status).toBe(422);
-          expect((error?.cause as ErrorCause)?.body?.fields).toBeDefined();
-        }
-      }
+      const error = await expectHttpError(response);
+      const expectedBody = JSON.stringify({
+        message: 'Email is invalid',
+        fields: { email: 'Invalid format' },
+      });
+      expect(error.message).toBe('Email is invalid');
+      expect(error.status).toBe(422);
+      expect((error.cause as ErrorCause).bodyPreview).toBe(expectedBody);
+      expect((error.cause as ErrorCause).bodyLength).toBe(expectedBody.length);
+      expect(error.cause as ErrorCause).not.toHaveProperty('body');
     });
 
     it('should handle authentication error', async () => {
@@ -613,15 +484,9 @@ describe('throwIfHttpError', () => {
         { status: 401, headers: { 'content-type': 'application/json' } }
       );
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('Invalid credentials');
-          expect(error.status).toBe(401);
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('Invalid credentials');
+      expect(error.status).toBe(401);
     });
 
     it('should handle server error with HTML response', async () => {
@@ -631,31 +496,53 @@ describe('throwIfHttpError', () => {
         headers: { 'content-type': 'text/html' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('500 Internal Server Error');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('500 Internal Server Error');
     });
 
-    it('should handle non-JSON content with text successfully extracted', async () => {
+    it('should handle non-JSON content without exposing body text in cause', async () => {
       const response = createMockResponse('Custom error text for XML', {
         status: 400,
         statusText: 'Bad Request',
         headers: { 'content-type': 'application/xml' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect((error.cause as ErrorCause).body).toBe('Custom error text for XML');
+      const error = await expectHttpError(response);
+      expect(error.cause as ErrorCause).not.toHaveProperty('body');
+    });
+
+    it('uses the raw value when a JSON response body is a primitive string', async () => {
+      class StringJsonResponse extends MockResponse {
+        public async json(): Promise<unknown> {
+          return 'plain-json-string';
         }
       }
+
+      const response = new StringJsonResponse('plain-json-string', {
+        status: 500,
+        headers: { 'content-type': 'application/json' },
+      }) as unknown as Response;
+
+      const error = await expectHttpError(response);
+      const cause = error.cause as ErrorCause;
+      expect(cause.bodyPreview).toBe('plain-json-string');
+      expect(cause.bodyLength).toBe('plain-json-string'.length);
+    });
+
+    it('falls back to String(data) when the response body cannot be JSON-serialized', async () => {
+      const circular: Record<string, unknown> = { name: 'loop' };
+      circular.self = circular;
+
+      const response = new MockResponse(circular, {
+        status: 500,
+        headers: { 'content-type': 'application/json' },
+      }) as unknown as Response;
+
+      const error = await expectHttpError(response);
+      const cause = error.cause as ErrorCause;
+      expect(typeof cause.bodyPreview).toBe('string');
+      expect(cause.bodyPreview).toBe(String(circular).slice(0, 200));
+      expect(cause.bodyLength).toBe(String(circular).length);
     });
 
     it('should handle text/plain without message when text is empty', async () => {
@@ -665,15 +552,9 @@ describe('throwIfHttpError', () => {
         headers: { 'content-type': 'text/plain' },
       });
 
-      try {
-        await throwIfHttpError(response);
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.message).toBe('500 Internal Server Error');
-          expect((error.cause as ErrorCause).body).toBe('');
-        }
-      }
+      const error = await expectHttpError(response);
+      expect(error.message).toBe('500 Internal Server Error');
+      expect(error.cause as ErrorCause).not.toHaveProperty('body');
     });
 
     it('should expose content type in HttpError cause', async () => {

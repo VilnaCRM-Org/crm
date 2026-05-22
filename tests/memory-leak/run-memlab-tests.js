@@ -62,13 +62,15 @@ const consoleMode = 'VERBOSE';
         }
       }
 
+      const fileName = path.basename(testFilePath);
       if (scenarios.length === 0) {
         logger.info(
-          `⏭️  Skipping ${path.basename(testFilePath)} (no scenarios exported; set MEMLEAK_INCLUDE_EXAMPLES=true to opt in)`
+          `⏭️  Skipping ${fileName} (no scenarios exported; ` +
+            `set MEMLEAK_INCLUDE_EXAMPLES=true to opt in)`
         );
       } else {
         totalScenariosRun += scenarios.length;
-        logger.info(`\n📋 Found ${scenarios.length} scenario(s) in ${path.basename(testFilePath)}`);
+        logger.info(`\n📋 Found ${scenarios.length} scenario(s) in ${fileName}`);
 
         for (const { name, scenario } of scenarios) {
           logger.info(`\n🧪 Running scenario: ${name} from ${path.basename(testFilePath)}`);

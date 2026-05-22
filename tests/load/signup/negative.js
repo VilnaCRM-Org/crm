@@ -11,7 +11,6 @@ export default function runNegativeTests(utils, baseUrl, params) {
   };
 
   if (!USE_REAL_BACKEND) {
-    // eslint-disable-next-line no-console
     console.log(
       '[INFO] Running negative tests in MOCK MODE - testing server resilience only. ' +
         'These tests DO NOT validate SQL injection or XSS prevention. ' +
@@ -59,9 +58,10 @@ function testSQLInjection(utils, baseUrl, headers, params) {
           const body = JSON.parse(response.body);
           if (body.id) {
             const getResponse = http.get(`${baseUrl}/api/users/${body.id}`, options);
+            const snippet = injection.substring(0, 20);
             utils.checkResponse(
               getResponse,
-              `SQL injection: persisted fullName is sanitized (not raw payload): ${injection.substring(0, 20)}`,
+              `SQL injection: persisted fullName is sanitized (not raw payload): ${snippet}`,
               (res) => {
                 try {
                   const user = JSON.parse(res.body);
@@ -76,9 +76,10 @@ function testSQLInjection(utils, baseUrl, headers, params) {
           // body.id already validated by checkResponse above
         }
       } else {
-        // eslint-disable-next-line no-console
+        const snippet = injection.substring(0, 20);
         console.log(
-          `[INFO] Mock server accepted SQL injection payload (expected - no validation): ${injection.substring(0, 20)}`
+          `[INFO] Mock server accepted SQL injection payload ` +
+            `(expected - no validation): ${snippet}`
         );
       }
     }
@@ -117,9 +118,9 @@ function testXSSAttempts(utils, baseUrl, headers, params) {
           }
         });
       } else {
-        // eslint-disable-next-line no-console
+        const snippet = xss.substring(0, 20);
         console.log(
-          `[INFO] Mock server accepted XSS payload (expected - no sanitization): ${xss.substring(0, 20)}`
+          `[INFO] Mock server accepted XSS payload (expected - no sanitization): ${snippet}`
         );
       }
     }

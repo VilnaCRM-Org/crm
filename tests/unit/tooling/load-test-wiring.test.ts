@@ -1,4 +1,4 @@
-// @jest-environment node
+// @jest-environment @stryker-mutator/jest-runner/jest-env/node
 
 import fs from 'fs';
 import path from 'path';
@@ -20,7 +20,7 @@ describe('load test wiring', () => {
     expect(dindTarget).not.toContain('/loadTests/homepage.js');
   });
 
-  it('runs both homepage and signup suites in the batch dind script and exposes a signup-only mode', () => {
+  it('runs homepage and signup suites in the batch dind script with a signup-only mode', () => {
     const batchScript = readFile('scripts/ci/batch_pw_load.sh');
 
     expect(batchScript).toContain('run_load_tests_dind "." "homepage"');

@@ -3,7 +3,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@": ["src"]
+      "@": ["src"],
+      "@auth/*": ["src/modules/user/features/auth/*"]
     }
   }
 }

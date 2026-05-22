@@ -13,6 +13,10 @@ jest.mock('@/assets/notification/confetti.svg', () => ({ ReactComponent: 'svg' }
 jest.mock('@/assets/notification/error.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/notification/settings.svg', () => ({ ReactComponent: 'svg' }));
 
+const UK_ERR_LEAD = 'Щось пішло не так із запитом.';
+const UK_ERR_TRAIL = 'Спробуйте ще раз пізніше';
+const GENERIC_UK_ERROR = `${UK_ERR_LEAD} ${UK_ERR_TRAIL}`;
+
 const createUkrainianI18n = (): ReturnType<typeof i18n.createInstance> => {
   const instance = i18n.createInstance();
   instance.use(initReactI18next).init({
@@ -51,7 +55,8 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByText('Помилка реєстрації. Спробуйте пізніше')).toBeInTheDocument();
+    const expected = 'Помилка реєстрації. Спробуйте пізніше';
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
   it('keeps custom backend error text when it is not the generic validation fallback', () => {
@@ -78,9 +83,21 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(
-      screen.getByText('Щось пішло не так із запитом. Спробуйте ще раз пізніше')
-    ).toBeInTheDocument();
+    expect(screen.getByText(GENERIC_UK_ERROR)).toBeInTheDocument();
+  });
+
+  it('falls back to the default localized error when the error text is only whitespace', () => {
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={baseProps.isSubmitting}
+        onBack={baseProps.onBack}
+        view={baseProps.view}
+        errorText="   "
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByText(GENERIC_UK_ERROR)).toBeInTheDocument();
   });
 
   it('falls back to the default localized error when the error text is only whitespace', () => {

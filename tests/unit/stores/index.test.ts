@@ -1,3 +1,6 @@
+import type { AnyAction } from '@reduxjs/toolkit';
+
+import devToolsOptions from '@/stores/dev-tools-options';
 import { getPreloadedAuthToken } from '@/stores/preloaded-auth-token';
 
 describe('store preloaded auth token', () => {
@@ -6,8 +9,7 @@ describe('store preloaded auth token', () => {
 
   afterEach(() => {
     if (originalWindow === undefined) {
-      // @ts-expect-error test cleanup for optional window
-      delete global.window;
+      delete (global as { window?: unknown }).window;
     } else {
       global.window = originalWindow;
     }
@@ -53,10 +55,28 @@ describe('store preloaded auth token', () => {
   });
 
   it('falls back to the env token when window is unavailable and arguments are omitted', () => {
-    // @ts-expect-error simulate a non-browser runtime for default parameter coverage
-    delete global.window;
+    delete (global as { window?: unknown }).window;
     process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = 'env-default-token';
 
     expect(getPreloadedAuthToken()).toBe('env-default-token');
+  });
+});
+
+describe('store devtools options', () => {
+  it('redacts cyclic action payloads without overflowing the stack', () => {
+    const sanitizeAction = devToolsOptions.actionSanitizer as (action: AnyAction) => AnyAction;
+    const payload: Record<string, unknown> = {
+      password: 'secret-password',
+      profile: { token: 'secret-token' },
+    };
+    payload.self = payload;
+
+    const sanitized = sanitizeAction({ type: 'auth/test', payload }) as AnyAction & {
+      payload: Record<string, unknown>;
+    };
+
+    expect(sanitized.payload.password).toBe('***');
+    expect(sanitized.payload.profile).toEqual({ token: '***' });
+    expect(sanitized.payload.self).toBe('[Circular]');
   });
 });

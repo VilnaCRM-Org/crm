@@ -10,9 +10,8 @@ import {
 } from 'react-hook-form';
 
 import UIButton from '@/components/ui-button';
+import styles from '@/components/ui-form/styles';
 import UITypography from '@/components/ui-typography';
-
-import styles from './styles';
 
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
@@ -50,7 +49,7 @@ export default function UIForm<T extends FieldValues>({
     defaultValues,
     ...formOptions,
   });
-  const submitting = isSubmitting ?? methods.formState.isSubmitting;
+  const submitting = Boolean(isSubmitting) || methods.formState.isSubmitting;
 
   const handleSubmit: SubmitHandler<T> = async (data) => {
     await onSubmit(data);
@@ -59,7 +58,6 @@ export default function UIForm<T extends FieldValues>({
     }
   };
   return (
-    // eslint-disable-next-line react/jsx-props-no-spreading
     <FormProvider {...methods}>
       <form noValidate onSubmit={methods.handleSubmit(handleSubmit)}>
         {error && (
