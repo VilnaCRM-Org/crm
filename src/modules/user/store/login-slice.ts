@@ -9,7 +9,6 @@ import { ThunkExtra } from '@/modules/user/store/types';
 import { UiError, ErrorHandler } from '@/services/error';
 import { ErrorParser } from '@/utils/error';
 
-
 type LoginSuccessPayload = LoginResponse & { email: string };
 
 export const loginUser = createAsyncThunk<
