@@ -14,11 +14,16 @@ export const formatError = (
     return {
       ...formattedError,
       message: 'Something went wrong on the server. Please try again later.',
+      extensions: { code: ApolloServerErrorCode.INTERNAL_SERVER_ERROR },
       ...(isDevelopment && error instanceof Error && error.message && { details: error.message }),
     };
   }
 
-  if (formattedError?.extensions?.code === 'BAD_REQUEST') {
+  const errorCode = formattedError?.extensions?.code;
+  if (
+    errorCode === ApolloServerErrorCode.BAD_REQUEST ||
+    errorCode === ApolloServerErrorCode.GRAPHQL_PARSE_FAILED
+  ) {
     return {
       ...formattedError,
       message: 'The request was invalid. Please check your input.',

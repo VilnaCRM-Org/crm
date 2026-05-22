@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import http from 'k6/http';
 
 import { hasSuccessfulSignupBody } from './response-assertions.js';

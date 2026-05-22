@@ -208,8 +208,8 @@ describe('ApiError', () => {
 
     it('should still build stack when captureStackTrace is unavailable', () => {
       const originalCapture = Error.captureStackTrace;
-      // @ts-expect-error intentionally removing to cover fallback path
-      Error.captureStackTrace = undefined;
+      (Error as { captureStackTrace?: typeof Error.captureStackTrace }).captureStackTrace =
+        undefined;
       try {
         const error = new ApiError('Stack fallback', 'TEST_CODE');
 

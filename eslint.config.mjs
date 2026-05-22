@@ -176,7 +176,7 @@ export default [
       'no-await-in-loop': 'warn',
       'no-restricted-syntax': 'warn',
       'no-alert': 'error',
-      'no-console': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'import/prefer-default-export': 'warn',
       'max-len': ['error', { code: 100 }],
       'eslint-comments/disable-enable-pair': 'off',
@@ -204,7 +204,10 @@ export default [
       'import/no-named-as-default': 'off',
       'import/no-unresolved': 'off',
       'import/extensions': 'off',
-      'react/jsx-props-no-spreading': 'error',
+      'react/jsx-props-no-spreading': [
+        'error',
+        { exceptions: ['TextField', 'FormProvider'] },
+      ],
       'react/react-in-jsx-scope': 'off',
       'react/require-default-props': 'off',
       'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
@@ -262,7 +265,7 @@ export default [
       globals: { ...globals.node, ...globals.browser, ...globals.jest },
     },
     rules: {
-      'no-console': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'import/extensions': 'off',
       'prefer-template': 'off',
       'no-restricted-syntax': 'off',
@@ -280,6 +283,14 @@ export default [
       '@typescript-eslint/no-require-imports': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
       'no-unused-vars': 'off',
+    },
+  },
+
+  // K6 load test scripts: console output is the idiomatic logging channel.
+  {
+    files: ['tests/load/**/*.js'],
+    rules: {
+      'no-console': 'off',
     },
   },
 

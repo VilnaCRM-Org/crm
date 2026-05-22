@@ -11,7 +11,6 @@ export default function runNegativeTests(utils, baseUrl, params) {
   };
 
   if (!USE_REAL_BACKEND) {
-    // eslint-disable-next-line no-console
     console.log(
       '[INFO] Running negative tests in MOCK MODE - testing server resilience only. ' +
         'These tests DO NOT validate SQL injection or XSS prevention. ' +
@@ -78,7 +77,6 @@ function testSQLInjection(utils, baseUrl, headers, params) {
         }
       } else {
         const snippet = injection.substring(0, 20);
-        // eslint-disable-next-line no-console
         console.log(
           `[INFO] Mock server accepted SQL injection payload ` +
             `(expected - no validation): ${snippet}`
@@ -121,7 +119,6 @@ function testXSSAttempts(utils, baseUrl, headers, params) {
         });
       } else {
         const snippet = xss.substring(0, 20);
-        // eslint-disable-next-line no-console
         console.log(
           `[INFO] Mock server accepted XSS payload (expected - no sanitization): ${snippet}`
         );

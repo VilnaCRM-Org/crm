@@ -9,8 +9,7 @@ describe('store preloaded auth token', () => {
 
   afterEach(() => {
     if (originalWindow === undefined) {
-      // @ts-expect-error test cleanup for optional window
-      delete global.window;
+      delete (global as { window?: unknown }).window;
     } else {
       global.window = originalWindow;
     }
@@ -56,8 +55,7 @@ describe('store preloaded auth token', () => {
   });
 
   it('falls back to the env token when window is unavailable and arguments are omitted', () => {
-    // @ts-expect-error simulate a non-browser runtime for default parameter coverage
-    delete global.window;
+    delete (global as { window?: unknown }).window;
     process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = 'env-default-token';
 
     expect(getPreloadedAuthToken()).toBe('env-default-token');

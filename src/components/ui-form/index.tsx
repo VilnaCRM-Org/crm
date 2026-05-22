@@ -58,7 +58,6 @@ export default function UIForm<T extends FieldValues>({
     }
   };
   return (
-    // eslint-disable-next-line react/jsx-props-no-spreading
     <FormProvider {...methods}>
       <form noValidate onSubmit={methods.handleSubmit(handleSubmit)}>
         {error && (

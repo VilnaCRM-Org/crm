@@ -74,7 +74,6 @@ export class ErrorHandler {
   }
 
   public static handle(error: unknown): void {
-    // eslint-disable-next-line no-console
     console.error('[ErrorHandler]', error);
   }
 

@@ -1,5 +1,6 @@
 import { HttpError } from './http-error';
 import HttpsClient, { RequestMethod } from './https-client';
+import isNonJsonBody from './is-non-json-body';
 import ResponseMessages from './response-messages';
 import throwIfHttpError from './throw-if-http-error';
 
@@ -61,7 +62,7 @@ export default class FetchHttpsClient implements HttpsClient {
     headers?: Record<string, string>
   ): RequestInit {
     const hasBody = body !== undefined;
-    const isJsonBody = hasBody && !this.isNonJsonBody(body);
+    const isJsonBody = hasBody && !isNonJsonBody(body);
 
     const config: RequestInit = {
       method,
@@ -71,25 +72,6 @@ export default class FetchHttpsClient implements HttpsClient {
       config.body = isJsonBody ? JSON.stringify(body) : (body as BodyInit);
     }
     return config;
-  }
-
-  private isNonJsonBody(body: unknown): boolean {
-    const isInstanceOfGlobal = (ctor: string): boolean => {
-      const globalCtor = (globalThis as Record<string, unknown>)[ctor];
-      return typeof globalCtor === 'function' && body instanceof (globalCtor as new () => unknown);
-    };
-    const isBinaryBuffer =
-      typeof ArrayBuffer !== 'undefined' &&
-      (body instanceof ArrayBuffer || ArrayBuffer.isView(body));
-
-    return (
-      typeof body === 'string' ||
-      isInstanceOfGlobal('FormData') ||
-      isInstanceOfGlobal('Blob') ||
-      isInstanceOfGlobal('URLSearchParams') ||
-      isInstanceOfGlobal('ReadableStream') ||
-      isBinaryBuffer
-    );
   }
 
   private createHeaders(

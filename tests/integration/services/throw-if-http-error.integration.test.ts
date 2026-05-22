@@ -154,6 +154,55 @@ describe('throwIfHttpError Coverage Tests', () => {
     });
   });
 
+  it('preserves the body preview when the JSON payload is itself a string', async () => {
+    const jsonStringBody = 'plain-json-string';
+    const mockResponse = {
+      ok: false,
+      status: 500,
+      statusText: 'Server Error',
+      url: 'http://localhost/api/test',
+      headers: { get: () => 'application/json' },
+      clone: () => ({
+        json: (): Promise<string> => Promise.resolve(jsonStringBody),
+      }),
+    } as unknown as Response;
+
+    let caught: unknown;
+    try {
+      await throwIfHttpError(mockResponse);
+    } catch (err) {
+      caught = err;
+    }
+    const cause = (caught as { cause: { bodyPreview: string; bodyLength: number } }).cause;
+    expect(cause.bodyPreview).toBe(jsonStringBody);
+    expect(cause.bodyLength).toBe(jsonStringBody.length);
+  });
+
+  it('falls back to String(data) when the JSON body cannot be serialized', async () => {
+    const circular: Record<string, unknown> = { name: 'loop' };
+    circular.self = circular;
+    const mockResponse = {
+      ok: false,
+      status: 500,
+      statusText: 'Server Error',
+      url: 'http://localhost/api/test',
+      headers: { get: () => 'application/json' },
+      clone: () => ({
+        json: (): Promise<typeof circular> => Promise.resolve(circular),
+      }),
+    } as unknown as Response;
+
+    let caught: unknown;
+    try {
+      await throwIfHttpError(mockResponse);
+    } catch (err) {
+      caught = err;
+    }
+    const cause = (caught as { cause: { bodyPreview: string; bodyLength: number } }).cause;
+    expect(cause.bodyPreview).toBe(String(circular).slice(0, 200));
+    expect(cause.bodyLength).toBe(String(circular).length);
+  });
+
   it('should handle failures when reading text bodies for non-JSON responses', async () => {
     const mockResponse = {
       ok: false,
