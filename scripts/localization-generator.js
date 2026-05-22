@@ -93,9 +93,7 @@ class LocalizationGenerator {
       }
     }
     if (missing.length) {
-      console.warn(
-        `Localization generator: required locale files missing.\n${missing.join('\n')}`
-      );
+      console.warn(`Localization generator: required locale files missing.\n${missing.join('\n')}`);
     }
   }
 
