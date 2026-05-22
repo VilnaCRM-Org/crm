@@ -30,7 +30,6 @@ declare module '@mui/material/styles' {
   interface Palette {
     darkPrimary: Palette['primary'];
     darkSecondary: Palette['secondary'];
-    white?: string;
     brandGray: Palette['brandGray'];
     grey200: Palette['grey200'];
     grey250: Palette['grey250'];
@@ -53,7 +52,6 @@ declare module '@mui/material/styles' {
   interface PaletteOptions {
     darkPrimary?: PaletteOptions['primary'];
     darkSecondary?: PaletteOptions['secondary'];
-    white?: string;
     brandGray?: PaletteOptions['brandGray'];
     grey200?: PaletteOptions['grey200'];
     grey250?: PaletteOptions['grey250'];

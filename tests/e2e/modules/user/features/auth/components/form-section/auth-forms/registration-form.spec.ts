@@ -35,6 +35,9 @@ test.describe('Registration Form', () => {
     await fillInitialsInput(page, userData);
     await fillEmailInput(page, userData);
     await fillPasswordInput(page, userData);
+
+    await expect(page).toHaveURL(REGISTRATION_URL);
+    await expect(page.locator(`text=${successNotificationTitle}`)).toBeHidden();
   });
 
   test('displays server error on registration failure', async ({ page }) => {

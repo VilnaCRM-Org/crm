@@ -6,18 +6,22 @@ class LocalizationGenerator {
     i18nFolderName = 'i18n',
     modulesPath = 'src',
     localizationFile = 'localization.json',
-    outputPath = 'src/i18n'
+    outputPath = 'src/i18n',
+    requiredLocales = ['en', 'uk']
   ) {
     this.modulesPath = modulesPath;
     this.i18nFolderName = i18nFolderName;
     this.localizationFile = localizationFile;
     this.pathToWriteLocalization = outputPath;
+    this.requiredLocales = requiredLocales;
   }
 
   generateLocalizationFile() {
     const featurePaths = this.getFeaturePaths();
 
     if (!featurePaths.length) return;
+
+    this.validateRequiredLocales(featurePaths);
 
     const localizationObj = featurePaths.reduce((acc, featurePath) => {
       const parsedLocalization = this.getLocalizationFromFolder(featurePath);
@@ -70,6 +74,29 @@ class LocalizationGenerator {
     };
     walk(this.modulesPath);
     return featureDirs;
+  }
+
+  validateRequiredLocales(featurePaths) {
+    const missing = [];
+    for (const featurePath of featurePaths) {
+      if (!fs.existsSync(featurePath)) continue;
+      const present = new Set(
+        fs
+          .readdirSync(featurePath, { withFileTypes: true })
+          .filter((file) => file.isFile() && file.name.endsWith('.json'))
+          .filter((file) => file.name !== this.localizationFile)
+          .map((file) => file.name.split('.')[0])
+      );
+      const missingForFeature = this.requiredLocales.filter((locale) => !present.has(locale));
+      if (missingForFeature.length) {
+        missing.push(`${featurePath}: missing ${missingForFeature.join(', ')}`);
+      }
+    }
+    if (missing.length) {
+      console.warn(
+        `Localization generator: required locale files missing.\n${missing.join('\n')}`
+      );
+    }
   }
 
   getLocalizationFromFolder(i18nFolderPath) {

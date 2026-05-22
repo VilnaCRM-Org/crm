@@ -39,32 +39,34 @@ const isSensitiveKey = (k: string): boolean => {
   if (SENSITIVE_KEY_SUBSTRINGS.some((s) => lower.includes(s))) return true;
   return SENSITIVE_KEY_PATTERN.test(lower);
 };
-function deepRedact<T>(input: T, seen = new WeakSet<object>()): T {
-  if (!input || typeof input !== 'object') return input;
-  if (seen.has(input)) return '[Circular]' as unknown as T;
-
+function redactContainer<T>(input: T & object, seen: WeakSet<object>): T {
   if (input instanceof Map) {
-    seen.add(input);
     return new Map(
       Array.from(input.entries(), ([k, v]) => [k, deepRedact(v, seen)])
     ) as unknown as T;
   }
   if (input instanceof Set) {
-    seen.add(input);
     return new Set(Array.from(input.values(), (v) => deepRedact(v, seen))) as unknown as T;
   }
   if (Array.isArray(input)) {
-    seen.add(input);
     return input.map((value) => deepRedact(value, seen)) as unknown as T;
   }
-  if (!isPlainObject(input)) return input as T;
+  if (isPlainObject(input)) {
+    return Object.fromEntries(
+      Object.entries(input as Record<string, unknown>).map(([k, v]) => [
+        k,
+        isSensitiveKey(k) ? '***' : deepRedact(v, seen),
+      ])
+    ) as T;
+  }
+  return input as T;
+}
+
+function deepRedact<T>(input: T, seen = new WeakSet<object>()): T {
+  if (!input || typeof input !== 'object') return input;
+  if (seen.has(input)) return '[Circular]' as unknown as T;
   seen.add(input);
-  return Object.fromEntries(
-    Object.entries(input as Record<string, unknown>).map(([k, v]) => [
-      k,
-      isSensitiveKey(k) ? '***' : deepRedact(v, seen),
-    ])
-  ) as T;
+  return redactContainer(input as T & object, seen);
 }
 
 const REDACTABLE_META_KEYS = ['arg', 'headers', 'request'] as const;
