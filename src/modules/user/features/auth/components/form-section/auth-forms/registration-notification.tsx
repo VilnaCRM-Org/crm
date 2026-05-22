@@ -6,7 +6,7 @@ import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/ui-button';
-import UiTypography from '@/components/ui-typography';
+import UITypography from '@/components/ui-typography';
 import { RegistrationView } from '@auth/components/form-section/types';
 
 import styles from './registration-notification.styles';
@@ -88,12 +88,12 @@ function ErrorNotificationContent({
       </Box>
 
       <Box sx={styles.messageContainerError}>
-        <UiTypography component="h4" sx={styles.messageTitle}>
+        <UITypography component="h4" sx={styles.messageTitle}>
           {title}
-        </UiTypography>
-        <UiTypography component="span" sx={styles.messageDescription}>
+        </UITypography>
+        <UITypography component="span" sx={styles.messageDescription}>
           {resolvedErrorText}
-        </UiTypography>
+        </UITypography>
 
         <Box sx={styles.buttonsBox}>
           {onRetry != null ? (
@@ -155,16 +155,16 @@ function SuccessNotificationContent({
       </Box>
 
       <Box sx={styles.messageContainer}>
-        <UiTypography
+        <UITypography
           component="h4"
           sx={styles.successMessageTitle}
           data-testid="success-notification-title"
         >
           {title}
-        </UiTypography>
-        <UiTypography component="span" sx={styles.successMessageDescription}>
+        </UITypography>
+        <UITypography component="span" sx={styles.successMessageDescription}>
           {description}
-        </UiTypography>
+        </UITypography>
 
         <UIButton
           sx={styles.messageButton}

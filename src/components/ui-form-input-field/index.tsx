@@ -56,7 +56,7 @@ export default function UIFormInputField<T extends FieldValues>({
       <Controller
         name={name}
         control={control}
-        defaultValue={defaultValue}
+        {...(defaultValue !== undefined ? { defaultValue } : {})}
         rules={rules}
         render={renderField}
       />

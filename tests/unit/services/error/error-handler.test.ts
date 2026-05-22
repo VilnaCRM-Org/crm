@@ -574,13 +574,16 @@ describe('ErrorHandler', () => {
 
     it('should delegate handle to static implementation', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      const handler = new ErrorHandler();
-      const error = new Error('instance test');
+      try {
+        const handler = new ErrorHandler();
+        const error = new Error('instance test');
 
-      handler.handle(error);
+        handler.handle(error);
 
-      expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
-      consoleErrorSpy.mockRestore();
+        expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+      } finally {
+        consoleErrorSpy.mockRestore();
+      }
     });
   });
 });

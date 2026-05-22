@@ -477,7 +477,7 @@ module.exports = {
       from: {
         path:
           '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/' +
-          '(?!features|helpers|lib|repositories|store)[^/]+/',
+          '(?!(?:features|helpers|lib|repositories|store)/)[^/]+/',
       },
       to: {},
     },
@@ -499,7 +499,7 @@ module.exports = {
       from: {
         path:
           '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/features/[a-z0-9-]+/' +
-          '(?!assets|components|hooks|i18n|repositories|routes|types|utils)[^/]+/',
+          '(?!(?:assets|components|hooks|i18n|repositories|routes|types|utils)/)[^/]+/',
       },
       to: {},
     },

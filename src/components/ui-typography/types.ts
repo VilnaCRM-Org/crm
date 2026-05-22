@@ -34,5 +34,5 @@ type NonLabelTypographyProps = {
   htmlFor?: never;
 };
 
-export type UiTypographyProps = BaseTypographyProps &
+export type UITypographyProps = BaseTypographyProps &
   (LabelTypographyProps | NonLabelTypographyProps);
