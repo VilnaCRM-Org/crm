@@ -204,10 +204,7 @@ export default [
       'import/no-named-as-default': 'off',
       'import/no-unresolved': 'off',
       'import/extensions': 'off',
-      'react/jsx-props-no-spreading': [
-        'error',
-        { exceptions: ['TextField', 'FormProvider'] },
-      ],
+      'react/jsx-props-no-spreading': ['error', { exceptions: ['TextField', 'FormProvider'] }],
       'react/react-in-jsx-scope': 'off',
       'react/require-default-props': 'off',
       'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
