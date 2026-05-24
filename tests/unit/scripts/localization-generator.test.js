@@ -377,6 +377,81 @@ describe('LocalizationGenerator', () => {
     });
   });
 
+  describe('validateRequiredLocales', () => {
+    it('does not warn when all required locales are present', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        mockFs.existsSync.mockReturnValue(true);
+        mockFs.readdirSync.mockReturnValue([
+          { name: 'en.json', isFile: () => true },
+          { name: 'uk.json', isFile: () => true },
+        ]);
+
+        generator.validateRequiredLocales(['feature/i18n']);
+
+        expect(warnSpy).not.toHaveBeenCalled();
+      } finally {
+        warnSpy.mockRestore();
+      }
+    });
+
+    it('warns once listing all features missing a required locale', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        mockFs.existsSync.mockReturnValue(true);
+        mockFs.readdirSync.mockImplementation((dir) => {
+          if (dir === 'feature1/i18n') {
+            return [{ name: 'uk.json', isFile: () => true }];
+          }
+          return [
+            { name: 'en.json', isFile: () => true },
+            { name: 'uk.json', isFile: () => true },
+          ];
+        });
+
+        generator.validateRequiredLocales(['feature1/i18n', 'feature2/i18n']);
+
+        expect(warnSpy).toHaveBeenCalledTimes(1);
+        expect(warnSpy.mock.calls[0][0]).toContain('feature1/i18n: missing en');
+        expect(warnSpy.mock.calls[0][0]).not.toContain('feature2/i18n');
+      } finally {
+        warnSpy.mockRestore();
+      }
+    });
+
+    it('skips folders that do not exist', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        mockFs.existsSync.mockReturnValue(false);
+
+        generator.validateRequiredLocales(['ghost/i18n']);
+
+        expect(mockFs.readdirSync).not.toHaveBeenCalled();
+        expect(warnSpy).not.toHaveBeenCalled();
+      } finally {
+        warnSpy.mockRestore();
+      }
+    });
+
+    it('ignores the output localization file when checking required locales', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        mockFs.existsSync.mockReturnValue(true);
+        mockFs.readdirSync.mockReturnValue([
+          { name: 'en.json', isFile: () => true },
+          { name: 'uk.json', isFile: () => true },
+          { name: generator.localizationFile, isFile: () => true },
+        ]);
+
+        generator.validateRequiredLocales(['feature/i18n']);
+
+        expect(warnSpy).not.toHaveBeenCalled();
+      } finally {
+        warnSpy.mockRestore();
+      }
+    });
+  });
+
   describe('writeLocalizationFile', () => {
     it('should create directory and write file', () => {
       const fileContent = JSON.stringify({ test: 'data' });

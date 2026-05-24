@@ -1,25 +1,25 @@
 import { render, screen } from '@testing-library/react';
 
-import UiTypography from '@/components/ui-typography';
+import UITypography from '@/components/ui-typography';
 
-describe('UiTypography', () => {
+describe('UITypography', () => {
   it('renders a paragraph by default when no component prop is provided', () => {
-    render(<UiTypography>Default copy</UiTypography>);
+    render(<UITypography>Default copy</UITypography>);
 
     expect(screen.getByText('Default copy').tagName).toBe('P');
   });
 
   it('renders the provided component prop', () => {
-    render(<UiTypography component="span">Inline copy</UiTypography>);
+    render(<UITypography component="span">Inline copy</UITypography>);
 
     expect(screen.getByText('Inline copy').tagName).toBe('SPAN');
   });
 
   it('renders a label element with htmlFor when component="label"', () => {
     render(
-      <UiTypography component="label" htmlFor="some-id">
+      <UITypography component="label" htmlFor="some-id">
         Label text
-      </UiTypography>
+      </UITypography>
     );
 
     const el = screen.getByText('Label text');
@@ -28,16 +28,16 @@ describe('UiTypography', () => {
   });
 
   it('renders an h1 element when component="h1"', () => {
-    render(<UiTypography component="h1">Heading</UiTypography>);
+    render(<UITypography component="h1">Heading</UITypography>);
 
     expect(screen.getByText('Heading').tagName).toBe('H1');
   });
 
   it('forwards id and role props to the rendered element', () => {
     render(
-      <UiTypography id="my-id" role="status">
+      <UITypography id="my-id" role="status">
         Status
-      </UiTypography>
+      </UITypography>
     );
 
     const el = screen.getByText('Status');

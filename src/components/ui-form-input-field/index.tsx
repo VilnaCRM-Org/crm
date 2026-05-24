@@ -53,13 +53,17 @@ export default function UIFormInputField<T extends FieldValues>({
 
   return (
     <ThemeProvider theme={theme}>
-      <Controller
-        name={name}
-        control={control}
-        defaultValue={defaultValue}
-        rules={rules}
-        render={renderField}
-      />
+      {defaultValue !== undefined ? (
+        <Controller
+          name={name}
+          control={control}
+          defaultValue={defaultValue}
+          rules={rules}
+          render={renderField}
+        />
+      ) : (
+        <Controller name={name} control={control} rules={rules} render={renderField} />
+      )}
     </ThemeProvider>
   );
 }
