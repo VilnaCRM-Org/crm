@@ -109,6 +109,15 @@ describe('RegistrationNotification', () => {
     expect(screen.getByText('Вітаємо!')).toBeInTheDocument();
   });
 
+  it('renders a single alert region for the success notification', () => {
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+  });
+
   it('calls onShown when success view is mounted', () => {
     const onShown = jest.fn();
     renderWithProviders(
@@ -178,6 +187,15 @@ describe('RegistrationNotification', () => {
     unmount();
     jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
     expect(onBack).not.toHaveBeenCalled();
+  });
+
+  it('renders a single alert region for the error notification', () => {
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 
   it('renders the retry button and disables it while submitting', () => {

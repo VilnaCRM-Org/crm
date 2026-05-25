@@ -26,9 +26,7 @@ async function extractJsonMeta(res: Response): Promise<{ message?: string; bodyM
   const data = await res.json().catch(() => undefined);
   if (data === undefined) return {};
   const candidate =
-    typeof data === 'object' && data !== null
-      ? (data as JsonWithMessage).message
-      : undefined;
+    typeof data === 'object' && data !== null ? (data as JsonWithMessage).message : undefined;
   const message = typeof candidate === 'string' ? candidate.slice(0, MESSAGE_LIMIT) : undefined;
   return { message, bodyMeta: buildBodyPreview(data) };
 }

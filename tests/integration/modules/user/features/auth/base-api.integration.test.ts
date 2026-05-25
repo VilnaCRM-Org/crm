@@ -375,7 +375,6 @@ describe('BaseAPI Integration', () => {
         expect(result.message).toBe('Request canceled.');
         expect(result.code).toBe(ApiErrorCodes.CANCELLED);
       });
-
     });
   });
 });

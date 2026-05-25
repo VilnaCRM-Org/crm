@@ -54,7 +54,7 @@ export default function RegistrationNotification({
 
   return (
     <Fade in={!isClosing} timeout={BACK_CLOSE_ANIMATION_MS} appear>
-      <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
+      <Box sx={styles.notificationSection}>
         {view === 'error' ? (
           <RegistrationErrorView
             isClosing={isClosing}
