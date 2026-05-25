@@ -5,14 +5,13 @@ import { I18nextProvider } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
-import container from '@/config/DependencyInjectionConfig';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import i18n from '@/i18n';
-import type LoginAPI from '@/modules/User/features/Auth/api/login-api';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
 import { loginReducer, registrationReducer } from '@/modules/User/store';
 import type { ThunkExtra } from '@/modules/User/store/types';
-import type { RootState } from '@/stores';
+import type LoginAPI from '@auth/api/login-api';
+import type RegistrationAPI from '@auth/api/registration-api';
 
 type TestRootState = {
   auth: ReturnType<typeof loginReducer>;
@@ -20,7 +19,7 @@ type TestRootState = {
 };
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
-  preloadedState?: Partial<RootState>;
+  preloadedState?: Partial<TestRootState>;
   store?: EnhancedStore<TestRootState>;
 }
 
@@ -48,7 +47,7 @@ export function renderWithProviders(
             } as ThunkExtra,
           },
         }),
-      preloadedState: preloadedState as never,
+      preloadedState,
     }),
     ...renderOptions
   }: ExtendedRenderOptions = {}

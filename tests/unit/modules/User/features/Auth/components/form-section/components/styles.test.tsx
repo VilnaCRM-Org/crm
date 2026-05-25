@@ -5,14 +5,14 @@ import breakpointsTheme from '@/components/UIBreakpoints';
 import formSectionComponentStyles, {
   StyledEyeIcon,
   StyledEyeIconOff,
-} from '@/modules/User/features/Auth/components/form-section/components/styles';
+} from '@auth/components/form-section/components/styles';
 
-jest.mock('@/modules/User/features/Auth/assets/eye.svg', () => ({
+jest.mock('@auth/assets/eye.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg data-testid="eye-icon" />,
 }));
 
-jest.mock('@/modules/User/features/Auth/assets/eye-off.svg', () => ({
+jest.mock('@auth/assets/eye-off.svg', () => ({
   __esModule: true,
   ReactComponent: (): JSX.Element => <svg data-testid="eye-icon-off" />,
 }));

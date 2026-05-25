@@ -3,16 +3,16 @@ import { rest } from 'msw';
 
 import '../../../setup';
 import API_ENDPOINTS from '@/config/apiConfig';
-import container from '@/config/DependencyInjectionConfig';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import type LoginAPI from '@/modules/User/features/Auth/api/login-api';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
 import {
   registrationReducer,
   registerUser,
   type RegistrationState,
 } from '@/modules/User/store/registration-slice';
 import type { ThunkExtra } from '@/modules/User/store/types';
+import type LoginAPI from '@auth/api/login-api';
+import type RegistrationAPI from '@auth/api/registration-api';
 
 import server from '../../../mocks/server';
 
@@ -69,10 +69,35 @@ describe('Registration Slice Aborted Action Tests', () => {
     expect(state.error).toBeNull();
   });
 
+  it('should preserve AbortError thrown directly by the registration API', async () => {
+    const abortError = Object.assign(new Error('The operation was aborted'), {
+      name: 'AbortError',
+    });
+    const directAbortStore = configureStore({
+      reducer: { registration: registrationReducer },
+      middleware: (getDefaultMiddleware) =>
+        getDefaultMiddleware({
+          thunk: {
+            extraArgument: {
+              loginAPI: { login: jest.fn() },
+              registrationAPI: { register: jest.fn().mockRejectedValue(abortError) },
+            } satisfies ThunkExtra,
+          },
+        }),
+    }) as TestStore;
+
+    const result = await directAbortStore.dispatch(
+      registerUser({ email: 'test@test.com', password: 'pass', fullName: 'Test' })
+    );
+
+    expect(result).toMatchObject({ error: expect.objectContaining({ name: 'AbortError' }) });
+    expect(directAbortStore.getState().registration.error).toBeNull();
+  });
+
   it('should parse errors without displayMessage field', async () => {
     server.use(
       rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-        res(ctx.status(500), ctx.json({ message: 'Internal server Error' }))
+        res(ctx.status(500), ctx.json({ message: 'Internal server error' }))
       )
     );
 

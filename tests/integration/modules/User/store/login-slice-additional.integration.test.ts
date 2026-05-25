@@ -3,12 +3,12 @@ import { rest } from 'msw';
 
 import '../../../setup';
 import API_ENDPOINTS from '@/config/apiConfig';
-import container from '@/config/DependencyInjectionConfig';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import type LoginAPI from '@/modules/User/features/Auth/api/login-api';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/registration-api';
-import { loginReducer, loginUser } from '@/modules/User/store/login-slice';
+import { loginReducer, loginUser, logout } from '@/modules/User/store/login-slice';
 import type { ThunkExtra } from '@/modules/User/store/types';
+import type LoginAPI from '@auth/api/login-api';
+import type RegistrationAPI from '@auth/api/registration-api';
 
 import server from '../../../mocks/server';
 
@@ -68,7 +68,7 @@ describe('Login Slice Coverage Tests', () => {
       expect(state.loading).toBe(false);
     });
 
-    it('should use action.error.message when payload is undefined', async () => {
+    it('should use action.error.message in async thunk when payload is undefined', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(500), ctx.json({ message: 'Server error' }))
@@ -105,6 +105,93 @@ describe('Login Slice Coverage Tests', () => {
 
       expect(state.error).toBe('Unknown error');
       expect(state.loading).toBe(false);
+    });
+  });
+
+  describe('direct reducer and thunk branches', () => {
+    it('handles fulfilled/rejected/thrown/aborted/logout flows with injected APIs', async () => {
+      const successStore = configureStore({
+        reducer: { auth: loginReducer },
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware({
+            thunk: {
+              extraArgument: {
+                loginAPI: { login: jest.fn().mockResolvedValue({ token: 'token-123' }) },
+                registrationAPI: { register: jest.fn() },
+              } satisfies ThunkExtra,
+            },
+          }),
+      }) as TestStore;
+
+      await successStore.dispatch(loginUser({ email: 'user@test.com', password: 'secret' }));
+      expect(successStore.getState().auth).toMatchObject({
+        email: 'user@test.com',
+        token: 'token-123',
+        loading: false,
+        error: null,
+      });
+
+      successStore.dispatch(logout());
+      expect(successStore.getState().auth).toMatchObject({
+        email: '',
+        token: null,
+        loading: false,
+        error: null,
+      });
+
+      const rejectedStore = configureStore({
+        reducer: { auth: loginReducer },
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware({
+            thunk: {
+              extraArgument: {
+                loginAPI: { login: jest.fn().mockResolvedValue(false) },
+                registrationAPI: { register: jest.fn() },
+              } satisfies ThunkExtra,
+            },
+          }),
+      }) as TestStore;
+
+      await rejectedStore.dispatch(loginUser({ email: 'bad@test.com', password: 'secret' }));
+      expect(rejectedStore.getState().auth.error).toBe('Unexpected response from server');
+
+      const thrownStore = configureStore({
+        reducer: { auth: loginReducer },
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware({
+            thunk: {
+              extraArgument: {
+                loginAPI: { login: jest.fn().mockRejectedValue(new Error('Network error')) },
+                registrationAPI: { register: jest.fn() },
+              } satisfies ThunkExtra,
+            },
+          }),
+      }) as TestStore;
+
+      await thrownStore.dispatch(loginUser({ email: 'throw@test.com', password: 'secret' }));
+      expect(thrownStore.getState().auth.error).toBe('JavaScript error occurred');
+
+      const abortError = Object.assign(new Error('The operation was aborted'), {
+        name: 'AbortError',
+      });
+      const abortedStore = configureStore({
+        reducer: { auth: loginReducer },
+        middleware: (getDefaultMiddleware) =>
+          getDefaultMiddleware({
+            thunk: {
+              extraArgument: {
+                loginAPI: { login: jest.fn().mockRejectedValue(abortError) },
+                registrationAPI: { register: jest.fn() },
+              } satisfies ThunkExtra,
+            },
+          }),
+      }) as TestStore;
+
+      const result = await abortedStore.dispatch(
+        loginUser({ email: 'abort@test.com', password: 'secret' })
+      );
+      expect(result).toMatchObject({ error: expect.objectContaining({ name: 'AbortError' }) });
+      expect(abortedStore.getState().auth.error).toBeNull();
     });
   });
 });

@@ -1,11 +1,12 @@
 import { screen, fireEvent } from '@testing-library/react';
 import i18n from 'i18next';
+import React, { act } from 'react';
 import { initReactI18next } from 'react-i18next';
 
 import localization from '@/i18n/localization.json';
 import RegistrationNotification, {
   BACK_CLOSE_ANIMATION_MS,
-} from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification';
+} from '@auth/components/form-section/auth-forms/registration-notification';
 
 import renderWithProviders from '../../../../../../../utils/renderWithProviders';
 
@@ -27,6 +28,11 @@ const createUkrainianI18n = (): ReturnType<typeof i18n.createInstance> => {
 
   return instance;
 };
+
+const VALIDATION_FALLBACK_HEAD = 'Помилка реєстрації.';
+const VALIDATION_FALLBACK_TAIL = 'Спробуйте пізніше';
+const DEFAULT_ERROR_HEAD = 'Щось пішло не так із запитом.';
+const DEFAULT_ERROR_TAIL = 'Спробуйте ще раз пізніше';
 
 describe('RegistrationNotification', () => {
   const baseProps = {
@@ -51,7 +57,8 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByText('Помилка реєстрації. Спробуйте пізніше')).toBeInTheDocument();
+    const validationFallback = `${VALIDATION_FALLBACK_HEAD} ${VALIDATION_FALLBACK_TAIL}`;
+    expect(screen.getByText(validationFallback)).toBeInTheDocument();
   });
 
   it('keeps custom backend error text when it is not the generic validation fallback', () => {
@@ -78,9 +85,8 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(
-      screen.getByText('Щось пішло не так із запитом. Спробуйте ще раз пізніше')
-    ).toBeInTheDocument();
+    const defaultLocalizedError = `${DEFAULT_ERROR_HEAD} ${DEFAULT_ERROR_TAIL}`;
+    expect(screen.getByText(defaultLocalizedError)).toBeInTheDocument();
   });
 
   it('renders the success notification', () => {
@@ -107,6 +113,67 @@ describe('RegistrationNotification', () => {
     expect(onShown).toHaveBeenCalledTimes(1);
   });
 
+  it('does not rerun onShown when the callback changes in success view', () => {
+    const onShown1 = jest.fn();
+    const onShown2 = jest.fn();
+    const onBack = jest.fn();
+
+    function RerenderHarness(): JSX.Element {
+      const [idx, setIdx] = React.useState(0);
+      const onShown = idx === 0 ? onShown1 : onShown2;
+      const handleSwitch = React.useCallback((): void => setIdx(1), []);
+      return (
+        <>
+          <button type="button" onClick={handleSwitch}>
+            switch-callback
+          </button>
+          <RegistrationNotification
+            key="notification"
+            isSubmitting={false}
+            onBack={onBack}
+            view="success"
+            onShown={onShown}
+          />
+        </>
+      );
+    }
+
+    renderWithProviders(<RerenderHarness />, { i18nMock: createUkrainianI18n() });
+    expect(onShown1).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'switch-callback' }));
+    expect(onShown2).not.toHaveBeenCalled();
+  });
+
+  it('calls onShown only once while success view stays mounted across rerenders', () => {
+    const onShown = jest.fn();
+    const onBack = jest.fn();
+    function RerenderHarness(): JSX.Element {
+      const [, setCounter] = React.useState(0);
+      const handleRerender = React.useCallback((): void => setCounter((value) => value + 1), []);
+      return (
+        <>
+          <button type="button" onClick={handleRerender}>
+            rerender
+          </button>
+          <RegistrationNotification
+            key="notification"
+            isSubmitting={false}
+            onBack={onBack}
+            view="success"
+            onShown={onShown}
+          />
+        </>
+      );
+    }
+
+    renderWithProviders(<RerenderHarness />, { i18nMock: createUkrainianI18n() });
+
+    fireEvent.click(screen.getByRole('button', { name: 'rerender' }));
+
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+
   it('calls onBack immediately when back is clicked in success view', () => {
     const onBack = jest.fn();
     renderWithProviders(
@@ -128,7 +195,9 @@ describe('RegistrationNotification', () => {
 
     fireEvent.click(screen.getByText('Назад'));
     expect(onBack).not.toHaveBeenCalled();
-    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
@@ -159,7 +228,9 @@ describe('RegistrationNotification', () => {
 
     fireEvent.click(screen.getByText('Назад'));
     unmount();
-    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
     expect(onBack).not.toHaveBeenCalled();
   });
 

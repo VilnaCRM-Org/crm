@@ -1,4 +1,4 @@
-import getSubmitLabelKey from '@/modules/User/features/Auth/utils/getSubmitLabelKey';
+import getSubmitLabelKey from '@auth/utils/getSubmitLabelKey';
 
 describe('getSubmitLabelKey', () => {
   describe('all combinations', () => {

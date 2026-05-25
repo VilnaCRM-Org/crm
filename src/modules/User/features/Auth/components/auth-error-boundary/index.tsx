@@ -1,4 +1,6 @@
+import styled from '@emotion/styled';
 import React, { Component, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface AuthErrorBoundaryState {
   hasError: boolean;
@@ -9,6 +11,62 @@ interface AuthErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode | ((args: { error?: Error; reset: () => void }) => ReactNode);
   onError?: (error: Error, info: React.ErrorInfo) => void;
+}
+
+const DEFAULT_FALLBACK_KEY = 'auth.error.default';
+
+const shouldShowErrorDetails = (error: Error | undefined): error is Error =>
+  Boolean(error) && (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test');
+
+const DetailsContainer = styled('details')({
+  marginTop: '1rem',
+});
+
+const SummaryStyled = styled('summary')({
+  cursor: 'pointer',
+});
+
+const RetryButton = styled('button')({
+  marginTop: '1rem',
+});
+
+function ErrorDetails({ error }: { error: Error }): JSX.Element {
+  const { t } = useTranslation();
+
+  return (
+    <DetailsContainer>
+      <SummaryStyled>{t('auth.error.details')}</SummaryStyled>
+      <pre style={{ whiteSpace: 'pre-wrap' }}>{error.message}</pre>
+    </DetailsContainer>
+  );
+}
+
+function FallbackContainer({
+  fallback,
+  error,
+  onReset,
+}: {
+  fallback: ReactNode;
+  error?: Error;
+  onReset: () => void;
+}): JSX.Element {
+  const { t } = useTranslation();
+  const resolvedFallback = fallback === DEFAULT_FALLBACK_KEY ? t(DEFAULT_FALLBACK_KEY) : fallback;
+
+  return (
+    <div
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+      data-testid="auth-error-boundary-fallback"
+    >
+      {resolvedFallback}
+      <RetryButton type="button" data-testid="auth-error-boundary-try-again" onClick={onReset}>
+        {t('auth.error.tryAgain')}
+      </RetryButton>
+      {shouldShowErrorDetails(error) && <ErrorDetails error={error} />}
+    </div>
+  );
 }
 
 export default class AuthErrorBoundary extends Component<
@@ -26,50 +84,17 @@ export default class AuthErrorBoundary extends Component<
 
   public componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const { onError } = this.props;
-
-    if (onError) {
-      onError(error, info);
-    }
+    onError?.(error, info);
   }
 
   public handleReset = (): void => this.setState({ hasError: false, error: undefined });
 
   public render(): ReactNode {
-    const { children, fallback = 'Something went wrong. Please try again later.' } = this.props;
+    const { children, fallback = DEFAULT_FALLBACK_KEY } = this.props;
     const { hasError, error } = this.state;
-    const shouldShowErrorDetails =
-      (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') && error;
-    const renderedFallback =
+    if (!hasError) return children;
+    const rendered =
       typeof fallback === 'function' ? fallback({ error, reset: this.handleReset }) : fallback;
-
-    if (hasError) {
-      return (
-        <div
-          role="alert"
-          aria-live="assertive"
-          aria-atomic="true"
-          data-testid="auth-error-boundary-fallback"
-        >
-          {renderedFallback}
-
-          <button
-            type="button"
-            data-testid="auth-error-boundary-try-again"
-            onClick={this.handleReset}
-            style={{ marginTop: '1rem' }}
-          >
-            Try again
-          </button>
-          {shouldShowErrorDetails && (
-            <details style={{ marginTop: '1rem' }}>
-              <summary>Error Details</summary>
-              <pre style={{ whiteSpace: 'pre-wrap' }}>{error!.message}</pre>
-            </details>
-          )}
-        </div>
-      );
-    }
-
-    return children;
+    return <FallbackContainer fallback={rendered} error={error} onReset={this.handleReset} />;
   }
 }
