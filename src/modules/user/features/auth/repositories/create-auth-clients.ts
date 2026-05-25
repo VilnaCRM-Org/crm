@@ -1,17 +1,14 @@
-import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
-import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
-import FetchHttpsClient from '@/services/https-client/fetch-https-client';
+import { inject, injectable } from 'tsyringe';
 
-export type AuthClients = {
-  loginAPI: LoginAPI;
-  registrationAPI: RegistrationAPI;
-};
+import TOKENS from '@/config/tokens';
 
-export default function createAuthClients(): AuthClients {
-  const httpsClient = new FetchHttpsClient();
+import LoginAPI from './login-api';
+import RegistrationAPI from './registration-api';
 
-  return {
-    loginAPI: new LoginAPI(httpsClient),
-    registrationAPI: new RegistrationAPI(httpsClient),
-  };
+@injectable()
+export default class AuthClients {
+  constructor(
+    @inject(TOKENS.LoginAPI) public readonly loginAPI: LoginAPI,
+    @inject(TOKENS.RegistrationAPI) public readonly registrationAPI: RegistrationAPI
+  ) {}
 }

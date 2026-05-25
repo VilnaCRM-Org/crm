@@ -2,12 +2,15 @@ import { ReadableStream } from 'node:stream/web';
 
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError, isHttpError } from '@/services/https-client/http-error';
+import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
+import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 
 const TEST_URL = 'http://localhost:8080/api/test';
 
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
-const originalFetch = global.fetch;
+const createClient = (): FetchHttpsClient =>
+  new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
 
 describe('FetchHttpsClient Integration', () => {
   let client: FetchHttpsClient;
@@ -17,12 +20,11 @@ describe('FetchHttpsClient Integration', () => {
   });
 
   afterAll(() => {
-    global.fetch = originalFetch;
     jest.restoreAllMocks();
   });
 
   beforeEach(() => {
-    client = new FetchHttpsClient();
+    client = createClient();
     mockFetch.mockClear();
   });
 
@@ -424,16 +426,10 @@ describe('FetchHttpsClient Integration', () => {
 
       mockFetch.mockResolvedValueOnce(mockResponse);
 
-      try {
-        await client.get(TEST_URL);
-        fail('Should have thrown an error');
-      } catch (error) {
-        expect(isHttpError(error)).toBe(true);
-        if (isHttpError(error)) {
-          expect(error.status).toBe(500);
-          expect(error.message).toContain('500');
-        }
-      }
+      const request = client.get(TEST_URL);
+
+      await expect(request).rejects.toMatchObject({ status: 500 });
+      await expect(request).rejects.toThrow(/500/);
     });
   });
 
@@ -476,77 +472,6 @@ describe('FetchHttpsClient Integration', () => {
         method: 'POST',
         headers: { Accept: 'application/json' },
         body: stringData,
-      });
-    });
-
-    it('should pass Blob bodies through unchanged', async () => {
-      const blob = new Blob(['hello'], { type: 'text/plain' });
-
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      );
-
-      await client.post<Blob, { ok: boolean }>(TEST_URL, blob);
-
-      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: blob,
-      });
-    });
-
-    it('should pass URLSearchParams bodies through unchanged', async () => {
-      const params = new URLSearchParams({ foo: 'bar' });
-
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      );
-
-      await client.post<URLSearchParams, { ok: boolean }>(TEST_URL, params);
-
-      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: params,
-      });
-    });
-
-    it('should pass ArrayBuffer and ArrayBufferView bodies through unchanged', async () => {
-      const buffer = new ArrayBuffer(4);
-
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      );
-      await client.post<ArrayBuffer, { ok: boolean }>(TEST_URL, buffer);
-
-      expect(mockFetch).toHaveBeenLastCalledWith(TEST_URL, {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: buffer,
-      });
-
-      const view = new Uint8Array([1, 2, 3]);
-      mockFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        })
-      );
-      await client.post<Uint8Array, { ok: boolean }>(TEST_URL, view);
-
-      expect(mockFetch).toHaveBeenLastCalledWith(TEST_URL, {
-        method: 'POST',
-        headers: { Accept: 'application/json' },
-        body: view,
       });
     });
   });

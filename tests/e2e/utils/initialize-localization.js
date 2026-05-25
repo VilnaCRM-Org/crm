@@ -6,6 +6,6 @@ import i18nConfig from '../../../src/config/i18n-config';
 export const i18nReady = i18n.use(initReactI18next).init(i18nConfig);
 
 export { i18n };
-export const { t } = i18n;
+export const t = i18n.t.bind(i18n);
 
 export default i18nReady;

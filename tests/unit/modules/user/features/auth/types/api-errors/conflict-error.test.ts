@@ -1,3 +1,4 @@
+import isAPIError from '@/modules/user/helpers/is-api-error';
 import ApiError from '@/modules/user/types/api-errors/api-error';
 import { ApiErrorCodes } from '@/modules/user/types/api-errors/api-error-codes';
 import ConflictError from '@/modules/user/types/api-errors/conflict-error';
@@ -64,6 +65,7 @@ describe('ConflictError', () => {
       const error = new ConflictError();
 
       expect(error instanceof ConflictError).toBe(true);
+      expect(isAPIError(error)).toBe(true);
     });
 
     it('should have correct prototype chain', () => {
@@ -81,7 +83,7 @@ describe('ConflictError', () => {
       expect(error.code).toBe('CONFLICT_ERROR');
     });
 
-    it('should have name from parent class', () => {
+    it('should expose its specific error name', () => {
       const error = new ConflictError();
 
       expect(error.name).toBe('ConflictError');
@@ -105,6 +107,10 @@ describe('ConflictError', () => {
       const error = new ConflictError();
 
       expect(error.cause).toBeUndefined();
+    });
+
+    it('returns false from isAPIError for a plain Error', () => {
+      expect(isAPIError(new Error('plain error'))).toBe(false);
     });
   });
 
@@ -262,7 +268,7 @@ describe('ConflictError', () => {
   describe('comparison with other errors', () => {
     it('should be distinguishable from ApiError', () => {
       const conflictError = new ConflictError();
-      const apiError = new ApiError('Test', 'CODE');
+      const apiError = new ApiError({ message: 'Test', code: 'CODE' });
 
       expect(conflictError instanceof ConflictError).toBe(true);
       expect(apiError instanceof ConflictError).toBe(false);
@@ -276,9 +282,9 @@ describe('ConflictError', () => {
       expect(standardError instanceof ConflictError).toBe(false);
     });
 
-    it('should have same name as ApiError', () => {
+    it('should have a distinct name from ApiError', () => {
       const conflictError = new ConflictError();
-      const apiError = new ApiError('Test', 'CODE');
+      const apiError = new ApiError({ message: 'Test', code: 'CODE' });
 
       expect(conflictError.name).toBe('ConflictError');
       expect(apiError.name).toBe('ApiError');

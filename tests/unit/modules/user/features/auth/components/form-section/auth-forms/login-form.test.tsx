@@ -2,19 +2,23 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import LoginForm, {
-  normalizeLoginErrorMessage,
-} from '@/modules/user/features/auth/components/form-section/auth-forms/login-form';
+  LoginErrorMessageNormalizer,
+} from '@auth/components/form-section/auth-forms/login-form';
+
+const normalizeLoginErrorMessage = (error: unknown): string =>
+  new LoginErrorMessageNormalizer().normalize(error);
 
 const mockDispatch = jest.fn();
 const mockLoginUser = jest.fn();
 const mockFormField = jest.fn();
 const mockUIForm = jest.fn();
-const submitCredentials = { email: 'user@example.com', password: 'secret123' } as const;
 
-let submitLoginForm: (() => Promise<void>) | null = null;
-
-function handleMockSubmitClick(): void {
-  void submitLoginForm?.();
+function makeSubmitHandler(
+  onSubmit: (data: { email: string; password: string }) => Promise<void>
+): () => void {
+  return (): void => {
+    void onSubmit({ email: 'user@example.com', password: 'secret123' });
+  };
 }
 
 jest.mock('react-i18next', () => ({
@@ -35,13 +39,13 @@ jest.mock('@/modules/user/store', () => ({
   loginUser: (...args: unknown[]): unknown => mockLoginUser(...args),
 }));
 
-jest.mock('@/modules/user/features/auth/utils/get-submit-label-key', () => ({
+jest.mock('@auth/utils/get-submit-label-key', () => ({
   __esModule: true,
   default: (mode: string, isSubmitting: boolean): string =>
     `${mode}.${isSubmitting ? 'submitting' : 'submit_button'}`,
 }));
 
-jest.mock('@/modules/user/features/auth/components/form-section/components/form-field', () => ({
+jest.mock('@auth/components/form-section/components/form-field', () => ({
   __esModule: true,
   default: (props: {
     label: string;
@@ -53,12 +57,12 @@ jest.mock('@/modules/user/features/auth/components/form-section/components/form-
   },
 }));
 
-jest.mock('@/modules/user/features/auth/components/form-section/components/password-field', () => ({
+jest.mock('@auth/components/form-section/components/password-field', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="password-field" />,
 }));
 
-jest.mock('@/modules/user/features/auth/components/form-section/components/user-options', () => ({
+jest.mock('@auth/components/form-section/components/user-options', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="user-options" />,
 }));
@@ -67,15 +71,15 @@ jest.mock('@/components/ui-form', () => ({
   __esModule: true,
   default: (props: {
     error: string;
+    isSubmitting: boolean;
     onSubmit: (data: { email: string; password: string }) => Promise<void>;
     children: ReactElement[];
   }): ReactElement => {
     mockUIForm(props);
-    submitLoginForm = (): Promise<void> => props.onSubmit(submitCredentials);
 
     return (
       <div>
-        <button type="button" onClick={handleMockSubmitClick}>
+        <button type="button" onClick={makeSubmitHandler(props.onSubmit)}>
           submit
         </button>
         <div data-testid="form-error">{props.error}</div>
@@ -88,7 +92,6 @@ jest.mock('@/components/ui-form', () => ({
 describe('LoginForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    submitLoginForm = null;
     mockLoginUser.mockImplementation((payload: unknown) => payload);
   });
 
@@ -120,6 +123,97 @@ describe('LoginForm', () => {
       );
     });
   });
+
+  it('translates the error reason when it matches an i18n key pattern', async () => {
+    mockDispatch.mockReturnValue({
+      unwrap: () => Promise.reject(new Error('')),
+    });
+
+    render(<LoginForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('form-error')).toHaveTextContent(
+        'sign_in.errors.login: auth.errors.unknown'
+      );
+    });
+  });
+
+  it('handles non-object submit failures through the translated error path', async () => {
+    mockDispatch.mockReturnValue({
+      // Rejecting with a non-Error primitive is the scenario under test.
+      unwrap: () => Promise.reject(404),
+    });
+
+    render(<LoginForm />);
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('form-error')).toHaveTextContent(
+        'sign_in.errors.login: auth.errors.unknown'
+      );
+    });
+  });
+
+  it('ignores serialized abort-shaped rejections from unwrap', async () => {
+    let rejectSubmit: (reason?: unknown) => void = () => undefined;
+    const abortLikeError = Object.assign(new Error('The operation was aborted'), {
+      name: 'AbortError',
+    });
+
+    mockDispatch.mockReturnValue({
+      unwrap: () =>
+        new Promise((_, reject) => {
+          rejectSubmit = reject;
+        }),
+    });
+
+    render(<LoginForm />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
+
+    await waitFor(() => {
+      expect(mockUIForm).toHaveBeenLastCalledWith(
+        expect.objectContaining({ error: '', isSubmitting: true })
+      );
+    });
+
+    rejectSubmit(abortLikeError);
+
+    await waitFor(() => {
+      expect(mockUIForm).toHaveBeenLastCalledWith(
+        expect.objectContaining({ error: '', isSubmitting: false })
+      );
+    });
+
+    expect(screen.getByTestId('form-error')).toHaveTextContent('');
+  });
+
+  it('exposes auth form barrel exports', () => {
+    jest.isolateModules(() => {
+      jest.doMock('@auth/components/form-section/auth-forms/login-form', () => ({
+        __esModule: true,
+        default: 'LoginForm',
+      }));
+      jest.doMock('@auth/components/form-section/auth-forms/registration-form', () => ({
+        __esModule: true,
+        default: 'RegistrationForm',
+      }));
+      jest.doMock('@auth/components/form-section/auth-forms/registration-form-fields', () => ({
+        __esModule: true,
+        default: 'RegistrationFormFields',
+      }));
+
+      const authForms = require('@auth/components/form-section/auth-forms');
+      expect(authForms.LoginForm).toBe('LoginForm');
+      expect(authForms.RegistrationForm).toBe('RegistrationForm');
+      expect(authForms.RegistrationFormFields).toBe('RegistrationFormFields');
+
+      jest.dontMock('@auth/components/form-section/auth-forms/login-form');
+      jest.dontMock('@auth/components/form-section/auth-forms/registration-form');
+      jest.dontMock('@auth/components/form-section/auth-forms/registration-form-fields');
+    });
+  });
 });
 
 describe('normalizeLoginErrorMessage', () => {
@@ -127,10 +221,34 @@ describe('normalizeLoginErrorMessage', () => {
     expect(normalizeLoginErrorMessage('Invalid credentials')).toBe('Invalid credentials');
   });
 
+  it('returns a trimmed direct string error when it contains surrounding whitespace', () => {
+    expect(normalizeLoginErrorMessage('  Invalid credentials  ')).toBe('Invalid credentials');
+  });
+
   it('returns an Error message when the error is an Error instance', () => {
     expect(normalizeLoginErrorMessage(new Error('Invalid credentials'))).toBe(
       'Invalid credentials'
     );
+  });
+
+  it('returns the unknown translation key when an Error message is blank', () => {
+    expect(normalizeLoginErrorMessage(new Error('   '))).toBe('auth.errors.unknown');
+  });
+
+  it('uses displayMessage when a blank Error message is present', () => {
+    const error = Object.assign(new Error('   '), {
+      displayMessage: 'Display message object',
+    });
+
+    expect(normalizeLoginErrorMessage(error)).toBe('Display message object');
+  });
+
+  it('uses data.message when a blank Error message is present', () => {
+    const error = Object.assign(new Error('   '), {
+      data: { message: 'Invalid credentials' },
+    });
+
+    expect(normalizeLoginErrorMessage(error)).toBe('Invalid credentials');
   });
 
   it('falls back to the unknown translation key for non-record values', () => {

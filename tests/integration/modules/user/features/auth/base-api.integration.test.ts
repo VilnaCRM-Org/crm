@@ -111,7 +111,7 @@ describe('BaseAPI Integration', () => {
 
         expect(result).toBeInstanceOf(ApiError);
         expect(result.message).toBe('Service unavailable. Please try again later.');
-        expect(result.code).toBe(ApiErrorCodes.SERVER);
+        expect(result.code).toBe(ApiErrorCodes.SERVICE_UNAVAILABLE);
       });
 
       it('should return Service Unavailable ApiError for 503 status', () => {
@@ -120,7 +120,7 @@ describe('BaseAPI Integration', () => {
 
         expect(result).toBeInstanceOf(ApiError);
         expect(result.message).toBe('Service unavailable. Please try again later.');
-        expect(result.code).toBe(ApiErrorCodes.SERVER);
+        expect(result.code).toBe(ApiErrorCodes.SERVICE_UNAVAILABLE);
       });
 
       it('should return Service Unavailable ApiError for 504 status', () => {
@@ -129,7 +129,7 @@ describe('BaseAPI Integration', () => {
 
         expect(result).toBeInstanceOf(ApiError);
         expect(result.message).toBe('Service unavailable. Please try again later.');
-        expect(result.code).toBe(ApiErrorCodes.SERVER);
+        expect(result.code).toBe(ApiErrorCodes.SERVICE_UNAVAILABLE);
       });
 
       it('should return Network Error for status 0', () => {
@@ -265,25 +265,28 @@ describe('BaseAPI Integration', () => {
         expect(result.message).toBe('Network error. Please check your connection.');
       });
 
-      it('should detect "ECANCELED" as network error', () => {
+      it('should detect "ECANCELED" as cancellation error', () => {
         const error = new Error('ECANCELED');
         const result = api.testHandleApiError(error, 'Request');
 
-        expect(result.message).toBe('Network error. Please check your connection.');
+        expect(result.message).toBe('Request canceled.');
+        expect(result.code).toBe(ApiErrorCodes.CANCELLED);
       });
 
-      it('should detect "canceled" keyword as network error', () => {
+      it('should detect "canceled" keyword as cancellation error', () => {
         const error = new Error('Request was canceled');
         const result = api.testHandleApiError(error, 'Request');
 
-        expect(result.message).toBe('Network error. Please check your connection.');
+        expect(result.message).toBe('Request canceled.');
+        expect(result.code).toBe(ApiErrorCodes.CANCELLED);
       });
 
-      it('should detect "cancelled" keyword as network error', () => {
+      it('should detect "cancelled" keyword as cancellation error', () => {
         const error = new Error('Request was cancelled');
         const result = api.testHandleApiError(error, 'Request');
 
-        expect(result.message).toBe('Network error. Please check your connection.');
+        expect(result.message).toBe('Request canceled.');
+        expect(result.code).toBe(ApiErrorCodes.CANCELLED);
       });
 
       it('should detect "ERR_NETWORK" as network error', () => {
@@ -352,6 +355,27 @@ describe('BaseAPI Integration', () => {
         const result = api.testHandleApiError(error, 'Test');
         expect(result).toBeInstanceOf(ApiError);
       });
+    });
+
+    describe('pre-built ApiError pass-through', () => {
+      it('returns an ApiError unchanged when it is already an ApiError', () => {
+        const original = new ApiError({
+          message: 'Already mapped',
+          code: ApiErrorCodes.UNKNOWN,
+        });
+        const result = api.testHandleApiError(original, 'Login');
+
+        expect(result).toBe(original);
+      });
+
+      it('treats an HttpError carrying an abort message as a cancellation error', () => {
+        const httpError = new HttpError({ status: 0, message: 'request aborted' });
+        const result = api.testHandleApiError(httpError, 'Login');
+
+        expect(result.message).toBe('Request canceled.');
+        expect(result.code).toBe(ApiErrorCodes.CANCELLED);
+      });
+
     });
   });
 });

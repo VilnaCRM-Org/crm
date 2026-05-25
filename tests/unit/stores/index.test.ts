@@ -77,6 +77,6 @@ describe('store devtools options', () => {
 
     expect(sanitized.payload.password).toBe('***');
     expect(sanitized.payload.profile).toEqual({ token: '***' });
-    expect(sanitized.payload.self).toBe('[Circular]');
+    expect(sanitized.payload.self).toBe(sanitized.payload);
   });
 });

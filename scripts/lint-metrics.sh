@@ -33,6 +33,63 @@ if ! jq empty "$METRICS_POLICY" 2>/dev/null; then
   exit 1
 fi
 
+METRICS_POLICY_SCHEMA="${METRICS_POLICY_SCHEMA:-config/metrics-policy.schema.json}"
+
+if [ ! -f "$METRICS_POLICY_SCHEMA" ]; then
+  printf 'ERROR: METRICS_POLICY_SCHEMA file not found: %s\n' "$METRICS_POLICY_SCHEMA" >&2
+  exit 1
+fi
+
+if ! jq empty "$METRICS_POLICY_SCHEMA" 2>/dev/null; then
+  printf 'ERROR: METRICS_POLICY_SCHEMA is not valid JSON: %s\n' "$METRICS_POLICY_SCHEMA" >&2
+  exit 1
+fi
+
+schema_errors=$(
+  jq -r --slurpfile policy "$METRICS_POLICY" '
+    . as $schema | $policy[0] as $p |
+    [
+      ( $p | keys[] as $k | select($schema.properties[$k] == null)
+        | "unknown top-level key: \($k)" ),
+      ( $schema.required[]? as $req | select(($p | has($req)) | not)
+        | "missing required top-level key: \($req)" ),
+      ( $schema.properties | to_entries[] as $section
+        | $p[$section.key] as $block
+        | select($block != null)
+        | if (($block | type) != "object") then
+            "non-object section: \($section.key): got \($block | type)"
+          else
+            ( ( $section.value.required[]? as $req
+                | select(($block | has($req)) | not)
+                | "missing required key: \($section.key).\($req)" ),
+              ( $block | keys[] as $k
+                | select($section.value.properties[$k] == null)
+                | "unknown key: \($section.key).\($k)" ),
+              ( $block | to_entries[] as $e
+                | $section.value.properties[$e.key] as $prop
+                | select($prop != null)
+                | ( select(($e.value | type) != "number")
+                    | "non-numeric value for \($section.key).\($e.key): got \($e.value | type)" ),
+                  ( select(($e.value | type) == "number")
+                    | ( select($prop.minimum != null and $e.value < $prop.minimum)
+                        | "\($section.key).\($e.key)=\($e.value) below minimum \($prop.minimum)" ),
+                      ( select($prop.maximum != null and $e.value > $prop.maximum)
+                        | "\($section.key).\($e.key)=\($e.value) above maximum \($prop.maximum)" )
+                  )
+              )
+            )
+          end
+      )
+    ] | .[]
+  ' "$METRICS_POLICY_SCHEMA"
+)
+
+if [ -n "$schema_errors" ]; then
+  printf 'ERROR: METRICS_POLICY does not satisfy schema (%s):\n' "$METRICS_POLICY_SCHEMA" >&2
+  printf '%s\n' "$schema_errors" | sed 's/^/  - /' >&2
+  exit 1
+fi
+
 threshold_assignments=$(
   jq -re '
     def hard_number($key):
@@ -373,7 +430,7 @@ print_summary_stdout() {
 if [ "$FAIL_COUNT" -gt 0 ]; then
   printf '\n'
   printf 'rust-code-analysis: %d hard violation(s) found\n\n' "$FAIL_COUNT"
-  printf 'All measured metrics:\n\n'
+  printf 'Selected measured metrics:\n\n'
   print_summary_stdout || true
   printf '\nViolations:\n\n'
   print_findings "$TMP_FINDINGS" || true
@@ -403,7 +460,7 @@ printf 'rust-code-analysis: all hard checks pass\n\n'
 print_summary_stdout || true
 printf '\n'
 
-printf 'Scope: %s | hard-fail policy thresholds enforced.\n' "$RCA_SCOPE"
+printf 'Scope: %s | selected hard-fail policy thresholds shown; all hard-fail thresholds enforced.\n' "$RCA_SCOPE"
 
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
   {

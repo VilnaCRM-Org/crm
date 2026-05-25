@@ -1,11 +1,11 @@
 import { lazy, Suspense } from 'react';
 
+import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 import BackToMain from '@/components/ui-back-to-main';
 import UIFooter from '@/components/ui-footer';
-import AuthErrorBoundary from '@/modules/user/features/auth/components/auth-error-boundary';
-import AuthSkeleton from '@/modules/user/features/auth/components/auth-skeleton';
+import AuthErrorBoundary from '@auth/components/auth-error-boundary';
 
-const FormSection = lazy(() => import('@/modules/user/features/auth/components/form-section'));
+const FormSection = lazy(() => import('@auth/components/form-section'));
 
 export default function Authentication(): JSX.Element {
   return (

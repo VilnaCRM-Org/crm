@@ -322,14 +322,18 @@ module.exports = {
     {
       name: 'no-tsyringe-outside-di-and-repositories',
       comment:
-        'tsyringe usage is restricted to composition root and repositories to ' +
-        'keep DI boundaries explicit.',
+        'tsyringe usage is restricted to composition root, repositories, and ' +
+        'injectable services/mappers/factories to keep DI boundaries explicit.',
       severity: 'error',
       from: {
         path: '^src/',
         pathNot: [
           '^src/config/dependency-injection-config[.]ts$',
           '^src/modules/[^/]+/features/[^/]+/repositories/',
+          '^src/services/',
+          '^src/stores/',
+          '^src/utils/error/',
+          '^src/modules/[^/]+/store/[^/]+-mapper[.]ts$',
         ],
       },
       to: {
@@ -339,10 +343,17 @@ module.exports = {
     {
       name: 'no-di-config-import-outside-composition-root',
       comment:
-        'The DI container configuration must only be imported by application composition roots.',
+        'The DI container configuration must only be imported by application ' +
+        'composition roots and store/hook bridges that resolve singletons.',
       severity: 'error',
       from: {
-        path: '^src/(?!index[.]tsx$|app[.]tsx$|stores/index[.]ts$).+',
+        path: '^src/',
+        pathNot: [
+          '^src/index[.]tsx$',
+          '^src/app[.]tsx$',
+          '^src/stores/',
+          '^src/modules/[^/]+/store/[^/]+-slice[.]ts$',
+        ],
       },
       to: {
         path: '^src/config/dependency-injection-config[.]ts$',
@@ -378,10 +389,11 @@ module.exports = {
       name: 'no-components-to-store',
       comment:
         'Feature components must not import from the module store directly. Use ' +
-        'hooks to access store state and dispatch.',
+        'hooks (use-* files) to access store state and dispatch.',
       severity: 'error',
       from: {
         path: '^src/modules/[^/]+/features/[^/]+/components/',
+        pathNot: '/use-[a-z0-9-]+[.]ts$',
       },
       to: {
         path: '^src/modules/[^/]+/store/',

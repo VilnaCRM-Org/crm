@@ -1,3 +1,5 @@
+/** @jest-environment @stryker-mutator/jest-runner/jest-env/jsdom */
+
 import ApiError from '@/modules/user/types/api-errors/api-error';
 import { ApiErrorCodes } from '@/modules/user/types/api-errors/api-error-codes';
 import ValidationError from '@/modules/user/types/api-errors/validation-error';
@@ -329,7 +331,7 @@ describe('ValidationError', () => {
   describe('comparison with other errors', () => {
     it('should be distinguishable from ApiError', () => {
       const validationError = new ValidationError();
-      const apiError = new ApiError('Test', 'CODE');
+      const apiError = new ApiError({ message: 'Test', code: 'CODE' });
 
       expect(validationError instanceof ValidationError).toBe(true);
       expect(apiError instanceof ValidationError).toBe(false);
@@ -345,7 +347,7 @@ describe('ValidationError', () => {
 
     it('should have different name than ApiError', () => {
       const validationError = new ValidationError();
-      const apiError = new ApiError('Test', 'CODE');
+      const apiError = new ApiError({ message: 'Test', code: 'CODE' });
 
       expect(validationError.name).toBe('ValidationError');
       expect(apiError.name).toBe('ApiError');
@@ -376,8 +378,7 @@ describe('ValidationError', () => {
       const json = JSON.stringify(error);
       expect(json).toBeDefined();
       const parsed = JSON.parse(json);
-      expect(error.cause).toEqual(cause);
-      expect(parsed.cause).toBeUndefined();
+      expect(parsed.cause).toEqual(cause);
     });
   });
 });

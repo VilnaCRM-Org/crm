@@ -11,8 +11,9 @@ so that I can identify and fix every issue in a single local run before pushing.
 
 ## Acceptance Criteria
 
-1. `make lint-metrics` runs the pinned `RCA_VERSION` CLI inside the `rca` container image, where
-   the binary is provisioned during Docker image build and is ready without host-side setup.
+1. If `./bin/rust-code-analysis-cli` does not exist, `make lint-metrics` downloads the pinned
+   `RCA_VERSION` release asset, installs it to `./bin/rust-code-analysis-cli`, and proceeds
+   without manual setup.
 2. `lint-metrics` analyzes only `src/` and excludes `node_modules/`, `dist/`, `coverage/`,
    `.storybook/`, and `tests/`.
 3. When one or more functions or closures exceed a threshold, all violations are collected,
@@ -29,13 +30,20 @@ so that I can identify and fix every issue in a single local run before pushing.
 
 ## Tasks / Subtasks
 
-- [x] Task 1: Provision the analyzer in the dedicated Docker tool image (AC: 1)
-  - [x] 1.1 Keep `RCA_VERSION` pinned in the Makefile as the single version source
-  - [x] 1.2 Download the Linux release asset during the `rca` Dockerfile stage
-  - [x] 1.3 Verify the downloaded archive with SHA256 in the Docker image build
-  - [x] 1.4 Extract the binary into `/usr/local/bin/` in the `rca` image and verify the version
-  - [x] 1.5 Keep the contributor entry point as
-        `make lint-metrics -> docker compose run --rm rca make lint-metrics-run`
+- [x] Task 1: Complete local binary install guard (AC: 1)
+  - [x] 1.1 Detect the current OS and CPU architecture in the `lint-metrics` target
+  - [x] 1.2 Select the supported Linux and Windows release assets for v`$(RCA_VERSION)`
+  - [x] 1.3 Reject unsupported Darwin and unknown platform combinations with actionable errors
+  - [x] 1.4 Download release assets from the pinned `v$(RCA_VERSION)` URL with `curl -fsSL`,
+        then verify the downloaded asset with SHA256 before extraction. Expected hashes for
+        `v$(RCA_VERSION)`:
+    - `rust-code-analysis-linux-cli-x86_64.tar.gz`:
+      `9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894`
+    - `rust-code-analysis-win-cli-x86_64.zip`:
+      `592e9adb0cd66c333043addd8beaa04ea692a4d531e3b6dc54a2de1f27159623`
+  - [x] 1.5 Run `sha256sum` or an equivalent checksum command against the downloaded release
+        asset, fail if it does not match the expected hash, then extract the binary into `./bin/`
+        and verify the installed version equals `$(RCA_VERSION)`
 
 - [x] Task 2: Implement governed-scope analysis (AC: 2)
   - [x] 2.1 Invoke `rust-code-analysis-cli` against `src/`
@@ -80,17 +88,24 @@ so that I can identify and fix every issue in a single local run before pushing.
 **Single invocation path:** `make lint-metrics` is the contributor-facing and CI-facing
 entry point. CI must not call `rust-code-analysis-cli` directly.
 
+**Docker-first execution (policy alignment):** Per the repository Docker-only policy
+(see `CLAUDE.md`), `make lint-metrics` runs inside the `rca` Docker Compose service. The
+binary-install guard in AC 1 and Task 1 (the `./bin/rust-code-analysis-cli` download,
+checksum, and version check) executes _inside that container_ against the bind-mounted
+`./bin/` directory — it is not a host-side install. The Darwin path (lines 99-100) likewise
+directs contributors to the Docker workflow rather than a host binary. No host installation
+of `rust-code-analysis-cli` is expected or required.
+
 **Tool version and install path:**
 
 - `RCA_VERSION = 0.0.25` remains the only version assignment in the Makefile.
-- `make lint-metrics` always shells into the `rca` service:
-  `docker compose run --rm rca make lint-metrics-run`.
-- The `rca` Dockerfile stage downloads:
+- Linux asset:
   `https://github.com/mozilla/rust-code-analysis/releases/download/v$(RCA_VERSION)/rust-code-analysis-linux-cli-x86_64.tar.gz`
-- SHA256 verification happens during the `rca` image build before extraction.
-- Install path inside the tool container: `/usr/local/bin/rust-code-analysis-cli`.
-- The host-facing fallback path remains `./bin/rust-code-analysis-cli` for direct `make lint-metrics-run`
-  usage outside the container, but the contributor workflow is container-first.
+- Windows asset: `rust-code-analysis-win-cli-x86_64.zip`
+- Install path: `./bin/rust-code-analysis-cli` on Linux and
+  `./bin/rust-code-analysis-cli.exe` on Windows.
+- Darwin has no v0.0.25 release asset and should fail with a message directing contributors to
+  run inside Docker.
 
 **Governed scope:**
 
@@ -133,12 +148,12 @@ fi
 
 ### Project Structure Notes
 
-- **Files modified:** `Makefile`, `Dockerfile`, `docker-compose.yml`
-- **Files created:** `scripts/lint-metrics.sh`, `config/metrics-policy.json`,
-  `config/metrics-policy.schema.json`, `tests/unit/scripts/lint-metrics.test.ts`
+- **Files modified:** `Makefile`, `Dockerfile`
+- **Files created:** `scripts/lint-metrics.sh`
 - **No application source changes** are required for this story.
-- `scripts/lint-metrics.sh` is the enforcement script; it reads thresholds from `config/metrics-policy.json`.
-- RCA binary installation is performed at Docker image build time in the `rca` Dockerfile stage.
+- `scripts/lint-metrics.sh` is the enforcement script; the Makefile owns installation and
+  passes threshold environment variables into the script, and the Dockerfile provisions the
+  `rca` image with the required tooling.
 
 ### Testing Approach
 
@@ -147,8 +162,8 @@ application runtime behavior:
 
 - `make lint-metrics` validates the analyzer path, jq enforcement, stdout reporting, and local
   `$GITHUB_STEP_SUMMARY` null handling.
-- `make lint-metrics` validates hard-fail findings, silent review-gate behavior, and passing
-  summary output through the Dockerized RCA runner.
+- `tests/unit/scripts/lint-metrics.test.ts` validates hard-fail findings, silent review-gate
+  behavior, and passing CI summary output with a fake RCA binary.
 - `make lint` validates chain integration.
 - The project convention is to run `make` commands in the Docker dev container when host tools
   are not guaranteed.
@@ -186,16 +201,11 @@ claude-sonnet-4-6
 - Implemented local stdout reporting and guarded GitHub Job Summary reporting.
 - Confirmed `lint` includes `lint-metrics`.
 
-### File List
+### File List (implementation files only; tests listed in Testing Approach)
 
 - `Makefile`
 - `Dockerfile`
 - `scripts/lint-metrics.sh`
-- `config/metrics-policy.json`
-- `config/metrics-policy.schema.json`
-- `docker-compose.yml`
-- `tests/unit/scripts/lint-metrics.test.ts`
-- `specs/implementation-artifacts/stories/1-2-make-lint-metrics-target-full-enforcement-reporting.md`
 
 ### Change Log
 

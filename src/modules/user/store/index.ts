@@ -1,2 +1,2 @@
-export * from './login-slice';
-export * from './registration-slice';
+export * from '@/modules/user/store/login-slice';
+export * from '@/modules/user/store/registration-slice';

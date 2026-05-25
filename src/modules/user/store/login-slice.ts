@@ -1,15 +1,22 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
 import {
-  LoginResponseSchema,
-  type LoginResponse,
-} from '@/modules/user/features/auth/types/api-responses';
-import { LoginUserDto } from '@/modules/user/features/auth/types/credentials';
-import { ThunkExtra } from '@/modules/user/store/types';
-import { UiError, ErrorHandler } from '@/services/error';
-import { ErrorParser } from '@/utils/error';
+  ActionReducerMapBuilder,
+  createAsyncThunk,
+  createSlice,
+  PayloadAction,
+} from '@reduxjs/toolkit';
 
-type LoginSuccessPayload = LoginResponse & { email: string };
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
+import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
+import LoginResponseMapper, {
+  type LoginSuccessPayload,
+} from '@/modules/user/store/login-response-mapper';
+import { ThunkExtra } from '@/modules/user/store/types';
+import { type UiError } from '@/services/error';
+import { LoginUserDto } from '@auth/types/credentials';
+
+const loginResponseMapper = container.resolve<LoginResponseMapper>(TOKENS.LoginResponseMapper);
+const authUiErrorMapper = container.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper);
 
 export const loginUser = createAsyncThunk<
   LoginSuccessPayload,
@@ -18,19 +25,13 @@ export const loginUser = createAsyncThunk<
 >('auth/loginUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.loginAPI.login(credentials, { signal });
-    const parsed = LoginResponseSchema.safeParse(apiResponse);
-
-    if (!parsed.success) {
-      const displayMessage = parsed.error.issues.map((i) => i.message).join('; ');
-      return rejectWithValue({ displayMessage, retryable: true });
-    }
-
-    return { email: credentials.email.toLowerCase(), ...parsed.data };
+    const result = loginResponseMapper.map(apiResponse, credentials.email);
+    return result.ok ? result.value : rejectWithValue(result.error);
   } catch (err) {
-    const parsedError = ErrorParser.parseHttpError(err);
-    const apiError = ErrorHandler.handleAuthError(parsedError);
-
-    return rejectWithValue(apiError);
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw err;
+    }
+    return rejectWithValue(authUiErrorMapper.map(err));
   }
 });
 
@@ -47,6 +48,30 @@ const initialState: LoginState = {
   error: null,
 };
 
+function handlePending(state: LoginState): void {
+  state.loading = true;
+  state.error = null;
+}
+
+function handleFulfilled(state: LoginState, action: PayloadAction<LoginSuccessPayload>): void {
+  state.loading = false;
+  state.email = action.payload.email;
+  state.token = action.payload.token;
+}
+
+function handleRejected(state: LoginState, action: ReturnType<typeof loginUser.rejected>): void {
+  state.loading = false;
+  if (action.meta.aborted) return;
+  state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
+}
+
+function buildExtraReducers(builder: ActionReducerMapBuilder<LoginState>): void {
+  builder
+    .addCase(loginUser.pending, handlePending)
+    .addCase(loginUser.fulfilled, handleFulfilled)
+    .addCase(loginUser.rejected, handleRejected);
+}
+
 export const loginSlice = createSlice({
   name: 'auth',
   initialState,
@@ -58,22 +83,7 @@ export const loginSlice = createSlice({
       state.loading = false;
     },
   },
-  extraReducers: (builder) => {
-    builder
-      .addCase(loginUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.email = action.payload.email;
-        state.token = action.payload.token;
-      })
-      .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
-      });
-  },
+  extraReducers: buildExtraReducers,
 });
 
 export const { logout } = loginSlice.actions;

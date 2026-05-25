@@ -1,122 +1,99 @@
-import { HttpError } from './http-error';
-import HttpsClient, { RequestMethod } from './https-client';
-import isNonJsonBody from './is-non-json-body';
-import ResponseMessages from './response-messages';
-import throwIfHttpError from './throw-if-http-error';
+import { inject, injectable } from 'tsyringe';
 
+import TOKENS from '@/config/tokens';
+import { HttpError } from '@/services/https-client/http-error';
+import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
+import HttpResponseProcessor from '@/services/https-client/http-response-processor';
+import HttpsClient, { RequestMethod } from '@/services/https-client/https-client';
+import ResponseMessages from '@/services/https-client/response-messages';
+
+interface RequestOptions {
+  headers?: Record<string, string>;
+  signal?: AbortSignal;
+}
+
+interface RequestArgs {
+  url: string;
+  method: RequestMethod;
+  body?: unknown;
+  options?: RequestOptions;
+}
+
+@injectable()
 export default class FetchHttpsClient implements HttpsClient {
-  public get<T>(url: string, options?: { signal?: AbortSignal }): Promise<T> {
-    return this.request<T>(url, 'GET', undefined, undefined, options);
+  private readonly requestConfigBuilder: HttpRequestConfigBuilder;
+
+  private readonly responseProcessor: HttpResponseProcessor;
+
+  constructor(
+    @inject(TOKENS.HttpRequestConfigBuilder) requestConfigBuilder: HttpRequestConfigBuilder,
+    @inject(TOKENS.HttpResponseProcessor) responseProcessor: HttpResponseProcessor
+  ) {
+    this.requestConfigBuilder = requestConfigBuilder;
+    this.responseProcessor = responseProcessor;
   }
 
-  public post<T, R>(url: string, data: T, options?: { signal?: AbortSignal }): Promise<R> {
-    return this.request<R>(url, 'POST', data, undefined, options);
+  public get<T>(url: string, options?: RequestOptions): Promise<T | undefined> {
+    return this.request<T>({ url, method: 'GET', options });
   }
 
-  public put<T, R>(url: string, data: T, options?: { signal?: AbortSignal }): Promise<R> {
-    return this.request<R>(url, 'PUT', data, undefined, options);
+  public post<T, R>(url: string, data: T, options?: RequestOptions): Promise<R | undefined> {
+    return this.request<R>({ url, method: 'POST', body: data, options });
   }
 
-  public patch<T, R>(url: string, data: T, options?: { signal?: AbortSignal }): Promise<R> {
-    return this.request<R>(url, 'PATCH', data, undefined, options);
+  public put<T, R>(url: string, data: T, options?: RequestOptions): Promise<R | undefined> {
+    return this.request<R>({ url, method: 'PUT', body: data, options });
   }
 
-  public delete<T, R>(url: string, data?: T, options?: { signal?: AbortSignal }): Promise<R> {
-    return this.request<R>(url, 'DELETE', data, undefined, options);
+  public patch<T, R>(url: string, data: T, options?: RequestOptions): Promise<R | undefined> {
+    return this.request<R>({ url, method: 'PATCH', body: data, options });
   }
 
-  private async request<R>(
-    url: string,
-    method: RequestMethod,
-    body?: unknown,
-    headers?: Record<string, string>,
-    options?: { signal?: AbortSignal }
-  ): Promise<R> {
-    if (options?.signal?.aborted) {
-      const abortError = new Error('The operation was aborted');
-      abortError.name = 'AbortError';
-      throw abortError;
-    }
-
-    const config: RequestInit = this.createRequestConfig(method, body, headers);
-    if (options?.signal) config.signal = options.signal;
-
-    try {
-      const response = await fetch(url, config);
-      return await this.processResponse<R>(response);
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        throw err;
-      }
-
-      if (err instanceof HttpError) {
-        throw err;
-      }
-      throw new HttpError({ status: 0, message: ResponseMessages.NETWORK_ERROR, cause: err });
-    }
+  public delete<T, R>(url: string, data?: T, options?: RequestOptions): Promise<R | undefined> {
+    return this.request<R>({ url, method: 'DELETE', body: data, options });
   }
 
   private createRequestConfig(
     method: RequestMethod,
-    body?: unknown,
-    headers?: Record<string, string>
+    body: unknown,
+    headers: Record<string, string> | undefined
   ): RequestInit {
-    const hasBody = body !== undefined;
-    const isJsonBody = hasBody && !isNonJsonBody(body);
-
-    const config: RequestInit = {
-      method,
-      headers: this.createHeaders(isJsonBody ? 'application/json' : undefined, headers),
-    };
-    if (hasBody) {
-      config.body = isJsonBody ? JSON.stringify(body) : (body as BodyInit);
-    }
-    return config;
+    return this.requestConfigBuilder.create(method, body, headers);
   }
 
-  private createHeaders(
-    contentType?: string,
-    customHeaders?: Record<string, string>
-  ): Record<string, string> {
-    const headers: Record<string, string> = {
-      Accept: 'application/json',
-      ...customHeaders,
-    };
-    const hasContentType = Object.keys(headers).some((key) => key.toLowerCase() === 'content-type');
-    if (contentType && !hasContentType) headers['Content-Type'] = contentType;
-    return headers;
-  }
-
-  private async processResponse<T>(response: Response): Promise<T> {
-    await throwIfHttpError(response);
-    const { status } = response;
-    if (status === 204 || status === 205 || status === 304) {
-      return undefined as T;
-    }
-    const contentType = (response.headers.get('content-type') || '').toLowerCase();
-    const isJson = /\bjson\b/.test(contentType) || contentType.includes('json');
-    if (!isJson) {
-      const text = await response.text().catch(() => '');
-      if (!text) return undefined as T;
-      throw new HttpError({
-        status,
-        message: ResponseMessages.RESPONSE_NOT_JSON,
-        cause: response,
-      });
-    }
+  private async request<R>({ url, method, body, options }: RequestArgs): Promise<R | undefined> {
+    if (options?.signal?.aborted) throwAbortError();
+    const config = this.createRequestConfig(method, body, options?.headers);
+    if (options?.signal) config.signal = options.signal;
     try {
-      const raw = await response
-        .clone()
-        .text()
-        .catch(() => '');
-      if (!raw || raw.trim().length === 0) return undefined as T;
-      return (await response.json()) as T;
-    } catch {
-      throw new HttpError({
-        status,
-        message: ResponseMessages.JSON_PARSE_FAILED,
-        cause: response,
-      });
+      const response = await fetch(url, config);
+      return await this.responseProcessor.process<R>(response);
+    } catch (err) {
+      return rethrowOrWrapTransportError(err);
     }
   }
+}
+
+function throwAbortError(): never {
+  const abortError = new Error('The operation was aborted');
+  abortError.name = 'AbortError';
+  throw abortError;
+}
+
+function rethrowOrWrapTransportError(error: unknown): never {
+  const isAbortError =
+    typeof error === 'object' &&
+    error !== null &&
+    'name' in error &&
+    (error as { name?: unknown }).name === 'AbortError';
+
+  if (isAbortError) {
+    throw error;
+  }
+
+  if (error instanceof HttpError) {
+    throw error;
+  }
+
+  throw new HttpError({ status: 0, message: ResponseMessages.NETWORK_ERROR, cause: error });
 }

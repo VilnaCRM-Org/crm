@@ -203,6 +203,34 @@ describe('throwIfHttpError Coverage Tests', () => {
     expect(cause.bodyLength).toBe(String(circular).length);
   });
 
+  it('returns without throwing for a 304 Not Modified response', async () => {
+    const mockResponse = {
+      ok: false,
+      status: 304,
+      statusText: 'Not Modified',
+      headers: { get: (): null => null },
+      clone: (): Response => mockResponse,
+    } as unknown as Response;
+
+    await expect(throwIfHttpError(mockResponse)).resolves.toBeUndefined();
+  });
+
+  it('produces an HttpError with no message when JSON body has no message field', async () => {
+    const mockResponse = {
+      ok: false,
+      status: 422,
+      statusText: 'Unprocessable Entity',
+      url: 'http://localhost/api/test',
+      headers: { get: (): string => 'application/json' },
+      clone: () => ({ json: async (): Promise<unknown> => ({ errors: ['x'] }) }),
+    } as unknown as Response;
+
+    await expect(throwIfHttpError(mockResponse)).rejects.toMatchObject({
+      status: 422,
+      message: '422 Unprocessable Entity',
+    });
+  });
+
   it('should handle failures when reading text bodies for non-JSON responses', async () => {
     const mockResponse = {
       ok: false,

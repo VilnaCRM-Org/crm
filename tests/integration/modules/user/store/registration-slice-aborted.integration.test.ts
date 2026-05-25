@@ -73,6 +73,28 @@ describe('Registration Slice Aborted Action Tests', () => {
     expect(state.error).toBeNull();
   });
 
+  it('rethrows AbortError so RTK marks the action as aborted', async () => {
+    const aborted = new Error('Request aborted');
+    aborted.name = 'AbortError';
+    const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+    const registerSpy = jest.spyOn(registrationAPI, 'register').mockRejectedValue(aborted);
+
+    const result = await store.dispatch(
+      registerUser({ email: 'abort@test.com', password: 'pass', fullName: 'Abort' })
+    );
+
+    expect(result.meta.requestStatus).toBe('rejected');
+    if (result.meta.requestStatus === 'rejected') {
+      expect(result.meta.aborted).toBe(true);
+    }
+
+    const state = store.getState().registration;
+    expect(state.loading).toBe(false);
+    expect(state.error).toBeNull();
+
+    registerSpy.mockRestore();
+  });
+
   it('should parse errors without displayMessage field', async () => {
     server.use(
       rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>

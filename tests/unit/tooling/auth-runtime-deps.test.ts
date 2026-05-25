@@ -9,14 +9,14 @@ const readFile = (relativePath: string): string =>
   fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
 
 describe('auth client runtime dependencies', () => {
-  it('keeps auth response validation centralized in the shared schema module', () => {
+  it('keeps auth response validation centralized in dedicated mappers', () => {
     const apiResponses = readFile('src/modules/user/features/auth/types/api-responses.ts');
-    const loginSlice = readFile('src/modules/user/store/login-slice.ts');
-    const registrationSlice = readFile('src/modules/user/store/registration-slice.ts');
+    const loginMapper = readFile('src/modules/user/store/login-response-mapper.ts');
+    const registrationMapper = readFile('src/modules/user/store/registration-response-mapper.ts');
 
     expect(apiResponses).toContain("from 'zod'");
-    expect(loginSlice).toContain('LoginResponseSchema.safeParse(apiResponse)');
-    expect(registrationSlice).toContain('RegistrationResponseSchema.safeParse(apiResponse)');
+    expect(loginMapper).toContain('LoginResponseSchema.safeParse(apiResponse)');
+    expect(registrationMapper).toContain('RegistrationResponseSchema.safeParse(apiResponse)');
   });
 
   it('keeps auth hooks and shared UI decoupled from redux and router bindings', () => {

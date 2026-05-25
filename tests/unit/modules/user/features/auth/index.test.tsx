@@ -18,7 +18,7 @@ jest.mock('@/components/ui-footer', () => ({
   default: (): ReactElement => <div data-testid="auth-shell-footer" />,
 }));
 
-jest.mock('@/modules/user/features/auth/components/auth-skeleton', () => ({
+jest.mock('@/components/skeletons/auth-skeleton', () => ({
   __esModule: true,
   default: (): ReactElement => <div data-testid="auth-shell-skeleton" />,
 }));

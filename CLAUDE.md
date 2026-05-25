@@ -101,6 +101,95 @@ make format         # Prettier
 
 Git hooks are managed by Husky. Run `make husky` once after cloning.
 
+### Code Metrics (rust-code-analysis)
+
+The repository enforces a wider rust-code-analysis policy across functions,
+closures, component bodies, hooks, files, classes, interfaces, comment ratios,
+spacing ratios, Maintainability Index, and Halstead metrics in `src/` using
+[`scripts/lint-metrics.sh`](scripts/lint-metrics.sh) backed by
+[rust-code-analysis](https://github.com/mozilla/rust-code-analysis) v0.0.25.
+The check runs automatically on every pull request targeting `main` and can be run
+locally before pushing.
+
+**Run locally:**
+
+```bash
+make lint-metrics
+```
+
+Requires a running Docker daemon (the gate runs inside the `rca` compose service).
+The `rust-code-analysis-cli` binary is downloaded automatically into `./bin/` on first run
+and is gitignored.
+
+**Hard-fail metrics:**
+
+- Cyclomatic Complexity: `> 10`
+- Cognitive Complexity: `> 15`
+- ABC Magnitude: `> 17`
+- Function / closure arguments: `> 3 / 3`
+- Exit points: `> 3`
+- Function LLOC / PLOC / SLOC: `> 10 / 40 / 45`
+- File LLOC / PLOC / SLOC: `> 120 / 300 / 350`
+- Halstead volume / bugs: function `> 1000 / 0.35`, file `> 8000 / 1.58`
+- Maintainability Index Visual Studio: `< 20`
+- Class WMC / NPM / NPA / COA / CDA: `> 30 / 8 / 2 / 0.60 / 0.25`
+- Interface NPM / NPA: `> 10 / 15`
+
+These hard-fail thresholds are tightened toward the target quality bands. The authoritative
+source is `config/metrics-policy.json`; this table mirrors it for quick reference and must be
+kept in sync when the policy changes.
+
+**Review-gate metrics:**
+
+These thresholds are kept in policy for calibration, but `make lint-metrics` does not print
+them and they do not fail CI by themselves.
+
+- Maintainability Index original / SEI: `< 65 / 65`
+- CLOC ratio: `< 0.10 or > 0.60`
+- Blank ratio: `< 0.02 or > 0.30`
+- Remaining function Halstead submetrics:
+  `n1 > 30`, `N1 > 80`, `n2 > 40`, `N2 > 120`, `length > 180`,
+  `estimated length > 160`, `vocabulary > 70`, `difficulty > 25`,
+  `level < 0.03`, `effort > 30000`, `time > 1800`, or purity ratio outside
+  `0.60..1.40`.
+- Remaining file Halstead submetrics:
+  `n1 > 60`, `N1 > 400`, `n2 > 90`, `N2 > 800`, `length > 1000`,
+  `estimated length > 850`, `vocabulary > 140`, `difficulty > 40`,
+  `level < 0.02`, `effort > 250000`, `time > 15000`, or purity ratio outside
+  `0.60..1.40`.
+
+**Reading a violation table:**
+
+When `make lint-metrics` finds violations, it prints a table to stdout:
+
+```text
+GATE     FILE                         SCOPE     SUBJECT          LINE  METRIC          VALUE  LIMIT
+----------------------------------------------------------------------------------------------------
+FAIL     src/services/foo.ts          function  processResponse    96  cognitive          28  <=24
+```
+
+Only hard failures are printed. Each row names the file, scope, subject, line, metric,
+measured value, and policy limit.
+
+**Common remediation patterns:**
+
+- **Complexity / ABC too high**: extract complex branches into well-named helpers;
+  replace switch-case chains with lookup maps where possible.
+- **Arguments too high**: group related parameters into a typed options object.
+- **Exit points too high**: consolidate early returns where it improves flow.
+- **Line counts too high**: split the function or file into smaller units.
+- **Halstead too high**: reduce dense expressions, repeated operators, and mixed concerns.
+- **MI too low**: simplify the code path and split responsibilities.
+- **Comment / blank ratios out of band**: add useful intent comments or remove noisy spacing.
+
+**Passing Job Summary (CI):**
+
+When all hard-fail metrics pass on a pull request, the GitHub Actions job writes a
+summary table to the workflow's Job Summary. Review-gate metrics are not shown.
+
+> **IDE / editor integration** is out of scope — use `make lint-metrics` from the
+> terminal as the authoritative check.
+
 ## Architecture
 
 ### Module Structure
@@ -146,14 +235,30 @@ const thunkExtraArgument: ThunkExtra = {
 
 ### Path Aliases
 
-Use `@/` prefix for all imports:
+This project follows the Bulletproof React import convention:
 
-```bash
-import Component from '@/components/ui-button';
-import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
+- `./X` for same-folder imports
+- `@/...` for cross-folder / cross-feature imports
+- Avoid deep relative chains like `../../../X` — reach for an alias instead
+
+```ts
+// Cross-feature: use the @/ alias
+import { Button } from '@/components/ui-button';
+
+// Same folder: use a relative import
+import { CommentsList } from './comments-list';
+
+// Within the Auth feature (any depth): use the @auth alias
+import { LoginAPI } from '@auth/repositories';
 ```
 
-Configured in:
+In addition to the project-wide `@/`, the Auth feature has its own scoped
+alias `@auth/* → src/modules/user/features/auth/*` so deeply nested imports
+into Auth stay readable and within the 100-character soft line limit. Use
+`@auth/...` whenever the target lives under `src/modules/user/features/auth/`,
+regardless of whether the importer is inside or outside the feature.
+
+Both aliases are configured in:
 
 - `tsconfig.paths.json` for TypeScript
 - `rsbuild.config.ts` for RSBuild
@@ -263,3 +368,48 @@ make check-node-version
 ```
 
 Uses `.nvmrc` for version pinning (Node 24).
+
+## BMAD-METHOD Integration
+
+Navigate phases with `/bmalph`. Try `/bmad-help` to discover all commands,
+or run `/bmalph-status` for a quick overview. See `_bmad/COMMANDS.md` for the full
+command reference.
+
+### Phases
+
+<!-- markdownlint-disable MD013 -->
+
+| Phase             | Focus                   | Key Commands                                                  |
+| ----------------- | ----------------------- | ------------------------------------------------------------- |
+| 1. Analysis       | Understand the problem  | `/create-brief`, `/brainstorm-project`, `/market-research`    |
+| 2. Planning       | Define the solution     | `/create-prd`, `/create-ux`                                   |
+| 3. Solutioning    | Design the architecture | `/create-architecture`, epics, readiness review               |
+| 4. Implementation | Build it                | `/sprint-planning`, `/create-story`, then `/bmalph-implement` |
+
+<!-- markdownlint-enable MD013 -->
+
+### Workflow
+
+1. Work through Phases 1-3 using BMAD agents and workflows (interactive, command-driven)
+2. Run `/bmalph-implement` to transition planning artifacts into Ralph format, then start Ralph
+
+### Management Commands
+
+| Command             | Description                                           |
+| ------------------- | ----------------------------------------------------- |
+| `/bmalph-status`    | Show current phase, Ralph progress, version info      |
+| `/bmalph-implement` | Transition planning artifacts → prepare Ralph loop    |
+| `/bmalph-upgrade`   | Update bundled assets to match current bmalph version |
+| `/bmalph-doctor`    | Check project health and report issues                |
+
+### Available Agents
+
+| Command        | Agent           | Role                                  |
+| -------------- | --------------- | ------------------------------------- |
+| `/analyst`     | Analyst         | Research, briefs, discovery           |
+| `/architect`   | Architect       | Technical design, architecture        |
+| `/pm`          | Product Manager | PRDs, epics, stories                  |
+| `/sm`          | Scrum Master    | Sprint planning, status, coordination |
+| `/dev`         | Developer       | Implementation, coding                |
+| `/ux-designer` | UX Designer     | User experience, wireframes           |
+| `/qa`          | QA Engineer     | Test automation, quality assurance    |
