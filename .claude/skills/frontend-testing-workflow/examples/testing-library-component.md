@@ -2,8 +2,10 @@
 
 ```typescript
 import { render, screen } from '@testing-library/react';
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import i18next from 'i18next';
+import { I18nextProvider, initReactI18next } from 'react-i18next';
+
+const i18n = i18next.createInstance();
 
 beforeAll(() =>
   i18n.use(initReactI18next).init({
@@ -22,12 +24,12 @@ beforeAll(() =>
   })
 );
 
-afterAll(() => {
-  i18n.removeResourceBundle('en', 'translation');
-});
-
 test('shows translated submit action', () => {
-  render(<ProfileSavePanel isSaving={false} onSave={jest.fn()} />);
+  render(
+    <I18nextProvider i18n={i18n}>
+      <ProfileSavePanel isSaving={false} onSave={jest.fn()} />
+    </I18nextProvider>
+  );
 
   expect(screen.getByRole('button', { name: /save/i })).toBeEnabled();
 });

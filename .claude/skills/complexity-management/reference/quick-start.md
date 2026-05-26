@@ -6,7 +6,8 @@
 make lint-metrics
 ```
 
-Read the violation row: file, scope, subject, line, metric, value, and limit.
+Read the violation row: gate, file, scope, subject, line, metric, value, and
+limit (eight columns).
 
 ## Fix Path
 

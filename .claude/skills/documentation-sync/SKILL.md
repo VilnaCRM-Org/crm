@@ -36,6 +36,7 @@ Update docs in the same change when you modify:
 ```bash
 make format
 make lint-md
+make lint
 ```
 
 ## Related Guides
