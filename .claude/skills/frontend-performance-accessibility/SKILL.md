@@ -21,7 +21,7 @@ Use `web-vitals` for runtime signals when adding instrumentation.
 - Prefer semantic MUI components and native controls.
 - Use accessible names for buttons, links, fields, dialogs, and icons.
 - Keep form errors connected to their fields.
-- Use Playwright role and label locators to preserve accessibility pressure.
+- Use Playwright role and label locators to preserve accessibility coverage.
 - Check keyboard interaction for menus, dialogs, forms, and route changes.
 
 ## Rendering Rules

@@ -39,6 +39,7 @@ after implementation:
 
 **Skills to execute for every new feature:**
 
+- `architecture`
 - `ci-workflow`
 - `code-organization`
 - `code-review`
@@ -70,6 +71,7 @@ What are you trying to do?
 ├─ Create something new
 │   ├─ React component, hook, form, feature UI → frontend-component-development
 │   ├─ Module / file placement and naming → code-organization
+│   ├─ New feature, repository, or service boundary → architecture
 │   ├─ Jest, Testing Library, Playwright, visual test → frontend-testing-workflow
 │   ├─ K6 load scenario → load-testing
 │   ├─ Sentry, web-vitals, structured log → observability-instrumentation
@@ -84,6 +86,7 @@ What are you trying to do?
 ├─ Review / validate work
 │   ├─ Before commit, push, PR → ci-workflow
 │   ├─ Address PR review comments → code-review
+│   ├─ `make lint-deps` boundary violation → architecture
 │   ├─ Confirm protected thresholds → quality-standards
 │   └─ Lighthouse / web-vitals / a11y audit → frontend-performance-accessibility
 │
@@ -155,6 +158,20 @@ RTK / RTK Query interactions, and route registration.
 
 Confirms `src/modules`, `src/features`, `src/components`, `src/services`,
 `src/utils`, and test-mirror placement; enforces `@/` path aliases.
+
+---
+
+### "Where should this feature, hook, or repository live?"
+
+**Use**: [architecture](architecture/SKILL.md).
+
+Embeds the layered Component → Hook → Repository → API diagram, the
+module catalog, and every `dependency-cruiser` boundary rule. Use this when
+`make lint-deps` fails or when a data flow crosses modules/services.
+
+**ALSO**: [code-organization](code-organization/SKILL.md) for the kebab-case
+naming rules; [frontend-component-development](frontend-component-development/SKILL.md)
+for the component/hook implementation.
 
 ---
 
@@ -281,12 +298,14 @@ Templates for feature READMEs, agent guides, and project documentation.
 
 ### Creating a complete new feature
 
-1. `frontend-component-development` – React, MUI, Emotion, i18n.
-2. `code-organization` – module placement and exports.
-3. `frontend-testing-workflow` – Jest, RTL, Playwright, visual coverage.
-4. `observability-instrumentation` – telemetry where relevant.
-5. `documentation-sync` – docs and READMEs.
-6. `ci-workflow` – validate everything.
+1. `architecture` – confirm the layer for each new file and the
+   repository/service boundary.
+2. `frontend-component-development` – React, MUI, Emotion, i18n.
+3. `code-organization` – module placement and exports.
+4. `frontend-testing-workflow` – Jest, RTL, Playwright, visual coverage.
+5. `observability-instrumentation` – telemetry where relevant.
+6. `documentation-sync` – docs and READMEs.
+7. `ci-workflow` – validate everything.
 
 ### Fixing a failing quality gate
 

@@ -1,19 +1,30 @@
 # Module Structure
 
+Module and feature folder names are lowercase kebab-case
+(`src-module-name-kebab-case`, `src-feature-name-kebab-case` in
+`.dependency-cruiser.js`).
+
 Use this shape for feature-owned UI:
 
 ```text
-src/modules/<Module>/features/<Feature>/
-  api/
+src/modules/<module>/features/<feature>/
+  assets/
   components/
-  helpers/
   hooks/
   i18n/
-  store/
+  repositories/
+  routes/
+  types/
+  utils/
   index.ts
 ```
 
-Only create folders that the feature actually needs.
+Only the folders listed above are allowed at feature root
+(`feature-allowed-folders`). Data access lives in `repositories/`; do not add
+`api/`, `helpers/`, or `store/` at the feature level. The module store stays
+at `src/modules/<module>/store/`.
 
-Shared UI belongs in `src/components` with the `UI` prefix when it is not tied to
-one module.
+Create only the folders the feature actually needs.
+
+Shared UI belongs in `src/components/` with the `ui-` prefix when it is not
+tied to one module (folder: `ui-button/`, exported symbol: `UIButton`).

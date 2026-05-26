@@ -66,6 +66,7 @@ What are you trying to do?
 ├─ Create something new
 │   ├─ React component, hook, or feature UI → frontend-component-development
 │   ├─ Module placement / file naming → code-organization
+│   ├─ New feature, repository, or service boundary → architecture
 │   ├─ Jest, Testing Library, Playwright, visual test → frontend-testing-workflow
 │   ├─ K6 load scenario → load-testing
 │   ├─ Sentry, web-vitals, structured log → observability-instrumentation
@@ -79,6 +80,7 @@ What are you trying to do?
 ├─ Review / validate work
 │   ├─ Before commit, push, or PR → ci-workflow
 │   ├─ Address PR review comments → code-review
+│   ├─ `make lint-deps` boundary violation → architecture
 │   ├─ Lighthouse, web-vitals, a11y → frontend-performance-accessibility
 │   └─ Protected quality thresholds → quality-standards
 │
@@ -140,11 +142,12 @@ Load supporting files only when the active task needs the extra detail.
 
 ### Quality & Architecture Skills
 
-| Skill                     | File                             | When to Use                                                     |
-| ------------------------- | -------------------------------- | --------------------------------------------------------------- |
-| **Quality Standards**     | `quality-standards/SKILL.md`     | Overview of protected frontend quality thresholds and commands. |
-| **Complexity Management** | `complexity-management/SKILL.md` | Files, components, hooks, or helpers exceed complexity gates.   |
-| **Code Organization**     | `code-organization/SKILL.md`     | Place, move, name, or split frontend files.                     |
+| Skill                     | File                             | When to Use                                                                                             |
+| ------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Architecture**          | `architecture/SKILL.md`          | Place a feature, wire data through hooks/repositories, or resolve `make lint-deps` boundary violations. |
+| **Quality Standards**     | `quality-standards/SKILL.md`     | Overview of protected frontend quality thresholds and commands.                                         |
+| **Complexity Management** | `complexity-management/SKILL.md` | Files, components, hooks, or helpers exceed complexity gates.                                           |
+| **Code Organization**     | `code-organization/SKILL.md`     | Place, move, name, or split frontend files.                                                             |
 
 ### Documentation, Observability, Performance Skills
 

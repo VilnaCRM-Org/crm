@@ -55,6 +55,7 @@ signal, schema, or user-facing change), execute **every** skill in
 
 **Skills to execute for every new feature:**
 
+- `architecture`
 - `ci-workflow`
 - `code-organization`
 - `code-review`
@@ -268,7 +269,32 @@ exceeds rust-code-analysis hard-fail gates documented in `CLAUDE.md`.
 
 ---
 
-### 10. Quality Standards (`quality-standards/`)
+### 10. Architecture (`architecture/`)
+
+**Purpose**: Document the layered Component → Hook → Repository → API flow,
+list the frontend modules, and surface the import boundaries enforced by
+`dependency-cruiser`.
+
+**When activated**:
+
+- Placing a new feature in the `src/modules/<m>/features/<f>/` tree.
+- Wiring data through hooks, repositories, and the API.
+- Deciding which microservice (user, payment, core, notification, webhook,
+  analytics) a repository should call.
+- `make lint-deps` reports a boundary violation.
+
+**What it does**:
+
+- Embeds the layered-architecture, system-context, module-catalog, CRM
+  page, onboarding, and user-module composition diagrams.
+- Lists every `dependency-cruiser` rule and what it forbids.
+- Provides a placement decision tree and common-mistake table.
+
+**Key commands**: `make lint-deps`, `make format`, `make lint`.
+
+---
+
+### 11. Quality Standards (`quality-standards/`)
 
 **Purpose**: Overview of protected frontend quality thresholds and the
 command map for verifying them.
@@ -290,7 +316,7 @@ command map for verifying them.
 
 ---
 
-### 11. Documentation Creation (`documentation-creation/`)
+### 12. Documentation Creation (`documentation-creation/`)
 
 **Purpose**: Create new repository documentation or agent guides from
 scratch.
@@ -309,7 +335,7 @@ scratch.
 
 ---
 
-### 12. Documentation Sync (`documentation-sync/`)
+### 13. Documentation Sync (`documentation-sync/`)
 
 **Purpose**: Keep `docs/`, READMEs, and agent guides aligned with code,
 commands, tools, and workflow changes.
@@ -330,7 +356,7 @@ commands, tools, and workflow changes.
 
 ---
 
-### 13. Observability Instrumentation (`observability-instrumentation/`)
+### 14. Observability Instrumentation (`observability-instrumentation/`)
 
 **Purpose**: Add frontend telemetry — Sentry, structured logs, and
 web-vitals signals.
@@ -351,7 +377,7 @@ web-vitals signals.
 
 ---
 
-### 14. Load Testing (`load-testing/`)
+### 15. Load Testing (`load-testing/`)
 
 **Purpose**: Create, run, and debug K6 load tests for frontend flows.
 
