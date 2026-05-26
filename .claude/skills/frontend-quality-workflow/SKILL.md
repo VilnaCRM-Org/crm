@@ -16,7 +16,7 @@ make lint
 
 ```bash
 bun x prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write
-qlty fmt --all --trigger agent --no-progress
+qlty fmt --all --no-progress
 ```
 
 If `make fmt-qlty` fails because `qlty` is not installed, install the Qlty CLI

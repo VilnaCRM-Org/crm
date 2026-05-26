@@ -1,6 +1,6 @@
 ---
 name: architecture
-description: Use when placing a feature in the module/feature tree, wiring data flow through hooks and repositories, deciding which microservice to call, or reviewing import boundaries enforced by dependency-cruiser.
+description: Use when placing features, repositories, hooks, or fixing dependency-cruiser errors.
 ---
 
 # Architecture
@@ -66,28 +66,65 @@ Read the layers top to bottom:
 ## Boundary Rules (dependency-cruiser, severity `error`)
 
 These come from `.dependency-cruiser.js`. They run on every PR via
-`make lint-deps`. Internalize them before placing a file:
+`make lint-deps`. Internalize them before placing a file.
 
-| Rule                                                                              | What it forbids                                                                                                                                   |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `no-cross-module-imports`                                                         | One module importing another module's internals.                                                                                                  |
-| `no-cross-feature-imports`                                                        | Sibling features inside the same module importing each other. Use the module's shared `hooks/`, `lib/`, `store/`, `types/`, or `utils/`.          |
-| `no-components-import-modules`                                                    | `src/components/*` depending on any `src/modules/*`.                                                                                              |
-| `no-repository-internal-imports`                                                  | Reaching past a repository's `index` file.                                                                                                        |
-| `no-repositories-to-ui-hooks`                                                     | Repositories depending on feature `components/`, `hooks/`, `routes/`, or module `hooks/` / `store/`.                                              |
-| `no-feature-direct-http-client`                                                   | Anything outside `repositories/` importing `src/services/https-client/`.                                                                          |
-| `no-store-direct-http-client`                                                     | Module `store/` importing `src/services/https-client/`.                                                                                           |
-| `no-feature-ui-to-services`                                                       | Feature `components/`, `hooks/`, `routes/` importing `src/services/`.                                                                             |
-| `no-components-to-repositories`                                                   | Components importing repositories directly (go through a hook).                                                                                   |
-| `no-components-to-store`                                                          | Components importing the module store directly (go through a hook). Exception: hook files (`use-*.ts`).                                           |
-| `no-store-to-feature-ui`                                                          | Module store importing feature `components/`, `hooks/`, `routes/`.                                                                                |
-| `no-lib-to-features`                                                              | Module `lib/` depending on its own `features/`.                                                                                                   |
-| `no-tsyringe-outside-di-and-repositories`                                         | `tsyringe` imports outside composition root, repositories, services, stores, error utils, and module store mappers.                               |
-| `no-di-config-import-outside-composition-root`                                    | Importing `src/config/dependency-injection-config.ts` outside `src/index.tsx`, `src/app.tsx`, `src/stores/`, or `src/modules/*/store/*-slice.ts`. |
-| `module-allowed-folders`                                                          | Folders at module root other than `config`, `features`, `hooks`, `lib`, `store`, `types`, `utils`.                                                |
-| `feature-allowed-folders`                                                         | Folders at feature root other than `assets`, `components`, `hooks`, `i18n`, `repositories`, `routes`, `types`, `utils`.                           |
-| `feature-hooks-file-convention`                                                   | Files inside `features/*/hooks/` other than `index.*` or `use-<kebab>.*`.                                                                         |
-| `no-uppercase-paths`, `src-module-name-kebab-case`, `src-feature-name-kebab-case` | Any uppercase letter in a source or test path.                                                                                                    |
+**Module and feature isolation:**
+
+- `no-cross-module-imports` — one module importing another module's
+  internals.
+- `no-cross-feature-imports` — sibling features in the same module
+  importing each other. Use the module's shared `hooks/`, `lib/`,
+  `store/`, `types/`, or `utils/`.
+- `no-components-import-modules` — `src/components/*` depending on any
+  `src/modules/*`.
+
+**Repository boundary:**
+
+- `no-repository-internal-imports` — reaching past a repository's `index`
+  file.
+- `no-repositories-to-ui-hooks` — repositories depending on feature
+  `components/`, `hooks/`, `routes/`, or module `hooks/` / `store/`.
+- `no-feature-direct-http-client` — anything outside `repositories/`
+  importing `src/services/https-client/`.
+- `no-store-direct-http-client` — module `store/` importing
+  `src/services/https-client/`.
+
+**UI layering:**
+
+- `no-feature-ui-to-services` — feature `components/`, `hooks/`,
+  `routes/` importing `src/services/`.
+- `no-components-to-repositories` — components importing repositories
+  directly (go through a hook).
+- `no-components-to-store` — components importing the module store
+  directly. Exception: hook files (`use-*.ts`).
+- `no-store-to-feature-ui` — module store importing feature
+  `components/`, `hooks/`, `routes/`.
+- `no-lib-to-features` — module `lib/` depending on its own `features/`.
+
+**DI containment:**
+
+- `no-tsyringe-outside-di-and-repositories` — `tsyringe` imports outside
+  composition root, repositories, services, stores, error utils, and
+  module store mappers.
+- `no-di-config-import-outside-composition-root` — importing
+  `src/config/dependency-injection-config.ts` outside `src/index.tsx`,
+  `src/app.tsx`, `src/stores/`, or `src/modules/*/store/*-slice.ts`.
+
+**Folder shape:**
+
+- `module-allowed-folders` — module root may only contain `config`,
+  `features`, `hooks`, `lib`, `store`, `types`, `utils`.
+- `feature-allowed-folders` — feature root may only contain `assets`,
+  `components`, `hooks`, `i18n`, `repositories`, `routes`, `types`,
+  `utils`.
+- `feature-hooks-file-convention` — files inside `features/*/hooks/`
+  must be `index.*` or `use-<kebab>.*`.
+
+**Naming:**
+
+- `no-uppercase-paths`, `src-module-name-kebab-case`,
+  `src-feature-name-kebab-case` — no uppercase letters in any source or
+  test path.
 
 When `make lint-deps` reports a violation, the fix is almost always to
 introduce or use the missing layer (a hook, a repository public re-export),
@@ -166,14 +203,19 @@ or through the public exports of another module — never a deep import.
 The frontend never talks to a microservice directly. It calls the BFF / API
 gateway, and the repository layer hides which service answered.
 
-| Service              | Stack             | Owns                                                                                                      |
-| -------------------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
-| user-service         | PHP, API Platform | Auth, registration, 2FA, OAuth, profile, password reset.                                                  |
-| payment-service      | PHP, API Platform | Plans, invoices, payment provider configs, payment page.                                                  |
-| core-service         | PHP, API Platform | Products, contacts, projects, attributes, tasks, dashboards, search, IP telephony settings, integrations. |
-| notification-service | Golang            | SSE notifications, emails, alerting.                                                                      |
-| webhook-service      | Golang            | Inbound and outbound webhooks; webhook settings per project.                                              |
-| analytics-service    | Golang            | Analytics collection, dashboards, alerting workers.                                                       |
+- **user-service** (PHP, API Platform) — auth, registration, 2FA, OAuth,
+  profile, password reset.
+- **payment-service** (PHP, API Platform) — plans, invoices, payment
+  provider configs, payment page.
+- **core-service** (PHP, API Platform) — products, contacts, projects,
+  attributes, tasks, dashboards, search, IP telephony settings,
+  integrations.
+- **notification-service** (Golang) — SSE notifications, emails,
+  alerting.
+- **webhook-service** (Golang) — inbound and outbound webhooks; webhook
+  settings per project.
+- **analytics-service** (Golang) — analytics collection, dashboards,
+  alerting workers.
 
 Each backend has its own database (MariaDB / MongoDB / MemoryDB / Vertica),
 cache, and file storage. Those are implementation details the frontend must
@@ -329,12 +371,22 @@ make lint
 
 ## Common Mistakes
 
-| Symptom                                                | Root cause                                                              | Fix                                                              |
-| ------------------------------------------------------ | ----------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `make lint-deps` flags `no-feature-direct-http-client` | Component or hook is calling `https-client` itself.                     | Move the call to a repository and consume it through a hook.     |
-| `no-components-to-store` fires on a `.tsx`             | Component is importing the slice directly.                              | Expose state through a `use-*.ts` selector hook and import that. |
-| `no-cross-feature-imports` fires                       | One feature reaches into a sibling feature's `components/` or `hooks/`. | Promote the shared code to `src/modules/<m>/lib/` or `hooks/`.   |
-| `feature-hooks-file-convention` fires                  | A non-hook file (helper, types) was placed inside `hooks/`.             | Move it to `utils/`, `types/`, or `lib/`.                        |
-| `module-allowed-folders` fires on `helpers/`           | Old layout still in use.                                                | Rename to `lib/` (or `utils/` at feature level).                 |
-| A repository imports from `hooks/` or `components/`    | Mapping logic crept into the wrong layer.                               | Move the mapping into the repository or a dedicated transformer. |
-| Need to share state across modules                     | Wrong layer — modules are isolated by design.                           | Lift to `src/stores/` or expose a hook from the owning module.   |
+- `no-feature-direct-http-client` fires — a component or hook is calling
+  `https-client` itself. Move the call into a repository and consume it
+  through a hook.
+- `no-components-to-store` fires on a `.tsx` — a component is importing
+  the slice directly. Expose state through a `use-*.ts` selector hook and
+  import that.
+- `no-cross-feature-imports` fires — one feature reaches into a sibling
+  feature's `components/` or `hooks/`. Promote the shared code to
+  `src/modules/<m>/lib/` or `hooks/`.
+- `feature-hooks-file-convention` fires — a non-hook file (helper, types)
+  was placed inside `hooks/`. Move it to `utils/`, `types/`, or `lib/`.
+- `module-allowed-folders` fires on `helpers/` — old layout still in use.
+  Rename to `lib/` (or `utils/` at feature level).
+- A repository imports from `hooks/` or `components/` — mapping logic
+  crept into the wrong layer. Move the mapping into the repository or a
+  dedicated transformer.
+- Need to share state across modules — wrong layer. Modules are isolated
+  by design; lift to `src/stores/` or expose a hook from the owning
+  module.
