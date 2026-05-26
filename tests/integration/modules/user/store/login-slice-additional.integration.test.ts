@@ -115,18 +115,22 @@ describe('Login Slice Coverage Tests', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       const loginSpy = jest.spyOn(loginAPI, 'login').mockRejectedValue(aborted);
 
-      const result = await store.dispatch(loginUser({ email: 'abort@test.com', password: 'pass' }));
+      try {
+        const result = await store.dispatch(
+          loginUser({ email: 'abort@test.com', password: 'pass' })
+        );
 
-      expect(result.meta.requestStatus).toBe('rejected');
-      if (result.meta.requestStatus === 'rejected') {
-        expect(result.meta.aborted).toBe(true);
+        expect(result.meta.requestStatus).toBe('rejected');
+        if (result.meta.requestStatus === 'rejected') {
+          expect(result.meta.aborted).toBe(true);
+        }
+
+        const state = store.getState().auth;
+        expect(state.loading).toBe(false);
+        expect(state.error).toBeNull();
+      } finally {
+        loginSpy.mockRestore();
       }
-
-      const state = store.getState().auth;
-      expect(state.loading).toBe(false);
-      expect(state.error).toBeNull();
-
-      loginSpy.mockRestore();
     });
   });
 });

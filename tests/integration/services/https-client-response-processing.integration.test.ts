@@ -200,21 +200,25 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       const parser = new HttpErrorResponseParser();
       const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
-      await expect(
-        parser.parse({
-          headers: { get: () => 'application/json' },
-          clone: () => {
-            throw new Error('clone failed');
-          },
-        } as unknown as Response)
-      ).resolves.toEqual({ message: 'clone failed', body: undefined });
+      try {
+        await expect(
+          parser.parse({
+            headers: { get: () => 'application/json' },
+            clone: () => {
+              throw new Error('clone failed');
+            },
+          } as unknown as Response)
+        ).resolves.toEqual({ message: 'clone failed', body: undefined });
 
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Failed to parse HTTP error response',
-        expect.objectContaining({
-          message: 'clone failed',
-        })
-      );
+        expect(debugSpy).toHaveBeenCalledWith(
+          'Failed to parse HTTP error response',
+          expect.objectContaining({
+            message: 'clone failed',
+          })
+        );
+      } finally {
+        debugSpy.mockRestore();
+      }
     });
 
     it('handles a non-Error value thrown while cloning the response', async () => {
@@ -222,19 +226,23 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
       const thrown: unknown = 'string failure';
 
-      await expect(
-        parser.parse({
-          headers: { get: () => 'text/plain' },
-          clone: () => {
-            throw thrown;
-          },
-        } as unknown as Response)
-      ).resolves.toEqual({ message: 'string failure', body: undefined });
+      try {
+        await expect(
+          parser.parse({
+            headers: { get: () => 'text/plain' },
+            clone: () => {
+              throw thrown;
+            },
+          } as unknown as Response)
+        ).resolves.toEqual({ message: 'string failure', body: undefined });
 
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Failed to parse HTTP error response',
-        expect.objectContaining({ message: 'string failure', stack: undefined })
-      );
+        expect(debugSpy).toHaveBeenCalledWith(
+          'Failed to parse HTTP error response',
+          expect.objectContaining({ message: 'string failure', stack: undefined })
+        );
+      } finally {
+        debugSpy.mockRestore();
+      }
     });
 
     it('loads HTTP helpers when reflected constructor types are unavailable', () => {

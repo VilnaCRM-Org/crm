@@ -140,9 +140,14 @@ describe('registrationSlice reducer and thunk coverage', () => {
     abortError.name = 'AbortError';
     (registrationAPI.register as jest.Mock).mockRejectedValue(abortError);
 
-    await store.dispatch(
+    const result = await store.dispatch(
       registerUser({ email: 'abort@test.com', password: 'pass', fullName: 'Abort User' })
     );
+
+    expect(result.meta.requestStatus).toBe('rejected');
+    if (result.meta.requestStatus === 'rejected') {
+      expect(result.meta.aborted).toBe(true);
+    }
 
     const state = store.getState().registration;
     expect(state.loading).toBe(false);

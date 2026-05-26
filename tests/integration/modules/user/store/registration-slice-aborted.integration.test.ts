@@ -79,20 +79,22 @@ describe('Registration Slice Aborted Action Tests', () => {
     const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
     const registerSpy = jest.spyOn(registrationAPI, 'register').mockRejectedValue(aborted);
 
-    const result = await store.dispatch(
-      registerUser({ email: 'abort@test.com', password: 'pass', fullName: 'Abort' })
-    );
+    try {
+      const result = await store.dispatch(
+        registerUser({ email: 'abort@test.com', password: 'pass', fullName: 'Abort' })
+      );
 
-    expect(result.meta.requestStatus).toBe('rejected');
-    if (result.meta.requestStatus === 'rejected') {
-      expect(result.meta.aborted).toBe(true);
+      expect(result.meta.requestStatus).toBe('rejected');
+      if (result.meta.requestStatus === 'rejected') {
+        expect(result.meta.aborted).toBe(true);
+      }
+
+      const state = store.getState().registration;
+      expect(state.loading).toBe(false);
+      expect(state.error).toBeNull();
+    } finally {
+      registerSpy.mockRestore();
     }
-
-    const state = store.getState().registration;
-    expect(state.loading).toBe(false);
-    expect(state.error).toBeNull();
-
-    registerSpy.mockRestore();
   });
 
   it('should parse errors without displayMessage field', async () => {

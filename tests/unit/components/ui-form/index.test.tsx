@@ -7,7 +7,7 @@ type Values = { name: string };
 const DEFAULTS: Values = { name: '' };
 
 describe('UIForm', () => {
-  it('renders title, subtitle, and submits with current values', async () => {
+  it('renders title, subtitle, and triggers submit', async () => {
     const onSubmit = jest.fn();
     render(
       <UIForm<Values>
@@ -97,7 +97,7 @@ describe('UIForm', () => {
     expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
   });
 
-  it('resets values after submit when resetOnSuccess is true', async () => {
+  it('invokes onSubmit when resetOnSuccess is true', async () => {
     const onSubmit = jest.fn().mockResolvedValue(undefined);
     render(
       <UIForm<Values>

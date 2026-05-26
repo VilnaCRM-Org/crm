@@ -14,12 +14,14 @@ const createClient = (): FetchHttpsClient =>
 
 describe('FetchHttpsClient Integration', () => {
   let client: FetchHttpsClient;
+  const originalFetch = global.fetch;
 
   beforeAll(() => {
     global.fetch = mockFetch;
   });
 
   afterAll(() => {
+    global.fetch = originalFetch;
     jest.restoreAllMocks();
   });
 
