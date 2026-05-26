@@ -1,7 +1,7 @@
 import getRegistrationError, {
   EMAIL_ALREADY_USED_KEY,
   GENERIC_SIGNUP_ERROR_KEY,
-} from '@/modules/User/features/Auth/utils/mapRegistrationError';
+} from '@auth/utils/mapRegistrationError';
 
 describe('mapRegistrationError', () => {
   describe('EMAIL_ALREADY_USED_KEY constant', () => {

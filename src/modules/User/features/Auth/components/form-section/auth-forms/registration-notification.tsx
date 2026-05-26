@@ -1,14 +1,12 @@
-import { Box, Fade, Typography } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { Box, Fade } from '@mui/material';
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 
-import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.svg';
-import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
-import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
-import UIButton from '@/components/UIButton';
-import UiTypography from '@/components/UITypography';
-import styles from '@/modules/User/features/Auth/components/form-section/auth-forms/registration-notification.styles';
-import { RegistrationView } from '@/modules/User/features/Auth/components/form-section/types';
+import { RegistrationView } from '@auth/components/form-section/types';
+
+import RegistrationErrorView from './registration-error-view';
+import RegistrationSuccessView from './registration-success-view';
+import useCloseTimer from './use-registration-close-timer';
+import useResolvedErrorText from './use-resolved-error-text';
 
 type RegistrationNotificationProps = {
   view: Exclude<RegistrationView, 'form'>;
@@ -20,147 +18,28 @@ type RegistrationNotificationProps = {
 };
 
 export const BACK_CLOSE_ANIMATION_MS = 300;
-const GENERIC_REGISTRATION_VALIDATION_ERRORS = new Set([
-  'invalid data provided',
-  'invalid registration data',
-  'unprocessable registration data',
-]);
-const ERROR_BUTTON_TEXT_STYLES = [styles.messageButtonText, styles.errorButtonMessage];
 
-type ErrorNotificationProps = Pick<
-  RegistrationNotificationProps,
-  'isSubmitting' | 'onBack' | 'onRetry'
-> & {
-  resolvedErrorText: string;
-  isClosing: boolean;
-};
-
-function ErrorNotification({
-  resolvedErrorText,
-  isSubmitting,
-  isClosing,
-  onRetry,
-  onBack,
-}: ErrorNotificationProps): JSX.Element {
-  const { t } = useTranslation();
-
-  return (
-    <Fade in={!isClosing} timeout={BACK_CLOSE_ANIMATION_MS} appear>
-      <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
-        <Box sx={styles.contentBoxError}>
-          <Box sx={styles.imageWrapperError}>
-            <Box
-              component={ErrorImage}
-              role="img"
-              aria-label={t('notifications.error.images.error')}
-              sx={styles.errorImage}
-            />
-          </Box>
-
-          <Box sx={styles.messageContainerError}>
-            <UiTypography component="h4" sx={styles.messageTitle}>
-              {t('notifications.error.title')}
-            </UiTypography>
-            <UiTypography component="span" sx={styles.messageDescription}>
-              {resolvedErrorText}
-            </UiTypography>
-
-            <Box sx={styles.buttonsBox}>
-              {onRetry != null ? (
-                <UIButton
-                  sx={styles.errorButton}
-                  variant="contained"
-                  type="button"
-                  disabled={isSubmitting || isClosing}
-                  onClick={onRetry}
-                >
-                  <Typography component="span" sx={ERROR_BUTTON_TEXT_STYLES}>
-                    {t('notifications.error.retry_button')}
-                  </Typography>
-                </UIButton>
-              ) : null}
-              <UIButton
-                sx={[styles.errorButton, styles.errorButtonSecondary]}
-                variant="outlined"
-                type="button"
-                disabled={isClosing}
-                onClick={onBack}
-              >
-                <Typography component="span" sx={ERROR_BUTTON_TEXT_STYLES}>
-                  {t('notifications.error.button')}
-                </Typography>
-              </UIButton>
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-    </Fade>
-  );
+function isSuccessView(view: string): boolean {
+  return view === 'success';
 }
 
-type SuccessNotificationProps = {
-  isClosing: boolean;
-  onBack: () => void;
-};
+function markShown(calledRef: MutableRefObject<boolean>, onShown?: () => void): boolean {
+  if (calledRef.current) return calledRef.current;
+  onShown?.();
+  return true;
+}
 
-function SuccessNotification({ isClosing, onBack }: SuccessNotificationProps): JSX.Element {
-  const { t } = useTranslation();
+function useShownCallback(view: string, onShown?: () => void): void {
+  const calledRef = useRef(false);
+  const successView = isSuccessView(view);
 
-  return (
-    <Fade in={!isClosing} timeout={BACK_CLOSE_ANIMATION_MS} appear>
-      <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
-        <Box sx={styles.contentBox} aria-label={t('notifications.success.title')}>
-          <Box sx={styles.successTopImgBox}>
-            <Box
-              component={ConfettiImage}
-              role="img"
-              aria-label={t('notifications.success.images.confetti')}
-              sx={styles.successConfetti}
-            />
-          </Box>
-          <Box sx={styles.gears}>
-            <Box
-              component={SettingsImage}
-              role="img"
-              aria-label={t('notifications.success.images.gears')}
-              sx={styles.successGears}
-            />
-          </Box>
-
-          <Box sx={styles.messageContainer}>
-            <UiTypography
-              component="h4"
-              sx={styles.successMessageTitle}
-              data-testid="success-notification-title"
-            >
-              {t('notifications.success.title')}
-            </UiTypography>
-            <UiTypography component="span" sx={styles.successMessageDescription}>
-              {t('notifications.success.description')}
-            </UiTypography>
-
-            <UIButton
-              sx={styles.messageButton}
-              variant="contained"
-              type="button"
-              size="medium"
-              fullWidth
-              disabled={isClosing}
-              onClick={onBack}
-            >
-              <Typography component="span" sx={styles.messageButtonText}>
-                {t('notifications.success.button')}
-              </Typography>
-            </UIButton>
-          </Box>
-
-          <Box sx={styles.bottomImgBox}>
-            <Box component={ConfettiImage} aria-hidden="true" sx={styles.successConfetti} />
-          </Box>
-        </Box>
-      </Box>
-    </Fade>
-  );
+  useEffect(() => {
+    if (!successView) {
+      calledRef.current = false;
+      return;
+    }
+    calledRef.current = markShown(calledRef, onShown);
+  }, [onShown, successView]);
 }
 
 export default function RegistrationNotification({
@@ -171,58 +50,36 @@ export default function RegistrationNotification({
   onBack,
   onRetry,
 }: RegistrationNotificationProps): JSX.Element {
-  const { t } = useTranslation();
   const [isClosing, setIsClosing] = useState(false);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const normalizedErrorText = errorText?.trim().toLowerCase().replace(/\s+/g, ' ');
-  const mappedErrorText =
-    normalizedErrorText && GENERIC_REGISTRATION_VALIDATION_ERRORS.has(normalizedErrorText)
-      ? t('sign_up.errors.signup_error')
-      : (errorText ?? '');
-  const resolvedErrorText = normalizedErrorText
-    ? mappedErrorText
-    : t('failure_responses.client_errors.something_went_wrong');
+  const { scheduleClose } = useCloseTimer();
+  const resolvedErrorText = useResolvedErrorText(errorText);
 
-  useEffect(() => {
-    if (view === 'success') {
-      onShown?.();
-    }
-  }, [onShown, view]);
-
-  useEffect(
-    (): (() => void) => (): void => {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-    },
-    []
-  );
+  useShownCallback(view, onShown);
 
   const handleBack = useCallback(() => {
-    if (view === 'success') {
+    if (isSuccessView(view)) {
       onBack();
       return;
     }
-
     setIsClosing(true);
-    closeTimerRef.current = setTimeout(() => {
-      onBack();
-      closeTimerRef.current = null;
-    }, BACK_CLOSE_ANIMATION_MS);
-  }, [onBack, view]);
+    scheduleClose(onBack, BACK_CLOSE_ANIMATION_MS);
+  }, [onBack, scheduleClose, view]);
 
-  if (view === 'error') {
-    return (
-      <ErrorNotification
-        resolvedErrorText={resolvedErrorText}
-        isSubmitting={isSubmitting}
-        isClosing={isClosing}
-        onRetry={onRetry}
-        onBack={handleBack}
-      />
-    );
-  }
-
-  return <SuccessNotification isClosing={isClosing} onBack={handleBack} />;
+  return (
+    <Fade in={!isClosing} timeout={BACK_CLOSE_ANIMATION_MS} appear>
+      <Box>
+        {view === 'error' ? (
+          <RegistrationErrorView
+            resolvedErrorText={resolvedErrorText}
+            isSubmitting={isSubmitting}
+            isClosing={isClosing}
+            onRetry={onRetry}
+            onBack={handleBack}
+          />
+        ) : (
+          <RegistrationSuccessView isClosing={isClosing} onBack={handleBack} />
+        )}
+      </Box>
+    </Fade>
+  );
 }

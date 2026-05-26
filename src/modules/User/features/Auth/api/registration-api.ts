@@ -2,24 +2,28 @@ import { inject, injectable } from 'tsyringe';
 
 import API_ENDPOINTS from '@/config/apiConfig';
 import TOKENS from '@/config/tokens';
-import type { RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
-import type HttpsClient from '@/services/HttpsClient/HttpsClient';
+import type HttpsClient from '@/services/HttpsClient/https-client';
+import type { RegisterUserDto } from '@auth/types/Credentials';
 
 import type { RegistrationResponse } from '../types/ApiResponses';
 
-import BaseAPI from './BaseAPI';
+import ApiErrorFactory from './api-error-factory';
+import BaseAPI from './base-api';
 import { RequestOptions } from './types';
 
 @injectable()
 export default class RegistrationAPI extends BaseAPI {
-  constructor(@inject(TOKENS.HttpsClient) private readonly httpsClient: HttpsClient) {
-    super();
+  constructor(
+    @inject(TOKENS.HttpsClient) private readonly httpsClient: HttpsClient,
+    @inject(TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory
+  ) {
+    super(apiErrorFactory);
   }
 
   public async register(
     credentials: RegisterUserDto,
     options?: RequestOptions
-  ): Promise<RegistrationResponse> {
+  ): Promise<RegistrationResponse | undefined> {
     try {
       return await this.httpsClient.post<RegisterUserDto, RegistrationResponse>(
         API_ENDPOINTS.REGISTER,

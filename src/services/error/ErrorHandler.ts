@@ -1,6 +1,5 @@
+import { ERROR_CODES, type ErrorCode } from '@/services/error/errorCodes';
 import ParsedError from '@/utils/error/types';
-
-import { ERROR_CODES, type ErrorCode } from './errorCodes';
 
 export interface UiError {
   readonly displayMessage: string;
@@ -35,6 +34,10 @@ const errorMap: Record<ErrorCode, UiError> = {
   },
   SERVER_ERROR: {
     displayMessage: 'Internal server error',
+    retryable: true,
+  },
+  SERVICE_UNAVAILABLE_ERROR: {
+    displayMessage: 'Service unavailable. Please try again later.',
     retryable: true,
   },
   NETWORK_ERROR: {

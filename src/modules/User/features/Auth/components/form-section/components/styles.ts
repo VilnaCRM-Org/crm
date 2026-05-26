@@ -1,10 +1,11 @@
 import { styled } from '@mui/material/styles';
 
 import breakpointsTheme from '@/components/UIBreakpoints';
-import { ReactComponent as EyeIconOff } from '@/modules/User/features/Auth/assets/eye-off.svg';
-import { ReactComponent as EyeIcon } from '@/modules/User/features/Auth/assets/eye.svg';
-import { fieldGapMargins } from '@/modules/User/features/Auth/components/form-section/styles';
 import { customColors } from '@/styles/colors';
+import { ReactComponent as EyeIconOff } from '@auth/assets/eye-off.svg';
+import { ReactComponent as EyeIcon } from '@auth/assets/eye.svg';
+
+import { fieldGapMargins } from '../styles';
 
 export default {
   formFieldWrapper: {
