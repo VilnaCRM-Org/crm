@@ -35,6 +35,13 @@ description: Use when selecting, running, or triaging frontend test suites.
 - Update visual snapshots only after inspecting the diff.
 - Add regression coverage for bug fixes before changing behavior.
 
+## Related Guides
+
+Before applying this skill, confirm the active task against
+[../AI-AGENT-GUIDE.md](../AI-AGENT-GUIDE.md) and
+[../SKILL-DECISION-GUIDE.md](../SKILL-DECISION-GUIDE.md) so every relevant
+skill is consulted.
+
 ## Line Length Disclosure
 
 Before presenting changes, check changed text files for lines longer than 100 characters.

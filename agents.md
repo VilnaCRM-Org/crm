@@ -13,6 +13,22 @@ see `CLAUDE.md`.
 
 Do not mirror BMAD skills into `.claude/skills`.
 
+### Mandatory Skill Check (Every Task)
+
+**Before any code, doc, or workflow change**, every AI agent (Claude Code,
+Codex, GitHub Copilot, Cursor, OpenAI agents, and any other assistant) MUST:
+
+1. Read [`.claude/skills/AI-AGENT-GUIDE.md`](.claude/skills/AI-AGENT-GUIDE.md).
+2. Read
+   [`.claude/skills/SKILL-DECISION-GUIDE.md`](.claude/skills/SKILL-DECISION-GUIDE.md).
+3. Identify every `.claude/skills/*` skill that applies to the current task
+   and read each matching `SKILL.md` before executing.
+4. Apply all relevant skills. Only skip one after recording
+   "Not applicable" with a concrete reason.
+
+This check is non-negotiable. Do not implement, format, lint, test, commit,
+or push until the relevant skills have been consulted.
+
 ## Quick Start for Agents
 
 ### First-Time Setup Checklist

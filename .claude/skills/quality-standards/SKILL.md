@@ -29,7 +29,9 @@ suite and should not be used as a mutating formatter.
 ## Protected Policy
 
 - Do not lower thresholds in `config/metrics-policy.json`.
-- Do not suppress ESLint or TypeScript failures without a narrow reason.
+- Do not silence findings with `eslint-disable`, `// @ts-ignore`,
+  `// @ts-nocheck`, `prettier-ignore`, `editorconfig-disable`, or
+  `markdownlint-disable`. Fix the root cause.
 - Do not accept markdownlint failures in skills or docs.
 - Do not commit generated snapshots unless the visual change is intentional.
 
@@ -42,6 +44,13 @@ suite and should not be used as a mutating formatter.
 | User journey                  | `make test-e2e`                                       |
 | Visual layout                 | `make test-visual`                                    |
 | Bundle or runtime performance | `make lighthouse-desktop` or `make lighthouse-mobile` |
+
+## Related Guides
+
+Before applying this skill, confirm the active task against
+[../AI-AGENT-GUIDE.md](../AI-AGENT-GUIDE.md) and
+[../SKILL-DECISION-GUIDE.md](../SKILL-DECISION-GUIDE.md) so every relevant
+skill is consulted.
 
 ## Line Length Disclosure
 

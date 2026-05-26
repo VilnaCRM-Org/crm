@@ -16,5 +16,9 @@ consistent before linting.
 
 ## Rule Suppressions
 
-Suppressions must be narrow and explained. Prefer changing code or types over
-silencing a rule.
+Do not add `eslint-disable`, `// @ts-ignore`, `// @ts-nocheck`,
+`prettier-ignore`, `editorconfig-disable`, or `markdownlint-disable`
+directives. Fix the code or the type contract so the rule's intent holds.
+
+If a rule genuinely cannot apply because of an external constraint, raise
+it with the user before silencing anything; never silence to land a change.

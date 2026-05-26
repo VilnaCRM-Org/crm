@@ -44,6 +44,13 @@ make lighthouse-mobile
 Run the subset that matches the change, then finish with `make format` followed
 by `make lint`.
 
+## Related Guides
+
+Before applying this skill, confirm the active task against
+[../AI-AGENT-GUIDE.md](../AI-AGENT-GUIDE.md) and
+[../SKILL-DECISION-GUIDE.md](../SKILL-DECISION-GUIDE.md) so every relevant
+skill is consulted.
+
 ## Line Length Disclosure
 
 Before presenting changes, check changed text files for lines longer than 100 characters.

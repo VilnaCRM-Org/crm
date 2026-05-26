@@ -30,14 +30,14 @@ Choose the smallest useful set, then run the full gate before committing:
 
 ## Failure Handling
 
-| Failure         | First response                                            |
-| --------------- | --------------------------------------------------------- |
-| Formatting diff | Re-run `make format` and inspect changed files            |
-| ESLint          | Fix the reported rule without disabling it by default     |
-| TypeScript      | Fix the type contract, not just the local error           |
-| Markdown        | Keep headings, fences, and lines markdownlint-compliant   |
-| Metrics         | Split dense functions or files; do not lower thresholds   |
-| Tests           | Reproduce the specific failing suite before changing code |
+| Failure         | First response                                               |
+| --------------- | ------------------------------------------------------------ |
+| Formatting diff | Re-run `make format` and inspect changed files               |
+| ESLint          | Fix the reported rule; never silence with eslint-disable     |
+| TypeScript      | Fix the type contract; do not add `@ts-ignore`/`@ts-nocheck` |
+| Markdown        | Keep headings, fences, and lines markdownlint-compliant      |
+| Metrics         | Split dense functions or files; do not lower thresholds      |
+| Tests           | Reproduce the specific failing suite before changing code    |
 
 ## Completion Checklist
 
@@ -45,6 +45,13 @@ Choose the smallest useful set, then run the full gate before committing:
 - [ ] Focused tests ran for changed behavior.
 - [ ] `make lint` passed or any blocker is documented.
 - [ ] `git status --short` shows only intended files.
+
+## Related Guides
+
+Before applying this skill, confirm the active task against
+[../AI-AGENT-GUIDE.md](../AI-AGENT-GUIDE.md) and
+[../SKILL-DECISION-GUIDE.md](../SKILL-DECISION-GUIDE.md) so every relevant
+skill is consulted.
 
 ## Line Length Disclosure
 

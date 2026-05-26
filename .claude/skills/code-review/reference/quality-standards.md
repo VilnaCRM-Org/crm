@@ -10,7 +10,9 @@
 ## Do Not Trade Quality For Silence
 
 - Do not lower `config/metrics-policy.json`.
-- Do not add broad ESLint disables.
+- Do not add `eslint-disable`, `// @ts-ignore`, `// @ts-nocheck`,
+  `prettier-ignore`, `editorconfig-disable`, or `markdownlint-disable`
+  directives; fix the underlying code or type.
 - Do not weaken TypeScript types to satisfy a local error.
 - Do not update visual snapshots without inspecting the diff.
 

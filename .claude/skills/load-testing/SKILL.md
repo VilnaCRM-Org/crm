@@ -37,6 +37,13 @@ Use the existing K6 variables in the Makefile:
 Run the smallest scenario that exercises the changed flow, then inspect the K6
 summary and generated HTML result.
 
+## Related Guides
+
+Before applying this skill, confirm the active task against
+[../AI-AGENT-GUIDE.md](../AI-AGENT-GUIDE.md) and
+[../SKILL-DECISION-GUIDE.md](../SKILL-DECISION-GUIDE.md) so every relevant
+skill is consulted.
+
 ## Line Length Disclosure
 
 Before presenting changes, check changed text files for lines longer than 100 characters.
