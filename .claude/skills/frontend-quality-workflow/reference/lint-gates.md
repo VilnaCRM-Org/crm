@@ -17,7 +17,7 @@ consistent before linting.
 ## Rule Suppressions
 
 Do not add `eslint-disable`, `// @ts-ignore`, `// @ts-nocheck`,
-`prettier-ignore`, `editorconfig-disable`, or `markdownlint-disable`
+`prettier-ignore`, `editorconfig-checker-disable`, or `markdownlint-disable`
 directives. Fix the code or the type contract so the rule's intent holds.
 
 If a rule genuinely cannot apply because of an external constraint, raise

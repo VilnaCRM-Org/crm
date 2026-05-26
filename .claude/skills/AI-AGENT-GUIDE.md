@@ -242,7 +242,7 @@ lowered:
 | K6 load                | Scenario thresholds met          | `load-testing`                       |
 
 **Never silence findings with `eslint-disable`, `// @ts-ignore`,
-`editorconfig-disable`, `prettier-ignore`, or markdownlint disable comments.**
+`editorconfig-checker-disable`, `prettier-ignore`, or markdownlint disable comments.**
 Fix the root cause. If a rule genuinely does not apply, refactor the code so
 the rule's intent holds.
 

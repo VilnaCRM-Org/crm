@@ -24,8 +24,14 @@ command -v qlty >/dev/null || {
 ```
 
 Inspect `"$installer"` before the `sh` step if you have not run the
-installer recently. After installing, open a new shell or export the
-installer path so `make fmt-qlty` can find `qlty`.
+installer recently. The installer places the CLI in `$HOME/.qlty/bin`
+and updates your shell rc files. After installing, start a new shell
+or add `$HOME/.qlty/bin` to `PATH` in the current shell so
+`make fmt-qlty` can find `qlty`:
+
+```bash
+export PATH="$HOME/.qlty/bin:$PATH"
+```
 
 Do not run `qlty init` or stage `.qlty/qlty.toml` as part of formatting unless
 the task explicitly asks to add repository Qlty configuration.

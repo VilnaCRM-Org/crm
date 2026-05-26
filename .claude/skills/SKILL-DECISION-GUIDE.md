@@ -6,7 +6,7 @@ are trying to accomplish.**
 **Non-negotiable rule**: fix root causes. Do not silence ESLint, TypeScript,
 Prettier, editorconfig-checker, markdownlint, rust-code-analysis, or any
 other quality tool with `eslint-disable`, `// @ts-ignore`,
-`prettier-ignore`, `editorconfig-disable`, or markdownlint disable comments.
+`prettier-ignore`, `editorconfig-checker-disable`, or markdownlint disable comments.
 
 ## Mandatory Skill Check (Every Task)
 

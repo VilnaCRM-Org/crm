@@ -30,7 +30,7 @@ suite and should not be used as a mutating formatter.
 
 - Do not lower thresholds in `config/metrics-policy.json`.
 - Do not silence findings with `eslint-disable`, `// @ts-ignore`,
-  `// @ts-nocheck`, `prettier-ignore`, `editorconfig-disable`, or
+  `// @ts-nocheck`, `prettier-ignore`, `editorconfig-checker-disable`, or
   `markdownlint-disable`. Fix the root cause.
 - Do not accept markdownlint failures in skills or docs.
 - Do not commit generated snapshots unless the visual change is intentional.

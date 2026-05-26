@@ -32,6 +32,7 @@ description: Use when writing or fixing Jest, Testing Library, Playwright, or vi
 make test-unit-client
 make test-unit-server
 make test-e2e
+make test-e2e-ui
 make test-visual
 make test-visual-update
 ```
