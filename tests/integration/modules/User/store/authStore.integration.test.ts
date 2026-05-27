@@ -2,11 +2,11 @@ import { rest } from 'msw';
 
 import '../../../setup';
 import API_ENDPOINTS from '@/config/apiConfig';
-import container from '@/config/DependencyInjectionConfig';
+import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import type LoginAPI from '@/modules/User/features/Auth/api/LoginAPI';
-import type RegistrationAPI from '@/modules/User/features/Auth/api/RegistrationAPI';
 import { sanitizeAuthState, useAuthStore } from '@/modules/User/features/Auth/stores/authStore';
+import type LoginAPI from '@auth/api/login-api';
+import type RegistrationAPI from '@auth/api/registration-api';
 
 import server from '../../../mocks/server';
 
@@ -585,6 +585,50 @@ describe('Auth Store Integration', () => {
       const state = useAuthStore.getState();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeNull();
+    });
+
+    it('resetRegistration clears only registration fields and selectRegisterRetryable reads the flag', async () => {
+      const { selectRegisterRetryable } = await import('@auth/stores/authStore');
+
+      useAuthStore.setState({
+        token: 'keep-me',
+        email: 'keep@me.com',
+        user: { fullName: 'X', email: 'x@y.com' },
+        registerError: 'oops',
+        registerLoading: true,
+        registerRetryable: true,
+      });
+
+      expect(selectRegisterRetryable(useAuthStore.getState())).toBe(true);
+
+      useAuthStore.getState().resetRegistration();
+
+      const state = useAuthStore.getState();
+      expect(state.token).toBe('keep-me');
+      expect(state.email).toBe('keep@me.com');
+      expect(state.user).toBeNull();
+      expect(state.registerError).toBeNull();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerRetryable).toBeUndefined();
+      expect(selectRegisterRetryable(state)).toBeUndefined();
+    });
+
+    it('seeds token from preloaded auth when the store module is re-evaluated', async () => {
+      const originalEnv = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = 'preloaded';
+
+      try {
+        await jest.isolateModulesAsync(async () => {
+          const mod = await import('@auth/stores/authStore');
+          expect(mod.useAuthStore.getState().token).toBe('preloaded');
+        });
+      } finally {
+        if (originalEnv === undefined) {
+          delete process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+        } else {
+          process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = originalEnv;
+        }
+      }
     });
   });
 });

@@ -1,6 +1,5 @@
 import * as path from 'path';
 
-import { pluginModuleFederation } from '@module-federation/rsbuild-plugin';
 import { defineConfig, loadEnv } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
@@ -21,15 +20,6 @@ export default defineConfig({
         svgo: true,
       },
     }),
-    pluginModuleFederation({
-      name: 'crm',
-      remotes: {},
-      exposes: {},
-      shared: {
-        react: { singleton: true, eager: true, requiredVersion: '^18.0.0' },
-        'react-dom': { singleton: true, eager: true, requiredVersion: '^18.0.0' },
-      },
-    }),
   ],
   html: {
     template: './public/index.html',
@@ -46,6 +36,10 @@ export default defineConfig({
     },
   },
   output: {
+    inlineStyles: !isDev,
+    filename: {
+      font: '[name].[contenthash][ext]',
+    },
     sourceMap: {
       js: isDev ? 'cheap-module-source-map' : false,
       css: isDev,
@@ -56,6 +50,7 @@ export default defineConfig({
       resolve: {
         alias: {
           '@': path.resolve(__dirname, 'src'),
+          '@auth': path.resolve(__dirname, 'src/modules/User/features/Auth'),
         },
       },
       experiments: {
@@ -79,6 +74,8 @@ export default defineConfig({
   },
   source: {
     decorators: { version: 'legacy' },
-    define: publicVars,
+    define: {
+      ...publicVars,
+    },
   },
 });

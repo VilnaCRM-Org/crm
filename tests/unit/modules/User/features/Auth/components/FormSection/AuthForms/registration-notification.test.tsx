@@ -1,0 +1,269 @@
+import { screen, fireEvent } from '@testing-library/react';
+import i18n from 'i18next';
+import React, { act } from 'react';
+import { initReactI18next } from 'react-i18next';
+
+import localization from '@/i18n/localization.json';
+import RegistrationNotification, {
+  BACK_CLOSE_ANIMATION_MS,
+} from '@auth/components/form-section/auth-forms/registration-notification';
+
+import renderWithProviders from '../../../../../../../utils/renderWithProviders';
+
+jest.mock('@/assets/notification/confetti.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/notification/error.svg', () => ({ ReactComponent: 'svg' }));
+jest.mock('@/assets/notification/settings.svg', () => ({ ReactComponent: 'svg' }));
+
+const createUkrainianI18n = (): ReturnType<typeof i18n.createInstance> => {
+  const instance = i18n.createInstance();
+  instance.use(initReactI18next).init({
+    lng: 'uk',
+    fallbackLng: 'uk',
+    resources: {
+      uk: { translation: localization.uk.translation },
+    },
+    interpolation: { escapeValue: false },
+    initImmediate: false,
+  });
+
+  return instance;
+};
+
+const VALIDATION_FALLBACK_HEAD = 'Помилка реєстрації.';
+const VALIDATION_FALLBACK_TAIL = 'Спробуйте пізніше';
+const DEFAULT_ERROR_HEAD = 'Щось пішло не так із запитом.';
+const DEFAULT_ERROR_TAIL = 'Спробуйте ще раз пізніше';
+
+describe('RegistrationNotification', () => {
+  const baseProps = {
+    isSubmitting: false,
+    onBack: jest.fn(),
+    view: 'error' as const,
+  };
+
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
+  it('shows the Ukrainian registration error for the English validation fallback', () => {
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={baseProps.isSubmitting}
+        onBack={baseProps.onBack}
+        view={baseProps.view}
+        errorText="Invalid data provided"
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    const validationFallback = `${VALIDATION_FALLBACK_HEAD} ${VALIDATION_FALLBACK_TAIL}`;
+    expect(screen.getByText(validationFallback)).toBeInTheDocument();
+  });
+
+  it('keeps custom backend error text when it is not the generic validation fallback', () => {
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={baseProps.isSubmitting}
+        onBack={baseProps.onBack}
+        view={baseProps.view}
+        errorText="Custom backend error"
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByText('Custom backend error')).toBeInTheDocument();
+  });
+
+  it('falls back to the default localized error when no error text is provided', () => {
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={baseProps.isSubmitting}
+        onBack={baseProps.onBack}
+        view={baseProps.view}
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    const defaultLocalizedError = `${DEFAULT_ERROR_HEAD} ${DEFAULT_ERROR_TAIL}`;
+    expect(screen.getByText(defaultLocalizedError)).toBeInTheDocument();
+  });
+
+  it('renders the success notification', () => {
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByText('Вітаємо!')).toBeInTheDocument();
+  });
+
+  it('calls onShown when success view is mounted', () => {
+    const onShown = jest.fn();
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={false}
+        onBack={jest.fn()}
+        view="success"
+        onShown={onShown}
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not rerun onShown when the callback changes in success view', () => {
+    const onShown1 = jest.fn();
+    const onShown2 = jest.fn();
+    const onBack = jest.fn();
+
+    function RerenderHarness(): JSX.Element {
+      const [idx, setIdx] = React.useState(0);
+      const onShown = idx === 0 ? onShown1 : onShown2;
+      const handleSwitch = React.useCallback((): void => setIdx(1), []);
+      return (
+        <>
+          <button type="button" onClick={handleSwitch}>
+            switch-callback
+          </button>
+          <RegistrationNotification
+            key="notification"
+            isSubmitting={false}
+            onBack={onBack}
+            view="success"
+            onShown={onShown}
+          />
+        </>
+      );
+    }
+
+    renderWithProviders(<RerenderHarness />, { i18nMock: createUkrainianI18n() });
+    expect(onShown1).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'switch-callback' }));
+    expect(onShown2).not.toHaveBeenCalled();
+  });
+
+  it('calls onShown only once while success view stays mounted across rerenders', () => {
+    const onShown = jest.fn();
+    const onBack = jest.fn();
+    function RerenderHarness(): JSX.Element {
+      const [, setCounter] = React.useState(0);
+      const handleRerender = React.useCallback((): void => setCounter((value) => value + 1), []);
+      return (
+        <>
+          <button type="button" onClick={handleRerender}>
+            rerender
+          </button>
+          <RegistrationNotification
+            key="notification"
+            isSubmitting={false}
+            onBack={onBack}
+            view="success"
+            onShown={onShown}
+          />
+        </>
+      );
+    }
+
+    renderWithProviders(<RerenderHarness />, { i18nMock: createUkrainianI18n() });
+
+    fireEvent.click(screen.getByRole('button', { name: 'rerender' }));
+
+    expect(onShown).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onBack immediately when back is clicked in success view', () => {
+    const onBack = jest.fn();
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="success" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    fireEvent.click(screen.getByText('Назад'));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onBack after animation delay when back is clicked in error view', () => {
+    jest.useFakeTimers();
+    const onBack = jest.fn();
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    fireEvent.click(screen.getByText('Назад'));
+    expect(onBack).not.toHaveBeenCalled();
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('only calls onBack once when back is clicked rapidly in error view', () => {
+    jest.useFakeTimers();
+    const onBack = jest.fn();
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    const backButton = screen.getByText('Назад');
+    fireEvent.click(backButton);
+    fireEvent.click(backButton);
+    fireEvent.click(backButton);
+
+    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('clears the close timer on unmount', () => {
+    jest.useFakeTimers();
+    const onBack = jest.fn();
+    const { unmount } = renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    fireEvent.click(screen.getByText('Назад'));
+    unmount();
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
+  it('renders the retry button and disables it while submitting', () => {
+    const onRetry = jest.fn();
+
+    renderWithProviders(
+      <RegistrationNotification isSubmitting onBack={jest.fn()} onRetry={onRetry} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    const retryButton = screen.getByRole('button', { name: 'Спробувати ще раз' });
+
+    expect(retryButton).toBeDisabled();
+    fireEvent.click(retryButton);
+    expect(onRetry).not.toHaveBeenCalled();
+  });
+
+  it('calls onRetry when the retry button is enabled', () => {
+    const onRetry = jest.fn();
+
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={false}
+        onBack={jest.fn()}
+        onRetry={onRetry}
+        view="error"
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+
+    expect(onRetry).toHaveBeenCalledTimes(1);
+  });
+});

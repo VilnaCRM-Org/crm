@@ -1,9 +1,6 @@
 import { Theme, createTheme } from '@mui/material';
 import { CSSProperties } from '@mui/material/styles/createMixins';
 
-import '@/config/Fonts/golos.css';
-import '@/config/Fonts/inter.css';
-
 import colorTheme from '../UIColorTheme';
 
 const hStyles: CSSProperties = {

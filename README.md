@@ -202,27 +202,14 @@ Available Load Test Scenarios:
 
 Adjust scenarios and thresholds in ./test/load/config.json.dist as needed.
 
-## Routing
-
-This project includes a routing script for managing URLs.
-The routing script maps requests to the correct HTML files, ensuring proper navigation.
-For detailed information, check the [routing script](scripts/cloudfront_routing.js).
-
-### How It Works
-
-- Mapping: Specific URL paths are mapped to corresponding HTML files.
-- Fallback Logic: For undefined routes, the script appends /index.html to handle directory-like paths.
-- Error Handling: If an error occurs, the script logs it and returns the original request.
-
-This routing logic is useful for SSR (Server-Side Rendered) applications,
-particularly when hosted on platforms like AWS CloudFront.
-
 ## Documentation
 
 Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
 If you're having trouble, head for
 [the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 as it's frequently updated.
+
+- [Architecture Decision Records (ADRs)](docs/adr/README.md)
 
 You can generate complete API-level documentation by running `doc` in the top-level
 folder, and documentation will appear in the `docs` folder, though you'll need to have

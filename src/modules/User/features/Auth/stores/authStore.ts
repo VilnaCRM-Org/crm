@@ -1,110 +1,52 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-import { login } from '@/modules/User/features/Auth/api/login';
-import { register } from '@/modules/User/features/Auth/api/register';
-import type { LoginUserDto, RegisterUserDto } from '@/modules/User/features/Auth/types/Credentials';
+import container from '@/config/dependency-injection-config';
+import { getPreloadedAuthToken } from '@/stores/preloaded-auth-token';
 
-interface AuthState {
-  email: string;
-  token: string | null;
-  loginLoading: boolean;
-  loginError: string | null;
-  registerLoading: boolean;
-  registerError: string | null;
-}
+import AuthStoreActions from './auth-store-actions';
+import type { AuthState, AuthStore } from './auth-types';
 
-interface AuthActions {
-  loginUser: (credentials: LoginUserDto, signal?: AbortSignal) => Promise<void>;
-  registerUser: (credentials: RegisterUserDto, signal?: AbortSignal) => Promise<void>;
-  logout: () => void;
-  reset: () => void;
-}
-
-type AuthStore = AuthState & AuthActions;
+export type { AuthState, AuthStore } from './auth-types';
+export * from './auth-selectors';
 
 const initialState: AuthState = {
   email: '',
-  token: null,
+  token: getPreloadedAuthToken() ?? null,
+  user: null,
   loginLoading: false,
   loginError: null,
   registerLoading: false,
   registerError: null,
+  registerRetryable: undefined,
 };
 
 export function sanitizeAuthState(state: AuthStore): AuthStore {
-  return {
-    ...state,
-    token: state.token ? '[REDACTED]' : null,
-  };
+  return { ...state, token: state.token ? '[REDACTED]' : null };
 }
+
+container.registerSingleton<AuthStoreActions>(AuthStoreActions);
 
 export const useAuthStore = create<AuthStore>()(
   devtools(
     (set) => ({
       ...initialState,
 
-      loginUser: async (credentials: LoginUserDto, signal?: AbortSignal): Promise<void> => {
-        set({ loginLoading: true, loginError: null }, false, 'auth/loginUser/pending');
+      loginUser: (credentials, signal): Promise<void> =>
+        container.resolve(AuthStoreActions).login(set, credentials, signal),
 
-        const result = await login(credentials, signal);
+      registerUser: (credentials, signal): Promise<void> =>
+        container.resolve(AuthStoreActions).register(set, credentials, signal),
 
-        if (result.status === 'aborted') {
-          set({ loginLoading: false }, false, 'auth/loginUser/aborted');
-        } else if (result.status === 'error') {
-          set(
-            { loginLoading: false, loginError: result.message },
-            false,
-            'auth/loginUser/rejected'
-          );
-        } else {
-          set(
-            { loginLoading: false, email: result.email, token: result.token, loginError: null },
-            false,
-            'auth/loginUser/fulfilled'
-          );
-        }
-      },
-
-      registerUser: async (credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> => {
-        set({ registerLoading: true, registerError: null }, false, 'auth/registerUser/pending');
-
-        const result = await register(credentials, signal);
-
-        if (result.status === 'aborted') {
-          set({ registerLoading: false }, false, 'auth/registerUser/aborted');
-        } else if (result.status === 'error') {
-          set(
-            { registerLoading: false, registerError: result.message },
-            false,
-            'auth/registerUser/rejected'
-          );
-        } else {
-          set(
-            { registerLoading: false, registerError: null },
-            false,
-            'auth/registerUser/fulfilled'
-          );
-        }
-      },
-
-      logout: (): void => {
-        set(initialState, false, 'auth/logout');
-      },
-
-      reset: (): void => {
-        set(initialState, false, 'auth/reset');
-      },
+      logout: (): void => set(initialState, false, 'auth/logout'),
+      reset: (): void => set(initialState, false, 'auth/reset'),
+      resetRegistration: (): void =>
+        set(
+          { user: null, registerError: null, registerLoading: false, registerRetryable: undefined },
+          false,
+          'auth/resetRegistration'
+        ),
     }),
     { name: 'auth', stateSanitizer: sanitizeAuthState }
   )
 );
-
-// Selectors
-export const selectEmail = (state: AuthStore): string => state.email;
-export const selectToken = (state: AuthStore): string | null => state.token;
-export const selectLoginLoading = (state: AuthStore): boolean => state.loginLoading;
-export const selectLoginError = (state: AuthStore): string | null => state.loginError;
-export const selectRegisterLoading = (state: AuthStore): boolean => state.registerLoading;
-export const selectRegisterError = (state: AuthStore): string | null => state.registerError;
-export const selectIsAuthenticated = (state: AuthStore): boolean => !!state.token;

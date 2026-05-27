@@ -1,5 +1,5 @@
 import { ErrorParser, ParsedError } from '@/utils/error';
-import ErrorParserClass from '@/utils/error/ErrorParser';
+import ErrorParserClass from '@/utils/error/error-parser';
 
 import MockResponse from './MockResponse';
 
