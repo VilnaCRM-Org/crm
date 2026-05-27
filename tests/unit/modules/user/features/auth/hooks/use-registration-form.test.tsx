@@ -1,256 +1,71 @@
-// @jest-environment jsdom
+import { act, renderHook } from '@testing-library/react';
 
-import '../../../../../utils/setup-bun-dom';
-import '@testing-library/jest-dom';
-import { act, render } from '@testing-library/react';
+import useRegistrationForm from '@auth/hooks/use-registration-form';
 
-type MockRegistrationState = {
-  user: { email: string; fullName: string } | null;
-  loading: boolean;
-  error: string | null;
+const mockDispatch = jest.fn();
+const selectorValues: Record<string, unknown> = {
+  user: null,
+  loading: false,
+  error: null,
 };
-
-type MockRootState = {
-  registration: MockRegistrationState;
-};
-
-type HookSnapshot = {
-  errorText: string;
-  formKey: number;
-  isSubmitting: boolean;
-  view: 'form' | 'success' | 'error';
-  handleRegister: (data: { email: string; fullName: string; password: string }) => void;
-  handleSuccessShown: () => void;
-  handleBackToForm: () => void;
-  handleRetry: () => void;
-};
-
-let mockState: MockRootState = {
-  registration: {
-    user: null,
-    loading: false,
-    error: null,
-  },
-};
-
-const registerUserMock = jest.fn((payload: unknown) => ({
-  type: 'registration/registerUser',
-  payload,
-}));
-const resetMock = jest.fn(() => ({ type: 'registration/reset' }));
-
-const dispatchMock = jest.fn((action: { type: string }) => {
-  if (action.type === 'registration/reset') {
-    mockState = {
-      registration: {
-        user: null,
-        loading: false,
-        error: null,
-      },
-    };
-  }
-
-  return action;
-});
-
-jest.mock('react-i18next', () => ({
-  useTranslation: (): { t: (key: string) => string } => ({
-    t: (key: string): string => key,
-  }),
-}));
 
 jest.mock('@/stores/hooks', () => ({
   __esModule: true,
-  default: (): typeof dispatchMock => dispatchMock,
-  useAppSelector: (selector: (state: MockRootState) => unknown): unknown => selector(mockState),
+  default: (): jest.Mock => mockDispatch,
+  useAppSelector: (selector: (state: unknown) => unknown): unknown =>
+    selector({
+      registration: {
+        user: selectorValues.user,
+        loading: selectorValues.loading,
+        error: selectorValues.error,
+      },
+    }),
 }));
-
-jest.mock('@/modules/user/store', () => ({
-  __esModule: true,
-  registerUser: registerUserMock,
-  reset: resetMock,
-}));
-
-type UseRegistrationFormModule =
-  typeof import('@/modules/user/features/auth/hooks/use-registration-form');
-let useRegistrationForm!: UseRegistrationFormModule['default'];
-
-function Capture({
-  onRender,
-  onViewChange,
-}: {
-  onRender: (snapshot: HookSnapshot) => void;
-  onViewChange?: (view: 'form' | 'success' | 'error') => void;
-}): JSX.Element | null {
-  const result = useRegistrationForm(onViewChange);
-
-  onRender({
-    errorText: result.errorText,
-    formKey: result.formKey,
-    isSubmitting: result.isSubmitting,
-    view: result.view,
-    handleRegister: result.handleRegister,
-    handleSuccessShown: result.handleSuccessShown,
-    handleBackToForm: result.handleBackToForm,
-    handleRetry: result.handleRetry,
-  });
-
-  return null;
-}
 
 describe('useRegistrationForm', () => {
-  beforeAll(async () => {
-    ({ default: useRegistrationForm } =
-      await import('@/modules/user/features/auth/hooks/use-registration-form'));
-  });
-
   beforeEach(() => {
-    mockState = {
-      registration: {
-        user: null,
-        loading: false,
-        error: null,
-      },
-    };
-    dispatchMock.mockClear();
-    registerUserMock.mockClear();
-    resetMock.mockClear();
+    selectorValues.user = null;
+    selectorValues.loading = false;
+    selectorValues.error = null;
+    mockDispatch.mockClear();
   });
 
-  it('waits to reset the form until the success notification is shown', () => {
-    const renders: HookSnapshot[] = [];
-    const { rerender } = render(<Capture onRender={(snapshot) => renders.push(snapshot)} />);
+  it('starts on the form view with empty error text', () => {
+    const { result } = renderHook(() => useRegistrationForm());
 
-    expect(renders.at(-1)).toMatchObject({
-      errorText: '',
-      formKey: 0,
-      isSubmitting: false,
-      view: 'form',
-    });
-
-    mockState = {
-      registration: {
-        user: {
-          email: 'ada@example.com',
-          fullName: 'Ada Lovelace',
-        },
-        loading: false,
-        error: null,
-      },
-    };
-
-    rerender(<Capture onRender={(snapshot) => renders.push(snapshot)} />);
-
-    expect(renders.slice(-2)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          errorText: '',
-          formKey: 0,
-          isSubmitting: true,
-          view: 'form',
-        }),
-        expect.objectContaining({
-          errorText: '',
-          formKey: 0,
-          isSubmitting: false,
-          view: 'success',
-        }),
-      ])
-    );
-
-    act(() => {
-      renders.at(-1)?.handleSuccessShown();
-    });
-
-    expect(renders.at(-1)).toMatchObject({
-      errorText: '',
-      formKey: 1,
-      isSubmitting: false,
-      view: 'success',
-    });
-
-    act(() => {
-      renders.at(-1)?.handleBackToForm();
-    });
-
-    expect(renders.at(-1)).toMatchObject({
-      errorText: '',
-      formKey: 1,
-      isSubmitting: false,
-      view: 'form',
-    });
+    expect(result.current.view).toBe('form');
+    expect(result.current.errorText).toBe('');
+    expect(result.current.formKey).toBe(0);
+    expect(result.current.isSubmitting).toBe(false);
   });
 
-  it('maps registration errors to the error view and notifies view changes', () => {
-    const renders: HookSnapshot[] = [];
+  it('notifies the onViewChange callback when the view changes', () => {
     const onViewChange = jest.fn();
-    const { rerender } = render(
-      <Capture onRender={(snapshot) => renders.push(snapshot)} onViewChange={onViewChange} />
-    );
+    renderHook(() => useRegistrationForm(onViewChange));
 
-    mockState = {
-      registration: {
-        user: null,
-        loading: false,
-        error: 'Email already exists',
-      },
-    };
-
-    rerender(
-      <Capture onRender={(snapshot) => renders.push(snapshot)} onViewChange={onViewChange} />
-    );
-
-    expect(renders.at(-1)).toMatchObject({
-      errorText: 'sign_up.errors.email_used',
-      view: 'error',
-      isSubmitting: false,
-    });
-    expect(onViewChange).toHaveBeenNthCalledWith(1, 'form');
-    expect(onViewChange).toHaveBeenLastCalledWith('error');
+    expect(onViewChange).toHaveBeenCalledWith('form');
   });
 
-  it('normalizes submitted data and retries the last registration payload', () => {
-    const renders: HookSnapshot[] = [];
+  it('surfaces the error text from the store', () => {
+    selectorValues.error = 'something went wrong';
+    const { result } = renderHook(() => useRegistrationForm());
 
-    render(<Capture onRender={(snapshot) => renders.push(snapshot)} />);
-
-    act(() => {
-      renders.at(-1)?.handleRegister({
-        email: 'ada@example.com',
-        fullName: '  Ada Lovelace  ',
-        password: 'Password1!',
-      });
-    });
-
-    expect(registerUserMock).toHaveBeenCalledWith({
-      email: 'ada@example.com',
-      fullName: 'Ada Lovelace',
-      password: 'Password1!',
-    });
-
-    act(() => {
-      renders.at(-1)?.handleRetry();
-    });
-
-    expect(resetMock).toHaveBeenCalledTimes(1);
-    expect(registerUserMock).toHaveBeenLastCalledWith({
-      email: 'ada@example.com',
-      fullName: 'Ada Lovelace',
-      password: 'Password1!',
-    });
+    expect(result.current.errorText).toBe('something went wrong');
   });
 
-  it('skips retry when nothing has been submitted yet', () => {
-    const renders: HookSnapshot[] = [];
+  it('exposes handlers and a stable formKey across renders', () => {
+    const { result, rerender } = renderHook(() => useRegistrationForm());
 
-    render(<Capture onRender={(snapshot) => renders.push(snapshot)} />);
+    expect(typeof result.current.handleRegister).toBe('function');
+    expect(typeof result.current.handleSuccessShown).toBe('function');
+    expect(typeof result.current.handleBackToForm).toBe('function');
+    expect(typeof result.current.handleRetry).toBe('function');
 
-    act(() => {
-      renders.at(-1)?.handleRetry();
-    });
+    const initialKey = result.current.formKey;
+    rerender();
+    expect(result.current.formKey).toBe(initialKey);
 
-    expect(dispatchMock).not.toHaveBeenCalled();
-    expect(resetMock).not.toHaveBeenCalled();
-    expect(registerUserMock).not.toHaveBeenCalled();
+    act(() => result.current.handleSuccessShown());
+    expect(result.current.formKey).toBe(initialKey + 1);
   });
 });

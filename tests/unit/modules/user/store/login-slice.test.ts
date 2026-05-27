@@ -56,8 +56,7 @@ describe('login-slice reducer and thunk coverage', () => {
     const state = store.getState().auth;
     expect(state.loading).toBe(false);
     expect(state.token).toBeNull();
-    expect(state.error).toContain('token');
-    expect(state.error).toContain('expected string');
+    expect(state.error).toBe('Unexpected response from server');
   });
 
   it('handles error path via ErrorParser and ErrorHandler', async () => {

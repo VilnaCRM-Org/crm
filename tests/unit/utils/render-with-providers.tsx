@@ -8,13 +8,13 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 
 import enTranslations from '@/i18n/localization.json';
-import { createAuthClients } from '@/modules/user/features/auth/repositories';
 import { loginReducer, type LoginState } from '@/modules/user/store/login-slice';
 import {
   registrationReducer,
   type RegistrationState,
 } from '@/modules/user/store/registration-slice';
 import type { ThunkExtra } from '@/modules/user/store/types';
+import createAuthClients from '@/stores/auth-clients';
 
 export const testI18n = i18n.createInstance();
 

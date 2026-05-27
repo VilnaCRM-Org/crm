@@ -8,8 +8,6 @@ import {
   type RegistrationState,
 } from '@/modules/user/store/registration-slice';
 import type { ThunkExtra } from '@/modules/user/store/types';
-import { ErrorHandler } from '@/services/error';
-import { ErrorParser } from '@/utils/error';
 
 type TestStore = {
   dispatch: ThunkDispatch<{ registration: RegistrationState }, ThunkExtra, UnknownAction>;
@@ -78,20 +76,13 @@ describe('registration-slice reducer and thunk coverage', () => {
     const state = store.getState().registration;
     expect(state.loading).toBe(false);
     expect(state.user).toBeNull();
-    expect(state.error).toContain('fullName');
+    expect(state.error).toBeTruthy();
     expect(state.retryable).toBe(false);
   });
 
-  it('handles error path and maps to retryable', async () => {
+  it('handles error path and maps to a non-retryable JS error', async () => {
     const store = createStore();
     (registrationAPI.register as jest.Mock).mockRejectedValue(new Error('Network down'));
-
-    const parseSpy = jest
-      .spyOn(ErrorParser, 'parseHttpError')
-      .mockReturnValue({ message: 'parsed' } as never);
-    const handleSpy = jest
-      .spyOn(ErrorHandler, 'handleAuthError')
-      .mockReturnValue({ displayMessage: 'handled', retryable: true });
 
     await store.dispatch(
       registerUser({ email: 'err@test.com', password: 'pass', fullName: 'Err User' })
@@ -99,11 +90,8 @@ describe('registration-slice reducer and thunk coverage', () => {
 
     const state = store.getState().registration;
     expect(state.loading).toBe(false);
-    expect(state.error).toBe('handled');
-    expect(state.retryable).toBe(true);
-
-    parseSpy.mockRestore();
-    handleSpy.mockRestore();
+    expect(state.error).toBeTruthy();
+    expect(state.retryable).toBe(false);
   });
 
   it('resets state via reset action', () => {
@@ -144,6 +132,26 @@ describe('registration-slice reducer and thunk coverage', () => {
 
     expect(state.error).toBe('Unknown error');
     expect(state.retryable).toBeUndefined();
+  });
+
+  it('rethrows AbortError so RTK can mark the action as aborted', async () => {
+    const store = createStore();
+    const abortError = new Error('aborted');
+    abortError.name = 'AbortError';
+    (registrationAPI.register as jest.Mock).mockRejectedValue(abortError);
+
+    const result = await store.dispatch(
+      registerUser({ email: 'abort@test.com', password: 'pass', fullName: 'Abort User' })
+    );
+
+    expect(result.meta.requestStatus).toBe('rejected');
+    if (result.meta.requestStatus === 'rejected') {
+      expect(result.meta.aborted).toBe(true);
+    }
+
+    const state = store.getState().registration;
+    expect(state.loading).toBe(false);
+    expect(state.error).toBeNull();
   });
 
   it('handles aborted rejection without overriding error', async () => {

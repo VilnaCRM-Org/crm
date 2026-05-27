@@ -78,7 +78,10 @@ describe('useAuthStore', () => {
 
   it('maps registration failures to a local error message', async () => {
     registerMock.mockRejectedValue(
-      new ApiError('Network error. Please check your connection.', ApiErrorCodes.NETWORK)
+      new ApiError({
+        message: 'Network error. Please check your connection.',
+        code: ApiErrorCodes.NETWORK,
+      })
     );
 
     const { result } = renderHook(() => useAuthStore());
@@ -214,7 +217,10 @@ describe('useAuthStore', () => {
 
   it('maps login API errors to a UiError via handleAuthError', async () => {
     loginMock.mockRejectedValue(
-      new ApiError('Network error. Please check your connection.', ApiErrorCodes.NETWORK)
+      new ApiError({
+        message: 'Network error. Please check your connection.',
+        code: ApiErrorCodes.NETWORK,
+      })
     );
 
     const { result } = renderHook(() => useAuthStore());

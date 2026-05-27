@@ -47,7 +47,11 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
   describe('parseHttpError - ApiError instances', () => {
     it('should parse ApiError with known code', () => {
-      const apiError = new ApiError('Authentication failed', 'AUTH_FAILED', 401);
+      const apiError = new ApiError({
+        message: 'Authentication failed',
+        code: 'AUTH_FAILED',
+        status: 401,
+      });
 
       const result = ErrorParser.parseHttpError(apiError);
 
@@ -57,7 +61,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     });
 
     it('should parse ApiError with custom message', () => {
-      const apiError = new ApiError('Custom error message', 'CUSTOM_ERROR', undefined);
+      const apiError = new ApiError({ message: 'Custom error message', code: 'CUSTOM_ERROR' });
 
       const result = ErrorParser.parseHttpError(apiError);
 
@@ -67,7 +71,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     });
 
     it('should parse ApiError with network error code', () => {
-      const apiError = new ApiError('Network error', 'NETWORK_ERROR', 0);
+      const apiError = new ApiError({ message: 'Network error', code: 'NETWORK_ERROR', status: 0 });
 
       const result = ErrorParser.parseHttpError(apiError);
 

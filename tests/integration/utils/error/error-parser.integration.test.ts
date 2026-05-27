@@ -50,7 +50,11 @@ describe('ErrorParser Integration', () => {
     });
 
     it('should handle ApiError instance', () => {
-      const apiError = new ApiError('Authentication failed', ApiErrorCodes.AUTH, 401);
+      const apiError = new ApiError({
+        message: 'Authentication failed',
+        code: ApiErrorCodes.AUTH,
+        status: 401,
+      });
 
       const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
@@ -60,7 +64,11 @@ describe('ErrorParser Integration', () => {
     });
 
     it('should handle ApiError with different error codes', () => {
-      const apiError = new ApiError('Network error occurred', ApiErrorCodes.NETWORK, 0);
+      const apiError = new ApiError({
+        message: 'Network error occurred',
+        code: ApiErrorCodes.NETWORK,
+        status: 0,
+      });
 
       const result: ParsedError = ErrorParser.parseHttpError(apiError);
 

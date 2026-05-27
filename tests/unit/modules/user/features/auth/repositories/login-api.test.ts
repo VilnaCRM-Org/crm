@@ -1,41 +1,45 @@
-// @jest-environment node
+// @jest-environment jsdom
 
-import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
-import { ApiErrorCodes } from '@/modules/user/types/api-errors';
-import { HttpError } from '@/services/https-client/http-error';
-import type HttpsClient from '@/services/https-client/https-client';
+import { ApiError } from '@/modules/user/types/api-errors';
+import LoginAPI from '@auth/repositories/login-api';
 
-function makeHttpsClient(post: jest.Mock): HttpsClient {
-  return { post } as unknown as HttpsClient;
-}
+type HttpsClient = import('@/services/https-client/https-client').default;
 
 describe('LoginAPI', () => {
-  it('returns the API response on success', async () => {
-    const postMock = jest.fn().mockResolvedValue({ token: 'abc123' });
-    const api = new LoginAPI(makeHttpsClient(postMock));
+  const credentials = { email: 'user@example.com', password: 'secret' };
 
-    const result = await api.login({ email: 'user@example.com', password: 'Password1' });
+  it('returns the underlying client response on success', async () => {
+    const httpsClient = {
+      post: jest.fn().mockResolvedValue({ token: 'abc123' }),
+    } as unknown as HttpsClient;
 
-    expect(result).toEqual({ token: 'abc123' });
+    const api = new LoginAPI(httpsClient, { convert: jest.fn() } as never);
+
+    await expect(api.login(credentials)).resolves.toEqual({ token: 'abc123' });
+    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, undefined);
   });
 
-  it('wraps HttpError in an ApiError via handleApiError', async () => {
-    const postMock = jest
-      .fn()
-      .mockRejectedValue(new HttpError({ status: 401, message: 'Unauthorized' }));
-    const api = new LoginAPI(makeHttpsClient(postMock));
+  it('passes request options to the underlying client', async () => {
+    const httpsClient = {
+      post: jest.fn().mockResolvedValue(undefined),
+    } as unknown as HttpsClient;
+    const api = new LoginAPI(httpsClient, { convert: jest.fn() } as never);
+    const options = { signal: new AbortController().signal };
 
-    await expect(
-      api.login({ email: 'user@example.com', password: 'Password1' })
-    ).rejects.toMatchObject({ code: ApiErrorCodes.AUTH });
+    await expect(api.login(credentials, options)).resolves.toBeUndefined();
+
+    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, options);
   });
 
-  it('wraps unknown errors in an ApiError via handleApiError', async () => {
-    const postMock = jest.fn().mockRejectedValue(new Error('Unknown'));
-    const api = new LoginAPI(makeHttpsClient(postMock));
+  it('maps non-API failures through BaseAPI handling', async () => {
+    const httpsClient = {
+      post: jest.fn().mockRejectedValue(new Error('network down')),
+    } as unknown as HttpsClient;
+    const converted = new ApiError({ message: 'Converted', code: 'CONVERTED' });
+    const api = new LoginAPI(httpsClient, {
+      convert: jest.fn().mockReturnValue(converted),
+    } as never);
 
-    await expect(
-      api.login({ email: 'user@example.com', password: 'Password1' })
-    ).rejects.toMatchObject({ code: ApiErrorCodes.UNKNOWN });
+    await expect(api.login(credentials)).rejects.toBe(converted);
   });
 });

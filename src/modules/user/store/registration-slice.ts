@@ -1,14 +1,21 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-
 import {
-  validateRegistrationResponse,
-  type SafeUserInfo,
-} from '@/modules/user/features/auth/types/api-responses';
-import { RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
-import { ErrorHandler, UiError } from '@/services/error';
-import { ErrorParser } from '@/utils/error';
+  createSlice,
+  createAsyncThunk,
+  PayloadAction,
+  ActionReducerMapBuilder,
+} from '@reduxjs/toolkit';
 
-import { ThunkExtra } from './types';
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
+import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
+import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
+import { ThunkExtra } from '@/modules/user/store/types';
+import type { UiError } from '@/services/error';
+import { SafeUserInfo } from '@auth/types/api-responses';
+import { RegisterUserDto } from '@auth/types/credentials';
+
+const registrationResponseMapper = new RegistrationResponseMapper();
+const authUiErrorMapper = container.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper);
 
 export const registerUser = createAsyncThunk<
   SafeUserInfo,
@@ -17,19 +24,14 @@ export const registerUser = createAsyncThunk<
 >('registration/registerUser', async (credentials, { extra, rejectWithValue, signal }) => {
   try {
     const apiResponse = await extra.registrationAPI.register(credentials, { signal });
-
-    const parsed = validateRegistrationResponse(apiResponse);
-    if (!parsed.success) {
-      const displayMessage = parsed.errors.join('\n');
-      return rejectWithValue({ displayMessage, retryable: false });
+    const result = registrationResponseMapper.map(apiResponse);
+    return result.ok ? result.value : rejectWithValue(result.error);
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw err;
     }
 
-    return parsed.data;
-  } catch (err) {
-    const parsedError = ErrorParser.parseHttpError(err);
-    const apiError = ErrorHandler.handleAuthError(parsedError);
-
-    return rejectWithValue(apiError);
+    return rejectWithValue(authUiErrorMapper.map(err));
   }
 });
 
@@ -46,36 +48,44 @@ const initialState: RegistrationState = {
   error: null,
 };
 
+function handlePending(state: RegistrationState): void {
+  state.loading = true;
+  state.error = null;
+  state.retryable = undefined;
+  state.user = null;
+}
+
+function handleFulfilled(state: RegistrationState, action: PayloadAction<SafeUserInfo>): void {
+  state.loading = false;
+  state.error = null;
+  state.retryable = undefined;
+  state.user = action.payload;
+}
+
+function handleRejected(
+  state: RegistrationState,
+  action: ReturnType<typeof registerUser.rejected>
+): void {
+  state.loading = false;
+  if (action.meta.aborted) return;
+  state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
+  state.retryable = action.payload?.retryable;
+}
+
+const buildExtraReducers = (builder: ActionReducerMapBuilder<RegistrationState>): void => {
+  builder
+    .addCase(registerUser.pending, handlePending)
+    .addCase(registerUser.fulfilled, handleFulfilled)
+    .addCase(registerUser.rejected, handleRejected);
+};
+
 export const registrationSlice = createSlice({
   name: 'registration',
   initialState,
   reducers: {
     reset: () => initialState,
   },
-  extraReducers: (builder) => {
-    builder
-      .addCase(registerUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.retryable = undefined;
-        state.user = null;
-      })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.error = null;
-        state.retryable = undefined;
-        state.user = action.payload;
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        if (action.meta.aborted) {
-          state.loading = false;
-          return;
-        }
-        state.loading = false;
-        state.error = action.payload?.displayMessage ?? action.error.message ?? 'Unknown error';
-        state.retryable = action.payload?.retryable;
-      });
-  },
+  extraReducers: buildExtraReducers,
 });
 export const registrationReducer = registrationSlice.reducer;
 export const { reset } = registrationSlice.actions;

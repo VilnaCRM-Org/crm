@@ -1,16 +1,21 @@
-// @jest-environment node
+import 'reflect-metadata';
 
-import * as repositories from '@/modules/user/features/auth/repositories';
-import BaseAPI from '@/modules/user/features/auth/repositories/base-api';
-import createAuthClients from '@/modules/user/features/auth/repositories/create-auth-clients';
-import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
-import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
+import {
+  ApiErrorFactory,
+  ApiStatusErrorFactory,
+  AuthClients,
+  BaseAPI,
+  LoginAPI,
+  RegistrationAPI,
+} from '@auth/repositories';
 
-describe('repositories index', () => {
-  it('re-exports the repository modules through the barrel', () => {
-    expect(repositories.BaseAPI).toBe(BaseAPI);
-    expect(repositories.createAuthClients).toBe(createAuthClients);
-    expect(repositories.LoginAPI).toBe(LoginAPI);
-    expect(repositories.RegistrationAPI).toBe(RegistrationAPI);
+describe('auth repositories barrel', () => {
+  it('re-exports every public class from the auth repositories module', () => {
+    expect(typeof ApiErrorFactory).toBe('function');
+    expect(typeof ApiStatusErrorFactory).toBe('function');
+    expect(typeof BaseAPI).toBe('function');
+    expect(typeof AuthClients).toBe('function');
+    expect(typeof LoginAPI).toBe('function');
+    expect(typeof RegistrationAPI).toBe('function');
   });
 });

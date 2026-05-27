@@ -1,14 +1,25 @@
-// @jest-environment node
+import 'reflect-metadata';
 
-import createAuthClients from '@/modules/user/features/auth/repositories/create-auth-clients';
-import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
-import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
+import container from '@/config/dependency-injection-config';
+import TOKENS from '@/config/tokens';
+import { AuthClients } from '@auth/repositories';
+import LoginAPI from '@auth/repositories/login-api';
+import RegistrationAPI from '@auth/repositories/registration-api';
 
-describe('createAuthClients', () => {
-  it('creates the auth API clients', () => {
-    const clients = createAuthClients();
+describe('AuthClients', () => {
+  it('resolves login and registration APIs via dependency injection', () => {
+    const clients = container.resolve<AuthClients>(TOKENS.AuthClients);
 
     expect(clients.loginAPI).toBeInstanceOf(LoginAPI);
     expect(clients.registrationAPI).toBeInstanceOf(RegistrationAPI);
+  });
+
+  it('exposes APIs passed directly to the constructor', () => {
+    const loginAPI = {} as LoginAPI;
+    const registrationAPI = {} as RegistrationAPI;
+    const clients = new AuthClients(loginAPI, registrationAPI);
+
+    expect(clients.loginAPI).toBe(loginAPI);
+    expect(clients.registrationAPI).toBe(registrationAPI);
   });
 });

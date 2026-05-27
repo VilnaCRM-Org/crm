@@ -5,7 +5,8 @@ import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'r
 
 import UIFormInputField from '@/components/ui-form-input-field';
 import UITypography from '@/components/ui-typography';
-import styles from '@/modules/user/features/auth/components/form-section/components/styles';
+
+import styles from './styles';
 
 export interface FormFieldProps<T extends FieldValues = FieldValues> {
   rules: RegisterOptions<T, Path<T>>;

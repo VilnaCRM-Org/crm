@@ -13,7 +13,12 @@ describe('ApiError classes', () => {
   describe('ApiError', () => {
     it('should create ApiError with all parameters', () => {
       const cause = new Error('Original');
-      const error = new ApiError('Test error', ApiErrorCodes.UNKNOWN, 500, cause);
+      const error = new ApiError({
+        message: 'Test error',
+        code: ApiErrorCodes.UNKNOWN,
+        status: 500,
+        cause,
+      });
 
       expect(error.message).toBe('Test error');
       expect(error.code).toBe(ApiErrorCodes.UNKNOWN);
@@ -23,7 +28,7 @@ describe('ApiError classes', () => {
     });
 
     it('should create ApiError without status code and original error', () => {
-      const error = new ApiError('Test error', ApiErrorCodes.NETWORK);
+      const error = new ApiError({ message: 'Test error', code: ApiErrorCodes.NETWORK });
 
       expect(error.message).toBe('Test error');
       expect(error.code).toBe(ApiErrorCodes.NETWORK);
@@ -40,7 +45,11 @@ describe('ApiError classes', () => {
       ).captureStackTrace = undefined;
 
       try {
-        const error = new ApiError('No stack capture', ApiErrorCodes.UNKNOWN, 400);
+        const error = new ApiError({
+          message: 'No stack capture',
+          code: ApiErrorCodes.UNKNOWN,
+          status: 400,
+        });
         expect(error.code).toBe(ApiErrorCodes.UNKNOWN);
         expect(error.status).toBe(400);
         expect(error.name).toBe('ApiError');
@@ -190,7 +199,7 @@ describe('ErrorHandler', () => {
   });
 
   it('should handle ApiError', () => {
-    const error = new ApiError('API error', ApiErrorCodes.SERVER, 500);
+    const error = new ApiError({ message: 'API error', code: ApiErrorCodes.SERVER, status: 500 });
     ErrorHandler.handle(error);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
@@ -199,7 +208,7 @@ describe('ErrorHandler', () => {
 
 describe('ErrorParser', () => {
   it('should parse ApiError with parseHttpError', () => {
-    const error = new ApiError('API error', ApiErrorCodes.AUTH, 401);
+    const error = new ApiError({ message: 'API error', code: ApiErrorCodes.AUTH, status: 401 });
     const result = ErrorParser.parseHttpError(error);
 
     expect(result.code).toBe(ApiErrorCodes.AUTH);

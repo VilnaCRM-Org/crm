@@ -28,27 +28,28 @@ const resolveLinkTarget = (to?: ButtonLinkTarget): string | undefined => {
   return `${to.pathname ?? ''}${to.search ?? ''}${to.hash ?? ''}` || undefined;
 };
 
-const UIButton = React.forwardRef<HTMLButtonElement, React.PropsWithChildren<UiButtonProps>>(
-  function UIButton(
-    { to, href, children, type = 'button', component, ...rest },
-    ref
-  ): React.ReactElement {
-    const linkTarget = resolveLinkTarget(to) ?? href;
-    const resolvedComponent = component ?? (linkTarget ? 'a' : 'button');
+const UIButton = React.forwardRef<
+  HTMLButtonElement | HTMLAnchorElement,
+  React.PropsWithChildren<UiButtonProps>
+>(function UIButton(
+  { to, href, children, type = 'button', component, ...rest },
+  ref
+): React.ReactElement {
+  const linkTarget = resolveLinkTarget(to) ?? href;
+  const resolvedComponent = component ?? (linkTarget ? 'a' : 'button');
 
-    const baseButton = (
-      <Button
-        ref={ref}
-        component={resolvedComponent}
-        href={linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined}
-        type={resolvedComponent === 'button' ? type : undefined}
-      >
-        {children}
-      </Button>
-    );
+  const baseButton = (
+    <Button
+      ref={ref}
+      component={resolvedComponent}
+      href={linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined}
+      type={resolvedComponent === 'button' ? type : undefined}
+    >
+      {children}
+    </Button>
+  );
 
-    return <ThemeProvider theme={Theme}>{React.cloneElement(baseButton, rest)}</ThemeProvider>;
-  }
-);
+  return <ThemeProvider theme={Theme}>{React.cloneElement(baseButton, rest)}</ThemeProvider>;
+});
 UIButton.displayName = 'UIButton';
 export default UIButton;

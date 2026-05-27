@@ -74,6 +74,20 @@ describe('ErrorHandler', () => {
           retryable: false,
         });
       });
+
+      it('should handle SERVICE_UNAVAILABLE_ERROR as retryable', () => {
+        const error: ParsedError = {
+          code: ERROR_CODES.SERVICE_UNAVAILABLE_ERROR,
+          message: 'Service unavailable',
+        };
+
+        const result = ErrorHandler.handleAuthError(error);
+
+        expect(result).toEqual({
+          displayMessage: 'Service unavailable. Please try again later.',
+          retryable: true,
+        });
+      });
     });
 
     describe('unrecognized error codes', () => {

@@ -107,4 +107,30 @@ describe('Login Slice Coverage Tests', () => {
       expect(state.loading).toBe(false);
     });
   });
+
+  describe('aborted login requests', () => {
+    it('rethrows AbortError so RTK marks the action as aborted', async () => {
+      const aborted = new Error('Login aborted');
+      aborted.name = 'AbortError';
+      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const loginSpy = jest.spyOn(loginAPI, 'login').mockRejectedValue(aborted);
+
+      try {
+        const result = await store.dispatch(
+          loginUser({ email: 'abort@test.com', password: 'pass' })
+        );
+
+        expect(result.meta.requestStatus).toBe('rejected');
+        if (result.meta.requestStatus === 'rejected') {
+          expect(result.meta.aborted).toBe(true);
+        }
+
+        const state = store.getState().auth;
+        expect(state.loading).toBe(false);
+        expect(state.error).toBeNull();
+      } finally {
+        loginSpy.mockRestore();
+      }
+    });
+  });
 });

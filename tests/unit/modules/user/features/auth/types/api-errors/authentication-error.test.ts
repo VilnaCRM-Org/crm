@@ -81,7 +81,7 @@ describe('AuthenticationError', () => {
       expect(error.code).toBe('AUTHENTICATION_ERROR');
     });
 
-    it('should have name from parent class', () => {
+    it('should expose its specific error name', () => {
       const error = new AuthenticationError();
 
       expect(error.name).toBe('AuthenticationError');
@@ -280,7 +280,7 @@ describe('AuthenticationError', () => {
   describe('comparison with other errors', () => {
     it('should be distinguishable from ApiError', () => {
       const authError = new AuthenticationError();
-      const apiError = new ApiError('Test', 'CODE');
+      const apiError = new ApiError({ message: 'Test', code: 'CODE' });
 
       expect(authError instanceof AuthenticationError).toBe(true);
       expect(apiError instanceof AuthenticationError).toBe(false);
@@ -294,9 +294,9 @@ describe('AuthenticationError', () => {
       expect(standardError instanceof AuthenticationError).toBe(false);
     });
 
-    it('should have same name as ApiError', () => {
+    it('should have a distinct name from ApiError', () => {
       const authError = new AuthenticationError();
-      const apiError = new ApiError('Test', 'CODE');
+      const apiError = new ApiError({ message: 'Test', code: 'CODE' });
 
       expect(authError.name).toBe('AuthenticationError');
       expect(apiError.name).toBe('ApiError');

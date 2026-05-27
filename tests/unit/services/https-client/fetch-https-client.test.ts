@@ -1,5 +1,11 @@
+/** @jest-environment @stryker-mutator/jest-runner/jest-env/jsdom */
+
+import 'reflect-metadata';
+
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
+import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
+import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 
 function createMockResponse(
@@ -35,13 +41,19 @@ const createErrorResponse = (status: number, statusText: string, url: string): R
     headers: new Headers(),
     json: async () => ({}),
   }) as unknown as Response;
+
+const createClient = (
+  requestConfigBuilder: HttpRequestConfigBuilder = new HttpRequestConfigBuilder(),
+  responseProcessor: HttpResponseProcessor = new HttpResponseProcessor()
+): FetchHttpsClient => new FetchHttpsClient(requestConfigBuilder, responseProcessor);
+
 describe('FetchHttpsClient', () => {
   const originalFetch = global.fetch;
   let client: FetchHttpsClient;
   let mockFetch: jest.Mock;
 
   beforeEach(() => {
-    client = new FetchHttpsClient();
+    client = createClient();
     mockFetch = jest.fn();
     global.fetch = mockFetch as unknown as typeof fetch;
   });
@@ -53,6 +65,24 @@ describe('FetchHttpsClient', () => {
   });
 
   describe('GET requests', () => {
+    it('uses an injected request builder with an explicit response processor', async () => {
+      const requestConfigBuilder = {
+        create: jest.fn().mockReturnValue({
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+          },
+        }),
+      };
+      const builderOnlyClient = createClient(
+        requestConfigBuilder as never,
+        new HttpResponseProcessor()
+      );
+      mockFetch.mockResolvedValue(createMockResponse(200, { ok: true }));
+
+      await expect(builderOnlyClient.get('/api/test')).resolves.toEqual({ ok: true });
+    });
+
     it('should make successful GET request', async () => {
       const responseData = { id: 1, name: 'Test' };
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
@@ -472,7 +502,7 @@ describe('FetchHttpsClient', () => {
       expect(result).toBeUndefined();
     });
 
-    it('returns undefined when response has no content-type header and empty body', async () => {
+    it('returns undefined for response with no content-type header and empty body', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         status: 204,
@@ -615,40 +645,6 @@ describe('FetchHttpsClient', () => {
       });
     });
 
-    it('should handle URLSearchParams body without JSON headers or serialization', async () => {
-      const params = new URLSearchParams({ filter: 'active' });
-      const responseData = { success: true };
-
-      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
-
-      await client.post('/api/search', params);
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/search', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-        },
-        body: params,
-      });
-    });
-
-    it('should handle typed array body without JSON headers or serialization', async () => {
-      const payload = new Uint8Array([1, 2, 3]);
-      const responseData = { success: true };
-
-      mockFetch.mockResolvedValue(createMockResponse(200, responseData));
-
-      await client.post('/api/binary', payload);
-
-      expect(mockFetch).toHaveBeenCalledWith('/api/binary', {
-        method: 'POST',
-        headers: {
-          Accept: 'application/json',
-        },
-        body: payload,
-      });
-    });
-
     it('should handle ReadableStream body', async () => {
       const originalReadableStream = global.ReadableStream;
       try {
@@ -693,23 +689,6 @@ describe('FetchHttpsClient', () => {
       expect(callArgs.headers['Content-Type']).toBe('application/json');
     });
 
-    it('skips adding JSON Content-Type when a custom content-type uses different casing', () => {
-      const customHeaders = { 'content-type': 'application/merge-patch+json' };
-      const config = (
-        client as unknown as {
-          createRequestConfig: (
-            method: string,
-            body?: unknown,
-            headers?: Record<string, string>
-          ) => RequestInit;
-        }
-      ).createRequestConfig('PATCH', { sample: true }, customHeaders);
-
-      const headers = (config.headers as Record<string, string>) || {};
-      expect(headers['content-type']).toBe('application/merge-patch+json');
-      expect(headers['Content-Type']).toBeUndefined();
-    });
-
     it('should not set Content-Type for FormData', async () => {
       const formData = new FormData();
       const responseData = { success: true };
@@ -731,6 +710,56 @@ describe('FetchHttpsClient', () => {
 
       const callArgs = mockFetch.mock.calls[0][1];
       expect(callArgs.headers.Accept).toBe('application/json');
+    });
+  });
+
+  describe('injected dependencies', () => {
+    it('delegates to the injected requestConfigBuilder and responseProcessor', async () => {
+      const mockProcessor = { process: jest.fn().mockResolvedValue({ injected: true }) };
+      const mockBuilder = {
+        create: jest
+          .fn()
+          .mockReturnValue({ method: 'GET', headers: { Accept: 'application/json' } }),
+      };
+      const customClient = new FetchHttpsClient(mockBuilder as never, mockProcessor as never);
+      mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
+
+      const result = await customClient.get('/api/test');
+
+      expect(mockBuilder.create).toHaveBeenCalled();
+      expect(mockProcessor.process).toHaveBeenCalled();
+      expect(result).toEqual({ injected: true });
+    });
+
+    it('uses an injected response processor with an explicit request builder', async () => {
+      const mockProcessor = { process: jest.fn().mockResolvedValue({ ok: true }) };
+      const customClient = createClient(new HttpRequestConfigBuilder(), mockProcessor as never);
+      mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
+
+      await expect(customClient.get('/api/test')).resolves.toEqual({ ok: true });
+
+      expect(mockFetch).toHaveBeenCalledWith('/api/test', {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+      expect(mockProcessor.process).toHaveBeenCalled();
+    });
+
+    it('loads when reflected helper constructor types are unavailable', () => {
+      for (const mockPath of [
+        '@/services/https-client/http-request-config-builder',
+        '@/services/https-client/http-response-processor',
+      ]) {
+        jest.isolateModules(() => {
+          jest.doMock(mockPath, () => ({ __esModule: true, default: undefined }));
+
+          expect(require('@/services/https-client/fetch-https-client')).toBeDefined();
+
+          jest.dontMock(mockPath);
+        });
+      }
     });
   });
 

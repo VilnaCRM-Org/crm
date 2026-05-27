@@ -112,19 +112,15 @@ describe('LoginAPI Integration', () => {
       );
     });
 
-    it('should handle 408 timeout (MSW limitation: triggers network error)', async () => {
-      // Note: MSW has a limitation where certain status codes (408, 504) trigger
-      // network errors instead of returning the status code. Our code correctly
-      // handles this as a network error, which is appropriate fallback behavior.
+    it('should map 408 to a timeout ApiError', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(408), ctx.json({ message: 'Request timeout' }))
         )
       );
 
-      // MSW triggers network error for 408, our code handles it correctly
       await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Network error. Please check your connection.'
+        'Request timed out. Please try again.'
       );
     });
 
@@ -176,19 +172,15 @@ describe('LoginAPI Integration', () => {
       );
     });
 
-    it('should handle 504 gateway timeout (MSW limitation: triggers network error)', async () => {
-      // Note: MSW has a limitation where certain status codes (408, 504) trigger
-      // network errors instead of returning the status code. Our code correctly
-      // handles this as a network error, which is appropriate fallback behavior.
+    it('should map 504 to a service unavailable ApiError', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
           res(ctx.status(504), ctx.json({ message: 'Gateway timeout' }))
         )
       );
 
-      // MSW triggers network error for 504, our code handles it correctly
       await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Network error. Please check your connection.'
+        'Service unavailable. Please try again later.'
       );
     });
 

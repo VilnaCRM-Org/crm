@@ -3,6 +3,7 @@ import { ApiErrorCodes } from './api-error-codes';
 
 export default class AuthenticationError extends ApiError {
   constructor(message = 'Invalid credentials') {
-    super(message, ApiErrorCodes.AUTH, 401);
+    super({ message, code: ApiErrorCodes.AUTH, status: 401 });
+    this.name = 'AuthenticationError';
   }
 }

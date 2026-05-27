@@ -6,40 +6,30 @@ import {
 } from '@/modules/user/store/registration-selectors';
 import type { RootState } from '@/stores';
 
+const state: RootState = {
+  auth: { email: '', token: null, loading: false, error: null },
+  registration: {
+    user: { email: 'a@b.com', fullName: 'A B' },
+    loading: true,
+    error: 'boom',
+    retryable: true,
+  },
+} as unknown as RootState;
+
 describe('registration selectors', () => {
-  const user = {
-    fullName: 'Test User',
-    email: 'user@example.com',
-  };
-
-  const state = {
-    auth: {
-      email: '',
-      token: null,
-      loading: false,
-      error: null,
-    },
-    registration: {
-      user,
-      loading: true,
-      error: 'Registration failed',
-      retryable: true,
-    },
-  } as RootState;
-
-  it('selects the registration user', () => {
-    expect(selectRegistrationUser(state)).toEqual(user);
+  it('selects user', () => {
+    expect(selectRegistrationUser(state)).toEqual({ email: 'a@b.com', fullName: 'A B' });
   });
 
-  it('selects the registration loading state', () => {
+  it('selects loading flag', () => {
     expect(selectRegistrationLoading(state)).toBe(true);
   });
 
-  it('selects the registration error', () => {
-    expect(selectRegistrationError(state)).toBe('Registration failed');
+  it('selects error', () => {
+    expect(selectRegistrationError(state)).toBe('boom');
   });
 
-  it('selects whether the registration request is retryable', () => {
+  it('selects retryable flag', () => {
     expect(selectRegistrationRetryable(state)).toBe(true);
   });
 });

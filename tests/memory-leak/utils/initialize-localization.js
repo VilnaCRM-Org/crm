@@ -8,7 +8,7 @@ async function initializeLocalization() {
     await i18n.use(initReactI18next).init(i18nConfig);
     return i18n;
   } catch (error) {
-    throw new Error(`Failed to initialize i18n: ${error}`);
+    throw new Error(`Failed to initialize i18n: ${error?.message ?? error}`);
   }
 }
 

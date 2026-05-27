@@ -15,94 +15,106 @@ const SOCIAL_BUTTONS = [
   { id: 'linkedin' },
 ] as const;
 
+const STATIC_SX = { animation: 'none', backgroundSize: '100% 100%' } as const;
+
 export type AuthSkeletonProps = {
   disableAnimation?: boolean;
 };
 
+type Wrap = <T extends object>(baseSx: T) => (T | typeof STATIC_SX)[];
+
+const buildWrap =
+  (disableAnimation: boolean): Wrap =>
+  (baseSx) =>
+    disableAnimation ? [baseSx, STATIC_SX] : [baseSx];
+
+function TitleBlock({ wrap }: { wrap: Wrap }): JSX.Element {
+  return (
+    <>
+      <UISkeletonText id="auth-skeleton-title" size="l" sx={wrap(styles.titleSkeleton)} />
+      <Box sx={styles.subtitleWrapper}>
+        <UISkeletonText id="auth-skeleton-subtitle" size="m" sx={wrap(styles.subtitleFirstLine)} />
+        <UISkeletonText
+          id="auth-skeleton-subtitle-line2"
+          size="m"
+          sx={wrap(styles.subtitleSecondLine)}
+        />
+      </Box>
+    </>
+  );
+}
+
+function FieldRows({
+  wrap,
+  disableAnimation,
+}: {
+  wrap: Wrap;
+  disableAnimation: boolean;
+}): JSX.Element {
+  return (
+    <>
+      {[1, 2, 3].map((id) => (
+        <Box key={id} sx={id === 3 ? styles.lastFieldContainer : styles.fieldContainer}>
+          <UISkeletonText
+            id={`auth-skeleton-field-label-${id}`}
+            size="l"
+            sx={wrap(styles.fieldLabel)}
+          />
+          <UISkeletonInput disableAnimation={disableAnimation} id={`auth-skeleton-input-${id}`} />
+        </Box>
+      ))}
+    </>
+  );
+}
+
+function SocialBlocks({ wrap }: { wrap: Wrap }): JSX.Element {
+  return (
+    <Box sx={styles.socialContainer}>
+      {SOCIAL_BUTTONS.map((button) => (
+        <UISkeletonBlock
+          id={`auth-skeleton-social-${button.id}`}
+          key={button.id}
+          sx={wrap(styles.socialButton)}
+        />
+      ))}
+    </Box>
+  );
+}
+
+function DividerBlock({ wrap }: { wrap: Wrap }): JSX.Element {
+  return (
+    <Divider id="auth-skeleton-divider" role="presentation" sx={styles.divider}>
+      <UISkeletonText id="auth-skeleton-divider-text" size="l" sx={wrap(styles.dividerText)} />
+    </Divider>
+  );
+}
+
+function FormBody({
+  wrap,
+  disableAnimation,
+}: {
+  wrap: Wrap;
+  disableAnimation: boolean;
+}): JSX.Element {
+  return (
+    <Box sx={wrap({ ...styles.formWrapper, ...styles.formWrapperPulse })}>
+      <TitleBlock wrap={wrap} />
+      <FieldRows wrap={wrap} disableAnimation={disableAnimation} />
+      <UISkeletonButton id="auth-skeleton-submit" sx={wrap(styles.buttonSkeleton)} />
+      <DividerBlock wrap={wrap} />
+      <SocialBlocks wrap={wrap} />
+    </Box>
+  );
+}
+
 export default function AuthSkeleton({ disableAnimation = false }: AuthSkeletonProps): JSX.Element {
   const { t } = useTranslation();
-  const staticSkeletonSx = disableAnimation
-    ? {
-        animation: 'none',
-        backgroundSize: '100% 100%',
-      }
-    : undefined;
-
-  const withStaticSx = <T extends object>(
-    baseSx: T
-  ): (T | NonNullable<typeof staticSkeletonSx>)[] =>
-    staticSkeletonSx ? [baseSx, staticSkeletonSx] : [baseSx];
+  const wrap = buildWrap(disableAnimation);
 
   return (
     <Box component="section" aria-label={t('auth.loadingForm')} sx={styles.formSection}>
-      <Box sx={withStaticSx({ ...styles.formWrapper, ...styles.formWrapperPulse })}>
-        <UISkeletonText id="auth-skeleton-title" size="l" sx={withStaticSx(styles.titleSkeleton)} />
-        <Box sx={styles.subtitleWrapper}>
-          <UISkeletonText
-            id="auth-skeleton-subtitle"
-            size="m"
-            sx={withStaticSx(styles.subtitleFirstLine)}
-          />
-          <UISkeletonText
-            id="auth-skeleton-subtitle-line2"
-            size="m"
-            sx={withStaticSx(styles.subtitleSecondLine)}
-          />
-        </Box>
-
-        <Box sx={styles.fieldContainer}>
-          <UISkeletonText
-            id="auth-skeleton-field-label-1"
-            size="l"
-            sx={withStaticSx(styles.fieldLabel)}
-          />
-          <UISkeletonInput disableAnimation={disableAnimation} id="auth-skeleton-input-1" />
-        </Box>
-
-        <Box sx={styles.fieldContainer}>
-          <UISkeletonText
-            id="auth-skeleton-field-label-2"
-            size="l"
-            sx={withStaticSx(styles.fieldLabel)}
-          />
-          <UISkeletonInput disableAnimation={disableAnimation} id="auth-skeleton-input-2" />
-        </Box>
-
-        <Box sx={styles.lastFieldContainer}>
-          <UISkeletonText
-            id="auth-skeleton-field-label-3"
-            size="l"
-            sx={withStaticSx(styles.fieldLabel)}
-          />
-          <UISkeletonInput disableAnimation={disableAnimation} id="auth-skeleton-input-3" />
-        </Box>
-
-        <UISkeletonButton id="auth-skeleton-submit" sx={withStaticSx(styles.buttonSkeleton)} />
-
-        <Divider id="auth-skeleton-divider" role="presentation" sx={styles.divider}>
-          <UISkeletonText
-            id="auth-skeleton-divider-text"
-            size="l"
-            sx={withStaticSx(styles.dividerText)}
-          />
-        </Divider>
-
-        <Box sx={styles.socialContainer}>
-          {SOCIAL_BUTTONS.map((button) => (
-            <UISkeletonBlock
-              id={`auth-skeleton-social-${button.id}`}
-              key={button.id}
-              sx={withStaticSx(styles.socialButton)}
-            />
-          ))}
-        </Box>
-      </Box>
-
-      <UISkeletonText
-        id="auth-skeleton-switcher"
-        size="l"
-        sx={withStaticSx(styles.switcherSkeleton)}
-      />
+      <FormBody wrap={wrap} disableAnimation={disableAnimation} />
+      <UISkeletonText id="auth-skeleton-switcher" size="l" sx={wrap(styles.switcherSkeleton)} />
     </Box>
   );
 }

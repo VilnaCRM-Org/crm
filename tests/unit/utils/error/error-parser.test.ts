@@ -2,7 +2,7 @@ import ApiError from '@/modules/user/types/api-errors/api-error';
 import ErrorParser from '@/utils/error/error-parser';
 import ParsedError from '@/utils/error/types';
 
-import MockResponse from './mock-response';
+import MockResponse from './MockResponse';
 
 const originalResponse = global.Response;
 
@@ -85,7 +85,11 @@ describe('ErrorParser', () => {
 
     describe('with ApiError objects', () => {
       it('should parse ApiError with code and message', () => {
-        const apiError = new ApiError('Authentication failed', 'AUTH_ERROR', 401);
+        const apiError = new ApiError({
+          message: 'Authentication failed',
+          code: 'AUTH_ERROR',
+          status: 401,
+        });
         const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
         expect(result).toEqual({
@@ -96,7 +100,7 @@ describe('ErrorParser', () => {
       });
 
       it('should parse ApiError without status', () => {
-        const apiError = new ApiError('Validation failed', 'VALIDATION_ERROR');
+        const apiError = new ApiError({ message: 'Validation failed', code: 'VALIDATION_ERROR' });
         const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
         expect(result).toEqual({
@@ -108,7 +112,12 @@ describe('ErrorParser', () => {
 
       it('should parse ApiError with cause', () => {
         const cause = new Error('Network error');
-        const apiError = new ApiError('Request failed', 'NETWORK_ERROR', 500, cause);
+        const apiError = new ApiError({
+          message: 'Request failed',
+          code: 'NETWORK_ERROR',
+          status: 500,
+          cause,
+        });
         const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
         expect(result).toEqual({
@@ -119,7 +128,7 @@ describe('ErrorParser', () => {
       });
 
       it('should parse ApiError with empty message', () => {
-        const apiError = new ApiError('', 'EMPTY_MESSAGE_ERROR');
+        const apiError = new ApiError({ message: '', code: 'EMPTY_MESSAGE_ERROR' });
         const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
         expect(result).toEqual({
@@ -130,7 +139,7 @@ describe('ErrorParser', () => {
       });
 
       it('should parse ApiError with special characters in code', () => {
-        const apiError = new ApiError('Test error', 'ERROR_CODE_123');
+        const apiError = new ApiError({ message: 'Test error', code: 'ERROR_CODE_123' });
         const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
         expect(result).toEqual({
@@ -141,7 +150,7 @@ describe('ErrorParser', () => {
       });
 
       it('should preserve all ApiError properties in result', () => {
-        const apiError = new ApiError('Test message', 'TEST_CODE', 400);
+        const apiError = new ApiError({ message: 'Test message', code: 'TEST_CODE', status: 400 });
         const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
         expect(result.code).toBe('TEST_CODE');
@@ -152,7 +161,7 @@ describe('ErrorParser', () => {
 
       it('should handle ApiError with long message', () => {
         const longMessage = 'A'.repeat(1000);
-        const apiError = new ApiError(longMessage, 'LONG_MESSAGE_ERROR');
+        const apiError = new ApiError({ message: longMessage, code: 'LONG_MESSAGE_ERROR' });
         const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
         expect(result).toEqual({
@@ -163,8 +172,10 @@ describe('ErrorParser', () => {
       });
 
       it('should handle ApiError with Unicode characters', () => {
-        const ukrMessage = 'Помилка автентифікації';
-        const apiError = new ApiError(ukrMessage, 'AUTH_ERROR_UA');
+        const apiError = new ApiError({
+          message: 'Помилка автентифікації',
+          code: 'AUTH_ERROR_UA',
+        });
         const result: ParsedError = ErrorParser.parseHttpError(apiError);
 
         expect(result).toEqual({

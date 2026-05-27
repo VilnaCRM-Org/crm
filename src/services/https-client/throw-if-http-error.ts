@@ -5,8 +5,11 @@ interface JsonWithMessage {
 }
 
 const BODY_PREVIEW_LIMIT = 200;
+const MESSAGE_LIMIT = 500;
 
-function buildBodyPreview(data: unknown): { bodyPreview: string; bodyLength: number } {
+type BodyMeta = { bodyPreview: string; bodyLength: number };
+
+function buildBodyPreview(data: unknown): BodyMeta {
   let serialized: string;
   try {
     serialized = typeof data === 'string' ? data : JSON.stringify(data);
@@ -19,35 +22,34 @@ function buildBodyPreview(data: unknown): { bodyPreview: string; bodyLength: num
   };
 }
 
+async function extractJsonMeta(res: Response): Promise<{ message?: string; bodyMeta?: BodyMeta }> {
+  const data = await res.json().catch(() => undefined);
+  if (data === undefined) return {};
+  const candidate =
+    typeof data === 'object' && data !== null ? (data as JsonWithMessage).message : undefined;
+  const message = typeof candidate === 'string' ? candidate.slice(0, MESSAGE_LIMIT) : undefined;
+  return { message, bodyMeta: buildBodyPreview(data) };
+}
+
+async function extractTextMessage(res: Response, ct: string): Promise<string | undefined> {
+  const text = await res.text().catch(() => '');
+  return ct.includes('text/plain') && text ? text.slice(0, MESSAGE_LIMIT) : undefined;
+}
+
+async function extractErrorMeta(res: Response): Promise<{ message?: string; bodyMeta?: BodyMeta }> {
+  const ct = (res.headers.get('content-type') || '').toLowerCase();
+  const cloned = res.clone();
+  if (ct.includes('json')) return extractJsonMeta(cloned);
+  const message = await extractTextMessage(cloned, ct);
+  return { message };
+}
+
 export default async function throwIfHttpError(res: Response): Promise<void> {
   if (res.ok || res.status === 304) return;
-
-  let msg = `${res.status} ${res.statusText}`;
-  let bodyMeta: { bodyPreview: string; bodyLength: number } | undefined;
-
-  try {
-    const ct = (res.headers.get('content-type') || '').toLowerCase();
-    const clonedRes = res.clone();
-
-    if (ct.includes('json')) {
-      const data = await clonedRes.json().catch(() => undefined);
-
-      if (data !== undefined) bodyMeta = buildBodyPreview(data);
-      const jsonData = data as JsonWithMessage | undefined;
-      if (jsonData?.message) {
-        msg = jsonData.message.slice(0, 500);
-      }
-    } else {
-      const text = await clonedRes.text().catch(() => '');
-      if (ct.includes('text/plain') && text) msg = text.slice(0, 500);
-    }
-  } catch {
-    // ignore body extraction errors; keep default message
-  }
-
+  const { message, bodyMeta } = await extractErrorMeta(res);
   throw new HttpError({
     status: res.status,
-    message: msg,
+    message: message ?? `${res.status} ${res.statusText}`,
     cause: {
       url: res.url,
       contentType: res.headers.get('content-type') ?? undefined,

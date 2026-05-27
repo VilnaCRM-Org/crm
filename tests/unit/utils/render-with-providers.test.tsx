@@ -3,11 +3,13 @@ import { useEffect } from 'react';
 
 import useAppDispatch from '@/stores/hooks';
 
-import { createAuthClients, type AuthClients } from '@/modules/user/features/auth/repositories';
+import { type AuthClients } from '@/modules/user/features/auth/repositories';
+import ApiErrorFactory from '@/modules/user/features/auth/repositories/api-error-factory';
 import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
 import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
 import { registerUser } from '@/modules/user/store/registration-slice';
 import type HttpsClient from '@/services/https-client/https-client';
+import createAuthClients from '@/stores/auth-clients';
 
 import renderWithProviders from './render-with-providers';
 
@@ -17,9 +19,9 @@ const registerMock = jest.fn<
   Parameters<RegistrationAPI['register']>
 >();
 
-jest.mock('@/modules/user/features/auth/repositories', () => ({
+jest.mock('@/stores/auth-clients', () => ({
   __esModule: true,
-  createAuthClients: jest.fn(),
+  default: jest.fn(),
 }));
 
 const mockedCreateAuthClients = createAuthClients as jest.MockedFunction<typeof createAuthClients>;
@@ -39,8 +41,9 @@ function makeHttpsClientMock(): HttpsClient {
 }
 
 function createAuthClientsMock(): AuthClients {
-  const loginAPI = new LoginAPI(makeHttpsClientMock());
-  const registrationAPI = new RegistrationAPI(makeHttpsClientMock());
+  const apiErrorFactory = new ApiErrorFactory();
+  const loginAPI = new LoginAPI(makeHttpsClientMock(), apiErrorFactory);
+  const registrationAPI = new RegistrationAPI(makeHttpsClientMock(), apiErrorFactory);
 
   jest.spyOn(loginAPI, 'login').mockImplementation(loginMock);
   jest.spyOn(registrationAPI, 'register').mockImplementation(registerMock);

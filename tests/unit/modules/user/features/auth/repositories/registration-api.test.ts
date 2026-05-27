@@ -1,58 +1,66 @@
-// @jest-environment node
+import API_ENDPOINTS from '@/config/api-config';
+import { ApiError } from '@/modules/user/types/api-errors';
+import RegistrationAPI from '@auth/repositories/registration-api';
 
-import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
-import { ApiErrorCodes } from '@/modules/user/types/api-errors';
-import { HttpError } from '@/services/https-client/http-error';
-import type HttpsClient from '@/services/https-client/https-client';
-
-function makeHttpsClient(post: jest.Mock): HttpsClient {
-  return { post } as unknown as HttpsClient;
-}
+type HttpsClient = import('@/services/https-client/https-client').default;
 
 describe('RegistrationAPI', () => {
-  it('returns the API response on success', async () => {
-    const postMock = jest
-      .fn()
-      .mockResolvedValue({ email: 'ada@example.com', fullName: 'Ada Lovelace' });
-    const api = new RegistrationAPI(makeHttpsClient(postMock));
+  const credentials = {
+    email: 'user@example.com',
+    password: 'secret',
+    fullName: 'Test User',
+  };
 
-    const result = await api.register({
-      email: 'ada@example.com',
-      fullName: 'Ada Lovelace',
-      password: 'Password1',
+  it('returns the underlying client response on success', async () => {
+    const httpsClient = {
+      post: jest
+        .fn()
+        .mockResolvedValue({ email: credentials.email, fullName: credentials.fullName }),
+    } as unknown as HttpsClient;
+
+    const api = new RegistrationAPI(httpsClient, { convert: jest.fn() } as never);
+
+    await expect(api.register(credentials)).resolves.toEqual({
+      email: credentials.email,
+      fullName: credentials.fullName,
     });
-
-    expect(result).toEqual({ email: 'ada@example.com', fullName: 'Ada Lovelace' });
+    expect(httpsClient.post).toHaveBeenCalledWith(API_ENDPOINTS.REGISTER, credentials, undefined);
   });
 
-  it('re-throws AbortError without wrapping', async () => {
-    const abortError = new Error('The user aborted a request.');
+  it('passes request options to the underlying client', async () => {
+    const httpsClient = {
+      post: jest.fn().mockResolvedValue(undefined),
+    } as unknown as HttpsClient;
+    const api = new RegistrationAPI(httpsClient, { convert: jest.fn() } as never);
+    const options = { signal: new AbortController().signal };
+
+    await expect(api.register(credentials, options)).resolves.toBeUndefined();
+
+    expect(httpsClient.post).toHaveBeenCalledWith(API_ENDPOINTS.REGISTER, credentials, options);
+  });
+
+  it('rethrows AbortError without converting it', async () => {
+    const abortError = new Error('The operation was aborted');
     abortError.name = 'AbortError';
-    const postMock = jest.fn().mockRejectedValue(abortError);
-    const api = new RegistrationAPI(makeHttpsClient(postMock));
+    const httpsClient = {
+      post: jest.fn().mockRejectedValue(abortError),
+    } as unknown as HttpsClient;
+    const converter = { convert: jest.fn() };
+    const api = new RegistrationAPI(httpsClient, converter as never);
 
-    await expect(
-      api.register({ email: 'ada@example.com', fullName: 'Ada Lovelace', password: 'Password1' })
-    ).rejects.toBe(abortError);
+    await expect(api.register(credentials)).rejects.toBe(abortError);
+    expect(converter.convert).not.toHaveBeenCalled();
   });
 
-  it('wraps HttpError via handleApiError', async () => {
-    const postMock = jest
-      .fn()
-      .mockRejectedValue(new HttpError({ status: 409, message: 'Conflict' }));
-    const api = new RegistrationAPI(makeHttpsClient(postMock));
+  it('maps non-abort failures through BaseAPI handling', async () => {
+    const httpsClient = {
+      post: jest.fn().mockRejectedValue(new Error('network down')),
+    } as unknown as HttpsClient;
+    const converted = new ApiError({ message: 'Converted', code: 'CONVERTED' });
+    const api = new RegistrationAPI(httpsClient, {
+      convert: jest.fn().mockReturnValue(converted),
+    } as never);
 
-    await expect(
-      api.register({ email: 'ada@example.com', fullName: 'Ada Lovelace', password: 'Password1' })
-    ).rejects.toMatchObject({ code: ApiErrorCodes.CONFLICT });
-  });
-
-  it('wraps unknown errors via handleApiError', async () => {
-    const postMock = jest.fn().mockRejectedValue(new Error('Something went wrong'));
-    const api = new RegistrationAPI(makeHttpsClient(postMock));
-
-    await expect(
-      api.register({ email: 'ada@example.com', fullName: 'Ada Lovelace', password: 'Password1' })
-    ).rejects.toMatchObject({ code: ApiErrorCodes.UNKNOWN });
+    await expect(api.register(credentials)).rejects.toBe(converted);
   });
 });
