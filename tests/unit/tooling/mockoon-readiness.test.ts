@@ -17,7 +17,8 @@ describe('Mockoon readiness tooling contract', () => {
       'wait-for-mockoon: ## Wait for the Mockoon API mock to be ready on port $(MOCKOON_PORT).'
     );
     expect(makefile).toContain(
-      '@echo "Waiting for Mockoon API mock to be ready on http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users..."'
+      '@echo "Waiting for Mockoon API mock to be ready on ' +
+        'http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users..."'
     );
     expect(makefile).toContain(
       'if curl -fsS http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users > /dev/null 2>&1; then'
@@ -25,7 +26,8 @@ describe('Mockoon readiness tooling contract', () => {
     expect(makefile).not.toContain('$(BIN_DIR)/wait-on tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT)');
     expect(makefile).toContain(`printf '\\n✅ Mockoon API mock is ready!\\n'`);
     expect(makefile).toContain(
-      `printf '\\n❌ Mockoon API mock failed to become ready on http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users\\n'`
+      `printf '\\n❌ Mockoon API mock failed to become ready on ` +
+        `http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users\\n'`
     );
     expect(makefile).toContain(
       '$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) logs --tail=50 mockoon || true;'

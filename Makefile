@@ -106,7 +106,7 @@ DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d
 BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 CI_SETUP_SERVICES           = dev mockoon
 CI_SETUP_UP_FLAGS           = -d --no-recreate
-ifeq ($(CI),1)
+ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
@@ -339,10 +339,10 @@ create-network: ## Create the external Docker network if it doesn't exist
 
 start-prod: create-network ## Build image and start container in production mode
 	# Keep production-like workflows idempotent by reusing any already-running services.
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate $(PROD_START_SERVICES) && make wait-for-prod-health
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate $(PROD_START_SERVICES) && make wait-for-prod-health && make wait-for-mockoon
 
 start-prod-clean: create-network ## Force rebuild and recreate all test containers
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build $(PROD_START_SERVICES) && make wait-for-prod-health
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build $(PROD_START_SERVICES) && make wait-for-prod-health && make wait-for-mockoon
 
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."

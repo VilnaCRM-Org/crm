@@ -15,8 +15,10 @@ describe('make start-prod startup contract', () => {
     });
 
     expect(output).toContain(
-      'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --no-recreate prod mockoon playwright'
+      'docker compose -f docker-compose.yml -f docker-compose.test.yml ' +
+        '-f common-healthchecks.yml up -d --no-recreate prod mockoon playwright'
     );
     expect(output).toContain('make wait-for-prod-health');
+    expect(output).toContain('make wait-for-mockoon');
   });
 });

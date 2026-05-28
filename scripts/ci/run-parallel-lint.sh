@@ -15,8 +15,9 @@ targets=("$@")
 pids=()
 
 for target in "${targets[@]}"; do
-  log_path="$tmp_dir/$target.log"
-  status_path="$tmp_dir/$target.status"
+  safe_target="${target//[^A-Za-z0-9._-]/_}"
+  log_path="$tmp_dir/$safe_target.log"
+  status_path="$tmp_dir/$safe_target.status"
 
   (
     if "$MAKE_BIN" "$target" >"$log_path" 2>&1; then
@@ -34,8 +35,9 @@ for pid in "${pids[@]}"; do
 done
 
 for target in "${targets[@]}"; do
-  log_path="$tmp_dir/$target.log"
-  status_path="$tmp_dir/$target.status"
+  safe_target="${target//[^A-Za-z0-9._-]/_}"
+  log_path="$tmp_dir/$safe_target.log"
+  status_path="$tmp_dir/$safe_target.status"
   target_status="$(cat "$status_path")"
 
   printf '===== %s =====\n' "$target"

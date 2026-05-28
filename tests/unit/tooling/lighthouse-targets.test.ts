@@ -8,7 +8,7 @@ import path from 'path';
 const repoRoot = path.resolve(__dirname, '..', '..', '..');
 
 describe('make Lighthouse audit target contracts', () => {
-  it('routes the desktop audit through lighthouse-setup without inlining setup in the LHCI command', () => {
+  it('routes the desktop audit through lighthouse-setup, not inline setup', () => {
     const output = execFileSync('make', ['-n', 'lighthouse-desktop'], {
       cwd: repoRoot,
       encoding: 'utf8',
@@ -22,7 +22,7 @@ describe('make Lighthouse audit target contracts', () => {
     expect(output).not.toContain('make ensure-chromium && make start-prod &&');
   });
 
-  it('routes the mobile audit through lighthouse-setup without inlining setup in the LHCI command', () => {
+  it('routes the mobile audit through lighthouse-setup, not inline setup', () => {
     const output = execFileSync('make', ['-n', 'lighthouse-mobile'], {
       cwd: repoRoot,
       encoding: 'utf8',
