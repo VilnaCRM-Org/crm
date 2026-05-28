@@ -209,13 +209,24 @@ wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	$(DOCKER_COMPOSE) logs --tail=50 dev || true; \
 	exit 1
 
+WAIT_FOR_MOCKOON_MAX_TRIES ?= 60
+WAIT_FOR_MOCKOON_SLEEP     ?= 1
+
 wait-for-mockoon: ## Wait for the Mockoon API mock to be ready on port $(MOCKOON_PORT).
-	@echo "Waiting for Mockoon API mock to be ready on tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT)..."
-	@$(BIN_DIR)/wait-on tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT) --timeout 60000 > /dev/null 2>&1 || \
-		(printf '\n❌ Mockoon API mock failed to become ready on tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT)\n'; \
-		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) logs --tail=50 mockoon || true; \
-		exit 1)
-	@printf '\n✅ Mockoon API mock is ready!\n'
+	@echo "Waiting for Mockoon API mock to be ready on http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users..."
+	@i=0; \
+	while [ $$i -lt $(WAIT_FOR_MOCKOON_MAX_TRIES) ]; do \
+		if curl -fsS http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users > /dev/null 2>&1; then \
+			printf '\n✅ Mockoon API mock is ready!\n'; \
+			exit 0; \
+		fi; \
+		printf "."; \
+		sleep $(WAIT_FOR_MOCKOON_SLEEP); \
+		i=$$((i+1)); \
+	done; \
+	printf '\n❌ Mockoon API mock failed to become ready on http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users\n'; \
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) logs --tail=50 mockoon || true; \
+	exit 1
 
 build: ## Build the dev container
 ifeq ($(DIND), 1)

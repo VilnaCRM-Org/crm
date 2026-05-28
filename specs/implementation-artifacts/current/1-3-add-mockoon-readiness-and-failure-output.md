@@ -11,8 +11,9 @@ so that I know whether the local API mock is ready or why startup failed.
 ## Acceptance Criteria
 
 1. `MOCKOON_PORT ?= 8080` is defined near the existing port variables.
-2. `wait-for-mockoon` probes `tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT)`.
-3. The probe uses a `60000` ms timeout.
+2. `wait-for-mockoon` polls `http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users` with host-side
+   `curl` (the same endpoint Mockoon's compose healthcheck uses).
+3. The poll retries with a bounded number of attempts (`WAIT_FOR_MOCKOON_MAX_TRIES`) before failing.
 4. The target prints a waiting message before probing.
 5. The target prints a success message when Mockoon is ready.
 6. The target exits non-zero with a clear failure message when Mockoon is not ready.
@@ -23,12 +24,12 @@ so that I know whether the local API mock is ready or why startup failed.
   - [ ] 1.1 Add a focused tooling test for the `wait-for-mockoon` target definition.
   - [ ] 1.2 Assert the Makefile keeps `MOCKOON_PORT ?= 8080` alongside the other public
         port variables.
-  - [ ] 1.3 Assert the readiness check uses `wait-on tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT)`.
-  - [ ] 1.4 Assert the probe uses `--timeout 60000`.
+  - [ ] 1.3 Assert the readiness check curls `http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users`.
+  - [ ] 1.4 Assert the poll retries via a bounded loop and does not depend on `$(BIN_DIR)/wait-on`.
   - [ ] 1.5 Assert the target prints explicit waiting, success, and failure output.
 
 - [ ] Task 2: Implement the external readiness gate (AC: 2, 3, 4, 5, 6)
-  - [ ] 2.1 Replace the HTTP polling loop with a `wait-on` TCP probe.
+  - [ ] 2.1 Use a host-side `curl` polling loop against `/api/users`, mirroring `wait-for-dev`.
   - [ ] 2.2 Keep the failure path non-zero and clear for the developer.
   - [ ] 2.3 Preserve Mockoon log output on failure to aid startup debugging.
 
@@ -43,12 +44,15 @@ so that I know whether the local API mock is ready or why startup failed.
 
 ### Architecture Decisions
 
-- **Readiness mechanism:** Use `wait-on` against `tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT)` instead of
-  an HTTP probe. This matches the selected architecture direction and keeps the external contract
-  consistent with the existing wait-target patterns.
-- **Execution boundary:** Run the TCP probe from the host-side `node_modules/.bin/wait-on` binary
-  rather than through `$(BUNX)`, because `localhost:$(MOCKOON_PORT)` must resolve to the published
-  host port, not the `dev` container loopback interface.
+- **Readiness mechanism:** Use a host-side `curl` polling loop against
+  `http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users` — the same endpoint Mockoon's compose
+  healthcheck probes. This mirrors the proven `wait-for-dev` pattern and depends only on `curl`,
+  which is always present on developer and CI hosts.
+- **Execution boundary:** Run the probe from the host (not inside the `dev` container) because
+  `localhost:$(MOCKOON_PORT)` must resolve to the published host port. Do **not** depend on
+  `$(BIN_DIR)/wait-on` (`./node_modules/.bin/wait-on`): host dependencies are not installed in CI
+  (deps live inside the Docker image), so that binary is absent on the runner and the probe fails
+  instantly. `curl` avoids this host-dependency trap.
 - **Failure diagnostics:** Keep a clear failure message and append `docker compose ... logs mockoon`
   output on timeout so the developer sees the reason for startup failure without extra commands.
 - **Scope boundary:** This story owns only the `wait-for-mockoon` readiness semantics and output.
@@ -99,8 +103,12 @@ gpt-5-codex
 ### Completion Notes List
 
 - Created the BMAD story artifact for Story 1.3 in the configured implementation artifact set.
-- Replaced the Mockoon wait loop with a `wait-on` TCP readiness gate and explicit startup messages.
+- Implemented the Mockoon readiness gate as a host-side `curl` polling loop against `/api/users`
+  with explicit startup messages.
 - Preserved Mockoon logs in the failure path for local debugging.
+- Correction: an interim `$(BIN_DIR)/wait-on tcp:` probe passed locally but failed every CI job
+  (`static`, `unit`, `integration`, `mutation-testing`, `codecov`, `performance`) in ~1ms because
+  `./node_modules/.bin/wait-on` is not installed on the CI host. Reverted to the host `curl` poll.
 
 ### File List
 
