@@ -17,10 +17,6 @@ const config = {
     'dist',
     'coverage',
     'tests/memory-leak/results/**',
-    // Tooling tests assert Makefile/CI contracts and cover no mutated source
-    // (mutate target is src/components only). Their `@jest-environment node`
-    // breaks Stryker's perTest coverage analysis, so keep them out of the sandbox.
-    'tests/unit/tooling/**',
     '.junie/',
     '.qlty/',
   ],
