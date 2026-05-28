@@ -34,9 +34,8 @@ LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gp
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
 LHCI_CHROME_FLAGS_ARG       = --collect.settings.chromeFlags="$(LHCI_CHROME_FLAGS)"
 LHCI_PRELOADED_AUTH_TOKEN   ?= lighthouse-preloaded-auth-token
-LHCI_BUILD_CMD          	= make ensure-chromium && make start-prod && $(LHCI)
-LHCI_DESKTOP           		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_DESKTOP) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
-LHCI_MOBILE            		= $(LHCI_BUILD_CMD) $(LHCI_CONFIG_MOBILE) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
+LHCI_DESKTOP           		= $(LHCI) $(LHCI_CONFIG_DESKTOP) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
+LHCI_MOBILE            		= $(LHCI) $(LHCI_CONFIG_MOBILE) $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)
 
 DOCKER_COMPOSE_TEST_FILE    = -f docker-compose.test.yml
 DOCKER_COMPOSE_DEV_FILE     = -f docker-compose.yml
@@ -86,6 +85,7 @@ UI_MODE_URL                 = http://$(WEBSITE_DOMAIN):$(PLAYWRIGHT_TEST_PORT)
 WEBSITE_DOMAIN              ?= localhost
 DEV_PORT                    ?= 3000
 PROD_PORT                   ?= 3001
+MOCKOON_PORT                ?= 8080
 PLAYWRIGHT_TEST_PORT        ?= 9324
 UI_HOST                     ?= 0.0.0.0
 INSTALL_CHROMIUM            ?= false
@@ -102,8 +102,21 @@ BUNX                        = $(BUN) x
 BUN_DIND                    = bun
 BUNX_DIND                   = $(BUN_DIND) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
-DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev && make wait-for-dev
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev mockoon && make wait-for-dev && make wait-for-mockoon
 BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
+CI_SETUP_SERVICES           = dev mockoon
+CI_SETUP_UP_FLAGS           = -d --no-recreate
+ifeq ($(CI),1)
+CI_SETUP_UP_FLAGS           = -d --build
+endif
+CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
+CI_LINT_TARGETS             = lint-eslint lint-tsc lint-md lint-metrics
+CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
+CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
+CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
+CI_TEST_RUNNER              = ./scripts/ci/run-parallel-tests.sh
+CI_TESTS                    = $(EXEC_DEV_TTYLESS) env
+PROD_START_SERVICES         = prod mockoon playwright
 
 STRYKER_CMD                 = make start && $(BUNX) stryker run
 STRYKER_CMD_DIND            = $(BUNX_DIND) stryker run
@@ -142,8 +155,40 @@ help:
 	@printf "\033[33mTargets:\033[0m\n"
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' Makefile | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[32m%-20s\033[0m %s\n", $$1, $$2}'
 
-start: create-network ## Start the application
+start: create-network ## Start the frontend dev server and Mockoon API mock
 	$(DEV_CMD)
+
+ci-setup: create-network ## Prepare the shared dev environment for CI-oriented checks
+	$(CI_SETUP_CMD)
+
+ci-lint: ## Run the CI lint phase with grouped target output
+	$(CI_LINT_RUNNER) $(CI_LINT_TARGETS)
+
+ci-test: ## Run the CI dev-side test phase (unit, integration) against the prepared dev environment
+	$(CI_TEST_RUNNER) $(CI_TEST_TARGETS)
+
+ci-mutation: ## Run mutation testing in isolation after the parallel dev-side tests (heavy; not parallelized)
+	make ci-test-mutation
+
+ci-prod-setup: ## Prepare the prod + Chromium environment for prod-side CI tests
+	make ensure-chromium
+	make start-prod
+
+ci-test-prod: ## Run the CI prod-side test phase (e2e, visual, memory-leak, load, lighthouse) sequentially
+	make ci-test-e2e
+	make ci-test-visual
+	make ci-test-memory-leak
+	make ci-test-load
+	make ci-test-lighthouse-desktop
+	make ci-test-lighthouse-mobile
+
+ci: ## Run the full local and GitHub Actions CI flow: setup, lint, dev tests, mutation, prod setup, prod tests
+	make ci-setup
+	make ci-lint
+	make ci-test
+	make ci-mutation
+	make ci-prod-setup
+	make ci-test-prod
 
 WAIT_FOR_DEV_MAX_TRIES     ?= 150
 WAIT_FOR_DEV_SLEEP         ?= 2
@@ -163,6 +208,14 @@ wait-for-dev: ## Wait for the dev service to be ready on port $(DEV_PORT).
 	printf '\n❌ Timed out waiting for dev service\n'; \
 	$(DOCKER_COMPOSE) logs --tail=50 dev || true; \
 	exit 1
+
+wait-for-mockoon: ## Wait for the Mockoon API mock to be ready on port $(MOCKOON_PORT).
+	@echo "Waiting for Mockoon API mock to be ready on tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT)..."
+	@$(BIN_DIR)/wait-on tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT) --timeout 60000 > /dev/null 2>&1 || \
+		(printf '\n❌ Mockoon API mock failed to become ready on tcp:$(WEBSITE_DOMAIN):$(MOCKOON_PORT)\n'; \
+		$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) logs --tail=50 mockoon || true; \
+		exit 1)
+	@printf '\n✅ Mockoon API mock is ready!\n'
 
 build: ## Build the dev container
 ifeq ($(DIND), 1)
@@ -274,10 +327,11 @@ create-network: ## Create the external Docker network if it doesn't exist
 	@docker network ls | grep -wq $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
 
 start-prod: create-network ## Build image and start container in production mode
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate && make wait-for-prod-health
+	# Keep production-like workflows idempotent by reusing any already-running services.
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --no-recreate $(PROD_START_SERVICES) && make wait-for-prod-health
 
 start-prod-clean: create-network ## Force rebuild and recreate all test containers
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build && make wait-for-prod-health
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) up -d --force-recreate --build $(PROD_START_SERVICES) && make wait-for-prod-health
 
 wait-for-prod:
 	@echo "Waiting for prod service on port $(PROD_PORT)..."
@@ -296,6 +350,36 @@ test-unit-client: ## Run all client-side unit tests using Jest (TEST_ENV=client)
 
 test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js env, TEST_ENV=server, target: $(TEST_DIR_APOLLO))
 	$(UNIT_TESTS) TEST_ENV=server $(JEST_CMD) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
+
+ci-test-unit-client: ## Run client-side unit tests assuming ci-setup already started the dev environment
+	$(CI_TESTS) TEST_ENV=client $(JEST_CMD) $(JEST_FLAGS)
+
+ci-test-unit-server: ## Run server-side unit tests assuming ci-setup already started the dev environment
+	$(CI_TESTS) TEST_ENV=server $(JEST_CMD) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
+
+ci-test-integration: ## Run integration tests assuming ci-setup already started the dev environment
+	$(CI_TESTS) TEST_ENV=integration $(JEST_CMD) $(JEST_FLAGS)
+
+ci-test-mutation: ## Run mutation tests assuming ci-setup already started the dev environment
+	$(BUNX) stryker run
+
+ci-test-e2e: ## Run E2E tests assuming ci-prod-setup already started the prod environment
+	$(RUN_E2E)
+
+ci-test-visual: ## Run visual tests assuming ci-prod-setup already started the prod environment
+	$(RUN_VISUAL)
+
+ci-test-memory-leak: ## Run memory leak tests using the dedicated memlab compose stack
+	$(RUN_MEMLAB)
+
+ci-test-load: prepare-results-dir ## Run K6 load tests assuming ci-prod-setup already started the prod environment
+	$(LOAD_TESTS_RUN)
+
+ci-test-lighthouse-desktop: ## Run Lighthouse desktop audit assuming ci-prod-setup already started the prod environment
+	$(LHCI_DESKTOP)
+
+ci-test-lighthouse-mobile: ## Run Lighthouse mobile audit assuming ci-prod-setup already started the prod environment
+	$(LHCI_MOBILE)
 
 test-integration: ## Run integration tests using Jest
 	$(UNIT_TESTS) TEST_ENV=integration $(JEST_CMD) $(JEST_FLAGS)
@@ -340,11 +424,15 @@ test-load-signup: start-prod wait-for-prod-health prepare-results-dir ## Execute
                        ## Use run_smoke/run_average/run_stress/run_spike/run_ratelimit before invoking this target.
 	$(LOAD_TESTS_RUN_SIGNUP)
 
-lighthouse-desktop: ## Run a Lighthouse audit using desktop viewport settings to evaluate performance and best practices
+lighthouse-desktop: lighthouse-setup ## Run a Lighthouse audit using desktop viewport settings to evaluate performance and best practices
 	$(LHCI_DESKTOP)
 
-lighthouse-mobile: ## Run a Lighthouse audit using mobile viewport settings to evaluate mobile UX and performance
+lighthouse-mobile: lighthouse-setup ## Run a Lighthouse audit using mobile viewport settings to evaluate mobile UX and performance
 	$(LHCI_MOBILE)
+
+lighthouse-setup: ## Prepare shared Chromium and prod prerequisites for Lighthouse audits
+	make ensure-chromium
+	make start-prod
 
 install: ## Install node modules using Bun in the dev container — uses frozen lockfile and affects node_modules via volumes
 	$(BUN) install --frozen-lockfile
