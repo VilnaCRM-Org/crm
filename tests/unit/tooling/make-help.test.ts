@@ -18,7 +18,7 @@ describe('make help discoverability contract', () => {
     expect(output).toContain('Start the frontend dev server and Mockoon API mock');
 
     expect(output).toContain('ci');
-    expect(output).toContain('Run the full local and GitHub Actions CI flow');
+    expect(output).toContain('Run the full local CI flow');
 
     expect(output).toContain('lighthouse-setup');
     expect(output).toContain(

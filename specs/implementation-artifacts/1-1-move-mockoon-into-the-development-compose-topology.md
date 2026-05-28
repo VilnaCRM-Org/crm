@@ -67,13 +67,13 @@ so that local startup and test startup can share the same stable Mockoon service
 
 ### References
 
-- Architecture: `specs/planning-artifacts/current/architecture-ci-chromium-2026-04-14.md`
+- Architecture: `specs/planning-artifacts/architecture-ci-chromium-2026-04-14.md`
   - `Docker Compose Topology`
   - `Decision Impact Analysis`
-- Epics: `specs/planning-artifacts/current/epics-start-ci-chromium-2026-04-14.md`
+- Epics: `specs/planning-artifacts/epics-start-ci-chromium-2026-04-14.md`
   - `Epic 1 Stories: Complete Local Development Startup`
   - `Story 1.1: Move Mockoon Into the Development Compose Topology`
-- PRD: `specs/planning-artifacts/current/prd-start-ci-chromium-2026-04-10.md`
+- PRD: `specs/planning-artifacts/prd-start-ci-chromium-2026-04-10.md`
   - `Dev Environment Setup`
   - `FR1`, `FR2`, `FR3`
 
@@ -97,5 +97,4 @@ gpt-5-codex
 
 ### File List
 
-- `specs/implementation-artifacts/current/1-1-move-mockoon-into-the-development-compose-topology.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/1-1-move-mockoon-into-the-development-compose-topology.md`

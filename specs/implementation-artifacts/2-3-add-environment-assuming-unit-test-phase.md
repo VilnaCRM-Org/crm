@@ -54,8 +54,6 @@ so that `make ci` avoids Docker startup races and still verifies client and serv
 ### Project Structure Notes
 
 - **Primary files:** `Makefile`, `scripts/ci/run-parallel-tests.sh`
-- **Focused test file:** `tests/unit/tooling/ci-test.test.ts`
-- **Supporting artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -92,8 +90,6 @@ exec -T dev env ...` execution and grouped parallel output.
 
 ### File List
 
-- `specs/implementation-artifacts/current/2-3-add-environment-assuming-unit-test-phase.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
-- `tests/unit/tooling/ci-test.test.ts`
+- `specs/implementation-artifacts/2-3-add-environment-assuming-unit-test-phase.md`
 - `scripts/ci/run-parallel-tests.sh`
 - `Makefile`

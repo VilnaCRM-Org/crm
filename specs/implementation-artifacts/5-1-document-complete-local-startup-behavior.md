@@ -42,7 +42,6 @@ so that I know the command starts both the frontend and Mockoon API mock and wha
 
 - **Primary file:** `README.md`
 - **Supporting verification target:** `tests/unit/tooling/make-start.test.ts`
-- **Supporting tracking artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -73,5 +72,4 @@ gpt-5-codex
 ### File List
 
 - `README.md`
-- `specs/implementation-artifacts/current/5-1-document-complete-local-startup-behavior.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/5-1-document-complete-local-startup-behavior.md`

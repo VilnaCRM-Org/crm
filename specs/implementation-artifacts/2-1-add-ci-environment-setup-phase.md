@@ -55,8 +55,6 @@ so that all CI checks run against a ready and consistent dev stack.
 ### Project Structure Notes
 
 - **Primary file:** `Makefile`
-- **Focused test file:** `tests/unit/tooling/ci-setup.test.ts`
-- **Supporting artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -94,7 +92,5 @@ gpt-5-codex
 
 ### File List
 
-- `specs/implementation-artifacts/current/2-1-add-ci-environment-setup-phase.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
-- `tests/unit/tooling/ci-setup.test.ts`
+- `specs/implementation-artifacts/2-1-add-ci-environment-setup-phase.md`
 - `Makefile`

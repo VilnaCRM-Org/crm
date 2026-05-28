@@ -6,27 +6,25 @@ Status: review
 
 As a developer,
 I want README and CONTRIBUTING guidance for `make ci`,
-so that I can run the same check command locally that GitHub Actions runs.
+so that I can run the full check suite locally with one command.
 
 ## Acceptance Criteria
 
 1. README documents `make ci` as the canonical local pre-push validation command.
 2. CONTRIBUTING documents `make ci` as the canonical local pre-push validation command.
-3. The docs state that GitHub Actions delegates to `make ci`.
-4. The docs describe GNU Make 4.0+ as a requirement.
-5. The docs include a macOS Homebrew install path for GNU Make.
-6. The docs summarize the `make ci` phases at a user-facing level.
+3. The docs describe GNU Make 4.0+ as a requirement.
+4. The docs include a macOS Homebrew install path for GNU Make.
+5. The docs summarize the `make ci` phases at a user-facing level.
 
 ## Tasks / Subtasks
 
-- [x] Task 1: Document the `make ci` workflow in the README (AC: 1, 3, 4, 5, 6)
+- [x] Task 1: Document `make ci` in the README (AC: 1, 3, 4, 5)
   - [x] 1.1 Add GNU Make 4.0+ to the prerequisites.
   - [x] 1.2 Add the macOS Homebrew install note.
   - [x] 1.3 Document `make ci` as the canonical local CI command.
-  - [x] 1.4 Document that GitHub Actions delegates to `make ci`.
-  - [x] 1.5 Summarize the CI phases at a user-facing level.
+  - [x] 1.4 Summarize the CI phases at a user-facing level.
 
-- [x] Task 2: Document the `make ci` workflow in CONTRIBUTING (AC: 2, 3, 4, 5, 6)
+- [x] Task 2: Document `make ci` in CONTRIBUTING (AC: 2, 3, 4, 5)
   - [x] 2.1 Add GNU Make 4.0+ and the macOS Homebrew note to the local setup guidance.
   - [x] 2.2 Add `make ci` as the command contributors should run before opening a PR.
   - [x] 2.3 Summarize the CI phases at a user-facing level.
@@ -35,24 +33,19 @@ so that I can run the same check command locally that GitHub Actions runs.
 
 ### Architecture Decisions
 
-- **Docs-only scope:** This story documents the CI entrypoint that already exists in the Makefile
-  and GitHub Actions workflow.
+- **Docs-only scope:** This story documents the CI entrypoint that already exists in the Makefile.
 - **Single CI command:** The docs now direct contributors to `make ci` instead of separate manual
-  check lists, matching the repository’s canonical local/remote CI path.
+  check lists, matching the repository’s canonical local CI path.
 - **Compatibility note:** GNU Make 4.0+ is documented explicitly because macOS commonly ships an
   older default Make implementation.
 
 ### Project Structure Notes
 
 - **Primary files:** `README.md`, `CONTRIBUTING.md`
-- **Supporting verification target:** `tests/unit/tooling/ci.test.ts`
-- **Supporting tracking artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
 - Run markdown lint on `README.md` and `CONTRIBUTING.md`.
-- Re-run the existing `make ci` dry-run tooling contract test so the documentation still matches
-  the implemented top-level CI entrypoint.
 
 ## Dev Agent Record
 
@@ -70,7 +63,7 @@ gpt-5-codex
 
 ### Completion Notes List
 
-- Documented `make ci` as the canonical local and GitHub Actions CI entrypoint.
+- Documented `make ci` as the canonical local CI entrypoint.
 - Added GNU Make 4.0+ guidance, including the macOS Homebrew install path.
 - Added a user-facing summary of the CI phases in both README and CONTRIBUTING.
 
@@ -78,5 +71,4 @@ gpt-5-codex
 
 - `README.md`
 - `CONTRIBUTING.md`
-- `specs/implementation-artifacts/current/5-2-document-make-ci-usage-and-gnu-make-prerequisite.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/5-2-document-make-ci-usage-and-gnu-make-prerequisite.md`

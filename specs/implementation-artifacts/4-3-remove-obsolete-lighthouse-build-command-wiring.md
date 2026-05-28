@@ -40,7 +40,6 @@ so that future Lighthouse targets cannot accidentally reintroduce duplicate Chro
 
 - **Primary file:** `Makefile`
 - **Focused test file:** `tests/unit/tooling/lighthouse-build-command-cleanup.test.ts`
-- **Supporting tracking artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -71,5 +70,4 @@ gpt-5-codex
 
 - `Makefile`
 - `tests/unit/tooling/lighthouse-build-command-cleanup.test.ts`
-- `specs/implementation-artifacts/current/4-3-remove-obsolete-lighthouse-build-command-wiring.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/4-3-remove-obsolete-lighthouse-build-command-wiring.md`

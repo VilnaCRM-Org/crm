@@ -102,7 +102,7 @@ Before opening the PR, run the canonical local CI command:
 make ci
 ```
 
-`make ci` is the same check entrypoint used by GitHub Actions. At a high level it runs shared
+`make ci` runs the same checks CI enforces across its workflows. At a high level it runs shared
 environment setup, linting, dev-side tests, prod-side setup, and prod-side automated checks.
 
 If you are updating older local scripts, aliases, or onboarding notes, migrate them to the current

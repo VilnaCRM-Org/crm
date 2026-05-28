@@ -27,7 +27,7 @@ so that I get a definitive local CI result before pushing.
 - [ ] Task 2: Add the top-level Makefile orchestration target (AC: 1, 2, 3, 4, 5)
   - [ ] 2.1 Add a public `ci` target to the Makefile.
   - [ ] 2.2 Delegate to `ci-setup`, `ci-lint`, and `ci-test` in order.
-  - [ ] 2.3 Keep the orchestration intentionally thin so future CI workflows can reuse it directly.
+  - [ ] 2.3 Keep the orchestration intentionally thin so it stays a simple, predictable entrypoint.
 
 ## Dev Notes
 
@@ -37,14 +37,12 @@ so that I get a definitive local CI result before pushing.
   duplicate their implementation details.
 - **Explicit order:** Use a recipe-based sequence instead of relying on Make parallel prerequisite
   execution so the phase order is stable and obvious.
-- **Phase reuse:** `ci` becomes the canonical local CI entrypoint that Story 3.1 can later reuse in
-  GitHub Actions unchanged.
+- **Single entrypoint:** `ci` becomes the canonical local entrypoint that runs the full check
+  suite (setup, lint, test) in one command.
 
 ### Project Structure Notes
 
 - **Primary file:** `Makefile`
-- **Focused test file:** `tests/unit/tooling/ci.test.ts`
-- **Supporting artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -80,7 +78,5 @@ gpt-5-codex
 
 ### File List
 
-- `specs/implementation-artifacts/current/2-4-add-top-level-make-ci-orchestration.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
-- `tests/unit/tooling/ci.test.ts`
+- `specs/implementation-artifacts/2-4-add-top-level-make-ci-orchestration.md`
 - `Makefile`

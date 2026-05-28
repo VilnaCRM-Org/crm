@@ -43,7 +43,6 @@ so that sequential audit runs do not repeat Chromium setup unnecessarily.
 
 - **Primary file:** `Makefile`
 - **Focused test file:** `tests/unit/tooling/lighthouse-targets.test.ts`
-- **Supporting tracking artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -76,5 +75,4 @@ gpt-5-codex
 
 - `Makefile`
 - `tests/unit/tooling/lighthouse-targets.test.ts`
-- `specs/implementation-artifacts/current/4-2-update-desktop-and-mobile-lighthouse-targets-to-use-shared-setup.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/4-2-update-desktop-and-mobile-lighthouse-targets-to-use-shared-setup.md`

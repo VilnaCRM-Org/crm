@@ -74,13 +74,13 @@ so that I know whether the local API mock is ready or why startup failed.
 
 ### References
 
-- Architecture: `specs/planning-artifacts/current/architecture-ci-chromium-2026-04-14.md`
+- Architecture: `specs/planning-artifacts/architecture-ci-chromium-2026-04-14.md`
   - `Mockoon Health Check`
   - `Naming Patterns`
-- Epics: `specs/planning-artifacts/current/epics-start-ci-chromium-2026-04-14.md`
+- Epics: `specs/planning-artifacts/epics-start-ci-chromium-2026-04-14.md`
   - `Epic 1 Stories: Complete Local Development Startup`
   - `Story 1.3: Add Mockoon Readiness and Failure Output`
-- PRD: `specs/planning-artifacts/current/prd-start-ci-chromium-2026-04-10.md`
+- PRD: `specs/planning-artifacts/prd-start-ci-chromium-2026-04-10.md`
   - `FR3`, `FR4`, `FR5`
 
 ## Dev Agent Record
@@ -112,8 +112,7 @@ gpt-5-codex
 
 ### File List
 
-- `specs/implementation-artifacts/current/1-3-add-mockoon-readiness-and-failure-output.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/1-3-add-mockoon-readiness-and-failure-output.md`
 - `tests/unit/tooling/mockoon-readiness.test.ts`
 - `tests/unit/tooling/make-start.test.ts`
 - `Makefile`

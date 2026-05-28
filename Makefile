@@ -182,7 +182,7 @@ ci-test-prod: ## Run the CI prod-side test phase (e2e, visual, memory-leak, load
 	make ci-test-lighthouse-desktop
 	make ci-test-lighthouse-mobile
 
-ci: ## Run the full local and GitHub Actions CI flow: setup, lint, dev tests, mutation, prod setup, prod tests
+ci: ## Run the full local CI flow: setup, lint, dev tests, mutation, prod setup, prod tests
 	make ci-setup
 	make ci-lint
 	make ci-test

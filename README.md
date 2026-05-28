@@ -134,7 +134,7 @@ Linting & Formatting
 Testing
 
 ```bash
-  make ci: runs the same local CI flow used by GitHub Actions
+  make ci: runs the full local CI flow (setup, lint, tests, and prod-side checks)
   make test-unit-all: runs unit tests for both client and server environments
   make test-unit-client: runs unit tests for the client using Jest
   make test-unit-server: runs unit tests for the server using Jest
@@ -150,13 +150,14 @@ Use `make ci` as the canonical pre-push validation command:
   make ci
 ```
 
-GitHub Actions delegates to this same target, so local and remote CI use the same check definition.
+Running `make ci` locally exercises the same checks CI runs across its workflows, so passing it
+before pushing means your changes should pass CI.
 
 Migration guidance for existing contributors:
 
 - replace older local CI command chains or custom wrappers with `make ci`
 - expect `make ci` to cover both dev-side and prod-side checks instead of only lint or unit phases
-- keep any local automation pointed at `make ci` so it stays aligned with GitHub Actions
+- keep any local automation pointed at `make ci`
 
 At a user-facing level, `make ci` runs these phases in order:
 

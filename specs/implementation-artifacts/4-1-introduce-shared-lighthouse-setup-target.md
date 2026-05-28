@@ -44,7 +44,6 @@ so that Chromium verification and production startup are not duplicated across a
 
 - **Primary file:** `Makefile`
 - **Focused test file:** `tests/unit/tooling/lighthouse-setup.test.ts`
-- **Supporting tracking artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -77,5 +76,4 @@ gpt-5-codex
 
 - `Makefile`
 - `tests/unit/tooling/lighthouse-setup.test.ts`
-- `specs/implementation-artifacts/current/4-1-introduce-shared-lighthouse-setup-target.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/4-1-introduce-shared-lighthouse-setup-target.md`

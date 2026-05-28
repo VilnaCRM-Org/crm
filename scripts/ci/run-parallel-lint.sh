@@ -9,10 +9,7 @@ fi
 MAKE_BIN="${MAKE_BIN:-make}"
 tmp_dir="$(mktemp -d)"
 overall_status=0
-cleanup() {
-  rm -rf "$tmp_dir"
-}
-trap cleanup EXIT
+trap 'rm -rf "$tmp_dir"' EXIT
 
 targets=("$@")
 pids=()

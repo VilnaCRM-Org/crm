@@ -53,8 +53,6 @@ so that local CI feedback is faster without hiding individual failures.
 ### Project Structure Notes
 
 - **Primary files:** `Makefile`, `scripts/ci/run-parallel-lint.sh`
-- **Focused test file:** `tests/unit/tooling/ci-lint.test.ts`
-- **Supporting artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -91,8 +89,6 @@ gpt-5-codex
 
 ### File List
 
-- `specs/implementation-artifacts/current/2-2-add-parallel-lint-phase.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
-- `tests/unit/tooling/ci-lint.test.ts`
+- `specs/implementation-artifacts/2-2-add-parallel-lint-phase.md`
 - `scripts/ci/run-parallel-lint.sh`
 - `Makefile`

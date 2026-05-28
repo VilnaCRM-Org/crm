@@ -73,13 +73,13 @@ so that e2e, visual, load, memory, and Lighthouse workflows do not regress.
 
 ### References
 
-- Architecture: `specs/planning-artifacts/current/architecture-ci-chromium-2026-04-14.md`
+- Architecture: `specs/planning-artifacts/architecture-ci-chromium-2026-04-14.md`
   - `Make Targets as Contracts`
   - `Environment Ownership`
-- Epics: `specs/planning-artifacts/current/epics-start-ci-chromium-2026-04-14.md`
+- Epics: `specs/planning-artifacts/epics-start-ci-chromium-2026-04-14.md`
   - `Epic 1 Stories: Complete Local Development Startup`
   - `Story 1.4: Preserve Production Test Startup After the Mockoon Move`
-- PRD: `specs/planning-artifacts/current/prd-start-ci-chromium-2026-04-10.md`
+- PRD: `specs/planning-artifacts/prd-start-ci-chromium-2026-04-10.md`
   - `FR1`
   - `FR2`
   - `FR3`
@@ -111,7 +111,6 @@ gpt-5-codex
 
 ### File List
 
-- `specs/implementation-artifacts/current/1-4-preserve-production-test-startup-after-the-mockoon-move.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/1-4-preserve-production-test-startup-after-the-mockoon-move.md`
 - `tests/unit/tooling/start-prod.test.ts`
 - `Makefile`

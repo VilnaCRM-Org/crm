@@ -72,14 +72,14 @@ start: create-network ## Start the application (frontend + Mockoon API mock)
 
 ### References
 
-- Architecture: `specs/planning-artifacts/current/architecture-ci-chromium-2026-04-14.md`
+- Architecture: `specs/planning-artifacts/architecture-ci-chromium-2026-04-14.md`
   - `Docker Compose Topology`
   - `Mockoon Health Check`
   - `Decision Impact Analysis`
-- Epics: `specs/planning-artifacts/current/epics-start-ci-chromium-2026-04-14.md`
+- Epics: `specs/planning-artifacts/epics-start-ci-chromium-2026-04-14.md`
   - `Epic 1 Stories: Complete Local Development Startup`
   - `Story 1.2: Start Frontend and Mockoon Together`
-- PRD: `specs/planning-artifacts/current/prd-start-ci-chromium-2026-04-10.md`
+- PRD: `specs/planning-artifacts/prd-start-ci-chromium-2026-04-10.md`
   - `Dev Environment Setup`
   - `FR1`, `FR2`, `FR3`, `FR4`, `FR6`
 
@@ -100,11 +100,10 @@ gpt-5-codex
 ### Completion Notes List
 
 - Created the BMAD story artifact for Story 1.2 in the configured implementation artifact set.
-- Kept the implementation artifact source of truth under `specs/implementation-artifacts/current`.
+- Kept the implementation artifact source of truth under `specs/implementation-artifacts`.
 
 ### File List
 
-- `specs/implementation-artifacts/current/1-2-start-frontend-and-mockoon-together.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/1-2-start-frontend-and-mockoon-together.md`
 - `tests/unit/tooling/make-start.test.ts`
 - `Makefile`

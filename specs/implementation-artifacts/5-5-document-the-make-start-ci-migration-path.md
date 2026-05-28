@@ -39,7 +39,6 @@ initiative lands.
 ### Project Structure Notes
 
 - **Primary files:** `README.md`, `CONTRIBUTING.md`
-- **Supporting tracking artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -68,5 +67,4 @@ gpt-5-codex
 
 - `README.md`
 - `CONTRIBUTING.md`
-- `specs/implementation-artifacts/current/5-5-document-the-make-start-ci-migration-path.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/5-5-document-the-make-start-ci-migration-path.md`

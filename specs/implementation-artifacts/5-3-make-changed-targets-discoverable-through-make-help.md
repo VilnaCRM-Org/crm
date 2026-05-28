@@ -11,7 +11,7 @@ so that I can discover available workflow commands from the terminal.
 ## Acceptance Criteria
 
 1. `make help` describes `start` in terms of the updated frontend + Mockoon startup behavior.
-2. `make help` describes `ci` in terms of the canonical local/remote CI workflow.
+2. `make help` describes `ci` in terms of the canonical local CI flow.
 3. `make help` includes `lighthouse-setup` with a user-facing shared-setup description.
 
 ## Tasks / Subtasks
@@ -24,7 +24,7 @@ so that I can discover available workflow commands from the terminal.
 
 - [x] Task 2: Update the public Makefile help text (AC: 1, 2, 3)
   - [x] 2.1 Update the `start` help text to reflect frontend + Mockoon startup.
-  - [x] 2.2 Update the `ci` help text to reflect the shared local/GitHub Actions flow.
+  - [x] 2.2 Update the `ci` help text to reflect the canonical local CI flow.
   - [x] 2.3 Update the `lighthouse-setup` help text to describe the shared prerequisites clearly.
 
 ## Dev Notes
@@ -40,7 +40,6 @@ so that I can discover available workflow commands from the terminal.
 
 - **Primary file:** `Makefile`
 - **Focused test file:** `tests/unit/tooling/make-help.test.ts`
-- **Supporting tracking artifact:** `specs/implementation-artifacts/current/sprint-status.yaml`
 
 ### Testing Approach
 
@@ -71,5 +70,4 @@ gpt-5-codex
 
 - `Makefile`
 - `tests/unit/tooling/make-help.test.ts`
-- `specs/implementation-artifacts/current/5-3-make-changed-targets-discoverable-through-make-help.md`
-- `specs/implementation-artifacts/current/sprint-status.yaml`
+- `specs/implementation-artifacts/5-3-make-changed-targets-discoverable-through-make-help.md`
