@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 
 import useRegistrationForm from '@auth/hooks/use-registration-form';
 
@@ -51,6 +51,15 @@ describe('useRegistrationForm', () => {
     const { result } = renderHook(() => useRegistrationForm());
 
     expect(result.current.errorText).toBe('something went wrong');
+  });
+
+  it('switches to the error view after a settled registration error', async () => {
+    selectorValues.error = 'something went wrong';
+
+    const { result } = renderHook(() => useRegistrationForm());
+
+    await waitFor(() => expect(result.current.view).toBe('error'));
+    expect(result.current.isSubmitting).toBe(false);
   });
 
   it('exposes handlers and a stable formKey across renders', () => {

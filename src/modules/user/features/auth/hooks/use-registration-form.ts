@@ -40,7 +40,7 @@ export default function useRegistrationForm(
     onViewChange?.(view);
   }, [onViewChange, view]);
 
-  const isSubmitting = loading || (view === 'form' && (user != null || error != null));
+  const isSubmitting = loading;
 
   useRegistrationViewSync({ user, error, isSubmitting, setView });
 
