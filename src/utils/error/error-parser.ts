@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
+import ApiError from '@/modules/user/types/api-errors/api-error';
 import ParsedError from '@/utils/error/types';
-import ApiError from '@auth/api/ApiErrors/api-error';
 
 type Matcher = { match: (error: unknown) => boolean; parse: (error: unknown) => ParsedError };
 

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
-import { Button } from '@/components/Button';
+import { Button } from './button';
 
 const meta: Meta<typeof Button> = {
   title: 'Example/Button',
@@ -23,8 +23,6 @@ export const Primary: Story = {
   args: {
     label: 'Primary Button',
     variant: 'primary',
-    // eslint-disable-next-line no-console
-    onClick: () => console.log('Clicked primary'),
   },
 };
 
@@ -32,7 +30,5 @@ export const Secondary: Story = {
   args: {
     label: 'Secondary Button',
     variant: 'secondary',
-    // eslint-disable-next-line no-console
-    onClick: () => console.log('Clicked secondary'),
   },
 };

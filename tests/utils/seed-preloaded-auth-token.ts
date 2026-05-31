@@ -11,7 +11,11 @@ export async function seedPreloadedAuthToken(
   page: PageRouteTarget,
   token: string = process.env[preloadedAuthTokenEnvVar]?.trim() || PRELOADED_AUTH_TOKEN
 ): Promise<void> {
-  const inlineScript = `<script>window[${JSON.stringify(preloadedAuthTokenKey)}]=${JSON.stringify(token)};</script>`;
+  const escapeForInlineScript = (json: string): string =>
+    json.replace(/<\/script/gi, '<\\/script').replace(/<!--/g, '<\\!--');
+  const keyJson = escapeForInlineScript(JSON.stringify(preloadedAuthTokenKey));
+  const tokenJson = escapeForInlineScript(JSON.stringify(token));
+  const inlineScript = `<script>window[${keyJson}]=${tokenJson};</script>`;
 
   await page.route('**/*', async (route) => {
     if (route.request().resourceType() === 'document') {

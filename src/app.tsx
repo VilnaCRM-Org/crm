@@ -7,7 +7,7 @@ import ProtectedRoute from '@/components/protected-route';
 import './index.css';
 
 const ButtonExample = lazy(async () => import('@/button-example'));
-const Authentication = lazy(async () => import('@/modules/User/features/Auth'));
+const Authentication = lazy(async () => import('@/modules/user/features/auth'));
 
 const router = createBrowserRouter([
   {

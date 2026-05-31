@@ -15,6 +15,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
+const tsconfigPath = path.join(rootDir, 'tsconfig.json');
 
 const testFilePatterns = [
   '**/*.test.js',
@@ -46,6 +47,11 @@ const devDependencyPatterns = [
 
 const importNoExtraneousDependenciesOptions = {
   devDependencies: devDependencyPatterns,
+  packageDir: [rootDir],
+};
+
+const testImportNoExtraneousDependenciesOptions = {
+  devDependencies: true,
   packageDir: [rootDir],
 };
 
@@ -138,7 +144,7 @@ export default [
       parser: tsParser,
       ecmaVersion: 2022,
       sourceType: 'module',
-      parserOptions: { project: './tsconfig.json' },
+      parserOptions: { project: tsconfigPath },
       globals: { ...globals.node, ...globals.browser, ...globals.jest },
     },
     plugins: {
@@ -152,7 +158,7 @@ export default [
       'import/internal-regex': '^@/',
       'import/resolver': {
         node: { extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'] },
-        typescript: { project: './tsconfig.json', alwaysTryTypes: true },
+        typescript: { project: tsconfigPath, alwaysTryTypes: true },
       },
     },
     rules: {
@@ -170,9 +176,9 @@ export default [
       'no-await-in-loop': 'warn',
       'no-restricted-syntax': 'warn',
       'no-alert': 'error',
-      'no-console': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'import/prefer-default-export': 'warn',
-      'max-len': ['error', { code: 150 }],
+      'max-len': ['error', { code: 100 }],
       'eslint-comments/disable-enable-pair': 'off',
       'no-restricted-imports': ['error', { patterns: ['@/features/*/*'] }],
       'no-param-reassign': ['error', { props: true, ignorePropertyModificationsFor: ['state'] }],
@@ -198,7 +204,7 @@ export default [
       'import/no-named-as-default': 'off',
       'import/no-unresolved': 'off',
       'import/extensions': 'off',
-      'react/jsx-props-no-spreading': 'error',
+      'react/jsx-props-no-spreading': ['error', { exceptions: ['TextField', 'FormProvider'] }],
       'react/react-in-jsx-scope': 'off',
       'react/require-default-props': 'off',
       'react/jsx-filename-extension': ['error', { extensions: ['.jsx', '.tsx'] }],
@@ -256,7 +262,7 @@ export default [
       globals: { ...globals.node, ...globals.browser, ...globals.jest },
     },
     rules: {
-      'no-console': 'error',
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'import/extensions': 'off',
       'prefer-template': 'off',
       'no-restricted-syntax': 'off',
@@ -266,7 +272,7 @@ export default [
       'no-restricted-globals': 'off',
       'no-undef': 'off',
       'no-use-before-define': 'off',
-      'import/no-extraneous-dependencies': ['error', importNoExtraneousDependenciesOptions],
+      'import/no-extraneous-dependencies': ['error', testImportNoExtraneousDependenciesOptions],
       'import/no-dynamic-require': 'off',
       'global-require': 'off',
       'no-await-in-loop': 'off',
@@ -277,6 +283,22 @@ export default [
     },
   },
 
+  // K6 load test scripts: console output is the idiomatic logging channel.
+  {
+    files: ['tests/load/**/*.js'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
+
   // Prettier last: disable all formatting-related rules.
   prettier,
+
+  // Re-enable max-len after prettier (prettier turns it off as a formatting rule).
+  {
+    files: jsxGlobs,
+    rules: {
+      'max-len': ['error', { code: 100 }],
+    },
+  },
 ];

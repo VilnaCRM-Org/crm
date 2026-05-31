@@ -4,7 +4,7 @@ import {
   SMALL_MOBILE_BREAKPOINT,
   baseSkeletonStyle,
 } from '@/components/skeletons/base/styles';
-import breakpointsTheme from '@/components/UIBreakpoints';
+import breakpointsTheme from '@/components/ui-breakpoints';
 
 export default {
   buttonSkeleton: {

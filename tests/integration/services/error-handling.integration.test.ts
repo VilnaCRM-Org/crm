@@ -1,13 +1,13 @@
 import '../setup';
-import { ErrorHandler } from '@/services/error/ErrorHandler';
-import ErrorParser from '@/utils/error/error-parser';
 import {
   ApiError,
   AuthenticationError,
   ConflictError,
   ValidationError,
   ApiErrorCodes,
-} from '@auth/api/ApiErrors';
+} from '@/modules/user/types/api-errors';
+import { ErrorHandler } from '@/services/error/error-handler';
+import ErrorParser from '@/utils/error/error-parser';
 
 describe('ApiError classes', () => {
   describe('ApiError', () => {

@@ -36,7 +36,7 @@ same Docker-backed environment and avoid host-specific drift.
    ```
 
 3. **Add translations** - Always provide both `en.json` and `uk.json`
-4. **Register services** - If needed, add to `src/config/DependencyInjectionConfig.ts`
+4. **Register services** - If needed, add to `src/config/dependency-injection-config.ts`
 5. **Add tests** - Unit tests in `tests/unit/`, E2E in `tests/e2e/`
 6. **Run linters** - `make lint` before committing
 
@@ -310,8 +310,8 @@ make pr-comments > review-comments.txt
 #   - Update component to use it
 #   - Commit: "refactor: extract email validation to helper function"
 
-git add src/modules/User/features/Auth/helpers/validators.ts
-git add src/modules/User/features/Auth/components/LoginForm.tsx
+git add src/modules/user/features/auth/helpers/validators.ts
+git add src/modules/user/features/auth/components/LoginForm.tsx
 git commit -m "refactor: extract email validation to helper function
 
 Per review suggestion in PR #123"
@@ -386,9 +386,9 @@ const handleSubmit = (data: LoginFormData) => { ... }
 **Solution**:
 
 ```typescript
-// Create: src/modules/User/features/Auth/hooks/useLoginForm.ts
+// Create: src/modules/user/features/auth/hooks/useLoginForm.ts
 // Update component to use hook
-// Add tests: tests/unit/modules/User/features/Auth/hooks/useLoginForm.test.ts
+// Add tests: tests/unit/modules/user/features/auth/hooks/useLoginForm.test.ts
 ```
 
 #### Pattern 4: Error Handling
@@ -419,7 +419,7 @@ try {
 **Solution**:
 
 ```typescript
-// Add to src/modules/User/features/Auth/i18n/en.json
+// Add to src/modules/user/features/auth/i18n/en.json
 {
   "login.title": "Sign In",
   "login.submit": "Log In"
@@ -454,7 +454,7 @@ export class MyService {
   }
 }
 
-// 3. Register in src/config/DependencyInjectionConfig.ts
+// 3. Register in src/config/dependency-injection-config.ts
 container.registerSingleton<MyService>(TOKENS.MyService, MyService);
 
 // 4. Use in Redux thunks
@@ -512,8 +512,8 @@ const moduleSlice = createSlice({
 
 ```typescript
 // Check error type
-import { isAPIError } from '@/modules/User/features/Auth/api/ApiErrors';
-import { ValidationError } from '@/modules/User/features/Auth/api/ApiErrors/ValidationError';
+import { isAPIError } from '@/modules/user/features/auth/api/api-errors';
+import { ValidationError } from '@/modules/user/features/auth/api/api-errors/validation-error';
 
 if (isAPIError(error)) {
   if (error instanceof ValidationError) {

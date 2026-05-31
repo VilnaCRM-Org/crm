@@ -9,7 +9,7 @@ ENV BUN_INSTALL=/root/.bun
 ENV PATH="/root/.bun/bin:$PATH"
 
 WORKDIR /app
-COPY package.json bun.lock* checkNodeVersion.js ./
+COPY package.json bun.lock* check-node-version.js ./
 COPY docker docker
 RUN bun install --frozen-lockfile && \
     node ./node_modules/typescript/bin/tsc --project ./docker/apollo-server/tsconfig.server.json

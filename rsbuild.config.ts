@@ -50,7 +50,7 @@ export default defineConfig({
       resolve: {
         alias: {
           '@': path.resolve(__dirname, 'src'),
-          '@auth': path.resolve(__dirname, 'src/modules/User/features/Auth'),
+          '@auth': path.resolve(__dirname, 'src/modules/user/features/auth'),
         },
       },
       experiments: {
