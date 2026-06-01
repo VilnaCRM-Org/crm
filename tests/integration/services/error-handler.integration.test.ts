@@ -101,4 +101,23 @@ describe('ErrorHandler Coverage Tests', () => {
       consoleSpy.mockRestore();
     }
   });
+
+  it('exposes instance methods that delegate to the static handlers', () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    try {
+      const handler = new ErrorHandler();
+      const parsedError = {
+        code: 'NETWORK_ERROR',
+        message: 'Network failed',
+      };
+
+      const result = handler.handleAuthError(parsedError);
+      handler.handle(new Error('instance handle'));
+
+      expect(result.displayMessage).toBeTruthy();
+      expect(consoleSpy).toHaveBeenCalledWith('[ErrorHandler]', expect.any(Error));
+    } finally {
+      consoleSpy.mockRestore();
+    }
+  });
 });
