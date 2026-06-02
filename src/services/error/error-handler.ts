@@ -1,6 +1,8 @@
 import { ERROR_CODES, type ErrorCode } from '@/services/error/error-codes';
 import ParsedError from '@/utils/error/types';
 
+export type ErrorLogger = Pick<Console, 'error'>;
+
 export interface UiError {
   readonly displayMessage: string;
   readonly retryable: boolean;
@@ -67,6 +69,12 @@ const errorMap: Record<ErrorCode, UiError> = {
 };
 
 export class ErrorHandler {
+  private static logger: ErrorLogger = console;
+
+  public static setLogger(logger?: ErrorLogger): void {
+    ErrorHandler.logger = logger ?? console;
+  }
+
   public static handleAuthError(error: ParsedError): UiError {
     return (
       errorMap[error.code as ErrorCode] ?? {
@@ -77,7 +85,7 @@ export class ErrorHandler {
   }
 
   public static handle(error: unknown): void {
-    console.error('[ErrorHandler]', error);
+    ErrorHandler.logger.error('[ErrorHandler]', error);
   }
 
   public handleAuthError(error: ParsedError): UiError {

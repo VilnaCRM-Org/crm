@@ -16,3 +16,36 @@ export const RegistrationResponseSchema = z.object({
 
 export type RegistrationResponse = z.infer<typeof RegistrationResponseSchema>;
 export type SafeUserInfo = RegistrationResponse;
+
+type ValidationResult<T> = { success: true; data: T } | { success: false; errors: string[] };
+
+type SafeParseLike<T> = { success: true; data: T } | { success: false; error: z.ZodError };
+
+const formatIssue = (issue: z.ZodIssue): string => {
+  const pathLabel = issue.path.join('.') || 'value';
+
+  if (issue.code === 'invalid_type') {
+    return `${pathLabel}: expected ${issue.expected}`;
+  }
+
+  return `${pathLabel}: ${issue.message}`;
+};
+
+const toValidationResult = <T>(parsed: SafeParseLike<T>): ValidationResult<T> => {
+  if (parsed.success) {
+    return { success: true, data: parsed.data };
+  }
+
+  return {
+    success: false,
+    errors: parsed.error.issues.map(formatIssue),
+  };
+};
+
+export const validateLoginResponse = (value: unknown): ValidationResult<LoginResponse> =>
+  toValidationResult(LoginResponseSchema.safeParse(value));
+
+export const validateRegistrationResponse = (
+  value: unknown
+): ValidationResult<RegistrationResponse> =>
+  toValidationResult(RegistrationResponseSchema.safeParse(value));

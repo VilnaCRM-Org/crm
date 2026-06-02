@@ -33,7 +33,7 @@ WORKDIR /app
 
 FROM base AS build
 
-COPY package.json bun.lock* check-node-version.js ./
+COPY package.json bun.lock* check-node-version.js .env ./
 RUN bun install
 
 

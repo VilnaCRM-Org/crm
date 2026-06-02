@@ -29,7 +29,7 @@ export default function useRegistrationForm(
 ): UseRegistrationFormResult {
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectRegistrationUser);
-  const isSubmitting = useAppSelector(selectRegistrationLoading);
+  const loading = useAppSelector(selectRegistrationLoading);
   const error = useAppSelector(selectRegistrationError);
 
   const [view, setView] = useState<RegistrationView>('form');
@@ -39,6 +39,9 @@ export default function useRegistrationForm(
   useEffect(() => {
     onViewChange?.(view);
   }, [onViewChange, view]);
+
+  const isSubmitting = loading;
+
   useRegistrationViewSync({ user, error, isSubmitting, setView });
 
   const handlers = useRegistrationHandlers({

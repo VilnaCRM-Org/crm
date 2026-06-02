@@ -14,7 +14,7 @@ type TestStore = {
   getState: () => { registration: RegistrationState };
 };
 
-describe('registrationSlice reducer and thunk coverage', () => {
+describe('registration-slice reducer and thunk coverage', () => {
   const loginAPI = { login: jest.fn() } as unknown as LoginAPI;
   const registrationAPI = { register: jest.fn() } as unknown as RegistrationAPI;
 

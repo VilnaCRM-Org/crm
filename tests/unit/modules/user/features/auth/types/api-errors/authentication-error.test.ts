@@ -116,16 +116,32 @@ describe('AuthenticationError', () => {
       expect(typeof error.stack).toBe('string');
     });
 
+    it('should pass the concrete subclass to captureStackTrace', () => {
+      const originalCapture = Error.captureStackTrace;
+      const captureStackTraceSpy = jest.fn();
+
+      Error.captureStackTrace = captureStackTraceSpy as typeof Error.captureStackTrace;
+
+      try {
+        const error = new AuthenticationError();
+
+        expect(captureStackTraceSpy).toHaveBeenCalledWith(error, AuthenticationError);
+      } finally {
+        Error.captureStackTrace = originalCapture;
+      }
+    });
+
     it('should include error message in stack', () => {
       const error = new AuthenticationError('Custom auth error');
 
       expect(error.stack).toContain('Custom auth error');
     });
 
-    it('should include AuthenticationError in stack', () => {
+    it('should omit AuthenticationError constructor frames from stack', () => {
       const error = new AuthenticationError();
+      const frames = (error.stack ?? '').split('\n').slice(1).join('\n');
 
-      expect(error.stack).toContain('AuthenticationError');
+      expect(frames).not.toMatch(/at new AuthenticationError\b/);
     });
   });
 
