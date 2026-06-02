@@ -100,7 +100,7 @@ describe('UIFormInputField controller branches', () => {
     };
   });
 
-  it('omits defaultValue from Controller when none is provided and forwards helperText to TextField', () => {
+  it('omits defaultValue from Controller and forwards helperText to TextField', () => {
     render(
       <UIFormInputField
         autoComplete="email"

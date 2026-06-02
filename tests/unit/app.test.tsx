@@ -71,7 +71,7 @@ describe('App', () => {
     document.documentElement.dir = '';
   });
 
-  it('renders the authentication route and falls back to ltr when i18n.dir is unavailable', async () => {
+  it('renders the auth route and falls back to ltr when i18n.dir is unavailable', async () => {
     mockI18n = {
       language: 'en',
     };

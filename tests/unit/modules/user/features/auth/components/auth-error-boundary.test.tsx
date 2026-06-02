@@ -3,6 +3,18 @@ import type { ErrorInfo, ReactElement, ReactNode } from 'react';
 
 import AuthErrorBoundary from '@/modules/user/features/auth/components/auth-error-boundary';
 
+const translations = {
+  'auth.error.default': 'Something went wrong. Please try again later.',
+  'auth.error.details': 'Error Details',
+  'auth.error.tryAgain': 'Try again',
+} as const;
+
+jest.mock('react-i18next', () => ({
+  useTranslation: (): { t: (key: string) => string } => ({
+    t: (key: string): string => translations[key as keyof typeof translations] ?? key,
+  }),
+}));
+
 function ThrowingChild({ error }: { error: Error }): ReactElement {
   throw error;
 }
@@ -94,7 +106,7 @@ describe('AuthErrorBoundary', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('supports fallback render functions and wires the reset handler to the try again button', () => {
+  it('supports fallback render functions and wires reset to the try again button', () => {
     const fallbackRenderer = jest.fn(
       ({ error }: { error?: Error; reset: () => void }): ReactElement => (
         <span>{error?.message}</span>

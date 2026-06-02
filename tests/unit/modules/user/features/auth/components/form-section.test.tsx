@@ -10,13 +10,30 @@ type LoginFormModule =
   typeof import('@/modules/user/features/auth/components/form-section/auth-forms/login-form');
 
 const uiButtonMock = jest.fn();
-const mockLoginFormDefault = (): ReactElement => <div data-testid="login-form" />;
-const mockNormalizeLoginErrorMessage = jest.fn(() => 'auth.errors.unknown');
-const loadLoginFormMock = jest.fn(
-  async (): Promise<LoginFormModule> => ({
+let triggerRegistrationSuccessView: (() => void) | null = null;
+
+function mockLoginFormDefault(): ReactElement {
+  return <div data-testid="login-form" />;
+}
+
+function getLoginErrorMessageNormalizer(): LoginFormModule['LoginErrorMessageNormalizer'] {
+  return jest.requireActual(
+    '@/modules/user/features/auth/components/form-section/auth-forms/login-error-message'
+  ).default as LoginFormModule['LoginErrorMessageNormalizer'];
+}
+
+function createMockLoginFormModule(): LoginFormModule {
+  return {
     default: mockLoginFormDefault,
-    normalizeLoginErrorMessage: mockNormalizeLoginErrorMessage,
-  })
+    LoginErrorMessageNormalizer: getLoginErrorMessageNormalizer(),
+  };
+}
+
+function handleTriggerRegistrationSuccess(): void {
+  triggerRegistrationSuccessView?.();
+}
+const loadLoginFormMock = jest.fn(
+  async (): Promise<LoginFormModule> => createMockLoginFormModule()
 );
 
 jest.mock('react-i18next', () => ({
@@ -76,22 +93,24 @@ jest.mock(
   '@/modules/user/features/auth/components/form-section/auth-forms/registration-form',
   () => ({
     __esModule: true,
-    default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => (
-      <div data-testid="registration-form">
-        <button
-          type="button"
-          data-testid="trigger-success-view"
-          onClick={() => onViewChange?.('success')}
-        />
-      </div>
-    ),
+    default: ({ onViewChange }: { onViewChange?: (view: string) => void }): ReactElement => {
+      triggerRegistrationSuccessView = (): void => onViewChange?.('success');
+      return (
+        <div data-testid="registration-form">
+          <button
+            type="button"
+            data-testid="trigger-success-view"
+            onClick={handleTriggerRegistrationSuccess}
+          />
+        </div>
+      );
+    },
   })
 );
 
 jest.mock('@/modules/user/features/auth/components/form-section/auth-forms/login-form', () => ({
   __esModule: true,
-  default: mockLoginFormDefault,
-  normalizeLoginErrorMessage: mockNormalizeLoginErrorMessage,
+  ...createMockLoginFormModule(),
 }));
 
 jest.mock(
@@ -102,7 +121,8 @@ jest.mock(
   })
 );
 
-let FormSection!: (typeof import('@/modules/user/features/auth/components/form-section'))['default'];
+type FormSectionModule = typeof import('@/modules/user/features/auth/components/form-section');
+let FormSection!: FormSectionModule['default'];
 
 describe('FormSection', () => {
   beforeAll(async () => {
@@ -112,6 +132,7 @@ describe('FormSection', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    triggerRegistrationSuccessView = null;
     document.body.replaceChildren();
   });
 
@@ -156,7 +177,7 @@ describe('FormSection', () => {
     expect(view.getByText('sign_up.form.switcher_text_no_account')).toBeInTheDocument();
   });
 
-  it('disables the switcher and ignores repeated clicks while the login form is loading', async () => {
+  it('disables the switcher and ignores repeated clicks while login is loading', async () => {
     let resolveLoginForm: ((value: LoginFormModule) => void) | undefined;
 
     loadLoginFormMock.mockImplementationOnce(
@@ -185,10 +206,7 @@ describe('FormSection', () => {
 
     expect(loadLoginFormMock).toHaveBeenCalledTimes(1);
 
-    resolveLoginForm?.({
-      default: mockLoginFormDefault,
-      normalizeLoginErrorMessage: mockNormalizeLoginErrorMessage,
-    });
+    resolveLoginForm?.(createMockLoginFormModule());
 
     await waitFor(() => {
       expect(view.getByTestId('login-form')).toBeInTheDocument();
@@ -234,7 +252,7 @@ describe('FormSection', () => {
     expect(view.queryByTestId('login-form')).not.toBeInTheDocument();
   });
 
-  it('shows an inline error and keeps registration visible when the login form fails to load', async () => {
+  it('shows inline error and keeps registration visible when login fails to load', async () => {
     loadLoginFormMock.mockRejectedValueOnce(new Error('chunk load failed'));
 
     const view = render(<FormSection />);

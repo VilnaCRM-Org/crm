@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 
 import i18n from './i18n';
 
+const noop = (): void => undefined;
+
 export default function ButtonExample(): JSX.Element {
   const { t } = useTranslation();
 
@@ -10,10 +12,8 @@ export default function ButtonExample(): JSX.Element {
     document.documentElement.dir = i18n.dir?.() || 'ltr';
   }, []);
 
-  const handleClick = (): void => undefined;
-
   return (
-    <button type="button" onClick={handleClick}>
+    <button type="button" onClick={noop}>
       {t('hello')}
     </button>
   );

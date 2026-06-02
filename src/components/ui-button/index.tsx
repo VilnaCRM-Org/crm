@@ -1,6 +1,6 @@
 import { ThemeProvider, Button } from '@mui/material';
 import { ButtonProps } from '@mui/material/Button';
-import * as React from 'react';
+import React from 'react';
 
 import Theme from './theme';
 
@@ -37,19 +37,18 @@ const UIButton = React.forwardRef<
 ): React.ReactElement {
   const linkTarget = resolveLinkTarget(to) ?? href;
   const resolvedComponent = component ?? (linkTarget ? 'a' : 'button');
-  const buttonProps = {
-    ...rest,
-    ref,
-    component: resolvedComponent,
-    href: linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined,
-    type: resolvedComponent === 'button' ? type : undefined,
-  };
-
-  return (
-    <ThemeProvider theme={Theme}>
-      {React.createElement(Button, buttonProps, children)}
-    </ThemeProvider>
+  const baseButton = (
+    <Button
+      ref={ref}
+      component={resolvedComponent}
+      href={linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined}
+      type={resolvedComponent === 'button' ? type : undefined}
+    >
+      {children}
+    </Button>
   );
+
+  return <ThemeProvider theme={Theme}>{React.cloneElement(baseButton, rest)}</ThemeProvider>;
 });
 UIButton.displayName = 'UIButton';
 export default UIButton;

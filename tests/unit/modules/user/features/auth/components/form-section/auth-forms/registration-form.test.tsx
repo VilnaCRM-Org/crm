@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 
-import RegistrationForm from '@/modules/user/features/auth/components/form-section/auth-forms/registration-form';
+import RegistrationForm from '@auth/components/form-section/auth-forms/registration-form';
 
 type FormState = {
   view: 'form' | 'success' | 'error';
@@ -103,7 +103,7 @@ describe('RegistrationForm', () => {
     expect(screen.getByTestId('inert-box')).toHaveAttribute('data-inert', 'false');
   });
 
-  it('marks the inert box as inert, disables submit, and shows the notification when not on form view', async () => {
+  it('disables submit and shows the notification when not on form view', async () => {
     mockFormState.view = 'success';
 
     render(<RegistrationForm />);

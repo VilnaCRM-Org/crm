@@ -54,7 +54,7 @@ function TestField(): JSX.Element {
 }
 
 describe('UIForm', () => {
-  it('uses the form submitting state and resets values after a successful submit when requested', async () => {
+  it('uses submitting state and resets values after a successful submit', async () => {
     let resolveSubmit!: () => void;
     const onSubmit = jest.fn(
       () =>
