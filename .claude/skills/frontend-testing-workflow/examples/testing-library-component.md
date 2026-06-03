@@ -1,9 +1,30 @@
 # Testing Library Component Example
 
+The component is defined inline here so the snippet is self-contained and runnable:
+
 ```typescript
+import { Button } from '@mui/material';
 import { render, screen } from '@testing-library/react';
 import i18next from 'i18next';
-import { I18nextProvider, initReactI18next } from 'react-i18next';
+import { I18nextProvider, initReactI18next, useTranslation } from 'react-i18next';
+
+interface ProfileSavePanelProps {
+  isSaving: boolean;
+  onSave: () => void;
+}
+
+function ProfileSavePanel({ isSaving, onSave }: ProfileSavePanelProps) {
+  const { t } = useTranslation();
+
+  return (
+    <section aria-labelledby="profile-save-title">
+      <h2 id="profile-save-title">{t('profile.save.title')}</h2>
+      <Button type="button" onClick={onSave} disabled={isSaving}>
+        {t('profile.save.button')}
+      </Button>
+    </section>
+  );
+}
 
 const i18n = i18next.createInstance();
 
