@@ -58,7 +58,17 @@ If you find an issue to work on, you are welcome to open a PR with a fix.
 
 1. Install or update to **Docker** and **Docker compose**. For more information, see [the README](README.md).
 
-2. Create a working branch and start with your changes!
+2. Install **GNU Make 4.0+** so the repository Make targets behave the same locally and in CI.
+   On macOS, install it with Homebrew:
+
+   ```bash
+   brew install make
+   ```
+
+   If Homebrew installs GNU Make as `gmake`, use `gmake` in place of `make` for the commands
+   below.
+
+3. Create a working branch and start with your changes!
 
 ### Commit your update
 
@@ -67,9 +77,40 @@ Don't forget to self-review to speed up the review process:zap:.
 
 Our commits are based on [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 
+### Make targets as contracts
+
+Repository `make` targets are public workflow contracts. A target must do what its name promises
+completely and reliably instead of expecting contributors or CI to remember extra manual setup
+steps.
+
+When you change or add a public target:
+
+- keep the target behavior aligned with its user-facing name
+- prefer composing existing targets instead of duplicating shell logic
+- update `make help` text when the user-facing behavior changes
+- update README and CONTRIBUTING when the documented workflow changes
+- preserve the canonical entrypoints contributors and CI already rely on, or document the migration
+  explicitly in the same change
+
 ### Pull Request
 
 When you're finished with the changes, create a pull request, also known as a PR.
+
+Before opening the PR, run the canonical local CI command:
+
+```bash
+make ci
+```
+
+`make ci` runs the same checks CI enforces across its workflows. At a high level it runs shared
+environment setup, linting, dev-side tests, prod-side setup, and prod-side automated checks.
+
+If you are updating older local scripts, aliases, or onboarding notes, migrate them to the current
+contracts in the same change:
+
+- treat `make start` as the full local stack entrypoint for both the frontend and Mockoon
+- replace older ad hoc CI command chains with `make ci`
+- point contributor-facing automation at those targets so local workflows stay aligned with CI
 
 - Fill the "Ready for review" template so that we can
   review your PR. This template helps reviewers understand your changes as well

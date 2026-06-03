@@ -51,6 +51,15 @@ Before running the application, make sure the following tools are installed on y
   Docker applications. Docker Compose is essential for starting up the
   development environment and running the services defined in docker-compose.yml.
 
+- **GNU Make 4.0+** is required for the repository Make targets. Linux environments usually already
+  provide a compatible version. On macOS, install a newer Make with Homebrew:
+
+  ```bash
+  brew install make
+  ```
+
+  If Homebrew installs GNU Make as `gmake`, use `gmake` anywhere this documentation says `make`.
+
 - **[Bun](https://bun.sh/)** used as the package manager (Node.js remains the runtime). Bun uses the
   `bun.lock` file to keep dependency resolutions consistent while delivering fast installs.
 
@@ -66,15 +75,31 @@ After installing all prerequisites, you can start the application inside a Docke
 
 The command will:
 
-- Build and start the project inside a Docker container named `dev`.
+- Build and start the shared local development stack inside Docker containers named `dev` and
+  `mockoon`.
 - Use the dependencies already baked into the dev image (mounted via a named `node_modules`
   volume) instead of reinstalling on every start.
-- The application will be up and running.
+- Wait for both readiness checks before returning: the frontend dev server and the Mockoon API
+  mock.
+- Expose the frontend at port `3000` and the mock API at port `8080`.
 
 > First-time setup: run `make create-network` to create the external `crm-network` before
 > using `docker compose` directly. `make start` runs this automatically.
 
-Access the application at <http://localhost:3000>.
+After startup completes:
+
+- Frontend: <http://localhost:3000>
+- Mockoon API mock: <http://localhost:8080>
+
+### Migration Note for Existing Contributors
+
+If you previously used `make start` expecting only the frontend dev container, update that mental
+model now: `make start` is the full local development entrypoint and starts both the frontend and
+Mockoon together.
+
+If you have local shell aliases, editor tasks, or scripts that used to compose older CI commands
+manually, replace them with `make ci`. That target is now the supported contract for pre-push and
+GitHub Actions validation.
 
 ## Project Commands
 
@@ -120,12 +145,38 @@ dependencies.
 Testing
 
 ```bash
+  make ci: runs the full local CI flow (setup, lint, tests, and prod-side checks)
   make test-unit-all: runs unit tests for both client and server environments
   make test-unit-client: runs unit tests for the client using Jest
   make test-unit-server: runs unit tests for the server using Jest
   make test-memory-leak: runs memory leak tests using Memlab
   make test-load: executes load tests using the K6 library
 ```
+
+### Run Local CI Before Pushing
+
+Use `make ci` as the canonical pre-push validation command:
+
+```bash
+  make ci
+```
+
+Running `make ci` locally exercises the same checks CI runs across its workflows, so passing it
+before pushing means your changes should pass CI.
+
+Migration guidance for existing contributors:
+
+- replace older local CI command chains or custom wrappers with `make ci`
+- expect `make ci` to cover both dev-side and prod-side checks instead of only lint or unit phases
+- keep any local automation pointed at `make ci`
+
+At a user-facing level, `make ci` runs these phases in order:
+
+- environment setup for the shared dev stack
+- lint checks
+- dev-side automated tests
+- production-like setup for Chromium and the prod stack
+- production-side automated tests, including end-to-end, visual, load, memory-leak, and Lighthouse checks
 
 Runs tests inside the Playwright container, targeting the production container:
 
@@ -139,13 +190,14 @@ Runs tests inside the Playwright container, targeting the production container:
 ### Important Note About Swagger E2E Tests
 
 For Swagger E2E tests, the application uses Mockoon to handle API requests.
-Mockoon serves as a mock API server that automatically starts when running E2E tests.
+Mockoon serves as a mock API server for both local development and E2E-style workflows.
 It uses the OpenAPI specification from the user-service repository and runs on port 8080
 within the Docker test network. The mock server provides consistent API responses
 during automated testing without requiring a real backend connection.
 
-To run tests locally, the Mockoon mock server is automatically started via
-`make test-e2e`. For manual setup, see the Mockoon configuration in
+For local development, `make start` brings up Mockoon alongside the frontend stack. Test-oriented
+targets such as `make test-e2e` and `make start-prod` also bring up the mock server through their
+own shared startup paths. For container-level configuration details, see `docker-compose.yml` and
 `docker-compose.test.yml`.
 
 Lighthouse
