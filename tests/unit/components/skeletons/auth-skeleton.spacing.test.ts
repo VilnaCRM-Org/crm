@@ -5,9 +5,9 @@ import {
   MD_INPUT_HEIGHT,
   XL_INPUT_HEIGHT,
 } from '@/components/skeletons/ui-skeleton-input/styles';
-import breakpointsTheme from '@/components/UIBreakpoints';
-import uiFormStyles from '@/components/UIForm/styles';
-import authProviderButtonStyles from '@auth/components/form-section/components/auth-provider-buttons/styles';
+import breakpointsTheme from '@/components/ui-breakpoints';
+import uiFormStyles from '@/components/ui-form/styles';
+import providerStyles from '@auth/components/form-section/components/auth-provider-buttons/styles';
 import formFieldStyles from '@auth/components/form-section/components/styles';
 import authFormSectionStyles, { fieldGapMargins } from '@auth/components/form-section/styles';
 
@@ -331,7 +331,7 @@ describe('AuthSkeleton spacing parity', () => {
         effectiveHeight(formSubmit, breakpoint) +
         toRem(
           valueAt(
-            authProviderButtonStyles.thirdPartyWrapper as Record<string, unknown>,
+            providerStyles.thirdPartyWrapper as Record<string, unknown>,
             'marginTop',
             breakpoint
           )

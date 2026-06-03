@@ -8,10 +8,11 @@ import { BrowserRouter } from 'react-router-dom';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import i18n from '@/i18n';
-import { loginReducer, registrationReducer } from '@/modules/User/store';
-import type { ThunkExtra } from '@/modules/User/store/types';
-import type LoginAPI from '@auth/api/login-api';
-import type RegistrationAPI from '@auth/api/registration-api';
+import type LoginAPI from '@/modules/user/features/auth/repositories/login-api';
+import type RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
+import { loginReducer, registrationReducer } from '@/modules/user/store';
+import type { ThunkExtra } from '@/modules/user/store/types';
+import type { RootState } from '@/stores';
 
 type TestRootState = {
   auth: ReturnType<typeof loginReducer>;
@@ -19,7 +20,7 @@ type TestRootState = {
 };
 
 interface ExtendedRenderOptions extends Omit<RenderOptions, 'queries'> {
-  preloadedState?: Partial<TestRootState>;
+  preloadedState?: Partial<RootState>;
   store?: EnhancedStore<TestRootState>;
 }
 
@@ -47,7 +48,7 @@ export function renderWithProviders(
             } as ThunkExtra,
           },
         }),
-      preloadedState,
+      preloadedState: preloadedState as never,
     }),
     ...renderOptions
   }: ExtendedRenderOptions = {}

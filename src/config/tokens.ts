@@ -13,6 +13,7 @@ const TOKENS = Object.freeze({
   HttpClientFactory: Symbol('HttpClientFactory'),
   DevToolsRedactor: Symbol('DevToolsRedactor'),
   DevToolsOptionsFactory: Symbol('DevToolsOptionsFactory'),
+  AuthClients: Symbol('AuthClients'),
 } as const);
 
 export default TOKENS;

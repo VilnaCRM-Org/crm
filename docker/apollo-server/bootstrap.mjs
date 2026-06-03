@@ -26,7 +26,7 @@ const commonArgs = process.execArgv ?? [];
 
 const { done: fetchDone } = run(nodeExec, [
   ...commonArgs,
-  resolve(__dirname, 'out/schemaFetcher.mjs'),
+  resolve(__dirname, 'out/schema-fetcher.mjs'),
 ]);
 await fetchDone;
 

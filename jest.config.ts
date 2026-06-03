@@ -51,7 +51,7 @@ const config: Config = {
       ? ['<rootDir>/docker/apollo-server/lib/**/*.{ts,mts}', '!**/*.d.ts']
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
-          '<rootDir>/scripts/localizationGenerator.js',
+          '<rootDir>/scripts/localization-generator.js',
           '!<rootDir>/src/**/types/**',
           '!<rootDir>/src/**/types.ts',
           '!<rootDir>/src/**/theme.ts',
@@ -78,7 +78,7 @@ const config: Config = {
   modulePathIgnorePatterns: ['<rootDir>/.stryker-tmp/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mts', 'json', 'node'],
   moduleNameMapper: {
-    '^@auth/(.*)$': '<rootDir>/src/modules/User/features/Auth/$1',
+    '^@auth/(.*)$': '<rootDir>/src/modules/user/features/auth/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.+)\\.js$': '$1',
   },

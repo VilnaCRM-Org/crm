@@ -1,13 +1,13 @@
 import '../setup';
-import { ErrorHandler } from '@/services/error/ErrorHandler';
-import ErrorParser from '@/utils/error/error-parser';
 import {
   ApiError,
   AuthenticationError,
   ConflictError,
   ValidationError,
   ApiErrorCodes,
-} from '@auth/api/ApiErrors';
+} from '@/modules/user/types/api-errors';
+import { ErrorHandler } from '@/services/error/error-handler';
+import ErrorParser from '@/utils/error/error-parser';
 
 describe('ApiError classes', () => {
   describe('ApiError', () => {
@@ -154,54 +154,55 @@ describe('ApiError classes', () => {
 });
 
 describe('ErrorHandler', () => {
-  let consoleErrorSpy: jest.SpyInstance;
+  let logger: { error: jest.Mock };
 
   beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    logger = { error: jest.fn() };
+    ErrorHandler.setLogger(logger);
   });
 
   afterEach(() => {
-    consoleErrorSpy.mockRestore();
+    ErrorHandler.setLogger(undefined);
   });
 
   it('should handle Error instance', () => {
     const error = new Error('Test error');
     ErrorHandler.handle(error);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('should handle string error', () => {
     const error = 'String error';
     ErrorHandler.handle(error);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('should handle null error', () => {
     ErrorHandler.handle(null);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', null);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', null);
   });
 
   it('should handle undefined error', () => {
     ErrorHandler.handle(undefined);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', undefined);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', undefined);
   });
 
   it('should handle object error', () => {
     const error = { message: 'Object error', code: 123 };
     ErrorHandler.handle(error);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('should handle ApiError', () => {
     const error = new ApiError({ message: 'API error', code: ApiErrorCodes.SERVER, status: 500 });
     ErrorHandler.handle(error);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 });
 

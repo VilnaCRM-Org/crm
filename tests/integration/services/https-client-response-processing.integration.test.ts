@@ -1,9 +1,11 @@
 import '../setup';
-import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
-import HttpErrorResponseParser from '@/services/HttpsClient/http-error-response-parser';
-import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
-import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
-import { HttpError } from '@/services/HttpsClient/HttpError';
+import FetchHttpsClient from '@/services/https-client/fetch-https-client';
+import { HttpError } from '@/services/https-client/http-error';
+import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
+import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
+import HttpResponseProcessor, {
+  throwIfHttpError as throwIfHttpErrorFromProcessor,
+} from '@/services/https-client/http-response-processor';
 
 const createClient = (): FetchHttpsClient =>
   new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
@@ -198,21 +200,25 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       const parser = new HttpErrorResponseParser();
       const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
 
-      await expect(
-        parser.parse({
-          headers: { get: () => 'application/json' },
-          clone: () => {
-            throw new Error('clone failed');
-          },
-        } as unknown as Response)
-      ).resolves.toEqual({ message: 'clone failed', body: undefined });
+      try {
+        await expect(
+          parser.parse({
+            headers: { get: () => 'application/json' },
+            clone: () => {
+              throw new Error('clone failed');
+            },
+          } as unknown as Response)
+        ).resolves.toEqual({ message: 'clone failed', body: undefined });
 
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Failed to parse HTTP error response',
-        expect.objectContaining({
-          message: 'clone failed',
-        })
-      );
+        expect(debugSpy).toHaveBeenCalledWith(
+          'Failed to parse HTTP error response',
+          expect.objectContaining({
+            message: 'clone failed',
+          })
+        );
+      } finally {
+        debugSpy.mockRestore();
+      }
     });
 
     it('handles a non-Error value thrown while cloning the response', async () => {
@@ -220,44 +226,48 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
       const thrown: unknown = 'string failure';
 
-      await expect(
-        parser.parse({
-          headers: { get: () => 'text/plain' },
-          clone: () => {
-            throw thrown;
-          },
-        } as unknown as Response)
-      ).resolves.toEqual({ message: 'string failure', body: undefined });
+      try {
+        await expect(
+          parser.parse({
+            headers: { get: () => 'text/plain' },
+            clone: () => {
+              throw thrown;
+            },
+          } as unknown as Response)
+        ).resolves.toEqual({ message: 'string failure', body: undefined });
 
-      expect(debugSpy).toHaveBeenCalledWith(
-        'Failed to parse HTTP error response',
-        expect.objectContaining({ message: 'string failure', stack: undefined })
-      );
+        expect(debugSpy).toHaveBeenCalledWith(
+          'Failed to parse HTTP error response',
+          expect.objectContaining({ message: 'string failure', stack: undefined })
+        );
+      } finally {
+        debugSpy.mockRestore();
+      }
     });
 
     it('loads HTTP helpers when reflected constructor types are unavailable', () => {
       for (const mockPath of [
-        '@/services/HttpsClient/http-request-config-builder',
-        '@/services/HttpsClient/http-response-processor',
+        '@/services/https-client/http-request-config-builder',
+        '@/services/https-client/http-response-processor',
       ]) {
         jest.isolateModules(() => {
           jest.doMock(mockPath, () => ({ __esModule: true, default: undefined }));
 
-          expect(require('@/services/HttpsClient/fetch-https-client')).toBeDefined();
+          expect(require('@/services/https-client/fetch-https-client')).toBeDefined();
 
           jest.dontMock(mockPath);
         });
       }
 
       jest.isolateModules(() => {
-        jest.doMock('@/services/HttpsClient/http-error-response-parser', () => ({
+        jest.doMock('@/services/https-client/http-error-response-parser', () => ({
           __esModule: true,
           default: undefined,
         }));
 
-        expect(require('@/services/HttpsClient/http-response-processor')).toBeDefined();
+        expect(require('@/services/https-client/http-response-processor')).toBeDefined();
 
-        jest.dontMock('@/services/HttpsClient/http-error-response-parser');
+        jest.dontMock('@/services/https-client/http-error-response-parser');
       });
     });
   });
@@ -378,6 +388,69 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       await expect(client.get('/test')).rejects.toThrow(HttpError);
       await expect(client.get('/test')).rejects.toThrow('Network error');
+    });
+
+    it('throws an HttpError for non-ok responses via the response parser', async () => {
+      const errorPayload = { message: 'Service down' };
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 503,
+        statusText: 'Service Unavailable',
+        url: '/svc',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        clone: () => ({ json: async (): Promise<unknown> => errorPayload }),
+      } as unknown as Response);
+
+      await expect(client.get('/svc')).rejects.toMatchObject({
+        status: 503,
+        message: 'Service down',
+        cause: { contentType: 'application/json', url: '/svc' },
+      });
+    });
+
+    it('uses the default HttpErrorResponseParser when none is injected', async () => {
+      const processor = new HttpResponseProcessor();
+      const okResponse = {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        clone: () => ({ text: async (): Promise<string> => '{"value":42}' }),
+        json: async (): Promise<unknown> => ({ value: 42 }),
+      } as unknown as Response;
+
+      await expect(processor.process<{ value: number }>(okResponse)).resolves.toEqual({
+        value: 42,
+      });
+    });
+
+    it('throwIfHttpError uses a default response parser when none is supplied', async () => {
+      const errorResponse = {
+        ok: false,
+        status: 500,
+        statusText: 'Server Error',
+        url: '/api/x',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        clone: () => ({ json: async (): Promise<unknown> => ({ message: 'kaboom' }) }),
+      } as unknown as Response;
+
+      await expect(throwIfHttpErrorFromProcessor(errorResponse)).rejects.toMatchObject({
+        status: 500,
+        message: 'kaboom',
+      });
+    });
+
+    it('allows injecting a custom HttpErrorResponseParser', async () => {
+      const parser = new HttpErrorResponseParser();
+      const processor = new HttpResponseProcessor(parser);
+
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 204,
+        headers: new Headers(),
+      } as Response);
+
+      const response = await global.fetch('/test');
+      await expect(processor.process(response)).resolves.toBeUndefined();
     });
   });
 });

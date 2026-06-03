@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 import {
   interceptAuthFormChunks,
   AUTH_ASYNC_JS_GLOB,
-} from '../../../utils/interceptAuthFormChunks';
+} from '../../../utils/intercept-auth-form-chunks';
 
 const AUTH_URL = '/authentication';
 
@@ -53,7 +53,8 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
     });
 
     test('should have accessible loading label on skeleton section', async ({ page }) => {
-      const section = page.locator('section[aria-label="Завантаження форми автентифікації"]');
+      const ariaLabel = 'Завантаження форми автентифікації';
+      const section = page.locator(`section[aria-label="${ariaLabel}"]`);
       await expect(section).toBeVisible({ timeout: 5000 });
     });
 
@@ -97,7 +98,8 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
       page.on('response', (response) => {
         const status = response.status();
         if (status >= 300 && status < 400) return;
-        // The auth page can trigger an expected 400 from the user API during form bootstrap in test mode.
+        // The auth page can trigger an expected 400 from the user API
+        // during form bootstrap in test mode.
         if (status === 400 && response.url().includes('/api/users')) return;
         if (!response.ok()) criticalErrors.push(`${status} ${response.url()}`);
       });

@@ -1,10 +1,10 @@
 import { ReadableStream } from 'node:stream/web';
 
-import FetchHttpsClient from '@/services/HttpsClient/fetch-https-client';
-import HttpRequestConfigBuilder from '@/services/HttpsClient/http-request-config-builder';
-import HttpResponseProcessor from '@/services/HttpsClient/http-response-processor';
-import { HttpError, isHttpError } from '@/services/HttpsClient/HttpError';
-import ResponseMessages from '@/services/HttpsClient/responseMessages';
+import FetchHttpsClient from '@/services/https-client/fetch-https-client';
+import { HttpError, isHttpError } from '@/services/https-client/http-error';
+import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
+import HttpResponseProcessor from '@/services/https-client/http-response-processor';
+import ResponseMessages from '@/services/https-client/response-messages';
 
 const TEST_URL = 'http://localhost:8080/api/test';
 
@@ -14,12 +14,14 @@ const createClient = (): FetchHttpsClient =>
 
 describe('FetchHttpsClient Integration', () => {
   let client: FetchHttpsClient;
+  const originalFetch = global.fetch;
 
   beforeAll(() => {
     global.fetch = mockFetch;
   });
 
   afterAll(() => {
+    global.fetch = originalFetch;
     jest.restoreAllMocks();
   });
 
