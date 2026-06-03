@@ -92,6 +92,7 @@ INSTALL_CHROMIUM            ?= false
 
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
 PRETTIER_CMD                = $(BUNX) prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
+QLTY_FMT                    = qlty fmt --all --trigger agent --no-progress
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 
@@ -204,8 +205,13 @@ build-out: ## Build production artifacts to ./out directory (via Docker)
 	docker rm $$container_id && \
 	echo "✅ Build artifacts extracted to ./out directory"
 
-format: ## This command executes Prettier formatting
+format: fmt-prettier fmt-qlty ## Run Prettier and Qlty formatting
+
+fmt-prettier: ## This command executes Prettier formatting
 	$(PRETTIER_CMD)
+
+fmt-qlty: ## This command executes Qlty formatting
+	$(QLTY_FMT)
 
 lint-eslint: ## This command executes ESLint
 	$(BUNX) eslint .
