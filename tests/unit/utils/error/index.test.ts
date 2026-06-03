@@ -1,7 +1,7 @@
 import { ErrorParser, ParsedError } from '@/utils/error';
 import ErrorParserClass from '@/utils/error/error-parser';
 
-import MockResponse from './MockResponse';
+import MockResponse from './mock-response';
 
 global.Response = MockResponse as unknown as typeof Response;
 

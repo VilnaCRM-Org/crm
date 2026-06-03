@@ -22,5 +22,7 @@ storybook-static/
 .npm
 .ralph
 
+.ralph/
+
 *.log
 *.lock

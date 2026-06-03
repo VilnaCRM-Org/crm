@@ -1,6 +1,6 @@
 import '../setup';
-import { throwIfHttpError } from '@/services/HttpsClient/http-response-processor';
-import { HttpError } from '@/services/HttpsClient/HttpError';
+import { HttpError } from '@/services/https-client/http-error';
+import throwIfHttpError from '@/services/https-client/throw-if-http-error';
 
 describe('throwIfHttpError Coverage Tests', () => {
   it('should handle errors during body extraction (catch block coverage)', async () => {
@@ -70,8 +70,9 @@ describe('throwIfHttpError Coverage Tests', () => {
     await expect(throwIfHttpError(mockResponse)).rejects.toThrow(HttpError);
   });
 
-  it('should include content type and body in HttpError cause for JSON errors', async () => {
+  it('should attach a bounded body preview and metadata to HttpError cause', async () => {
     const jsonBody = { message: 'Parsed error message', detail: 'details' };
+    const serializedBody = JSON.stringify(jsonBody);
     const mockResponse = {
       ok: false,
       status: 422,
@@ -85,25 +86,50 @@ describe('throwIfHttpError Coverage Tests', () => {
       },
       clone: () => ({
         json: (): Promise<typeof jsonBody> => Promise.resolve(jsonBody),
-        text: (): Promise<string> => Promise.resolve(JSON.stringify(jsonBody)),
+        text: (): Promise<string> => Promise.resolve(serializedBody),
       }),
     } as unknown as Response;
 
+    await expect(throwIfHttpError(mockResponse)).rejects.toMatchObject({
+      status: 422,
+      message: jsonBody.message,
+      cause: {
+        url: 'http://localhost/api/test',
+        contentType: 'application/json',
+        bodyPreview: serializedBody,
+        bodyLength: serializedBody.length,
+      },
+    });
+    await expect(throwIfHttpError(mockResponse)).rejects.toMatchObject({
+      cause: expect.not.objectContaining({ body: expect.anything() }),
+    });
+  });
+
+  it('truncates oversized response bodies in the preview', async () => {
+    const longField = 'x'.repeat(1000);
+    const jsonBody = { message: 'too big', longField };
+    const serializedBody = JSON.stringify(jsonBody);
+    const mockResponse = {
+      ok: false,
+      status: 500,
+      statusText: 'Internal Server Error',
+      url: 'http://localhost/api/test',
+      headers: { get: () => 'application/json' },
+      clone: () => ({
+        json: (): Promise<typeof jsonBody> => Promise.resolve(jsonBody),
+        text: (): Promise<string> => Promise.resolve(serializedBody),
+      }),
+    } as unknown as Response;
+
+    let caught: unknown;
     try {
       await throwIfHttpError(mockResponse);
-      fail('Should have thrown HttpError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(HttpError);
-      if (error instanceof HttpError) {
-        expect(error.status).toBe(422);
-        expect(error.message).toBe(jsonBody.message);
-        expect(error.cause).toEqual({
-          url: 'http://localhost/api/test',
-          contentType: 'application/json',
-          body: JSON.stringify(jsonBody),
-        });
-      }
+    } catch (err) {
+      caught = err;
     }
+    const cause = (caught as { cause: { bodyPreview: string; bodyLength: number } }).cause;
+    expect(cause.bodyPreview.length).toBe(200);
+    expect(cause.bodyLength).toBe(serializedBody.length);
   });
 
   it('should handle missing content-type header', async () => {
@@ -125,6 +151,83 @@ describe('throwIfHttpError Coverage Tests', () => {
       cause: {
         contentType: undefined,
       },
+    });
+  });
+
+  it('preserves the body preview when the JSON payload is itself a string', async () => {
+    const jsonStringBody = 'plain-json-string';
+    const mockResponse = {
+      ok: false,
+      status: 500,
+      statusText: 'Server Error',
+      url: 'http://localhost/api/test',
+      headers: { get: () => 'application/json' },
+      clone: () => ({
+        json: (): Promise<string> => Promise.resolve(jsonStringBody),
+      }),
+    } as unknown as Response;
+
+    let caught: unknown;
+    try {
+      await throwIfHttpError(mockResponse);
+    } catch (err) {
+      caught = err;
+    }
+    const cause = (caught as { cause: { bodyPreview: string; bodyLength: number } }).cause;
+    expect(cause.bodyPreview).toBe(jsonStringBody);
+    expect(cause.bodyLength).toBe(jsonStringBody.length);
+  });
+
+  it('falls back to String(data) when the JSON body cannot be serialized', async () => {
+    const circular: Record<string, unknown> = { name: 'loop' };
+    circular.self = circular;
+    const mockResponse = {
+      ok: false,
+      status: 500,
+      statusText: 'Server Error',
+      url: 'http://localhost/api/test',
+      headers: { get: () => 'application/json' },
+      clone: () => ({
+        json: (): Promise<typeof circular> => Promise.resolve(circular),
+      }),
+    } as unknown as Response;
+
+    let caught: unknown;
+    try {
+      await throwIfHttpError(mockResponse);
+    } catch (err) {
+      caught = err;
+    }
+    const cause = (caught as { cause: { bodyPreview: string; bodyLength: number } }).cause;
+    expect(cause.bodyPreview).toBe(String(circular).slice(0, 200));
+    expect(cause.bodyLength).toBe(String(circular).length);
+  });
+
+  it('returns without throwing for a 304 Not Modified response', async () => {
+    const mockResponse = {
+      ok: false,
+      status: 304,
+      statusText: 'Not Modified',
+      headers: { get: (): null => null },
+      clone: (): Response => mockResponse,
+    } as unknown as Response;
+
+    await expect(throwIfHttpError(mockResponse)).resolves.toBeUndefined();
+  });
+
+  it('produces an HttpError with no message when JSON body has no message field', async () => {
+    const mockResponse = {
+      ok: false,
+      status: 422,
+      statusText: 'Unprocessable Entity',
+      url: 'http://localhost/api/test',
+      headers: { get: (): string => 'application/json' },
+      clone: () => ({ json: async (): Promise<unknown> => ({ errors: ['x'] }) }),
+    } as unknown as Response;
+
+    await expect(throwIfHttpError(mockResponse)).rejects.toMatchObject({
+      status: 422,
+      message: '422 Unprocessable Entity',
     });
   });
 
