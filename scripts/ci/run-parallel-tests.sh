@@ -12,11 +12,20 @@ overall_status=0
 
 trap 'rm -rf "$tmp_dir"' EXIT
 
+build_safe_target() {
+  local target="$1"
+  local target_hash
+
+  target_hash="$(printf '%s' "$target" | sha256sum | cut -c1-8)"
+
+  printf '%s_%s' "${target//[^A-Za-z0-9._-]/_}" "$target_hash"
+}
+
 targets=("$@")
 pids=()
 
 for target in "${targets[@]}"; do
-  safe_target="${target//[^A-Za-z0-9._-]/_}"
+  safe_target="$(build_safe_target "$target")"
   log_path="$tmp_dir/$safe_target.log"
   status_path="$tmp_dir/$safe_target.status"
 
@@ -36,7 +45,7 @@ for pid in "${pids[@]}"; do
 done
 
 for target in "${targets[@]}"; do
-  safe_target="${target//[^A-Za-z0-9._-]/_}"
+  safe_target="$(build_safe_target "$target")"
   log_path="$tmp_dir/$safe_target.log"
   status_path="$tmp_dir/$safe_target.status"
   target_status="$(cat "$status_path")"
