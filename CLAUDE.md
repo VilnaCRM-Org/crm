@@ -227,18 +227,18 @@ The codebase follows a modular architecture:
 
 ```bash
 src/
-├── modules/          # Feature modules (e.g., User, BackToMain)
-│   └── User/
-│       ├── features/    # Feature-specific code (Auth)
-│       ├── store/       # Zustand stores
-│       ├── helpers/     # Module utilities
-│       └── package.json # Module metadata
+├── modules/          # Feature modules (e.g., user, back-to-main)
+│   └── user/
+│       ├── features/        # Feature-specific code
+│       │   └── auth/
+│       │       ├── stores/        # Zustand auth store + composition root
+│       │       ├── repositories/  # AuthRepository, API clients, error factory
+│       │       └── types/         # Auth types (AuthError, AuthStore, ...)
+│       ├── store/           # Shared response/error mappers
+│       └── package.json     # Module metadata
 ├── components/      # Reusable UI components (prefixed with UI*)
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
-├── stores/
-│   └── zustand/
-│       └── authStore.ts
 ├── config/          # DI configuration, tokens, API config
 ├── routes/          # Route definitions
 ├── providers/       # React context providers
@@ -255,30 +255,38 @@ The project uses tsyringe for DI:
 4. Use `@injectable()` decorator on classes
 5. Resolve dependencies via `container.resolve<Type>(TOKENS.ServiceName)`
 
-Example from Zustand store (resolving APIs inside actions):
+The auth store stays container-free: the DI container is resolved once in the
+composition root, and an `AuthRepository` is injected into the store actions
+(no `container.resolve` inside the store or its actions):
 
 ```typescript
-const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
-const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+// src/modules/user/features/auth/stores/index.ts (composition root)
+export const useAuthStore = AuthStoreFactory.create(container.resolve(AuthStoreActions));
 ```
 
-Zustand store pattern (`src/stores/zustand/authStore.ts`):
+Zustand store pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+// auth-store-factory.ts — container-free; receives injected actions
+export default class AuthStoreFactory {
+  public static create(actions: AuthStoreActions): UseAuthStore {
+    return create<AuthStore>()(
+      devtools(
+        (set) => ({
+          /* state + actions delegating to `actions` */
+        }),
+        { name: 'auth' }
+      )
+    );
+  }
+}
 
-export const useAuthStore = create<AuthStore>()(
-  devtools(
-    (set) => ({
-      /* state + actions */
-    }),
-    { name: 'auth' }
-  )
-);
-
-// Selectors
-export const selectEmail = (s: AuthStore): string => s.email;
+// auth-store-selectors.ts — selectors grouped in a class (no free functions)
+export default class AuthStoreSelectors {
+  public static email(s: AuthStore): string {
+    return s.email;
+  }
+}
 ```
 
 ### Path Aliases
