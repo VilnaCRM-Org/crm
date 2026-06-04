@@ -14,7 +14,10 @@ import HttpsClient from '@/services/https-client/https-client';
 import HttpClientFactory from '@/services/https-client/https-client-factory';
 import AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ErrorParser from '@/utils/error/error-parser';
-import { ApiErrorFactory, LoginAPI, RegistrationAPI } from '@auth/repositories';
+import { ApiErrorFactory, AuthErrorFactory, LoginAPI, RegistrationAPI } from '@auth/repositories';
+import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
+import type { AuthRepository } from '@auth/types/auth-repository';
+import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
 
 container.registerSingleton<ApiErrorFactory>(TOKENS.ApiErrorFactory, ApiErrorFactory);
 container.registerSingleton<ErrorParser>(TOKENS.ErrorParser, ErrorParser);
@@ -41,5 +44,20 @@ container.registerSingleton<HttpsClient>(TOKENS.HttpsClient, FetchHttpsClient);
 container.registerSingleton<RegistrationAPI>(TOKENS.RegistrationAPI, RegistrationAPI);
 container.registerSingleton<LoginAPI>(TOKENS.LoginAPI, LoginAPI);
 container.registerSingleton<AbortErrorDetector>(TOKENS.AbortErrorDetector, AbortErrorDetector);
+
+container.register<AuthRepositoryDeps>(TOKENS.AuthRepositoryDeps, {
+  useFactory: (c) => ({
+    loginAPI: c.resolve<LoginAPI>(TOKENS.LoginAPI),
+    registrationAPI: c.resolve<RegistrationAPI>(TOKENS.RegistrationAPI),
+    loginResponseMapper: c.resolve<LoginResponseMapper>(TOKENS.LoginResponseMapper),
+    registrationResponseMapper: c.resolve<RegistrationResponseMapper>(
+      TOKENS.RegistrationResponseMapper
+    ),
+    authUiErrorMapper: c.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper),
+    abortDetector: c.resolve<AbortErrorDetector>(TOKENS.AbortErrorDetector),
+    authErrorFactory: c.resolve(AuthErrorFactory),
+  }),
+});
+container.registerSingleton<AuthRepository>(TOKENS.AuthRepository, AuthRepositoryImpl);
 
 export default container;
