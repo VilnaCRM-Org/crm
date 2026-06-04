@@ -85,6 +85,15 @@ export default class AuthErrorBoundary extends Component<
   public componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const { onError } = this.props;
     onError?.(error, info);
+
+    if (process.env.NODE_ENV !== 'production') {
+      const resolvedConsole = Reflect.get(globalThis, 'console') as
+        | { error: (...args: unknown[]) => void }
+        | undefined;
+      if (resolvedConsole) {
+        resolvedConsole.error('AuthErrorBoundary caught an error:', error, info);
+      }
+    }
   }
 
   public handleReset = (): void => this.setState({ hasError: false, error: undefined });

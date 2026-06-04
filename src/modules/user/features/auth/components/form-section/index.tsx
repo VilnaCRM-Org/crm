@@ -109,24 +109,38 @@ function FormSwitcher({
   );
 }
 
-export default function FormSection(): JSX.Element {
-  const [registrationView, setRegistrationView] = useState<RegistrationView>('form');
-  const { mode, isLoadingLogin, loadLoginError, handleSwitcherIntent, handleSwitch } =
-    useLoginSwitcher();
-  const { t } = useTranslation();
+type FormSectionLayoutProps = {
+  mode: AuthMode;
+  registrationView: RegistrationView;
+  onRegistrationViewChange: (view: RegistrationView) => void;
+  isLoadingLogin: boolean;
+  loadLoginError: LoadLoginErrorKey;
+  onSwitch: () => void;
+  onIntent: () => void;
+  t: TFunction;
+};
 
-  const onSwitch = useCallback(() => {
-    setRegistrationView('form');
-    handleSwitch();
-  }, [handleSwitch]);
-
+function FormSectionLayout({
+  mode,
+  registrationView,
+  onRegistrationViewChange,
+  isLoadingLogin,
+  loadLoginError,
+  onSwitch,
+  onIntent,
+  t,
+}: FormSectionLayoutProps): JSX.Element {
   const showNotification = mode === 'register' && registrationView !== 'form';
 
   return (
     <Box component="section" sx={styles.formSection}>
       <Box sx={styles.formWrapper}>
-        <AuthBody mode={mode} onViewChange={setRegistrationView} />
-        <InertBox id="auth-provider-buttons-container" inert={showNotification}>
+        <AuthBody mode={mode} onViewChange={onRegistrationViewChange} />
+        <InertBox
+          id="auth-provider-buttons-container"
+          data-testid="auth-provider-buttons-container"
+          inert={showNotification}
+        >
           <AuthProviderButtons />
         </InertBox>
       </Box>
@@ -135,9 +149,61 @@ export default function FormSection(): JSX.Element {
         isLoadingLogin={isLoadingLogin}
         loadLoginError={loadLoginError}
         onSwitch={onSwitch}
-        onIntent={handleSwitcherIntent}
+        onIntent={onIntent}
         t={t}
       />
     </Box>
+  );
+}
+
+function useFormSectionViewModel(): FormSectionLayoutProps {
+  const [registrationView, setRegistrationView] = useState<RegistrationView>('form');
+  const { mode, isLoadingLogin, loadLoginError, handleSwitcherIntent, handleSwitch } =
+    useLoginSwitcher();
+  const { t } = useTranslation();
+  const onRegistrationViewChange = useCallback((view: RegistrationView) => {
+    setRegistrationView(view);
+  }, []);
+
+  const onSwitch = useCallback(() => {
+    setRegistrationView('form');
+    handleSwitch();
+  }, [handleSwitch]);
+
+  return {
+    mode,
+    registrationView,
+    onRegistrationViewChange,
+    isLoadingLogin,
+    loadLoginError,
+    onSwitch,
+    onIntent: handleSwitcherIntent,
+    t,
+  };
+}
+
+export default function FormSection(): JSX.Element {
+  const {
+    mode,
+    registrationView,
+    onRegistrationViewChange,
+    isLoadingLogin,
+    loadLoginError,
+    onSwitch,
+    onIntent,
+    t,
+  } = useFormSectionViewModel();
+
+  return (
+    <FormSectionLayout
+      mode={mode}
+      registrationView={registrationView}
+      onRegistrationViewChange={onRegistrationViewChange}
+      isLoadingLogin={isLoadingLogin}
+      loadLoginError={loadLoginError}
+      onSwitch={onSwitch}
+      onIntent={onIntent}
+      t={t}
+    />
   );
 }

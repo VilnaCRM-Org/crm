@@ -68,7 +68,6 @@ export default function PasswordField<T extends FieldValues & { password: string
       label={label}
       autoComplete={autoComplete}
       inputProps={{
-        sx: styles.passwordField,
         endAdornment: <PasswordVisibilityButton show={showPassword} onToggle={toggle} t={t} />,
       }}
     />

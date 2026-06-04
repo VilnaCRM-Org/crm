@@ -30,6 +30,7 @@
     "docker/**/*",
     "lighthouse/**/*",
     "tests/**/*",
+    ".storybook/**/*",
     "*.ts",
     "*.tsx",
     "*.js"
