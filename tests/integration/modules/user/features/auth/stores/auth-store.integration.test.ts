@@ -8,6 +8,7 @@ import type LoginAPI from '@auth/repositories/login-api';
 import type RegistrationAPI from '@auth/repositories/registration-api';
 import { AuthStoreSelectors, useAuthStore } from '@auth/stores';
 import AuthStoreFactory from '@auth/stores/auth-store-factory';
+import PreloadedAuthToken from '@auth/stores/preloaded-auth-token';
 
 import server from '../../../../../mocks/server';
 
@@ -25,11 +26,11 @@ function createDelayedPromise(ms: number): Promise<void> {
 
 describe('Auth Store Integration', () => {
   beforeEach(() => {
-    container.clearInstances();
     useAuthStore.getState().reset();
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     useAuthStore.getState().reset();
     server.resetHandlers();
   });
@@ -529,6 +530,17 @@ describe('Auth Store Integration', () => {
       const loggedOut = useAuthStore.getState();
       expect(AuthStoreSelectors.isAuthenticated(loggedOut)).toBe(false);
     });
+
+    it('should select registerUser from state', async () => {
+      const user = { fullName: 'Jane Doe', email: 'jane@test.com' };
+      useAuthStore.setState({ user });
+
+      const state = useAuthStore.getState();
+      expect(AuthStoreSelectors.registerUser(state)).toEqual(user);
+
+      useAuthStore.setState({ user: null });
+      expect(AuthStoreSelectors.registerUser(useAuthStore.getState())).toBeNull();
+    });
   });
 
   describe('sanitizeAuthState', () => {
@@ -615,6 +627,132 @@ describe('Auth Store Integration', () => {
         } else {
           process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = originalEnv;
         }
+      }
+    });
+
+    it('seeds token from window when window token is present', async () => {
+      await jest.isolateModulesAsync(async () => {
+        (window as Window & { __PRELOADED_AUTH_TOKEN__?: string }).__PRELOADED_AUTH_TOKEN__ =
+          'window-token';
+        try {
+          const mod = await import('@auth/stores');
+          expect(mod.useAuthStore.getState().token).toBe('window-token');
+        } finally {
+          delete (window as Window & { __PRELOADED_AUTH_TOKEN__?: string })
+            .__PRELOADED_AUTH_TOKEN__;
+        }
+      });
+    });
+
+    it('trims whitespace from env token', async () => {
+      const originalEnv = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = '  trimmed  ';
+
+      try {
+        await jest.isolateModulesAsync(async () => {
+          const mod = await import('@auth/stores');
+          expect(mod.useAuthStore.getState().token).toBe('trimmed');
+        });
+      } finally {
+        if (originalEnv === undefined) {
+          delete process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+        } else {
+          process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = originalEnv;
+        }
+      }
+    });
+  });
+
+  describe('PreloadedAuthToken.read', () => {
+    it('returns window token when provided directly', () => {
+      const result = PreloadedAuthToken.read({ __PRELOADED_AUTH_TOKEN__: 'win-tok' }, undefined);
+
+      expect(result).toBe('win-tok');
+    });
+
+    it('returns env token when window is null', () => {
+      const result = PreloadedAuthToken.read(null as unknown as undefined, 'env-tok');
+
+      expect(result).toBe('env-tok');
+    });
+
+    it('trims whitespace from window token', () => {
+      const result = PreloadedAuthToken.read({ __PRELOADED_AUTH_TOKEN__: '  padded  ' }, undefined);
+
+      expect(result).toBe('padded');
+    });
+
+    it('returns undefined when both window and env tokens are absent', () => {
+      const result = PreloadedAuthToken.read(null as unknown as undefined, undefined);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('falls back to env token when window object has no token property', () => {
+      const result = PreloadedAuthToken.read(
+        {} as { __PRELOADED_AUTH_TOKEN__?: string },
+        'env-fallback'
+      );
+
+      expect(result).toBe('env-fallback');
+    });
+
+    it('falls back to env token when window token is empty string after trimming', () => {
+      const result = PreloadedAuthToken.read({ __PRELOADED_AUTH_TOKEN__: '   ' }, 'fallback');
+
+      expect(result).toBe('fallback');
+    });
+
+    it('returns env token when window token is null', () => {
+      const result = PreloadedAuthToken.read(
+        { __PRELOADED_AUTH_TOKEN__: null as unknown as string },
+        'env-tok'
+      );
+
+      expect(result).toBe('env-tok');
+    });
+
+    it('window token takes priority over env token', () => {
+      const result = PreloadedAuthToken.read({ __PRELOADED_AUTH_TOKEN__: 'win' }, 'env');
+
+      expect(result).toBe('win');
+    });
+
+    it('returns undefined when process.env access throws', () => {
+      const originalEnv = process.env;
+      Object.defineProperty(process, 'env', {
+        get() {
+          throw new Error('process.env unavailable');
+        },
+        configurable: true,
+      });
+
+      try {
+        const result = PreloadedAuthToken.read(null as unknown as undefined);
+
+        expect(result).toBeUndefined();
+      } finally {
+        Object.defineProperty(process, 'env', {
+          value: originalEnv,
+          configurable: true,
+          writable: true,
+        });
+      }
+    });
+
+    it('falls back to env when window is unavailable (default param)', () => {
+      const originalWindow = global.window;
+      Object.defineProperty(global, 'window', { configurable: true, value: undefined });
+
+      try {
+        const result = PreloadedAuthToken.read(undefined, 'env-fallback');
+
+        expect(result).toBe('env-fallback');
+      } finally {
+        Object.defineProperty(global, 'window', {
+          configurable: true,
+          value: originalWindow,
+        });
       }
     });
   });

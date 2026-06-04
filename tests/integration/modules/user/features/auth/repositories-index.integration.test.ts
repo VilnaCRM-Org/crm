@@ -1,7 +1,13 @@
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import { BaseAPI, LoginAPI, RegistrationAPI } from '@/modules/user/features/auth/repositories';
+import {
+  ApiStatusErrorFactory,
+  BaseAPI,
+  LoginAPI,
+  RegistrationAPI,
+} from '@/modules/user/features/auth/repositories';
+import { ApiErrorCodes } from '@/modules/user/types/api-errors';
 
 describe('Repositories index integration', () => {
   it('should export BaseAPI class', () => {
@@ -20,5 +26,11 @@ describe('Repositories index integration', () => {
     const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
 
     expect(registrationAPI).toBeInstanceOf(RegistrationAPI);
+  });
+
+  it('should export ApiStatusErrorFactory and produce a service-unavailable error for 503', () => {
+    const error = ApiStatusErrorFactory.fromHttpError({ status: 503, message: 'down' }, 'Login');
+
+    expect(error.code).toBe(ApiErrorCodes.SERVICE_UNAVAILABLE);
   });
 });

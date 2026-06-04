@@ -13,7 +13,6 @@ const makeDeps = (): AuthRepositoryDeps =>
     abortDetector: { isAbortError: jest.fn().mockReturnValue(false) },
     authErrorFactory: {
       fromUiError: jest.fn((e) => ({ kind: 'unknown', ...e })),
-      fromValidationIssues: jest.fn(),
     },
   }) as unknown as AuthRepositoryDeps;
 

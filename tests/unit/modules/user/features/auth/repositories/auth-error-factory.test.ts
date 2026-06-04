@@ -10,16 +10,4 @@ describe('AuthErrorFactory', () => {
       retryable: true,
     });
   });
-
-  it('builds a validation AuthError that preserves issues', () => {
-    const result = factory.fromValidationIssues('Invalid data provided', [
-      { path: 'email', message: 'Invalid email' },
-    ]);
-    expect(result).toEqual({
-      kind: 'validation',
-      displayMessage: 'Invalid data provided',
-      retryable: false,
-      issues: [{ path: 'email', message: 'Invalid email' }],
-    });
-  });
 });
