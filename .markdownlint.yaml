@@ -191,7 +191,20 @@ MD039: true
 MD040:
   # List of languages
   allowed_languages:
-    ['bash', 'ts', 'typescript', 'js', 'javascript', 'json', 'yaml', 'sh', 'text', 'makefile']
+    [
+      'bash',
+      'ts',
+      'typescript',
+      'js',
+      'javascript',
+      'json',
+      'yaml',
+      'sh',
+      'text',
+      'makefile',
+      'mermaid',
+      'dot',
+    ]
   # Require language only
   language_only: false
 

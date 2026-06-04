@@ -48,18 +48,6 @@ services:
     networks:
       - crm-network
 
-  mockoon:
-    build:
-      context: .
-      dockerfile: Mockoon.Dockerfile
-    ports:
-      - '${MOCKOON_PORT:-8080}:${MOCKOON_PORT:-8080}'
-    restart: unless-stopped
-    healthcheck:
-      test: ['CMD', 'wget', '-q', 'http://localhost:${MOCKOON_PORT:-8080}/api/users', '-O', '-']
-    networks:
-      - crm-network
-
   k6:
     profiles: ['load']
     build:

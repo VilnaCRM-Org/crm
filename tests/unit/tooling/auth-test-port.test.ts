@@ -51,7 +51,12 @@ describe('auth test harness wiring', () => {
     expect(makefile).not.toContain(
       'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(LHCI_PRELOADED_AUTH_TOKEN)'
     );
-    expect(makefile).toContain('make ensure-chromium && make start-prod && $(LHCI)');
+    // Local Lighthouse audits share a single setup target that ensures
+    // Chromium and starts prod before the audit, so the CI orchestration can
+    // start prod once and reuse the bare $(LHCI_DESKTOP)/$(LHCI_MOBILE) runs.
+    expect(makefile).toContain('lighthouse-desktop: lighthouse-setup');
+    expect(makefile).toContain('lighthouse-mobile: lighthouse-setup');
+    expect(makefile).toMatch(/lighthouse-setup:.*\n\tmake ensure-chromium\n\tmake start-prod/);
     expect(batchScript).not.toContain('LHCI_PRELOADED_AUTH_TOKEN');
     expect(makefile).not.toContain('--collect.url=$(LHCI_TARGET_URL)');
     expect(makefile).not.toContain('--collect.url=http://localhost:3001');
