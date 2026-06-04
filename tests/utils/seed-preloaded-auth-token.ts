@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import { preloadedAuthTokenKey } from '@/stores/preloaded-auth-token';
+import PreloadedAuthToken from '@auth/stores/preloaded-auth-token';
 
 export const PRELOADED_AUTH_TOKEN = 'playwright-preloaded-auth-token';
 export const preloadedAuthTokenEnvVar = 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN' as const;
@@ -13,7 +13,7 @@ export async function seedPreloadedAuthToken(
 ): Promise<void> {
   const escapeForInlineScript = (json: string): string =>
     json.replace(/<\/script/gi, '<\\/script').replace(/<!--/g, '<\\!--');
-  const keyJson = escapeForInlineScript(JSON.stringify(preloadedAuthTokenKey));
+  const keyJson = escapeForInlineScript(JSON.stringify(PreloadedAuthToken.key));
   const tokenJson = escapeForInlineScript(JSON.stringify(token));
   const inlineScript = `<script>window[${keyJson}]=${tokenJson};</script>`;
 
