@@ -8,7 +8,7 @@ const registerUser = jest.fn<Promise<void>, [RegisterUserDto]>(() => Promise.res
 const resetRegistration = jest.fn();
 const storeState = { registerUser, resetRegistration };
 
-jest.mock('@/stores/auth-store', () => ({
+jest.mock('@auth/stores', () => ({
   __esModule: true,
   useAuthStore: (selector: (state: typeof storeState) => unknown): unknown => selector(storeState),
 }));

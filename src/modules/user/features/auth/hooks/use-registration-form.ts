@@ -1,12 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
-import {
-  selectRegisterError,
-  selectRegisterLoading,
-  selectRegisterUser,
-  useAuthStore,
-} from '@/stores/auth-store';
 import { RegistrationView } from '@auth/components/form-section/types';
+import { AuthStoreSelectors, useAuthStore } from '@auth/stores';
 import { RegisterUserDto } from '@auth/types/credentials';
 
 import useRegistrationHandlers from './use-registration-handlers';
@@ -26,9 +21,10 @@ type UseRegistrationFormResult = {
 export default function useRegistrationForm(
   onViewChange?: (view: RegistrationView) => void
 ): UseRegistrationFormResult {
-  const user = useAuthStore(selectRegisterUser);
-  const isSubmitting = useAuthStore(selectRegisterLoading);
-  const error = useAuthStore(selectRegisterError);
+  const user = useAuthStore(AuthStoreSelectors.registerUser);
+  const isSubmitting = useAuthStore(AuthStoreSelectors.registerLoading);
+  const error = useAuthStore(AuthStoreSelectors.registerError);
+  const errorText = error?.displayMessage ?? null;
 
   const [view, setView] = useState<RegistrationView>('form');
   const [formKey, setFormKey] = useState(0);
@@ -37,7 +33,7 @@ export default function useRegistrationForm(
   useEffect(() => {
     onViewChange?.(view);
   }, [onViewChange, view]);
-  useRegistrationViewSync({ user, error, isSubmitting, setView });
+  useRegistrationViewSync({ user, error: errorText, isSubmitting, setView });
 
   const handlers = useRegistrationHandlers({
     setView,
@@ -45,5 +41,5 @@ export default function useRegistrationForm(
     lastSubmittedDataRef,
   });
 
-  return { view, errorText: error ?? '', formKey, isSubmitting, ...handlers };
+  return { view, errorText: errorText ?? '', formKey, isSubmitting, ...handlers };
 }

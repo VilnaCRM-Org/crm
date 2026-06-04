@@ -29,8 +29,14 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
+interface AuthError {
+  kind: string;
+  displayMessage: string;
+  retryable: boolean;
+}
+
 const authStoreState: {
-  loginError: string | null;
+  loginError: AuthError | null;
   loginLoading: boolean;
   loginUser: (...args: unknown[]) => unknown;
 } = {
@@ -39,7 +45,7 @@ const authStoreState: {
   loginUser: mockLoginUser,
 };
 
-jest.mock('@/stores/auth-store', () => ({
+jest.mock('@auth/stores', () => ({
   __esModule: true,
   useAuthStore: Object.assign(
     (selector?: (state: typeof authStoreState) => unknown): unknown =>
@@ -51,8 +57,10 @@ jest.mock('@/stores/auth-store', () => ({
       getState: (): typeof authStoreState => authStoreState,
     }
   ),
-  selectLoginError: (state: typeof authStoreState): string | null => state.loginError,
-  selectLoginLoading: (state: typeof authStoreState): boolean => state.loginLoading,
+  AuthStoreSelectors: {
+    loginError: (state: typeof authStoreState): AuthError | null => state.loginError,
+    loginLoading: (state: typeof authStoreState): boolean => state.loginLoading,
+  },
 }));
 
 jest.mock('@auth/utils/get-submit-label-key', () => ({
@@ -142,7 +150,11 @@ describe('LoginForm', () => {
   });
 
   it('shows a translated login error prefix when the store has a login error', () => {
-    authStoreState.loginError = 'Invalid credentials';
+    authStoreState.loginError = {
+      kind: 'authentication',
+      displayMessage: 'Invalid credentials',
+      retryable: false,
+    };
 
     render(<LoginForm />);
 

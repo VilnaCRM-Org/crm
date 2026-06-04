@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { useCallback, useEffect } from 'react';
 
-import { selectLoginError, selectLoginLoading, useAuthStore } from '@/stores/auth-store';
+import { AuthStoreSelectors, useAuthStore } from '@auth/stores';
 import { LoginUserDto } from '@auth/types/credentials';
 
 import LoginErrorMessageNormalizer from './login-error-message';
@@ -24,8 +24,8 @@ function formatLoginError(raw: string | null, t: TFunction): string {
 
 export default function useLoginSubmitter(t: TFunction): LoginSubmitter {
   const loginUser = useAuthStore((state) => state.loginUser);
-  const isSubmitting = useAuthStore(selectLoginLoading);
-  const rawError = useAuthStore(selectLoginError);
+  const isSubmitting = useAuthStore(AuthStoreSelectors.loginLoading);
+  const rawError = useAuthStore(AuthStoreSelectors.loginError);
 
   useEffect(
     () => (): void => {
@@ -41,5 +41,9 @@ export default function useLoginSubmitter(t: TFunction): LoginSubmitter {
     [loginUser]
   );
 
-  return { error: formatLoginError(rawError, t), isSubmitting, handleLogin };
+  return {
+    error: formatLoginError(rawError?.displayMessage ?? null, t),
+    isSubmitting,
+    handleLogin,
+  };
 }

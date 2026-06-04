@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 
-import { useAuthStore } from '@/stores/auth-store';
 import useRegistrationForm from '@auth/hooks/use-registration-form';
+import { useAuthStore } from '@auth/stores';
 
 describe('useRegistrationForm', () => {
   beforeEach(() => {
@@ -22,7 +22,9 @@ describe('useRegistrationForm', () => {
 
   it('reports the store error through errorText and notifies view change subscribers', () => {
     const onViewChange = jest.fn();
-    useAuthStore.setState({ registerError: 'boom' });
+    useAuthStore.setState({
+      registerError: { kind: 'unknown', displayMessage: 'boom', retryable: false },
+    });
 
     const { result } = renderHook(() => useRegistrationForm(onViewChange));
 

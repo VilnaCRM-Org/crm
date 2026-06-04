@@ -1,8 +1,8 @@
 import { act, renderHook } from '@testing-library/react';
 import type { TFunction } from 'i18next';
 
-import { useAuthStore } from '@/stores/auth-store';
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
+import { useAuthStore } from '@auth/stores';
 
 const t: TFunction = ((key: string, options?: Record<string, unknown>): string => {
   if (options?.reason !== undefined) return `${key}|${String(options.reason)}`;
@@ -22,7 +22,9 @@ describe('useLoginSubmitter', () => {
   });
 
   it('formats a plain string login error from the store', () => {
-    useAuthStore.setState({ loginError: 'Bad credentials' });
+    useAuthStore.setState({
+      loginError: { kind: 'authentication', displayMessage: 'Bad credentials', retryable: false },
+    });
 
     const { result } = renderHook(() => useLoginSubmitter(t));
 
@@ -30,7 +32,13 @@ describe('useLoginSubmitter', () => {
   });
 
   it('translates an i18n-key shaped login error', () => {
-    useAuthStore.setState({ loginError: 'auth.errors.unknown' });
+    useAuthStore.setState({
+      loginError: {
+        kind: 'authentication',
+        displayMessage: 'auth.errors.unknown',
+        retryable: false,
+      },
+    });
 
     const { result } = renderHook(() => useLoginSubmitter(t));
 
@@ -38,7 +46,9 @@ describe('useLoginSubmitter', () => {
   });
 
   it('clears the login error on unmount', () => {
-    useAuthStore.setState({ loginError: 'still here' });
+    useAuthStore.setState({
+      loginError: { kind: 'authentication', displayMessage: 'still here', retryable: false },
+    });
 
     const { unmount } = renderHook(() => useLoginSubmitter(t));
     unmount();

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuthStore } from '@auth/stores';
 import RegistrationHandlersFactory, {
   type RegistrationHandlerDeps,
   type RegistrationHandlers,

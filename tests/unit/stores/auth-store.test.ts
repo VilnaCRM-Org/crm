@@ -11,6 +11,7 @@ import {
   selectRegisterError,
   selectRegisterLoading,
   selectRegisterRetryable,
+  selectRegisterUser,
   selectToken,
   useAuthStore,
 } from '@/stores/auth-store';
@@ -281,6 +282,10 @@ describe('authStore', () => {
 
     it('selectRegisterError returns register error', () => {
       expect(selectRegisterError(useAuthStore.getState())).toBe('register error');
+    });
+
+    it('selectRegisterUser returns the registered user', () => {
+      expect(selectRegisterUser(useAuthStore.getState())).toBeNull();
     });
 
     it('selectIsAuthenticated returns true when token exists', () => {
