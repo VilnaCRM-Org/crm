@@ -3,9 +3,12 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { CreateUserInput, User } from './types';
 
+const EMAIL_LOCAL = String.raw`[a-zA-Z0-9.!#$%&'*+/=?^_\`{|}~-]+`;
+const EMAIL_LABEL = String.raw`[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?`;
+const EMAIL_REGEX = new RegExp(`^${EMAIL_LOCAL}@${EMAIL_LABEL}(?:\\.${EMAIL_LABEL})*$`);
+
 const validateCreateUserInput = (input: CreateUserInput): void => {
-  const emailRegex =
-    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  const emailRegex = EMAIL_REGEX;
 
   if (!input.email || !emailRegex.test(input.email)) {
     throw new GraphQLError('Invalid email format', {

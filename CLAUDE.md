@@ -1,13 +1,12 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this
-repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
 Modern SPA template based on React, featuring extensive CI checks, configured testing tools
-(Playwright, Jest), and a modular architecture inspired by bulletproof-react. This template is used
-for all VilnaCRM microservices.
+(Playwright, Jest), and a modular architecture inspired by bulletproof-react.
+This template is used for all VilnaCRM microservices.
 
 ## Tech Stack
 
@@ -18,8 +17,8 @@ for all VilnaCRM microservices.
 - **i18n**: react-i18next (main language: uk, fallback: en)
 - **Build**: RSBuild (Rspack-based bundler, configured via `rsbuild.config.ts`)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
-- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime; Bun is used
-  only to manage dependencies using `bun.lock`.
+- **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
+  Bun is used only to manage dependencies using `bun.lock`.
 - **Node**: >=24.8.0 (enforced via engineStrict)
 
 ## Development Environment
@@ -72,8 +71,9 @@ make test-visual-ui        # Visual tests with UI
 make test-visual-update    # Update visual snapshots
 ```
 
-**Important**: E2E tests use Mockoon to mock API responses. The mock server automatically starts via
-docker-compose.test.yml and serves the OpenAPI spec from user-service repository on port 8080.
+**Important**: E2E tests use Mockoon to mock API responses.
+The mock server automatically starts via docker-compose.test.yml and serves
+the OpenAPI spec from user-service repository on port 8080.
 
 ### Performance Tests
 
@@ -96,7 +96,6 @@ make lint           # Run all linters
 make lint-eslint    # ESLint
 make lint-tsc       # TypeScript
 make lint-md        # Markdown
-make lint-metrics   # rust-code-analysis complexity gate (see below)
 make format         # Prettier
 ```
 
@@ -221,7 +220,7 @@ src/
 
 The project uses tsyringe for DI:
 
-1. Services are registered in `src/config/DependencyInjectionConfig.ts`
+1. Services are registered in `src/config/dependency-injection-config.ts`
 2. Tokens are defined in `src/config/tokens.ts`
 3. Import `reflect-metadata` at app entry point (already done in `src/index.tsx`)
 4. Use `@injectable()` decorator on classes
@@ -263,19 +262,19 @@ This project follows the Bulletproof React import convention:
 
 ```ts
 // Cross-feature: use the @/ alias
-import { Button } from '@/components/UIButton';
+import { Button } from '@/components/ui-button';
 
 // Same folder: use a relative import
 import { CommentsList } from './comments-list';
 
 // Within the Auth feature (any depth): use the @auth alias
-import { LoginAPI } from '@auth/api';
+import { LoginAPI } from '@auth/repositories';
 ```
 
 In addition to the project-wide `@/`, the Auth feature has its own scoped
-alias `@auth/* → src/modules/User/features/Auth/*` so deeply nested imports
+alias `@auth/* → src/modules/user/features/auth/*` so deeply nested imports
 into Auth stay readable and within the 100-character soft line limit. Use
-`@auth/...` whenever the target lives under `src/modules/User/features/Auth/`,
+`@auth/...` whenever the target lives under `src/modules/user/features/auth/`,
 regardless of whether the importer is inside or outside the feature.
 
 Both aliases are configured in:
@@ -304,7 +303,7 @@ Apollo Server runs in development for local GraphQL API:
 Localization files are auto-generated during build:
 
 - Module i18n files: `src/modules/*/features/*/i18n/{en,uk}.json`
-- Generated via `scripts/localizationGenerator.js`
+- Generated via `scripts/localization-generator.js`
 - Skip generation: `SKIP_LOCALE_GEN=1`
 
 ## Storybook
@@ -363,12 +362,11 @@ Key variables in `.env`:
 
 ## Important Patterns
 
-1. **API Error Handling**: Use typed API errors in `src/modules/User/features/Auth/api/ApiErrors/`
+1. **API Error Handling**: Use typed API errors in `src/modules/user/types/api-errors/`
    - `ValidationError`, `AuthenticationError`, `ConflictError`
    - Check with `isAPIError()` helper
 
-2. **Form Validation**: Centralized in module features (e.g.,
-   `Auth/components/FormSection/Validations/`)
+2. **Form Validation**: Centralized in module features (e.g., `auth/components/form-section/validations/`)
 
 3. **Routing**: Defined in `App.tsx` using `createBrowserRouter`
 

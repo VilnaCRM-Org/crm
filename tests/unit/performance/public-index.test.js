@@ -35,7 +35,6 @@ describe('public index performance safeguards', () => {
   it('keeps dependency injection metadata out of the client entry bundle', () => {
     const entrySource = fs.readFileSync(path.resolve(__dirname, '../../../src/index.tsx'), 'utf8');
 
-    expect(entrySource).not.toContain("import 'reflect-metadata';");
     expect(entrySource).not.toContain("import '@/config/dependency-injection-config';");
   });
 

@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 
-import { selectToken, useAuthStore } from '@auth/stores/authStore';
+import { selectToken, useAuthStore } from '@/stores/auth-store';
 
 export default function ProtectedRoute(): JSX.Element {
   const token = useAuthStore(selectToken);

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { group, sleep } from 'k6';
 
 import runPositiveTests from './signup/positive.js';

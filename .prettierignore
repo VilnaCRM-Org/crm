@@ -21,5 +21,7 @@ storybook-static/
 .eslintcache
 .npm
 
+.ralph/
+
 *.log
 *.lock

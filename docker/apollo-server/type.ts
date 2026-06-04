@@ -30,11 +30,11 @@ export interface MutationResolvers {
    * Creates a new user.
    *
    * @param parent - The parent object, typically not used in root-level resolvers.
-   * @param args - An object containing the `input` field, which holds the user data required for creation.
-   * @param context - The GraphQL execution context, providing access to authentication, database, loaders, etc.
-   * @param info - Information about the GraphQL execution state, including the query AST and schema details.
+   * @param args - Object containing the `input` field with the user data required for creation.
+   * @param context - GraphQL execution context (auth, database, loaders, etc).
+   * @param info - GraphQL execution state, including the query AST and schema details.
    *
-   * @returns Promise resolving to `CreateUserPayload` containing the created user and `clientMutationId`.
+   * @returns Promise resolving to `CreateUserPayload` with the created user and `clientMutationId`.
    */
   createUser: (
     parent: unknown,
