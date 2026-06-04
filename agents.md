@@ -6,6 +6,29 @@ This document provides workflows, patterns, and troubleshooting tips specificall
 AI assistants working with this codebase. For project overview and tech stack details,
 see `CLAUDE.md`.
 
+## Agent Skill Locations
+
+- `.agents/skills`: BMAD agents, planning workflows, and interactive methods.
+- `.claude/skills`: non-BMAD frontend project skills.
+
+Do not mirror BMAD skills into `.claude/skills`.
+
+### Mandatory Skill Check (Every Task)
+
+**Before any code, doc, or workflow change**, every AI agent (Claude Code,
+Codex, GitHub Copilot, Cursor, OpenAI agents, and any other assistant) MUST:
+
+1. Read [`.claude/skills/AI-AGENT-GUIDE.md`](.claude/skills/AI-AGENT-GUIDE.md).
+2. Read
+   [`.claude/skills/SKILL-DECISION-GUIDE.md`](.claude/skills/SKILL-DECISION-GUIDE.md).
+3. Identify every `.claude/skills/*` skill that applies to the current task
+   and read each matching `SKILL.md` before executing.
+4. Apply all relevant skills. Only skip one after recording
+   "Not applicable" with a concrete reason.
+
+This check is non-negotiable. Do not implement, format, lint, test, commit,
+or push until the relevant skills have been consulted.
+
 ## Quick Start for Agents
 
 ### First-Time Setup Checklist
@@ -38,7 +61,8 @@ same Docker-backed environment and avoid host-specific drift.
 3. **Add translations** - Always provide both `en.json` and `uk.json`
 4. **Register services** - If needed, add to `src/config/dependency-injection-config.ts`
 5. **Add tests** - Unit tests in `tests/unit/`, E2E in `tests/e2e/`
-6. **Run linters** - `make lint` before committing
+6. **Format and lint** - Run `make format` before `make lint`
+   (`make format` includes Prettier and `qlty fmt`)
 
 #### Modifying Existing Code
 
@@ -202,7 +226,8 @@ git commit -m "Apply code review suggestion: improve component naming"
 
 ```bash
 # For code changes
-make lint-eslint              # Fix code style
+make format                   # Prettier and qlty fmt
+make lint-eslint              # ESLint
 make lint-tsc                 # Static type checking
 make test-unit-all            # Run all unit tests
 make lint                     # Full linting suite (for significant changes)
@@ -291,6 +316,7 @@ Addresses review comment: https://github.com/org/repo/pull/123#discussion_r45678
 #### After Completing All Comments
 
 ```bash
+make format                # Prettier and qlty fmt
 make lint                  # Full quality check
 make test-unit-all         # Verify all tests pass
 make pr-comments           # Verify no new unresolved comments
@@ -888,11 +914,12 @@ Run monthly or when dependabot alerts
 
 ### After Making Changes
 
-1. **Run linters**: `make lint`
-2. **Run tests**: `make test-unit-all`
-3. **Manual verification**: `make start` and test in browser
-4. **Check bundle size**: `make build-analyze` if adding dependencies
-5. **Update docs**: If changing public APIs
+1. **Run formatters**: `make format` (Prettier and `qlty fmt`)
+2. **Run linters**: `make lint`
+3. **Run tests**: `make test-unit-all`
+4. **Manual verification**: `make start` and test in browser
+5. **Check bundle size**: `make build-analyze` if adding dependencies
+6. **Update docs**: If changing public APIs
 
 ### Code Review Self-Check
 
@@ -940,7 +967,9 @@ make lint               # All linters
 make lint-eslint        # ESLint only
 make lint-tsc           # TypeScript only
 make lint-md            # Markdown only
-make format             # Prettier format
+make fmt-prettier       # Prettier format
+make fmt-qlty           # Qlty format
+make format             # Prettier and Qlty format
 ```
 
 ### Building

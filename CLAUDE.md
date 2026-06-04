@@ -96,10 +96,39 @@ make lint           # Run all linters
 make lint-eslint    # ESLint
 make lint-tsc       # TypeScript
 make lint-md        # Markdown
-make format         # Prettier
+make lint-metrics   # rust-code-analysis complexity gate (see below)
+make fmt-prettier   # Prettier
+make fmt-qlty       # qlty fmt
+make format         # Prettier + qlty fmt
 ```
 
 Git hooks are managed by Husky. Run `make husky` once after cloning.
+Agents should run `make format` before `make lint`. Formatting is intentionally
+separate from the `lint` verification suite.
+
+## Agent Skill Layout
+
+- `.agents/skills`: BMAD agents, planning workflows, and interactive methods.
+- `.claude/skills`: frontend project skills for implementation, quality,
+  testing, review, documentation, observability, and performance guidance.
+
+Do not mirror BMAD skills into `.claude/skills`.
+
+### Mandatory Skill Check (Every Task)
+
+**Before any code, doc, or workflow change**, every AI agent (Claude Code,
+Codex, GitHub Copilot, Cursor, OpenAI agents, and any other assistant) MUST:
+
+1. Read [`.claude/skills/AI-AGENT-GUIDE.md`](.claude/skills/AI-AGENT-GUIDE.md).
+2. Read
+   [`.claude/skills/SKILL-DECISION-GUIDE.md`](.claude/skills/SKILL-DECISION-GUIDE.md).
+3. Identify every `.claude/skills/*` skill that applies to the current task
+   and read each matching `SKILL.md` before executing.
+4. Apply all relevant skills. Only skip one after recording
+   "Not applicable" with a concrete reason.
+
+This check is non-negotiable. Do not implement, format, lint, test, commit,
+or push until the relevant skills have been consulted.
 
 ### Code Metrics (rust-code-analysis)
 
