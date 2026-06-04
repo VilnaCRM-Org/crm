@@ -16,6 +16,7 @@ export interface AuthError {
   readonly displayMessage: string;
   readonly retryable: boolean;
   readonly issues?: readonly FieldIssue[];
+  readonly aborted?: boolean;
 }
 
 export type AuthResult<T> = { ok: true; value: T } | { ok: false; error: AuthError };

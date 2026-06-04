@@ -12,6 +12,8 @@ const TOKENS = Object.freeze({
   HttpErrorResponseParser: Symbol('HttpErrorResponseParser'),
   HttpClientFactory: Symbol('HttpClientFactory'),
   AbortErrorDetector: Symbol('AbortErrorDetector'),
+  AuthRepository: Symbol('AuthRepository'),
+  AuthRepositoryDeps: Symbol('AuthRepositoryDeps'),
 } as const);
 
 export default TOKENS;
