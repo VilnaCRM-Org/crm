@@ -1,6 +1,6 @@
-import type { SafeUserInfo } from '../types/api-responses';
-import type { AuthError, AuthResult } from '../types/auth-error';
-import type { LoginUserDto, RegisterUserDto } from '../types/credentials';
+import type { SafeUserInfo } from './api-responses';
+import type { AuthResult } from './auth-error';
+import type { LoginUserDto, RegisterUserDto } from './credentials';
 
 export interface AuthSession {
   readonly email: string;
@@ -14,5 +14,3 @@ export interface AuthRepository {
   login(credentials: LoginUserDto, signal?: AbortSignal): Promise<LoginResult>;
   register(credentials: RegisterUserDto, signal?: AbortSignal): Promise<RegisterResult>;
 }
-
-export type { AuthError };
