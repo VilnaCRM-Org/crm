@@ -1,4 +1,4 @@
-import AuthStoreActions from '@auth/repositories/auth-store-actions';
+import AuthStoreActions from '@auth/stores/auth-store-actions';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type { AuthSetState } from '@auth/types/auth-store';
 

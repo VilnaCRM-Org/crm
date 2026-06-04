@@ -357,6 +357,7 @@ module.exports = {
           '^src/app[.]tsx$',
           '^src/stores/',
           '^src/modules/[^/]+/store/[^/]+-slice[.]ts$',
+          '^src/modules/[^/]+/features/[^/]+/stores/index[.]ts$',
         ],
       },
       to: {
