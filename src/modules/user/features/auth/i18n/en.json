@@ -60,6 +60,7 @@
       "switcher_text_no_account": "Don’t have an account yet?"
     },
     "errors": {
+      "load_failed": "Couldn't open the sign-up form. Please try again.",
       "email_used": "Email address is already in use",
       "signup_error": "Registration error. Please try again later"
     }
@@ -87,14 +88,10 @@
       "forgot_password": "Forgot password?"
     }
   },
-  "footer": {
-    "logo_alt": "VilnaCRM logo",
-    "privacy": "Privacy Policy",
-    "usage_policy": "Terms of Use"
-  },
   "notifications": {
     "close": "Close notification",
     "success": {
+      "aria_label": "Registration successful notification",
       "title": "Congratulations!",
       "description": "You have successfully registered",
       "button": "Go back",
@@ -108,7 +105,7 @@
       "retry_button": "Try again",
       "button": "Go back",
       "images": {
-        "error": "Red triangle with a warning about an error."
+        "error": "Red triangle with a warning about an error"
       }
     }
   },
@@ -125,7 +122,12 @@
       "network_error": "Network error. Please check your internet connection"
     },
     "server_errors": {
-      "server_error": "Internal Server Error"
+      "server_error": "Internal server error"
     }
+  },
+  "footer": {
+    "logo_alt": "VilnaCRM logo",
+    "privacy": "Privacy Policy",
+    "usage_policy": "Terms of Use"
   }
 }

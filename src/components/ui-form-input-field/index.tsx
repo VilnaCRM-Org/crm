@@ -20,7 +20,7 @@ type CustomTextField<T extends FieldValues> = TextFieldProps & {
     RegisterOptions<T, Path<T>>,
     'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
   >;
-  defaultValue: PathValue<T, Path<T>> | undefined;
+  defaultValue?: PathValue<T, Path<T>>;
   name: Path<T>;
 };
 
@@ -28,6 +28,64 @@ type RenderFieldArgs<T extends FieldValues> = {
   field: ControllerRenderProps<T, Path<T>>;
   fieldState: ControllerFieldState;
 };
+
+type ControlledFieldProps<T extends FieldValues> = {
+  control: Control<T>;
+  rules: Omit<
+    RegisterOptions<T, Path<T>>,
+    'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
+  >;
+  defaultValue?: PathValue<T, Path<T>>;
+  name: Path<T>;
+  sx: TextFieldProps['sx'];
+  textFieldProps: Omit<CustomTextField<T>, 'control' | 'rules' | 'defaultValue' | 'name' | 'sx'>;
+};
+
+function createRenderField<T extends FieldValues>(
+  sx: TextFieldProps['sx'],
+  textFieldProps: ControlledFieldProps<T>['textFieldProps']
+): (args: RenderFieldArgs<T>) => React.ReactElement {
+  return function fieldView({
+    field: { ref, ...field },
+    fieldState,
+  }: RenderFieldArgs<T>): React.ReactElement {
+    return (
+      <TextField
+        {...textFieldProps}
+        {...field}
+        inputRef={ref}
+        error={fieldState.invalid}
+        helperText={fieldState.error?.message ?? textFieldProps.helperText}
+        sx={sx}
+      />
+    );
+  };
+}
+
+function ControlledField<T extends FieldValues>({
+  control,
+  rules,
+  defaultValue,
+  name,
+  sx,
+  textFieldProps,
+}: ControlledFieldProps<T>): React.ReactElement {
+  const view = createRenderField<T>(sx, textFieldProps);
+
+  if (defaultValue !== undefined) {
+    return (
+      <Controller
+        name={name}
+        control={control}
+        defaultValue={defaultValue}
+        rules={rules}
+        render={view}
+      />
+    );
+  }
+
+  return <Controller name={name} control={control} rules={rules} render={view} />;
+}
 
 export default function UIFormInputField<T extends FieldValues>({
   control,
@@ -37,33 +95,16 @@ export default function UIFormInputField<T extends FieldValues>({
   sx,
   ...props
 }: CustomTextField<T>): React.ReactElement {
-  const renderField = ({
-    field: { ref, ...field },
-    fieldState,
-  }: RenderFieldArgs<T>): React.ReactElement => (
-    <TextField
-      {...props}
-      {...field}
-      inputRef={ref}
-      error={fieldState.invalid}
-      helperText={fieldState.error?.message ?? props.helperText}
-      sx={sx}
-    />
-  );
-
   return (
     <ThemeProvider theme={theme}>
-      {defaultValue !== undefined ? (
-        <Controller
-          name={name}
-          control={control}
-          defaultValue={defaultValue}
-          rules={rules}
-          render={renderField}
-        />
-      ) : (
-        <Controller name={name} control={control} rules={rules} render={renderField} />
-      )}
+      <ControlledField
+        control={control}
+        rules={rules}
+        defaultValue={defaultValue}
+        name={name}
+        sx={sx}
+        textFieldProps={props}
+      />
     </ThemeProvider>
   );
 }

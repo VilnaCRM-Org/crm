@@ -50,6 +50,16 @@ describe('UIButton Component', () => {
 
       expect(screen.getByRole('link')).not.toHaveAttribute('type');
     });
+
+    it('prefers the resolved to target over an explicit href prop', () => {
+      render(
+        <UIButton to="/expected-path" href="/ignored-path">
+          Preferred Link
+        </UIButton>
+      );
+
+      expect(screen.getByRole('link')).toHaveAttribute('href', '/expected-path');
+    });
   });
 
   describe('Rendering as regular button', () => {

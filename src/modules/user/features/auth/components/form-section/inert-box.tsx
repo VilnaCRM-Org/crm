@@ -5,6 +5,7 @@ interface InertBoxProps {
   id: string;
   inert: boolean;
   children: ReactNode;
+  'data-testid'?: string;
 }
 
 function applyInert(el: HTMLDivElement | null, inert: boolean): void {
@@ -13,14 +14,19 @@ function applyInert(el: HTMLDivElement | null, inert: boolean): void {
   else el.removeAttribute('inert');
 }
 
-export default function InertBox({ id, inert, children }: InertBoxProps): JSX.Element {
+export default function InertBox({
+  id,
+  inert,
+  children,
+  'data-testid': dataTestId,
+}: InertBoxProps): JSX.Element {
   const setInertRef = useCallback(
     (el: HTMLDivElement | null): void => applyInert(el, inert),
     [inert]
   );
 
   return (
-    <Box id={id} ref={setInertRef}>
+    <Box id={id} data-testid={dataTestId} ref={setInertRef}>
       {children}
     </Box>
   );
