@@ -892,9 +892,12 @@ See `.github/workflows/` for configuration
   it is never persisted to `localStorage`, cookies, or disk
 - **Testing/LHCI only**: a token may be preloaded at runtime via
   `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
-  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. The Lighthouse/Playwright image
-  (`docker-compose.test.yml`, `target: production`) injects it only when
-  `LHCI_PRELOADED_AUTH_TOKEN` is set; it **must never be used in real production**
+  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. The Make-driven Lighthouse/Playwright
+  workflows build this image (`docker-compose.test.yml`, `target: production`) and inject a
+  **default** token automatically — `Makefile` sets
+  `LHCI_PRELOADED_AUTH_TOKEN ?= lighthouse-preloaded-auth-token` and bare-`export`s it, so
+  the prod-target test image always carries a token even if the user set nothing. It
+  **must never be shipped as a real production artifact**
 - This is enforced operationally, not by a `NODE_ENV` gate: `PreloadedAuthToken.read()`
   uses the token whenever it is present, so `LHCI_PRELOADED_AUTH_TOKEN` and
   `window.__PRELOADED_AUTH_TOKEN__` must be kept out of production builds and CI secrets.
