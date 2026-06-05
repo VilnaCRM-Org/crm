@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { useCallback, useEffect } from 'react';
+import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
 import { AuthStoreSelectors, useAuthStore } from '@auth/stores';
 import { LoginUserDto } from '@auth/types/credentials';
@@ -14,6 +14,7 @@ type LoginSubmitter = {
 
 const I18N_KEY_RE = /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/i;
 const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();
+type LoginUser = (data: LoginUserDto, signal?: AbortSignal) => Promise<void>;
 
 function formatLoginError(raw: string | null, t: TFunction): string {
   if (!raw) return '';
@@ -22,24 +23,50 @@ function formatLoginError(raw: string | null, t: TFunction): string {
   return t('sign_in.errors.login', { reason });
 }
 
-export default function useLoginSubmitter(t: TFunction): LoginSubmitter {
-  const loginUser = useAuthStore((state) => state.loginUser);
-  const isSubmitting = useAuthStore(AuthStoreSelectors.loginLoading);
-  const rawError = useAuthStore(AuthStoreSelectors.loginError);
+function clearLoginError(controllers: Set<AbortController>): void {
+  for (const controller of controllers) {
+    controller.abort();
+  }
 
+  controllers.clear();
+  useAuthStore.setState({ loginError: null });
+}
+
+function useLoginControllers(): MutableRefObject<Set<AbortController>> {
+  const loginControllersRef = useRef<Set<AbortController>>(new Set());
   useEffect(
     () => (): void => {
-      useAuthStore.setState({ loginError: null });
+      clearLoginError(loginControllersRef.current);
     },
     []
   );
 
-  const handleLogin = useCallback(
+  return loginControllersRef;
+}
+
+function useAbortableLogin(loginUser: LoginUser): LoginSubmitter['handleLogin'] {
+  const loginControllersRef = useLoginControllers();
+
+  return useCallback(
     async (data: LoginUserDto): Promise<void> => {
-      await loginUser(data);
+      const controller = new AbortController();
+      loginControllersRef.current.add(controller);
+
+      try {
+        await loginUser(data, controller.signal);
+      } finally {
+        loginControllersRef.current.delete(controller);
+      }
     },
-    [loginUser]
+    [loginControllersRef, loginUser]
   );
+}
+
+export default function useLoginSubmitter(t: TFunction): LoginSubmitter {
+  const loginUser = useAuthStore((state) => state.loginUser);
+  const isSubmitting = useAuthStore(AuthStoreSelectors.loginLoading);
+  const rawError = useAuthStore(AuthStoreSelectors.loginError);
+  const handleLogin = useAbortableLogin(loginUser);
 
   return {
     error: formatLoginError(rawError?.displayMessage ?? null, t),

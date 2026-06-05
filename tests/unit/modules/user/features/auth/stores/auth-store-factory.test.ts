@@ -51,6 +51,34 @@ describe('AuthStoreFactory', () => {
     expect(useStore.getState().email).toBe('');
   });
 
+  it('logout and reset clear a preloaded token instead of restoring it', async () => {
+    const originalEnv = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+    process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = 'preloaded-token';
+    try {
+      await jest.isolateModulesAsync(async () => {
+        const { default: Factory } = await import('@auth/stores/auth-store-factory');
+        const useStore = Factory.create(makeActions());
+
+        expect(useStore.getState().token).toBe('preloaded-token');
+
+        useStore.getState().logout();
+        expect(useStore.getState().token).toBeNull();
+
+        useStore.setState({ email: 'x@y.z', token: 'token' });
+        useStore.getState().reset();
+
+        expect(useStore.getState().email).toBe('');
+        expect(useStore.getState().token).toBeNull();
+      });
+    } finally {
+      if (originalEnv === undefined) {
+        delete process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+      } else {
+        process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = originalEnv;
+      }
+    }
+  });
+
   it('resetRegistration clears registration fields', () => {
     const useStore = AuthStoreFactory.create(makeActions());
     useStore.setState({
@@ -68,5 +96,28 @@ describe('AuthStoreFactory', () => {
   it('sanitize redacts the token for devtools', () => {
     expect(AuthStoreFactory.sanitize({ token: 't' } as never).token).toBe('[REDACTED]');
     expect(AuthStoreFactory.sanitize({ token: null } as never).token).toBeNull();
+  });
+
+  it('skips devtools middleware in production', async () => {
+    const originalEnv = process.env.NODE_ENV;
+    const devtoolsMock = jest.fn((stateCreator: unknown) => stateCreator);
+    process.env.NODE_ENV = 'production';
+
+    try {
+      await jest.isolateModulesAsync(async () => {
+        jest.doMock('zustand/middleware', () => ({ devtools: devtoolsMock }));
+        const { default: Factory } = await import('@auth/stores/auth-store-factory');
+        Factory.create(makeActions());
+      });
+
+      expect(devtoolsMock).not.toHaveBeenCalled();
+    } finally {
+      jest.dontMock('zustand/middleware');
+      if (originalEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = originalEnv;
+      }
+    }
   });
 });

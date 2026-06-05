@@ -9,11 +9,16 @@ import RegistrationHandlersFactory, {
 export default function useRegistrationHandlers(
   deps: RegistrationHandlerDeps
 ): RegistrationHandlers {
+  const { setView, setFormKey, lastSubmittedDataRef } = deps;
   const registerUser = useAuthStore((state) => state.registerUser);
   const resetRegistration = useAuthStore((state) => state.resetRegistration);
 
   return useMemo(
-    () => new RegistrationHandlersFactory(deps, { registerUser, resetRegistration }).build(),
-    [deps, registerUser, resetRegistration]
+    () =>
+      new RegistrationHandlersFactory(
+        { setView, setFormKey, lastSubmittedDataRef },
+        { registerUser, resetRegistration }
+      ).build(),
+    [lastSubmittedDataRef, registerUser, resetRegistration, setFormKey, setView]
   );
 }

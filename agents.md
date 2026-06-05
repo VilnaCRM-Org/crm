@@ -807,6 +807,10 @@ chore(deps): update dependencies
 docs(readme): update installation steps
 ```
 
+### Commit Safety
+
+- Do not commit or push markdown (`.md`) files unless the user explicitly requests it.
+
 ### Pre-commit Hooks
 
 Husky runs automatically:

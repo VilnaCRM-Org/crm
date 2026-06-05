@@ -142,10 +142,13 @@ describe('LoginForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
     await waitFor(() => {
-      expect(mockLoginUser).toHaveBeenCalledWith({
-        email: 'user@example.com',
-        password: 'secret123',
-      });
+      expect(mockLoginUser).toHaveBeenCalledWith(
+        {
+          email: 'user@example.com',
+          password: 'secret123',
+        },
+        expect.any(AbortSignal)
+      );
     });
   });
 

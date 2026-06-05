@@ -88,4 +88,44 @@ describe('useRegistrationHandlers', () => {
     expect(resetRegistration).not.toHaveBeenCalled();
     expect(registerUser).not.toHaveBeenCalled();
   });
+
+  it('keeps the same handler object when rerendered with stable dependency refs', () => {
+    const setView = jest.fn();
+    const setFormKey = jest.fn();
+    const lastSubmittedDataRef = { current: null } as MutableRefObject<RegisterUserDto | null>;
+
+    const { result, rerender } = renderHook(
+      ({
+        currentSetView,
+        currentSetFormKey,
+        currentLastSubmittedDataRef,
+      }: {
+        currentSetView: typeof setView;
+        currentSetFormKey: typeof setFormKey;
+        currentLastSubmittedDataRef: typeof lastSubmittedDataRef;
+      }) =>
+        useRegistrationHandlers({
+          setView: currentSetView,
+          setFormKey: currentSetFormKey,
+          lastSubmittedDataRef: currentLastSubmittedDataRef,
+        }),
+      {
+        initialProps: {
+          currentSetView: setView,
+          currentSetFormKey: setFormKey,
+          currentLastSubmittedDataRef: lastSubmittedDataRef,
+        },
+      }
+    );
+
+    const firstHandlers = result.current;
+
+    rerender({
+      currentSetView: setView,
+      currentSetFormKey: setFormKey,
+      currentLastSubmittedDataRef: lastSubmittedDataRef,
+    });
+
+    expect(result.current).toBe(firstHandlers);
+  });
 });

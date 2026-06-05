@@ -9,6 +9,15 @@ const t: TFunction = ((key: string, options?: Record<string, unknown>): string =
   return key;
 }) as unknown as TFunction;
 
+function createDeferred(): { promise: Promise<void>; resolve: () => void } {
+  let resolve = (): void => {};
+  const promise = new Promise<void>((resolver) => {
+    resolve = resolver;
+  });
+
+  return { promise, resolve };
+}
+
 describe('useLoginSubmitter', () => {
   beforeEach(() => {
     useAuthStore.getState().reset();
@@ -66,6 +75,47 @@ describe('useLoginSubmitter', () => {
       await result.current.handleLogin({ email: 'a@b.com', password: 'pw' });
     });
 
-    expect(loginUser).toHaveBeenCalledWith({ email: 'a@b.com', password: 'pw' });
+    expect(loginUser).toHaveBeenCalledWith(
+      { email: 'a@b.com', password: 'pw' },
+      expect.any(AbortSignal)
+    );
+  });
+
+  it('does not restore a late login error after unmount', async () => {
+    const deferred = createDeferred();
+    const lateError = {
+      kind: 'authentication' as const,
+      displayMessage: 'late failure',
+      retryable: false,
+    };
+    const loginUser = jest
+      .fn()
+      .mockImplementation(async (_data, signal?: AbortSignal): Promise<void> => {
+        await deferred.promise;
+
+        if (signal?.aborted) {
+          return;
+        }
+
+        useAuthStore.setState({ loginError: lateError });
+      });
+
+    useAuthStore.setState({ loginUser });
+
+    const { result, unmount } = renderHook(() => useLoginSubmitter(t));
+    let pendingLogin!: Promise<void>;
+
+    await act(async () => {
+      pendingLogin = result.current.handleLogin({ email: 'a@b.com', password: 'pw' });
+    });
+
+    unmount();
+
+    await act(async () => {
+      deferred.resolve();
+      await pendingLogin;
+    });
+
+    expect(useAuthStore.getState().loginError).toBeNull();
   });
 });

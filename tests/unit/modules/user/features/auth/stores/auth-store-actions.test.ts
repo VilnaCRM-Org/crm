@@ -91,4 +91,127 @@ describe('AuthStoreActions', () => {
       'auth/registerUser/aborted'
     );
   });
+
+  it('clears login loading when the repository rejects unexpectedly', async () => {
+    const set = jest.fn() as unknown as AuthSetState;
+    await new AuthStoreActions(
+      makeRepo({ login: jest.fn().mockRejectedValue(new Error('Unexpected failure')) })
+    ).login(set, { email: 'a@b.c', password: 'p' });
+
+    expect(set).toHaveBeenLastCalledWith(
+      {
+        loginLoading: false,
+        loginError: expect.objectContaining({ kind: 'unknown', retryable: false }),
+      },
+      false,
+      'auth/loginUser/rejected'
+    );
+  });
+
+  it('treats unexpected abort rejections as aborted login requests', async () => {
+    const set = jest.fn() as unknown as AuthSetState;
+    await new AuthStoreActions(
+      makeRepo({
+        login: jest
+          .fn()
+          .mockRejectedValue(new DOMException('The operation was aborted', 'AbortError')),
+      })
+    ).login(set, { email: 'a@b.c', password: 'p' });
+
+    expect(set).toHaveBeenLastCalledWith({ loginLoading: false }, false, 'auth/loginUser/aborted');
+  });
+
+  it('normalizes unexpected non-Error login rejections', async () => {
+    const set = jest.fn() as unknown as AuthSetState;
+    await new AuthStoreActions(makeRepo({ login: jest.fn().mockRejectedValue('boom') })).login(
+      set,
+      {
+        email: 'a@b.c',
+        password: 'p',
+      }
+    );
+
+    expect(set).toHaveBeenLastCalledWith(
+      {
+        loginLoading: false,
+        loginError: expect.objectContaining({ kind: 'unknown', retryable: false }),
+      },
+      false,
+      'auth/loginUser/rejected'
+    );
+  });
+
+  it('preserves structured auth errors from rejected login calls', async () => {
+    const error = {
+      kind: 'server' as const,
+      displayMessage: 'Server unavailable',
+      retryable: true,
+    };
+    const set = jest.fn() as unknown as AuthSetState;
+    await new AuthStoreActions(makeRepo({ login: jest.fn().mockRejectedValue(error) })).login(set, {
+      email: 'a@b.c',
+      password: 'p',
+    });
+
+    expect(set).toHaveBeenLastCalledWith(
+      { loginLoading: false, loginError: error },
+      false,
+      'auth/loginUser/rejected'
+    );
+  });
+
+  it('normalizes rejected Error objects with undefined messages', async () => {
+    const error = new Error();
+    error.message = undefined as unknown as string;
+    const set = jest.fn() as unknown as AuthSetState;
+    await new AuthStoreActions(makeRepo({ login: jest.fn().mockRejectedValue(error) })).login(set, {
+      email: 'a@b.c',
+      password: 'p',
+    });
+
+    expect(set).toHaveBeenLastCalledWith(
+      {
+        loginLoading: false,
+        loginError: expect.objectContaining({ kind: 'unknown', retryable: false }),
+      },
+      false,
+      'auth/loginUser/rejected'
+    );
+  });
+
+  it('clears register loading when the repository rejects unexpectedly', async () => {
+    const set = jest.fn() as unknown as AuthSetState;
+    await new AuthStoreActions(
+      makeRepo({ register: jest.fn().mockRejectedValue(new Error('Unexpected failure')) })
+    ).register(set, { fullName: 'A', email: 'a@b.c', password: 'p' });
+
+    expect(set).toHaveBeenLastCalledWith(
+      {
+        registerLoading: false,
+        registerError: expect.objectContaining({ kind: 'unknown', retryable: false }),
+      },
+      false,
+      'auth/registerUser/rejected'
+    );
+  });
+
+  it('treats rejected aborted registration errors as aborted requests', async () => {
+    const set = jest.fn() as unknown as AuthSetState;
+    await new AuthStoreActions(
+      makeRepo({
+        register: jest.fn().mockRejectedValue({
+          kind: 'network',
+          displayMessage: '',
+          retryable: false,
+          aborted: true,
+        }),
+      })
+    ).register(set, { fullName: 'A', email: 'a@b.c', password: 'p' });
+
+    expect(set).toHaveBeenLastCalledWith(
+      { registerLoading: false },
+      false,
+      'auth/registerUser/aborted'
+    );
+  });
 });
