@@ -890,12 +890,16 @@ See `.github/workflows/` for configuration
 
 - Access token is stored only in the in-memory Zustand auth state (`useAuthStore`);
   it is never persisted to `localStorage`, cookies, or disk
-- **Testing/LHCI only**: a token may be preloaded via `window.__PRELOADED_AUTH_TOKEN__`
-  or the `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. This is strictly for automated
-  tests and Lighthouse CI and **must never be used in production**
-- Preloaded tokens must be gated behind test-only/runtime checks (e.g. only when
-  `NODE_ENV` is `test`/`development`) and excluded from production builds and CI secrets,
-  so a token can never leak into a production bundle
+- **Testing/LHCI only**: a token may be preloaded at runtime via
+  `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
+  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. The Lighthouse/Playwright image
+  (`docker-compose.test.yml`, `target: production`) injects it only when
+  `LHCI_PRELOADED_AUTH_TOKEN` is set; it **must never be used in real production**
+- This is enforced operationally, not by a `NODE_ENV` gate: `PreloadedAuthToken.read()`
+  uses the token whenever it is present, so `LHCI_PRELOADED_AUTH_TOKEN` and
+  `window.__PRELOADED_AUTH_TOKEN__` must be kept out of production builds and CI secrets.
+  `rsbuild.config.ts` must not add an explicit `define` for the token (guarded by
+  `tests/unit/performance/public-index.test.js`)
 - No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Dependency Audits
