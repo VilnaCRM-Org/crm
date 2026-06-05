@@ -146,6 +146,7 @@ Testing
 
 ```bash
   make ci: runs the full local CI flow (setup, lint, tests, and prod-side checks)
+  make test-bats: runs shell-level regression coverage for Makefile targets and CI helper scripts
   make test-unit-all: runs unit tests for both client and server environments
   make test-unit-client: runs unit tests for the client using Jest
   make test-unit-server: runs unit tests for the server using Jest
@@ -163,6 +164,19 @@ Use `make ci` as the canonical pre-push validation command:
 
 Running `make ci` locally exercises the same checks CI runs across its workflows, so passing it
 before pushing means your changes should pass CI.
+
+### Bats Shell Coverage
+
+Use the Bats suite when you need fast regression coverage for Makefile shell flows and the
+`scripts/ci` wrappers without running the full prod-side stack:
+
+```bash
+make test-bats
+```
+
+When you add or change a public Make target, update `tests/bats/make-target-coverage.tsv` in the
+same change. Either add or adjust direct Bats coverage for the target, or point the manifest at
+the pull-request workflow that already executes the target end to end.
 
 Migration guidance for existing contributors:
 
