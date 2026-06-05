@@ -327,7 +327,7 @@ husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	$(BUNX) husky install
 
 test-bats: create-network ## Run Bats coverage for Makefile shell flows and CI helper scripts inside Docker
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev sh -c 'bun install --frozen-lockfile && bun x bats --formatter $(BATS_FORMATTER) -r tests/bats'
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev sh -c 'bun install --frozen-lockfile && bun x bats --formatter "$(BATS_FORMATTER)" -r tests/bats'
 
 storybook-start: ## Start Storybook UI and open in browser
 	$(STORYBOOK_START)

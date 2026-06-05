@@ -14,6 +14,7 @@ setup() {
   assert_output_contains 'Usage:'
 
   reset_command_log
+  # shellcheck disable=SC2016
   run env \
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
@@ -35,6 +36,7 @@ setup() {
   assert_output_contains 'Usage:'
 
   reset_command_log
+  # shellcheck disable=SC2016
   run env \
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \

@@ -188,8 +188,6 @@ setup_ci_script_test_env() {
   create_docker_stub
   create_make_stub
   create_generic_stub tar
-  create_generic_stub grep
-  create_generic_stub tee
 
   export SCRIPT_SANDBOX="$BATS_TEST_TMPDIR/script-sandbox"
   mkdir -p "$SCRIPT_SANDBOX"
@@ -213,6 +211,7 @@ run_ci_script() {
   local script_path="$1"
   shift
 
+  # shellcheck disable=SC2016
   run env \
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
