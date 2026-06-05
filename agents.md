@@ -729,12 +729,13 @@ nvm use        # If using nvm
 
 2. Use React DevTools in browser
 
-3. Check Redux state:
+3. Check Zustand/auth state:
 
    ```typescript
-   import { useSelector } from 'react-redux';
-   const state = useSelector((state) => state);
-   console.log('Redux state:', state);
+   import { useAuthStore } from '@auth/stores';
+
+   const authState = useAuthStore.getState();
+   console.log('Auth state:', authState);
    ```
 
 #### Debug Apollo Server
@@ -887,9 +888,9 @@ See `.github/workflows/` for configuration
 
 ### API Authentication
 
-- Tokens stored in Redux (memory only)
-- HTTP-only cookies for refresh tokens
-- CORS configured in Apollo Server
+- Access token stored in Zustand auth state (`useAuthStore`) and kept in memory
+- Test/LHCI flows can preload a token via `window.__PRELOADED_AUTH_TOKEN__` or `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN`
+- No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Dependency Audits
 
