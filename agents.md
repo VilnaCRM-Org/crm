@@ -888,8 +888,14 @@ See `.github/workflows/` for configuration
 
 ### API Authentication
 
-- Access token stored in Zustand auth state (`useAuthStore`) and kept in memory
-- Test/LHCI flows can preload a token via `window.__PRELOADED_AUTH_TOKEN__` or `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN`
+- Access token is stored only in the in-memory Zustand auth state (`useAuthStore`);
+  it is never persisted to `localStorage`, cookies, or disk
+- **Testing/LHCI only**: a token may be preloaded via `window.__PRELOADED_AUTH_TOKEN__`
+  or the `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. This is strictly for automated
+  tests and Lighthouse CI and **must never be used in production**
+- Preloaded tokens must be gated behind test-only/runtime checks (e.g. only when
+  `NODE_ENV` is `test`/`development`) and excluded from production builds and CI secrets,
+  so a token can never leak into a production bundle
 - No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Dependency Audits
