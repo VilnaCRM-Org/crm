@@ -4,96 +4,128 @@ import type { MutableRefObject } from 'react';
 import useRegistrationHandlers from '@auth/hooks/use-registration-handlers';
 import type { RegisterUserDto } from '@auth/types/credentials';
 
-const registerUserAction = { type: 'registration/registerUser/pending' };
-const resetAction = { type: 'registration/reset' };
+const registerUser = jest.fn<Promise<void>, [RegisterUserDto]>(() => Promise.resolve());
+const resetRegistration = jest.fn();
+const storeState = { registerUser, resetRegistration };
 
-jest.mock('@/modules/user/store', () => ({
-  registerUser: jest.fn(() => registerUserAction),
-  reset: jest.fn(() => resetAction),
+jest.mock('@auth/stores', () => ({
+  __esModule: true,
+  useAuthStore: (selector: (state: typeof storeState) => unknown): unknown => selector(storeState),
 }));
 
+type Handlers = ReturnType<typeof useRegistrationHandlers>;
+
 describe('useRegistrationHandlers', () => {
+  beforeEach(() => {
+    registerUser.mockClear();
+    resetRegistration.mockClear();
+  });
+
   const buildHook = (): {
-    view: ReturnType<typeof renderHook>;
-    dispatch: jest.Mock;
+    current: () => Handlers;
     setView: jest.Mock;
     setFormKey: jest.Mock;
     lastSubmittedDataRef: MutableRefObject<RegisterUserDto | null>;
   } => {
-    const dispatch = jest.fn();
     const setView = jest.fn();
     const setFormKey = jest.fn();
     const lastSubmittedDataRef = { current: null } as MutableRefObject<RegisterUserDto | null>;
 
-    const view = renderHook(() =>
-      useRegistrationHandlers({
-        dispatch: dispatch as never,
-        setView,
-        setFormKey,
-        lastSubmittedDataRef,
-      })
+    const { result } = renderHook(() =>
+      useRegistrationHandlers({ setView, setFormKey, lastSubmittedDataRef })
     );
 
-    return { view, dispatch, setView, setFormKey, lastSubmittedDataRef };
+    return { current: () => result.current, setView, setFormKey, lastSubmittedDataRef };
   };
 
-  it('handleRegister normalizes fullName, stores it in ref, and dispatches', () => {
-    const { view: result, dispatch, lastSubmittedDataRef } = buildHook();
-    const data: RegisterUserDto = {
-      email: 'a@b.com',
-      password: 'pw',
-      fullName: '   Alice Bob   ',
-    };
+  it('handleRegister normalizes fullName, stores it in ref, and registers', async () => {
+    const { current, lastSubmittedDataRef } = buildHook();
+    const data: RegisterUserDto = { email: 'a@b.com', password: 'pw', fullName: '   Alice Bob   ' };
 
-    act(() =>
-      (result.result.current as ReturnType<typeof useRegistrationHandlers>).handleRegister(data)
-    );
+    await act(() => current().handleRegister(data));
 
     expect(lastSubmittedDataRef.current).toEqual({ ...data, fullName: 'Alice Bob' });
-    expect(dispatch).toHaveBeenCalledWith(registerUserAction);
+    expect(registerUser).toHaveBeenCalledWith({ ...data, fullName: 'Alice Bob' });
   });
 
-  it('handleBackToForm resets state and clears the ref', () => {
-    const { view: result, dispatch, setView, lastSubmittedDataRef } = buildHook();
+  it('handleBackToForm resets registration and clears the ref', () => {
+    const { current, setView, lastSubmittedDataRef } = buildHook();
     lastSubmittedDataRef.current = { email: 'x', password: 'y', fullName: 'Z' };
 
-    act(() =>
-      (result.result.current as ReturnType<typeof useRegistrationHandlers>).handleBackToForm()
-    );
+    act(() => current().handleBackToForm());
 
     expect(setView).toHaveBeenCalledWith('form');
-    expect(dispatch).toHaveBeenCalledWith(resetAction);
+    expect(resetRegistration).toHaveBeenCalledTimes(1);
     expect(lastSubmittedDataRef.current).toBeNull();
   });
 
   it('handleSuccessShown increments the form key', () => {
-    const { view: result, setFormKey } = buildHook();
+    const { current, setFormKey } = buildHook();
 
-    act(() =>
-      (result.result.current as ReturnType<typeof useRegistrationHandlers>).handleSuccessShown()
-    );
+    act(() => current().handleSuccessShown());
 
     expect(setFormKey).toHaveBeenCalledWith(expect.any(Function));
     const update = setFormKey.mock.calls[0][0] as (n: number) => number;
     expect(update(3)).toBe(4);
   });
 
-  it('handleRetry resets and re-dispatches the last submitted data when available', () => {
-    const { view: result, dispatch, lastSubmittedDataRef } = buildHook();
+  it('handleRetry resets and re-registers the last submitted data when available', () => {
+    const { current, lastSubmittedDataRef } = buildHook();
     const last: RegisterUserDto = { email: 'a@b.com', password: 'pw', fullName: 'Alice' };
     lastSubmittedDataRef.current = last;
 
-    act(() => (result.result.current as ReturnType<typeof useRegistrationHandlers>).handleRetry());
+    act(() => current().handleRetry());
 
-    expect(dispatch).toHaveBeenNthCalledWith(1, resetAction);
-    expect(dispatch).toHaveBeenNthCalledWith(2, registerUserAction);
+    expect(resetRegistration).toHaveBeenCalledTimes(1);
+    expect(registerUser).toHaveBeenCalledWith(last);
   });
 
   it('handleRetry is a no-op when no last data is stored', () => {
-    const { view: result, dispatch } = buildHook();
+    const { current } = buildHook();
 
-    act(() => (result.result.current as ReturnType<typeof useRegistrationHandlers>).handleRetry());
+    act(() => current().handleRetry());
 
-    expect(dispatch).not.toHaveBeenCalled();
+    expect(resetRegistration).not.toHaveBeenCalled();
+    expect(registerUser).not.toHaveBeenCalled();
+  });
+
+  it('keeps the same handler object when rerendered with stable dependency refs', () => {
+    const setView = jest.fn();
+    const setFormKey = jest.fn();
+    const lastSubmittedDataRef = { current: null } as MutableRefObject<RegisterUserDto | null>;
+
+    const { result, rerender } = renderHook(
+      ({
+        currentSetView,
+        currentSetFormKey,
+        currentLastSubmittedDataRef,
+      }: {
+        currentSetView: typeof setView;
+        currentSetFormKey: typeof setFormKey;
+        currentLastSubmittedDataRef: typeof lastSubmittedDataRef;
+      }) =>
+        useRegistrationHandlers({
+          setView: currentSetView,
+          setFormKey: currentSetFormKey,
+          lastSubmittedDataRef: currentLastSubmittedDataRef,
+        }),
+      {
+        initialProps: {
+          currentSetView: setView,
+          currentSetFormKey: setFormKey,
+          currentLastSubmittedDataRef: lastSubmittedDataRef,
+        },
+      }
+    );
+
+    const firstHandlers = result.current;
+
+    rerender({
+      currentSetView: setView,
+      currentSetFormKey: setFormKey,
+      currentLastSubmittedDataRef: lastSubmittedDataRef,
+    });
+
+    expect(result.current).toBe(firstHandlers);
   });
 });

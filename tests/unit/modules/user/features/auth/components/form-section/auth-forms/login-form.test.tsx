@@ -8,7 +8,6 @@ import LoginForm, {
 const normalizeLoginErrorMessage = (error: unknown): string =>
   new LoginErrorMessageNormalizer().normalize(error);
 
-const mockDispatch = jest.fn();
 const mockLoginUser = jest.fn();
 const mockFormField = jest.fn();
 const mockUIForm = jest.fn();
@@ -30,13 +29,38 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@/stores/hooks', () => ({
-  __esModule: true,
-  default: (): typeof mockDispatch => mockDispatch,
-}));
+interface AuthError {
+  kind: string;
+  displayMessage: string;
+  retryable: boolean;
+}
 
-jest.mock('@/modules/user/store', () => ({
-  loginUser: (...args: unknown[]): unknown => mockLoginUser(...args),
+const authStoreState: {
+  loginError: AuthError | null;
+  loginLoading: boolean;
+  loginUser: (...args: unknown[]) => unknown;
+} = {
+  loginError: null,
+  loginLoading: false,
+  loginUser: mockLoginUser,
+};
+
+jest.mock('@auth/stores', () => ({
+  __esModule: true,
+  useAuthStore: Object.assign(
+    (selector?: (state: typeof authStoreState) => unknown): unknown =>
+      selector ? selector(authStoreState) : authStoreState,
+    {
+      setState: (next: Partial<typeof authStoreState>): void => {
+        Object.assign(authStoreState, next);
+      },
+      getState: (): typeof authStoreState => authStoreState,
+    }
+  ),
+  AuthStoreSelectors: {
+    loginError: (state: typeof authStoreState): AuthError | null => state.loginError,
+    loginLoading: (state: typeof authStoreState): boolean => state.loginLoading,
+  },
 }));
 
 jest.mock('@auth/utils/get-submit-label-key', () => ({
@@ -92,7 +116,9 @@ jest.mock('@/components/ui-form', () => ({
 describe('LoginForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockLoginUser.mockImplementation((payload: unknown) => payload);
+    authStoreState.loginError = null;
+    authStoreState.loginLoading = false;
+    mockLoginUser.mockReset();
   });
 
   it('uses sign-in translations for the email field', () => {
@@ -109,82 +135,39 @@ describe('LoginForm', () => {
     );
   });
 
-  it('shows a translated login error prefix with a normalized message', async () => {
-    mockDispatch.mockReturnValue({
-      unwrap: () => Promise.reject(new Error('Invalid credentials')),
-    });
+  it('invokes the loginUser action when the form is submitted', async () => {
+    mockLoginUser.mockResolvedValue(undefined);
 
     render(<LoginForm />);
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
     await waitFor(() => {
-      expect(screen.getByTestId('form-error')).toHaveTextContent(
-        'sign_in.errors.login: Invalid credentials'
+      expect(mockLoginUser).toHaveBeenCalledWith(
+        {
+          email: 'user@example.com',
+          password: 'secret123',
+        },
+        expect.any(AbortSignal)
       );
     });
   });
 
-  it('translates the error reason when it matches an i18n key pattern', async () => {
-    mockDispatch.mockReturnValue({
-      unwrap: () => Promise.reject(new Error('')),
-    });
+  it('shows a translated login error prefix when the store has a login error', () => {
+    authStoreState.loginError = {
+      kind: 'authentication',
+      displayMessage: 'Invalid credentials',
+      retryable: false,
+    };
 
     render(<LoginForm />);
-    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
-    await waitFor(() => {
-      expect(screen.getByTestId('form-error')).toHaveTextContent(
-        'sign_in.errors.login: auth.errors.unknown'
-      );
-    });
+    expect(screen.getByTestId('form-error')).toHaveTextContent(
+      'sign_in.errors.login: Invalid credentials'
+    );
   });
 
-  it('handles non-object submit failures through the translated error path', async () => {
-    mockDispatch.mockReturnValue({
-      // Rejecting with a non-Error primitive is the scenario under test.
-      unwrap: () => Promise.reject(404),
-    });
-
+  it('shows nothing when the store has no login error', () => {
     render(<LoginForm />);
-    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('form-error')).toHaveTextContent(
-        'sign_in.errors.login: auth.errors.unknown'
-      );
-    });
-  });
-
-  it('ignores serialized abort-shaped rejections from unwrap', async () => {
-    let rejectSubmit: (reason?: unknown) => void = () => undefined;
-    const abortLikeError = Object.assign(new Error('The operation was aborted'), {
-      name: 'AbortError',
-    });
-
-    mockDispatch.mockReturnValue({
-      unwrap: () =>
-        new Promise((_, reject) => {
-          rejectSubmit = reject;
-        }),
-    });
-
-    render(<LoginForm />);
-
-    fireEvent.click(screen.getByRole('button', { name: 'submit' }));
-
-    await waitFor(() => {
-      expect(mockUIForm).toHaveBeenLastCalledWith(
-        expect.objectContaining({ error: '', isSubmitting: true })
-      );
-    });
-
-    rejectSubmit(abortLikeError);
-
-    await waitFor(() => {
-      expect(mockUIForm).toHaveBeenLastCalledWith(
-        expect.objectContaining({ error: '', isSubmitting: false })
-      );
-    });
 
     expect(screen.getByTestId('form-error')).toHaveTextContent('');
   });
@@ -204,7 +187,7 @@ describe('LoginForm', () => {
         default: 'RegistrationFormFields',
       }));
 
-      const authForms = require('@auth/components/form-section/auth-forms');
+      const authForms = jest.requireActual('@auth/components/form-section/auth-forms');
       expect(authForms.LoginForm).toBe('LoginForm');
       expect(authForms.RegistrationForm).toBe('RegistrationForm');
       expect(authForms.RegistrationFormFields).toBe('RegistrationFormFields');

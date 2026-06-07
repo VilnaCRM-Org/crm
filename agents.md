@@ -729,12 +729,13 @@ nvm use        # If using nvm
 
 2. Use React DevTools in browser
 
-3. Check Redux state:
+3. Check Zustand/auth state:
 
    ```typescript
-   import { useSelector } from 'react-redux';
-   const state = useSelector((state) => state);
-   console.log('Redux state:', state);
+   import { useAuthStore } from '@auth/stores';
+
+   const authState = useAuthStore.getState();
+   console.log('Auth state:', authState);
    ```
 
 #### Debug Apollo Server
@@ -806,6 +807,10 @@ test(e2e): add login flow tests
 chore(deps): update dependencies
 docs(readme): update installation steps
 ```
+
+### Commit Safety
+
+- Do not commit or push markdown (`.md`) files unless the user explicitly requests it.
 
 ### Pre-commit Hooks
 
@@ -883,9 +888,22 @@ See `.github/workflows/` for configuration
 
 ### API Authentication
 
-- Tokens stored in Redux (memory only)
-- HTTP-only cookies for refresh tokens
-- CORS configured in Apollo Server
+- Access token is stored only in the in-memory Zustand auth state (`useAuthStore`);
+  it is never persisted to `localStorage`, cookies, or disk
+- **Testing/LHCI only**: a token may be preloaded at runtime via
+  `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
+  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. The Make-driven Lighthouse/Playwright
+  workflows build this image (`docker-compose.test.yml`, `target: production`) and inject a
+  **default** token automatically — `Makefile` sets
+  `LHCI_PRELOADED_AUTH_TOKEN ?= lighthouse-preloaded-auth-token` and bare-`export`s it, so
+  the prod-target test image always carries a token even if the user set nothing. It
+  **must never be shipped as a real production artifact**
+- This is enforced operationally, not by a `NODE_ENV` gate: `PreloadedAuthToken.read()`
+  uses the token whenever it is present, so `LHCI_PRELOADED_AUTH_TOKEN` and
+  `window.__PRELOADED_AUTH_TOKEN__` must be kept out of production builds and CI secrets.
+  `rsbuild.config.ts` must not add an explicit `define` for the token (guarded by
+  `tests/unit/performance/public-index.test.js`)
+- No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Dependency Audits
 

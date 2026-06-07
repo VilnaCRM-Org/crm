@@ -84,8 +84,7 @@ export default class ApiStatusErrorFactory {
     if (kind === 'auth') return new AuthenticationError();
     if (kind === 'conflict')
       return new ConflictError(`${this.context} conflict. Resource already exists.`);
-    const exhaustive: 'service' = kind;
-    return exhaustive === 'service' ? this.toServiceUnavailableError() : exhaustive;
+    return this.toServiceUnavailableError();
   }
 
   private toKnownApiError(spec: Extract<StatusErrorSpec, { kind: 'api' }>): ApiError {

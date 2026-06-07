@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
-import useAppDispatch, { useAppSelector } from '@/stores/hooks';
-
-import {
-  selectRegistrationError,
-  selectRegistrationLoading,
-  selectRegistrationUser,
-} from '@/modules/user/store/registration-selectors';
 import { RegistrationView } from '@auth/components/form-section/types';
+import { AuthStoreSelectors, useAuthStore } from '@auth/stores';
 import { RegisterUserDto } from '@auth/types/credentials';
 
 import useRegistrationHandlers from './use-registration-handlers';
@@ -18,7 +12,7 @@ type UseRegistrationFormResult = {
   errorText: string;
   formKey: number;
   isSubmitting: boolean;
-  handleRegister: (data: RegisterUserDto) => void;
+  handleRegister: (data: RegisterUserDto) => Promise<void>;
   handleSuccessShown: () => void;
   handleBackToForm: () => void;
   handleRetry: () => void;
@@ -27,10 +21,10 @@ type UseRegistrationFormResult = {
 export default function useRegistrationForm(
   onViewChange?: (view: RegistrationView) => void
 ): UseRegistrationFormResult {
-  const dispatch = useAppDispatch();
-  const user = useAppSelector(selectRegistrationUser);
-  const loading = useAppSelector(selectRegistrationLoading);
-  const error = useAppSelector(selectRegistrationError);
+  const user = useAuthStore(AuthStoreSelectors.registerUser);
+  const isSubmitting = useAuthStore(AuthStoreSelectors.registerLoading);
+  const error = useAuthStore(AuthStoreSelectors.registerError);
+  const errorText = error?.displayMessage ?? null;
 
   const [view, setView] = useState<RegistrationView>('form');
   const [formKey, setFormKey] = useState(0);
@@ -39,17 +33,13 @@ export default function useRegistrationForm(
   useEffect(() => {
     onViewChange?.(view);
   }, [onViewChange, view]);
-
-  const isSubmitting = loading;
-
-  useRegistrationViewSync({ user, error, isSubmitting, setView });
+  useRegistrationViewSync({ user, error: errorText, isSubmitting, setView });
 
   const handlers = useRegistrationHandlers({
-    dispatch,
     setView,
     setFormKey,
     lastSubmittedDataRef,
   });
 
-  return { view, errorText: error ?? '', formKey, isSubmitting, ...handlers };
+  return { view, errorText: errorText ?? '', formKey, isSubmitting, ...handlers };
 }

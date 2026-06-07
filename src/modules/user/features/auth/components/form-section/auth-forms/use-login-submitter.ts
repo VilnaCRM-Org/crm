@@ -1,9 +1,7 @@
 import type { TFunction } from 'i18next';
-import { Dispatch, SetStateAction, useCallback, useState } from 'react';
+import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
-import useAppDispatch from '@/stores/hooks';
-
-import { loginUser } from '@/modules/user/store';
+import { AuthStoreSelectors, useAuthStore } from '@auth/stores';
 import { LoginUserDto } from '@auth/types/credentials';
 
 import LoginErrorMessageNormalizer from './login-error-message';
@@ -14,62 +12,65 @@ type LoginSubmitter = {
   handleLogin: (data: LoginUserDto) => Promise<void>;
 };
 
-type SubmitLoginContext = {
-  data: LoginUserDto;
-  dispatch: ReturnType<typeof useAppDispatch>;
-  setError: Dispatch<SetStateAction<string>>;
-  setIsSubmitting: Dispatch<SetStateAction<boolean>>;
-  t: TFunction;
-};
-
 const I18N_KEY_RE = /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/i;
 const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();
+type LoginUser = (data: LoginUserDto, signal?: AbortSignal) => Promise<void>;
 
-function isAbortLike(err: unknown): boolean {
-  if (!err || typeof err !== 'object') {
-    return false;
+function formatLoginError(raw: string | null, t: TFunction): string {
+  if (!raw) return '';
+  const normalized = loginErrorMessageNormalizer.normalize(raw);
+  const reason = I18N_KEY_RE.test(normalized) ? t(normalized) : normalized;
+  return t('sign_in.errors.login', { reason });
+}
+
+function clearLoginError(controllers: Set<AbortController>): void {
+  for (const controller of controllers) {
+    controller.abort();
   }
 
-  const maybeError = err as { name?: unknown; code?: unknown; message?: unknown };
-  return (
-    maybeError.name === 'AbortError' ||
-    maybeError.code === 'ABORT_ERR' ||
-    maybeError.message === 'The operation was aborted'
+  controllers.clear();
+  useAuthStore.setState({ loginError: null });
+}
+
+function useLoginControllers(): MutableRefObject<Set<AbortController>> {
+  const loginControllersRef = useRef<Set<AbortController>>(new Set());
+  useEffect(
+    () => (): void => {
+      clearLoginError(loginControllersRef.current);
+    },
+    []
   );
+
+  return loginControllersRef;
 }
 
-function setLoginFailure(ctx: SubmitLoginContext, err: unknown): void {
-  const message = loginErrorMessageNormalizer.normalize(err);
-  const reason = I18N_KEY_RE.test(message) ? ctx.t(message) : message;
-  ctx.setError(ctx.t('sign_in.errors.login', { reason }));
-}
+function useAbortableLogin(loginUser: LoginUser): LoginSubmitter['handleLogin'] {
+  const loginControllersRef = useLoginControllers();
 
-function handleSubmitError(ctx: SubmitLoginContext, err: unknown): void {
-  if (isAbortLike(err)) {
-    return;
-  }
-  setLoginFailure(ctx, err);
-}
+  return useCallback(
+    async (data: LoginUserDto): Promise<void> => {
+      const controller = new AbortController();
+      loginControllersRef.current.add(controller);
 
-async function submitLogin(ctx: SubmitLoginContext): Promise<void> {
-  ctx.setIsSubmitting(true);
-  ctx.setError('');
-  try {
-    await ctx.dispatch(loginUser(ctx.data)).unwrap();
-  } catch (err) {
-    handleSubmitError(ctx, err);
-  } finally {
-    ctx.setIsSubmitting(false);
-  }
+      try {
+        await loginUser(data, controller.signal);
+      } finally {
+        loginControllersRef.current.delete(controller);
+      }
+    },
+    [loginControllersRef, loginUser]
+  );
 }
 
 export default function useLoginSubmitter(t: TFunction): LoginSubmitter {
-  const [error, setError] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const dispatch = useAppDispatch();
-  const handleLogin = useCallback(
-    (data: LoginUserDto) => submitLogin({ data, dispatch, setError, setIsSubmitting, t }),
-    [dispatch, t]
-  );
-  return { error, isSubmitting, handleLogin };
+  const loginUser = useAuthStore((state) => state.loginUser);
+  const isSubmitting = useAuthStore(AuthStoreSelectors.loginLoading);
+  const rawError = useAuthStore(AuthStoreSelectors.loginError);
+  const handleLogin = useAbortableLogin(loginUser);
+
+  return {
+    error: formatLoginError(rawError?.displayMessage ?? null, t),
+    isSubmitting,
+    handleLogin,
+  };
 }

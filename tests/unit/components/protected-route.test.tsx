@@ -1,40 +1,37 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { render, screen } from '@testing-library/react';
-import { Provider } from 'react-redux';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-import ProtectedRoute from '@/components/protected-route';
-import { loginReducer } from '@/modules/user/store/login-slice';
-import { registrationReducer } from '@/modules/user/store/registration-slice';
+import ProtectedRoute from '@auth/components/protected-route';
+import { useAuthStore } from '@auth/stores';
 
-jest.mock('@/stores', () => ({
-  __esModule: true,
-  default: {},
-}));
-
-const makeStore = (token: string | null): ReturnType<typeof configureStore> =>
-  configureStore({
-    reducer: { auth: loginReducer, registration: registrationReducer },
-    preloadedState: {
-      auth: { token, email: '', loading: false, error: null },
-    },
+function seedToken(token: string | null): void {
+  act(() => {
+    useAuthStore.getState().reset();
+    useAuthStore.setState({ token });
   });
+}
 
-const renderWithRouter = (token: string | null): ReturnType<typeof render> =>
-  render(
-    <Provider store={makeStore(token)}>
-      <MemoryRouter initialEntries={['/']}>
-        <Routes>
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<div data-testid="dashboard" />} />
-          </Route>
-          <Route path="/authentication" element={<div data-testid="auth-page" />} />
-        </Routes>
-      </MemoryRouter>
-    </Provider>
+const renderWithRouter = (token: string | null): ReturnType<typeof render> => {
+  seedToken(token);
+  return render(
+    <MemoryRouter initialEntries={['/']}>
+      <Routes>
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<div data-testid="dashboard" />} />
+        </Route>
+        <Route path="/authentication" element={<div data-testid="auth-page" />} />
+      </Routes>
+    </MemoryRouter>
   );
+};
 
 describe('ProtectedRoute', () => {
+  afterEach(() => {
+    act(() => {
+      useAuthStore.getState().reset();
+    });
+  });
+
   it('redirects to /authentication when token is null', () => {
     renderWithRouter(null);
 

@@ -34,14 +34,8 @@ describe('public index performance safeguards', () => {
 
   it('keeps dependency injection metadata out of the client entry bundle', () => {
     const entrySource = fs.readFileSync(path.resolve(__dirname, '../../../src/index.tsx'), 'utf8');
-    const storeSource = fs.readFileSync(
-      path.resolve(__dirname, '../../../src/stores/index.ts'),
-      'utf8'
-    );
 
     expect(entrySource).not.toContain("import '@/config/dependency-injection-config';");
-    expect(storeSource).not.toContain("from '@/config/dependency-injection-config'");
-    expect(storeSource).not.toContain('container.resolve<');
   });
 
   it('serves immutable cache headers for static assets in production', () => {

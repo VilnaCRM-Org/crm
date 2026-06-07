@@ -4,9 +4,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
-import { Provider } from 'react-redux';
 
-import Store from '@/stores';
 import '@/styles/fonts.css';
 import theme from '@/styles/theme';
 
@@ -26,11 +24,9 @@ root.render(
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Provider store={Store}>
-          <React.Suspense fallback={null}>
-            <App />
-          </React.Suspense>
-        </Provider>
+        <React.Suspense fallback={null}>
+          <App />
+        </React.Suspense>
       </ThemeProvider>
     </StyledEngineProvider>
   </React.StrictMode>

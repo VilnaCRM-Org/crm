@@ -1,20 +1,11 @@
 import { ThemeProvider, createTheme, Theme } from '@mui/material/styles';
-import { configureStore } from '@reduxjs/toolkit';
 import { render, RenderResult } from '@testing-library/react';
 import i18n, { i18n as I18nType } from 'i18next';
 import React from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
-import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 
 import enTranslations from '@/i18n/localization.json';
-import { loginReducer, type LoginState } from '@/modules/user/store/login-slice';
-import {
-  registrationReducer,
-  type RegistrationState,
-} from '@/modules/user/store/registration-slice';
-import type { ThunkExtra } from '@/modules/user/store/types';
-import createAuthClients from '@/stores/auth-clients';
 
 export const testI18n = i18n.createInstance();
 
@@ -46,53 +37,18 @@ export const testTheme = createTheme({
 interface RenderOptions {
   theme?: Theme;
   i18nMock?: I18nType;
-  preloadedState?: {
-    auth?: Partial<LoginState>;
-    registration?: Partial<RegistrationState>;
-  };
 }
+
 const renderWithProviders = (
   component: React.ReactElement,
-  { theme = testTheme, i18nMock = testI18n, preloadedState }: RenderOptions = {}
-): RenderResult => {
-  const thunkExtraArgument: ThunkExtra = createAuthClients();
-  const testStore = configureStore({
-    reducer: {
-      auth: loginReducer,
-      registration: registrationReducer,
-    },
-    preloadedState: {
-      auth: {
-        token: null,
-        email: '',
-        loading: false,
-        error: null,
-        ...preloadedState?.auth,
-      },
-      registration: {
-        user: null,
-        loading: false,
-        error: null,
-        ...preloadedState?.registration,
-      },
-    },
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        thunk: {
-          extraArgument: thunkExtraArgument,
-        },
-      }),
-  });
-
-  return render(
-    <Provider store={testStore}>
-      <MemoryRouter>
-        <ThemeProvider theme={theme}>
-          <I18nextProvider i18n={i18nMock}>{component}</I18nextProvider>
-        </ThemeProvider>
-      </MemoryRouter>
-    </Provider>
+  { theme = testTheme, i18nMock = testI18n }: RenderOptions = {}
+): RenderResult =>
+  render(
+    <MemoryRouter>
+      <ThemeProvider theme={theme}>
+        <I18nextProvider i18n={i18nMock}>{component}</I18nextProvider>
+      </ThemeProvider>
+    </MemoryRouter>
   );
-};
 
 export default renderWithProviders;

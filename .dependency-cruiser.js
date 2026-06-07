@@ -244,7 +244,10 @@ module.exports = {
       severity: 'error',
       from: {
         path: '^src/',
-        pathNot: '^src/modules/[^/]+/features/[^/]+/repositories/',
+        pathNot: [
+          '^src/modules/[^/]+/features/[^/]+/repositories/',
+          '^src/config/dependency-injection-config[.]ts$',
+        ],
       },
       to: {
         path:
@@ -330,6 +333,7 @@ module.exports = {
         pathNot: [
           '^src/config/dependency-injection-config[.]ts$',
           '^src/modules/[^/]+/features/[^/]+/repositories/',
+          '^src/modules/[^/]+/features/[^/]+/stores/',
           '^src/services/',
           '^src/stores/',
           '^src/utils/error/',
@@ -353,6 +357,7 @@ module.exports = {
           '^src/app[.]tsx$',
           '^src/stores/',
           '^src/modules/[^/]+/store/[^/]+-slice[.]ts$',
+          '^src/modules/[^/]+/features/[^/]+/stores/index[.]ts$',
         ],
       },
       to: {
@@ -436,12 +441,12 @@ module.exports = {
       name: 'feature-allowed-folders',
       comment:
         'Feature root may only contain allowed folders: assets, components, ' +
-        'hooks, i18n, repositories, routes, types, utils.',
+        'hooks, i18n, repositories, routes, stores, types, utils.',
       severity: 'error',
       from: {
         path:
           '^src/modules/[^/]+/features/[^/]+/' +
-          '(?!(?:assets|components|hooks|i18n|repositories|routes|types|utils)/)[^/]+/',
+          '(?!(?:assets|components|hooks|i18n|repositories|routes|stores|types|utils)/)[^/]+/',
       },
       to: {},
     },
@@ -506,12 +511,12 @@ module.exports = {
       name: 'tests-feature-allowed-folders',
       comment:
         'Test feature root may only contain allowed folders: assets, components, ' +
-        'hooks, i18n, repositories, routes, types, utils.',
+        'hooks, i18n, repositories, routes, stores, types, utils.',
       severity: 'error',
       from: {
         path:
           '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/features/[a-z0-9-]+/' +
-          '(?!(?:assets|components|hooks|i18n|repositories|routes|types|utils)/)[^/]+/',
+          '(?!(?:assets|components|hooks|i18n|repositories|routes|stores|types|utils)/)[^/]+/',
       },
       to: {},
     },

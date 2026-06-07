@@ -1,4 +1,9 @@
-import type { SerializedError } from '@reduxjs/toolkit';
+interface SerializedError {
+  name?: string;
+  message?: string;
+  stack?: string;
+  code?: string;
+}
 
 const UNKNOWN_KEY = 'auth.errors.unknown';
 
