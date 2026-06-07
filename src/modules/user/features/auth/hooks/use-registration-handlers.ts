@@ -1,75 +1,24 @@
-import type { Dispatch, SetStateAction, MutableRefObject } from 'react';
-import { useCallback } from 'react';
+import { useMemo } from 'react';
 
-import { registerUser, reset } from '@/modules/user/store';
-import { RegistrationView } from '@auth/components/form-section/types';
-import { RegisterUserDto } from '@auth/types/credentials';
+import { useAuthStore } from '@auth/stores';
+import RegistrationHandlersFactory, {
+  type RegistrationHandlerDeps,
+  type RegistrationHandlers,
+} from '@auth/utils/registration-handlers-factory';
 
-const incrementKey = (prev: number): number => prev + 1;
-const normalize = (data: RegisterUserDto): RegisterUserDto => ({
-  ...data,
-  fullName: data.fullName.trim(),
-});
+export default function useRegistrationHandlers(
+  deps: RegistrationHandlerDeps
+): RegistrationHandlers {
+  const { setView, setFormKey, lastSubmittedDataRef } = deps;
+  const registerUser = useAuthStore((state) => state.registerUser);
+  const resetRegistration = useAuthStore((state) => state.resetRegistration);
 
-type Handlers = {
-  handleRegister: (data: RegisterUserDto) => void;
-  handleSuccessShown: () => void;
-  handleBackToForm: () => void;
-  handleRetry: () => void;
-};
-
-type Deps = {
-  dispatch: ReturnType<typeof import('@/stores/hooks').default>;
-  setView: Dispatch<SetStateAction<RegistrationView>>;
-  setFormKey: Dispatch<SetStateAction<number>>;
-  lastSubmittedDataRef: MutableRefObject<RegisterUserDto | null>;
-};
-
-type RegisterDeps = Pick<Deps, 'dispatch' | 'lastSubmittedDataRef'>;
-type BackToFormDeps = Pick<Deps, 'dispatch' | 'setView' | 'lastSubmittedDataRef'>;
-type SuccessShownDeps = Pick<Deps, 'setFormKey'>;
-
-function useHandleRegister(deps: RegisterDeps): Handlers['handleRegister'] {
-  const { dispatch, lastSubmittedDataRef } = deps;
-  return useCallback(
-    (data: RegisterUserDto): void => {
-      const normalized = normalize(data);
-      lastSubmittedDataRef.current = normalized;
-      dispatch(registerUser(normalized));
-    },
-    [dispatch, lastSubmittedDataRef]
+  return useMemo(
+    () =>
+      new RegistrationHandlersFactory(
+        { setView, setFormKey, lastSubmittedDataRef },
+        { registerUser, resetRegistration }
+      ).build(),
+    [lastSubmittedDataRef, registerUser, resetRegistration, setFormKey, setView]
   );
-}
-
-function useHandleBackToForm(deps: BackToFormDeps): Handlers['handleBackToForm'] {
-  const { dispatch, setView, lastSubmittedDataRef } = deps;
-  return useCallback((): void => {
-    setView('form');
-    dispatch(reset());
-    lastSubmittedDataRef.current = null;
-  }, [dispatch, setView, lastSubmittedDataRef]);
-}
-
-function useHandleSuccessShown(deps: SuccessShownDeps): Handlers['handleSuccessShown'] {
-  const { setFormKey } = deps;
-  return useCallback(() => setFormKey(incrementKey), [setFormKey]);
-}
-
-function useHandleRetry(deps: RegisterDeps): Handlers['handleRetry'] {
-  const { dispatch, lastSubmittedDataRef } = deps;
-  return useCallback((): void => {
-    const last = lastSubmittedDataRef.current;
-    if (!last) return;
-    dispatch(reset());
-    dispatch(registerUser(last));
-  }, [dispatch, lastSubmittedDataRef]);
-}
-
-export default function useRegistrationHandlers(deps: Deps): Handlers {
-  const handleRegister = useHandleRegister(deps);
-  const handleBackToForm = useHandleBackToForm(deps);
-  const handleSuccessShown = useHandleSuccessShown(deps);
-  const handleRetry = useHandleRetry(deps);
-
-  return { handleRegister, handleSuccessShown, handleBackToForm, handleRetry };
 }

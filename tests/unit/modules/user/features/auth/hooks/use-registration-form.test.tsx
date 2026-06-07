@@ -1,80 +1,44 @@
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 
 import useRegistrationForm from '@auth/hooks/use-registration-form';
-
-const mockDispatch = jest.fn();
-const selectorValues: Record<string, unknown> = {
-  user: null,
-  loading: false,
-  error: null,
-};
-
-jest.mock('@/stores/hooks', () => ({
-  __esModule: true,
-  default: (): jest.Mock => mockDispatch,
-  useAppSelector: (selector: (state: unknown) => unknown): unknown =>
-    selector({
-      registration: {
-        user: selectorValues.user,
-        loading: selectorValues.loading,
-        error: selectorValues.error,
-      },
-    }),
-}));
+import { useAuthStore } from '@auth/stores';
 
 describe('useRegistrationForm', () => {
   beforeEach(() => {
-    selectorValues.user = null;
-    selectorValues.loading = false;
-    selectorValues.error = null;
-    mockDispatch.mockClear();
+    useAuthStore.getState().reset();
   });
 
-  it('starts on the form view with empty error text', () => {
+  it('exposes registration state and handlers, starting on the form view', () => {
     const { result } = renderHook(() => useRegistrationForm());
 
     expect(result.current.view).toBe('form');
     expect(result.current.errorText).toBe('');
-    expect(result.current.formKey).toBe(0);
     expect(result.current.isSubmitting).toBe(false);
-  });
-
-  it('notifies the onViewChange callback when the view changes', () => {
-    const onViewChange = jest.fn();
-    renderHook(() => useRegistrationForm(onViewChange));
-
-    expect(onViewChange).toHaveBeenCalledWith('form');
-  });
-
-  it('surfaces the error text from the store', () => {
-    selectorValues.error = 'something went wrong';
-    const { result } = renderHook(() => useRegistrationForm());
-
-    expect(result.current.errorText).toBe('something went wrong');
-  });
-
-  it('switches to the error view after a settled registration error', async () => {
-    selectorValues.error = 'something went wrong';
-
-    const { result } = renderHook(() => useRegistrationForm());
-
-    await waitFor(() => expect(result.current.view).toBe('error'));
-    expect(result.current.isSubmitting).toBe(false);
-  });
-
-  it('exposes handlers and a stable formKey across renders', () => {
-    const { result, rerender } = renderHook(() => useRegistrationForm());
-
     expect(typeof result.current.handleRegister).toBe('function');
     expect(typeof result.current.handleSuccessShown).toBe('function');
     expect(typeof result.current.handleBackToForm).toBe('function');
     expect(typeof result.current.handleRetry).toBe('function');
+  });
 
-    const initialKey = result.current.formKey;
-    rerender();
-    expect(result.current.formKey).toBe(initialKey);
+  it('reports the store error through errorText and notifies view change subscribers', () => {
+    const onViewChange = jest.fn();
+    useAuthStore.setState({
+      registerError: { kind: 'unknown', displayMessage: 'boom', retryable: false },
+    });
+
+    const { result } = renderHook(() => useRegistrationForm(onViewChange));
+
+    expect(result.current.errorText).toBe('boom');
+    expect(onViewChange).toHaveBeenCalledWith('error');
+    expect(result.current.view).toBe('error');
+  });
+
+  it('increments the form key when success is shown', () => {
+    const { result } = renderHook(() => useRegistrationForm());
+    const before = result.current.formKey;
 
     act(() => result.current.handleSuccessShown());
-    expect(result.current.formKey).toBe(initialKey + 1);
+
+    expect(result.current.formKey).toBe(before + 1);
   });
 });

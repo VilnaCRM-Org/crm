@@ -1,4 +1,5 @@
 import '../../../../setup';
+import ApiErrorFactory from '@/modules/user/features/auth/repositories/api-error-factory';
 import BaseAPI from '@/modules/user/features/auth/repositories/base-api';
 import {
   ApiError,
@@ -375,6 +376,17 @@ describe('BaseAPI Integration', () => {
         expect(result.message).toBe('Request canceled.');
         expect(result.code).toBe(ApiErrorCodes.CANCELLED);
       });
+    });
+  });
+
+  describe('ApiErrorFactory.fromHttpError static method', () => {
+    it('maps status-less network-keyword error to network code via right-side OR branch', () => {
+      const error = { status: undefined as unknown as number, message: 'network unavailable' };
+
+      const result = ApiErrorFactory.fromHttpError(error, 'Login');
+
+      expect(result.code).toBe(ApiErrorCodes.NETWORK);
+      expect(result.message).toBe('Network error. Please check your connection.');
     });
   });
 });

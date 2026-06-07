@@ -1,23 +1,8 @@
 import { ApiErrorCodes } from '@/modules/user/types/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
-import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
 
 describe('ApiErrorFactory', () => {
-  it('keeps the defensive simple-error fallback branch covered', () => {
-    const FactoryCtor = ApiStatusErrorFactory as unknown as new (
-      spec: { kind: 'service' },
-      error: { status: number; message: string },
-      context: string
-    ) => object;
-    const factory = new FactoryCtor({ kind: 'service' }, { status: 503, message: '' }, 'Login');
-    const toSimpleApiError = Reflect.get(factory, 'toSimpleApiError') as (
-      kind: 'unexpected'
-    ) => unknown;
-
-    expect(toSimpleApiError.call(factory, 'unexpected')).toBe('unexpected');
-  });
-
   it('loads auth API modules when reflected constructor types are unavailable', () => {
     const modulePaths = ['@auth/repositories/login-api', '@auth/repositories/registration-api'];
     for (const modulePath of modulePaths) {

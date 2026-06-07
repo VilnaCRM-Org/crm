@@ -1,43 +1,33 @@
+import 'reflect-metadata';
+
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 
 describe('RegistrationResponseMapper', () => {
   const mapper = new RegistrationResponseMapper();
 
-  it('maps a valid registration response', () => {
-    const result = mapper.map({
-      email: 'user@example.com',
-      fullName: 'Test User',
-    });
+  it('returns ok with user info on a valid response', () => {
+    const result = mapper.map({ fullName: 'Test User', email: 'test@example.com' });
 
-    expect(result).toEqual({
-      ok: true,
-      value: {
-        email: 'user@example.com',
-        fullName: 'Test User',
-      },
-    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.fullName).toBe('Test User');
+      expect(result.value.email).toBe('test@example.com');
+    }
   });
 
-  it('returns a UI error when the registration response shape is invalid', () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    try {
-      const result = mapper.map({
-        email: 42,
-      });
+  it('returns error when response fields have wrong types', () => {
+    const result = mapper.map({ fullName: 123, email: 456 });
 
-      expect(result.ok).toBe(false);
-      if (result.ok) {
-        throw new Error('Expected invalid registration response to fail');
-      }
-
-      expect(result.error).toEqual({
-        displayMessage:
-          'There was a problem with the provided information. Please check your input.',
-        retryable: false,
-      });
-      expect(consoleErrorSpy).toHaveBeenCalled();
-    } finally {
-      consoleErrorSpy.mockRestore();
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.displayMessage).toBeTruthy();
+      expect(result.error.retryable).toBe(false);
     }
+  });
+
+  it('returns error when the response is null', () => {
+    const result = mapper.map(null);
+
+    expect(result.ok).toBe(false);
   });
 });

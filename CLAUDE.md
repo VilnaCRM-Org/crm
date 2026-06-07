@@ -11,7 +11,7 @@ This template is used for all VilnaCRM microservices.
 ## Tech Stack
 
 - **Frontend**: React 18.3, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
-- **State Management**: Redux Toolkit with RTK Query
+- **State Management**: Zustand (lightweight store with `create` and `devtools`)
 - **Routing**: React Router v6
 - **DI Container**: tsyringe with reflect-metadata decorators
 - **i18n**: react-i18next (main language: uk, fallback: en)
@@ -227,16 +227,18 @@ The codebase follows a modular architecture:
 
 ```bash
 src/
-├── modules/          # Feature modules (e.g., User, BackToMain)
-│   └── User/
-│       ├── features/    # Feature-specific code (Auth)
-│       ├── store/       # Redux slices
-│       ├── helpers/     # Module utilities
-│       └── package.json # Module metadata
+├── modules/          # Feature modules (e.g., user, back-to-main)
+│   └── user/
+│       ├── features/        # Feature-specific code
+│       │   └── auth/
+│       │       ├── stores/        # Zustand auth store + composition root
+│       │       ├── repositories/  # AuthRepository, API clients, error factory
+│       │       └── types/         # Auth types (AuthError, AuthStore, ...)
+│       ├── store/           # Shared response/error mappers
+│       └── package.json     # Module metadata
 ├── components/      # Reusable UI components (prefixed with UI*)
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
-├── stores/          # Global Redux store configuration
 ├── config/          # DI configuration, tokens, API config
 ├── routes/          # Route definitions
 ├── providers/       # React context providers
@@ -253,13 +255,38 @@ The project uses tsyringe for DI:
 4. Use `@injectable()` decorator on classes
 5. Resolve dependencies via `container.resolve<Type>(TOKENS.ServiceName)`
 
-Example from store configuration:
+The auth store stays container-free: the DI container is resolved once in the
+composition root, and an `AuthRepository` is injected into the store actions
+(no `container.resolve` inside the store or its actions):
 
-```bash
-const thunkExtraArgument: ThunkExtra = {
-  loginAPI: container.resolve<LoginAPI>(TOKENS.LoginAPI),
-  registrationAPI: container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI),
-};
+```typescript
+// src/modules/user/features/auth/stores/index.ts (composition root)
+export const useAuthStore = AuthStoreFactory.create(container.resolve(AuthStoreActions));
+```
+
+Zustand store pattern (`src/modules/user/features/auth/stores/`):
+
+```typescript
+// auth-store-factory.ts — container-free; receives injected actions
+export default class AuthStoreFactory {
+  public static create(actions: AuthStoreActions): UseAuthStore {
+    return create<AuthStore>()(
+      devtools(
+        (set) => ({
+          /* state + actions delegating to `actions` */
+        }),
+        { name: 'auth' }
+      )
+    );
+  }
+}
+
+// auth-store-selectors.ts — selectors grouped in a class (no free functions)
+export default class AuthStoreSelectors {
+  public static email(s: AuthStore): string {
+    return s.email;
+  }
+}
 ```
 
 ### Path Aliases

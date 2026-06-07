@@ -20,7 +20,7 @@ describe('auth client runtime dependencies', () => {
   });
 
   it('keeps auth hooks and shared UI decoupled from redux and router bindings', () => {
-    const authHook = readFile('src/modules/user/features/auth/hooks/use-auth-store.ts');
+    const authHook = readFile('src/modules/user/features/auth/hooks/use-registration-form.ts');
     const uiButton = readFile('src/components/ui-button/index.tsx');
 
     expect(authHook).not.toContain("from '@/stores/hooks'");

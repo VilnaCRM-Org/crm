@@ -24,5 +24,7 @@ storybook-static/
 
 .ralph/
 
+.ralph/
+
 *.log
 *.lock

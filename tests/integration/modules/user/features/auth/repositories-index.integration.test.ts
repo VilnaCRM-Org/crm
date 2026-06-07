@@ -2,12 +2,12 @@ import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import {
-  AuthClients,
+  ApiStatusErrorFactory,
   BaseAPI,
   LoginAPI,
   RegistrationAPI,
 } from '@/modules/user/features/auth/repositories';
-import createAuthClients from '@/stores/auth-clients';
+import { ApiErrorCodes } from '@/modules/user/types/api-errors';
 
 describe('Repositories index integration', () => {
   it('should export BaseAPI class', () => {
@@ -28,11 +28,9 @@ describe('Repositories index integration', () => {
     expect(registrationAPI).toBeInstanceOf(RegistrationAPI);
   });
 
-  it('should export a factory that creates auth API clients', () => {
-    const clients = createAuthClients();
+  it('should export ApiStatusErrorFactory and produce a service-unavailable error for 503', () => {
+    const error = ApiStatusErrorFactory.fromHttpError({ status: 503, message: 'down' }, 'Login');
 
-    expect(clients).toBeInstanceOf(AuthClients);
-    expect(clients.loginAPI).toBeInstanceOf(LoginAPI);
-    expect(clients.registrationAPI).toBeInstanceOf(RegistrationAPI);
+    expect(error.code).toBe(ApiErrorCodes.SERVICE_UNAVAILABLE);
   });
 });

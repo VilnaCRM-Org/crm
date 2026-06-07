@@ -16,14 +16,6 @@ const mockI18n: MockI18n = {
   language: 'en',
 };
 
-const mockStore = {
-  getState: (): { auth: { token: string | null } } => ({
-    auth: { token: 'token' },
-  }),
-  subscribe: (): (() => void) => () => undefined,
-  dispatch: (): void => undefined,
-};
-
 window.history.pushState({}, '', '/');
 
 if (typeof Request === 'undefined') {
@@ -36,12 +28,7 @@ jest.mock('react-i18next', () => ({
   useTranslation: (): { i18n: MockI18n } => ({ i18n: mockI18n }),
 }));
 
-jest.mock('@/stores', () => ({
-  __esModule: true,
-  default: mockStore,
-}));
-
-jest.mock('@/components/protected-route', () => {
+jest.mock('@auth/components/protected-route', () => {
   const { Outlet } = jest.requireActual('react-router-dom');
 
   return {

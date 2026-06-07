@@ -12,10 +12,12 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import HttpsClient from '@/services/https-client/https-client';
 import HttpClientFactory from '@/services/https-client/https-client-factory';
-import { DevToolsOptionsFactory } from '@/stores/dev-tools-options';
-import { DevToolsRedactor } from '@/stores/dev-tools-redaction';
+import AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ErrorParser from '@/utils/error/error-parser';
-import { ApiErrorFactory, AuthClients, LoginAPI, RegistrationAPI } from '@auth/repositories';
+import { ApiErrorFactory, AuthErrorFactory, LoginAPI, RegistrationAPI } from '@auth/repositories';
+import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
+import type { AuthRepository } from '@auth/types/auth-repository';
+import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
 
 container.registerSingleton<ApiErrorFactory>(TOKENS.ApiErrorFactory, ApiErrorFactory);
 container.registerSingleton<ErrorParser>(TOKENS.ErrorParser, ErrorParser);
@@ -38,14 +40,24 @@ container.registerSingleton<HttpResponseProcessor>(
   HttpResponseProcessor
 );
 container.registerSingleton<HttpClientFactory>(TOKENS.HttpClientFactory, HttpClientFactory);
-container.registerSingleton<DevToolsRedactor>(TOKENS.DevToolsRedactor, DevToolsRedactor);
-container.registerSingleton<DevToolsOptionsFactory>(
-  TOKENS.DevToolsOptionsFactory,
-  DevToolsOptionsFactory
-);
 container.registerSingleton<HttpsClient>(TOKENS.HttpsClient, FetchHttpsClient);
 container.registerSingleton<RegistrationAPI>(TOKENS.RegistrationAPI, RegistrationAPI);
 container.registerSingleton<LoginAPI>(TOKENS.LoginAPI, LoginAPI);
-container.registerSingleton<AuthClients>(TOKENS.AuthClients, AuthClients);
+container.registerSingleton<AbortErrorDetector>(TOKENS.AbortErrorDetector, AbortErrorDetector);
+
+container.register<AuthRepositoryDeps>(TOKENS.AuthRepositoryDeps, {
+  useFactory: (c) => ({
+    loginAPI: c.resolve<LoginAPI>(TOKENS.LoginAPI),
+    registrationAPI: c.resolve<RegistrationAPI>(TOKENS.RegistrationAPI),
+    loginResponseMapper: c.resolve<LoginResponseMapper>(TOKENS.LoginResponseMapper),
+    registrationResponseMapper: c.resolve<RegistrationResponseMapper>(
+      TOKENS.RegistrationResponseMapper
+    ),
+    authUiErrorMapper: c.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper),
+    abortDetector: c.resolve<AbortErrorDetector>(TOKENS.AbortErrorDetector),
+    authErrorFactory: c.resolve(AuthErrorFactory),
+  }),
+});
+container.registerSingleton<AuthRepository>(TOKENS.AuthRepository, AuthRepositoryImpl);
 
 export default container;

@@ -2,7 +2,7 @@ import React, { lazy, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-import ProtectedRoute from '@/components/protected-route';
+import ProtectedRoute from '@auth/components/protected-route';
 
 import './index.css';
 
