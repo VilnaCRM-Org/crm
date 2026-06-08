@@ -4,9 +4,10 @@ import TOKENS from '@/config/tokens';
 
 import type { AuthError } from '../types/auth-error';
 import type { AuthRepository, LoginResult, RegisterResult } from '../types/auth-repository';
-import type { AuthSetState } from '../types/auth-store';
 import type { LoginUserDto, RegisterUserDto } from '../types/credentials';
 import { toUiError } from '../utils/auth-request-errors';
+
+import AuthStateVar from './auth-var';
 
 @injectable()
 export default class AuthStoreActions {
@@ -52,98 +53,69 @@ export default class AuthStoreActions {
     };
   }
 
-  private static applyLogin(set: AuthSetState, result: LoginResult): void {
+  private static applyLogin(result: LoginResult): void {
     if (result.ok) {
-      set(
-        {
-          loginLoading: false,
-          email: result.value.email,
-          token: result.value.token,
-          loginError: null,
-        },
-        false,
-        'auth/loginUser/fulfilled'
-      );
+      AuthStateVar.set({
+        loginLoading: false,
+        email: result.value.email,
+        token: result.value.token,
+        loginError: null,
+      });
       return;
     }
     if (result.error.aborted) {
-      set({ loginLoading: false }, false, 'auth/loginUser/aborted');
+      AuthStateVar.set({ loginLoading: false });
       return;
     }
-    set({ loginLoading: false, loginError: result.error }, false, 'auth/loginUser/rejected');
+    AuthStateVar.set({ loginLoading: false, loginError: result.error });
   }
 
-  private static applyLoginRejection(set: AuthSetState, error: unknown): void {
+  private static applyLoginRejection(error: unknown): void {
     if (AuthStoreActions.isAborted(error)) {
-      set({ loginLoading: false }, false, 'auth/loginUser/aborted');
+      AuthStateVar.set({ loginLoading: false });
       return;
     }
-    set(
-      { loginLoading: false, loginError: AuthStoreActions.toAuthError(error) },
-      false,
-      'auth/loginUser/rejected'
-    );
+    AuthStateVar.set({ loginLoading: false, loginError: AuthStoreActions.toAuthError(error) });
   }
 
-  private static applyRegister(set: AuthSetState, result: RegisterResult): void {
+  private static applyRegister(result: RegisterResult): void {
     if (result.ok) {
-      set(
-        { registerLoading: false, user: result.value, registerError: null },
-        false,
-        'auth/registerUser/fulfilled'
-      );
+      AuthStateVar.set({ registerLoading: false, user: result.value, registerError: null });
       return;
     }
     if (result.error.aborted) {
-      set({ registerLoading: false }, false, 'auth/registerUser/aborted');
+      AuthStateVar.set({ registerLoading: false });
       return;
     }
-    set(
-      { registerLoading: false, registerError: result.error },
-      false,
-      'auth/registerUser/rejected'
-    );
+    AuthStateVar.set({ registerLoading: false, registerError: result.error });
   }
 
-  private static applyRegisterRejection(set: AuthSetState, error: unknown): void {
+  private static applyRegisterRejection(error: unknown): void {
     if (AuthStoreActions.isAborted(error)) {
-      set({ registerLoading: false }, false, 'auth/registerUser/aborted');
+      AuthStateVar.set({ registerLoading: false });
       return;
     }
-    set(
-      { registerLoading: false, registerError: AuthStoreActions.toAuthError(error) },
-      false,
-      'auth/registerUser/rejected'
-    );
+    AuthStateVar.set({
+      registerLoading: false,
+      registerError: AuthStoreActions.toAuthError(error),
+    });
   }
 
-  public async login(
-    set: AuthSetState,
-    credentials: LoginUserDto,
-    signal?: AbortSignal
-  ): Promise<void> {
-    set({ loginLoading: true, loginError: null }, false, 'auth/loginUser/pending');
+  public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
+    AuthStateVar.set({ loginLoading: true, loginError: null });
     try {
-      AuthStoreActions.applyLogin(set, await this.repository.login(credentials, signal));
+      AuthStoreActions.applyLogin(await this.repository.login(credentials, signal));
     } catch (error) {
-      AuthStoreActions.applyLoginRejection(set, error);
+      AuthStoreActions.applyLoginRejection(error);
     }
   }
 
-  public async register(
-    set: AuthSetState,
-    credentials: RegisterUserDto,
-    signal?: AbortSignal
-  ): Promise<void> {
-    set(
-      { registerLoading: true, registerError: null, user: null },
-      false,
-      'auth/registerUser/pending'
-    );
+  public async register(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
+    AuthStateVar.set({ registerLoading: true, registerError: null, user: null });
     try {
-      AuthStoreActions.applyRegister(set, await this.repository.register(credentials, signal));
+      AuthStoreActions.applyRegister(await this.repository.register(credentials, signal));
     } catch (error) {
-      AuthStoreActions.applyRegisterRejection(set, error);
+      AuthStoreActions.applyRegisterRejection(error);
     }
   }
 }

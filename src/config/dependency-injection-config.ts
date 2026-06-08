@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
-import { container } from 'tsyringe';
+import { ApolloClient, InMemoryCache, type NormalizedCacheObject } from '@apollo/client';
+import { container, instanceCachingFactory } from 'tsyringe';
 
 import TOKENS from '@/config/tokens';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
@@ -14,11 +15,21 @@ import HttpsClient from '@/services/https-client/https-client';
 import HttpClientFactory from '@/services/https-client/https-client-factory';
 import AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ErrorParser from '@/utils/error/error-parser';
+import GraphQLUrl from '@/utils/get-graphql-url';
 import { ApiErrorFactory, AuthErrorFactory, LoginAPI, RegistrationAPI } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
 
+container.register<ApolloClient<NormalizedCacheObject>>(TOKENS.ApolloClient, {
+  useFactory: instanceCachingFactory(
+    () =>
+      new ApolloClient<NormalizedCacheObject>({
+        uri: GraphQLUrl.resolve(),
+        cache: new InMemoryCache(),
+      })
+  ),
+});
 container.registerSingleton<ApiErrorFactory>(TOKENS.ApiErrorFactory, ApiErrorFactory);
 container.registerSingleton<ErrorParser>(TOKENS.ErrorParser, ErrorParser);
 container.registerSingleton<LoginResponseMapper>(TOKENS.LoginResponseMapper, LoginResponseMapper);

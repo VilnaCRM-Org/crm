@@ -47,16 +47,13 @@ const authStoreState: {
 
 jest.mock('@auth/stores', () => ({
   __esModule: true,
-  useAuthStore: Object.assign(
-    (selector?: (state: typeof authStoreState) => unknown): unknown =>
-      selector ? selector(authStoreState) : authStoreState,
-    {
-      setState: (next: Partial<typeof authStoreState>): void => {
-        Object.assign(authStoreState, next);
-      },
-      getState: (): typeof authStoreState => authStoreState,
-    }
-  ),
+  useAuthState: (): typeof authStoreState => authStoreState,
+  authActions: {
+    loginUser: (...args: unknown[]): unknown => mockLoginUser(...args),
+    clearLoginError: (): void => {
+      authStoreState.loginError = null;
+    },
+  },
   AuthStoreSelectors: {
     loginError: (state: typeof authStoreState): AuthError | null => state.loginError,
     loginLoading: (state: typeof authStoreState): boolean => state.loginLoading,

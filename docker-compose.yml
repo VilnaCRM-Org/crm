@@ -34,6 +34,21 @@ services:
     networks:
       - crm-network
 
+  apollo:
+    build:
+      context: .
+      dockerfile: Apollo.Dockerfile
+    env_file:
+      - .env
+    ports:
+      - '${GRAPHQL_PORT:-4000}:4000'
+    restart: unless-stopped
+    healthcheck:
+      test:
+        ['CMD', 'curl', '-f', 'http://localhost:${GRAPHQL_PORT:-4000}/${GRAPHQL_API_PATH:-graphql}']
+    networks:
+      - crm-network
+
   rca:
     profiles: [tools]
     build:

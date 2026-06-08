@@ -1,3 +1,4 @@
+import type { ApolloClient, NormalizedCacheObject } from '@apollo/client';
 import 'reflect-metadata';
 
 import container from '@/config/dependency-injection-config';
@@ -10,5 +11,12 @@ describe('dependency-injection-config', () => {
 
     expect(typeof repo.login).toBe('function');
     expect(typeof repo.register).toBe('function');
+  });
+
+  it('resolves a singleton ApolloClient from the GraphQL factory', () => {
+    const client = container.resolve<ApolloClient<NormalizedCacheObject>>(TOKENS.ApolloClient);
+
+    expect(typeof client.mutate).toBe('function');
+    expect(container.resolve(TOKENS.ApolloClient)).toBe(client);
   });
 });

@@ -2,12 +2,12 @@ import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import ProtectedRoute from '@auth/components/protected-route';
-import { useAuthStore } from '@auth/stores';
+import { AuthStateVar } from '@auth/stores';
 
 function seedToken(token: string | null): void {
   act(() => {
-    useAuthStore.getState().reset();
-    useAuthStore.setState({ token });
+    AuthStateVar.reset();
+    AuthStateVar.set({ token });
   });
 }
 
@@ -28,7 +28,7 @@ const renderWithRouter = (token: string | null): ReturnType<typeof render> => {
 describe('ProtectedRoute', () => {
   afterEach(() => {
     act(() => {
-      useAuthStore.getState().reset();
+      AuthStateVar.reset();
     });
   });
 

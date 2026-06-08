@@ -1,8 +1,15 @@
-import API_ENDPOINTS from '@/config/api-config';
-import { ApiError } from '@/modules/user/types/api-errors';
-import RegistrationAPI from '@auth/repositories/registration-api';
+import { ApolloError } from '@apollo/client';
 
-type HttpsClient = import('@/services/https-client/https-client').default;
+import { ApiError, ConflictError } from '@/modules/user/types/api-errors';
+import ApiErrorFactory from '@auth/repositories/api-error-factory';
+import RegistrationAPI from '@auth/repositories/registration-api';
+import CREATE_USER from '@auth/types/graphql/mutations';
+
+type ApolloClient = import('@apollo/client').ApolloClient<
+  import('@apollo/client').NormalizedCacheObject
+>;
+
+const mockApollo = (mutate: jest.Mock): ApolloClient => ({ mutate }) as unknown as ApolloClient;
 
 describe('RegistrationAPI', () => {
   const credentials = {
@@ -11,56 +18,85 @@ describe('RegistrationAPI', () => {
     fullName: 'Test User',
   };
 
-  it('returns the underlying client response on success', async () => {
-    const httpsClient = {
-      post: jest
-        .fn()
-        .mockResolvedValue({ email: credentials.email, fullName: credentials.fullName }),
-    } as unknown as HttpsClient;
+  const userPayload = {
+    id: 'user-1',
+    confirmed: true,
+    email: credentials.email,
+    initials: credentials.fullName,
+  };
 
-    const api = new RegistrationAPI(httpsClient, { convert: jest.fn() } as never);
+  it('creates the user through the GraphQL mutation and maps the payload', async () => {
+    const mutate = jest.fn().mockResolvedValue({
+      data: { createUser: { user: userPayload, clientMutationId: 'cid' } },
+    });
+    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
 
     await expect(api.register(credentials)).resolves.toEqual({
       email: credentials.email,
       fullName: credentials.fullName,
     });
-    expect(httpsClient.post).toHaveBeenCalledWith(API_ENDPOINTS.REGISTER, credentials, undefined);
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mutation: CREATE_USER,
+        variables: {
+          input: {
+            email: credentials.email,
+            initials: credentials.fullName,
+            password: credentials.password,
+            clientMutationId: expect.any(String),
+          },
+        },
+        context: { fetchOptions: { signal: undefined } },
+      })
+    );
   });
 
-  it('passes request options to the underlying client', async () => {
-    const httpsClient = {
-      post: jest.fn().mockResolvedValue(undefined),
-    } as unknown as HttpsClient;
-    const api = new RegistrationAPI(httpsClient, { convert: jest.fn() } as never);
-    const options = { signal: new AbortController().signal };
+  it('returns undefined when the mutation yields no user', async () => {
+    const mutate = jest.fn().mockResolvedValue({ data: null });
+    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
 
-    await expect(api.register(credentials, options)).resolves.toBeUndefined();
-
-    expect(httpsClient.post).toHaveBeenCalledWith(API_ENDPOINTS.REGISTER, credentials, options);
+    await expect(api.register(credentials)).resolves.toBeUndefined();
   });
 
-  it('rethrows AbortError without converting it', async () => {
-    const abortError = new Error('The operation was aborted');
-    abortError.name = 'AbortError';
-    const httpsClient = {
-      post: jest.fn().mockRejectedValue(abortError),
-    } as unknown as HttpsClient;
+  it('forwards the abort signal and throws an AbortError without converting on abort', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const mutate = jest.fn().mockRejectedValue(new Error('network failure mid-flight'));
     const converter = { convert: jest.fn() };
-    const api = new RegistrationAPI(httpsClient, converter as never);
+    const api = new RegistrationAPI(mockApollo(mutate), converter as never);
 
-    await expect(api.register(credentials)).rejects.toBe(abortError);
+    await expect(api.register(credentials, { signal: controller.signal })).rejects.toMatchObject({
+      name: 'AbortError',
+    });
     expect(converter.convert).not.toHaveBeenCalled();
+    expect(mutate).toHaveBeenCalledWith(
+      expect.objectContaining({ context: { fetchOptions: { signal: controller.signal } } })
+    );
   });
 
   it('maps non-abort failures through BaseAPI handling', async () => {
-    const httpsClient = {
-      post: jest.fn().mockRejectedValue(new Error('network down')),
-    } as unknown as HttpsClient;
+    const mutate = jest.fn().mockRejectedValue(new Error('network down'));
     const converted = new ApiError({ message: 'Converted', code: 'CONVERTED' });
-    const api = new RegistrationAPI(httpsClient, {
+    const api = new RegistrationAPI(mockApollo(mutate), {
       convert: jest.fn().mockReturnValue(converted),
     } as never);
 
     await expect(api.register(credentials)).rejects.toBe(converted);
+  });
+
+  it('maps a 409 network status from the GraphQL transport to a ConflictError', async () => {
+    const networkError = Object.assign(new Error('Conflict'), { statusCode: 409 });
+    const mutate = jest.fn().mockRejectedValue(new ApolloError({ networkError }));
+    const api = new RegistrationAPI(mockApollo(mutate), new ApiErrorFactory());
+
+    await expect(api.register(credentials)).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it('falls back to generic conversion for an ApolloError with no http status', async () => {
+    const graphQLError = { message: 'Something went wrong', extensions: {} };
+    const mutate = jest.fn().mockRejectedValue(new ApolloError({ graphQLErrors: [graphQLError] }));
+    const api = new RegistrationAPI(mockApollo(mutate), new ApiErrorFactory());
+
+    await expect(api.register(credentials)).rejects.toBeInstanceOf(ApiError);
   });
 });

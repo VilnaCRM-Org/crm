@@ -1,13 +1,33 @@
+import { ApolloError } from '@apollo/client';
 import { rest } from 'msw';
 
 import '../../../../setup';
-import API_ENDPOINTS from '@/config/api-config';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
-import { ConflictError } from '@/modules/user/types/api-errors';
+import { ApiError, ConflictError } from '@/modules/user/types/api-errors';
+import ApiErrorFactory from '@auth/repositories/api-error-factory';
 
-import server from '../../../../mocks/server';
+import server, { GRAPHQL_URL } from '../../../../mocks/server';
+
+type ApolloClientLike = import('@apollo/client').ApolloClient<
+  import('@apollo/client').NormalizedCacheObject
+>;
+
+const credentials = {
+  email: 'newuser@example.com',
+  password: 'securepass123',
+  fullName: 'New User',
+};
+
+const createUserSuccessBody = {
+  data: {
+    createUser: {
+      user: { id: 'user-123', confirmed: true, email: 'newuser@example.com', initials: 'New User' },
+      clientMutationId: 'client-mutation-id',
+    },
+  },
+};
 
 describe('RegistrationAPI Integration', () => {
   let registrationAPI: RegistrationAPI;
@@ -17,263 +37,130 @@ describe('RegistrationAPI Integration', () => {
   afterAll(() => server.close());
 
   beforeEach(() => {
-    // Resolve from actual DI container
     registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
   });
 
   describe('successful registration', () => {
-    it('should successfully register with valid credentials', async () => {
-      const mockResponse = {
-        fullName: 'New User',
-        email: 'newuser@example.com',
-        message: 'User registered successfully',
-      };
+    it('creates the user via the GraphQL mutation and maps the payload', async () => {
+      let capturedInput: Record<string, string> | undefined;
 
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(201), ctx.json(mockResponse))
-        )
-      );
-
-      const result = await registrationAPI.register({
-        email: 'newuser@example.com',
-        password: 'securepass123',
-        fullName: 'New User',
-      });
-
-      expect(result).toEqual(mockResponse);
-    });
-
-    it('should send correct request body with all fields', async () => {
-      let requestBody: Record<string, string> | null = null;
-
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, async (req, res, ctx) => {
-          requestBody = await req.json();
-          return res(ctx.status(201), ctx.json({ fullName: 'Test User', email: 'test@test.com' }));
+        rest.post(GRAPHQL_URL, async (req, res, ctx) => {
+          const body = (await req.json()) as { variables?: { input?: Record<string, string> } };
+          capturedInput = body.variables?.input;
+          return res(ctx.status(200), ctx.json(createUserSuccessBody));
         })
       );
 
-      await registrationAPI.register({
-        email: 'user@test.com',
-        password: 'mypassword123',
-        fullName: 'John Doe',
-      });
+      const result = await registrationAPI.register(credentials);
 
-      expect(requestBody).toEqual({
-        email: 'user@test.com',
-        password: 'mypassword123',
-        fullName: 'John Doe',
+      expect(result).toEqual({ email: 'newuser@example.com', fullName: 'New User' });
+      expect(capturedInput).toEqual({
+        email: 'newuser@example.com',
+        initials: 'New User',
+        password: 'securepass123',
+        clientMutationId: expect.any(String),
       });
+    });
+
+    it('trims the full name into initials before sending', async () => {
+      let capturedInput: Record<string, string> | undefined;
+
+      server.use(
+        rest.post(GRAPHQL_URL, async (req, res, ctx) => {
+          const body = (await req.json()) as { variables?: { input?: Record<string, string> } };
+          capturedInput = body.variables?.input;
+          return res(ctx.status(200), ctx.json(createUserSuccessBody));
+        })
+      );
+
+      await registrationAPI.register({ ...credentials, fullName: '  New User  ' });
+
+      expect(capturedInput?.initials).toBe('New User');
+    });
+  });
+
+  describe('empty responses', () => {
+    it.each([
+      ['data is null', { data: null }],
+      ['createUser is null', { data: { createUser: null } }],
+      ['user is null', { data: { createUser: { user: null } } }],
+    ])('resolves to undefined when %s', async (_label, body) => {
+      server.use(rest.post(GRAPHQL_URL, (_req, res, ctx) => res(ctx.status(200), ctx.json(body))));
+
+      await expect(registrationAPI.register(credentials)).resolves.toBeUndefined();
     });
   });
 
   describe('error handling', () => {
-    it('should throw ConflictError on 409 response (user already exists)', async () => {
+    it('maps a 409 duplicate-email response to a ConflictError', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(409), ctx.json({ message: 'User already exists' }))
+        rest.post(GRAPHQL_URL, (_req, res, ctx) =>
+          res(
+            ctx.status(409),
+            ctx.json({
+              errors: [
+                {
+                  message: 'Email already exists',
+                  extensions: { code: 'CONFLICT', http: { status: 409 } },
+                },
+              ],
+            })
+          )
         )
       );
 
-      await expect(
-        registrationAPI.register({
-          email: 'existing@test.com',
-          password: 'pass123',
-          fullName: 'Existing User',
-        })
-      ).rejects.toThrow(ConflictError);
+      await expect(registrationAPI.register(credentials)).rejects.toBeInstanceOf(ConflictError);
     });
 
-    it('should throw ConflictError with correct message', async () => {
+    it('throws an ApiError on a GraphQL error response without a status', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(409), ctx.json({ message: 'Conflict' }))
+        rest.post(GRAPHQL_URL, (_req, res, ctx) =>
+          res(ctx.status(200), ctx.json({ data: null, errors: [{ message: 'Something wrong' }] }))
         )
       );
 
-      await expect(
-        registrationAPI.register({
-          email: 'test@test.com',
-          password: 'pass',
-          fullName: 'Test',
-        })
-      ).rejects.toThrow('Registration conflict. Resource already exists.');
+      await expect(registrationAPI.register(credentials)).rejects.toBeInstanceOf(ApiError);
     });
 
-    it('should throw ApiError with correct message for 400 status', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(400), ctx.json({ message: 'Bad request' }))
-        )
+    it('converts an Apollo error that carries no http status generically', async () => {
+      const mutate = jest
+        .fn()
+        .mockRejectedValue(new ApolloError({ graphQLErrors: [{ message: 'no status' } as never] }));
+      const api = new RegistrationAPI(
+        { mutate } as unknown as ApolloClientLike,
+        new ApiErrorFactory()
       );
 
-      await expect(
-        registrationAPI.register({
-          email: 'invalid-email',
-          password: '123',
-          fullName: '',
-        })
-      ).rejects.toThrow('Invalid registration data');
+      await expect(api.register(credentials)).rejects.toBeInstanceOf(ApiError);
     });
 
-    it('should throw ApiError for 422 unprocessable entity', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(422), ctx.json({ message: 'Unprocessable entity' }))
-        )
-      );
+    it('throws an ApiError on a network failure', async () => {
+      server.use(rest.post(GRAPHQL_URL, (_req, res) => res.networkError('Failed to fetch')));
 
-      await expect(
-        registrationAPI.register({
-          email: 'test@test.com',
-          password: 'weak',
-          fullName: 'Test',
-        })
-      ).rejects.toThrow('Unprocessable registration data');
-    });
-
-    it('should throw ApiError for 401 status', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(401), ctx.json({ message: 'Unauthorized' }))
-        )
-      );
-
-      await expect(
-        registrationAPI.register({
-          email: 'test@test.com',
-          password: 'pass',
-          fullName: 'Test',
-        })
-      ).rejects.toThrow('Invalid credentials');
-    });
-
-    it('should throw ApiError for 403 forbidden', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(403), ctx.json({ message: 'Forbidden' }))
-        )
-      );
-
-      await expect(
-        registrationAPI.register({
-          email: 'test@test.com',
-          password: 'pass',
-          fullName: 'Test',
-        })
-      ).rejects.toThrow('Forbidden');
-    });
-
-    it('should throw ApiError for 404 not found', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(404), ctx.json({ message: 'Not found' }))
-        )
-      );
-
-      await expect(
-        registrationAPI.register({
-          email: 'test@test.com',
-          password: 'pass',
-          fullName: 'Test',
-        })
-      ).rejects.toThrow('Registration not found');
-    });
-
-    it('should throw ApiError for 429 rate limit', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(429), ctx.json({ message: 'Too many requests' }))
-        )
-      );
-
-      await expect(
-        registrationAPI.register({
-          email: 'test@test.com',
-          password: 'pass',
-          fullName: 'Test',
-        })
-      ).rejects.toThrow('Too many requests. Please slow down.');
-    });
-
-    it('should throw ApiError for 500 server error', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(500), ctx.json({ message: 'Internal server error' }))
-        )
-      );
-
-      await expect(
-        registrationAPI.register({
-          email: 'test@test.com',
-          password: 'pass',
-          fullName: 'Test',
-        })
-      ).rejects.toThrow('Server error. Please try again later.');
-    });
-
-    it('should handle network errors', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res) => res.networkError('Failed to fetch'))
-      );
-
-      await expect(
-        registrationAPI.register({
-          email: 'test@test.com',
-          password: 'pass',
-          fullName: 'Test',
-        })
-      ).rejects.toThrow('Network error. Please check your connection.');
+      await expect(registrationAPI.register(credentials)).rejects.toBeInstanceOf(ApiError);
     });
   });
 
   describe('request cancellation', () => {
-    it('should handle pre-aborted AbortSignal', async () => {
+    it('throws an AbortError when the signal is already aborted', async () => {
       const controller = new AbortController();
-
-      // Abort before making the request
       controller.abort();
-
-      await expect(
-        registrationAPI.register(
-          {
-            email: 'test@test.com',
-            password: 'pass',
-            fullName: 'Test',
-          },
-          { signal: controller.signal }
-        )
-      ).rejects.toThrow();
-    });
-
-    it('should not throw if request completes before cancellation', async () => {
-      const controller = new AbortController();
-      const mockResponse = { fullName: 'Test User', email: 'test@test.com' };
 
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
-          res(ctx.status(201), ctx.json(mockResponse))
+        rest.post(GRAPHQL_URL, (_req, res, ctx) =>
+          res(ctx.status(500), ctx.json({ errors: [{ message: 'unused' }] }))
         )
       );
 
-      const result = await registrationAPI.register(
-        {
-          email: 'test@test.com',
-          password: 'pass',
-          fullName: 'Test',
-        },
-        { signal: controller.signal }
-      );
-
-      controller.abort();
-
-      expect(result).toEqual(mockResponse);
+      await expect(
+        registrationAPI.register(credentials, { signal: controller.signal })
+      ).rejects.toMatchObject({ name: 'AbortError' });
     });
   });
 
   describe('DI container integration', () => {
-    it('should be resolvable from DI container multiple times', () => {
+    it('is resolvable from the DI container multiple times', () => {
       const instance1 = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
       const instance2 = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
 

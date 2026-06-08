@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
-import { AuthStoreSelectors, useAuthStore } from '@auth/stores';
+import { AuthStoreSelectors, authActions, useAuthState } from '@auth/stores';
 import { LoginUserDto } from '@auth/types/credentials';
 
 import LoginErrorMessageNormalizer from './login-error-message';
@@ -29,7 +29,7 @@ function clearLoginError(controllers: Set<AbortController>): void {
   }
 
   controllers.clear();
-  useAuthStore.setState({ loginError: null });
+  authActions.clearLoginError();
 }
 
 function useLoginControllers(): MutableRefObject<Set<AbortController>> {
@@ -63,10 +63,10 @@ function useAbortableLogin(loginUser: LoginUser): LoginSubmitter['handleLogin'] 
 }
 
 export default function useLoginSubmitter(t: TFunction): LoginSubmitter {
-  const loginUser = useAuthStore((state) => state.loginUser);
-  const isSubmitting = useAuthStore(AuthStoreSelectors.loginLoading);
-  const rawError = useAuthStore(AuthStoreSelectors.loginError);
-  const handleLogin = useAbortableLogin(loginUser);
+  const state = useAuthState();
+  const isSubmitting = AuthStoreSelectors.loginLoading(state);
+  const rawError = AuthStoreSelectors.loginError(state);
+  const handleLogin = useAbortableLogin(authActions.loginUser);
 
   return {
     error: formatLoginError(rawError?.displayMessage ?? null, t),

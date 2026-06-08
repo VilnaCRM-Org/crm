@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import type { TFunction } from 'i18next';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
-import { useAuthStore } from '@auth/stores';
+import { AuthStateVar, authActions } from '@auth/stores';
 
 const t: TFunction = ((key: string, options?: Record<string, unknown>): string => {
   if (options?.reason !== undefined) return `${key}|${String(options.reason)}`;
@@ -20,7 +20,11 @@ function createDeferred(): { promise: Promise<void>; resolve: () => void } {
 
 describe('useLoginSubmitter', () => {
   beforeEach(() => {
-    useAuthStore.getState().reset();
+    AuthStateVar.reset();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('returns empty error when store has none and exposes loading state', () => {
@@ -31,7 +35,7 @@ describe('useLoginSubmitter', () => {
   });
 
   it('formats a plain string login error from the store', () => {
-    useAuthStore.setState({
+    AuthStateVar.set({
       loginError: { kind: 'authentication', displayMessage: 'Bad credentials', retryable: false },
     });
 
@@ -41,7 +45,7 @@ describe('useLoginSubmitter', () => {
   });
 
   it('translates an i18n-key shaped login error', () => {
-    useAuthStore.setState({
+    AuthStateVar.set({
       loginError: {
         kind: 'authentication',
         displayMessage: 'auth.errors.unknown',
@@ -55,19 +59,18 @@ describe('useLoginSubmitter', () => {
   });
 
   it('clears the login error on unmount', () => {
-    useAuthStore.setState({
+    AuthStateVar.set({
       loginError: { kind: 'authentication', displayMessage: 'still here', retryable: false },
     });
 
     const { unmount } = renderHook(() => useLoginSubmitter(t));
     unmount();
 
-    expect(useAuthStore.getState().loginError).toBeNull();
+    expect(AuthStateVar.get().loginError).toBeNull();
   });
 
-  it('invokes the store loginUser action when handleLogin is called', async () => {
-    const loginUser = jest.fn().mockResolvedValue(undefined);
-    useAuthStore.setState({ loginUser });
+  it('invokes the loginUser action when handleLogin is called', async () => {
+    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useLoginSubmitter(t));
 
@@ -88,8 +91,8 @@ describe('useLoginSubmitter', () => {
       displayMessage: 'late failure',
       retryable: false,
     };
-    const loginUser = jest
-      .fn()
+    jest
+      .spyOn(authActions, 'loginUser')
       .mockImplementation(async (_data, signal?: AbortSignal): Promise<void> => {
         await deferred.promise;
 
@@ -97,10 +100,8 @@ describe('useLoginSubmitter', () => {
           return;
         }
 
-        useAuthStore.setState({ loginError: lateError });
+        AuthStateVar.set({ loginError: lateError });
       });
-
-    useAuthStore.setState({ loginUser });
 
     const { result, unmount } = renderHook(() => useLoginSubmitter(t));
     let pendingLogin!: Promise<void>;
@@ -116,6 +117,6 @@ describe('useLoginSubmitter', () => {
       await pendingLogin;
     });
 
-    expect(useAuthStore.getState().loginError).toBeNull();
+    expect(AuthStateVar.get().loginError).toBeNull();
   });
 });

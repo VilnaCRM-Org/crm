@@ -6,11 +6,15 @@ import type { RegisterUserDto } from '@auth/types/credentials';
 
 const registerUser = jest.fn<Promise<void>, [RegisterUserDto]>(() => Promise.resolve());
 const resetRegistration = jest.fn();
-const storeState = { registerUser, resetRegistration };
 
 jest.mock('@auth/stores', () => ({
   __esModule: true,
-  useAuthStore: (selector: (state: typeof storeState) => unknown): unknown => selector(storeState),
+  authActions: {
+    registerUser: (data: RegisterUserDto): Promise<void> => registerUser(data),
+    resetRegistration: (): void => {
+      resetRegistration();
+    },
+  },
 }));
 
 type Handlers = ReturnType<typeof useRegistrationHandlers>;

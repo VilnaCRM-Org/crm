@@ -6,16 +6,23 @@ import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import type LoginAPI from '@auth/repositories/login-api';
 import type RegistrationAPI from '@auth/repositories/registration-api';
-import { AuthStoreSelectors, useAuthStore } from '@auth/stores';
-import AuthStoreFactory from '@auth/stores/auth-store-factory';
-import PreloadedAuthToken from '@auth/stores/preloaded-auth-token';
+import { AuthStateVar, AuthStoreSelectors, authActions } from '@auth/stores';
 
-import server from '../../../../../mocks/server';
+import server, { GRAPHQL_URL } from '../../../../../mocks/server';
 
 const registrationCredentials = {
   email: 'test@example.com',
   password: 'password123',
   fullName: 'Test User',
+};
+
+const createUserSuccessBody = {
+  data: {
+    createUser: {
+      user: { id: 'u1', confirmed: true, email: 'test@example.com', initials: 'Test User' },
+      clientMutationId: 'c1',
+    },
+  },
 };
 
 function createDelayedPromise(ms: number): Promise<void> {
@@ -26,18 +33,18 @@ function createDelayedPromise(ms: number): Promise<void> {
 
 describe('Auth Store Integration', () => {
   beforeEach(() => {
-    useAuthStore.getState().reset();
+    authActions.reset();
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
-    useAuthStore.getState().reset();
+    authActions.reset();
     server.resetHandlers();
   });
 
   describe('initial state', () => {
     it('should have correct initial state', () => {
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
 
       expect(state.email).toBe('');
       expect(state.token).toBeNull();
@@ -56,21 +63,11 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      let loadingWasTrue = false;
-      const unsubscribe = useAuthStore.subscribe((state) => {
-        if (state.loginLoading) {
-          loadingWasTrue = true;
-        }
-      });
-
-      const promise = useAuthStore
-        .getState()
-        .loginUser({ email: 'user@test.com', password: 'pass' });
+      const promise = authActions.loginUser({ email: 'user@test.com', password: 'pass' });
+      expect(AuthStateVar.get().loginLoading).toBe(true);
 
       await promise;
-
-      unsubscribe();
-      expect(loadingWasTrue).toBe(true);
+      expect(AuthStateVar.get().loginLoading).toBe(false);
     });
 
     it('should update state on successful login', async () => {
@@ -80,9 +77,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'user@example.com', password: 'pass123' });
+      await authActions.loginUser({ email: 'user@example.com', password: 'pass123' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
 
       expect(state.loginLoading).toBe(false);
       expect(state.email).toBe('user@example.com');
@@ -97,9 +94,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'USER@TEST.COM', password: 'pass' });
+      await authActions.loginUser({ email: 'USER@TEST.COM', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.email).toBe('user@test.com');
     });
 
@@ -110,8 +107,8 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'first@test.com', password: 'pass' });
-      expect(useAuthStore.getState().token).toBe('first-token');
+      await authActions.loginUser({ email: 'first@test.com', password: 'pass' });
+      expect(AuthStateVar.get().token).toBe('first-token');
 
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
@@ -119,9 +116,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'second@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'second@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.token).toBe('second-token');
       expect(state.email).toBe('second@test.com');
     });
@@ -135,9 +132,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'bad@test.com', password: 'badpass' });
+      await authActions.loginUser({ email: 'bad@test.com', password: 'badpass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.token).toBeNull();
       expect(state.loginError).toBeTruthy();
@@ -146,9 +143,9 @@ describe('Auth Store Integration', () => {
     it('should set error state on network failure', async () => {
       server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Failed to fetch')));
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.token).toBeNull();
       expect(state.loginError).toBeTruthy();
@@ -161,9 +158,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'invalid', password: '123' });
+      await authActions.loginUser({ email: 'invalid', password: '123' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -175,8 +172,8 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
-      expect(useAuthStore.getState().loginError).toBeTruthy();
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      expect(AuthStateVar.get().loginError).toBeTruthy();
 
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
@@ -184,9 +181,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'correctpass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'correctpass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginError).toBeNull();
       expect(state.token).toBe('new-token');
     });
@@ -198,9 +195,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -209,16 +206,16 @@ describe('Auth Store Integration', () => {
       const errorCodes = [403, 404, 408, 422, 429, 502, 503, 504];
 
       for (const code of errorCodes) {
-        useAuthStore.getState().reset();
+        authActions.reset();
         server.use(
           rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
             res(ctx.status(code), ctx.json({ message: `Error ${code}` }))
           )
         );
 
-        await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+        await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-        const state = useAuthStore.getState();
+        const state = AuthStateVar.get();
         expect(state.loginLoading).toBe(false);
         expect(state.loginError).toBeTruthy();
       }
@@ -233,13 +230,13 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'user@test.com', password: 'pass' });
-      expect(useAuthStore.getState().token).toBe('token123');
-      expect(useAuthStore.getState().email).toBe('user@test.com');
+      await authActions.loginUser({ email: 'user@test.com', password: 'pass' });
+      expect(AuthStateVar.get().token).toBe('token123');
+      expect(AuthStateVar.get().email).toBe('user@test.com');
 
-      useAuthStore.getState().logout();
+      authActions.logout();
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.token).toBeNull();
       expect(state.email).toBe('');
       expect(state.loginError).toBeNull();
@@ -259,14 +256,15 @@ describe('Auth Store Integration', () => {
       );
 
       const abortController = new AbortController();
-      const promise = useAuthStore
-        .getState()
-        .loginUser({ email: 'test@test.com', password: 'pass' }, abortController.signal);
+      const promise = authActions.loginUser(
+        { email: 'test@test.com', password: 'pass' },
+        abortController.signal
+      );
 
       abortController.abort();
       await promise;
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -280,9 +278,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
       expect(state.token).toBeNull();
@@ -292,96 +290,92 @@ describe('Auth Store Integration', () => {
   describe('registerUser', () => {
     it('should handle successful registration', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-          res(ctx.status(201), ctx.json({ fullName: 'Test User', email: 'test@example.com' }))
+        rest.post(GRAPHQL_URL, (_, res, ctx) =>
+          res(ctx.status(200), ctx.json(createUserSuccessBody))
         )
       );
 
-      await useAuthStore.getState().registerUser(registrationCredentials);
+      await authActions.registerUser(registrationCredentials);
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeNull();
     });
 
     it('should set loading state during registration', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, async (_, res, ctx) => {
+        rest.post(GRAPHQL_URL, async (_, res, ctx) => {
           await createDelayedPromise(50);
-          return res(
-            ctx.status(201),
-            ctx.json({ fullName: 'Test User', email: 'test@example.com' })
-          );
+          return res(ctx.status(200), ctx.json(createUserSuccessBody));
         })
       );
 
-      let loadingWasTrue = false;
-      const unsubscribe = useAuthStore.subscribe((state) => {
-        if (state.registerLoading) {
-          loadingWasTrue = true;
-        }
-      });
+      const promise = authActions.registerUser(registrationCredentials);
+      expect(AuthStateVar.get().registerLoading).toBe(true);
 
-      await useAuthStore.getState().registerUser(registrationCredentials);
+      await promise;
+      expect(AuthStateVar.get().registerLoading).toBe(false);
 
-      unsubscribe();
-      expect(loadingWasTrue).toBe(true);
-
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeNull();
     });
 
     it('should handle validation error from API response', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ fullName: 123, email: 456 }))
+        rest.post(GRAPHQL_URL, (_, res, ctx) =>
+          res(
+            ctx.status(200),
+            ctx.json({
+              data: {
+                createUser: { user: { id: 'u', confirmed: true, email: 456, initials: 123 } },
+              },
+            })
+          )
         )
       );
 
-      await useAuthStore.getState().registerUser(registrationCredentials);
+      await authActions.registerUser(registrationCredentials);
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
 
     it('should handle 400 error', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-          res(ctx.status(400), ctx.json({ message: 'Bad request' }))
+        rest.post(GRAPHQL_URL, (_, res, ctx) =>
+          res(ctx.status(400), ctx.json({ errors: [{ message: 'Bad request' }] }))
         )
       );
 
-      await useAuthStore.getState().registerUser(registrationCredentials);
+      await authActions.registerUser(registrationCredentials);
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
 
     it('should handle 409 conflict error', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-          res(ctx.status(409), ctx.json({ message: 'User already exists' }))
+        rest.post(GRAPHQL_URL, (_, res, ctx) =>
+          res(ctx.status(409), ctx.json({ errors: [{ message: 'User already exists' }] }))
         )
       );
 
-      await useAuthStore.getState().registerUser(registrationCredentials);
+      await authActions.registerUser(registrationCredentials);
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
 
     it('should handle network failure', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_, res) => res.networkError('Failed to fetch'))
-      );
+      server.use(rest.post(GRAPHQL_URL, (_, res) => res.networkError('Failed to fetch')));
 
-      await useAuthStore.getState().registerUser(registrationCredentials);
+      await authActions.registerUser(registrationCredentials);
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
@@ -390,9 +384,9 @@ describe('Auth Store Integration', () => {
       const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
       jest.spyOn(registrationAPI, 'register').mockRejectedValue(new Error('Unexpected failure'));
 
-      await useAuthStore.getState().registerUser(registrationCredentials);
+      await authActions.registerUser(registrationCredentials);
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
@@ -400,10 +394,15 @@ describe('Auth Store Integration', () => {
     it('should handle pre-aborted signal', async () => {
       const abortController = new AbortController();
       abortController.abort();
+      server.use(
+        rest.post(GRAPHQL_URL, (_, res, ctx) =>
+          res(ctx.status(500), ctx.json({ errors: [{ message: 'should not surface' }] }))
+        )
+      );
 
-      await useAuthStore.getState().registerUser(registrationCredentials, abortController.signal);
+      await authActions.registerUser(registrationCredentials, abortController.signal);
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeNull();
     });
@@ -414,11 +413,12 @@ describe('Auth Store Integration', () => {
       const abortController = new AbortController();
       abortController.abort();
 
-      await useAuthStore
-        .getState()
-        .loginUser({ email: 'test@test.com', password: 'pass' }, abortController.signal);
+      await authActions.loginUser(
+        { email: 'test@test.com', password: 'pass' },
+        abortController.signal
+      );
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -429,9 +429,9 @@ describe('Auth Store Integration', () => {
         .spyOn(loginAPI, 'login')
         .mockRejectedValue(new DOMException('The operation was aborted', 'AbortError'));
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -442,9 +442,9 @@ describe('Auth Store Integration', () => {
       abortError.name = 'AbortError';
       jest.spyOn(loginAPI, 'login').mockRejectedValue(abortError);
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -453,9 +453,9 @@ describe('Auth Store Integration', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue(new Error('Request was aborted by user'));
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeNull();
     });
@@ -464,9 +464,9 @@ describe('Auth Store Integration', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue(new Error('Network failure'));
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -475,9 +475,9 @@ describe('Auth Store Integration', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue('string error');
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -486,9 +486,9 @@ describe('Auth Store Integration', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue(null);
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -499,9 +499,9 @@ describe('Auth Store Integration', () => {
       error.message = undefined as unknown as string;
       jest.spyOn(loginAPI, 'login').mockRejectedValue(error);
 
-      await useAuthStore.getState().loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
       expect(state.loginError).toBeTruthy();
     });
@@ -515,9 +515,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'sel@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'sel@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(AuthStoreSelectors.email(state)).toBe('sel@test.com');
       expect(AuthStoreSelectors.token(state)).toBe('sel-token');
       expect(AuthStoreSelectors.loginLoading(state)).toBe(false);
@@ -526,32 +526,20 @@ describe('Auth Store Integration', () => {
       expect(AuthStoreSelectors.registerError(state)).toBeNull();
       expect(AuthStoreSelectors.isAuthenticated(state)).toBe(true);
 
-      useAuthStore.getState().logout();
-      const loggedOut = useAuthStore.getState();
+      authActions.logout();
+      const loggedOut = AuthStateVar.get();
       expect(AuthStoreSelectors.isAuthenticated(loggedOut)).toBe(false);
     });
 
     it('should select registerUser from state', async () => {
       const user = { fullName: 'Jane Doe', email: 'jane@test.com' };
-      useAuthStore.setState({ user });
+      AuthStateVar.set({ user });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(AuthStoreSelectors.registerUser(state)).toEqual(user);
 
-      useAuthStore.setState({ user: null });
-      expect(AuthStoreSelectors.registerUser(useAuthStore.getState())).toBeNull();
-    });
-  });
-
-  describe('sanitizeAuthState', () => {
-    it('should redact token when present', () => {
-      const state = { ...useAuthStore.getState(), token: 'secret-token' };
-      expect(AuthStoreFactory.sanitize(state).token).toBe('[REDACTED]');
-    });
-
-    it('should keep null token as null', () => {
-      const state = { ...useAuthStore.getState(), token: null };
-      expect(AuthStoreFactory.sanitize(state).token).toBeNull();
+      AuthStateVar.set({ user: null });
+      expect(AuthStoreSelectors.registerUser(AuthStateVar.get())).toBeNull();
     });
   });
 
@@ -566,9 +554,9 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await useAuthStore.getState().loginUser({ email: 'di@test.com', password: 'pass' });
+      await authActions.loginUser({ email: 'di@test.com', password: 'pass' });
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.token).toBe('di-token');
       expect(state.email).toBe('di@test.com');
     });
@@ -578,20 +566,20 @@ describe('Auth Store Integration', () => {
       expect(registrationAPI).toBeDefined();
 
       server.use(
-        rest.post(API_ENDPOINTS.REGISTER, (_, res, ctx) =>
-          res(ctx.status(201), ctx.json({ fullName: 'Test User', email: 'test@example.com' }))
+        rest.post(GRAPHQL_URL, (_, res, ctx) =>
+          res(ctx.status(200), ctx.json(createUserSuccessBody))
         )
       );
 
-      await useAuthStore.getState().registerUser(registrationCredentials);
+      await authActions.registerUser(registrationCredentials);
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeNull();
     });
 
     it('resetRegistration clears registration fields; retryable selector reads it', async () => {
-      useAuthStore.setState({
+      AuthStateVar.set({
         token: 'keep-me',
         email: 'keep@me.com',
         user: { fullName: 'X', email: 'x@y.com' },
@@ -599,11 +587,11 @@ describe('Auth Store Integration', () => {
         registerLoading: true,
       });
 
-      expect(AuthStoreSelectors.registerRetryable(useAuthStore.getState())).toBe(true);
+      expect(AuthStoreSelectors.registerRetryable(AuthStateVar.get())).toBe(true);
 
-      useAuthStore.getState().resetRegistration();
+      authActions.resetRegistration();
 
-      const state = useAuthStore.getState();
+      const state = AuthStateVar.get();
       expect(state.token).toBe('keep-me');
       expect(state.email).toBe('keep@me.com');
       expect(state.user).toBeNull();
@@ -619,7 +607,7 @@ describe('Auth Store Integration', () => {
       try {
         await jest.isolateModulesAsync(async () => {
           const mod = await import('@auth/stores');
-          expect(mod.useAuthStore.getState().token).toBe('preloaded');
+          expect(mod.AuthStateVar.get().token).toBe('preloaded');
         });
       } finally {
         if (originalEnv === undefined) {
@@ -636,7 +624,7 @@ describe('Auth Store Integration', () => {
           'window-token';
         try {
           const mod = await import('@auth/stores');
-          expect(mod.useAuthStore.getState().token).toBe('window-token');
+          expect(mod.AuthStateVar.get().token).toBe('window-token');
         } finally {
           delete (window as Window & { __PRELOADED_AUTH_TOKEN__?: string })
             .__PRELOADED_AUTH_TOKEN__;
@@ -651,7 +639,7 @@ describe('Auth Store Integration', () => {
       try {
         await jest.isolateModulesAsync(async () => {
           const mod = await import('@auth/stores');
-          expect(mod.useAuthStore.getState().token).toBe('trimmed');
+          expect(mod.AuthStateVar.get().token).toBe('trimmed');
         });
       } finally {
         if (originalEnv === undefined) {
@@ -659,100 +647,6 @@ describe('Auth Store Integration', () => {
         } else {
           process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = originalEnv;
         }
-      }
-    });
-  });
-
-  describe('PreloadedAuthToken.read', () => {
-    it('returns window token when provided directly', () => {
-      const result = PreloadedAuthToken.read({ __PRELOADED_AUTH_TOKEN__: 'win-tok' }, undefined);
-
-      expect(result).toBe('win-tok');
-    });
-
-    it('returns env token when window is null', () => {
-      const result = PreloadedAuthToken.read(null as unknown as undefined, 'env-tok');
-
-      expect(result).toBe('env-tok');
-    });
-
-    it('trims whitespace from window token', () => {
-      const result = PreloadedAuthToken.read({ __PRELOADED_AUTH_TOKEN__: '  padded  ' }, undefined);
-
-      expect(result).toBe('padded');
-    });
-
-    it('returns undefined when both window and env tokens are absent', () => {
-      const result = PreloadedAuthToken.read(null as unknown as undefined, undefined);
-
-      expect(result).toBeUndefined();
-    });
-
-    it('falls back to env token when window object has no token property', () => {
-      const result = PreloadedAuthToken.read(
-        {} as { __PRELOADED_AUTH_TOKEN__?: string },
-        'env-fallback'
-      );
-
-      expect(result).toBe('env-fallback');
-    });
-
-    it('falls back to env token when window token is empty string after trimming', () => {
-      const result = PreloadedAuthToken.read({ __PRELOADED_AUTH_TOKEN__: '   ' }, 'fallback');
-
-      expect(result).toBe('fallback');
-    });
-
-    it('returns env token when window token is null', () => {
-      const result = PreloadedAuthToken.read(
-        { __PRELOADED_AUTH_TOKEN__: null as unknown as string },
-        'env-tok'
-      );
-
-      expect(result).toBe('env-tok');
-    });
-
-    it('window token takes priority over env token', () => {
-      const result = PreloadedAuthToken.read({ __PRELOADED_AUTH_TOKEN__: 'win' }, 'env');
-
-      expect(result).toBe('win');
-    });
-
-    it('returns undefined when process.env access throws', () => {
-      const originalEnv = process.env;
-      Object.defineProperty(process, 'env', {
-        get() {
-          throw new Error('process.env unavailable');
-        },
-        configurable: true,
-      });
-
-      try {
-        const result = PreloadedAuthToken.read(null as unknown as undefined);
-
-        expect(result).toBeUndefined();
-      } finally {
-        Object.defineProperty(process, 'env', {
-          value: originalEnv,
-          configurable: true,
-          writable: true,
-        });
-      }
-    });
-
-    it('falls back to env when window is unavailable (default param)', () => {
-      const originalWindow = global.window;
-      Object.defineProperty(global, 'window', { configurable: true, value: undefined });
-
-      try {
-        const result = PreloadedAuthToken.read(undefined, 'env-fallback');
-
-        expect(result).toBe('env-fallback');
-      } finally {
-        Object.defineProperty(global, 'window', {
-          configurable: true,
-          value: originalWindow,
-        });
       }
     });
   });
