@@ -72,6 +72,7 @@
     "@typescript-eslint/eslint-plugin": "^8.51.0",
     "@typescript-eslint/parser": "^8.51.0",
     "ajv": "^8.20.0",
+    "bats": "^1.13.0",
     "babel-loader": "^9.2.1",
     "babel-plugin-transform-typescript-metadata": "^0.3.2",
     "css-loader": "^7.1.2",
