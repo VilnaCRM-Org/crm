@@ -287,7 +287,7 @@ export default [
   // stable `id` where a non-semantic hook is unavoidable; tests query by
   // role/label/text. Stories are excluded.
   {
-    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    files: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx'],
     ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*'],
     rules: {
       'no-restricted-syntax': [
@@ -318,7 +318,8 @@ export default [
       'no-restricted-syntax': [
         'warn',
         {
-          selector: 'CallExpression[callee.property.name=/^(get|query|find)(All)?ByTestId$/]',
+          selector:
+            'CallExpression[callee.property.name=/^(get|query|find)(All)?ByTestId$/], CallExpression[callee.name=/^(get|query|find)(All)?ByTestId$/]',
           message:
             'Prefer getByRole/getByLabelText/getByText; *ByTestId is a last resort (issue #90).',
         },
