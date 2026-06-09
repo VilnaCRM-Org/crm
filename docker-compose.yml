@@ -41,7 +41,7 @@ services:
     env_file:
       - .env
     ports:
-      - '${GRAPHQL_PORT:-4000}:4000'
+      - '${GRAPHQL_PORT:-4000}:${GRAPHQL_PORT:-4000}'
     restart: unless-stopped
     healthcheck:
       test:

@@ -41,7 +41,7 @@ services:
       - .env
     restart: unless-stopped
     ports:
-      - '4000:4000'
+      - '${GRAPHQL_PORT:-4000}:${GRAPHQL_PORT:-4000}'
     healthcheck:
       test:
         ['CMD', 'curl', '-f', 'http://localhost:${GRAPHQL_PORT:-4000}/${GRAPHQL_API_PATH:-graphql}']
