@@ -43,8 +43,19 @@ services:
     ports:
       - '${GRAPHQL_PORT:-4000}:${GRAPHQL_PORT:-4000}'
     healthcheck:
+      # Apollo Server 4 returns HTTP 400 for GET /graphql without a query, and the image
+      # ships wget (busybox) but not curl. POST a tiny query so the check reflects real health.
       test:
-        ['CMD', 'curl', '-f', 'http://localhost:${GRAPHQL_PORT:-4000}/${GRAPHQL_API_PATH:-graphql}']
+        [
+          'CMD',
+          'wget',
+          '-q',
+          '-O',
+          '/dev/null',
+          '--header=Content-Type: application/json',
+          '--post-data={"query":"{__typename}"}',
+          'http://localhost:${GRAPHQL_PORT:-4000}/${GRAPHQL_API_PATH:-graphql}',
+        ]
     networks:
       - crm-network
 

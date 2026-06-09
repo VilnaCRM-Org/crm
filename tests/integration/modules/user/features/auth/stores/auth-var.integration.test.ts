@@ -44,9 +44,12 @@ describe('auth-var integration coverage', () => {
   it('reads the window token by default when window is present', () => {
     const original = window.__PRELOADED_AUTH_TOKEN__;
     window.__PRELOADED_AUTH_TOKEN__ = 'win-default';
-    expect(AuthStateVar.readSeedToken(undefined, undefined)).toBe('win-default');
-    if (original === undefined) delete window.__PRELOADED_AUTH_TOKEN__;
-    else window.__PRELOADED_AUTH_TOKEN__ = original;
+    try {
+      expect(AuthStateVar.readSeedToken(undefined, undefined)).toBe('win-default');
+    } finally {
+      if (original === undefined) delete window.__PRELOADED_AUTH_TOKEN__;
+      else window.__PRELOADED_AUTH_TOKEN__ = original;
+    }
   });
 
   it('uses the env token by default when window is absent, else null', () => {
@@ -54,13 +57,16 @@ describe('auth-var integration coverage', () => {
     const originalEnv = process.env[ENV_KEY];
     Object.defineProperty(global, 'window', { configurable: true, value: undefined });
 
-    process.env[ENV_KEY] = 'env-token';
-    expect(AuthStateVar.readSeedToken()).toBe('env-token');
-    delete process.env[ENV_KEY];
-    expect(AuthStateVar.readSeedToken()).toBeNull();
-
-    Object.defineProperty(global, 'window', { configurable: true, value: originalWindow });
-    if (originalEnv !== undefined) process.env[ENV_KEY] = originalEnv;
+    try {
+      process.env[ENV_KEY] = 'env-token';
+      expect(AuthStateVar.readSeedToken()).toBe('env-token');
+      delete process.env[ENV_KEY];
+      expect(AuthStateVar.readSeedToken()).toBeNull();
+    } finally {
+      Object.defineProperty(global, 'window', { configurable: true, value: originalWindow });
+      if (originalEnv !== undefined) process.env[ENV_KEY] = originalEnv;
+      else delete process.env[ENV_KEY];
+    }
   });
 
   it('returns null when reading the env token throws', () => {
@@ -72,7 +78,10 @@ describe('auth-var integration coverage', () => {
       },
     });
     Object.defineProperty(process, 'env', { configurable: true, value: throwingEnv });
-    expect(AuthStateVar.readSeedToken({})).toBeNull();
-    Object.defineProperty(process, 'env', { configurable: true, value: originalEnv });
+    try {
+      expect(AuthStateVar.readSeedToken({})).toBeNull();
+    } finally {
+      Object.defineProperty(process, 'env', { configurable: true, value: originalEnv });
+    }
   });
 });
