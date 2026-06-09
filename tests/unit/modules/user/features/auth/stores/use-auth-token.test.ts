@@ -81,6 +81,26 @@ describe('useAuthToken', () => {
     expect(tracker.cancelled).toEqual([false, true]);
   });
 
+  // Guards against re-arming with a fresh closure per notification, which would retain an
+  // ever-growing wrapper chain (and recursive unsubscribe depth) for mounted consumers.
+  it('re-arms the same listener function on every auth change', () => {
+    const reactiveVar = AuthStateVar.reactiveVar();
+    const realOnNextChange = reactiveVar.onNextChange.bind(reactiveVar);
+    const registered: unknown[] = [];
+    jest.spyOn(reactiveVar, 'onNextChange').mockImplementation((listener) => {
+      registered.push(listener);
+      return realOnNextChange(listener);
+    });
+
+    const { unmount } = renderHook(() => useAuthToken());
+    act(() => AuthStateVar.set({ token: 'tok-1' }));
+    act(() => AuthStateVar.set({ token: 'tok-2' }));
+
+    expect(registered).toHaveLength(3);
+    expect(new Set(registered).size).toBe(1);
+    unmount();
+  });
+
   // Apollo snapshots listeners before notifying, so a listener can fire after the hook's
   // cleanup ran in the same broadcast; it must neither notify React nor re-arm itself.
   it('ignores a notification that races with cleanup in the same broadcast', () => {

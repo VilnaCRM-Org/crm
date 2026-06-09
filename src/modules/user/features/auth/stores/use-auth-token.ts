@@ -19,16 +19,18 @@ class AuthTokenStore {
     return AuthStateVar.get().token;
   }
 
-  // Returns a canceller that reads `cancel` lazily: every re-arm reassigns it, so cleanup
-  // always unregisters the newest armed listener instead of orphaning it until the next
-  // auth-state mutation.
+  // Re-arms the same listener closure and reassigns the single `cancel` binding, keeping
+  // retention and unsubscribe depth O(1) across auth changes. The returned canceller reads
+  // `cancel` lazily so cleanup always unregisters the newest armed listener.
   private static relisten(isActive: () => boolean, notify: () => void): () => void {
-    let cancel = AuthStateVar.reactiveVar().onNextChange((): void => {
+    let cancel: () => void;
+    const listener = (): void => {
       if (isActive()) {
-        cancel = AuthTokenStore.relisten(isActive, notify);
+        cancel = AuthStateVar.reactiveVar().onNextChange(listener);
         notify();
       }
-    });
+    };
+    cancel = AuthStateVar.reactiveVar().onNextChange(listener);
     return (): void => cancel();
   }
 }
