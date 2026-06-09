@@ -579,55 +579,35 @@ export class MyService {
 // 3. Register in src/config/dependency-injection-config.ts
 container.registerSingleton<MyService>(TOKENS.MyService, MyService);
 
-// 4. Use in Redux thunks
-const thunkExtraArgument: ThunkExtra = {
-  myService: container.resolve<MyService>(TOKENS.MyService),
-};
-
-// 5. Access in async thunks
-export const myThunk = createAsyncThunk('module/action', async (_, { extra }) => {
-  const { myService } = extra as ThunkExtra;
-  return myService.doSomething();
-});
+// 4. Resolve once at the composition root and inject the dependency
+//    (keep React components, stores, and store actions container-free)
+export const useMyStore = MyStoreFactory.create(container.resolve(MyStoreActions));
 ```
 
-### Redux Store Pattern
+### Zustand Store Pattern
+
+Stores use Zustand (`create` + `devtools`) and stay container-free. Resolve the DI
+container once in the composition root, then inject an actions class (which holds the
+repositories) into the store factory — never call `container.resolve` inside the store
+or its actions. See `src/modules/user/features/auth/stores/` for the reference store.
 
 ```typescript
-// Module slice: src/modules/[Module]/store/[module]Slice.ts
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+// Composition root: src/modules/[Module]/stores/index.ts
+export const useModuleStore = ModuleStoreFactory.create(container.resolve(ModuleStoreActions));
 
-export const fetchData = createAsyncThunk(
-  'module/fetchData',
-  async (params, { extra, rejectWithValue }) => {
-    try {
-      const { moduleAPI } = extra as ThunkExtra;
-      return await moduleAPI.getData(params);
-    } catch (error) {
-      return rejectWithValue(error);
-    }
+// Store factory: container-free; receives injected actions
+export default class ModuleStoreFactory {
+  public static create(actions: ModuleStoreActions): UseModuleStore {
+    return create<ModuleStore>()(
+      devtools(
+        (set) => ({
+          // state + actions delegating to `actions`
+        }),
+        { name: 'module' }
+      )
+    );
   }
-);
-
-const moduleSlice = createSlice({
-  name: 'module',
-  initialState,
-  reducers: {},
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchData.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchData.fulfilled, (state, action) => {
-        state.data = action.payload;
-        state.loading = false;
-      })
-      .addCase(fetchData.rejected, (state, action) => {
-        state.error = action.payload;
-        state.loading = false;
-      });
-  },
-});
+}
 ```
 
 ### API Error Handling Pattern
@@ -720,7 +700,7 @@ export const UIComponentName: React.FC<UIComponentNameProps> = (props) => {
 
    ```bash
    docker compose -f docker-compose.test.yml exec playwright \
-     pnpm exec playwright test tests/e2e/login.spec.ts
+     bunx playwright test tests/e2e/login.spec.ts
    ```
 
 ### Visual Regression Testing
@@ -740,7 +720,7 @@ export const UIComponentName: React.FC<UIComponentNameProps> = (props) => {
 **Solution**: Check these configs match:
 
 - `tsconfig.paths.json` - TypeScript
-- `craco.config.js` - Webpack
+- `rsbuild.config.ts` - RSBuild
 - `jest.config.ts` - Jest tests
 
 #### Issue: Tests fail with "reflect-metadata" error
@@ -791,16 +771,16 @@ export NODE_OPTIONS=--max-old-space-size=4096
 make build
 ```
 
-#### Issue: pnpm install fails
+#### Issue: bun install fails
 
-**Cause**: Wrong Node/pnpm version
+**Cause**: Wrong Node/Bun version
 
 **Solution**:
 
 ```bash
 node --version  # Should be >=24.8.0
-pnpm --version  # Should be >=9
-nvm use        # If using nvm
+bun --version   # Should be >=1.3.5
+nvm use         # If using nvm
 ```
 
 #### Issue: Tests pass locally but fail in CI
@@ -858,7 +838,7 @@ nvm use        # If using nvm
 
 ```bash
 make build-analyze
-# Opens webpack-bundle-analyzer in browser
+# Opens the RSBuild bundle analyzer report in the browser
 ```
 
 **Look for**:
@@ -936,8 +916,8 @@ When creating a new module:
 - [ ] Add i18n files: `i18n/en.json`, `i18n/uk.json`
 - [ ] Register services in DI container
 - [ ] Add tokens to `src/config/tokens.ts`
-- [ ] Create Redux slice in `store/`
-- [ ] Add RTK Query API if needed
+- [ ] Create Zustand store in `stores/`
+- [ ] Add a repository / API client if needed
 - [ ] Write unit tests in `tests/unit/modules/[ModuleName]/`
 - [ ] Add E2E tests if user-facing
 - [ ] Update routes in `App.tsx` if needed
@@ -1004,8 +984,8 @@ See `.github/workflows/` for configuration
 ### Dependency Audits
 
 ```bash
-docker compose exec -T dev pnpm audit
-docker compose exec -T dev pnpm audit --fix  # Auto-fix vulnerabilities
+docker compose exec -T dev bun audit
+docker compose exec -T dev bun update  # Bump dependencies to pull in fixes
 ```
 
 Run monthly or when dependabot alerts
