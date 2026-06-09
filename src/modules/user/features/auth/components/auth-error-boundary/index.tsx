@@ -54,14 +54,9 @@ function FallbackContainer({
   const resolvedFallback = fallback === DEFAULT_FALLBACK_KEY ? t(DEFAULT_FALLBACK_KEY) : fallback;
 
   return (
-    <div
-      role="alert"
-      aria-live="assertive"
-      aria-atomic="true"
-      data-testid="auth-error-boundary-fallback"
-    >
+    <div role="alert" aria-live="assertive" aria-atomic="true">
       {resolvedFallback}
-      <RetryButton type="button" data-testid="auth-error-boundary-try-again" onClick={onReset}>
+      <RetryButton type="button" onClick={onReset}>
         {t('auth.error.tryAgain')}
       </RetryButton>
       {shouldShowErrorDetails(error) && <ErrorDetails error={error} />}

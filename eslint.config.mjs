@@ -283,6 +283,49 @@ export default [
     },
   },
 
+  // Source (issue #90): production source must not ship `data-testid`. Expose a
+  // stable `id` where a non-semantic hook is unavoidable; tests query by
+  // role/label/text. Stories are excluded.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='data-testid']",
+          message:
+            'No data-testid in source — expose a stable id or query by role/label/text (issue #90).',
+        },
+        {
+          selector: "Property[key.value='data-testid']",
+          message: 'No data-testid prop in source — use an id instead (issue #90).',
+        },
+        {
+          selector: "TSPropertySignature[key.value='data-testid']",
+          message: 'No data-testid prop type in source — expose an id prop instead (issue #90).',
+        },
+      ],
+    },
+  },
+
+  // Tests (issue #90): discourage *ByTestId — prefer getByRole/getByLabelText/
+  // getByText, falling back to a stable id. `warn` during staged migration
+  // (mock-stub queries remain valid); promote to `error` once the suite is clean.
+  {
+    files: testFilePatterns,
+    rules: {
+      'no-restricted-syntax': [
+        'warn',
+        {
+          selector: 'CallExpression[callee.property.name=/^(get|query|find)(All)?ByTestId$/]',
+          message:
+            'Prefer getByRole/getByLabelText/getByText; *ByTestId is a last resort (issue #90).',
+        },
+      ],
+    },
+  },
+
   // K6 load test scripts: console output is the idiomatic logging channel.
   {
     files: ['tests/load/**/*.js'],

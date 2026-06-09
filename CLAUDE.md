@@ -412,6 +412,12 @@ Key variables in `.env`:
    - E2E tests for user flows
    - Visual tests for UI regression
    - Mutation tests for code quality
+   - **Selectors**: source ships **no `data-testid`** — locate elements by
+     user-facing semantics (`getByRole`, `getByLabelText`, `getByText`), falling
+     back to a stable `id` only when no semantic query fits. Enforced in
+     `eslint.config.mjs` via `no-restricted-syntax`: `error` on `data-testid` in
+     `src/**`, `warn` on `*ByTestId` in tests (mock-stub queries stay valid).
+     Satisfy the gate by refactoring, never with `eslint-disable`.
 
 5. **Docker Network**: External network `website-network` used for service communication
 

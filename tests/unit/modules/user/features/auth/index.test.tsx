@@ -63,7 +63,7 @@ describe('Authentication shell', () => {
     render(<Authentication />);
 
     await waitFor(() => {
-      expect(screen.getByTestId('auth-error-boundary-fallback')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toBeInTheDocument();
     });
   });
 });

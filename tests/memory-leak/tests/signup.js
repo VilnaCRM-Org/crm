@@ -8,7 +8,6 @@ const logger = require('../utils/logger');
 const ROUTE_PATH = '/authentication';
 const DEFAULT_TIMEOUT = 5000;
 const NETWORK_IDLE_TIMEOUT = 30000;
-const SIGNUP_SWITCHER_SELECTOR = '[data-testid="signup-switcher"]';
 const PAGE_STATE_KEY = '__MEMLAB_SIGNUP_BASELINE__';
 
 const scenarioBuilder = new ScenarioBuilder(ROUTE_PATH);
@@ -48,6 +47,27 @@ async function waitForLoginForm(page, timeout = DEFAULT_TIMEOUT) {
   );
 }
 
+// Click the mode switcher by its visible label text (the button has no test
+// hook by design — see issue #90: source ships no data-testid).
+async function clickSwitcherByText(page, switcherText) {
+  await page.waitForFunction(
+    (text) =>
+      Array.from(document.querySelectorAll('button')).some((button) =>
+        button.textContent.trim().includes(text)
+      ),
+    { timeout: DEFAULT_TIMEOUT },
+    switcherText
+  );
+  await page.evaluate((text) => {
+    const button = Array.from(document.querySelectorAll('button')).find((candidate) =>
+      candidate.textContent.trim().includes(text)
+    );
+    if (button) {
+      button.click();
+    }
+  }, switcherText);
+}
+
 async function ensureRegistrationForm(page) {
   const isRegistrationForm = await page.$('input[name="fullName"]');
 
@@ -55,60 +75,14 @@ async function ensureRegistrationForm(page) {
     return false;
   }
 
-  const switcherText = t('sign_up.form.switcher_text_no_account');
-  const switcherByTestId = await page.$(SIGNUP_SWITCHER_SELECTOR);
-
-  if (switcherByTestId) {
-    await page.click(SIGNUP_SWITCHER_SELECTOR);
-  } else {
-    await page.waitForFunction(
-      (text) =>
-        Array.from(document.querySelectorAll('button')).some((button) =>
-          button.textContent.trim().includes(text)
-        ),
-      { timeout: DEFAULT_TIMEOUT },
-      switcherText
-    );
-    await page.evaluate((text) => {
-      const button = Array.from(document.querySelectorAll('button')).find((candidate) =>
-        candidate.textContent.trim().includes(text)
-      );
-      if (button) {
-        button.click();
-      }
-    }, switcherText);
-  }
-
+  await clickSwitcherByText(page, t('sign_up.form.switcher_text_no_account'));
   await waitForRegistrationForm(page);
 
   return true;
 }
 
 async function restoreLoginView(page) {
-  const switcherText = t('sign_up.form.switcher_text_have_account');
-  const switcherByTestId = await page.$(SIGNUP_SWITCHER_SELECTOR);
-
-  if (switcherByTestId) {
-    await page.click(SIGNUP_SWITCHER_SELECTOR);
-  } else {
-    await page.waitForFunction(
-      (text) =>
-        Array.from(document.querySelectorAll('button')).some((button) =>
-          button.textContent.trim().includes(text)
-        ),
-      { timeout: DEFAULT_TIMEOUT },
-      switcherText
-    );
-    await page.evaluate((text) => {
-      const button = Array.from(document.querySelectorAll('button')).find((candidate) =>
-        candidate.textContent.trim().includes(text)
-      );
-      if (button) {
-        button.click();
-      }
-    }, switcherText);
-  }
-
+  await clickSwitcherByText(page, t('sign_up.form.switcher_text_have_account'));
   await waitForLoginForm(page);
 }
 

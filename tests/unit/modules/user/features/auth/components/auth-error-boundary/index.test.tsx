@@ -94,7 +94,7 @@ describe('AuthErrorBoundary', () => {
       </AuthErrorBoundary>
     );
 
-    expect(screen.getByTestId('auth-error-boundary-fallback')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
 
     shouldThrow = false;
     rerender(
@@ -103,7 +103,7 @@ describe('AuthErrorBoundary', () => {
       </AuthErrorBoundary>
     );
 
-    await userEvent.click(screen.getByTestId('auth-error-boundary-try-again'));
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }));
 
     expect(screen.getByTestId('child')).toBeInTheDocument();
   });
