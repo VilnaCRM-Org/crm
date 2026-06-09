@@ -4,6 +4,7 @@ import type { AuthActions } from '../types/auth-store';
 
 import AuthStoreActions from './auth-store-actions';
 import AuthStateVar, { useAuthState } from './auth-var';
+import useAuthToken from './use-auth-token';
 
 const actions = container.resolve(AuthStoreActions);
 
@@ -17,5 +18,5 @@ export const authActions: AuthActions = {
 };
 
 export { default as AuthStoreSelectors } from './auth-store-selectors';
-export { AuthStateVar, useAuthState };
+export { AuthStateVar, useAuthState, useAuthToken };
 export type { AuthState } from '../types/auth-store';

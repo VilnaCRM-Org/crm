@@ -111,7 +111,7 @@ separate from the `lint` verification suite.
 - `.agents/skills`: BMAD agents, planning workflows, and interactive methods.
 - `.claude/skills`: frontend project skills for implementation, quality,
   testing, review, documentation, observability, and performance guidance.
-- `~/.claude/skills` (global, personal): UI/design/a11y skills (from
+- `~/.claude/skills` (global, personal): UI/design/motion/a11y skills (from
   [ui-skills.com](https://www.ui-skills.com/skills/)) plus testing, performance, React/TS,
   and browser/audit skills. Catalog and triggers: see "Global Skills" in `agents.md`.
 

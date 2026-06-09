@@ -1,9 +1,9 @@
 import { Navigate, Outlet } from 'react-router-dom';
 
-import { AuthStoreSelectors, useAuthState } from '@auth/stores';
+import { useAuthToken } from '@auth/stores';
 
 export default function ProtectedRoute(): JSX.Element {
-  const token = AuthStoreSelectors.token(useAuthState());
+  const token = useAuthToken();
 
   return token ? <Outlet /> : <Navigate to="/authentication" replace />;
 }

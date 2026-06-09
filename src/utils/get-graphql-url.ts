@@ -5,7 +5,7 @@ export default class GraphQLUrl {
     'REACT_APP_GRAPHQL_URL must be defined in production environment. Cannot default to localhost.';
 
   public static resolve(): string {
-    const url = process.env.REACT_APP_GRAPHQL_URL;
+    const url = process.env.REACT_APP_GRAPHQL_URL?.trim();
 
     if (process.env.NODE_ENV === 'production' && !url) {
       throw new Error(GraphQLUrl.productionMessage);

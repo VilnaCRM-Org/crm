@@ -38,6 +38,20 @@ describe('auth-var state helpers', () => {
 });
 
 describe('readSeedToken', () => {
+  const originalWindow = global.window;
+  const originalEnv = process.env;
+  const originalWindowToken = window.__PRELOADED_AUTH_TOKEN__;
+  const originalEnvToken = process.env[ENV_KEY];
+
+  afterEach(() => {
+    Object.defineProperty(global, 'window', { configurable: true, value: originalWindow });
+    Object.defineProperty(process, 'env', { configurable: true, value: originalEnv });
+    if (originalWindowToken === undefined) delete window.__PRELOADED_AUTH_TOKEN__;
+    else window.__PRELOADED_AUTH_TOKEN__ = originalWindowToken;
+    if (originalEnvToken === undefined) delete process.env[ENV_KEY];
+    else process.env[ENV_KEY] = originalEnvToken;
+  });
+
   it('prefers the trimmed token injected on window', () => {
     const token = AuthStateVar.readSeedToken(
       { [AuthStateVar.windowKey]: ' window-token ' },
@@ -55,40 +69,25 @@ describe('readSeedToken', () => {
   });
 
   it('reads the window token by default when window is present', () => {
-    const original = window.__PRELOADED_AUTH_TOKEN__;
     window.__PRELOADED_AUTH_TOKEN__ = 'win-default';
     expect(AuthStateVar.readSeedToken(undefined, undefined)).toBe('win-default');
-    if (original === undefined) delete window.__PRELOADED_AUTH_TOKEN__;
-    else window.__PRELOADED_AUTH_TOKEN__ = original;
   });
 
   it('uses the default env token when window is absent', () => {
-    const originalWindow = global.window;
-    const originalEnv = process.env[ENV_KEY];
     Object.defineProperty(global, 'window', { configurable: true, value: undefined });
     process.env[ENV_KEY] = 'env-token';
 
     expect(AuthStateVar.readSeedToken()).toBe('env-token');
-
-    Object.defineProperty(global, 'window', { configurable: true, value: originalWindow });
-    if (originalEnv === undefined) delete process.env[ENV_KEY];
-    else process.env[ENV_KEY] = originalEnv;
   });
 
   it('returns null when window is absent and no env token is set', () => {
-    const originalWindow = global.window;
-    const originalEnv = process.env[ENV_KEY];
     Object.defineProperty(global, 'window', { configurable: true, value: undefined });
     delete process.env[ENV_KEY];
 
     expect(AuthStateVar.readSeedToken()).toBeNull();
-
-    Object.defineProperty(global, 'window', { configurable: true, value: originalWindow });
-    if (originalEnv !== undefined) process.env[ENV_KEY] = originalEnv;
   });
 
   it('returns null when reading the env token throws', () => {
-    const originalEnv = process.env;
     const throwingEnv = new Proxy(process.env, {
       get(target: NodeJS.ProcessEnv, prop: string | symbol): unknown {
         if (prop === ENV_KEY) throw new Error('no env access');
@@ -98,13 +97,5 @@ describe('readSeedToken', () => {
     Object.defineProperty(process, 'env', { configurable: true, value: throwingEnv });
 
     expect(AuthStateVar.readSeedToken({})).toBeNull();
-
-    Object.defineProperty(process, 'env', { configurable: true, value: originalEnv });
-  });
-
-  it('keeps the module-level reactive var in sync with updates', () => {
-    AuthStateVar.set({ token: 'direct' });
-    expect(AuthStateVar.get().token).toBe('direct');
-    AuthStateVar.reset();
   });
 });
