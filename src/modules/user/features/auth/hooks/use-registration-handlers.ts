@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { useAuthStore } from '@auth/stores';
+import { authActions } from '@auth/stores';
 import RegistrationHandlersFactory, {
   type RegistrationHandlerDeps,
   type RegistrationHandlers,
@@ -10,8 +10,7 @@ export default function useRegistrationHandlers(
   deps: RegistrationHandlerDeps
 ): RegistrationHandlers {
   const { setView, setFormKey, lastSubmittedDataRef } = deps;
-  const registerUser = useAuthStore((state) => state.registerUser);
-  const resetRegistration = useAuthStore((state) => state.resetRegistration);
+  const { registerUser, resetRegistration } = authActions;
 
   return useMemo(
     () =>

@@ -111,6 +111,9 @@ separate from the `lint` verification suite.
 - `.agents/skills`: BMAD agents, planning workflows, and interactive methods.
 - `.claude/skills`: frontend project skills for implementation, quality,
   testing, review, documentation, observability, and performance guidance.
+- `~/.claude/skills` (global, personal): UI/design/motion/a11y skills (from
+  [ui-skills.com](https://www.ui-skills.com/skills/)) plus testing, performance, React/TS,
+  and browser/audit skills. Catalog and triggers: see "Global Skills" in `agents.md`.
 
 Do not mirror BMAD skills into `.claude/skills`.
 
@@ -122,8 +125,9 @@ Codex, GitHub Copilot, Cursor, OpenAI agents, and any other assistant) MUST:
 1. Read [`.claude/skills/AI-AGENT-GUIDE.md`](.claude/skills/AI-AGENT-GUIDE.md).
 2. Read
    [`.claude/skills/SKILL-DECISION-GUIDE.md`](.claude/skills/SKILL-DECISION-GUIDE.md).
-3. Identify every `.claude/skills/*` skill that applies to the current task
-   and read each matching `SKILL.md` before executing.
+3. Identify every `.claude/skills/*` skill **and** every relevant global
+   `~/.claude/skills` skill (see "Global Skills" in `agents.md`) for the task,
+   then invoke each match before executing.
 4. Apply all relevant skills. Only skip one after recording
    "Not applicable" with a concrete reason.
 

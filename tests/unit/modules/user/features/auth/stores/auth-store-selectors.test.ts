@@ -1,7 +1,7 @@
 import AuthStoreSelectors from '@auth/stores/auth-store-selectors';
-import type { AuthStore } from '@auth/types/auth-store';
+import type { AuthState } from '@auth/types/auth-store';
 
-const base: AuthStore = {
+const base: AuthState = {
   email: 'a@b.c',
   token: 't',
   user: { email: 'a@b.c' },
@@ -9,11 +9,6 @@ const base: AuthStore = {
   loginError: { kind: 'unknown', displayMessage: 'x', retryable: true },
   registerLoading: false,
   registerError: { kind: 'conflict', displayMessage: 'y', retryable: false },
-  loginUser: jest.fn(),
-  registerUser: jest.fn(),
-  logout: jest.fn(),
-  reset: jest.fn(),
-  resetRegistration: jest.fn(),
 };
 
 describe('AuthStoreSelectors', () => {
@@ -33,7 +28,7 @@ describe('AuthStoreSelectors', () => {
   });
 
   it('handles null token and null register error', () => {
-    const state: AuthStore = { ...base, token: null, registerError: null };
+    const state: AuthState = { ...base, token: null, registerError: null };
     expect(AuthStoreSelectors.isAuthenticated(state)).toBe(false);
     expect(AuthStoreSelectors.registerError(state)).toBeNull();
     expect(AuthStoreSelectors.registerRetryable(state)).toBeUndefined();

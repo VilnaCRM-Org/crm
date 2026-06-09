@@ -1,41 +1,41 @@
 import type { SafeUserInfo } from '../types/api-responses';
 import type { AuthError } from '../types/auth-error';
-import type { AuthStore } from '../types/auth-store';
+import type { AuthState } from '../types/auth-store';
 
 export default class AuthStoreSelectors {
-  public static email(state: AuthStore): string {
+  public static email(state: AuthState): string {
     return state.email;
   }
 
-  public static token(state: AuthStore): string | null {
+  public static token(state: AuthState): string | null {
     return state.token;
   }
 
-  public static isAuthenticated(state: AuthStore): boolean {
+  public static isAuthenticated(state: AuthState): boolean {
     return !!state.token;
   }
 
-  public static loginLoading(state: AuthStore): boolean {
+  public static loginLoading(state: AuthState): boolean {
     return state.loginLoading;
   }
 
-  public static loginError(state: AuthStore): AuthError | null {
+  public static loginError(state: AuthState): AuthError | null {
     return state.loginError;
   }
 
-  public static registerLoading(state: AuthStore): boolean {
+  public static registerLoading(state: AuthState): boolean {
     return state.registerLoading;
   }
 
-  public static registerError(state: AuthStore): AuthError | null {
+  public static registerError(state: AuthState): AuthError | null {
     return state.registerError;
   }
 
-  public static registerUser(state: AuthStore): SafeUserInfo | null {
+  public static registerUser(state: AuthState): SafeUserInfo | null {
     return state.user;
   }
 
-  public static registerRetryable(state: AuthStore): boolean | undefined {
+  public static registerRetryable(state: AuthState): boolean | undefined {
     return state.registerError?.retryable;
   }
 }

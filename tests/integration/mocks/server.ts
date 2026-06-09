@@ -2,6 +2,9 @@ import { rest } from 'msw';
 import { setupServer } from 'msw/node';
 
 import API_ENDPOINTS from '@/config/api-config';
+import GraphQLUrl from '@/utils/get-graphql-url';
+
+export const GRAPHQL_URL = GraphQLUrl.resolve();
 
 const handlers = [
   rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
@@ -12,12 +15,21 @@ const handlers = [
       })
     )
   ),
-  rest.post(API_ENDPOINTS.REGISTER, (_req, res, ctx) =>
+  rest.post(GRAPHQL_URL, (_req, res, ctx) =>
     res(
-      ctx.status(201),
+      ctx.status(200),
       ctx.json({
-        fullName: 'Test User',
-        email: 'test@example.com',
+        data: {
+          createUser: {
+            user: {
+              id: 'default-user-id',
+              confirmed: true,
+              email: 'test@example.com',
+              initials: 'Test User',
+            },
+            clientMutationId: 'default-client-mutation-id',
+          },
+        },
       })
     )
   ),

@@ -18,8 +18,7 @@ export interface AuthActions {
   logout: () => void;
   reset: () => void;
   resetRegistration: () => void;
+  clearLoginError: () => void;
 }
 
 export type AuthStore = AuthState & AuthActions;
-
-export type AuthSetState = (partial: Partial<AuthState>, replace?: false, action?: string) => void;

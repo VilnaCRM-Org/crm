@@ -1,11 +1,11 @@
 import { act, renderHook } from '@testing-library/react';
 
 import useRegistrationForm from '@auth/hooks/use-registration-form';
-import { useAuthStore } from '@auth/stores';
+import { AuthStateVar } from '@auth/stores';
 
 describe('useRegistrationForm', () => {
   beforeEach(() => {
-    useAuthStore.getState().reset();
+    AuthStateVar.reset();
   });
 
   it('exposes registration state and handlers, starting on the form view', () => {
@@ -22,7 +22,7 @@ describe('useRegistrationForm', () => {
 
   it('reports the store error through errorText and notifies view change subscribers', () => {
     const onViewChange = jest.fn();
-    useAuthStore.setState({
+    AuthStateVar.set({
       registerError: { kind: 'unknown', displayMessage: 'boom', retryable: false },
     });
 

@@ -1,11 +1,14 @@
+import type { ApolloClient, NormalizedCacheObject } from '@apollo/client';
 import { inject, injectable } from 'tsyringe';
+import { v4 as uuidv4 } from 'uuid';
 
-import API_ENDPOINTS from '@/config/api-config';
 import TOKENS from '@/config/tokens';
-import type HttpsClient from '@/services/https-client/https-client';
+import { HttpError } from '@/services/https-client/http-error';
 import type { RegisterUserDto } from '@auth/types/credentials';
 
 import type { RegistrationResponse } from '../types/api-responses';
+import CREATE_USER from '../types/graphql/mutations';
+import type { CreateUserInput, CreateUserResponse } from '../types/graphql/types';
 
 import ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
@@ -14,10 +17,33 @@ import { RequestOptions } from './types';
 @injectable()
 export default class RegistrationAPI extends BaseAPI {
   constructor(
-    @inject(TOKENS.HttpsClient) private readonly httpsClient: HttpsClient,
+    @inject(TOKENS.ApolloClient)
+    private readonly apolloClient: ApolloClient<NormalizedCacheObject>,
     @inject(TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory
   ) {
     super(apiErrorFactory);
+  }
+
+  private static toCreateUserInput(credentials: RegisterUserDto): CreateUserInput {
+    return {
+      email: credentials.email,
+      initials: credentials.fullName.trim(),
+      password: credentials.password,
+      clientMutationId: uuidv4(),
+    };
+  }
+
+  private static httpStatusOf(error: unknown): number | undefined {
+    const networkError = (error as { networkError?: { statusCode?: number } }).networkError;
+    const status = networkError?.statusCode;
+    return typeof status === 'number' ? status : undefined;
+  }
+
+  private static normalizeError(error: unknown): unknown {
+    const status = RegistrationAPI.httpStatusOf(error);
+    return typeof status === 'number'
+      ? new HttpError({ status, message: 'Registration request failed', cause: error })
+      : error;
   }
 
   public async register(
@@ -25,16 +51,25 @@ export default class RegistrationAPI extends BaseAPI {
     options?: RequestOptions
   ): Promise<RegistrationResponse | undefined> {
     try {
-      return await this.httpsClient.post<RegisterUserDto, RegistrationResponse>(
-        API_ENDPOINTS.REGISTER,
-        credentials,
-        options
-      );
+      const { data } = await this.apolloClient.mutate<
+        CreateUserResponse,
+        { input: CreateUserInput }
+      >({
+        mutation: CREATE_USER,
+        variables: { input: RegistrationAPI.toCreateUserInput(credentials) },
+        context: { fetchOptions: { signal: options?.signal } },
+      });
+
+      const user = data?.createUser?.user;
+      return user ? { email: user.email, fullName: user.initials } : undefined;
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        throw error; // Let RTK detect the abort
+      if (options?.signal?.aborted) {
+        // Normalize to an AbortError so the store's abort detection stays transport-agnostic.
+        const abortError = new Error('Registration request was aborted');
+        abortError.name = 'AbortError';
+        throw abortError;
       }
-      throw this.handleApiError(error, 'Registration');
+      throw this.handleApiError(RegistrationAPI.normalizeError(error), 'Registration');
     }
   }
 }

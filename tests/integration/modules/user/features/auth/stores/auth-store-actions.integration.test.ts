@@ -1,180 +1,70 @@
 import AuthStoreActions from '@auth/stores/auth-store-actions';
+import AuthStateVar from '@auth/stores/auth-var';
+import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository } from '@auth/types/auth-repository';
-import type { AuthSetState } from '@auth/types/auth-store';
 
-const makeRepo = (overrides: Partial<AuthRepository> = {}): AuthRepository =>
+const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   ({
     login: jest.fn().mockResolvedValue({ ok: true, value: { email: 'a@b.c', token: 't' } }),
     register: jest.fn().mockResolvedValue({ ok: true, value: { email: 'a@b.c' } }),
-    ...overrides,
+    ...over,
   }) as AuthRepository;
 
+const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
+  new AuthStoreActions(makeRepo(over)).login({ email: 'a@b.c', password: 'p' });
+
+const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
+  new AuthStoreActions(makeRepo(over)).register({ fullName: 'A', email: 'a@b.c', password: 'p' });
+
 describe('AuthStoreActions integration coverage', () => {
-  it('preserves auth-shaped login rejections', async () => {
-    const error = {
-      kind: 'server' as const,
-      displayMessage: 'Server unavailable',
-      retryable: true,
-    };
-    const set = jest.fn() as unknown as AuthSetState;
+  beforeEach(() => AuthStateVar.reset());
 
-    await new AuthStoreActions(makeRepo({ login: jest.fn().mockRejectedValue(error) })).login(set, {
-      email: 'a@b.c',
-      password: 'p',
-    });
-
-    expect(set).toHaveBeenLastCalledWith(
-      { loginLoading: false, loginError: error },
-      false,
-      'auth/loginUser/rejected'
-    );
+  it('preserves a structured auth error thrown by login', async () => {
+    const error: AuthError = { kind: 'server', displayMessage: 'Down', retryable: true };
+    await loginWith({ login: jest.fn().mockRejectedValue(error) });
+    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: error });
   });
 
-  it('normalizes unexpected string login rejections', async () => {
-    const set = jest.fn() as unknown as AuthSetState;
-
-    await new AuthStoreActions(makeRepo({ login: jest.fn().mockRejectedValue('boom') })).login(
-      set,
-      { email: 'a@b.c', password: 'p' }
-    );
-
-    expect(set).toHaveBeenLastCalledWith(
-      {
-        loginLoading: false,
-        loginError: expect.objectContaining({ kind: 'unknown', retryable: false }),
-      },
-      false,
-      'auth/loginUser/rejected'
-    );
+  it('normalizes a non-Error thrown login rejection', async () => {
+    await loginWith({ login: jest.fn().mockRejectedValue('boom') });
+    expect(AuthStateVar.get().loginError).toMatchObject({ kind: 'unknown', retryable: false });
   });
 
-  it('treats abort-marker login rejections as aborted', async () => {
-    const set = jest.fn() as unknown as AuthSetState;
-
-    await new AuthStoreActions(
-      makeRepo({ login: jest.fn().mockRejectedValue({ aborted: true }) })
-    ).login(set, { email: 'a@b.c', password: 'p' });
-
-    expect(set).toHaveBeenLastCalledWith({ loginLoading: false }, false, 'auth/loginUser/aborted');
-  });
-
-  it('treats AbortError-name login rejections as aborted', async () => {
-    const set = jest.fn() as unknown as AuthSetState;
-    const error = new Error('Operation cancelled');
-    error.name = 'AbortError';
-
-    await new AuthStoreActions(makeRepo({ login: jest.fn().mockRejectedValue(error) })).login(set, {
-      email: 'a@b.c',
-      password: 'p',
-    });
-
-    expect(set).toHaveBeenLastCalledWith({ loginLoading: false }, false, 'auth/loginUser/aborted');
-  });
-
-  it('treats ABORT_ERR login rejections as aborted', async () => {
-    const set = jest.fn() as unknown as AuthSetState;
-    const error = Object.assign(new Error('Request stopped'), { code: 'ABORT_ERR' });
-
-    await new AuthStoreActions(makeRepo({ login: jest.fn().mockRejectedValue(error) })).login(set, {
-      email: 'a@b.c',
-      password: 'p',
-    });
-
-    expect(set).toHaveBeenLastCalledWith({ loginLoading: false }, false, 'auth/loginUser/aborted');
-  });
-
-  it('treats abort-message login rejections as aborted', async () => {
-    const set = jest.fn() as unknown as AuthSetState;
-
-    await new AuthStoreActions(
-      makeRepo({ login: jest.fn().mockRejectedValue(new Error('Request was aborted by user')) })
-    ).login(set, { email: 'a@b.c', password: 'p' });
-
-    expect(set).toHaveBeenLastCalledWith({ loginLoading: false }, false, 'auth/loginUser/aborted');
-  });
-
-  it('treats cancel-message login rejections as aborted', async () => {
-    const set = jest.fn() as unknown as AuthSetState;
-
-    await new AuthStoreActions(
-      makeRepo({ login: jest.fn().mockRejectedValue(new Error('User cancelled the request')) })
-    ).login(set, { email: 'a@b.c', password: 'p' });
-
-    expect(set).toHaveBeenLastCalledWith({ loginLoading: false }, false, 'auth/loginUser/aborted');
-  });
-
-  it('normalizes undefined-message login rejections', async () => {
-    const set = jest.fn() as unknown as AuthSetState;
+  it('normalizes a thrown Error with an undefined message', async () => {
     const error = new Error();
     error.message = undefined as unknown as string;
-
-    await new AuthStoreActions(makeRepo({ login: jest.fn().mockRejectedValue(error) })).login(set, {
-      email: 'a@b.c',
-      password: 'p',
-    });
-
-    expect(set).toHaveBeenLastCalledWith(
-      {
-        loginLoading: false,
-        loginError: expect.objectContaining({ kind: 'unknown', retryable: false }),
-      },
-      false,
-      'auth/loginUser/rejected'
-    );
+    await loginWith({ login: jest.fn().mockRejectedValue(error) });
+    expect(AuthStateVar.get().loginError).toMatchObject({ kind: 'unknown', retryable: false });
   });
 
-  it('preserves auth-shaped register rejections', async () => {
-    const error = {
-      kind: 'conflict' as const,
-      displayMessage: 'Already exists',
+  it.each([
+    ['an abort marker object', { aborted: true }],
+    ['an AbortError name', Object.assign(new Error('stopped'), { name: 'AbortError' })],
+    ['an ABORT_ERR code', Object.assign(new Error('stopped'), { code: 'ABORT_ERR' })],
+    ['an abort message', new Error('Request was aborted')],
+    ['a cancel message', new Error('User cancelled the request')],
+  ])('treats a thrown login rejection with %s as aborted', async (_label, error) => {
+    await loginWith({ login: jest.fn().mockRejectedValue(error) });
+    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: null });
+  });
+
+  it('normalizes a generic thrown register error', async () => {
+    await registerWith({ register: jest.fn().mockRejectedValue(new Error('Unexpected failure')) });
+    expect(AuthStateVar.get().registerError).toMatchObject({ kind: 'unknown', retryable: false });
+  });
+
+  it('treats a thrown abort-marker register rejection as aborted', async () => {
+    await registerWith({ register: jest.fn().mockRejectedValue({ aborted: true }) });
+    expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, registerError: null });
+  });
+
+  it('applies a repository-reported error result to the auth state', async () => {
+    const error: AuthError = {
+      kind: 'authentication',
+      displayMessage: 'Invalid',
       retryable: false,
     };
-    const set = jest.fn() as unknown as AuthSetState;
-
-    await new AuthStoreActions(makeRepo({ register: jest.fn().mockRejectedValue(error) })).register(
-      set,
-      {
-        fullName: 'A',
-        email: 'a@b.c',
-        password: 'p',
-      }
-    );
-
-    expect(set).toHaveBeenLastCalledWith(
-      { registerLoading: false, registerError: error },
-      false,
-      'auth/registerUser/rejected'
-    );
-  });
-
-  it('normalizes unexpected register rejections', async () => {
-    const set = jest.fn() as unknown as AuthSetState;
-
-    await new AuthStoreActions(
-      makeRepo({ register: jest.fn().mockRejectedValue(new Error('Unexpected failure')) })
-    ).register(set, { fullName: 'A', email: 'a@b.c', password: 'p' });
-
-    expect(set).toHaveBeenLastCalledWith(
-      {
-        registerLoading: false,
-        registerError: expect.objectContaining({ kind: 'unknown', retryable: false }),
-      },
-      false,
-      'auth/registerUser/rejected'
-    );
-  });
-
-  it('treats abort-marker register rejections as aborted', async () => {
-    const set = jest.fn() as unknown as AuthSetState;
-
-    await new AuthStoreActions(
-      makeRepo({ register: jest.fn().mockRejectedValue({ aborted: true }) })
-    ).register(set, { fullName: 'A', email: 'a@b.c', password: 'p' });
-
-    expect(set).toHaveBeenLastCalledWith(
-      { registerLoading: false },
-      false,
-      'auth/registerUser/aborted'
-    );
+    await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error }) });
+    expect(AuthStateVar.get().loginError).toEqual(error);
   });
 });

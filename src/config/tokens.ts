@@ -1,6 +1,7 @@
 const TOKENS = Object.freeze({
   LoginAPI: Symbol('LoginAPI'),
   RegistrationAPI: Symbol('RegistrationAPI'),
+  ApolloClient: Symbol('ApolloClient'),
   HttpsClient: Symbol('HttpsClient'),
   ApiErrorFactory: Symbol('ApiErrorFactory'),
   ErrorParser: Symbol('ErrorParser'),

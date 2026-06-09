@@ -10,6 +10,9 @@ see `CLAUDE.md`.
 
 - `.agents/skills`: BMAD agents, planning workflows, and interactive methods.
 - `.claude/skills`: non-BMAD frontend project skills.
+- `~/.claude/skills` (global, personal): UI/design/motion/a11y skills (from
+  [ui-skills.com](https://www.ui-skills.com/skills/)) plus testing, performance, React/TS,
+  and browser/audit skills, invoked by name via the Skill tool. See "Global Skills" below.
 
 Do not mirror BMAD skills into `.claude/skills`.
 
@@ -21,13 +24,106 @@ Codex, GitHub Copilot, Cursor, OpenAI agents, and any other assistant) MUST:
 1. Read [`.claude/skills/AI-AGENT-GUIDE.md`](.claude/skills/AI-AGENT-GUIDE.md).
 2. Read
    [`.claude/skills/SKILL-DECISION-GUIDE.md`](.claude/skills/SKILL-DECISION-GUIDE.md).
-3. Identify every `.claude/skills/*` skill that applies to the current task
-   and read each matching `SKILL.md` before executing.
+3. Identify every `.claude/skills/*` skill **and** every relevant global skill (see
+   "Global Skills" below) for the current task, and invoke each match before executing.
 4. Apply all relevant skills. Only skip one after recording
    "Not applicable" with a concrete reason.
 
 This check is non-negotiable. Do not implement, format, lint, test, commit,
 or push until the relevant skills have been consulted.
+
+### Global Skills (`~/.claude/skills`, personal)
+
+These personal skills are available in every project (not committed in this repo). When a
+task hits a skill's triggers, invoke it **by name** with the Skill tool — alongside the
+project skills above and, for any UI change, the mandatory `accessibility-lead` agent. Use
+the project `.claude/skills/*` workflow skills for process and gates first; reach for these
+for deeper, technique-level guidance. The UI/design/motion/a11y groups come from
+[ui-skills.com](https://www.ui-skills.com/skills/); the rest were installed earlier.
+
+**Stack note:** several UI skills assume Tailwind CSS or shadcn/ui. This project uses
+Material UI v7 + Emotion, so translate their utility-class / token guidance to MUI's `sx`,
+`styled()`, and theme — keep the design principles, adapt the implementation.
+
+- **Build & style UI** (creating or beautifying components, pages, dashboards):
+  - `frontend-design` — distinctive, production-grade UI that avoids generic AI aesthetics.
+  - `interface-design` — dashboards, admin panels, SaaS app UI (this CRM's primary surface).
+  - `bencium-innovative-ux-designer` — distinctive, polished interfaces from a brief.
+  - `emil-design-eng` — UI polish, component design, and the invisible details.
+  - `make-interfaces-feel-better` — micro-interactions, hover/shadow/border, optical detail.
+  - `design-taste-frontend` — anti-slop direction; infers the right design language.
+  - `ui-ux-pro-max` — broad UI/UX reference: styles, palettes, font pairings, UX rules.
+  - `design-lab` — explore several design variants before committing to one.
+- **Redesign & review existing UI:**
+  - `redesign-existing-projects` — upgrade existing UI to premium quality, audit-first.
+  - `web-design-guidelines` — review UI code against Web Interface Guidelines.
+  - `rams` — real-time accessibility and visual design review.
+- **Design systems & color:**
+  - `swiss-design` — Swiss/modernist grid and typography system (Tailwind-oriented).
+  - `minimalist-ui` — clean editorial layout, monochrome, restrained visuals.
+  - `oklch-skill` — OKLCH color systems: conversion, palettes, contrast, dark mode.
+  - `baseline-ui` — validate animation durations, type scale, and layout anti-patterns.
+- **Motion, animation & interaction:**
+  - `interaction-design` — microinteractions, transitions, loading and feedback states.
+  - `transitions-dev` — drop-in CSS transitions for modals, dropdowns, badges, page changes.
+  - `12-principles-of-animation` — audit motion against Disney's 12 principles.
+  - `to-spring-or-not-to-spring` — choose spring vs easing for a given motion.
+  - `morphing-icons` — SVG line-based icon-to-icon morph transitions.
+  - `pseudo-elements` — CSS pseudo-elements and the View Transitions API.
+  - `fixing-motion-performance` — fix jank: layout thrashing, compositor props, blur.
+- **Accessibility (design, audit & testing):**
+  - `fixing-accessibility` — fix ARIA, keyboard nav, focus, contrast, and form errors.
+  - `wcag-audit-patterns` — WCAG 2.2 audit and remediation patterns.
+  - `accessibility-testing` — WCAG 2.2 via axe-core + manual strategies and legal mapping.
+  - `a11y-playwright-testing` — axe-core + Playwright a11y checks (keyboard, ARIA, contrast).
+  - `a11y-debugging` — a11y auditing via Chrome DevTools MCP (semantics, focus, contrast).
+- **Metadata, SEO & React health:**
+  - `fixing-metadata` — titles, meta descriptions, canonical, Open Graph, JSON-LD, robots.
+  - `react-doctor` — scan React for lint, a11y, bundle, and architecture regressions.
+  - `canvas-design` — static visual art (posters, `.png`/`.pdf`); niche, non-UI output.
+- **Testing & QA:**
+  - Playwright suites: `playwright-best-practices`, `playwright-automation`,
+    `playwright-e2e-testing`, `playwright-regression-testing`, `playwright-skill`,
+    `playwright-generate-test`.
+  - `visual-testing` — screenshot / visual regression (Playwright, Chromatic, Percy, Argos).
+  - `test-reliability` — diagnose and heal one flaky test at runtime.
+  - `unit-testing`, `javascript-typescript-jest` — Jest units, mocking, coverage, doubles.
+  - `react18-enzyme-to-rtl` — migrate Enzyme tests to React Testing Library.
+  - `semantic-test-selectors` — role/label/text queries; avoid `data-testid` (matches #90).
+  - `api-testing` — REST/GraphQL endpoint, schema, and contract testing.
+  - `qa-test-planner` — test plans, manual cases, regression suites, bug reports.
+- **Performance:**
+  - `performance-optimization`, `performance-testing` — profiling, k6, Web Vitals budgets.
+  - `debug-optimize-lcp` — diagnose and improve LCP via Chrome DevTools.
+  - `memory-leak-debugging` — heapsnapshots / memlab for leaks and OOM.
+- **React, TypeScript & code quality:**
+  - `frontend-ui-engineering` — production-quality components, layout, and state.
+  - `vercel-react-best-practices` — React render and bundle performance patterns.
+  - `react18-dep-compatibility` — React 18.3 / 19 dependency compatibility matrix.
+  - `typescript-clean-code` — Clean Code for TS; load its `rules.md`/`examples.md` refs.
+  - `eliminating-duplication` — DRY vs over-abstraction; jscpd/qlty gate (matches #91).
+  - `storybook-story-writing` — CSF3 stories that showcase variants and build.
+- **Browser, audit & CI:**
+  - `chrome-devtools`, `browser-testing-with-devtools`, `webapp-testing` — drive a real
+    browser to inspect DOM, console, network, and performance.
+  - `web-quality-audit` — Lighthouse-style performance/a11y/SEO/best-practices audit.
+  - `web-design-reviewer` — visual inspection to find and fix design/layout issues.
+  - `pix` — autonomous pixel-perfect UI loop using Figma MCP + Chrome.
+  - `hardening-github-actions-permissions` — least-privilege GITHUB_TOKEN in workflows.
+
+Accessibility is non-negotiable here: pair the a11y skills above with the mandatory
+`accessibility-lead` agent review for any UI change.
+
+To add or refresh the ui-skills.com skills, browse
+[ui-skills.com](https://www.ui-skills.com/skills/) and install **globally** with, e.g.:
+
+```bash
+curl -fsSL https://ui-skills.com/install | sh -s -- "frontend-design interface-design"
+```
+
+The official installer also writes into any detected project `.claude/` and command dirs;
+this repo's set was installed into `~/.claude/skills/` only, to keep the project tree and
+command palette clean.
 
 ## Quick Start for Agents
 
@@ -483,55 +579,35 @@ export class MyService {
 // 3. Register in src/config/dependency-injection-config.ts
 container.registerSingleton<MyService>(TOKENS.MyService, MyService);
 
-// 4. Use in Redux thunks
-const thunkExtraArgument: ThunkExtra = {
-  myService: container.resolve<MyService>(TOKENS.MyService),
-};
-
-// 5. Access in async thunks
-export const myThunk = createAsyncThunk('module/action', async (_, { extra }) => {
-  const { myService } = extra as ThunkExtra;
-  return myService.doSomething();
-});
+// 4. Resolve once at the composition root and inject the dependency
+//    (React components, stores, and store actions never call container.resolve themselves)
+export const useMyStore = MyStoreFactory.create(container.resolve(MyStoreActions));
 ```
 
-### Redux Store Pattern
+### Zustand Store Pattern
+
+Stores use Zustand (`create` + `devtools`) and stay container-free. Resolve the DI
+container once in the composition root, then inject an actions class (which holds the
+repositories) into the store factory — never call `container.resolve` inside the store
+or its actions. See `src/modules/user/features/auth/stores/` for the reference store.
 
 ```typescript
-// Module slice: src/modules/[Module]/store/[module]Slice.ts
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+// Composition root: src/modules/[Module]/features/[Feature]/stores/index.ts
+export const useModuleStore = ModuleStoreFactory.create(container.resolve(ModuleStoreActions));
 
-export const fetchData = createAsyncThunk(
-  'module/fetchData',
-  async (params, { extra, rejectWithValue }) => {
-    try {
-      const { moduleAPI } = extra as ThunkExtra;
-      return await moduleAPI.getData(params);
-    } catch (error) {
-      return rejectWithValue(error);
-    }
+// Store factory: container-free; receives injected actions
+export default class ModuleStoreFactory {
+  public static create(actions: ModuleStoreActions): UseModuleStore {
+    return create<ModuleStore>()(
+      devtools(
+        (set) => ({
+          // state + actions delegating to `actions`
+        }),
+        { name: 'module' }
+      )
+    );
   }
-);
-
-const moduleSlice = createSlice({
-  name: 'module',
-  initialState,
-  reducers: {},
-  extraReducers: (builder) => {
-    builder
-      .addCase(fetchData.pending, (state) => {
-        state.loading = true;
-      })
-      .addCase(fetchData.fulfilled, (state, action) => {
-        state.data = action.payload;
-        state.loading = false;
-      })
-      .addCase(fetchData.rejected, (state, action) => {
-        state.error = action.payload;
-        state.loading = false;
-      });
-  },
-});
+}
 ```
 
 ### API Error Handling Pattern
@@ -624,7 +700,7 @@ export const UIComponentName: React.FC<UIComponentNameProps> = (props) => {
 
    ```bash
    docker compose -f docker-compose.test.yml exec playwright \
-     pnpm exec playwright test tests/e2e/login.spec.ts
+     bunx playwright test tests/e2e/login.spec.ts
    ```
 
 ### Visual Regression Testing
@@ -644,7 +720,7 @@ export const UIComponentName: React.FC<UIComponentNameProps> = (props) => {
 **Solution**: Check these configs match:
 
 - `tsconfig.paths.json` - TypeScript
-- `craco.config.js` - Webpack
+- `rsbuild.config.ts` - RSBuild
 - `jest.config.ts` - Jest tests
 
 #### Issue: Tests fail with "reflect-metadata" error
@@ -695,16 +771,16 @@ export NODE_OPTIONS=--max-old-space-size=4096
 make build
 ```
 
-#### Issue: pnpm install fails
+#### Issue: bun install fails
 
-**Cause**: Wrong Node/pnpm version
+**Cause**: Wrong Node/Bun version
 
 **Solution**:
 
 ```bash
 node --version  # Should be >=24.8.0
-pnpm --version  # Should be >=9
-nvm use        # If using nvm
+bun --version   # Should be >=1.3.5
+nvm use         # If using nvm
 ```
 
 #### Issue: Tests pass locally but fail in CI
@@ -762,7 +838,7 @@ nvm use        # If using nvm
 
 ```bash
 make build-analyze
-# Opens webpack-bundle-analyzer in browser
+# Opens the RSBuild bundle analyzer report in the browser
 ```
 
 **Look for**:
@@ -840,8 +916,8 @@ When creating a new module:
 - [ ] Add i18n files: `i18n/en.json`, `i18n/uk.json`
 - [ ] Register services in DI container
 - [ ] Add tokens to `src/config/tokens.ts`
-- [ ] Create Redux slice in `store/`
-- [ ] Add RTK Query API if needed
+- [ ] Create Zustand store in `features/[Feature]/stores/`
+- [ ] Add a repository / API client if needed
 - [ ] Write unit tests in `tests/unit/modules/[ModuleName]/`
 - [ ] Add E2E tests if user-facing
 - [ ] Update routes in `App.tsx` if needed
@@ -908,8 +984,8 @@ See `.github/workflows/` for configuration
 ### Dependency Audits
 
 ```bash
-docker compose exec -T dev pnpm audit
-docker compose exec -T dev pnpm audit --fix  # Auto-fix vulnerabilities
+docker compose exec -T dev bun audit
+docker compose exec -T dev bun update  # Bump dependencies to pull in fixes
 ```
 
 Run monthly or when dependabot alerts

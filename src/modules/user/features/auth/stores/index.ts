@@ -1,10 +1,22 @@
 import container from '@/config/dependency-injection-config';
 
+import type { AuthActions } from '../types/auth-store';
+
 import AuthStoreActions from './auth-store-actions';
-import AuthStoreFactory from './auth-store-factory';
+import AuthStateVar, { useAuthState } from './auth-var';
+import useAuthToken from './use-auth-token';
+
+const actions = container.resolve(AuthStoreActions);
+
+export const authActions: AuthActions = {
+  loginUser: (credentials, signal) => actions.login(credentials, signal),
+  registerUser: (credentials, signal) => actions.register(credentials, signal),
+  logout: AuthStateVar.reset,
+  reset: AuthStateVar.reset,
+  resetRegistration: AuthStateVar.resetRegistration,
+  clearLoginError: AuthStateVar.clearLoginError,
+};
 
 export { default as AuthStoreSelectors } from './auth-store-selectors';
-export type { AuthState, AuthStore } from '../types/auth-store';
-export type { UseAuthStore } from './auth-store-factory';
-
-export const useAuthStore = AuthStoreFactory.create(container.resolve(AuthStoreActions));
+export { AuthStateVar, useAuthState, useAuthToken };
+export type { AuthState } from '../types/auth-store';
