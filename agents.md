@@ -580,7 +580,7 @@ export class MyService {
 container.registerSingleton<MyService>(TOKENS.MyService, MyService);
 
 // 4. Resolve once at the composition root and inject the dependency
-//    (keep React components, stores, and store actions container-free)
+//    (React components, stores, and store actions never call container.resolve themselves)
 export const useMyStore = MyStoreFactory.create(container.resolve(MyStoreActions));
 ```
 
@@ -592,7 +592,7 @@ repositories) into the store factory — never call `container.resolve` inside t
 or its actions. See `src/modules/user/features/auth/stores/` for the reference store.
 
 ```typescript
-// Composition root: src/modules/[Module]/stores/index.ts
+// Composition root: src/modules/[Module]/features/[Feature]/stores/index.ts
 export const useModuleStore = ModuleStoreFactory.create(container.resolve(ModuleStoreActions));
 
 // Store factory: container-free; receives injected actions
@@ -916,7 +916,7 @@ When creating a new module:
 - [ ] Add i18n files: `i18n/en.json`, `i18n/uk.json`
 - [ ] Register services in DI container
 - [ ] Add tokens to `src/config/tokens.ts`
-- [ ] Create Zustand store in `stores/`
+- [ ] Create Zustand store in `features/[Feature]/stores/`
 - [ ] Add a repository / API client if needed
 - [ ] Write unit tests in `tests/unit/modules/[ModuleName]/`
 - [ ] Add E2E tests if user-facing
