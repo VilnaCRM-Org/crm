@@ -78,11 +78,7 @@ function MessageContainer({
 }): JSX.Element {
   return (
     <Box sx={styles.messageContainer}>
-      <UITypography
-        component="h4"
-        sx={styles.successMessageTitle}
-        data-testid="success-notification-title"
-      >
+      <UITypography component="h4" sx={styles.successMessageTitle}>
         {title}
       </UITypography>
       <UITypography component="span" sx={styles.successMessageDescription}>

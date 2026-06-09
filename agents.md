@@ -689,9 +689,10 @@ export const UIComponentName: React.FC<UIComponentNameProps> = (props) => {
      constructor(private page: Page) {}
 
      async login(email: string, password: string) {
-       await this.page.fill('[data-testid="email"]', email);
-       await this.page.fill('[data-testid="password"]', password);
-       await this.page.click('[data-testid="submit"]');
+       // Query by user-facing semantics — source ships no data-testid (issue #90).
+       await this.page.getByLabel('Email').fill(email);
+       await this.page.getByLabel('Password').fill(password);
+       await this.page.getByRole('button', { name: 'Sign in' }).click();
      }
    }
    ```

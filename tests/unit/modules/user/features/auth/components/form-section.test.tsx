@@ -124,6 +124,12 @@ jest.mock(
 type FormSectionModule = typeof import('@/modules/user/features/auth/components/form-section');
 let FormSection!: FormSectionModule['default'];
 
+function getAuthProviderContainer(view: ReturnType<typeof render>): HTMLElement {
+  return view
+    .getAllByRole('generic')
+    .find((element) => element.id === 'auth-provider-buttons-container') as HTMLElement;
+}
+
 describe('FormSection', () => {
   beforeAll(async () => {
     ({ default: FormSection } =
@@ -269,19 +275,21 @@ describe('FormSection', () => {
 
   it('marks auth provider buttons as inert when notification view is active', () => {
     const view = render(<FormSection />);
+    const authProviderContainer = getAuthProviderContainer(view);
 
-    expect(view.getByTestId('auth-provider-buttons-container')).not.toHaveAttribute('inert');
+    expect(authProviderContainer).not.toHaveAttribute('inert');
 
     fireEvent.click(view.getByTestId('trigger-success-view'));
 
-    expect(view.getByTestId('auth-provider-buttons-container')).toHaveAttribute('inert');
+    expect(authProviderContainer).toHaveAttribute('inert');
   });
 
   it('clears notification view when switching modes', async () => {
     const view = render(<FormSection />);
+    const authProviderContainer = getAuthProviderContainer(view);
 
     fireEvent.click(view.getByTestId('trigger-success-view'));
-    expect(view.getByTestId('auth-provider-buttons-container')).toHaveAttribute('inert');
+    expect(authProviderContainer).toHaveAttribute('inert');
 
     fireEvent.click(view.getByText('sign_up.form.switcher_text_have_account'));
 
@@ -291,6 +299,6 @@ describe('FormSection', () => {
 
     fireEvent.click(view.getByText('sign_up.form.switcher_text_no_account'));
 
-    expect(view.getByTestId('auth-provider-buttons-container')).not.toHaveAttribute('inert');
+    expect(authProviderContainer).not.toHaveAttribute('inert');
   });
 });

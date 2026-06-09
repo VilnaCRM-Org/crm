@@ -59,7 +59,6 @@ function SwitcherButton({
       onFocus={onIntent}
       onTouchStart={onIntent}
       disabled={disabled}
-      data-testid="signup-switcher"
     >
       {label}
     </UIButton>
@@ -136,11 +135,7 @@ function FormSectionLayout({
     <Box component="section" sx={styles.formSection}>
       <Box sx={styles.formWrapper}>
         <AuthBody mode={mode} onViewChange={onRegistrationViewChange} />
-        <InertBox
-          id="auth-provider-buttons-container"
-          data-testid="auth-provider-buttons-container"
-          inert={showNotification}
-        >
+        <InertBox id="auth-provider-buttons-container" inert={showNotification}>
           <AuthProviderButtons />
         </InertBox>
       </Box>
