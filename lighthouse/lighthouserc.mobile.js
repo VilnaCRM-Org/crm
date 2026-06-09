@@ -4,7 +4,9 @@ module.exports = {
   ci: {
     collect: {
       url: pages,
-      numberOfRuns: 3,
+      // 5 runs (vs 3) so the median-run aggregation is robust to a single noisy
+      // mobile sample on /authentication and does not flake across the 0.84 gate.
+      numberOfRuns: 5,
       settings: {
         formFactor: 'mobile',
         screenEmulation: {
