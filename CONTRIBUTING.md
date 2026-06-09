@@ -87,6 +87,9 @@ When you change or add a public target:
 
 - keep the target behavior aligned with its user-facing name
 - prefer composing existing targets instead of duplicating shell logic
+- keep `tests/bats/make-target-coverage.tsv` in sync with the current Makefile target list
+- add or update Bats coverage for uncovered shell flows, or record the PR workflow that already
+  exercises the target end to end
 - update `make help` text when the user-facing behavior changes
 - update README and CONTRIBUTING when the documented workflow changes
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration

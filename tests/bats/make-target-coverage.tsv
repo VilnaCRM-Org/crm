@@ -1,0 +1,98 @@
+target	coverage	evidence	details
+all	bats	tests/bats/makefile_targets.bats	Validated through the alias target returning the documented help output.
+test	bats	tests/bats/makefile_targets.bats	Validated through the alias target running both unit test entrypoints.
+help	bats	tests/bats/makefile_targets.bats	Validated through the help output contract and `test-bats` discoverability.
+start	ci	.github/workflows/static-testing.yml	Executed directly by multiple PR workflows that begin with `make start`.
+ci-setup	bats	tests/bats/makefile_targets.bats	Validated as the CI dev-stack setup wrapper over Docker Compose and readiness checks.
+ci-lint	bats	tests/bats/makefile_targets.bats	Validated as the wrapper around `scripts/ci/run-parallel-lint.sh`.
+ci-test	bats	tests/bats/makefile_targets.bats	Validated as the wrapper around `scripts/ci/run-parallel-tests.sh`.
+ci-mutation	bats	tests/bats/makefile_targets.bats	Validated as the alias that dispatches to the isolated mutation target.
+ci-prod-setup	bats	tests/bats/makefile_targets.bats	Validated as the prod-side setup wrapper over Chromium and prod startup flows.
+ci-test-prod	bats	tests/bats/makefile_targets.bats	Validated as the sequential prod-side umbrella target.
+ci	bats	tests/bats/makefile_targets.bats	Validated as the full local CI umbrella target.
+ensure-dev	bats	tests/bats/makefile_targets.bats	Validated through the already-running dev-service branch.
+wait-for-dev	ci	.github/workflows/static-testing.yml	Exercised transitively by PR workflows that call `make start`.
+wait-for-mockoon	ci	.github/workflows/static-testing.yml	Exercised transitively by PR workflows that call `make start`.
+build	bats	tests/bats/makefile_targets.bats	Validated for both the default Docker build path and the DIND branch.
+build-dev-chromium	ci	.github/workflows/performance-testing.yml	Executed directly by the performance workflow.
+ensure-chromium	ci	.github/workflows/performance-testing.yml	Exercised transitively by the Lighthouse PR workflow targets.
+build-analyze	bats	tests/bats/makefile_targets.bats	Validated as the ANALYZE=true production build wrapper.
+build-out	bats	tests/bats/makefile_targets.bats	Validated as the Docker artifact extraction flow.
+format	bats	tests/bats/makefile_targets.bats	Validated as the combined Prettier and Qlty formatting entrypoint.
+fmt-prettier	bats	tests/bats/makefile_targets.bats	Validated as the direct Prettier formatting command.
+fmt-qlty	bats	tests/bats/makefile_targets.bats	Validated as the direct Qlty formatting command.
+lint-eslint	bats	tests/bats/makefile_targets.bats	Validated as the direct ESLint command.
+lint-tsc	bats	tests/bats/makefile_targets.bats	Validated as the direct TypeScript check command.
+lint-md	bats	tests/bats/makefile_targets.bats	Validated as the direct Markdown lint command.
+lint-deps	ci	.github/workflows/dependency-cruiser.yml	Executed directly by the dependency-cruiser PR workflow.
+lint-metrics	bats	tests/bats/makefile_targets.bats	Validated as the Docker-backed rust-code-analysis wrapper including summary-path handoff.
+lint-metrics-run	bats	tests/bats/makefile_targets.bats	Validated as the direct shell-script handoff into `scripts/lint-metrics.sh`.
+lint	ci	.github/workflows/static-testing.yml	Executed directly by the static-testing PR workflow.
+husky	bats	tests/bats/makefile_targets.bats	Validated as the one-time Git hook setup command.
+storybook-start	bats	tests/bats/makefile_targets.bats	Validated as the Storybook dev-server wrapper.
+storybook-build	bats	tests/bats/makefile_targets.bats	Validated as the Storybook build wrapper.
+test-e2e	ci	.github/workflows/e2e-testing.yml	Executed directly by the E2E PR workflow.
+test-e2e-ui	bats	tests/bats/makefile_targets.bats	Validated as the UI-mode Playwright E2E wrapper.
+test-visual	ci	.github/workflows/visual-testing.yml	Executed directly by the visual-testing PR workflow.
+test-visual-ui	bats	tests/bats/makefile_targets.bats	Validated as the UI-mode Playwright visual wrapper.
+test-visual-update	bats	tests/bats/makefile_targets.bats	Validated as the visual snapshot update wrapper.
+create-network	ci	.github/workflows/static-testing.yml	Exercised transitively by the shared start and prod-side startup entrypoints.
+start-prod	ci	.github/workflows/e2e-testing.yml	Exercised transitively by prod-side PR workflows that depend on `make start-prod`.
+start-prod-clean	bats	tests/bats/makefile_targets.bats	Validated as the force-recreate prod startup wrapper.
+wait-for-prod	bats	tests/bats/makefile_targets.bats	Validated as the wait-on based prod readiness helper.
+test-unit-all	ci	.github/workflows/unit-testing.yml	Executed directly by the unit-testing PR workflow.
+test-unit-client	ci	.github/workflows/unit-testing.yml	Exercised transitively by `make test-unit-all`.
+test-unit-server	ci	.github/workflows/unit-testing.yml	Exercised transitively by `make test-unit-all`.
+ci-test-unit-client	bats	tests/bats/makefile_targets.bats	Validated as the client-side unit target used by CI batching.
+ci-test-unit-server	bats	tests/bats/makefile_targets.bats	Validated as the server-side unit target used by CI batching.
+ci-test-integration	bats	tests/bats/makefile_targets.bats	Validated as the integration target used by CI batching.
+ci-test-mutation	bats	tests/bats/makefile_targets.bats	Validated as the isolated mutation target used by CI batching.
+ci-test-e2e	bats	tests/bats/makefile_targets.bats	Validated as the prod-ready E2E target used by CI batching.
+ci-test-visual	bats	tests/bats/makefile_targets.bats	Validated as the prod-ready visual target used by CI batching.
+ci-test-memory-leak	bats	tests/bats/makefile_targets.bats	Validated as the dedicated Memlab target used by CI batching.
+ci-test-load	bats	tests/bats/makefile_targets.bats	Validated as the prod-ready K6 target used by CI batching.
+ci-test-lighthouse-desktop	bats	tests/bats/makefile_targets.bats	Validated as the desktop Lighthouse target used by CI batching.
+ci-test-lighthouse-mobile	bats	tests/bats/makefile_targets.bats	Validated as the mobile Lighthouse target used by CI batching.
+test-integration	ci	.github/workflows/integration-testing.yml	Executed directly by the integration-testing PR workflow.
+test-integration-watch	bats	tests/bats/makefile_targets.bats	Validated as the watch-mode integration wrapper.
+test-memory-leak	ci	.github/workflows/memory-leak-testing.yml	Executed directly by the memory-leak PR workflow.
+test-mutation	ci	.github/workflows/mutation-testing.yml	Executed directly by the mutation-testing PR workflow.
+wait-for-prod-health	ci	.github/workflows/load-testing.yml	Exercised transitively by the load-testing PR workflow targets.
+prepare-results-dir	ci	.github/workflows/load-testing.yml	Exercised transitively by the load-testing PR workflow targets.
+test-load	ci	.github/workflows/load-testing.yml	Executed directly by the homepage load-testing PR workflow.
+test-load-signup	ci	.github/workflows/load-testing.yml	Executed directly by the signup load-testing PR workflow.
+lighthouse-desktop	ci	.github/workflows/performance-testing.yml	Executed directly by the desktop performance PR workflow.
+lighthouse-mobile	ci	.github/workflows/performance-testing.yml	Executed directly by the mobile performance PR workflow.
+lighthouse-setup	ci	.github/workflows/performance-testing.yml	Exercised transitively by the Lighthouse PR workflow targets.
+install	bats	tests/bats/makefile_targets.bats	Validated as the Bun install plus Husky setup entrypoint.
+update	bats	tests/bats/makefile_targets.bats	Validated as the Bun dependency update command.
+down	bats	tests/bats/makefile_targets.bats	Validated as the Docker Compose teardown command.
+sh	bats	tests/bats/makefile_targets.bats	Validated as the dev-shell entrypoint.
+ps	bats	tests/bats/makefile_targets.bats	Validated as the Docker Compose status command.
+logs	bats	tests/bats/makefile_targets.bats	Validated as the follow-logs dev command.
+new-logs	bats	tests/bats/makefile_targets.bats	Validated as the tail-from-now dev log command.
+logs-prod	bats	tests/bats/makefile_targets.bats	Validated as the prod log follow command.
+stop	bats	tests/bats/makefile_targets.bats	Validated as the Docker Compose stop command.
+check-node-version	bats	tests/bats/makefile_targets.bats	Validated as the dev-container Node version check command.
+pr-comments	bats	tests/bats/makefile_targets.bats	Validated as the wrapper around `scripts/get-pr-comments.sh`.
+clean	bats	tests/bats/makefile_targets.bats	Validated as the project-scoped Docker cleanup flow.
+build-prod	bats	tests/bats/makefile_targets.bats	Validated as the DIND prod-image build command.
+build-k6	bats	tests/bats/makefile_targets.bats	Validated as the DIND K6 image build command.
+install-chromium-lhci	bats	tests/bats/makefile_targets.bats	Validated as the DIND Chromium and LHCI install command.
+test-chromium	bats	tests/bats/makefile_targets.bats	Validated as the DIND Chromium version check command.
+memory-leak-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND Memlab entrypoint.
+lighthouse-desktop-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND desktop Lighthouse entrypoint.
+lighthouse-mobile-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND mobile Lighthouse entrypoint.
+patch-prod-mockoon-url	bats	tests/bats/makefile_targets.bats	Validated as the prod-bundle Mockoon URL patch command.
+create-temp-dev-container-dind	bats	tests/bats/makefile_targets.bats	Validated as the temporary dev-container creation command.
+copy-source-to-container-dind	bats	tests/bats/makefile_targets.bats	Validated as the source-copy streaming command for DIND.
+install-deps-in-container-dind	bats	tests/bats/makefile_targets.bats	Validated as the dependency install command for the temp dev container.
+run-unit-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND unit-test command pair.
+run-integration-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND integration-test command.
+run-mutation-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND mutation-test command.
+run-eslint-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND ESLint command.
+run-typescript-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND TypeScript command.
+run-markdown-lint-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND Markdown lint command.
+create-k6-helper-container-dind	bats	tests/bats/makefile_targets.bats	Validated as the helper-container creation command for K6 DIND tests.
+run-load-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND K6 execution command.
+test-bats	ci	.github/workflows/bats-testing.yml	Executed directly by the dedicated Bats PR workflow.
