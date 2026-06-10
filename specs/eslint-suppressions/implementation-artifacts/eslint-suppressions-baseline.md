@@ -1,7 +1,8 @@
 # ESLint Suppression Baseline
 
-Status: in progress — before-cleanup inventory (Story 2.1) and after-cleanup inventory
-(Story 2.5) are recorded; the standalone enforcement decision is finalized in Story 3.2.
+Status: complete — before-cleanup inventory (Story 2.1) and after-cleanup inventory
+(Story 2.5) are recorded, and the standalone enforcement decision is finalized in Story 3.2
+(see "Enforcement Decision" below).
 
 ## Command and Scan Scope
 
@@ -130,7 +131,43 @@ will flag the comment as an error before it ever reaches the standalone scan.
 | After Story 2.4     | 1                | test `prefer-screen-queries` removed       |
 | After cleanup (2.5) | 0                | tooling allow-list dropped; rule tightened |
 
-## Enforcement Decision
+## Enforcement Decision (Story 3.2, 2026-06-10)
 
-To be recorded in Story 3.2. The MVP target stays standalone: it is intentionally not wired
-into aggregate `make lint` or CI enforcement, pending an explicit baseline decision.
+**Decision:** the suppression inventory target is **Standalone during MVP**. It is run
+directly and on demand via `make lint-eslint-suppressions`, against the default scan scope
+`src tests scripts eslint.config.mjs`.
+
+- **Lint and CI are untouched.** Restated in policy terms:
+  aggregate `make lint` and CI enforcement are not changed in MVP. The target is intentionally
+  not added to aggregate `make lint`, and the suppression scan is not added as a CI gate. The
+  existing lint workflow (`lint-eslint lint-tsc lint-md lint-deps lint-metrics`) and the CI
+  lint jobs run exactly as before this feature.
+- The Makefile encodes this placement, so it is a tested invariant rather than only prose:
+  aggregate `lint:` lists `lint-eslint lint-tsc lint-md lint-deps lint-metrics` and
+  intentionally omits `lint-eslint-suppressions`. `tests/bats/eslint_suppressions.bats`
+  asserts the `lint:` line does not contain `lint-eslint-suppressions` (Stories 1.1 and 3.1).
+
+### Accepted baseline and remaining-suppression rationale
+
+The accepted baseline is **zero**: after cleanup the default scan reports **0** matches across
+`src tests scripts eslint.config.mjs`. Because the baseline is zero there are **no remaining
+suppressions** and therefore no per-entry rationale to record — there is no accepted or
+intentional suppression carried forward. Any future suppression is unambiguously new debt:
+`make lint-eslint-suppressions` will report it and exit non-zero, and ESLint's own
+`eslint-comments/no-use` rule (now without an `allow` list) flags the directive as an error
+before it reaches the standalone scan.
+
+### Future enforcement options (deferred)
+
+The repository has reached a zero baseline, but no agreed policy yet promotes the scan to a
+blocking gate. The following options are explicitly **deferred** beyond the MVP, and
+no story requires CI enforcement or aggregate lint wiring as part of the MVP:
+
+- Wiring `lint-eslint-suppressions` into aggregate `make lint` — would add it to the `lint:`
+  prerequisites and update the Bats placement test so both the standalone target and aggregate
+  `lint` stay validated (the future-wiring guidance recorded in Story 3.1).
+- Adding the suppression scan as a CI enforcement gate on pull requests.
+
+These remain future, maintainer-driven decisions. The MVP intentionally delivers only the
+standalone command, the zero baseline, and this evidence so reviewers can act on the current
+output without relying on future policy assumptions.

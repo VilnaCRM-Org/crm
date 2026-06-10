@@ -78,6 +78,46 @@ create_excluded_dir_fixtures() {
   [ "$status" -eq 0 ]
 }
 
+@test "baseline artifact publishes counts and the finalized standalone enforcement decision" {
+  local baseline="$PROJECT_ROOT/specs/eslint-suppressions/implementation-artifacts/eslint-suppressions-baseline.md"
+
+  # AC1: the baseline artifact exists.
+  [ -f "$baseline" ]
+
+  # AC1/AC3: before-cleanup and after-cleanup suppression counts are recorded.
+  run grep -F 'Before cleanup' "$baseline"
+  [ "$status" -eq 0 ]
+  run grep -F 'After cleanup' "$baseline"
+  [ "$status" -eq 0 ]
+
+  # AC3: the command used and the scan scope are recorded.
+  run grep -F 'make lint-eslint-suppressions' "$baseline"
+  [ "$status" -eq 0 ]
+  run grep -F 'src tests scripts eslint.config.mjs' "$baseline"
+  [ "$status" -eq 0 ]
+
+  # AC2: the decision states the target is standalone during the MVP and that
+  # aggregate `make lint` and CI enforcement are not changed in the MVP.
+  run grep -F 'Standalone during MVP' "$baseline"
+  [ "$status" -eq 0 ]
+  run grep -F 'aggregate `make lint` and CI enforcement are not changed in MVP' "$baseline"
+  [ "$status" -eq 0 ]
+
+  # AC3: with a zero baseline there are no remaining entries, so the artifact
+  # records a zero-baseline statement rather than a remaining-suppression list.
+  run grep -F 'zero' "$baseline"
+  [ "$status" -eq 0 ]
+
+  # AC4: future enforcement options are deferred and no story requires CI
+  # enforcement or aggregate lint wiring as part of the MVP.
+  run grep -F 'no story requires CI enforcement or aggregate lint wiring as part of the MVP' "$baseline"
+  [ "$status" -eq 0 ]
+
+  # AC2/AC4: the decision is finalized, not still pending in a later story.
+  run grep -F 'To be recorded in Story 3.2' "$baseline"
+  [ "$status" -ne 0 ]
+}
+
 @test "default scan succeeds with a short message when no suppression directives exist in scope" {
   run_make_target lint-eslint-suppressions
   [ "$status" -eq 0 ]
