@@ -112,7 +112,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = lint-eslint lint-tsc lint-md lint-metrics
+CI_LINT_TARGETS             = lint-eslint lint-tsc lint-md lint-dup lint-metrics
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
