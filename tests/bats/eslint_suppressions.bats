@@ -130,3 +130,48 @@ create_excluded_dir_fixtures() {
   assert_output_contains "$override_dir/sample.js:1:// $(suppression_directive 'disable') no-alert"
   assert_output_not_contains 'src/fixture.ts'
 }
+
+@test "pass and fail exit codes track the controlled fixture via ESLINT_SUPPRESSION_SCAN_PATHS" {
+  local positive_dir="$BATS_TEST_TMPDIR/positive-scope"
+  mkdir -p "$positive_dir"
+  {
+    printf '// %s a\n' "$(suppression_directive 'disable-next-line')"
+    printf 'const value = 1; // %s b\n' "$(suppression_directive 'disable-line')"
+    printf '/* %s c */\n' "$(suppression_directive 'disable')"
+    printf '/* %s d */\n' "$(suppression_directive 'enable')"
+  } > "$positive_dir/all-variants.ts"
+
+  run_make_target lint-eslint-suppressions "ESLINT_SUPPRESSION_SCAN_PATHS=$positive_dir"
+  [ "$status" -ne 0 ]
+  assert_output_contains "$positive_dir/all-variants.ts:1:// $(suppression_directive 'disable-next-line') a"
+  assert_output_contains "$positive_dir/all-variants.ts:2:const value = 1; // $(suppression_directive 'disable-line') b"
+  assert_output_contains "$positive_dir/all-variants.ts:3:/* $(suppression_directive 'disable') c */"
+  assert_output_contains "$positive_dir/all-variants.ts:4:/* $(suppression_directive 'enable') d */"
+
+  local negative_dir="$BATS_TEST_TMPDIR/negative-scope"
+  mkdir -p "$negative_dir"
+  printf 'const clean = true;\n' > "$negative_dir/clean.ts"
+
+  run_make_target lint-eslint-suppressions "ESLINT_SUPPRESSION_SCAN_PATHS=$negative_dir"
+  [ "$status" -eq 0 ]
+  assert_output_contains 'No ESLint suppression directives found'
+}
+
+@test "a grep scan error other than no-match exits non-zero and is not masked as success" {
+  # Force grep to fail with a scan error (status >= 2), as it would on an
+  # unreadable path, to prove the target propagates the error instead of
+  # reporting a false success.
+  cat > "$STUB_BIN_DIR/grep" <<'STUB'
+#!/usr/bin/env bash
+echo "grep: simulated scan error" >&2
+exit 2
+STUB
+  chmod +x "$STUB_BIN_DIR/grep"
+
+  mkdir -p "$MAKEFILE_SANDBOX/src"
+  printf 'const ok = true;\n' > "$MAKEFILE_SANDBOX/src/clean.ts"
+
+  run_make_target lint-eslint-suppressions
+  [ "$status" -ne 0 ]
+  assert_output_not_contains 'No ESLint suppression directives found'
+}
