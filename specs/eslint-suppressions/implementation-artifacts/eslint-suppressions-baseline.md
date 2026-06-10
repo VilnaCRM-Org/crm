@@ -39,6 +39,27 @@ Total in-scope scan matches: **3** (1 tooling, 1 source, 1 test).
   `/* eslint-disable testing-library/prefer-screen-queries */`. Deferred to Story 2.4 (test
   cleanup).
 
+## Tooling Cleanup Decision (Story 2.2, 2026-06-10)
+
+Tooling scope for this story is `scripts` and `eslint.config.mjs`. In-scope inventory:
+
+- `scripts`: zero suppressions — no cleanup required.
+- `eslint.config.mjs:173`: the `eslint-comments/no-use` `allow` list. **Left in place for the
+  MVP baseline** (deferred).
+
+Rationale for deferral: this `allow` list is exactly what permits the two real
+`eslint-disable` directives still present in `src` and `tests`. The
+`eslint-comments/no-use` rule is configured as `error`, so dropping the `allow` list now
+would make ESLint flag both
+`src/services/https-client/http-error-response-parser.ts:49` and
+`tests/unit/modules/user/features/auth/components/form-section.test.tsx:2`. That is an
+unrelated lint regression and would break `make lint-eslint` (and the pre-commit hook).
+Removing the allow-list therefore depends on the source (Story 2.3) and test (Story 2.4)
+cleanups landing first. It will be dropped in or after Story 2.4 and re-inventoried in
+Story 2.5.
+
+No tooling code changes were made in Story 2.2; `src` and `tests` entries remain out of scope.
+
 ## After-Cleanup Inventory
 
 To be recorded in Story 2.5 (rerun `make lint-eslint-suppressions` and capture the
