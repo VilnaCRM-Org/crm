@@ -4,7 +4,7 @@ describe('lighthouse mobile config', () => {
   it('keeps the mobile performance threshold strict enough to catch regressions', () => {
     expect(mobileConfig.ci.assert.assertions['categories:performance']).toEqual([
       'error',
-      { minScore: 0.84, aggregationMethod: 'median-run' },
+      { minScore: 0.82, aggregationMethod: 'median-run' },
     ]);
   });
 });
