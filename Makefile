@@ -327,7 +327,7 @@ lint: lint-eslint lint-tsc lint-md lint-deps lint-metrics ## Runs all linters: E
 # wired into aggregate `lint` until the suppression baseline decision
 # (specs/eslint-suppressions) explicitly changes that.
 ESLINT_SUPPRESSION_PATTERN = eslint-(disable-next-line|disable-line|disable|enable)([^[:alnum:]_-]|$$)
-ESLINT_SUPPRESSION_SCAN_PATHS = src tests scripts .eslintrc.js
+ESLINT_SUPPRESSION_SCAN_PATHS = src tests scripts eslint.config.mjs
 ESLINT_SUPPRESSION_GREP_ARGS = -rnE --binary-files=without-match \
 	--exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist \
 	--exclude-dir=coverage --exclude-dir=test-results --exclude-dir=playwright-report \

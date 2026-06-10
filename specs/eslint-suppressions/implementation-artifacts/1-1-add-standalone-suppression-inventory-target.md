@@ -80,3 +80,6 @@ claude-fable-5 (initial implementation), claude-opus-4-8 at xhigh effort (verifi
 
 - 2026-06-10: Story 1.1 implemented — suppression policy variables, standalone
   `lint-eslint-suppressions` target, Bats coverage, and coverage-manifest registration.
+- 2026-06-10: Story 2.1 corrected `ESLINT_SUPPRESSION_SCAN_PATHS` from `.eslintrc.js` to the
+  real flat-config file `eslint.config.mjs`; the Epic 2 reconciliation noted in Dev Notes is
+  now resolved (see the Story 2.1 artifact).

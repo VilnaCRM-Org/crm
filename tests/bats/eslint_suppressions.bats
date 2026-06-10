@@ -33,8 +33,8 @@ create_scope_fixtures() {
     > "$MAKEFILE_SANDBOX/tests/fixture.test.ts"
   printf '// %s no-console\n' "$(suppression_directive 'enable')" \
     > "$MAKEFILE_SANDBOX/scripts/fixture.js"
-  printf 'module.exports = {}; // %s semi\n' "$(suppression_directive 'disable-line')" \
-    > "$MAKEFILE_SANDBOX/.eslintrc.js"
+  printf 'export default {}; // %s semi\n' "$(suppression_directive 'disable-line')" \
+    > "$MAKEFILE_SANDBOX/eslint.config.mjs"
 }
 
 create_excluded_dir_fixtures() {
@@ -54,7 +54,7 @@ create_excluded_dir_fixtures() {
   run grep -E '^ESLINT_SUPPRESSION_PATTERN[[:space:]]*=' "$PROJECT_ROOT/Makefile"
   [ "$status" -eq 0 ]
 
-  run grep -E '^ESLINT_SUPPRESSION_SCAN_PATHS[[:space:]]*=[[:space:]]*src tests scripts \.eslintrc\.js' \
+  run grep -E '^ESLINT_SUPPRESSION_SCAN_PATHS[[:space:]]*=[[:space:]]*src tests scripts eslint\.config\.mjs' \
     "$PROJECT_ROOT/Makefile"
   [ "$status" -eq 0 ]
 
@@ -69,7 +69,7 @@ create_excluded_dir_fixtures() {
   assert_output_contains 'No ESLint suppression directives found'
 }
 
-@test "default scan reports directives from src, tests, scripts, and .eslintrc.js" {
+@test "default scan reports directives from src, tests, scripts, and eslint.config.mjs" {
   create_scope_fixtures
 
   run_make_target lint-eslint-suppressions
@@ -77,7 +77,7 @@ create_excluded_dir_fixtures() {
   assert_output_contains "src/fixture.ts:1:// $(suppression_directive 'disable-next-line') no-console"
   assert_output_contains "tests/fixture.test.ts:1:/* $(suppression_directive 'disable') no-magic-numbers */"
   assert_output_contains "scripts/fixture.js:1:// $(suppression_directive 'enable') no-console"
-  assert_output_contains ".eslintrc.js:1:module.exports = {}; // $(suppression_directive 'disable-line') semi"
+  assert_output_contains "eslint.config.mjs:1:export default {}; // $(suppression_directive 'disable-line') semi"
 }
 
 @test "each required directive variant is reported once in grep-style path:line:matched text" {
@@ -93,7 +93,7 @@ create_excluded_dir_fixtures() {
   [ "$status" -ne 0 ]
 
   # Four distinct directive lines must produce exactly four reported entries:
-  # eslint-disable-next-line must be reported once, not also as a bare eslint-disable.
+  # the longest directive form must be reported once, not also as a shorter prefix form.
   local reported
   reported="$(printf '%s\n' "$output" | grep -c 'src/variants\.ts:')"
   [ "$reported" -eq 4 ]
