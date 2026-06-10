@@ -53,8 +53,8 @@ so that reviewers can use the MVP output without relying on future policy assump
   scope. The only Story 3.2 gap was the finalized enforcement decision — the file still read
   "Status: in progress" and the Enforcement Decision section said "To be recorded in Story
   3.2". This story closes that gap; it does not re-derive the counts.
-- The locked MVP decision (see `.ralph/@AGENT.md` and the architecture artifact) is that the
-  target stays standalone: not wired into aggregate `make lint` and not a CI gate. Story 3.1
+- The locked MVP decision (see the architecture artifact under `planning-artifacts/`) is that
+  the target stays standalone: not wired into aggregate `make lint` and not a CI gate. Story 3.1
   made the placement explicit in the Makefile; Story 3.2 records the matching enforcement
   decision and the deferred-future options in the baseline artifact so reviewers can act on the
   current output without relying on future policy assumptions.
@@ -91,15 +91,14 @@ claude-opus-4-8
   command, the scan scope, the "Standalone during MVP" decision, the not-changed-in-MVP
   statement, the zero-baseline statement, and the deferred-future statement, and that the
   placeholder "To be recorded in Story 3.2" is gone.
-- Full Bats suite is 10/10 green. `markdownlint` passes on the baseline artifact and this
-  artifact.
+- The `eslint_suppressions` Bats file is 10/10 green (9 prior + 1 new); the full Bats suite
+  is 26/26 green. `markdownlint` passes on the baseline artifact and this artifact.
 
 ### File List
 
 - `specs/eslint-suppressions/implementation-artifacts/eslint-suppressions-baseline.md`
 - `specs/eslint-suppressions/implementation-artifacts/3-2-publish-suppression-baseline-and-enforcement-decision.md`
 - `tests/bats/eslint_suppressions.bats`
-- `.ralph/@fix_plan.md`
 
 ### Change Log
 
@@ -107,4 +106,4 @@ claude-opus-4-8
   Finalized the enforcement decision in `eslint-suppressions-baseline.md` (standalone during
   MVP; aggregate `make lint` and CI enforcement unchanged; zero baseline; future enforcement
   options deferred) and added a Bats test covering the published counts and decision. Full Bats
-  suite 10/10.
+  suite 26/26 (the `eslint_suppressions` file is 10/10).

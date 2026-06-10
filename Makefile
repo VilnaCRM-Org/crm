@@ -332,10 +332,12 @@ lint: lint-eslint lint-tsc lint-md lint-deps lint-metrics ## Runs all linters: E
 # standalone target and aggregate `lint` stay validated.
 ESLINT_SUPPRESSION_PATTERN = eslint-(disable-next-line|disable-line|disable|enable)([^[:alnum:]_-]|$$)
 ESLINT_SUPPRESSION_SCAN_PATHS = src tests scripts eslint.config.mjs
-ESLINT_SUPPRESSION_GREP_ARGS = -rnE --binary-files=without-match \
-	--exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist \
-	--exclude-dir=coverage --exclude-dir=test-results --exclude-dir=playwright-report \
-	--exclude-dir=storybook-static --exclude-dir=out --exclude-dir=specs --exclude-dir=docs
+# Portable scan: grep -r companions --exclude-dir and --binary-files are GNU-only
+# and fail on the BusyBox grep in the Alpine dev container. Use find for recursion
+# and directory pruning, then grep the file list with only POSIX-portable flags.
+ESLINT_SUPPRESSION_PRUNE_DIRS = .git node_modules dist coverage test-results \
+	playwright-report storybook-static out specs docs
+ESLINT_SUPPRESSION_GREP_ARGS = -HnEI
 
 lint-eslint-suppressions: ## Report ESLint suppression directives with file/line output (standalone; not part of `make lint`)
 	@scan_paths=""; \
@@ -346,7 +348,16 @@ lint-eslint-suppressions: ## Report ESLint suppression directives with file/line
 		echo "lint-eslint-suppressions: none of the scan paths exist: $(ESLINT_SUPPRESSION_SCAN_PATHS)" >&2; \
 		exit 2; \
 	fi; \
-	grep $(ESLINT_SUPPRESSION_GREP_ARGS) '$(ESLINT_SUPPRESSION_PATTERN)' $$scan_paths; \
+	prune_expr=""; \
+	for prune_dir in $(ESLINT_SUPPRESSION_PRUNE_DIRS); do \
+		prune_expr="$$prune_expr -type d -name $$prune_dir -prune -o"; \
+	done; \
+	scan_files=$$(find $$scan_paths $$prune_expr -type f -print); \
+	if [ -z "$$scan_files" ]; then \
+		echo "No ESLint suppression directives found in:$$scan_paths"; \
+		exit 0; \
+	fi; \
+	grep $(ESLINT_SUPPRESSION_GREP_ARGS) '$(ESLINT_SUPPRESSION_PATTERN)' $$scan_files; \
 	grep_status=$$?; \
 	if [ "$$grep_status" -eq 0 ]; then \
 		echo "ESLint suppression directives found; fix the underlying issues instead of suppressing." >&2; \

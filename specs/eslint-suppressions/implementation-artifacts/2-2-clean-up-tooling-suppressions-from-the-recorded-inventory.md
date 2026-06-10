@@ -51,6 +51,10 @@ changes.
   suppressions are removed; it lands in or after Story 2.4 and is re-inventoried in Story 2.5.
 - This story makes no code change. Per AC 3, the tooling suppression is left in place with the
   deferral rationale recorded in the baseline artifact. `src` and `tests` remain out of scope.
+- Superseded by Story 2.5: the deferral above is the historical interim decision for this
+  story. Once the source (Story 2.3) and test (Story 2.4) suppressions were removed, the
+  `eslint-comments/no-use` allow-list was dropped from `eslint.config.mjs`; the final repository
+  state has no allow-list.
 
 ## Dev Agent Record
 
@@ -75,3 +79,5 @@ claude-opus-4-8
 - 2026-06-10: Story 2.2 — recorded the tooling cleanup decision: the `eslint.config.mjs`
   `eslint-comments/no-use` allow-list is left in place for the MVP baseline (deferred to after
   Stories 2.3/2.4) with rationale; no tooling code change.
+- 2026-06-10: superseded by Story 2.5 — the allow-list was later removed from
+  `eslint.config.mjs` after Stories 2.3/2.4; the deferral above is the historical interim state.

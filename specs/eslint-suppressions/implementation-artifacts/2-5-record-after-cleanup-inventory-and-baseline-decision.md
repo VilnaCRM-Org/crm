@@ -85,7 +85,6 @@ claude-opus-4-8
 - `eslint.config.mjs`
 - `specs/eslint-suppressions/implementation-artifacts/eslint-suppressions-baseline.md`
 - `specs/eslint-suppressions/implementation-artifacts/2-5-record-after-cleanup-inventory-and-baseline-decision.md`
-- `.ralph/@fix_plan.md`
 
 ### Change Log
 

@@ -53,8 +53,8 @@ so that contributors understand whether it is standalone or part of broader lint
 - This story is documentation-only and adds no runtime `src/` code, so the rust-code-analysis
   and integration-coverage gates are unaffected. The Makefile and Bats files are outside the
   `src/` metrics scope.
-- The locked MVP decision (see `.ralph/@AGENT.md` and the architecture artifact) is that the
-  target stays standalone: it is intentionally not wired into aggregate `make lint` or CI.
+- The locked MVP decision (see the architecture artifact under `planning-artifacts/`) is that
+  the target stays standalone: it is intentionally not wired into aggregate `make lint` or CI.
   Story 3.1 makes that placement explicit; Story 3.2 finalizes the matching enforcement
   decision in `eslint-suppressions-baseline.md`.
 - TDD: the new placement-documentation test failed first on the AC3 future-wiring assertion
@@ -85,7 +85,6 @@ claude-opus-4-8
 - `Makefile`
 - `tests/bats/eslint_suppressions.bats`
 - `specs/eslint-suppressions/implementation-artifacts/3-1-document-standalone-workflow-placement.md`
-- `.ralph/@fix_plan.md`
 
 ### Change Log
 

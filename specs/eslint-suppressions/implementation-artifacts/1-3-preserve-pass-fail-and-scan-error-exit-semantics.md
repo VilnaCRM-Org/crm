@@ -64,7 +64,6 @@ claude-opus-4-8
 
 - `tests/bats/eslint_suppressions.bats`
 - `specs/eslint-suppressions/implementation-artifacts/1-3-preserve-pass-fail-and-scan-error-exit-semantics.md`
-- `.ralph/@fix_plan.md`
 
 ### Change Log
 
