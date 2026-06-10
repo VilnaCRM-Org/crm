@@ -83,7 +83,7 @@ describe('HttpErrorResponseParser', () => {
 
   it('returns a readable parsed payload when cloning the response fails', async () => {
     const parser = new HttpErrorResponseParser();
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     await expect(
       parser.parse({
@@ -94,18 +94,18 @@ describe('HttpErrorResponseParser', () => {
       } as unknown as Response)
     ).resolves.toEqual({ message: 'clone failed', body: undefined });
 
-    expect(debugSpy).toHaveBeenCalledWith(
+    expect(warnSpy).toHaveBeenCalledWith(
       'Failed to parse HTTP error response',
       expect.objectContaining({
         message: 'clone failed',
       })
     );
-    debugSpy.mockRestore();
+    warnSpy.mockRestore();
   });
 
   it('handles a non-Error value thrown while cloning the response', async () => {
     const parser = new HttpErrorResponseParser();
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => {});
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const thrown: unknown = 'string failure';
 
     await expect(
@@ -117,11 +117,11 @@ describe('HttpErrorResponseParser', () => {
       } as unknown as Response)
     ).resolves.toEqual({ message: 'string failure', body: undefined });
 
-    expect(debugSpy).toHaveBeenCalledWith(
+    expect(warnSpy).toHaveBeenCalledWith(
       'Failed to parse HTTP error response',
       expect.objectContaining({ message: 'string failure', stack: undefined })
     );
-    debugSpy.mockRestore();
+    warnSpy.mockRestore();
   });
 
   it('extracts the JSON message and stringified body when content-type is JSON', async () => {

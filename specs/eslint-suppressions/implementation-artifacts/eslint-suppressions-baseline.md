@@ -60,6 +60,20 @@ Story 2.5.
 
 No tooling code changes were made in Story 2.2; `src` and `tests` entries remain out of scope.
 
+## Source Cleanup (Story 2.3, 2026-06-10)
+
+Source scope for this story is `src`. The one source entry was removed:
+
+- `src/services/https-client/http-error-response-parser.ts:49` — the
+  `// eslint-disable-next-line no-console` was removed by switching the parse-failure
+  diagnostic from `console.debug` to `console.warn`. `no-console` already allows `warn`/
+  `error`, so the directive is no longer needed and the diagnostic is preserved (same message
+  and payload). The parser's public contract (return value and the error thrown by `assertOk`)
+  is unchanged. Unit and integration tests were updated to spy on `console.warn`.
+
+Running inventory after Story 2.3: **2** (tooling `eslint.config.mjs:173`, test
+`form-section.test.tsx:2`). `tests` and the tooling allow-list remain out of scope here.
+
 ## After-Cleanup Inventory
 
 To be recorded in Story 2.5 (rerun `make lint-eslint-suppressions` and capture the
