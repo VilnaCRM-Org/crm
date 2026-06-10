@@ -323,6 +323,36 @@ lint-metrics-run:
 
 lint: lint-eslint lint-tsc lint-md lint-deps lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, dependency-cruiser, and rust-code-analysis metrics.
 
+# ESLint suppression inventory policy. Standalone during MVP: intentionally not
+# wired into aggregate `lint` until the suppression baseline decision
+# (specs/eslint-suppressions) explicitly changes that.
+ESLINT_SUPPRESSION_PATTERN = eslint-(disable-next-line|disable-line|disable|enable)([^[:alnum:]_-]|$$)
+ESLINT_SUPPRESSION_SCAN_PATHS = src tests scripts .eslintrc.js
+ESLINT_SUPPRESSION_GREP_ARGS = -rnE --binary-files=without-match \
+	--exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist \
+	--exclude-dir=coverage --exclude-dir=test-results --exclude-dir=playwright-report \
+	--exclude-dir=storybook-static --exclude-dir=out --exclude-dir=specs --exclude-dir=docs
+
+lint-eslint-suppressions: ## Report ESLint suppression directives with file/line output (standalone; not part of `make lint`)
+	@scan_paths=""; \
+	for scan_path in $(ESLINT_SUPPRESSION_SCAN_PATHS); do \
+		if [ -e "$$scan_path" ]; then scan_paths="$$scan_paths $$scan_path"; fi; \
+	done; \
+	if [ -z "$$scan_paths" ]; then \
+		echo "lint-eslint-suppressions: none of the scan paths exist: $(ESLINT_SUPPRESSION_SCAN_PATHS)" >&2; \
+		exit 2; \
+	fi; \
+	grep $(ESLINT_SUPPRESSION_GREP_ARGS) '$(ESLINT_SUPPRESSION_PATTERN)' $$scan_paths; \
+	grep_status=$$?; \
+	if [ "$$grep_status" -eq 0 ]; then \
+		echo "ESLint suppression directives found; fix the underlying issues instead of suppressing." >&2; \
+		exit 1; \
+	elif [ "$$grep_status" -eq 1 ]; then \
+		echo "No ESLint suppression directives found in:$$scan_paths"; \
+	else \
+		exit "$$grep_status"; \
+	fi
+
 husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	$(BUNX) husky install
 

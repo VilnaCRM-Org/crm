@@ -15,7 +15,7 @@ const dockerComposePath = path.join(repoRoot, 'docker-compose.yml');
 const metricsPolicy = path.join(repoRoot, 'config/metrics-policy.json');
 const storyPath = path.join(
   repoRoot,
-  'specs/implementation-artifacts/stories/' +
+  'specs/rust-code-analysis/implementation-artifacts/' +
     '2-2-baseline-compliance-verification-required-check-registration.md'
 );
 
