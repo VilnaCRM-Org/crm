@@ -83,6 +83,7 @@ fmt-qlty|qlty fmt --all --trigger agent --no-progress|
 lint-eslint|bun x eslint .|
 lint-tsc|bun x tsc|
 lint-md|bun x markdownlint -i CHANGELOG.md -i test-results/**/*.md -i playwright-report/data/**/*.md **/*.md|
+lint-dup|bun x jscpd|
 lint-metrics-run|lint-metrics.sh RCA_BIN=./bin/rust-code-analysis-cli RCA_VERSION=0.0.25 RCA_SCOPE=src/ RCA_EXCLUDES=**/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/** METRICS_POLICY=config/metrics-policy.json|
 husky|bun x husky install|
 storybook-start|bun x storybook dev -p 6006 --host 0.0.0.0 --no-open|

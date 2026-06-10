@@ -1062,6 +1062,7 @@ make lint               # All linters
 make lint-eslint        # ESLint only
 make lint-tsc           # TypeScript only
 make lint-md            # Markdown only
+make lint-dup           # Duplication (jscpd) only
 make fmt-prettier       # Prettier format
 make fmt-qlty           # Qlty format
 make format             # Prettier and Qlty format

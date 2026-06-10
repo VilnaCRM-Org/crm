@@ -23,6 +23,7 @@ suite and should not be used as a mutating formatter.
 | ESLint       | `make lint-eslint`  |
 | TypeScript   | `make lint-tsc`     |
 | Markdown     | `make lint-md`      |
+| Duplication  | `make lint-dup`     |
 | Metrics      | `make lint-metrics` |
 | Full quality | `make lint`         |
 

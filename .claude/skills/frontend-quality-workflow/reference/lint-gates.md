@@ -6,6 +6,7 @@
 make lint-eslint
 make lint-tsc
 make lint-md
+make lint-dup
 make lint-metrics
 make lint
 ```

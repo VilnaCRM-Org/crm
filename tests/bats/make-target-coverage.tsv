@@ -25,6 +25,7 @@ lint-eslint	bats	tests/bats/makefile_targets.bats	Validated as the direct ESLint
 lint-tsc	bats	tests/bats/makefile_targets.bats	Validated as the direct TypeScript check command.
 lint-md	bats	tests/bats/makefile_targets.bats	Validated as the direct Markdown lint command.
 lint-deps	ci	.github/workflows/dependency-cruiser.yml	Executed directly by the dependency-cruiser PR workflow.
+lint-dup	bats	tests/bats/makefile_targets.bats	Validated as the direct jscpd copy/paste duplication command.
 lint-metrics	bats	tests/bats/makefile_targets.bats	Validated as the Docker-backed rust-code-analysis wrapper including summary-path handoff.
 lint-metrics-run	bats	tests/bats/makefile_targets.bats	Validated as the direct shell-script handoff into `scripts/lint-metrics.sh`.
 lint	ci	.github/workflows/static-testing.yml	Executed directly by the static-testing PR workflow.

@@ -129,6 +129,7 @@ Linting & Formatting
   make lint-eslint: lints the codebase using eslint rules
   make lint-tsc: runs static type checking with TypeScript
   make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
+  make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
 ```
 
 ### Dependency rules
