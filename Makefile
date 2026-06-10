@@ -325,7 +325,11 @@ lint: lint-eslint lint-tsc lint-md lint-deps lint-metrics ## Runs all linters: E
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision
-# (specs/eslint-suppressions) explicitly changes that.
+# (specs/eslint-suppressions) explicitly changes that. Run it directly via
+# `make lint-eslint-suppressions`; it stays independent of `make lint`. If a
+# later baseline decision wires it into aggregate `lint`, add it to the `lint:`
+# prerequisites and update tests/bats/eslint_suppressions.bats so both the
+# standalone target and aggregate `lint` stay validated.
 ESLINT_SUPPRESSION_PATTERN = eslint-(disable-next-line|disable-line|disable|enable)([^[:alnum:]_-]|$$)
 ESLINT_SUPPRESSION_SCAN_PATHS = src tests scripts eslint.config.mjs
 ESLINT_SUPPRESSION_GREP_ARGS = -rnE --binary-files=without-match \

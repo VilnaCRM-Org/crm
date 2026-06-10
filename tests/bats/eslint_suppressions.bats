@@ -63,6 +63,21 @@ create_excluded_dir_fixtures() {
   assert_output_not_contains 'lint-eslint-suppressions'
 }
 
+@test "Makefile documents the standalone workflow placement and future-wiring guidance" {
+  # AC1: the target's help text marks it standalone and not part of `make lint`.
+  run grep -E '^lint-eslint-suppressions:.*standalone' "$PROJECT_ROOT/Makefile"
+  [ "$status" -eq 0 ]
+
+  # AC1/AC2: the policy comment states it is standalone during MVP.
+  run grep -F 'Standalone during MVP' "$PROJECT_ROOT/Makefile"
+  [ "$status" -eq 0 ]
+
+  # AC3: forward-looking guidance is recorded for when the baseline decision
+  # later wires the target into aggregate lint.
+  run grep -F 'wires it into aggregate' "$PROJECT_ROOT/Makefile"
+  [ "$status" -eq 0 ]
+}
+
 @test "default scan succeeds with a short message when no suppression directives exist in scope" {
   run_make_target lint-eslint-suppressions
   [ "$status" -eq 0 ]
