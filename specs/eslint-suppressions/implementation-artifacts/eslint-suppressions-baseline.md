@@ -1,7 +1,7 @@
 # ESLint Suppression Baseline
 
-Status: in progress — before-cleanup inventory captured in Story 2.1; after-cleanup and
-enforcement decision are recorded in Stories 2.5 and 3.2.
+Status: in progress — before-cleanup inventory (Story 2.1) and after-cleanup inventory
+(Story 2.5) are recorded; the standalone enforcement decision is finalized in Story 3.2.
 
 ## Command and Scan Scope
 
@@ -92,10 +92,43 @@ Running inventory after Story 2.4: **1** (tooling `eslint.config.mjs:173`). The 
 `tests` suppressions are now resolved; only the deferred tooling allow-list remains, to be
 dropped or accepted as the baseline in Story 2.5.
 
-## After-Cleanup Inventory
+## After-Cleanup Inventory (Story 2.5, 2026-06-10)
 
-To be recorded in Story 2.5 (rerun `make lint-eslint-suppressions` and capture the
-after-cleanup count and any remaining baseline).
+Command rerun against the default scan scope:
+
+```text
+$ make lint-eslint-suppressions
+No ESLint suppression directives found in: src tests scripts eslint.config.mjs
+```
+
+Total in-scope scan matches: **0**. The target exits zero (pass).
+
+The one remaining inventory entry — the deferred tooling allow-list at
+`eslint.config.mjs:173` — was dropped in this story. With the source (Story 2.3) and test
+(Story 2.4) `eslint-disable` directives already removed, the `eslint-comments/no-use`
+`allow` list no longer permitted any real suppression, so the `allow` option was deleted and
+the rule was tightened to a bare `'eslint-comments/no-use': 'error'`. `make lint-eslint`
+still passes (no new errors; only the pre-existing `*ByTestId` warnings from issue #90
+remain), and the scan now reports zero matches.
+
+### Baseline decision
+
+The repository contains **no ESLint suppressions** after cleanup. The accepted baseline is
+therefore **zero**: every directive variant (`eslint-disable-next-line`,
+`eslint-disable-line`, `eslint-disable`, `eslint-enable`) is absent from the default scan
+scope (`src tests scripts eslint.config.mjs`). Because the baseline is zero, any future
+suppression is unambiguously new debt — `make lint-eslint-suppressions` will report it and
+exit non-zero, and ESLint's own `eslint-comments/no-use` rule (now without an `allow` list)
+will flag the comment as an error before it ever reaches the standalone scan.
+
+### Before/after counts
+
+| Stage               | In-scope matches | Notes                                      |
+| ------------------- | ---------------- | ------------------------------------------ |
+| Before cleanup      | 3                | 1 tooling, 1 source, 1 test (Story 2.1)    |
+| After Story 2.3     | 2                | source `no-console` removed                |
+| After Story 2.4     | 1                | test `prefer-screen-queries` removed       |
+| After cleanup (2.5) | 0                | tooling allow-list dropped; rule tightened |
 
 ## Enforcement Decision
 

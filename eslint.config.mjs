@@ -168,10 +168,7 @@ export default [
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
       ...eslintComments.configs.recommended.rules,
-      'eslint-comments/no-use': [
-        'error',
-        { allow: ['eslint-disable-next-line', 'eslint-disable', 'eslint-enable'] },
-      ],
+      'eslint-comments/no-use': 'error',
       'react/jsx-no-bind': 'warn',
       'no-await-in-loop': 'warn',
       'no-restricted-syntax': 'warn',
