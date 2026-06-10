@@ -74,6 +74,24 @@ Source scope for this story is `src`. The one source entry was removed:
 Running inventory after Story 2.3: **2** (tooling `eslint.config.mjs:173`, test
 `form-section.test.tsx:2`). `tests` and the tooling allow-list remain out of scope here.
 
+## Test Cleanup (Story 2.4, 2026-06-10)
+
+Test scope for this story is `tests`. The one test entry was removed:
+
+- `tests/unit/modules/user/features/auth/components/form-section.test.tsx:2` — the
+  `/* eslint-disable testing-library/prefer-screen-queries */` was removed by migrating every
+  Testing Library query from the destructured `render()` result
+  (`view.getBy*`/`view.queryBy*`/`view.getAllByRole`) to the global `screen.*` API, which is
+  exactly what `testing-library/prefer-screen-queries` requires. Test intent is unchanged: all
+  10 assertions are equivalent (same roles, text, and mock-stub test IDs) and the suite stays
+  10/10 green. The `data-testid` queries that remain target only `jest.mock` stub elements (a
+  legitimate exception per the semantic-test-selectors policy), so they raise only the existing
+  `*ByTestId` warning, not an error, and introduce no new lint regression.
+
+Running inventory after Story 2.4: **1** (tooling `eslint.config.mjs:173`). The `src` and
+`tests` suppressions are now resolved; only the deferred tooling allow-list remains, to be
+dropped or accepted as the baseline in Story 2.5.
+
 ## After-Cleanup Inventory
 
 To be recorded in Story 2.5 (rerun `make lint-eslint-suppressions` and capture the
