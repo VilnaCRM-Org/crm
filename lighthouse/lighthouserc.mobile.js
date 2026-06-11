@@ -25,9 +25,10 @@ module.exports = {
     },
     assert: {
       assertions: {
-        // Probe: temporarily aligned with the 0.9 desktop bar to make CI print the
-        // measured median for the /authentication page after the deferred-DI refactor.
-        'categories:performance': ['error', { minScore: 0.9, aggregationMethod: 'median-run' }],
+        // 0.85 (vs 0.9 desktop): the deferred-DI refactor lifted the /authentication
+        // median to 0.88 in CI (probe run 27332237906); 0.85 keeps headroom for the
+        // mobile network/CPU simulation variance between runners.
+        'categories:performance': ['error', { minScore: 0.85, aggregationMethod: 'median-run' }],
         'categories:accessibility': ['error', { minScore: 0.9 }],
         'categories:bestPractices': ['error', { minScore: 0.9 }],
         'categories:seo': ['error', { minScore: 0.9 }],
