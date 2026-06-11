@@ -301,35 +301,37 @@ The project uses tsyringe for DI:
 4. Use `@injectable()` decorator on classes
 5. Resolve dependencies via `container.resolve<Type>(TOKENS.ServiceName)`
 
-The auth store stays container-free: the DI container is resolved once in the
-composition root, and an `AuthRepository` is injected into the store actions
-(no `container.resolve` inside the store or its actions):
+The auth store stays container-free: only the composition root
+(`src/modules/user/features/auth/stores/index.ts`) touches the DI container, and it
+loads the container plus `AuthStoreActions` behind a dynamic `import()` on the first
+auth action. This keeps Apollo Client, zod, tsyringe, and the repositories out of the
+chunks needed to paint the authentication page (mobile Lighthouse budget):
 
 ```typescript
 // src/modules/user/features/auth/stores/index.ts (composition root)
-export const useAuthStore = AuthStoreFactory.create(container.resolve(AuthStoreActions));
+private static async load(): Promise<AuthStoreActions> {
+  const { default: container } = await import('@/config/dependency-injection-config');
+  const { default: ActionsClass } = await import('./auth-store-actions');
+  return container.resolve(ActionsClass);
+}
 ```
 
-Zustand store pattern (`src/modules/user/features/auth/stores/`):
+Auth state pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-// auth-store-factory.ts — container-free; receives injected actions
-export default class AuthStoreFactory {
-  public static create(actions: AuthStoreActions): UseAuthStore {
-    return create<AuthStore>()(
-      devtools(
-        (set) => ({
-          /* state + actions delegating to `actions` */
-        }),
-        { name: 'auth' }
-      )
-    );
+// auth-var.ts — dependency-free reactive state (ReactiveVarFactory, no @apollo/client)
+export default class AuthStateVar {
+  public static get(): AuthState {
+    /* read */
+  }
+  public static set(partial: Partial<AuthState>): void {
+    /* merge + notify */
   }
 }
 
 // auth-store-selectors.ts — selectors grouped in a class (no free functions)
 export default class AuthStoreSelectors {
-  public static email(s: AuthStore): string {
+  public static email(s: AuthState): string {
     return s.email;
   }
 }
