@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
 
-import type { AuthState } from '../types/auth-store';
-import type { AuthTokenWindow } from '../types/auth-window';
-import type { ReactiveVar } from '../types/reactive-var';
+import type { AuthState } from '@auth/types/auth-store';
+import type { AuthTokenWindow } from '@auth/types/auth-window';
+import type { ReactiveVar } from '@auth/types/reactive-var';
 
 import ReactiveVarFactory from './reactive-var';
 

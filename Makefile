@@ -353,6 +353,10 @@ lint-eslint-suppressions: ## Report ESLint suppression directives with file/line
 		prune_expr="$$prune_expr -type d -name $$prune_dir -prune -o"; \
 	done; \
 	scan_files=$$(find $$scan_paths $$prune_expr -type f -print); \
+	find_status=$$?; \
+	if [ "$$find_status" -ne 0 ]; then \
+		exit "$$find_status"; \
+	fi; \
 	if [ -z "$$scan_files" ]; then \
 		echo "No ESLint suppression directives found in:$$scan_paths"; \
 		exit 0; \
