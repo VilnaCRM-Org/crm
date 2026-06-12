@@ -112,7 +112,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = lint-eslint lint-tsc lint-md lint-metrics
+CI_LINT_TARGETS             = lint-eslint lint-tsc lint-md lint-dup lint-metrics
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -141,7 +141,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
-.PHONY: clean lint lint-metrics lint-metrics-run
+.PHONY: clean lint lint-dup lint-metrics lint-metrics-run
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -290,6 +290,9 @@ lint-md: ## This command executes Markdown linter
 lint-deps: ## This command executes dependency-cruiser
 	$(BUNX) depcruise --exclude '^\.stryker-tmp/' .
 
+lint-dup: ## Run the jscpd copy/paste duplication gate (thresholds in .jscpd.json)
+	$(BUNX) jscpd
+
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
 	@summary_path="$$GITHUB_STEP_SUMMARY"; \
 	if [ -n "$$summary_path" ]; then \
@@ -321,7 +324,7 @@ lint-metrics-run:
 	METRICS_POLICY="$(METRICS_POLICY_PATH)" \
 	sh scripts/lint-metrics.sh
 
-lint: lint-eslint lint-tsc lint-md lint-deps lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, dependency-cruiser, and rust-code-analysis metrics.
+lint: lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, and rust-code-analysis metrics.
 
 husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	$(BUNX) husky install

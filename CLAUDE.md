@@ -96,6 +96,7 @@ make lint           # Run all linters
 make lint-eslint    # ESLint
 make lint-tsc       # TypeScript
 make lint-md        # Markdown
+make lint-dup       # jscpd copy/paste duplication gate (see below)
 make lint-metrics   # rust-code-analysis complexity gate (see below)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
@@ -223,6 +224,47 @@ summary table to the workflow's Job Summary. Review-gate metrics are not shown.
 > **IDE / editor integration** is out of scope — use `make lint-metrics` from the
 > terminal as the authoritative check.
 
+### Code Duplication (jscpd)
+
+The repository enforces a copy/paste duplication gate using
+[jscpd](https://github.com/kucherenko/jscpd) so the DRY principle is enforced
+automatically instead of being caught ad-hoc in review. The gate runs on every
+pull request targeting `main` (the `static testing` workflow runs `make lint`)
+and locally before pushing.
+
+**Run locally:**
+
+```bash
+make lint-dup
+```
+
+This runs `jscpd` inside the dev container against the thresholds in
+[`.jscpd.json`](.jscpd.json). The gate fails the build (non-zero exit) as soon as
+any clone at or above the threshold is found.
+
+**Thresholds (authoritative source: `.jscpd.json`):**
+
+- `minTokens: 75` — a clone must span at least 75 tokens to count.
+- `minLines: 5` — and at least 5 lines.
+- `threshold: 0` — zero tolerance above `minTokens`; any qualifying clone fails.
+- `mode: "mild"` — blank lines and comments are ignored when matching.
+- `format`: `typescript`, `tsx`, `javascript`, `jsx` only.
+- `path`: `src` only; `ignore` excludes tests, specs, stories, `*.d.ts`, and the
+  generated `i18n` JSON.
+
+**Threshold rationale:** the bar is set at genuine copy-paste, not incidental
+similarity. At 75 tokens the gate catches real duplicated blocks (the
+~120–160-token notification style clones that motivated this gate) while staying
+above incidental TypeScript noise — shared `import` headers, repeated type
+shapes, and short JSX scaffolding — which would otherwise push contributors
+toward unhealthy abstractions. Duplication detection is threshold-based and noisy
+on styles/markup, so keep the bar at copy-paste mass if you widen coverage.
+
+**Remediation:** satisfy the gate by **deduplicating** — extract shared style
+fragments, constants, factories, or a base object plus overrides — never with
+ignore/suppress directives. The same root-cause-not-suppression policy used for
+ESLint, TypeScript, and metrics applies here.
+
 ## Architecture
 
 ### Module Structure
@@ -259,35 +301,37 @@ The project uses tsyringe for DI:
 4. Use `@injectable()` decorator on classes
 5. Resolve dependencies via `container.resolve<Type>(TOKENS.ServiceName)`
 
-The auth store stays container-free: the DI container is resolved once in the
-composition root, and an `AuthRepository` is injected into the store actions
-(no `container.resolve` inside the store or its actions):
+The auth store stays container-free: only the composition root
+(`src/modules/user/features/auth/stores/index.ts`) touches the DI container, and it
+loads the container plus `AuthStoreActions` behind a dynamic `import()` on the first
+auth action. This keeps Apollo Client, zod, tsyringe, and the repositories out of the
+chunks needed to paint the authentication page (mobile Lighthouse budget):
 
 ```typescript
 // src/modules/user/features/auth/stores/index.ts (composition root)
-export const useAuthStore = AuthStoreFactory.create(container.resolve(AuthStoreActions));
+private static async load(): Promise<AuthStoreActions> {
+  const { default: container } = await import('@/config/dependency-injection-config');
+  const { default: ActionsClass } = await import('./auth-store-actions');
+  return container.resolve(ActionsClass);
+}
 ```
 
-Zustand store pattern (`src/modules/user/features/auth/stores/`):
+Auth state pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-// auth-store-factory.ts — container-free; receives injected actions
-export default class AuthStoreFactory {
-  public static create(actions: AuthStoreActions): UseAuthStore {
-    return create<AuthStore>()(
-      devtools(
-        (set) => ({
-          /* state + actions delegating to `actions` */
-        }),
-        { name: 'auth' }
-      )
-    );
+// auth-var.ts — dependency-free reactive state (ReactiveVarFactory, no @apollo/client)
+export default class AuthStateVar {
+  public static get(): AuthState {
+    /* read */
+  }
+  public static set(partial: Partial<AuthState>): void {
+    /* merge + notify */
   }
 }
 
 // auth-store-selectors.ts — selectors grouped in a class (no free functions)
 export default class AuthStoreSelectors {
-  public static email(s: AuthStore): string {
+  public static email(s: AuthState): string {
     return s.email;
   }
 }

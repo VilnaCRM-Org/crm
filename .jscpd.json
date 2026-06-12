@@ -1,0 +1,11 @@
+{
+  "threshold": 0,
+  "minTokens": 75,
+  "minLines": 5,
+  "mode": "mild",
+  "format": ["typescript", "tsx", "javascript", "jsx"],
+  "path": ["src"],
+  "ignore": ["**/*.test.*", "**/*.spec.*", "**/*.stories.*", "**/*.d.ts", "**/i18n/**"],
+  "reporters": ["consoleFull"],
+  "gitignore": true
+}

@@ -1,7 +1,10 @@
-import { makeVar, useReactiveVar, type ReactiveVar } from '@apollo/client';
+import { useSyncExternalStore } from 'react';
 
-import type { AuthState } from '../types/auth-store';
-import type { AuthTokenWindow } from '../types/auth-window';
+import type { AuthState } from '@auth/types/auth-store';
+import type { AuthTokenWindow } from '@auth/types/auth-window';
+import type { ReactiveVar } from '@auth/types/reactive-var';
+
+import ReactiveVarFactory from './reactive-var';
 
 export default class AuthStateVar {
   public static readonly windowKey = '__PRELOADED_AUTH_TOKEN__' as const;
@@ -16,7 +19,7 @@ export default class AuthStateVar {
     registerError: null,
   };
 
-  private static readonly state: ReactiveVar<AuthState> = makeVar<AuthState>({
+  private static readonly state: ReactiveVar<AuthState> = ReactiveVarFactory.create<AuthState>({
     ...AuthStateVar.cleared,
     token: AuthStateVar.readSeedToken(),
   });
@@ -68,5 +71,5 @@ export default class AuthStateVar {
 }
 
 export function useAuthState(): AuthState {
-  return useReactiveVar(AuthStateVar.reactiveVar());
+  return useSyncExternalStore(AuthStateVar.reactiveVar().subscribe, AuthStateVar.get);
 }
