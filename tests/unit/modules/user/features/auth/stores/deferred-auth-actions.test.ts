@@ -27,6 +27,12 @@ const credentials = { email: 'a@b.c', password: 'p' };
 const registration = { fullName: 'A', email: 'a@b.c', password: 'p' };
 
 describe('deferred auth actions composition root', () => {
+  // clearMocks resets call history per test; mockReset additionally drops any staged
+  // (mockReturnValue / mockImplementationOnce) implementation so specs stay independent.
+  beforeEach(() => {
+    resolveMock.mockReset();
+  });
+
   it('sets loginLoading synchronously before the deferred graph resolves', async () => {
     const { authActions, AuthStateVar } = await loadBarrel();
     resolveMock.mockReturnValue(makeActions());
