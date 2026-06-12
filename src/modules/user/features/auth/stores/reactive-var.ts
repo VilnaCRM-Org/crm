@@ -1,4 +1,4 @@
-import type { ReactiveVar, ReactiveVarListener } from '../types/reactive-var';
+import type { ReactiveVar, ReactiveVarListener } from '@auth/types/reactive-var';
 
 import ReactiveVarState from './reactive-var-state';
 

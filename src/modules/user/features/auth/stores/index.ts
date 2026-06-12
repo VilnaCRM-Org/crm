@@ -1,6 +1,6 @@
-import type { AuthError } from '../types/auth-error';
-import type { AuthActions } from '../types/auth-store';
-import type { LoginUserDto, RegisterUserDto } from '../types/credentials';
+import type { AuthError } from '@auth/types/auth-error';
+import type { AuthActions } from '@auth/types/auth-store';
+import type { LoginUserDto, RegisterUserDto } from '@auth/types/credentials';
 
 import type AuthStoreActions from './auth-store-actions';
 import AuthStateVar, { useAuthState } from './auth-var';
@@ -38,9 +38,9 @@ class DeferredAuthActions {
     onFailure: (error: AuthError) => void
   ): Promise<AuthStoreActions | null> {
     try {
-      DeferredAuthActions.instance ??= DeferredAuthActions.load();
-      return await DeferredAuthActions.instance;
-    } catch {
+      return await (DeferredAuthActions.instance ??= DeferredAuthActions.load());
+    } catch (error) {
+      console.error('Auth module failed to load; surfacing retryable error to the user.', error);
       DeferredAuthActions.instance = undefined;
       onFailure(DeferredAuthActions.loadFailure);
       return null;
@@ -67,4 +67,4 @@ export const authActions: AuthActions = {
 
 export { default as AuthStoreSelectors } from './auth-store-selectors';
 export { AuthStateVar, useAuthState, useAuthToken };
-export type { AuthState } from '../types/auth-store';
+export type { AuthState } from '@auth/types/auth-store';
