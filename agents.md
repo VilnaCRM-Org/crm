@@ -710,7 +710,7 @@ concrete reason — in the test file (as a comment), the PR description, or your
 Use the same `Not applicable: <reason>` convention as the Mandatory Skill Check. A bare
 "not applicable" with no reason, or silent omission, does not satisfy this policy.
 
-Example: `Boundary/edge: N/A — presentational component with no inputs, state, or branches.`
+Example: `Boundary/edge — Not applicable: presentational component with no inputs, state, or branches.`
 
 ### Step 4 — Regression Coverage Is Mandatory for Bug Fixes
 
