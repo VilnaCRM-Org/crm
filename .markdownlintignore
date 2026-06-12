@@ -12,3 +12,5 @@ lhci-reports-desktop
 lhci-reports-mobile
 reports
 tmp-lhci
+# BMAD planning & implementation artifacts: prose specs with wide tables, not code-grade markdown
+specs
