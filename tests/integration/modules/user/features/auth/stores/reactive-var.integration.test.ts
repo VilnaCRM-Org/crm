@@ -46,19 +46,26 @@ describe('reactive var integration', () => {
   it('keeps notifying persistent subscribers after a one-shot listener throws', () => {
     const variable = ReactiveVarFactory.create({ token: null as string | null });
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const failure = new Error('listener failure');
     const failing = jest.fn(() => {
-      throw new Error('listener failure');
+      throw failure;
     });
     const survivor = jest.fn();
     variable.onNextChange(failing);
     variable.subscribe(survivor);
 
     const next = { token: 'session' };
-    expect(variable(next)).toBe(next);
+    try {
+      expect(variable(next)).toBe(next);
 
-    expect(failing).toHaveBeenCalledWith(next);
-    expect(survivor).toHaveBeenCalledTimes(1);
-    expect(consoleError).toHaveBeenCalled();
-    consoleError.mockRestore();
+      expect(failing).toHaveBeenCalledWith(next);
+      expect(survivor).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(
+        'ReactiveVar listener threw during notification',
+        failure
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });
