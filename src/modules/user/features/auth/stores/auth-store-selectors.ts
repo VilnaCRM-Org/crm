@@ -1,6 +1,6 @@
-import type { SafeUserInfo } from '../types/api-responses';
-import type { AuthError } from '../types/auth-error';
-import type { AuthState } from '../types/auth-store';
+import type { SafeUserInfo } from '@auth/types/api-responses';
+import type { AuthError } from '@auth/types/auth-error';
+import type { AuthState } from '@auth/types/auth-store';
 
 export default class AuthStoreSelectors {
   public static email(state: AuthState): string {
