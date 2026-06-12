@@ -25,9 +25,9 @@ module.exports = {
     },
     assert: {
       assertions: {
-        // 0.85 (vs 0.9 desktop): the deferred-DI refactor lifted the /authentication
-        // median to 0.88 in CI (probe run 27332237906); 0.85 keeps headroom for the
-        // mobile network/CPU simulation variance between runners.
+        // 0.85 (vs 0.9 desktop): mobile network simulation and CPU throttling
+        // introduce variance on the /authentication page; 0.85 keeps headroom
+        // while still catching regressions after the deferred-DI auth refactor.
         'categories:performance': ['error', { minScore: 0.85, aggregationMethod: 'median-run' }],
         'categories:accessibility': ['error', { minScore: 0.9 }],
         'categories:bestPractices': ['error', { minScore: 0.9 }],
