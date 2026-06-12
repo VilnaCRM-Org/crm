@@ -27,6 +27,7 @@ lint-md	bats	tests/bats/makefile_targets.bats	Validated as the direct Markdown l
 lint-deps	ci	.github/workflows/dependency-cruiser.yml	Executed directly by the dependency-cruiser PR workflow.
 lint-metrics	bats	tests/bats/makefile_targets.bats	Validated as the Docker-backed rust-code-analysis wrapper including summary-path handoff.
 lint-metrics-run	bats	tests/bats/makefile_targets.bats	Validated as the direct shell-script handoff into `scripts/lint-metrics.sh`.
+lint-eslint-suppressions	bats	tests/bats/eslint_suppressions.bats	Validated as the standalone suppression inventory scan covering default scope, exclusions, and scan-path overrides.
 lint	ci	.github/workflows/static-testing.yml	Executed directly by the static-testing PR workflow.
 husky	bats	tests/bats/makefile_targets.bats	Validated as the one-time Git hook setup command.
 storybook-start	bats	tests/bats/makefile_targets.bats	Validated as the Storybook dev-server wrapper.

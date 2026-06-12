@@ -14,13 +14,74 @@ Before any code, doc, or workflow change you MUST:
 
 1. Open `.claude/skills/AI-AGENT-GUIDE.md`.
 2. Open this file (`.claude/skills/SKILL-DECISION-GUIDE.md`).
-3. Identify every skill below that applies to the active task.
-4. Read each matching `.claude/skills/{skill}/SKILL.md` before executing.
-5. If a skill is plausibly relevant, **read it first**; only skip it after
+3. Identify every skill that applies to the active task — **both** the project
+   `.claude/skills` workflows below **and** the global `~/.claude/skills`
+   techniques in the [Global Skills](#global-skills-claudeskills--task--skill-map)
+   table. Always scan both lists; a task often needs one of each.
+4. Read each matching project `.claude/skills/{skill}/SKILL.md`, and invoke each
+   matching global skill **by name** with the Skill tool, before executing.
+5. If a skill is plausibly relevant, **read/invoke it first**; only skip it after
    recording "Not applicable" with a concrete reason.
 
-The decision tree below selects the primary skill; it does **not** replace
-this mandatory pass.
+Project skills cover process and gates (run them first); global skills add the
+deeper, technique-level guidance. The decision tree below selects the primary
+project skill; it does **not** replace this mandatory pass or the global table.
+
+## Global Skills (`~/.claude/skills`) — Task → Skill Map
+
+These personal skills are installed globally (not committed in this repo) and are
+available in every project via the Skill tool. They are **part of the mandatory
+pass above**: when a task matches a trigger below, invoke the named skill(s) **by
+name** with the Skill tool, alongside the project workflow skills. Project skills
+own process and gates; reach here for deeper technique. The full catalogue with
+longer descriptions lives in `agents.md` ("Global Skills"); this table is the
+enforced, on-path quick reference.
+
+**Stack note:** several UI skills assume Tailwind CSS or shadcn/ui. This project
+uses Material UI v7 + Emotion — keep their design principles but translate
+utility-class / token guidance to MUI's `sx`, `styled()`, and theme.
+
+**Accessibility note:** the a11y skills below are technique guidance; they do
+**not** replace the mandatory `accessibility-lead` agent review for any UI change.
+Pair them — invoke the skill for the fix, run the agent for the review.
+
+| When the task is…                                             | Invoke (global `~/.claude/skills`)                                                                                                                              |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build / beautify a component, page, dashboard, or SaaS UI     | `frontend-design`, `interface-design`, `frontend-ui-engineering`, `bencium-innovative-ux-designer`, `design-taste-frontend`, `ui-ux-pro-max`                    |
+| Add polish / micro-detail to existing UI                      | `emil-design-eng`, `make-interfaces-feel-better`                                                                                                                |
+| Explore several design directions before committing           | `design-lab`                                                                                                                                                    |
+| Redesign / upgrade existing UI to premium quality             | `redesign-existing-projects`, `web-design-reviewer`                                                                                                             |
+| Review UI against design / interface guidelines               | `web-design-guidelines`, `rams`                                                                                                                                 |
+| Design system, grid, typography, minimal / editorial layout   | `swiss-design`, `minimalist-ui`, `baseline-ui`                                                                                                                  |
+| Color: palettes, contrast, dark mode (OKLCH)                  | `oklch-skill`                                                                                                                                                   |
+| Motion, transitions, animation, icon morphs, view transitions | `interaction-design`, `transitions-dev`, `12-principles-of-animation`, `to-spring-or-not-to-spring`, `morphing-icons`, `pseudo-elements`                        |
+| Animation jank / motion performance                           | `fixing-motion-performance`                                                                                                                                     |
+| Fix a11y: ARIA, keyboard nav, focus, contrast, form errors    | `fixing-accessibility` (+ `accessibility-lead` agent)                                                                                                           |
+| WCAG audit and remediation                                    | `wcag-audit-patterns`                                                                                                                                           |
+| Automated a11y testing (axe-core, Playwright, DevTools)       | `accessibility-testing`, `a11y-playwright-testing`, `a11y-debugging`                                                                                            |
+| SEO / metadata: titles, canonical, Open Graph, JSON-LD        | `fixing-metadata`                                                                                                                                               |
+| React health scan (lint, a11y, bundle, architecture)          | `react-doctor`                                                                                                                                                  |
+| Static visual art (poster, `.png`/`.pdf`)                     | `canvas-design`                                                                                                                                                 |
+| Write / debug / structure Playwright tests                    | `playwright-best-practices`, `playwright-automation`, `playwright-e2e-testing`, `playwright-regression-testing`, `playwright-skill`, `playwright-generate-test` |
+| Visual regression / screenshot testing                        | `visual-testing`                                                                                                                                                |
+| Heal one flaky test at runtime                                | `test-reliability`                                                                                                                                              |
+| Jest units, mocking, coverage, test doubles                   | `unit-testing`, `javascript-typescript-jest`                                                                                                                    |
+| Migrate Enzyme tests to React Testing Library                 | `react18-enzyme-to-rtl`                                                                                                                                         |
+| Choose test selectors (avoid `data-testid`)                   | `semantic-test-selectors`                                                                                                                                       |
+| REST / GraphQL endpoint, schema, contract testing             | `api-testing`                                                                                                                                                   |
+| Test plans, manual cases, regression suites, bug reports      | `qa-test-planner`                                                                                                                                               |
+| Performance profiling, Web Vitals budgets, k6                 | `performance-optimization`, `performance-testing`                                                                                                               |
+| Diagnose / improve LCP                                        | `debug-optimize-lcp`                                                                                                                                            |
+| Memory leaks / OOM (heapsnapshots, memlab)                    | `memory-leak-debugging`                                                                                                                                         |
+| React render / bundle performance patterns                    | `vercel-react-best-practices`                                                                                                                                   |
+| React 18.3 / 19 dependency compatibility                      | `react18-dep-compatibility`                                                                                                                                     |
+| TypeScript clean-code refactor                                | `typescript-clean-code`                                                                                                                                         |
+| Duplicate code / DRY (jscpd, qlty)                            | `eliminating-duplication`                                                                                                                                       |
+| Storybook stories (CSF3)                                      | `storybook-story-writing`                                                                                                                                       |
+| Drive a real browser: DOM, console, network, perf             | `chrome-devtools`, `browser-testing-with-devtools`, `webapp-testing`                                                                                            |
+| Lighthouse-style perf / a11y / SEO audit                      | `web-quality-audit`                                                                                                                                             |
+| Pixel-perfect Figma → code loop                               | `pix`                                                                                                                                                           |
+| Harden GitHub Actions token permissions                       | `hardening-github-actions-permissions`                                                                                                                          |
 
 ## New Feature / Significant Change Verification Gate
 

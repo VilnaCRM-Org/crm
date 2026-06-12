@@ -1,9 +1,8 @@
 // @jest-environment jsdom
-/* eslint-disable testing-library/prefer-screen-queries */
 
 import '../../../../../utils/setup-bun-dom';
 import '@testing-library/jest-dom';
-import { fireEvent, render, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { act, type ButtonHTMLAttributes, type ReactElement } from 'react';
 
 type LoginFormModule =
@@ -124,8 +123,8 @@ jest.mock(
 type FormSectionModule = typeof import('@/modules/user/features/auth/components/form-section');
 let FormSection!: FormSectionModule['default'];
 
-function getAuthProviderContainer(view: ReturnType<typeof render>): HTMLElement {
-  return view
+function getAuthProviderContainer(): HTMLElement {
+  return screen
     .getAllByRole('generic')
     .find((element) => element.id === 'auth-provider-buttons-container') as HTMLElement;
 }
@@ -143,44 +142,43 @@ describe('FormSection', () => {
   });
 
   it('renders the primary form and social providers immediately', () => {
-    const view = render(<FormSection />);
+    render(<FormSection />);
 
-    expect(view.getByTestId('registration-form')).toBeInTheDocument();
-    expect(view.getByTestId('auth-provider-buttons')).toBeInTheDocument();
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-provider-buttons')).toBeInTheDocument();
   });
 
   it('keeps the current form visible across rerenders', async () => {
-    const view = render(<FormSection />);
-    const { rerender } = view;
+    const { rerender } = render(<FormSection />);
 
-    expect(view.getByTestId('registration-form')).toBeInTheDocument();
-    expect(view.getByTestId('auth-provider-buttons')).toBeInTheDocument();
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-provider-buttons')).toBeInTheDocument();
 
     rerender(<FormSection />);
 
     await waitFor(() => {
-      expect(view.getByTestId('registration-form')).toBeInTheDocument();
+      expect(screen.getByTestId('registration-form')).toBeInTheDocument();
     });
 
-    expect(view.getByTestId('auth-provider-buttons')).toBeInTheDocument();
+    expect(screen.getByTestId('auth-provider-buttons')).toBeInTheDocument();
   });
 
   it('switches to login mode when the switcher button is clicked', async () => {
-    const view = render(<FormSection />);
+    render(<FormSection />);
 
-    expect(view.getByTestId('registration-form')).toBeInTheDocument();
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
 
-    fireEvent.click(view.getByText('sign_up.form.switcher_text_have_account'));
+    fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
 
-    expect(view.getByTestId('registration-form')).toBeInTheDocument();
-    expect(view.queryByTestId('login-form')).not.toBeInTheDocument();
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+    expect(screen.queryByTestId('login-form')).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(view.getByTestId('login-form')).toBeInTheDocument();
+      expect(screen.getByTestId('login-form')).toBeInTheDocument();
     });
 
-    expect(view.queryByTestId('registration-form')).not.toBeInTheDocument();
-    expect(view.getByText('sign_up.form.switcher_text_no_account')).toBeInTheDocument();
+    expect(screen.queryByTestId('registration-form')).not.toBeInTheDocument();
+    expect(screen.getByText('sign_up.form.switcher_text_no_account')).toBeInTheDocument();
   });
 
   it('disables the switcher and ignores repeated clicks while login is loading', async () => {
@@ -193,9 +191,9 @@ describe('FormSection', () => {
         })
     );
 
-    const view = render(<FormSection />);
+    render(<FormSection />);
 
-    const switcherButton = view.getByText('sign_up.form.switcher_text_have_account');
+    const switcherButton = screen.getByText('sign_up.form.switcher_text_have_account');
 
     fireEvent.click(switcherButton);
 
@@ -215,89 +213,89 @@ describe('FormSection', () => {
     resolveLoginForm?.(createMockLoginFormModule());
 
     await waitFor(() => {
-      expect(view.getByTestId('login-form')).toBeInTheDocument();
+      expect(screen.getByTestId('login-form')).toBeInTheDocument();
     });
   });
 
   it('triggers prefetch on switcher hover', () => {
-    const view = render(<FormSection />);
+    render(<FormSection />);
 
-    fireEvent.mouseEnter(view.getByText('sign_up.form.switcher_text_have_account'));
+    fireEvent.mouseEnter(screen.getByText('sign_up.form.switcher_text_have_account'));
 
-    expect(view.getByText('sign_up.form.switcher_text_have_account')).toBeInTheDocument();
+    expect(screen.getByText('sign_up.form.switcher_text_have_account')).toBeInTheDocument();
     expect(loadLoginFormMock).toHaveBeenCalledTimes(1);
   });
 
   it('swallows login prefetch errors from focus intent', async () => {
     loadLoginFormMock.mockRejectedValueOnce(new Error('prefetch failed'));
 
-    const view = render(<FormSection />);
+    render(<FormSection />);
 
-    fireEvent.focus(view.getByText('sign_up.form.switcher_text_have_account'));
+    fireEvent.focus(screen.getByText('sign_up.form.switcher_text_have_account'));
 
     await waitFor(() => {
       expect(loadLoginFormMock).toHaveBeenCalledTimes(1);
     });
 
-    expect(view.getByTestId('registration-form')).toBeInTheDocument();
-    expect(view.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('toggles back to registration mode on a second click', async () => {
-    const view = render(<FormSection />);
+    render(<FormSection />);
 
-    fireEvent.click(view.getByText('sign_up.form.switcher_text_have_account'));
+    fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
 
     await waitFor(() => {
-      expect(view.getByTestId('login-form')).toBeInTheDocument();
+      expect(screen.getByTestId('login-form')).toBeInTheDocument();
     });
 
-    fireEvent.click(view.getByText('sign_up.form.switcher_text_no_account'));
+    fireEvent.click(screen.getByText('sign_up.form.switcher_text_no_account'));
 
-    expect(view.getByTestId('registration-form')).toBeInTheDocument();
-    expect(view.queryByTestId('login-form')).not.toBeInTheDocument();
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+    expect(screen.queryByTestId('login-form')).not.toBeInTheDocument();
   });
 
   it('shows inline error and keeps registration visible when login fails to load', async () => {
     loadLoginFormMock.mockRejectedValueOnce(new Error('chunk load failed'));
 
-    const view = render(<FormSection />);
+    render(<FormSection />);
 
-    fireEvent.click(view.getByText('sign_up.form.switcher_text_have_account'));
+    fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
 
     await waitFor(() => {
-      expect(view.getByRole('alert')).toHaveTextContent('sign_in.errors.load_failed');
+      expect(screen.getByRole('alert')).toHaveTextContent('sign_in.errors.load_failed');
     });
 
-    expect(view.getByTestId('registration-form')).toBeInTheDocument();
-    expect(view.queryByTestId('login-form')).not.toBeInTheDocument();
+    expect(screen.getByTestId('registration-form')).toBeInTheDocument();
+    expect(screen.queryByTestId('login-form')).not.toBeInTheDocument();
   });
 
   it('marks auth provider buttons as inert when notification view is active', () => {
-    const view = render(<FormSection />);
-    const authProviderContainer = getAuthProviderContainer(view);
+    render(<FormSection />);
+    const authProviderContainer = getAuthProviderContainer();
 
     expect(authProviderContainer).not.toHaveAttribute('inert');
 
-    fireEvent.click(view.getByTestId('trigger-success-view'));
+    fireEvent.click(screen.getByTestId('trigger-success-view'));
 
     expect(authProviderContainer).toHaveAttribute('inert');
   });
 
   it('clears notification view when switching modes', async () => {
-    const view = render(<FormSection />);
-    const authProviderContainer = getAuthProviderContainer(view);
+    render(<FormSection />);
+    const authProviderContainer = getAuthProviderContainer();
 
-    fireEvent.click(view.getByTestId('trigger-success-view'));
+    fireEvent.click(screen.getByTestId('trigger-success-view'));
     expect(authProviderContainer).toHaveAttribute('inert');
 
-    fireEvent.click(view.getByText('sign_up.form.switcher_text_have_account'));
+    fireEvent.click(screen.getByText('sign_up.form.switcher_text_have_account'));
 
     await waitFor(() => {
-      expect(view.getByTestId('login-form')).toBeInTheDocument();
+      expect(screen.getByTestId('login-form')).toBeInTheDocument();
     });
 
-    fireEvent.click(view.getByText('sign_up.form.switcher_text_no_account'));
+    fireEvent.click(screen.getByText('sign_up.form.switcher_text_no_account'));
 
     expect(authProviderContainer).not.toHaveAttribute('inert');
   });

@@ -1,11 +1,10 @@
 import { inject, injectable } from 'tsyringe';
 
 import TOKENS from '@/config/tokens';
-
-import type { AuthError } from '../types/auth-error';
-import type { AuthRepository, LoginResult, RegisterResult } from '../types/auth-repository';
-import type { LoginUserDto, RegisterUserDto } from '../types/credentials';
-import { toUiError } from '../utils/auth-request-errors';
+import type { AuthError } from '@auth/types/auth-error';
+import type { AuthRepository, LoginResult, RegisterResult } from '@auth/types/auth-repository';
+import type { LoginUserDto, RegisterUserDto } from '@auth/types/credentials';
+import { toUiError } from '@auth/utils/auth-request-errors';
 
 import AuthStateVar from './auth-var';
 

@@ -323,6 +323,55 @@ lint-metrics-run:
 
 lint: lint-eslint lint-tsc lint-md lint-deps lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, dependency-cruiser, and rust-code-analysis metrics.
 
+# ESLint suppression inventory policy. Standalone during MVP: intentionally not
+# wired into aggregate `lint` until the suppression baseline decision
+# (specs/eslint-suppressions) explicitly changes that. Run it directly via
+# `make lint-eslint-suppressions`; it stays independent of `make lint`. If a
+# later baseline decision wires it into aggregate `lint`, add it to the `lint:`
+# prerequisites and update tests/bats/eslint_suppressions.bats so both the
+# standalone target and aggregate `lint` stay validated.
+ESLINT_SUPPRESSION_PATTERN = eslint-(disable-next-line|disable-line|disable|enable)([^[:alnum:]_-]|$$)
+ESLINT_SUPPRESSION_SCAN_PATHS = src tests scripts eslint.config.mjs
+# Portable scan: grep -r companions --exclude-dir and --binary-files are GNU-only
+# and fail on the BusyBox grep in the Alpine dev container. Use find for recursion
+# and directory pruning, then grep the file list with only POSIX-portable flags.
+ESLINT_SUPPRESSION_PRUNE_DIRS = .git node_modules dist coverage test-results \
+	playwright-report storybook-static out specs docs
+ESLINT_SUPPRESSION_GREP_ARGS = -HnEI
+
+lint-eslint-suppressions: ## Report ESLint suppression directives with file/line output (standalone; not part of `make lint`)
+	@scan_paths=""; \
+	for scan_path in $(ESLINT_SUPPRESSION_SCAN_PATHS); do \
+		if [ -e "$$scan_path" ]; then scan_paths="$$scan_paths $$scan_path"; fi; \
+	done; \
+	if [ -z "$$scan_paths" ]; then \
+		echo "lint-eslint-suppressions: none of the scan paths exist: $(ESLINT_SUPPRESSION_SCAN_PATHS)" >&2; \
+		exit 2; \
+	fi; \
+	prune_expr=""; \
+	for prune_dir in $(ESLINT_SUPPRESSION_PRUNE_DIRS); do \
+		prune_expr="$$prune_expr -type d -name $$prune_dir -prune -o"; \
+	done; \
+	scan_files=$$(find $$scan_paths $$prune_expr -type f -print); \
+	find_status=$$?; \
+	if [ "$$find_status" -ne 0 ]; then \
+		exit "$$find_status"; \
+	fi; \
+	if [ -z "$$scan_files" ]; then \
+		echo "No ESLint suppression directives found in:$$scan_paths"; \
+		exit 0; \
+	fi; \
+	grep $(ESLINT_SUPPRESSION_GREP_ARGS) '$(ESLINT_SUPPRESSION_PATTERN)' $$scan_files; \
+	grep_status=$$?; \
+	if [ "$$grep_status" -eq 0 ]; then \
+		echo "ESLint suppression directives found; fix the underlying issues instead of suppressing." >&2; \
+		exit 1; \
+	elif [ "$$grep_status" -eq 1 ]; then \
+		echo "No ESLint suppression directives found in:$$scan_paths"; \
+	else \
+		exit "$$grep_status"; \
+	fi
+
 husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
 	$(BUNX) husky install
 

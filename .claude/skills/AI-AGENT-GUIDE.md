@@ -31,10 +31,13 @@ instructions. Start with `SKILL-DECISION-GUIDE.md`.
 
 1. Read `.claude/skills/AI-AGENT-GUIDE.md` (this file).
 2. Read `.claude/skills/SKILL-DECISION-GUIDE.md`.
-3. Identify every `.claude/skills/*` skill that applies to the task.
-4. Open each matching `SKILL.md` and follow its steps.
-5. If a skill is plausibly relevant, **read it before deciding it does not
-   apply**, and record "Not applicable" with a concrete reason if you skip it.
+3. Identify every skill that applies to the task — **both** project
+   `.claude/skills/*` skills **and** global `~/.claude/skills` skills (see the
+   "Global Skills" task → skill table in `SKILL-DECISION-GUIDE.md`). Scan both.
+4. Open each matching project `SKILL.md` and follow its steps; invoke each
+   matching global skill by name with the Skill tool.
+5. If a skill is plausibly relevant, **read/invoke it before deciding it does
+   not apply**, and record "Not applicable" with a concrete reason if you skip it.
 
 This check is non-negotiable. Do not respond to the user with implementation
 steps or commit code until the relevant skills have been consulted.
@@ -157,6 +160,17 @@ Load supporting files only when the active task needs the extra detail.
 | **Documentation Sync**     | `documentation-sync/SKILL.md`            | Keep docs aligned after code, command, tool, or workflow changes. |
 | **Observability**          | `observability-instrumentation/SKILL.md` | Add Sentry, structured logs, or web-vitals signals.               |
 | **Load Testing**           | `load-testing/SKILL.md`                  | Create, run, or debug K6 load tests for frontend flows.           |
+
+### Global Technique Skills (`~/.claude/skills`, personal)
+
+Installed globally, available via the Skill tool in every project, **not committed
+here**. The project skills above own process and gates; the global suite adds
+technique-level depth for UI/design, motion, accessibility, testing, performance,
+and code quality. Match a task to a skill using the
+[Global Skills task → skill table](SKILL-DECISION-GUIDE.md#global-skills-claudeskills--task--skill-map)
+in `SKILL-DECISION-GUIDE.md`, and invoke matches by name. Full descriptions are in
+`agents.md` ("Global Skills"). For any UI change, pair the a11y skills with the
+mandatory `accessibility-lead` agent review.
 
 ### BMAD Planning Skills (Separate Directory)
 
