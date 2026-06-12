@@ -50,19 +50,26 @@ describe('ReactiveVarFactory', () => {
   it('isolates a throwing one-shot listener so persistent subscribers still run', () => {
     const variable = ReactiveVarFactory.create(0);
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const failure = new Error('listener failure');
     const failing = jest.fn(() => {
-      throw new Error('listener failure');
+      throw failure;
     });
     const survivor = jest.fn();
     variable.onNextChange(failing);
     variable.subscribe(survivor);
 
-    expect(variable(1)).toBe(1);
+    try {
+      expect(variable(1)).toBe(1);
 
-    expect(failing).toHaveBeenCalledWith(1);
-    expect(survivor).toHaveBeenCalledTimes(1);
-    expect(consoleError).toHaveBeenCalled();
-    consoleError.mockRestore();
+      expect(failing).toHaveBeenCalledWith(1);
+      expect(survivor).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(
+        'ReactiveVar listener threw during notification',
+        failure
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it('skips all notifications when the same reference is written again', () => {

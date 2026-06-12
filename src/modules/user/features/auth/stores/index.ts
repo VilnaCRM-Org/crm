@@ -14,7 +14,7 @@ class DeferredAuthActions {
 
   private static readonly loadFailure: AuthError = {
     kind: 'network',
-    displayMessage: 'Failed to load the sign-in service. Please try again.',
+    displayMessage: 'Failed to load the authentication service. Please try again.',
     retryable: true,
   };
 
