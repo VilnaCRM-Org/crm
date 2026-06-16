@@ -1,0 +1,26 @@
+name: eslint-suppressions
+
+on:
+  pull_request:
+    branches: ['main']
+
+permissions: {}
+
+concurrency:
+  group: eslint-suppressions-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eslint-suppressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Run lint-eslint-suppressions
+        run: make lint-eslint-suppressions

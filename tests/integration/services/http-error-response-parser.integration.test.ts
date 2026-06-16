@@ -107,7 +107,7 @@ describe('HttpErrorResponseParser Integration', () => {
   });
 
   it('logs and recovers when cloning the response throws', async () => {
-    const debugSpy = jest.spyOn(console, 'debug').mockImplementation(() => undefined);
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     try {
       const response = {
         headers: { get: (): string => 'application/json' },
@@ -120,9 +120,9 @@ describe('HttpErrorResponseParser Integration', () => {
         message: 'cannot clone',
         body: undefined,
       });
-      expect(debugSpy).toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalled();
     } finally {
-      debugSpy.mockRestore();
+      warnSpy.mockRestore();
     }
   });
 

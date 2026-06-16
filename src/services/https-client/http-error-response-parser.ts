@@ -46,8 +46,7 @@ export default class HttpErrorResponseParser {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
-      // eslint-disable-next-line no-console
-      console.debug('Failed to parse HTTP error response', {
+      console.warn('Failed to parse HTTP error response', {
         message,
         stack: error instanceof Error ? error.stack : undefined,
       });
