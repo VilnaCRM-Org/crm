@@ -1,8 +1,8 @@
 # ESLint Suppression Baseline
 
 Status: complete — before-cleanup inventory (Story 2.1) and after-cleanup inventory
-(Story 2.5) are recorded, and the standalone enforcement decision is finalized in Story 3.2
-(see "Enforcement Decision" below).
+(Story 2.5) are recorded, and the standalone, CI-enforced decision is finalized in Story 3.2
+and updated for the dedicated CI gate (see "Enforcement Decision" below).
 
 ## Command and Scan Scope
 
@@ -131,18 +131,22 @@ will flag the comment as an error before it ever reaches the standalone scan.
 | After Story 2.4     | 1                | test `prefer-screen-queries` removed       |
 | After cleanup (2.5) | 0                | tooling allow-list dropped; rule tightened |
 
-## Enforcement Decision (Story 3.2, 2026-06-10)
+## Enforcement Decision (Story 3.2, 2026-06-10; updated 2026-06-16)
 
-**Decision:** the suppression inventory target is **Standalone during MVP**. It is run
-directly and on demand via `make lint-eslint-suppressions`, against the default scan scope
-`src tests scripts eslint.config.mjs`.
+**Decision:** the suppression inventory target is **standalone but CI-enforced**. It is run
+directly via `make lint-eslint-suppressions` against the default scan scope
+`src tests scripts eslint.config.mjs`, and it is enforced on every pull request.
 
-- **Lint and CI are untouched.** Restated in policy terms:
-  aggregate `make lint` and CI enforcement are not changed in MVP. The target is intentionally
-  not added to aggregate `make lint`, and the suppression scan is not added as a CI gate. The
-  existing lint workflow (`lint-eslint lint-tsc lint-md lint-deps lint-metrics`) and the CI
-  lint jobs run exactly as before this feature.
-- The Makefile encodes this placement, so it is a tested invariant rather than only prose:
+- **CI enforcement is adopted.** The suppression scan is **enforced as a dedicated CI gate**
+  by `.github/workflows/eslint-suppressions.yml`, which runs `make lint-eslint-suppressions`
+  on every pull request to `main`; any newly introduced suppression makes the target exit
+  non-zero and fails the check.
+- **Aggregate `make lint` is unchanged.** The target stays standalone and is intentionally not
+  added to aggregate `make lint`; **aggregate `make lint` wiring remains deferred**. The
+  existing lint workflow (`lint-eslint lint-tsc lint-md lint-deps lint-metrics`) runs exactly
+  as before this feature.
+- The Makefile encodes the standalone placement, so it is a tested invariant rather than only
+  prose:
   aggregate `lint:` lists `lint-eslint lint-tsc lint-md lint-deps lint-metrics` and
   intentionally omits `lint-eslint-suppressions`. `tests/bats/eslint_suppressions.bats`
   asserts the `lint:` line does not contain `lint-eslint-suppressions` (Stories 1.1 and 3.1).
@@ -157,17 +161,16 @@ intentional suppression carried forward. Any future suppression is unambiguously
 `eslint-comments/no-use` rule (now without an `allow` list) flags the directive as an error
 before it reaches the standalone scan.
 
-### Future enforcement options (deferred)
+### Adopted and deferred enforcement
 
-The repository has reached a zero baseline, but no agreed policy yet promotes the scan to a
-blocking gate. The following options are explicitly **deferred** beyond the MVP, and
-no story requires CI enforcement or aggregate lint wiring as part of the MVP:
+The repository has reached a zero baseline, so the scan now backs a blocking gate. CI
+enforcement is **adopted**: `.github/workflows/eslint-suppressions.yml` runs the scan as a
+dedicated pull-request gate, so any future suppression is unambiguously new debt — the gate
+reports it and fails, and ESLint's own `eslint-comments/no-use` rule (now without an `allow`
+list) flags the directive as an error before it reaches the scan.
+
+One option remains explicitly **deferred** as a future, maintainer-driven decision:
 
 - Wiring `lint-eslint-suppressions` into aggregate `make lint` — would add it to the `lint:`
   prerequisites and update the Bats placement test so both the standalone target and aggregate
   `lint` stay validated (the future-wiring guidance recorded in Story 3.1).
-- Adding the suppression scan as a CI enforcement gate on pull requests.
-
-These remain future, maintainer-driven decisions. The MVP intentionally delivers only the
-standalone command, the zero baseline, and this evidence so reviewers can act on the current
-output without relying on future policy assumptions.

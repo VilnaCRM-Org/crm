@@ -96,11 +96,11 @@ create_excluded_dir_fixtures() {
   run grep -F 'src tests scripts eslint.config.mjs' "$baseline"
   [ "$status" -eq 0 ]
 
-  # AC2: the decision states the target is standalone during the MVP and that
-  # aggregate `make lint` and CI enforcement are not changed in the MVP.
-  run grep -F 'Standalone during MVP' "$baseline"
+  # AC2: the decision states the target stays standalone (not part of aggregate
+  # `make lint`) but is enforced as a dedicated CI gate.
+  run grep -F 'standalone but CI-enforced' "$baseline"
   [ "$status" -eq 0 ]
-  run grep -F 'aggregate `make lint` and CI enforcement are not changed in MVP' "$baseline"
+  run grep -F 'enforced as a dedicated CI gate' "$baseline"
   [ "$status" -eq 0 ]
 
   # AC3: with a zero baseline there are no remaining entries, so the artifact
@@ -108,9 +108,8 @@ create_excluded_dir_fixtures() {
   run grep -F 'zero' "$baseline"
   [ "$status" -eq 0 ]
 
-  # AC4: future enforcement options are deferred and no story requires CI
-  # enforcement or aggregate lint wiring as part of the MVP.
-  run grep -F 'no story requires CI enforcement or aggregate lint wiring as part of the MVP' "$baseline"
+  # AC4: aggregate `make lint` wiring remains the deferred future option.
+  run grep -F 'aggregate `make lint` wiring remains deferred' "$baseline"
   [ "$status" -eq 0 ]
 
   # AC2/AC4: the decision is finalized, not still pending in a later story.

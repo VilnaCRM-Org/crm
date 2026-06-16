@@ -491,20 +491,20 @@ So that reviewers can use the MVP output without relying on future policy assump
 **And** it includes the after-cleanup suppression count
 **And** it includes any remaining suppression rationale.
 
-**Given** the MVP suppression target remains standalone
+**Given** the suppression target stays standalone (not part of aggregate `make lint`)
 **When** maintainers review `specs/eslint-suppressions/implementation-artifacts/eslint-suppressions-baseline.md`
-**Then** the artifact states that `lint-eslint-suppressions` is standalone during MVP
-**And** it states that aggregate `make lint` and CI enforcement are not changed in MVP.
+**Then** the artifact states that `lint-eslint-suppressions` is standalone but CI-enforced
+**And** it states that the scan is enforced as a dedicated CI gate while aggregate `make lint` is unchanged.
 
 **Given** the artifact records the current baseline
 **When** reviewers need to evaluate suppression debt in this MVP or a later pull request
 **Then** the artifact provides the command used, scan scope, before/after counts, and remaining
 baseline entries or zero-baseline statement.
 
-**Given** the repository has not reached an agreed baseline
-**When** maintainers review MVP completion
+**Given** the repository has reached a zero baseline
+**When** maintainers review the enforcement decision
 **Then**
 `specs/eslint-suppressions/implementation-artifacts/eslint-suppressions-baseline.md`
-records that future
-enforcement options are deferred
-**And** no story requires CI enforcement or aggregate lint wiring as part of the MVP.
+records that CI
+enforcement is adopted via a dedicated workflow
+**And** aggregate `make lint` wiring remains the deferred future option.

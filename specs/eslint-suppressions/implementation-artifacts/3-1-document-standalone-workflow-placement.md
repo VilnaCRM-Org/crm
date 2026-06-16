@@ -53,10 +53,11 @@ so that contributors understand whether it is standalone or part of broader lint
 - This story is documentation-only and adds no runtime `src/` code, so the rust-code-analysis
   and integration-coverage gates are unaffected. The Makefile and Bats files are outside the
   `src/` metrics scope.
-- The locked MVP decision (see the architecture artifact under `planning-artifacts/`) is that
-  the target stays standalone: it is intentionally not wired into aggregate `make lint` or CI.
-  Story 3.1 makes that placement explicit; Story 3.2 finalizes the matching enforcement
-  decision in `eslint-suppressions-baseline.md`.
+- The placement decision keeps the target standalone: it is intentionally not wired into
+  aggregate `make lint`. (CI enforcement, originally deferred, was later adopted as a dedicated
+  workflow — see Story 3.2 and the baseline artifact's Enforcement Decision.) Story 3.1 makes
+  the standalone `make lint` placement explicit; Story 3.2 finalizes the enforcement decision
+  in `eslint-suppressions-baseline.md`.
 - TDD: the new placement-documentation test failed first on the AC3 future-wiring assertion
   (RED), then passed once the Makefile policy comment recorded that guidance (GREEN).
 
