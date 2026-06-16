@@ -156,7 +156,8 @@ same Docker-backed environment and avoid host-specific drift.
 
 3. **Add translations** - Always provide both `en.json` and `uk.json`
 4. **Register services** - If needed, add to `src/config/dependency-injection-config.ts`
-5. **Add tests** - Unit tests in `tests/unit/`, E2E in `tests/e2e/`
+5. **Add tests** - Unit tests in `tests/unit/`, E2E in `tests/e2e/`. Apply the Mandatory
+   Test-Scenario Coverage Policy (positive, negative, and edge cases).
 6. **Format and lint** - Run `make format` before `make lint`
    (`make format` includes Prettier and `qlty fmt`)
 
@@ -198,7 +199,9 @@ same Docker-backed environment and avoid host-specific drift.
      node ./node_modules/jest/bin/jest.js --testNamePattern="test name"
    ```
 
-4. **Fix and verify** - Ensure no regressions with `make test-unit-all`
+4. **Fix and add a regression test** - Add a test that fails before the fix and passes
+   after it (Mandatory Test-Scenario Coverage Policy, Step 4), then confirm no
+   regressions with `make test-unit-all`
 5. **Update snapshots if needed** - Run
    `docker compose exec -T dev env TEST_ENV=client node ./node_modules/jest/bin/jest.js -u`
    (use cautiously)
@@ -650,7 +653,95 @@ export const UIComponentName: React.FC<UIComponentNameProps> = (props) => {
 // Always prefix reusable UI components with "UI"
 ```
 
+## Mandatory Test-Scenario Coverage Policy
+
+This policy is a hard requirement, not advice. It applies to **every AI agent** (Claude
+Code, Codex, GitHub Copilot, Cursor, and any other assistant) whenever you **write or
+update tests** — when adding a feature, changing behavior, or fixing a bug. Adding only a
+happy-path test is **not** adequate coverage and does **not** make the work done.
+
+Follow the five steps below in order. Skipping a scenario class or step is allowed **only**
+with a recorded, concrete justification (see Step 3) — never by silent omission.
+
+### Step 1 — Pick the Right Test Layer
+
+Choose the layer(s) that actually exercise the change; a single change often needs more
+than one. Match the change to the suite and run its verification command:
+
+| Test layer          | Use it for                                | Command                 |
+| ------------------- | ----------------------------------------- | ----------------------- |
+| Client unit (jsdom) | Components, hooks, stores, client utils   | `make test-unit-client` |
+| Server unit (node)  | Apollo resolvers, GraphQL mock behavior   | `make test-unit-server` |
+| Integration         | Cross-module flows, DI wiring (100% gate) | `make test-integration` |
+| E2E (Playwright)    | User-facing flows end to end (Mockoon)    | `make test-e2e`         |
+| Visual regression   | Any change to rendered UI or styling      | `make test-visual`      |
+
+Add a specialized suite when the change touches its concern: `make test-mutation` (test
+strength), `make test-memory-leak` (leaks / OOM), `make test-load` (traffic, K6), and
+`make lighthouse-desktop` / `make lighthouse-mobile` (performance, a11y, best practices).
+
+### Step 2 — Cover Every Applicable Scenario Class
+
+For each layer you touch, cover all three scenario classes that apply to the change.
+Positive coverage on its own is never enough:
+
+1. **Positive / happy path** — valid input and expected success behavior.
+2. **Negative / invalid / failure path** — invalid input, validation failures, and error,
+   loading, timeout, and retry handling.
+3. **Boundary / edge cases** — empty, null, undefined, and partial-data states, plus
+   boundary values and off-by-one behavior.
+
+Walk this checklist and add coverage for every item the change can reach:
+
+- [ ] Valid input / expected success behavior
+- [ ] Invalid input / validation failures
+- [ ] Empty, null, undefined, and partial-data states
+- [ ] Loading, timeout, retry, and error handling
+- [ ] Permission / auth / role-sensitive flows
+- [ ] Boundary values and off-by-one behavior
+- [ ] Locale / i18n-sensitive behavior (uk primary, en fallback)
+- [ ] Visual regressions for UI changes (`make test-visual`)
+- [ ] Previously fixed bug regression coverage (see Step 4)
+
+### Step 3 — Document Any Skipped Scenario Class
+
+If a scenario class or checklist item genuinely does not apply, record it explicitly with a
+concrete reason — in the test file (as a comment), the PR description, or your task summary.
+Use the same `Not applicable: <reason>` convention as the Mandatory Skill Check. A bare
+"not applicable" with no reason, or silent omission, does not satisfy this policy.
+
+Example: `Boundary/edge — Not applicable: presentational component with no inputs, state, or branches.`
+
+### Step 4 — Regression Coverage Is Mandatory for Bug Fixes
+
+When you fix a bug, add a regression test that fails before your fix and passes after it.
+This is mandatory unless there is a concrete, recorded reason a test cannot reasonably be
+added (for example, the defect lives in third-party infrastructure you do not control).
+Document that reason as in Step 3, and cover the previously broken scenario in the layer
+that best reproduces it (usually client or server unit, sometimes E2E or visual).
+
+### Step 5 — Verify Before Calling Test Work Done
+
+Test work is not "done" until the relevant verification commands have actually been run and
+pass. Run the layer commands you touched, then the project gate:
+
+```bash
+make format           # Prettier + qlty fmt (run before lint)
+make test-unit-all    # Client + server unit suites
+make test-integration # Integration suite (global 100% coverage gate)
+make test-e2e         # User-facing flows (for UI / behavior changes)
+make test-visual      # Visual regression (for UI / styling changes)
+make lint             # Full gate: ESLint, TS, markdown, deps, metrics
+```
+
+Run only the suites the change affects, but never skip a suite that does apply. For CI
+parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
+
 ## Testing Strategies
+
+> These strategies operate under the Mandatory Test-Scenario Coverage Policy above: for every
+> suite below, cover positive, negative, and edge cases (or record a concrete "Not applicable"
+> reason) and run the verification commands before calling test work done.
 
 ### Unit Testing Best Practices
 
@@ -675,7 +766,9 @@ export const UIComponentName: React.FC<UIComponentNameProps> = (props) => {
    const mockHttpsClient = HttpsClient as jest.MockedClass<typeof HttpsClient>;
    ```
 
-4. **Test coverage requirements**: Aim for >80% coverage on new code
+4. **Test coverage requirements**: >80% line coverage on new code is a floor, not the
+   bar. It never substitutes for the scenario-class coverage (positive, negative, edge)
+   required by the Mandatory Test-Scenario Coverage Policy above.
 
 ### E2E Testing with Playwright
 
@@ -920,10 +1013,11 @@ When creating a new module:
 - [ ] Create Zustand store in `features/[Feature]/stores/`
 - [ ] Add a repository / API client if needed
 - [ ] Write unit tests in `tests/unit/modules/[ModuleName]/`
-- [ ] Add E2E tests if user-facing
+- [ ] Add E2E and visual tests if user-facing
 - [ ] Update routes in `App.tsx` if needed
 - [ ] Document public APIs in module README
-- [ ] Run full test suite: `make test-unit-all && make test-e2e`
+- [ ] Cover positive, negative, and edge cases per the Mandatory Test-Scenario Coverage Policy
+- [ ] Run full test suite: `make test-unit-all && make test-e2e && make test-visual`
 
 ## Environment-Specific Notes
 
@@ -1011,7 +1105,9 @@ Run monthly or when dependabot alerts
 
 1. **Run formatters**: `make format` (Prettier and `qlty fmt`)
 2. **Run linters**: `make lint`
-3. **Run tests**: `make test-unit-all`
+3. **Run tests**: `make test-unit-all` (plus `make test-e2e` / `make test-visual` for UI
+   changes), covering positive, negative, and edge cases per the Mandatory Test-Scenario
+   Coverage Policy
 4. **Manual verification**: `make start` and test in browser
 5. **Check bundle size**: `make build-analyze` if adding dependencies
 6. **Update docs**: If changing public APIs
@@ -1022,7 +1118,7 @@ Run monthly or when dependabot alerts
 - [ ] No linter errors
 - [ ] TypeScript compiles without errors
 - [ ] No console warnings in browser
-- [ ] Added tests for new functionality
+- [ ] Added tests for new functionality (positive, negative, and edge cases per policy)
 - [ ] Updated relevant documentation
 - [ ] Follows project conventions
 - [ ] No hardcoded values (use config)
@@ -1062,6 +1158,7 @@ make lint               # All linters
 make lint-eslint        # ESLint only
 make lint-tsc           # TypeScript only
 make lint-md            # Markdown only
+make lint-dup           # Duplication (jscpd) only
 make fmt-prettier       # Prettier format
 make fmt-qlty           # Qlty format
 make format             # Prettier and Qlty format
@@ -1100,4 +1197,4 @@ make check-node-version # Verify Node version
 This document is maintained alongside the codebase. When patterns emerge or common
 issues are resolved, update this guide to help future agents work more effectively.
 
-**Last updated**: 2025-10-20
+**Last updated**: 2026-06-10
