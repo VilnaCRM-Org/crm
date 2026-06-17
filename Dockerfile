@@ -53,27 +53,33 @@ ARG TARGETARCH
 SHELL ["/bin/sh", "-c"]
 
 RUN set -eux; \
-    set -- ca-certificates jq make tar unzip; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends \
+      ca-certificates=20230311+deb12u1 \
+      jq=1.6-2.1+deb12u1 \
+      make=4.3-4.1 \
+      tar=1.34+dfsg-1.2+deb12u1 \
+      unzip=6.0-28; \
     if [ "${TARGETARCH}" = "amd64" ]; then \
-      set -- "$@" curl; \
+      apt-get install -y --no-install-recommends curl=7.88.1-10+deb12u14; \
     else \
-      set -- "$@" build-essential cargo; \
+      apt-get install -y --no-install-recommends \
+        build-essential=12.9 \
+        cargo=0.66.0+ds1-1; \
     fi; \
-    apt-get update && \
-    apt-get install -y --no-install-recommends "$@" && \
-    rm -rf /var/lib/apt/lists/* && \
+    rm -rf /var/lib/apt/lists/*; \
     if [ "${TARGETARCH}" = "amd64" ]; then \
       rca_tarball_url="https://github.com/mozilla/rust-code-analysis/releases/download/"\
-"v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz" && \
-      curl --retry 5 --retry-delay 2 -fsSL "$rca_tarball_url" -o /tmp/rca.tar.gz && \
-      printf '%s  %s\n' "${RCA_SHA256}" "/tmp/rca.tar.gz" > /tmp/rca.tar.gz.sha256 && \
-      sha256sum -c /tmp/rca.tar.gz.sha256 && \
+"v${RCA_VERSION}/rust-code-analysis-linux-cli-x86_64.tar.gz"; \
+      curl --retry 5 --retry-delay 2 -fsSL "$rca_tarball_url" -o /tmp/rca.tar.gz; \
+      printf '%s  %s\n' "${RCA_SHA256}" "/tmp/rca.tar.gz" > /tmp/rca.tar.gz.sha256; \
+      sha256sum -c /tmp/rca.tar.gz.sha256; \
       tar -xz -C /usr/local/bin -f /tmp/rca.tar.gz; \
     else \
       cargo install --locked --version "${RCA_VERSION}" rust-code-analysis-cli --root /usr/local; \
-    fi && \
-    chmod +x /usr/local/bin/rust-code-analysis-cli && \
-    /usr/local/bin/rust-code-analysis-cli --version && \
+    fi; \
+    chmod +x /usr/local/bin/rust-code-analysis-cli; \
+    /usr/local/bin/rust-code-analysis-cli --version; \
     rm -f /tmp/rca.tar.gz /tmp/rca.tar.gz.sha256
 
 ENV RCA_BIN=/usr/local/bin/rust-code-analysis-cli

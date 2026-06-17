@@ -95,6 +95,20 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
+### Dockerfile build performance
+
+If your change touches a configured Dockerfile path (or the gate's own config),
+a CI gate rebuilds each configured image, measures its size and build time,
+checks the size against a per-image budget (`.github/dockerfile-perf.json`), and
+runs `dive` (layer efficiency, `.dive-ci`) and `hadolint` (best practice,
+`.hadolint.yaml`) gates with their own thresholds. The check hard-fails a pull
+request when a budget or gate is exceeded, unless a documented exception
+applies. Exceptions are granted via an inline `# perf-exception: <reason>`
+marker (its own comment line), the repo-wide `docker-perf-exception` PR label,
+or a per-image `docker-perf-exception:<name>` PR label that waives only that
+image. The decision logic is covered by `tests/bats/docker_perf.bats`
+(run with `make test-bats`).
+
 ### Pull Request
 
 When you're finished with the changes, create a pull request, also known as a PR.
