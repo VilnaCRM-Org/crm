@@ -1,0 +1,139 @@
+name: dockerfile performance
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'Dockerfile'
+      - 'tests/load/dockerfile'
+      - '.github/dockerfile-perf.json'
+      - '.github/workflows/dockerfile-performance.yml'
+      - 'scripts/ci/docker_perf.sh'
+      - '.hadolint.yaml'
+      - '.dive-ci'
+
+permissions: {}
+
+# Only the latest run per PR may proceed: a new push cancels any in-flight run
+# so its (slower) comment job cannot overwrite the sticky PR comment with stale
+# metrics from a superseded commit, and we avoid duplicate head+base builds.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    name: resolve matrix
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.gen.outputs.matrix }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Build image matrix from config
+        id: gen
+        run: |
+          matrix="$(jq -c '{include: .}' .github/dockerfile-perf.json)"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  performance:
+    name: ${{ matrix.name }}
+    needs: setup
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout base branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Measure and gate Dockerfile performance
+        env:
+          NAME: ${{ matrix.name }}
+          DOCKERFILE: ${{ matrix.dockerfile }}
+          CONTEXT: ${{ matrix.context }}
+          TARGET: ${{ matrix.target }}
+          BUDGET_MB: ${{ matrix.budget_mb }}
+          TOLERANCE_PCT: ${{ matrix.tolerance_pct }}
+          BASE_DOCKERFILE: base/${{ matrix.dockerfile }}
+          BASE_CONTEXT: base/${{ matrix.context }}
+          DOCKER_PERF_GHA_CACHE: '1'
+          PERF_EXCEPTION_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'docker-perf-exception') }}
+          PERF_EXCEPTION_IMAGE_LABEL: ${{ contains(github.event.pull_request.labels.*.name, format('docker-perf-exception:{0}', matrix.name)) }}
+          PERF_EXCEPTION_LABEL_NAME: docker-perf-exception
+          OUT_DIR: .docker-perf
+        run: bash scripts/ci/docker_perf.sh run
+
+      - name: Upload metrics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: docker-perf-${{ matrix.name }}
+          path: .docker-perf/
+          retention-days: 14
+
+  comment:
+    name: PR report
+    needs: performance
+    if: always() && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download metrics
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: docker-perf-*
+          path: metrics
+          merge-multiple: true
+
+      - name: Assemble report
+        id: report
+        run: |
+          {
+            echo "## 🐳 Dockerfile build performance"
+            echo
+            echo "Size and build time of each changed image vs. the base branch."
+            echo "Policy, thresholds, and exceptions: see \`CONTRIBUTING.md\`."
+            echo
+            echo "| Image | Dockerfile | Size | Δ vs base | Build time | Budget | Status |"
+            echo "| --- | --- | --- | --- | --- | --- | --- |"
+            if ls metrics/row-*.md >/dev/null 2>&1; then
+              cat metrics/row-*.md
+            else
+              echo "| _no images measured_ | | | | | | |"
+            fi
+          } > report.md
+          {
+            echo 'body<<DOCKER_PERF_EOF'
+            cat report.md
+            echo 'DOCKER_PERF_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Post or update PR comment
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
+        with:
+          header: docker-build-perf
+          message: ${{ steps.report.outputs.body }}
