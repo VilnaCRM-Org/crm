@@ -19,11 +19,15 @@ describe('ui-button contained theme', () => {
     expect(getContained()[`&.${buttonClasses.loading}`]).toBeUndefined();
   });
 
-  it('keeps the validation-disabled grey scoped to the disabled rule only', () => {
-    const disabledRule = getContained()['&:disabled'] as CssBlock;
+  it('greys the disabled and loading fill via a class selector that beats MUI defaults', () => {
+    const contained = getContained();
+    const disabledRule = contained['&&.Mui-disabled'] as CssBlock;
 
+    expect(contained['&:disabled']).toBeUndefined();
     expect(disabledRule.backgroundColor).toBe(paletteColors.background.subtle);
     expect(disabledRule.backgroundColor).toBe('#E1E7EA');
+    expect(disabledRule.color).toBe(customColors.text.primary);
+    expect(disabledRule.color).toBe('#404142');
   });
 
   it('draws a focus-visible outline distinct from hover that boxShadow does not remove', () => {

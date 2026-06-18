@@ -32,9 +32,9 @@ export default createTheme({
             backgroundColor: paletteColors.primary.active,
             boxShadow: 'none',
           },
-          '&:disabled': {
+          '&&.Mui-disabled': {
             backgroundColor: paletteColors.background.subtle,
-            color: paletteColors.background.default,
+            color: customColors.text.primary,
           },
           [`@media (prefers-reduced-motion: reduce)`]: {
             [`& .${circularProgressClasses.svg}`]: {
