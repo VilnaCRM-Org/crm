@@ -126,6 +126,17 @@ describe('LoginForm', () => {
     );
   });
 
+  it('passes the stable submit and submitting labels to the form', () => {
+    render(<LoginForm />);
+
+    expect(mockUIForm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        submitLabel: 'sign_in.form.submit_button',
+        submittingLabel: 'sign_in.form.submitting',
+      })
+    );
+  });
+
   it('invokes the loginUser action when the form is submitted', async () => {
     mockLoginUser.mockResolvedValue(undefined);
 

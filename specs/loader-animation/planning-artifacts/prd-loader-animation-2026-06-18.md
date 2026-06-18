@@ -27,9 +27,10 @@ inputDocuments:
 Replace the auth submit button's split, partly-inaccessible busy treatment — a
 detached 70px `CircularProgress` below a grey, low-contrast disabled button — with
 Material-UI v7's **native in-button loading state**: while submitting, the same
-button keeps its brand fill, hides its label, shows a centered spinner, and goes
-non-interactive, with the busy state exposed programmatically via `aria-busy` and a
-single polite announcement.
+button goes natively disabled into its existing grey `#E1E7EA` disabled appearance
+(matching the Figma design, node 439:19256), hides its label, shows a centered
+spinner, and goes non-interactive, with the busy state exposed programmatically via
+`aria-busy` and a single polite announcement.
 
 The goal is one accessible, zero-layout-shift "working" cue on the login and
 registration forms — readable, WCAG 2.2 AA-clean (contrast, name/role/value, focus,
@@ -50,7 +51,9 @@ true, a **detached** `CircularProgress color="primary" size={70}` that drops in
 At the same moment the button is set `disabled`, so the contained theme rule in
 `src/components/ui-button/theme.ts` (`&:disabled` → `backgroundColor:
 background.subtle (#E1E7EA)`, `color: background.default (#FFFFFF)`) fires and the
-button greys out to white-on-grey.
+button greys out to white-on-grey. That grey `#E1E7EA` disabled appearance is, in
+fact, exactly the loading look the Figma design (node 439:19256) calls for — a grey
+pill — so the native loading treatment will reuse it rather than override it.
 
 A second, related defect lives in the label wiring. Both forms compute the submit
 label through `t(getSubmitLabelKey(mode, isSubmitting))`
@@ -68,7 +71,10 @@ This treatment has three concrete problems:
    submitting, pushing surrounding content and changing the form height between
    idle and busy states.
 2. **A WCAG 1.4.3 contrast defect.** The grey disabled state renders the label as
-   white text on `#E1E7EA`, roughly a 1.2:1 ratio — far below the 4.5:1 minimum.
+   white text on `#E1E7EA`, roughly a 1.26:1 ratio — far below the 4.5:1 minimum.
+   This is a pre-existing issue of the **validation-disabled** state, where the
+   label stays visible; it is out of scope here (see FR4 / AR2). In the loading
+   state the label is hidden, so the ratio does not apply to the busy button.
 3. **Split, redundant signaling.** The greyed button and the detached spinner are
    two separate "busy" cues that are not tied together, and the `<form noValidate>`
    carries **no** `aria-busy` and **no** live-region announcement, so assistive
@@ -79,7 +85,10 @@ loading API on `@mui/material/Button` — the `loading`, `loadingPosition`, and
 `loadingIndicator` props — that replaces the deprecated `@mui/lab` `LoadingButton`.
 With `loading={submitting}` and `loadingPosition="center"`, MUI visually hides the
 button label, overlays a centered `CircularProgress`, and natively disables the
-button — all within the button's fixed geometry, with zero layout shift.
+button — all within the button's fixed geometry, with zero layout shift. Because the
+`loading` prop natively `disabled`s the button, the existing `&:disabled` grey
+`#E1E7EA` rule applies unchanged, giving the loading button the grey pill the Figma
+design specifies — no custom loading-fill override is added.
 
 This PRD specifies replacing the detached-spinner-plus-grey-button treatment with
 that in-button native loading treatment, scoped narrowly to the **submit button of
@@ -93,13 +102,14 @@ deleted and is **not** reintroduced here.
 ### Goals
 
 - Show busy state **inside** the submit button: hide the label, overlay a centered
-  spinner, keep the button's `#1EAEFF` brand fill and `57px`-radius geometry.
+  spinner, and let the natively disabled button show its existing grey `#E1E7EA`
+  disabled fill (matching the Figma design) within the `57px`-radius geometry.
 - Remove the detached `size={70}` `CircularProgress` and the layout shift it causes.
 - Make the busy state programmatically perceivable: `aria-busy` on the `<form>`
   plus exactly one polite announcement reusing the localized `submitting` string.
-- Resolve the spinner-on-brand-blue contrast concern with a concrete, justified
-  choice — a dark `#404142` indicator on the `#0399ED` loading fill (4.67:1) —
-  rather than relying on the rejected grey disabled state.
+- Resolve the spinner contrast concern with a concrete, justified choice — a dark
+  `#404142` indicator on the grey `#E1E7EA` loading fill (8.12:1) — which clears
+  WCAG 1.4.11's 3:1 floor with a wide margin.
 - Give the idle / re-enabled submit button a distinct, conformant focus indicator
   (a visible outline clearing ≥3:1 against both the fill and the white page).
 - Keep the submit label stable across idle and loading states so the busy button
@@ -118,6 +128,9 @@ deleted and is **not** reintroduced here.
 - No change to form validation logic, submit handlers, or the auth store.
 - No migration to `@mui/lab` `LoadingButton` (use native `@mui/material/Button`).
 - No new dependency; `CircularProgress` is already on the auth path.
+- No "fix" to the pre-existing validation-disabled label contrast (white on
+  `#E1E7EA`, 1.26:1) — that visible-label disabled state is unchanged and out of
+  scope.
 
 ## Scope
 
@@ -130,7 +143,9 @@ deleted and is **not** reintroduced here.
 - `src/components/ui-form/index.tsx` (`SubmitControls`, `FormBody` `<form>`),
   `src/components/ui-form/styles.ts` (removal of `styles.loader`),
   `src/components/ui-button/index.tsx` (pass-through of the loading-related props),
-  and `src/components/ui-button/theme.ts` (loading-specific fill override).
+  and `src/components/ui-button/theme.ts` (removal of the previously-planned
+  loading-specific fill override, its `buttonClasses.loading` rule, and its import;
+  the loading button reuses the existing `&:disabled` grey rule).
 - `src/modules/user/features/auth/utils/get-submit-label-key.ts` — removal of the
   state-dependent label swap (see FR11), and the two consumers that call it.
 - Reuse (no edit to) the existing `submitting` / `submit_button` i18n keys under
@@ -144,6 +159,8 @@ deleted and is **not** reintroduced here.
 - The page-load `AuthSkeleton`.
 - The login/register switcher.
 - Any non-auth consumer of `UIButton` or `UIForm`.
+- The pre-existing validation-disabled label contrast (white on `#E1E7EA`,
+  1.26:1) when the label is visible — not touched by this change.
 
 ## Functional Requirements
 
@@ -161,13 +178,16 @@ documents.
   true, the button MUST be natively `disabled` (the `loading` prop sets the
   underlying `ButtonBase` `disabled`), so it cannot be clicked or re-activated and
   cannot trigger form submission.
-- **FR4 — Keep the brand fill while loading.** The button MUST retain a brand blue
-  fill while loading — it MUST NOT show the grey `#E1E7EA` disabled state. A
-  loading-specific theme/sx rule keyed on `buttonClasses.loading`
-  (`.MuiButton-loading`) MUST override the `&:disabled` grey rule, using the darker
-  active brand blue `#0399ED` to signal busy and provide the high-contrast field
-  for the dark spinner (see AR2). The geometry (`57px` radius, responsive
-  width/height) MUST stay identical.
+- **FR4 — Use the native disabled grey while loading.** While loading, the button
+  uses the native disabled grey `#E1E7EA` (matching the design); no brand-fill
+  override is applied. Because the `loading` prop natively `disabled`s the button,
+  the existing `&:disabled` rule (`backgroundColor: background.subtle (#E1E7EA)` =
+  `paletteColors.background.subtle`) applies as-is, producing the grey pill the
+  Figma design (node 439:19256) specifies. No loading-specific theme/sx rule and no
+  `buttonClasses.loading` (`.MuiButton-loading`) override is added; greying out
+  while loading is correct and desired. The grey `#E1E7EA` fill provides the
+  high-contrast field for the dark spinner (see AR2). The geometry (`57px` radius,
+  responsive width/height) MUST stay identical.
 - **FR5 — Remove the detached spinner.** The standalone `CircularProgress
 color="primary" size={70}` rendered after the button in `SubmitControls`
   (`index.tsx` line 116) and the `styles.loader` block in `styles.ts` MUST be
@@ -218,20 +238,23 @@ documents.
   the button and announcement via `getByRole` / `getByLabelText` / `getByText`,
   using a stable `id` only as a last resort.
 - **NFR5 — No suppressions.** No `eslint-disable`, `@ts-ignore`, or equivalent
-  suppression may be added; the brand-fill fix is a theme/sx override only. No new
-  inline code comments are added; rationale lives in PR/docs.
+  suppression may be added; the loading state needs no override — it reuses the
+  existing `:disabled` grey rule. No new inline code comments are added; rationale
+  lives in PR/docs.
 - **NFR6 — i18n parity.** Any i18n key used MUST exist in both `en.json` and
   `uk.json` and stay in sync via the localization generator. Existing keys
   (`sign_up.form.submitting` = "Signing up…" / "Обробка…",
   `sign_in.form.submitting` = "Signing in…" / "Вхід…") are reused; no English
   string is hard-coded. No JSON edits are required — all four keys already exist.
-- **NFR7 — WCAG conformance.** The result MUST satisfy WCAG 1.4.3 (contrast,
-  resolving the rejected grey state), 1.4.11 (non-text contrast for the dark
-  spinner and the focus outline), 4.1.2 (name/role/value — preserved accessible
-  name and busy state), 4.1.3 (status messages — the polite busy announcement via
-  `role="status"`), 2.4.3 (focus order on the error-return path), 2.4.7 (focus
-  visible), and 2.4.11 (focus appearance — the in-scope, distinct focus indicator
-  on the idle / re-enabled submit button). See Accessibility Requirements.
+- **NFR7 — WCAG conformance.** The result MUST satisfy WCAG 1.4.3 (contrast — the
+  busy button hides its label, so the white-on-grey label ratio does not apply to
+  it; the pre-existing visible validation-disabled label is out of scope),
+  1.4.11 (non-text contrast for the dark spinner and the focus outline),
+  4.1.2 (name/role/value — preserved accessible name and busy state),
+  4.1.3 (status messages — the polite busy announcement via `role="status"`),
+  2.4.3 (focus order on the error-return path), 2.4.7 (focus visible), and
+  2.4.11 (focus appearance — the in-scope, distinct focus indicator on the idle /
+  re-enabled submit button). See Accessibility Requirements.
 - **NFR8 — Reduced motion.** Under `prefers-reduced-motion: reduce`, the spinner
   animation MUST be suppressed (`animation: none` on the indicator) since the
   visual/e2e harness forces reduced motion
@@ -245,7 +268,7 @@ documents.
 - **NFR9 — Mutation + integration coverage.** The change MUST keep 100%
   integration coverage over `src/**` with new branches (loading vs idle, both
   forms) exercised by tests, and MUST leave **no surviving Stryker mutant on the
-  new branches**: the loading-fill color (`#0399ED`), the
+  new branches**: the spinner indicator color (`#404142`), the
   `submit_button`-versus-`submitting` key selection, and the `aria-busy` value.
 
 ## Accessibility Requirements
@@ -265,25 +288,28 @@ review.
   no separately-exposed progressbar node contributes a name. The button MUST never
   be a nameless spinner, and MUST NOT have its accessible name swapped to the
   "submitting" string.
-- **AR2 — Spinner non-text contrast (WCAG 1.4.11).** White on the idle `#1EAEFF`
-  fill is **2.46:1**, below the 3:1 requirement for meaningful non-text
-  indicators. The resolution (per FR4) shifts the button fill to the darker active
-  blue `#0399ED` **while loading** and draws the spinner in dark
-  `customColors.text.primary` (`#404142`) — **not** white — at `thickness={4.5}`
-  and `size={28}`. The indicator MUST NOT be white and MUST NOT use
-  `color="inherit"`. Dark `#404142` on `#0399ED` is **4.67:1**, comfortably
-  clearing the 1.4.11 3:1 floor for a thin anti-aliased stroke. The white-on-
-  `#0399ED` 3.10:1 option is explicitly **rejected** as too marginal for a thin
-  anti-aliased stroke and MUST NOT be cited as the conformance basis anywhere.
-  (Import note: `#404142` is `customColors.text.primary`, under `customColors.text`,
-  **not** `paletteColors`.)
+- **AR2 — Spinner non-text contrast (WCAG 1.4.11).** Per FR4, the button uses the
+  native disabled grey `#E1E7EA` fill **while loading** (no override added), and
+  the spinner is drawn in dark `customColors.text.primary` (`#404142`) — **not**
+  white — at `thickness={4.5}` and `size={28}`. The indicator MUST NOT be white and
+  MUST NOT use `color="inherit"`. Dark `#404142` on the grey `#E1E7EA` fill is
+  **8.12:1**, clearing the 1.4.11 3:1 floor for a thin anti-aliased stroke with a
+  wide margin (and even better than it would be on the brand blue). A white spinner
+  on `#E1E7EA` is **1.26:1** and is explicitly **rejected** as failing the 3:1
+  floor; it MUST NOT be cited as the conformance basis anywhere. Note also that the
+  white `submit_button` **label** on `#E1E7EA` is 1.26:1, but it is **hidden** while
+  loading (`loadingPosition="center"` → `visibility: hidden`), so that ratio does
+  not apply to the busy state; the plain validation-disabled state (label visible)
+  keeps that pre-existing 1.26:1 and is explicitly **out of scope** for this change
+  — do not "fix" the disabled label color. (Import note: `#404142` is
+  `customColors.text.primary`, under `customColors.text`, **not** `paletteColors`.)
 - **AR2b — Supplementary, belt-and-suspenders (WCAG 1.4.11 framing).** The spinner
-  is built to pass 1.4.11 on its own (the 4.67:1 stroke) **and** is supplementary:
-  busy is also conveyed by `aria-busy` (AR4), the native `disabled` attribute, the
-  fill shift to `#0399ED`, and the polite live region (AR3). This is
-  belt-and-suspenders, **not** "decorative-and-excused." The UX document MUST
-  record and justify the dark-stroke contrast math and the `thickness` / `size`
-  values.
+  is built to pass 1.4.11 on its own (the 8.12:1 stroke on grey) **and** is
+  supplementary: busy is also conveyed by `aria-busy` (AR4), the native `disabled`
+  attribute, the grey `#E1E7EA` disabled fill, and the polite live region (AR3).
+  This is belt-and-suspenders, **not** "decorative-and-excused." The UX document
+  MUST record and justify the dark-stroke contrast math and the `thickness` /
+  `size` values.
 - **AR3 — Single polite live region (WCAG 4.1.2, 4.1.3).** Implements FR7. Exactly
   one polite, non-assertive live region — a `UILiveStatus` span with `role="status"`
   (which carries implicit `aria-live="polite"`) plus `aria-atomic="true"` —
@@ -305,10 +331,11 @@ review.
     `#1EAEFF` fill — effectively no visible focus). The fix splits `:focus-visible`
     OUT of `:hover` and adds an `outline: '2px solid #404142'` with `outlineOffset:
 '2px'`, drawn **outside** the fill so it clears ≥3:1 against both the
-    `#1EAEFF` / `#0399ED` fill and the white page (`#404142` is ~4.67:1 on
-    `#0399ED` and ~9:1 on white). The outline MUST NOT be removed by `boxShadow:
-'none'`. This feature touches that exact control and asserts NFR7/AR5, so it
-    **owns** this fix — it is NOT deferred as pre-existing or out of scope.
+    `#1EAEFF` idle fill and the white page (`#404142` is ~4.17:1 on the `#1EAEFF`
+    idle fill and ~10.22:1 on white; against the grey `#E1E7EA` disabled fill it is
+    ~8.12:1). The outline MUST NOT be removed by `boxShadow: 'none'`. This feature
+    touches that exact control and asserts NFR7/AR5, so it **owns** this fix — it is
+    NOT deferred as pre-existing or out of scope.
   - **Registration error path (in-place):** because submit drives the button to
     native `disabled` (moving focus to `<body>`), and the registration form passes
     `error={null}` so the failure swaps to `RegistrationNotificationPanel`, the
@@ -342,11 +369,12 @@ Each criterion is testable and traceable to the requirement IDs above.
   `disabled` attribute, is not in the tab order, cannot be clicked, and a second
   submit attempt does not fire the submit handler again. Verified by unit/e2e test.
 - **AC3 (FR4, AR2, AR2b).** While submitting, the button's computed background is
-  the brand blue `#0399ED` (not `#E1E7EA`), and the spinner stroke is dark
-  `#404142` (`customColors.text.primary`) at `thickness={4.5}` / `size={28}` — not
-  white and not `color="inherit"` — giving a 4.67:1 dark-on-`#0399ED` non-text
-  contrast; the `57px`-radius geometry is unchanged. Verified by unit test on the
-  loading-class style and the indicator props, plus a visual snapshot.
+  the native disabled grey `#E1E7EA` (`paletteColors.background.subtle`, matching
+  the design — no brand-fill override), and the spinner stroke is dark `#404142`
+  (`customColors.text.primary`) at `thickness={4.5}` / `size={28}` — not white and
+  not `color="inherit"` — giving an 8.12:1 dark-on-`#E1E7EA` non-text contrast; the
+  `57px`-radius geometry is unchanged. Verified by unit test on the loading/disabled
+  style and the indicator props, plus a visual snapshot.
 - **AC4 (FR6, AR4).** The `<form>` exposes `aria-busy="true"` exactly while
   submitting and `aria-busy="false"` otherwise. Verified by unit test querying the
   form's `aria-busy`.
@@ -375,8 +403,8 @@ Each criterion is testable and traceable to the requirement IDs above.
   Lighthouse run.
 - **AC11 (NFR9).** Integration coverage over `src/**` stays at 100% with new
   loading/idle branches covered for both forms, and Stryker reports **no surviving
-  mutant** on the new branches (loading-fill color, `submit_button`-versus-
-  `submitting` key selection, and `aria-busy` value). Verified in CI.
+  mutant** on the new branches (spinner indicator color `#404142`, `submit_button`-
+  versus-`submitting` key selection, and `aria-busy` value). Verified in CI.
 - **AC12 (FR7, AR3).** Exactly one polite live region announces the localized
   `submitting` string, rendered as a `UILiveStatus` span with `role="status"`
   (implicit `aria-live="polite"`) plus `aria-atomic="true"`; there is no bare
@@ -386,9 +414,9 @@ Each criterion is testable and traceable to the requirement IDs above.
 - **AC13 (NFR7, AR5).** The idle / re-enabled submit button presents a distinct
   focus indicator: `:focus-visible` is split out of `:hover` and applies `outline:
 '2px solid #404142'` with `outlineOffset: '2px'`, drawn outside the fill and not
-  removed by `boxShadow: 'none'`, clearing ≥3:1 against both the `#1EAEFF` /
-  `#0399ED` fill and the white page. Verified by unit test on the `:focus-visible`
-  style (WCAG 2.4.7, 2.4.11).
+  removed by `boxShadow: 'none'`, clearing ≥3:1 against both the `#1EAEFF` idle fill
+  and the white page. Verified by unit test on the `:focus-visible` style
+  (WCAG 2.4.7, 2.4.11).
 - **AC14 (AR5).** After a registration failure, focus lands on a meaningful element
   (the `RegistrationNotificationPanel` heading / error text via `tabIndex={-1}`),
   **not** `<body>`; the existing login `ErrorBanner` focus-move path is preserved.
@@ -397,18 +425,18 @@ Each criterion is testable and traceable to the requirement IDs above.
 
 ## Risks & Mitigations
 
-| ID  | Risk                                                                                                                                                                                                 | Mitigation                                                                                                                                                                                                                                                                                                        |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| R1  | The `&:disabled` grey theme rule bleeds into the loading state, regressing FR4/AR2.                                                                                                                  | Key the loading override on `buttonClasses.loading` (specificity `.MuiButton-contained.MuiButton-loading` beats `.MuiButton-contained:disabled`); add a unit test asserting `#0399ED` while loading (AC3).                                                                                                        |
-| R2  | Loading and ordinary validation-disabled states get conflated, weakening the real disabled style.                                                                                                    | Scope the brand-fill override to the loading class only; the plain `:disabled` (invalid) state keeps the existing grey.                                                                                                                                                                                           |
-| R3  | Spinner contrast stays below 3:1 if a white stroke is kept on the idle `#1EAEFF` fill (2.46:1) or even the loading `#0399ED` fill (3.10:1, rejected as too marginal for a thin anti-aliased stroke). | FR4/AR2 mandate the `#0399ED` loading fill **and** a dark `#404142` (`customColors.text.primary`) stroke at `thickness={4.5}` / `size={28}`: `#404142` on `#0399ED` is 4.67:1, comfortably clearing 1.4.11; the UX doc records the dark-stroke contrast math. AC3 unit-tests the indicator color and props.       |
-| R4  | Forced reduced motion in the visual harness causes snapshot flake from the continuous spin.                                                                                                          | NFR8/AC7: set `animation: none` under `prefers-reduced-motion: reduce`.                                                                                                                                                                                                                                           |
-| R5  | Focus loss to `<body>` when the focused button becomes disabled, stranding keyboard/SR users at `<body>` after the error round-trip (AR5).                                                           | The polite live region announces busy state; on the registration error path move focus to the `RegistrationNotificationPanel` heading/error text (`tabIndex={-1}`, focus on mount), and keep the existing login `ErrorBanner` focus-move path per AR5 (AC14); success-path focus belongs to the destination view. |
-| R6  | A nameless or mislabeled spinner-only button (WCAG 4.1.2 failure) if children are swapped to empty or to the "submitting" string, or a competing name on the indicator.                              | FR10/FR11/AR1: keep the stable `submit_button` label as children (MUI hides it visually), remove the `getSubmitLabelKey` swap, and drop any `aria-label` on the indicator; AC5 asserts the accessible name equals `submit_button` exactly with no progressbar name.                                               |
-| R7  | A second live region, a bare `aria-live` span, or a `role="progressbar"` announcement duplicates or weakens the polite message.                                                                      | FR7/AR3: exactly one polite live region via `UILiveStatus` (`role="status"` + `aria-atomic="true"`); no bare `aria-live` span and no extra progressbar announcement wired (AC12).                                                                                                                                 |
-| R8  | Shared style/markup duplicated across the two forms trips jscpd.                                                                                                                                     | Both forms already route through shared `UIForm`/`SubmitControls`; keep the loading logic centralized there (NFR2).                                                                                                                                                                                               |
-| R9  | rca file/function thresholds exceeded if loading logic crowds `SubmitControls`/`UIButton`.                                                                                                           | Keep additions small and, if needed, extract a helper into its own file per the per-file function cap (NFR3).                                                                                                                                                                                                     |
-| R10 | The `:focus-visible` rule stays collapsed into `:hover` (`#00A3FF`, `boxShadow: 'none'` ⇒ ~1.18:1), leaving the idle/re-enabled button with no visible focus (WCAG 2.4.7/2.4.11).                    | AR5: split `:focus-visible` out of `:hover` and apply `outline: '2px solid #404142'` + `outlineOffset: '2px'` outside the fill (≥3:1 on fill and white page); not removed by `boxShadow: 'none'`. AC13 unit-tests the focus style.                                                                                |
+| ID  | Risk                                                                                                                                                                                    | Mitigation                                                                                                                                                                                                                                                                                                                                          |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R1  | The loading button fails to match the Figma grey design if a stray brand-fill override is added on the loading state.                                                                   | Add **no** loading-fill override: let the native `loading`-driven `disabled` reuse the existing `&:disabled` grey `#E1E7EA` rule; add a unit test asserting the fill is `#E1E7EA` while loading (AC3).                                                                                                                                              |
+| R2  | The loading-disabled and ordinary validation-disabled states get conflated in a way that changes the real disabled style.                                                               | Both states intentionally share the same grey `#E1E7EA` `:disabled` rule (matching the design); add nothing loading-specific, so the plain validation-disabled state is untouched.                                                                                                                                                                  |
+| R3  | Spinner contrast stays below 3:1 if a white stroke is used on the grey `#E1E7EA` fill (white on `#E1E7EA` is 1.26:1, rejected as failing the 3:1 floor for a thin anti-aliased stroke). | FR4/AR2 keep the grey `#E1E7EA` disabled fill (matching the design) **and** mandate a dark `#404142` (`customColors.text.primary`) stroke at `thickness={4.5}` / `size={28}`: `#404142` on `#E1E7EA` is 8.12:1, clearing 1.4.11 with a wide margin; the UX doc records the dark-stroke contrast math. AC3 unit-tests the indicator color and props. |
+| R4  | Forced reduced motion in the visual harness causes snapshot flake from the continuous spin.                                                                                             | NFR8/AC7: set `animation: none` under `prefers-reduced-motion: reduce`.                                                                                                                                                                                                                                                                             |
+| R5  | Focus loss to `<body>` when the focused button becomes disabled, stranding keyboard/SR users at `<body>` after the error round-trip (AR5).                                              | The polite live region announces busy state; on the registration error path move focus to the `RegistrationNotificationPanel` heading/error text (`tabIndex={-1}`, focus on mount), and keep the existing login `ErrorBanner` focus-move path per AR5 (AC14); success-path focus belongs to the destination view.                                   |
+| R6  | A nameless or mislabeled spinner-only button (WCAG 4.1.2 failure) if children are swapped to empty or to the "submitting" string, or a competing name on the indicator.                 | FR10/FR11/AR1: keep the stable `submit_button` label as children (MUI hides it visually), remove the `getSubmitLabelKey` swap, and drop any `aria-label` on the indicator; AC5 asserts the accessible name equals `submit_button` exactly with no progressbar name.                                                                                 |
+| R7  | A second live region, a bare `aria-live` span, or a `role="progressbar"` announcement duplicates or weakens the polite message.                                                         | FR7/AR3: exactly one polite live region via `UILiveStatus` (`role="status"` + `aria-atomic="true"`); no bare `aria-live` span and no extra progressbar announcement wired (AC12).                                                                                                                                                                   |
+| R8  | Shared style/markup duplicated across the two forms trips jscpd.                                                                                                                        | Both forms already route through shared `UIForm`/`SubmitControls`; keep the loading logic centralized there (NFR2).                                                                                                                                                                                                                                 |
+| R9  | rca file/function thresholds exceeded if loading logic crowds `SubmitControls`/`UIButton`.                                                                                              | Keep additions small and, if needed, extract a helper into its own file per the per-file function cap (NFR3).                                                                                                                                                                                                                                       |
+| R10 | The `:focus-visible` rule stays collapsed into `:hover` (`#00A3FF`, `boxShadow: 'none'` ⇒ ~1.18:1), leaving the idle/re-enabled button with no visible focus (WCAG 2.4.7/2.4.11).       | AR5: split `:focus-visible` out of `:hover` and apply `outline: '2px solid #404142'` + `outlineOffset: '2px'` outside the `#1EAEFF` idle fill (≥3:1 on fill and white page); not removed by `boxShadow: 'none'`. AC13 unit-tests the focus style.                                                                                                   |
 
 ## Success Metrics
 
@@ -421,12 +449,15 @@ Each criterion is testable and traceable to the requirement IDs above.
   focus outline; the registration error path moves focus to the notification
   heading/error text rather than stranding at `<body>`, and the login `ErrorBanner`
   focus-move path is preserved (NFR7, AR1-AR5, AC3-AC5, AC12-AC14).
-- **Contrast:** white on the idle `#1EAEFF` fill is 2.46:1; the loading fill is
-  `#0399ED` and the spinner is drawn in dark `#404142` (`customColors.text.primary`,
-  `thickness={4.5}` / `size={28}`) for a 4.67:1 dark-on-`#0399ED` non-text contrast
-  that clears 1.4.11; the focus outline (`#404142`) is ~4.67:1 on `#0399ED` and ~9:1
-  on white; the label is never white-on-grey (WCAG 1.4.3/1.4.11 pass). The rejected
-  white-on-`#0399ED` 3.10:1 option is not the conformance basis.
+- **Contrast:** the loading button uses the native disabled grey `#E1E7EA` fill
+  (matching the Figma design) and the spinner is drawn in dark `#404142`
+  (`customColors.text.primary`, `thickness={4.5}` / `size={28}`) for an 8.12:1
+  dark-on-`#E1E7EA` non-text contrast that clears 1.4.11 with a wide margin; the
+  rejected white-on-`#E1E7EA` 1.26:1 option is not the conformance basis; the focus
+  outline (`#404142`) is ~8.12:1 on the grey `#E1E7EA` fill, ~4.17:1 on the
+  `#1EAEFF` idle fill, and ~10.22:1 on white; the busy button's label is hidden, so
+  the white-on-grey label ratio (1.26:1, pre-existing, out of scope) does not apply
+  to it (WCAG 1.4.3/1.4.11 pass).
 - **Gate health:** Lighthouse CI ≥ ~0.85, `make lint-dup` / `make lint-metrics` /
   ESLint / TS green with no suppressions, i18n en+uk in sync with no JSON edits,
   100% integration coverage retained, no surviving Stryker mutant on the new

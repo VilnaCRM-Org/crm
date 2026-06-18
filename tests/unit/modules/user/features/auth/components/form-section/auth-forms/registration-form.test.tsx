@@ -46,25 +46,28 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
+const mockUIForm = jest.fn();
+
 jest.mock('@/components/ui-form', () => ({
   __esModule: true,
-  default: ({
-    children,
-    isSubmitDisabled,
-    isSubmitting,
-  }: {
+  default: (props: {
     children: ReactNode;
     isSubmitDisabled?: boolean;
     isSubmitting?: boolean;
-  }): ReactElement => (
-    <form
-      data-testid="ui-form"
-      data-disabled={String(Boolean(isSubmitDisabled))}
-      data-submitting={String(Boolean(isSubmitting))}
-    >
-      {children}
-    </form>
-  ),
+    submitLabel?: string;
+    submittingLabel?: string;
+  }): ReactElement => {
+    mockUIForm(props);
+    return (
+      <form
+        data-testid="ui-form"
+        data-disabled={String(Boolean(props.isSubmitDisabled))}
+        data-submitting={String(Boolean(props.isSubmitting))}
+      >
+        {props.children}
+      </form>
+    );
+  },
 }));
 
 jest.mock('@auth/components/form-section/inert-box', () => ({
@@ -83,10 +86,22 @@ jest.mock('@auth/components/form-section/auth-forms/registration-form-fields', (
 
 describe('RegistrationForm', () => {
   beforeEach(() => {
+    mockUIForm.mockClear();
     mockFormState.view = 'form';
     mockFormState.errorText = '';
     mockFormState.isSubmitting = false;
     mockFormState.formKey = 0;
+  });
+
+  it('passes the stable submit and submitting labels to the form', () => {
+    render(<RegistrationForm />);
+
+    expect(mockUIForm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        submitLabel: 'sign_up.form.submit_button',
+        submittingLabel: 'sign_up.form.submitting',
+      })
+    );
   });
 
   it('renders the form panel and no notification when on form view', () => {

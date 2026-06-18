@@ -18,7 +18,7 @@ describe('UIForm', () => {
         title="My Title"
         subtitle="My Subtitle"
       >
-        <input name="name" data-testid="name-input" defaultValue="Alice" />
+        <input name="name" aria-label="name" defaultValue="Alice" />
       </UIForm>
     );
 
@@ -144,6 +144,77 @@ describe('UIForm', () => {
     expect(within(button).getAllByRole('progressbar', { hidden: true })).toHaveLength(1);
     expect(screen.getAllByRole('progressbar', { hidden: true })).toHaveLength(1);
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('does not re-invoke the submit handler while a submit is already in flight', async () => {
+    let resolveSubmit!: () => void;
+    const onSubmit = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSubmit = resolve;
+        })
+    );
+
+    render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={onSubmit}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+      >
+        <span />
+      </UIForm>
+    );
+
+    const button = screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement;
+    fireEvent.click(button);
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+    expect(button).toBeDisabled();
+    expect(button.form).toHaveAttribute('aria-busy', 'true');
+
+    fireEvent.click(button);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    resolveSubmit();
+    await waitFor(() => expect(button).toBeEnabled());
+  });
+
+  it('keeps the accessible name the submit label with an unnamed spinner idle and loading', () => {
+    const { rerender } = render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+        isSubmitting={false}
+      >
+        <span />
+      </UIForm>
+    );
+
+    expect(screen.getByRole('button', { name: 'Submit' })).toHaveAccessibleName('Submit');
+
+    rerender(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+        isSubmitting
+      >
+        <span />
+      </UIForm>
+    );
+
+    const button = screen.getByRole('button', { name: 'Submit' });
+    expect(button).toHaveAccessibleName('Submit');
+    expect(button).not.toHaveAccessibleName('Submitting…');
+    const spinner = within(button).getByRole('progressbar', { hidden: true });
+    expect(spinner).not.toHaveAccessibleName();
   });
 
   it('announces the submitting label through one polite live region while submitting', () => {

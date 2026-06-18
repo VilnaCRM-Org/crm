@@ -15,13 +15,8 @@ const reducedMotionQuery = '@media (prefers-reduced-motion: reduce)';
 const svgSelector = `& .${circularProgressClasses.svg}`;
 
 describe('ui-button contained theme', () => {
-  it('keeps the brand fill and white label while loading', () => {
-    const loadingRule = getContained()[`&.${buttonClasses.loading}`] as CssBlock;
-
-    expect(loadingRule.backgroundColor).toBe(paletteColors.primary.active);
-    expect(loadingRule.backgroundColor).toBe('#0399ED');
-    expect(loadingRule.color).toBe(paletteColors.background.default);
-    expect(loadingRule.color).toBe('#FFFFFF');
+  it('shows the disabled grey while loading (no brand-fill loading override)', () => {
+    expect(getContained()[`&.${buttonClasses.loading}`]).toBeUndefined();
   });
 
   it('keeps the validation-disabled grey scoped to the disabled rule only', () => {
@@ -50,9 +45,7 @@ describe('ui-button contained theme', () => {
     const svgRule = reducedMotion[svgSelector] as CssBlock;
 
     expect(svgRule.animation).toBe('none');
-
-    const loadingRule = contained[`&.${buttonClasses.loading}`] as CssBlock;
-    expect(loadingRule[svgSelector]).toBeUndefined();
+    expect(contained[svgSelector]).toBeUndefined();
   });
 
   it('preserves the pill geometry', () => {

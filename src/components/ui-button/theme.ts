@@ -1,5 +1,4 @@
 import { createTheme } from '@mui/material';
-import { buttonClasses } from '@mui/material/Button';
 import { circularProgressClasses } from '@mui/material/CircularProgress';
 
 import breakpointsTheme from '@/components/ui-breakpoints';
@@ -35,10 +34,6 @@ export default createTheme({
           },
           '&:disabled': {
             backgroundColor: paletteColors.background.subtle,
-            color: paletteColors.background.default,
-          },
-          [`&.${buttonClasses.loading}`]: {
-            backgroundColor: paletteColors.primary.active,
             color: paletteColors.background.default,
           },
           [`@media (prefers-reduced-motion: reduce)`]: {

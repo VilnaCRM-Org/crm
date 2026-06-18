@@ -85,6 +85,10 @@ Pair them — invoke the skill for the fix, run the agent for the review.
 
 ## New Feature / Significant Change Verification Gate
 
+**Before implementing any user-visible part**, run
+[figma-design-check](figma-design-check/SKILL.md) to confirm the planned UI matches the
+Figma design (via the Figma MCP); ask for the Figma reference if none is known.
+
 If the change introduces a new feature, route, component family, telemetry
 signal, schema, or other user-facing behavior, run **every** skill below
 after implementation:
@@ -130,6 +134,7 @@ What are you trying to do?
 │   └─ CI readiness before commit/push/PR → ci-workflow
 │
 ├─ Create something new
+│   ├─ ANY UI / visual change (color, layout, state, styling) → figma-design-check (Figma MCP) FIRST
 │   ├─ React component, hook, form, feature UI → frontend-component-development
 │   ├─ Module / file placement and naming → code-organization
 │   ├─ New feature, repository, or service boundary → architecture
@@ -202,6 +207,12 @@ explains environment selection (`TEST_ENV=client` vs `server`).
 ---
 
 ### "I am building or changing a React component, hook, or feature UI"
+
+**FIRST (before any visual change)**:
+[figma-design-check](figma-design-check/SKILL.md) — verify the planned change matches
+the Figma design via the Figma MCP. If the change alters anything the user sees
+(color, layout, spacing, typography, sizing, or an interaction state), run this gate
+before writing or editing the UI code; ask for the Figma reference if none is known.
 
 **Use**: [frontend-component-development](frontend-component-development/SKILL.md).
 

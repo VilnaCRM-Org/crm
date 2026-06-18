@@ -36,8 +36,9 @@ announcement, and no morph/enter-exit motion.
 The change is centralized: both auth forms route through shared
 `UIForm` → `FormBody` → `SubmitControls`
 (`src/components/ui-form/index.tsx`), so the busy behavior is implemented once and
-inherited by login and registration. The brand-fill fix is a theme override keyed
-on `buttonClasses.loading`; the accessible busy state is `aria-busy` on the
+inherited by login and registration. The loading button uses the native disabled
+grey `#E1E7EA` — matching the Figma design (node 439:19256, a grey `#E1E7EA` pill) —
+with no brand-fill override; the accessible busy state is `aria-busy` on the
 `<form>` plus exactly one polite live region carrying the localized `submitting`
 string.
 
@@ -49,11 +50,12 @@ and referenced verbatim here for traceability.
 **Epic goal.** Replace the detached `size={70}` `CircularProgress` plus grey
 disabled button in shared `UIForm` with MUI v7's native
 `@mui/material/Button` loading API (`loading` + `loadingPosition="center"` +
-`loadingIndicator`), keeping the brand `#1EAEFF`/`#0399ED` contained fill, hiding
-the label visually while preserving the accessible name, drawing a conformant
-focus indicator, removing the layout shift, and exposing the busy state via
-`aria-busy` and a single polite announcement — all within existing repo gates
-with no new dependency and no suppressions.
+`loadingIndicator`), letting the native loading state grey the button to the
+disabled `#E1E7EA` fill (matching the Figma design, node 439:19256), hiding the
+label visually while preserving the accessible name, drawing a conformant focus
+indicator, removing the layout shift, and exposing the busy state via `aria-busy`
+and a single polite announcement — all within existing repo gates with no new
+dependency and no suppressions.
 
 **Epic scope.** The submit button of the login
 (`.../auth-forms/login-form.tsx`) and registration
@@ -71,74 +73,79 @@ no `data-testid`, and no new inline code comments.
 
 ---
 
-### Story 1.1: Brand fill, conformant focus indicator, and reduced-motion guard via theme override
+### Story 1.1: Conformant focus indicator and reduced-motion guard via theme override
 
 **User story.** As a user submitting an auth form, I want the submit button to
-stay brand blue while it works (not turn grey) and to show a clearly visible focus
-ring when I tab to it, so the busy state reads as "working", the spinner has enough
-contrast to be perceivable, and the keyboard focus is never lost.
+show the same grey disabled appearance while it works (matching the design) and to
+show a clearly visible focus ring when I tab to it, so the busy state reads as
+"disabled / working", the spinner has enough contrast to be perceivable, and the
+keyboard focus is never lost.
 
-**Description.** Three theme fixes land together because they all live in
-`src/components/ui-button/theme.ts` and they all touch the same contained-button
+**Description.** Two theme fixes land together because they both live in
+`src/components/ui-button/theme.ts` and they both touch the same contained-button
 rule set:
 
-1. **Loading fill.** The native loading button is natively `disabled`, so the
-   existing `MuiButton.styleOverrides.contained['&:disabled']` rule
-   (`backgroundColor: paletteColors.background.subtle` `#E1E7EA`,
-   `color: background.default` `#FFFFFF`) fires today and renders white-on-grey
-   (~1.2:1). Add a loading-scoped override keyed on the imported
-   `buttonClasses.loading` so the `.MuiButton-contained.MuiButton-loading` selector
-   (two classes) outranks `.MuiButton-contained:disabled` (single pseudo) without
-   weakening the ordinary validation-disabled grey. The loading fill becomes the
-   darker active brand blue `#0399ED` (`paletteColors.primary.active`). The label
-   stays white (`background.default`); the spinner stroke is dark (Story 1.3), so
-   the spinner clears 1.4.11 on its own (`#404142` on `#0399ED` = 4.67:1).
+1. **Loading fill = the disabled grey.** The native loading button is natively
+   `disabled`, so the existing `MuiButton.styleOverrides.contained['&:disabled']`
+   rule (`backgroundColor: paletteColors.background.subtle` `#E1E7EA`,
+   `color: background.default` `#FFFFFF`) fires today and is exactly what we want:
+   the loading button shows the grey `#E1E7EA` pill from the Figma design (node
+   439:19256). There is NO loading-scoped fill override — the previous
+   `buttonClasses.loading` rule that set the fill to `#1EAEFF`/`#0399ED` was
+   REMOVED, along with its `buttonClasses` fill import. The label stays white
+   (`background.default`) but is hidden during loading via `loadingPosition="center"`
+   (`visibility: hidden`, Story 1.5), so the white-on-grey label contrast does not
+   apply to the busy state. The spinner stroke is dark (Story 1.3), so the spinner
+   clears 1.4.11 on its own (`#404142` on `#E1E7EA` = 8.12:1).
 2. **Focus indicator (in scope).** Today `:focus-visible` is collapsed into the
    shared `:hover` rule, which shifts to `#00A3FF` with `boxShadow: 'none'` —
-   `#00A3FF` on `#1EAEFF` is only ~1.18:1, i.e. effectively no visible focus ring.
-   Split `:focus-visible` OUT of the `:hover` rule and give it a distinct,
-   conformant indicator: `outline: '2px solid #404142'` + `outlineOffset: '2px'`,
-   drawn OUTSIDE the fill so it clears ≥3:1 against BOTH the `#1EAEFF`/`#0399ED`
-   fill (`#404142` is ~4.67:1 on `#0399ED`) and the white page (`#404142` is ~9:1
-   on white). The outline MUST NOT be cancelled by `boxShadow: 'none'`. This
-   feature touches this exact control and asserts NFR7/AR5, so it owns the fix;
-   there is no "pre-existing / out of scope" deferral.
+   `#00A3FF` on the surrounding fill is only ~1.18:1, i.e. effectively no visible
+   focus ring. Split `:focus-visible` OUT of the `:hover` rule and give it a
+   distinct, conformant indicator: `outline: '2px solid #404142'` +
+   `outlineOffset: '2px'`, drawn OUTSIDE the fill so it clears ≥3:1 against BOTH the
+   `#E1E7EA` loading/disabled fill (`#404142` is 8.12:1 on `#E1E7EA`) and the white
+   page (`#404142` is 10.22:1 on white). The outline MUST NOT be cancelled by
+   `boxShadow: 'none'`. This feature touches this exact control and asserts
+   NFR7/AR5, so it owns the fix; there is no "pre-existing / out of scope" deferral.
 3. **Reduced-motion guard.** Add a nested `@media (prefers-reduced-motion: reduce)`
    block under the loading selector that sets `animation: 'none'` on the indicator
    SVG (via the imported `circularProgressClasses.svg`).
 
-Geometry (`57px` radius, padding) is untouched. This story is theme-only: static
-object literals, no new function, no consumer wiring yet.
+Geometry (`57px` radius, padding) is untouched. The idle/enabled contained fill
+keeps its existing brand `#1EAEFF` (`paletteColors.primary.main`); the `:active`
+(pressed) state keeps its existing `#0399ED` (`paletteColors.primary.active`) fill,
+unchanged. This story is theme-only: static object literals, no new function, no
+consumer wiring yet.
 
 **Acceptance Criteria.**
 
-- Given the auth theme, When the submit button carries `buttonClasses.loading`,
-  Then its computed `background-color` is `#0399ED` and its label `color` is
-  `#FFFFFF`, Then the `&:disabled` grey rule is overridden by specificity (FR4,
+- Given the auth theme, When the submit button is natively `disabled` (loading),
+  Then its computed `background-color` is the grey `#E1E7EA` (matching the design)
+  via the existing `&:disabled` rule and no brand-fill override is applied (FR4,
   AR2, AC3).
 - Given a form that is invalid (validation-disabled, not loading), When the button
-  is rendered, Then it still shows the existing grey `#E1E7EA` (the override is
-  scoped to the loading class only) (FR4, R2).
+  is rendered, Then it shows the same grey `#E1E7EA` (the loading state reuses this
+  identical disabled rule; no override distinguishes them) (FR4, R2).
 - Given the button receives keyboard focus, When `:focus-visible` is computed, Then
   the rule is distinct from `:hover` and applies `outline: 2px solid #404142` with
   `outlineOffset: 2px`, and `boxShadow: 'none'` does not remove it; the indicator
-  clears ≥3:1 against the `#1EAEFF`/`#0399ED` fill and the white page (NFR7, AR5,
-  WCAG 2.4.7 Focus Visible, WCAG 2.4.11 Focus Appearance).
+  clears ≥3:1 against the `#E1E7EA` fill (8.12:1) and the white page (10.22:1)
+  (NFR7, AR5, WCAG 2.4.7 Focus Visible, WCAG 2.4.11 Focus Appearance).
 - Given `prefers-reduced-motion: reduce`, When the loading indicator renders, Then
   its SVG has `animation: none` (NFR8, AR6, AC7).
-- Given the override, When the button geometry is measured, Then `border-radius`
+- Given the change, When the button geometry is measured, Then `border-radius`
   stays `57px` and no dimension changes (FR8).
-- Given the change, When `buttonClasses` / `circularProgressClasses` are
-  referenced, Then they are imported (never hardcoded) and no suppression or inline
-  comment is added (NFR5, R1).
+- Given the change, When `circularProgressClasses` is referenced, Then it is
+  imported (never hardcoded) and no suppression or inline comment is added (NFR5,
+  R1).
 
 **Files touched.** `src/components/ui-button/theme.ts`.
 
 **Tests to add/update.** Unit (`tests/unit/components/ui-button.test.tsx` or a new
 sibling): render a contained MUI `Button loading` under the theme and assert the
-loading-class computed `backgroundColor` is `#0399ED` and label `color` white;
-assert the plain `:disabled` (no loading) path keeps `#E1E7EA`; assert
-`:focus-visible` is a separate rule that emits `outline: 2px solid #404142` /
+natively-disabled (loading) computed `backgroundColor` is the grey `#E1E7EA`;
+assert the plain `:disabled` (no loading) path also keeps `#E1E7EA` (same rule);
+assert `:focus-visible` is a separate rule that emits `outline: 2px solid #404142` /
 `outlineOffset: 2px` and is not erased by `boxShadow: 'none'`; assert the
 reduced-motion media rule is **conditional** — `animation: none` is emitted only
 under `prefers-reduced-motion: reduce` and is absent without it. Assert exact color
@@ -187,8 +194,8 @@ so a future refactor of the clone/anchor logic cannot silently drop the props.
 loading props pass through to the inner button; assert the anchor branch is
 unaffected. Locate elements via `getByRole` (NFR4).
 
-**Dependencies.** 1.1 (the loading class the test observes is styled there; the
-pass-through test can co-assert the fill).
+**Dependencies.** 1.1 (the disabled/loading state the test observes is styled there;
+the pass-through test can co-assert the grey fill).
 
 **Definition of Done.** Pass-through tests green; no `UIButton` signature change;
 ESLint/TS/metrics pass; no `data-testid`.
@@ -198,30 +205,31 @@ ESLint/TS/metrics pass; no `data-testid`.
 ### Story 1.3: Extract the dark in-button spinner (`SubmitSpinner`)
 
 **User story.** As a user, I want a single centered spinner inside the submit
-button while it works, with enough contrast against the blue fill to be clearly
-perceivable, so the busy state is visible without any element appearing below the
-button.
+button while it works, with enough contrast against the grey disabled fill to be
+clearly perceivable, so the busy state is visible without any element appearing
+below the button.
 
 **Description.** Add a tiny new component file
 `src/components/ui-form/submit-spinner.tsx`:
 `SubmitSpinner()` returns
 `<CircularProgress sx={{ color: customColors.text.primary }} thickness={4.5} size={28} />`.
 The stroke color is the dark `#404142` (`customColors.text.primary` — it lives in
-`customColors.text`, NOT `paletteColors`), which on the `#0399ED` loading fill from
-1.1 measures 4.67:1, comfortably clearing WCAG 1.4.11 (3:1). The spinner MUST NOT
-be white and MUST NOT use `color="inherit"`; the white-on-`#0399ED` option (3.10:1)
-is rejected as too marginal for a thin anti-aliased stroke. `thickness={4.5}` and
-`size={28}` give a prominent ring inside the fixed box without leaving it. The
-spinner carries NO accessible name: it does not take a `label`/`aria-label` prop and
-does not expose a labelled progressbar — the button's accessible name comes from its
-stable `submit_button` children (Story 1.7), and the `submitting` string is used
-only by the live region (Story 1.6). The spinner is its own file so
-`ui-form/index.tsx` stays under the per-file ≤10 functions/closures cap (NFR3). No
-spinner motion override lives here (reduced motion is handled by the theme, 1.1).
+`customColors.text`, NOT `paletteColors`), which on the `#E1E7EA` grey loading fill
+from 1.1 measures 8.12:1, comfortably clearing WCAG 1.4.11 (3:1). The spinner MUST
+NOT be white and MUST NOT use `color="inherit"`; a white spinner on `#E1E7EA` is
+only 1.26:1 (fails 1.4.11), so the dark `#404142` stroke is the correct choice and
+is even better on the grey fill. `thickness={4.5}` and `size={28}` give a prominent
+ring inside the fixed box without leaving it. The spinner carries NO accessible
+name: it does not take a `label`/`aria-label` prop and does not expose a labelled
+progressbar — the button's accessible name comes from its stable `submit_button`
+children (Story 1.7), and the `submitting` string is used only by the live region
+(Story 1.6). The spinner is its own file so `ui-form/index.tsx` stays under the
+per-file ≤10 functions/closures cap (NFR3). No spinner motion override lives here
+(reduced motion is handled by the theme, 1.1).
 
 The spinner is built to pass 1.4.11 on its own AND is supplementary: busy is also
-conveyed by `aria-busy`, the native `disabled` state, the fill shift, and the live
-region. Belt-and-suspenders, not "decorative-and-excused."
+conveyed by `aria-busy`, the native `disabled` state, and the live region.
+Belt-and-suspenders, not "decorative-and-excused."
 
 **Acceptance Criteria.**
 
@@ -299,8 +307,8 @@ no suppression/`data-testid`/inline comment.
 ### Story 1.5: Refactor `SubmitControls` to native loading and remove the detached spinner
 
 **User story.** As a user, I want the busy state shown inside the same submit
-button (label hidden, centered spinner) instead of a spinner dropping in below it,
-so the form does not shift while submitting.
+button (label hidden, centered spinner, grey disabled fill) instead of a spinner
+dropping in below it, so the form does not shift while submitting.
 
 **Description.** Rewrite `SubmitControls` (`ui-form/index.tsx` lines 101-119): set
 `loading={submitting}` (a real boolean so MUI's loading wrapper stays stably mounted
@@ -352,8 +360,8 @@ stable accessible name equal to `submit_button`. Update any test asserting the o
 detached spinner or the `submitting` child text. Exact-string assertions for
 mutation hardening (AC11).
 
-**Dependencies.** 1.1 (fill), 1.3 (`SubmitSpinner`); precedes 1.6 (same file); lands
-in the same change set as 1.7 (required `submittingLabel`).
+**Dependencies.** 1.1 (disabled/loading fill), 1.3 (`SubmitSpinner`); precedes 1.6
+(same file); lands in the same change set as 1.7 (required `submittingLabel`).
 
 **Definition of Done.** `SubmitControls` rewritten; detached spinner and
 `styles.loader` removed; unit tests green; metrics/jscpd/ESLint/TS pass; no
@@ -490,12 +498,12 @@ mutants on the fill, focus outline, key choice, and `aria-busy` value are killed
 
 **Description.** Consolidate and complete the unit/integration suite so every new
 branch is exercised for **both** forms: loading vs idle, `aria-busy` true/false,
-`submitting ? submittingLabel : ''`, the `#0399ED` loading fill vs the `#E1E7EA`
-validation-disabled grey, the `#404142` focus outline vs `:hover`, the `#404142`
-spinner stroke, and the stable `submit_button` accessible name while loading. Add
-the double-submit assertion: while `submitting`, a second submit attempt does not
-re-invoke the handler (FR9). Add a `jest-axe` check confirming no duplicate live
-region and no name/role/value violation (AC5). Assertions use exact
+`submitting ? submittingLabel : ''`, the `#E1E7EA` grey disabled/loading fill (the
+same rule covers idle-invalid and loading), the `#404142` focus outline vs `:hover`,
+the `#404142` spinner stroke, and the stable `submit_button` accessible name while
+loading. Add the double-submit assertion: while `submitting`, a second submit attempt
+does not re-invoke the handler (FR9). Add a `jest-axe` check confirming no duplicate
+live region and no name/role/value violation (AC5). Assertions use exact
 strings/attributes (not truthiness) so Stryker mutants on the fill color, the focus
 outline, the spinner stroke, the `submit_button` vs `submitting` key, and the
 `aria-busy` value are caught (NFR9/AC11). The new `submit-spinner.tsx` and
@@ -549,9 +557,10 @@ time regardless of `prefers-reduced-motion`, so this helper can only ever snapsh
 frozen frame — a "prove the spinner spins" snapshot through anything resembling it
 is not achievable. Use this path for what it is good at: capture idle-vs-submitting
 baselines for the auth form and assert identical form height and button box (zero
-shift) and the `#0399ED` fill (FR8, AC6, AC7). (2) **Reduced-motion guard is
-conditional (non-visual).** Replace the previously-proposed "prove it spins via
-snapshot" case with a unit/DOM assertion (covered in 1.1's tests) that the theme's
+shift) and the grey `#E1E7EA` disabled/loading fill (FR8, AC6, AC7).
+(2) **Reduced-motion guard is conditional (non-visual).** Replace the
+previously-proposed "prove it spins via snapshot" case with a unit/DOM assertion
+(covered in 1.1's tests) that the theme's
 `@media (prefers-reduced-motion: reduce)` rule emits `animation: none` on the
 indicator SVG **only** under reduced motion and is **absent** without it — proving
 the guard is conditional rather than blanket, with no dependency on a bespoke
@@ -564,7 +573,7 @@ Snapshot file names for case (1) follow the existing
 
 - Given the forced-reduced-motion harness, When idle and submitting snapshots are
   compared, Then form height and button box are identical (zero shift) and the
-  loading fill is `#0399ED` (FR8, AC6).
+  loading fill is the grey `#E1E7EA` (matching the design) (FR8, AC6).
 - Given forced reduced motion, When the loading state is captured, Then the
   indicator is a static ring and the snapshot is stable (no spin flake) (NFR8, AR6,
   AC7, R4).
@@ -574,7 +583,7 @@ Snapshot file names for case (1) follow the existing
   confirming the guard is conditional, not unconditional (NFR8, AR6).
 
 **Files touched.** A new/extended visual spec under `tests/visual/...` for the
-zero-shift + `#0399ED` baselines (preserving the existing `-{projectName}-` snapshot
+zero-shift + `#E1E7EA` baselines (preserving the existing `-{projectName}-` snapshot
 convention); baseline PNGs. The conditional-guard assertion lives in the theme unit
 test (Story 1.1) — no new visual project is added for it.
 
@@ -655,13 +664,14 @@ reintroduce a detached spinner or the deleted loader family.
 
 **Description.** Update the "Important Patterns" → loader note in
 `/home/dima/Desktop/crm/CLAUDE.md` to describe the **live** treatment: the auth
-submit button uses MUI native `loading` + `loadingPosition="center"`, keeps the
-brand contained fill shifting to `#0399ED` while loading (not the grey disabled
-state), draws a distinct conformant `:focus-visible` outline, hides the label
-visually while preserving the accessible name, renders one dark `#404142` centered
-`SubmitSpinner` (thickness 4.5, size 28, 4.67:1 — not white), carries `aria-busy` on
-the `<form>`, and announces via one polite `UILiveStatus` (`role="status"`) — with
-no `role="progressbar"`, no detached spinner, and no L1-L5 loader family. Rationale
+submit button uses MUI native `loading` + `loadingPosition="center"`, goes natively
+`disabled` to the grey `#E1E7EA` fill while loading (the same disabled state shown
+in the design, node 439:19256, not a brand-fill override), draws a distinct
+conformant `:focus-visible` outline, hides the label visually while preserving the
+accessible name, renders one dark `#404142` centered `SubmitSpinner` (thickness 4.5,
+size 28, 8.12:1 on the grey fill — not white), carries `aria-busy` on the `<form>`,
+and announces via one polite `UILiveStatus` (`role="status"`) — with no
+`role="progressbar"`, no detached spinner, and no L1-L5 loader family. Rationale
 lives here and in the PR (no inline code comments — NFR5). Then run the full gate
 sweep: `make format` then `make lint` (ESLint, tsc, `make lint-dup`,
 `make lint-metrics`), unit + integration, visual + e2e, and confirm the Lighthouse
@@ -670,9 +680,9 @@ CI gate (~0.85) — all green with no suppressions.
 **Acceptance Criteria.**
 
 - Given CLAUDE.md, When the loader note is read, Then it accurately describes the
-  in-button native loading treatment (dark spinner, focus outline, `role="status"`
-  announcement) and the out-of-scope items, and is markdownlint-clean (documentation
-  accuracy).
+  in-button native loading treatment (grey `#E1E7EA` disabled fill, dark spinner,
+  focus outline, `role="status"` announcement) and the out-of-scope items, and is
+  markdownlint-clean (documentation accuracy).
 - Given `make lint-dup`, `make lint-metrics`, ESLint, and TS, When run, Then all
   pass with no new suppressions, ignores, or inline code comments (NFR2, NFR3,
   NFR5, AC8).
@@ -701,8 +711,9 @@ Story 1.7 (which supplies it from both consumers and removes `getSubmitLabelKey`
 land in the **same change set** — the tree never compiles through a missing-label /
 nameless-spinner state:
 
-1. **1.1 Theme override** (loading fill + conformant `:focus-visible` outline +
-   reduced-motion guard) — foundation, no consumer wiring.
+1. **1.1 Theme override** (conformant `:focus-visible` outline + reduced-motion
+   guard; the loading button reuses the existing disabled grey, no fill override) —
+   foundation, no consumer wiring.
 2. **1.2 `UIButton` pass-through** — lock the props flow (test-only; depends on 1.1
    for the observed loading class).
 3. **1.3 `SubmitSpinner`** and **1.4 `UILiveStatus`** — independent new primitives,
@@ -732,44 +743,44 @@ Critical path: 1.1 → (1.5 + 1.7) → 1.6 → 1.8 → (1.9 ‖ 1.10) → 1.11. 
 
 Every requirement maps to the stories that satisfy it.
 
-| Req         | Statement (short)                                                     | Stories                  |
-| ----------- | --------------------------------------------------------------------- | ------------------------ |
-| FR1         | Hide visible label while submitting (visually)                        | 1.2, 1.5, 1.9            |
-| FR2         | Centered in-button spinner, none outside                              | 1.2, 1.3, 1.5            |
-| FR3         | Disabled / non-interactive while submitting                           | 1.2, 1.5, 1.10           |
-| FR4         | Keep brand fill (`#0399ED`), not grey, while loading                  | 1.1, 1.5                 |
-| FR5         | Remove detached `size={70}` spinner + `styles.loader`                 | 1.5                      |
-| FR6         | `aria-busy` on the `<form>`                                           | 1.6, 1.10                |
-| FR7         | Exactly one polite announcement (localized `submitting`)              | 1.4, 1.6, 1.7            |
-| FR8         | Zero layout shift idle↔submitting                                     | 1.1, 1.5, 1.9            |
-| FR9         | Double-submit guard via native disabled                               | 1.5, 1.8, 1.10           |
-| FR10        | Preserve accessible name (stable `submit_button`)                     | 1.5, 1.7, 1.8            |
-| NFR1        | Lighthouse ≥ ~0.85, no new heavy dep                                  | 1.4, 1.11                |
-| NFR2        | jscpd DRY gate (dedupe, no ignores)                                   | 1.5, 1.7, 1.11           |
-| NFR3        | rca metrics gate (per-file caps, complexity)                          | 1.1, 1.3, 1.4, 1.5, 1.11 |
-| NFR4        | No `data-testid`; semantic queries                                    | 1.2, 1.3, 1.4, 1.8, 1.10 |
-| NFR5        | No suppressions / no inline comments                                  | 1.1, 1.5, 1.7, 1.11      |
-| NFR6        | i18n parity en/uk; no hardcoded English                               | 1.7, 1.11                |
-| NFR7        | WCAG 1.4.3 / 1.4.11 / 4.1.2 / 4.1.3 / 2.4.7 / 2.4.11                  | 1.1, 1.3, 1.4, 1.6, 1.8  |
-| NFR8        | Reduced motion: `animation: none` (quality, not AA)                   | 1.1, 1.9                 |
-| NFR9        | 100% integration coverage + mutation health                           | 1.3, 1.4, 1.8            |
-| AR1         | Accessible name preserved (stable `submit_button`, no indicator name) | 1.3, 1.5, 1.7            |
-| AR2         | Spinner non-text contrast 4.67:1 (`#404142` on `#0399ED`)             | 1.1, 1.3                 |
-| AR3         | Single polite live region (`role="status"`, zero layout)              | 1.4, 1.6                 |
-| AR4         | Form busy state (`aria-busy`)                                         | 1.6                      |
-| AR5         | Focus indicator + error focus + re-enable path                        | 1.1, 1.10                |
-| AR6         | Reduced-motion conveyance                                             | 1.1, 1.9                 |
-| AC1         | One in-button indicator, no sibling spinner                           | 1.5, 1.8                 |
-| AC2         | Native disabled + no double submit                                    | 1.8, 1.10                |
-| AC3         | Loading fill `#0399ED`, white label, geometry kept                    | 1.1, 1.9                 |
-| AC4         | `aria-busy` true/false                                                | 1.6, 1.8                 |
-| AC5         | One polite region + exact accessible name                             | 1.6, 1.7, 1.8            |
-| AC6         | No layout shift (visual + CLS)                                        | 1.4, 1.9                 |
-| AC7         | Reduced-motion static ring, stable snapshot                           | 1.1, 1.9                 |
-| AC8         | Lint-dup / lint-metrics / ESLint / TS, no suppressions                | 1.11                     |
-| AC9         | i18n keys exist + in sync en/uk                                       | 1.7, 1.11                |
-| AC10        | Lighthouse CI ≥ ~0.85                                                 | 1.11                     |
-| AC11        | Integration 100% + mutation healthy                                   | 1.8                      |
-| WCAG 2.4.7  | Focus Visible — distinct `:focus-visible` outline                     | 1.1                      |
-| WCAG 2.4.11 | Focus Appearance — ≥3:1 focus indicator, not removed                  | 1.1                      |
-| WCAG 4.1.3  | Status Messages — `role="status"` busy announcement                   | 1.4, 1.6                 |
+| Req         | Statement (short)                                                                | Stories                  |
+| ----------- | -------------------------------------------------------------------------------- | ------------------------ |
+| FR1         | Hide visible label while submitting (visually)                                   | 1.2, 1.5, 1.9            |
+| FR2         | Centered in-button spinner, none outside                                         | 1.2, 1.3, 1.5            |
+| FR3         | Disabled / non-interactive while submitting                                      | 1.2, 1.5, 1.10           |
+| FR4         | Use the native disabled grey `#E1E7EA` while loading (no override)               | 1.1, 1.5                 |
+| FR5         | Remove detached `size={70}` spinner + `styles.loader`                            | 1.5                      |
+| FR6         | `aria-busy` on the `<form>`                                                      | 1.6, 1.10                |
+| FR7         | Exactly one polite announcement (localized `submitting`)                         | 1.4, 1.6, 1.7            |
+| FR8         | Zero layout shift idle↔submitting                                                | 1.1, 1.5, 1.9            |
+| FR9         | Double-submit guard via native disabled                                          | 1.5, 1.8, 1.10           |
+| FR10        | Preserve accessible name (stable `submit_button`)                                | 1.5, 1.7, 1.8            |
+| NFR1        | Lighthouse ≥ ~0.85, no new heavy dep                                             | 1.4, 1.11                |
+| NFR2        | jscpd DRY gate (dedupe, no ignores)                                              | 1.5, 1.7, 1.11           |
+| NFR3        | rca metrics gate (per-file caps, complexity)                                     | 1.1, 1.3, 1.4, 1.5, 1.11 |
+| NFR4        | No `data-testid`; semantic queries                                               | 1.2, 1.3, 1.4, 1.8, 1.10 |
+| NFR5        | No suppressions / no inline comments                                             | 1.1, 1.5, 1.7, 1.11      |
+| NFR6        | i18n parity en/uk; no hardcoded English                                          | 1.7, 1.11                |
+| NFR7        | WCAG 1.4.3 / 1.4.11 / 4.1.2 / 4.1.3 / 2.4.7 / 2.4.11                             | 1.1, 1.3, 1.4, 1.6, 1.8  |
+| NFR8        | Reduced motion: `animation: none` (quality, not AA)                              | 1.1, 1.9                 |
+| NFR9        | 100% integration coverage + mutation health                                      | 1.3, 1.4, 1.8            |
+| AR1         | Accessible name preserved (stable `submit_button`, no indicator name)            | 1.3, 1.5, 1.7            |
+| AR2         | Spinner non-text contrast 8.12:1 (`#404142` on `#E1E7EA`)                        | 1.1, 1.3                 |
+| AR3         | Single polite live region (`role="status"`, zero layout)                         | 1.4, 1.6                 |
+| AR4         | Form busy state (`aria-busy`)                                                    | 1.6                      |
+| AR5         | Focus indicator + error focus + re-enable path                                   | 1.1, 1.10                |
+| AR6         | Reduced-motion conveyance                                                        | 1.1, 1.9                 |
+| AC1         | One in-button indicator, no sibling spinner                                      | 1.5, 1.8                 |
+| AC2         | Native disabled + no double submit                                               | 1.8, 1.10                |
+| AC3         | Loading fill grey `#E1E7EA` (native disabled), white hidden label, geometry kept | 1.1, 1.9                 |
+| AC4         | `aria-busy` true/false                                                           | 1.6, 1.8                 |
+| AC5         | One polite region + exact accessible name                                        | 1.6, 1.7, 1.8            |
+| AC6         | No layout shift (visual + CLS)                                                   | 1.4, 1.9                 |
+| AC7         | Reduced-motion static ring, stable snapshot                                      | 1.1, 1.9                 |
+| AC8         | Lint-dup / lint-metrics / ESLint / TS, no suppressions                           | 1.11                     |
+| AC9         | i18n keys exist + in sync en/uk                                                  | 1.7, 1.11                |
+| AC10        | Lighthouse CI ≥ ~0.85                                                            | 1.11                     |
+| AC11        | Integration 100% + mutation healthy                                              | 1.8                      |
+| WCAG 2.4.7  | Focus Visible — distinct `:focus-visible` outline                                | 1.1                      |
+| WCAG 2.4.11 | Focus Appearance — ≥3:1 focus indicator, not removed                             | 1.1                      |
+| WCAG 4.1.3  | Status Messages — `role="status"` busy announcement                              | 1.4, 1.6                 |
