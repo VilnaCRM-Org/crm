@@ -1,7 +1,9 @@
 import { createTheme } from '@mui/material';
+import { buttonClasses } from '@mui/material/Button';
+import { circularProgressClasses } from '@mui/material/CircularProgress';
 
 import breakpointsTheme from '@/components/ui-breakpoints';
-import { paletteColors } from '@/styles/colors';
+import { customColors, paletteColors } from '@/styles/colors';
 
 const { lg } = breakpointsTheme.breakpoints.values;
 
@@ -17,9 +19,15 @@ export default createTheme({
           borderRadius: '57px',
           padding: '20px 32px',
 
-          '&:hover, &:focus-visible': {
+          '&:hover': {
             backgroundColor: paletteColors.primary.hover,
             boxShadow: 'none',
+          },
+          '&:focus-visible': {
+            backgroundColor: paletteColors.primary.hover,
+            boxShadow: 'none',
+            outline: `2px solid ${customColors.text.primary}`,
+            outlineOffset: '2px',
           },
           '&:active': {
             backgroundColor: paletteColors.primary.active,
@@ -28,6 +36,15 @@ export default createTheme({
           '&:disabled': {
             backgroundColor: paletteColors.background.subtle,
             color: paletteColors.background.default,
+          },
+          [`&.${buttonClasses.loading}`]: {
+            backgroundColor: paletteColors.primary.active,
+            color: paletteColors.background.default,
+          },
+          [`@media (prefers-reduced-motion: reduce)`]: {
+            [`& .${circularProgressClasses.svg}`]: {
+              animation: 'none',
+            },
           },
         },
         outlined: {

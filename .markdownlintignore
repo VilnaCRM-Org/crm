@@ -6,6 +6,7 @@ lighthouse
 .tmp
 _bmad
 _bmad-output
+**/planning-artifacts/
 build
 storybook-static
 lhci-reports-desktop
