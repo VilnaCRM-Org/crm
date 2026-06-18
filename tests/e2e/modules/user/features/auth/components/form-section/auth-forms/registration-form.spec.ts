@@ -107,6 +107,7 @@ test.describe('Registration Form loader behaviour', () => {
     const signupButton = await fillValidRegistration(page);
     await signupButton.click();
     await expect(signupButton).toBeDisabled();
+    await expect.poll(() => postCount).toBe(1);
     await signupButton.click({ force: true });
 
     expect(postCount).toBe(1);
