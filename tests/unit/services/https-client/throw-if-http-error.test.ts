@@ -1,5 +1,5 @@
 import { HttpError } from '@/services/https-client/http-error';
-import throwIfHttpError from '@/services/https-client/throw-if-http-error';
+import httpErrorThrower from '@/services/https-client/throw-if-http-error';
 
 interface ErrorCause {
   [key: string]: unknown;
@@ -66,7 +66,7 @@ const createMockResponse = (
 
 async function expectHttpError(response: Response): Promise<HttpError> {
   try {
-    await throwIfHttpError(response);
+    await httpErrorThrower.throwIfError(response);
   } catch (error) {
     expect(error).toBeInstanceOf(HttpError);
     return error as HttpError;
@@ -79,19 +79,19 @@ describe('throwIfHttpError', () => {
     it('should not throw for 200 OK', async () => {
       const response = createMockResponse(null, { status: 200 });
 
-      await expect(throwIfHttpError(response)).resolves.toBeUndefined();
+      await expect(httpErrorThrower.throwIfError(response)).resolves.toBeUndefined();
     });
 
     it('should not throw for 201 Created', async () => {
       const response = createMockResponse(null, { status: 201 });
 
-      await expect(throwIfHttpError(response)).resolves.toBeUndefined();
+      await expect(httpErrorThrower.throwIfError(response)).resolves.toBeUndefined();
     });
 
     it('should not throw for 204 No Content', async () => {
       const response = createMockResponse(null, { status: 204 });
 
-      await expect(throwIfHttpError(response)).resolves.toBeUndefined();
+      await expect(httpErrorThrower.throwIfError(response)).resolves.toBeUndefined();
     });
 
     it('should not throw for any 2xx status', async () => {
@@ -100,7 +100,7 @@ describe('throwIfHttpError', () => {
       await Promise.all(
         statuses.map(async (status) => {
           const response = createMockResponse(null, { status });
-          await expect(throwIfHttpError(response)).resolves.toBeUndefined();
+          await expect(httpErrorThrower.throwIfError(response)).resolves.toBeUndefined();
         })
       );
     });
@@ -113,7 +113,7 @@ describe('throwIfHttpError', () => {
         statusText: 'Bad Request',
       });
 
-      await expect(throwIfHttpError(response)).rejects.toThrow(HttpError);
+      await expect(httpErrorThrower.throwIfError(response)).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError for 401 Unauthorized', async () => {
@@ -122,7 +122,7 @@ describe('throwIfHttpError', () => {
         statusText: 'Unauthorized',
       });
 
-      await expect(throwIfHttpError(response)).rejects.toThrow(HttpError);
+      await expect(httpErrorThrower.throwIfError(response)).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError for 403 Forbidden', async () => {
@@ -131,7 +131,7 @@ describe('throwIfHttpError', () => {
         statusText: 'Forbidden',
       });
 
-      await expect(throwIfHttpError(response)).rejects.toThrow(HttpError);
+      await expect(httpErrorThrower.throwIfError(response)).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError for 404 Not Found', async () => {
@@ -140,7 +140,7 @@ describe('throwIfHttpError', () => {
         statusText: 'Not Found',
       });
 
-      await expect(throwIfHttpError(response)).rejects.toThrow(HttpError);
+      await expect(httpErrorThrower.throwIfError(response)).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError for 500 Internal Server Error', async () => {
@@ -149,7 +149,7 @@ describe('throwIfHttpError', () => {
         statusText: 'Internal Server Error',
       });
 
-      await expect(throwIfHttpError(response)).rejects.toThrow(HttpError);
+      await expect(httpErrorThrower.throwIfError(response)).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError for 502 Bad Gateway', async () => {
@@ -158,7 +158,7 @@ describe('throwIfHttpError', () => {
         statusText: 'Bad Gateway',
       });
 
-      await expect(throwIfHttpError(response)).rejects.toThrow(HttpError);
+      await expect(httpErrorThrower.throwIfError(response)).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError for 503 Service Unavailable', async () => {
@@ -167,7 +167,7 @@ describe('throwIfHttpError', () => {
         statusText: 'Service Unavailable',
       });
 
-      await expect(throwIfHttpError(response)).rejects.toThrow(HttpError);
+      await expect(httpErrorThrower.throwIfError(response)).rejects.toThrow(HttpError);
     });
   });
 
@@ -435,7 +435,7 @@ describe('throwIfHttpError', () => {
       await Promise.all(
         statuses.map(async (status) => {
           const response = createMockResponse(null, { status });
-          await expect(throwIfHttpError(response)).rejects.toThrow(HttpError);
+          await expect(httpErrorThrower.throwIfError(response)).rejects.toThrow(HttpError);
         })
       );
     });
@@ -446,7 +446,7 @@ describe('throwIfHttpError', () => {
       await Promise.all(
         statuses.map(async (status) => {
           const response = createMockResponse(null, { status });
-          await expect(throwIfHttpError(response)).rejects.toThrow(HttpError);
+          await expect(httpErrorThrower.throwIfError(response)).rejects.toThrow(HttpError);
         })
       );
     });
@@ -567,7 +567,7 @@ describe('throwIfHttpError', () => {
         }
       );
 
-      await expect(throwIfHttpError(response)).rejects.toMatchObject({
+      await expect(httpErrorThrower.throwIfError(response)).rejects.toMatchObject({
         cause: expect.objectContaining({ contentType: 'application/json' }),
       });
     });

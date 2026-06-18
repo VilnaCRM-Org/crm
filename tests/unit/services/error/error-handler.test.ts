@@ -2,6 +2,8 @@ import { ERROR_CODES } from '@/services/error/error-codes';
 import { ErrorHandler, UiError } from '@/services/error/error-handler';
 import ParsedError from '@/utils/error/types';
 
+const errorHandler = new ErrorHandler();
+
 describe('ErrorHandler', () => {
   describe('handleAuthError', () => {
     describe('recognized error codes', () => {
@@ -11,7 +13,7 @@ describe('ErrorHandler', () => {
           message: 'Authentication failed',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Invalid credentials',
@@ -25,7 +27,7 @@ describe('ErrorHandler', () => {
           message: 'Unauthorized',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Unauthorized',
@@ -39,7 +41,7 @@ describe('ErrorHandler', () => {
           message: 'Internal server error',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Internal server error',
@@ -53,7 +55,7 @@ describe('ErrorHandler', () => {
           message: 'JavaScript error occurred',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'JavaScript error occurred',
@@ -67,7 +69,7 @@ describe('ErrorHandler', () => {
           message: 'Unknown error',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'An unknown error occurred',
@@ -81,7 +83,7 @@ describe('ErrorHandler', () => {
           message: 'Service unavailable',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Service unavailable. Please try again later.',
@@ -97,7 +99,7 @@ describe('ErrorHandler', () => {
           message: 'Some error',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Something went wrong. Please try again.',
@@ -111,7 +113,7 @@ describe('ErrorHandler', () => {
           message: 'Error message',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Something went wrong. Please try again.',
@@ -125,7 +127,7 @@ describe('ErrorHandler', () => {
           message: 'Not found',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Something went wrong. Please try again.',
@@ -139,7 +141,7 @@ describe('ErrorHandler', () => {
           message: 'Bad request',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Something went wrong. Please try again.',
@@ -153,7 +155,7 @@ describe('ErrorHandler', () => {
           message: 'Custom error message',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Something went wrong. Please try again.',
@@ -169,7 +171,7 @@ describe('ErrorHandler', () => {
           message: 'Test',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toHaveProperty('displayMessage');
         expect(typeof result.displayMessage).toBe('string');
@@ -181,7 +183,7 @@ describe('ErrorHandler', () => {
           message: 'Test',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toHaveProperty('retryable');
         expect(typeof result.retryable).toBe('boolean');
@@ -198,7 +200,7 @@ describe('ErrorHandler', () => {
 
         errorCodes.forEach((code) => {
           const error: ParsedError = { code, message: 'Test' };
-          const result = ErrorHandler.handleAuthError(error);
+          const result = errorHandler.handleAuthError(error);
           expect(result.retryable).toBe(false);
         });
       });
@@ -213,7 +215,7 @@ describe('ErrorHandler', () => {
           original: originalError,
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Invalid credentials',
@@ -229,7 +231,7 @@ describe('ErrorHandler', () => {
           original,
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Unauthorized',
@@ -244,7 +246,7 @@ describe('ErrorHandler', () => {
           original: 'string error',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'JavaScript error occurred',
@@ -259,7 +261,7 @@ describe('ErrorHandler', () => {
           original: { status: 500, data: 'error' },
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Internal server error',
@@ -275,7 +277,7 @@ describe('ErrorHandler', () => {
           message: 'A'.repeat(10000),
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result.displayMessage).toBe('Invalid credentials');
       });
@@ -286,7 +288,7 @@ describe('ErrorHandler', () => {
           message: '',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result.displayMessage).toBe('Invalid credentials');
       });
@@ -297,7 +299,7 @@ describe('ErrorHandler', () => {
           message: 'Помилка автентифікації',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result.displayMessage).toBe('Invalid credentials');
       });
@@ -308,7 +310,7 @@ describe('ErrorHandler', () => {
           message: 'Error',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result.displayMessage).toBe('Something went wrong. Please try again.');
       });
@@ -319,7 +321,7 @@ describe('ErrorHandler', () => {
           message: 'Auth failed',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         // Should not match due to case sensitivity
         expect(result.displayMessage).toBe('Something went wrong. Please try again.');
@@ -333,8 +335,8 @@ describe('ErrorHandler', () => {
           message: 'Test',
         };
 
-        const result1 = ErrorHandler.handleAuthError(error);
-        const result2 = ErrorHandler.handleAuthError(error);
+        const result1 = errorHandler.handleAuthError(error);
+        const result2 = errorHandler.handleAuthError(error);
 
         expect(result1).toEqual(result2);
       });
@@ -345,7 +347,7 @@ describe('ErrorHandler', () => {
           message: 'Unauthorized',
         };
 
-        const results = Array.from({ length: 10 }, () => ErrorHandler.handleAuthError(error));
+        const results = Array.from({ length: 10 }, () => errorHandler.handleAuthError(error));
         const allSame = results.every(
           (result) =>
             result.displayMessage === results[0].displayMessage &&
@@ -364,7 +366,7 @@ describe('ErrorHandler', () => {
           original: new Error('Login failed'),
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Invalid credentials',
@@ -379,7 +381,7 @@ describe('ErrorHandler', () => {
           original: { status: 401, message: 'Token expired' },
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Unauthorized',
@@ -394,7 +396,7 @@ describe('ErrorHandler', () => {
           original: new Error('Connection timeout'),
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Internal server error',
@@ -409,7 +411,7 @@ describe('ErrorHandler', () => {
           original: new TypeError('Failed to fetch'),
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'JavaScript error occurred',
@@ -423,7 +425,7 @@ describe('ErrorHandler', () => {
           message: 'Something unexpected happened',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toEqual({
           displayMessage: 'Something went wrong. Please try again.',
@@ -439,7 +441,7 @@ describe('ErrorHandler', () => {
           message: 'Test',
         };
 
-        const result: UiError = ErrorHandler.handleAuthError(error);
+        const result: UiError = errorHandler.handleAuthError(error);
 
         expect(result).toBeDefined();
         expect(result.displayMessage).toBeDefined();
@@ -452,7 +454,7 @@ describe('ErrorHandler', () => {
           message: 'Test',
         };
 
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         // TypeScript enforces readonly at compile-time, not runtime
         expect(result.displayMessage).toBe('Invalid credentials');
@@ -470,7 +472,7 @@ describe('ErrorHandler', () => {
         };
 
         // Should work without creating ErrorHandler instance
-        const result = ErrorHandler.handleAuthError(error);
+        const result = errorHandler.handleAuthError(error);
 
         expect(result).toBeDefined();
       });
@@ -483,7 +485,7 @@ describe('ErrorHandler', () => {
 
         // Call directly on class
         expect(() => {
-          ErrorHandler.handleAuthError(error);
+          errorHandler.handleAuthError(error);
         }).not.toThrow();
       });
     });
@@ -500,7 +502,7 @@ describe('ErrorHandler', () => {
 
         testCases.forEach(([code, expectedMessage]) => {
           const error: ParsedError = { code, message: 'Test' };
-          const result = ErrorHandler.handleAuthError(error);
+          const result = errorHandler.handleAuthError(error);
           expect(result.displayMessage).toBe(expectedMessage);
           expect(result.retryable).toBe(false);
         });
@@ -513,69 +515,69 @@ describe('ErrorHandler', () => {
 
     beforeEach(() => {
       logger = { error: jest.fn() };
-      ErrorHandler.setLogger(undefined);
+      errorHandler.setLogger(undefined);
     });
 
     afterEach(() => {
-      ErrorHandler.setLogger(undefined);
+      errorHandler.setLogger(undefined);
     });
 
     it('logs errors through the configured logger', () => {
       const error = new Error('Test error');
-      ErrorHandler.setLogger(logger);
-      ErrorHandler.handle(error);
+      errorHandler.setLogger(logger);
+      errorHandler.handle(error);
 
       expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
     });
 
     it('logs unknown error types through the configured logger', () => {
       const unknownError = { message: 'Unknown error' };
-      ErrorHandler.setLogger(logger);
-      ErrorHandler.handle(unknownError);
+      errorHandler.setLogger(logger);
+      errorHandler.handle(unknownError);
 
       expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', unknownError);
     });
 
     it('logs string errors through the configured logger', () => {
       const stringError = 'String error';
-      ErrorHandler.setLogger(logger);
-      ErrorHandler.handle(stringError);
+      errorHandler.setLogger(logger);
+      errorHandler.handle(stringError);
 
       expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', stringError);
     });
 
     it('logs null errors through the configured logger', () => {
-      ErrorHandler.setLogger(logger);
-      ErrorHandler.handle(null);
+      errorHandler.setLogger(logger);
+      errorHandler.handle(null);
 
       expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', null);
     });
 
     it('logs undefined errors through the configured logger', () => {
-      ErrorHandler.setLogger(logger);
-      ErrorHandler.handle(undefined);
+      errorHandler.setLogger(logger);
+      errorHandler.handle(undefined);
 
       expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', undefined);
     });
 
     it('logs number errors through the configured logger', () => {
-      ErrorHandler.setLogger(logger);
-      ErrorHandler.handle(42);
+      errorHandler.setLogger(logger);
+      errorHandler.handle(42);
 
       expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', 42);
     });
 
     it('logs boolean errors through the configured logger', () => {
-      ErrorHandler.setLogger(logger);
-      ErrorHandler.handle(false);
+      errorHandler.setLogger(logger);
+      errorHandler.handle(false);
 
       expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', false);
     });
 
     it('logs array errors through the configured logger', () => {
       const arrayError = ['error1', 'error2'];
-      ErrorHandler.setLogger(logger);
-      ErrorHandler.handle(arrayError);
+      errorHandler.setLogger(logger);
+      errorHandler.handle(arrayError);
 
       expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', arrayError);
     });
@@ -584,7 +586,7 @@ describe('ErrorHandler', () => {
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
       const error = new Error('No console');
 
-      expect(() => ErrorHandler.handle(error)).not.toThrow();
+      expect(() => errorHandler.handle(error)).not.toThrow();
       expect(consoleSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
       expect(logger.error).not.toHaveBeenCalled();
 

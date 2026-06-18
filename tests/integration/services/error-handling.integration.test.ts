@@ -9,6 +9,9 @@ import {
 import { ErrorHandler } from '@/services/error/error-handler';
 import ErrorParser from '@/utils/error/error-parser';
 
+const errorHandler = new ErrorHandler();
+const errorParser = new ErrorParser();
+
 describe('ApiError classes', () => {
   describe('ApiError', () => {
     it('should create ApiError with all parameters', () => {
@@ -158,49 +161,49 @@ describe('ErrorHandler', () => {
 
   beforeEach(() => {
     logger = { error: jest.fn() };
-    ErrorHandler.setLogger(logger);
+    errorHandler.setLogger(logger);
   });
 
   afterEach(() => {
-    ErrorHandler.setLogger(undefined);
+    errorHandler.setLogger(undefined);
   });
 
   it('should handle Error instance', () => {
     const error = new Error('Test error');
-    ErrorHandler.handle(error);
+    errorHandler.handle(error);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('should handle string error', () => {
     const error = 'String error';
-    ErrorHandler.handle(error);
+    errorHandler.handle(error);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('should handle null error', () => {
-    ErrorHandler.handle(null);
+    errorHandler.handle(null);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', null);
   });
 
   it('should handle undefined error', () => {
-    ErrorHandler.handle(undefined);
+    errorHandler.handle(undefined);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', undefined);
   });
 
   it('should handle object error', () => {
     const error = { message: 'Object error', code: 123 };
-    ErrorHandler.handle(error);
+    errorHandler.handle(error);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('should handle ApiError', () => {
     const error = new ApiError({ message: 'API error', code: ApiErrorCodes.SERVER, status: 500 });
-    ErrorHandler.handle(error);
+    errorHandler.handle(error);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
@@ -209,7 +212,7 @@ describe('ErrorHandler', () => {
 describe('ErrorParser', () => {
   it('should parse ApiError with parseHttpError', () => {
     const error = new ApiError({ message: 'API error', code: ApiErrorCodes.AUTH, status: 401 });
-    const result = ErrorParser.parseHttpError(error);
+    const result = errorParser.parseHttpError(error);
 
     expect(result.code).toBe(ApiErrorCodes.AUTH);
     expect(result.message).toBe('API error');
@@ -218,7 +221,7 @@ describe('ErrorParser', () => {
 
   it('should parse AuthenticationError with parseHttpError', () => {
     const error = new AuthenticationError();
-    const result = ErrorParser.parseHttpError(error);
+    const result = errorParser.parseHttpError(error);
 
     expect(result.code).toBe(ApiErrorCodes.AUTH);
     expect(result.message).toBe('Invalid credentials');
@@ -226,7 +229,7 @@ describe('ErrorParser', () => {
 
   it('should parse regular Error with parseHttpError', () => {
     const error = new Error('Test error message');
-    const result = ErrorParser.parseHttpError(error);
+    const result = errorParser.parseHttpError(error);
 
     expect(result.code).toBe('JS_ERROR');
     expect(result.message).toBe('Test error message');
@@ -235,7 +238,7 @@ describe('ErrorParser', () => {
 
   it('should parse unknown error types', () => {
     const error = 'String error';
-    const result = ErrorParser.parseHttpError(error);
+    const result = errorParser.parseHttpError(error);
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');
@@ -243,7 +246,7 @@ describe('ErrorParser', () => {
   });
 
   it('should parse null', () => {
-    const result = ErrorParser.parseHttpError(null);
+    const result = errorParser.parseHttpError(null);
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');
@@ -251,7 +254,7 @@ describe('ErrorParser', () => {
   });
 
   it('should parse undefined', () => {
-    const result = ErrorParser.parseHttpError(undefined);
+    const result = errorParser.parseHttpError(undefined);
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');
@@ -259,7 +262,7 @@ describe('ErrorParser', () => {
   });
 
   it('should parse number', () => {
-    const result = ErrorParser.parseHttpError(123);
+    const result = errorParser.parseHttpError(123);
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');
@@ -268,7 +271,7 @@ describe('ErrorParser', () => {
 
   it('should parse object', () => {
     const error = { code: 123, detail: 'Some detail' };
-    const result = ErrorParser.parseHttpError(error);
+    const result = errorParser.parseHttpError(error);
 
     expect(result.code).toBe('UNKNOWN_ERROR');
     expect(result.message).toBe('An unknown error occurred');

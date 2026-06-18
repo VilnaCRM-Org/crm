@@ -1,6 +1,6 @@
 import Box from '@mui/material/Box';
 
-import getBlockSkeletonStyles from '@/components/skeletons/ui-skeleton-block/styles';
+import blockSkeletonStyles from '@/components/skeletons/ui-skeleton-block/styles';
 import { UISkeletonBlockProps } from '@/components/skeletons/ui-skeleton-block/types';
 
 function UISkeletonBlock({
@@ -13,7 +13,7 @@ function UISkeletonBlock({
   const additionalSx = Array.isArray(sx) ? sx : [sx];
 
   return (
-    <Box id={id} sx={[getBlockSkeletonStyles(width, height, borderRadius), ...additionalSx]} />
+    <Box id={id} sx={[blockSkeletonStyles.build(width, height, borderRadius), ...additionalSx]} />
   );
 }
 

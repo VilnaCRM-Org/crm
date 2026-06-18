@@ -6,7 +6,9 @@ import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
 import { ApiError, ConflictError } from '@/modules/user/types/api-errors';
+import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
+import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
 
 import server, { GRAPHQL_URL } from '../../../../mocks/server';
 
@@ -129,7 +131,7 @@ describe('RegistrationAPI Integration', () => {
         .mockRejectedValue(new ApolloError({ graphQLErrors: [{ message: 'no status' } as never] }));
       const api = new RegistrationAPI(
         { mutate } as unknown as ApolloClientLike,
-        new ApiErrorFactory()
+        new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard())
       );
 
       await expect(api.register(credentials)).rejects.toBeInstanceOf(ApiError);

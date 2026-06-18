@@ -1,4 +1,4 @@
-import getSubmitLabelKey from '@/modules/user/features/auth/utils/get-submit-label-key';
+import submitLabelKey from '@/modules/user/features/auth/utils/get-submit-label-key';
 
 describe('getSubmitLabelKey', () => {
   describe('all combinations', () => {
@@ -10,15 +10,15 @@ describe('getSubmitLabelKey', () => {
     ] as const)(
       'should return %s for mode %s and isSubmitting %s',
       (mode, isSubmitting, expected) => {
-        expect(getSubmitLabelKey(mode, isSubmitting)).toBe(expected);
+        expect(submitLabelKey.resolve(mode, isSubmitting)).toBe(expected);
       }
     );
   });
 
   describe('isSubmitting behavior', () => {
     it('should return different keys based on isSubmitting state', () => {
-      const keyWhenNotSubmitting = getSubmitLabelKey('sign_in', false);
-      const keyWhenSubmitting = getSubmitLabelKey('sign_in', true);
+      const keyWhenNotSubmitting = submitLabelKey.resolve('sign_in', false);
+      const keyWhenSubmitting = submitLabelKey.resolve('sign_in', true);
 
       expect(keyWhenNotSubmitting).not.toBe(keyWhenSubmitting);
       expect(keyWhenNotSubmitting).toContain('submit_button');

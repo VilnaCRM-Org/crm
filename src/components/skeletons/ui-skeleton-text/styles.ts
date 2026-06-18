@@ -13,14 +13,17 @@ type StylesObject = typeof baseSkeletonStyle & {
   borderRadius: string;
 };
 
-export default function getTextSkeletonStyles(
-  size: SkeletonTextSize,
-  width: string | number
-): StylesObject {
-  return {
-    ...baseSkeletonStyle,
-    height: sizeHeights[size],
-    width,
-    borderRadius: SKELETON_BORDER_RADIUS,
-  };
+class TextSkeletonStyles {
+  public build(size: SkeletonTextSize, width: string | number): StylesObject {
+    return {
+      ...baseSkeletonStyle,
+      height: sizeHeights[size],
+      width,
+      borderRadius: SKELETON_BORDER_RADIUS,
+    };
+  }
 }
+
+const textSkeletonStyles = new TextSkeletonStyles();
+
+export default textSkeletonStyles;

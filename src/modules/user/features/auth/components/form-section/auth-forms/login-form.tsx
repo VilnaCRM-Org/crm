@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
-import { createValidators } from '@auth/components/form-section/validations';
+import formValidators from '@auth/components/form-section/validations';
 import { LoginUserDto } from '@auth/types/credentials';
-import getSubmitLabelKey from '@auth/utils/get-submit-label-key';
+import submitLabelKey from '@auth/utils/get-submit-label-key';
 
 import LoginErrorMessageNormalizer from './login-error-message';
 import LoginFormFields from './login-form-fields';
@@ -16,7 +16,7 @@ const LOGIN_DEFAULTS: LoginUserDto = { email: '', password: '' };
 export default function LoginForm(): JSX.Element {
   const { t } = useTranslation();
   const { error, isSubmitting, handleLogin } = useLoginSubmitter(t);
-  const validators = createValidators(t);
+  const validators = formValidators.create(t);
 
   return (
     <UIForm<LoginUserDto>
@@ -24,7 +24,7 @@ export default function LoginForm(): JSX.Element {
       defaultValues={LOGIN_DEFAULTS}
       error={error}
       isSubmitting={isSubmitting}
-      submitLabel={t(getSubmitLabelKey('sign_in', isSubmitting))}
+      submitLabel={t(submitLabelKey.resolve('sign_in', isSubmitting))}
       title={t('sign_in.title')}
       subtitle={t('sign_in.subtitle')}
     >

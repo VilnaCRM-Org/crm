@@ -31,16 +31,22 @@ export const notificationSection = {
   zIndex: 1000,
 } as const;
 
-export const messageButtonText = (
-  theme: Theme
-): Theme['typography']['button'] & Record<string, unknown> => ({
-  fontFamily: 'Golos, sans-serif',
-  fontSize: '0.9375rem',
-  lineHeight: '1.125rem',
-  fontWeight: 500,
-  [theme.breakpoints.up('md')]: {
-    fontSize: '1.125rem',
-    lineHeight: '1.35rem',
-    fontWeight: 600,
-  },
-});
+type MessageButtonTextStyle = Theme['typography']['button'] & Record<string, unknown>;
+
+class NotificationStyles {
+  public messageButtonText(theme: Theme): MessageButtonTextStyle {
+    return {
+      fontFamily: 'Golos, sans-serif',
+      fontSize: '0.9375rem',
+      lineHeight: '1.125rem',
+      fontWeight: 500,
+      [theme.breakpoints.up('md')]: {
+        fontSize: '1.125rem',
+        lineHeight: '1.35rem',
+        fontWeight: 600,
+      },
+    };
+  }
+}
+
+export const notificationStyles = new NotificationStyles();

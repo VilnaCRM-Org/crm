@@ -1,6 +1,8 @@
 import '../setup';
 import { ErrorHandler } from '@/services/error';
 
+const errorHandler = new ErrorHandler();
+
 describe('ErrorHandler Coverage Tests', () => {
   it('should return fallback error for unknown error codes', () => {
     const unknownError = {
@@ -9,7 +11,7 @@ describe('ErrorHandler Coverage Tests', () => {
       original: new Error('test'),
     };
 
-    const result = ErrorHandler.handleAuthError(unknownError);
+    const result = errorHandler.handleAuthError(unknownError);
 
     expect(result.displayMessage).toBe('Something went wrong. Please try again.');
     expect(result.retryable).toBe(false);
@@ -22,7 +24,7 @@ describe('ErrorHandler Coverage Tests', () => {
       original: null,
     };
 
-    const result = ErrorHandler.handleAuthError(invalidError);
+    const result = errorHandler.handleAuthError(invalidError);
 
     expect(result.displayMessage).toBe('Something went wrong. Please try again.');
     expect(result.retryable).toBe(false);
@@ -35,7 +37,7 @@ describe('ErrorHandler Coverage Tests', () => {
       original: {},
     };
 
-    const result = ErrorHandler.handleAuthError(specialError);
+    const result = errorHandler.handleAuthError(specialError);
 
     expect(result.displayMessage).toBe('Something went wrong. Please try again.');
     expect(result.retryable).toBe(false);
@@ -48,39 +50,39 @@ describe('ErrorHandler Coverage Tests', () => {
       original: new Error('net'),
     };
 
-    const result = ErrorHandler.handleAuthError(networkError);
+    const result = errorHandler.handleAuthError(networkError);
 
     expect(result.displayMessage).toBeTruthy();
     expect(result.retryable).toBeDefined();
   });
 
   afterEach(() => {
-    ErrorHandler.setLogger(undefined);
+    errorHandler.setLogger(undefined);
   });
 
   it('should call handle method and log error through the configured logger', () => {
     const logger = { error: jest.fn() };
-    ErrorHandler.setLogger(logger);
+    errorHandler.setLogger(logger);
 
     const testError = new Error('Test error');
-    ErrorHandler.handle(testError);
+    errorHandler.handle(testError);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', testError);
   });
 
   it('should handle different error types in handle method', () => {
     const logger = { error: jest.fn() };
-    ErrorHandler.setLogger(logger);
+    errorHandler.setLogger(logger);
 
-    ErrorHandler.handle('string error');
-    ErrorHandler.handle({ custom: 'error' });
-    ErrorHandler.handle(null);
+    errorHandler.handle('string error');
+    errorHandler.handle({ custom: 'error' });
+    errorHandler.handle(null);
 
     expect(logger.error).toHaveBeenCalledTimes(3);
   });
 
   it('should safely no-op when no logger is configured', () => {
-    expect(() => ErrorHandler.handle(new Error('No console available'))).not.toThrow();
+    expect(() => errorHandler.handle(new Error('No console available'))).not.toThrow();
   });
 
   it('exposes instance methods that delegate to the static handlers', () => {

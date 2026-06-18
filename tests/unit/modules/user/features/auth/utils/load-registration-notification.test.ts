@@ -13,7 +13,7 @@ describe('loadRegistrationNotification', () => {
   it('imports the registration notification module on demand', async () => {
     const { default: loadRegistrationNotification } =
       await import('@auth/utils/load-registration-notification');
-    const loaded = await loadRegistrationNotification();
+    const loaded = await loadRegistrationNotification.load();
 
     expect(loaded.default).toBeDefined();
     expect(typeof loaded.default).toBe('function');
@@ -22,8 +22,8 @@ describe('loadRegistrationNotification', () => {
   it('caches the import promise across consecutive calls', async () => {
     const { default: loadRegistrationNotification } =
       await import('@auth/utils/load-registration-notification');
-    const first = loadRegistrationNotification();
-    const second = loadRegistrationNotification();
+    const first = loadRegistrationNotification.load();
+    const second = loadRegistrationNotification.load();
 
     expect(first).toBe(second);
     await first;
@@ -37,7 +37,7 @@ describe('loadRegistrationNotification', () => {
     const { default: loadRegistrationNotification } =
       await import('@auth/utils/load-registration-notification');
 
-    await expect(loadRegistrationNotification()).rejects.toThrow('boom');
+    await expect(loadRegistrationNotification.load()).rejects.toThrow('boom');
 
     jest.dontMock('@auth/components/form-section/auth-forms/registration-notification');
     jest.doMock('@auth/components/form-section/auth-forms/registration-notification', () => ({
@@ -45,8 +45,8 @@ describe('loadRegistrationNotification', () => {
       default: (): ReactElement | null => null,
     }));
 
-    const next = loadRegistrationNotification();
-    const again = loadRegistrationNotification();
+    const next = loadRegistrationNotification.load();
+    const again = loadRegistrationNotification.load();
     expect(next).toBe(again);
     await next;
   });

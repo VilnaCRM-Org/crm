@@ -3,9 +3,7 @@ import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
-import HttpResponseProcessor, {
-  throwIfHttpError as throwIfHttpErrorFromProcessor,
-} from '@/services/https-client/http-response-processor';
+import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 
 const createClient = (): FetchHttpsClient =>
   new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
@@ -433,7 +431,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         clone: () => ({ json: async (): Promise<unknown> => ({ message: 'kaboom' }) }),
       } as unknown as Response;
 
-      await expect(throwIfHttpErrorFromProcessor(errorResponse)).rejects.toMatchObject({
+      await expect(new HttpResponseProcessor().process(errorResponse)).rejects.toMatchObject({
         status: 500,
         message: 'kaboom',
       });

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
-import loadLoginForm from '@auth/utils/load-login-form';
+import loginFormLoader from '@auth/utils/load-login-form';
 
 import RegistrationForm from './auth-forms/registration-form';
 import AuthProviderButtons from './components/auth-provider-buttons';
@@ -15,7 +15,7 @@ import { RegistrationView } from './types';
 import type { AuthMode } from './types';
 import useLoginSwitcher, { type LoadLoginErrorKey } from './use-login-switcher';
 
-const LoginForm = lazy(loadLoginForm);
+const LoginForm = lazy(() => loginFormLoader.load());
 
 function getSwitcherLabelKey(mode: AuthMode): string {
   return mode === 'login'

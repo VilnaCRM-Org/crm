@@ -12,8 +12,6 @@ const UNKNOWN_ERROR: Omit<ParsedError, 'original'> = {
 
 @injectable()
 export default class ErrorParser {
-  private static readonly defaultInstance = new ErrorParser();
-
   private readonly matchers: Matcher[];
 
   constructor() {
@@ -44,10 +42,6 @@ export default class ErrorParser {
         },
       },
     ];
-  }
-
-  public static parseHttpError(error: unknown): ParsedError {
-    return this.defaultInstance.parse(error);
   }
 
   public parseHttpError(error: unknown): ParsedError {

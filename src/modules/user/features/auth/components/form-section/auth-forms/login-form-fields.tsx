@@ -3,12 +3,12 @@ import type { TFunction } from 'i18next';
 import FormField from '@auth/components/form-section/components/form-field';
 import PasswordField from '@auth/components/form-section/components/password-field';
 import UserOptions from '@auth/components/form-section/components/user-options';
-import { createValidators } from '@auth/components/form-section/validations';
+import formValidators from '@auth/components/form-section/validations';
 import { LoginUserDto } from '@auth/types/credentials';
 
 type Props = {
   t: TFunction;
-  validators: ReturnType<typeof createValidators>;
+  validators: ReturnType<typeof formValidators.create>;
 };
 
 export default function LoginFormFields({ t, validators }: Props): JSX.Element {

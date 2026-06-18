@@ -4,7 +4,7 @@ import { setupServer } from 'msw/node';
 import API_ENDPOINTS from '@/config/api-config';
 import GraphQLUrl from '@/utils/get-graphql-url';
 
-export const GRAPHQL_URL = GraphQLUrl.resolve();
+export const GRAPHQL_URL = new GraphQLUrl().resolve();
 
 const handlers = [
   rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>

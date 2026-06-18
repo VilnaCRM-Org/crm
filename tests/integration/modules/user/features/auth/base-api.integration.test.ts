@@ -1,6 +1,4 @@
 import '../../../../setup';
-import ApiErrorFactory from '@/modules/user/features/auth/repositories/api-error-factory';
-import BaseAPI from '@/modules/user/features/auth/repositories/base-api';
 import {
   ApiError,
   AuthenticationError,
@@ -9,6 +7,10 @@ import {
   ApiErrorCodes,
 } from '@/modules/user/types/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
+import HttpErrorGuard from '@/services/https-client/http-error-guard';
+import ApiErrorFactory from '@auth/repositories/api-error-factory';
+import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
+import BaseAPI from '@auth/repositories/base-api';
 
 // Test class that extends BaseAPI to expose the protected method
 class TestAPI extends BaseAPI {
@@ -21,7 +23,7 @@ describe('BaseAPI Integration', () => {
   let api: TestAPI;
 
   beforeEach(() => {
-    api = new TestAPI();
+    api = new TestAPI(new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard()));
   });
 
   describe('handleApiError method', () => {
@@ -148,6 +150,17 @@ describe('BaseAPI Integration', () => {
 
         expect(result).toBeInstanceOf(ApiError);
         expect(result.message).toBe('Network error. Please check your connection.');
+        expect(result.code).toBe(ApiErrorCodes.NETWORK);
+      });
+
+      it('should return Network Error for a falsy-status HttpError with a network message', () => {
+        const httpError = new HttpError({
+          status: undefined as unknown as number,
+          message: 'connection lost',
+        });
+        const result = api.testHandleApiError(httpError, 'Request');
+
+        expect(result).toBeInstanceOf(ApiError);
         expect(result.code).toBe(ApiErrorCodes.NETWORK);
       });
 
@@ -381,9 +394,12 @@ describe('BaseAPI Integration', () => {
 
   describe('ApiErrorFactory.fromHttpError static method', () => {
     it('maps status-less network-keyword error to network code via right-side OR branch', () => {
-      const error = { status: undefined as unknown as number, message: 'network unavailable' };
+      const error = new HttpError({ status: 0, message: 'network unavailable' });
 
-      const result = ApiErrorFactory.fromHttpError(error, 'Login');
+      const result = new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard()).convert(
+        error,
+        'Login'
+      );
 
       expect(result.code).toBe(ApiErrorCodes.NETWORK);
       expect(result.message).toBe('Network error. Please check your connection.');

@@ -1,6 +1,6 @@
 import { startTransition } from 'react';
 
-import loadLoginForm from '@auth/utils/load-login-form';
+import loginFormLoader from '@auth/utils/load-login-form';
 
 import type { AuthMode } from './types';
 
@@ -35,7 +35,8 @@ export default class LoginSwitchController {
     const requestId = deps.loginSwitchRequest.current;
     deps.setLoadLoginError(null);
     deps.setIsLoadingLogin(true);
-    loadLoginForm()
+    loginFormLoader
+      .load()
       .then(() => this.applyLoginSwitchResult(requestId, 'loaded'))
       .catch(() => this.applyLoginSwitchResult(requestId, 'failed'))
       .finally(() => this.finishLoginSwitch(requestId));

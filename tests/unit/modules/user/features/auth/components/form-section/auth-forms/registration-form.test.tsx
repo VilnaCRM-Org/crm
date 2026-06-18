@@ -31,18 +31,21 @@ jest.mock('@auth/hooks/use-registration-form', () => ({
 }));
 
 jest.mock('@auth/components/form-section/validations', () => ({
-  createValidators: (): Record<string, never> => ({}),
+  __esModule: true,
+  default: { create: (): Record<string, never> => ({}) },
 }));
 
 jest.mock('@auth/utils/get-submit-label-key', () => ({
   __esModule: true,
-  default: (): string => 'sign_up.submit',
+  default: { resolve: (): string => 'sign_up.submit' },
 }));
 
 jest.mock('@auth/utils/load-registration-notification', () => ({
   __esModule: true,
-  default: (): Promise<{ default: () => ReactElement }> =>
-    Promise.resolve({ default: (): ReactElement => <div data-testid="reg-notification" /> }),
+  default: {
+    load: (): Promise<{ default: () => ReactElement }> =>
+      Promise.resolve({ default: (): ReactElement => <div data-testid="reg-notification" /> }),
+  },
 }));
 
 jest.mock('react-i18next', () => ({

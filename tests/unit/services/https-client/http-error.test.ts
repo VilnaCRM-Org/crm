@@ -1,4 +1,7 @@
-import { HttpError, isHttpError } from '@/services/https-client/http-error';
+import { HttpError } from '@/services/https-client/http-error';
+import HttpErrorGuard from '@/services/https-client/http-error-guard';
+
+const httpErrorGuard = new HttpErrorGuard();
 
 describe('HttpError', () => {
   describe('constructor', () => {
@@ -326,19 +329,19 @@ describe('isHttpError', () => {
     it('should return true for HttpError instance', () => {
       const error = new HttpError({ status: 404, message: 'Not Found' });
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should return true for HttpError with cause', () => {
       const error = new HttpError({ status: 500, message: 'Error', cause: 'test' });
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should return true for HttpError with status 0', () => {
       const error = new HttpError({ status: 0, message: 'Network Error' });
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
   });
 
@@ -346,77 +349,77 @@ describe('isHttpError', () => {
     it('should return true for object with name HttpError and status number', () => {
       const error = { name: 'HttpError', status: 404, message: 'Not Found' };
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should return true for object with name HttpError, status 0', () => {
       const error = { name: 'HttpError', status: 0 };
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should return false for object with name HttpError but non-number status', () => {
       const error = { name: 'HttpError', status: '404' };
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for object with status but wrong name', () => {
       const error = { name: 'Error', status: 404 };
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for object without name', () => {
       const error = { status: 404, message: 'Not Found' };
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for object without status', () => {
       const error = { name: 'HttpError', message: 'Not Found' };
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
   });
 
   describe('invalid inputs', () => {
     it('should return false for null', () => {
-      expect(isHttpError(null)).toBe(false);
+      expect(httpErrorGuard.is(null)).toBe(false);
     });
 
     it('should return false for undefined', () => {
-      expect(isHttpError(undefined)).toBe(false);
+      expect(httpErrorGuard.is(undefined)).toBe(false);
     });
 
     it('should return false for string', () => {
-      expect(isHttpError('error')).toBe(false);
+      expect(httpErrorGuard.is('error')).toBe(false);
     });
 
     it('should return false for number', () => {
-      expect(isHttpError(404)).toBe(false);
+      expect(httpErrorGuard.is(404)).toBe(false);
     });
 
     it('should return false for boolean', () => {
-      expect(isHttpError(true)).toBe(false);
-      expect(isHttpError(false)).toBe(false);
+      expect(httpErrorGuard.is(true)).toBe(false);
+      expect(httpErrorGuard.is(false)).toBe(false);
     });
 
     it('should return false for array', () => {
-      expect(isHttpError([])).toBe(false);
-      expect(isHttpError([{ name: 'HttpError', status: 404 }])).toBe(false);
+      expect(httpErrorGuard.is([])).toBe(false);
+      expect(httpErrorGuard.is([{ name: 'HttpError', status: 404 }])).toBe(false);
     });
 
     it('should return false for function', () => {
-      expect(isHttpError(() => {})).toBe(false);
+      expect(httpErrorGuard.is(() => {})).toBe(false);
     });
 
     it('should return false for Symbol', () => {
-      expect(isHttpError(Symbol('error'))).toBe(false);
+      expect(httpErrorGuard.is(Symbol('error'))).toBe(false);
     });
 
     it('should return false for empty object', () => {
-      expect(isHttpError({})).toBe(false);
+      expect(httpErrorGuard.is({})).toBe(false);
     });
   });
 
@@ -424,20 +427,20 @@ describe('isHttpError', () => {
     it('should return false for standard Error', () => {
       const error = new Error('Standard error');
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for TypeError', () => {
       const error = new TypeError('Type error');
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for custom Error with name HttpError but no status', () => {
       const error = new Error('Error');
       error.name = 'HttpError';
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return true for custom Error with name HttpError and status', () => {
@@ -445,7 +448,7 @@ describe('isHttpError', () => {
       error.name = 'HttpError';
       error.status = 404;
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
   });
 
@@ -460,13 +463,13 @@ describe('isHttpError', () => {
         },
       };
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle object created with Object.create', () => {
       const error = Object.create({ name: 'HttpError', status: 404 });
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle object with null prototype', () => {
@@ -474,37 +477,37 @@ describe('isHttpError', () => {
       error.name = 'HttpError';
       error.status = 404;
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle frozen object', () => {
       const error = Object.freeze({ name: 'HttpError', status: 404 });
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle sealed object', () => {
       const error = Object.seal({ name: 'HttpError', status: 404 });
 
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should return false for object with status as string', () => {
       const error = { name: 'HttpError', status: '404' };
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for object with status as null', () => {
       const error = { name: 'HttpError', status: null };
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for object with status as object', () => {
       const error = { name: 'HttpError', status: { code: 404 } };
 
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
   });
 
@@ -512,7 +515,7 @@ describe('isHttpError', () => {
     it('should narrow type correctly in TypeScript', () => {
       const error: unknown = new HttpError({ status: 404, message: 'Not Found' });
 
-      if (isHttpError(error)) {
+      if (httpErrorGuard.is(error)) {
         expect(error.status).toBe(404);
         expect(error.name).toBe('HttpError');
       }
@@ -526,7 +529,7 @@ describe('isHttpError', () => {
         { name: 'HttpError', status: 500 },
       ];
 
-      const httpErrors = errors.filter(isHttpError);
+      const httpErrors = errors.filter((e) => httpErrorGuard.is(e));
       expect(httpErrors).toHaveLength(2);
     });
   });
@@ -535,12 +538,12 @@ describe('isHttpError', () => {
     it('should return same result for same input', () => {
       const error = new HttpError({ status: 404, message: 'Not Found' });
 
-      expect(isHttpError(error)).toBe(isHttpError(error));
+      expect(httpErrorGuard.is(error)).toBe(httpErrorGuard.is(error));
     });
 
     it('should be deterministic', () => {
       const error = new HttpError({ status: 404, message: 'Not Found' });
-      const results = Array.from({ length: 10 }, () => isHttpError(error));
+      const results = Array.from({ length: 10 }, () => httpErrorGuard.is(error));
       const allSame = results.every((result) => result === results[0]);
 
       expect(allSame).toBe(true);

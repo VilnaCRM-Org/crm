@@ -5,7 +5,7 @@ import { type MouseEvent, useCallback, useState } from 'react';
 import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { createValidators } from '../validations';
+import formValidators from '../validations';
 
 import FormField from './form-field';
 import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
@@ -53,7 +53,7 @@ export default function PasswordField<T extends FieldValues & { password: string
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
   const toggle = useCallback((): void => setShowPassword((prev) => !prev), []);
-  const validators = createValidators(t);
+  const validators = formValidators.create(t);
 
   return (
     <FormField<T>

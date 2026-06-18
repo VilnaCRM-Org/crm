@@ -1,7 +1,9 @@
 import { ApolloError } from '@apollo/client';
 
 import { ApiError, ConflictError } from '@/modules/user/types/api-errors';
+import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
+import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
 import RegistrationAPI from '@auth/repositories/registration-api';
 import CREATE_USER from '@auth/types/graphql/mutations';
 
@@ -87,7 +89,10 @@ describe('RegistrationAPI', () => {
   it('maps a 409 network status from the GraphQL transport to a ConflictError', async () => {
     const networkError = Object.assign(new Error('Conflict'), { statusCode: 409 });
     const mutate = jest.fn().mockRejectedValue(new ApolloError({ networkError }));
-    const api = new RegistrationAPI(mockApollo(mutate), new ApiErrorFactory());
+    const api = new RegistrationAPI(
+      mockApollo(mutate),
+      new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard())
+    );
 
     await expect(api.register(credentials)).rejects.toBeInstanceOf(ConflictError);
   });
@@ -95,7 +100,10 @@ describe('RegistrationAPI', () => {
   it('falls back to generic conversion for an ApolloError with no http status', async () => {
     const graphQLError = { message: 'Something went wrong', extensions: {} };
     const mutate = jest.fn().mockRejectedValue(new ApolloError({ graphQLErrors: [graphQLError] }));
-    const api = new RegistrationAPI(mockApollo(mutate), new ApiErrorFactory());
+    const api = new RegistrationAPI(
+      mockApollo(mutate),
+      new ApiErrorFactory(new ApiStatusErrorFactory(), new HttpErrorGuard())
+    );
 
     await expect(api.register(credentials)).rejects.toBeInstanceOf(ApiError);
   });

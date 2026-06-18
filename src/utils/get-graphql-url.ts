@@ -1,16 +1,19 @@
-export default class GraphQLUrl {
-  private static readonly fallback = 'http://localhost:4000/graphql';
+import { injectable } from 'tsyringe';
 
-  private static readonly productionMessage =
+@injectable()
+export default class GraphQLUrl {
+  private readonly fallback = 'http://localhost:4000/graphql';
+
+  private readonly productionMessage =
     'REACT_APP_GRAPHQL_URL must be defined in production environment. Cannot default to localhost.';
 
-  public static resolve(): string {
+  public resolve(): string {
     const url = process.env.REACT_APP_GRAPHQL_URL?.trim();
 
     if (process.env.NODE_ENV === 'production' && !url) {
-      throw new Error(GraphQLUrl.productionMessage);
+      throw new Error(this.productionMessage);
     }
 
-    return url || GraphQLUrl.fallback;
+    return url || this.fallback;
   }
 }

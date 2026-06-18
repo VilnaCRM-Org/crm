@@ -2,12 +2,14 @@ import '../../setup';
 import ApiError from '@/modules/user/types/api-errors/api-error';
 import { ErrorParser } from '@/utils/error';
 
+const errorParser = new ErrorParser();
+
 describe('ErrorParser Comprehensive Coverage', () => {
   describe('parseHttpError - Response instances', () => {
     it('should parse Response instance with status 404', () => {
       const response = new Response(null, { status: 404, statusText: 'Not Found' });
 
-      const result = ErrorParser.parseHttpError(response);
+      const result = errorParser.parseHttpError(response);
 
       expect(result.code).toBe('HTTP_404');
       expect(result.message).toBe('HTTP error 404');
@@ -17,7 +19,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     it('should parse Response instance with status 500', () => {
       const response = new Response(null, { status: 500, statusText: 'Internal Server Error' });
 
-      const result = ErrorParser.parseHttpError(response);
+      const result = errorParser.parseHttpError(response);
 
       expect(result.code).toBe('HTTP_500');
       expect(result.message).toBe('HTTP error 500');
@@ -27,7 +29,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     it('should parse Response instance with status 401', () => {
       const response = new Response(null, { status: 401, statusText: 'Unauthorized' });
 
-      const result = ErrorParser.parseHttpError(response);
+      const result = errorParser.parseHttpError(response);
 
       expect(result.code).toBe('HTTP_401');
       expect(result.message).toBe('HTTP error 401');
@@ -37,7 +39,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     it('should parse Response instance with status 200', () => {
       const response = new Response(null, { status: 200 });
 
-      const result = ErrorParser.parseHttpError(response);
+      const result = errorParser.parseHttpError(response);
 
       expect(result.code).toBe('HTTP_200');
       expect(result.message).toBe('HTTP error 200');
@@ -53,7 +55,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
         status: 401,
       });
 
-      const result = ErrorParser.parseHttpError(apiError);
+      const result = errorParser.parseHttpError(apiError);
 
       expect(result.code).toBe('AUTH_FAILED');
       expect(result.message).toBe('Authentication failed');
@@ -63,7 +65,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     it('should parse ApiError with custom message', () => {
       const apiError = new ApiError({ message: 'Custom error message', code: 'CUSTOM_ERROR' });
 
-      const result = ErrorParser.parseHttpError(apiError);
+      const result = errorParser.parseHttpError(apiError);
 
       expect(result.code).toBe('CUSTOM_ERROR');
       expect(result.message).toBe('Custom error message');
@@ -73,7 +75,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     it('should parse ApiError with network error code', () => {
       const apiError = new ApiError({ message: 'Network error', code: 'NETWORK_ERROR', status: 0 });
 
-      const result = ErrorParser.parseHttpError(apiError);
+      const result = errorParser.parseHttpError(apiError);
 
       expect(result.code).toBe('NETWORK_ERROR');
       expect(result.message).toBe('Network error');
@@ -85,7 +87,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     it('should parse standard Error', () => {
       const error = new Error('Something went wrong');
 
-      const result = ErrorParser.parseHttpError(error);
+      const result = errorParser.parseHttpError(error);
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('Something went wrong');
@@ -95,7 +97,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     it('should parse TypeError', () => {
       const error = new TypeError('Type mismatch');
 
-      const result = ErrorParser.parseHttpError(error);
+      const result = errorParser.parseHttpError(error);
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('Type mismatch');
@@ -105,7 +107,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     it('should parse RangeError', () => {
       const error = new RangeError('Value out of range');
 
-      const result = ErrorParser.parseHttpError(error);
+      const result = errorParser.parseHttpError(error);
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('Value out of range');
@@ -115,7 +117,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     it('should parse Error with empty message', () => {
       const error = new Error('');
 
-      const result = ErrorParser.parseHttpError(error);
+      const result = errorParser.parseHttpError(error);
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe('');
@@ -126,7 +128,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
       const longMessage = 'a'.repeat(1000);
       const error = new Error(longMessage);
 
-      const result = ErrorParser.parseHttpError(error);
+      const result = errorParser.parseHttpError(error);
 
       expect(result.code).toBe('JS_ERROR');
       expect(result.message).toBe(longMessage);
@@ -136,7 +138,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
   describe('parseHttpError - unknown types', () => {
     it('should parse string error', () => {
-      const result = ErrorParser.parseHttpError('string error');
+      const result = errorParser.parseHttpError('string error');
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
@@ -144,7 +146,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     });
 
     it('should parse number error', () => {
-      const result = ErrorParser.parseHttpError(42);
+      const result = errorParser.parseHttpError(42);
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
@@ -152,7 +154,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     });
 
     it('should parse null error', () => {
-      const result = ErrorParser.parseHttpError(null);
+      const result = errorParser.parseHttpError(null);
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
@@ -160,7 +162,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     });
 
     it('should parse undefined error', () => {
-      const result = ErrorParser.parseHttpError(undefined);
+      const result = errorParser.parseHttpError(undefined);
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
@@ -169,7 +171,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
     it('should parse object error', () => {
       const obj = { error: 'custom' };
-      const result = ErrorParser.parseHttpError(obj);
+      const result = errorParser.parseHttpError(obj);
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
@@ -178,7 +180,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
     it('should parse array error', () => {
       const arr = ['error1', 'error2'];
-      const result = ErrorParser.parseHttpError(arr);
+      const result = errorParser.parseHttpError(arr);
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
@@ -186,7 +188,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
     });
 
     it('should parse boolean error', () => {
-      const result = ErrorParser.parseHttpError(false);
+      const result = errorParser.parseHttpError(false);
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');
@@ -195,7 +197,7 @@ describe('ErrorParser Comprehensive Coverage', () => {
 
     it('should parse symbol error', () => {
       const sym = Symbol('error');
-      const result = ErrorParser.parseHttpError(sym);
+      const result = errorParser.parseHttpError(sym);
 
       expect(result.code).toBe('UNKNOWN_ERROR');
       expect(result.message).toBe('An unknown error occurred');

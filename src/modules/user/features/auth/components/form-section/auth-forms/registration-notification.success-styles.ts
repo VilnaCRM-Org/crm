@@ -3,8 +3,8 @@ import { customColors, paletteColors } from '@/styles/colors';
 
 import {
   compactViewport,
-  messageButtonText,
   notificationSection,
+  notificationStyles,
 } from './registration-notification.shared-styles';
 
 const contentBox = {
@@ -180,7 +180,7 @@ export default {
     height: '10.25rem',
   },
   messageContainer,
-  messageButtonText,
+  messageButtonText: notificationStyles.messageButtonText,
   successMessageTitle,
   successMessageDescription,
   messageButton,

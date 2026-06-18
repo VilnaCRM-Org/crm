@@ -5,7 +5,7 @@ import getBlockSkeletonStyles from '@/components/skeletons/ui-skeleton-block/sty
 
 jest.mock('@/components/skeletons/ui-skeleton-block/styles', () => ({
   __esModule: true,
-  default: jest.fn(() => ({})),
+  default: { build: jest.fn(() => ({})) },
 }));
 
 describe('UISkeletonBlock', () => {
@@ -23,14 +23,14 @@ describe('UISkeletonBlock', () => {
     render(<UISkeletonBlock id="skeleton-block" />);
 
     expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
-    expect(getBlockSkeletonStyles).toHaveBeenCalledWith('100%', '3rem', '8px');
+    expect(getBlockSkeletonStyles.build).toHaveBeenCalledWith('100%', '3rem', '8px');
   });
 
   it('renders with custom dimensions and borderRadius', () => {
     render(<UISkeletonBlock width="200px" height="4rem" borderRadius="12px" id="skeleton-block" />);
 
     expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
-    expect(getBlockSkeletonStyles).toHaveBeenCalledWith('200px', '4rem', '12px');
+    expect(getBlockSkeletonStyles.build).toHaveBeenCalledWith('200px', '4rem', '12px');
   });
 
   it('applies array sx without dropping the base styles', () => {
@@ -39,7 +39,7 @@ describe('UISkeletonBlock', () => {
     render(<UISkeletonBlock sx={arraySx} id="skeleton-block" />);
 
     expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
-    expect(getBlockSkeletonStyles).toHaveBeenCalledWith('100%', '3rem', '8px');
+    expect(getBlockSkeletonStyles.build).toHaveBeenCalledWith('100%', '3rem', '8px');
   });
 
   it('renders with object sx prop', () => {
@@ -68,6 +68,6 @@ describe('UISkeletonBlock', () => {
 
     rerender(<UISkeletonBlock width="50%" id="skeleton-block" />);
     expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
-    expect(getBlockSkeletonStyles).toHaveBeenLastCalledWith('50%', '3rem', '8px');
+    expect(getBlockSkeletonStyles.build).toHaveBeenLastCalledWith('50%', '3rem', '8px');
   });
 });

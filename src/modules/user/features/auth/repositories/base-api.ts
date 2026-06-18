@@ -5,7 +5,7 @@ import ApiErrorFactory from './api-error-factory';
 export default class BaseAPI {
   private readonly apiErrorFactory: ApiErrorFactory;
 
-  constructor(apiErrorFactory: ApiErrorFactory = new ApiErrorFactory()) {
+  constructor(apiErrorFactory: ApiErrorFactory) {
     this.apiErrorFactory = apiErrorFactory;
   }
 

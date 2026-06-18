@@ -14,18 +14,6 @@ const PROVIDERS = [
 ] as const;
 type OAuthService = (typeof PROVIDERS)[number]['key'];
 
-function signInWithProvider(service: OAuthService): void {
-  if (typeof window === 'undefined') return;
-  // TODO: Implement actual OAuth authentication
-  //  example:
-  const url = buildApiUrl(`/auth/${encodeURIComponent(service)}`);
-  const win = window.open(url, '_blank', 'noopener,noreferrer');
-
-  if (!win) {
-    window.location.href = url;
-  }
-}
-
 interface OAuthProvider {
   label: string;
   SvgComponent: ComponentType<SVGProps<SVGSVGElement>>;
@@ -33,11 +21,29 @@ interface OAuthProvider {
   ariaLabel: string;
 }
 
-const oauthProviders: ReadonlyArray<OAuthProvider> = PROVIDERS.map((p) => ({
-  label: p.label,
-  SvgComponent: p.SvgComponent,
-  onClick: () => signInWithProvider(p.key),
-  ariaLabel: `Sign in with ${p.label}`,
-}));
+class OAuthProviders {
+  public list(): ReadonlyArray<OAuthProvider> {
+    return PROVIDERS.map((p) => ({
+      label: p.label,
+      SvgComponent: p.SvgComponent,
+      onClick: () => this.signInWithProvider(p.key),
+      ariaLabel: `Sign in with ${p.label}`,
+    }));
+  }
+
+  private signInWithProvider(service: OAuthService): void {
+    if (typeof window === 'undefined') return;
+    // TODO: Implement actual OAuth authentication
+    //  example:
+    const url = buildApiUrl(`/auth/${encodeURIComponent(service)}`);
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+
+    if (!win) {
+      window.location.href = url;
+    }
+  }
+}
+
+const oauthProviders = new OAuthProviders().list();
 
 export default oauthProviders;

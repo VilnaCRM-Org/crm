@@ -58,6 +58,78 @@ const testImportNoExtraneousDependenciesOptions = {
 const tsGlobs = ['**/*.ts', '**/*.tsx'];
 const jsGlobs = ['**/*.js', '**/*.jsx'];
 const jsxGlobs = ['**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx'];
+
+// Source (issue #90): production source must not ship `data-testid`.
+const dataTestidSelectors = [
+  {
+    selector: "JSXAttribute[name.name='data-testid']",
+    message:
+      'No data-testid in source — expose a stable id or query by role/label/text (issue #90).',
+  },
+  {
+    selector: "Property[key.value='data-testid']",
+    message: 'No data-testid prop in source — use an id instead (issue #90).',
+  },
+  {
+    selector: "TSPropertySignature[key.value='data-testid']",
+    message: 'No data-testid prop type in source — expose an id prop instead (issue #90).',
+  },
+];
+
+// Source (issue #100): non-React application code (services, repositories, mappers,
+// factories, stores, utils) must not use `static` members or standalone functions.
+// Static methods and free functions bind at the call site and resist substitution in
+// tests; instance methods on injectable classes can be swapped for mocks/spies via the
+// tsyringe DI container. React components and hooks are exempt (they are functions by
+// definition) — this block targets `src/**/*.ts` only and ignores `use-*` hook files.
+const noStaticOrFreeFunctionSelectors = [
+  {
+    selector: 'MethodDefinition[static=true]',
+    message:
+      'No static methods in non-React source — use an injectable instance method resolved via the DI container so collaborators can be mocked (issue #100).',
+  },
+  {
+    selector: 'PropertyDefinition[static=true]',
+    message:
+      'No static fields in non-React source — hold state on an injectable instance instead (issue #100).',
+  },
+  {
+    selector: 'Program > FunctionDeclaration',
+    message:
+      'No standalone functions in non-React source — make it an instance method on an injectable class (issue #100).',
+  },
+  {
+    selector: 'Program > ExportNamedDeclaration > FunctionDeclaration',
+    message:
+      'No exported standalone functions in non-React source — make it an instance method on an injectable class (issue #100).',
+  },
+  {
+    selector: 'ExportDefaultDeclaration > FunctionDeclaration',
+    message:
+      'No default-exported standalone functions in non-React source — make it an instance method on an injectable class (issue #100).',
+  },
+  {
+    selector:
+      "Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='ArrowFunctionExpression']",
+    message:
+      'No exported arrow functions in non-React source — make it an instance method on an injectable class (issue #100).',
+  },
+  {
+    selector:
+      "Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression']",
+    message:
+      'No exported function expressions in non-React source — make it an instance method on an injectable class (issue #100).',
+  },
+];
+
+const nonReactSourceGlobs = ['src/**/*.ts'];
+const nonReactSourceIgnores = [
+  '**/*.stories.*',
+  '**/*.test.*',
+  '**/*.spec.*',
+  '**/*.d.ts',
+  'src/**/use-*.ts',
+];
 const storyGlobs = ['**/*.stories.js', '**/*.stories.jsx', '**/*.stories.ts', '**/*.stories.tsx'];
 
 export default [
@@ -287,22 +359,20 @@ export default [
     files: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx'],
     ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*'],
     rules: {
-      'no-restricted-syntax': [
-        'error',
-        {
-          selector: "JSXAttribute[name.name='data-testid']",
-          message:
-            'No data-testid in source — expose a stable id or query by role/label/text (issue #90).',
-        },
-        {
-          selector: "Property[key.value='data-testid']",
-          message: 'No data-testid prop in source — use an id instead (issue #90).',
-        },
-        {
-          selector: "TSPropertySignature[key.value='data-testid']",
-          message: 'No data-testid prop type in source — expose an id prop instead (issue #90).',
-        },
-      ],
+      'no-restricted-syntax': ['error', ...dataTestidSelectors],
+    },
+  },
+
+  // Source (issue #100): forbid `static` members and standalone functions in non-React
+  // application code. This block matches `src/**/*.ts` only (so `.tsx` components and
+  // class error boundaries are exempt) and ignores `use-*` hook files. It re-includes the
+  // data-testid selectors because flat config replaces (does not merge) `no-restricted-syntax`
+  // for files matched by multiple blocks.
+  {
+    files: nonReactSourceGlobs,
+    ignores: nonReactSourceIgnores,
+    rules: {
+      'no-restricted-syntax': ['error', ...dataTestidSelectors, ...noStaticOrFreeFunctionSelectors],
     },
   },
 

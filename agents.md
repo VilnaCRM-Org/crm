@@ -559,6 +559,30 @@ const { t } = useTranslation();
 
 ## Architecture Patterns
 
+### No static methods or free functions (issue #100)
+
+Non-React application code (services, repositories, mappers, factories, stores, utilities
+under `src/**/*.ts`) must **not** use `static` class members or standalone (free)
+functions. Convert them to **instance methods on an injectable class** so collaborators can
+be swapped for mocks/spies through the tsyringe DI container instead of via module mocking.
+
+- **Behavioral collaborators** → `@injectable()` class + token in `tokens.ts` + registration
+  in `dependency-injection-config.ts`, resolved with `@inject`/`container.resolve`.
+- **Render-path state primitives** that must stay container-free for the auth-page
+  Lighthouse budget (`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`)
+  → instance class exported as a **module singleton** (`export default new X()`); call sites
+  remain `X.method(...)` and no tsyringe enters the paint path.
+- **Pure helpers / validators / type guards / style helpers / lazy loaders** → instance
+  methods on a singleton class, never free functions.
+- **Exempt:** React components (`*.tsx`, incl. class error boundaries using
+  `static getDerivedStateFromError`) and hooks (`use-*.ts` / `use-*.tsx`).
+
+Enforced by an ESLint `no-restricted-syntax` gate in `eslint.config.mjs` (scoped to
+`src/**/*.ts`, ignoring `use-*`), run by `make lint-eslint` and the `static testing`
+workflow. Fix violations by refactoring — never with `eslint-disable`. In tests, inject a
+mock collaborator (or pass a stub to the constructor / resolve from a child container)
+rather than mocking the module.
+
 ### Dependency Injection Pattern
 
 ```typescript
@@ -596,11 +620,13 @@ or its actions. See `src/modules/user/features/auth/stores/` for the reference s
 
 ```typescript
 // Composition root: src/modules/[Module]/features/[Feature]/stores/index.ts
-export const useModuleStore = ModuleStoreFactory.create(container.resolve(ModuleStoreActions));
+const moduleStoreFactory = new ModuleStoreFactory();
+export const useModuleStore = moduleStoreFactory.create(container.resolve(ModuleStoreActions));
 
-// Store factory: container-free; receives injected actions
-export default class ModuleStoreFactory {
-  public static create(actions: ModuleStoreActions): UseModuleStore {
+// Store factory: container-free; receives injected actions. Instance method + module
+// singleton (no `static`) per the no-static convention above.
+class ModuleStoreFactory {
+  public create(actions: ModuleStoreActions): UseModuleStore {
     return create<ModuleStore>()(
       devtools(
         (set) => ({

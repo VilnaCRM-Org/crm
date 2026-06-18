@@ -4,7 +4,7 @@ import ReactiveVarFactory from '@auth/stores/reactive-var';
 
 describe('reactive var integration', () => {
   it('supports read, write, one-shot and persistent notification end to end', () => {
-    const variable = ReactiveVarFactory.create({ token: null as string | null });
+    const variable = new ReactiveVarFactory().create({ token: null as string | null });
     const once = jest.fn();
     const always = jest.fn();
     variable.onNextChange(once);
@@ -27,7 +27,7 @@ describe('reactive var integration', () => {
 
   it('skips notifications for same-reference writes and honours cancelled listeners', () => {
     const value = { token: 'stable' };
-    const variable = ReactiveVarFactory.create(value);
+    const variable = new ReactiveVarFactory().create(value);
     const once = jest.fn();
     const always = jest.fn();
     const cancel = variable.onNextChange(once);
@@ -44,7 +44,7 @@ describe('reactive var integration', () => {
   });
 
   it('keeps notifying persistent subscribers after a one-shot listener throws', () => {
-    const variable = ReactiveVarFactory.create({ token: null as string | null });
+    const variable = new ReactiveVarFactory().create({ token: null as string | null });
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
     const failure = new Error('listener failure');
     const failing = jest.fn(() => {

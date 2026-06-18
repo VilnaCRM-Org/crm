@@ -1,7 +1,7 @@
 import { TFunction } from 'i18next';
 
-import { createValidators } from '@auth/components/form-section/validations';
-import { isValidEmailFormat } from '@auth/components/form-section/validations/email';
+import formValidators from '@auth/components/form-section/validations';
+import emailValidator from '@auth/components/form-section/validations/email';
 
 import emptyUser from './constants';
 
@@ -29,7 +29,7 @@ describe('email validation', () => {
         '123@example.com',
         'user@123.com',
       ])('should return true for valid email: %s', (email) => {
-        expect(isValidEmailFormat(email)).toBe(true);
+        expect(emailValidator.isValidFormat(email)).toBe(true);
       });
     });
 
@@ -58,65 +58,65 @@ describe('email validation', () => {
         'user@exam ple.com',
         'user name@example.com',
       ])('should return false for invalid email: %s', (email) => {
-        expect(isValidEmailFormat(email)).toBe(false);
+        expect(emailValidator.isValidFormat(email)).toBe(false);
       });
     });
 
     describe('edge cases', () => {
       it('should handle email with multiple dots in local part', () => {
-        expect(isValidEmailFormat('first.middle.last@example.com')).toBe(true);
+        expect(emailValidator.isValidFormat('first.middle.last@example.com')).toBe(true);
       });
 
       it('should handle email with numbers', () => {
-        expect(isValidEmailFormat('user123@example456.com')).toBe(true);
+        expect(emailValidator.isValidFormat('user123@example456.com')).toBe(true);
       });
 
       it('should handle email with subdomain', () => {
-        expect(isValidEmailFormat('user@mail.example.com')).toBe(true);
+        expect(emailValidator.isValidFormat('user@mail.example.com')).toBe(true);
       });
 
       it('should handle email with hyphen', () => {
-        expect(isValidEmailFormat('user-name@example-domain.com')).toBe(true);
+        expect(emailValidator.isValidFormat('user-name@example-domain.com')).toBe(true);
       });
 
       it('should reject email starting with dot in local part', () => {
-        expect(isValidEmailFormat('.user@example.com')).toBe(false);
+        expect(emailValidator.isValidFormat('.user@example.com')).toBe(false);
       });
 
       it('should reject email ending with dot in local part', () => {
-        expect(isValidEmailFormat('user.@example.com')).toBe(false);
+        expect(emailValidator.isValidFormat('user.@example.com')).toBe(false);
       });
 
       it('should allow consecutive dots in local part (regex allows it)', () => {
         // Note: The regex actually allows this pattern
-        expect(isValidEmailFormat('user..name@example.com')).toBe(true);
+        expect(emailValidator.isValidFormat('user..name@example.com')).toBe(true);
       });
 
       it('should reject email with space', () => {
-        expect(isValidEmailFormat('user name@example.com')).toBe(false);
+        expect(emailValidator.isValidFormat('user name@example.com')).toBe(false);
       });
 
       it('should reject email without @', () => {
-        expect(isValidEmailFormat('userexample.com')).toBe(false);
+        expect(emailValidator.isValidFormat('userexample.com')).toBe(false);
       });
 
       it('should reject email without domain', () => {
-        expect(isValidEmailFormat('user@')).toBe(false);
+        expect(emailValidator.isValidFormat('user@')).toBe(false);
       });
 
       it('should reject email without TLD', () => {
-        expect(isValidEmailFormat('user@example')).toBe(false);
+        expect(emailValidator.isValidFormat('user@example')).toBe(false);
       });
 
       it('should reject email with single character TLD', () => {
-        expect(isValidEmailFormat('user@example.c')).toBe(false);
+        expect(emailValidator.isValidFormat('user@example.c')).toBe(false);
       });
     });
   });
 
   describe('validators.email', () => {
     const tMock = ((key: string) => key) as unknown as TFunction;
-    const validators = createValidators(tMock);
+    const validators = formValidators.create(tMock);
 
     describe('valid emails', () => {
       it('should return true for valid email', () => {

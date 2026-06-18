@@ -309,7 +309,7 @@ chunks needed to paint the authentication page (mobile Lighthouse budget):
 
 ```typescript
 // src/modules/user/features/auth/stores/index.ts (composition root)
-private static async load(): Promise<AuthStoreActions> {
+private async load(): Promise<AuthStoreActions> {
   const { default: container } = await import('@/config/dependency-injection-config');
   const { default: ActionsClass } = await import('./auth-store-actions');
   return container.resolve(ActionsClass);
@@ -319,23 +319,62 @@ private static async load(): Promise<AuthStoreActions> {
 Auth state pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-// auth-var.ts — dependency-free reactive state (ReactiveVarFactory, no @apollo/client)
-export default class AuthStateVar {
-  public static get(): AuthState {
+// auth-var.ts — dependency-free reactive state (ReactiveVarFactory, no @apollo/client).
+// Instance methods on a module-singleton instance keep the paint path container-free
+// (no tsyringe in the auth chunk) while satisfying the no-static convention (issue #100).
+export class AuthStateVar {
+  public get(): AuthState {
     /* read */
   }
-  public static set(partial: Partial<AuthState>): void {
+  public set(partial: Partial<AuthState>): void {
     /* merge + notify */
   }
 }
+const authStateVar = new AuthStateVar();
+export default authStateVar;
 
-// auth-store-selectors.ts — selectors grouped in a class (no free functions)
-export default class AuthStoreSelectors {
-  public static email(s: AuthState): string {
+// auth-store-selectors.ts — selectors grouped in a class, exported as a singleton (no free functions)
+class AuthStoreSelectors {
+  public email(s: AuthState): string {
     return s.email;
   }
 }
+export default new AuthStoreSelectors();
 ```
+
+### No static methods or free functions (issue #100)
+
+Non-React application code (services, repositories, mappers, factories, stores, and
+utilities under `src/**/*.ts`) must **not** use `static` class members or standalone
+(free) functions — neither `export function foo()` / `export default function foo()` nor
+`export const foo = () => …`. Use **instance methods on an injectable class** instead.
+
+**Why:** mockability and testability. Static methods and free functions bind at the call
+site and resist substitution, pushing tests toward module mocking and monkey-patching.
+Instance methods behind a tsyringe token can be swapped for mocks/spies via the DI
+container — collaborators are injected, not reached for.
+
+**How to apply:**
+
+- Behavioral collaborators (services, repos, mappers, factories, error handlers) are
+  `@injectable()` classes registered in `dependency-injection-config.ts` against a token
+  in `tokens.ts`, and resolved via `container.resolve<Type>(TOKENS.X)` or constructor
+  `@inject`.
+- Render-path state primitives that must stay container-free for the auth-page Lighthouse
+  budget (`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`) are
+  instance classes exported as a **module singleton** (`export default new X()`), so call
+  sites stay `X.method(...)` and no tsyringe is pulled into the paint path.
+- Pure helpers/validators/type-guards/style-helpers/lazy-loaders also become instance
+  methods on a singleton class rather than free functions.
+
+**Exempt:** React components (`*.tsx`, including class error boundaries that need
+`static getDerivedStateFromError`) and hooks (`use-*.ts` / `use-*.tsx`) — they are
+functions by definition.
+
+**Enforcement:** an ESLint `no-restricted-syntax` gate (in `eslint.config.mjs`, scoped to
+`src/**/*.ts` excluding `use-*`) fails the build on `static` members and standalone
+functions. It runs in `make lint-eslint` and the `static testing` workflow. Satisfy it by
+refactoring to instance methods — never with `eslint-disable`.
 
 ### Path Aliases
 

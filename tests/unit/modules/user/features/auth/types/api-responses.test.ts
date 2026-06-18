@@ -1,18 +1,17 @@
-import {
-  validateLoginResponse,
-  validateRegistrationResponse,
-} from '@/modules/user/features/auth/types/api-responses';
+import ResponseValidators from '@auth/types/response-validators';
+
+const responseValidators = new ResponseValidators();
 
 describe('auth api response validators', () => {
   it('rejects array-like registration payloads with an object-level error', () => {
-    expect(validateRegistrationResponse([])).toEqual({
+    expect(responseValidators.validateRegistration([])).toEqual({
       success: false,
       errors: ['value: expected object'],
     });
   });
 
   it('keeps valid login payloads intact', () => {
-    expect(validateLoginResponse({ token: 'secret-token' })).toEqual({
+    expect(responseValidators.validateLogin({ token: 'secret-token' })).toEqual({
       success: true,
       data: { token: 'secret-token' },
     });
