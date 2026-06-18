@@ -1,4 +1,3 @@
-import { CircularProgress } from '@mui/material';
 import { ReactNode } from 'react';
 import {
   useForm,
@@ -12,6 +11,8 @@ import {
 import UIButton from '@/components/ui-button';
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import styles from '@/components/ui-form/styles';
+import SubmitSpinner from '@/components/ui-form/submit-spinner';
+import UILiveStatus from '@/components/ui-live-status';
 import UITypography from '@/components/ui-typography';
 
 export interface UIFormProps<T extends FieldValues> {
@@ -28,6 +29,7 @@ export interface UIFormProps<T extends FieldValues> {
   showSubtitle?: boolean;
   resetOnSuccess?: boolean;
   isSubmitDisabled?: boolean;
+  submittingLabel: string;
 }
 
 type SubmitHandlerOptions<T extends FieldValues> = {
@@ -55,6 +57,7 @@ type FormBodyProps<T extends FieldValues> = {
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;
+  submittingLabel: string;
 };
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
@@ -104,17 +107,17 @@ function SubmitControls({
   submitLabel,
 }: SubmitControlsProps): JSX.Element {
   return (
-    <>
-      <UIButton
-        type="submit"
-        disabled={submitting || isSubmitDisabled}
-        variant="contained"
-        sx={styles.submitButton}
-      >
-        {submitLabel}
-      </UIButton>
-      {submitting ? <CircularProgress color="primary" size={70} sx={styles.loader} /> : null}
-    </>
+    <UIButton
+      type="submit"
+      loading={submitting}
+      loadingPosition="center"
+      loadingIndicator={<SubmitSpinner />}
+      disabled={isSubmitDisabled}
+      variant="contained"
+      sx={styles.submitButton}
+    >
+      {submitLabel}
+    </UIButton>
   );
 }
 
@@ -130,6 +133,7 @@ function FormBody<T extends FieldValues>({
   submitting,
   isSubmitDisabled,
   submitLabel,
+  submittingLabel,
 }: FormBodyProps<T>): JSX.Element {
   return (
     <form noValidate onSubmit={methods.handleSubmit(handleSubmit)}>
@@ -146,6 +150,7 @@ function FormBody<T extends FieldValues>({
         isSubmitDisabled={isSubmitDisabled}
         submitLabel={submitLabel}
       />
+      <UILiveStatus message={submitting ? submittingLabel : ''} />
     </form>
   );
 }
@@ -164,6 +169,7 @@ export default function UIForm<T extends FieldValues>({
   showSubtitle = true,
   resetOnSuccess = false,
   isSubmitDisabled = false,
+  submittingLabel,
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
@@ -182,6 +188,7 @@ export default function UIForm<T extends FieldValues>({
         submitting={submitting}
         isSubmitDisabled={isSubmitDisabled}
         submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
       >
         {children}
       </FormBody>

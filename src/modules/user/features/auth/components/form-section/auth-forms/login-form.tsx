@@ -25,6 +25,7 @@ export default function LoginForm(): JSX.Element {
       error={error}
       isSubmitting={isSubmitting}
       submitLabel={t(getSubmitLabelKey('sign_in', isSubmitting))}
+      submittingLabel={t('sign_in.form.submitting')}
       title={t('sign_in.title')}
       subtitle={t('sign_in.subtitle')}
     >

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 
 import UIForm from '@/components/ui-form';
 
@@ -14,6 +14,7 @@ describe('UIForm', () => {
         defaultValues={DEFAULTS}
         onSubmit={onSubmit}
         submitLabel="Submit"
+        submittingLabel="Submitting…"
         title="My Title"
         subtitle="My Subtitle"
       >
@@ -35,6 +36,7 @@ describe('UIForm', () => {
         defaultValues={DEFAULTS}
         onSubmit={jest.fn()}
         submitLabel="Submit"
+        submittingLabel="Submitting…"
         title="Title"
         error="Boom"
       >
@@ -51,6 +53,7 @@ describe('UIForm', () => {
         defaultValues={DEFAULTS}
         onSubmit={jest.fn()}
         submitLabel="Submit"
+        submittingLabel="Submitting…"
         title="Hidden"
         subtitle="HiddenSub"
         showTitle={false}
@@ -64,12 +67,13 @@ describe('UIForm', () => {
     expect(screen.queryByText('HiddenSub')).not.toBeInTheDocument();
   });
 
-  it('disables submit when isSubmitting is true and shows a loader', () => {
+  it('shows a single in-button spinner and keeps the stable name while submitting', () => {
     render(
       <UIForm<Values>
         defaultValues={DEFAULTS}
         onSubmit={jest.fn()}
         submitLabel="Submit"
+        submittingLabel="Submitting…"
         title="Title"
         isSubmitting
       >
@@ -77,8 +81,49 @@ describe('UIForm', () => {
       </UIForm>
     );
 
-    expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    const button = screen.getByRole('button', { name: 'Submit' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveClass('MuiButton-loading');
+    expect(within(button).getAllByRole('progressbar', { hidden: true })).toHaveLength(1);
+    expect(screen.getAllByRole('progressbar', { hidden: true })).toHaveLength(1);
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+
+  it('announces the submitting label through one polite live region while submitting', () => {
+    render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+        isSubmitting
+      >
+        <span />
+      </UIForm>
+    );
+
+    const regions = screen.getAllByRole('status');
+    expect(regions).toHaveLength(1);
+    expect(regions[0]).toHaveTextContent('Submitting…');
+  });
+
+  it('keeps the live region empty and the button interactive when idle', () => {
+    render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+      >
+        <span />
+      </UIForm>
+    );
+
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeEnabled();
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    expect(screen.queryByRole('progressbar', { hidden: true })).not.toBeInTheDocument();
   });
 
   it('disables submit when isSubmitDisabled is true', () => {
@@ -87,6 +132,7 @@ describe('UIForm', () => {
         defaultValues={DEFAULTS}
         onSubmit={jest.fn()}
         submitLabel="Submit"
+        submittingLabel="Submitting…"
         title="Title"
         isSubmitDisabled
       >
@@ -104,6 +150,7 @@ describe('UIForm', () => {
         defaultValues={DEFAULTS}
         onSubmit={onSubmit}
         submitLabel="Submit"
+        submittingLabel="Submitting…"
         title="Title"
         resetOnSuccess
       >

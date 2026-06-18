@@ -90,9 +90,4 @@ export default {
       lineHeight: 1,
     },
   },
-
-  loader: {
-    display: 'block',
-    margin: '1rem auto 0',
-  },
 };

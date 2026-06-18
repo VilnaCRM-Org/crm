@@ -42,6 +42,7 @@ function RegistrationFormPanel({
         isSubmitting={form.isSubmitting}
         isSubmitDisabled={form.view !== 'form'}
         submitLabel={t(getSubmitLabelKey('sign_up', form.isSubmitting))}
+        submittingLabel={t('sign_up.form.submitting')}
         title={t('sign_up.title')}
         subtitle={t('sign_up.subtitle')}
       >
