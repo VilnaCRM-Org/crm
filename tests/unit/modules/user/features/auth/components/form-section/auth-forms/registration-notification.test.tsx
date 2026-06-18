@@ -203,13 +203,22 @@ describe('RegistrationNotification', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 
-  it('moves focus to a silent wrapper around the error heading, not the body', () => {
+  it('renders the error alert without a redundant aria-live', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="error" />,
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByRole('heading', { level: 4 })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).not.toHaveAttribute('aria-live');
+  });
+
+  it('moves focus off the body to the error notification on mount', () => {
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByRole('heading', { level: 4 })).toHaveAccessibleName();
     expect(document.body).not.toHaveFocus();
   });
 

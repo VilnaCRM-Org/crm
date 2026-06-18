@@ -34,7 +34,7 @@ CI gate (~0.85) — all green with no suppressions.
   at/above ~0.85 with no new heavy dependency on the auth critical path (NFR1,
   AC10).
 
-**Files touched.** `/home/dima/Desktop/crm/CLAUDE.md`.
+**Files touched.** `CLAUDE.md`.
 
 **Tests to add/update.** None (docs); the gate sweep re-runs all suites.
 

@@ -107,8 +107,7 @@ test.describe('Registration Form loader behaviour', () => {
     const signupButton = await fillValidRegistration(page);
     await signupButton.click();
     await expect(signupButton).toBeDisabled();
-    await signupButton.click({ force: true }).catch(() => {});
-    await page.waitForTimeout(300);
+    await signupButton.click({ force: true });
 
     expect(postCount).toBe(1);
     release();

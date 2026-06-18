@@ -235,9 +235,9 @@ Belt-and-suspenders, not "decorative-and-excused."
 **Acceptance Criteria.**
 
 - Given `SubmitSpinner`, When rendered, Then exactly one `CircularProgress` exists
-  with stroke color `customColors.text.primary` (`#404142`), `thickness=4.5`, and
-  `size=28`; it is NOT white and does NOT use `color="inherit"` (FR2, AR2, WCAG
-  1.4.11).
+  with stroke color `paletteColors.background.default` (white `#FFFFFF`),
+  `thickness=4.5`, and `size=28`; it does NOT use `color="inherit"` — white-on-grey
+  is 1.26:1, a design-accepted 1.4.11 deviation (FR2, AR2, WCAG 1.4.11).
 - Given the spinner, When its accessibility tree is inspected, Then it exposes no
   accessible name and contributes no separately-named progressbar node (AR1, D4).
 - Given the file, When measured by rca, Then it defines a single component
@@ -247,7 +247,7 @@ Belt-and-suspenders, not "decorative-and-excused."
 
 **Tests to add/update.** Unit (new
 `tests/unit/components/ui-form/submit-spinner.test.tsx`): render and assert one
-indicator, the exact stroke `color` `#404142`, `thickness=4.5`, and `size=28`;
+indicator, the exact stroke `color` white `#FFFFFF`, `thickness=4.5`, and `size=28`;
 assert it is white (`paletteColors.background.default`); assert it exposes no accessible
 name (queried by role, no `data-testid`). Full coverage of the new file (NFR9).
 
@@ -501,7 +501,7 @@ mutants on the fill, focus outline, key choice, and `aria-busy` value are killed
 branch is exercised for **both** forms: loading vs idle, `aria-busy` true/false,
 `submitting ? submittingLabel : ''`, the `#E1E7EA` grey disabled/loading fill (the
 same rule covers idle-invalid and loading), the `#404142` focus outline vs `:hover`,
-the `#404142` spinner stroke, and the stable `submit_button` accessible name while
+the white `#FFFFFF` spinner stroke, and the stable `submit_button` accessible name while
 loading. Add the double-submit assertion: while `submitting`, a second submit attempt
 does not re-invoke the handler (FR9). Add a `jest-axe` check confirming no duplicate
 live region and no name/role/value violation (AC5). Assertions use exact
@@ -669,8 +669,8 @@ submit button uses MUI native `loading` + `loadingPosition="center"`, goes nativ
 `disabled` to the grey `#E1E7EA` fill while loading (the same disabled state shown
 in the design, node 439:19256, not a brand-fill override), draws a distinct
 conformant `:focus-visible` outline, hides the label visually while preserving the
-accessible name, renders one dark `#404142` centered `SubmitSpinner` (thickness 4.5,
-size 28, white — 1.26:1 on grey, a design-accepted deviation), carries `aria-busy` on the `<form>`,
+accessible name, renders one white `#FFFFFF` centered `SubmitSpinner` (thickness 4.5,
+size 28 — 1.26:1 on grey, a design-accepted deviation), carries `aria-busy` on the `<form>`,
 and announces via one polite `UILiveStatus` (`role="status"`) — with no
 `role="progressbar"`, no detached spinner, and no L1-L5 loader family. Rationale
 lives here and in the PR (no inline code comments — NFR5). Then run the full gate
@@ -681,7 +681,7 @@ CI gate (~0.85) — all green with no suppressions.
 **Acceptance Criteria.**
 
 - Given CLAUDE.md, When the loader note is read, Then it accurately describes the
-  in-button native loading treatment (grey `#E1E7EA` disabled fill, dark spinner,
+  in-button native loading treatment (grey `#E1E7EA` disabled fill, white spinner,
   focus outline, `role="status"` announcement) and the out-of-scope items, and is
   markdownlint-clean (documentation accuracy).
 - Given `make lint-dup`, `make lint-metrics`, ESLint, and TS, When run, Then all
@@ -766,7 +766,7 @@ Every requirement maps to the stories that satisfy it.
 | NFR8        | Reduced motion: `animation: none` (quality, not AA)                              | 1.1, 1.9                 |
 | NFR9        | 100% integration coverage + mutation health                                      | 1.3, 1.4, 1.8            |
 | AR1         | Accessible name preserved (stable `submit_button`, no indicator name)            | 1.3, 1.5, 1.7            |
-| AR2         | Spinner non-text contrast 8.12:1 (`#404142` on `#E1E7EA`)                        | 1.1, 1.3                 |
+| AR2         | Spinner white `#FFFFFF` on `#E1E7EA` 1.26:1 (design-accepted 1.4.11 deviation)   | 1.1, 1.3                 |
 | AR3         | Single polite live region (`role="status"`, zero layout)                         | 1.4, 1.6                 |
 | AR4         | Form busy state (`aria-busy`)                                                    | 1.6                      |
 | AR5         | Focus indicator + error focus + re-enable path                                   | 1.1, 1.10                |

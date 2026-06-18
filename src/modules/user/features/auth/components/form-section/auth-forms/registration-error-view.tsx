@@ -117,7 +117,7 @@ export default function RegistrationErrorView({
 }: Props): JSX.Element {
   const { t } = useTranslation();
   return (
-    <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
+    <Box role="alert" sx={styles.notificationSection}>
       <Box sx={styles.contentBoxError}>
         <ErrorImageBlock label={t('notifications.error.images.error')} />
         <Box sx={styles.messageContainerError}>

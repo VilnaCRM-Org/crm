@@ -277,13 +277,13 @@ suppressed with `animation: none` on the spinner SVG, leaving a static partial
 ring. The unit assertion is that `animation: none` appears **only inside** the
 `prefers-reduced-motion: reduce` media query (never unconditionally). The busy
 state is still fully conveyed by `aria-busy` (AR4), the native `disabled`
-attribute (FR3), the dark spinner, and the polite live region (AR3) — so
+attribute (FR3), the white spinner, and the polite live region (AR3) — so
 suppressing the spin loses no information.
 
 ```text
 prefers-reduced-motion: no-preference   →  spinner rotates (MUI keyframes)
 prefers-reduced-motion: reduce          →  animation: none (static ring)
-                                            state still announced + aria-busy + disabled + dark spinner
+                                            state still announced + aria-busy + disabled + white spinner
 ```
 
 ## Accessible Announcement Copy & Live-Region Semantics
@@ -327,7 +327,7 @@ the indicator).
   …fields…
   <Button loading={submitting}>          ← FR1-FR4, FR10
      {submitLabel}                       ← always present (the accessible name)
-     loadingIndicator: CircularProgress  ← dark #404142 on grey #E1E7EA, size 28, thickness 4.5, NO aria-label
+     loadingIndicator: CircularProgress  ← white #FFFFFF on grey #E1E7EA, size 28, thickness 4.5, NO aria-label
   </Button>
   <span role="status" aria-atomic="true">  ← FR7 / AR3 / 4.1.3: the ONE announcement
      {submitting ? t('…submitting') : ''}
@@ -406,7 +406,7 @@ This is a free double-submit guard — no separate guard logic is added.
 
 | Aspect                 | Before (main)                                                     | After (this design)                                                    |
 | ---------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Busy visual            | Grey button + detached `size={70}` spinner below                  | Same button, label hidden, centered dark spinner                       |
+| Busy visual            | Grey button + detached `size={70}` spinner below                  | Same button, label hidden, centered white spinner                      |
 | Layout                 | Spinner pushes content → shift (FR8 violated)                     | Zero shift; swap inside fixed box (FR8)                                |
 | Button fill (busy)     | `#E1E7EA` grey, white label 1.26:1 (label visible)                | `#E1E7EA` grey (Figma), label removed, white spinner 1.26:1 (accepted) |
 | Focus indicator        | `:focus-visible` = `:hover` fill shift 1.18:1 (2.4.7/2.4.11 fail) | `2px solid #404142` outline + `2px` offset, ≥3:1 (2.4.7/2.4.11)        |
@@ -461,7 +461,7 @@ between the long-label idle and loading states.
 If the form is invalid (`isSubmitDisabled`) the button is grey and not loading;
 it never enters the loading path because submission cannot fire. The loading
 button uses the **same** native grey `#E1E7EA` disabled fill (no override), so
-the two disabled-looking states share the fill by design — the dark spinner and
+the two disabled-looking states share the fill by design — the white spinner and
 the hidden label are what distinguish the busy state, and the `:disabled` rule is
 reused as-is rather than weakened.
 

@@ -49,7 +49,7 @@ describe('UIForm', () => {
     expect(alert).not.toHaveAttribute('aria-live');
   });
 
-  it('moves focus to a silent wrapper around the error alert, not the body', () => {
+  it('moves focus off the body when the error alert mounts', () => {
     render(
       <UIForm<Values>
         defaultValues={DEFAULTS}
@@ -63,7 +63,7 @@ describe('UIForm', () => {
       </UIForm>
     );
 
-    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Boom');
     expect(document.body).not.toHaveFocus();
   });
 

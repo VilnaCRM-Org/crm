@@ -99,9 +99,10 @@ test.describe('Login Form loader behaviour', () => {
 
     const focusLandedOnBanner = await page.evaluate(() => {
       const active = document.activeElement;
-      return (
-        active !== document.body && active !== null && !!active.querySelector('[role="alert"]')
-      );
+      if (active === null || active === document.body) return false;
+      const isAlert = active.closest('[role="alert"]') !== null;
+      const wrapsAlert = active.querySelector('[role="alert"]') !== null;
+      return isAlert || wrapsAlert;
     });
     expect(focusLandedOnBanner).toBe(true);
   });
