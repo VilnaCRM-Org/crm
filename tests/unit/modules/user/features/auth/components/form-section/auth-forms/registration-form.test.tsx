@@ -34,11 +34,6 @@ jest.mock('@auth/components/form-section/validations', () => ({
   createValidators: (): Record<string, never> => ({}),
 }));
 
-jest.mock('@auth/utils/get-submit-label-key', () => ({
-  __esModule: true,
-  default: (): string => 'sign_up.submit',
-}));
-
 jest.mock('@auth/utils/load-registration-notification', () => ({
   __esModule: true,
   default: (): Promise<{ default: () => ReactElement }> =>
