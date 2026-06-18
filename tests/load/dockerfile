@@ -4,7 +4,7 @@ WORKDIR /app
 
 ENV CGO_ENABLED 0
 
-RUN apk add --no-cache git
+RUN apk add --no-cache git=2.49.1-r0
 
 RUN go install go.k6.io/xk6/cmd/xk6@v0.18.0
 
@@ -14,14 +14,13 @@ RUN xk6 build \
     --with github.com/avitalique/xk6-file@v1.5.0
 
 FROM alpine:3.22
-RUN apk add --no-cache ca-certificates tzdata
-
-COPY --from=builder /app/k6 /bin/
-
-RUN addgroup -g 1000 k6 && adduser -u 1000 -G k6 -D k6 \
-    && chown k6:k6 /bin/k6 \
+RUN apk add --no-cache ca-certificates=20260413-r0 tzdata=2026b-r0 \
+    && addgroup -g 1000 k6 \
+    && adduser -u 1000 -G k6 -D k6 \
     && mkdir -p /loadTests/results \
     && chown k6:k6 /loadTests/results
+
+COPY --chown=k6:k6 --from=builder /app/k6 /bin/k6
 
 USER k6
 

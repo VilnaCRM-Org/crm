@@ -57,3 +57,6 @@ reports/
 /_bmad-output/
 .ralph/logs/
 _bmad-output/
+
+# Dockerfile build-performance gate (scripts/ci/docker_perf.sh) artifacts
+/.docker-perf/
