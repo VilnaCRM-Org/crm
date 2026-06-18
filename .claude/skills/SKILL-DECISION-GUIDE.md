@@ -134,7 +134,7 @@ What are you trying to do?
 │   └─ CI readiness before commit/push/PR → ci-workflow
 │
 ├─ Create something new
-│   ├─ ANY UI / visual change (color, layout, state, styling) → figma-design-check (Figma MCP) FIRST
+│   ├─ ANY UI / visual change → figma-design-check before writing or editing the UI code
 │   ├─ React component, hook, form, feature UI → frontend-component-development
 │   ├─ Module / file placement and naming → code-organization
 │   ├─ New feature, repository, or service boundary → architecture

@@ -7,13 +7,13 @@ the in-button submit loader and what is intentionally out of scope, so I don't
 reintroduce a detached spinner or the deleted loader family.
 
 **Description.** Update the "Important Patterns" → loader note in
-`/home/dima/Desktop/crm/CLAUDE.md` to describe the **live** treatment: the auth
+`CLAUDE.md` to describe the **live** treatment: the auth
 submit button uses MUI native `loading` + `loadingPosition="center"`, goes natively
 `disabled` to the grey `#E1E7EA` fill while loading (the same disabled state shown
 in the design, node 439:19256, not a brand-fill override), draws a distinct
 conformant `:focus-visible` outline, hides the label visually while preserving the
-accessible name, renders one dark `#404142` centered `SubmitSpinner` (thickness 4.5,
-size 28, 8.12:1 on the grey fill — not white), carries `aria-busy` on the `<form>`,
+accessible name, renders one **white** `#FFFFFF` centered `SubmitSpinner` (thickness 4.5,
+size 28, 1.26:1 on the grey fill — design-accepted), carries `aria-busy` on the `<form>`,
 and announces via one polite `UILiveStatus` (`role="status"`) — with no
 `role="progressbar"`, no detached spinner, and no L1-L5 loader family. Rationale
 lives here and in the PR (no inline code comments — NFR5). Then run the full gate

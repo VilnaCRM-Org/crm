@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { ReactNode, useCallback } from 'react';
+import { ReactNode } from 'react';
 import {
   useForm,
   SubmitHandler,
@@ -12,9 +12,11 @@ import {
 import UIButton from '@/components/ui-button';
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import styles from '@/components/ui-form/styles';
-import SubmitSpinner from '@/components/ui-form/submit-spinner';
 import UILiveStatus from '@/components/ui-live-status';
 import UITypography from '@/components/ui-typography';
+import useFocusOnMount from '@/utils/use-focus-on-mount';
+
+import SubmitSpinner from './submit-spinner';
 
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
@@ -62,9 +64,7 @@ type FormBodyProps<T extends FieldValues> = {
 };
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
-  const focusOnAppear = useCallback((node: HTMLDivElement | null) => {
-    node?.focus();
-  }, []);
+  const focusOnAppear = useFocusOnMount<HTMLDivElement>();
   if (!error) return null;
   return (
     <Box ref={focusOnAppear} tabIndex={-1} sx={styles.errorBannerFocus}>

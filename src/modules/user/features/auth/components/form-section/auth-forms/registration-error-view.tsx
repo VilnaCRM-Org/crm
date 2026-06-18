@@ -1,12 +1,12 @@
 import { Box, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 import { paletteColors } from '@/styles/colors';
+import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import styles from './registration-notification.error-styles';
 
@@ -19,9 +19,7 @@ const headingFocusStyles = {
 };
 
 function FocusableErrorHeading({ title }: { title: string }): JSX.Element {
-  const focusOnMount = useCallback((node: HTMLDivElement | null) => {
-    node?.focus();
-  }, []);
+  const focusOnMount = useFocusOnMount<HTMLDivElement>();
   return (
     <Box ref={focusOnMount} tabIndex={-1} sx={headingFocusStyles}>
       <UITypography component="h4" sx={styles.messageTitle}>

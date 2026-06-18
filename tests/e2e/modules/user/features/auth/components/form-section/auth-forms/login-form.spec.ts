@@ -70,8 +70,8 @@ test.describe('Login Form loader behaviour', () => {
     const submitButton = await fillValidLogin(page);
     await submitButton.click();
     await expect(submitButton).toBeDisabled();
-    await submitButton.click({ force: true }).catch(() => {});
-    await page.waitForTimeout(300);
+    await expect.poll(() => postCount).toBe(1);
+    await submitButton.click({ force: true });
 
     expect(postCount).toBe(1);
     release();

@@ -22,8 +22,12 @@ rule set:
    REMOVED, along with its `buttonClasses` fill import. The label stays white
    (`background.default`) but is hidden during loading via `loadingPosition="center"`
    (`visibility: hidden`, Story 1.5), so the white-on-grey label contrast does not
-   apply to the busy state. The spinner stroke is dark (Story 1.3), so the spinner
-   clears 1.4.11 on its own (`#404142` on `#E1E7EA` = 8.12:1).
+   apply to the busy state. The spinner stroke is **white** (`#FFFFFF`,
+   `paletteColors.background.default`; Story 1.3) — **1.26:1** on the grey `#E1E7EA` fill, a
+   deliberate design-owner-accepted WCAG 1.4.11 deviation (Figma node 439:19256). The busy
+   state does not rely on spinner contrast: it is bounded by `aria-busy`, the native disabled
+   state, the polite `UILiveStatus` live region, and the reduced-motion guard. (`#404142` is
+   the focus-outline color, not the spinner.)
 2. **Focus indicator (in scope).** Today `:focus-visible` is collapsed into the
    shared `:hover` rule, which shifts to `#00A3FF` with `boxShadow: 'none'` —
    `#00A3FF` on the surrounding fill is only ~1.18:1, i.e. effectively no visible

@@ -99,6 +99,7 @@ test.describe('Registration Form loader behaviour', () => {
       release = resolve;
     });
     await page.route(REGISTRATION_API_URL, async (route) => {
+      if (route.request().method() !== 'POST') return route.fallback();
       postCount += 1;
       await inFlight;
       return successResponse(route);

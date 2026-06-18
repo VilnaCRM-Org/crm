@@ -203,7 +203,7 @@ ESLint/TS/metrics pass; no `data-testid`.
 
 ---
 
-### Story 1.3: Extract the dark in-button spinner (`SubmitSpinner`)
+### Story 1.3: Extract the in-button spinner (`SubmitSpinner`)
 
 **User story.** As a user, I want a single centered spinner inside the submit
 button while it works, with enough contrast against the grey disabled fill to be
