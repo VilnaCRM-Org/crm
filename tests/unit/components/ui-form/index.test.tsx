@@ -30,7 +30,7 @@ describe('UIForm', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
   });
 
-  it('renders the error banner when error is provided', () => {
+  it('renders the error alert assertively with no redundant aria-live', () => {
     render(
       <UIForm<Values>
         defaultValues={DEFAULTS}
@@ -44,7 +44,64 @@ describe('UIForm', () => {
       </UIForm>
     );
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Boom');
+    const alert = screen.getByRole('alert');
+    expect(alert).toHaveTextContent('Boom');
+    expect(alert).not.toHaveAttribute('aria-live');
+  });
+
+  it('exposes aria-busy on the form mirroring the submitting state', () => {
+    const { rerender } = render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+        isSubmitting={false}
+      >
+        <span />
+      </UIForm>
+    );
+
+    const idleButton = screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement;
+    expect(idleButton.form).toHaveAttribute('aria-busy', 'false');
+
+    rerender(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+        isSubmitting
+      >
+        <span />
+      </UIForm>
+    );
+
+    const busyButton = screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement;
+    expect(busyButton.form).toHaveAttribute('aria-busy', 'true');
+  });
+
+  it('keeps the busy and error regions distinct: one assertive alert, empty polite status', () => {
+    render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+        error="Boom"
+        isSubmitting={false}
+      >
+        <span />
+      </UIForm>
+    );
+
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    const status = screen.getByRole('status');
+    expect(status).toBeEmptyDOMElement();
+    expect(status).not.toHaveAttribute('role', 'alert');
   });
 
   it('hides title and subtitle when show flags are false', () => {

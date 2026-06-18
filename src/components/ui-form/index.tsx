@@ -63,7 +63,7 @@ type FormBodyProps<T extends FieldValues> = {
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
   if (!error) return null;
   return (
-    <UITypography role="alert" aria-live="polite" sx={{ color: 'red', marginBottom: '1rem' }}>
+    <UITypography role="alert" sx={{ color: 'red', marginBottom: '1rem' }}>
       {error}
     </UITypography>
   );
@@ -136,7 +136,7 @@ function FormBody<T extends FieldValues>({
   submittingLabel,
 }: FormBodyProps<T>): JSX.Element {
   return (
-    <form noValidate onSubmit={methods.handleSubmit(handleSubmit)}>
+    <form noValidate aria-busy={submitting} onSubmit={methods.handleSubmit(handleSubmit)}>
       <ErrorBanner error={error} />
       <FormHeader
         title={title}
