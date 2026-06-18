@@ -90,48 +90,42 @@ How this interacts with `UIButton`'s clone/anchor logic:
 - `cloneElement` merges `rest` onto `baseButton`; because `baseButton` already carries
   `component`, `href`, and `type`, the loading props arrive purely additive and do not collide.
 
-### (b) `ui-button/theme.ts` — loading reuses the native disabled grey `#E1E7EA` + dark `#404142` spinner, add a conformant focus indicator
+### (b) `ui-button/theme.ts` — loading reuses the disabled grey `#E1E7EA` + white spinner; label hidden while loading; conformant focus indicator
 
-The native loading button is **natively `disabled`**, so the existing
-`MuiButton.styleOverrides.contained['&:disabled']` rule
-(`backgroundColor: paletteColors.background.subtle` `#E1E7EA`, `color: paletteColors.background.default`
-`#FFFFFF`) fires and renders the grey `#E1E7EA` pill — this is exactly the desired loading
-appearance and **matches the Figma design** (node 439:19256, a grey `#E1E7EA` pill). The label is
-white-on-grey, but under `loadingPosition="center"` that label is `visibility: hidden`, so the
-white-on-grey label contrast does not apply to the busy state. There is **no** loading-scoped fill
-override — the previous `buttonClasses.loading` rule (and its `buttonClasses` import) is
-**removed**; the disabled grey is correct and desired while loading (R1/R2):
+The native loading button is **natively `disabled`**, so it picks up the contained disabled rule.
+Because crm wraps MUI in `StyledEngineProvider injectFirst`, MUI's own `.Mui-disabled` styles are
+injected first and a plain `:disabled` override loses on source order — so the disabled rule is
+written as **`&&.Mui-disabled`** (`backgroundColor: paletteColors.background.subtle` `#E1E7EA`,
+`color: paletteColors.background.default` `#FFFFFF`). This renders the grey `#E1E7EA` pill with a
+white label — exactly the desired loading appearance, **matching the Figma design** (node
+439:19256). There is **no** loading-scoped fill override (no `buttonClasses.loading` rule, no
+`buttonClasses` import): the disabled grey is correct and desired while loading (R1/R2).
+
+While loading the label word must be **removed** (only the spinner shows). MUI hides the
+center-loading label via `color: transparent`, but the `&&.Mui-disabled` rule above sets the label
+`#FFFFFF`, which would override that and leak the white text. So one extra rule —
+**`&&.Mui-disabled.MuiButton-loading { color: 'transparent' }`** — re-hides the label in the loading
+state only (the plain disabled state keeps its white label). The white spinner has its own color and
+is unaffected.
 
 ```ts
 import { circularProgressClasses } from '@mui/material/CircularProgress';
-// No buttonClasses import and no '&.${buttonClasses.loading}' fill override:
-// the native 'loading' prop disables the button, so the existing '&:disabled'
-// rule (grey #E1E7EA) is reused as-is. Only the reduced-motion guard below is added.
+// '&&.Mui-disabled' (injectFirst-safe) -> grey #E1E7EA fill + white label.
+// '&&.Mui-disabled.MuiButton-loading' -> label color transparent (word hidden while loading).
+// No buttonClasses fill override; reduced-motion guard below.
 ```
 
-- The loading button reuses the single `.MuiButton-contained:disabled` rule; **no** second class
-  selector competes with it, because there is no loading-fill override. `buttonClasses.loading` is
-  **not** imported and **not** referenced anywhere (per the PRD/MUI_FACTS contract, the loading
-  state is just the disabled state).
-- The fill is the native disabled grey `#E1E7EA` (`paletteColors.background.subtle`, already in
-  `src/styles/colors.ts`) while loading — matching the Figma design. The greying is **correct and
-  desired**: the busy button is non-interactive and reads as disabled, which is exactly the intent.
-  The grey fill is also the background the spinner stroke is measured against. The plain `:disabled`
-  (invalid form) state and the loading state share this one grey rule — no override scopes them
-  apart. The idle/enabled contained fill remains `#1EAEFF` (`paletteColors.primary.main`) and the
-  `:active` (pressed) state still uses `#0399ED` (`paletteColors.primary.active`); both are
-  untouched.
-- **Spinner contrast (AR2/FR4, WCAG 1.4.11).** The loading indicator is **not** white and does
-  **not** use `color="inherit"`. It is a `CircularProgress` stroked in dark `#404142`
-  (`customColors.text.primary`), `thickness={4.5}`, `size={28}`. `#404142` on the `#E1E7EA` loading
-  fill measures **8.12:1**, clearing the 3:1 non-text-contrast floor with a wide margin. A
-  white-on-`#E1E7EA` option (1.26:1) is **rejected** as failing the 3:1 floor for a thin
-  anti-aliased stroke; the dark `#404142` choice is unchanged and is even better on grey. Note the
-  import path: `#404142` is `customColors.text.primary` (it lives in `customColors.text`, **not** in
-  `paletteColors`).
-- **Belt-and-suspenders, not decorative-and-excused (AR2).** The spinner is built to pass 1.4.11 on
-  its own _and_ is supplementary: busy is **also** conveyed by `aria-busy`, the native `disabled`
-  state, and the polite live region. It is never relied on as the sole busy signal.
+- The idle/enabled contained fill remains `#1EAEFF` (`paletteColors.primary.main`); the `:active`
+  (pressed) state still uses `#0399ED` (`paletteColors.primary.active`). Both are untouched. The
+  plain `:disabled` (invalid form) and the loading state share the one `&&.Mui-disabled` grey rule.
+- **Spinner color (AR2/FR4) — white, a design-accepted 1.4.11 deviation.** The loading indicator is
+  a `CircularProgress` stroked **white** (`paletteColors.background.default` `#FFFFFF`),
+  `thickness={4.5}`, `size={28}` — matching the Figma white-on-grey design. White on `#E1E7EA` is
+  **1.26:1**, below the 3:1 non-text-contrast floor; this is a **deliberate deviation accepted by
+  the design owner** (a dark `#404142` indicator at 8.12:1 was considered and **not** chosen). The
+  busy state is also conveyed by `aria-busy`, the native `disabled` state, the polite live region,
+  the spinner's motion, and the removed label — so the deviation is bounded (AR2/AR2b). The focus
+  indicator (below) is a separate concern and keeps the dark `#404142` outline.
 - **Focus indicator is in scope (NFR7/AR5, WCAG 2.4.7 / 2.4.11).** Today `:focus-visible` is folded
   into the shared `:hover` rule — both collapse to `#00A3FF` with `boxShadow: 'none'`, so a focused
   fill of `#00A3FF` against the idle `#1EAEFF` fill is **1.18:1**, i.e. effectively no visible focus
@@ -185,10 +179,11 @@ drive the button's native loading instead:
   hides this label visually under `loadingPosition="center"` but keeps it in the DOM, so the
   accessible name persists. `getSubmitLabelKey` (and its unit test) are removed since its only role
   was the now-undesired swap.
-- The custom `loadingIndicator` is a `CircularProgress` stroked in dark `#404142`
-  (`customColors.text.primary`, **not** `color="inherit"` and **not** white), `thickness={4.5}`,
-  `size={28}` — matching the removed size-70 spinner's prominence inside the fixed box and clearing
-  WCAG 1.4.11 at 8.12:1 on the grey `#E1E7EA` loading fill (AR2/FR4). It carries **no** `aria-label`:
+- The custom `loadingIndicator` is a `CircularProgress` stroked **white**
+  (`paletteColors.background.default` `#FFFFFF`), `thickness={4.5}`, `size={28}` — matching the
+  removed size-70 spinner's prominence inside the fixed box and the Figma white-on-grey design.
+  White on `#E1E7EA` is 1.26:1, a deliberate design-owner-accepted 1.4.11 deviation (AR2/AR2b). It
+  carries **no** `aria-label`:
   the button's own children supply the accessible name (see precedence note below), so the indicator
   must not place a competing name on the control. It is extracted into its own tiny component file
   (`SubmitSpinner`) to keep `SubmitControls` small and respect the per-file function/closure cap
@@ -283,7 +278,7 @@ export default function UILiveStatus({ message }: { message: string }): JSX.Elem
 | `src/components/ui-button/theme.ts`                                                       | Add `import { circularProgressClasses } from '@mui/material/CircularProgress'`. **Do not** add (and remove if present) any `import { buttonClasses }` or `&.${buttonClasses.loading}` fill override — the native `loading` prop disables the button, so the existing `:disabled` rule (grey `#E1E7EA`) is reused as-is (matches Figma node 439:19256). Add only a `@media (prefers-reduced-motion: reduce)` rule under the disabled/loading selector setting `animation: 'none'` on the indicator SVG. Spinner stroke is dark `#404142` (`customColors.text.primary`), thickness `4.5`, size `28` — not white, not `color="inherit"`. **Split `:focus-visible` out of the `:hover` rule** and give it a conformant indicator: `outline: '2px solid #404142'` + `outlineOffset: '2px'`, drawn outside the fill (≥3:1 on the grey `#E1E7EA` fill and the white page), and not erased by `boxShadow: 'none'` (NFR7/AR5). No change to `:disabled` fill; `:active` stays `#0399ED`; idle stays `#1EAEFF`. |
 | `src/components/ui-button/index.tsx`                                                      | No signature change. Confirm `loading`/`loadingPosition`/`loadingIndicator` flow through `...rest` into `cloneElement`; loading stays button-only (anchor branch untouched).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | `src/components/ui-form/index.tsx`                                                        | `SubmitControls`: remove detached `<CircularProgress size={70}>`; set `loading={submitting}`, `loadingPosition="center"`, `loadingIndicator={<SubmitSpinner/>}`, `disabled={isSubmitDisabled}`; render `{submitLabel}` (stable, the sole accessible name). `FormBody`: add `aria-busy={submitting}` to `<form>` and render `<UILiveStatus message={submitting ? submittingLabel : ''} />` once after `SubmitControls`. `ErrorBanner`: drop the redundant `aria-live="polite"`, keep `role="alert"` alone (assertive, declared once). Thread `submittingLabel` through `UIFormProps`/`FormBodyProps`/`SubmitControlsProps` as a **required** `submittingLabel: string` (mirroring the already-required `submitLabel: string`; do **not** declare it optional with a default — required forbids the empty/silent live-region state). Drop the `CircularProgress` import.                                                                                                                                |
-| `src/components/ui-form/submit-spinner.tsx`                                               | **New.** `SubmitSpinner()` → `<CircularProgress thickness={4.5} size={28} sx={{ color: customColors.text.primary }} />` — dark `#404142` stroke (8.12:1 on the grey `#E1E7EA` fill), **no** `aria-label` (the button children are the accessible name; no competing name on the indicator). Own file to respect the ≤10 functions/closures-per-file cap (NFR3).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `src/components/ui-form/submit-spinner.tsx`                                               | **New.** `SubmitSpinner()` → `<CircularProgress thickness={4.5} size={28} sx={{ color: paletteColors.background.default }} />` — white stroke (1.26:1 on the grey `#E1E7EA` fill, a design-accepted 1.4.11 deviation), **no** `aria-label` (the button children are the accessible name; no competing name on the indicator). Own file to respect the ≤10 functions/closures-per-file cap (NFR3).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `src/components/ui-form/styles.ts`                                                        | Remove the `loader: { display: 'block', margin: '1rem auto 0' }` block (FR5). `submitButton` geometry unchanged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | `src/components/ui-live-status/index.tsx`                                                 | **New.** `UILiveStatus` polite live-region primitive — `<span role="status" aria-atomic="true">` (implicit `aria-live="polite"`), visually hidden via MUI `visuallyHidden` (`position: absolute` + `clip`, zero layout box). Dependency-free.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | `src/modules/user/features/auth/components/form-section/auth-forms/login-form.tsx`        | `submitLabel={t('sign_in.form.submit_button')}` (stable); add `submittingLabel={t('sign_in.form.submitting')}`. Drop `getSubmitLabelKey` import/usage.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -327,7 +322,7 @@ export default function UILiveStatus({ message }: { message: string }): JSX.Elem
   - AC3: the loading button's computed background is the native disabled grey `#E1E7EA`
     (`paletteColors.background.subtle`, matching Figma — the same as the validation-disabled state,
     with no loading-fill override) and the spinner stroke is `#404142` (`customColors.text.primary`),
-    `thickness={4.5}`, `size={28}` — not white, not `color="inherit"`; geometry (57px radius)
+    `thickness={4.5}`, `size={28}`, white (`paletteColors.background.default`); geometry (57px radius)
     unchanged (FR4/AR2). Asserted via the `:disabled` rule / class presence; assert that **no**
     `buttonClasses.loading` fill override exists.
   - AC3-focus (NFR7/AR5): assert `:focus-visible` is split out of `:hover` and resolves to
@@ -396,7 +391,7 @@ Per the team's DI/coverage gotcha, the auth store is unaffected (no store change
 ## Rollout / Sequencing
 
 1. Theme first: confirm the native `loading` prop reuses the existing `:disabled` grey `#E1E7EA`
-   (no override; matches Figma node 439:19256) with the dark `#404142` spinner, add the
+   (no override; matches Figma node 439:19256) with the white spinner, add the
    reduced-motion guard, and **split `:focus-visible` out of `:hover`** with the conformant `#404142`
    outline/offset in `ui-button/theme.ts`; confirm `UIButton` passes loading props through `...rest`
    (no signature change).

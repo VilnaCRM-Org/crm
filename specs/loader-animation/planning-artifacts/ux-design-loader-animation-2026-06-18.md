@@ -49,19 +49,21 @@ changes; geometry, accessible name, and DOM children are constant (FR8, FR10).
 | hover                | Pointer over idle button                                 | `#00A3FF` fill (`primary.hover`)                                  | Yes                    | name = submit label                                     |
 | focus-visible        | Keyboard focus on idle button                            | `#1EAEFF` fill + `2px solid #404142` outline, `2px` offset        | Yes                    | name = submit label                                     |
 | active               | Pressed (pointer/keyboard) on idle button                | `#0399ED` fill (`primary.active`)                                 | Yes                    | name = submit label                                     |
-| loading              | `submitting === true`                                    | `#E1E7EA` grey disabled fill, label hidden, dark spinner          | No (native disabled)   | name = submit label; `aria-busy` form                   |
+| loading              | `submitting === true`                                    | `#E1E7EA` grey disabled fill, label removed, white spinner        | No (native disabled)   | name = submit label; `aria-busy` form                   |
 | disabled-not-loading | `isSubmitDisabled === true`, not submitting              | `#E1E7EA` grey fill, white label                                  | No                     | name = submit label, native `disabled`                  |
 | error (login)        | Login submit failed; `submitting` back to `false`        | Returns to idle/disabled per validity; `ErrorBanner` shows        | Per validity           | error banner is the error channel                       |
 | error (registration) | Registration submit failed; `submitting` back to `false` | Form view swaps to notification view; `ErrorBanner` never renders | n/a (button unmounted) | notification view receives focus + is the error channel |
 
 The loading and disabled-not-loading states share the **same** native grey
-`#E1E7EA` fill: the `loading` prop natively `disabled`s the button, so it simply
-inherits the existing `&:disabled` rule (FR4) — this matches the Figma design
+`#E1E7EA` fill: the `loading` prop natively `disabled`s the button, so it
+inherits the existing `&&.Mui-disabled` rule (FR4; `StyledEngineProvider
+injectFirst` requires the doubled class selector) — this matches the Figma design
 (node 439:19256, a grey `#E1E7EA` pill). The button color does change between
 idle (`#1EAEFF`) and loading (grey `#E1E7EA`), and that greying is correct and
 desired. There is no custom loading-fill override; the loading state visually
-matches the validation-disabled state by design, and the dark spinner plus the
-hidden label distinguish the busy intent.
+matches the validation-disabled state by design, and the white spinner plus the
+removed label (the loading-state label color is `transparent`) distinguish the
+busy intent.
 
 ### State transition sketch
 
@@ -128,97 +130,68 @@ section).
 
 ### Spinner size / stroke / color (FR2, AR2)
 
-| Property    | Value                                                                                   | Rationale                                                                                                                    |
-| ----------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Component   | `CircularProgress` (already on auth path)                                               | No new dependency (NFR1)                                                                                                     |
-| `size`      | `28`                                                                                    | Prominent inside the 50/70px button, replacing the old size-70 presence without leaving the box                              |
-| `color`     | dark stroke `customColors.text.primary` `#404142`; never white, never `color="inherit"` | `#404142` on the `#E1E7EA` grey loading fill is **8.12:1**, clearing 1.4.11 (3:1) with a wide margin (see contrast section)  |
-| `thickness` | `4.5` (override MUI default `3.6`)                                                      | A thicker stroke reduces the share of anti-aliased edge pixels, so the measured non-text contrast holds at the rendered ring |
-| position    | `loadingPosition="center"`                                                              | Centered overlay, hides label                                                                                                |
+| Property    | Value                                              | Rationale                                                                                                                                                                  |
+| ----------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Component   | `CircularProgress` (already on auth path)          | No new dependency (NFR1)                                                                                                                                                   |
+| `size`      | `28`                                               | Prominent inside the 50/70px button, replacing the old size-70 presence without leaving the box                                                                            |
+| `color`     | white `paletteColors.background.default` `#FFFFFF` | Matches the Figma design (node 439:19256): a white indicator on the grey disabled pill, consistent with the button's white-on-grey disabled treatment (see decision below) |
+| `thickness` | `4.5` (override MUI default `3.6`)                 | A thicker stroke makes the white ring more legible on the grey fill                                                                                                        |
+| position    | `loadingPosition="center"`                         | Centered overlay, hides label                                                                                                                                              |
 
 ## The Spinner Contrast Decision
 
-The PRD (AR2) flagged that a white `CircularProgress` on a grey fill measures
-**1.26:1**, far below the WCAG 1.4.11 (non-text contrast) 3:1 floor for a
-meaningful indicator. The lever taken is to render the spinner dark on the native
-grey disabled fill the loading button adopts. The button fill **is** changed
-between idle and loading — to the grey `#E1E7EA` disabled fill — and that greying
-is correct and matches the Figma design (node 439:19256).
+**Decision (design owner): the loading button uses the native grey `#E1E7EA`
+(`paletteColors.background.subtle`) disabled fill — matching the Figma design
+(node 439:19256) — with a WHITE spinner (`#FFFFFF`, `paletteColors.background.default`)
+and the white submit label, exactly like the approved disabled-button design.**
+This keeps the busy state visually identical to the rest of the auth button's
+white-on-grey disabled treatment rather than introducing a contrasting dark
+indicator. No theme fill override is added: the `loading` prop natively
+`disabled`s the button, so it uses the existing `&&.Mui-disabled` grey rule
+(`StyledEngineProvider injectFirst` requires the doubled class selector). The
+label is set to `transparent` only in the loading state
+(`&&.Mui-disabled.MuiButton-loading`) so the word is removed while the white
+spinner shows; the spinner keeps its own `#FFFFFF` color.
 
-**Decision: let the loading button use the native grey `#E1E7EA`
-(`paletteColors.background.subtle`) disabled fill — matching the Figma design —
-AND render the spinner stroke dark with `customColors.text.primary` `#404142` —
-the spinner is never white and never uses `color="inherit"`.** `#404142` on
-`#E1E7EA` is **8.12:1**, clearing 1.4.11 with a wide margin. No theme override is
-added: the `loading` prop natively `disabled`s the button, so it simply uses the
-existing `.MuiButton-contained:disabled` grey rule. The previous theme override
-that forced the loading fill (to `#1EAEFF`/`#0399ED`) was **removed**, along with
-its `buttonClasses.loading` rule and `buttonClasses` import (FR4).
+### Contrast: a deliberate, design-owner-accepted deviation
 
-> Import note: `#404142` is `customColors.text.primary` (in `customColors.text`,
-> **not** `paletteColors`).
+White `#FFFFFF` on the grey `#E1E7EA` fill is **1.26:1**, below the WCAG 1.4.11
+(non-text contrast) 3:1 floor for a meaningful graphical object. This is an
+**accepted deviation**, decided by the design owner, to match the approved Figma
+design. A dark `#404142` indicator (which would measure 8.12:1 and clear 1.4.11)
+was considered and explicitly **not** chosen — the design calls for the plain
+white-on-grey disabled look.
 
-### Why the spinner is dark `#404142`, not white
+The deviation is bounded because the busy state does **not** rely on the
+spinner's static contrast alone. It is also conveyed by:
 
-A white `CircularProgress` is a thin (~3.6px default), anti-aliased SVG stroke.
-On the grey `#E1E7EA` loading fill a white ring is essentially invisible:
+- `aria-busy="true"` on the `<form>` (AR4),
+- the native `disabled` attribute on the button (FR3),
+- one polite `role="status"` live region announcing the localized `submitting`
+  string (AR3),
+- the spinner's **motion** (a moving indicator reads as "working" independent of
+  its static contrast),
+- the label being **removed** (the button visibly changes from its label to a
+  spinner).
 
-| White stroke on       | Ratio  | Verdict         |
-| --------------------- | ------ | --------------- |
-| `#E1E7EA` (grey load) | 1.26:1 | ✗ far below 3:1 |
-| `#1EAEFF` (idle)      | 2.46:1 | ✗ below 3:1     |
-| `#00A3FF` (hover)     | 2.73:1 | ✗ below 3:1     |
-
-White on the `#E1E7EA` grey loading fill is `1.26:1`, far below the 3:1 floor; a
-thin anti-aliased ring renders with its edge pixels blended toward the
-background, so its **effective** contrast sits below even that nominal value. The
-white-on-grey option is therefore **explicitly rejected**; the conformance basis
-is never a white ring.
-
-Instead the decision lets the loading button adopt the native grey `#E1E7EA`
-disabled fill (matching the Figma design) and renders the **spinner stroke dark**
-using `customColors.text.primary` `#404142`. Dark `#404142` on `#E1E7EA` is
-**8.12:1** — well clear of 3:1, and even better on grey than on the idle blue —
-and the spinner raises `thickness` to `4.5` so the rendered ring carries less
-anti-aliased edge. The white submit label is **hidden** while loading
-(`loadingPosition="center"` → `visibility: hidden`), so its `1.26:1` contrast on
-the grey fill does not apply to the busy state.
-
-### Why the fill is greyed
-
-- Letting the loading button use the native grey `#E1E7EA` disabled fill matches
-  the Figma design (node 439:19256, a grey `#E1E7EA` pill) and requires **no**
-  custom override — the `loading` prop natively `disabled`s the button, so the
-  existing `:disabled` grey rule applies for free.
-- The dark spinner carries the visual busy cue and clears 1.4.11 on the grey fill
-  at **8.12:1**, so the conformance basis does not depend on any fill change.
-- A decorative-only argument was rejected: the spinner is the primary visual busy
-  cue, so treating it as below-threshold decoration would be a weak conformance
-  posture. The dark stroke meets 1.4.11 at 8.12:1 on its own.
-
-### Belt-and-suspenders, not decorative-and-excused (D1b)
-
-The dark `#404142` spinner is built to **pass 1.4.11 on its own** (8.12:1) **and**
-is supplementary: the busy state is _also_ conveyed by `aria-busy` on the
-`<form>` (AR4), the native `disabled` attribute (FR3), the dark spinner itself,
-and the polite `role="status"` live region (AR3). This is belt-and-suspenders —
-multiple redundant cues each carrying the state — **not** a "decorative and
-therefore excused from contrast" argument. The conformance claim rests on the
-spinner itself meeting non-text contrast; the other cues are additional
-reinforcement.
+This is the accepted tradeoff: visual fidelity to the design over the 1.4.11
+guideline for the decorative spinner, with the busy state still fully exposed
+programmatically and through motion. The focus indicator (a separate concern)
+remains the dark `#404142` outline, which clears 3:1 — see the focus section.
 
 ### Resulting contrast budget
 
 ```text
 spinner / fill contrast budget
-white ring on #E1E7EA (grey load)  = 1.26 : 1   ✗ below 3:1; NOT shipped
-dark #404142 ring on #E1E7EA       = 8.12 : 1   ✓ 1.4.11 with wide margin (thickness 4.5)
-white label on #E1E7EA (grey)      = 1.26 : 1   hidden while loading (visibility:hidden)
+white ring on #E1E7EA (grey load)  = 1.26 : 1   below 3:1 — design-accepted deviation (see above)
+white label on #E1E7EA (grey)      = 1.26 : 1   shown when disabled; hidden while loading (transparent)
+focus outline #404142 on #E1E7EA   = 8.12 : 1   ✓ 1.4.11 (focus indicator, unchanged)
 ```
 
-The conformance claim rests on the **dark** `#404142` stroke at `thickness: 4.5`
-measuring **8.12:1** on the `#E1E7EA` grey fill — never on a rejected
-white-on-grey ring. The plain validation-disabled state keeps the pre-existing
+The spinner ships **white** (matching the design) at `1.26:1` on the `#E1E7EA`
+grey fill — a deliberate, design-owner-accepted 1.4.11 deviation, with the busy
+state carried by `aria-busy`, the disabled state, the live region, and the
+spinner's motion. The plain validation-disabled state keeps the pre-existing
 `1.26:1` white label (label visible), which is **out of scope** for this change.
 
 ## Focus Indicator (In Scope) — 2.4.7 / 2.4.11
@@ -431,19 +404,19 @@ This is a free double-submit guard — no separate guard logic is added.
 
 ## Before / After Comparison
 
-| Aspect                 | Before (main)                                                     | After (this design)                                                 |
-| ---------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Busy visual            | Grey button + detached `size={70}` spinner below                  | Same button, label hidden, centered dark spinner                    |
-| Layout                 | Spinner pushes content → shift (FR8 violated)                     | Zero shift; swap inside fixed box (FR8)                             |
-| Button fill (busy)     | `#E1E7EA` grey, white label 1.26:1 (label visible)                | `#E1E7EA` grey (Figma), label hidden, dark `#404142` spinner 8.12:1 |
-| Focus indicator        | `:focus-visible` = `:hover` fill shift 1.18:1 (2.4.7/2.4.11 fail) | `2px solid #404142` outline + `2px` offset, ≥3:1 (2.4.7/2.4.11)     |
-| Signaling              | Two split, untied cues                                            | One unified in-button cue + one announcement                        |
-| `aria-busy`            | Absent on `<form>`                                                | `aria-busy={submitting}` on `<form>` (FR6)                          |
-| Announcement           | None                                                              | One polite `role="status"` region, localized (FR7)                  |
-| Accessible name (busy) | Fragile                                                           | Preserved (label stays as children) (FR10/AR1)                      |
-| Reduced motion         | Unhandled spin (snapshot flake risk)                              | `animation: none` static ring (NFR8/AR6, quality)                   |
-| Error-path focus       | Registration failure strands focus on `<body>`                    | Notification view receives focus on mount (AR5)                     |
-| Double-submit          | Disabled, detached spinner below                                  | Native disabled grey, in-button spinner (FR3/FR9)                   |
+| Aspect                 | Before (main)                                                     | After (this design)                                                    |
+| ---------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Busy visual            | Grey button + detached `size={70}` spinner below                  | Same button, label hidden, centered dark spinner                       |
+| Layout                 | Spinner pushes content → shift (FR8 violated)                     | Zero shift; swap inside fixed box (FR8)                                |
+| Button fill (busy)     | `#E1E7EA` grey, white label 1.26:1 (label visible)                | `#E1E7EA` grey (Figma), label removed, white spinner 1.26:1 (accepted) |
+| Focus indicator        | `:focus-visible` = `:hover` fill shift 1.18:1 (2.4.7/2.4.11 fail) | `2px solid #404142` outline + `2px` offset, ≥3:1 (2.4.7/2.4.11)        |
+| Signaling              | Two split, untied cues                                            | One unified in-button cue + one announcement                           |
+| `aria-busy`            | Absent on `<form>`                                                | `aria-busy={submitting}` on `<form>` (FR6)                             |
+| Announcement           | None                                                              | One polite `role="status"` region, localized (FR7)                     |
+| Accessible name (busy) | Fragile                                                           | Preserved (label stays as children) (FR10/AR1)                         |
+| Reduced motion         | Unhandled spin (snapshot flake risk)                              | `animation: none` static ring (NFR8/AR6, quality)                      |
+| Error-path focus       | Registration failure strands focus on `<body>`                    | Notification view receives focus on mount (AR5)                        |
+| Double-submit          | Disabled, detached spinner below                                  | Native disabled grey, in-button spinner (FR3/FR9)                      |
 
 ## Edge Cases
 
@@ -498,7 +471,7 @@ reused as-is rather than weakened.
 - Geometry / zero shift → FR8, AC6.
 - Label hide / accessible name → FR1, FR10, AR1, AC5.
 - In-button spinner / detached removal → FR2, FR5, AC1.
-- Contrast decision (native grey `#E1E7EA` disabled fill, no override + dark `#404142` spinner = 8.12:1) → FR4, AR2, AC3.
+- Contrast decision (native grey `#E1E7EA` disabled fill, no override + white spinner; white-on-grey 1.26:1 is a design-accepted deviation) → FR4, AR2, AC3.
 - Focus indicator (`:focus-visible` split out; `2px solid #404142` + `2px` offset, ≥3:1; replaces the 1.18:1 defect) → NFR7, AR5, AC2.
 - Registration error-path focus (notification view focused on mount, not `<body>`) → AR5, Story 1.10.
 - Motion / reduced motion (quality / snapshot stability, not AA) → NFR8, AR6, AC7.

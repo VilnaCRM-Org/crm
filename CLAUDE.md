@@ -467,7 +467,22 @@ Key variables in `.env`:
      `src/**`, `warn` on `*ByTestId` in tests (mock-stub queries stay valid).
      Satisfy the gate by refactoring, never with `eslint-disable`.
 
-5. **Docker Network**: External network `website-network` used for service communication
+5. **Submit-button loader**: The auth submit button (shared `UIForm` →
+   `SubmitControls`) shows its busy state with MUI v7's native `Button`
+   `loading` + `loadingPosition="center"` + `loadingIndicator={<SubmitSpinner />}`.
+   While submitting, the button goes natively `disabled` into the grey `#E1E7EA`
+   disabled state (matching the Figma design), its text label is removed
+   (`color: transparent`, kept in the DOM so the accessible name stays the localized
+   `submit_button` label), and a centered **white** `SubmitSpinner` (`CircularProgress`,
+   `thickness 4.5`, `size 28`, `aria-hidden`) renders. The `<form>` carries
+   `aria-busy` and one polite `UILiveStatus` (`role="status"`) announces the localized
+   `submitting` string. There is no detached spinner, no `role="progressbar"`, and no
+   L1-L5 loader family. The disabled-grey theme override uses `&&.Mui-disabled` —
+   `StyledEngineProvider injectFirst` requires the class selector, not `:disabled`.
+   Out of scope / unchanged: the retry button, the page-load skeleton, and the
+   login/register switcher.
+
+6. **Docker Network**: External network `website-network` used for service communication
 
 ## Node Version Management
 

@@ -1,4 +1,5 @@
-import { ReactNode } from 'react';
+import { Box } from '@mui/material';
+import { ReactNode, useCallback } from 'react';
 import {
   useForm,
   SubmitHandler,
@@ -61,11 +62,16 @@ type FormBodyProps<T extends FieldValues> = {
 };
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
+  const focusOnAppear = useCallback((node: HTMLDivElement | null) => {
+    node?.focus();
+  }, []);
   if (!error) return null;
   return (
-    <UITypography role="alert" sx={{ color: 'red', marginBottom: '1rem' }}>
-      {error}
-    </UITypography>
+    <Box ref={focusOnAppear} tabIndex={-1} sx={styles.errorBannerFocus}>
+      <UITypography role="alert" sx={{ color: 'red', marginBottom: '1rem' }}>
+        {error}
+      </UITypography>
+    </Box>
   );
 }
 

@@ -19,15 +19,21 @@ describe('ui-button contained theme', () => {
     expect(getContained()[`&.${buttonClasses.loading}`]).toBeUndefined();
   });
 
-  it('greys the disabled and loading fill via a class selector that beats MUI defaults', () => {
+  it('greys the disabled fill with a white label (class selector beats MUI defaults)', () => {
     const contained = getContained();
     const disabledRule = contained['&&.Mui-disabled'] as CssBlock;
 
     expect(contained['&:disabled']).toBeUndefined();
     expect(disabledRule.backgroundColor).toBe(paletteColors.background.subtle);
     expect(disabledRule.backgroundColor).toBe('#E1E7EA');
-    expect(disabledRule.color).toBe(customColors.text.primary);
-    expect(disabledRule.color).toBe('#404142');
+    expect(disabledRule.color).toBe(paletteColors.background.default);
+    expect(disabledRule.color).toBe('#FFFFFF');
+  });
+
+  it('hides the label while loading by making it transparent', () => {
+    const loadingRule = getContained()['&&.Mui-disabled.MuiButton-loading'] as CssBlock;
+
+    expect(loadingRule.color).toBe('transparent');
   });
 
   it('draws a focus-visible outline distinct from hover that boxShadow does not remove', () => {

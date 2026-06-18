@@ -95,8 +95,9 @@ rule set:
    REMOVED, along with its `buttonClasses` fill import. The label stays white
    (`background.default`) but is hidden during loading via `loadingPosition="center"`
    (`visibility: hidden`, Story 1.5), so the white-on-grey label contrast does not
-   apply to the busy state. The spinner stroke is dark (Story 1.3), so the spinner
-   clears 1.4.11 on its own (`#404142` on `#E1E7EA` = 8.12:1).
+   apply to the busy state. The spinner is white (Story 1.3) to match the design;
+   white-on-grey is 1.26:1 — a design-accepted 1.4.11 deviation (busy is also conveyed
+   by `aria-busy`, the disabled state, and the live region).
 2. **Focus indicator (in scope).** Today `:focus-visible` is collapsed into the
    shared `:hover` rule, which shifts to `#00A3FF` with `boxShadow: 'none'` —
    `#00A3FF` on the surrounding fill is only ~1.18:1, i.e. effectively no visible
@@ -212,13 +213,13 @@ below the button.
 **Description.** Add a tiny new component file
 `src/components/ui-form/submit-spinner.tsx`:
 `SubmitSpinner()` returns
-`<CircularProgress sx={{ color: customColors.text.primary }} thickness={4.5} size={28} />`.
-The stroke color is the dark `#404142` (`customColors.text.primary` — it lives in
-`customColors.text`, NOT `paletteColors`), which on the `#E1E7EA` grey loading fill
-from 1.1 measures 8.12:1, comfortably clearing WCAG 1.4.11 (3:1). The spinner MUST
-NOT be white and MUST NOT use `color="inherit"`; a white spinner on `#E1E7EA` is
-only 1.26:1 (fails 1.4.11), so the dark `#404142` stroke is the correct choice and
-is even better on the grey fill. `thickness={4.5}` and `size={28}` give a prominent
+`<CircularProgress sx={{ color: paletteColors.background.default }} thickness={4.5} size={28} />`.
+The stroke color is white (`paletteColors.background.default` `#FFFFFF`), matching the
+Figma white-on-grey design (node 439:19256). White on the `#E1E7EA` grey loading fill is
+1.26:1, below WCAG 1.4.11's 3:1 floor — a deliberate, design-owner-accepted deviation
+(a dark `#404142` indicator at 8.12:1 was considered and not chosen). The busy state is
+also conveyed by `aria-busy`, the native disabled state, the polite live region, and the
+spinner's motion. `thickness={4.5}` and `size={28}` give a prominent
 ring inside the fixed box without leaving it. The spinner carries NO accessible
 name: it does not take a `label`/`aria-label` prop and does not expose a labelled
 progressbar — the button's accessible name comes from its stable `submit_button`
@@ -247,7 +248,7 @@ Belt-and-suspenders, not "decorative-and-excused."
 **Tests to add/update.** Unit (new
 `tests/unit/components/ui-form/submit-spinner.test.tsx`): render and assert one
 indicator, the exact stroke `color` `#404142`, `thickness=4.5`, and `size=28`;
-assert it is not white / not `color="inherit"`; assert it exposes no accessible
+assert it is white (`paletteColors.background.default`); assert it exposes no accessible
 name (queried by role, no `data-testid`). Full coverage of the new file (NFR9).
 
 **Dependencies.** None for rendering; pairs with 1.5 which consumes it.
@@ -669,7 +670,7 @@ submit button uses MUI native `loading` + `loadingPosition="center"`, goes nativ
 in the design, node 439:19256, not a brand-fill override), draws a distinct
 conformant `:focus-visible` outline, hides the label visually while preserving the
 accessible name, renders one dark `#404142` centered `SubmitSpinner` (thickness 4.5,
-size 28, 8.12:1 on the grey fill — not white), carries `aria-busy` on the `<form>`,
+size 28, white — 1.26:1 on grey, a design-accepted deviation), carries `aria-busy` on the `<form>`,
 and announces via one polite `UILiveStatus` (`role="status"`) — with no
 `role="progressbar"`, no detached spinner, and no L1-L5 loader family. Rationale
 lives here and in the PR (no inline code comments — NFR5). Then run the full gate

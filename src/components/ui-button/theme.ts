@@ -34,7 +34,10 @@ export default createTheme({
           },
           '&&.Mui-disabled': {
             backgroundColor: paletteColors.background.subtle,
-            color: customColors.text.primary,
+            color: paletteColors.background.default,
+          },
+          '&&.Mui-disabled.MuiButton-loading': {
+            color: 'transparent',
           },
           [`@media (prefers-reduced-motion: reduce)`]: {
             [`& .${circularProgressClasses.svg}`]: {

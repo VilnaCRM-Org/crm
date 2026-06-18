@@ -203,6 +203,16 @@ describe('RegistrationNotification', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 
+  it('moves focus to a silent wrapper around the error heading, not the body', () => {
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByRole('heading', { level: 4 })).toBeInTheDocument();
+    expect(document.body).not.toHaveFocus();
+  });
+
   it('renders the retry button and disables it while submitting', () => {
     const onRetry = jest.fn();
 

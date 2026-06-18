@@ -49,6 +49,24 @@ describe('UIForm', () => {
     expect(alert).not.toHaveAttribute('aria-live');
   });
 
+  it('moves focus to a silent wrapper around the error alert, not the body', () => {
+    render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+        error="Boom"
+      >
+        <span />
+      </UIForm>
+    );
+
+    expect(screen.getByRole('alert')).toBeInTheDocument();
+    expect(document.body).not.toHaveFocus();
+  });
+
   it('exposes aria-busy on the form mirroring the submitting state', () => {
     const { rerender } = render(
       <UIForm<Values>

@@ -288,25 +288,26 @@ review.
   no separately-exposed progressbar node contributes a name. The button MUST never
   be a nameless spinner, and MUST NOT have its accessible name swapped to the
   "submitting" string.
-- **AR2 — Spinner non-text contrast (WCAG 1.4.11).** Per FR4, the button uses the
-  native disabled grey `#E1E7EA` fill **while loading** (no override added), and
-  the spinner is drawn in dark `customColors.text.primary` (`#404142`) — **not**
-  white — at `thickness={4.5}` and `size={28}`. The indicator MUST NOT be white and
-  MUST NOT use `color="inherit"`. Dark `#404142` on the grey `#E1E7EA` fill is
-  **8.12:1**, clearing the 1.4.11 3:1 floor for a thin anti-aliased stroke with a
-  wide margin (and even better than it would be on the brand blue). A white spinner
-  on `#E1E7EA` is **1.26:1** and is explicitly **rejected** as failing the 3:1
-  floor; it MUST NOT be cited as the conformance basis anywhere. Note also that the
-  white `submit_button` **label** on `#E1E7EA` is 1.26:1, but it is **hidden** while
-  loading (`loadingPosition="center"` → `visibility: hidden`), so that ratio does
-  not apply to the busy state; the plain validation-disabled state (label visible)
-  keeps that pre-existing 1.26:1 and is explicitly **out of scope** for this change
-  — do not "fix" the disabled label color. (Import note: `#404142` is
-  `customColors.text.primary`, under `customColors.text`, **not** `paletteColors`.)
-- **AR2b — Supplementary, belt-and-suspenders (WCAG 1.4.11 framing).** The spinner
-  is built to pass 1.4.11 on its own (the 8.12:1 stroke on grey) **and** is
-  supplementary: busy is also conveyed by `aria-busy` (AR4), the native `disabled`
-  attribute, the grey `#E1E7EA` disabled fill, and the polite live region (AR3).
+- **AR2 — Spinner non-text contrast (WCAG 1.4.11) — design-accepted deviation.**
+  Per FR4, the button uses the native disabled grey `#E1E7EA` fill **while loading**
+  (no override added), and the spinner is drawn **white**
+  (`paletteColors.background.default` `#FFFFFF`) at `thickness={4.5}` and `size={28}`
+  — matching the Figma design (node 439:19256), which renders the disabled/loading
+  button as white-on-grey. White `#FFFFFF` on `#E1E7EA` is **1.26:1**, below the
+  1.4.11 3:1 floor. This is a **deliberate deviation accepted by the design owner**
+  to match the approved design; a dark `#404142` indicator (which would measure
+  8.12:1) was considered and explicitly **not** chosen. The white `submit_button`
+  **label** on `#E1E7EA` is likewise 1.26:1 but is **removed** while loading
+  (`loadingPosition="center"` plus a `transparent` loading-state label color), so it
+  does not show in the busy state; the plain validation-disabled state (label
+  visible, white-on-grey 1.26:1) is the approved design and is explicitly **out of
+  scope** for this change — do not "fix" the disabled label color.
+- **AR2b — The deviation is bounded (defence-in-depth).** Because the white spinner
+  is below 1.4.11, the busy state does **not** rely on its static contrast alone: it
+  is also conveyed by `aria-busy` (AR4), the native `disabled` attribute, the polite
+  `role="status"` live region (AR3), the spinner's **motion**, and the label being
+  removed. Visual fidelity to the design is the accepted tradeoff against the 1.4.11
+  guideline for the decorative spinner.
   This is belt-and-suspenders, **not** "decorative-and-excused." The UX document
   MUST record and justify the dark-stroke contrast math and the `thickness` /
   `size` values.
@@ -370,9 +371,9 @@ Each criterion is testable and traceable to the requirement IDs above.
   submit attempt does not fire the submit handler again. Verified by unit/e2e test.
 - **AC3 (FR4, AR2, AR2b).** While submitting, the button's computed background is
   the native disabled grey `#E1E7EA` (`paletteColors.background.subtle`, matching
-  the design — no brand-fill override), and the spinner stroke is dark `#404142`
-  (`customColors.text.primary`) at `thickness={4.5}` / `size={28}` — not white and
-  not `color="inherit"` — giving an 8.12:1 dark-on-`#E1E7EA` non-text contrast; the
+  the design — no brand-fill override), and the spinner is white
+  (`paletteColors.background.default`) at `thickness={4.5}` / `size={28}` — matching
+  the Figma design (white-on-grey 1.26:1, a design-accepted 1.4.11 deviation); the
   `57px`-radius geometry is unchanged. Verified by unit test on the loading/disabled
   style and the indicator props, plus a visual snapshot.
 - **AC4 (FR6, AR4).** The `<form>` exposes `aria-busy="true"` exactly while
@@ -450,7 +451,7 @@ Each criterion is testable and traceable to the requirement IDs above.
   heading/error text rather than stranding at `<body>`, and the login `ErrorBanner`
   focus-move path is preserved (NFR7, AR1-AR5, AC3-AC5, AC12-AC14).
 - **Contrast:** the loading button uses the native disabled grey `#E1E7EA` fill
-  (matching the Figma design) and the spinner is drawn in dark `#404142`
+  (matching the Figma design) and the spinner is drawn white (`paletteColors.background.default`)
   (`customColors.text.primary`, `thickness={4.5}` / `size={28}`) for an 8.12:1
   dark-on-`#E1E7EA` non-text contrast that clears 1.4.11 with a wide margin; the
   rejected white-on-`#E1E7EA` 1.26:1 option is not the conformance basis; the focus
