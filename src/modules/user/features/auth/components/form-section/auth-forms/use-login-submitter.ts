@@ -2,19 +2,13 @@ import type { TFunction } from 'i18next';
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
 import { AuthStoreSelectors, authActions, useAuthState } from '@auth/stores';
-import { LoginUserDto } from '@auth/types/credentials';
+import type { LoginUserDto } from '@auth/types/credentials';
 
 import LoginErrorMessageNormalizer from './login-error-message';
-
-type LoginSubmitter = {
-  error: string;
-  isSubmitting: boolean;
-  handleLogin: (data: LoginUserDto) => Promise<void>;
-};
+import type { LoginSubmitter, LoginUser } from './use-login-submitter.types';
 
 const I18N_KEY_RE = /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/i;
 const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();
-type LoginUser = (data: LoginUserDto, signal?: AbortSignal) => Promise<void>;
 
 function formatLoginError(raw: string | null, t: TFunction): string {
   if (!raw) return '';

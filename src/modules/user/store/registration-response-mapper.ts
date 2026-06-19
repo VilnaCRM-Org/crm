@@ -1,11 +1,8 @@
 import { injectable } from 'tsyringe';
 
-import type { UiError } from '@/services/error';
-import { RegistrationResponseSchema, type SafeUserInfo } from '@auth/types/api-responses';
+import { RegistrationResponseSchema } from '@auth/utils/response-schemas';
 
-export type RegistrationResponseMappingResult =
-  | { ok: true; value: SafeUserInfo }
-  | { ok: false; error: UiError };
+import type { RegistrationResponseMappingResult } from './registration-response-mapper.types';
 
 const INVALID_REGISTRATION_RESPONSE_MESSAGE =
   'There was a problem with the provided information. Please check your input.';

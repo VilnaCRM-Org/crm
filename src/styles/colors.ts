@@ -63,8 +63,3 @@ export const customColors = {
     main: '#D0D4D8',
   },
 } as const;
-
-export type CustomColors = typeof customColors;
-
-export type PaletteColorKey = keyof typeof paletteColors;
-export type PaletteColorValue = (typeof paletteColors)[PaletteColorKey];

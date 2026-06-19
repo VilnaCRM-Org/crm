@@ -538,6 +538,41 @@ module.exports = {
       },
       to: {},
     },
+    {
+      name: 'type-files-imported-as-type-only',
+      comment:
+        'Type-only files (types.ts, types/**, *.types.ts) may only be imported with ' +
+        '`import type`. Importing them as runtime values pulls type-only modules into ' +
+        'runtime bundles and breaks the type/runtime split (issue #88).',
+      severity: 'error',
+      from: {
+        path: '^src/',
+        pathNot: ['[.]d[.]ts$'],
+      },
+      to: {
+        path: ['^src/.+/types[.]ts$', '^src/.+/types/', '^src/.+[.]types[.]ts$'],
+        pathNot: ['[.]d[.]ts$'],
+        dependencyTypes: ['import', 'export'],
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
+      name: 'type-files-no-runtime-imports',
+      comment:
+        'Type-only files (types.ts, types/**, *.types.ts) must not depend on runtime ' +
+        '(value) modules. Keep them free of runtime imports; use `import type` for any ' +
+        'cross-module type references (issue #88).',
+      severity: 'error',
+      from: {
+        path: ['^src/.+/types[.]ts$', '^src/.+/types/', '^src/.+[.]types[.]ts$'],
+        pathNot: ['[.]d[.]ts$'],
+      },
+      to: {
+        path: '^src/',
+        pathNot: ['[.]d[.]ts$'],
+        dependencyTypesNot: ['type-only'],
+      },
+    },
   ],
   options: {
     doNotFollow: {

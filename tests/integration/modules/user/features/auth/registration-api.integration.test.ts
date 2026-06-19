@@ -5,7 +5,7 @@ import '../../../../setup';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
-import { ApiError, ConflictError } from '@/modules/user/types/api-errors';
+import { ApiError, ConflictError } from '@/modules/user/lib/api-errors';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
 
 import server, { GRAPHQL_URL } from '../../../../mocks/server';

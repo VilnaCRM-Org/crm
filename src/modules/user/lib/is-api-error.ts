@@ -1,7 +1,4 @@
-interface APIError {
-  code: string;
-  message: string;
-}
+import type { APIError } from './is-api-error.types';
 
 const hasStringProp = (obj: Record<string, unknown>, key: string): boolean =>
   key in obj && typeof obj[key] === 'string';

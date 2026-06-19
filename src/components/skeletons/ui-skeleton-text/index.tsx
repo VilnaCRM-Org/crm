@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 
 import getTextSkeletonStyles from '@/components/skeletons/ui-skeleton-text/styles';
-import { UISkeletonTextProps } from '@/components/skeletons/ui-skeleton-text/types';
+import type { UISkeletonTextProps } from '@/components/skeletons/ui-skeleton-text/types';
 
 function UISkeletonText({
   id,

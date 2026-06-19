@@ -1,22 +1,12 @@
 import { Box, Fade } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
-import { RegistrationView } from '@auth/components/form-section/types';
-
 import RegistrationErrorView from './registration-error-view';
 import styles from './registration-notification.styles';
+import type { RegistrationNotificationProps } from './registration-notification.types';
 import RegistrationSuccessView from './registration-success-view';
 import useCloseTimer from './use-registration-close-timer';
 import useResolvedErrorText from './use-resolved-error-text';
-
-type RegistrationNotificationProps = {
-  view: Exclude<RegistrationView, 'form'>;
-  errorText?: string;
-  isSubmitting: boolean;
-  onShown?: () => void;
-  onBack: () => void;
-  onRetry?: () => void;
-};
 
 export const BACK_CLOSE_ANIMATION_MS = 300;
 

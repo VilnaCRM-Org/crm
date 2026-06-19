@@ -7,7 +7,7 @@ import {
   ConflictError,
   ValidationError,
   ApiErrorCodes,
-} from '@/modules/user/types/api-errors';
+} from '@/modules/user/lib/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
 
 // Test class that extends BaseAPI to expose the protected method

@@ -1,22 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { RegistrationView } from '@auth/components/form-section/types';
+import type { RegistrationView } from '@auth/components/form-section/types';
 import { AuthStoreSelectors, useAuthState } from '@auth/stores';
-import { RegisterUserDto } from '@auth/types/credentials';
+import type { RegisterUserDto } from '@auth/types/credentials';
+import type { UseRegistrationFormResult } from '@auth/types/registration-form-result';
 
 import useRegistrationHandlers from './use-registration-handlers';
 import useRegistrationViewSync from './use-registration-view-sync';
-
-type UseRegistrationFormResult = {
-  view: RegistrationView;
-  errorText: string;
-  formKey: number;
-  isSubmitting: boolean;
-  handleRegister: (data: RegisterUserDto) => Promise<void>;
-  handleSuccessShown: () => void;
-  handleBackToForm: () => void;
-  handleRetry: () => void;
-};
 
 export default function useRegistrationForm(
   onViewChange?: (view: RegistrationView) => void

@@ -1,9 +1,10 @@
 import { injectable } from 'tsyringe';
 
-import { ApiError, ApiErrorCodes } from '@/modules/user/types/api-errors';
+import { ApiError, ApiErrorCodes } from '@/modules/user/lib/api-errors';
 import { isHttpError } from '@/services/https-client/http-error';
 
-import ApiStatusErrorFactory, { type HttpErrorLike } from './api-status-error-factory';
+import ApiStatusErrorFactory from './api-status-error-factory';
+import type { HttpErrorLike } from './api-status-error-factory.types';
 
 const NETWORK_KEYWORDS = [
   'failed to fetch',

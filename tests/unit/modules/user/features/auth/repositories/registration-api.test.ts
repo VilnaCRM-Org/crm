@@ -1,9 +1,9 @@
 import { ApolloError } from '@apollo/client';
 
-import { ApiError, ConflictError } from '@/modules/user/types/api-errors';
+import { ApiError, ConflictError } from '@/modules/user/lib/api-errors';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
+import CREATE_USER from '@auth/repositories/create-user-mutation';
 import RegistrationAPI from '@auth/repositories/registration-api';
-import CREATE_USER from '@auth/types/graphql/mutations';
 
 type ApolloClient = import('@apollo/client').ApolloClient<
   import('@apollo/client').NormalizedCacheObject

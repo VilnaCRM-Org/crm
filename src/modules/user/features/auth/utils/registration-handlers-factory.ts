@@ -1,25 +1,10 @@
-import type { Dispatch, SetStateAction, MutableRefObject } from 'react';
+import type { RegisterUserDto } from '@auth/types/credentials';
 
-import { RegistrationView } from '@auth/components/form-section/types';
-import { RegisterUserDto } from '@auth/types/credentials';
-
-export type RegistrationStoreActions = {
-  registerUser: (data: RegisterUserDto) => Promise<void>;
-  resetRegistration: () => void;
-};
-
-export type RegistrationHandlerDeps = {
-  setView: Dispatch<SetStateAction<RegistrationView>>;
-  setFormKey: Dispatch<SetStateAction<number>>;
-  lastSubmittedDataRef: MutableRefObject<RegisterUserDto | null>;
-};
-
-export type RegistrationHandlers = {
-  handleRegister: (data: RegisterUserDto) => Promise<void>;
-  handleSuccessShown: () => void;
-  handleBackToForm: () => void;
-  handleRetry: () => void;
-};
+import type {
+  RegistrationStoreActions,
+  RegistrationHandlerDeps,
+  RegistrationHandlers,
+} from './registration-handlers-factory.types';
 
 const normalize = (data: RegisterUserDto): RegisterUserDto => ({
   ...data,

@@ -2,16 +2,9 @@ import { injectable } from 'tsyringe';
 
 import { HttpError } from '@/services/https-client/http-error';
 
+import type { ExtractedBody, JsonWithMessage } from './http-error-response-parser.types';
+
 const MAX_ERROR_BODY_CHARS = 500;
-
-interface JsonWithMessage {
-  message?: string;
-}
-
-export interface ExtractedBody {
-  message: string | null;
-  body: string | undefined;
-}
 
 @injectable()
 export default class HttpErrorResponseParser {

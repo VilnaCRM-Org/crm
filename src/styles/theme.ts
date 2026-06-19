@@ -1,7 +1,6 @@
 import { createTheme } from '@mui/material/styles';
 
 import { customColors, paletteColors } from './colors';
-import './types';
 
 export default createTheme({
   palette: {

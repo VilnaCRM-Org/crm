@@ -7,11 +7,7 @@ import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 
 import styles from './registration-notification.success-styles';
-
-interface Props {
-  isClosing: boolean;
-  onBack: () => void;
-}
+import type { Props } from './registration-success-view.types';
 
 function ConfettiTop({ label }: { label: string }): JSX.Element {
   return (

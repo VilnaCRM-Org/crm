@@ -4,7 +4,7 @@ import {
   AuthenticationError,
   ConflictError,
   ValidationError,
-} from '@/modules/user/types/api-errors';
+} from '@/modules/user/lib/api-errors';
 import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
 
 describe('ApiStatusErrorFactory', () => {

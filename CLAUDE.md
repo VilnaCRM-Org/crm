@@ -447,8 +447,11 @@ Key variables in `.env`:
 
 ## Important Patterns
 
-1. **API Error Handling**: Use typed API errors in `src/modules/user/types/api-errors/`
-   - `ValidationError`, `AuthenticationError`, `ConflictError`
+1. **API Error Handling**: Typed API error **classes** live in
+   `src/modules/user/lib/api-errors/` (`ApiError`, `ValidationError`,
+   `AuthenticationError`, `ConflictError`, `ApiErrorCodes`); their **option
+   types** (`ApiErrorOptions`, `ValidationErrorOptions`) stay in
+   `src/modules/user/types/api-errors/` (type-only — see pattern 6).
    - Check with `isAPIError()` helper
 
 2. **Form Validation**: Centralized in module features (e.g., `auth/components/form-section/validations/`)
@@ -468,6 +471,22 @@ Key variables in `.env`:
      Satisfy the gate by refactoring, never with `eslint-disable`.
 
 5. **Docker Network**: External network `website-network` used for service communication
+
+6. **Type-only files (issue #88)**: All TypeScript types live in dedicated
+   type-only files — `types.ts`, `types/**`, or a sibling `*.types.ts`. Those
+   files contain **only** type-level constructs (`interface`, `type`,
+   `import type`, type re-exports, `declare`) — never runtime `const` / `function` /
+   `class` / expression statements. Conversely, logic files must not declare or
+   export `interface` / `type`; a component's prop types move to a sibling
+   `*.types.ts` and are imported back via `import type`. Enforced by ESLint
+   (`no-restricted-syntax` overrides on the type-file globs and on logic files in
+   `eslint.config.mjs`) and dependency-cruiser (`type-files-imported-as-type-only`,
+   `type-files-no-runtime-imports`): type files may only be imported with
+   `import type` and must not depend on runtime modules. Runtime that once
+   co-located under `types/` was relocated accordingly — zod schemas + validators
+   to `auth/utils/response-schemas.ts`, the `CREATE_USER` gql document to
+   `auth/repositories/`, and the API error classes to `lib/api-errors/` (pattern 1).
+   Satisfy the gate by moving code, never with disable directives.
 
 ## Node Version Management
 

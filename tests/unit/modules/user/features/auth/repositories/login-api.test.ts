@@ -1,9 +1,9 @@
 // @jest-environment jsdom
 
-import { ApiError } from '@/modules/user/types/api-errors';
+import { ApiError } from '@/modules/user/lib/api-errors';
 import LoginAPI from '@auth/repositories/login-api';
 
-type HttpsClient = import('@/services/https-client/https-client').default;
+type HttpsClient = import('@/services/https-client/https-client.types').HttpsClient;
 
 describe('LoginAPI', () => {
   const credentials = { email: 'user@example.com', password: 'secret' };

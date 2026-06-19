@@ -4,19 +4,9 @@ import {
   AuthenticationError,
   ConflictError,
   ValidationError,
-} from '@/modules/user/types/api-errors';
+} from '@/modules/user/lib/api-errors';
 
-export interface HttpErrorLike {
-  status: number;
-  message: string;
-}
-
-type StatusErrorSpec =
-  | { kind: 'validation'; status: 400 | 422; prefix: 'Invalid' | 'Unprocessable' }
-  | { kind: 'auth' }
-  | { kind: 'api'; status: number; code: string; message: string }
-  | { kind: 'conflict' }
-  | { kind: 'service' };
+import type { HttpErrorLike, StatusErrorSpec } from './api-status-error-factory.types';
 
 const STATUS_ERROR_SPECS: Record<number, StatusErrorSpec> = {
   400: { kind: 'validation', prefix: 'Invalid', status: 400 },

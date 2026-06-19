@@ -7,7 +7,7 @@ import {
   LoginAPI,
   RegistrationAPI,
 } from '@/modules/user/features/auth/repositories';
-import { ApiErrorCodes } from '@/modules/user/types/api-errors';
+import { ApiErrorCodes } from '@/modules/user/lib/api-errors';
 
 describe('Repositories index integration', () => {
   it('should export BaseAPI class', () => {

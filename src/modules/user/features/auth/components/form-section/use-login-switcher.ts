@@ -2,22 +2,12 @@ import { useCallback, useRef, useState } from 'react';
 
 import loadLoginForm from '@auth/utils/load-login-form';
 
-import LoginSwitchController, {
-  type LoadLoginErrorKey,
-  type SwitchDeps,
-} from './login-switch-actions';
+import LoginSwitchController from './login-switch-actions';
+import type { LoadLoginErrorKey, SwitchDeps } from './login-switch-actions.types';
 import type { AuthMode } from './types';
+import type { LoginSwitcher } from './use-login-switcher.types';
 
-export type { LoadLoginErrorKey } from './login-switch-actions';
-
-export interface LoginSwitcher {
-  mode: AuthMode;
-  isLoadingLogin: boolean;
-  loadLoginError: LoadLoginErrorKey;
-  setMode: (mode: AuthMode) => void;
-  handleSwitcherIntent: () => void;
-  handleSwitch: () => void;
-}
+export type { LoadLoginErrorKey } from './login-switch-actions.types';
 
 export default function useLoginSwitcher(): LoginSwitcher {
   const [isLoadingLogin, setIsLoadingLogin] = useState(false);

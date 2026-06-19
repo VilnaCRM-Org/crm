@@ -4,25 +4,22 @@ import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
 import InertBox from '@auth/components/form-section/inert-box';
-import type { RegistrationView } from '@auth/components/form-section/types';
 import { createValidators } from '@auth/components/form-section/validations';
 import useRegistrationForm from '@auth/hooks/use-registration-form';
-import { RegisterUserDto } from '@auth/types/credentials';
+import type { RegisterUserDto } from '@auth/types/credentials';
 import getSubmitLabelKey from '@auth/utils/get-submit-label-key';
 import loadRegistrationNotification from '@auth/utils/load-registration-notification';
 
 import RegistrationFormFields from './registration-form-fields';
-
-type RegistrationFormProps = {
-  onViewChange?: (view: RegistrationView) => void;
-};
+import type {
+  RegistrationFormProps,
+  RegistrationFormState,
+  Validators,
+} from './registration-form.types';
 
 const RegistrationNotification = lazy(loadRegistrationNotification);
 
 const DEFAULT_VALUES: RegisterUserDto = { fullName: '', email: '', password: '' };
-
-type RegistrationFormState = ReturnType<typeof useRegistrationForm>;
-type Validators = ReturnType<typeof createValidators>;
 
 function RegistrationFormPanel({
   form,

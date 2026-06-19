@@ -1,7 +1,7 @@
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
-import type HttpsClient from '@/services/https-client/https-client';
 import HttpClientFactory from '@/services/https-client/https-client-factory';
+import type { HttpsClient } from '@/services/https-client/https-client.types';
 
 class StubHttpsClient implements HttpsClient {
   public async get<T>(_url: string): Promise<T | undefined> {

@@ -280,12 +280,22 @@ export default [
     },
   },
 
-  // Source (issue #90): production source must not ship `data-testid`. Expose a
-  // stable `id` where a non-semantic hook is unavoidable; tests query by
-  // role/label/text. Stories are excluded.
+  // Source: production source must not ship `data-testid` (issue #90), and logic
+  // files must not declare types — types live in dedicated type-only files
+  // `types.ts`, `types/**`, `*.types.ts` (issue #88). Stories/tests/`.d.ts` and the
+  // type-only files (governed by the separate override below) are excluded.
   {
     files: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx'],
-    ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*'],
+    ignores: [
+      '**/*.stories.*',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.d.ts',
+      'src/**/types.ts',
+      'src/**/types/**/*.ts',
+      'src/**/types/**/*.tsx',
+      'src/**/*.types.ts',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',
@@ -297,6 +307,68 @@ export default [
         {
           selector: "Property[key.value='data-testid']",
           message: 'No data-testid prop in source — use an id instead (issue #90).',
+        },
+        {
+          selector: "TSPropertySignature[key.value='data-testid']",
+          message: 'No data-testid prop type in source — expose an id prop instead (issue #90).',
+        },
+        {
+          selector: 'TSInterfaceDeclaration',
+          message:
+            'No type declarations in logic files — move this interface to a sibling type-only file (`<name>.types.ts` or `types.ts`) (issue #88).',
+        },
+        {
+          selector: 'TSTypeAliasDeclaration',
+          message:
+            'No type declarations in logic files — move this type alias to a sibling type-only file (`<name>.types.ts` or `types.ts`) (issue #88).',
+        },
+      ],
+    },
+  },
+
+  // Type-only files (issue #88): `types.ts`, `types/**`, `*.types.ts` must contain
+  // ONLY type-level constructs (interface, type, type-only import/re-export,
+  // `declare`). Forbid runtime syntax so type files never carry logic.
+  {
+    files: [
+      'src/**/types.ts',
+      'src/**/types/**/*.ts',
+      'src/**/types/**/*.tsx',
+      'src/**/*.types.ts',
+    ],
+    ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'VariableDeclaration:not([declare=true])',
+          message:
+            'Type-only files must not declare runtime variables — use a type, or `declare const` for ambient typings (issue #88).',
+        },
+        {
+          selector: 'FunctionDeclaration:not([declare=true])',
+          message:
+            'Type-only files must not declare functions — use a type, or `declare function` for ambient typings (issue #88).',
+        },
+        {
+          selector: 'ClassDeclaration:not([declare=true])',
+          message:
+            'Type-only files must not declare classes — use an interface, or `declare class` for ambient typings (issue #88).',
+        },
+        {
+          selector: 'TSEnumDeclaration:not([declare=true])',
+          message:
+            'Type-only files must not declare runtime enums — use a union type or a `declare enum` (issue #88).',
+        },
+        {
+          selector:
+            'ExpressionStatement, IfStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, SwitchStatement, TryStatement, ThrowStatement, WithStatement, LabeledStatement, DebuggerStatement',
+          message: 'Type-only files must not contain runtime statements (issue #88).',
+        },
+        {
+          selector: 'ExportDefaultDeclaration > *:not(TSInterfaceDeclaration)',
+          message:
+            'Type-only files must not default-export a runtime value — only `export default interface` is allowed (issue #88).',
         },
         {
           selector: "TSPropertySignature[key.value='data-testid']",

@@ -1,5 +1,7 @@
 import { Validate, FieldValues } from 'react-hook-form';
 
+import type { Rule } from './email.types';
+
 const isBasicEmailFormat = (email: string): boolean => /@/.test(email) && /\./.test(email);
 
 const EMAIL_LOCAL_PART = /[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?/;
@@ -7,8 +9,6 @@ const EMAIL_DOMAIN_PART = /[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}
 const VALID_EMAIL_RE = new RegExp(`^${EMAIL_LOCAL_PART.source}@${EMAIL_DOMAIN_PART.source}$`);
 
 export const isValidEmailFormat = (email: string): boolean => VALID_EMAIL_RE.test(email);
-
-type Rule = { check: (email: string) => boolean; messageKey: string };
 
 const emailRules: Rule[] = [
   { check: (v) => v.length > 0, messageKey: 'sign_up.form.email_input.required' },

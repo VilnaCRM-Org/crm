@@ -1,4 +1,4 @@
-import { ApiError } from '@/modules/user/types/api-errors';
+import { ApiError } from '@/modules/user/lib/api-errors';
 
 import ApiErrorFactory from './api-error-factory';
 

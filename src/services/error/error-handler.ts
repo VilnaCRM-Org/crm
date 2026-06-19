@@ -1,12 +1,9 @@
-import { ERROR_CODES, type ErrorCode } from '@/services/error/error-codes';
-import ParsedError from '@/utils/error/types';
+import { ERROR_CODES } from '@/services/error/error-codes';
+import type { ErrorCode } from '@/services/error/error-codes.types';
+import type ParsedError from '@/utils/error/types';
 
-export type ErrorLogger = Pick<Console, 'error'>;
+import type { ErrorLogger, UiError } from './error-handler.types';
 
-export interface UiError {
-  readonly displayMessage: string;
-  readonly retryable: boolean;
-}
 const errorMap: Record<ErrorCode, UiError> = {
   [ERROR_CODES.AUTH_INVALID]: {
     displayMessage: 'Invalid credentials',

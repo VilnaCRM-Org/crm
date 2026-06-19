@@ -8,13 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { createValidators } from '../validations';
 
 import FormField from './form-field';
+import type { PasswordFieldProps } from './password-field.types';
 import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
-
-type PasswordFieldProps = {
-  placeholder: string;
-  label: string;
-  autoComplete: string;
-};
 
 function preventMouseDown(event: MouseEvent<HTMLButtonElement>): void {
   event.preventDefault();

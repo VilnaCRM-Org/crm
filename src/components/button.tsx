@@ -1,10 +1,6 @@
 import { ReactElement } from 'react';
 
-export interface ButtonProps {
-  label?: string;
-  variant?: 'primary' | 'secondary';
-  onClick: () => void;
-}
+import type { ButtonProps } from './button.types';
 
 export function Button({
   label = 'Button',

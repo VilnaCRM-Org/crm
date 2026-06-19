@@ -1,7 +1,7 @@
-import isAPIError from '@/modules/user/helpers/is-api-error';
-import ApiError from '@/modules/user/types/api-errors/api-error';
-import { ApiErrorCodes } from '@/modules/user/types/api-errors/api-error-codes';
-import ConflictError from '@/modules/user/types/api-errors/conflict-error';
+import ApiError from '@/modules/user/lib/api-errors/api-error';
+import { ApiErrorCodes } from '@/modules/user/lib/api-errors/api-error-codes';
+import ConflictError from '@/modules/user/lib/api-errors/conflict-error';
+import isAPIError from '@/modules/user/lib/is-api-error';
 
 describe('ConflictError', () => {
   describe('constructor', () => {

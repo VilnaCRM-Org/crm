@@ -1,4 +1,4 @@
-import { ApiErrorCodes } from '@/modules/user/types/api-errors';
+import { ApiErrorCodes } from '@/modules/user/lib/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
 

@@ -5,7 +5,7 @@ import API_ENDPOINTS from '@/config/api-config';
 import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
-import { AuthenticationError } from '@/modules/user/types/api-errors';
+import { AuthenticationError } from '@/modules/user/lib/api-errors';
 
 import server from '../../../../mocks/server';
 

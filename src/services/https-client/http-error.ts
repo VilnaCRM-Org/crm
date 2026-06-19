@@ -1,8 +1,4 @@
-export interface HttpErrorParams {
-  status: number;
-  message: string;
-  cause?: unknown;
-}
+import type { HttpErrorParams } from './http-error.types';
 
 export class HttpError extends Error {
   public readonly status: number;

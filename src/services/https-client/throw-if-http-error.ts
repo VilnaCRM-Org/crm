@@ -1,13 +1,8 @@
 import { HttpError } from './http-error';
-
-interface JsonWithMessage {
-  message?: string;
-}
+import type { JsonWithMessage, BodyMeta } from './throw-if-http-error.types';
 
 const BODY_PREVIEW_LIMIT = 200;
 const MESSAGE_LIMIT = 500;
-
-type BodyMeta = { bodyPreview: string; bodyLength: number };
 
 function buildBodyPreview(data: unknown): BodyMeta {
   let serialized: string;

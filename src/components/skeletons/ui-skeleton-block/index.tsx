@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 
 import getBlockSkeletonStyles from '@/components/skeletons/ui-skeleton-block/styles';
-import { UISkeletonBlockProps } from '@/components/skeletons/ui-skeleton-block/types';
+import type { UISkeletonBlockProps } from '@/components/skeletons/ui-skeleton-block/types';
 
 function UISkeletonBlock({
   id,

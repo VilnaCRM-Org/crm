@@ -1,5 +1,7 @@
 import { FieldValues, Validate } from 'react-hook-form';
 
+import type { NameRule, ValidationFunction, ValidationKeys } from './name.types';
+
 const MAX_FULL_NAME_LENGTH = 255;
 const ALLOWED_NAME_CHARACTERS = '[A-Za-zА-Яа-яІіЇїЄєҐґ]';
 const NAME_SEPARATORS = `[\\s'-]`;
@@ -7,9 +9,6 @@ const SINGLE_NAME_PATTERN = `${ALLOWED_NAME_CHARACTERS}+`;
 const NAME_SEP_GROUP = `(?:${NAME_SEPARATORS}${SINGLE_NAME_PATTERN})`;
 const NAME_WITH_SEPARATORS_PATTERN = `${SINGLE_NAME_PATTERN}${NAME_SEP_GROUP}*`;
 const FULL_NAME_PATTERN = `${SINGLE_NAME_PATTERN}${NAME_SEP_GROUP}+`;
-
-type ValidationFunction = (value: string) => boolean;
-type ValidationKeys = 'isLettersOnly' | 'isFormatted' | 'isEmpty';
 
 export const fullNameValidators: Record<ValidationKeys, ValidationFunction> = {
   isLettersOnly: (value) => new RegExp(`^${NAME_WITH_SEPARATORS_PATTERN}$`).test(value),
@@ -19,8 +18,6 @@ export const fullNameValidators: Record<ValidationKeys, ValidationFunction> = {
     value.length <= MAX_FULL_NAME_LENGTH,
   isEmpty: (value) => value.trim().length === 0,
 };
-
-type NameRule = { check: (value: string) => boolean; messageKey: string };
 
 const nameRules: NameRule[] = [
   {

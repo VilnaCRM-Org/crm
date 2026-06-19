@@ -1,6 +1,4 @@
-type Mode = 'sign_in' | 'sign_up';
-type FormState = 'submitting' | 'submit_button';
-type LabelKey = `${Mode}.form.${FormState}`;
+import type { FormState, LabelKey, Mode } from './get-submit-label-key.types';
 
 export default function getSubmitLabelKey(mode: Mode, isSubmitting: boolean): LabelKey {
   const state: FormState = isSubmitting ? 'submitting' : 'submit_button';

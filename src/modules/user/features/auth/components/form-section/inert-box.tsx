@@ -1,11 +1,7 @@
 import { Box } from '@mui/material';
-import { type ReactNode, useCallback } from 'react';
+import { useCallback } from 'react';
 
-interface InertBoxProps {
-  id: string;
-  inert: boolean;
-  children: ReactNode;
-}
+import type { InertBoxProps } from './inert-box.types';
 
 function applyInert(el: HTMLDivElement | null, inert: boolean): void {
   if (!el) return;

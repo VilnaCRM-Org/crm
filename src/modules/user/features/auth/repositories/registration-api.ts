@@ -7,12 +7,12 @@ import { HttpError } from '@/services/https-client/http-error';
 import type { RegisterUserDto } from '@auth/types/credentials';
 
 import type { RegistrationResponse } from '../types/api-responses';
-import CREATE_USER from '../types/graphql/mutations';
 import type { CreateUserInput, CreateUserResponse } from '../types/graphql/types';
 
 import ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
-import { RequestOptions } from './types';
+import CREATE_USER from './create-user-mutation';
+import type { RequestOptions } from './types';
 
 @injectable()
 export default class RegistrationAPI extends BaseAPI {

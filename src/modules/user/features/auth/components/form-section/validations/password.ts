@@ -1,14 +1,7 @@
 import type { TFunction } from 'i18next';
 import { FieldValues, Validate } from 'react-hook-form';
 
-type ValidationPswdMessageKey =
-  | 'invalidLength'
-  | 'numberRequired'
-  | 'uppercaseRequired'
-  | 'lowercaseRequired'
-  | 'fieldRequired';
-
-type Rule = { check: (value: string) => boolean; key: ValidationPswdMessageKey };
+import type { Rule, ValidationPswdMessageKey } from './password.types';
 
 const rules: Rule[] = [
   { check: (v) => v.length >= 8 && v.length <= 64, key: 'invalidLength' },

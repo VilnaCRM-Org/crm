@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import { RequestMethod } from '@/services/https-client/https-client';
+import type { RequestMethod } from '@/services/https-client/https-client.types';
 
 @injectable()
 export default class HttpRequestConfigBuilder {

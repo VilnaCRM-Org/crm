@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 
-type CloseTimer = {
-  scheduleClose: (fn: () => void, delayMs: number) => void;
-};
+import type { CloseTimer } from './use-registration-close-timer.types';
 
 function clearTimer(
   timerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>

@@ -6,15 +6,8 @@ import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 
+import type { Props } from './registration-error-view.types';
 import styles from './registration-notification.error-styles';
-
-interface Props {
-  resolvedErrorText: string;
-  isSubmitting: boolean;
-  isClosing: boolean;
-  onRetry?: () => void;
-  onBack: () => void;
-}
 
 const buttonTextStyles = [styles.messageButtonText, styles.errorButtonMessage];
 
