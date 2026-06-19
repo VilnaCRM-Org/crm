@@ -38,7 +38,8 @@ function RegistrationFormPanel({
         onSubmit={form.handleRegister}
         defaultValues={DEFAULT_VALUES}
         error={null}
-        isSubmitting={form.isSubmitting}
+        isSubmitting={form.showSubmitLoader}
+        submittingAnnouncement={form.isSubmitting}
         isSubmitDisabled={form.view !== 'form'}
         submitLabel={t('sign_up.form.submit_button')}
         submittingLabel={t('sign_up.form.submitting')}

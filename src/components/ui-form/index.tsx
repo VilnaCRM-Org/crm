@@ -33,6 +33,7 @@ export interface UIFormProps<T extends FieldValues> {
   resetOnSuccess?: boolean;
   isSubmitDisabled?: boolean;
   submittingLabel: string;
+  submittingAnnouncement?: boolean;
 }
 
 type SubmitHandlerOptions<T extends FieldValues> = {
@@ -61,6 +62,7 @@ type FormBodyProps<T extends FieldValues> = {
   isSubmitDisabled: boolean;
   submitLabel: string;
   submittingLabel: string;
+  announceSubmitting: boolean;
 };
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
@@ -140,6 +142,7 @@ function FormBody<T extends FieldValues>({
   isSubmitDisabled,
   submitLabel,
   submittingLabel,
+  announceSubmitting,
 }: FormBodyProps<T>): JSX.Element {
   return (
     <form noValidate aria-busy={submitting} onSubmit={methods.handleSubmit(handleSubmit)}>
@@ -156,7 +159,7 @@ function FormBody<T extends FieldValues>({
         isSubmitDisabled={isSubmitDisabled}
         submitLabel={submitLabel}
       />
-      <UILiveStatus message={submitting ? submittingLabel : ''} />
+      <UILiveStatus message={announceSubmitting ? submittingLabel : ''} />
     </form>
   );
 }
@@ -176,16 +179,16 @@ export default function UIForm<T extends FieldValues>({
   resetOnSuccess = false,
   isSubmitDisabled = false,
   submittingLabel,
+  submittingAnnouncement,
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
-  const handleSubmit = buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess });
 
   return (
     <FormProviderBridge methods={methods}>
       <FormBody
         methods={methods}
-        handleSubmit={handleSubmit}
+        handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
         error={error}
         title={title}
         subtitle={subtitle}
@@ -195,6 +198,7 @@ export default function UIForm<T extends FieldValues>({
         isSubmitDisabled={isSubmitDisabled}
         submitLabel={submitLabel}
         submittingLabel={submittingLabel}
+        announceSubmitting={submittingAnnouncement ?? submitting}
       >
         {children}
       </FormBody>

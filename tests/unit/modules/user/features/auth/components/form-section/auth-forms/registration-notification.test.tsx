@@ -119,6 +119,16 @@ describe('RegistrationNotification', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 
+  it('moves focus off the body to the success notification on mount', () => {
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByRole('heading', { level: 4 })).toHaveAccessibleName();
+    expect(document.body).not.toHaveFocus();
+  });
+
   it('calls onShown when success view is mounted', () => {
     const onShown = jest.fn();
     renderWithProviders(

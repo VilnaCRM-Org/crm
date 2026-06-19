@@ -254,6 +254,27 @@ describe('UIForm', () => {
     expect(regions[0]).toHaveTextContent('Submitting…');
   });
 
+  it('keeps the spinner and aria-busy on while silencing the status announcement', () => {
+    render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Title"
+        isSubmitting
+        submittingAnnouncement={false}
+      >
+        <span />
+      </UIForm>
+    );
+
+    const button = screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement;
+    expect(button).toHaveClass('MuiButton-loading');
+    expect(button.form).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
+
   it('keeps the live region empty and the button interactive when idle', () => {
     render(
       <UIForm<Values>
