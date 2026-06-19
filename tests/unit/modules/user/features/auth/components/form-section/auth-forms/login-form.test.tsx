@@ -64,7 +64,7 @@ jest.mock('@auth/utils/get-submit-label-key', () => ({
   __esModule: true,
   default: {
     resolve: (mode: string, isSubmitting: boolean): string =>
-      `${mode}.${isSubmitting ? 'submitting' : 'submit_button'}`,
+      `${mode}.form.${isSubmitting ? 'submitting' : 'submit_button'}`,
   },
 }));
 

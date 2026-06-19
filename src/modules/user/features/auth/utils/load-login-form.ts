@@ -1,22 +1,7 @@
-type LoginFormModule = typeof import('@auth/components/form-section/auth-forms/login-form');
+import LazyModuleLoader from './lazy-module-loader';
 
-class LoginFormLoader {
-  private promise: Promise<LoginFormModule> | null = null;
-
-  public load(): Promise<LoginFormModule> {
-    if (!this.promise) {
-      this.promise = import('@auth/components/form-section/auth-forms/login-form').catch(
-        (error) => {
-          this.promise = null;
-          throw error;
-        }
-      );
-    }
-
-    return this.promise;
-  }
-}
-
-const loginFormLoader = new LoginFormLoader();
+const loginFormLoader = new LazyModuleLoader(
+  () => import('@auth/components/form-section/auth-forms/login-form')
+);
 
 export default loginFormLoader;

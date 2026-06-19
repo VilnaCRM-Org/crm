@@ -8,6 +8,9 @@ const NAME_SEP_GROUP = `(?:${NAME_SEPARATORS}${SINGLE_NAME_PATTERN})`;
 const NAME_WITH_SEPARATORS_PATTERN = `${SINGLE_NAME_PATTERN}${NAME_SEP_GROUP}*`;
 const FULL_NAME_PATTERN = `${SINGLE_NAME_PATTERN}${NAME_SEP_GROUP}+`;
 
+const NAME_WITH_SEPARATORS_RE = new RegExp(`^${NAME_WITH_SEPARATORS_PATTERN}$`);
+const FULL_NAME_RE = new RegExp(`^${FULL_NAME_PATTERN}$`);
+
 type NameRule = { check: (value: string) => boolean; messageKey: string };
 
 class FullNameValidator {
@@ -24,15 +27,11 @@ class FullNameValidator {
   ];
 
   public isLettersOnly(value: string): boolean {
-    return new RegExp(`^${NAME_WITH_SEPARATORS_PATTERN}$`).test(value);
+    return NAME_WITH_SEPARATORS_RE.test(value);
   }
 
   public isFormatted(value: string): boolean {
-    return (
-      new RegExp(`^${FULL_NAME_PATTERN}$`).test(value) &&
-      value.length >= 2 &&
-      value.length <= MAX_FULL_NAME_LENGTH
-    );
+    return FULL_NAME_RE.test(value) && value.length >= 2 && value.length <= MAX_FULL_NAME_LENGTH;
   }
 
   public isEmpty(value: string): boolean {

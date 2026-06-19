@@ -110,15 +110,15 @@ const noStaticOrFreeFunctionSelectors = [
   },
   {
     selector:
-      "Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='ArrowFunctionExpression']",
+      "Program > VariableDeclaration > VariableDeclarator[init.type='ArrowFunctionExpression'], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='ArrowFunctionExpression'], ExportDefaultDeclaration > ArrowFunctionExpression",
     message:
-      'No exported arrow functions in non-React source — make it an instance method on an injectable class (issue #100).',
+      'No top-level arrow functions in non-React source — make it an instance method on an injectable class (issue #100).',
   },
   {
     selector:
-      "Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression']",
+      "Program > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression'], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression'], ExportDefaultDeclaration > FunctionExpression",
     message:
-      'No exported function expressions in non-React source — make it an instance method on an injectable class (issue #100).',
+      'No top-level function expressions in non-React source — make it an instance method on an injectable class (issue #100).',
   },
 ];
 

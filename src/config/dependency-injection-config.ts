@@ -36,7 +36,7 @@ container.register<ApolloClient<NormalizedCacheObject>>(TOKENS.ApolloClient, {
   useFactory: instanceCachingFactory(
     () =>
       new ApolloClient<NormalizedCacheObject>({
-        uri: container.resolve(GraphQLUrl).resolve(),
+        uri: container.resolve<GraphQLUrl>(TOKENS.GraphQLUrl).resolve(),
         cache: new InMemoryCache(),
       })
   ),

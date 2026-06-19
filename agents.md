@@ -608,7 +608,8 @@ container.registerSingleton<MyService>(TOKENS.MyService, MyService);
 
 // 4. Resolve once at the composition root and inject the dependency
 //    (React components, stores, and store actions never call container.resolve themselves)
-export const useMyStore = MyStoreFactory.create(container.resolve(MyStoreActions));
+const myStoreFactory = new MyStoreFactory();
+export const useMyStore = myStoreFactory.create(container.resolve(MyStoreActions));
 ```
 
 ### Zustand Store Pattern

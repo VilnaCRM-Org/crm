@@ -37,7 +37,10 @@ jest.mock('@auth/components/form-section/validations', () => ({
 
 jest.mock('@auth/utils/get-submit-label-key', () => ({
   __esModule: true,
-  default: { resolve: (): string => 'sign_up.submit' },
+  default: {
+    resolve: (mode: string, isSubmitting: boolean): string =>
+      `${mode}.form.${isSubmitting ? 'submitting' : 'submit_button'}`,
+  },
 }));
 
 jest.mock('@auth/utils/load-registration-notification', () => ({

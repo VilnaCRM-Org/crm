@@ -464,26 +464,24 @@ describe('ErrorHandler', () => {
       });
     });
 
-    describe('static method behavior', () => {
-      it('should be callable without instantiation', () => {
+    describe('instance method behavior', () => {
+      it('handles auth errors when called on the instance', () => {
         const error: ParsedError = {
           code: ERROR_CODES.AUTH_INVALID,
           message: 'Test',
         };
 
-        // Should work without creating ErrorHandler instance
         const result = errorHandler.handleAuthError(error);
 
         expect(result).toBeDefined();
       });
 
-      it('should not require ErrorHandler instance', () => {
+      it('does not throw when handling a known error code on the instance', () => {
         const error: ParsedError = {
           code: ERROR_CODES.HTTP_401,
           message: 'Test',
         };
 
-        // Call directly on class
         expect(() => {
           errorHandler.handleAuthError(error);
         }).not.toThrow();

@@ -5,7 +5,7 @@ import { type MouseEvent, useCallback, useState } from 'react';
 import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import formValidators from '../validations';
+import formValidators from '@auth/components/form-section/validations';
 
 import FormField from './form-field';
 import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
