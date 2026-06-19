@@ -1,9 +1,10 @@
 import { CircularProgress, useMediaQuery } from '@mui/material';
 
+import breakpointsTheme from '@/components/ui-breakpoints';
 import { paletteColors } from '@/styles/colors';
 
 export default function SubmitSpinner(): JSX.Element {
-  const isWide = useMediaQuery('(min-width:768px)');
+  const isWide = useMediaQuery(breakpointsTheme.breakpoints.up('md'));
   return (
     <CircularProgress
       aria-hidden
