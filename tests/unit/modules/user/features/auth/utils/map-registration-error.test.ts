@@ -16,7 +16,7 @@ describe('mapRegistrationError', () => {
     });
   });
 
-  describe('getRegistrationError', () => {
+  describe('registrationErrorMapper.map', () => {
     describe('email already exists errors', () => {
       it('should return EMAIL_ALREADY_USED_KEY for error with "email" and "exists"', () => {
         expect(registrationErrorMapper.map('Email already exists')).toBe(EMAIL_ALREADY_USED_KEY);
