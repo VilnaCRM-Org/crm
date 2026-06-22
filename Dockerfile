@@ -2,6 +2,7 @@ FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS base
 
 ARG CURL_VERSION=8.14.1-r2
 ARG INSTALL_CHROMIUM=false
+ARG INSTALL_PLAYWRIGHT_BROWSERS=false
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
@@ -29,6 +30,10 @@ WORKDIR /app
 
 COPY package.json bun.lock* check-node-version.js ./
 RUN bun install --frozen-lockfile
+
+RUN if [ "$INSTALL_PLAYWRIGHT_BROWSERS" = "true" ]; then \
+      bun x playwright install chromium; \
+    fi
 
 
 # -------- Build Stage --------

@@ -206,3 +206,68 @@ create-k6-helper-container-dind K6_HELPER_NAME=crm-k6-helper|docker images -q cr
 run-load-tests-dind K6_HELPER_NAME=crm-k6-helper|docker exec crm-k6-helper k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)|/loadTests/homepage.js
 EOF
 }
+
+@test "dev-mode Playwright targets run inside the dev container with PLAYWRIGHT_DEV_MODE" {
+  # Full suite: reuses the running dev container and injects the dev-mode flag in-container.
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_DOCKER_RUNNING_SERVICE=dev \
+    make -C "$MAKEFILE_SANDBOX" test-e2e-dev BIN_DIR="$STUB_BIN_DIR"
+  [ "$status" -eq 0 ]
+  assert_log_contains 'compose exec -T dev env PLAYWRIGHT_DEV_MODE=1 bun x playwright test ./tests/e2e'
+  # Dev-server and mockoon readiness are gated as preconditions (the reuse path too).
+  assert_log_contains 'curl -fsS http://localhost:3000'
+  assert_log_contains 'curl -fsS http://localhost:8080/api/users'
+
+  # FILE= scopes to a single spec; the test dir is not also passed, so the run is not broadened.
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_DOCKER_RUNNING_SERVICE=dev \
+    make -C "$MAKEFILE_SANDBOX" test-e2e-dev FILE=tests/e2e/modules/back-to-main.spec.ts BIN_DIR="$STUB_BIN_DIR"
+  [ "$status" -eq 0 ]
+  assert_log_contains 'compose exec -T dev env PLAYWRIGHT_DEV_MODE=1 bun x playwright test tests/e2e/modules/back-to-main.spec.ts'
+
+  # Visual smoke run targets the visual directory through the same dev-mode wrapper.
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_DOCKER_RUNNING_SERVICE=dev \
+    make -C "$MAKEFILE_SANDBOX" test-visual-dev BIN_DIR="$STUB_BIN_DIR"
+  [ "$status" -eq 0 ]
+  assert_log_contains 'compose exec -T dev env PLAYWRIGHT_DEV_MODE=1 bun x playwright test ./tests/visual'
+
+  # Browser provisioning is explicit and runs the pinned Playwright installer.
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_DOCKER_RUNNING_SERVICE=dev \
+    make -C "$MAKEFILE_SANDBOX" ensure-playwright-browsers BIN_DIR="$STUB_BIN_DIR"
+  [ "$status" -eq 0 ]
+  assert_log_contains 'compose exec -T dev bun x playwright install chromium'
+}
+
+@test "the dev e2e debug target requires FILE and allocates a TTY" {
+  # Missing FILE fails fast with remediation before invoking Playwright.
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_DOCKER_RUNNING_SERVICE=dev \
+    make -C "$MAKEFILE_SANDBOX" test-e2e-dev-debug BIN_DIR="$STUB_BIN_DIR"
+  [ "$status" -ne 0 ]
+  assert_output_contains 'FILE= is required'
+
+  # With FILE set it debugs a single spec via a TTY-capable exec (no -T) under --debug.
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_DOCKER_RUNNING_SERVICE=dev \
+    make -C "$MAKEFILE_SANDBOX" test-e2e-dev-debug FILE=tests/e2e/modules/back-to-main.spec.ts BIN_DIR="$STUB_BIN_DIR"
+  [ "$status" -eq 0 ]
+  assert_log_contains 'compose exec dev env PLAYWRIGHT_DEV_MODE=1 PLAYWRIGHT_TRACE_PORT=9323 bun x playwright test tests/e2e/modules/back-to-main.spec.ts --debug'
+}

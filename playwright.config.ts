@@ -7,7 +7,22 @@ dotenvExpand(env);
 
 const cdHeaderName = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME?.trim();
 const cdHeaderValue = process.env.REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE?.trim();
-const baseURL = process.env.REACT_APP_PROD_CONTAINER_API_URL || 'http://localhost:3001';
+
+const isDevMode = process.env.PLAYWRIGHT_DEV_MODE === '1';
+const prodBaseURL = process.env.REACT_APP_PROD_CONTAINER_API_URL || 'http://localhost:3001';
+const devBaseURL = process.env.WEBSITE_URL || `http://localhost:${process.env.DEV_PORT || '3000'}`;
+const baseURL = isDevMode ? devBaseURL : prodBaseURL;
+
+const chromiumLaunchArgs = [
+  // Required for cross-container communication in Docker test environment (for CORS)
+  '--disable-web-security',
+  '--disable-features=IsolateOrigins',
+  '--disable-site-isolation-trials',
+];
+
+const devSnapshotPathTemplate =
+  'tests/visual/__snapshots__-dev/' +
+  '{testFileName}-snapshots/{arg}{-projectName}{-snapshotSuffix}{ext}';
 
 // Snapshot path: relies on Playwright defaults, which match the repo convention
 // of `{spec-file-name}-snapshots/{snapshot-name}-{projectName}-{platform}.png`.
@@ -22,6 +37,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [['html', { open: 'never' }]],
+  ...(isDevMode ? { snapshotPathTemplate: devSnapshotPathTemplate } : {}),
   use: {
     trace: 'on-first-retry',
     ignoreHTTPSErrors: true,
@@ -34,30 +50,33 @@ export default defineConfig({
         }
       : {}),
   },
-  projects: [
-    {
-      name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        // Required for cross-container communication in Docker test environment (for CORS)
-        launchOptions: {
-          args: [
-            '--disable-web-security',
-            '--disable-features=IsolateOrigins',
-            '--disable-site-isolation-trials',
-          ],
+  projects: isDevMode
+    ? [
+        {
+          name: 'chromium-dev',
+          use: {
+            ...devices['Desktop Chrome'],
+            launchOptions: { args: chromiumLaunchArgs },
+          },
         },
-      },
-    },
+      ]
+    : [
+        {
+          name: 'chromium',
+          use: {
+            ...devices['Desktop Chrome'],
+            launchOptions: { args: chromiumLaunchArgs },
+          },
+        },
 
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
+        {
+          name: 'firefox',
+          use: { ...devices['Desktop Firefox'] },
+        },
 
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-  ],
+        {
+          name: 'webkit',
+          use: { ...devices['Desktop Safari'] },
+        },
+      ],
 });

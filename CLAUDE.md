@@ -75,6 +75,25 @@ make test-visual-update    # Update visual snapshots
 The mock server automatically starts via docker-compose.test.yml and serves
 the OpenAPI spec from user-service repository on port 8080.
 
+#### Fast dev-mode targets (run from the dev container)
+
+```bash
+make ensure-playwright-browsers   # one-time: install Playwright browsers (opt-in)
+make test-e2e-dev                 # e2e suite against the dev server
+make test-e2e-dev FILE=tests/e2e/modules/back-to-main.spec.ts
+make test-visual-dev              # dev-build visual smoke suite (not CI-gating)
+make test-e2e-dev-debug FILE=tests/e2e/modules/back-to-main.spec.ts  # Playwright Inspector
+```
+
+`PLAYWRIGHT_DEV_MODE=1` is set only inside these recipes (injected into the container via `env`), so
+it never leaks into the IDE Playwright extension, CI, `make sh` shells, or the five production-parity
+targets. Dev-mode visual snapshots are smoke-level and not CI-gating; they live in
+`tests/visual/__snapshots__-dev/` under the `chromium-dev` project, separate from the authoritative
+production baselines produced by `make test-visual`. The trace viewer defaults to
+`http://localhost:9323` (override with `PLAYWRIGHT_TRACE_PORT`). These targets are local-only and are
+never wired into CI. `prod`/`playwright` stay isolated because the dev path composes only
+`docker-compose.yml` (`dev` + `mockoon`) and never starts the test stack.
+
 ### Performance Tests
 
 ```bash
@@ -432,6 +451,14 @@ For specific E2E test:
 make start-prod
 # In another terminal:
 docker compose -f docker-compose.test.yml exec playwright bunx playwright test tests/e2e/path/to/test.spec.ts
+```
+
+For a fast single-test inner loop from the `dev` container (no production stack):
+
+```bash
+make test-e2e-dev FILE=tests/e2e/modules/back-to-main.spec.ts
+make test-visual-dev FILE=tests/visual/visual-comparison.spec.ts
+make test-e2e-dev-debug FILE=tests/e2e/modules/back-to-main.spec.ts
 ```
 
 ## Environment Variables

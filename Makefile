@@ -41,6 +41,7 @@ DOCKER_COMPOSE_TEST_FILE    = -f docker-compose.test.yml
 DOCKER_COMPOSE_DEV_FILE     = -f docker-compose.yml
 COMMON_HEALTHCHECKS_FILE    = -f common-healthchecks.yml
 EXEC_DEV_TTYLESS            = $(DOCKER_COMPOSE) exec -T dev
+EXEC_DEV_TTY                = $(DOCKER_COMPOSE) exec dev
 
 PLAYWRIGHT_DOCKER_CMD       = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec playwright
 PLAYWRIGHT_TEST             = $(PLAYWRIGHT_DOCKER_CMD) sh -c
@@ -87,8 +88,11 @@ DEV_PORT                    ?= 3000
 PROD_PORT                   ?= 3001
 MOCKOON_PORT                ?= 8080
 PLAYWRIGHT_TEST_PORT        ?= 9324
+PLAYWRIGHT_TRACE_PORT       ?= 9323
 UI_HOST                     ?= 0.0.0.0
 INSTALL_CHROMIUM            ?= false
+INSTALL_PLAYWRIGHT_BROWSERS ?= false
+FILE                        ?=
 
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
 PRETTIER_CMD                = $(BUNX) prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
@@ -150,6 +154,9 @@ test: test-unit-all
 RUN_VISUAL                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 RUN_E2E                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
 PLAYWRIGHT_TEST_CMD         = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
+PLAYWRIGHT_DEV_TEST         = $(EXEC_DEV_TTYLESS) env PLAYWRIGHT_DEV_MODE=1 bun x playwright test
+RUN_E2E_DEV                 = $(PLAYWRIGHT_DEV_TEST) "$(TEST_DIR_E2E)"
+RUN_VISUAL_DEV              = $(PLAYWRIGHT_DEV_TEST) "$(TEST_DIR_VISUAL)"
 
 
 help:
@@ -405,6 +412,23 @@ test-visual-ui: start-prod ## Start the production environment and run visual te
 
 test-visual-update: start-prod ## Update Playwright visual snapshots
 	$(PLAYWRIGHT_TEST_CMD) $(TEST_DIR_VISUAL) --update-snapshots
+
+require-playwright-browsers: ensure-dev
+	@$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) exec -T dev sh -lc 'ls "$$HOME"/.cache/ms-playwright/chromium-*/ >/dev/null 2>&1 || { printf "❌ Playwright browsers are not installed in the dev container.\n   Run: make ensure-playwright-browsers\n" >&2; exit 1; }'
+
+ensure-playwright-browsers: ensure-dev ## Install Playwright browsers (Chromium) in the dev container (idempotent)
+	$(BUNX) playwright install chromium
+	@echo "✅ Playwright Chromium is ready in the dev container."
+
+test-e2e-dev: ensure-dev wait-for-dev wait-for-mockoon require-playwright-browsers ## Run Playwright e2e tests in the dev container (FILE= for one spec)
+	@if [ -n "$(FILE)" ]; then $(PLAYWRIGHT_DEV_TEST) "$(FILE)"; else $(RUN_E2E_DEV); fi
+
+test-visual-dev: ensure-dev wait-for-dev wait-for-mockoon require-playwright-browsers ## Run dev-build visual smoke tests, not CI-gating (FILE= for one spec)
+	@if [ -n "$(FILE)" ]; then $(PLAYWRIGHT_DEV_TEST) "$(FILE)"; else $(RUN_VISUAL_DEV); fi
+
+test-e2e-dev-debug: ensure-dev wait-for-dev wait-for-mockoon require-playwright-browsers ## Debug one e2e spec with Playwright Inspector (FILE= required)
+	@[ -n "$(FILE)" ] || { printf "❌ FILE= is required, e.g. make test-e2e-dev-debug FILE=tests/e2e/foo.spec.ts\n" >&2; exit 1; }
+	$(EXEC_DEV_TTY) env PLAYWRIGHT_DEV_MODE=1 PLAYWRIGHT_TRACE_PORT=$(PLAYWRIGHT_TRACE_PORT) bun x playwright test "$(FILE)" --debug
 
 create-network: ## Create the external Docker network if it doesn't exist
 	@docker network ls | grep -wq $(NETWORK_NAME) || docker network create $(NETWORK_NAME)
