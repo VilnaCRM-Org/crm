@@ -216,7 +216,8 @@ EOF
     make -C "$MAKEFILE_SANDBOX" test-e2e-dev BIN_DIR="$STUB_BIN_DIR"
   [ "$status" -eq 0 ]
   assert_log_contains 'compose exec -T dev env PLAYWRIGHT_DEV_MODE=1 bun x playwright test ./tests/e2e'
-  # Dev-server and mockoon readiness are gated as preconditions (the reuse path too).
+  # Dev-server and mockoon readiness are gated as preconditions (the reuse path too);
+  # the require-playwright-browsers preflight also runs ahead of the Playwright invocation.
   assert_log_contains 'curl -fsS http://localhost:3000'
   assert_log_contains 'curl -fsS http://localhost:8080/api/users'
 

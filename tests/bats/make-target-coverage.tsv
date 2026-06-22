@@ -98,3 +98,8 @@ run-markdown-lint-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as 
 create-k6-helper-container-dind	bats	tests/bats/makefile_targets.bats	Validated as the helper-container creation command for K6 DIND tests.
 run-load-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND K6 execution command.
 test-bats	ci	.github/workflows/bats-testing.yml	Executed directly by the dedicated Bats PR workflow.
+ensure-playwright-browsers	bats	tests/bats/makefile_targets.bats	Validated as the idempotent dev-container Playwright browser installer.
+require-playwright-browsers	bats	tests/bats/makefile_targets.bats	Validated as the fail-fast browser preflight that gates the dev-mode targets.
+test-e2e-dev	bats	tests/bats/makefile_targets.bats	Validated as the dev-container Playwright e2e runner with FILE scoping.
+test-e2e-dev-debug	bats	tests/bats/makefile_targets.bats	Validated as the TTY-capable single-spec Playwright Inspector debug target.
+test-visual-dev	bats	tests/bats/makefile_targets.bats	Validated as the dev-build visual smoke runner with FILE scoping.
