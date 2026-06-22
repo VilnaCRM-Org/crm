@@ -13,7 +13,7 @@ RUN apk add --no-cache \
     jq=1.7.1-r0 \
     make=4.4.1-r2 \
     python3=3.12.13-r0 && \
-    if [ "$INSTALL_CHROMIUM" = "true" ]; then \
+    if [ "$INSTALL_CHROMIUM" = "true" ] || [ "$INSTALL_PLAYWRIGHT_BROWSERS" = "true" ]; then \
       apk add --no-cache \
         chromium=136.0.7103.113-r0 \
         font-freefont=20120503-r4 \
@@ -30,10 +30,6 @@ WORKDIR /app
 
 COPY package.json bun.lock* check-node-version.js ./
 RUN bun install --frozen-lockfile
-
-RUN if [ "$INSTALL_PLAYWRIGHT_BROWSERS" = "true" ]; then \
-      bun x playwright install chromium; \
-    fi
 
 
 # -------- Build Stage --------

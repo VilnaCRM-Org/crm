@@ -78,7 +78,7 @@ the OpenAPI spec from user-service repository on port 8080.
 #### Fast dev-mode targets (run from the dev container)
 
 ```bash
-make ensure-playwright-browsers   # one-time: install Playwright browsers (opt-in)
+make ensure-playwright-browsers   # one-time: install Chromium via system apk (opt-in)
 make test-e2e-dev                 # e2e suite against the dev server
 make test-e2e-dev FILE=tests/e2e/modules/back-to-main.spec.ts
 make test-visual-dev              # dev-build visual smoke suite (not CI-gating)

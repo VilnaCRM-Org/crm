@@ -241,7 +241,7 @@ EOF
   [ "$status" -eq 0 ]
   assert_log_contains 'compose exec -T dev env PLAYWRIGHT_DEV_MODE=1 bun x playwright test ./tests/visual'
 
-  # Browser provisioning is explicit and runs the pinned Playwright installer.
+  # Browser provisioning installs the system Chromium via apk (Alpine-compatible).
   reset_command_log
   run env \
     PATH="$STUB_BIN_DIR:$PATH" \
@@ -249,7 +249,7 @@ EOF
     FAKE_DOCKER_RUNNING_SERVICE=dev \
     make -C "$MAKEFILE_SANDBOX" ensure-playwright-browsers BIN_DIR="$STUB_BIN_DIR"
   [ "$status" -eq 0 ]
-  assert_log_contains 'compose exec -T dev bun x playwright install chromium'
+  assert_log_contains 'apk add --no-cache chromium=136.0.7103.113-r0'
 }
 
 @test "the dev e2e debug target requires FILE and allocates a TTY" {

@@ -208,8 +208,9 @@ The `-dev` Playwright targets run e2e and visual specs from the already-running 
 fast inner loop. They never start the production stack, and the production-parity `make test-e2e` and
 `make test-visual` targets are unchanged — those remain the authoritative, CI-gating path.
 
-One-time setup installs the Playwright browsers into the dev container (opt-in; the default image
-ships without them):
+One-time setup installs Chromium into the dev container — the system apk build that Playwright drives
+in dev mode (the Alpine-compatible binary already used for Lighthouse, not Playwright's glibc
+download). It is opt-in; the default image ships without it:
 
 ```bash
 make ensure-playwright-browsers

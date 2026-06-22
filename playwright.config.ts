@@ -12,6 +12,7 @@ const isDevMode = process.env.PLAYWRIGHT_DEV_MODE === '1';
 const prodBaseURL = process.env.REACT_APP_PROD_CONTAINER_API_URL || 'http://localhost:3001';
 const devBaseURL = process.env.WEBSITE_URL || `http://localhost:${process.env.DEV_PORT || '3000'}`;
 const baseURL = isDevMode ? devBaseURL : prodBaseURL;
+const devChromiumPath = process.env.PLAYWRIGHT_CHROMIUM_PATH || '/usr/bin/chromium-browser';
 
 const chromiumLaunchArgs = [
   // Required for cross-container communication in Docker test environment (for CORS)
@@ -56,7 +57,7 @@ export default defineConfig({
           name: 'chromium-dev',
           use: {
             ...devices['Desktop Chrome'],
-            launchOptions: { args: chromiumLaunchArgs },
+            launchOptions: { args: chromiumLaunchArgs, executablePath: devChromiumPath },
           },
         },
       ]

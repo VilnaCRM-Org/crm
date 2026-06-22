@@ -414,11 +414,10 @@ test-visual-update: start-prod ## Update Playwright visual snapshots
 	$(PLAYWRIGHT_TEST_CMD) $(TEST_DIR_VISUAL) --update-snapshots
 
 require-playwright-browsers: ensure-dev
-	@$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) exec -T dev sh -lc 'ls "$$HOME"/.cache/ms-playwright/chromium-*/ >/dev/null 2>&1 || { printf "❌ Playwright browsers are not installed in the dev container.\n   Run: make ensure-playwright-browsers\n" >&2; exit 1; }'
+	@$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) exec -T dev sh -lc '[ -x "$(CHROMIUM_BIN_PATH)" ] || { printf "❌ Chromium is not installed in the dev container.\n   Run: make ensure-playwright-browsers\n" >&2; exit 1; }'
 
-ensure-playwright-browsers: ensure-dev ## Install Playwright browsers (Chromium) in the dev container (idempotent)
-	$(BUNX) playwright install chromium
-	@echo "✅ Playwright Chromium is ready in the dev container."
+ensure-playwright-browsers: ensure-chromium ## Install Chromium for dev-mode Playwright (idempotent; system apk build)
+	@echo "✅ Dev-mode Playwright uses the system Chromium at $(CHROMIUM_BIN_PATH)."
 
 test-e2e-dev: ensure-dev wait-for-dev wait-for-mockoon require-playwright-browsers ## Run Playwright e2e tests in the dev container (FILE= for one spec)
 	@if [ -n "$(FILE)" ]; then $(PLAYWRIGHT_DEV_TEST) "$(FILE)"; else $(RUN_E2E_DEV); fi
