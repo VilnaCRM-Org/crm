@@ -1,6 +1,15 @@
 import breakpointsTheme from '@/components/ui-breakpoints';
+import { paletteColors } from '@/styles/colors';
 
 export default {
+  errorBannerFocus: {
+    outline: 'none',
+    '&:focus-visible': {
+      outline: `2px solid ${paletteColors.error.main}`,
+      outlineOffset: '2px',
+    },
+  },
+
   formTitle: {
     fontSize: '1.375rem',
     fontFamily: 'Golos',
@@ -89,10 +98,5 @@ export default {
       fontSize: '1.125rem',
       lineHeight: 1,
     },
-  },
-
-  loader: {
-    display: 'block',
-    margin: '1rem auto 0',
   },
 };

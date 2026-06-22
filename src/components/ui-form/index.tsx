@@ -1,4 +1,4 @@
-import { CircularProgress } from '@mui/material';
+import { Box } from '@mui/material';
 import { ReactNode } from 'react';
 import {
   useForm,
@@ -12,7 +12,11 @@ import {
 import UIButton from '@/components/ui-button';
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import styles from '@/components/ui-form/styles';
+import UILiveStatus from '@/components/ui-live-status';
 import UITypography from '@/components/ui-typography';
+import useFocusOnMount from '@/utils/use-focus-on-mount';
+
+import SubmitSpinner from './submit-spinner';
 
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
@@ -28,6 +32,8 @@ export interface UIFormProps<T extends FieldValues> {
   showSubtitle?: boolean;
   resetOnSuccess?: boolean;
   isSubmitDisabled?: boolean;
+  submittingLabel: string;
+  submittingAnnouncement?: boolean;
 }
 
 type SubmitHandlerOptions<T extends FieldValues> = {
@@ -55,14 +61,19 @@ type FormBodyProps<T extends FieldValues> = {
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;
+  submittingLabel: string;
+  announceSubmitting: boolean;
 };
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
+  const focusOnAppear = useFocusOnMount<HTMLDivElement>();
   if (!error) return null;
   return (
-    <UITypography role="alert" aria-live="polite" sx={{ color: 'red', marginBottom: '1rem' }}>
-      {error}
-    </UITypography>
+    <Box ref={focusOnAppear} tabIndex={-1} sx={styles.errorBannerFocus}>
+      <UITypography role="alert" sx={{ color: 'red', marginBottom: '1rem' }}>
+        {error}
+      </UITypography>
+    </Box>
   );
 }
 
@@ -104,17 +115,17 @@ function SubmitControls({
   submitLabel,
 }: SubmitControlsProps): JSX.Element {
   return (
-    <>
-      <UIButton
-        type="submit"
-        disabled={submitting || isSubmitDisabled}
-        variant="contained"
-        sx={styles.submitButton}
-      >
-        {submitLabel}
-      </UIButton>
-      {submitting ? <CircularProgress color="primary" size={70} sx={styles.loader} /> : null}
-    </>
+    <UIButton
+      type="submit"
+      loading={submitting}
+      loadingPosition="center"
+      loadingIndicator={<SubmitSpinner />}
+      disabled={isSubmitDisabled}
+      variant="contained"
+      sx={styles.submitButton}
+    >
+      {submitLabel}
+    </UIButton>
   );
 }
 
@@ -130,9 +141,11 @@ function FormBody<T extends FieldValues>({
   submitting,
   isSubmitDisabled,
   submitLabel,
+  submittingLabel,
+  announceSubmitting,
 }: FormBodyProps<T>): JSX.Element {
   return (
-    <form noValidate onSubmit={methods.handleSubmit(handleSubmit)}>
+    <form noValidate aria-busy={submitting} onSubmit={methods.handleSubmit(handleSubmit)}>
       <ErrorBanner error={error} />
       <FormHeader
         title={title}
@@ -146,6 +159,7 @@ function FormBody<T extends FieldValues>({
         isSubmitDisabled={isSubmitDisabled}
         submitLabel={submitLabel}
       />
+      <UILiveStatus message={announceSubmitting ? submittingLabel : ''} />
     </form>
   );
 }
@@ -164,16 +178,17 @@ export default function UIForm<T extends FieldValues>({
   showSubtitle = true,
   resetOnSuccess = false,
   isSubmitDisabled = false,
+  submittingLabel,
+  submittingAnnouncement,
 }: UIFormProps<T>): JSX.Element {
   const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
-  const handleSubmit = buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess });
 
   return (
     <FormProviderBridge methods={methods}>
       <FormBody
         methods={methods}
-        handleSubmit={handleSubmit}
+        handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
         error={error}
         title={title}
         subtitle={subtitle}
@@ -182,6 +197,8 @@ export default function UIForm<T extends FieldValues>({
         submitting={submitting}
         isSubmitDisabled={isSubmitDisabled}
         submitLabel={submitLabel}
+        submittingLabel={submittingLabel}
+        announceSubmitting={submittingAnnouncement ?? submitting}
       >
         {children}
       </FormBody>

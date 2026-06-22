@@ -128,4 +128,37 @@ describe('UIButton Component', () => {
       expect(button).toHaveClass('MuiButton-root');
     });
   });
+
+  describe('Native loading props forwarding', () => {
+    it('forwards loading and loadingPosition into the inner Button', () => {
+      render(
+        <UIButton type="submit" loading loadingPosition="center">
+          Submit
+        </UIButton>
+      );
+
+      const button = screen.getByRole('button', { name: 'Submit' });
+      expect(button).toBeDisabled();
+      expect(button).toHaveClass('MuiButton-loading');
+    });
+
+    it('forwards a custom loadingIndicator node without changing the accessible name', () => {
+      render(
+        <UIButton loading loadingIndicator={<span aria-hidden="true">spin</span>}>
+          Submit
+        </UIButton>
+      );
+
+      expect(screen.getByText('spin')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Submit' })).toBeInTheDocument();
+    });
+
+    it('applies no loading wiring on the anchor branch', () => {
+      render(<UIButton to="/dashboard">Go</UIButton>);
+
+      const link = screen.getByRole('link');
+      expect(link.tagName.toLowerCase()).toBe('a');
+      expect(link).not.toHaveClass('MuiButton-loading');
+    });
+  });
 });
