@@ -342,7 +342,7 @@ class AuthStoreSelectors {
 export default new AuthStoreSelectors();
 ```
 
-### No static methods or free functions (issue #100)
+### No static methods or free functions (issues #100, #89)
 
 Non-React application code (services, repositories, mappers, factories, stores, and
 utilities under `src/**/*.ts`) must **not** use `static` class members or standalone
@@ -373,8 +373,17 @@ functions by definition.
 
 **Enforcement:** an ESLint `no-restricted-syntax` gate (in `eslint.config.mjs`, scoped to
 `src/**/*.ts` excluding `use-*`) fails the build on `static` members and standalone
-functions. It runs in `make lint-eslint` and the `static testing` workflow. Satisfy it by
-refactoring to instance methods — never with `eslint-disable`.
+functions — `function` declarations (including generators), default-exported functions,
+and top-level arrow / function-expression `const`s. It runs in `make lint-eslint` and the
+`static testing` workflow. Satisfy it by refactoring to instance methods — never with
+`eslint-disable`.
+
+This gate is the canonical enforcement of the **only classes outside React components**
+convention (issue #89, closed as covered here): with free functions banned in non-React
+`.ts`, all such logic is class-encapsulated, so #89 needs no separate ESLint or
+dependency-cruiser rule. Per #89's own "honest limitation", the residual gap is **semantic,
+not syntactic** — logic smuggled into an object literal's methods (or a misplaced helper) is
+not statically detectable and stays a review-gate concern.
 
 ### Path Aliases
 

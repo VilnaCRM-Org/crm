@@ -559,7 +559,7 @@ const { t } = useTranslation();
 
 ## Architecture Patterns
 
-### No static methods or free functions (issue #100)
+### No static methods or free functions (issues #100, #89)
 
 Non-React application code (services, repositories, mappers, factories, stores, utilities
 under `src/**/*.ts`) must **not** use `static` class members or standalone (free)
@@ -582,6 +582,15 @@ Enforced by an ESLint `no-restricted-syntax` gate in `eslint.config.mjs` (scoped
 workflow. Fix violations by refactoring — never with `eslint-disable`. In tests, inject a
 mock collaborator (or pass a stub to the constructor / resolve from a child container)
 rather than mocking the module.
+
+This gate is the canonical enforcement of the **only classes outside React components**
+convention (issue #89, closed as covered here): banning free functions in non-React `.ts`
+makes all such logic class-encapsulated, so #89 needs no separate ESLint or
+dependency-cruiser rule. The dependency-cruiser placement rule #89 originally proposed is
+superseded — dep-cruiser reasons about the import graph, not whether a module's exports are
+classes, and the blanket ESLint ban is stricter than the helper-zone carve-out #89 sketched.
+Per #89's "honest limitation", the residual gap is **semantic** (logic hidden in an object
+literal's methods or a misplaced helper) and stays a review-gate concern.
 
 ### Dependency Injection Pattern
 
