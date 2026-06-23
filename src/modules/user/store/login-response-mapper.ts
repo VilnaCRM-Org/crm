@@ -1,19 +1,13 @@
 import { injectable } from 'tsyringe';
 
-import type { UiError } from '@/services/error';
-import { LoginResponseSchema, type LoginResponse } from '@auth/types/api-responses';
-
-export type LoginSuccessPayload = LoginResponse & { email: string };
-
-export type LoginResponseMappingResult =
-  | { ok: true; value: LoginSuccessPayload }
-  | { ok: false; error: UiError };
+import type { LoginMappingResult } from '@/modules/user/types/store/login-mapper';
+import { LoginResponseSchema } from '@auth/utils/response-schemas';
 
 const INVALID_LOGIN_RESPONSE_MESSAGE = 'Unexpected response from server';
 
 @injectable()
 export default class LoginResponseMapper {
-  public map(apiResponse: unknown, email: string): LoginResponseMappingResult {
+  public map(apiResponse: unknown, email: string): LoginMappingResult {
     const parsed = LoginResponseSchema.safeParse(apiResponse);
     if (!parsed.success) {
       return {

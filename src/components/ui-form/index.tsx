@@ -1,14 +1,13 @@
 import { Box } from '@mui/material';
 import { ReactNode } from 'react';
-import {
-  useForm,
-  SubmitHandler,
-  FieldValues,
-  DefaultValues,
-  UseFormProps,
-  UseFormReturn,
-} from 'react-hook-form';
+import { useForm, SubmitHandler, FieldValues } from 'react-hook-form';
 
+import type {
+  FormBodyProps,
+  SubmitControlsProps,
+  SubmitHandlerOptions,
+  UIFormProps,
+} from '@/components/types/ui-form';
 import UIButton from '@/components/ui-button';
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import styles from '@/components/ui-form/styles';
@@ -17,53 +16,6 @@ import UITypography from '@/components/ui-typography';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import SubmitSpinner from './submit-spinner';
-
-export interface UIFormProps<T extends FieldValues> {
-  onSubmit: SubmitHandler<T>;
-  defaultValues: DefaultValues<T>;
-  children: ReactNode;
-  formOptions?: Omit<UseFormProps<T>, 'defaultValues'>;
-  isSubmitting?: boolean;
-  error?: string | null;
-  submitLabel: string;
-  title: ReactNode;
-  subtitle?: ReactNode;
-  showTitle?: boolean;
-  showSubtitle?: boolean;
-  resetOnSuccess?: boolean;
-  isSubmitDisabled?: boolean;
-  submittingLabel: string;
-  submittingAnnouncement?: boolean;
-}
-
-type SubmitHandlerOptions<T extends FieldValues> = {
-  onSubmit: SubmitHandler<T>;
-  methods: UseFormReturn<T>;
-  defaultValues: DefaultValues<T>;
-  resetOnSuccess: boolean;
-};
-
-type SubmitControlsProps = {
-  submitting: boolean;
-  isSubmitDisabled: boolean;
-  submitLabel: string;
-};
-
-type FormBodyProps<T extends FieldValues> = {
-  methods: UseFormReturn<T>;
-  handleSubmit: SubmitHandler<T>;
-  children: ReactNode;
-  error?: string | null;
-  title: ReactNode;
-  subtitle?: ReactNode;
-  showTitle: boolean;
-  showSubtitle: boolean;
-  submitting: boolean;
-  isSubmitDisabled: boolean;
-  submitLabel: string;
-  submittingLabel: string;
-  announceSubmitting: boolean;
-};
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
   const focusOnAppear = useFocusOnMount<HTMLDivElement>();

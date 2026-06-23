@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 
 import styles from '@/components/skeletons/ui-skeleton-input/styles';
-import { UISkeletonInputProps } from '@/components/skeletons/ui-skeleton-input/types';
+import type { UISkeletonInputProps } from '@/components/skeletons/ui-skeleton-input/types';
 
 function UISkeletonInput({ disableAnimation = false, id }: UISkeletonInputProps): JSX.Element {
   const staticSx = disableAnimation ? styles.staticSkeleton : undefined;

@@ -1,10 +1,6 @@
-import { ReactNode } from 'react';
-import { FieldValues, FormProvider, UseFormReturn } from 'react-hook-form';
+import { FieldValues, FormProvider } from 'react-hook-form';
 
-type FormProviderBridgeProps<T extends FieldValues> = {
-  methods: UseFormReturn<T>;
-  children: ReactNode;
-};
+import type { FormProviderBridgeProps } from '@/components/types/ui-form/form-provider-bridge';
 
 export default function FormProviderBridge<T extends FieldValues>({
   methods,

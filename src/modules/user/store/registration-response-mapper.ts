@@ -1,18 +1,14 @@
 import { injectable } from 'tsyringe';
 
-import type { UiError } from '@/services/error';
-import { RegistrationResponseSchema, type SafeUserInfo } from '@auth/types/api-responses';
-
-export type RegistrationResponseMappingResult =
-  | { ok: true; value: SafeUserInfo }
-  | { ok: false; error: UiError };
+import type { RegistrationMappingResult } from '@/modules/user/types/store/registration-mapper';
+import { RegistrationResponseSchema } from '@auth/utils/response-schemas';
 
 const INVALID_REGISTRATION_RESPONSE_MESSAGE =
   'There was a problem with the provided information. Please check your input.';
 
 @injectable()
 export default class RegistrationResponseMapper {
-  public map(apiResponse: unknown): RegistrationResponseMappingResult {
+  public map(apiResponse: unknown): RegistrationMappingResult {
     const parsed = RegistrationResponseSchema.safeParse(apiResponse);
     if (!parsed.success) {
       // Log only a non-PII summary; schema errors can echo user-provided values.

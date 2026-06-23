@@ -1,4 +1,4 @@
-import getRegistrationError, {
+import registrationErrorMapper, {
   EMAIL_ALREADY_USED_KEY,
   GENERIC_SIGNUP_ERROR_KEY,
 } from '@/modules/user/features/auth/utils/map-registration-error';
@@ -16,136 +16,144 @@ describe('mapRegistrationError', () => {
     });
   });
 
-  describe('getRegistrationError', () => {
+  describe('registrationErrorMapper.map', () => {
     describe('email already exists errors', () => {
       it('should return EMAIL_ALREADY_USED_KEY for error with "email" and "exists"', () => {
-        expect(getRegistrationError('Email already exists')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('Email already exists')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
       it('returns EMAIL_ALREADY_USED_KEY for "email" and "exists" (case insensitive)', () => {
-        expect(getRegistrationError('EMAIL ALREADY EXISTS')).toBe(EMAIL_ALREADY_USED_KEY);
-        expect(getRegistrationError('Email Already Exists')).toBe(EMAIL_ALREADY_USED_KEY);
-        expect(getRegistrationError('email already exists')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('EMAIL ALREADY EXISTS')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('Email Already Exists')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('email already exists')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
       it('should return EMAIL_ALREADY_USED_KEY for error with both keywords in any order', () => {
-        expect(getRegistrationError('Exists email')).toBe(EMAIL_ALREADY_USED_KEY);
-        expect(getRegistrationError('This email exists in system')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('Exists email')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('This email exists in system')).toBe(
+          EMAIL_ALREADY_USED_KEY
+        );
       });
 
       it('returns EMAIL_ALREADY_USED_KEY when keywords are separated by other words', () => {
-        expect(getRegistrationError('The email address already exists in our database')).toBe(
+        expect(
+          registrationErrorMapper.map('The email address already exists in our database')
+        ).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('User with this email exists')).toBe(
           EMAIL_ALREADY_USED_KEY
         );
-        expect(getRegistrationError('User with this email exists')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
       it('should return EMAIL_ALREADY_USED_KEY for error with mixed case', () => {
-        expect(getRegistrationError('EmAiL aLrEaDy ExIsTs')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('EmAiL aLrEaDy ExIsTs')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
       it('should return EMAIL_ALREADY_USED_KEY for error with extra whitespace', () => {
-        expect(getRegistrationError('  email   already   exists  ')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('  email   already   exists  ')).toBe(
+          EMAIL_ALREADY_USED_KEY
+        );
       });
     });
 
     describe('generic errors', () => {
       it('should return GENERIC_SIGNUP_ERROR_KEY for error without both keywords', () => {
-        expect(getRegistrationError('Something went wrong')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('Something went wrong')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
 
       it('should return GENERIC_SIGNUP_ERROR_KEY for error with only "email" keyword', () => {
-        expect(getRegistrationError('Invalid email format')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('Invalid email format')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
 
       it('should return GENERIC_SIGNUP_ERROR_KEY for error with only "exists" keyword', () => {
-        expect(getRegistrationError('User already exists')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('User already exists')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
 
       it('should return GENERIC_SIGNUP_ERROR_KEY for network errors', () => {
-        expect(getRegistrationError('Network error')).toBe(GENERIC_SIGNUP_ERROR_KEY);
-        expect(getRegistrationError('Connection timeout')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('Network error')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('Connection timeout')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
 
       it('should return GENERIC_SIGNUP_ERROR_KEY for validation errors', () => {
-        expect(getRegistrationError('Validation failed')).toBe(GENERIC_SIGNUP_ERROR_KEY);
-        expect(getRegistrationError('Password too weak')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('Validation failed')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('Password too weak')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
 
       it('should return GENERIC_SIGNUP_ERROR_KEY for server errors', () => {
-        expect(getRegistrationError('Internal server error')).toBe(GENERIC_SIGNUP_ERROR_KEY);
-        expect(getRegistrationError('500 Internal Server Error')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('Internal server error')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('500 Internal Server Error')).toBe(
+          GENERIC_SIGNUP_ERROR_KEY
+        );
       });
 
       it('should return null for empty string', () => {
-        expect(getRegistrationError('')).toBe(null);
+        expect(registrationErrorMapper.map('')).toBe(null);
       });
 
       it('should return GENERIC_SIGNUP_ERROR_KEY for random text', () => {
-        expect(getRegistrationError('Random error message')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('Random error message')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
     });
 
     describe('null and undefined handling', () => {
       it('should return null for null input', () => {
-        expect(getRegistrationError(null)).toBe(null);
+        expect(registrationErrorMapper.map(null)).toBe(null);
       });
 
       it('should return null for undefined input', () => {
-        expect(getRegistrationError(undefined)).toBe(null);
+        expect(registrationErrorMapper.map(undefined)).toBe(null);
       });
     });
 
     describe('edge cases', () => {
       it('should return GENERIC_SIGNUP_ERROR_KEY for whitespace-only string', () => {
-        expect(getRegistrationError('   ')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('   ')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
 
       it('should return GENERIC_SIGNUP_ERROR_KEY for string with only one keyword', () => {
-        expect(getRegistrationError('email')).toBe(GENERIC_SIGNUP_ERROR_KEY);
-        expect(getRegistrationError('exists')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('email')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('exists')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
 
       it('should handle keywords with special characters around them', () => {
-        expect(getRegistrationError('email! exists?')).toBe(EMAIL_ALREADY_USED_KEY);
-        expect(getRegistrationError('[email] {exists}')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('email! exists?')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('[email] {exists}')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
       it('should handle keywords in JSON-like strings', () => {
-        expect(getRegistrationError('{"error": "Email already exists", "code": 409}')).toBe(
+        expect(registrationErrorMapper.map('{"error": "Email already exists", "code": 409}')).toBe(
           EMAIL_ALREADY_USED_KEY
         );
       });
 
       it('should handle keywords in sentences', () => {
         expect(
-          getRegistrationError(
+          registrationErrorMapper.map(
             'Registration failed because the email you provided already exists in our system'
           )
         ).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
       it('should handle partial matches correctly (should not match)', () => {
-        expect(getRegistrationError('emailer existent')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('emailer existent')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
 
       it('should handle keywords as substrings', () => {
-        expect(getRegistrationError('email@test.com exists')).toBe(EMAIL_ALREADY_USED_KEY);
-        expect(getRegistrationError('myemail preexists')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('email@test.com exists')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('myemail preexists')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
       it('should return GENERIC_SIGNUP_ERROR_KEY for strings with newlines', () => {
-        expect(getRegistrationError('Error occurred\nPlease try again')).toBe(
+        expect(registrationErrorMapper.map('Error occurred\nPlease try again')).toBe(
           GENERIC_SIGNUP_ERROR_KEY
         );
       });
 
       it('returns EMAIL_ALREADY_USED_KEY for newlines containing both keywords', () => {
-        expect(getRegistrationError('Email\nalready\nexists')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('Email\nalready\nexists')).toBe(EMAIL_ALREADY_USED_KEY);
       });
 
       it('should handle Unicode characters', () => {
-        expect(getRegistrationError('Email вже exists')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('Email вже exists')).toBe(EMAIL_ALREADY_USED_KEY);
       });
     });
 
@@ -159,15 +167,15 @@ describe('mapRegistrationError', () => {
         'email already exists',
         'Email Already Exists',
       ])('should be case insensitive for: %s', (error) => {
-        expect(getRegistrationError(error)).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map(error)).toBe(EMAIL_ALREADY_USED_KEY);
       });
     });
 
     describe('return type consistency', () => {
       it('should return string or null', () => {
-        const result1 = getRegistrationError('email exists');
-        const result2 = getRegistrationError(null);
-        const result3 = getRegistrationError('random error');
+        const result1 = registrationErrorMapper.map('email exists');
+        const result2 = registrationErrorMapper.map(null);
+        const result3 = registrationErrorMapper.map('random error');
 
         expect(typeof result1 === 'string' || result1 === null).toBe(true);
         expect(typeof result2 === 'string' || result2 === null).toBe(true);
@@ -177,26 +185,30 @@ describe('mapRegistrationError', () => {
       it('should always return one of the three possible values', () => {
         const possibleValues = [EMAIL_ALREADY_USED_KEY, GENERIC_SIGNUP_ERROR_KEY, null];
 
-        expect(possibleValues).toContain(getRegistrationError('email exists'));
-        expect(possibleValues).toContain(getRegistrationError('random error'));
-        expect(possibleValues).toContain(getRegistrationError(null));
+        expect(possibleValues).toContain(registrationErrorMapper.map('email exists'));
+        expect(possibleValues).toContain(registrationErrorMapper.map('random error'));
+        expect(possibleValues).toContain(registrationErrorMapper.map(null));
       });
     });
 
     describe('pattern matching logic', () => {
       it('should require both keywords for EMAIL_ALREADY_USED_KEY', () => {
-        expect(getRegistrationError('email test exists')).toBe(EMAIL_ALREADY_USED_KEY);
-        expect(getRegistrationError('email test')).toBe(GENERIC_SIGNUP_ERROR_KEY);
-        expect(getRegistrationError('test exists')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('email test exists')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('email test')).toBe(GENERIC_SIGNUP_ERROR_KEY);
+        expect(registrationErrorMapper.map('test exists')).toBe(GENERIC_SIGNUP_ERROR_KEY);
       });
 
       it('should match keywords anywhere in the string', () => {
-        expect(getRegistrationError('Start email middle exists end')).toBe(EMAIL_ALREADY_USED_KEY);
-        expect(getRegistrationError('exists first email second')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('Start email middle exists end')).toBe(
+          EMAIL_ALREADY_USED_KEY
+        );
+        expect(registrationErrorMapper.map('exists first email second')).toBe(
+          EMAIL_ALREADY_USED_KEY
+        );
       });
 
       it('should handle keywords with no space between (as substrings)', () => {
-        expect(getRegistrationError('emailexists')).toBe(EMAIL_ALREADY_USED_KEY);
+        expect(registrationErrorMapper.map('emailexists')).toBe(EMAIL_ALREADY_USED_KEY);
       });
     });
   });

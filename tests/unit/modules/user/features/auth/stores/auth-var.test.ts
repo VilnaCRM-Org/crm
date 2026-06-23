@@ -1,6 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 
-import AuthStateVar, { useAuthState } from '@auth/stores/auth-var';
+import AuthStateVar from '@auth/stores/auth-var';
+import useAuthState from '@auth/stores/use-auth-state';
 
 const ENV_KEY = 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN';
 const CLEARED = {

@@ -2,14 +2,14 @@ import { inject, injectable } from 'tsyringe';
 
 import API_ENDPOINTS from '@/config/api-config';
 import TOKENS from '@/config/tokens';
-import type HttpsClient from '@/services/https-client/https-client';
+import type { HttpsClient } from '@/services/types/https-client/https-client';
 
 import type { LoginResponse } from '../types/api-responses';
-import { LoginUserDto } from '../types/credentials';
+import type { LoginUserDto } from '../types/credentials';
 
 import ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
-import { RequestOptions } from './types';
+import type { RequestOptions } from './types';
 
 @injectable()
 export default class LoginAPI extends BaseAPI {

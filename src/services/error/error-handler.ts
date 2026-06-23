@@ -1,12 +1,10 @@
-import { ERROR_CODES, type ErrorCode } from '@/services/error/error-codes';
-import ParsedError from '@/utils/error/types';
+import { injectable } from 'tsyringe';
 
-export type ErrorLogger = Pick<Console, 'error'>;
+import { ERROR_CODES } from '@/services/error/error-codes';
+import type { ErrorCode } from '@/services/types/error/error-codes';
+import type { ErrorLogger, UiError } from '@/services/types/error/error-handler';
+import type ParsedError from '@/utils/error/types';
 
-export interface UiError {
-  readonly displayMessage: string;
-  readonly retryable: boolean;
-}
 const errorMap: Record<ErrorCode, UiError> = {
   [ERROR_CODES.AUTH_INVALID]: {
     displayMessage: 'Invalid credentials',
@@ -68,14 +66,15 @@ const errorMap: Record<ErrorCode, UiError> = {
   },
 };
 
+@injectable()
 export class ErrorHandler {
-  private static logger: ErrorLogger = console;
+  private logger: ErrorLogger = console;
 
-  public static setLogger(logger?: ErrorLogger): void {
-    ErrorHandler.logger = logger ?? console;
+  public setLogger(logger?: ErrorLogger): void {
+    this.logger = logger ?? console;
   }
 
-  public static handleAuthError(error: ParsedError): UiError {
+  public handleAuthError(error: ParsedError): UiError {
     return (
       errorMap[error.code as ErrorCode] ?? {
         displayMessage: 'Something went wrong. Please try again.',
@@ -84,15 +83,7 @@ export class ErrorHandler {
     );
   }
 
-  public static handle(error: unknown): void {
-    ErrorHandler.logger.error('[ErrorHandler]', error);
-  }
-
-  public handleAuthError(error: ParsedError): UiError {
-    return ErrorHandler.handleAuthError(error);
-  }
-
   public handle(error: unknown): void {
-    ErrorHandler.handle(error);
+    this.logger.error('[ErrorHandler]', error);
   }
 }

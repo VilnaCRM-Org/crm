@@ -1,8 +1,6 @@
 /** @jest-environment @stryker-mutator/jest-runner/jest-env/jsdom */
 
-import HttpResponseProcessor, {
-  throwIfHttpError,
-} from '@/services/https-client/http-response-processor';
+import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 
 function createResponse(
   status: number,
@@ -56,19 +54,5 @@ describe('HttpResponseProcessor', () => {
 
       jest.dontMock('@/services/https-client/http-error-response-parser');
     });
-  });
-});
-
-describe('throwIfHttpError', () => {
-  it('reuses the response guard behavior exposed by the response processor module', async () => {
-    await expect(throwIfHttpError(createResponse(204, undefined, ''))).resolves.toBeUndefined();
-  });
-
-  it('uses an injected parser when provided explicitly', async () => {
-    const parser = { assertOk: jest.fn().mockResolvedValue(undefined) };
-    const response = createResponse(204, undefined, '');
-
-    await expect(throwIfHttpError(response, parser as never)).resolves.toBeUndefined();
-    expect(parser.assertOk).toHaveBeenCalledWith(response);
   });
 });

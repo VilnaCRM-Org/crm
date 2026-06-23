@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 
 import { authActions } from '@auth/stores';
-import RegistrationHandlersFactory, {
-  type RegistrationHandlerDeps,
-  type RegistrationHandlers,
-} from '@auth/utils/registration-handlers-factory';
+import type {
+  RegistrationHandlerDeps,
+  RegistrationHandlers,
+} from '@auth/types/utils/registration-handlers-factory';
+import RegistrationHandlersFactory from '@auth/utils/registration-handlers-factory';
 
 export default function useRegistrationHandlers(
   deps: RegistrationHandlerDeps

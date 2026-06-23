@@ -1,6 +1,6 @@
 import { TFunction } from 'i18next';
 
-import { createValidators } from '@/modules/user/features/auth/components/form-section/validations';
+import formValidators from '@/modules/user/features/auth/components/form-section/validations';
 
 import emptyUser from './constants';
 
@@ -10,7 +10,7 @@ jest.mock('i18next', () => ({
 
 describe('validations module exports', () => {
   const tMock = ((key: string) => key) as unknown as TFunction;
-  const validators = createValidators(tMock);
+  const validators = formValidators.create(tMock);
 
   describe('validateEmail export', () => {
     it('should export validateEmail function', () => {

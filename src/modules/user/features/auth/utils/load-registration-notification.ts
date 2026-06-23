@@ -1,19 +1,7 @@
-let registrationNotificationPromise: Promise<
-  typeof import('@auth/components/form-section/auth-forms/registration-notification')
-> | null = null;
+import LazyModuleLoader from './lazy-module-loader';
 
-export default function loadRegistrationNotification(): Promise<
-  typeof import('@auth/components/form-section/auth-forms/registration-notification')
-> {
-  if (!registrationNotificationPromise) {
-    registrationNotificationPromise =
-      import('@auth/components/form-section/auth-forms/registration-notification').catch(
-        (error) => {
-          registrationNotificationPromise = null;
-          throw error;
-        }
-      );
-  }
+const registrationNotificationLoader = new LazyModuleLoader(
+  () => import('@auth/components/form-section/auth-forms/registration-notification')
+);
 
-  return registrationNotificationPromise;
-}
+export default registrationNotificationLoader;

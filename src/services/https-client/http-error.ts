@@ -1,8 +1,4 @@
-export interface HttpErrorParams {
-  status: number;
-  message: string;
-  cause?: unknown;
-}
+import type { HttpErrorParams } from '@/services/types/https-client/http-error';
 
 export class HttpError extends Error {
   public readonly status: number;
@@ -25,14 +21,3 @@ export class HttpError extends Error {
     return { name: this.name, message: this.message, status: this.status, cause: this.cause };
   }
 }
-
-export const isHttpError = (e: unknown): e is HttpError => {
-  if (e instanceof HttpError) return true;
-
-  if (typeof e === 'object' && e !== null) {
-    const maybeHttpError = e as Record<string, unknown>;
-    return maybeHttpError.name === 'HttpError' && typeof maybeHttpError.status === 'number';
-  }
-
-  return false;
-};

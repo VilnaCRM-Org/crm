@@ -4,20 +4,9 @@ import TOKENS from '@/config/tokens';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
-import HttpsClient, { RequestMethod } from '@/services/https-client/https-client';
 import ResponseMessages from '@/services/https-client/response-messages';
-
-interface RequestOptions {
-  headers?: Record<string, string>;
-  signal?: AbortSignal;
-}
-
-interface RequestArgs {
-  url: string;
-  method: RequestMethod;
-  body?: unknown;
-  options?: RequestOptions;
-}
+import type { RequestOptions, RequestArgs } from '@/services/types/https-client/fetch-https-client';
+import type { HttpsClient, RequestMethod } from '@/services/types/https-client/https-client';
 
 @injectable()
 export default class FetchHttpsClient implements HttpsClient {
@@ -62,38 +51,38 @@ export default class FetchHttpsClient implements HttpsClient {
   }
 
   private async request<R>({ url, method, body, options }: RequestArgs): Promise<R | undefined> {
-    if (options?.signal?.aborted) throwAbortError();
+    if (options?.signal?.aborted) this.throwAbortError();
     const config = this.createRequestConfig(method, body, options?.headers);
     if (options?.signal) config.signal = options.signal;
     try {
       const response = await fetch(url, config);
       return await this.responseProcessor.process<R>(response);
     } catch (err) {
-      return rethrowOrWrapTransportError(err);
+      return this.rethrowOrWrapTransportError(err);
     }
   }
-}
 
-function throwAbortError(): never {
-  const abortError = new Error('The operation was aborted');
-  abortError.name = 'AbortError';
-  throw abortError;
-}
-
-function rethrowOrWrapTransportError(error: unknown): never {
-  const isAbortError =
-    typeof error === 'object' &&
-    error !== null &&
-    'name' in error &&
-    (error as { name?: unknown }).name === 'AbortError';
-
-  if (isAbortError) {
-    throw error;
+  private throwAbortError(): never {
+    const abortError = new Error('The operation was aborted');
+    abortError.name = 'AbortError';
+    throw abortError;
   }
 
-  if (error instanceof HttpError) {
-    throw error;
-  }
+  private rethrowOrWrapTransportError(error: unknown): never {
+    const isAbortError =
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      (error as { name?: unknown }).name === 'AbortError';
 
-  throw new HttpError({ status: 0, message: ResponseMessages.NETWORK_ERROR, cause: error });
+    if (isAbortError) {
+      throw error;
+    }
+
+    if (error instanceof HttpError) {
+      throw error;
+    }
+
+    throw new HttpError({ status: 0, message: ResponseMessages.NETWORK_ERROR, cause: error });
+  }
 }

@@ -2,6 +2,12 @@ import AuthStoreActions from '@auth/stores/auth-store-actions';
 import AuthStateVar from '@auth/stores/auth-var';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository } from '@auth/types/auth-repository';
+import type AuthErrorHandler from '@auth/utils/auth-error-handler';
+import AuthRequestErrors from '@auth/utils/auth-request-errors';
+
+const authRequestErrors = new AuthRequestErrors({
+  handle: (e: unknown) => ({ displayMessage: String(e), retryable: false }),
+} as unknown as AuthErrorHandler);
 
 const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   ({
@@ -11,10 +17,14 @@ const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   }) as AuthRepository;
 
 const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over)).login({ email: 'a@b.c', password: 'p' });
+  new AuthStoreActions(makeRepo(over), authRequestErrors).login({ email: 'a@b.c', password: 'p' });
 
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over)).register({ fullName: 'A', email: 'a@b.c', password: 'p' });
+  new AuthStoreActions(makeRepo(over), authRequestErrors).register({
+    fullName: 'A',
+    email: 'a@b.c',
+    password: 'p',
+  });
 
 const abortError = {
   kind: 'network' as const,

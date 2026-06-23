@@ -1,13 +1,6 @@
-interface SerializedError {
-  name?: string;
-  message?: string;
-  stack?: string;
-  code?: string;
-}
+import type { Extractor, SerializedError } from '@auth/types/auth-forms/login-error-message';
 
 const UNKNOWN_KEY = 'auth.errors.unknown';
-
-type Extractor = (error: unknown) => string | null;
 
 export default class LoginErrorMessageNormalizer {
   private readonly extractors: Extractor[];

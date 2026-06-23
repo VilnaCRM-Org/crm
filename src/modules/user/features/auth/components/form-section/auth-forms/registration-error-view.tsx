@@ -7,6 +7,7 @@ import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 import { paletteColors } from '@/styles/colors';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
+import type { Props } from '@auth/types/auth-forms/registration-error-view';
 
 import styles from './registration-notification.error-styles';
 
@@ -27,14 +28,6 @@ function FocusableErrorHeading({ title }: { title: string }): JSX.Element {
       </UITypography>
     </Box>
   );
-}
-
-interface Props {
-  resolvedErrorText: string;
-  isSubmitting: boolean;
-  isClosing: boolean;
-  onRetry?: () => void;
-  onBack: () => void;
 }
 
 const buttonTextStyles = [styles.messageButtonText, styles.errorButtonMessage];

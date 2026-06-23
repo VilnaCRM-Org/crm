@@ -1,31 +1,37 @@
-import {
-  handleAuthError,
-  type UiError,
-} from '@/modules/user/features/auth/utils/handle-auth-error';
+import { inject, injectable } from 'tsyringe';
 
-export const isAbortError = (error: unknown): boolean =>
-  typeof error === 'object' &&
-  error !== null &&
-  'name' in error &&
-  (error as { name?: unknown }).name === 'AbortError';
+import TOKENS from '@/config/tokens';
+import AuthErrorHandler, { type UiError } from '@auth/utils/auth-error-handler';
 
-export const isUiError = (error: unknown): error is UiError => {
-  if (typeof error !== 'object' || error === null) return false;
-  const candidate = error as { displayMessage?: unknown; retryable?: unknown };
-  return typeof candidate.displayMessage === 'string' && typeof candidate.retryable === 'boolean';
-};
+@injectable()
+export default class AuthRequestErrors {
+  constructor(
+    @inject(TOKENS.AuthErrorHandler) private readonly authErrorHandler: AuthErrorHandler
+  ) {}
 
-export function toUiError(error: unknown): UiError {
-  return isUiError(error) ? error : handleAuthError(error);
-}
+  public isAbortError(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      (error as { name?: unknown }).name === 'AbortError'
+    );
+  }
 
-export function createValidationUiError(
-  errors: string[],
-  retryable: boolean,
-  separator: string
-): UiError {
-  return {
-    displayMessage: errors.join(separator),
-    retryable,
-  };
+  public isUiError(error: unknown): error is UiError {
+    if (typeof error !== 'object' || error === null) return false;
+    const candidate = error as { displayMessage?: unknown; retryable?: unknown };
+    return typeof candidate.displayMessage === 'string' && typeof candidate.retryable === 'boolean';
+  }
+
+  public toUiError(error: unknown): UiError {
+    return this.isUiError(error) ? error : this.authErrorHandler.handle(error);
+  }
+
+  public createValidationUiError(errors: string[], retryable: boolean, separator: string): UiError {
+    return {
+      displayMessage: errors.join(separator),
+      retryable,
+    };
+  }
 }

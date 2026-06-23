@@ -2,7 +2,7 @@ import ReactiveVarFactory from '@auth/stores/reactive-var';
 
 describe('ReactiveVarFactory', () => {
   it('reads the initial value and returns the written value', () => {
-    const variable = ReactiveVarFactory.create({ count: 0 });
+    const variable = new ReactiveVarFactory().create({ count: 0 });
     expect(variable()).toEqual({ count: 0 });
 
     const next = { count: 1 };
@@ -11,7 +11,7 @@ describe('ReactiveVarFactory', () => {
   });
 
   it('notifies one-shot listeners exactly once with the new value', () => {
-    const variable = ReactiveVarFactory.create(0);
+    const variable = new ReactiveVarFactory().create(0);
     const listener = jest.fn();
     variable.onNextChange(listener);
 
@@ -23,7 +23,7 @@ describe('ReactiveVarFactory', () => {
   });
 
   it('does not notify a one-shot listener after its canceller runs', () => {
-    const variable = ReactiveVarFactory.create(0);
+    const variable = new ReactiveVarFactory().create(0);
     const listener = jest.fn();
     const cancel = variable.onNextChange(listener);
 
@@ -34,7 +34,7 @@ describe('ReactiveVarFactory', () => {
   });
 
   it('notifies persistent subscribers on every change until unsubscribed', () => {
-    const variable = ReactiveVarFactory.create(0);
+    const variable = new ReactiveVarFactory().create(0);
     const listener = jest.fn();
     const unsubscribe = variable.subscribe(listener);
 
@@ -48,7 +48,7 @@ describe('ReactiveVarFactory', () => {
   });
 
   it('isolates a throwing one-shot listener so persistent subscribers still run', () => {
-    const variable = ReactiveVarFactory.create(0);
+    const variable = new ReactiveVarFactory().create(0);
     const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {});
     const failure = new Error('listener failure');
     const failing = jest.fn(() => {
@@ -74,7 +74,7 @@ describe('ReactiveVarFactory', () => {
 
   it('skips all notifications when the same reference is written again', () => {
     const value = { count: 0 };
-    const variable = ReactiveVarFactory.create(value);
+    const variable = new ReactiveVarFactory().create(value);
     const once = jest.fn();
     const always = jest.fn();
     variable.onNextChange(once);

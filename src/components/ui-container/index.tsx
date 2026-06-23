@@ -1,11 +1,9 @@
 import { Box } from '@mui/material';
 import React from 'react';
 
-import styles from './styles';
+import type { ContainerProps } from '@/components/types/ui-container';
 
-type ContainerProps = {
-  children: React.ReactNode;
-};
+import styles from './styles';
 
 export default function UIContainer({ children }: ContainerProps): React.ReactElement {
   return (

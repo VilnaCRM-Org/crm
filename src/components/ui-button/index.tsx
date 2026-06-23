@@ -1,20 +1,9 @@
 import { ThemeProvider, Button } from '@mui/material';
-import { ButtonProps } from '@mui/material/Button';
 import React from 'react';
 
+import type { ButtonLinkTarget, UiButtonProps } from '@/components/types/ui-button';
+
 import Theme from './theme';
-
-type ButtonLinkTarget =
-  | string
-  | {
-      pathname?: string;
-      search?: string;
-      hash?: string;
-    };
-
-interface UiButtonProps extends ButtonProps {
-  to?: ButtonLinkTarget;
-}
 
 const resolveLinkTarget = (to?: ButtonLinkTarget): string | undefined => {
   if (!to) {

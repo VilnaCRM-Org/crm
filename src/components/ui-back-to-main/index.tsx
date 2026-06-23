@@ -4,13 +4,13 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import BackArrow from '@/assets/icons/arrows/back-arrow.svg';
-import getBackToMainStyles from '@/components/ui-back-to-main/styles';
+import backToMainStyles from '@/components/ui-back-to-main/styles';
 import UIButton from '@/components/ui-button';
 import UIContainer from '@/components/ui-container';
 
 export default function UIBackToMain(): React.ReactElement {
   const theme = useTheme();
-  const styles = getBackToMainStyles(theme);
+  const styles = backToMainStyles.build(theme);
   const { t } = useTranslation();
 
   return (

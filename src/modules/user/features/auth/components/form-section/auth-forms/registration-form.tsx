@@ -4,24 +4,21 @@ import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
 import InertBox from '@auth/components/form-section/inert-box';
-import type { RegistrationView } from '@auth/components/form-section/types';
-import { createValidators } from '@auth/components/form-section/validations';
+import formValidators from '@auth/components/form-section/validations';
 import useRegistrationForm from '@auth/hooks/use-registration-form';
-import { RegisterUserDto } from '@auth/types/credentials';
-import loadRegistrationNotification from '@auth/utils/load-registration-notification';
+import type {
+  RegistrationFormProps,
+  RegistrationFormState,
+  Validators,
+} from '@auth/types/auth-forms/registration-form';
+import type { RegisterUserDto } from '@auth/types/credentials';
+import registrationNotificationLoader from '@auth/utils/load-registration-notification';
 
 import RegistrationFormFields from './registration-form-fields';
 
-type RegistrationFormProps = {
-  onViewChange?: (view: RegistrationView) => void;
-};
-
-const RegistrationNotification = lazy(loadRegistrationNotification);
+const RegistrationNotification = lazy(() => registrationNotificationLoader.load());
 
 const DEFAULT_VALUES: RegisterUserDto = { fullName: '', email: '', password: '' };
-
-type RegistrationFormState = ReturnType<typeof useRegistrationForm>;
-type Validators = ReturnType<typeof createValidators>;
 
 function RegistrationFormPanel({
   form,
@@ -75,7 +72,7 @@ function RegistrationNotificationPanel({
 export default function RegistrationForm({ onViewChange }: RegistrationFormProps): JSX.Element {
   const { t } = useTranslation();
   const form = useRegistrationForm(onViewChange);
-  const validators = createValidators(t);
+  const validators = formValidators.create(t);
 
   return (
     <>

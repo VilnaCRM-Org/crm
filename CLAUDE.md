@@ -334,7 +334,7 @@ chunks needed to paint the authentication page (mobile Lighthouse budget):
 
 ```typescript
 // src/modules/user/features/auth/stores/index.ts (composition root)
-private static async load(): Promise<AuthStoreActions> {
+private async load(): Promise<AuthStoreActions> {
   const { default: container } = await import('@/config/dependency-injection-config');
   const { default: ActionsClass } = await import('./auth-store-actions');
   return container.resolve(ActionsClass);
@@ -344,23 +344,71 @@ private static async load(): Promise<AuthStoreActions> {
 Auth state pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-// auth-var.ts — dependency-free reactive state (ReactiveVarFactory, no @apollo/client)
-export default class AuthStateVar {
-  public static get(): AuthState {
+// auth-var.ts — dependency-free reactive state (ReactiveVarFactory, no @apollo/client).
+// Instance methods on a module-singleton instance keep the paint path container-free
+// (no tsyringe in the auth chunk) while satisfying the no-static convention (issue #100).
+export class AuthStateVar {
+  public get(): AuthState {
     /* read */
   }
-  public static set(partial: Partial<AuthState>): void {
+  public set(partial: Partial<AuthState>): void {
     /* merge + notify */
   }
 }
+const authStateVar = new AuthStateVar();
+export default authStateVar;
 
-// auth-store-selectors.ts — selectors grouped in a class (no free functions)
-export default class AuthStoreSelectors {
-  public static email(s: AuthState): string {
+// auth-store-selectors.ts — selectors grouped in a class, exported as a singleton (no free functions)
+class AuthStoreSelectors {
+  public email(s: AuthState): string {
     return s.email;
   }
 }
+export default new AuthStoreSelectors();
 ```
+
+### No static methods or free functions (issues #100, #89)
+
+Non-React application code (services, repositories, mappers, factories, stores, and
+utilities under `src/**/*.ts`) must **not** use `static` class members or standalone
+(free) functions — neither `export function foo()` / `export default function foo()` nor
+`export const foo = () => …`. Use **instance methods on an injectable class** instead.
+
+**Why:** mockability and testability. Static methods and free functions bind at the call
+site and resist substitution, pushing tests toward module mocking and monkey-patching.
+Instance methods behind a tsyringe token can be swapped for mocks/spies via the DI
+container — collaborators are injected, not reached for.
+
+**How to apply:**
+
+- Behavioral collaborators (services, repos, mappers, factories, error handlers) are
+  `@injectable()` classes registered in `dependency-injection-config.ts` against a token
+  in `tokens.ts`, and resolved via `container.resolve<Type>(TOKENS.X)` or constructor
+  `@inject`.
+- Render-path state primitives that must stay container-free for the auth-page Lighthouse
+  budget (`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`) are
+  instance classes exported as a **module singleton** (`export default new X()`), so call
+  sites stay `X.method(...)` and no tsyringe is pulled into the paint path.
+- Pure helpers/validators/type-guards/style-helpers/lazy-loaders also become instance
+  methods on a singleton class rather than free functions.
+
+**Exempt:** React components (`*.tsx`, including class error boundaries that need
+`static getDerivedStateFromError`) and hooks (`use-*.ts` / `use-*.tsx`) — they are
+functions by definition.
+
+**Enforcement:** an ESLint `no-restricted-syntax` gate (in `eslint.config.mjs`, scoped to
+`src/**/*.ts` excluding `use-*`) fails the build on `static` members and standalone
+functions — `function` declarations (including generators), default-exported functions,
+and top-level arrow / function-expression `const`s. It runs in `make lint-eslint` and the
+`static testing` workflow. Satisfy it by refactoring to instance methods — never with
+`eslint-disable`.
+
+This gate is the canonical enforcement of the **only classes outside React components**
+convention (issue #89, closed as covered here): with free functions banned in non-React
+`.ts`, all such logic is class-encapsulated, so #89 needs no separate ESLint or
+dependency-cruiser rule. Per #89's own "honest limitation", the residual gap is **semantic,
+not syntactic** — logic smuggled into an object literal's methods (or a misplaced helper) is
+not statically detectable and stays a review-gate concern.
 
 ### Path Aliases
 
@@ -480,8 +528,11 @@ Key variables in `.env`:
 
 ## Important Patterns
 
-1. **API Error Handling**: Use typed API errors in `src/modules/user/types/api-errors/`
-   - `ValidationError`, `AuthenticationError`, `ConflictError`
+1. **API Error Handling**: Typed API error **classes** live in
+   `src/modules/user/lib/api-errors/` (`ApiError`, `ValidationError`,
+   `AuthenticationError`, `ConflictError`, `ApiErrorCodes`); their **option
+   types** (`ApiErrorOptions`, `ValidationErrorOptions`) stay in
+   `src/modules/user/types/api-errors/` (type-only — see pattern 6).
    - Check with `isAPIError()` helper
 
 2. **Form Validation**: Centralized in module features (e.g., `auth/components/form-section/validations/`)
@@ -516,6 +567,25 @@ Key variables in `.env`:
    login/register switcher.
 
 6. **Docker Network**: External network `website-network` used for service communication
+
+7. **Type-only files (issue #88)**: All TypeScript types live in dedicated
+   type-only files — a `types.ts` or, preferably, the per-feature/area **`types/`
+   folder** grouped one level by source area (e.g.
+   `@auth/types/auth-forms/login-form-fields`, `@/components/types/ui-form`). Types
+   are **not** placed in a sibling `<name>.types.ts` next to the component. Those
+   files contain **only** type-level constructs (`interface`, `type`,
+   `import type`, type re-exports, `declare`) — never runtime `const` / `function` /
+   `class` / expression statements. Conversely, logic files must not declare or
+   export `interface` / `type`; a component's prop types move to its feature/area
+   `types/` folder and are imported back via `import type`. Enforced by ESLint
+   (`no-restricted-syntax` overrides on the type-file globs and on logic files in
+   `eslint.config.mjs`) and dependency-cruiser (`type-files-imported-as-type-only`,
+   `type-files-no-runtime-imports`): type files may only be imported with
+   `import type` and must not depend on runtime modules. Runtime that once
+   co-located under `types/` was relocated accordingly — zod schemas + validators
+   to `auth/utils/response-schemas.ts`, the `CREATE_USER` gql document to
+   `auth/repositories/`, and the API error classes to `lib/api-errors/` (pattern 1).
+   Satisfy the gate by moving code, never with disable directives.
 
 ## Node Version Management
 

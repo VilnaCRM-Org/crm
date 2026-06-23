@@ -1,30 +1,9 @@
-import type { Dispatch, SetStateAction, MutableRefObject } from 'react';
-
-import { RegistrationView } from '@auth/components/form-section/types';
-import { RegisterUserDto } from '@auth/types/credentials';
-
-export type RegistrationStoreActions = {
-  registerUser: (data: RegisterUserDto) => Promise<void>;
-  resetRegistration: () => void;
-};
-
-export type RegistrationHandlerDeps = {
-  setView: Dispatch<SetStateAction<RegistrationView>>;
-  setFormKey: Dispatch<SetStateAction<number>>;
-  lastSubmittedDataRef: MutableRefObject<RegisterUserDto | null>;
-};
-
-export type RegistrationHandlers = {
-  handleRegister: (data: RegisterUserDto) => Promise<void>;
-  handleSuccessShown: () => void;
-  handleBackToForm: () => void;
-  handleRetry: () => void;
-};
-
-const normalize = (data: RegisterUserDto): RegisterUserDto => ({
-  ...data,
-  fullName: data.fullName.trim(),
-});
+import type { RegisterUserDto } from '@auth/types/credentials';
+import type {
+  RegistrationStoreActions,
+  RegistrationHandlerDeps,
+  RegistrationHandlers,
+} from '@auth/types/utils/registration-handlers-factory';
 
 export default class RegistrationHandlersFactory {
   private readonly deps: RegistrationHandlerDeps;
@@ -44,8 +23,15 @@ export default class RegistrationHandlersFactory {
     };
   }
 
+  private normalize(data: RegisterUserDto): RegisterUserDto {
+    return {
+      ...data,
+      fullName: data.fullName.trim(),
+    };
+  }
+
   private async handleRegister(data: RegisterUserDto): Promise<void> {
-    const normalized = normalize(data);
+    const normalized = this.normalize(data);
     this.deps.lastSubmittedDataRef.current = normalized;
     await this.actions.registerUser(normalized);
   }

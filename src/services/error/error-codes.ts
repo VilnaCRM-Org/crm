@@ -19,5 +19,3 @@ export const ERROR_CODES = {
   RATE_LIMITED: 'RATE_LIMITED',
   CANCELLED: 'CANCELLED',
 } as const;
-
-export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];

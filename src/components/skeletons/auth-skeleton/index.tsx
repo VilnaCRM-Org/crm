@@ -7,6 +7,7 @@ import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
 import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
+import type { AuthSkeletonProps, Wrap } from '@/components/types/auth-skeleton';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },
@@ -16,12 +17,6 @@ const SOCIAL_BUTTONS = [
 ] as const;
 
 const STATIC_SX = { animation: 'none', backgroundSize: '100% 100%' } as const;
-
-export type AuthSkeletonProps = {
-  disableAnimation?: boolean;
-};
-
-type Wrap = <T extends object>(baseSx: T) => (T | typeof STATIC_SX)[];
 
 const buildWrap =
   (disableAnimation: boolean): Wrap =>

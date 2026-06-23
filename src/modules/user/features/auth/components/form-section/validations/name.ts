@@ -1,4 +1,6 @@
-import { FieldValues, Validate } from 'react-hook-form';
+import type { FieldValues, Validate } from 'react-hook-form';
+
+import type { NameRule } from '@auth/types/validations/name';
 
 const MAX_FULL_NAME_LENGTH = 255;
 const ALLOWED_NAME_CHARACTERS = '[A-Za-zА-Яа-яІіЇїЄєҐґ]';
@@ -8,43 +10,46 @@ const NAME_SEP_GROUP = `(?:${NAME_SEPARATORS}${SINGLE_NAME_PATTERN})`;
 const NAME_WITH_SEPARATORS_PATTERN = `${SINGLE_NAME_PATTERN}${NAME_SEP_GROUP}*`;
 const FULL_NAME_PATTERN = `${SINGLE_NAME_PATTERN}${NAME_SEP_GROUP}+`;
 
-type ValidationFunction = (value: string) => boolean;
-type ValidationKeys = 'isLettersOnly' | 'isFormatted' | 'isEmpty';
+const NAME_WITH_SEPARATORS_RE = new RegExp(`^${NAME_WITH_SEPARATORS_PATTERN}$`);
+const FULL_NAME_RE = new RegExp(`^${FULL_NAME_PATTERN}$`);
 
-export const fullNameValidators: Record<ValidationKeys, ValidationFunction> = {
-  isLettersOnly: (value) => new RegExp(`^${NAME_WITH_SEPARATORS_PATTERN}$`).test(value),
-  isFormatted: (value) =>
-    new RegExp(`^${FULL_NAME_PATTERN}$`).test(value) &&
-    value.length >= 2 &&
-    value.length <= MAX_FULL_NAME_LENGTH,
-  isEmpty: (value) => value.trim().length === 0,
-};
+class FullNameValidator {
+  private readonly rules: NameRule[] = [
+    { check: (v) => !this.isEmpty(v), messageKey: 'sign_up.form.name_input.required' },
+    {
+      check: (v) => this.isLettersOnly(v.trim()),
+      messageKey: 'sign_up.form.name_input.special_characters_error',
+    },
+    {
+      check: (v) => this.isFormatted(v.trim()),
+      messageKey: 'sign_up.form.name_input.full_name_format_error',
+    },
+  ];
 
-type NameRule = { check: (value: string) => boolean; messageKey: string };
+  public isLettersOnly(value: string): boolean {
+    return NAME_WITH_SEPARATORS_RE.test(value);
+  }
 
-const nameRules: NameRule[] = [
-  {
-    check: (v) => !fullNameValidators.isEmpty(v),
-    messageKey: 'sign_up.form.name_input.required',
-  },
-  {
-    check: (v) => fullNameValidators.isLettersOnly(v.trim()),
-    messageKey: 'sign_up.form.name_input.special_characters_error',
-  },
-  {
-    check: (v) => fullNameValidators.isFormatted(v.trim()),
-    messageKey: 'sign_up.form.name_input.full_name_format_error',
-  },
-];
+  public isFormatted(value: string): boolean {
+    return FULL_NAME_RE.test(value) && value.length >= 2 && value.length <= MAX_FULL_NAME_LENGTH;
+  }
 
-function runNameValidation(input: string, t: (key: string) => string): string | true {
-  const failed = nameRules.find((r) => !r.check(input));
-  return failed ? t(failed.messageKey) : true;
+  public isEmpty(value: string): boolean {
+    return value.trim().length === 0;
+  }
+
+  public create<TFieldValues extends FieldValues>(
+    t: (key: string) => string
+  ): Validate<string, TFieldValues> {
+    return (fullName: string) => this.run(fullName || '', t);
+  }
+
+  private run(input: string, t: (key: string) => string): string | true {
+    const failed = this.rules.find((r) => !r.check(input));
+    return failed ? t(failed.messageKey) : true;
+  }
 }
 
-const createFullNameValidator =
-  <TFieldValues extends FieldValues>(t: (key: string) => string): Validate<string, TFieldValues> =>
-  (fullName: string) =>
-    runNameValidation(fullName || '', t);
+const fullNameValidator = new FullNameValidator();
 
-export default createFullNameValidator;
+export default fullNameValidator;

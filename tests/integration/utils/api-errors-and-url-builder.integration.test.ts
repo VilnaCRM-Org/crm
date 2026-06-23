@@ -4,8 +4,8 @@ import {
   ConflictError,
   ValidationError,
   ApiErrorCodes,
-} from '@/modules/user/types/api-errors';
-import buildApiUrl from '@/utils/url-builder';
+} from '@/modules/user/lib/api-errors';
+import urlBuilder from '@/utils/url-builder';
 
 describe('API Errors and URL Builder Integration', () => {
   describe('ApiError Constructors', () => {
@@ -111,7 +111,7 @@ describe('API Errors and URL Builder Integration', () => {
     it('should handle when baseUrl exists', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:3001';
 
-      const result = buildApiUrl('/api/users');
+      const result = urlBuilder.build('/api/users');
 
       expect(result).toBe('http://localhost:3001/api/users');
     });
@@ -119,7 +119,7 @@ describe('API Errors and URL Builder Integration', () => {
     it('should handle when baseUrl exists with trailing slashes', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:3001///';
 
-      const result = buildApiUrl('///api/users');
+      const result = urlBuilder.build('///api/users');
 
       expect(result).toBe('http://localhost:3001/api/users');
     });
@@ -127,7 +127,7 @@ describe('API Errors and URL Builder Integration', () => {
     it('should handle when baseUrl is empty string', () => {
       process.env.REACT_APP_MOCKOON_URL = '';
 
-      const result = buildApiUrl('/api/users');
+      const result = urlBuilder.build('/api/users');
 
       expect(result).toBe('/api/users');
     });
@@ -135,7 +135,7 @@ describe('API Errors and URL Builder Integration', () => {
     it('should handle when baseUrl is undefined', () => {
       delete process.env.REACT_APP_MOCKOON_URL;
 
-      const result = buildApiUrl('/api/users');
+      const result = urlBuilder.build('/api/users');
 
       expect(result).toBe('/api/users');
     });
@@ -143,7 +143,7 @@ describe('API Errors and URL Builder Integration', () => {
     it('should handle when baseUrl is whitespace only', () => {
       process.env.REACT_APP_MOCKOON_URL = '   ';
 
-      const result = buildApiUrl('/api/users');
+      const result = urlBuilder.build('/api/users');
 
       expect(result).toBe('/api/users');
     });
@@ -151,7 +151,7 @@ describe('API Errors and URL Builder Integration', () => {
     it('should handle endpoint without leading slash when baseUrl exists', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:3001';
 
-      const result = buildApiUrl('api/users');
+      const result = urlBuilder.build('api/users');
 
       expect(result).toBe('http://localhost:3001/api/users');
     });
@@ -159,7 +159,7 @@ describe('API Errors and URL Builder Integration', () => {
     it('should handle endpoint without leading slash when baseUrl is empty', () => {
       process.env.REACT_APP_MOCKOON_URL = '';
 
-      const result = buildApiUrl('api/users');
+      const result = urlBuilder.build('api/users');
 
       expect(result).toBe('/api/users');
     });

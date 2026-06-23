@@ -1,8 +1,8 @@
 /** @jest-environment @stryker-mutator/jest-runner/jest-env/jsdom */
 
-import ApiError from '@/modules/user/types/api-errors/api-error';
-import { ApiErrorCodes } from '@/modules/user/types/api-errors/api-error-codes';
-import ValidationError from '@/modules/user/types/api-errors/validation-error';
+import ApiError from '@/modules/user/lib/api-errors/api-error';
+import { ApiErrorCodes } from '@/modules/user/lib/api-errors/api-error-codes';
+import ValidationError from '@/modules/user/lib/api-errors/validation-error';
 
 describe('ValidationError', () => {
   describe('constructor', () => {

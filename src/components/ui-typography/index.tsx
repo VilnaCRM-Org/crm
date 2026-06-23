@@ -1,7 +1,7 @@
 import { Typography } from '@mui/material';
 import React from 'react';
 
-import { UITypographyProps } from '@/components/ui-typography/types';
+import type { UITypographyProps } from '@/components/ui-typography/types';
 
 function UITypography({
   sx,

@@ -2,16 +2,10 @@ import styled from '@emotion/styled';
 import React, { Component, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface AuthErrorBoundaryState {
-  hasError: boolean;
-  error?: Error;
-}
-
-interface AuthErrorBoundaryProps {
-  children: ReactNode;
-  fallback?: ReactNode | ((args: { error?: Error; reset: () => void }) => ReactNode);
-  onError?: (error: Error, info: React.ErrorInfo) => void;
-}
+import type {
+  AuthErrorBoundaryProps,
+  AuthErrorBoundaryState,
+} from '@auth/types/auth-error-boundary';
 
 const DEFAULT_FALLBACK_KEY = 'auth.error.default';
 

@@ -6,7 +6,7 @@ import type { SkeletonTextSize } from '@/components/skeletons/ui-skeleton-text/t
 
 jest.mock('@/components/skeletons/ui-skeleton-text/styles', () => ({
   __esModule: true,
-  default: jest.fn(() => ({})),
+  default: { build: jest.fn(() => ({})) },
 }));
 
 describe('UISkeletonText', () => {
@@ -24,7 +24,7 @@ describe('UISkeletonText', () => {
     render(<UISkeletonText id="ui-skeleton-text" />);
 
     expect(getSkeletonText('ui-skeleton-text')).toHaveAttribute('id', 'ui-skeleton-text');
-    expect(getTextSkeletonStyles).toHaveBeenCalledWith('m', '100%');
+    expect(getTextSkeletonStyles.build).toHaveBeenCalledWith('m', '100%');
   });
 
   it('passes provided size and width to style builder', () => {
@@ -37,7 +37,7 @@ describe('UISkeletonText', () => {
       'id',
       'ui-skeleton-text-custom'
     );
-    expect(getTextSkeletonStyles).toHaveBeenCalledWith(size, width);
+    expect(getTextSkeletonStyles.build).toHaveBeenCalledWith(size, width);
   });
 
   it('applies array sx without dropping the base styles', () => {
@@ -64,14 +64,14 @@ describe('UISkeletonText', () => {
     render(<UISkeletonText size="s" width="30%" id="ui-skeleton-text-s" />);
 
     expect(getSkeletonText('ui-skeleton-text-s')).toHaveAttribute('id', 'ui-skeleton-text-s');
-    expect(getTextSkeletonStyles).toHaveBeenCalledWith('s', '30%');
+    expect(getTextSkeletonStyles.build).toHaveBeenCalledWith('s', '30%');
   });
 
   it('calls style builder with size "l" and provided width', () => {
     render(<UISkeletonText size="l" width="80%" id="ui-skeleton-text-l" />);
 
     expect(getSkeletonText('ui-skeleton-text-l')).toHaveAttribute('id', 'ui-skeleton-text-l');
-    expect(getTextSkeletonStyles).toHaveBeenCalledWith('l', '80%');
+    expect(getTextSkeletonStyles.build).toHaveBeenCalledWith('l', '80%');
   });
 
   it('has no interactive elements', () => {

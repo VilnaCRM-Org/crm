@@ -1,23 +1,11 @@
 import { Grid } from '@mui/material';
-import type { InputProps } from '@mui/material/Input';
-import { InputHTMLAttributes } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
 import UIFormInputField from '@/components/ui-form-input-field';
 import UITypography from '@/components/ui-typography';
+import type { FormFieldProps } from '@auth/types/components/form-field';
 
 import styles from './styles';
-
-export interface FormFieldProps<T extends FieldValues = FieldValues> {
-  rules: RegisterOptions<T, Path<T>>;
-  name: Path<T>;
-  placeholder: string;
-  type: InputHTMLAttributes<HTMLInputElement>['type'];
-  label: string;
-  autoComplete: string;
-  defaultValue?: PathValue<T, Path<T>>;
-  inputProps?: InputProps;
-}
 
 export default function FormField<T extends FieldValues>({
   rules = {} as RegisterOptions<T, Path<T>>,

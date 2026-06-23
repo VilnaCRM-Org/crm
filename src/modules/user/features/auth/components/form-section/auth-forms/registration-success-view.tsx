@@ -7,13 +7,9 @@ import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 import { paletteColors } from '@/styles/colors';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
+import type { Props } from '@auth/types/auth-forms/registration-success-view';
 
 import styles from './registration-notification.success-styles';
-
-interface Props {
-  isClosing: boolean;
-  onBack: () => void;
-}
 
 const headingFocusStyles = {
   outline: 'none',

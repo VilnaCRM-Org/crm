@@ -1,21 +1,12 @@
 import { startTransition } from 'react';
 
-import loadLoginForm from '@auth/utils/load-login-form';
+import type {
+  LoadLoginErrorKeyValue,
+  SwitchDeps,
+} from '@auth/types/form-section/login-switch-actions';
+import loginFormLoader from '@auth/utils/load-login-form';
 
-import type { AuthMode } from './types';
-
-export const LOAD_LOGIN_ERROR_KEY = 'sign_in.errors.load_failed' as const;
-
-export type LoadLoginErrorKey = typeof LOAD_LOGIN_ERROR_KEY | null;
-
-export interface SwitchDeps {
-  isLoadingLogin: boolean;
-  mode: AuthMode;
-  loginSwitchRequest: { current: number };
-  setMode: (m: AuthMode) => void;
-  setIsLoadingLogin: (v: boolean) => void;
-  setLoadLoginError: (v: LoadLoginErrorKey) => void;
-}
+export const LOAD_LOGIN_ERROR_KEY: LoadLoginErrorKeyValue = 'sign_in.errors.load_failed';
 
 export default class LoginSwitchController {
   constructor(private readonly deps: SwitchDeps) {}
@@ -35,7 +26,8 @@ export default class LoginSwitchController {
     const requestId = deps.loginSwitchRequest.current;
     deps.setLoadLoginError(null);
     deps.setIsLoadingLogin(true);
-    loadLoginForm()
+    loginFormLoader
+      .load()
       .then(() => this.applyLoginSwitchResult(requestId, 'loaded'))
       .catch(() => this.applyLoginSwitchResult(requestId, 'failed'))
       .finally(() => this.finishLoginSwitch(requestId));

@@ -1,18 +1,7 @@
-let loginFormPromise: Promise<
-  typeof import('@auth/components/form-section/auth-forms/login-form')
-> | null = null;
+import LazyModuleLoader from './lazy-module-loader';
 
-export default function loadLoginForm(): Promise<
-  typeof import('@auth/components/form-section/auth-forms/login-form')
-> {
-  if (!loginFormPromise) {
-    loginFormPromise = import('@auth/components/form-section/auth-forms/login-form').catch(
-      (error) => {
-        loginFormPromise = null;
-        throw error;
-      }
-    );
-  }
+const loginFormLoader = new LazyModuleLoader(
+  () => import('@auth/components/form-section/auth-forms/login-form')
+);
 
-  return loginFormPromise;
-}
+export default loginFormLoader;

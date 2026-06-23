@@ -1,4 +1,4 @@
-import isAPIError from '@/modules/user/helpers/is-api-error';
+import apiErrorGuard from '@/modules/user/lib/is-api-error';
 
 describe('isAPIError', () => {
   describe('valid API errors', () => {
@@ -7,7 +7,7 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: 'Error message',
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should return true for API error with additional properties', () => {
@@ -17,7 +17,7 @@ describe('isAPIError', () => {
         details: 'Additional details',
         timestamp: Date.now(),
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should return true for empty strings', () => {
@@ -25,7 +25,7 @@ describe('isAPIError', () => {
         code: '',
         message: '',
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should return true for API error with numeric code as string', () => {
@@ -33,7 +33,7 @@ describe('isAPIError', () => {
         code: '404',
         message: 'Not found',
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should return true for API error with long message', () => {
@@ -41,47 +41,47 @@ describe('isAPIError', () => {
         code: 'VALIDATION_ERROR',
         message: 'A'.repeat(1000),
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
   });
 
   describe('invalid API errors - wrong types', () => {
     it('should return false for null', () => {
-      expect(isAPIError(null)).toBe(false);
+      expect(apiErrorGuard.is(null)).toBe(false);
     });
 
     it('should return false for undefined', () => {
-      expect(isAPIError(undefined)).toBe(false);
+      expect(apiErrorGuard.is(undefined)).toBe(false);
     });
 
     it('should return false for string', () => {
-      expect(isAPIError('error string')).toBe(false);
+      expect(apiErrorGuard.is('error string')).toBe(false);
     });
 
     it('should return false for number', () => {
-      expect(isAPIError(123)).toBe(false);
+      expect(apiErrorGuard.is(123)).toBe(false);
     });
 
     it('should return false for boolean', () => {
-      expect(isAPIError(true)).toBe(false);
-      expect(isAPIError(false)).toBe(false);
+      expect(apiErrorGuard.is(true)).toBe(false);
+      expect(apiErrorGuard.is(false)).toBe(false);
     });
 
     it('should return false for array', () => {
-      expect(isAPIError([])).toBe(false);
-      expect(isAPIError(['error'])).toBe(false);
+      expect(apiErrorGuard.is([])).toBe(false);
+      expect(apiErrorGuard.is(['error'])).toBe(false);
     });
 
     it('should return false for array with objects', () => {
-      expect(isAPIError([{ code: 'ERROR', message: 'Message' }])).toBe(false);
+      expect(apiErrorGuard.is([{ code: 'ERROR', message: 'Message' }])).toBe(false);
     });
 
     it('should return false for function', () => {
-      expect(isAPIError(() => {})).toBe(false);
+      expect(apiErrorGuard.is(() => {})).toBe(false);
     });
 
     it('should return false for Symbol', () => {
-      expect(isAPIError(Symbol('error'))).toBe(false);
+      expect(apiErrorGuard.is(Symbol('error'))).toBe(false);
     });
   });
 
@@ -90,18 +90,18 @@ describe('isAPIError', () => {
       const error = {
         message: 'Error message',
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for object without message', () => {
       const error = {
         code: 'ERROR_CODE',
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for empty object', () => {
-      expect(isAPIError({})).toBe(false);
+      expect(apiErrorGuard.is({})).toBe(false);
     });
 
     it('should return false for object with only other properties', () => {
@@ -109,7 +109,7 @@ describe('isAPIError', () => {
         status: 500,
         details: 'Some details',
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
   });
 
@@ -119,7 +119,7 @@ describe('isAPIError', () => {
         code: 123,
         message: 'Error message',
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when message is not a string', () => {
@@ -127,7 +127,7 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: 123,
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when code is null', () => {
@@ -135,7 +135,7 @@ describe('isAPIError', () => {
         code: null,
         message: 'Error message',
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when message is null', () => {
@@ -143,7 +143,7 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: null,
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when code is undefined', () => {
@@ -151,7 +151,7 @@ describe('isAPIError', () => {
         code: undefined,
         message: 'Error message',
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when message is undefined', () => {
@@ -159,7 +159,7 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: undefined,
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when code is an object', () => {
@@ -167,7 +167,7 @@ describe('isAPIError', () => {
         code: { value: 'ERROR_CODE' },
         message: 'Error message',
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when message is an object', () => {
@@ -175,7 +175,7 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: { text: 'Error message' },
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when code is an array', () => {
@@ -183,7 +183,7 @@ describe('isAPIError', () => {
         code: ['ERROR_CODE'],
         message: 'Error message',
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when message is an array', () => {
@@ -191,7 +191,7 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: ['Error message'],
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when code is boolean', () => {
@@ -199,7 +199,7 @@ describe('isAPIError', () => {
         code: true,
         message: 'Error message',
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false when message is boolean', () => {
@@ -207,26 +207,26 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: false,
       };
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
   });
 
   describe('Error instances', () => {
     it('should return false for Error instance without code', () => {
       const error = new Error('Error message');
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return true for Error instance with code and message', () => {
       type WithCode<T extends Error = Error> = T & { code?: string };
       const error: WithCode = new Error('Error message');
       error.code = 'ERROR_CODE';
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should return false for TypeError instance', () => {
       const error = new TypeError('Type error');
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
 
     it('should return true for custom Error with code property', () => {
@@ -240,7 +240,7 @@ describe('isAPIError', () => {
       }
 
       const error = new APIErrorClass('ERROR_CODE', 'Error message');
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
   });
 
@@ -254,7 +254,7 @@ describe('isAPIError', () => {
           return 'Error message';
         },
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle object created with Object.create', () => {
@@ -262,14 +262,14 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: 'Error message',
       });
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle object with null prototype', () => {
       const error = Object.create(null);
       error.code = 'ERROR_CODE';
       error.message = 'Error message';
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle frozen object', () => {
@@ -277,7 +277,7 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: 'Error message',
       });
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle sealed object', () => {
@@ -285,7 +285,7 @@ describe('isAPIError', () => {
         code: 'ERROR_CODE',
         message: 'Error message',
       });
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle object with numeric string code', () => {
@@ -293,7 +293,7 @@ describe('isAPIError', () => {
         code: '0',
         message: '0',
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle object with whitespace strings', () => {
@@ -301,7 +301,7 @@ describe('isAPIError', () => {
         code: '   ',
         message: '   ',
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle object with special characters in strings', () => {
@@ -309,7 +309,7 @@ describe('isAPIError', () => {
         code: 'ERROR-CODE_123',
         message: 'Error: message with special chars!@#$%',
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle object with Unicode characters', () => {
@@ -317,7 +317,7 @@ describe('isAPIError', () => {
         code: 'ПОМИЛКА',
         message: 'Повідомлення про помилку',
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle object with emojis', () => {
@@ -325,7 +325,7 @@ describe('isAPIError', () => {
         code: '❌ ERROR',
         message: '⚠️ Error message',
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
   });
 
@@ -336,7 +336,7 @@ describe('isAPIError', () => {
         message: 'Error message',
       };
 
-      if (isAPIError(error)) {
+      if (apiErrorGuard.is(error)) {
         // TypeScript should recognize error as having code and message
         expect(error.code).toBe('ERROR_CODE');
         expect(error.message).toBe('Error message');
@@ -351,7 +351,7 @@ describe('isAPIError', () => {
         { code: 'ERROR_2', message: 'Message 2' },
       ];
 
-      const apiErrors = errors.filter(isAPIError);
+      const apiErrors = errors.filter((e) => apiErrorGuard.is(e));
       expect(apiErrors).toHaveLength(2);
     });
   });
@@ -359,12 +359,12 @@ describe('isAPIError', () => {
   describe('consistency', () => {
     it('should return same result for same input', () => {
       const error = { code: 'ERROR', message: 'Message' };
-      expect(isAPIError(error)).toBe(isAPIError(error));
+      expect(apiErrorGuard.is(error)).toBe(apiErrorGuard.is(error));
     });
 
     it('should be deterministic', () => {
       const error = { code: 'ERROR', message: 'Message' };
-      const results = Array.from({ length: 10 }, () => isAPIError(error));
+      const results = Array.from({ length: 10 }, () => apiErrorGuard.is(error));
       const allSame = results.every((result) => result === results[0]);
       expect(allSame).toBe(true);
     });
@@ -377,7 +377,7 @@ describe('isAPIError', () => {
         message: 'Resource not found',
         status: 404,
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle validation error format', () => {
@@ -386,7 +386,7 @@ describe('isAPIError', () => {
         message: 'Invalid input data',
         fields: ['email', 'password'],
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should handle authentication error format', () => {
@@ -395,12 +395,12 @@ describe('isAPIError', () => {
         message: 'Invalid credentials',
         statusCode: 401,
       };
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should reject plain Error objects', () => {
       const error = new Error('Network error');
-      expect(isAPIError(error)).toBe(false);
+      expect(apiErrorGuard.is(error)).toBe(false);
     });
   });
 });

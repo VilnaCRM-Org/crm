@@ -16,14 +16,15 @@ describe('error module exports', () => {
       expect(ErrorParser).toBe(ErrorParserClass);
     });
 
-    it('should have parseHttpError static method', () => {
-      expect(ErrorParser.parseHttpError).toBeDefined();
-      expect(typeof ErrorParser.parseHttpError).toBe('function');
+    it('should have a parseHttpError instance method', () => {
+      const errorParser = new ErrorParser();
+      expect(errorParser.parseHttpError).toBeDefined();
+      expect(typeof errorParser.parseHttpError).toBe('function');
     });
 
     it('should allow calling parseHttpError', () => {
       const error = new Error('Test error');
-      const result = ErrorParser.parseHttpError(error);
+      const result = new ErrorParser().parseHttpError(error);
 
       expect(result).toHaveProperty('code');
       expect(result).toHaveProperty('message');
@@ -59,7 +60,7 @@ describe('error module exports', () => {
   describe('integration', () => {
     it('should work together - parse error and type result', () => {
       const error = new Response(null, { status: 404 });
-      const result: ParsedError = ErrorParser.parseHttpError(error);
+      const result: ParsedError = new ErrorParser().parseHttpError(error);
 
       expect(result.code).toBe('HTTP_404');
       expect(result.message).toBe('HTTP error 404');
