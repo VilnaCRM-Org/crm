@@ -213,7 +213,7 @@ EOF
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_DOCKER_RUNNING_SERVICE=dev \
-    make -C "$MAKEFILE_SANDBOX" test-e2e-dev BIN_DIR="$STUB_BIN_DIR"
+    make -C "$MAKEFILE_SANDBOX" test-e2e ENV=dev BIN_DIR="$STUB_BIN_DIR"
   [ "$status" -eq 0 ]
   assert_log_contains 'compose exec -T dev env PLAYWRIGHT_DEV_MODE=1 bun x playwright test ./tests/e2e'
   # Dev-server and mockoon readiness are gated as preconditions (the reuse path too);
@@ -227,7 +227,7 @@ EOF
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_DOCKER_RUNNING_SERVICE=dev \
-    make -C "$MAKEFILE_SANDBOX" test-e2e-dev FILE=tests/e2e/modules/back-to-main.spec.ts BIN_DIR="$STUB_BIN_DIR"
+    make -C "$MAKEFILE_SANDBOX" test-e2e ENV=dev FILE=tests/e2e/modules/back-to-main.spec.ts BIN_DIR="$STUB_BIN_DIR"
   [ "$status" -eq 0 ]
   assert_log_contains 'compose exec -T dev env PLAYWRIGHT_DEV_MODE=1 bun x playwright test tests/e2e/modules/back-to-main.spec.ts'
 
@@ -237,7 +237,7 @@ EOF
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_DOCKER_RUNNING_SERVICE=dev \
-    make -C "$MAKEFILE_SANDBOX" test-visual-dev BIN_DIR="$STUB_BIN_DIR"
+    make -C "$MAKEFILE_SANDBOX" test-visual ENV=dev BIN_DIR="$STUB_BIN_DIR"
   [ "$status" -eq 0 ]
   assert_log_contains 'compose exec -T dev env PLAYWRIGHT_DEV_MODE=1 bun x playwright test ./tests/visual'
 
@@ -252,13 +252,13 @@ EOF
   assert_log_contains 'apk add --no-cache chromium=136.0.7103.113-r0'
 }
 
-@test "the dev e2e debug target requires FILE and allocates a TTY" {
+@test "test-e2e ENV=dev DEBUG=1 requires FILE and allocates a TTY" {
   # Missing FILE fails fast with remediation before invoking Playwright.
   run env \
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_DOCKER_RUNNING_SERVICE=dev \
-    make -C "$MAKEFILE_SANDBOX" test-e2e-dev-debug BIN_DIR="$STUB_BIN_DIR"
+    make -C "$MAKEFILE_SANDBOX" test-e2e ENV=dev DEBUG=1 BIN_DIR="$STUB_BIN_DIR"
   [ "$status" -ne 0 ]
   assert_output_contains 'FILE= is required'
 
@@ -268,7 +268,7 @@ EOF
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_DOCKER_RUNNING_SERVICE=dev \
-    make -C "$MAKEFILE_SANDBOX" test-e2e-dev-debug FILE=tests/e2e/modules/back-to-main.spec.ts BIN_DIR="$STUB_BIN_DIR"
+    make -C "$MAKEFILE_SANDBOX" test-e2e ENV=dev DEBUG=1 FILE=tests/e2e/modules/back-to-main.spec.ts BIN_DIR="$STUB_BIN_DIR"
   [ "$status" -eq 0 ]
   assert_log_contains 'compose exec dev env PLAYWRIGHT_DEV_MODE=1 PLAYWRIGHT_TRACE_PORT=9323 bun x playwright test tests/e2e/modules/back-to-main.spec.ts --debug'
 }

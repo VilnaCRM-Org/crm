@@ -216,21 +216,21 @@ download). It is opt-in; the default image ships without it:
 make ensure-playwright-browsers
 ```
 
-Run e2e specs against the dev server (omit `FILE=` to run the whole suite):
+Run e2e specs against the dev server with `ENV=dev` (omit `FILE=` to run the whole suite):
 
 ```bash
-make test-e2e-dev
-make test-e2e-dev FILE=tests/e2e/modules/back-to-main.spec.ts
-make test-e2e-dev FILE='tests/e2e/components/**/*.spec.ts'
+make test-e2e ENV=dev
+make test-e2e ENV=dev FILE=tests/e2e/modules/back-to-main.spec.ts
+make test-e2e ENV=dev FILE='tests/e2e/components/**/*.spec.ts'
 ```
 
 Run dev-build visual smoke specs, or debug a single e2e spec with the Playwright Inspector
-(`FILE=` is required for the debug target):
+(`DEBUG=1` requires `FILE=`):
 
 ```bash
-make test-visual-dev
-make test-visual-dev FILE=tests/visual/visual-comparison.spec.ts
-make test-e2e-dev-debug FILE=tests/e2e/modules/back-to-main.spec.ts
+make test-visual ENV=dev
+make test-visual ENV=dev FILE=tests/visual/visual-comparison.spec.ts
+make test-e2e ENV=dev DEBUG=1 FILE=tests/e2e/modules/back-to-main.spec.ts
 ```
 
 A quoted `FILE=` glob is forwarded verbatim and resolved by Playwright, not the host shell.
@@ -238,7 +238,7 @@ A quoted `FILE=` glob is forwarded verbatim and resolved by Playwright, not the 
 Dev-mode visual snapshots are **smoke-level and not CI-gating**. They are written to
 `tests/visual/__snapshots__-dev/` under a `chromium-dev` project tag, separate from the production
 baselines; the authoritative snapshots remain the production ones from `make test-visual`. The first
-`make test-visual-dev` run records any missing dev baseline; to regenerate dev baselines later
+`make test-visual ENV=dev` run records any missing dev baseline; to regenerate dev baselines later
 (without touching the production snapshots), append `--update-snapshots` through the dev container:
 
 ```bash

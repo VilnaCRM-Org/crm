@@ -100,6 +100,3 @@ run-load-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND 
 test-bats	ci	.github/workflows/bats-testing.yml	Executed directly by the dedicated Bats PR workflow.
 ensure-playwright-browsers	bats	tests/bats/makefile_targets.bats	Validated as the idempotent dev-container Chromium installer (system apk build).
 require-playwright-browsers	bats	tests/bats/makefile_targets.bats	Validated as the fail-fast browser preflight that gates the dev-mode targets.
-test-e2e-dev	bats	tests/bats/makefile_targets.bats	Validated as the dev-container Playwright e2e runner with FILE scoping.
-test-e2e-dev-debug	bats	tests/bats/makefile_targets.bats	Validated as the TTY-capable single-spec Playwright Inspector debug target.
-test-visual-dev	bats	tests/bats/makefile_targets.bats	Validated as the dev-build visual smoke runner with FILE scoping.
