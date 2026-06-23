@@ -2,7 +2,7 @@ import type { Theme } from '@mui/material/styles';
 
 import breakpointsTheme, { heightBreakpoints } from '@/components/ui-breakpoints';
 import { paletteColors } from '@/styles/colors';
-import type { MessageButtonTextStyle } from '@auth/types/auth-forms/registration-notification.shared-styles';
+import type { MessageButtonTextStyle } from '@auth/types/auth-forms/notification-shared-styles';
 
 const compactMaxWidth = breakpointsTheme.breakpoints.values.sm - 1;
 

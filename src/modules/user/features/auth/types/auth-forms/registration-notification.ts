@@ -1,6 +1,6 @@
 import type { RegistrationView } from '@auth/components/form-section/types';
 
-export type RegistrationNotificationProps = {
+export type Props = {
   view: Exclude<RegistrationView, 'form'>;
   errorText?: string;
   isSubmitting: boolean;

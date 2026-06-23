@@ -266,9 +266,7 @@ export default [
       'no-alert': 'error',
       'no-console': ['error', { allow: ['warn', 'error'] }],
       'import/prefer-default-export': 'warn',
-      // Import statements are exempt: module paths (esp. the per-feature `types/` folders,
-      // issue #88) are unavoidably long and prettier cannot wrap a single-specifier import.
-      'max-len': ['error', { code: 100, ignorePattern: '^import\\s' }],
+      'max-len': ['error', { code: 100 }],
       'eslint-comments/disable-enable-pair': 'off',
       'no-restricted-imports': ['error', { patterns: ['@/features/*/*'] }],
       'no-param-reassign': ['error', { props: true, ignorePropertyModificationsFor: ['state'] }],
@@ -492,12 +490,10 @@ export default [
   prettier,
 
   // Re-enable max-len after prettier (prettier turns it off as a formatting rule).
-  // Import statements are exempt: module paths (esp. the per-feature `types/` folders,
-  // issue #88) are unavoidably long and prettier cannot wrap a single-specifier import.
   {
     files: jsxGlobs,
     rules: {
-      'max-len': ['error', { code: 100, ignorePattern: '^import\\s' }],
+      'max-len': ['error', { code: 100 }],
     },
   },
 ];

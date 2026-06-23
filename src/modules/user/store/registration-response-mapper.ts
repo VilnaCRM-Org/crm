@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import type { RegistrationResponseMappingResult } from '@/modules/user/types/store/registration-response-mapper';
+import type { RegistrationResult } from '@/modules/user/types/store/registration-response-mapper';
 import { RegistrationResponseSchema } from '@auth/utils/response-schemas';
 
 const INVALID_REGISTRATION_RESPONSE_MESSAGE =
@@ -8,7 +8,7 @@ const INVALID_REGISTRATION_RESPONSE_MESSAGE =
 
 @injectable()
 export default class RegistrationResponseMapper {
-  public map(apiResponse: unknown): RegistrationResponseMappingResult {
+  public map(apiResponse: unknown): RegistrationResult {
     const parsed = RegistrationResponseSchema.safeParse(apiResponse);
     if (!parsed.success) {
       // Log only a non-PII summary; schema errors can echo user-provided values.

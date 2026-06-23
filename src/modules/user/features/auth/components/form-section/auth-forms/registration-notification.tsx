@@ -1,7 +1,7 @@
 import { Box, Fade } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
-import type { RegistrationNotificationProps } from '@auth/types/auth-forms/registration-notification';
+import type { Props } from '@auth/types/auth-forms/registration-notification';
 
 import RegistrationErrorView from './registration-error-view';
 import styles from './registration-notification.styles';
@@ -12,7 +12,7 @@ import useResolvedErrorText from './use-resolved-error-text';
 export const BACK_CLOSE_ANIMATION_MS = 300;
 
 function useBackHandler(
-  view: RegistrationNotificationProps['view'],
+  view: Props['view'],
   onBack: () => void,
   setIsClosing: (v: boolean) => void
 ): () => void {
@@ -34,7 +34,7 @@ export default function RegistrationNotification({
   onShown,
   onBack,
   onRetry,
-}: RegistrationNotificationProps): JSX.Element {
+}: Props): JSX.Element {
   const [isClosing, setIsClosing] = useState(false);
   const resolvedErrorText = useResolvedErrorText(errorText);
   const handleBack = useBackHandler(view, onBack, setIsClosing);
