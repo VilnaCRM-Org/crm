@@ -77,8 +77,8 @@ const dataTestidSelectors = [
 ];
 
 // Source (issue #88): logic files must not declare types — interfaces and type aliases
-// live in dedicated type-only files (`<name>.types.ts`, `types.ts`, `types/**`). These
-// selectors are re-included in every override that replaces `no-restricted-syntax` for
+// live in the per-feature/area `types/` folder (or a `types.ts`), never beside the logic.
+// These selectors are re-included in every override that replaces `no-restricted-syntax` for
 // non-React source so the type-declaration gate is never dropped by flat-config override.
 const typeDeclarationSelectors = [
   {
@@ -374,9 +374,9 @@ export default [
   },
 
   // Source: production source must not ship `data-testid` (issue #90), and logic
-  // files must not declare types — types live in dedicated type-only files
-  // `types.ts`, `types/**`, `*.types.ts` (issue #88). Stories/tests/`.d.ts` and the
-  // type-only files (governed by the separate override below) are excluded.
+  // files must not declare types — types live in dedicated type-only files:
+  // `types.ts` or the per-feature/area `types/**` folders (issue #88). Stories/tests/`.d.ts`
+  // and the type-only files (governed by the separate override below) are excluded.
   {
     files: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx'],
     ignores: [
