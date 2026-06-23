@@ -1,4 +1,4 @@
-import type { APIError } from './is-api-error.types';
+import type { APIError } from '@/modules/user/types/lib/is-api-error';
 
 class ApiErrorGuard {
   public is(err: unknown): err is APIError {

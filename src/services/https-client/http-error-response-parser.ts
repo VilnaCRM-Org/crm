@@ -1,8 +1,10 @@
 import { injectable } from 'tsyringe';
 
 import { HttpError } from '@/services/https-client/http-error';
-
-import type { ExtractedBody, JsonWithMessage } from './http-error-response-parser.types';
+import type {
+  ExtractedBody,
+  JsonWithMessage,
+} from '@/services/types/https-client/http-error-response-parser';
 
 const MAX_ERROR_BODY_CHARS = 500;
 

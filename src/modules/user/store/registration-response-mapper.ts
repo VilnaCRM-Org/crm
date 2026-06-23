@@ -1,8 +1,7 @@
 import { injectable } from 'tsyringe';
 
+import type { RegistrationResponseMappingResult } from '@/modules/user/types/store/registration-response-mapper';
 import { RegistrationResponseSchema } from '@auth/utils/response-schemas';
-
-import type { RegistrationResponseMappingResult } from './registration-response-mapper.types';
 
 const INVALID_REGISTRATION_RESPONSE_MESSAGE =
   'There was a problem with the provided information. Please check your input.';

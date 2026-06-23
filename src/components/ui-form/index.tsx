@@ -2,6 +2,12 @@ import { Box } from '@mui/material';
 import { ReactNode } from 'react';
 import { useForm, SubmitHandler, FieldValues } from 'react-hook-form';
 
+import type {
+  FormBodyProps,
+  SubmitControlsProps,
+  SubmitHandlerOptions,
+  UIFormProps,
+} from '@/components/types/ui-form';
 import UIButton from '@/components/ui-button';
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import styles from '@/components/ui-form/styles';
@@ -9,12 +15,6 @@ import UILiveStatus from '@/components/ui-live-status';
 import UITypography from '@/components/ui-typography';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
-import type {
-  FormBodyProps,
-  SubmitControlsProps,
-  SubmitHandlerOptions,
-  UIFormProps,
-} from './index.types';
 import SubmitSpinner from './submit-spinner';
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {

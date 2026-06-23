@@ -1,10 +1,9 @@
 import { injectable } from 'tsyringe';
 
 import { ERROR_CODES } from '@/services/error/error-codes';
-import type { ErrorCode } from '@/services/error/error-codes.types';
+import type { ErrorCode } from '@/services/types/error/error-codes';
+import type { ErrorLogger, UiError } from '@/services/types/error/error-handler';
 import type ParsedError from '@/utils/error/types';
-
-import type { ErrorLogger, UiError } from './error-handler.types';
 
 const errorMap: Record<ErrorCode, UiError> = {
   [ERROR_CODES.AUTH_INVALID]: {

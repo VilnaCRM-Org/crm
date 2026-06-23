@@ -5,11 +5,11 @@ import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
+import type { FormSectionLayoutProps } from '@auth/types/form-section';
 import loginFormLoader from '@auth/utils/load-login-form';
 
 import RegistrationForm from './auth-forms/registration-form';
 import AuthProviderButtons from './components/auth-provider-buttons';
-import type { FormSectionLayoutProps } from './index.types';
 import InertBox from './inert-box';
 import styles from './styles';
 import type { RegistrationView, AuthMode } from './types';

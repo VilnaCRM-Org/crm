@@ -84,12 +84,12 @@ const typeDeclarationSelectors = [
   {
     selector: 'TSInterfaceDeclaration',
     message:
-      'No type declarations in logic files — move this interface to a sibling type-only file (`<name>.types.ts` or `types.ts`) (issue #88).',
+      'No type declarations in logic files — move this interface to the nearest feature/area `types/` folder (e.g. `@auth/types/<group>/<name>`), not beside the component (issue #88).',
   },
   {
     selector: 'TSTypeAliasDeclaration',
     message:
-      'No type declarations in logic files — move this type alias to a sibling type-only file (`<name>.types.ts` or `types.ts`) (issue #88).',
+      'No type declarations in logic files — move this type alias to the nearest feature/area `types/` folder (e.g. `@auth/types/<group>/<name>`), not beside the component (issue #88).',
   },
 ];
 
@@ -148,7 +148,6 @@ const nonReactSourceIgnores = [
   'src/**/use-*.ts',
   'src/**/types.ts',
   'src/**/types/**/*.ts',
-  'src/**/*.types.ts',
 ];
 const storyGlobs = ['**/*.stories.js', '**/*.stories.jsx', '**/*.stories.ts', '**/*.stories.tsx'];
 
@@ -267,7 +266,9 @@ export default [
       'no-alert': 'error',
       'no-console': ['error', { allow: ['warn', 'error'] }],
       'import/prefer-default-export': 'warn',
-      'max-len': ['error', { code: 100 }],
+      // Import statements are exempt: module paths (esp. the per-feature `types/` folders,
+      // issue #88) are unavoidably long and prettier cannot wrap a single-specifier import.
+      'max-len': ['error', { code: 100, ignorePattern: '^import\\s' }],
       'eslint-comments/disable-enable-pair': 'off',
       'no-restricted-imports': ['error', { patterns: ['@/features/*/*'] }],
       'no-param-reassign': ['error', { props: true, ignorePropertyModificationsFor: ['state'] }],
@@ -386,25 +387,20 @@ export default [
       'src/**/types.ts',
       'src/**/types/**/*.ts',
       'src/**/types/**/*.tsx',
-      'src/**/*.types.ts',
     ],
     rules: {
       'no-restricted-syntax': ['error', ...dataTestidSelectors, ...typeDeclarationSelectors],
     },
   },
 
-  // Type-only files (issue #88): `types.ts`, `types/**`, `*.types.ts` must contain
-  // ONLY type-level constructs (interface, type, type-only import/re-export,
+  // Type-only files (issue #88): `types.ts` and the per-feature/area `types/` folders must
+  // contain ONLY type-level constructs (interface, type, type-only import/re-export,
   // `declare`). Forbid runtime syntax so type files never carry logic. Ordered after the
   // no-static (#100) block below would be wrong — the no-static block ignores these globs,
-  // so this override is the last (and only) one matching type-only files.
+  // so this override is the last (and only) one matching type-only files. Sibling
+  // `<name>.types.ts` files are intentionally NOT type-only here: types live in `types/`.
   {
-    files: [
-      'src/**/types.ts',
-      'src/**/types/**/*.ts',
-      'src/**/types/**/*.tsx',
-      'src/**/*.types.ts',
-    ],
+    files: ['src/**/types.ts', 'src/**/types/**/*.ts', 'src/**/types/**/*.tsx'],
     ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
     rules: {
       'no-restricted-syntax': [
@@ -496,10 +492,12 @@ export default [
   prettier,
 
   // Re-enable max-len after prettier (prettier turns it off as a formatting rule).
+  // Import statements are exempt: module paths (esp. the per-feature `types/` folders,
+  // issue #88) are unavoidably long and prettier cannot wrap a single-specifier import.
   {
     files: jsxGlobs,
     rules: {
-      'max-len': ['error', { code: 100 }],
+      'max-len': ['error', { code: 100, ignorePattern: '^import\\s' }],
     },
   },
 ];

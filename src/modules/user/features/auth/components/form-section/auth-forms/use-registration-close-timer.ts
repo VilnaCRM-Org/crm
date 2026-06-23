@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, type MutableRefObject } from 'react';
 
-import type { CloseTimer } from './use-registration-close-timer.types';
+import type { CloseTimer } from '@auth/types/auth-forms/use-registration-close-timer';
 
 function clearTimer(
   timerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>

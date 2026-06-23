@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next';
 import { FieldValues, Validate } from 'react-hook-form';
 
-import type { Rule, ValidationPswdMessageKey } from './password.types';
+import type { Rule, ValidationPswdMessageKey } from '@auth/types/validations/password';
 
 class PasswordValidator {
   private readonly rules: Rule[] = [

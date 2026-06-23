@@ -3,9 +3,12 @@ import { TextFieldProps } from '@mui/material/TextField';
 import React from 'react';
 import { Controller, FieldValues } from 'react-hook-form';
 
+import type {
+  ControlledFieldProps,
+  CustomTextField,
+  RenderFieldArgs,
+} from '@/components/types/ui-form-input-field';
 import theme from '@/components/ui-form-input-field/theme';
-
-import type { ControlledFieldProps, CustomTextField, RenderFieldArgs } from './index.types';
 
 function createRenderField<T extends FieldValues>(
   sx: TextFieldProps['sx'],

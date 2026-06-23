@@ -3,7 +3,7 @@
 import { ApiError } from '@/modules/user/lib/api-errors';
 import LoginAPI from '@auth/repositories/login-api';
 
-type HttpsClient = import('@/services/https-client/https-client.types').HttpsClient;
+type HttpsClient = import('@/services/types/https-client/https-client').HttpsClient;
 
 describe('LoginAPI', () => {
   const credentials = { email: 'user@example.com', password: 'secret' };

@@ -1,8 +1,10 @@
 import { startTransition } from 'react';
 
+import type {
+  LoadLoginErrorKeyValue,
+  SwitchDeps,
+} from '@auth/types/form-section/login-switch-actions';
 import loginFormLoader from '@auth/utils/load-login-form';
-
-import type { LoadLoginErrorKeyValue, SwitchDeps } from './login-switch-actions.types';
 
 export const LOAD_LOGIN_ERROR_KEY: LoadLoginErrorKeyValue = 'sign_in.errors.load_failed';
 

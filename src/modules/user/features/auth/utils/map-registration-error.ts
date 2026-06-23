@@ -2,7 +2,7 @@ import type {
   EmailAlreadyUsedKey,
   GenericSignupErrorKey,
   MessageKey,
-} from './map-registration-error.types';
+} from '@auth/types/utils/map-registration-error';
 
 export const EMAIL_ALREADY_USED_KEY: EmailAlreadyUsedKey = 'sign_up.errors.email_used';
 export const GENERIC_SIGNUP_ERROR_KEY: GenericSignupErrorKey = 'sign_up.errors.signup_error';

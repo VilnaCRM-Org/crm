@@ -7,8 +7,8 @@ import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 import { paletteColors } from '@/styles/colors';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
+import type { Props } from '@auth/types/auth-forms/registration-error-view';
 
-import type { Props } from './registration-error-view.types';
 import styles from './registration-notification.error-styles';
 
 const headingFocusStyles = {

@@ -3,8 +3,7 @@ import { ReactComponent as Facebook } from '@auth/assets/social-links/facebook-c
 import { ReactComponent as GitHub } from '@auth/assets/social-links/github-color.svg';
 import { ReactComponent as Google } from '@auth/assets/social-links/google-color.svg';
 import { ReactComponent as Twitter } from '@auth/assets/social-links/twitter-color.svg';
-
-import type { OAuthProvider } from './oauth-providers.types';
+import type { OAuthProvider } from '@auth/types/auth-provider-buttons/oauth-providers';
 
 const PROVIDERS = [
   { key: 'google', label: 'Google', SvgComponent: Google },

@@ -536,12 +536,15 @@ Key variables in `.env`:
 6. **Docker Network**: External network `website-network` used for service communication
 
 7. **Type-only files (issue #88)**: All TypeScript types live in dedicated
-   type-only files — `types.ts`, `types/**`, or a sibling `*.types.ts`. Those
+   type-only files — a `types.ts` or, preferably, the per-feature/area **`types/`
+   folder** grouped one level by source area (e.g.
+   `@auth/types/auth-forms/login-form-fields`, `@/components/types/ui-form`). Types
+   are **not** placed in a sibling `<name>.types.ts` next to the component. Those
    files contain **only** type-level constructs (`interface`, `type`,
    `import type`, type re-exports, `declare`) — never runtime `const` / `function` /
    `class` / expression statements. Conversely, logic files must not declare or
-   export `interface` / `type`; a component's prop types move to a sibling
-   `*.types.ts` and are imported back via `import type`. Enforced by ESLint
+   export `interface` / `type`; a component's prop types move to its feature/area
+   `types/` folder and are imported back via `import type`. Enforced by ESLint
    (`no-restricted-syntax` overrides on the type-file globs and on logic files in
    `eslint.config.mjs`) and dependency-cruiser (`type-files-imported-as-type-only`,
    `type-files-no-runtime-imports`): type files may only be imported with

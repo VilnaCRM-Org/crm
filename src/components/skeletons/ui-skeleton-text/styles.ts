@@ -1,7 +1,6 @@
 import { SKELETON_BORDER_RADIUS, baseSkeletonStyle } from '@/components/skeletons/base/styles';
 import type { SkeletonTextSize } from '@/components/skeletons/ui-skeleton-text/types';
-
-import type { StylesObject } from './styles.types';
+import type { StylesObject } from '@/components/types/ui-skeleton-text/styles';
 
 const sizeHeights: Record<SkeletonTextSize, string> = {
   s: '8px',

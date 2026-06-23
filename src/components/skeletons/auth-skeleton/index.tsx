@@ -7,8 +7,7 @@ import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
 import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
-
-import type { AuthSkeletonProps, Wrap } from './index.types';
+import type { AuthSkeletonProps, Wrap } from '@/components/types/auth-skeleton';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },

@@ -1,4 +1,4 @@
-import type { customColors, paletteColors } from './colors';
+import type { customColors, paletteColors } from '@/styles/colors';
 
 export type CustomColors = typeof customColors;
 

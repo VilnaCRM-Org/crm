@@ -1,6 +1,6 @@
 import { FieldValues, FormProvider } from 'react-hook-form';
 
-import type { FormProviderBridgeProps } from './form-provider-bridge.types';
+import type { FormProviderBridgeProps } from '@/components/types/ui-form/form-provider-bridge';
 
 export default function FormProviderBridge<T extends FieldValues>({
   methods,

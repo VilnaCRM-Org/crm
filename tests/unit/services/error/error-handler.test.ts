@@ -1,6 +1,6 @@
 import { ERROR_CODES } from '@/services/error/error-codes';
 import { ErrorHandler } from '@/services/error/error-handler';
-import type { UiError } from '@/services/error/error-handler.types';
+import type { UiError } from '@/services/types/error/error-handler';
 import ParsedError from '@/utils/error/types';
 
 const errorHandler = new ErrorHandler();

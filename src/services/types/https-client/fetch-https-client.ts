@@ -1,4 +1,4 @@
-import type { RequestMethod } from '@/services/https-client/https-client.types';
+import type { RequestMethod } from '@/services/types/https-client/https-client';
 
 interface RequestOptions {
   headers?: Record<string, string>;

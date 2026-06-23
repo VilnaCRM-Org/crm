@@ -1,9 +1,10 @@
 import { Box, Fade } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 
+import type { RegistrationNotificationProps } from '@auth/types/auth-forms/registration-notification';
+
 import RegistrationErrorView from './registration-error-view';
 import styles from './registration-notification.styles';
-import type { RegistrationNotificationProps } from './registration-notification.types';
 import RegistrationSuccessView from './registration-success-view';
 import useCloseTimer from './use-registration-close-timer';
 import useResolvedErrorText from './use-resolved-error-text';

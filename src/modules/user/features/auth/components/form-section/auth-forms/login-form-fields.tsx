@@ -1,9 +1,8 @@
 import FormField from '@auth/components/form-section/components/form-field';
 import PasswordField from '@auth/components/form-section/components/password-field';
 import UserOptions from '@auth/components/form-section/components/user-options';
+import type { Props } from '@auth/types/auth-forms/login-form-fields';
 import type { LoginUserDto } from '@auth/types/credentials';
-
-import type { Props } from './login-form-fields.types';
 
 export default function LoginFormFields({ t, validators }: Props): JSX.Element {
   return (

@@ -3,9 +3,9 @@ import { inject, injectable } from 'tsyringe';
 import TOKENS from '@/config/tokens';
 import { ApiError, ApiErrorCodes } from '@/modules/user/lib/api-errors';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
+import type { HttpErrorLike } from '@auth/types/repositories/api-status-error-factory';
 
 import ApiStatusErrorFactory from './api-status-error-factory';
-import type { HttpErrorLike } from './api-status-error-factory.types';
 
 const NETWORK_KEYWORDS = [
   'failed to fetch',

@@ -1,4 +1,4 @@
-import type { Extractor, SerializedError } from './login-error-message.types';
+import type { Extractor, SerializedError } from '@auth/types/auth-forms/login-error-message';
 
 const UNKNOWN_KEY = 'auth.errors.unknown';
 

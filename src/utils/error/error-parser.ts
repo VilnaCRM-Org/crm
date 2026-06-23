@@ -2,8 +2,7 @@ import { injectable } from 'tsyringe';
 
 import ApiError from '@/modules/user/lib/api-errors/api-error';
 import type ParsedError from '@/utils/error/types';
-
-import type { Matcher } from './error-parser.types';
+import type { Matcher } from '@/utils/types/error/error-parser';
 
 const UNKNOWN_ERROR: Omit<ParsedError, 'original'> = {
   code: 'UNKNOWN_ERROR',

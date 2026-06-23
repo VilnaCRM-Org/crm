@@ -3,8 +3,8 @@ import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'r
 
 import UIFormInputField from '@/components/ui-form-input-field';
 import UITypography from '@/components/ui-typography';
+import type { FormFieldProps } from '@auth/types/components/form-field';
 
-import type { FormFieldProps } from './form-field.types';
 import styles from './styles';
 
 export default function FormField<T extends FieldValues>({

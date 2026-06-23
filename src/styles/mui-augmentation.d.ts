@@ -1,6 +1,6 @@
 import '@mui/material/styles';
 
-import type { CustomColors } from './colors.types';
+import type { CustomColors } from '@/styles/types/colors';
 
 declare module '@mui/material/styles' {
   interface Theme {

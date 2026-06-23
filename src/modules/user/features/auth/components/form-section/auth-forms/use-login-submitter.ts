@@ -2,10 +2,10 @@ import type { TFunction } from 'i18next';
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react';
 
 import { AuthStoreSelectors, authActions, useAuthState } from '@auth/stores';
+import type { LoginSubmitter, LoginUser } from '@auth/types/auth-forms/use-login-submitter';
 import type { LoginUserDto } from '@auth/types/credentials';
 
 import LoginErrorMessageNormalizer from './login-error-message';
-import type { LoginSubmitter, LoginUser } from './use-login-submitter.types';
 
 const I18N_KEY_RE = /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/i;
 const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();

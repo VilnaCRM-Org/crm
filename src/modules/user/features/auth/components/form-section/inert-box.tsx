@@ -1,7 +1,7 @@
 import { Box } from '@mui/material';
 import { useCallback } from 'react';
 
-import type { InertBoxProps } from './inert-box.types';
+import type { InertBoxProps } from '@auth/types/form-section/inert-box';
 
 function applyInert(el: HTMLDivElement | null, inert: boolean): void {
   if (!el) return;

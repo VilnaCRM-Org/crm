@@ -1,8 +1,9 @@
 import type { TFunction } from 'i18next';
 import type { FieldValues } from 'react-hook-form';
 
+import type { Validators } from '@auth/types/validations';
+
 import emailValidator from './email';
-import type { Validators } from './index.types';
 import fullNameValidator from './name';
 import passwordValidator from './password';
 

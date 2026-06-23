@@ -6,9 +6,9 @@ import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import formValidators from '@auth/components/form-section/validations';
+import type { PasswordFieldProps } from '@auth/types/components/password-field';
 
 import FormField from './form-field';
-import type { PasswordFieldProps } from './password-field.types';
 import styles, { StyledEyeIcon, StyledEyeIconOff } from './styles';
 
 function preventMouseDown(event: MouseEvent<HTMLButtonElement>): void {

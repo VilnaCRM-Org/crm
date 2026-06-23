@@ -1,5 +1,5 @@
 import HttpClientFactory from '@/services/https-client/https-client-factory';
-import type { HttpsClient } from '@/services/https-client/https-client.types';
+import type { HttpsClient } from '@/services/types/https-client/https-client';
 
 interface MockClientOptions {
   returnValue?: unknown;

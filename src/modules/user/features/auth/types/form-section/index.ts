@@ -1,7 +1,8 @@
 import type { TFunction } from 'i18next';
 
-import type { AuthMode, RegistrationView } from './types';
-import type { LoadLoginErrorKey } from './use-login-switcher';
+import type { AuthMode, RegistrationView } from '@auth/components/form-section/types';
+
+import type { LoadLoginErrorKey } from './login-switch-actions';
 
 export type FormSectionLayoutProps = {
   mode: AuthMode;

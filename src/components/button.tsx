@@ -1,6 +1,6 @@
 import { ReactElement } from 'react';
 
-import type { ButtonProps } from './button.types';
+import type { ButtonProps } from '@/components/types/button';
 
 export function Button({
   label = 'Button',

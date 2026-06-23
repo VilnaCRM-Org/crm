@@ -2,7 +2,7 @@ import { inject, injectable } from 'tsyringe';
 
 import API_ENDPOINTS from '@/config/api-config';
 import TOKENS from '@/config/tokens';
-import type { HttpsClient } from '@/services/https-client/https-client.types';
+import type { HttpsClient } from '@/services/types/https-client/https-client';
 
 import type { LoginResponse } from '../types/api-responses';
 import type { LoginUserDto } from '../types/credentials';

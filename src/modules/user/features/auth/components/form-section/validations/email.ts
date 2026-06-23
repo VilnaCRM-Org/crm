@@ -1,6 +1,6 @@
 import type { Validate, FieldValues } from 'react-hook-form';
 
-import type { Rule } from './email.types';
+import type { Rule } from '@auth/types/validations/email';
 
 const EMAIL_LOCAL_PART = /[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?/;
 const EMAIL_DOMAIN_PART = /[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}/;

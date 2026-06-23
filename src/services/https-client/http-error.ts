@@ -1,4 +1,4 @@
-import type { HttpErrorParams } from './http-error.types';
+import type { HttpErrorParams } from '@/services/types/https-client/http-error';
 
 export class HttpError extends Error {
   public readonly status: number;

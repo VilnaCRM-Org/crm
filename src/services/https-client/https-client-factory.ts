@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import type { HttpsClient } from '@/services/https-client/https-client.types';
+import type { HttpsClient } from '@/services/types/https-client/https-client';
 
 @injectable()
 export default class HttpClientFactory {

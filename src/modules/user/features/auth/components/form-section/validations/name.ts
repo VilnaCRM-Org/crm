@@ -1,6 +1,6 @@
 import type { FieldValues, Validate } from 'react-hook-form';
 
-import type { NameRule } from './name.types';
+import type { NameRule } from '@auth/types/validations/name';
 
 const MAX_FULL_NAME_LENGTH = 255;
 const ALLOWED_NAME_CHARACTERS = '[A-Za-zА-Яа-яІіЇїЄєҐґ]';

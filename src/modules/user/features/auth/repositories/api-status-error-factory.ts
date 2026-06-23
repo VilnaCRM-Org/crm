@@ -7,12 +7,11 @@ import {
   ConflictError,
   ValidationError,
 } from '@/modules/user/lib/api-errors';
-
 import type {
   HttpErrorLike,
   StatusErrorInput,
   StatusErrorSpec,
-} from './api-status-error-factory.types';
+} from '@auth/types/repositories/api-status-error-factory';
 
 const STATUS_ERROR_SPECS: Record<number, StatusErrorSpec> = {
   400: { kind: 'validation', prefix: 'Invalid', status: 400 },

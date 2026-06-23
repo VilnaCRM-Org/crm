@@ -1,7 +1,8 @@
 import { ThemeProvider, Button } from '@mui/material';
 import React from 'react';
 
-import type { ButtonLinkTarget, UiButtonProps } from './index.types';
+import type { ButtonLinkTarget, UiButtonProps } from '@/components/types/ui-button';
+
 import Theme from './theme';
 
 const resolveLinkTarget = (to?: ButtonLinkTarget): string | undefined => {

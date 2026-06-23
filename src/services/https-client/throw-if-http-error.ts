@@ -1,5 +1,10 @@
+import type {
+  JsonWithMessage,
+  BodyMeta,
+  ErrorMeta,
+} from '@/services/types/https-client/throw-if-http-error';
+
 import { HttpError } from './http-error';
-import type { JsonWithMessage, BodyMeta, ErrorMeta } from './throw-if-http-error.types';
 
 const BODY_PREVIEW_LIMIT = 200;
 const MESSAGE_LIMIT = 500;

@@ -1,10 +1,9 @@
 import type { RegisterUserDto } from '@auth/types/credentials';
-
 import type {
   RegistrationStoreActions,
   RegistrationHandlerDeps,
   RegistrationHandlers,
-} from './registration-handlers-factory.types';
+} from '@auth/types/utils/registration-handlers-factory';
 
 export default class RegistrationHandlersFactory {
   private readonly deps: RegistrationHandlerDeps;

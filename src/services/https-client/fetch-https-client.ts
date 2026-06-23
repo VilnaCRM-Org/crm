@@ -4,10 +4,9 @@ import TOKENS from '@/config/tokens';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
-import type { HttpsClient, RequestMethod } from '@/services/https-client/https-client.types';
 import ResponseMessages from '@/services/https-client/response-messages';
-
-import type { RequestOptions, RequestArgs } from './fetch-https-client.types';
+import type { RequestOptions, RequestArgs } from '@/services/types/https-client/fetch-https-client';
+import type { HttpsClient, RequestMethod } from '@/services/types/https-client/https-client';
 
 @injectable()
 export default class FetchHttpsClient implements HttpsClient {

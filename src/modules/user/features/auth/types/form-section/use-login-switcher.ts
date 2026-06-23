@@ -1,5 +1,6 @@
-import type { LoadLoginErrorKey } from './login-switch-actions.types';
-import type { AuthMode } from './types';
+import type { AuthMode } from '@auth/components/form-section/types';
+
+import type { LoadLoginErrorKey } from './login-switch-actions';
 
 export interface LoginSwitcher {
   mode: AuthMode;

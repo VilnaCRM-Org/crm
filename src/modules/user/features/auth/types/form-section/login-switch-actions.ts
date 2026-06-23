@@ -1,4 +1,4 @@
-import type { AuthMode } from './types';
+import type { AuthMode } from '@auth/components/form-section/types';
 
 export type LoadLoginErrorKeyValue = 'sign_in.errors.load_failed';
 export type LoadLoginErrorKey = LoadLoginErrorKeyValue | null;

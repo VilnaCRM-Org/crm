@@ -6,15 +6,15 @@ import UIForm from '@/components/ui-form';
 import InertBox from '@auth/components/form-section/inert-box';
 import formValidators from '@auth/components/form-section/validations';
 import useRegistrationForm from '@auth/hooks/use-registration-form';
-import type { RegisterUserDto } from '@auth/types/credentials';
-import registrationNotificationLoader from '@auth/utils/load-registration-notification';
-
-import RegistrationFormFields from './registration-form-fields';
 import type {
   RegistrationFormProps,
   RegistrationFormState,
   Validators,
-} from './registration-form.types';
+} from '@auth/types/auth-forms/registration-form';
+import type { RegisterUserDto } from '@auth/types/credentials';
+import registrationNotificationLoader from '@auth/utils/load-registration-notification';
+
+import RegistrationFormFields from './registration-form-fields';
 
 const RegistrationNotification = lazy(() => registrationNotificationLoader.load());
 

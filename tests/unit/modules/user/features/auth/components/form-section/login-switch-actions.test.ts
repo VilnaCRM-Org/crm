@@ -3,7 +3,7 @@ import { act } from 'react';
 import LoginSwitchController, {
   LOAD_LOGIN_ERROR_KEY,
 } from '@auth/components/form-section/login-switch-actions';
-import type { SwitchDeps } from '@auth/components/form-section/login-switch-actions.types';
+import type { SwitchDeps } from '@auth/types/form-section/login-switch-actions';
 import loadLoginForm from '@auth/utils/load-login-form';
 
 const switchToRegister = (deps: SwitchDeps): void =>

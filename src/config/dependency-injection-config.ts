@@ -14,7 +14,7 @@ import HttpErrorResponseParser from '@/services/https-client/http-error-response
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import HttpClientFactory from '@/services/https-client/https-client-factory';
-import type { HttpsClient } from '@/services/https-client/https-client.types';
+import type { HttpsClient } from '@/services/types/https-client/https-client';
 import AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ErrorParser from '@/utils/error/error-parser';
 import GraphQLUrl from '@/utils/get-graphql-url';

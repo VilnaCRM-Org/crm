@@ -1,7 +1,8 @@
 import { Box } from '@mui/material';
 import React from 'react';
 
-import type { ContainerProps } from './index.types';
+import type { ContainerProps } from '@/components/types/ui-container';
+
 import styles from './styles';
 
 export default function UIContainer({ children }: ContainerProps): React.ReactElement {
