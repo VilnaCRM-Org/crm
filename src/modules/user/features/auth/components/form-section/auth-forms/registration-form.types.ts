@@ -1,5 +1,5 @@
 import type { RegistrationView } from '@auth/components/form-section/types';
-import type { createValidators } from '@auth/components/form-section/validations';
+import type formValidators from '@auth/components/form-section/validations';
 import type useRegistrationForm from '@auth/hooks/use-registration-form';
 
 export type RegistrationFormProps = {
@@ -7,4 +7,4 @@ export type RegistrationFormProps = {
 };
 
 export type RegistrationFormState = ReturnType<typeof useRegistrationForm>;
-export type Validators = ReturnType<typeof createValidators>;
+export type Validators = ReturnType<typeof formValidators.create>;

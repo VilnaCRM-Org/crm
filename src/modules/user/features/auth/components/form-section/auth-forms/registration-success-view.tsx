@@ -5,9 +5,30 @@ import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.
 import { ReactComponent as SettingsImage } from '@/assets/notification/settings.svg';
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
+import { paletteColors } from '@/styles/colors';
+import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import styles from './registration-notification.success-styles';
 import type { Props } from './registration-success-view.types';
+
+const headingFocusStyles = {
+  outline: 'none',
+  '&:focus-visible': {
+    outline: `2px solid ${paletteColors.primary.main}`,
+    outlineOffset: '2px',
+  },
+};
+
+function FocusableSuccessHeading({ title }: { title: string }): JSX.Element {
+  const focusOnMount = useFocusOnMount<HTMLDivElement>();
+  return (
+    <Box ref={focusOnMount} tabIndex={-1} sx={headingFocusStyles}>
+      <UITypography component="h4" sx={styles.successMessageTitle}>
+        {title}
+      </UITypography>
+    </Box>
+  );
+}
 
 function ConfettiTop({ label }: { label: string }): JSX.Element {
   return (
@@ -74,9 +95,7 @@ function MessageContainer({
 }): JSX.Element {
   return (
     <Box sx={styles.messageContainer}>
-      <UITypography component="h4" sx={styles.successMessageTitle}>
-        {title}
-      </UITypography>
+      <FocusableSuccessHeading title={title} />
       <UITypography component="span" sx={styles.successMessageDescription}>
         {description}
       </UITypography>
@@ -88,7 +107,7 @@ function MessageContainer({
 export default function RegistrationSuccessView({ isClosing, onBack }: Props): JSX.Element {
   const { t } = useTranslation();
   return (
-    <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
+    <Box role="alert" sx={styles.notificationSection}>
       <Box sx={styles.contentBox} aria-label={t('notifications.success.title')}>
         <ConfettiTop label={t('notifications.success.images.confetti')} />
         <GearsImage label={t('notifications.success.images.gears')} />

@@ -1,5 +1,5 @@
 import '../setup';
-import buildApiUrl from '@/utils/url-builder';
+import urlBuilder from '@/utils/url-builder';
 
 describe('urlBuilder', () => {
   const originalEnv = process.env.REACT_APP_MOCKOON_URL;
@@ -16,7 +16,7 @@ describe('urlBuilder', () => {
     it('should combine base URL and endpoint', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api';
 
-      const result = buildApiUrl('/users');
+      const result = urlBuilder.build('/users');
 
       expect(result).toBe('http://localhost:8080/api/users');
     });
@@ -24,7 +24,7 @@ describe('urlBuilder', () => {
     it('should handle base URL with trailing slash', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api/';
 
-      const result = buildApiUrl('/users');
+      const result = urlBuilder.build('/users');
 
       expect(result).toBe('http://localhost:8080/api/users');
     });
@@ -32,7 +32,7 @@ describe('urlBuilder', () => {
     it('should handle base URL with multiple trailing slashes', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api///';
 
-      const result = buildApiUrl('/users');
+      const result = urlBuilder.build('/users');
 
       expect(result).toBe('http://localhost:8080/api/users');
     });
@@ -40,7 +40,7 @@ describe('urlBuilder', () => {
     it('should handle endpoint without leading slash', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api';
 
-      const result = buildApiUrl('users');
+      const result = urlBuilder.build('users');
 
       expect(result).toBe('http://localhost:8080/api/users');
     });
@@ -48,7 +48,7 @@ describe('urlBuilder', () => {
     it('should handle endpoint with multiple leading slashes', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api';
 
-      const result = buildApiUrl('///users');
+      const result = urlBuilder.build('///users');
 
       expect(result).toBe('http://localhost:8080/api/users');
     });
@@ -56,7 +56,7 @@ describe('urlBuilder', () => {
     it('should handle both base URL and endpoint with slashes', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api/';
 
-      const result = buildApiUrl('/users');
+      const result = urlBuilder.build('/users');
 
       expect(result).toBe('http://localhost:8080/api/users');
     });
@@ -64,7 +64,7 @@ describe('urlBuilder', () => {
     it('should handle base URL with whitespace', () => {
       process.env.REACT_APP_MOCKOON_URL = '  http://localhost:8080/api  ';
 
-      const result = buildApiUrl('/users');
+      const result = urlBuilder.build('/users');
 
       expect(result).toBe('http://localhost:8080/api/users');
     });
@@ -72,7 +72,7 @@ describe('urlBuilder', () => {
     it('should handle nested endpoints', () => {
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api';
 
-      const result = buildApiUrl('/users/123/profile');
+      const result = urlBuilder.build('/users/123/profile');
 
       expect(result).toBe('http://localhost:8080/api/users/123/profile');
     });
@@ -80,13 +80,13 @@ describe('urlBuilder', () => {
 
   it('should preserve query string and not double-encode', () => {
     process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api/';
-    const result = buildApiUrl('/users?active=true&role=admin');
+    const result = urlBuilder.build('/users?active=true&role=admin');
     expect(result).toBe('http://localhost:8080/api/users?active=true&role=admin');
   });
 
   it('should preserve URL fragment', () => {
     process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080/api';
-    const result = buildApiUrl('/users#section');
+    const result = urlBuilder.build('/users#section');
     expect(result).toBe('http://localhost:8080/api/users#section');
   });
 
@@ -94,7 +94,7 @@ describe('urlBuilder', () => {
     it('should return endpoint with leading slash when base URL is empty', () => {
       process.env.REACT_APP_MOCKOON_URL = '';
 
-      const result = buildApiUrl('/users');
+      const result = urlBuilder.build('/users');
 
       expect(result).toBe('/users');
     });
@@ -102,7 +102,7 @@ describe('urlBuilder', () => {
     it('should return endpoint with leading slash when base URL is undefined', () => {
       delete process.env.REACT_APP_MOCKOON_URL;
 
-      const result = buildApiUrl('/users');
+      const result = urlBuilder.build('/users');
 
       expect(result).toBe('/users');
     });
@@ -110,7 +110,7 @@ describe('urlBuilder', () => {
     it('should add leading slash when base URL is empty and endpoint has no slash', () => {
       process.env.REACT_APP_MOCKOON_URL = '';
 
-      const result = buildApiUrl('users');
+      const result = urlBuilder.build('users');
 
       expect(result).toBe('/users');
     });
@@ -118,7 +118,7 @@ describe('urlBuilder', () => {
     it('should handle whitespace-only base URL', () => {
       process.env.REACT_APP_MOCKOON_URL = '   ';
 
-      const result = buildApiUrl('/users');
+      const result = urlBuilder.build('/users');
 
       expect(result).toBe('/users');
     });

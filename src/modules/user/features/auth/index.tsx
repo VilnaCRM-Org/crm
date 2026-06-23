@@ -1,3 +1,4 @@
+import { Box } from '@mui/material';
 import { lazy, Suspense } from 'react';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
@@ -11,13 +12,13 @@ export default function Authentication(): JSX.Element {
   return (
     <>
       <UIBackToMain />
-      <main>
+      <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <AuthErrorBoundary>
           <Suspense fallback={<AuthSkeleton />}>
             <FormSection />
           </Suspense>
         </AuthErrorBoundary>
-      </main>
+      </Box>
 
       <UIFooter />
     </>

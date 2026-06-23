@@ -23,20 +23,20 @@ describe('getGraphQLUrl Integration', () => {
     delete process.env.REACT_APP_GRAPHQL_URL;
     process.env.NODE_ENV = 'test';
 
-    expect(GraphQLUrl.resolve()).toBe('http://localhost:4000/graphql');
+    expect(new GraphQLUrl().resolve()).toBe('http://localhost:4000/graphql');
   });
 
   it('returns the configured url trimmed when provided', () => {
     process.env.REACT_APP_GRAPHQL_URL = ' http://example.com/graphql ';
 
-    expect(GraphQLUrl.resolve()).toBe('http://example.com/graphql');
+    expect(new GraphQLUrl().resolve()).toBe('http://example.com/graphql');
   });
 
   it('throws in production when the url is missing', () => {
     delete process.env.REACT_APP_GRAPHQL_URL;
     process.env.NODE_ENV = 'production';
 
-    expect(() => GraphQLUrl.resolve()).toThrow(
+    expect(() => new GraphQLUrl().resolve()).toThrow(
       /REACT_APP_GRAPHQL_URL must be defined in production/
     );
   });
@@ -45,7 +45,7 @@ describe('getGraphQLUrl Integration', () => {
     process.env.REACT_APP_GRAPHQL_URL = '   ';
     process.env.NODE_ENV = 'production';
 
-    expect(() => GraphQLUrl.resolve()).toThrow(
+    expect(() => new GraphQLUrl().resolve()).toThrow(
       /REACT_APP_GRAPHQL_URL must be defined in production/
     );
   });

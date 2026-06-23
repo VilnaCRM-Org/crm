@@ -9,3 +9,5 @@ export type StatusErrorSpec =
   | { kind: 'api'; status: number; code: string; message: string }
   | { kind: 'conflict' }
   | { kind: 'service' };
+
+export type StatusErrorInput = { error: HttpErrorLike; context: string };

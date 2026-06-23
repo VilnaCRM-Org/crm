@@ -1,8 +1,8 @@
-import buildApiUrl from '@/utils/url-builder';
+import urlBuilder from '@/utils/url-builder';
 
 const API_ENDPOINTS = Object.freeze({
-  REGISTER: buildApiUrl('/api/users'),
-  LOGIN: buildApiUrl('/api/users'),
+  REGISTER: urlBuilder.build('/api/users'),
+  LOGIN: urlBuilder.build('/api/users'),
 } as const);
 
 export default API_ENDPOINTS;

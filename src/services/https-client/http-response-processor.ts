@@ -19,7 +19,7 @@ export default class HttpResponseProcessor {
   }
 
   public async process<T>(response: Response): Promise<T | undefined> {
-    await throwIfHttpError(response, this.httpErrorResponseParser);
+    await this.httpErrorResponseParser.assertOk(response);
     if (NO_BODY_STATUSES.has(response.status)) {
       return undefined;
     }
@@ -54,11 +54,4 @@ export default class HttpResponseProcessor {
 
     throw new HttpError({ status, message: ResponseMessages.RESPONSE_NOT_JSON, cause: response });
   }
-}
-
-export async function throwIfHttpError(
-  response: Response,
-  httpErrorResponseParser: HttpErrorResponseParser = new HttpErrorResponseParser()
-): Promise<void> {
-  await httpErrorResponseParser.assertOk(response);
 }

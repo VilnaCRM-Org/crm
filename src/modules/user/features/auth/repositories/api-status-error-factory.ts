@@ -1,3 +1,5 @@
+import { injectable } from 'tsyringe';
+
 import {
   ApiError,
   ApiErrorCodes,
@@ -6,7 +8,11 @@ import {
   ValidationError,
 } from '@/modules/user/lib/api-errors';
 
-import type { HttpErrorLike, StatusErrorSpec } from './api-status-error-factory.types';
+import type {
+  HttpErrorLike,
+  StatusErrorInput,
+  StatusErrorSpec,
+} from './api-status-error-factory.types';
 
 const STATUS_ERROR_SPECS: Record<number, StatusErrorSpec> = {
   400: { kind: 'validation', prefix: 'Invalid', status: 400 },
@@ -38,71 +44,67 @@ const STATUS_ERROR_SPECS: Record<number, StatusErrorSpec> = {
   504: { kind: 'service' },
 };
 
+@injectable()
 export default class ApiStatusErrorFactory {
-  private readonly context: string;
-
-  private readonly error: HttpErrorLike;
-
-  private readonly spec: StatusErrorSpec;
-
-  private constructor(spec: StatusErrorSpec, error: HttpErrorLike, context: string) {
-    this.spec = spec;
-    this.error = error;
-    this.context = context;
-  }
-
-  public static fromHttpError(error: HttpErrorLike, context: string): ApiError {
+  public fromHttpError(error: HttpErrorLike, context: string): ApiError {
     const spec = STATUS_ERROR_SPECS[error.status];
-    if (!spec)
+    if (!spec) {
       return new ApiError({
         message: `${context} failed`,
         code: ApiErrorCodes.UNKNOWN,
         status: error.status,
         cause: error,
       });
-    return new ApiStatusErrorFactory(spec, error, context).toApiError();
+    }
+    return this.toApiError(spec, { error, context });
   }
 
-  private toApiError(): ApiError {
-    const { spec } = this;
-    if (spec.kind === 'validation') return this.toValidationError(spec);
-    if (spec.kind === 'api') return this.toKnownApiError(spec);
-    return this.toSimpleApiError(spec.kind);
+  private toApiError(spec: StatusErrorSpec, input: StatusErrorInput): ApiError {
+    if (spec.kind === 'validation') return this.toValidationError(spec, input);
+    if (spec.kind === 'api') return this.toKnownApiError(spec, input);
+    return this.toSimpleApiError(spec.kind, input);
   }
 
-  private toSimpleApiError(kind: 'auth' | 'conflict' | 'service'): ApiError {
+  private toSimpleApiError(
+    kind: 'auth' | 'conflict' | 'service',
+    input: StatusErrorInput
+  ): ApiError {
     if (kind === 'auth') return new AuthenticationError();
     if (kind === 'conflict')
-      return new ConflictError(`${this.context} conflict. Resource already exists.`);
-    return this.toServiceUnavailableError();
+      return new ConflictError(`${input.context} conflict. Resource already exists.`);
+    return this.toServiceUnavailableError(input.error);
   }
 
-  private toKnownApiError(spec: Extract<StatusErrorSpec, { kind: 'api' }>): ApiError {
-    const message = spec.status === 404 ? `${this.context} ${spec.message}` : spec.message;
+  private toKnownApiError(
+    spec: Extract<StatusErrorSpec, { kind: 'api' }>,
+    input: StatusErrorInput
+  ): ApiError {
+    const message = spec.status === 404 ? `${input.context} ${spec.message}` : spec.message;
     return new ApiError({
       message,
       code: spec.code,
       status: spec.status,
-      cause: this.error,
+      cause: input.error,
     });
   }
 
-  private toServiceUnavailableError(): ApiError {
+  private toServiceUnavailableError(error: HttpErrorLike): ApiError {
     return new ApiError({
       message: 'Service unavailable. Please try again later.',
       code: ApiErrorCodes.SERVICE_UNAVAILABLE,
-      status: this.error.status,
-      cause: this.error,
+      status: error.status,
+      cause: error,
     });
   }
 
   private toValidationError(
-    spec: Extract<StatusErrorSpec, { kind: 'validation' }>
+    spec: Extract<StatusErrorSpec, { kind: 'validation' }>,
+    input: StatusErrorInput
   ): ValidationError {
     return new ValidationError({
-      message: `${spec.prefix} ${this.context.toLowerCase()} data`,
+      message: `${spec.prefix} ${input.context.toLowerCase()} data`,
       status: spec.status,
-      cause: this.error,
+      cause: input.error,
     });
   }
 }

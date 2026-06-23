@@ -24,28 +24,6 @@ export default class RegistrationAPI extends BaseAPI {
     super(apiErrorFactory);
   }
 
-  private static toCreateUserInput(credentials: RegisterUserDto): CreateUserInput {
-    return {
-      email: credentials.email,
-      initials: credentials.fullName.trim(),
-      password: credentials.password,
-      clientMutationId: uuidv4(),
-    };
-  }
-
-  private static httpStatusOf(error: unknown): number | undefined {
-    const networkError = (error as { networkError?: { statusCode?: number } }).networkError;
-    const status = networkError?.statusCode;
-    return typeof status === 'number' ? status : undefined;
-  }
-
-  private static normalizeError(error: unknown): unknown {
-    const status = RegistrationAPI.httpStatusOf(error);
-    return typeof status === 'number'
-      ? new HttpError({ status, message: 'Registration request failed', cause: error })
-      : error;
-  }
-
   public async register(
     credentials: RegisterUserDto,
     options?: RequestOptions
@@ -56,7 +34,7 @@ export default class RegistrationAPI extends BaseAPI {
         { input: CreateUserInput }
       >({
         mutation: CREATE_USER,
-        variables: { input: RegistrationAPI.toCreateUserInput(credentials) },
+        variables: { input: this.toCreateUserInput(credentials) },
         context: { fetchOptions: { signal: options?.signal } },
       });
 
@@ -69,7 +47,29 @@ export default class RegistrationAPI extends BaseAPI {
         abortError.name = 'AbortError';
         throw abortError;
       }
-      throw this.handleApiError(RegistrationAPI.normalizeError(error), 'Registration');
+      throw this.handleApiError(this.normalizeError(error), 'Registration');
     }
+  }
+
+  private toCreateUserInput(credentials: RegisterUserDto): CreateUserInput {
+    return {
+      email: credentials.email,
+      initials: credentials.fullName.trim(),
+      password: credentials.password,
+      clientMutationId: uuidv4(),
+    };
+  }
+
+  private httpStatusOf(error: unknown): number | undefined {
+    const networkError = (error as { networkError?: { statusCode?: number } }).networkError;
+    const status = networkError?.statusCode;
+    return typeof status === 'number' ? status : undefined;
+  }
+
+  private normalizeError(error: unknown): unknown {
+    const status = this.httpStatusOf(error);
+    return typeof status === 'number'
+      ? new HttpError({ status, message: 'Registration request failed', cause: error })
+      : error;
   }
 }

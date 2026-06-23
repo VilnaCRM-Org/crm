@@ -1,3 +1,3 @@
-import type { createValidators } from '@auth/components/form-section/validations';
+import type formValidators from '@auth/components/form-section/validations';
 
-export type Validators = ReturnType<typeof createValidators>;
+export type Validators = ReturnType<typeof formValidators.create>;

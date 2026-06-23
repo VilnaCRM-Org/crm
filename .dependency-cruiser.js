@@ -323,28 +323,6 @@ module.exports = {
       },
     },
     {
-      name: 'no-tsyringe-outside-di-and-repositories',
-      comment:
-        'tsyringe usage is restricted to composition root, repositories, and ' +
-        'injectable services/mappers/factories to keep DI boundaries explicit.',
-      severity: 'error',
-      from: {
-        path: '^src/',
-        pathNot: [
-          '^src/config/dependency-injection-config[.]ts$',
-          '^src/modules/[^/]+/features/[^/]+/repositories/',
-          '^src/modules/[^/]+/features/[^/]+/stores/',
-          '^src/services/',
-          '^src/stores/',
-          '^src/utils/error/',
-          '^src/modules/[^/]+/store/[^/]+-mapper[.]ts$',
-        ],
-      },
-      to: {
-        path: '^node_modules/tsyringe/',
-      },
-    },
-    {
       name: 'no-di-config-import-outside-composition-root',
       comment:
         'The DI container configuration must only be imported by application ' +

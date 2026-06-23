@@ -1,10 +1,13 @@
 import { ReadableStream } from 'node:stream/web';
 
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
-import { HttpError, isHttpError } from '@/services/https-client/http-error';
+import { HttpError } from '@/services/https-client/http-error';
+import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+
+const httpErrorGuard = new HttpErrorGuard();
 
 const TEST_URL = 'http://localhost:8080/api/test';
 
@@ -347,8 +350,8 @@ describe('FetchHttpsClient Integration', () => {
       mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
 
       const error = await client.get(TEST_URL).catch((err) => err);
-      expect(isHttpError(error)).toBe(true);
-      if (isHttpError(error)) {
+      expect(httpErrorGuard.is(error)).toBe(true);
+      if (httpErrorGuard.is(error)) {
         expect(error.status).toBe(0);
         expect(error.message).toBe(ResponseMessages.NETWORK_ERROR);
       }
@@ -593,7 +596,7 @@ describe('HttpError class', () => {
   describe('isHttpError type guard', () => {
     it('should return true for HttpError instance', () => {
       const error = new HttpError({ status: 500, message: 'Error' });
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should return true for object with HttpError shape', () => {
@@ -602,24 +605,24 @@ describe('HttpError class', () => {
         status: 404,
         message: 'Not Found',
       };
-      expect(isHttpError(error)).toBe(true);
+      expect(httpErrorGuard.is(error)).toBe(true);
     });
 
     it('should return false for regular Error', () => {
       const error = new Error('Regular error');
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for null', () => {
-      expect(isHttpError(null)).toBe(false);
+      expect(httpErrorGuard.is(null)).toBe(false);
     });
 
     it('should return false for undefined', () => {
-      expect(isHttpError(undefined)).toBe(false);
+      expect(httpErrorGuard.is(undefined)).toBe(false);
     });
 
     it('should return false for string', () => {
-      expect(isHttpError('error')).toBe(false);
+      expect(httpErrorGuard.is('error')).toBe(false);
     });
 
     it('should return false for object without status', () => {
@@ -627,7 +630,7 @@ describe('HttpError class', () => {
         name: 'HttpError',
         message: 'Error',
       };
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
 
     it('should return false for object with wrong name', () => {
@@ -636,7 +639,7 @@ describe('HttpError class', () => {
         status: 500,
         message: 'Error',
       };
-      expect(isHttpError(error)).toBe(false);
+      expect(httpErrorGuard.is(error)).toBe(false);
     });
   });
 });

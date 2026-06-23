@@ -1,4 +1,4 @@
-import buildApiUrl from '@/utils/url-builder';
+import urlBuilder from '@/utils/url-builder';
 import { ReactComponent as Facebook } from '@auth/assets/social-links/facebook-color.svg';
 import { ReactComponent as GitHub } from '@auth/assets/social-links/github-color.svg';
 import { ReactComponent as Google } from '@auth/assets/social-links/google-color.svg';
@@ -13,23 +13,29 @@ const PROVIDERS = [
   { key: 'twitter', label: 'Twitter', SvgComponent: Twitter },
 ] as const;
 
-function signInWithProvider(service: (typeof PROVIDERS)[number]['key']): void {
-  if (typeof window === 'undefined') return;
-  // TODO: Implement actual OAuth authentication
-  //  example:
-  const url = buildApiUrl(`/auth/${encodeURIComponent(service)}`);
-  const win = window.open(url, '_blank', 'noopener,noreferrer');
+class OAuthProviders {
+  public list(): ReadonlyArray<OAuthProvider> {
+    return PROVIDERS.map((p) => ({
+      label: p.label,
+      SvgComponent: p.SvgComponent,
+      onClick: () => this.signInWithProvider(p.key),
+      ariaLabel: `Sign in with ${p.label}`,
+    }));
+  }
 
-  if (!win) {
-    window.location.href = url;
+  private signInWithProvider(service: (typeof PROVIDERS)[number]['key']): void {
+    if (typeof window === 'undefined') return;
+    // TODO: Implement actual OAuth authentication
+    //  example:
+    const url = urlBuilder.build(`/auth/${encodeURIComponent(service)}`);
+    const win = window.open(url, '_blank', 'noopener,noreferrer');
+
+    if (!win) {
+      window.location.href = url;
+    }
   }
 }
 
-const oauthProviders: ReadonlyArray<OAuthProvider> = PROVIDERS.map((p) => ({
-  label: p.label,
-  SvgComponent: p.SvgComponent,
-  onClick: () => signInWithProvider(p.key),
-  ariaLabel: `Sign in with ${p.label}`,
-}));
+const oauthProviders = new OAuthProviders().list();
 
 export default oauthProviders;

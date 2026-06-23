@@ -69,7 +69,7 @@ describe('switchToLogin', () => {
 
   it('loads login form and switches to login mode on success', async () => {
     const deps = makeDeps();
-    (loadLoginForm as jest.Mock).mockResolvedValue(undefined);
+    (loadLoginForm.load as jest.Mock).mockResolvedValue(undefined);
 
     switchToLogin(deps);
     await Promise.resolve();
@@ -83,7 +83,7 @@ describe('switchToLogin', () => {
 
   it('sets load error and stops loading when the form fails to load', async () => {
     const deps = makeDeps();
-    (loadLoginForm as jest.Mock).mockRejectedValue(new Error('chunk failed'));
+    (loadLoginForm.load as jest.Mock).mockRejectedValue(new Error('chunk failed'));
 
     switchToLogin(deps);
     await Promise.resolve();
@@ -99,7 +99,9 @@ describe('switchToLogin', () => {
     const firstLoad = new Promise<void>((r) => {
       resolveFirst = r;
     });
-    (loadLoginForm as jest.Mock).mockReturnValueOnce(firstLoad).mockResolvedValueOnce(undefined);
+    (loadLoginForm.load as jest.Mock)
+      .mockReturnValueOnce(firstLoad)
+      .mockResolvedValueOnce(undefined);
 
     const shared = {
       loginSwitchRequest: { current: 0 },
@@ -127,7 +129,7 @@ describe('switchToLogin', () => {
     const firstLoad = new Promise<void>((_, r) => {
       rejectFirst = r;
     });
-    (loadLoginForm as jest.Mock).mockReturnValueOnce(firstLoad);
+    (loadLoginForm.load as jest.Mock).mockReturnValueOnce(firstLoad);
 
     const shared = {
       loginSwitchRequest: { current: 0 },
@@ -155,7 +157,7 @@ describe('switchToLogin', () => {
     const firstLoad = new Promise<void>((r) => {
       resolveFirst = r;
     });
-    (loadLoginForm as jest.Mock).mockReturnValueOnce(firstLoad);
+    (loadLoginForm.load as jest.Mock).mockReturnValueOnce(firstLoad);
 
     const firstInstance = makeDeps();
     const secondInstance = makeDeps();

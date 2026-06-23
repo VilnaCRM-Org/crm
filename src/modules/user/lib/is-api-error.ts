@@ -1,12 +1,17 @@
 import type { APIError } from './is-api-error.types';
 
-const hasStringProp = (obj: Record<string, unknown>, key: string): boolean =>
-  key in obj && typeof obj[key] === 'string';
+class ApiErrorGuard {
+  public is(err: unknown): err is APIError {
+    if (typeof err !== 'object' || err === null) return false;
+    const record = err as Record<string, unknown>;
+    return this.hasStringProp(record, 'code') && this.hasStringProp(record, 'message');
+  }
 
-function isAPIError(err: unknown): err is APIError {
-  if (typeof err !== 'object' || err === null) return false;
-  const record = err as Record<string, unknown>;
-  return hasStringProp(record, 'code') && hasStringProp(record, 'message');
+  private hasStringProp(obj: Record<string, unknown>, key: string): boolean {
+    return key in obj && typeof obj[key] === 'string';
+  }
 }
 
-export default isAPIError;
+const apiErrorGuard = new ApiErrorGuard();
+
+export default apiErrorGuard;

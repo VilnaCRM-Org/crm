@@ -85,7 +85,7 @@ jest.mock('@/components/ui-typography', () => ({
 
 jest.mock('@/modules/user/features/auth/utils/load-login-form', () => ({
   __esModule: true,
-  default: loadLoginFormMock,
+  default: { load: loadLoginFormMock },
 }));
 
 jest.mock(

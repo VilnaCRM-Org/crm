@@ -10,7 +10,7 @@ class TestAPI extends BaseAPI {
 
 describe('BaseAPI', () => {
   it('returns ApiError instances unchanged', () => {
-    const api = new TestAPI();
+    const api = new TestAPI({ convert: jest.fn() } as unknown as ApiErrorFactory);
     const existing = new ApiError({ message: 'Existing', code: 'EXISTING' });
 
     expect(api.exposeHandleApiError(existing, 'Login')).toBe(existing);

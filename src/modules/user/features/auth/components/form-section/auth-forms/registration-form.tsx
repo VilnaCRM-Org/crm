@@ -4,11 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';
 import InertBox from '@auth/components/form-section/inert-box';
-import { createValidators } from '@auth/components/form-section/validations';
+import formValidators from '@auth/components/form-section/validations';
 import useRegistrationForm from '@auth/hooks/use-registration-form';
 import type { RegisterUserDto } from '@auth/types/credentials';
-import getSubmitLabelKey from '@auth/utils/get-submit-label-key';
-import loadRegistrationNotification from '@auth/utils/load-registration-notification';
+import registrationNotificationLoader from '@auth/utils/load-registration-notification';
 
 import RegistrationFormFields from './registration-form-fields';
 import type {
@@ -17,7 +16,7 @@ import type {
   Validators,
 } from './registration-form.types';
 
-const RegistrationNotification = lazy(loadRegistrationNotification);
+const RegistrationNotification = lazy(() => registrationNotificationLoader.load());
 
 const DEFAULT_VALUES: RegisterUserDto = { fullName: '', email: '', password: '' };
 
@@ -36,9 +35,11 @@ function RegistrationFormPanel({
         onSubmit={form.handleRegister}
         defaultValues={DEFAULT_VALUES}
         error={null}
-        isSubmitting={form.isSubmitting}
+        isSubmitting={form.showSubmitLoader}
+        submittingAnnouncement={form.isSubmitting}
         isSubmitDisabled={form.view !== 'form'}
-        submitLabel={t(getSubmitLabelKey('sign_up', form.isSubmitting))}
+        submitLabel={t('sign_up.form.submit_button')}
+        submittingLabel={t('sign_up.form.submitting')}
         title={t('sign_up.title')}
         subtitle={t('sign_up.subtitle')}
       >
@@ -71,7 +72,7 @@ function RegistrationNotificationPanel({
 export default function RegistrationForm({ onViewChange }: RegistrationFormProps): JSX.Element {
   const { t } = useTranslation();
   const form = useRegistrationForm(onViewChange);
-  const validators = createValidators(t);
+  const validators = formValidators.create(t);
 
   return (
     <>

@@ -11,7 +11,27 @@ export default class ReactiveVarState<T> {
     this.value = initialValue;
   }
 
-  private static register<L>(listeners: Set<L>, listener: L): () => void {
+  public write(value: T): T {
+    if (this.value === value) return value;
+    // Snapshot both listener sets and advance the value before notifying, so a
+    // re-entrant write() from a listener sees the new value and its own stable set.
+    const onceListeners = [...this.once];
+    this.once.clear();
+    this.value = value;
+    onceListeners.forEach((listener) => this.safeNotify(listener, value));
+    [...this.always].forEach((listener) => this.safeNotify(listener, undefined));
+    return value;
+  }
+
+  public onNext(listener: ReactiveVarListener<T>): () => void {
+    return this.register(this.once, listener);
+  }
+
+  public onEvery(listener: () => void): () => void {
+    return this.register(this.always, listener);
+  }
+
+  private register<L>(listeners: Set<L>, listener: L): () => void {
     listeners.add(listener);
     return (): void => {
       listeners.delete(listener);
@@ -20,31 +40,11 @@ export default class ReactiveVarState<T> {
 
   // Isolate each listener so one throwing subscriber cannot stop the rest (esp. the
   // persistent `always` listeners that follow the one-shot ones).
-  private static safeNotify<A>(listener: (arg: A) => void, arg: A): void {
+  private safeNotify<A>(listener: (arg: A) => void, arg: A): void {
     try {
       listener(arg);
     } catch (error) {
       console.error('ReactiveVar listener threw during notification', error);
     }
-  }
-
-  public write(value: T): T {
-    if (this.value === value) return value;
-    // Snapshot both listener sets and advance the value before notifying, so a
-    // re-entrant write() from a listener sees the new value and its own stable set.
-    const onceListeners = [...this.once];
-    this.once.clear();
-    this.value = value;
-    onceListeners.forEach((listener) => ReactiveVarState.safeNotify(listener, value));
-    [...this.always].forEach((listener) => ReactiveVarState.safeNotify(listener, undefined));
-    return value;
-  }
-
-  public onNext(listener: ReactiveVarListener<T>): () => void {
-    return ReactiveVarState.register(this.once, listener);
-  }
-
-  public onEvery(listener: () => void): () => void {
-    return ReactiveVarState.register(this.always, listener);
   }
 }

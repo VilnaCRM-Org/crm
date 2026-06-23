@@ -21,6 +21,8 @@ export interface UIFormProps<T extends FieldValues> {
   showSubtitle?: boolean;
   resetOnSuccess?: boolean;
   isSubmitDisabled?: boolean;
+  submittingLabel: string;
+  submittingAnnouncement?: boolean;
 }
 
 export type SubmitHandlerOptions<T extends FieldValues> = {
@@ -37,6 +39,8 @@ export type SubmitControlsProps = {
 };
 
 export type FormBodyProps<T extends FieldValues> = {
+  submittingLabel: string;
+  announceSubmitting: boolean;
   methods: UseFormReturn<T>;
   handleSubmit: SubmitHandler<T>;
   children: ReactNode;

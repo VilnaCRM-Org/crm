@@ -1,7 +1,7 @@
 import { TFunction } from 'i18next';
 
-import { createValidators } from '@auth/components/form-section/validations';
-import { fullNameValidators } from '@auth/components/form-section/validations/name';
+import formValidators from '@auth/components/form-section/validations';
+import fullNameValidator from '@auth/components/form-section/validations/name';
 
 import emptyUser from './constants';
 
@@ -13,18 +13,18 @@ describe('name validation', () => {
   describe('validators', () => {
     describe('isEmpty', () => {
       it('should return true for empty string', () => {
-        expect(fullNameValidators.isEmpty('')).toBe(true);
+        expect(fullNameValidator.isEmpty('')).toBe(true);
       });
 
       it('should return true for whitespace only', () => {
-        expect(fullNameValidators.isEmpty('   ')).toBe(true);
-        expect(fullNameValidators.isEmpty('\t')).toBe(true);
-        expect(fullNameValidators.isEmpty('\n')).toBe(true);
+        expect(fullNameValidator.isEmpty('   ')).toBe(true);
+        expect(fullNameValidator.isEmpty('\t')).toBe(true);
+        expect(fullNameValidator.isEmpty('\n')).toBe(true);
       });
 
       it('should return false for non-empty string', () => {
-        expect(fullNameValidators.isEmpty('John Doe')).toBe(false);
-        expect(fullNameValidators.isEmpty(' John Doe ')).toBe(false);
+        expect(fullNameValidator.isEmpty('John Doe')).toBe(false);
+        expect(fullNameValidator.isEmpty(' John Doe ')).toBe(false);
       });
     });
 
@@ -50,7 +50,7 @@ describe('name validation', () => {
           'Jean Claude Van Damme',
           'John-Paul Mary-Jane',
         ])('should return true for valid name: %s', (name) => {
-          expect(fullNameValidators.isLettersOnly(name)).toBe(true);
+          expect(fullNameValidator.isLettersOnly(name)).toBe(true);
         });
       });
 
@@ -79,37 +79,37 @@ describe('name validation', () => {
           'John;Doe',
           'John:Doe',
         ])('should return false for invalid name: %s', (name) => {
-          expect(fullNameValidators.isLettersOnly(name)).toBe(false);
+          expect(fullNameValidator.isLettersOnly(name)).toBe(false);
         });
       });
 
       describe('edge cases', () => {
         it('should reject consecutive spaces (regex does not allow)', () => {
-          expect(fullNameValidators.isLettersOnly('John  Doe')).toBe(false);
+          expect(fullNameValidator.isLettersOnly('John  Doe')).toBe(false);
         });
 
         it('should reject consecutive hyphens (regex does not allow)', () => {
-          expect(fullNameValidators.isLettersOnly('John--Doe')).toBe(false);
+          expect(fullNameValidator.isLettersOnly('John--Doe')).toBe(false);
         });
 
         it('should reject consecutive apostrophes (regex does not allow)', () => {
-          expect(fullNameValidators.isLettersOnly("John''Doe")).toBe(false);
+          expect(fullNameValidator.isLettersOnly("John''Doe")).toBe(false);
         });
 
         it('should handle mixed separators', () => {
-          expect(fullNameValidators.isLettersOnly("John-Paul O'Brien Smith")).toBe(true);
+          expect(fullNameValidator.isLettersOnly("John-Paul O'Brien Smith")).toBe(true);
         });
 
         it('should reject starting with separator', () => {
-          expect(fullNameValidators.isLettersOnly(' John')).toBe(false);
-          expect(fullNameValidators.isLettersOnly('-John')).toBe(false);
-          expect(fullNameValidators.isLettersOnly("'John")).toBe(false);
+          expect(fullNameValidator.isLettersOnly(' John')).toBe(false);
+          expect(fullNameValidator.isLettersOnly('-John')).toBe(false);
+          expect(fullNameValidator.isLettersOnly("'John")).toBe(false);
         });
 
         it('should reject ending with separator', () => {
-          expect(fullNameValidators.isLettersOnly('John ')).toBe(false);
-          expect(fullNameValidators.isLettersOnly('John-')).toBe(false);
-          expect(fullNameValidators.isLettersOnly("John'")).toBe(false);
+          expect(fullNameValidator.isLettersOnly('John ')).toBe(false);
+          expect(fullNameValidator.isLettersOnly('John-')).toBe(false);
+          expect(fullNameValidator.isLettersOnly("John'")).toBe(false);
         });
       });
     });
@@ -126,7 +126,7 @@ describe('name validation', () => {
           'Олена Шевченко-Петренко',
           'Anne Marie Claire',
         ])('should return true for valid full name: %s', (name) => {
-          expect(fullNameValidators.isFormatted(name)).toBe(true);
+          expect(fullNameValidator.isFormatted(name)).toBe(true);
         });
       });
 
@@ -134,70 +134,70 @@ describe('name validation', () => {
         it.each(['John', 'Mary', 'Іван', 'Марія'])(
           'should return false for single name: %s',
           (name) => {
-            expect(fullNameValidators.isFormatted(name)).toBe(false);
+            expect(fullNameValidator.isFormatted(name)).toBe(false);
           }
         );
       });
 
       describe('invalid full names - too short', () => {
         it('should return false for name with single character', () => {
-          expect(fullNameValidators.isFormatted('J')).toBe(false);
+          expect(fullNameValidator.isFormatted('J')).toBe(false);
         });
 
         it('should return true for name with 2 characters total including space', () => {
           // Note: 'A B' is 3 characters total (A, space, B) which is >= 2
-          expect(fullNameValidators.isFormatted('A B')).toBe(true);
+          expect(fullNameValidator.isFormatted('A B')).toBe(true);
         });
       });
 
       describe('invalid full names - too long', () => {
         it('should return false for name longer than 255 characters', () => {
           const longName = 'A'.repeat(128) + ' ' + 'B'.repeat(128);
-          expect(fullNameValidators.isFormatted(longName)).toBe(false);
+          expect(fullNameValidator.isFormatted(longName)).toBe(false);
         });
 
         it('should return true for name exactly 255 characters', () => {
           const exactName = 'A'.repeat(127) + ' ' + 'B'.repeat(127);
           expect(exactName.length).toBe(255);
-          expect(fullNameValidators.isFormatted(exactName)).toBe(true);
+          expect(fullNameValidator.isFormatted(exactName)).toBe(true);
         });
 
         it('should return true for name less than 255 characters', () => {
           const validName = 'A'.repeat(100) + ' ' + 'B'.repeat(100);
           expect(validName.length).toBeLessThan(255);
-          expect(fullNameValidators.isFormatted(validName)).toBe(true);
+          expect(fullNameValidator.isFormatted(validName)).toBe(true);
         });
       });
 
       describe('edge cases', () => {
         it('should handle two-character names correctly', () => {
-          expect(fullNameValidators.isFormatted('Jo Do')).toBe(true);
+          expect(fullNameValidator.isFormatted('Jo Do')).toBe(true);
         });
 
         it('should handle names with hyphens', () => {
-          expect(fullNameValidators.isFormatted('Mary-Jane Doe')).toBe(true);
-          expect(fullNameValidators.isFormatted('John Smith-Jones')).toBe(true);
+          expect(fullNameValidator.isFormatted('Mary-Jane Doe')).toBe(true);
+          expect(fullNameValidator.isFormatted('John Smith-Jones')).toBe(true);
         });
 
         it('should handle names with apostrophes', () => {
-          expect(fullNameValidators.isFormatted("Patrick O'Brien")).toBe(true);
-          expect(fullNameValidators.isFormatted("Mary D'Angelo")).toBe(true);
+          expect(fullNameValidator.isFormatted("Patrick O'Brien")).toBe(true);
+          expect(fullNameValidator.isFormatted("Mary D'Angelo")).toBe(true);
         });
 
         it('should handle three-part names', () => {
-          expect(fullNameValidators.isFormatted('John Paul Smith')).toBe(true);
+          expect(fullNameValidator.isFormatted('John Paul Smith')).toBe(true);
         });
 
         it('should handle four-part names', () => {
-          expect(fullNameValidators.isFormatted('Jean Claude Van Damme')).toBe(true);
+          expect(fullNameValidator.isFormatted('Jean Claude Van Damme')).toBe(true);
         });
 
         it('should reject starting with separator', () => {
-          expect(fullNameValidators.isFormatted(' John Doe')).toBe(false);
+          expect(fullNameValidator.isFormatted(' John Doe')).toBe(false);
         });
 
         it('should reject ending with separator', () => {
-          expect(fullNameValidators.isFormatted('John Doe ')).toBe(false);
+          expect(fullNameValidator.isFormatted('John Doe ')).toBe(false);
         });
       });
     });
@@ -205,7 +205,7 @@ describe('name validation', () => {
 
   describe('validators.fullName', () => {
     const tMock = ((key: string) => key) as unknown as TFunction;
-    const validators = createValidators(tMock);
+    const validators = formValidators.create(tMock);
 
     describe('valid full names', () => {
       it('should return true for valid full name', () => {

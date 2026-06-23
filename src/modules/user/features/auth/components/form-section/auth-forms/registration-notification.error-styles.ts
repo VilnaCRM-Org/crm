@@ -4,8 +4,8 @@ import { customColors, paletteColors } from '@/styles/colors';
 import {
   centeredColumnFlex,
   compactViewport,
-  messageButtonText,
   notificationSection,
+  notificationStyles,
 } from './registration-notification.shared-styles';
 
 const mediumHeightDesktopViewport = [
@@ -198,7 +198,7 @@ const messageDescription = {
 
 export default {
   notificationSection,
-  messageButtonText,
+  messageButtonText: notificationStyles.messageButtonText,
   contentBoxError,
   errorImage,
   imageWrapperError,

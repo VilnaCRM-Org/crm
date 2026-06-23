@@ -6,6 +6,7 @@ export type UseRegistrationFormResult = {
   errorText: string;
   formKey: number;
   isSubmitting: boolean;
+  showSubmitLoader: boolean;
   handleRegister: (data: RegisterUserDto) => Promise<void>;
   handleSuccessShown: () => void;
   handleBackToForm: () => void;

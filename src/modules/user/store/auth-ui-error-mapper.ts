@@ -1,14 +1,16 @@
-import { ErrorHandler, type UiError } from '@/services/error';
-import ErrorParser from '@/utils/error/error-parser';
+import { inject, injectable } from 'tsyringe';
 
+import TOKENS from '@/config/tokens';
+import { type UiError } from '@/services/error';
+import AuthErrorHandler from '@auth/utils/auth-error-handler';
+
+@injectable()
 export default class AuthUiErrorMapper {
-  private readonly errorParser: ErrorParser;
-
-  constructor(errorParser: ErrorParser = new ErrorParser()) {
-    this.errorParser = errorParser;
-  }
+  constructor(
+    @inject(TOKENS.AuthErrorHandler) private readonly authErrorHandler: AuthErrorHandler
+  ) {}
 
   public map(error: unknown): UiError {
-    return ErrorHandler.handleAuthError(this.errorParser.parseHttpError(error));
+    return this.authErrorHandler.handle(error);
   }
 }

@@ -6,11 +6,6 @@ import type {
   RegistrationHandlers,
 } from './registration-handlers-factory.types';
 
-const normalize = (data: RegisterUserDto): RegisterUserDto => ({
-  ...data,
-  fullName: data.fullName.trim(),
-});
-
 export default class RegistrationHandlersFactory {
   private readonly deps: RegistrationHandlerDeps;
   private readonly actions: RegistrationStoreActions;
@@ -29,8 +24,15 @@ export default class RegistrationHandlersFactory {
     };
   }
 
+  private normalize(data: RegisterUserDto): RegisterUserDto {
+    return {
+      ...data,
+      fullName: data.fullName.trim(),
+    };
+  }
+
   private async handleRegister(data: RegisterUserDto): Promise<void> {
-    const normalized = normalize(data);
+    const normalized = this.normalize(data);
     this.deps.lastSubmittedDataRef.current = normalized;
     await this.actions.registerUser(normalized);
   }

@@ -1,6 +1,6 @@
 import '../setup';
 import { HttpError } from '@/services/https-client/http-error';
-import throwIfHttpError from '@/services/https-client/throw-if-http-error';
+import httpErrorThrower from '@/services/https-client/throw-if-http-error';
 
 describe('throwIfHttpError Coverage Tests', () => {
   it('should handle errors during body extraction (catch block coverage)', async () => {
@@ -20,7 +20,7 @@ describe('throwIfHttpError Coverage Tests', () => {
       }),
     } as unknown as Response;
 
-    await expect(throwIfHttpError(mockResponse)).rejects.toThrow(HttpError);
+    await expect(httpErrorThrower.throwIfError(mockResponse)).rejects.toThrow(HttpError);
   });
 
   it('should handle plain text error responses (text/plain branch)', async () => {
@@ -41,7 +41,7 @@ describe('throwIfHttpError Coverage Tests', () => {
     } as unknown as Response;
 
     try {
-      await throwIfHttpError(mockResponse);
+      await httpErrorThrower.throwIfError(mockResponse);
       fail('Should have thrown HttpError');
     } catch (error) {
       expect(error).toBeInstanceOf(HttpError);
@@ -67,7 +67,7 @@ describe('throwIfHttpError Coverage Tests', () => {
       }),
     } as unknown as Response;
 
-    await expect(throwIfHttpError(mockResponse)).rejects.toThrow(HttpError);
+    await expect(httpErrorThrower.throwIfError(mockResponse)).rejects.toThrow(HttpError);
   });
 
   it('should attach a bounded body preview and metadata to HttpError cause', async () => {
@@ -90,7 +90,7 @@ describe('throwIfHttpError Coverage Tests', () => {
       }),
     } as unknown as Response;
 
-    await expect(throwIfHttpError(mockResponse)).rejects.toMatchObject({
+    await expect(httpErrorThrower.throwIfError(mockResponse)).rejects.toMatchObject({
       status: 422,
       message: jsonBody.message,
       cause: {
@@ -100,7 +100,7 @@ describe('throwIfHttpError Coverage Tests', () => {
         bodyLength: serializedBody.length,
       },
     });
-    await expect(throwIfHttpError(mockResponse)).rejects.toMatchObject({
+    await expect(httpErrorThrower.throwIfError(mockResponse)).rejects.toMatchObject({
       cause: expect.not.objectContaining({ body: expect.anything() }),
     });
   });
@@ -123,7 +123,7 @@ describe('throwIfHttpError Coverage Tests', () => {
 
     let caught: unknown;
     try {
-      await throwIfHttpError(mockResponse);
+      await httpErrorThrower.throwIfError(mockResponse);
     } catch (err) {
       caught = err;
     }
@@ -146,7 +146,7 @@ describe('throwIfHttpError Coverage Tests', () => {
       }),
     } as unknown as Response;
 
-    await expect(throwIfHttpError(mockResponse)).rejects.toMatchObject({
+    await expect(httpErrorThrower.throwIfError(mockResponse)).rejects.toMatchObject({
       status: 502,
       cause: {
         contentType: undefined,
@@ -169,7 +169,7 @@ describe('throwIfHttpError Coverage Tests', () => {
 
     let caught: unknown;
     try {
-      await throwIfHttpError(mockResponse);
+      await httpErrorThrower.throwIfError(mockResponse);
     } catch (err) {
       caught = err;
     }
@@ -194,7 +194,7 @@ describe('throwIfHttpError Coverage Tests', () => {
 
     let caught: unknown;
     try {
-      await throwIfHttpError(mockResponse);
+      await httpErrorThrower.throwIfError(mockResponse);
     } catch (err) {
       caught = err;
     }
@@ -212,7 +212,7 @@ describe('throwIfHttpError Coverage Tests', () => {
       clone: (): Response => mockResponse,
     } as unknown as Response;
 
-    await expect(throwIfHttpError(mockResponse)).resolves.toBeUndefined();
+    await expect(httpErrorThrower.throwIfError(mockResponse)).resolves.toBeUndefined();
   });
 
   it('produces an HttpError with no message when JSON body has no message field', async () => {
@@ -225,7 +225,7 @@ describe('throwIfHttpError Coverage Tests', () => {
       clone: () => ({ json: async (): Promise<unknown> => ({ errors: ['x'] }) }),
     } as unknown as Response;
 
-    await expect(throwIfHttpError(mockResponse)).rejects.toMatchObject({
+    await expect(httpErrorThrower.throwIfError(mockResponse)).rejects.toMatchObject({
       status: 422,
       message: '422 Unprocessable Entity',
     });
@@ -247,6 +247,6 @@ describe('throwIfHttpError Coverage Tests', () => {
       }),
     } as unknown as Response;
 
-    await expect(throwIfHttpError(mockResponse)).rejects.toBeInstanceOf(HttpError);
+    await expect(httpErrorThrower.throwIfError(mockResponse)).rejects.toBeInstanceOf(HttpError);
   });
 });

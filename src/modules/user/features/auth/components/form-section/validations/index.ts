@@ -1,15 +1,21 @@
 import type { TFunction } from 'i18next';
 import type { FieldValues } from 'react-hook-form';
 
-import createEmailValidator from './email';
+import emailValidator from './email';
 import type { Validators } from './index.types';
-import createFullNameValidator from './name';
-import createPasswordValidator from './password';
+import fullNameValidator from './name';
+import passwordValidator from './password';
 
-export const createValidators = <TFieldValues extends FieldValues>(
-  t: TFunction
-): Validators<TFieldValues> => ({
-  email: createEmailValidator<TFieldValues>(t),
-  password: createPasswordValidator<TFieldValues>(t),
-  fullName: createFullNameValidator<TFieldValues>(t),
-});
+class FormValidators {
+  public create<TFieldValues extends FieldValues>(t: TFunction): Validators<TFieldValues> {
+    return {
+      email: emailValidator.create<TFieldValues>(t),
+      password: passwordValidator.create<TFieldValues>(t),
+      fullName: fullNameValidator.create<TFieldValues>(t),
+    };
+  }
+}
+
+const formValidators = new FormValidators();
+
+export default formValidators;

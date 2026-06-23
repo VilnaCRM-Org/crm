@@ -8,6 +8,7 @@ type FormState = {
   errorText: string;
   formKey: number;
   isSubmitting: boolean;
+  showSubmitLoader: boolean;
   handleRegister: jest.Mock;
   handleSuccessShown: jest.Mock;
   handleBackToForm: jest.Mock;
@@ -19,6 +20,7 @@ const mockFormState: FormState = {
   errorText: '',
   formKey: 0,
   isSubmitting: false,
+  showSubmitLoader: false,
   handleRegister: jest.fn(),
   handleSuccessShown: jest.fn(),
   handleBackToForm: jest.fn(),
@@ -31,18 +33,16 @@ jest.mock('@auth/hooks/use-registration-form', () => ({
 }));
 
 jest.mock('@auth/components/form-section/validations', () => ({
-  createValidators: (): Record<string, never> => ({}),
-}));
-
-jest.mock('@auth/utils/get-submit-label-key', () => ({
   __esModule: true,
-  default: (): string => 'sign_up.submit',
+  default: { create: (): Record<string, never> => ({}) },
 }));
 
 jest.mock('@auth/utils/load-registration-notification', () => ({
   __esModule: true,
-  default: (): Promise<{ default: () => ReactElement }> =>
-    Promise.resolve({ default: (): ReactElement => <div data-testid="reg-notification" /> }),
+  default: {
+    load: (): Promise<{ default: () => ReactElement }> =>
+      Promise.resolve({ default: (): ReactElement => <div data-testid="reg-notification" /> }),
+  },
 }));
 
 jest.mock('react-i18next', () => ({
@@ -51,25 +51,30 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
+const mockUIForm = jest.fn();
+
 jest.mock('@/components/ui-form', () => ({
   __esModule: true,
-  default: ({
-    children,
-    isSubmitDisabled,
-    isSubmitting,
-  }: {
+  default: (props: {
     children: ReactNode;
     isSubmitDisabled?: boolean;
     isSubmitting?: boolean;
-  }): ReactElement => (
-    <form
-      data-testid="ui-form"
-      data-disabled={String(Boolean(isSubmitDisabled))}
-      data-submitting={String(Boolean(isSubmitting))}
-    >
-      {children}
-    </form>
-  ),
+    submittingAnnouncement?: boolean;
+    submitLabel?: string;
+    submittingLabel?: string;
+  }): ReactElement => {
+    mockUIForm(props);
+    return (
+      <form
+        data-testid="ui-form"
+        data-disabled={String(Boolean(props.isSubmitDisabled))}
+        data-submitting={String(Boolean(props.isSubmitting))}
+        data-announce={String(Boolean(props.submittingAnnouncement))}
+      >
+        {props.children}
+      </form>
+    );
+  },
 }));
 
 jest.mock('@auth/components/form-section/inert-box', () => ({
@@ -88,10 +93,23 @@ jest.mock('@auth/components/form-section/auth-forms/registration-form-fields', (
 
 describe('RegistrationForm', () => {
   beforeEach(() => {
+    mockUIForm.mockClear();
     mockFormState.view = 'form';
     mockFormState.errorText = '';
     mockFormState.isSubmitting = false;
+    mockFormState.showSubmitLoader = false;
     mockFormState.formKey = 0;
+  });
+
+  it('passes the stable submit and submitting labels to the form', () => {
+    render(<RegistrationForm />);
+
+    expect(mockUIForm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        submitLabel: 'sign_up.form.submit_button',
+        submittingLabel: 'sign_up.form.submitting',
+      })
+    );
   });
 
   it('renders the form panel and no notification when on form view', () => {
@@ -113,11 +131,32 @@ describe('RegistrationForm', () => {
     expect(await screen.findByTestId('reg-notification')).toBeInTheDocument();
   });
 
-  it('passes the submitting flag through to the form', () => {
-    mockFormState.isSubmitting = true;
+  it('drives the visual submit loader from showSubmitLoader', () => {
+    mockFormState.isSubmitting = false;
+    mockFormState.showSubmitLoader = true;
 
     render(<RegistrationForm />);
 
     expect(screen.getByTestId('ui-form')).toHaveAttribute('data-submitting', 'true');
+  });
+
+  it('announces submitting only while the request is in flight', () => {
+    mockFormState.isSubmitting = true;
+    mockFormState.showSubmitLoader = true;
+
+    render(<RegistrationForm />);
+
+    expect(screen.getByTestId('ui-form')).toHaveAttribute('data-announce', 'true');
+  });
+
+  it('keeps the loader visible but stops announcing once a result arrives', () => {
+    mockFormState.isSubmitting = false;
+    mockFormState.showSubmitLoader = true;
+
+    render(<RegistrationForm />);
+
+    const form = screen.getByTestId('ui-form');
+    expect(form).toHaveAttribute('data-submitting', 'true');
+    expect(form).toHaveAttribute('data-announce', 'false');
   });
 });

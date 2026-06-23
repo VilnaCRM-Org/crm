@@ -1,7 +1,7 @@
 import ApiError from '@/modules/user/lib/api-errors/api-error';
 import { ApiErrorCodes } from '@/modules/user/lib/api-errors/api-error-codes';
 import ConflictError from '@/modules/user/lib/api-errors/conflict-error';
-import isAPIError from '@/modules/user/lib/is-api-error';
+import apiErrorGuard from '@/modules/user/lib/is-api-error';
 
 describe('ConflictError', () => {
   describe('constructor', () => {
@@ -65,7 +65,7 @@ describe('ConflictError', () => {
       const error = new ConflictError();
 
       expect(error instanceof ConflictError).toBe(true);
-      expect(isAPIError(error)).toBe(true);
+      expect(apiErrorGuard.is(error)).toBe(true);
     });
 
     it('should have correct prototype chain', () => {
@@ -110,7 +110,7 @@ describe('ConflictError', () => {
     });
 
     it('returns false from isAPIError for a plain Error', () => {
-      expect(isAPIError(new Error('plain error'))).toBe(false);
+      expect(apiErrorGuard.is(new Error('plain error'))).toBe(false);
     });
   });
 

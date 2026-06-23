@@ -70,10 +70,11 @@ describe('performance serving config', () => {
     expect(registrationFormSource).toContain('import { lazy, Suspense');
     expect(registrationFormSource).toContain("from 'react';");
     expect(registrationFormSource).toContain(
-      'import loadRegistrationNotification from ' + "'@auth/utils/load-registration-notification';"
+      'import registrationNotificationLoader from ' +
+        "'@auth/utils/load-registration-notification';"
     );
     expect(registrationFormSource).toContain(
-      'const RegistrationNotification = lazy(loadRegistrationNotification);'
+      'const RegistrationNotification = lazy(() => registrationNotificationLoader.load());'
     );
     expect(registrationFormSource).not.toContain(
       'import RegistrationNotification from ' +

@@ -8,15 +8,21 @@ jest.mock('@/components/ui-button', () => ({
   default: ({
     children,
     disabled,
+    loading,
     onClick,
     type = 'button',
   }: {
     children: JSX.Element | string;
     disabled?: boolean;
+    loading?: boolean;
     onClick?: () => void;
     type?: 'button' | 'submit' | 'reset';
   }): JSX.Element => (
-    <button type={type === 'submit' ? 'submit' : 'button'} disabled={disabled} onClick={onClick}>
+    <button
+      type={type === 'submit' ? 'submit' : 'button'}
+      disabled={disabled || loading}
+      onClick={onClick}
+    >
       {children}
     </button>
   ),
@@ -68,6 +74,7 @@ describe('UIForm', () => {
         onSubmit={onSubmit}
         defaultValues={{ name: '' }}
         submitLabel="Save"
+        submittingLabel="Saving…"
         title="Title"
         resetOnSuccess
       >
@@ -76,15 +83,14 @@ describe('UIForm', () => {
     );
 
     const input = screen.getByLabelText('name');
-    const submitButton = screen.getByRole('button', { name: 'Save' });
 
     fireEvent.change(input, { target: { value: 'Ada' } });
-    fireEvent.click(submitButton);
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledWith({ name: 'Ada' });
     });
-    expect(submitButton).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
 
     resolveSubmit();
 
@@ -102,6 +108,7 @@ describe('UIForm', () => {
         isSubmitDisabled
         error="Request failed"
         submitLabel="Save"
+        submittingLabel="Saving…"
         title="Title"
       >
         <TestField />

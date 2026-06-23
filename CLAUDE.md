@@ -309,7 +309,7 @@ chunks needed to paint the authentication page (mobile Lighthouse budget):
 
 ```typescript
 // src/modules/user/features/auth/stores/index.ts (composition root)
-private static async load(): Promise<AuthStoreActions> {
+private async load(): Promise<AuthStoreActions> {
   const { default: container } = await import('@/config/dependency-injection-config');
   const { default: ActionsClass } = await import('./auth-store-actions');
   return container.resolve(ActionsClass);
@@ -319,23 +319,71 @@ private static async load(): Promise<AuthStoreActions> {
 Auth state pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-// auth-var.ts — dependency-free reactive state (ReactiveVarFactory, no @apollo/client)
-export default class AuthStateVar {
-  public static get(): AuthState {
+// auth-var.ts — dependency-free reactive state (ReactiveVarFactory, no @apollo/client).
+// Instance methods on a module-singleton instance keep the paint path container-free
+// (no tsyringe in the auth chunk) while satisfying the no-static convention (issue #100).
+export class AuthStateVar {
+  public get(): AuthState {
     /* read */
   }
-  public static set(partial: Partial<AuthState>): void {
+  public set(partial: Partial<AuthState>): void {
     /* merge + notify */
   }
 }
+const authStateVar = new AuthStateVar();
+export default authStateVar;
 
-// auth-store-selectors.ts — selectors grouped in a class (no free functions)
-export default class AuthStoreSelectors {
-  public static email(s: AuthState): string {
+// auth-store-selectors.ts — selectors grouped in a class, exported as a singleton (no free functions)
+class AuthStoreSelectors {
+  public email(s: AuthState): string {
     return s.email;
   }
 }
+export default new AuthStoreSelectors();
 ```
+
+### No static methods or free functions (issues #100, #89)
+
+Non-React application code (services, repositories, mappers, factories, stores, and
+utilities under `src/**/*.ts`) must **not** use `static` class members or standalone
+(free) functions — neither `export function foo()` / `export default function foo()` nor
+`export const foo = () => …`. Use **instance methods on an injectable class** instead.
+
+**Why:** mockability and testability. Static methods and free functions bind at the call
+site and resist substitution, pushing tests toward module mocking and monkey-patching.
+Instance methods behind a tsyringe token can be swapped for mocks/spies via the DI
+container — collaborators are injected, not reached for.
+
+**How to apply:**
+
+- Behavioral collaborators (services, repos, mappers, factories, error handlers) are
+  `@injectable()` classes registered in `dependency-injection-config.ts` against a token
+  in `tokens.ts`, and resolved via `container.resolve<Type>(TOKENS.X)` or constructor
+  `@inject`.
+- Render-path state primitives that must stay container-free for the auth-page Lighthouse
+  budget (`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`) are
+  instance classes exported as a **module singleton** (`export default new X()`), so call
+  sites stay `X.method(...)` and no tsyringe is pulled into the paint path.
+- Pure helpers/validators/type-guards/style-helpers/lazy-loaders also become instance
+  methods on a singleton class rather than free functions.
+
+**Exempt:** React components (`*.tsx`, including class error boundaries that need
+`static getDerivedStateFromError`) and hooks (`use-*.ts` / `use-*.tsx`) — they are
+functions by definition.
+
+**Enforcement:** an ESLint `no-restricted-syntax` gate (in `eslint.config.mjs`, scoped to
+`src/**/*.ts` excluding `use-*`) fails the build on `static` members and standalone
+functions — `function` declarations (including generators), default-exported functions,
+and top-level arrow / function-expression `const`s. It runs in `make lint-eslint` and the
+`static testing` workflow. Satisfy it by refactoring to instance methods — never with
+`eslint-disable`.
+
+This gate is the canonical enforcement of the **only classes outside React components**
+convention (issue #89, closed as covered here): with free functions banned in non-React
+`.ts`, all such logic is class-encapsulated, so #89 needs no separate ESLint or
+dependency-cruiser rule. Per #89's own "honest limitation", the residual gap is **semantic,
+not syntactic** — logic smuggled into an object literal's methods (or a misplaced helper) is
+not statically detectable and stays a review-gate concern.
 
 ### Path Aliases
 
@@ -470,9 +518,24 @@ Key variables in `.env`:
      `src/**`, `warn` on `*ByTestId` in tests (mock-stub queries stay valid).
      Satisfy the gate by refactoring, never with `eslint-disable`.
 
-5. **Docker Network**: External network `website-network` used for service communication
+5. **Submit-button loader**: The auth submit button (shared `UIForm` →
+   `SubmitControls`) shows its busy state with MUI v7's native `Button`
+   `loading` + `loadingPosition="center"` + `loadingIndicator={<SubmitSpinner />}`.
+   While submitting, the button goes natively `disabled` into the grey `#E1E7EA`
+   disabled state (matching the Figma design), its text label is removed
+   (`color: transparent`, kept in the DOM so the accessible name stays the localized
+   `submit_button` label), and a centered **white** `SubmitSpinner` (`CircularProgress`,
+   `thickness 4.5`, `size 28`, `aria-hidden`) renders. The `<form>` carries
+   `aria-busy` and one polite `UILiveStatus` (`role="status"`) announces the localized
+   `submitting` string. There is no detached spinner, no `role="progressbar"`, and no
+   L1-L5 loader family. The disabled-grey theme override uses `&&.Mui-disabled` —
+   `StyledEngineProvider injectFirst` requires the class selector, not `:disabled`.
+   Out of scope / unchanged: the retry button, the page-load skeleton, and the
+   login/register switcher.
 
-6. **Type-only files (issue #88)**: All TypeScript types live in dedicated
+6. **Docker Network**: External network `website-network` used for service communication
+
+7. **Type-only files (issue #88)**: All TypeScript types live in dedicated
    type-only files — `types.ts`, `types/**`, or a sibling `*.types.ts`. Those
    files contain **only** type-level constructs (`interface`, `type`,
    `import type`, type re-exports, `declare`) — never runtime `const` / `function` /
