@@ -202,6 +202,59 @@ Runs tests inside the Playwright container, targeting the production container:
   make test-visual-ui: runs UI-focused visual regression tests
 ```
 
+### Fast dev-mode Playwright targets
+
+The `-dev` Playwright targets run e2e and visual specs from the already-running `dev` container for a
+fast inner loop. They never start the production stack, and the production-parity `make test-e2e` and
+`make test-visual` targets are unchanged — those remain the authoritative, CI-gating path.
+
+One-time setup installs Chromium into the dev container — the system apk build that Playwright drives
+in dev mode (the Alpine-compatible binary already used for Lighthouse, not Playwright's glibc
+download). It is opt-in; the default image ships without it:
+
+```bash
+make ensure-playwright-browsers
+```
+
+Run e2e specs against the dev server with `ENV=dev` (omit `FILE=` to run the whole suite):
+
+```bash
+make test-e2e ENV=dev
+make test-e2e ENV=dev FILE=tests/e2e/modules/back-to-main.spec.ts
+make test-e2e ENV=dev FILE='tests/e2e/components/**/*.spec.ts'
+```
+
+Run dev-build visual smoke specs, or debug a single e2e spec with the Playwright Inspector
+(`DEBUG=1` requires `FILE=`):
+
+```bash
+make test-visual ENV=dev
+make test-visual ENV=dev FILE=tests/visual/visual-comparison.spec.ts
+make test-e2e ENV=dev DEBUG=1 FILE=tests/e2e/modules/back-to-main.spec.ts
+```
+
+A quoted `FILE=` glob is forwarded verbatim and resolved by Playwright, not the host shell.
+
+Dev-mode visual snapshots are **smoke-level and not CI-gating**. They are written to
+`tests/visual/__snapshots__-dev/` under a `chromium-dev` project tag, separate from the production
+baselines; the authoritative snapshots remain the production ones from `make test-visual`. The first
+`make test-visual ENV=dev` run records any missing dev baseline; to regenerate dev baselines later
+(without touching the production snapshots), append `--update-snapshots` through the dev container:
+
+```bash
+docker compose exec -T dev env PLAYWRIGHT_DEV_MODE=1 \
+  bun x playwright test tests/visual --update-snapshots
+```
+
+The trace viewer is reachable at `http://localhost:9323` by default; override the port with
+`PLAYWRIGHT_TRACE_PORT`. The default never collides with `DEV_PORT` (3000), `PROD_PORT` (3001), or
+`GRAPHQL_PORT` (4000).
+
+These targets are local-only and are never wired into CI. When one fails fast, the message names the
+unmet precondition: missing browsers (`make ensure-playwright-browsers`), an unhealthy dev server
+(re-run `make start` and check `make logs`), an unreachable Mockoon mock, or a `FILE=` pattern that
+matches zero specs (Playwright's native non-zero exit is preserved).
+
 ### Important Note About Swagger E2E Tests
 
 For Swagger E2E tests, the application uses Mockoon to handle API requests.

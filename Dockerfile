@@ -2,6 +2,7 @@ FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS base
 
 ARG CURL_VERSION=8.14.1-r2
 ARG INSTALL_CHROMIUM=false
+ARG INSTALL_PLAYWRIGHT_BROWSERS=false
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
@@ -12,7 +13,7 @@ RUN apk add --no-cache \
     jq=1.7.1-r0 \
     make=4.4.1-r2 \
     python3=3.12.13-r0 && \
-    if [ "$INSTALL_CHROMIUM" = "true" ]; then \
+    if [ "$INSTALL_CHROMIUM" = "true" ] || [ "$INSTALL_PLAYWRIGHT_BROWSERS" = "true" ]; then \
       apk add --no-cache \
         chromium=136.0.7103.113-r0 \
         font-freefont=20120503-r4 \
