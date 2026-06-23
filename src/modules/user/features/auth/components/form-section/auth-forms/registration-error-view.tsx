@@ -5,8 +5,29 @@ import { useTranslation } from 'react-i18next';
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
+import { paletteColors } from '@/styles/colors';
+import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import styles from './registration-notification.error-styles';
+
+const headingFocusStyles = {
+  outline: 'none',
+  '&:focus-visible': {
+    outline: `2px solid ${paletteColors.error.main}`,
+    outlineOffset: '2px',
+  },
+};
+
+function FocusableErrorHeading({ title }: { title: string }): JSX.Element {
+  const focusOnMount = useFocusOnMount<HTMLDivElement>();
+  return (
+    <Box ref={focusOnMount} tabIndex={-1} sx={headingFocusStyles}>
+      <UITypography component="h4" sx={styles.messageTitle}>
+        {title}
+      </UITypography>
+    </Box>
+  );
+}
 
 interface Props {
   resolvedErrorText: string;
@@ -94,13 +115,11 @@ export default function RegistrationErrorView({
 }: Props): JSX.Element {
   const { t } = useTranslation();
   return (
-    <Box role="alert" aria-live="polite" sx={styles.notificationSection}>
+    <Box role="alert" sx={styles.notificationSection}>
       <Box sx={styles.contentBoxError}>
         <ErrorImageBlock label={t('notifications.error.images.error')} />
         <Box sx={styles.messageContainerError}>
-          <UITypography component="h4" sx={styles.messageTitle}>
-            {t('notifications.error.title')}
-          </UITypography>
+          <FocusableErrorHeading title={t('notifications.error.title')} />
           <UITypography component="span" sx={styles.messageDescription}>
             {resolvedErrorText}
           </UITypography>

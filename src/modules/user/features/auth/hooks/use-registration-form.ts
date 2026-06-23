@@ -12,6 +12,7 @@ type UseRegistrationFormResult = {
   errorText: string;
   formKey: number;
   isSubmitting: boolean;
+  showSubmitLoader: boolean;
   handleRegister: (data: RegisterUserDto) => Promise<void>;
   handleSuccessShown: () => void;
   handleBackToForm: () => void;
@@ -26,6 +27,7 @@ export default function useRegistrationForm(
   const isSubmitting = AuthStoreSelectors.registerLoading(state);
   const error = AuthStoreSelectors.registerError(state);
   const errorText = error?.displayMessage ?? null;
+  const showSubmitLoader = isSubmitting || Boolean(user) || Boolean(error);
 
   const [view, setView] = useState<RegistrationView>('form');
   const [formKey, setFormKey] = useState(0);
@@ -42,5 +44,5 @@ export default function useRegistrationForm(
     lastSubmittedDataRef,
   });
 
-  return { view, errorText: errorText ?? '', formKey, isSubmitting, ...handlers };
+  return { view, errorText: errorText ?? '', formKey, isSubmitting, showSubmitLoader, ...handlers };
 }

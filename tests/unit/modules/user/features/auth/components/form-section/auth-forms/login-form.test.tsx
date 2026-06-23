@@ -60,14 +60,6 @@ jest.mock('@auth/stores', () => ({
   },
 }));
 
-jest.mock('@auth/utils/get-submit-label-key', () => ({
-  __esModule: true,
-  default: {
-    resolve: (mode: string, isSubmitting: boolean): string =>
-      `${mode}.form.${isSubmitting ? 'submitting' : 'submit_button'}`,
-  },
-}));
-
 jest.mock('@auth/components/form-section/components/form-field', () => ({
   __esModule: true,
   default: (props: {
@@ -130,6 +122,17 @@ describe('LoginForm', () => {
         rules: expect.objectContaining({
           required: 'sign_in.form.email_input.required',
         }),
+      })
+    );
+  });
+
+  it('passes the stable submit and submitting labels to the form', () => {
+    render(<LoginForm />);
+
+    expect(mockUIForm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        submitLabel: 'sign_in.form.submit_button',
+        submittingLabel: 'sign_in.form.submitting',
       })
     );
   });

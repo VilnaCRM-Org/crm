@@ -18,6 +18,10 @@ export const fieldGapMargins = {
 };
 
 export const formSection = {
+  flexGrow: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
   paddingTop: '0.5rem',
   paddingX: '0.375rem',
   paddingBottom: '1.5rem',

@@ -8,7 +8,6 @@ import type { RegistrationView } from '@auth/components/form-section/types';
 import formValidators from '@auth/components/form-section/validations';
 import useRegistrationForm from '@auth/hooks/use-registration-form';
 import { RegisterUserDto } from '@auth/types/credentials';
-import submitLabelKey from '@auth/utils/get-submit-label-key';
 import registrationNotificationLoader from '@auth/utils/load-registration-notification';
 
 import RegistrationFormFields from './registration-form-fields';
@@ -39,9 +38,11 @@ function RegistrationFormPanel({
         onSubmit={form.handleRegister}
         defaultValues={DEFAULT_VALUES}
         error={null}
-        isSubmitting={form.isSubmitting}
+        isSubmitting={form.showSubmitLoader}
+        submittingAnnouncement={form.isSubmitting}
         isSubmitDisabled={form.view !== 'form'}
-        submitLabel={t(submitLabelKey.resolve('sign_up', form.isSubmitting))}
+        submitLabel={t('sign_up.form.submit_button')}
+        submittingLabel={t('sign_up.form.submitting')}
         title={t('sign_up.title')}
         subtitle={t('sign_up.subtitle')}
       >

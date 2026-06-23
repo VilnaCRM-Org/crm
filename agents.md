@@ -28,6 +28,13 @@ Codex, GitHub Copilot, Cursor, OpenAI agents, and any other assistant) MUST:
    "Global Skills" below) for the current task, and invoke each match before executing.
 4. Apply all relevant skills. Only skip one after recording
    "Not applicable" with a concrete reason.
+5. **For any UI / visual change** (component, layout, color, fill, spacing,
+   typography, sizing, or an interaction state such as default / hover /
+   focus-visible / active / disabled / loading): run
+   [`figma-design-check`](.claude/skills/figma-design-check/SKILL.md) to verify the
+   planned change against the Figma design (via the Figma MCP) **before** writing or
+   editing the UI code, and run the `accessibility-lead` agent. Ask for the Figma
+   reference if none is known; do not guess the design intent.
 
 This check is non-negotiable. Do not implement, format, lint, test, commit,
 or push until the relevant skills have been consulted.
