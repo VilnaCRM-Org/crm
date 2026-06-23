@@ -13,6 +13,7 @@ ci	bats	tests/bats/makefile_targets.bats	Validated as the full local CI umbrella
 ensure-dev	bats	tests/bats/makefile_targets.bats	Validated through the already-running dev-service branch.
 wait-for-dev	ci	.github/workflows/static-testing.yml	Exercised transitively by PR workflows that call `make start`.
 wait-for-mockoon	ci	.github/workflows/static-testing.yml	Exercised transitively by PR workflows that call `make start`.
+wait-for-apollo	ci	.github/workflows/static-testing.yml	Exercised transitively by PR workflows that call `make start`.
 build	bats	tests/bats/makefile_targets.bats	Validated for both the default Docker build path and the DIND branch.
 build-dev-chromium	ci	.github/workflows/performance-testing.yml	Executed directly by the performance workflow.
 ensure-chromium	ci	.github/workflows/performance-testing.yml	Exercised transitively by the Lighthouse PR workflow targets.

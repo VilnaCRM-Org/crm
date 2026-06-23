@@ -119,6 +119,16 @@ describe('RegistrationNotification', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(1);
   });
 
+  it('moves focus off the body to the success notification on mount', () => {
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByRole('heading', { level: 4 })).toHaveAccessibleName();
+    expect(document.body).not.toHaveFocus();
+  });
+
   it('calls onShown when success view is mounted', () => {
     const onShown = jest.fn();
     renderWithProviders(
@@ -201,6 +211,25 @@ describe('RegistrationNotification', () => {
     );
 
     expect(screen.getAllByRole('alert')).toHaveLength(1);
+  });
+
+  it('renders the error alert without a redundant aria-live', () => {
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByRole('alert')).not.toHaveAttribute('aria-live');
+  });
+
+  it('moves focus off the body to the error notification on mount', () => {
+    renderWithProviders(
+      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="error" />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByRole('heading', { level: 4 })).toHaveAccessibleName();
+    expect(document.body).not.toHaveFocus();
   });
 
   it('renders the retry button and disables it while submitting', () => {

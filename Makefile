@@ -110,7 +110,7 @@ BUNX                        = $(BUN) x
 BUN_DIND                    = bun
 BUNX_DIND                   = $(BUN_DIND) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
-DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev mockoon && make wait-for-dev && make wait-for-mockoon
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev mockoon apollo && make wait-for-dev && make wait-for-mockoon && make wait-for-apollo
 BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 CI_SETUP_SERVICES           = dev mockoon
 CI_SETUP_UP_FLAGS           = -d --no-recreate
@@ -252,6 +252,25 @@ wait-for-mockoon: ## Wait for the Mockoon API mock to be ready on port $(MOCKOON
 	done; \
 	printf '\n❌ Mockoon API mock failed to become ready on http://$(WEBSITE_DOMAIN):$(MOCKOON_PORT)/api/users\n'; \
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) logs --tail=50 mockoon || true; \
+	exit 1
+
+WAIT_FOR_APOLLO_MAX_TRIES ?= 60
+WAIT_FOR_APOLLO_SLEEP     ?= 1
+
+wait-for-apollo: ## Wait for the Apollo GraphQL server to be ready on port $(GRAPHQL_PORT).
+	@echo "Waiting for Apollo server to be ready on http://$(WEBSITE_DOMAIN):$(GRAPHQL_PORT)/$(GRAPHQL_API_PATH)..."
+	@i=0; \
+	while [ $$i -lt $(WAIT_FOR_APOLLO_MAX_TRIES) ]; do \
+		if curl -fsS -H 'Content-Type: application/json' --data '{"query":"{__typename}"}' http://$(WEBSITE_DOMAIN):$(GRAPHQL_PORT)/$(GRAPHQL_API_PATH) > /dev/null 2>&1; then \
+			printf '\n✅ Apollo server is ready!\n'; \
+			exit 0; \
+		fi; \
+		printf "."; \
+		sleep $(WAIT_FOR_APOLLO_SLEEP); \
+		i=$$((i+1)); \
+	done; \
+	printf '\n❌ Apollo server failed to become ready on http://$(WEBSITE_DOMAIN):$(GRAPHQL_PORT)/$(GRAPHQL_API_PATH)\n'; \
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) logs --tail=50 apollo || true; \
 	exit 1
 
 build: ## Build the dev container

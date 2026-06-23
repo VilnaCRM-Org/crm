@@ -47,6 +47,7 @@ test.describe.parallel('Registration Notification Visual Tests', () => {
 
       await expect(page.locator(`text=${successNotificationTitle}`)).toBeVisible();
       await page.waitForLoadState('networkidle');
+      await page.mouse.move(0, 0);
 
       await expect(page).toHaveScreenshot(
         getRegistrationNotificationSnapshotName(currentLanguage, screen.name, 'success'),
@@ -77,6 +78,7 @@ test.describe.parallel('Registration Notification Visual Tests', () => {
 
       await expect(page.locator('[role="alert"]')).toBeVisible();
       await page.waitForLoadState('networkidle');
+      await page.mouse.move(0, 0);
 
       await expect(page).toHaveScreenshot(
         getRegistrationNotificationSnapshotName(currentLanguage, screen.name, 'error'),
