@@ -5,6 +5,10 @@ import { buildClientMutationId, buildGraphqlUser } from '@tests/builders';
 import { userData } from '../constants/constants';
 
 export async function successResponse(route: Route): Promise<void> {
+  const requestBody = route.request().postDataJSON() as {
+    variables?: { input?: { clientMutationId?: string } };
+  } | null;
+  const sentMutationId = requestBody?.variables?.input?.clientMutationId;
   await route.fulfill({
     status: 200,
     contentType: 'application/json',
@@ -16,7 +20,7 @@ export async function successResponse(route: Route): Promise<void> {
             initials: userData.fullName,
             confirmed: true,
           }),
-          clientMutationId: buildClientMutationId(),
+          clientMutationId: sentMutationId ?? buildClientMutationId(),
         },
       },
     }),

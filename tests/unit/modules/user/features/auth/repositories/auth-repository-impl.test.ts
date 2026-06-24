@@ -20,15 +20,20 @@ const makeDeps = (): AuthRepositoryDeps =>
 describe('AuthRepositoryImpl', () => {
   it('returns an AuthSession on successful login', async () => {
     const deps = makeDeps();
-    const email = buildEmail();
+    const credentials = { email: buildEmail(), password: buildPassword() };
     const token = buildToken();
-    (deps.loginAPI.login as jest.Mock).mockResolvedValue({ token });
-    (deps.loginResponseMapper.map as jest.Mock).mockReturnValue(ok({ token, email }));
+    const apiResponse = { token };
+    (deps.loginAPI.login as jest.Mock).mockResolvedValue(apiResponse);
+    (deps.loginResponseMapper.map as jest.Mock).mockReturnValue(
+      ok({ token, email: credentials.email })
+    );
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.login({ email: buildEmail(), password: buildPassword() });
+    const result = await repo.login(credentials);
 
-    expect(result).toEqual({ ok: true, value: { email, token } });
+    expect(deps.loginAPI.login).toHaveBeenCalledWith(credentials, { signal: undefined });
+    expect(deps.loginResponseMapper.map).toHaveBeenCalledWith(apiResponse, credentials.email);
+    expect(result).toEqual({ ok: true, value: { email: credentials.email, token } });
   });
 
   it('maps transport errors to a structured AuthError', async () => {
@@ -82,17 +87,23 @@ describe('AuthRepositoryImpl', () => {
 
   it('returns a SafeUserInfo on successful register', async () => {
     const deps = makeDeps();
-    const safeUser = { id: buildUserId(), email: buildEmail(), fullName: buildFullName() };
+    const credentials = {
+      email: buildEmail(),
+      password: buildPassword(),
+      fullName: buildFullName(),
+    };
+    const safeUser = {
+      id: buildUserId(),
+      email: credentials.email,
+      fullName: credentials.fullName,
+    };
     (deps.registrationAPI.register as jest.Mock).mockResolvedValue({});
     (deps.registrationResponseMapper.map as jest.Mock).mockReturnValue(ok(safeUser));
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.register({
-      email: buildEmail(),
-      password: buildPassword(),
-      fullName: buildFullName(),
-    });
+    const result = await repo.register(credentials);
 
+    expect(deps.registrationAPI.register).toHaveBeenCalledWith(credentials, { signal: undefined });
     expect(result).toEqual({ ok: true, value: safeUser });
   });
 
