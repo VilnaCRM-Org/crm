@@ -145,7 +145,7 @@ module.exports = {
         "or there's something in the test folder that isn't a test.",
       severity: 'error',
       from: {
-        pathNot: '^(tests)',
+        pathNot: '^(tests)|^jest\\.setup\\.ts$',
       },
       to: {
         path: '^(tests)',
@@ -431,12 +431,12 @@ module.exports = {
     {
       name: 'tests-top-level-allowed-folders',
       comment:
-        'Tests root may only contain allowed folders: apollo-server, e2e, ' +
-        'integration, load, memory-leak, unit, visual.',
+        'Tests root may only contain allowed folders: apollo-server, builders, ' +
+        'e2e, integration, load, memory-leak, unit, utils, visual.',
       severity: 'error',
       from: {
         path:
-          '^tests/(?!(?:apollo-server|e2e|integration|' +
+          '^tests/(?!(?:apollo-server|builders|e2e|integration|' +
           'load|memory-leak|unit|utils|visual)/)[^/]+/',
       },
       to: {},

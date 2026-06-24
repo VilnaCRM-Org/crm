@@ -6,6 +6,7 @@ import container from '@/config/dependency-injection-config';
 import TOKENS from '@/config/tokens';
 import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
 import { AuthenticationError } from '@/modules/user/lib/api-errors';
+import { buildCredentials, buildLoginResponse } from '@tests/builders';
 
 import server from '../../../../mocks/server';
 
@@ -23,9 +24,7 @@ describe('LoginAPI Integration', () => {
 
   describe('successful login', () => {
     it('should successfully login with valid credentials', async () => {
-      const mockResponse = {
-        token: 'abc123-token',
-      };
+      const mockResponse = buildLoginResponse();
 
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
@@ -33,33 +32,25 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      const result = await loginAPI.login({
-        email: 'test@example.com',
-        password: 'password123',
-      });
+      const result = await loginAPI.login(buildCredentials());
 
       expect(result).toEqual(mockResponse);
     });
 
     it('should send correct request body', async () => {
       let requestBody: Record<string, string> | null = null;
+      const credentials = buildCredentials();
 
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, async (req, res, ctx) => {
           requestBody = await req.json();
-          return res(ctx.status(200), ctx.json({ token: 'abc' }));
+          return res(ctx.status(200), ctx.json(buildLoginResponse()));
         })
       );
 
-      await loginAPI.login({
-        email: 'user@test.com',
-        password: 'mypassword',
-      });
+      await loginAPI.login(credentials);
 
-      expect(requestBody).toEqual({
-        email: 'user@test.com',
-        password: 'mypassword',
-      });
+      expect(requestBody).toEqual(credentials);
     });
   });
 
@@ -71,9 +62,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(
-        loginAPI.login({ email: 'wrong@test.com', password: 'wrongpass' })
-      ).rejects.toThrow(AuthenticationError);
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow(AuthenticationError);
     });
 
     it('should throw ApiError with correct message for 400 status', async () => {
@@ -83,9 +72,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'invalid', password: '123' })).rejects.toThrow(
-        'Invalid login data'
-      );
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow('Invalid login data');
     });
 
     it('should throw ApiError for 403 status', async () => {
@@ -95,9 +82,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Forbidden'
-      );
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow('Forbidden');
     });
 
     it('should throw ApiError for 404 status', async () => {
@@ -107,9 +92,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
-        'Login not found'
-      );
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow('Login not found');
     });
 
     it('should map 408 to a timeout ApiError', async () => {
@@ -119,7 +102,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow(
         'Request timed out. Please try again.'
       );
     });
@@ -131,7 +114,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow(
         'Too many requests. Please slow down.'
       );
     });
@@ -143,7 +126,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow(
         'Server error. Please try again later.'
       );
     });
@@ -155,7 +138,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow(
         'Service unavailable. Please try again later.'
       );
     });
@@ -167,7 +150,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow(
         'Service unavailable. Please try again later.'
       );
     });
@@ -179,7 +162,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow(
         'Service unavailable. Please try again later.'
       );
     });
@@ -187,7 +170,7 @@ describe('LoginAPI Integration', () => {
     it('should handle network errors', async () => {
       server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Failed to fetch')));
 
-      await expect(loginAPI.login({ email: 'test@test.com', password: 'pass' })).rejects.toThrow(
+      await expect(loginAPI.login(buildCredentials())).rejects.toThrow(
         'Network error. Please check your connection.'
       );
     });
@@ -201,13 +184,13 @@ describe('LoginAPI Integration', () => {
       controller.abort();
 
       await expect(
-        loginAPI.login({ email: 'test@test.com', password: 'pass' }, { signal: controller.signal })
+        loginAPI.login(buildCredentials(), { signal: controller.signal })
       ).rejects.toThrow();
     });
 
     it('should not throw if request completes before cancellation', async () => {
       const controller = new AbortController();
-      const mockResponse = { token: 'abc' };
+      const mockResponse = buildLoginResponse();
 
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
@@ -215,10 +198,7 @@ describe('LoginAPI Integration', () => {
         )
       );
 
-      const result = await loginAPI.login(
-        { email: 'test@test.com', password: 'pass' },
-        { signal: controller.signal }
-      );
+      const result = await loginAPI.login(buildCredentials(), { signal: controller.signal });
 
       controller.abort();
 

@@ -213,6 +213,76 @@ same Docker-backed environment and avoid host-specific drift.
    `docker compose exec -T dev env TEST_ENV=client node ./node_modules/jest/bin/jest.js -u`
    (use cautiously)
 
+## Test Data — Faker builders (issue #101)
+
+Tests generate domain data with [`@faker-js/faker`](https://fakerjs.dev/) through shared
+builders instead of hardcoding magic literals. Generated, intention-revealing data exposes
+hidden assumptions and stops tests from coupling to a specific string.
+
+### Builders
+
+Import factories from the `@tests/builders` alias (resolves in Jest and Playwright). Every
+builder returns domain-VALID data by construction (passing the app's email, password, and
+name validators) and accepts an `overrides` object to pin specific fields:
+
+- `buildUser(overrides?)` → `{ fullName, email, password }` (`RegisterUserDto`).
+- `buildCredentials(overrides?)` → `{ email, password }` (`LoginUserDto`).
+- `buildEmail()` / `buildFullName()` / `buildPassword()` → a single valid field.
+- `buildToken()` / `buildUserId()` / `buildClientMutationId()` → opaque token / uuid.
+- `buildLoginResponse(overrides?)` → `{ token }`.
+- `buildRegistrationResponse(overrides?)` → `{ fullName, email }`.
+- `buildCreateUserInput(overrides?)` → `{ email, initials, clientMutationId }`.
+- `buildGraphqlUser(overrides?)` → `{ id, confirmed, email, initials }`.
+
+```ts
+import { buildUser, buildEmail } from '@tests/builders';
+
+const user = buildUser(); // fully generated, all fields valid
+const pinned = buildUser({ email: buildEmail() }); // pin a field, generate the rest
+```
+
+Bind a generated value to a `const` once and reuse it across the input and the assertion —
+never call a builder twice expecting the two values to be equal:
+
+```ts
+const email = buildEmail();
+const result = await repo.create({ email });
+expect(result.email).toBe(email);
+```
+
+### Deterministic seeding
+
+`@tests/builders/seed` seeds Faker so runs are reproducible. `seedFaker()` is wired into
+every runner's setup — `jest.setup.ts` (client), `tests/integration/setup.ts`,
+`tests/apollo-server/setup.ts`, and the Playwright e2e/visual shared constants. The seed
+defaults to `DEFAULT_FAKER_SEED` and is reported once per worker
+(`[faker] deterministic seed=...`). Reproduce a specific failing run by exporting the seed:
+
+```bash
+FAKER_SEED=12345 make test-unit-client
+```
+
+Determinism keeps visual snapshots stable. The shared integration mock server
+(`tests/integration/mocks/server.ts`) exposes its generated defaults
+(`defaultLoginResponse`, `defaultGraphqlUser`, `defaultClientMutationId`) so tests assert
+against those exports rather than literals.
+
+### When NOT to use a builder
+
+Keep a hardcoded literal when the value IS the test case or a fixed contract: intentional
+invalid / edge-case inputs (malformed emails like `test@`, boundary passwords), golden text,
+config values, URLs, error codes / messages, i18n keys / strings, mocked return sentinels,
+and placeholders that must equal a rendered string. A generated value must stay in the same
+validity / equivalence class so branch coverage is unchanged.
+
+### Review guideline
+
+New tests SHOULD generate arbitrary user / auth domain data (emails, names, passwords, ids,
+tokens) with `@tests/builders` rather than introducing fresh hardcoded fixtures. This is a
+review-gate convention: "hardcoded fixture vs intentional literal" is a semantic distinction
+that a static rule cannot reliably tell apart (the same reasoning the repo applies to the
+issue #89 class-only gate), so reviewers enforce it rather than ESLint.
+
 ## Code Review Workflow and PR Refactoring
 
 ### Automated Code Review Comment Retrieval

@@ -4,9 +4,12 @@ import type { ReactElement } from 'react';
 import LoginForm, {
   LoginErrorMessageNormalizer,
 } from '@auth/components/form-section/auth-forms/login-form';
+import { buildCredentials } from '@tests/builders';
 
 const normalizeLoginErrorMessage = (error: unknown): string =>
   new LoginErrorMessageNormalizer().normalize(error);
+
+const submitCredentials = buildCredentials();
 
 const mockLoginUser = jest.fn();
 const mockFormField = jest.fn();
@@ -16,7 +19,7 @@ function makeSubmitHandler(
   onSubmit: (data: { email: string; password: string }) => Promise<void>
 ): () => void {
   return (): void => {
-    void onSubmit({ email: 'user@example.com', password: 'secret123' });
+    void onSubmit({ ...submitCredentials });
   };
 }
 
@@ -144,13 +147,7 @@ describe('LoginForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'submit' }));
 
     await waitFor(() => {
-      expect(mockLoginUser).toHaveBeenCalledWith(
-        {
-          email: 'user@example.com',
-          password: 'secret123',
-        },
-        expect.any(AbortSignal)
-      );
+      expect(mockLoginUser).toHaveBeenCalledWith(submitCredentials, expect.any(AbortSignal));
     });
   });
 

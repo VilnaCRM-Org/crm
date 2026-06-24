@@ -3,6 +3,7 @@ import type { TFunction } from 'i18next';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
 import { AuthStateVar, authActions } from '@auth/stores';
+import { buildCredentials } from '@tests/builders';
 
 const t: TFunction = ((key: string, options?: Record<string, unknown>): string => {
   if (options?.reason !== undefined) return `${key}|${String(options.reason)}`;
@@ -71,17 +72,15 @@ describe('useLoginSubmitter', () => {
 
   it('invokes the loginUser action when handleLogin is called', async () => {
     const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+    const credentials = buildCredentials();
 
     const { result } = renderHook(() => useLoginSubmitter(t));
 
     await act(async () => {
-      await result.current.handleLogin({ email: 'a@b.com', password: 'pw' });
+      await result.current.handleLogin(credentials);
     });
 
-    expect(loginUser).toHaveBeenCalledWith(
-      { email: 'a@b.com', password: 'pw' },
-      expect.any(AbortSignal)
-    );
+    expect(loginUser).toHaveBeenCalledWith(credentials, expect.any(AbortSignal));
   });
 
   it('does not restore a late login error after unmount', async () => {
@@ -107,7 +106,7 @@ describe('useLoginSubmitter', () => {
     let pendingLogin!: Promise<void>;
 
     await act(async () => {
-      pendingLogin = result.current.handleLogin({ email: 'a@b.com', password: 'pw' });
+      pendingLogin = result.current.handleLogin(buildCredentials());
     });
 
     unmount();

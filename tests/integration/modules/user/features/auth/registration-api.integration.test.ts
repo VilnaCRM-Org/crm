@@ -9,6 +9,7 @@ import { ApiError, ConflictError } from '@/modules/user/lib/api-errors';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
 import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
+import { buildClientMutationId, buildUser, buildUserId } from '@tests/builders';
 
 import server, { GRAPHQL_URL } from '../../../../mocks/server';
 
@@ -16,17 +17,14 @@ type ApolloClientLike = import('@apollo/client').ApolloClient<
   import('@apollo/client').NormalizedCacheObject
 >;
 
-const credentials = {
-  email: 'newuser@example.com',
-  password: 'securepass123',
-  fullName: 'New User',
-};
+const credentials = buildUser();
+const { email, fullName, password } = credentials;
 
 const createUserSuccessBody = {
   data: {
     createUser: {
-      user: { id: 'user-123', confirmed: true, email: 'newuser@example.com', initials: 'New User' },
-      clientMutationId: 'client-mutation-id',
+      user: { id: buildUserId(), confirmed: true, email, initials: fullName },
+      clientMutationId: buildClientMutationId(),
     },
   },
 };
@@ -56,11 +54,11 @@ describe('RegistrationAPI Integration', () => {
 
       const result = await registrationAPI.register(credentials);
 
-      expect(result).toEqual({ email: 'newuser@example.com', fullName: 'New User' });
+      expect(result).toEqual({ email, fullName });
       expect(capturedInput).toEqual({
-        email: 'newuser@example.com',
-        initials: 'New User',
-        password: 'securepass123',
+        email,
+        initials: fullName,
+        password,
         clientMutationId: expect.any(String),
       });
     });
@@ -76,9 +74,9 @@ describe('RegistrationAPI Integration', () => {
         })
       );
 
-      await registrationAPI.register({ ...credentials, fullName: '  New User  ' });
+      await registrationAPI.register({ ...credentials, fullName: `  ${fullName}  ` });
 
-      expect(capturedInput?.initials).toBe('New User');
+      expect(capturedInput?.initials).toBe(fullName);
     });
   });
 

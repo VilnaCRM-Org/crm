@@ -4,6 +4,12 @@ import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
+import { buildEmail, buildFullName, buildPassword, buildToken } from '@tests/builders';
+
+const email = buildEmail();
+const token = buildToken();
+const password = buildPassword();
+const fullName = buildFullName();
 
 const authRequestErrors = new AuthRequestErrors({
   handle: (e: unknown) => ({ displayMessage: String(e), retryable: false }),
@@ -11,19 +17,19 @@ const authRequestErrors = new AuthRequestErrors({
 
 const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   ({
-    login: jest.fn().mockResolvedValue({ ok: true, value: { email: 'a@b.c', token: 't' } }),
-    register: jest.fn().mockResolvedValue({ ok: true, value: { email: 'a@b.c' } }),
+    login: jest.fn().mockResolvedValue({ ok: true, value: { email, token } }),
+    register: jest.fn().mockResolvedValue({ ok: true, value: { email } }),
     ...over,
   }) as AuthRepository;
 
 const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors).login({ email: 'a@b.c', password: 'p' });
+  new AuthStoreActions(makeRepo(over), authRequestErrors).login({ email, password });
 
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
   new AuthStoreActions(makeRepo(over), authRequestErrors).register({
-    fullName: 'A',
-    email: 'a@b.c',
-    password: 'p',
+    fullName,
+    email,
+    password,
   });
 
 const abortError = {
@@ -40,8 +46,8 @@ describe('AuthStoreActions', () => {
     await loginWith({});
     expect(AuthStateVar.get()).toMatchObject({
       loginLoading: false,
-      email: 'a@b.c',
-      token: 't',
+      email,
+      token,
       loginError: null,
     });
   });
@@ -65,7 +71,7 @@ describe('AuthStoreActions', () => {
     await registerWith({});
     expect(AuthStateVar.get()).toMatchObject({
       registerLoading: false,
-      user: { email: 'a@b.c' },
+      user: { email },
       registerError: null,
     });
   });

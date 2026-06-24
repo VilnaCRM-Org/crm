@@ -34,7 +34,7 @@ let setupFiles: string[] = [];
 if (isIntegration) {
   setupFiles = ['<rootDir>/tests/integration/setup.ts'];
 } else if (TEST_ENV === 'server') {
-  setupFiles = [];
+  setupFiles = ['<rootDir>/tests/apollo-server/setup.ts'];
 } else {
   setupFiles = ['<rootDir>/jest.setup.ts'];
 }
@@ -72,13 +72,18 @@ const config: Config = {
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
     '^.+\\.(mts)$': ['ts-jest', { useESM: true }],
-    '^.+\\.js$': 'babel-jest',
+    '^.+\\.(js|mjs)$': [
+      'babel-jest',
+      { presets: [['@babel/preset-env', { targets: { node: 'current' } }]] },
+    ],
   },
+  transformIgnorePatterns: ['/node_modules/(?!@faker-js/)', '\\.pnp\\.[^\\/]+$'],
   setupFilesAfterEnv: setupFiles,
   modulePathIgnorePatterns: ['<rootDir>/.stryker-tmp/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mts', 'json', 'node'],
   moduleNameMapper: {
     '^@auth/(.*)$': '<rootDir>/src/modules/user/features/auth/$1',
+    '^@tests/(.*)$': '<rootDir>/tests/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.+)\\.js$': '$1',
   },

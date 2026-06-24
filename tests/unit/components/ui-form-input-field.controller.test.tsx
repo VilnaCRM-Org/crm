@@ -4,6 +4,7 @@ import type { PropsWithChildren, ReactNode } from 'react';
 import type { Control, FieldValues } from 'react-hook-form';
 
 import UIFormInputField from '@/components/ui-form-input-field';
+import { buildEmail } from '@tests/builders';
 
 type ControllerRenderParams = {
   field: {
@@ -129,11 +130,13 @@ describe('UIFormInputField controller branches', () => {
   });
 
   it('forwards defaultValue to Controller when provided', () => {
+    const defaultValue = buildEmail();
+
     render(
       <UIFormInputField
         autoComplete="email"
         control={{} as Control<FieldValues>}
-        defaultValue="seed@example.com"
+        defaultValue={defaultValue}
         name="email"
         placeholder="Email"
         rules={{}}
@@ -145,7 +148,7 @@ describe('UIFormInputField controller branches', () => {
 
     expect(controllerProps).toEqual(
       expect.objectContaining({
-        defaultValue: 'seed@example.com',
+        defaultValue,
         name: 'email',
       })
     );

@@ -1,5 +1,6 @@
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
+import { buildEmail, buildFullName, buildPassword, buildToken, buildUserId } from '@tests/builders';
 
 const ok = <T>(value: T): { ok: true; value: T } => ({ ok: true as const, value });
 
@@ -19,13 +20,15 @@ const makeDeps = (): AuthRepositoryDeps =>
 describe('AuthRepositoryImpl', () => {
   it('returns an AuthSession on successful login', async () => {
     const deps = makeDeps();
-    (deps.loginAPI.login as jest.Mock).mockResolvedValue({ token: 't' });
-    (deps.loginResponseMapper.map as jest.Mock).mockReturnValue(ok({ token: 't', email: 'a@b.c' }));
+    const email = buildEmail();
+    const token = buildToken();
+    (deps.loginAPI.login as jest.Mock).mockResolvedValue({ token });
+    (deps.loginResponseMapper.map as jest.Mock).mockReturnValue(ok({ token, email }));
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.login({ email: 'A@B.C', password: 'p' });
+    const result = await repo.login({ email: buildEmail(), password: buildPassword() });
 
-    expect(result).toEqual({ ok: true, value: { email: 'a@b.c', token: 't' } });
+    expect(result).toEqual({ ok: true, value: { email, token } });
   });
 
   it('maps transport errors to a structured AuthError', async () => {
@@ -37,7 +40,7 @@ describe('AuthRepositoryImpl', () => {
     });
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.login({ email: 'a@b.c', password: 'p' });
+    const result = await repo.login({ email: buildEmail(), password: buildPassword() });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -51,7 +54,7 @@ describe('AuthRepositoryImpl', () => {
     (deps.abortDetector.isAbortError as jest.Mock).mockReturnValue(true);
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.login({ email: 'a@b.c', password: 'p' });
+    const result = await repo.login({ email: buildEmail(), password: buildPassword() });
 
     expect(result).toEqual({
       ok: false,
@@ -69,7 +72,7 @@ describe('AuthRepositoryImpl', () => {
     });
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.login({ email: 'a@b.c', password: 'p' });
+    const result = await repo.login({ email: buildEmail(), password: buildPassword() });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -79,12 +82,16 @@ describe('AuthRepositoryImpl', () => {
 
   it('returns a SafeUserInfo on successful register', async () => {
     const deps = makeDeps();
-    const safeUser = { id: '1', email: 'a@b.c', fullName: 'A B' };
+    const safeUser = { id: buildUserId(), email: buildEmail(), fullName: buildFullName() };
     (deps.registrationAPI.register as jest.Mock).mockResolvedValue({});
     (deps.registrationResponseMapper.map as jest.Mock).mockReturnValue(ok(safeUser));
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.register({ email: 'a@b.c', password: 'p', fullName: 'A B' });
+    const result = await repo.register({
+      email: buildEmail(),
+      password: buildPassword(),
+      fullName: buildFullName(),
+    });
 
     expect(result).toEqual({ ok: true, value: safeUser });
   });
@@ -98,7 +105,11 @@ describe('AuthRepositoryImpl', () => {
     });
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.register({ email: 'a@b.c', password: 'p', fullName: 'A B' });
+    const result = await repo.register({
+      email: buildEmail(),
+      password: buildPassword(),
+      fullName: buildFullName(),
+    });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -115,7 +126,11 @@ describe('AuthRepositoryImpl', () => {
     });
     const repo = new AuthRepositoryImpl(deps);
 
-    const result = await repo.register({ email: 'a@b.c', password: 'p', fullName: 'A B' });
+    const result = await repo.register({
+      email: buildEmail(),
+      password: buildPassword(),
+      fullName: buildFullName(),
+    });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {

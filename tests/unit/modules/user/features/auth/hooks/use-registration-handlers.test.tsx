@@ -3,6 +3,7 @@ import type { MutableRefObject } from 'react';
 
 import useRegistrationHandlers from '@auth/hooks/use-registration-handlers';
 import type { RegisterUserDto } from '@auth/types/credentials';
+import { buildUser } from '@tests/builders';
 
 const registerUser = jest.fn<Promise<void>, [RegisterUserDto]>(() => Promise.resolve());
 const resetRegistration = jest.fn();
@@ -75,7 +76,7 @@ describe('useRegistrationHandlers', () => {
 
   it('handleRetry resets and re-registers the last submitted data when available', () => {
     const { current, lastSubmittedDataRef } = buildHook();
-    const last: RegisterUserDto = { email: 'a@b.com', password: 'pw', fullName: 'Alice' };
+    const last: RegisterUserDto = buildUser();
     lastSubmittedDataRef.current = last;
 
     act(() => current().handleRetry());

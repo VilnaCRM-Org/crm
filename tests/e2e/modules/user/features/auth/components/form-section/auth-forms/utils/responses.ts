@@ -1,5 +1,7 @@
 import { Route } from '@playwright/test';
 
+import { buildClientMutationId, buildGraphqlUser } from '@tests/builders';
+
 import { userData } from '../constants/constants';
 
 export async function successResponse(route: Route): Promise<void> {
@@ -9,13 +11,12 @@ export async function successResponse(route: Route): Promise<void> {
     body: JSON.stringify({
       data: {
         createUser: {
-          user: {
+          user: buildGraphqlUser({
             email: userData.email,
             initials: userData.fullName,
-            id: '12345',
             confirmed: true,
-          },
-          clientMutationId: '186',
+          }),
+          clientMutationId: buildClientMutationId(),
         },
       },
     }),

@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 
 import AuthStateVar from '@auth/stores/auth-var';
 import useAuthState from '@auth/stores/use-auth-state';
+import { buildEmail } from '@tests/builders';
 
 const ENV_KEY = 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN';
 const CLEARED = {
@@ -30,11 +31,12 @@ describe('auth-var state helpers', () => {
   });
 
   it('re-renders consumers of useAuthState when the reactive var changes', () => {
+    const email = buildEmail();
     const { result } = renderHook(() => useAuthState());
     expect(result.current.email).toBe('');
 
-    act(() => AuthStateVar.set({ email: 'live@update.com' }));
-    expect(result.current.email).toBe('live@update.com');
+    act(() => AuthStateVar.set({ email }));
+    expect(result.current.email).toBe(email);
   });
 });
 

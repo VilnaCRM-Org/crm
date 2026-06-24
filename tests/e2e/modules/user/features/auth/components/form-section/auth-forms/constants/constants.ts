@@ -1,7 +1,11 @@
 import { faker } from '@faker-js/faker';
 
+import { buildUser, seedFaker } from '@tests/builders';
+
 import { t } from '../../../../../../../../utils/initialize-localization';
 import { ExpectationEmail, ExpectationsPassword, User } from '../types';
+
+seedFaker();
 
 export const REGISTRATION_URL = '/authentication';
 export const REGISTRATION_API_URL = '**/graphql'; // Apollo GraphQL createUser endpoint
@@ -15,15 +19,7 @@ export const requiredNameError: string = t('sign_up.form.name_input.required');
 export const successNotificationTitle: string = t('notifications.success.title');
 
 export function generateUserData(): User {
-  const firstName: string = faker.helpers.fromRegExp(/[A-Za-zА-Яа-яІіЇїЄєҐґ]{3,10}/);
-  const lastName: string = faker.helpers.fromRegExp(/[A-Za-zА-Яа-яІіЇїЄєҐґ]{3,10}/);
-  const domain = faker.internet.domainName();
-  const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}`;
-  return {
-    fullName: `${firstName} ${lastName}`,
-    email,
-    password: faker.internet.password({ length: 16, prefix: 'Q9' }),
-  };
+  return buildUser();
 }
 
 export const userData: User = generateUserData();
