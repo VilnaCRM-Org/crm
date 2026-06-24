@@ -3,8 +3,9 @@ import '../../../../../setup';
 import { renderHook } from '@testing-library/react';
 
 import { AuthStateVar, authActions, useAuthState, useAuthToken } from '@auth/stores';
+import { buildCredentials, buildUser } from '@tests/builders';
 
-import server from '../../../../../mocks/server';
+import server, { defaultLoginResponse } from '../../../../../mocks/server';
 
 describe('auth stores composition root integration', () => {
   beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
@@ -15,10 +16,10 @@ describe('auth stores composition root integration', () => {
   afterAll(() => server.close());
 
   it('drives login and registration through the real repository and clears state', async () => {
-    await authActions.loginUser({ email: 'a@b.c', password: 'password' });
-    expect(AuthStateVar.get().token).toBe('default-token-123');
+    await authActions.loginUser(buildCredentials());
+    expect(AuthStateVar.get().token).toBe(defaultLoginResponse.token);
 
-    await authActions.registerUser({ fullName: 'A B', email: 'a@b.c', password: 'password' });
+    await authActions.registerUser(buildUser());
     expect(AuthStateVar.get().registerError).toBeNull();
 
     authActions.resetRegistration();

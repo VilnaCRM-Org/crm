@@ -2,20 +2,22 @@
 
 import { ApiError } from '@/modules/user/lib/api-errors';
 import LoginAPI from '@auth/repositories/login-api';
+import { buildCredentials, buildLoginResponse } from '@tests/builders';
 
 type HttpsClient = import('@/services/types/https-client/https-client').HttpsClient;
 
 describe('LoginAPI', () => {
-  const credentials = { email: 'user@example.com', password: 'secret' };
+  const credentials = buildCredentials();
 
   it('returns the underlying client response on success', async () => {
+    const loginResponse = buildLoginResponse();
     const httpsClient = {
-      post: jest.fn().mockResolvedValue({ token: 'abc123' }),
+      post: jest.fn().mockResolvedValue(loginResponse),
     } as unknown as HttpsClient;
 
     const api = new LoginAPI(httpsClient, { convert: jest.fn() } as never);
 
-    await expect(api.login(credentials)).resolves.toEqual({ token: 'abc123' });
+    await expect(api.login(credentials)).resolves.toEqual(loginResponse);
     expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, undefined);
   });
 

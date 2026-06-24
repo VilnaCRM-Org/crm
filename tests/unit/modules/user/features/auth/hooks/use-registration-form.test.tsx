@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 
 import useRegistrationForm from '@auth/hooks/use-registration-form';
 import { AuthStateVar } from '@auth/stores';
+import { buildRegistrationResponse } from '@tests/builders';
 
 describe('useRegistrationForm', () => {
   beforeEach(() => {
@@ -47,7 +48,7 @@ describe('useRegistrationForm', () => {
   it('keeps showSubmitLoader on after success until the result is cleared', () => {
     AuthStateVar.set({
       registerLoading: false,
-      user: { email: 'user@example.com', fullName: 'User Example' },
+      user: buildRegistrationResponse(),
     });
 
     const { result } = renderHook(() => useRegistrationForm());

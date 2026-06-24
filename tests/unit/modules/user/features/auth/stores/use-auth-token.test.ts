@@ -2,6 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 
 import AuthStateVar from '@auth/stores/auth-var';
 import useAuthToken from '@auth/stores/use-auth-token';
+import { buildToken } from '@tests/builders';
 
 // Wraps every unsubscriber handed out by `onNextChange` so tests can assert which
 // registrations the hook actually cancels on cleanup.
@@ -38,24 +39,27 @@ describe('useAuthToken', () => {
     });
     expect(result.current).toBeNull();
 
-    act(() => AuthStateVar.set({ token: 'tok-1' }));
-    expect(result.current).toBe('tok-1');
+    const firstToken = buildToken();
+    act(() => AuthStateVar.set({ token: firstToken }));
+    expect(result.current).toBe(firstToken);
 
     const callsAfterToken = hookCalls;
     act(() => AuthStateVar.set({ loginLoading: true }));
     expect(hookCalls).toBe(callsAfterToken);
 
-    act(() => AuthStateVar.set({ token: 'tok-2' }));
-    expect(result.current).toBe('tok-2');
+    const secondToken = buildToken();
+    act(() => AuthStateVar.set({ token: secondToken }));
+    expect(result.current).toBe(secondToken);
   });
 
   it('stops notifying after unmount', () => {
     const { result, unmount } = renderHook(() => useAuthToken());
     expect(result.current).toBeNull();
 
+    const afterUnmountToken = buildToken();
     unmount();
-    act(() => AuthStateVar.set({ token: 'after-unmount' }));
-    expect(AuthStateVar.get().token).toBe('after-unmount');
+    act(() => AuthStateVar.set({ token: afterUnmountToken }));
+    expect(AuthStateVar.get().token).toBe(afterUnmountToken);
   });
 
   it('unregisters the armed listener on unmount', () => {
@@ -74,7 +78,7 @@ describe('useAuthToken', () => {
     tracker.install();
 
     const { unmount } = renderHook(() => useAuthToken());
-    act(() => AuthStateVar.set({ token: 'tok-rearm' }));
+    act(() => AuthStateVar.set({ token: buildToken() }));
     expect(tracker.cancelled).toEqual([false, false]);
 
     unmount();
@@ -93,8 +97,8 @@ describe('useAuthToken', () => {
     });
 
     const { unmount } = renderHook(() => useAuthToken());
-    act(() => AuthStateVar.set({ token: 'tok-1' }));
-    act(() => AuthStateVar.set({ token: 'tok-2' }));
+    act(() => AuthStateVar.set({ token: buildToken() }));
+    act(() => AuthStateVar.set({ token: buildToken() }));
 
     expect(registered).toHaveLength(3);
     expect(new Set(registered).size).toBe(1);
@@ -112,7 +116,7 @@ describe('useAuthToken', () => {
     unmountHook = unmount;
     const relistenSpy = jest.spyOn(reactiveVar, 'onNextChange');
 
-    act(() => AuthStateVar.set({ token: 'race' }));
+    act(() => AuthStateVar.set({ token: buildToken() }));
     expect(relistenSpy).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,7 @@ import { createRef } from 'react';
 
 import type { RegisterUserDto } from '@auth/types/credentials';
 import RegistrationHandlersFactory from '@auth/utils/registration-handlers-factory';
+import { buildUser } from '@tests/builders';
 
 const createDeps = (
   ref: { current: RegisterUserDto | null } = createRef<RegisterUserDto | null>() as {
@@ -94,7 +95,7 @@ describe('RegistrationHandlersFactory', () => {
   });
 
   it('handleRetry resets and re-submits with the last submitted data', () => {
-    const last: RegisterUserDto = { email: 'a@b.com', password: 'pw', fullName: 'Last User' };
+    const last: RegisterUserDto = buildUser();
     const ref = { current: last };
     const { deps } = createDeps(ref);
     const { actions, registerUser, resetRegistration } = createActions();

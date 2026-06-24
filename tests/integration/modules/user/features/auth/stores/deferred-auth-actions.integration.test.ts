@@ -2,8 +2,9 @@ import '../../../../../setup';
 
 import container from '@/config/dependency-injection-config';
 import { AuthStateVar, authActions } from '@auth/stores';
+import { buildCredentials, buildUser } from '@tests/builders';
 
-import server from '../../../../../mocks/server';
+import server, { defaultLoginResponse } from '../../../../../mocks/server';
 
 describe('deferred auth actions integration', () => {
   beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
@@ -14,17 +15,19 @@ describe('deferred auth actions integration', () => {
   afterAll(() => server.close());
 
   it('surfaces a retryable error when the DI graph fails to load, then recovers', async () => {
+    const credentials = buildCredentials();
+    const registration = buildUser();
     const resolveSpy = jest.spyOn(container, 'resolve').mockImplementation(() => {
       throw new Error('chunk load failed');
     });
 
-    await authActions.loginUser({ email: 'a@b.c', password: 'password' });
+    await authActions.loginUser(credentials);
     expect(AuthStateVar.get()).toMatchObject({
       loginLoading: false,
       loginError: { kind: 'network', retryable: true },
     });
 
-    await authActions.registerUser({ fullName: 'A B', email: 'a@b.c', password: 'password' });
+    await authActions.registerUser(registration);
     expect(AuthStateVar.get()).toMatchObject({
       registerLoading: false,
       registerError: { kind: 'network', retryable: true },
@@ -32,7 +35,7 @@ describe('deferred auth actions integration', () => {
 
     resolveSpy.mockRestore();
 
-    await authActions.loginUser({ email: 'a@b.c', password: 'password' });
-    expect(AuthStateVar.get().token).toBe('default-token-123');
+    await authActions.loginUser(credentials);
+    expect(AuthStateVar.get().token).toBe(defaultLoginResponse.token);
   });
 });

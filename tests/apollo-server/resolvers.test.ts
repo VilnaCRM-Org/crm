@@ -1,5 +1,7 @@
 import { GraphQLError } from 'graphql';
 
+import { buildCreateUserInput, buildFullName } from '@tests/builders';
+
 import { resolvers, clearUsers, __test__ } from '../../docker/apollo-server/lib/resolvers';
 import { CreateUserInput } from '../../docker/apollo-server/lib/types';
 
@@ -15,11 +17,7 @@ describe('resolvers Mutation createUser', () => {
 
   describe('successful user creation', () => {
     it('should create a user with valid input', async () => {
-      const input: CreateUserInput = {
-        email: 'test@example.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput();
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
 
@@ -27,41 +25,28 @@ describe('resolvers Mutation createUser', () => {
         user: {
           id: 'mocked-uuid-1234',
           confirmed: true,
-          email: 'test@example.com',
-          initials: 'John Doe',
+          email: input.email,
+          initials: input.initials,
         },
-        clientMutationId: 'mutation-123',
+        clientMutationId: input.clientMutationId,
       });
     });
 
     it('should create multiple users with different emails', async () => {
-      const input1: CreateUserInput = {
-        email: 'user1@example.com',
-        initials: 'User One',
-        clientMutationId: 'mutation-1',
-      };
-
-      const input2: CreateUserInput = {
-        email: 'user2@example.com',
-        initials: 'User Two',
-        clientMutationId: 'mutation-2',
-      };
+      const input1: CreateUserInput = buildCreateUserInput();
+      const input2: CreateUserInput = buildCreateUserInput();
 
       const result1 = await resolvers.Mutation.createUser(undefined, { input: input1 });
       const result2 = await resolvers.Mutation.createUser(undefined, { input: input2 });
 
-      expect(result1.user.email).toBe('user1@example.com');
-      expect(result2.user.email).toBe('user2@example.com');
+      expect(result1.user.email).toBe(input1.email);
+      expect(result2.user.email).toBe(input2.email);
     });
   });
 
   describe('email validation', () => {
     it('should throw error for missing email', async () => {
-      const input = {
-        email: '',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      } as CreateUserInput;
+      const input: CreateUserInput = buildCreateUserInput({ email: '' });
 
       const promise = resolvers.Mutation.createUser(undefined, { input });
       await expect(promise).rejects.toThrow(GraphQLError);
@@ -75,11 +60,7 @@ describe('resolvers Mutation createUser', () => {
     });
 
     it('should throw error for invalid email format - missing @', async () => {
-      const input: CreateUserInput = {
-        email: 'invalidemail.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: 'invalidemail.com' });
 
       await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toThrow(
         GraphQLError
@@ -87,11 +68,7 @@ describe('resolvers Mutation createUser', () => {
     });
 
     it('should throw error for invalid email format - missing domain', async () => {
-      const input: CreateUserInput = {
-        email: 'test@',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: 'test@' });
 
       await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toThrow(
         GraphQLError
@@ -99,11 +76,7 @@ describe('resolvers Mutation createUser', () => {
     });
 
     it('should throw error for invalid email format - invalid characters', async () => {
-      const input: CreateUserInput = {
-        email: 'test @example.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: 'test @example.com' });
 
       await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toThrow(
         GraphQLError
@@ -111,11 +84,7 @@ describe('resolvers Mutation createUser', () => {
     });
 
     it('should accept valid email with special characters', async () => {
-      const input: CreateUserInput = {
-        email: 'test.user+tag@example.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: 'test.user+tag@example.com' });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.email).toBe('test.user+tag@example.com');
@@ -124,11 +93,7 @@ describe('resolvers Mutation createUser', () => {
 
   describe('initials validation', () => {
     it('should throw error for missing initials', async () => {
-      const input = {
-        email: 'test@example.com',
-        initials: '',
-        clientMutationId: 'mutation-123',
-      } as CreateUserInput;
+      const input: CreateUserInput = buildCreateUserInput({ initials: '' });
 
       const promise = resolvers.Mutation.createUser(undefined, { input });
       await expect(promise).rejects.toThrow(GraphQLError);
@@ -142,11 +107,7 @@ describe('resolvers Mutation createUser', () => {
     });
 
     it('should throw error for initials shorter than 2 characters', async () => {
-      const input: CreateUserInput = {
-        email: 'test@example.com',
-        initials: 'A',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ initials: 'A' });
 
       await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toThrow(
         GraphQLError
@@ -154,41 +115,30 @@ describe('resolvers Mutation createUser', () => {
     });
 
     it('should accept initials with exactly 2 characters', async () => {
-      const input: CreateUserInput = {
-        email: 'test@example.com',
-        initials: 'AB',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ initials: 'AB' });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.initials).toBe('AB');
     });
 
     it('should accept initials longer than 2 characters', async () => {
-      const input: CreateUserInput = {
-        email: 'test@example.com',
-        initials: 'John Doe Smith',
-        clientMutationId: 'mutation-123',
-      };
+      const initials = buildFullName();
+      const input: CreateUserInput = buildCreateUserInput({ initials });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
-      expect(result.user.initials).toBe('John Doe Smith');
+      expect(result.user.initials).toBe(initials);
     });
   });
 
   describe('duplicate email handling', () => {
     it('should throw error when creating user with duplicate email', async () => {
-      const input: CreateUserInput = {
-        email: 'duplicate@example.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-1',
-      };
+      const input: CreateUserInput = buildCreateUserInput();
 
       // First creation should succeed
       await resolvers.Mutation.createUser(undefined, { input });
 
       // Second creation with same email should fail
-      const input2 = { ...input, clientMutationId: 'mutation-2' };
+      const input2 = { ...input, clientMutationId: buildCreateUserInput().clientMutationId };
       const promise = resolvers.Mutation.createUser(undefined, { input: input2 });
       await expect(promise).rejects.toThrow(GraphQLError);
       await expect(promise).rejects.toMatchObject({
@@ -234,46 +184,30 @@ describe('resolvers Mutation createUser', () => {
 
   describe('user properties', () => {
     it('should set confirmed to true by default', async () => {
-      const input: CreateUserInput = {
-        email: 'test@example.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput();
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.confirmed).toBe(true);
     });
 
     it('should generate a unique ID for the user', async () => {
-      const input: CreateUserInput = {
-        email: 'test@example.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput();
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.id).toBe('mocked-uuid-1234');
     });
 
     it('should return clientMutationId in response', async () => {
-      const input: CreateUserInput = {
-        email: 'test@example.com',
-        initials: 'John Doe',
-        clientMutationId: 'custom-mutation-id',
-      };
+      const input: CreateUserInput = buildCreateUserInput();
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
-      expect(result.clientMutationId).toBe('custom-mutation-id');
+      expect(result.clientMutationId).toBe(input.clientMutationId);
     });
   });
 
   describe('validation order', () => {
     it('should validate email before checking duplicates', async () => {
-      const input: CreateUserInput = {
-        email: 'invalid-email',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: 'invalid-email' });
 
       await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toMatchObject({
         message: 'Invalid email format',
@@ -281,11 +215,7 @@ describe('resolvers Mutation createUser', () => {
     });
 
     it('should validate initials before checking duplicates', async () => {
-      const input: CreateUserInput = {
-        email: 'test@example.com',
-        initials: 'A',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ initials: 'A' });
 
       await expect(resolvers.Mutation.createUser(undefined, { input })).rejects.toMatchObject({
         message: 'Invalid initials',
@@ -303,11 +233,7 @@ describe('resolvers Mutation createUser', () => {
         throw new Error('UUID generation failed');
       });
 
-      const input: CreateUserInput = {
-        email: 'test@example.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput();
 
       const promise = resolvers.Mutation.createUser(undefined, { input });
       await expect(promise).rejects.toThrow(GraphQLError);
@@ -330,11 +256,7 @@ describe('resolvers Mutation createUser', () => {
 
   describe('edge cases', () => {
     it('should reject email with only spaces', async () => {
-      const input: CreateUserInput = {
-        email: '   ',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: '   ' });
 
       const promise = resolvers.Mutation.createUser(undefined, { input });
       await expect(promise).rejects.toThrow(GraphQLError);
@@ -344,44 +266,28 @@ describe('resolvers Mutation createUser', () => {
     });
 
     it('should accept email with subdomain', async () => {
-      const input: CreateUserInput = {
-        email: 'user@mail.example.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: 'user@mail.example.com' });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.email).toBe('user@mail.example.com');
     });
 
     it('should accept email with numbers', async () => {
-      const input: CreateUserInput = {
-        email: 'user123@example456.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: 'user123@example456.com' });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.email).toBe('user123@example456.com');
     });
 
     it('should accept email with consecutive dots (current regex allows this)', async () => {
-      const input: CreateUserInput = {
-        email: 'user..name@example.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: 'user..name@example.com' });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.email).toBe('user..name@example.com');
     });
 
     it('should accept initials with only spaces if length >= 2 (current validation)', async () => {
-      const input: CreateUserInput = {
-        email: 'test-spaces@example.com',
-        initials: '   ',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ initials: '   ' });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.initials).toBe('   ');
@@ -389,44 +295,28 @@ describe('resolvers Mutation createUser', () => {
 
     it('should handle very long initials', async () => {
       const longInitials = 'A'.repeat(200);
-      const input: CreateUserInput = {
-        email: 'test-long@example.com',
-        initials: longInitials,
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ initials: longInitials });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.initials).toBe(longInitials);
     });
 
     it('should handle unicode characters in initials', async () => {
-      const input: CreateUserInput = {
-        email: 'unicode@example.com',
-        initials: 'Иван Петров',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ initials: 'Иван Петров' });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.initials).toBe('Иван Петров');
     });
 
     it('should handle special characters in initials', async () => {
-      const input: CreateUserInput = {
-        email: 'special@example.com',
-        initials: "O'Brien-Smith",
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ initials: "O'Brien-Smith" });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.initials).toBe("O'Brien-Smith");
     });
 
     it('should handle email with hyphen in domain', async () => {
-      const input: CreateUserInput = {
-        email: 'user@ex-ample.com',
-        initials: 'John Doe',
-        clientMutationId: 'mutation-123',
-      };
+      const input: CreateUserInput = buildCreateUserInput({ email: 'user@ex-ample.com' });
 
       const result = await resolvers.Mutation.createUser(undefined, { input });
       expect(result.user.email).toBe('user@ex-ample.com');
@@ -435,11 +325,7 @@ describe('resolvers Mutation createUser', () => {
 
   describe('concurrent operations', () => {
     it('should handle multiple users being created concurrently', async () => {
-      const inputs = Array.from({ length: 5 }, (_, i) => ({
-        email: `user${i}@example.com`,
-        initials: `User ${i}`,
-        clientMutationId: `mutation-${i}`,
-      }));
+      const inputs = Array.from({ length: 5 }, () => buildCreateUserInput());
 
       const results = await Promise.all(
         inputs.map((input) => resolvers.Mutation.createUser(undefined, { input }))
@@ -447,8 +333,8 @@ describe('resolvers Mutation createUser', () => {
 
       expect(results).toHaveLength(5);
       results.forEach((result, i) => {
-        expect(result.user.email).toBe(`user${i}@example.com`);
-        expect(result.user.initials).toBe(`User ${i}`);
+        expect(result.user.email).toBe(inputs[i].email);
+        expect(result.user.initials).toBe(inputs[i].initials);
       });
     });
   });

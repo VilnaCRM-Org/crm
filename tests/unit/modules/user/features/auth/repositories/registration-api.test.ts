@@ -6,6 +6,7 @@ import ApiErrorFactory from '@auth/repositories/api-error-factory';
 import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
 import CREATE_USER from '@auth/repositories/create-user-mutation';
 import RegistrationAPI from '@auth/repositories/registration-api';
+import { buildClientMutationId, buildGraphqlUser, buildUser } from '@tests/builders';
 
 type ApolloClient = import('@apollo/client').ApolloClient<
   import('@apollo/client').NormalizedCacheObject
@@ -14,22 +15,16 @@ type ApolloClient = import('@apollo/client').ApolloClient<
 const mockApollo = (mutate: jest.Mock): ApolloClient => ({ mutate }) as unknown as ApolloClient;
 
 describe('RegistrationAPI', () => {
-  const credentials = {
-    email: 'user@example.com',
-    password: 'secret',
-    fullName: 'Test User',
-  };
+  const credentials = buildUser();
 
-  const userPayload = {
-    id: 'user-1',
-    confirmed: true,
+  const userPayload = buildGraphqlUser({
     email: credentials.email,
     initials: credentials.fullName,
-  };
+  });
 
   it('creates the user through the GraphQL mutation and maps the payload', async () => {
     const mutate = jest.fn().mockResolvedValue({
-      data: { createUser: { user: userPayload, clientMutationId: 'cid' } },
+      data: { createUser: { user: userPayload, clientMutationId: buildClientMutationId() } },
     });
     const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
 

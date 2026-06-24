@@ -7,20 +7,25 @@ import TOKENS from '@/config/tokens';
 import type LoginAPI from '@auth/repositories/login-api';
 import type RegistrationAPI from '@auth/repositories/registration-api';
 import { AuthStateVar, AuthStoreSelectors, authActions } from '@auth/stores';
+import {
+  buildClientMutationId,
+  buildCredentials,
+  buildGraphqlUser,
+  buildLoginResponse,
+  buildRegistrationResponse,
+  buildToken,
+  buildUser,
+} from '@tests/builders';
 
 import server, { GRAPHQL_URL } from '../../../../../mocks/server';
 
-const registrationCredentials = {
-  email: 'test@example.com',
-  password: 'password123',
-  fullName: 'Test User',
-};
+const registrationCredentials = buildUser();
 
 const createUserSuccessBody = {
   data: {
     createUser: {
-      user: { id: 'u1', confirmed: true, email: 'test@example.com', initials: 'Test User' },
-      clientMutationId: 'c1',
+      user: buildGraphqlUser(),
+      clientMutationId: buildClientMutationId(),
     },
   },
 };
@@ -59,11 +64,11 @@ describe('Auth Store Integration', () => {
     it('should update state to pending when login starts', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.delay(50), ctx.status(200), ctx.json({ token: 'token123' }))
+          res(ctx.delay(50), ctx.status(200), ctx.json(buildLoginResponse()))
         )
       );
 
-      const promise = authActions.loginUser({ email: 'user@test.com', password: 'pass' });
+      const promise = authActions.loginUser(buildCredentials());
       expect(AuthStateVar.get().loginLoading).toBe(true);
 
       await promise;
@@ -71,26 +76,26 @@ describe('Auth Store Integration', () => {
     });
 
     it('should update state on successful login', async () => {
+      const credentials = buildCredentials();
+      const { token } = buildLoginResponse();
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'token123' }))
-        )
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.json({ token })))
       );
 
-      await authActions.loginUser({ email: 'user@example.com', password: 'pass123' });
+      await authActions.loginUser(credentials);
 
       const state = AuthStateVar.get();
 
       expect(state.loginLoading).toBe(false);
-      expect(state.email).toBe('user@example.com');
-      expect(state.token).toBe('token123');
+      expect(state.email).toBe(credentials.email);
+      expect(state.token).toBe(token);
       expect(state.loginError).toBeNull();
     });
 
     it('should normalize email to lowercase', async () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'token-abc' }))
+          res(ctx.status(200), ctx.json(buildLoginResponse()))
         )
       );
 
@@ -101,26 +106,30 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle multiple successful logins', async () => {
+      const firstCredentials = buildCredentials();
+      const firstToken = buildToken();
+      const secondCredentials = buildCredentials();
+      const secondToken = buildToken();
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'first-token' }))
+          res(ctx.status(200), ctx.json({ token: firstToken }))
         )
       );
 
-      await authActions.loginUser({ email: 'first@test.com', password: 'pass' });
-      expect(AuthStateVar.get().token).toBe('first-token');
+      await authActions.loginUser(firstCredentials);
+      expect(AuthStateVar.get().token).toBe(firstToken);
 
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'second-token' }))
+          res(ctx.status(200), ctx.json({ token: secondToken }))
         )
       );
 
-      await authActions.loginUser({ email: 'second@test.com', password: 'pass' });
+      await authActions.loginUser(secondCredentials);
 
       const state = AuthStateVar.get();
-      expect(state.token).toBe('second-token');
-      expect(state.email).toBe('second@test.com');
+      expect(state.token).toBe(secondToken);
+      expect(state.email).toBe(secondCredentials.email);
     });
   });
 
@@ -132,7 +141,7 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await authActions.loginUser({ email: 'bad@test.com', password: 'badpass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -143,7 +152,7 @@ describe('Auth Store Integration', () => {
     it('should set error state on network failure', async () => {
       server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Failed to fetch')));
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -172,20 +181,21 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
       expect(AuthStateVar.get().loginError).toBeTruthy();
 
+      const newToken = buildToken();
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'new-token' }))
+          res(ctx.status(200), ctx.json({ token: newToken }))
         )
       );
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'correctpass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginError).toBeNull();
-      expect(state.token).toBe('new-token');
+      expect(state.token).toBe(newToken);
     });
 
     it('should handle 500 server error', async () => {
@@ -195,7 +205,7 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -213,7 +223,7 @@ describe('Auth Store Integration', () => {
           )
         );
 
-        await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+        await authActions.loginUser(buildCredentials());
 
         const state = AuthStateVar.get();
         expect(state.loginLoading).toBe(false);
@@ -224,15 +234,15 @@ describe('Auth Store Integration', () => {
 
   describe('logout action', () => {
     it('should clear all auth state on logout', async () => {
+      const credentials = buildCredentials();
+      const { token } = buildLoginResponse();
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'token123' }))
-        )
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.json({ token })))
       );
 
-      await authActions.loginUser({ email: 'user@test.com', password: 'pass' });
-      expect(AuthStateVar.get().token).toBe('token123');
-      expect(AuthStateVar.get().email).toBe('user@test.com');
+      await authActions.loginUser(credentials);
+      expect(AuthStateVar.get().token).toBe(token);
+      expect(AuthStateVar.get().email).toBe(credentials.email);
 
       authActions.logout();
 
@@ -251,15 +261,12 @@ describe('Auth Store Integration', () => {
       server.use(
         rest.post(API_ENDPOINTS.LOGIN, async (_, res, ctx) => {
           await createDelayedPromise(100);
-          return res(ctx.status(200), ctx.json({ token: 'token' }));
+          return res(ctx.status(200), ctx.json(buildLoginResponse()));
         })
       );
 
       const abortController = new AbortController();
-      const promise = authActions.loginUser(
-        { email: 'test@test.com', password: 'pass' },
-        abortController.signal
-      );
+      const promise = authActions.loginUser(buildCredentials(), abortController.signal);
 
       abortController.abort();
       await promise;
@@ -278,7 +285,7 @@ describe('Auth Store Integration', () => {
         )
       );
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -413,10 +420,7 @@ describe('Auth Store Integration', () => {
       const abortController = new AbortController();
       abortController.abort();
 
-      await authActions.loginUser(
-        { email: 'test@test.com', password: 'pass' },
-        abortController.signal
-      );
+      await authActions.loginUser(buildCredentials(), abortController.signal);
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -429,7 +433,7 @@ describe('Auth Store Integration', () => {
         .spyOn(loginAPI, 'login')
         .mockRejectedValue(new DOMException('The operation was aborted', 'AbortError'));
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -442,7 +446,7 @@ describe('Auth Store Integration', () => {
       abortError.name = 'AbortError';
       jest.spyOn(loginAPI, 'login').mockRejectedValue(abortError);
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -453,7 +457,7 @@ describe('Auth Store Integration', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue(new Error('Request was aborted by user'));
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -464,7 +468,7 @@ describe('Auth Store Integration', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue(new Error('Network failure'));
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -475,7 +479,7 @@ describe('Auth Store Integration', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue('string error');
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -486,7 +490,7 @@ describe('Auth Store Integration', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue(null);
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -499,7 +503,7 @@ describe('Auth Store Integration', () => {
       error.message = undefined as unknown as string;
       jest.spyOn(loginAPI, 'login').mockRejectedValue(error);
 
-      await authActions.loginUser({ email: 'test@test.com', password: 'pass' });
+      await authActions.loginUser(buildCredentials());
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -509,17 +513,17 @@ describe('Auth Store Integration', () => {
 
   describe('selectors', () => {
     it('should select state values correctly', async () => {
+      const credentials = buildCredentials();
+      const { token } = buildLoginResponse();
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'sel-token' }))
-        )
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.json({ token })))
       );
 
-      await authActions.loginUser({ email: 'sel@test.com', password: 'pass' });
+      await authActions.loginUser(credentials);
 
       const state = AuthStateVar.get();
-      expect(AuthStoreSelectors.email(state)).toBe('sel@test.com');
-      expect(AuthStoreSelectors.token(state)).toBe('sel-token');
+      expect(AuthStoreSelectors.email(state)).toBe(credentials.email);
+      expect(AuthStoreSelectors.token(state)).toBe(token);
       expect(AuthStoreSelectors.loginLoading(state)).toBe(false);
       expect(AuthStoreSelectors.loginError(state)).toBeNull();
       expect(AuthStoreSelectors.registerLoading(state)).toBe(false);
@@ -532,7 +536,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should select registerUser from state', async () => {
-      const user = { fullName: 'Jane Doe', email: 'jane@test.com' };
+      const user = buildRegistrationResponse();
       AuthStateVar.set({ user });
 
       const state = AuthStateVar.get();
@@ -548,17 +552,17 @@ describe('Auth Store Integration', () => {
       const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
       expect(loginAPI).toBeDefined();
 
+      const credentials = buildCredentials();
+      const { token } = buildLoginResponse();
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: 'di-token' }))
-        )
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.json({ token })))
       );
 
-      await authActions.loginUser({ email: 'di@test.com', password: 'pass' });
+      await authActions.loginUser(credentials);
 
       const state = AuthStateVar.get();
-      expect(state.token).toBe('di-token');
-      expect(state.email).toBe('di@test.com');
+      expect(state.token).toBe(token);
+      expect(state.email).toBe(credentials.email);
     });
 
     it('should use real RegistrationAPI from DI container', async () => {

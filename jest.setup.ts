@@ -1,6 +1,10 @@
 import 'reflect-metadata';
 import '@testing-library/jest-dom';
 
+import { seedFaker } from './tests/builders/seed';
+
+seedFaker();
+
 // jsdom does not provide a global fetch. Apollo Client's HttpLink requires one to
 // exist at construction time; individual tests that exercise network code stub it.
 if (!globalThis.fetch) {

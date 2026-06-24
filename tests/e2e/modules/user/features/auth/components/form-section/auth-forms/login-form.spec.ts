@@ -1,5 +1,7 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
 
+import { buildCredentials } from '@tests/builders';
+
 import fillInput from '../../../../../../../utils/fill-input';
 import { t } from '../../../../../../../utils/initialize-localization';
 
@@ -11,7 +13,7 @@ const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const passwordPlaceholder: string = t('sign_in.form.password_input.placeholder');
 const submitLabel: string = t('sign_in.form.submit_button');
 
-const validCredentials = { email: 'user@example.com', password: 'Q9validPassword1' };
+const validCredentials = buildCredentials();
 
 async function gotoLogin(page: Page): Promise<void> {
   await page.goto(AUTH_URL);

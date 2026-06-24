@@ -1,17 +1,19 @@
 import 'reflect-metadata';
 
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
+import { buildRegistrationResponse } from '@tests/builders';
 
 describe('RegistrationResponseMapper', () => {
   const mapper = new RegistrationResponseMapper();
 
   it('returns ok with user info on a valid response', () => {
-    const result = mapper.map({ fullName: 'Test User', email: 'test@example.com' });
+    const response = buildRegistrationResponse();
+    const result = mapper.map(response);
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.fullName).toBe('Test User');
-      expect(result.value.email).toBe('test@example.com');
+      expect(result.value.fullName).toBe(response.fullName);
+      expect(result.value.email).toBe(response.email);
     }
   });
 

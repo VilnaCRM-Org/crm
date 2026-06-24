@@ -587,6 +587,19 @@ Key variables in `.env`:
    `auth/repositories/`, and the API error classes to `lib/api-errors/` (pattern 1).
    Satisfy the gate by moving code, never with disable directives.
 
+8. **Test data — Faker builders (issue #101)**: Tests generate arbitrary user/auth domain
+   data (emails, names, passwords, ids, tokens) with `@faker-js/faker` via shared builders in
+   `tests/builders/` (`buildUser`, `buildCredentials`, `buildEmail`, `buildLoginResponse`,
+   `buildCreateUserInput`, `buildGraphqlUser`, …), imported through the `@tests/*` alias.
+   Builders return domain-valid data by construction and take an `overrides` object. Faker is
+   seeded deterministically (`seedFaker()` in each runner's setup; default `DEFAULT_FAKER_SEED`,
+   override with `FAKER_SEED=<integer>`; the seed is reported once per worker) so the suite is
+   reproducible and visual snapshots stay stable. Bind a generated value to a `const` once and
+   reuse it across input and assertion. Keep hardcoded literals only when the value IS the test
+   case or a fixed contract (invalid/edge-case inputs, golden text, config, URLs, error
+   codes/messages, i18n strings, mock sentinels). See the "Test Data — Faker builders" section
+   in `agents.md` for the full convention and review guideline.
+
 ## Node Version Management
 
 Check Node version compatibility:
