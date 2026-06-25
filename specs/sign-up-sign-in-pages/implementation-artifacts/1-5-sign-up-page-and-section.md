@@ -1,6 +1,6 @@
 # Story 1.5: Add `/sign-up` page + `SignUpFormSection` (real `<h1>` and swap link)
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -29,36 +29,36 @@ so that registration is a bookmarkable, independently-titled URL.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add the `/sign-up` route-level page (AC: 1, 2, 6)
-  - [ ] 1.1 Create `src/modules/user/features/auth/sign-up/index.tsx` exporting a default
+- [x] Task 1: Add the `/sign-up` route-level page (AC: 1, 2, 6)
+  - [x] 1.1 Create `src/modules/user/features/auth/sign-up/index.tsx` exporting a default
         `SignUp` that lazily imports `SignUpFormSection` and wraps it in `<AuthPageLayout>`
-  - [ ] 1.2 Call `usePageTitle('sign_up.title')` inside `SignUp` (hook authored in Story 1.7)
-  - [ ] 1.3 Keep each file to a single component so it stays under the rca thresholds (NFR3)
+  - [x] 1.2 Call `usePageTitle('sign_up.title')` inside `SignUp` (hook authored in Story 1.7)
+  - [x] 1.3 Keep each file to a single component so it stays under the rca thresholds (NFR3)
 
-- [ ] Task 2: Add the `SignUpFormSection` inner lazy chunk (AC: 1, 3, 5)
-  - [ ] 2.1 Create `src/modules/user/features/auth/sign-up/sign-up-form-section.tsx` owning the
+- [x] Task 2: Add the `SignUpFormSection` inner lazy chunk (AC: 1, 3, 5)
+  - [x] 2.1 Create `src/modules/user/features/auth/sign-up/sign-up-form-section.tsx` owning the
         `registrationView` state and rendering `<AuthFormSection>` with `RegistrationForm`
-  - [ ] 2.2 Pass `oauthInert={view !== 'form'}` so a `success`/`error` view marks the OAuth row
+  - [x] 2.2 Pass `oauthInert={view !== 'form'}` so a `success`/`error` view marks the OAuth row
         `inert` (preserves today's derivation)
-  - [ ] 2.3 Pass `switcher={<AuthSwitcher to="/sign-in"
+  - [x] 2.3 Pass `switcher={<AuthSwitcher to="/sign-in"
 labelKey="sign_up.form.switcher_text_have_account" />}` reusing the existing i18n key
-  - [ ] 2.4 Wire `RegistrationForm` unchanged via its retained `onViewChange` prop and the
+  - [x] 2.4 Wire `RegistrationForm` unchanged via its retained `onViewChange` prop and the
         `RegistrationView` type; import no login code (FR12)
 
-- [ ] Task 3: Thread the real `<h1>` into the registration form (AC: 2)
-  - [ ] 3.1 Add `titleComponent="h1"` to the `<UIForm<RegisterUserDto>>` in
+- [x] Task 3: Thread the real `<h1>` into the registration form (AC: 2)
+  - [x] 3.1 Add `titleComponent="h1"` to the `<UIForm<RegisterUserDto>>` in
         `src/modules/user/features/auth/components/form-section/auth-forms/registration-form.tsx`
         (the only edit to that file)
 
-- [ ] Task 4: Add/update tests (AC: 1, 2, 3, 4, 5)
-  - [ ] 4.1 Add `tests/unit/modules/user/features/auth/sign-up/index.test.tsx`: `/sign-up`
+- [x] Task 4: Add/update tests (AC: 1, 2, 3, 4, 5)
+  - [x] 4.1 Add `tests/unit/modules/user/features/auth/sign-up/index.test.tsx`: `/sign-up`
         renders Registration (`<h1>` "Registration"), the swap link to `/sign-in`, and the OAuth
         row, and asserts no login code is imported (mock assertion)
-  - [ ] 4.2 Update
+  - [x] 4.2 Update
         `tests/unit/modules/user/features/auth/components/form-section/auth-forms/registration-form.test.tsx`
         to assert the title is a real `<h1>` and fix any harness coupling to the deleted
         `FormSection`
-  - [ ] 4.3 Use semantic selectors only (`getByRole`/`getByText`); no `data-testid`
+  - [x] 4.3 Use semantic selectors only (`getByRole`/`getByText`); no `data-testid`
 
 ## Dev Notes
 
@@ -96,3 +96,39 @@ labelKey="sign_up.form.switcher_text_have_account" />}` reusing the existing i18
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-5
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Added the `/sign-up` route page + `SignUpFormSection` lazy chunk, and added `titleComponent="h1"`
+  to the registration form's `UIForm` (C1, AR1).
+- Deviation: the spec placed these at `auth/sign-up/`, but the repo dependency-cruiser
+  `feature-allowed-folders` rule restricts the feature root to
+  assets/components/hooks/i18n/repositories/routes/stores/types/utils — route pages must live under
+  `routes/`. Relocated to `auth/routes/sign-up/` (this applies to Story 1.6 sign-in and the Story
+  1.8 routing imports as well).
+- `SignUpFormSection` owns the surviving `registrationView` state; `oauthInert={view !== 'form'}`
+  reproduces the old `showNotification` derivation (AC5). The swap link is the `AuthSwitcher` to
+  `/sign-in` ("Already have an account?"); no login code is imported (FR12).
+- AC2 (real `<h1>` "Registration"): the page test renders the real chain (registration internals
+  mocked) and asserts `getByRole('heading', { level: 1, name: 'Registration' })`; the
+  registration-form test additionally asserts `UIForm` receives `titleComponent="h1"`.
+- Gates green: ESLint, tsc, dependency-cruiser, jscpd, rca metrics; both new files 100% covered;
+  no suppressions and no inline comments.
+
+**File List:**
+
+- `src/modules/user/features/auth/routes/sign-up/index.tsx` (new)
+- `src/modules/user/features/auth/routes/sign-up/sign-up-form-section.tsx` (new)
+- `src/modules/user/features/auth/components/form-section/auth-forms/registration-form.tsx`
+  (modified — `titleComponent="h1"`)
+- `tests/unit/modules/user/features/auth/routes/sign-up/index.test.tsx` (new)
+- `tests/unit/modules/user/features/auth/components/form-section/auth-forms/registration-form.test.tsx`
+  (modified — `titleComponent` assertion)
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.5 — `/sign-up` page (relocated to `routes/`).

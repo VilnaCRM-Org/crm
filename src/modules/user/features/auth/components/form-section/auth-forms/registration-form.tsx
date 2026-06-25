@@ -41,6 +41,7 @@ function RegistrationFormPanel({
         submitLabel={t('sign_up.form.submit_button')}
         submittingLabel={t('sign_up.form.submitting')}
         title={t('sign_up.title')}
+        titleComponent="h1"
         subtitle={t('sign_up.subtitle')}
       >
         <RegistrationFormFields t={t} validators={validators} />

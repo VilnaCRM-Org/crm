@@ -62,6 +62,7 @@ jest.mock('@/components/ui-form', () => ({
     submittingAnnouncement?: boolean;
     submitLabel?: string;
     submittingLabel?: string;
+    titleComponent?: string;
   }): ReactElement => {
     mockUIForm(props);
     return (
@@ -110,6 +111,12 @@ describe('RegistrationForm', () => {
         submittingLabel: 'sign_up.form.submitting',
       })
     );
+  });
+
+  it('renders the form title as a real <h1> via titleComponent (AC2)', () => {
+    render(<RegistrationForm />);
+
+    expect(mockUIForm).toHaveBeenCalledWith(expect.objectContaining({ titleComponent: 'h1' }));
   });
 
   it('renders the form panel and no notification when on form view', () => {
