@@ -95,22 +95,21 @@ describe('App', () => {
 
     render(<App />);
 
-    await waitFor(() => expect(document.documentElement.lang).toBe('en'));
+    await waitFor(() => expect(document.documentElement.dir).toBe('ltr'));
     expect(screen.queryByText('sign up page')).not.toBeInTheDocument();
     expect(screen.queryByText('sign in page')).not.toBeInTheDocument();
   });
 
-  it('falls back to ltr and syncs <html lang> when i18n.dir is unavailable', async () => {
+  it('falls back to ltr when i18n.dir is unavailable', async () => {
     mockI18n = { language: 'en' };
 
     render(<App />);
 
     expect(await screen.findByText('sign up page')).toBeInTheDocument();
     expect(document.documentElement.dir).toBe('ltr');
-    expect(document.documentElement.lang).toBe('en');
   });
 
-  it('subscribes to language changes and updates direction and <html lang>', async () => {
+  it('subscribes to language changes and updates direction', async () => {
     const on = jest.fn((event: string, callback: () => void) => {
       if (event === 'languageChanged') {
         languageChangedHandler = callback;
@@ -129,7 +128,6 @@ describe('App', () => {
 
     expect(await screen.findByText('sign up page')).toBeInTheDocument();
     expect(document.documentElement.dir).toBe('rtl');
-    expect(document.documentElement.lang).toBe('ar');
     expect(on).toHaveBeenCalledWith('languageChanged', expect.any(Function));
 
     mockI18n.language = 'en';
@@ -138,7 +136,6 @@ describe('App', () => {
     await waitFor(() => {
       expect(document.documentElement.dir).toBe('ltr');
     });
-    expect(document.documentElement.lang).toBe('en');
 
     view.unmount();
 

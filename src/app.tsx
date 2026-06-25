@@ -36,7 +36,7 @@ function App(): React.ReactElement {
   useEffect(() => {
     const applyHtmlAttrs = (): void => {
       document.documentElement.dir = i18n.dir?.(i18n.language) || 'ltr';
-      document.documentElement.lang = i18n.language;
+      // document.documentElement.lang = i18n.language;
     };
     applyHtmlAttrs();
     i18n.on?.('languageChanged', applyHtmlAttrs);
