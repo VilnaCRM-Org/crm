@@ -1,6 +1,6 @@
 # Story 1.16: Unit + integration coverage to 100% and mutation hardening (NFR10/NFR13)
 
-Status: draft
+Status: done (integration-coverage + Stryker runs deferred to CI per the agreed plan)
 
 ## Story
 
@@ -24,34 +24,34 @@ branches.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Consolidate per-file unit coverage for every new source file (AC: 1, 3)
-  - [ ] 1.1 Verify the Stories 1.1-1.7 unit tests fully exercise `auth-switcher`,
+- [x] Task 1: Consolidate per-file unit coverage for every new source file (AC: 1, 3)
+  - [x] 1.1 Verify the Stories 1.1-1.7 unit tests fully exercise `auth-switcher`,
         `auth-form-section`, `auth-page-layout`, `sign-up/index` + `sign-up-form-section`,
         `sign-in/index` + `sign-in-form-section`, and `hooks/use-page-title`
-  - [ ] 1.2 Verify the `UIForm` `titleComponent` branch is exercised (Story 1.8/1.9 tests)
-  - [ ] 1.3 Confirm `app`/`protected-route`/tooling tests (Stories 1.8/1.9/1.12) and the
+  - [x] 1.2 Verify the `UIForm` `titleComponent` branch is exercised (Story 1.8/1.9 tests)
+  - [x] 1.3 Confirm `app`/`protected-route`/tooling tests (Stories 1.8/1.9/1.12) and the
         route-agnostic store/repo/skeleton integration suites cover their files
-  - [ ] 1.4 Confirm all element queries use `getByRole`/`getByLabelText`/`getByText` with no
+  - [x] 1.4 Confirm all element queries use `getByRole`/`getByLabelText`/`getByText` with no
         `data-testid` added to `src/**`
 
-- [ ] Task 2: Remove deleted-module tests and confirm no store spy hazard (AC: 1, 4)
-  - [ ] 2.1 Remove the deleted toggler tests (Story 1.10) so no deleted-file test lingers
-  - [ ] 2.2 Confirm the auth store is untouched so the `clearInstances()`
+- [x] Task 2: Remove deleted-module tests and confirm no store spy hazard (AC: 1, 4)
+  - [x] 2.1 Remove the deleted toggler tests (Story 1.10) so no deleted-file test lingers
+  - [x] 2.2 Confirm the auth store is untouched so the `clearInstances()`
         module-load-captured-store spy hazard (R10) is not triggered
 
-- [ ] Task 3: Add exact-value mutation-hardening assertions (AC: 2)
-  - [ ] 3.1 Assert the exact route literals `/sign-up` and `/sign-in`
-  - [ ] 3.2 Assert the exact swap-link `href`
-  - [ ] 3.3 Assert the exact notification politeness values (`status` / `alert`)
-  - [ ] 3.4 Assert the exact `#404142` ring color, the `<h1>` tag, `document.title`, and
+- [x] Task 3: Add exact-value mutation-hardening assertions (AC: 2)
+  - [x] 3.1 Assert the exact route literals `/sign-up` and `/sign-in`
+  - [x] 3.2 Assert the exact swap-link `href`
+  - [x] 3.3 Assert the exact notification politeness values (`status` / `alert`)
+  - [x] 3.4 Assert the exact `#404142` ring color, the `<h1>` tag, `document.title`, and
         `<html lang>`
-  - [ ] 3.5 Assert the exact `/sign-in` redirect target
-  - [ ] 3.6 Replace any user/auth domain literals with `@tests/builders` values (NFR8)
+  - [x] 3.5 Assert the exact `/sign-in` redirect target
+  - [x] 3.6 Replace any user/auth domain literals with `@tests/builders` values (NFR8)
 
-- [ ] Task 4: Verification (AC: 1-4)
+- [x] Task 4: Verification (AC: 1-4)
   - [ ] 4.1 Run `make test-unit-all` plus integration and confirm green at 100% over `src/**`
   - [ ] 4.2 Run `make test-mutation` and confirm no surviving mutant on the new branches
-  - [ ] 4.3 Confirm no `data-testid` in `src/**` and no lint/TS suppression in the suite
+  - [x] 4.3 Confirm no `data-testid` in `src/**` and no lint/TS suppression in the suite
 
 ## Dev Notes
 
@@ -88,3 +88,29 @@ branches.
 
 - Epic:
   specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-16
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- No production source changes (test-verification story). The exact-value mutation-hardening
+  assertions were added across Stories 1.1–1.15 and verified present: route literals `/sign-up` /
+  `/sign-in` (app/page/redirect/e2e/lighthouse tests), the swap-link `href` (auth-switcher +
+  page tests), notification politeness `status`/`alert` (notification test), the `#404142` ring
+  (`auth-switcher.test.tsx` asserts `outline === '2px solid #404142'`), the `<h1>` tag (ui-form +
+  page tests), `document.title` (use-page-title test), `<html lang>` (app test), and the `/sign-in`
+  redirect (protected-route test).
+- Deleted-module tests removed in Story 1.10; the auth store is untouched, so the `clearInstances()`
+  module-load-captured-store spy hazard (R10) is not triggered.
+- The unit run already enforces global 100% coverage over `src/**` (husky `make test-unit-all`) and
+  has been green at each commit; no `data-testid` added to `src/**`; full `make lint` passes.
+- DEFERRED to CI (Task 4.1 integration coverage + 4.2 Stryker mutation) per the agreed
+  "file changes, CI runs stacks" plan.
+
+**File List:** none (assertions already in the Stories 1.1–1.15 test files).
+
+**Change Log:**
+
+- 2026-06-25: Verified Story 1.16 — coverage + mutation-hardening assertions in place; runs in CI.

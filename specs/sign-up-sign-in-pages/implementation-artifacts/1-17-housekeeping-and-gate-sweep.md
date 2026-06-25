@@ -1,6 +1,6 @@
 # Story 1.17: Housekeeping, docs, and full gate sweep
 
-Status: draft
+Status: done (full CI test/perf sweep + squash-message `Closes #31` deferred to CI/merge)
 
 ## Story
 
@@ -29,17 +29,17 @@ so the spec is discoverable and the change is provably within every repo gate be
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Point BMAD config and specs index at this spec (AC: 1, 2)
-  - [ ] 1.1 Update `_bmad/config.yaml` `planning_artifacts`/`implementation_artifacts` (`:9-10`)
+- [x] Task 1: Point BMAD config and specs index at this spec (AC: 1, 2)
+  - [x] 1.1 Update `_bmad/config.yaml` `planning_artifacts`/`implementation_artifacts` (`:9-10`)
         from `specs/makefile-playwright-targets/...` to `specs/sign-up-sign-in-pages/...`
-  - [ ] 1.2 Add a `sign-up-sign-in-pages` row to the `specs/README.md` "Current Specs" table
+  - [x] 1.2 Add a `sign-up-sign-in-pages` row to the `specs/README.md` "Current Specs" table
         (`:18-23`)
-  - [ ] 1.3 Confirm `specs/README.md` is markdownlint-clean (MD013 limit 100)
+  - [x] 1.3 Confirm `specs/README.md` is markdownlint-clean (MD013 limit 100)
 
-- [ ] Task 2: Run the static + DRY + metrics + type gates (AC: 3, 4)
-  - [ ] 2.1 Run `make format` then `make lint` (ESLint, tsc, `make lint-dup`, `make lint-metrics`)
+- [x] Task 2: Run the static + DRY + metrics + type gates (AC: 3, 4)
+  - [x] 2.1 Run `make format` then `make lint` (ESLint, tsc, `make lint-dup`, `make lint-metrics`)
         and dependency-cruiser; all pass with no new suppressions or inline comments
-  - [ ] 2.2 Run the i18n parity check: every used key exists in both `en.json` and `uk.json`
+  - [x] 2.2 Run the i18n parity check: every used key exists in both `en.json` and `uk.json`
         with no hardcoded English, and confirm `sign_in.errors.load_failed` parity (removed from
         both if dropped)
 
@@ -50,7 +50,7 @@ so the spec is discoverable and the change is provably within every repo gate be
         the lazy form section and no new auth-path dependency
 
 - [ ] Task 4: Land the commit with correct close discipline (AC: 6)
-  - [ ] 4.1 Write a commit header ≤100 chars with a `(#31)` scope
+  - [x] 4.1 Write a commit header ≤100 chars with a `(#31)` scope
   - [ ] 4.2 Ensure the squash message carries `Closes #31` (squash-merge-only; the `cubic` bot
         rewrites the PR body and strips manual closers)
 
@@ -84,3 +84,31 @@ so the spec is discoverable and the change is provably within every repo gate be
 
 - Epic (`specs/sign-up-sign-in-pages/planning-artifacts/`):
   `epics-sign-up-sign-in-pages-2026-06-25.md#story-1-17`
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Housekeeping done: `_bmad/config.yaml` already points `planning_artifacts`/`implementation_artifacts`
+  at `specs/sign-up-sign-in-pages/...`; `specs/README.md` has the `sign-up-sign-in-pages` row
+  (added in the base commit) and is markdownlint-clean.
+- Gate sweep GREEN: full `make lint` (ESLint, tsc, markdownlint, dependency-cruiser, jscpd,
+  rust-code-analysis metrics) passes with no suppressions, ignores, or new inline comments; the unit
+  suite is green at 100% coverage over `src/**`; i18n parity holds (the localization generator +
+  suite validate en/uk; `sign_in.errors.load_failed` was kept in both per the Story 1.10 decision).
+- Commit discipline followed throughout: every commit header is `≤100` chars with a `(#31)` scope
+  and no `Co-Authored-By` trailer.
+- DEFERRED (per the agreed plan / merge): Task 3 — the full CI test/perf sweep (integration, e2e,
+  visual with regenerated baselines, memory-leak, Stryker, Lighthouse `/sign-up` + `/sign-in` ≥0.85);
+  Task 4.2 — the squash-merge message must carry `Closes #31` (the repo is squash-merge-only and the
+  `cubic` bot rewrites the PR body + strips manual closers, so the closer rides the squash message at
+  merge, not the PR body).
+
+**File List:** none new (config.yaml + README already updated; this is a verification sweep).
+
+**Change Log:**
+
+- 2026-06-25: Verified Story 1.17 — housekeeping + static gate sweep green; CI sweep + squash-close
+  deferred.

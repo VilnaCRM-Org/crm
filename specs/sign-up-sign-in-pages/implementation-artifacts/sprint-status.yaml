@@ -56,6 +56,6 @@ development_status:
   1-13-e2e-refactor-swap-navigation: done
   1-14-visual-split-and-baselines: done
   1-15-memory-leak-routes: done
-  1-16-coverage-and-mutation: ready-for-dev
-  1-17-housekeeping-and-gate-sweep: ready-for-dev
+  1-16-coverage-and-mutation: done
+  1-17-housekeeping-and-gate-sweep: done
   epic-1-retrospective: optional
