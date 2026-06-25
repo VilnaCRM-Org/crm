@@ -1,6 +1,6 @@
 # Story 1.8: Routing — add `/sign-up` + `/sign-in`, remove `/authentication`, `<html lang>` (M2)
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -24,31 +24,31 @@ and as a Ukrainian-speaking screen-reader user I want the page announced in the 
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Rewrite the router in `src/app.tsx` for the new auth routes (AC: 1, 2, 4)
-  - [ ] 1.1 Keep the `ProtectedRoute → '/' ButtonExample` branch (`app.tsx:13-21`) verbatim
-  - [ ] 1.2 Remove the `{ path: '/authentication', element: <Authentication/> }` entry
+- [x] Task 1: Rewrite the router in `src/app.tsx` for the new auth routes (AC: 1, 2, 4)
+  - [x] 1.1 Keep the `ProtectedRoute → '/' ButtonExample` branch (`app.tsx:13-21`) verbatim
+  - [x] 1.2 Remove the `{ path: '/authentication', element: <Authentication/> }` entry
         (`app.tsx:22-25`) and the `Authentication` lazy import (`app.tsx:10`) — no redirect,
         no alias (FR3, D-REMOVE)
-  - [ ] 1.3 Add `const SignUp = lazy(async () => import('@auth/sign-up'));` and
+  - [x] 1.3 Add `const SignUp = lazy(async () => import('@auth/sign-up'));` and
         `const SignIn = lazy(async () => import('@auth/sign-in'));`
-  - [ ] 1.4 Add `{ path: '/sign-up', element: <SignUp /> }` and
+  - [x] 1.4 Add `{ path: '/sign-up', element: <SignUp /> }` and
         `{ path: '/sign-in', element: <SignIn /> }`, keeping the unchanged
         `<React.Suspense fallback={null}>` (`app.tsx:40`) so route chunking is preserved
 
-- [ ] Task 2: Add `<html lang>` to the existing i18n effect in `src/app.tsx` (AC: 3, 5)
-  - [ ] 2.1 In the i18n `useEffect` (`app.tsx:31-38`), set
+- [x] Task 2: Add `<html lang>` to the existing i18n effect in `src/app.tsx` (AC: 3, 5)
+  - [x] 2.1 In the i18n `useEffect` (`app.tsx:31-38`), set
         `document.documentElement.lang = i18n.language` alongside `applyDir()`
-  - [ ] 2.2 Re-apply the `lang` on the `languageChanged` event and tear it down via the existing
+  - [x] 2.2 Re-apply the `lang` on the `languageChanged` event and tear it down via the existing
         `i18n.off` cleanup, adding no new closure or exit point so the effect stays under the
         rca caps (≤3 exit points, Cognitive ≤15)
 
-- [ ] Task 3: Update unit tests for the new routes and `<html lang>` (AC: 1, 2, 3)
-  - [ ] 3.1 In `tests/unit/app.test.tsx`, replace `pushState('/authentication')` (`:21`) with a
+- [x] Task 3: Update unit tests for the new routes and `<html lang>` (AC: 1, 2, 3)
+  - [x] 3.1 In `tests/unit/app.test.tsx`, replace `pushState('/authentication')` (`:21`) with a
         `/sign-up` render case and add a `/sign-in` render case
-  - [ ] 3.2 Assert `/authentication` resolves to no auth page (AC3); rename the mocked auth
+  - [x] 3.2 Assert `/authentication` resolves to no auth page (AC3); rename the mocked auth
         module path(s) to the new page modules
-  - [ ] 3.3 Assert `document.documentElement.lang` after a simulated `languageChanged` (AC9)
-  - [ ] 3.4 Update `tests/unit/app-root.test.tsx` mocked auth page module path(s); the `/`
+  - [x] 3.3 Assert `document.documentElement.lang` after a simulated `languageChanged` (AC9)
+  - [x] 3.4 Update `tests/unit/app-root.test.tsx` mocked auth page module path(s); the `/`
         protected-outlet assertion stays
 
 ## Dev Notes
@@ -79,3 +79,35 @@ and as a Ukrainian-speaking screen-reader user I want the page announced in the 
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-8
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Rewrote `app.tsx` routing: removed `/authentication` + its lazy import (no redirect, no alias),
+  added route-level lazy `/sign-up` → `SignUp` and `/sign-in` → `SignIn` (imported from
+  `@auth/routes/...` per the Story 1.5 relocation). Kept the ProtectedRoute → `/` branch verbatim.
+- Added `document.documentElement.lang = i18n.language` to the existing i18n effect (renamed
+  `applyDir` → `applyHtmlAttrs`), re-applied on `languageChanged` via the same listener/cleanup —
+  no new closure or exit point (M2, AR4; stays under the rca caps).
+- Tests: rewrote `app.test.tsx` to render via a `react-router-dom` mock (`createBrowserRouter`
+  returns the route array; `RouterProvider` builds a `createMemoryRouter` at a controllable path).
+  This avoids the dual-React-instance breakage of `jest.resetModules` and lets one App instance be
+  tested at `/sign-up`, `/sign-in`, and the removed `/authentication` (renders no auth page), with
+  `<html lang>` assertions incl. on `languageChanged`. Updated `app-root.test.tsx` mocks to the two
+  new page modules.
+- Gates green: ESLint, tsc, dependency-cruiser, jscpd, rca metrics; `app.tsx` 100% covered; no
+  suppressions and no inline comments.
+
+**File List:**
+
+- `src/app.tsx` (modified — routes + `<html lang>`)
+- `tests/unit/app.test.tsx` (rewritten)
+- `tests/unit/app-root.test.tsx` (modified — auth page mocks)
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.8 — routing for `/sign-up` + `/sign-in`, removed
+  `/authentication`, `<html lang>` sync.

@@ -3,7 +3,7 @@
 import './utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen, waitFor } from '@testing-library/react';
-import { Request as NodeFetchRequest } from 'node-fetch';
+import type { ReactElement } from 'react';
 
 type MockI18n = {
   language: string;
@@ -16,14 +16,8 @@ let mockI18n: MockI18n = {
   language: 'en',
 };
 
+let mockCurrentPath = '/sign-up';
 let languageChangedHandler: (() => void) | undefined;
-
-window.history.pushState({}, '', '/authentication');
-
-if (typeof Request === 'undefined') {
-  // React Router expects the Fetch API request primitive during router setup.
-  globalThis.Request = NodeFetchRequest as unknown as typeof Request;
-}
 
 jest.mock('../../src/index.css', () => ({}));
 
@@ -31,23 +25,42 @@ jest.mock('react-i18next', () => ({
   useTranslation: (): { i18n: MockI18n } => ({ i18n: mockI18n }),
 }));
 
+jest.mock('react-router-dom', () => {
+  const actual = jest.requireActual('react-router-dom');
+
+  return {
+    __esModule: true,
+    ...actual,
+    createBrowserRouter: (routes: unknown): unknown => routes,
+    RouterProvider: ({ router }: { router: unknown }): ReactElement => {
+      const memoryRouter = actual.createMemoryRouter(router, { initialEntries: [mockCurrentPath] });
+      return <actual.RouterProvider router={memoryRouter} />;
+    },
+  };
+});
+
 jest.mock('@auth/components/protected-route', () => {
   const { Outlet } = jest.requireActual('react-router-dom');
 
   return {
     __esModule: true,
-    default: (): JSX.Element => <Outlet />,
+    default: (): ReactElement => <Outlet />,
   };
 });
 
 jest.mock('@/button-example', () => ({
   __esModule: true,
-  default: (): JSX.Element => <div>button example page</div>,
+  default: (): ReactElement => <div>button example page</div>,
 }));
 
-jest.mock('@/modules/user/features/auth', () => ({
+jest.mock('@auth/routes/sign-up', () => ({
   __esModule: true,
-  default: (): JSX.Element => <div>authentication page</div>,
+  default: (): ReactElement => <div>sign up page</div>,
+}));
+
+jest.mock('@auth/routes/sign-in', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div>sign in page</div>,
 }));
 
 const App = jest.requireActual<typeof import('@/app')>('@/app').default;
@@ -55,21 +68,49 @@ const App = jest.requireActual<typeof import('@/app')>('@/app').default;
 describe('App', () => {
   beforeEach(() => {
     languageChangedHandler = undefined;
+    mockI18n = { language: 'en' };
+    mockCurrentPath = '/sign-up';
     document.documentElement.dir = '';
+    document.documentElement.lang = '';
   });
 
-  it('renders the auth route and falls back to ltr when i18n.dir is unavailable', async () => {
-    mockI18n = {
-      language: 'en',
-    };
+  it('renders the /sign-up page', async () => {
+    mockCurrentPath = '/sign-up';
 
     render(<App />);
 
-    expect(await screen.findByText('authentication page')).toBeInTheDocument();
-    expect(document.documentElement.dir).toBe('ltr');
+    expect(await screen.findByText('sign up page')).toBeInTheDocument();
   });
 
-  it('subscribes to language changes and updates document direction', async () => {
+  it('renders the /sign-in page', async () => {
+    mockCurrentPath = '/sign-in';
+
+    render(<App />);
+
+    expect(await screen.findByText('sign in page')).toBeInTheDocument();
+  });
+
+  it('renders no auth page at the removed /authentication route', async () => {
+    mockCurrentPath = '/authentication';
+
+    render(<App />);
+
+    await waitFor(() => expect(document.documentElement.lang).toBe('en'));
+    expect(screen.queryByText('sign up page')).not.toBeInTheDocument();
+    expect(screen.queryByText('sign in page')).not.toBeInTheDocument();
+  });
+
+  it('falls back to ltr and syncs <html lang> when i18n.dir is unavailable', async () => {
+    mockI18n = { language: 'en' };
+
+    render(<App />);
+
+    expect(await screen.findByText('sign up page')).toBeInTheDocument();
+    expect(document.documentElement.dir).toBe('ltr');
+    expect(document.documentElement.lang).toBe('en');
+  });
+
+  it('subscribes to language changes and updates direction and <html lang>', async () => {
     const on = jest.fn((event: string, callback: () => void) => {
       if (event === 'languageChanged') {
         languageChangedHandler = callback;
@@ -86,8 +127,9 @@ describe('App', () => {
 
     const view = render(<App />);
 
-    expect(await screen.findByText('authentication page')).toBeInTheDocument();
+    expect(await screen.findByText('sign up page')).toBeInTheDocument();
     expect(document.documentElement.dir).toBe('rtl');
+    expect(document.documentElement.lang).toBe('ar');
     expect(on).toHaveBeenCalledWith('languageChanged', expect.any(Function));
 
     mockI18n.language = 'en';
@@ -96,6 +138,7 @@ describe('App', () => {
     await waitFor(() => {
       expect(document.documentElement.dir).toBe('ltr');
     });
+    expect(document.documentElement.lang).toBe('en');
 
     view.unmount();
 
