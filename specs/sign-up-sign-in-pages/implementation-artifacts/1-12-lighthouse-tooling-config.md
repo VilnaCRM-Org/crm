@@ -12,13 +12,18 @@ stay green.
 
 ## Acceptance Criteria
 
-1. Given `lighthouse/constants.js`, When the `pages` array is computed, Then the second entry
-   is the `/sign-up` URL (not `/authentication`) (NFR2, AC18, AC22).
-2. Given `lighthouse-constants.test.ts`, When run, Then it expects `…/sign-up` and passes
-   (AC22).
-3. Given `auth-test-port.test.ts`, When run, Then it asserts the `constants.js` `/sign-up`
-   ternary string and still asserts `performance-testing.yml` does NOT contain the route
-   (AC22).
+> **Scope extension (2026-06-25 user requirement):** the audit covers BOTH `/sign-up` AND
+> `/sign-in`, not `/sign-up` alone (see Completion Notes). The `/sign-up` references in AC1–AC3
+> below therefore also apply to `/sign-in`; the `pages` array and tooling assertions exercise both
+> routes, which is what CI runs.
+
+1. Given `lighthouse/constants.js`, When the `pages` array is computed, Then it includes both the
+   `/sign-up` and `/sign-in` URLs (not `/authentication`) (NFR2, AC18, AC22).
+2. Given `lighthouse-constants.test.ts`, When run, Then it expects both `…/sign-up` and
+   `…/sign-in` and passes (AC22).
+3. Given `auth-test-port.test.ts`, When run, Then it asserts the `constants.js` `/sign-up` and
+   `/sign-in` ternary strings and still asserts `performance-testing.yml` does NOT contain the
+   routes (AC22).
 4. Given `performance-serving.test.ts`, When run, Then it asserts the new `SignUp`/`SignIn`
    lazy imports and the route-level splitting intent (NFR2, AC18).
 5. Given `lighthouserc.mobile.js`, When read, Then its comment names `/sign-up` and the 0.85

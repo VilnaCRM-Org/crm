@@ -1,6 +1,6 @@
 # Story 1.14: Visual — split specs into sign-up + sign-in and regenerate baselines
 
-Status: done (baseline regeneration deferred to CI per the agreed plan)
+Status: done (/sign-in baselines generated + committed; firefox cross-env drift is CI-authoritative)
 
 ## Story
 
@@ -93,17 +93,22 @@ so that "no visual regression" is proven.
   `visual-comparison.sign-up.spec.ts-snapshots/` (60 baselines preserved). Snapshot names are
   URL-independent (`${currentLanguage}_${screen.name}`), so the old register-view baselines carry
   over to /sign-up (same register view, pixel-neutral a11y changes per NFR1).
-- Added `visual-comparison.sign-in.spec.ts` (`[sign-in]`, `PAGES.SIGN_IN`) — NEW, no baselines yet.
+- Added `visual-comparison.sign-in.spec.ts` (`[sign-in]`, `PAGES.SIGN_IN`) — NEW; baselines generated
+  and committed (39 PNGs = 13 screens × chromium/firefox/webkit) via `make test-visual-update`.
 - `visual-comparison.auth-skeleton.spec.ts` → `PAGES.SIGN_UP` (skeleton render is route-independent;
   baselines unchanged). `submit-loader` + `registration-notification` visual specs navigate via
   `REGISTRATION_URL` (repointed to /sign-up in Story 1.13) — no change needed.
 
-**DEFERRED to CI / follow-up (Task 3 — unchecked):** run `make test-visual-update` (Docker + prod
-stack) to (a) generate the NEW /sign-in baselines, (b) re-verify the preserved /sign-up baselines
-pass (h1-vs-p / link changes are believed pixel-neutral but the visual job is the authority), and
-(c) regenerate the `registration-notification` baseline after the Story 1.11 error-view DOM
-restructure. Then `make test-visual` must be green. Locally validated via ESLint + tsc +
-dependency-cruiser only.
+**Task 3 — resolved against the prod stack:** (a) the NEW /sign-in baselines were generated and
+committed (39 PNGs); (b) the preserved /sign-up baselines re-verified — chromium + webkit pass (the
+h1-vs-p / link changes are pixel-neutral); (c) the `registration-notification` baseline did NOT need
+regeneration — the Story 1.11 error-view restructure had dropped the description's flex top-margin
+(inline `<span>` inside a `role="alert"` Box), shifting the message/buttons ~8px; that was corrected
+in code (`role="alert"` moved onto the description typography) so the existing baseline passes.
+chromium + webkit are 160/160 green across the full visual suite. Firefox shows a pre-existing
+cross-environment rasterization drift (sub-pixel AA + 1px page-height rounding on every spec,
+including the unrelated /home page) — left to the canonical CI environment as the authority per the
+agreed plan; no baselines regenerated to mask it.
 
 **File List:**
 

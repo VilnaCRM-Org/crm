@@ -133,7 +133,8 @@ test.describe('Registration Form loader behaviour', () => {
       return (
         active !== document.body &&
         active !== null &&
-        !!active.querySelector('h1, h2, h3, h4, h5, h6')
+        (active.matches('h1, h2, h3, h4, h5, h6') ||
+          !!active.querySelector('h1, h2, h3, h4, h5, h6'))
       );
     });
     expect(focusOnMeaningfulElement).toBe(true);

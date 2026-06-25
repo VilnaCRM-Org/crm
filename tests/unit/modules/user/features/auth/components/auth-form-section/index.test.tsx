@@ -16,7 +16,7 @@ jest.mock('@auth/components/form-section/components/auth-provider-buttons', () =
 jest.mock('@auth/components/form-section/inert-box', () => ({
   __esModule: true,
   default: ({ inert, children }: { inert: boolean; children: ReactNode }): ReactElement => (
-    <div data-testid="oauth-inert-box" data-inert={String(inert)}>
+    <div role="group" aria-label="OAuth providers" data-inert={String(inert)}>
       {children}
     </div>
   ),
@@ -42,12 +42,18 @@ describe('AuthFormSection', () => {
   it('marks the OAuth row inert when oauthInert is true (AC2)', () => {
     renderSection(true);
 
-    expect(screen.getByTestId('oauth-inert-box')).toHaveAttribute('data-inert', 'true');
+    expect(screen.getByRole('group', { name: 'OAuth providers' })).toHaveAttribute(
+      'data-inert',
+      'true'
+    );
   });
 
   it('leaves the OAuth row not inert when oauthInert is false (AC2)', () => {
     renderSection(false);
 
-    expect(screen.getByTestId('oauth-inert-box')).toHaveAttribute('data-inert', 'false');
+    expect(screen.getByRole('group', { name: 'OAuth providers' })).toHaveAttribute(
+      'data-inert',
+      'false'
+    );
   });
 });

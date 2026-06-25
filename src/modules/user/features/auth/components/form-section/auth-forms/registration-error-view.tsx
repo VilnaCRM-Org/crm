@@ -94,11 +94,9 @@ function ErrorMessage({ title, text }: { title: string; text: string }): JSX.Ele
       <UITypography component="h2" sx={styles.messageTitle}>
         {title}
       </UITypography>
-      <Box role="alert">
-        <UITypography component="span" sx={styles.messageDescription}>
-          {text}
-        </UITypography>
-      </Box>
+      <UITypography component="span" role="alert" sx={styles.messageDescription}>
+        {text}
+      </UITypography>
     </>
   );
 }

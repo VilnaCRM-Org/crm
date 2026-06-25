@@ -71,7 +71,8 @@ describe('usePageTitle', () => {
 
     view.unmount();
 
-    expect(mockI18n.off).toHaveBeenCalledWith('languageChanged', expect.any(Function));
+    expect(languageChangedHandler).toBeInstanceOf(Function);
+    expect(mockI18n.off).toHaveBeenCalledWith('languageChanged', languageChangedHandler);
   });
 
   it('tolerates an i18n instance without on/off subscription methods', () => {

@@ -92,4 +92,11 @@ describe('AuthSwitcher', () => {
 
     expect(switcher.color).toBe('#969B9D');
   });
+
+  it('pins :link and :visited to #969B9D so the UA visited color cannot override it', () => {
+    const switcher = switcherStyles.switcher as Record<string, unknown>;
+    const linkStates = switcher['&:link, &:visited'] as Record<string, string>;
+
+    expect(linkStates.color).toBe('#969B9D');
+  });
 });

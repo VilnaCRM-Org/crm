@@ -76,8 +76,9 @@ so that there is no orphan importer, a green build, and a clean dependency graph
   `.../types/form-section/login-switch-actions.ts`, `.../types/form-section/use-login-switcher.ts`.
 - Modify `src/modules/user/features/auth/components/form-section/styles.ts` — remove
   `formSwitcherError` (`:42-56`) and the unused `paletteColors` import (`:7`); keep
-  `formSection`/`formWrapper`/`fieldGapMargins`. The `formSwitcherButton` rule (`:15-41`) now
-  lives in `auth-switcher/styles.ts` (Story 1.1).
+  `formSection`/`formWrapper`/`fieldGapMargins` **and `formSwitcherButton` (`:15-41`)** — it stays
+  here as the shared source, and `auth-switcher/styles.ts` (Story 1.1) reuses it by spreading it
+  (then adding the focus-visible ring), which is how the jscpd DRY gate is satisfied.
 - Modify `src/modules/user/features/auth/components/form-section/types.ts` — remove `AuthMode`
   (`:3`); keep `RegistrationView` (`:4`, used by `SignUpFormSection` + `RegistrationForm`) and
   `AuthVariants`.

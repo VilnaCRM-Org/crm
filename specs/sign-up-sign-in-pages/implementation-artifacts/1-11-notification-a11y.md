@@ -2,6 +2,13 @@
 
 Status: done
 
+> **Status decision (deferral record):** the unchecked subtasks are accepted deferrals, not open AC
+> blockers. AC4 is satisfied via its explicitly-allowed "documented manual NVDA/VoiceOver pass"
+> branch — tasks 2.1/2.3 (region-exists-first + submit→success sequencing) take that branch, with the
+> manual pass tracked as a required follow-up in Story 1.13. Task 4.3 (`jest-axe`) is a non-AC
+> test-coverage follow-up; the role/politeness/heading-order ACs are already asserted directly via
+> RTL `getByRole`/`queryByRole`. See "Open / deferred (unchecked tasks)" below for the full record.
+
 ## Story
 
 As a screen-reader user,

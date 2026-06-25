@@ -234,12 +234,21 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByRole('heading', { level: 2 })).toHaveAccessibleName();
-    expect(document.body).not.toHaveFocus();
-
+    const heading = screen.getByRole('heading', { level: 2 });
     const alert = screen.getByRole('alert');
-    expect(alert).not.toContainElement(screen.getByRole('heading', { level: 2 }));
-    expect(alert).not.toContainElement(screen.getByRole('button', { name: 'Спробувати ще раз' }));
+    const retryButton = screen.getByRole('button', { name: 'Спробувати ще раз' });
+
+    expect(heading).toHaveAccessibleName();
+
+    expect(document.body).not.toHaveFocus();
+    expect(heading).not.toHaveFocus();
+    expect(alert).not.toHaveFocus();
+    screen.getAllByRole('button').forEach((button) => {
+      expect(button).not.toHaveFocus();
+    });
+
+    expect(alert).not.toContainElement(heading);
+    expect(alert).not.toContainElement(retryButton);
   });
 
   it('renders the retry button and disables it while submitting', () => {

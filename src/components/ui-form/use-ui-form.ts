@@ -8,7 +8,7 @@ export default function useUIForm<T extends FieldValues>({
   formOptions,
   isSubmitting,
 }: UseUIFormOptions<T>): UseUIFormResult<T> {
-  const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
+  const methods = useForm<T>({ ...formOptions, defaultValues, mode: 'onTouched' });
   const submitting = isSubmitting ?? methods.formState.isSubmitting;
   return { methods, submitting };
 }

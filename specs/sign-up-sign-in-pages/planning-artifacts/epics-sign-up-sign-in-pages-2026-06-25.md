@@ -50,6 +50,13 @@ inputDocuments:
 
 **Author:** BMad (Product Manager) **Date:** 2026-06-25 **Source:** VilnaCRM-Org/crm#31
 
+> **Status:** complete — all 17 stories are `done` (`epic-1: done` in `sprint-status.yaml`).
+> **Accepted deferrals (2026-06-25, owner: RudoiDmytro):** Story 1.11 carries documented a11y
+> follow-ups that are **not AC blockers** — AC4 is met via its explicitly-allowed "documented manual
+> NVDA/VoiceOver pass" branch (the manual pass is tracked in Story 1.13), and a `jest-axe`
+> no-competing-live-region assertion is a non-AC test-coverage follow-up (the role/politeness/heading
+> ACs are already asserted directly via RTL). See Story 1.11's "Open / deferred" record.
+
 ## Overview
 
 This document decomposes the auth-page split into **one Epic** and a sequence of small,

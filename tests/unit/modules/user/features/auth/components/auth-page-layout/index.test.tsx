@@ -34,6 +34,10 @@ function ThrowingChild(): ReactElement {
 }
 
 describe('AuthPageLayout', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('renders the back link, main landmark, child, and footer (AC1)', () => {
     render(
       <AuthPageLayout>

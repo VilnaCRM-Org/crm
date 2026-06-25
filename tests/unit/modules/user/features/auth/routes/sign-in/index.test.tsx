@@ -29,17 +29,17 @@ jest.mock('@auth/components/form-section/auth-forms/login-form-fields', () => ({
 
 jest.mock('@auth/components/form-section/components/auth-provider-buttons', () => ({
   __esModule: true,
-  default: (): ReactElement => <div data-testid="oauth-row" />,
+  default: (): ReactElement => <div>oauth-row</div>,
 }));
 
 jest.mock('@/components/ui-back-to-main', () => ({
   __esModule: true,
-  default: (): ReactElement => <div data-testid="auth-shell-header" />,
+  default: (): ReactElement => <div>auth shell header</div>,
 }));
 
 jest.mock('@/components/ui-footer', () => ({
   __esModule: true,
-  default: (): ReactElement => <div data-testid="auth-shell-footer" />,
+  default: (): ReactElement => <div>auth shell footer</div>,
 }));
 
 jest.mock('@/components/skeletons/auth-skeleton', () => ({
@@ -58,10 +58,10 @@ describe('SignIn page', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: 'Authentication' })
     ).toBeInTheDocument();
-    expect(screen.getByTestId('auth-shell-header')).toBeInTheDocument();
+    expect(screen.getByText('auth shell header')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
-    expect(screen.getByTestId('auth-shell-footer')).toBeInTheDocument();
-    expect(screen.getByTestId('oauth-row')).toBeInTheDocument();
+    expect(screen.getByText('auth shell footer')).toBeInTheDocument();
+    expect(screen.getByText('oauth-row')).toBeInTheDocument();
 
     const link = screen.getByRole('link', { name: 'Don’t have an account yet?' });
     expect(link).toHaveAttribute('href', '/sign-up');
