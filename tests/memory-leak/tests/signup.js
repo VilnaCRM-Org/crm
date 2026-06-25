@@ -5,10 +5,9 @@ const verifyPage = require('../utils/verify-page');
 const ScenarioBuilder = require('../utils/scenario-builder');
 const logger = require('../utils/logger');
 
-const ROUTE_PATH = '/authentication';
+const ROUTE_PATH = '/sign-up';
 const DEFAULT_TIMEOUT = 5000;
 const NETWORK_IDLE_TIMEOUT = 30000;
-const PAGE_STATE_KEY = '__MEMLAB_SIGNUP_BASELINE__';
 
 const scenarioBuilder = new ScenarioBuilder(ROUTE_PATH);
 
@@ -33,57 +32,6 @@ async function waitForRegistrationForm(page, timeout = DEFAULT_TIMEOUT) {
   );
 
   logger.debug('✓ Registration form detected (3+ inputs, has fullName field)');
-}
-
-async function waitForLoginForm(page, timeout = DEFAULT_TIMEOUT) {
-  await page.waitForFunction(
-    () => {
-      const passwordInput = document.querySelector('input[name="password"]');
-      const fullNameInput = document.querySelector('input[name="fullName"]');
-
-      return passwordInput !== null && fullNameInput === null;
-    },
-    { timeout }
-  );
-}
-
-// Click the mode switcher by its visible label text (the button has no test
-// hook by design — see issue #90: source ships no data-testid).
-async function clickSwitcherByText(page, switcherText) {
-  await page.waitForFunction(
-    (text) =>
-      Array.from(document.querySelectorAll('button')).some((button) =>
-        button.textContent.trim().includes(text)
-      ),
-    { timeout: DEFAULT_TIMEOUT },
-    switcherText
-  );
-  await page.evaluate((text) => {
-    const button = Array.from(document.querySelectorAll('button')).find((candidate) =>
-      candidate.textContent.trim().includes(text)
-    );
-    if (button) {
-      button.click();
-    }
-  }, switcherText);
-}
-
-async function ensureRegistrationForm(page) {
-  const isRegistrationForm = await page.$('input[name="fullName"]');
-
-  if (isRegistrationForm) {
-    return false;
-  }
-
-  await clickSwitcherByText(page, t('sign_up.form.switcher_text_no_account'));
-  await waitForRegistrationForm(page);
-
-  return true;
-}
-
-async function restoreLoginView(page) {
-  await clickSwitcherByText(page, t('sign_up.form.switcher_text_have_account'));
-  await waitForLoginForm(page);
 }
 
 function generatePassword(length = 12) {
@@ -164,13 +112,7 @@ async function setup(page) {
       timeout: NETWORK_IDLE_TIMEOUT,
     });
     await verifyPage(page, ROUTE_PATH);
-    await page.evaluate((stateKey) => {
-      const isRegistrationView = document.querySelector('input[name="fullName"]') !== null;
-      window[stateKey] = {
-        startedOnRegistration: isRegistrationView,
-        registrationSwitched: false,
-      };
-    }, PAGE_STATE_KEY);
+    await waitForRegistrationForm(page);
   } catch (error) {
     logger.error(`❌ Setup failed: ${error.message}`);
     throw error;
@@ -179,21 +121,6 @@ async function setup(page) {
 
 async function action(page) {
   try {
-    const registrationSwitched = await ensureRegistrationForm(page);
-    await page.evaluate(
-      ({ stateKey, registrationSwitched: switched }) => {
-        const currentState = window[stateKey] || {
-          startedOnRegistration: false,
-          registrationSwitched: false,
-        };
-
-        window[stateKey] = {
-          ...currentState,
-          registrationSwitched: switched,
-        };
-      },
-      { stateKey: PAGE_STATE_KEY, registrationSwitched }
-    );
     const selectors = getRegistrationSelectors();
     const userData = generateFakeUserData();
     await fillFormFields(page, selectors, userData);
@@ -207,15 +134,6 @@ async function back(page) {
   try {
     const selectors = getRegistrationSelectors();
     await clearFormFields(page, selectors);
-    const shouldRestoreLogin = await page.evaluate((stateKey) => {
-      const state = window[stateKey];
-
-      return Boolean(state) && !state.startedOnRegistration && state.registrationSwitched;
-    }, PAGE_STATE_KEY);
-
-    if (shouldRestoreLogin) {
-      await restoreLoginView(page);
-    }
   } catch (error) {
     logger.warn(`⚠️ Back function warning: ${error.message}`);
     throw error;
@@ -224,22 +142,6 @@ async function back(page) {
 
 async function completeRegistrationAction(page) {
   try {
-    const registrationSwitched = await ensureRegistrationForm(page);
-    await page.evaluate(
-      ({ stateKey, registrationSwitched: switched }) => {
-        const currentState = window[stateKey] || {
-          startedOnRegistration: false,
-          registrationSwitched: false,
-        };
-
-        window[stateKey] = {
-          ...currentState,
-          registrationSwitched: switched,
-        };
-      },
-      { stateKey: PAGE_STATE_KEY, registrationSwitched }
-    );
-
     const selectors = getRegistrationSelectors();
     const userData = generateFakeUserData();
 
@@ -267,15 +169,6 @@ async function completeRegistrationBack(page) {
   try {
     const selectors = getRegistrationSelectors();
     await clearFormFields(page, selectors);
-    const shouldRestoreLogin = await page.evaluate((stateKey) => {
-      const state = window[stateKey];
-
-      return Boolean(state) && !state.startedOnRegistration && state.registrationSwitched;
-    }, PAGE_STATE_KEY);
-
-    if (shouldRestoreLogin) {
-      await restoreLoginView(page);
-    }
   } catch (error) {
     logger.warn(`⚠️ Complete registration back warning: ${error.message}`);
     throw error;

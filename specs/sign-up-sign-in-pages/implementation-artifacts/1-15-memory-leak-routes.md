@@ -1,6 +1,6 @@
 # Story 1.15: Memory-leak route paths and single-route signup scenario (NFR10)
 
-Status: draft
+Status: done (make test-memory-leak run deferred to CI per the agreed plan)
 
 ## Story
 
@@ -21,24 +21,24 @@ so that the MemLab suite exercises `/sign-up` and no longer drives the removed t
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Repoint the auth-skeleton MemLab scenario to `/sign-up` (AC: 1)
-  - [ ] 1.1 In `tests/memory-leak/tests/auth-skeleton.js`, change the
+- [x] Task 1: Repoint the auth-skeleton MemLab scenario to `/sign-up` (AC: 1)
+  - [x] 1.1 In `tests/memory-leak/tests/auth-skeleton.js`, change the
         `pushState('/authentication')` navigation (`:14`) to `/sign-up`
-  - [ ] 1.2 Leave the `/__memlab_away__` leak baseline navigation unchanged
+  - [x] 1.2 Leave the `/__memlab_away__` leak baseline navigation unchanged
 
-- [ ] Task 2: Simplify `signup.js` to a single-route signup scenario (AC: 2, 3)
-  - [ ] 2.1 In `tests/memory-leak/tests/signup.js`, change `ROUTE_PATH='/authentication'`
+- [x] Task 2: Simplify `signup.js` to a single-route signup scenario (AC: 2, 3)
+  - [x] 2.1 In `tests/memory-leak/tests/signup.js`, change `ROUTE_PATH='/authentication'`
         (`:8`) to `/sign-up`
-  - [ ] 2.2 Remove the cross-mode switcher helpers `ensureRegistrationForm`,
+  - [x] 2.2 Remove the cross-mode switcher helpers `ensureRegistrationForm`,
         `restoreLoginView`, and `clickSwitcherByText` (`:52-87`) — the swap is now cross-route
-  - [ ] 2.3 Reduce the scenario to fill + submit the registration form directly on `/sign-up`
+  - [x] 2.3 Reduce the scenario to fill + submit the registration form directly on `/sign-up`
         (registration is the default view there), with no toggler/switcher interaction
-  - [ ] 2.4 Keep any generated domain data on `@faker-js/faker` / the shared builders (NFR8)
+  - [x] 2.4 Keep any generated domain data on `@faker-js/faker` / the shared builders (NFR8)
 
 - [ ] Task 3: Verify both scenarios run leak-free on the new routes (AC: 1, 2, 3)
   - [ ] 3.1 Run `make test-memory-leak` and confirm both scenarios navigate to `/sign-up`
         and report no leak
-  - [ ] 3.2 Confirm no surviving reference to the removed switcher helpers or the
+  - [x] 3.2 Confirm no surviving reference to the removed switcher helpers or the
         `/authentication` path remains in either scenario
 
 ## Dev Notes
@@ -65,3 +65,28 @@ so that the MemLab suite exercises `/sign-up` and no longer drives the removed t
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-15
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- `auth-skeleton.js`: `pushState('/authentication')` → `/sign-up` (+ comment); the
+  `/__memlab_away__` baseline is unchanged.
+- `signup.js`: `ROUTE_PATH` → `/sign-up`; removed the dead cross-mode switcher dance
+  (`clickSwitcherByText`, `ensureRegistrationForm`, `restoreLoginView`, `waitForLoginForm`) and the
+  `PAGE_STATE_KEY` view-tracking state — `/sign-up` renders registration by default, so the scenario
+  is now a single-route fill+submit (setup waits for the registration form; action fills it; back
+  clears it). Faker data kept.
+- Verified no `/authentication` or switcher-helper reference remains in `tests/memory-leak`.
+- Task 3.1 (run `make test-memory-leak`) DEFERRED to CI per the agreed plan; Task 3.2 (no surviving
+  reference) confirmed locally via grep; locally validated via ESLint + tsc.
+
+**File List:**
+
+- MODIFIED: `tests/memory-leak/tests/auth-skeleton.js`, `tests/memory-leak/tests/signup.js`.
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.15 — memory-leak routes → /sign-up; single-route signup scenario.
