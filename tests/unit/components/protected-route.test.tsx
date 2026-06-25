@@ -19,7 +19,8 @@ const renderWithRouter = (token: string | null): ReturnType<typeof render> => {
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<div data-testid="dashboard" />} />
         </Route>
-        <Route path="/authentication" element={<div data-testid="auth-page" />} />
+        <Route path="/sign-in" element={<div data-testid="sign-in-page" />} />
+        <Route path="/sign-up" element={<div data-testid="sign-up-page" />} />
       </Routes>
     </MemoryRouter>
   );
@@ -32,10 +33,11 @@ describe('ProtectedRoute', () => {
     });
   });
 
-  it('redirects to /authentication when token is null', () => {
+  it('redirects to /sign-in (not /sign-up) when token is null', () => {
     renderWithRouter(null);
 
-    expect(screen.getByTestId('auth-page')).toBeInTheDocument();
+    expect(screen.getByTestId('sign-in-page')).toBeInTheDocument();
+    expect(screen.queryByTestId('sign-up-page')).not.toBeInTheDocument();
     expect(screen.queryByTestId('dashboard')).not.toBeInTheDocument();
   });
 
@@ -43,6 +45,6 @@ describe('ProtectedRoute', () => {
     renderWithRouter('test-token');
 
     expect(screen.getByTestId('dashboard')).toBeInTheDocument();
-    expect(screen.queryByTestId('auth-page')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('sign-in-page')).not.toBeInTheDocument();
   });
 });

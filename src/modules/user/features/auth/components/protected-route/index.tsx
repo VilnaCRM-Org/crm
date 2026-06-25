@@ -5,5 +5,5 @@ import useAuthToken from '@auth/stores/use-auth-token';
 export default function ProtectedRoute(): JSX.Element {
   const token = useAuthToken();
 
-  return token ? <Outlet /> : <Navigate to="/authentication" replace />;
+  return token ? <Outlet /> : <Navigate to="/sign-in" replace />;
 }

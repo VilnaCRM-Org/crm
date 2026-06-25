@@ -1,6 +1,6 @@
 # Story 1.9: Protected-route redirect to `/sign-in` (D-REDIRECT)
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -20,18 +20,18 @@ so that I land on the login page rather than the removed `/authentication` route
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Flip the protected-route redirect target to `/sign-in` (AC: 1, 2)
-  - [ ] 1.1 In `src/modules/user/features/auth/components/protected-route/index.tsx`, change
+- [x] Task 1: Flip the protected-route redirect target to `/sign-in` (AC: 1, 2)
+  - [x] 1.1 In `src/modules/user/features/auth/components/protected-route/index.tsx`, change
         the `<Navigate to="/authentication" replace/>` target to `<Navigate to="/sign-in"
 replace/>`, keeping `useAuthToken()` and the `<Outlet/>` branch unchanged
-  - [ ] 1.2 Confirm this is the single-literal change only — no other logic, props, or imports
+  - [x] 1.2 Confirm this is the single-literal change only — no other logic, props, or imports
         are touched
-- [ ] Task 2: Update the protected-route unit test to the new target (AC: 1, 3)
-  - [ ] 2.1 In `tests/unit/components/protected-route.test.tsx`, change the route element and
+- [x] Task 2: Update the protected-route unit test to the new target (AC: 1, 3)
+  - [x] 2.1 In `tests/unit/components/protected-route.test.tsx`, change the route element and
         redirect target `/authentication` → `/sign-in` (lines `:22,35`)
-  - [ ] 2.2 Assert the unauthenticated render lands on the `/sign-in` element with the exact
+  - [x] 2.2 Assert the unauthenticated render lands on the `/sign-in` element with the exact
         string `/sign-in` asserted so Stryker kills a mutated route string (NFR13)
-  - [ ] 2.3 Keep the authenticated-token case rendering the protected `<Outlet/>` (unchanged)
+  - [x] 2.3 Keep the authenticated-token case rendering the protected `<Outlet/>` (unchanged)
 
 ## Dev Notes
 
@@ -66,3 +66,28 @@ replace/>`, keeping `useAuthToken()` and the `<Outlet/>` branch unchanged
 
 - Epic:
   specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-9
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Changed `ProtectedRoute`'s unauthenticated redirect from the removed `/authentication` to
+  `/sign-in` (D-REDIRECT, FR4) — a one-line `Navigate to` change; `useAuthToken()` and the
+  `<Outlet/>` branch are unchanged.
+- Updated `protected-route.test.tsx`: the redirect-target route is now `/sign-in`; also added a
+  `/sign-up` stub and assert it is NOT rendered, so a mutated redirect target (`/sign-up` or the old
+  `/authentication`) is killed (mutation hardening, AC21). The mock-stub `data-testid` queries stay
+  warn-level per NFR5/R13.
+- Gates green: ESLint, tsc, dependency-cruiser, jscpd, rca metrics; protected-route 100% covered; no
+  suppressions and no inline comments.
+
+**File List:**
+
+- `src/modules/user/features/auth/components/protected-route/index.tsx` (modified)
+- `tests/unit/components/protected-route.test.tsx` (modified)
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.9 — protected-route redirect → `/sign-in`.

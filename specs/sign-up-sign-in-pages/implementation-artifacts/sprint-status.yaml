@@ -49,7 +49,7 @@ development_status:
   1-6-sign-in-page-and-section: done
   1-7-per-route-document-title: done
   1-8-routing-and-html-lang: done
-  1-9-protected-route-redirect: ready-for-dev
+  1-9-protected-route-redirect: done
   1-10-delete-in-place-toggler: ready-for-dev
   1-11-notification-a11y: ready-for-dev
   1-12-lighthouse-tooling-config: ready-for-dev
