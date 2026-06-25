@@ -52,13 +52,13 @@ describe('performance serving config', () => {
     const appSource = readFile('src/app.tsx');
 
     expect(appSource).toContain("import React, { lazy, useEffect } from 'react';");
-    expect(appSource).toContain(
-      "const Authentication = lazy(async () => import('@/modules/user/features/auth'));"
-    );
+    expect(appSource).toContain("const SignUp = lazy(async () => import('@auth/routes/sign-up'));");
+    expect(appSource).toContain("const SignIn = lazy(async () => import('@auth/routes/sign-in'));");
     expect(appSource).toContain(
       "const ButtonExample = lazy(async () => import('@/button-example'));"
     );
-    expect(appSource).not.toContain("import Authentication from '@/modules/user/features/auth';");
+    expect(appSource).not.toContain("import SignUp from '@auth/routes/sign-up';");
+    expect(appSource).not.toContain("import SignIn from '@auth/routes/sign-in';");
     expect(appSource).not.toContain("import ButtonExample from '@/button-example';");
   });
 

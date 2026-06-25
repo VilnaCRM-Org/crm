@@ -23,7 +23,7 @@ function FocusableSuccessHeading({ title }: { title: string }): JSX.Element {
   const focusOnMount = useFocusOnMount<HTMLDivElement>();
   return (
     <Box ref={focusOnMount} tabIndex={-1} sx={headingFocusStyles}>
-      <UITypography component="h4" sx={styles.successMessageTitle}>
+      <UITypography component="h2" sx={styles.successMessageTitle}>
         {title}
       </UITypography>
     </Box>
@@ -107,8 +107,8 @@ function MessageContainer({
 export default function RegistrationSuccessView({ isClosing, onBack }: Props): JSX.Element {
   const { t } = useTranslation();
   return (
-    <Box role="alert" sx={styles.notificationSection}>
-      <Box sx={styles.contentBox} aria-label={t('notifications.success.title')}>
+    <Box role="status" sx={styles.notificationSection}>
+      <Box sx={styles.contentBox}>
         <ConfettiTop label={t('notifications.success.images.confetti')} />
         <GearsImage label={t('notifications.success.images.gears')} />
         <MessageContainer

@@ -5,10 +5,9 @@ import { buildCredentials } from '@tests/builders';
 import fillInput from '../../../../../../../utils/fill-input';
 import { t } from '../../../../../../../utils/initialize-localization';
 
-const AUTH_URL = '/authentication';
+const LOGIN_URL = '/sign-in';
 const LOGIN_API_URL = '**/api/users';
 
-const switcherToLogin: string = t('sign_up.form.switcher_text_have_account');
 const emailPlaceholder: string = t('sign_in.form.email_input.placeholder');
 const passwordPlaceholder: string = t('sign_in.form.password_input.placeholder');
 const submitLabel: string = t('sign_in.form.submit_button');
@@ -16,8 +15,7 @@ const submitLabel: string = t('sign_in.form.submit_button');
 const validCredentials = buildCredentials();
 
 async function gotoLogin(page: Page): Promise<void> {
-  await page.goto(AUTH_URL);
-  await page.locator('button', { hasText: switcherToLogin }).click();
+  await page.goto(LOGIN_URL);
 }
 
 async function fillValidLogin(page: Page): Promise<ReturnType<Page['locator']>> {

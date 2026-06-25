@@ -42,9 +42,14 @@ jest.mock('@/button-example', () => ({
   default: (): JSX.Element => <div>button example page</div>,
 }));
 
-jest.mock('@/modules/user/features/auth', () => ({
+jest.mock('@auth/routes/sign-up', () => ({
   __esModule: true,
-  default: (): JSX.Element => <div>authentication page</div>,
+  default: (): JSX.Element => <div>sign up page</div>,
+}));
+
+jest.mock('@auth/routes/sign-in', () => ({
+  __esModule: true,
+  default: (): JSX.Element => <div>sign in page</div>,
 }));
 
 const App = jest.requireActual<typeof import('@/app')>('@/app').default;

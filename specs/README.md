@@ -21,6 +21,7 @@ specs/
 | `start-ci-chromium`           | Implemented |
 | `eslint-suppressions`         | In progress |
 | `makefile-playwright-targets` | Planned     |
+| `sign-up-sign-in-pages`       | In progress |
 
 ## Conventions
 

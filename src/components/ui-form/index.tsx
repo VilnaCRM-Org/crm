@@ -1,11 +1,12 @@
 import { Box } from '@mui/material';
 import { ReactNode } from 'react';
-import { useForm, SubmitHandler, FieldValues } from 'react-hook-form';
+import { SubmitHandler, FieldValues, useFormContext } from 'react-hook-form';
 
 import type {
   FormBodyProps,
   SubmitControlsProps,
   SubmitHandlerOptions,
+  TitleHeadingComponent,
   UIFormProps,
 } from '@/components/types/ui-form';
 import UIButton from '@/components/ui-button';
@@ -16,6 +17,7 @@ import UITypography from '@/components/ui-typography';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import SubmitSpinner from './submit-spinner';
+import useUIForm from './use-ui-form';
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
   const focusOnAppear = useFocusOnMount<HTMLDivElement>();
@@ -34,16 +36,18 @@ function FormHeader({
   subtitle,
   showTitle,
   showSubtitle,
+  titleComponent,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   showTitle: boolean;
   showSubtitle: boolean;
+  titleComponent?: TitleHeadingComponent;
 }): JSX.Element {
   return (
     <>
       {showTitle && title && (
-        <UITypography variant="h4" sx={styles.formTitle}>
+        <UITypography variant="h4" component={titleComponent} sx={styles.formTitle}>
           {title}
         </UITypography>
       )}
@@ -82,7 +86,6 @@ function SubmitControls({
 }
 
 function FormBody<T extends FieldValues>({
-  methods,
   handleSubmit,
   children,
   error,
@@ -90,12 +93,14 @@ function FormBody<T extends FieldValues>({
   subtitle,
   showTitle,
   showSubtitle,
+  titleComponent,
   submitting,
   isSubmitDisabled,
   submitLabel,
   submittingLabel,
   announceSubmitting,
 }: FormBodyProps<T>): JSX.Element {
+  const methods = useFormContext<T>();
   return (
     <form noValidate aria-busy={submitting} onSubmit={methods.handleSubmit(handleSubmit)}>
       <ErrorBanner error={error} />
@@ -104,6 +109,7 @@ function FormBody<T extends FieldValues>({
         subtitle={subtitle}
         showTitle={showTitle}
         showSubtitle={showSubtitle}
+        titleComponent={titleComponent}
       />
       {children}
       <SubmitControls
@@ -121,31 +127,31 @@ export default function UIForm<T extends FieldValues>({
   defaultValues,
   children,
   formOptions = {},
-  isSubmitting = undefined,
+  isSubmitting,
   error = null,
-  submitLabel,
-  title,
   subtitle = null,
   showTitle = true,
   showSubtitle = true,
   resetOnSuccess = false,
   isSubmitDisabled = false,
+  submitLabel,
+  title,
   submittingLabel,
+  titleComponent,
   submittingAnnouncement,
 }: UIFormProps<T>): JSX.Element {
-  const methods = useForm<T>({ mode: 'onTouched', defaultValues, ...formOptions });
-  const submitting = isSubmitting ?? methods.formState.isSubmitting;
+  const { methods, submitting } = useUIForm<T>({ defaultValues, formOptions, isSubmitting });
 
   return (
     <FormProviderBridge methods={methods}>
       <FormBody
-        methods={methods}
         handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
         error={error}
         title={title}
         subtitle={subtitle}
         showTitle={showTitle}
         showSubtitle={showSubtitle}
+        titleComponent={titleComponent}
         submitting={submitting}
         isSubmitDisabled={isSubmitDisabled}
         submitLabel={submitLabel}

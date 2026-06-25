@@ -17,9 +17,10 @@ const renderWithRouter = (token: string | null): ReturnType<typeof render> => {
     <MemoryRouter initialEntries={['/']}>
       <Routes>
         <Route element={<ProtectedRoute />}>
-          <Route path="/" element={<div data-testid="dashboard" />} />
+          <Route path="/" element={<div>dashboard</div>} />
         </Route>
-        <Route path="/authentication" element={<div data-testid="auth-page" />} />
+        <Route path="/sign-in" element={<div>sign in page</div>} />
+        <Route path="/sign-up" element={<div>sign up page</div>} />
       </Routes>
     </MemoryRouter>
   );
@@ -32,17 +33,18 @@ describe('ProtectedRoute', () => {
     });
   });
 
-  it('redirects to /authentication when token is null', () => {
+  it('redirects to /sign-in (not /sign-up) when token is null', () => {
     renderWithRouter(null);
 
-    expect(screen.getByTestId('auth-page')).toBeInTheDocument();
-    expect(screen.queryByTestId('dashboard')).not.toBeInTheDocument();
+    expect(screen.getByText('sign in page')).toBeInTheDocument();
+    expect(screen.queryByText('sign up page')).not.toBeInTheDocument();
+    expect(screen.queryByText('dashboard')).not.toBeInTheDocument();
   });
 
   it('renders children when token is present', () => {
     renderWithRouter('test-token');
 
-    expect(screen.getByTestId('dashboard')).toBeInTheDocument();
-    expect(screen.queryByTestId('auth-page')).not.toBeInTheDocument();
+    expect(screen.getByText('dashboard')).toBeInTheDocument();
+    expect(screen.queryByText('sign in page')).not.toBeInTheDocument();
   });
 });

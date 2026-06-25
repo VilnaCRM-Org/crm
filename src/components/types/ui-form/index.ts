@@ -7,6 +7,8 @@ import type {
   UseFormReturn,
 } from 'react-hook-form';
 
+export type TitleHeadingComponent = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+
 export interface UIFormProps<T extends FieldValues> {
   onSubmit: SubmitHandler<T>;
   defaultValues: DefaultValues<T>;
@@ -23,6 +25,7 @@ export interface UIFormProps<T extends FieldValues> {
   isSubmitDisabled?: boolean;
   submittingLabel: string;
   submittingAnnouncement?: boolean;
+  titleComponent?: TitleHeadingComponent;
 }
 
 export type SubmitHandlerOptions<T extends FieldValues> = {
@@ -38,10 +41,20 @@ export type SubmitControlsProps = {
   submitLabel: string;
 };
 
+export interface UseUIFormOptions<T extends FieldValues> {
+  defaultValues: DefaultValues<T>;
+  formOptions: Omit<UseFormProps<T>, 'defaultValues'>;
+  isSubmitting?: boolean;
+}
+
+export interface UseUIFormResult<T extends FieldValues> {
+  methods: UseFormReturn<T>;
+  submitting: boolean;
+}
+
 export type FormBodyProps<T extends FieldValues> = {
   submittingLabel: string;
   announceSubmitting: boolean;
-  methods: UseFormReturn<T>;
   handleSubmit: SubmitHandler<T>;
   children: ReactNode;
   error?: string | null;
@@ -52,4 +65,5 @@ export type FormBodyProps<T extends FieldValues> = {
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;
+  titleComponent?: TitleHeadingComponent;
 };

@@ -110,13 +110,14 @@ describe('RegistrationNotification', () => {
     expect(screen.getByText('Вітаємо!')).toBeInTheDocument();
   });
 
-  it('renders a single alert region for the success notification', () => {
+  it('announces the success notification politely as a single status region', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('moves focus off the body to the success notification on mount', () => {
@@ -125,7 +126,7 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByRole('heading', { level: 4 })).toHaveAccessibleName();
+    expect(screen.getByRole('heading', { level: 2 })).toHaveAccessibleName();
     expect(document.body).not.toHaveFocus();
   });
 
@@ -222,14 +223,32 @@ describe('RegistrationNotification', () => {
     expect(screen.getByRole('alert')).not.toHaveAttribute('aria-live');
   });
 
-  it('moves focus off the body to the error notification on mount', () => {
+  it('focuses a wrapper outside the assertive alert on mount (Gap 1)', () => {
     renderWithProviders(
-      <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="error" />,
+      <RegistrationNotification
+        isSubmitting={false}
+        onBack={jest.fn()}
+        onRetry={jest.fn()}
+        view="error"
+      />,
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByRole('heading', { level: 4 })).toHaveAccessibleName();
+    const heading = screen.getByRole('heading', { level: 2 });
+    const alert = screen.getByRole('alert');
+    const retryButton = screen.getByRole('button', { name: 'Спробувати ще раз' });
+
+    expect(heading).toHaveAccessibleName();
+
     expect(document.body).not.toHaveFocus();
+    expect(heading).not.toHaveFocus();
+    expect(alert).not.toHaveFocus();
+    screen.getAllByRole('button').forEach((button) => {
+      expect(button).not.toHaveFocus();
+    });
+
+    expect(alert).not.toContainElement(heading);
+    expect(alert).not.toContainElement(retryButton);
   });
 
   it('renders the retry button and disables it while submitting', () => {

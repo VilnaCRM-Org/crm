@@ -1,7 +1,7 @@
 import ScenarioBuilder from '../utils/scenario-builder.js';
 
 // Baseline is a non-matching route so no auth components are mounted.
-// action() navigates to /authentication, triggering the AuthSkeleton → FormSection
+// action() navigates to /sign-up, triggering the AuthSkeleton → FormSection
 // transition. back() returns to the baseline so MemLab can detect any objects
 // retained from the skeleton's lifecycle.
 const scenarioBuilder = new ScenarioBuilder('/__memlab_away__');
@@ -11,7 +11,7 @@ const authFormSelector = 'form, [role="form"]';
 async function action(page) {
   try {
     await page.evaluate(() => {
-      window.history.pushState({}, '', '/authentication');
+      window.history.pushState({}, '', '/sign-up');
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
 

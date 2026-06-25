@@ -30,6 +30,41 @@ describe('UIForm', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
   });
 
+  it('renders the title as a real <h1> when titleComponent="h1" (AC1)', () => {
+    render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Auth Title"
+        titleComponent="h1"
+      >
+        <input name="name" aria-label="name" />
+      </UIForm>
+    );
+
+    const heading = screen.getByRole('heading', { level: 1, name: 'Auth Title' });
+    expect(heading.tagName).toBe('H1');
+  });
+
+  it('renders the title as a <p> by default for non-auth callers (AC2)', () => {
+    render(
+      <UIForm<Values>
+        defaultValues={DEFAULTS}
+        onSubmit={jest.fn()}
+        submitLabel="Submit"
+        submittingLabel="Submitting…"
+        title="Plain Title"
+      >
+        <input name="name" aria-label="name" />
+      </UIForm>
+    );
+
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(screen.getByText('Plain Title').tagName).toBe('P');
+  });
+
   it('renders the error alert assertively with no redundant aria-live', () => {
     render(
       <UIForm<Values>

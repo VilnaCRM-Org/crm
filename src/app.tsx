@@ -7,7 +7,8 @@ import ProtectedRoute from '@auth/components/protected-route';
 import './index.css';
 
 const ButtonExample = lazy(async () => import('@/button-example'));
-const Authentication = lazy(async () => import('@/modules/user/features/auth'));
+const SignUp = lazy(async () => import('@auth/routes/sign-up'));
+const SignIn = lazy(async () => import('@auth/routes/sign-in'));
 
 const router = createBrowserRouter([
   {
@@ -20,8 +21,12 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: '/authentication',
-    element: <Authentication />,
+    path: '/sign-up',
+    element: <SignUp />,
+  },
+  {
+    path: '/sign-in',
+    element: <SignIn />,
   },
 ]);
 
@@ -29,12 +34,13 @@ function App(): React.ReactElement {
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    const applyDir = (): void => {
+    const applyHtmlAttrs = (): void => {
       document.documentElement.dir = i18n.dir?.(i18n.language) || 'ltr';
+      // document.documentElement.lang = i18n.language;
     };
-    applyDir();
-    i18n.on?.('languageChanged', applyDir);
-    return (): void => i18n.off?.('languageChanged', applyDir);
+    applyHtmlAttrs();
+    i18n.on?.('languageChanged', applyHtmlAttrs);
+    return (): void => i18n.off?.('languageChanged', applyHtmlAttrs);
   }, [i18n]);
   return (
     <React.Suspense fallback={null}>
