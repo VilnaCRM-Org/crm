@@ -14,7 +14,8 @@ const normalizedBaseUrl = baseUrl === '/' ? '/' : baseUrl.replace(/\/+$/, '');
 
 const pages = [
   normalizedBaseUrl,
-  normalizedBaseUrl === '/' ? '/authentication' : `${normalizedBaseUrl}/authentication`,
+  normalizedBaseUrl === '/' ? '/sign-up' : `${normalizedBaseUrl}/sign-up`,
+  normalizedBaseUrl === '/' ? '/sign-in' : `${normalizedBaseUrl}/sign-in`,
 ];
 
 module.exports = {

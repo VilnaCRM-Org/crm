@@ -1,6 +1,6 @@
 # Story 1.12: Lighthouse + tooling config — point the audited page at `/sign-up`
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -26,24 +26,24 @@ stay green.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Point the audited page at `/sign-up` in the Lighthouse config (AC: 1, 5)
-  - [ ] 1.1 In `lighthouse/constants.js` change the appended `pages` entry from
+- [x] Task 1: Point the audited page at `/sign-up` in the Lighthouse config (AC: 1, 5)
+  - [x] 1.1 In `lighthouse/constants.js` change the appended `pages` entry from
         `/authentication` to the `/sign-up` ternary
         (`normalizedBaseUrl === '/' ? '/sign-up' : normalizedBaseUrl + '/sign-up'`)
-  - [ ] 1.2 In `lighthouse/lighthouserc.mobile.js` update the explanatory comment that names
+  - [x] 1.2 In `lighthouse/lighthouserc.mobile.js` update the explanatory comment that names
         `/authentication` to name `/sign-up`, leaving the 0.85 mobile gate unchanged
-- [ ] Task 2: Update the tooling unit tests to the `/sign-up` route (AC: 2, 3, 4)
-  - [ ] 2.1 In `tests/unit/tooling/lighthouse-constants.test.ts` change the expected array
+- [x] Task 2: Update the tooling unit tests to the `/sign-up` route (AC: 2, 3, 4)
+  - [x] 2.1 In `tests/unit/tooling/lighthouse-constants.test.ts` change the expected array
         second entry from `…/authentication` to `…/sign-up`
-  - [ ] 2.2 In `tests/unit/tooling/auth-test-port.test.ts` assert the `constants.js` `/sign-up`
+  - [x] 2.2 In `tests/unit/tooling/auth-test-port.test.ts` assert the `constants.js` `/sign-up`
         ternary string and keep `expect(workflow).not.toContain('/authentication')` (optionally
         adding `not.toContain('/sign-up')` for `performance-testing.yml`)
-  - [ ] 2.3 In `tests/unit/tooling/performance-serving.test.ts` replace the
+  - [x] 2.3 In `tests/unit/tooling/performance-serving.test.ts` replace the
         `Authentication = lazy(...)` expected string with the new `SignUp`/`SignIn` lazy
         imports while keeping the route-level-code-splitting intent
-- [ ] Task 3: Verify gates pass (AC: 1-5)
-  - [ ] 3.1 Run the three tooling unit tests and confirm they are green
-  - [ ] 3.2 Run `make lint` and `make lint-metrics` and confirm a clean pass
+- [x] Task 3: Verify gates pass (AC: 1-5)
+  - [x] 3.1 Run the three tooling unit tests and confirm they are green
+  - [x] 3.2 Run `make lint` and `make lint-metrics` and confirm a clean pass
 
 ## Dev Notes
 
@@ -81,3 +81,38 @@ stay green.
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-12
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- **User requirement (2026-06-25): performance testing covers BOTH `/sign-up` AND `/sign-in`** —
+  the spec's 1.12 only moved Lighthouse to `/sign-up`; extended to both. `lighthouse/constants.js`
+  `pages` now = `[base, base/sign-up, base/sign-in]`.
+- `lighthouserc.mobile.js` comment now names `/sign-up` and `/sign-in`; the 0.85 mobile gate is
+  unchanged.
+- Tooling tests: `lighthouse-constants.test.ts` expects the 3-entry pages array;
+  `auth-test-port.test.ts` asserts both `/sign-up` and `/sign-in` ternaries in `constants.js`, that
+  `constants.js` no longer contains `/authentication`, and that the perf workflow contains none of
+  the routes. `performance-serving.test.ts` was already updated to the `SignUp`/`SignIn` lazy imports
+  in Story 1.8.
+- Verified no `/authentication` remains in `lighthouse/`, `scripts/`, or `.github/`.
+- Note: both `/sign-up` and `/sign-in` must now meet the mobile 0.85 budget when Lighthouse runs in
+  CI; both are route-level lazy chunks of comparable weight.
+- Gates green: ESLint, tsc, dependency-cruiser, jscpd, rca metrics; tooling tests pass; no
+  suppressions and no inline comments.
+
+**File List:**
+
+- `lighthouse/constants.js` (modified — both `/sign-up` and `/sign-in`)
+- `lighthouse/lighthouserc.mobile.js` (modified — comment)
+- `tests/unit/tooling/lighthouse-constants.test.ts` (modified)
+- `tests/unit/tooling/auth-test-port.test.ts` (modified)
+- `tests/unit/tooling/performance-serving.test.ts` (updated earlier in Story 1.8)
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.12 — Lighthouse audits `/sign-up` + `/sign-in` (both pages, per
+  the user requirement).

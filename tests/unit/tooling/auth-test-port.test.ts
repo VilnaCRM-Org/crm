@@ -28,13 +28,19 @@ describe('auth test harness wiring', () => {
     const batchScript = readFile('scripts/ci/batch_lhci_leak.sh');
 
     expect(workflow).not.toContain('/authentication');
+    expect(workflow).not.toContain('/sign-up');
+    expect(workflow).not.toContain('/sign-in');
 
+    expect(constants).not.toContain('/authentication');
     expect(constants).toContain(
       "const normalizedBaseUrl = baseUrl === '/' ? '/' : baseUrl.replace("
     );
     expect(constants).toContain('normalizedBaseUrl,');
     expect(constants).toContain(
-      "normalizedBaseUrl === '/' ? '/authentication' : `${normalizedBaseUrl}/authentication`,"
+      "normalizedBaseUrl === '/' ? '/sign-up' : `${normalizedBaseUrl}/sign-up`,"
+    );
+    expect(constants).toContain(
+      "normalizedBaseUrl === '/' ? '/sign-in' : `${normalizedBaseUrl}/sign-in`,"
     );
     expect(constants).toContain('baseUrl: normalizedBaseUrl');
     expect(desktopRc).toContain("const { pages } = require('./constants');");

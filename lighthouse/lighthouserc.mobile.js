@@ -26,7 +26,7 @@ module.exports = {
     assert: {
       assertions: {
         // 0.85 (vs 0.9 desktop): mobile network simulation and CPU throttling
-        // introduce variance on the /authentication page; 0.85 keeps headroom
+        // introduce variance on the /sign-up and /sign-in pages; 0.85 keeps headroom
         // while still catching regressions after the deferred-DI auth refactor.
         'categories:performance': ['error', { minScore: 0.85, aggregationMethod: 'median-run' }],
         'categories:accessibility': ['error', { minScore: 0.9 }],
