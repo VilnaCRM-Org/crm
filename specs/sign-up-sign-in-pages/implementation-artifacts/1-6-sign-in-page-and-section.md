@@ -1,6 +1,6 @@
 # Story 1.6: Add `/sign-in` page + `SignInFormSection` (real `<h1>` and swap link)
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -26,35 +26,35 @@ directly (not only via a toggle).
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add the `/sign-in` route-level page (AC: 1, 2, 5)
-  - [ ] 1.1 Create `src/modules/user/features/auth/sign-in/index.tsx` as the route-level
+- [x] Task 1: Add the `/sign-in` route-level page (AC: 1, 2, 5)
+  - [x] 1.1 Create `src/modules/user/features/auth/sign-in/index.tsx` as the route-level
         `SignIn` page that lazily imports `./sign-in-form-section` and wraps it in
         `AuthPageLayout`
-  - [ ] 1.2 Call `usePageTitle('sign_in.title')` in `SignIn` so the page sets its own
+  - [x] 1.2 Call `usePageTitle('sign_in.title')` in `SignIn` so the page sets its own
         localized `document.title` (hook delivered by Story 1.7)
-  - [ ] 1.3 Keep the page a single component under the rca caps (NFR3)
-- [ ] Task 2: Add `SignInFormSection` (login section, swap link, constant OAuth state) (AC: 1, 3, 4)
-  - [ ] 2.1 Create `src/modules/user/features/auth/sign-in/sign-in-form-section.tsx` rendering
+  - [x] 1.3 Keep the page a single component under the rca caps (NFR3)
+- [x] Task 2: Add `SignInFormSection` (login section, swap link, constant OAuth state) (AC: 1, 3, 4)
+  - [x] 2.1 Create `src/modules/user/features/auth/sign-in/sign-in-form-section.tsx` rendering
         `AuthFormSection` with `oauthInert={false}` (login has no notification view)
-  - [ ] 2.2 Pass `switcher={<AuthSwitcher to="/sign-up"
+  - [x] 2.2 Pass `switcher={<AuthSwitcher to="/sign-up"
 labelKey="sign_up.form.switcher_text_no_account" />}` so the swap link points at
         `/sign-up` and reuses the existing i18n key (NFR9)
-  - [ ] 2.3 Render `LoginForm` unchanged as the section child; import no registration code
+  - [x] 2.3 Render `LoginForm` unchanged as the section child; import no registration code
         (FR12)
-- [ ] Task 3: Give the login form a real `<h1>` (AC: 2)
-  - [ ] 3.1 Add `titleComponent="h1"` to the `<UIForm<LoginUserDto>>` in
+- [x] Task 3: Give the login form a real `<h1>` (AC: 2)
+  - [x] 3.1 Add `titleComponent="h1"` to the `<UIForm<LoginUserDto>>` in
         `src/modules/user/features/auth/components/form-section/auth-forms/login-form.tsx`
         (the only edit to that file)
-- [ ] Task 4: Tests for the `/sign-in` page and the login title (AC: 1, 2, 3, 4)
-  - [ ] 4.1 Add `tests/unit/modules/user/features/auth/sign-in/index.test.tsx`: assert
+- [x] Task 4: Tests for the `/sign-in` page and the login title (AC: 1, 2, 3, 4)
+  - [x] 4.1 Add `tests/unit/modules/user/features/auth/sign-in/index.test.tsx`: assert
         `/sign-in` renders Login (`<h1>` "Authentication"), the swap link to `/sign-up`, and
         the OAuth row, using semantic queries (NFR5)
-  - [ ] 4.2 In the same test, assert no registration code is imported (mock assertion) (AC2)
-  - [ ] 4.3 Update
+  - [x] 4.2 In the same test, assert no registration code is imported (mock assertion) (AC2)
+  - [x] 4.3 Update
         `tests/unit/modules/user/features/auth/components/form-section/auth-forms/login-form.test.tsx`
         to assert the title is a real `<h1>` and fix any harness coupling to the deleted
         `FormSection` (AC10, AC15)
-  - [ ] 4.4 Build test data with the `@faker-js/faker` builders under `tests/builders/`; keep
+  - [x] 4.4 Build test data with the `@faker-js/faker` builders under `tests/builders/`; keep
         hardcoded literals only for fixed contract strings (titles, hrefs, i18n text)
 
 ## Dev Notes
@@ -102,3 +102,35 @@ labelKey="sign_up.form.switcher_text_no_account" />}` so the swap link points at
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-6
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Added the `/sign-in` route page + `SignInFormSection` (under `auth/routes/sign-in/` per the
+  dependency-cruiser `feature-allowed-folders` rule — same relocation as Story 1.5), and added
+  `titleComponent="h1"` to the login form's `UIForm` (C1, AR1).
+- `SignInFormSection` has constant `oauthInert={false}` (login has no notification view); the swap
+  link is the `AuthSwitcher` to `/sign-up` ("Don’t have an account yet?", curly apostrophe per the
+  i18n value). No registration code is imported (FR12); D3 keeps "Authentication" as the title/`<h1>`.
+- The page test renders the real chain (login internals mocked) and asserts the real `<h1>`
+  "Authentication", the swap link → `/sign-up`, the OAuth row, and `document.title`; the login-form
+  test asserts `UIForm` receives `titleComponent="h1"`.
+- Gates green: ESLint, tsc, dependency-cruiser, jscpd, rca metrics; both new files 100% covered; no
+  suppressions and no inline comments.
+
+**File List:**
+
+- `src/modules/user/features/auth/routes/sign-in/index.tsx` (new)
+- `src/modules/user/features/auth/routes/sign-in/sign-in-form-section.tsx` (new)
+- `src/modules/user/features/auth/components/form-section/auth-forms/login-form.tsx`
+  (modified — `titleComponent="h1"`)
+- `tests/unit/modules/user/features/auth/routes/sign-in/index.test.tsx` (new)
+- `tests/unit/modules/user/features/auth/components/form-section/auth-forms/login-form.test.tsx`
+  (modified — `titleComponent` assertion)
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.6 — `/sign-in` page (under `routes/`).

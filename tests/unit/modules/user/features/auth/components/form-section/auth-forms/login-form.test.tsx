@@ -92,6 +92,7 @@ jest.mock('@/components/ui-form', () => ({
     isSubmitting: boolean;
     onSubmit: (data: { email: string; password: string }) => Promise<void>;
     children: ReactElement[];
+    titleComponent?: string;
   }): ReactElement => {
     mockUIForm(props);
 
@@ -138,6 +139,12 @@ describe('LoginForm', () => {
         submittingLabel: 'sign_in.form.submitting',
       })
     );
+  });
+
+  it('renders the login title as a real <h1> via titleComponent (AC2)', () => {
+    render(<LoginForm />);
+
+    expect(mockUIForm).toHaveBeenCalledWith(expect.objectContaining({ titleComponent: 'h1' }));
   });
 
   it('invokes the loginUser action when the form is submitted', async () => {

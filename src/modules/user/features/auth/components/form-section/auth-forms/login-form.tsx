@@ -26,6 +26,7 @@ export default function LoginForm(): JSX.Element {
       submitLabel={t('sign_in.form.submit_button')}
       submittingLabel={t('sign_in.form.submitting')}
       title={t('sign_in.title')}
+      titleComponent="h1"
       subtitle={t('sign_in.subtitle')}
     >
       <LoginFormFields t={t} validators={validators} />
