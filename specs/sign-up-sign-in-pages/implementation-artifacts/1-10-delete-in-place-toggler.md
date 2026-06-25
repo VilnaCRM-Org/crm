@@ -1,6 +1,6 @@
 # Story 1.10: Delete the in-place toggler machinery (FR13)
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -25,44 +25,44 @@ so that there is no orphan importer, a green build, and a clean dependency graph
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Delete the toggler source modules (AC: 1, 2)
-  - [ ] 1.1 Delete `src/modules/user/features/auth/index.tsx` (old `Authentication` page;
+- [x] Task 1: Delete the toggler source modules (AC: 1, 2)
+  - [x] 1.1 Delete `src/modules/user/features/auth/index.tsx` (old `Authentication` page;
         chrome now in `AuthPageLayout`)
-  - [ ] 1.2 Delete `src/modules/user/features/auth/components/form-section/index.tsx`
+  - [x] 1.2 Delete `src/modules/user/features/auth/components/form-section/index.tsx`
         (`FormSection`, `AuthBody`, `SwitcherButton`, `SwitcherError`, `FormSwitcher`,
         `FormSectionLayout`, `useFormSectionViewModel`, `getSwitcherLabelKey`)
-  - [ ] 1.3 Delete `src/modules/user/features/auth/components/form-section/use-login-switcher.ts`
-  - [ ] 1.4 Delete
+  - [x] 1.3 Delete `src/modules/user/features/auth/components/form-section/use-login-switcher.ts`
+  - [x] 1.4 Delete
         `src/modules/user/features/auth/components/form-section/login-switch-actions.ts`
         (`LoginSwitchController` + `LOAD_LOGIN_ERROR_KEY`)
-  - [ ] 1.5 Delete `src/modules/user/features/auth/utils/load-login-form.ts` (`loginFormLoader`)
-  - [ ] 1.6 Keep `src/modules/user/features/auth/utils/lazy-module-loader.ts` (still used by
+  - [x] 1.5 Delete `src/modules/user/features/auth/utils/load-login-form.ts` (`loginFormLoader`)
+  - [x] 1.6 Keep `src/modules/user/features/auth/utils/lazy-module-loader.ts` (still used by
         `load-registration-notification.ts`)
 
-- [ ] Task 2: Delete the toggler type-only files (AC: 1)
-  - [ ] 2.1 Delete `src/modules/user/features/auth/types/form-section/index.ts`
+- [x] Task 2: Delete the toggler type-only files (AC: 1)
+  - [x] 2.1 Delete `src/modules/user/features/auth/types/form-section/index.ts`
         (`FormSectionLayoutProps`)
-  - [ ] 2.2 Delete `src/modules/user/features/auth/types/form-section/login-switch-actions.ts`
-  - [ ] 2.3 Delete `src/modules/user/features/auth/types/form-section/use-login-switcher.ts`
+  - [x] 2.2 Delete `src/modules/user/features/auth/types/form-section/login-switch-actions.ts`
+  - [x] 2.3 Delete `src/modules/user/features/auth/types/form-section/use-login-switcher.ts`
 
-- [ ] Task 3: Prune the surviving form-section files (AC: 3, 4, 5)
-  - [ ] 3.1 In `src/modules/user/features/auth/components/form-section/styles.ts`, remove
+- [x] Task 3: Prune the surviving form-section files (AC: 3, 4, 5)
+  - [x] 3.1 In `src/modules/user/features/auth/components/form-section/styles.ts`, remove
         `formSwitcherError` (`:42-56`) and the now-unused `paletteColors` import (`:7`); keep
         `formSection`/`formWrapper` and the `fieldGapMargins` re-export
-  - [ ] 3.2 In `src/modules/user/features/auth/components/form-section/types.ts`, remove
+  - [x] 3.2 In `src/modules/user/features/auth/components/form-section/types.ts`, remove
         `AuthMode` (`:3`); keep `RegistrationView` (`:4`) and `AuthVariants`
-  - [ ] 3.3 Apply the i18n decision on `sign_in.errors.load_failed` in
+  - [x] 3.3 Apply the i18n decision on `sign_in.errors.load_failed` in
         `src/modules/user/features/auth/i18n/en.json` and `uk.json`; if removed, remove from
         BOTH locales for parity; keep `sign_up.errors.load_failed`
 
-- [ ] Task 4: Remove the deleted-module tests and verify no orphan importer (AC: 1, 2)
-  - [ ] 4.1 Delete
+- [x] Task 4: Remove the deleted-module tests and verify no orphan importer (AC: 1, 2)
+  - [x] 4.1 Delete
         `tests/unit/modules/user/features/auth/components/form-section/index.test.tsx`,
         `tests/unit/modules/user/features/auth/components/form-section.test.tsx`,
         `tests/unit/modules/user/features/auth/components/form-section/login-switch-actions.test.ts`,
         and `tests/unit/modules/user/features/auth/index.test.tsx` (chrome assertions ported to
         the `auth-page-layout` test in Story 1.3)
-  - [ ] 4.2 Confirm via `grep` + `make lint-tsc` + dependency-cruiser that nothing imports the
+  - [x] 4.2 Confirm via `grep` + `make lint-tsc` + dependency-cruiser that nothing imports the
         deleted modules, `styles.formSwitcherError`, `AuthMode`, or `loginFormLoader`, and the
         build is green
 
@@ -111,3 +111,43 @@ so that there is no orphan importer, a green build, and a clean dependency graph
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-10
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Deleted the dead in-place toggler: `auth/index.tsx`, `form-section/index.tsx`,
+  `use-login-switcher.ts`, `login-switch-actions.ts`, `utils/load-login-form.ts`, and the three
+  toggler type files; removed their four tests. Verified via grep + tsc + dependency-cruiser that no
+  orphan importer remains. Kept `utils/lazy-module-loader.ts` (still used by
+  `load-registration-notification`) and `types/form-section/inert-box.ts`.
+- Pruned `form-section/styles.ts`: removed `formSwitcherError` + the now-unused `paletteColors`
+  import. **KEPT `formSwitcherButton`** — `auth-switcher/styles.ts` (Story 1.1) REUSES it (spreads it
+  and adds the focus-visible ring), which is how the jscpd DRY gate is satisfied, and a skeleton
+  spacing test references it. (Corrected an initial over-removal that broke auth-switcher + the
+  skeleton spacing test.)
+- Pruned `form-section/types.ts`: removed `AuthMode`; kept `RegistrationView` + `AuthVariants`.
+- i18n: LEFT `sign_in.errors.load_failed` in both en/uk (the story permits leave-or-remove; leaving
+  keeps en/uk parity with zero risk — only the deleted switcher read it). `sign_up.errors.load_failed`
+  stays (AuthErrorBoundary paths).
+- Gates green: ESLint, tsc, dependency-cruiser (no orphans), jscpd, rca metrics; full client unit
+  suite passing (1340); no suppressions and no inline comments.
+
+**File List:**
+
+- DELETED (src): `auth/index.tsx`; `form-section/index.tsx`, `form-section/use-login-switcher.ts`,
+  `form-section/login-switch-actions.ts`; `utils/load-login-form.ts`;
+  `types/form-section/{index,login-switch-actions,use-login-switcher}.ts`.
+- DELETED (tests): `auth/index.test.tsx`; `form-section/index.test.tsx`; `form-section.test.tsx`;
+  `form-section/login-switch-actions.test.ts`.
+- MODIFIED: `form-section/styles.ts` (drop `formSwitcherError` + `paletteColors`),
+  `form-section/types.ts` (drop `AuthMode`).
+- ADDED (tests): `tests/unit/modules/user/features/auth/components/form-section/inert-box.test.tsx`
+  — restores the 100% coverage of the surviving `inert-box.tsx` that the deleted toggler tests had
+  incidentally provided (queries the box via `getAllByRole('generic').find(el => el.id === …)`).
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.10 — deleted the in-place toggler machinery.

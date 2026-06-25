@@ -50,7 +50,7 @@ development_status:
   1-7-per-route-document-title: done
   1-8-routing-and-html-lang: done
   1-9-protected-route-redirect: done
-  1-10-delete-in-place-toggler: ready-for-dev
+  1-10-delete-in-place-toggler: done
   1-11-notification-a11y: ready-for-dev
   1-12-lighthouse-tooling-config: ready-for-dev
   1-13-e2e-refactor-swap-navigation: ready-for-dev

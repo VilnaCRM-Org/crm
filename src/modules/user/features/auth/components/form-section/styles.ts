@@ -4,7 +4,7 @@ import {
   formWrapper as sharedFormWrapper,
 } from '@/components/skeletons/base/auth-form-shared-styles';
 import breakpointsTheme from '@/components/ui-breakpoints';
-import { customColors, paletteColors } from '@/styles/colors';
+import { customColors } from '@/styles/colors';
 
 // Re-exported for existing consumers (form-section/components/styles.ts).
 export const fieldGapMargins = sharedFieldGapMargins;
@@ -37,21 +37,6 @@ export default {
       fontWeight: 500,
       fontSize: '0.9375rem',
       lineHeight: 1.2,
-    },
-  },
-  formSwitcherError: {
-    marginTop: '1rem',
-    minHeight: '1.25rem',
-
-    fontFamily: 'Golos',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    lineHeight: 1.43,
-    color: paletteColors.error.main,
-    textAlign: 'center',
-
-    [`@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`]: {
-      marginTop: '1.25rem',
     },
   },
 };
