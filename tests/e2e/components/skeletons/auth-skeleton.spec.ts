@@ -5,7 +5,7 @@ import {
   AUTH_ASYNC_JS_GLOB,
 } from '../../../utils/intercept-auth-form-chunks';
 
-const AUTH_URL = '/authentication';
+const AUTH_URL = '/sign-up';
 
 test.describe('AuthSkeleton Component E2E Tests', () => {
   test.describe('Loading State', () => {

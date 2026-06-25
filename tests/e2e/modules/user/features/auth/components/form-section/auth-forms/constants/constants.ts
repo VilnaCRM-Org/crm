@@ -7,7 +7,7 @@ import { ExpectationEmail, ExpectationsPassword, User } from '../types';
 
 seedFaker();
 
-export const REGISTRATION_URL = '/authentication';
+export const REGISTRATION_URL = '/sign-up';
 export const REGISTRATION_API_URL = '**/graphql'; // Apollo GraphQL createUser endpoint
 
 export const placeholderInitials: string = t('sign_up.form.name_input.placeholder');

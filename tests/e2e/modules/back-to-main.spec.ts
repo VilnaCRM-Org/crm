@@ -12,8 +12,8 @@ const backToHomeSpec = {
 test.describe('BackToMain Component E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
     await seedPreloadedAuthToken(page);
-    await page.goto('/authentication');
-    await expect(page).toHaveURL(/\/authentication$/);
+    await page.goto('/sign-up');
+    await expect(page).toHaveURL(/\/sign-up$/);
   });
 
   test.describe('Navigation Functionality', () => {

@@ -1,6 +1,6 @@
 # Story 1.13: E2E refactor + new swap-navigation spec + registration-error focus
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -25,36 +25,36 @@ registration failure, so the routed flow is correct and accessible end-to-end.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Rename auth routes across the existing e2e specs (AC: 2, 3)
-  - [ ] 1.1 Update
+- [x] Task 1: Rename auth routes across the existing e2e specs (AC: 2, 3)
+  - [x] 1.1 Update
         `tests/e2e/modules/user/features/auth/components/form-section/auth-forms/constants/constants.ts`
         — `REGISTRATION_URL='/authentication'` → `/sign-up` (`:10`)
-  - [ ] 1.2 Update
+  - [x] 1.2 Update
         `tests/e2e/modules/user/features/auth/components/form-section/auth-forms/login-form.spec.ts`
         — `AUTH_URL='/authentication'` → navigate directly to `/sign-in`, dropping
         `gotoLogin`'s switcher click (`:8,18-21`)
-  - [ ] 1.3 Update `tests/e2e/components/skeletons/auth-skeleton.spec.ts` —
+  - [x] 1.3 Update `tests/e2e/components/skeletons/auth-skeleton.spec.ts` —
         `AUTH_URL='/authentication'` → `/sign-up` (`:8`); skeleton behavior unchanged
-  - [ ] 1.4 Update `tests/e2e/modules/back-to-main.spec.ts` — `page.goto('/authentication')` +
+  - [x] 1.4 Update `tests/e2e/modules/back-to-main.spec.ts` — `page.goto('/authentication')` +
         `toHaveURL(/\/authentication$/)` → `/sign-up` (`:15-16`)
-  - [ ] 1.5 Verify
+  - [x] 1.5 Verify
         `tests/e2e/modules/user/features/auth/components/form-section/auth-forms/registration-form.spec.ts`
         resolves through the constant and asserts `toHaveURL('/sign-up')`
 
-- [ ] Task 2: Add the new swap-navigation spec (AC: 1, 5)
-  - [ ] 2.1 Create `tests/e2e/modules/user/features/auth/swap-navigation.spec.ts`
-  - [ ] 2.2 From `/sign-up`, locate
+- [x] Task 2: Add the new swap-navigation spec (AC: 1, 5)
+  - [x] 2.1 Create `tests/e2e/modules/user/features/auth/swap-navigation.spec.ts`
+  - [x] 2.2 From `/sign-up`, locate
         `getByRole('link', { name: switcher_text_have_account })`, click → assert
         `toHaveURL(/\/sign-in$/)`
-  - [ ] 2.3 From `/sign-in`, locate the reciprocal link → click → assert
+  - [x] 2.3 From `/sign-in`, locate the reciprocal link → click → assert
         `toHaveURL(/\/sign-up$/)`; assert the control is a link (`<a href>`)
 
-- [ ] Task 3: Add the registration-error focus assertion (AC: 4, 5)
-  - [ ] 3.1 After a registration failure, assert the active element is a meaningful element
+- [x] Task 3: Add the registration-error focus assertion (AC: 4, 5)
+  - [x] 3.1 After a registration failure, assert the active element is a meaningful element
         (the error view), explicitly NOT `<body>`, while the form is `inert`
-  - [ ] 3.2 Source generated user/credential data from `@tests/builders` (`buildUser`,
+  - [x] 3.2 Source generated user/credential data from `@tests/builders` (`buildUser`,
         `buildCredentials`), seeded via `seedFaker()` — no hardcoded literals
-  - [ ] 3.3 Locate elements by role/label/text only — no `*ByTestId` for the swap link or
+  - [x] 3.3 Locate elements by role/label/text only — no `*ByTestId` for the swap link or
         headings
 
 ## Dev Notes
@@ -89,3 +89,35 @@ registration failure, so the routed flow is correct and accessible end-to-end.
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-13
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Updated e2e route refs: e2e `constants.ts` `REGISTRATION_URL` → `/sign-up`; `login-form.spec`
+  `gotoLogin` now navigates directly to `/sign-in` (switcher click + `switcherToLogin` removed);
+  e2e `auth-skeleton.spec` `AUTH_URL` → `/sign-up`; `back-to-main.spec` `goto` + `toHaveURL` →
+  `/sign-up`; `registration-form.spec` failure-focus `querySelector('h4')` → heading-agnostic
+  (`h1..h6`) to match the new `h2` notification heading + the focus wrapper.
+- Added `tests/e2e/modules/user/features/auth/swap-navigation.spec.ts`: from `/sign-up` the swap
+  link (`a[href="/sign-in"]` with the switcher text) navigates to `/sign-in`, and the reciprocal
+  from `/sign-in` → `/sign-up` (both directions; asserts it is a real `<a href>` + `toHaveURL`).
+- Deviation: the AC says `getByRole('link')`, but the repo's testing-library ESLint rule
+  (`prefer-screen-queries`) flags Playwright's `page.getByRole`; used the repo's e2e convention
+  `page.locator('a[href=...]').filter({ hasText })` instead (same intent). No suppressions.
+- Per the agreed "file changes, CI runs stacks" plan these specs RUN in CI (`make test-e2e`,
+  Mockoon-backed); locally validated via ESLint + tsc + dependency-cruiser (the unit gate does not
+  execute Playwright).
+
+**File List:**
+
+- MODIFIED: e2e `auth-forms/constants/constants.ts`, `auth-forms/login-form.spec.ts`,
+  `auth-forms/registration-form.spec.ts`, `components/skeletons/auth-skeleton.spec.ts`,
+  `modules/back-to-main.spec.ts`.
+- NEW: `tests/e2e/modules/user/features/auth/swap-navigation.spec.ts`.
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.13 — e2e route refactor + swap-navigation spec (CI runs the suite).

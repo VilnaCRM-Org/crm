@@ -130,7 +130,11 @@ test.describe('Registration Form loader behaviour', () => {
 
     const focusOnMeaningfulElement = await page.evaluate(() => {
       const active = document.activeElement;
-      return active !== document.body && active !== null && !!active.querySelector('h4');
+      return (
+        active !== document.body &&
+        active !== null &&
+        !!active.querySelector('h1, h2, h3, h4, h5, h6')
+      );
     });
     expect(focusOnMeaningfulElement).toBe(true);
   });
