@@ -19,17 +19,6 @@ const headingFocusStyles = {
   },
 };
 
-function FocusableErrorHeading({ title }: { title: string }): JSX.Element {
-  const focusOnMount = useFocusOnMount<HTMLDivElement>();
-  return (
-    <Box ref={focusOnMount} tabIndex={-1} sx={headingFocusStyles}>
-      <UITypography component="h4" sx={styles.messageTitle}>
-        {title}
-      </UITypography>
-    </Box>
-  );
-}
-
 const buttonTextStyles = [styles.messageButtonText, styles.errorButtonMessage];
 
 function ErrorImageBlock({ label }: { label: string }): JSX.Element {
@@ -99,6 +88,21 @@ function ErrorButtons({
   );
 }
 
+function ErrorMessage({ title, text }: { title: string; text: string }): JSX.Element {
+  return (
+    <>
+      <UITypography component="h2" sx={styles.messageTitle}>
+        {title}
+      </UITypography>
+      <Box role="alert">
+        <UITypography component="span" sx={styles.messageDescription}>
+          {text}
+        </UITypography>
+      </Box>
+    </>
+  );
+}
+
 export default function RegistrationErrorView({
   resolvedErrorText,
   isSubmitting,
@@ -107,15 +111,17 @@ export default function RegistrationErrorView({
   onBack,
 }: Props): JSX.Element {
   const { t } = useTranslation();
+  const focusOnMount = useFocusOnMount<HTMLDivElement>();
   return (
-    <Box role="alert" sx={styles.notificationSection}>
+    <Box sx={styles.notificationSection}>
       <Box sx={styles.contentBoxError}>
         <ErrorImageBlock label={t('notifications.error.images.error')} />
-        <Box sx={styles.messageContainerError}>
-          <FocusableErrorHeading title={t('notifications.error.title')} />
-          <UITypography component="span" sx={styles.messageDescription}>
-            {resolvedErrorText}
-          </UITypography>
+        <Box
+          ref={focusOnMount}
+          tabIndex={-1}
+          sx={[styles.messageContainerError, headingFocusStyles]}
+        >
+          <ErrorMessage title={t('notifications.error.title')} text={resolvedErrorText} />
           <ErrorButtons
             isSubmitting={isSubmitting}
             isClosing={isClosing}
