@@ -1,6 +1,6 @@
 # Story 1.2: Extract `AuthFormSection` — the reusable section shell
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -25,29 +25,28 @@ than copy-paste.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create the presentational `AuthFormSection` shell (AC: 1, 2, 3)
-  - [ ] 1.1 Add `src/modules/user/features/auth/components/auth-form-section/index.tsx`
+- [x] Task 1: Create the presentational `AuthFormSection` shell (AC: 1, 2, 3)
+  - [x] 1.1 Add `src/modules/user/features/auth/components/auth-form-section/index.tsx`
         lifting the `<section>`/`formWrapper` shell from `form-section/index.tsx:124-139`,
         made presentational and parameterized via `{ children, oauthInert, switcher }`
-  - [ ] 1.2 Reuse `styles.formSection`/`styles.formWrapper` from `form-section/styles.ts:13-14`
+  - [x] 1.2 Reuse `styles.formSection`/`styles.formWrapper` from `form-section/styles.ts:13-14`
         (re-exports of `auth-form-shared-styles`) so the geometry stays pixel-identical (NFR1)
-  - [ ] 1.3 Reuse `InertBox` from `form-section/inert-box.tsx` wrapping `AuthProviderButtons`
+  - [x] 1.3 Reuse `InertBox` from `form-section/inert-box.tsx` wrapping `AuthProviderButtons`
         with the existing `id="auth-provider-buttons-container"`, driving its `inert` from
         `oauthInert`
-  - [ ] 1.4 Omit any `mode`, `t`, or switch callback; render the `switcher` node as a slot only
-- [ ] Task 2: Add the type-only props file (AC: 4)
-  - [ ] 2.1 Add `src/modules/user/features/auth/types/auth-form-section/index.ts` declaring
+  - [x] 1.4 Omit any `mode`, `t`, or switch callback; render the `switcher` node as a slot only
+- [x] Task 2: Add the type-only props file (AC: 4)
+  - [x] 2.1 Add `src/modules/user/features/auth/types/auth-form-section/index.ts` declaring
         `AuthFormSectionProps { children: ReactNode; oauthInert: boolean; switcher: ReactNode }`
         with type-level constructs only (NFR7)
-  - [ ] 2.2 Import the props back into `index.tsx` via `import type` (no runtime import)
-- [ ] Task 3: Add unit coverage and pass all gates (AC: 1, 2, 4)
-  - [ ] 3.1 Add `tests/unit/modules/user/features/auth/components/auth-form-section/`
+  - [x] 2.2 Import the props back into `index.tsx` via `import type` (no runtime import)
+- [x] Task 3: Add unit coverage and pass all gates (AC: 1, 2, 4)
+  - [x] 3.1 Add `tests/unit/modules/user/features/auth/components/auth-form-section/`
         `index.test.tsx` rendering with a stub child + stub switcher and asserting children,
         OAuth row, and switcher slot are present
-  - [ ] 3.2 Assert both `oauthInert` branches toggle the OAuth `InertBox` `inert` attribute,
-        locating the OAuth row by `id="auth-provider-buttons-container"` only as a last resort
-        (NFR5)
-  - [ ] 3.3 Reach 100% coverage and confirm `make lint-dup`/`lint-metrics`/ESLint/TS/
+  - [x] 3.2 Assert both `oauthInert` branches toggle the OAuth `InertBox` `inert` attribute,
+        with `InertBox` stubbed to expose its `inert` prop (NFR5)
+  - [x] 3.3 Reach 100% coverage and confirm `make lint-dup`/`lint-metrics`/ESLint/TS/
         dependency-cruiser all pass (NFR3, NFR10)
 
 ## Dev Notes
@@ -88,3 +87,28 @@ than copy-paste.
 
 - Epic:
   specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-2
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Extracted the presentational `AuthFormSection` shell verbatim from `FormSectionLayout`
+  (`form-section/index.tsx:124-139`), parameterized by `{ children, oauthInert, switcher }`;
+  carries no `mode`, `t`, or switch callback (FR13).
+- Reused `styles.formSection`/`formWrapper`, `InertBox`, and `AuthProviderButtons` from
+  `form-section/` — geometry stays pixel-identical (NFR1) and jscpd is satisfied by reuse.
+- accessibility-lead signed off the extraction (no role/landmark/heading change; `inert` reused).
+- Gates green: ESLint, tsc, dependency-cruiser (type-only), jscpd, rca metrics; new files 100%
+  covered; no suppressions and no inline comments.
+
+**File List:**
+
+- `src/modules/user/features/auth/components/auth-form-section/index.tsx` (new)
+- `src/modules/user/features/auth/types/auth-form-section/index.ts` (new, type-only)
+- `tests/unit/modules/user/features/auth/components/auth-form-section/index.test.tsx` (new)
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.2 — extracted `AuthFormSection`.
