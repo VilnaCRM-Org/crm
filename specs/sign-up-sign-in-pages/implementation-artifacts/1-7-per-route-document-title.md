@@ -1,6 +1,6 @@
 # Story 1.7: Per-route `document.title` via `usePageTitle` (M1 → AR3)
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -25,22 +25,22 @@ so the two URLs are not announced with the same title.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add the `usePageTitle` hook (AC: 1, 2, 3, 4, 5)
-  - [ ] 1.1 Create `src/modules/user/features/auth/hooks/use-page-title.ts` as a `use-*` hook
+- [x] Task 1: Add the `usePageTitle` hook (AC: 1, 2, 3, 4, 5)
+  - [x] 1.1 Create `src/modules/user/features/auth/hooks/use-page-title.ts` as a `use-*` hook
         (NFR6-exempt) with signature `usePageTitle(titleKey: string)`
-  - [ ] 1.2 Read `t(titleKey)` and compose the localized title (e.g. `"<heading> - VilnaCRM"`),
+  - [x] 1.2 Read `t(titleKey)` and compose the localized title (e.g. `"<heading> - VilnaCRM"`),
         then set `document.title`
-  - [ ] 1.3 Subscribe to `languageChanged` to re-apply the title, mirroring the subscribe/cleanup
+  - [x] 1.3 Subscribe to `languageChanged` to re-apply the title, mirroring the subscribe/cleanup
         shape of the existing `dir` effect (`app.tsx:31-38`)
-  - [ ] 1.4 Return a cleanup that unsubscribes from `languageChanged` so the listener does not
+  - [x] 1.4 Return a cleanup that unsubscribes from `languageChanged` so the listener does not
         leak (NFR3)
 
-- [ ] Task 2: Add unit coverage for the hook (AC: 1, 2, 3, 4)
-  - [ ] 2.1 Create `tests/unit/modules/user/features/auth/hooks/use-page-title.test.tsx`
-  - [ ] 2.2 Assert `document.title` is set from the i18n key with exact title-string assertions
+- [x] Task 2: Add unit coverage for the hook (AC: 1, 2, 3, 4)
+  - [x] 2.1 Create `tests/unit/modules/user/features/auth/hooks/use-page-title.test.tsx`
+  - [x] 2.2 Assert `document.title` is set from the i18n key with exact title-string assertions
         (NFR13), and differs between `sign_up.title` and `sign_in.title`
-  - [ ] 2.3 Assert the title re-applies on a simulated `languageChanged` event
-  - [ ] 2.4 Assert the cleanup unsubscribes from `languageChanged` (no leak)
+  - [x] 2.3 Assert the title re-applies on a simulated `languageChanged` event
+  - [x] 2.4 Assert the cleanup unsubscribes from `languageChanged` (no leak)
 
 ## Dev Notes
 
@@ -68,3 +68,27 @@ so the two URLs are not announced with the same title.
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-7
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Added `usePageTitle(titleKey)` at `hooks/use-page-title.ts` (a `use-*` hook, NFR6-exempt): reads
+  `i18n.t(titleKey)`, sets `document.title` to `"<heading> - VilnaCRM"`, subscribes to
+  `languageChanged` to re-apply, and unsubscribes on cleanup — mirroring the `app.tsx` dir effect.
+- Titles are sourced from the same keys as each page `<h1>`: `sign_up.title` ("Registration") and
+  `sign_in.title` ("Authentication", D3 kept), so the two routes differ (WCAG 2.4.2, M1).
+- Tests assert the exact composed titles, distinctness, languageChanged re-application (uk),
+  cleanup unsubscribe, and tolerance of an i18n without on/off — 100% coverage incl. branches.
+- Gates green: ESLint, tsc, dependency-cruiser, jscpd, rca metrics; no suppressions, no comments.
+
+**File List:**
+
+- `src/modules/user/features/auth/hooks/use-page-title.ts` (new)
+- `tests/unit/modules/user/features/auth/hooks/use-page-title.test.tsx` (new)
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.7 — per-route `document.title` via `usePageTitle`.
