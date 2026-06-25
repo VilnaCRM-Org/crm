@@ -91,5 +91,6 @@ export const placeholders: PlaceholderFields = {
 
 export const PAGES = {
   HOME: '/',
-  AUTH: '/authentication',
+  SIGN_UP: '/sign-up',
+  SIGN_IN: '/sign-in',
 } as const;

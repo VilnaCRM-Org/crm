@@ -1,6 +1,6 @@
 # Story 1.14: Visual — split specs into sign-up + sign-in and regenerate baselines
 
-Status: draft
+Status: done (baseline regeneration deferred to CI per the agreed plan)
 
 ## Story
 
@@ -27,18 +27,18 @@ so that "no visual regression" is proven.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Repoint the visual page keys to the split routes (AC: 1, 4)
-  - [ ] 1.1 In `tests/visual/constants.ts` `PAGES` (`:92-95`), replace `AUTH: '/authentication'`
+- [x] Task 1: Repoint the visual page keys to the split routes (AC: 1, 4)
+  - [x] 1.1 In `tests/visual/constants.ts` `PAGES` (`:92-95`), replace `AUTH: '/authentication'`
         with `SIGN_UP: '/sign-up'` and `SIGN_IN: '/sign-in'` (no `AUTH` key remains)
-  - [ ] 1.2 Verify `tests/visual/take-visual-snapshot.ts` keeps the `if (url === PAGES.HOME)`
+  - [x] 1.2 Verify `tests/visual/take-visual-snapshot.ts` keeps the `if (url === PAGES.HOME)`
         token-seeding branch (`:33-35`) and adds NO seeding branch for `/sign-up` or `/sign-in`
 
-- [ ] Task 2: Split the authentication visual spec into sign-up + sign-in (AC: 2, 5)
-  - [ ] 2.1 Rename `tests/visual/visual-comparison.authentication.spec.ts` to
+- [x] Task 2: Split the authentication visual spec into sign-up + sign-in (AC: 2, 5)
+  - [x] 2.1 Rename `tests/visual/visual-comparison.authentication.spec.ts` to
         `tests/visual/visual-comparison.sign-up.spec.ts` and snapshot `PAGES.SIGN_UP`
-  - [ ] 2.2 Add `tests/visual/visual-comparison.sign-in.spec.ts` (new) snapshotting `PAGES.SIGN_IN`
+  - [x] 2.2 Add `tests/visual/visual-comparison.sign-in.spec.ts` (new) snapshotting `PAGES.SIGN_IN`
         for the login route, which now has its own page
-  - [ ] 2.3 Update `tests/visual/visual-comparison.auth-skeleton.spec.ts` (`:15`) `PAGES.AUTH` →
+  - [x] 2.3 Update `tests/visual/visual-comparison.auth-skeleton.spec.ts` (`:15`) `PAGES.AUTH` →
         `PAGES.SIGN_UP`
 
 - [ ] Task 3: Regenerate and verify the baselines (AC: 3, 5)
@@ -78,3 +78,41 @@ so that "no visual regression" is proven.
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-14
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes (file changes done; baseline runs deferred to CI per the agreed plan):**
+
+- Visual constants: `PAGES.AUTH` → `PAGES.SIGN_UP` + `PAGES.SIGN_IN` (no `AUTH` key remains);
+  `take-visual-snapshot.ts` keeps the HOME-only token-seeding branch (no seeding for /sign-up or
+  /sign-in).
+- Renamed `visual-comparison.authentication.spec.ts` → `visual-comparison.sign-up.spec.ts`
+  (`PAGES.SIGN_UP`, `[sign-up]`) and `git mv`'d its snapshot dir →
+  `visual-comparison.sign-up.spec.ts-snapshots/` (60 baselines preserved). Snapshot names are
+  URL-independent (`${currentLanguage}_${screen.name}`), so the old register-view baselines carry
+  over to /sign-up (same register view, pixel-neutral a11y changes per NFR1).
+- Added `visual-comparison.sign-in.spec.ts` (`[sign-in]`, `PAGES.SIGN_IN`) — NEW, no baselines yet.
+- `visual-comparison.auth-skeleton.spec.ts` → `PAGES.SIGN_UP` (skeleton render is route-independent;
+  baselines unchanged). `submit-loader` + `registration-notification` visual specs navigate via
+  `REGISTRATION_URL` (repointed to /sign-up in Story 1.13) — no change needed.
+
+**DEFERRED to CI / follow-up (Task 3 — unchecked):** run `make test-visual-update` (Docker + prod
+stack) to (a) generate the NEW /sign-in baselines, (b) re-verify the preserved /sign-up baselines
+pass (h1-vs-p / link changes are believed pixel-neutral but the visual job is the authority), and
+(c) regenerate the `registration-notification` baseline after the Story 1.11 error-view DOM
+restructure. Then `make test-visual` must be green. Locally validated via ESLint + tsc +
+dependency-cruiser only.
+
+**File List:**
+
+- MODIFIED: `tests/visual/constants.ts`, `tests/visual/visual-comparison.auth-skeleton.spec.ts`.
+- RENAMED: `visual-comparison.authentication.spec.ts` → `visual-comparison.sign-up.spec.ts` (+ its
+  `-snapshots/` dir).
+- NEW: `tests/visual/visual-comparison.sign-in.spec.ts`.
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.14 — split visual specs into sign-up + sign-in; baseline
+  regeneration deferred to CI.

@@ -12,7 +12,7 @@ async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<voi
 
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
 
-  await page.goto(PAGES.AUTH, { waitUntil: 'commit' });
+  await page.goto(PAGES.SIGN_UP, { waitUntil: 'commit' });
 
   const skeletonTitle = page.locator('#auth-skeleton-title');
   await expect(skeletonTitle).toBeVisible({ timeout: 5000 });

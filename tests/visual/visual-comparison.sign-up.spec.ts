@@ -3,10 +3,10 @@ import { test } from '@playwright/test';
 import { PAGES, screenSizes } from './constants';
 import takeVisualSnapshot from './take-visual-snapshot';
 
-test.describe.parallel('Auth Visual Tests', () => {
+test.describe.parallel('Sign-up Visual Tests', () => {
   for (const screen of screenSizes) {
-    test(`[auth] ${screen.name}`, async ({ page }) => {
-      await takeVisualSnapshot(page, PAGES.AUTH, screen);
+    test(`[sign-up] ${screen.name}`, async ({ page }) => {
+      await takeVisualSnapshot(page, PAGES.SIGN_UP, screen);
     });
   }
 });
