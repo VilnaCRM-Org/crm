@@ -1,6 +1,6 @@
 # Story 1.3: Extract `AuthPageLayout` — the reusable page chrome
 
-Status: draft
+Status: done
 
 ## Story
 
@@ -24,25 +24,25 @@ behavior is preserved.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Add the `AuthPageLayout` component (AC: 1, 2, 3, 4)
-  - [ ] 1.1 Create `src/modules/user/features/auth/components/auth-page-layout/index.tsx`
+- [x] Task 1: Add the `AuthPageLayout` component (AC: 1, 2, 3, 4)
+  - [x] 1.1 Create `src/modules/user/features/auth/components/auth-page-layout/index.tsx`
         with the chrome lifted verbatim from `auth/index.tsx:12-25`
-  - [ ] 1.2 Mirror the imports from `auth/index.tsx:1-7` (`Box`, `Suspense`, `AuthSkeleton`,
+  - [x] 1.2 Mirror the imports from `auth/index.tsx:1-7` (`Box`, `Suspense`, `AuthSkeleton`,
         `UIBackToMain`, `UIFooter`, `AuthErrorBoundary`)
-  - [ ] 1.3 Keep the `<main>` `sx` literal, `<AuthErrorBoundary>`, and
+  - [x] 1.3 Keep the `<main>` `sx` literal, `<AuthErrorBoundary>`, and
         `<Suspense fallback={<AuthSkeleton/>}>` identical to today's (FR8, FR12, NFR1)
 
-- [ ] Task 2: Add the type-only props file (AC: 4)
-  - [ ] 2.1 Create `src/modules/user/features/auth/types/auth-page-layout/index.ts` with
+- [x] Task 2: Add the type-only props file (AC: 4)
+  - [x] 2.1 Create `src/modules/user/features/auth/types/auth-page-layout/index.ts` with
         `AuthPageLayoutProps { children: ReactNode }`, imported via `import type` (NFR7)
 
-- [ ] Task 3: Cover the new layout with unit tests (AC: 1, 2, 3, 4)
-  - [ ] 3.1 Add
+- [x] Task 3: Cover the new layout with unit tests (AC: 1, 2, 3, 4)
+  - [x] 3.1 Add
         `tests/unit/modules/user/features/auth/components/auth-page-layout/index.test.tsx`
-  - [ ] 3.2 Port the header / `<main>` / skeleton-while-loading / footer and
+  - [x] 3.2 Port the header / `<main>` / skeleton-while-loading / footer and
         error-boundary-fallback assertions from the to-be-deleted
         `tests/unit/modules/user/features/auth/index.test.tsx`
-  - [ ] 3.3 Use semantic queries (`getByRole('main')`, role/text) per NFR5 and reach 100%
+  - [x] 3.3 Use semantic queries (`getByRole('main')`, role/text) per NFR5 and reach 100%
         coverage of the new layout (NFR10)
 
 ## Dev Notes
@@ -76,3 +76,29 @@ behavior is preserved.
 ### References
 
 - Epic: specs/sign-up-sign-in-pages/planning-artifacts/epics-sign-up-sign-in-pages-2026-06-25.md#story-1-3
+
+## Dev Agent Record
+
+**Agent Model Used:** Opus 4.8 (BMAD Dev agent, Amelia)
+
+**Completion Notes:**
+
+- Lifted the page chrome verbatim from `auth/index.tsx:12-25` into `AuthPageLayout`,
+  parameterized by `children` (replacing the hardcoded `<FormSection/>`); the `<main>` sx,
+  `AuthErrorBoundary`, and `Suspense fallback={<AuthSkeleton/>}` are unchanged (FR8, FR12, NFR1).
+- Ported the header/main/skeleton-while-loading/footer and error-boundary-fallback assertions
+  from the to-be-deleted `auth/index.test.tsx` (that deletion lands in Story 1.10).
+- Landmark structure preserved (one `<main>`, `UIBackToMain`/`UIFooter` siblings) — covered by
+  the pre-implementation accessibility-lead review.
+- Gates green: ESLint, tsc, dependency-cruiser (type-only), jscpd, rca metrics; new files 100%
+  covered; no suppressions and no inline comments.
+
+**File List:**
+
+- `src/modules/user/features/auth/components/auth-page-layout/index.tsx` (new)
+- `src/modules/user/features/auth/types/auth-page-layout/index.ts` (new, type-only)
+- `tests/unit/modules/user/features/auth/components/auth-page-layout/index.test.tsx` (new)
+
+**Change Log:**
+
+- 2026-06-25: Implemented Story 1.3 — extracted `AuthPageLayout`.
