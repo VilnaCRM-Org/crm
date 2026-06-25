@@ -2,7 +2,8 @@
 
 import '../../../../../utils/setup-bun-dom';
 import '@testing-library/jest-dom';
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
+import { useLocation } from 'react-router-dom';
 
 import localization from '@/i18n/localization.json';
 import AuthSwitcher from '@/modules/user/features/auth/components/auth-switcher';
@@ -14,7 +15,26 @@ const enForm = localization.en.translation.sign_up.form;
 const HAVE_ACCOUNT = enForm.switcher_text_have_account;
 const NO_ACCOUNT = enForm.switcher_text_no_account;
 
+function LocationProbe(): JSX.Element {
+  const { pathname } = useLocation();
+  return <span data-testid="loc">{pathname}</span>;
+}
+
 describe('AuthSwitcher', () => {
+  it('navigates client-side (changes the route, no full reload) when clicked', () => {
+    renderWithProviders(
+      <>
+        <AuthSwitcher to="/sign-in" labelKey="sign_up.form.switcher_text_have_account" />
+        <LocationProbe />
+      </>
+    );
+    expect(screen.getByTestId('loc')).toHaveTextContent(/^\/$/);
+
+    fireEvent.click(screen.getByRole('link', { name: HAVE_ACCOUNT }));
+
+    expect(screen.getByTestId('loc')).toHaveTextContent('/sign-in');
+  });
+
   it('renders a real link to /sign-in with the "have account" label', () => {
     renderWithProviders(
       <AuthSwitcher to="/sign-in" labelKey="sign_up.form.switcher_text_have_account" />

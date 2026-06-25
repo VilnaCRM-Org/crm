@@ -121,3 +121,30 @@ Opus 4.8 (Ralph loop).
 ### Change Log
 
 - 2026-06-25: Story drafted and implemented (commit 22a4429a); status set to done.
+
+## Addendum — client-side swap (post-spec product change, 2026-06-25)
+
+**Product owner change:** the swap must NOT full-reload the page; keep the "old behaviour" (no
+refresh) but still change the URL. This deviates from the spec's AR7 (full-document navigation,
+chosen partly for its native focus reset).
+
+**Implementation:** `AuthSwitcher` keeps the real `<a href>` (via `UIButton to=`, so middle/cmd-click
+still open a new tab and the `link` role is unchanged) and intercepts the left-click with
+react-router's `useLinkClickHandler(to)` → client-side `navigate(to)` with `preventDefault`. The URL
+changes `/sign-up` ↔ `/sign-in` with no full reload. `UIButton` and `UIBackToMain` are unchanged
+(scoped to `AuthSwitcher`); rendering/styling is byte-identical (NFR1) — only the click is now SPA.
+
+**Accessibility:** equivalent to before — not a regression. The previous full reload reset focus to
+`<body>`; client-side nav also leaves focus on `<body>` (the clicked link unmounts) — same end-state.
+The `useLinkClickHandler` link preserves the `link` role + `href`. **Follow-ups:**
+(a) `accessibility-lead` re-review of this change is PENDING — the agent hit an account spend limit
+mid-review and could not finish; (b) optional enhancement: move focus to the new page's `<h1>` on
+swap (better than focus-to-body), not required to avoid a regression.
+
+**Tests:** `auth-switcher.test.tsx` adds a client-side-nav assertion (clicking changes the
+MemoryRouter location to `/sign-in`; jsdom does not navigate on a plain anchor click, so the location
+change proves the SPA handler ran). `swap-navigation.spec.ts` sets a `window` marker before the click
+and asserts it survives the navigation (a full reload would clear it).
+
+**Files (addendum):** `auth-switcher/index.tsx` (modified — `useLinkClickHandler` onClick),
+`auth-switcher.test.tsx` (client-side-nav test), `swap-navigation.spec.ts` (no-reload assertions).
