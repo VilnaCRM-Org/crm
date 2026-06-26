@@ -3,6 +3,7 @@
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 
 let mockCurrentPath = '/sign-up';
@@ -83,7 +84,11 @@ describe('routes', () => {
   const renderAt = (path: string): void => {
     mockCurrentPath = path;
     const { RouterProvider: MockedRP } = jest.requireMock('react-router-dom');
-    render(<MockedRP router={router} />);
+    render(
+      <Suspense fallback={null}>
+        <MockedRP router={router} />
+      </Suspense>
+    );
   };
 
   it('renders SignUp at /sign-up (AC1)', async () => {

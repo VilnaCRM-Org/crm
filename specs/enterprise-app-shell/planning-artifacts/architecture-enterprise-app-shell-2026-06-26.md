@@ -119,8 +119,8 @@ with inline static styles + hardcoded baseline copy, because the providers may b
 
 ### `ErrorReporter` seam (NEW) — interface + import-light default
 
-**Locations:** `src/services/error-reporting/types/error-reporter/index.ts` (type-only interface),
-`src/services/error-reporting/error-reporter.ts` (`NoopErrorReporter` class),
+**Locations:** `src/services/types/error-reporting/index.ts` (type-only interface),
+`src/services/error-reporting/noop-error-reporter.ts` (`NoopErrorReporter` class),
 `src/services/error-reporting/index.ts` (barrel + default singleton),
 `src/config/tokens.ts` + `src/config/dependency-injection-config.ts` (token + registration). Implements
 **FR10, FR11, NFR6, NFR7; D1, D5.**
@@ -451,8 +451,8 @@ files are listed because the epics reference them and the loop applies them.
 
 | Path                                                               | Change                                                                                                                                                                                                |
 | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/services/error-reporting/types/error-reporter/index.ts`       | **New (type-only).** `ErrorReporter` interface (`report(error, context?)`). (FR10, NFR7)                                                                                                              |
-| `src/services/error-reporting/error-reporter.ts`                   | **New.** `@injectable() NoopErrorReporter implements ErrorReporter` — import-light (no Apollo/zod). (FR11, NFR6, NFR2)                                                                                |
+| `src/services/types/error-reporting/index.ts`                      | **New (type-only).** `ErrorReporter` interface (`report(error, context?)`). (FR10, NFR7)                                                                                                              |
+| `src/services/error-reporting/noop-error-reporter.ts`              | **New.** `@injectable() NoopErrorReporter implements ErrorReporter` — import-light (no Apollo/zod). (FR11, NFR6, NFR2)                                                                                |
 | `src/services/error-reporting/index.ts`                            | **New.** Barrel: re-export `NoopErrorReporter` + default module-singleton `noopErrorReporter`. (FR11)                                                                                                 |
 | `src/config/tokens.ts`                                             | **Modify.** Add `ErrorReporter: Symbol('ErrorReporter')` to the frozen `TOKENS`. (FR11)                                                                                                               |
 | `src/config/dependency-injection-config.ts`                        | **Modify.** `container.registerSingleton(TOKENS.ErrorReporter, NoopErrorReporter)` — DI path for the future adapter; the boundary does NOT resolve from here (D1). (FR11)                             |

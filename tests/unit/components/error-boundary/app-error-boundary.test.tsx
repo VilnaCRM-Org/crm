@@ -104,18 +104,39 @@ describe('AppErrorBoundary', () => {
     const originalEnv = process.env.NODE_ENV;
     Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', configurable: true });
 
-    const calls: unknown[][] = [];
-    consoleSpy.mockImplementation((...args: unknown[]) => {
-      calls.push(args);
-    });
+    try {
+      const calls: unknown[][] = [];
+      consoleSpy.mockImplementation((...args: unknown[]) => {
+        calls.push(args);
+      });
+
+      render(
+        <AppErrorBoundary>
+          <Bomb shouldThrow />
+        </AppErrorBoundary>
+      );
+
+      expect(calls.some((args) => args[0] === '[AppErrorBoundary]')).toBe(false);
+    } finally {
+      Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, configurable: true });
+    }
+  });
+
+  it('keeps rendering the fallback when the reporter itself throws (AC3)', () => {
+    const throwingReporter: ErrorReporter = {
+      report: jest.fn(() => {
+        throw new Error('reporter exploded');
+      }),
+    };
 
     render(
-      <AppErrorBoundary>
+      <AppErrorBoundary reporter={throwingReporter}>
         <Bomb shouldThrow />
       </AppErrorBoundary>
     );
 
-    expect(calls.some((args) => args[0] === '[AppErrorBoundary]')).toBe(false);
-    Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, configurable: true });
+    expect(throwingReporter.report).toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 });

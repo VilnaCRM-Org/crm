@@ -12,6 +12,8 @@ const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
   useRouteError: (): unknown => mockRouteError,
   useNavigate: (): jest.Mock => mockNavigate,
+  isRouteErrorResponse: (error: unknown): boolean =>
+    error != null && typeof error === 'object' && 'status' in error && 'statusText' in error,
 }));
 
 jest.mock('@/components/error-boundary/error-fallback', () => ({
@@ -36,12 +38,15 @@ describe('RouteError', () => {
     mockNavigate.mockReset();
   });
 
-  it('renders ErrorFallback (AC1)', () => {
+  it('maps an unknown route error to a generic Error (AC1)', () => {
+    mockRouteError = undefined;
+
     render(<RouteError />);
-    expect(screen.getByText('no-error')).toBeInTheDocument();
+
+    expect(screen.getByText('Unknown route error')).toBeInTheDocument();
   });
 
-  it('passes the error when routeError is an Error instance (AC1)', () => {
+  it('passes the error through when routeError is an Error instance (AC1)', () => {
     mockRouteError = new Error('route failed');
 
     render(<RouteError />);
@@ -49,12 +54,12 @@ describe('RouteError', () => {
     expect(screen.getByText('route failed')).toBeInTheDocument();
   });
 
-  it('passes undefined error when routeError is not an Error (AC1)', () => {
+  it('maps a RouteErrorResponse to a status message (AC1)', () => {
     mockRouteError = { status: 404, statusText: 'Not Found' };
 
     render(<RouteError />);
 
-    expect(screen.getByText('no-error')).toBeInTheDocument();
+    expect(screen.getByText('404 Not Found')).toBeInTheDocument();
   });
 
   it('reset navigates to home (AC1)', async () => {

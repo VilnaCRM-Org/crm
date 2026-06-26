@@ -20,6 +20,13 @@ describe('ErrorFallback', () => {
     expect(screen.getByRole('button', { name: /try again/i })).toBeInTheDocument();
   });
 
+  it('announces the failure via an alert region inside a main landmark (AR1, AR17)', () => {
+    render(<ErrorFallback reset={resetMock} />);
+
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/unexpected error occurred/i);
+  });
+
   it('moves focus to the h1 on mount (AC3)', async () => {
     render(<ErrorFallback reset={resetMock} />);
 

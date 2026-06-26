@@ -20,10 +20,12 @@ export default class AppErrorBoundary extends React.Component<
 
   public componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const reporter = this.props.reporter ?? noopErrorReporter;
-    reporter.report(error, { componentStack: info.componentStack });
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('[AppErrorBoundary]', error, info.componentStack);
+    try {
+      reporter.report(error, { componentStack: info.componentStack });
+    } catch (reportingError) {
+      this.logDev('[AppErrorBoundary:report]', reportingError);
     }
+    this.logDev('[AppErrorBoundary]', error, info.componentStack);
   }
 
   public handleReset = (): void => {
@@ -35,5 +37,11 @@ export default class AppErrorBoundary extends React.Component<
       return <ErrorFallback error={this.state.error} reset={this.handleReset} />;
     }
     return this.props.children;
+  }
+
+  private logDev(...args: unknown[]): void {
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(...args);
+    }
   }
 }

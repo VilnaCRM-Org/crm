@@ -23,12 +23,12 @@ export default function ErrorFallback({ error, reset }: ErrorFallbackProps): JSX
   }, []);
 
   return (
-    <div lang="en" style={styles.container}>
+    <main lang="en" style={styles.container}>
       <div style={styles.messageBlock}>
         <h1 ref={headingRef} tabIndex={-1} style={styles.heading}>
           Something went wrong
         </h1>
-        <p style={styles.description}>
+        <p role="alert" style={styles.description}>
           An unexpected error occurred. Please try refreshing the page or clicking the button below.
         </p>
       </div>
@@ -36,6 +36,6 @@ export default function ErrorFallback({ error, reset }: ErrorFallbackProps): JSX
         Try again
       </button>
       <ErrorDiagnostics error={error} />
-    </div>
+    </main>
   );
 }

@@ -105,7 +105,7 @@ adapter can be wired later without touching boundary components, and as a develo
 injectable class behind an interface, consistent with the repo's DI conventions.
 
 **Description.** Add the seam under `src/services/error-reporting/` (FR10, FR11, D1-A). Type-only
-interface `src/services/error-reporting/types/error-reporter/index.ts`:
+interface `src/services/types/error-reporting/index.ts`:
 
 ```text
 export interface ErrorReporter {
@@ -113,7 +113,7 @@ export interface ErrorReporter {
 }
 ```
 
-`src/services/error-reporting/error-reporter.ts` — an `@injectable()` class with an instance method
+`src/services/error-reporting/noop-error-reporter.ts` — an `@injectable()` class with an instance method
 (no `static`, no free functions, #100/NFR6); it is **import-light** (imports only `tsyringe`'s
 `injectable` + the type — **no** Apollo/zod, so it is safe in the paint path, NFR2):
 
@@ -146,8 +146,8 @@ NOT delegate to the existing `ErrorHandler` service (D5).
 - Given the interface, When inspected, Then it lives in a type-only `types/` file imported via
   `import type` (NFR7), and the logic file declares no `interface`/`type`.
 
-**Files touched.** `src/services/error-reporting/types/error-reporter/index.ts` (new, type-only),
-`src/services/error-reporting/error-reporter.ts` (new), `src/services/error-reporting/index.ts` (new),
+**Files touched.** `src/services/types/error-reporting/index.ts` (new, type-only),
+`src/services/error-reporting/noop-error-reporter.ts` (new), `src/services/error-reporting/index.ts` (new),
 `src/config/tokens.ts` (modify), `src/config/dependency-injection-config.ts` (modify).
 
 **Tests to add/update.** Unit (new `tests/unit/services/error-reporting/error-reporter.test.ts`):

@@ -223,7 +223,7 @@ wiring of each concern, not the product pages themselves.
   renders a provider-independent `ErrorFallback` and calls `reporter.report(...)`. No `@auth/*`
   imports, no `auth.*` i18n keys.
 - **Not-Found page** (`src/components/not-found/not-found.tsx`): the accessible 404 catch-all element.
-- **Error-reporting seam** (`src/services/error-reporting/error-reporter.ts` for the
+- **Error-reporting seam** (`src/services/error-reporting/noop-error-reporter.ts` for the
   `NoopErrorReporter` class, `src/services/error-reporting/index.ts`, the `ErrorReporter` interface in
   a type-only file, and an `ErrorReporter` token added to `src/config/tokens.ts`).
 - **`src/index.tsx`** (Modify): slimmed to mount the root boundary + `AppProviders` + `App`, preserving
