@@ -16,7 +16,7 @@ export default function UIBackToMain(): React.ReactElement {
   return (
     <Box component="section" sx={styles.section}>
       <UIContainer>
-        <UIButton disableRipple sx={styles.backButton} to="/" aria-label="Back">
+        <UIButton disableRipple sx={styles.backButton} to="/">
           <Box sx={styles.icon}>
             <img src={BackArrow} alt="" aria-hidden="true" />
           </Box>
