@@ -343,6 +343,39 @@ module.exports = {
       },
     },
     {
+      name: 'no-providers-import-feature-internals',
+      comment:
+        'The providers shell layer must not import from feature internals. ' +
+        'Providers are composition roots and must stay decoupled from feature logic.',
+      severity: 'error',
+      from: { path: '^src/providers/' },
+      to: { path: '^src/modules/[^/]+/features/' },
+    },
+    {
+      name: 'no-components-import-feature-internals',
+      comment:
+        'Shared components must not import from feature internals. ' +
+        'Extract shared logic to src/hooks, src/services, or src/utils instead.',
+      severity: 'error',
+      from: { path: '^src/components/' },
+      to: { path: '^src/modules/[^/]+/features/' },
+    },
+    {
+      name: 'no-routes-import-feature-internals',
+      comment:
+        'The routes shell layer must not import from feature internals. ' +
+        'Exceptions: public page entries (routes/) and the routing guard (protected-route).',
+      severity: 'error',
+      from: { path: '^src/routes/' },
+      to: {
+        path: '^src/modules/[^/]+/features/',
+        pathNot: [
+          '^src/modules/[^/]+/features/[^/]+/routes/',
+          '^src/modules/[^/]+/features/[^/]+/components/protected-route/',
+        ],
+      },
+    },
+    {
       name: 'no-cross-feature-imports',
       comment:
         'Features within a module must not import from sibling features. Use ' +
