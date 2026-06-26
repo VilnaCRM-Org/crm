@@ -1,13 +1,11 @@
 // @jest-environment jsdom
 
-import './utils/setup-bun-dom';
+import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 let mockCurrentPath = '/sign-up';
-
-jest.mock('../../src/index.css', () => ({}));
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { i18n: { language: string }; t: (k: string) => string } => ({
@@ -23,8 +21,8 @@ jest.mock('react-router-dom', () => {
     ...actual,
     createBrowserRouter: (routes: unknown): unknown => routes,
     RouterProvider: ({ router }: { router: unknown }): ReactElement => {
-      const memoryRouter = actual.createMemoryRouter(router, { initialEntries: [mockCurrentPath] });
-      return <actual.RouterProvider router={memoryRouter} />;
+      const mem = actual.createMemoryRouter(router, { initialEntries: [mockCurrentPath] });
+      return <actual.RouterProvider router={mem} />;
     },
   };
 });
@@ -41,7 +39,14 @@ jest.mock('@/components/layouts/root-layout', () => {
 
 jest.mock('@/components/layouts/app-layout', () => {
   const { Outlet } = jest.requireActual('react-router-dom');
-  return { __esModule: true, default: (): ReactElement => <Outlet /> };
+  return {
+    __esModule: true,
+    default: (): ReactElement => (
+      <main>
+        <Outlet />
+      </main>
+    ),
+  };
 });
 
 jest.mock('@/components/error-boundary/route-error', () => ({
@@ -69,27 +74,37 @@ jest.mock('@auth/routes/sign-in', () => ({
   default: (): ReactElement => <div>sign in page</div>,
 }));
 
-const App = jest.requireActual<typeof import('@/app')>('@/app').default;
+import router from '@/routes/routes';
 
-describe('App', () => {
-  beforeEach(() => {
-    mockCurrentPath = '/sign-up';
-  });
+describe('routes', () => {
+  const RouterProvider =
+    jest.requireActual<typeof import('react-router-dom')>('react-router-dom').RouterProvider;
 
-  it('renders the /sign-up page via RouterProvider (AC1)', async () => {
-    render(<App />);
+  const renderAt = (path: string): void => {
+    mockCurrentPath = path;
+    const { RouterProvider: MockedRP } = jest.requireMock('react-router-dom');
+    render(<MockedRP router={router} />);
+  };
+
+  it('renders SignUp at /sign-up (AC1)', async () => {
+    renderAt('/sign-up');
     expect(await screen.findByText('sign up page')).toBeInTheDocument();
+    void RouterProvider;
   });
 
-  it('renders the /sign-in page via RouterProvider (AC1)', async () => {
-    mockCurrentPath = '/sign-in';
-    render(<App />);
+  it('renders SignIn at /sign-in (AC1)', async () => {
+    renderAt('/sign-in');
     expect(await screen.findByText('sign in page')).toBeInTheDocument();
   });
 
-  it('renders NotFound at an unknown path (AC2)', async () => {
-    mockCurrentPath = '/unknown-path';
-    render(<App />);
+  it('renders NotFound on unknown path (AC2)', async () => {
+    renderAt('/does-not-exist');
     expect(await screen.findByText('not found page')).toBeInTheDocument();
+  });
+
+  it('renders ButtonExample through AppLayout at / (AC1)', async () => {
+    renderAt('/');
+    expect(await screen.findByText('button example page')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toBeInTheDocument();
   });
 });

@@ -26,10 +26,13 @@ describe('public index performance safeguards', () => {
   });
 
   it('keeps route suspense fallback empty to avoid adding a loading spinner to first paint', () => {
-    const appSource = fs.readFileSync(path.resolve(__dirname, '../../../src/app.tsx'), 'utf8');
+    const rootLayoutSource = fs.readFileSync(
+      path.resolve(__dirname, '../../../src/components/layouts/root-layout.tsx'),
+      'utf8'
+    );
 
-    expect(appSource).toContain('<React.Suspense fallback={null}>');
-    expect(appSource).not.toContain('CircularProgress');
+    expect(rootLayoutSource).toContain('fallback={null}');
+    expect(rootLayoutSource).not.toContain('CircularProgress');
   });
 
   it('keeps dependency injection metadata out of the client entry bundle', () => {

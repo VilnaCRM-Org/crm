@@ -48,18 +48,21 @@ describe('performance serving config', () => {
     expect(rsbuildConfigSource).not.toContain("type: 'async-chunks'");
   });
 
-  it('keeps route-level code splitting in the app shell', () => {
-    const appSource = readFile('src/app.tsx');
+  it('keeps route-level code splitting in the routes layer', () => {
+    const routesSource = readFile('src/routes/routes.tsx');
 
-    expect(appSource).toContain("import React, { lazy, useEffect } from 'react';");
-    expect(appSource).toContain("const SignUp = lazy(async () => import('@auth/routes/sign-up'));");
-    expect(appSource).toContain("const SignIn = lazy(async () => import('@auth/routes/sign-in'));");
-    expect(appSource).toContain(
+    expect(routesSource).toContain(
+      "const SignUp = lazy(async () => import('@auth/routes/sign-up'));"
+    );
+    expect(routesSource).toContain(
+      "const SignIn = lazy(async () => import('@auth/routes/sign-in'));"
+    );
+    expect(routesSource).toContain(
       "const ButtonExample = lazy(async () => import('@/button-example'));"
     );
-    expect(appSource).not.toContain("import SignUp from '@auth/routes/sign-up';");
-    expect(appSource).not.toContain("import SignIn from '@auth/routes/sign-in';");
-    expect(appSource).not.toContain("import ButtonExample from '@/button-example';");
+    expect(routesSource).not.toContain("import SignUp from '@auth/routes/sign-up';");
+    expect(routesSource).not.toContain("import SignIn from '@auth/routes/sign-in';");
+    expect(routesSource).not.toContain("import ButtonExample from '@/button-example';");
   });
 
   it('keeps registration notifications out of the initial auth form chunk', () => {
