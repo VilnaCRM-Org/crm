@@ -46,11 +46,13 @@ describe('ErrorFallback', () => {
     const originalEnv = process.env.NODE_ENV;
     Object.defineProperty(process.env, 'NODE_ENV', { value: 'production', configurable: true });
 
-    render(<ErrorFallback error={new Error('boom')} reset={resetMock} />);
+    try {
+      render(<ErrorFallback error={new Error('boom')} reset={resetMock} />);
 
-    expect(screen.queryByRole('group')).not.toBeInTheDocument();
-
-    Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, configurable: true });
+      expect(screen.queryByRole('group')).not.toBeInTheDocument();
+    } finally {
+      Object.defineProperty(process.env, 'NODE_ENV', { value: originalEnv, configurable: true });
+    }
   });
 
   it('renders error.message inside a disclosure widget in test/dev environment (AC5)', () => {

@@ -4,11 +4,11 @@ import { createBrowserRouter } from 'react-router-dom';
 import RouteError from '@/components/error-boundary/route-error';
 import AppLayout from '@/components/layouts/app-layout';
 import RootLayout from '@/components/layouts/root-layout';
-import NotFound from '@/components/not-found/not-found';
 import ROUTE_PATHS from '@/routes/route-paths';
 import ProtectedRoute from '@auth/components/protected-route';
 
 const ButtonExample = lazy(async () => import('@/button-example'));
+const NotFound = lazy(async () => import('@/components/not-found/not-found'));
 const SignUp = lazy(async () => import('@auth/routes/sign-up'));
 const SignIn = lazy(async () => import('@auth/routes/sign-in'));
 
