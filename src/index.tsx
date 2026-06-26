@@ -1,12 +1,12 @@
 import 'reflect-metadata';
 
-import CssBaseline from '@mui/material/CssBaseline';
-import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 
 import '@/styles/fonts.css';
-import theme from '@/styles/theme';
+
+import AppErrorBoundary from '@/components/error-boundary/app-error-boundary';
+import AppProviders from '@/providers/app-providers';
 
 import App from './app';
 import i18n from './i18n';
@@ -21,13 +21,10 @@ const root = createRoot(rootElement);
 
 root.render(
   <React.StrictMode>
-    <StyledEngineProvider injectFirst>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <React.Suspense fallback={null}>
-          <App />
-        </React.Suspense>
-      </ThemeProvider>
-    </StyledEngineProvider>
+    <AppErrorBoundary>
+      <AppProviders>
+        <App />
+      </AppProviders>
+    </AppErrorBoundary>
   </React.StrictMode>
 );

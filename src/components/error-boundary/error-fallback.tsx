@@ -42,6 +42,8 @@ const styles = {
     border: 'none',
     borderRadius: '8px',
     cursor: 'pointer',
+    outline: '3px solid #005FCC',
+    outlineOffset: '2px',
   },
   details: {
     marginTop: '1.5rem',

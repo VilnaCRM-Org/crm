@@ -71,4 +71,11 @@ describe('ErrorFallback', () => {
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading).toHaveStyle({ color: '#1A1C1E' });
   });
+
+  it('reset button has explicit focus indicator outline for WCAG 2.4.11 (AR WCAG)', () => {
+    render(<ErrorFallback reset={resetMock} />);
+
+    const button = screen.getByRole('button', { name: /try again/i });
+    expect(button).toHaveStyle({ outline: '3px solid #005FCC' });
+  });
 });
