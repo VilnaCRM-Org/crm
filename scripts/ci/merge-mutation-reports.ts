@@ -44,7 +44,7 @@ async function resolveBreakThreshold(): Promise<number> {
   return breakThreshold;
 }
 
-/** Merge the shard reports, recompute the score, and exit non-zero if it is below the break gate. */
+/** Merge shard reports, recompute the score, and exit non-zero if below the break gate. */
 async function main(): Promise<void> {
   const dir = REPORTS_DIR;
 

@@ -92,7 +92,7 @@ export function tallyMutants(mutantsByFile: ReadonlyMap<string, ReportMutant[]>)
   return tally;
 }
 
-/** The overall mutation score (`detected / valid * 100`), or `NaN` when there are no valid mutants. */
+/** Mutation score (`detected / valid * 100`), or `NaN` when there are no valid mutants. */
 export function mutationScore(tally: StatusTally): number {
   return tally.valid > 0 ? (tally.detected / tally.valid) * 100 : Number.NaN;
 }
