@@ -4,8 +4,11 @@ import { join, resolve } from 'node:path';
 import { type MutationReport, scoreReports } from './mutation-report';
 
 const SHARD_FILE = /^mutation-shard-\d+\.json$/;
+
+/** Fixed shard-report directory; never taken from argv so it stays path-injection safe. */
 const REPORTS_DIR = resolve(process.cwd(), 'reports', 'mutation');
 
+/** Read and parse every `mutation-shard-*.json` report in `dir`, sorted by name. */
 function loadShardReports(dir: string): { name: string; report: MutationReport }[] {
   let entries: string[];
   try {
@@ -27,6 +30,7 @@ function loadShardReports(dir: string): { name: string; report: MutationReport }
     });
 }
 
+/** Read the canonical `thresholds.break` from the real Stryker config so it can never drift. */
 async function resolveBreakThreshold(): Promise<number> {
   const { default: base } = (await import('../../stryker.config.mjs')) as {
     default: { thresholds?: { break?: number | null } };
@@ -40,6 +44,7 @@ async function resolveBreakThreshold(): Promise<number> {
   return breakThreshold;
 }
 
+/** Merge the shard reports, recompute the score, and exit non-zero if it is below the break gate. */
 async function main(): Promise<void> {
   const dir = REPORTS_DIR;
 

@@ -1,15 +1,19 @@
+/** A single mutant entry in a `mutation-testing-elements` JSON report. */
 export interface ReportMutant {
   status?: string;
 }
 
+/** A source file entry (the system under test) in a mutation report. */
 export interface ReportFile {
   mutants?: ReportMutant[];
 }
 
+/** The subset of the `mutation-testing-elements` schema this gate reads. */
 export interface MutationReport {
   files?: Record<string, ReportFile>;
 }
 
+/** Per-status mutant counts plus the derived detected/undetected/valid totals. */
 export interface StatusTally {
   killed: number;
   timeout: number;
@@ -24,12 +28,14 @@ export interface StatusTally {
   valid: number;
 }
 
+/** The merged score over a set of shard reports. */
 export interface ScoreResult {
   tally: StatusTally;
   fileCount: number;
   mutationScore: number;
 }
 
+/** Union the `files` maps of every shard report, keyed by source path (first occurrence wins). */
 export function mergeReportFiles(reports: readonly MutationReport[]): Map<string, ReportMutant[]> {
   const byFile = new Map<string, ReportMutant[]>();
   for (const report of reports) {
@@ -42,6 +48,7 @@ export function mergeReportFiles(reports: readonly MutationReport[]): Map<string
   return byFile;
 }
 
+/** Map each Stryker mutant status to its tally counter. */
 const STATUS_TALLY_KEYS = new Map<string, keyof StatusTally>([
   ['Killed', 'killed'],
   ['Timeout', 'timeout'],
@@ -52,6 +59,7 @@ const STATUS_TALLY_KEYS = new Map<string, keyof StatusTally>([
   ['Ignored', 'ignored'],
 ]);
 
+/** Tally mutant statuses across the merged source files and derive detected/undetected/valid. */
 export function tallyMutants(mutantsByFile: ReadonlyMap<string, ReportMutant[]>): StatusTally {
   const tally: StatusTally = {
     killed: 0,
@@ -84,10 +92,12 @@ export function tallyMutants(mutantsByFile: ReadonlyMap<string, ReportMutant[]>)
   return tally;
 }
 
+/** The overall mutation score (`detected / valid * 100`), or `NaN` when there are no valid mutants. */
 export function mutationScore(tally: StatusTally): number {
   return tally.valid > 0 ? (tally.detected / tally.valid) * 100 : Number.NaN;
 }
 
+/** Merge shard reports and compute the overall mutation score. */
 export function scoreReports(reports: readonly MutationReport[]): ScoreResult {
   const byFile = mergeReportFiles(reports);
   const tally = tallyMutants(byFile);
