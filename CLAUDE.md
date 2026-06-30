@@ -114,6 +114,18 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 
 - smoke, average, stress, spike
 
+### CI parallelization
+
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
+4-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+`merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
+threshold read from `stryker.config.mjs` (`make merge-mutation-reports`) — identical gate, much
+faster (~1h → fits the PR budget). Lighthouse desktop/mobile run as a parallel matrix
+(`performance-testing.yml`). Every workflow declares `concurrency` with `cancel-in-progress: true`
+(release/sandbox workflows use `false`) so a new push cancels the previous run. No gate is weakened
+and no threshold changes. See "CI speed and the mutation-testing gate" in `CONTRIBUTING.md` for the
+full flow and the branch-protection required-checks update.
+
 ## Code Quality
 
 ```bash

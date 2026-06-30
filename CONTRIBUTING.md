@@ -109,6 +109,61 @@ or a per-image `docker-perf-exception:<name>` PR label that waives only that
 image. The decision logic is covered by `tests/bats/docker_perf.bats`
 (run with `make test-bats`).
 
+### CI speed and the mutation-testing gate
+
+GitHub runs the pull-request workflows in parallel, so PR feedback is gated by the slowest single
+job. Two things keep that fast without dropping or weakening any check — every gate still runs on
+every PR, and no threshold (Stryker, metrics, jscpd, dependency-cruiser, Lighthouse) is relaxed.
+
+**Cancel superseded runs.** Every workflow declares a `concurrency` group keyed on the workflow and
+the PR (or ref) with `cancel-in-progress: true`, so pushing a new commit aborts the previous run for
+that PR instead of letting it finish. The release and sandbox-lifecycle workflows
+(`autorelease`, `sandbox-creating`, `sandbox-deleting`) use `cancel-in-progress: false` so an
+in-flight release or sandbox trigger is never aborted.
+
+**Mutation testing is sharded, not slowed.** Stryker over the whole component surface
+(`src/components/**/*.tsx`) took close to an hour as one job. `mutation-testing.yml` now fans
+`make test-mutation-shard` across a 4-way matrix; each shard mutates a deterministic, disjoint slice
+of the same file set (`stryker.shard.config.mjs`) and uploads a per-shard JSON report. A final
+`merge and enforce gate` job runs `make merge-mutation-reports`, which unions the shard reports and
+re-enforces the **unchanged** Stryker `break` threshold (read live from `stryker.config.mjs`) over
+the whole set, computing the mutation score exactly as an unsharded run would. Sharding by file is
+score-preserving: each mutant runs against the full suite regardless of which shard owns it. A
+missing shard report makes the merge fail closed (it never passes the gate vacuously). The merge math
+is unit-tested in `tests/unit/mutation-report.test.ts`. Shards run against a lean dev-only container
+(`make start-dev`) because mutation tests mock all backends and need neither Mockoon nor Apollo.
+
+Run it locally either way:
+
+```bash
+make test-mutation                                   # full, gated, single-process run
+# or reproduce the sharded CI flow against a running dev service:
+make start-dev
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=4   # repeat for 1..3
+make merge-mutation-reports MUTATION_SHARD_TOTAL=4
+```
+
+To change the shard count, keep the `index` matrix in `mutation-testing.yml` and the merge job's
+`MUTATION_SHARD_TOTAL` in lock-step (`index` must be `[0 .. TOTAL-1]`); a mismatch fails closed at
+the merge gate rather than passing silently.
+
+**Lighthouse runs as a matrix.** `performance-testing.yml` runs the desktop and mobile audits as two
+parallel matrix cells (`lighthouse desktop` / `lighthouse mobile`) instead of sequentially in one
+job.
+
+**Required status checks (maintainer action).** Because the single `mutation testing` and
+`performance testing` checks no longer exist as one job each, a maintainer must update
+**Settings → Branches → Branch protection rules** to require these jobs in place of the old single
+checks:
+
+- `mutation testing / merge and enforce gate`
+- `performance testing / lighthouse desktop`
+- `performance testing / lighthouse mobile`
+
+The merge job runs `if: ${{ !cancelled() }}` and fails closed if any shard did not succeed (a skipped
+required check would otherwise count as a pass), so requiring the merge job alone is sufficient — a
+crashed shard turns the gate red rather than bypassing it.
+
 ### Pull Request
 
 When you're finished with the changes, create a pull request, also known as a PR.

@@ -7,11 +7,20 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   performance:
+    name: lighthouse ${{ matrix.formFactor }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        formFactor: [desktop, mobile]
 
     steps:
       - name: Checkout code
@@ -30,8 +39,5 @@ jobs:
       - name: Start container
         run: INSTALL_CHROMIUM=true make start
 
-      - name: Run desktop performance test
-        run: make lighthouse-desktop
-
-      - name: Run mobile performance test
-        run: make lighthouse-mobile
+      - name: Run ${{ matrix.formFactor }} performance test
+        run: make lighthouse-${{ matrix.formFactor }}

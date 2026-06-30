@@ -272,3 +272,24 @@ EOF
   [ "$status" -eq 0 ]
   assert_log_contains 'compose exec dev env PLAYWRIGHT_DEV_MODE=1 PLAYWRIGHT_TRACE_PORT=9323 bun x playwright test tests/e2e/modules/back-to-main.spec.ts --debug'
 }
+
+@test "start-dev builds and starts only the dev service" {
+  reset_command_log
+  run_make_target start-dev
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose -f docker-compose.yml up -d --build dev'
+}
+
+@test "test-mutation-shard runs the shard config in the dev container with shard env vars" {
+  reset_command_log
+  run_make_target test-mutation-shard MUTATION_SHARD_INDEX=2 MUTATION_SHARD_TOTAL=4
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose exec -T -e MUTATION_SHARD_INDEX=2 -e MUTATION_SHARD_TOTAL=4 dev bun x stryker run stryker.shard.config.mjs'
+}
+
+@test "merge-mutation-reports merges shard reports and enforces the gate in the dev container" {
+  reset_command_log
+  run_make_target merge-mutation-reports MUTATION_SHARD_TOTAL=4
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose exec -T -e MUTATION_SHARD_TOTAL=4 dev bun scripts/ci/merge-mutation-reports.ts'
+}

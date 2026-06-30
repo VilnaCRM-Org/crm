@@ -160,6 +160,7 @@ export default [
       'build/**',
       'coverage/**',
       'stryker.config.mjs',
+      'stryker.shard.config.mjs',
       '.stryker-tmp/**',
       '.storybook/**',
       'storybook-static/**',
