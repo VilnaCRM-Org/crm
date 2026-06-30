@@ -130,6 +130,10 @@ STRYKER_CMD                 = make start && $(BUNX) stryker run
 STRYKER_CMD_DIND            = $(BUNX_DIND) stryker run
 UNIT_TESTS                  = $(MAKE) ensure-dev && $(EXEC_DEV_TTYLESS) env
 
+MUTATION_SHARD_TOTAL        ?= 1
+MUTATION_SHARD_INDEX        ?= 0
+MUTATION_REPORTS_DIR         = reports/mutation
+
 STORYBOOK_BUILD             = $(BUNX) storybook build
 STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
@@ -176,6 +180,9 @@ help:
 
 start: create-network ## Start the frontend dev server and Mockoon API mock
 	$(DEV_CMD)
+
+start-dev: create-network ## Build and start only the dev service (no mockoon/apollo, no readiness wait) for container-exec jobs like mutation sharding
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev
 
 ci-setup: create-network ## Prepare the shared dev environment for CI-oriented checks
 	$(CI_SETUP_CMD)
@@ -525,6 +532,12 @@ test-memory-leak: start-prod ## This command executes memory leaks tests using M
 
 test-mutation: ## Run mutation tests using Stryker after building the app
 	$(STRYKER_CMD)
+
+test-mutation-shard: ## Run mutation shard MUTATION_SHARD_INDEX of MUTATION_SHARD_TOTAL in the running dev container
+	$(DOCKER_COMPOSE) exec -T -e MUTATION_SHARD_INDEX=$(MUTATION_SHARD_INDEX) -e MUTATION_SHARD_TOTAL=$(MUTATION_SHARD_TOTAL) dev bun x stryker run stryker.shard.config.mjs
+
+merge-mutation-reports: ## Merge mutation shard reports and re-enforce the Stryker break gate in the running dev container
+	$(DOCKER_COMPOSE) exec -T -e MUTATION_SHARD_TOTAL=$(MUTATION_SHARD_TOTAL) dev bun scripts/ci/merge-mutation-reports.ts
 
 wait-for-prod-health: ## Wait for the prod container to reach a healthy state.
 	@echo "Waiting for prod container to become healthy (timeout: 60s)..."

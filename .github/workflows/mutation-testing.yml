@@ -7,8 +7,60 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  mutation-testing:
+  shard:
+    name: shard ${{ matrix.index }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # To change the shard count, keep this list and the merge job's
+        # MUTATION_SHARD_TOTAL in lock-step: index must be [0 .. TOTAL-1]. A
+        # mismatch fails closed at the merge gate's shard-count/index check.
+        index: [0, 1, 2, 3]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Start dev container
+        run: make start-dev
+
+      - name: Run mutation shard
+        run: make test-mutation-shard MUTATION_SHARD_INDEX=${{ matrix.index }} MUTATION_SHARD_TOTAL=4
+
+      - name: Upload shard report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mutation-shard-${{ matrix.index }}
+          path: reports/mutation/mutation-shard-${{ matrix.index }}.json
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Stop docker test environment
+        if: always()
+        run: make down
+
+  merge:
+    name: merge and enforce gate
+    needs: shard
+    # Run even when a shard failed so the gate fails CLOSED. Without this the job
+    # would be SKIPPED on shard failure, and branch protection treats a skipped
+    # required check as passing — silently bypassing the mutation gate.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,8 +76,27 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Start container
-        run: make start
+      - name: Fail if any mutation shard did not succeed
+        if: needs.shard.result != 'success'
+        env:
+          SHARD_RESULT: ${{ needs.shard.result }}
+        run: |
+          echo "::error::Mutation shards did not all succeed (result=$SHARD_RESULT); failing the gate."
+          exit 1
 
-      - name: Run mutation testing
-        run: make test-mutation
+      - name: Download shard reports
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: mutation-shard-*
+          path: reports/mutation
+          merge-multiple: true
+
+      - name: Start dev container
+        run: make start-dev
+
+      - name: Merge reports and enforce mutation-score gate
+        run: make merge-mutation-reports MUTATION_SHARD_TOTAL=4
+
+      - name: Stop docker test environment
+        if: always()
+        run: make down

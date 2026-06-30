@@ -101,3 +101,6 @@ run-load-tests-dind	bats	tests/bats/makefile_targets.bats	Validated as the DIND 
 test-bats	ci	.github/workflows/bats-testing.yml	Executed directly by the dedicated Bats PR workflow.
 ensure-playwright-browsers	bats	tests/bats/makefile_targets.bats	Validated as the idempotent dev-container Chromium installer (system apk build).
 require-playwright-browsers	bats	tests/bats/makefile_targets.bats	Validated as the fail-fast browser preflight that gates the dev-mode targets.
+start-dev	bats	tests/bats/makefile_targets.bats	Validated as the lean dev-only Docker Compose start target for container-exec jobs.
+test-mutation-shard	bats	tests/bats/makefile_targets.bats	Validated as the per-shard Stryker run dispatched to the running dev container.
+merge-mutation-reports	bats	tests/bats/makefile_targets.bats	Validated as the shard-report merge and break-gate command in the running dev container.
