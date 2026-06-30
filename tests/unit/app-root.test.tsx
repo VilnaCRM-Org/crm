@@ -25,17 +25,36 @@ if (typeof Request === 'undefined') {
 jest.mock('../../src/index.css', () => ({}));
 
 jest.mock('react-i18next', () => ({
-  useTranslation: (): { i18n: MockI18n } => ({ i18n: mockI18n }),
+  useTranslation: (): { i18n: MockI18n; t: (k: string) => string } => ({
+    i18n: mockI18n,
+    t: (k: string): string => k,
+  }),
 }));
 
 jest.mock('@auth/components/protected-route', () => {
   const { Outlet } = jest.requireActual('react-router-dom');
-
-  return {
-    __esModule: true,
-    default: (): JSX.Element => <Outlet />,
-  };
+  return { __esModule: true, default: (): JSX.Element => <Outlet /> };
 });
+
+jest.mock('@/components/layouts/root-layout', () => {
+  const { Outlet } = jest.requireActual('react-router-dom');
+  return { __esModule: true, default: (): JSX.Element => <Outlet /> };
+});
+
+jest.mock('@/components/layouts/app-layout', () => {
+  const { Outlet } = jest.requireActual('react-router-dom');
+  return { __esModule: true, default: (): JSX.Element => <Outlet /> };
+});
+
+jest.mock('@/components/error-boundary/route-error', () => ({
+  __esModule: true,
+  default: (): JSX.Element => <div>route error</div>,
+}));
+
+jest.mock('@/components/not-found/not-found', () => ({
+  __esModule: true,
+  default: (): JSX.Element => <div>not found page</div>,
+}));
 
 jest.mock('@/button-example', () => ({
   __esModule: true,

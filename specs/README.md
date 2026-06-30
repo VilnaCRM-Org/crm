@@ -22,6 +22,7 @@ specs/
 | `eslint-suppressions`         | In progress |
 | `makefile-playwright-targets` | Planned     |
 | `sign-up-sign-in-pages`       | In progress |
+| `enterprise-app-shell`        | Implemented |
 
 ## Conventions
 

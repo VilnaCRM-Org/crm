@@ -8,12 +8,14 @@ import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import { ErrorHandler } from '@/services/error';
+import NoopErrorReporter from '@/services/error-reporting/noop-error-reporter';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import HttpClientFactory from '@/services/https-client/https-client-factory';
+import type { ErrorReporter } from '@/services/types/error-reporting';
 import type { HttpsClient } from '@/services/types/https-client/https-client';
 import AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ErrorParser from '@/utils/error/error-parser';
@@ -89,5 +91,6 @@ container.register<AuthRepositoryDeps>(TOKENS.AuthRepositoryDeps, {
   }),
 });
 container.registerSingleton<AuthRepository>(TOKENS.AuthRepository, AuthRepositoryImpl);
+container.registerSingleton<ErrorReporter>(TOKENS.ErrorReporter, NoopErrorReporter);
 
 export default container;

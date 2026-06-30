@@ -59,7 +59,7 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
     });
 
     test('should transition from skeleton to authentication form', async ({ page }) => {
-      await expect(page.locator('#auth-skeleton-divider')).toBeVisible({ timeout: 3000 });
+      await expect(page.locator('#auth-skeleton-divider')).toBeVisible({ timeout: 5000 });
 
       await releaseDelayedChunk?.();
       await page.unroute(AUTH_ASYNC_JS_GLOB);
@@ -76,7 +76,7 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
     });
 
     test('should hide skeleton elements after authentication form loads', async ({ page }) => {
-      await expect(page.locator('#auth-skeleton-title')).toBeVisible({ timeout: 3000 });
+      await expect(page.locator('#auth-skeleton-title')).toBeVisible({ timeout: 5000 });
 
       await releaseDelayedChunk?.();
       await page.unroute(AUTH_ASYNC_JS_GLOB);

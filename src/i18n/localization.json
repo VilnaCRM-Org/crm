@@ -1,6 +1,151 @@
 {
+  "en": {
+    "translation": {
+      "not_found": {
+        "title": "Page not found",
+        "description": "The page you're looking for doesn't exist.",
+        "cta": "Go to homepage"
+      },
+      "root_element_missing": "Root element not found",
+      "buttons": {
+        "back_to_main": "Back to homepage"
+      },
+      "auth": {
+        "error": {
+          "default": "Something went wrong. Please try again later.",
+          "details": "Error Details",
+          "tryAgain": "Try again"
+        },
+        "password": {
+          "hide": "Hide password",
+          "show": "Show password"
+        },
+        "loadingForm": "Loading authentication form"
+      },
+      "sign_up": {
+        "title": "Registration",
+        "subtitle": "Create an account in VilnaCRM",
+        "socials_main_heading": "Or",
+        "form": {
+          "name_input": {
+            "label": "Your first and last name",
+            "placeholder": "Mykhailo Svitskyi",
+            "special_characters_error": "Please use letters only",
+            "required": "This field is required",
+            "full_name_format_error": "Please enter your full name in the correct format"
+          },
+          "email_input": {
+            "label": "Email",
+            "placeholder": "vilnaCRM@gmail.com",
+            "required": "This field is required",
+            "email_format_error": "Please make sure your email includes '@' and '.'",
+            "invalid_message": "Please enter a valid email address"
+          },
+          "password_input": {
+            "label": "Password",
+            "placeholder": "Create a password",
+            "required": "This field is required",
+            "error_length": "Please enter a password between 8 and 64 characters",
+            "error_numbers": "Please include at least one digit",
+            "error_uppercase": "Please include at least one uppercase letter",
+            "error_lowercase": "Please include at least one lowercase letter"
+          },
+          "password_tip": {
+            "alt": "Password tip icon",
+            "title": "8 to 64 characters.",
+            "recommendation_text": "We recommend using:",
+            "options": {
+              "option_1": "lowercase and uppercase letters",
+              "option_2": "special characters (#&*$)",
+              "option_3": "numbers"
+            }
+          },
+          "submitting": "Signing up…",
+          "submit_button": "Sign Up",
+          "error_text": "There was an error. Please check again",
+          "switcher_text_have_account": "Already have an account?",
+          "switcher_text_no_account": "Don’t have an account yet?"
+        },
+        "errors": {
+          "load_failed": "Couldn't open the sign-up form. Please try again.",
+          "email_used": "Email address is already in use",
+          "signup_error": "Registration error. Please try again later"
+        }
+      },
+      "sign_in": {
+        "title": "Authentication",
+        "subtitle": "Sign in to your account in two clicks",
+        "errors": {
+          "load_failed": "Failed to load sign-in form. Please try again.",
+          "login": "Sign in error: {{reason}}"
+        },
+        "form": {
+          "email_input": {
+            "placeholder": "Enter your email",
+            "label": "Email",
+            "required": "This field is required"
+          },
+          "password_input": {
+            "placeholder": "Enter your password",
+            "label": "Password"
+          },
+          "submit_button": "Sign in",
+          "submitting": "Signing in…",
+          "remember_me": "Remember me",
+          "forgot_password": "Forgot password?"
+        }
+      },
+      "notifications": {
+        "close": "Close notification",
+        "success": {
+          "aria_label": "Registration successful notification",
+          "title": "Congratulations!",
+          "description": "You have successfully registered",
+          "button": "Go back",
+          "images": {
+            "confetti": "Cheerful and colorful confetti",
+            "gears": "Decorative celebration gears"
+          }
+        },
+        "error": {
+          "title": "An error occurred",
+          "retry_button": "Try again",
+          "button": "Go back",
+          "images": {
+            "error": "Red triangle with a warning about an error"
+          }
+        }
+      },
+      "failure_responses": {
+        "authentication_errors": {
+          "unauthorized_access": "Unauthorized access. Please log in again",
+          "access_denied": "Access denied. You do not have permission to perform this action"
+        },
+        "client_errors": {
+          "something_went_wrong": "Something went wrong with the request. Try again later",
+          "unexpected_error": "An unexpected error occurred. Please try again"
+        },
+        "network_errors": {
+          "network_error": "Network error. Please check your internet connection"
+        },
+        "server_errors": {
+          "server_error": "Internal server error"
+        }
+      },
+      "footer": {
+        "logo_alt": "VilnaCRM logo",
+        "privacy": "Privacy Policy",
+        "usage_policy": "Terms of Use"
+      }
+    }
+  },
   "uk": {
     "translation": {
+      "not_found": {
+        "title": "Сторінку не знайдено",
+        "description": "Сторінку, яку ви шукаєте, не існує.",
+        "cta": "На головну сторінку"
+      },
       "login": {
         "title": "Автентифікація",
         "info_desc": "Увійдіть до свого аккаунту за два кліки"
@@ -11,7 +156,7 @@
       },
       "auth": {
         "error": {
-          "default": "Щось пішло не так. Спробуйте ще раз пізніше.",
+          "default": "Щось пішло не так. Спробуйте пізніше.",
           "details": "Деталі помилки",
           "tryAgain": "Спробувати ще раз"
         },
@@ -135,141 +280,6 @@
         "logo_alt": "Логотип VilnaCRM",
         "privacy": "Політика конфіденційності",
         "usage_policy": "Умови користування"
-      }
-    }
-  },
-  "en": {
-    "translation": {
-      "root_element_missing": "Root element not found",
-      "buttons": {
-        "back_to_main": "Back to homepage"
-      },
-      "auth": {
-        "error": {
-          "default": "Something went wrong. Please try again later.",
-          "details": "Error details",
-          "tryAgain": "Try again"
-        },
-        "password": {
-          "hide": "Hide password",
-          "show": "Show password"
-        },
-        "loadingForm": "Loading authentication form"
-      },
-      "sign_up": {
-        "title": "Registration",
-        "subtitle": "Create an account in VilnaCRM",
-        "socials_main_heading": "Or",
-        "form": {
-          "name_input": {
-            "label": "Your first and last name",
-            "placeholder": "Mykhailo Svitskyi",
-            "special_characters_error": "Please use letters only",
-            "required": "This field is required",
-            "full_name_format_error": "Please enter your full name in the correct format"
-          },
-          "email_input": {
-            "label": "Email",
-            "placeholder": "vilnaCRM@gmail.com",
-            "required": "This field is required",
-            "email_format_error": "Please make sure your email includes '@' and '.'",
-            "invalid_message": "Please enter a valid email address"
-          },
-          "password_input": {
-            "label": "Password",
-            "placeholder": "Create a password",
-            "required": "This field is required",
-            "error_length": "Please enter a password between 8 and 64 characters",
-            "error_numbers": "Please include at least one digit",
-            "error_uppercase": "Please include at least one uppercase letter",
-            "error_lowercase": "Please include at least one lowercase letter"
-          },
-          "password_tip": {
-            "alt": "Password tip icon",
-            "title": "8 to 64 characters.",
-            "recommendation_text": "We recommend using:",
-            "options": {
-              "option_1": "lowercase and uppercase letters",
-              "option_2": "special characters (#&*$)",
-              "option_3": "numbers"
-            }
-          },
-          "submitting": "Signing up…",
-          "submit_button": "Sign Up",
-          "error_text": "There was an error. Please check again",
-          "switcher_text_have_account": "Already have an account?",
-          "switcher_text_no_account": "Don’t have an account yet?"
-        },
-        "errors": {
-          "load_failed": "Couldn't open the sign-up form. Please try again.",
-          "email_used": "Email address is already in use",
-          "signup_error": "Registration error. Please try again later"
-        }
-      },
-      "sign_in": {
-        "title": "Authentication",
-        "subtitle": "Sign in to your account in two clicks",
-        "errors": {
-          "load_failed": "Failed to load sign-in form. Please try again.",
-          "login": "Sign in error: {{reason}}"
-        },
-        "form": {
-          "email_input": {
-            "placeholder": "Enter your email",
-            "label": "Email",
-            "required": "This field is required"
-          },
-          "password_input": {
-            "placeholder": "Enter your password",
-            "label": "Password"
-          },
-          "submit_button": "Sign in",
-          "submitting": "Signing in…",
-          "remember_me": "Remember me",
-          "forgot_password": "Forgot password?"
-        }
-      },
-      "notifications": {
-        "close": "Close notification",
-        "success": {
-          "aria_label": "Registration successful notification",
-          "title": "Congratulations!",
-          "description": "You have successfully registered",
-          "button": "Go back",
-          "images": {
-            "confetti": "Cheerful and colorful confetti",
-            "gears": "Decorative celebration gears"
-          }
-        },
-        "error": {
-          "title": "An error occurred",
-          "retry_button": "Try again",
-          "button": "Go back",
-          "images": {
-            "error": "Red triangle with a warning about an error"
-          }
-        }
-      },
-      "failure_responses": {
-        "authentication_errors": {
-          "unauthorized_access": "Unauthorized access. Please log in again",
-          "access_denied": "Access denied. You do not have permission to perform this action"
-        },
-        "client_errors": {
-          "something_went_wrong": "Something went wrong with the request. Try again later",
-          "unexpected_error": "An unexpected error occurred. Please try again"
-        },
-        "network_errors": {
-          "network_error": "Network error. Please check your internet connection"
-        },
-        "server_errors": {
-          "server_error": "Internal server error"
-        }
-      },
-      "footer": {
-        "logo_alt": "VilnaCRM logo",
-        "privacy": "Privacy Policy",
-        "usage_policy": "Terms of Use"
       }
     }
   }
