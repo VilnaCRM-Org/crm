@@ -507,11 +507,11 @@ export default [
         {
           patterns: [
             {
-              group: ['@/features/*/*'],
+              group: ['@/features/*/*', '!@/features/*/index'],
               message: 'Import a feature through its public API barrel, not a deep internal path.',
             },
             {
-              group: ['@/modules/*/*'],
+              group: ['@/modules/*/*', '!@/modules/*/index'],
               message:
                 'Import a module through its public API barrel (e.g. @/modules/user), ' +
                 'not a deep internal path.',
@@ -547,7 +547,7 @@ export default [
         {
           patterns: [
             {
-              group: ['@/features/*/*'],
+              group: ['@/features/*/*', '!@/features/*/index'],
               message: 'Import a feature through its public API barrel, not a deep internal path.',
             },
             {
@@ -555,7 +555,7 @@ export default [
               message: 'Import the auth feature through its public API (@auth), not a deep path.',
             },
             {
-              group: ['@/modules/*/features/*/*'],
+              group: ['@/modules/*/features/*/*', '!@/modules/*/features/*/index'],
               message:
                 'Import a feature through its public API barrel (feature index), ' +
                 'not a deep internal path.',
