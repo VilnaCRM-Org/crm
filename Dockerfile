@@ -57,7 +57,7 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
       ca-certificates=20230311+deb12u1 \
-      jq=1.6-2.1+deb12u1 \
+      jq=1.6-2.1+deb12u2 \
       make=4.3-4.1 \
       tar=1.34+dfsg-1.2+deb12u1 \
       unzip=6.0-28; \
