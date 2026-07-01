@@ -11,13 +11,29 @@ barrel — never a deep internal path.
 
 ### Module barrel — `@/modules/user` (`src/modules/user/index.ts`)
 
-- `ApiError` — the module's single public error type, and today its only
-  cross-module consumer (the shared `error-parser`). The barrel exposes exactly
-  what crosses the module boundary and grows as real consumers appear; it does
-  not re-export the auth feature's own surface (that would couple the module
-  barrel to feature internals and, via the shared error path, form a
-  module ↔ feature import cycle). Cross-feature contract lives in the feature
-  barrel below.
+- `ApiError` — the module's public error type (consumed by the shared
+  `error-parser`).
+- `AuthRepository` (type) — the public repository interface.
+- `LoginResponse`, `SafeUserInfo` (types) — public response shapes.
+
+Two deliberate deviations from the issue's illustrative example, both forced by
+this codebase:
+
+- **Route entry components stay out of the barrel.** The issue example shows
+  `Authentication` / `ProtectedRoute` here, but the app-shell router
+  **code-splits** the page entries (`@auth/routes/sign-up|sign-in`) and imports
+  the `protected-route` guard directly. Re-exporting components from this barrel
+  would (a) defeat lazy-loading (the auth page's mobile Lighthouse budget) and
+  (b) pull React into every consumer of the barrel — including the plain
+  `error-parser` util. They remain the documented router-only exception below.
+- **The feature interface/response types are re-exported by their leaf type
+  paths, not through the `@auth` barrel.** The `@auth` barrel re-exports
+  `AuthErrorHandler`, whose implementation imports `error-parser`, which imports
+  this barrel for `ApiError`; routing the module barrel through `@auth` therefore
+  forms a `module ↔ feature` cycle (`no-circular`, verified). The module root
+  `index` is the module's sanctioned composition point (`no-feature-internal-imports`
+  intentionally exempts it), so it re-exports the feature's **leaf type files**
+  directly — matching the issue's own example.
 
 ### Feature barrel — `@auth` (`src/modules/user/features/auth/index.ts`)
 
