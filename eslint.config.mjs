@@ -497,4 +497,72 @@ export default [
       'max-len': ['error', { code: 100 }],
     },
   },
+
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    ignores: ['src/modules/**', 'src/routes/**', 'src/config/dependency-injection-config.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*/*', '!@/features/*/index'],
+              message: 'Import a feature through its public API barrel, not a deep internal path.',
+            },
+            {
+              group: ['@/modules/*/*', '!@/modules/*/index'],
+              message:
+                'Import a module through its public API barrel (e.g. @/modules/user), ' +
+                'not a deep internal path.',
+            },
+            {
+              group: ['@auth/*/*'],
+              message: 'Import the auth feature through its public API (@auth), not a deep path.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  {
+    files: [
+      'src/modules/*/store/**/*.ts',
+      'src/modules/*/store/**/*.tsx',
+      'src/modules/*/types/**/*.ts',
+      'src/modules/*/types/**/*.tsx',
+      'src/modules/*/lib/**/*.ts',
+      'src/modules/*/lib/**/*.tsx',
+      'src/modules/*/hooks/**/*.ts',
+      'src/modules/*/hooks/**/*.tsx',
+      'src/modules/*/utils/**/*.ts',
+      'src/modules/*/utils/**/*.tsx',
+      'src/modules/*/config/**/*.ts',
+      'src/modules/*/config/**/*.tsx',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*/*', '!@/features/*/index'],
+              message: 'Import a feature through its public API barrel, not a deep internal path.',
+            },
+            {
+              group: ['@auth/*/*'],
+              message: 'Import the auth feature through its public API (@auth), not a deep path.',
+            },
+            {
+              group: ['@/modules/*/features/*/*', '!@/modules/*/features/*/index'],
+              message:
+                'Import a feature through its public API barrel (feature index), ' +
+                'not a deep internal path.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

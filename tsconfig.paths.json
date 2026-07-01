@@ -4,6 +4,7 @@
     "paths": {
       "@/*": ["src/*"],
       "@": ["src"],
+      "@auth": ["src/modules/user/features/auth"],
       "@auth/*": ["src/modules/user/features/auth/*"],
       "@tests/*": ["tests/*"]
     }

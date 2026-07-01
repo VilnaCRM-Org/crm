@@ -227,6 +227,23 @@ module.exports = {
       },
     },
     {
+      name: 'no-module-internal-imports',
+      comment:
+        'Code outside a module must import it through the module public API ' +
+        '(src/modules/<module>/index). Deep imports into module internals are ' +
+        'forbidden. Exempt consumers: the DI composition root (DI wiring) and the ' +
+        'app-shell router (src/routes) — the router is instead narrowly scoped by ' +
+        'no-routes-import-feature-internals and no-routes-import-module-internals.',
+      severity: 'error',
+      from: {
+        path: '^src/',
+        pathNot: ['^src/modules/', '^src/routes/', '^src/config/dependency-injection-config[.]ts$'],
+      },
+      to: {
+        path: '^src/modules/[^/]+/(?!index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$).+',
+      },
+    },
+    {
       name: 'no-components-import-modules',
       comment: 'Shared UI components must not depend on feature modules.',
       severity: 'error',
@@ -376,6 +393,20 @@ module.exports = {
       },
     },
     {
+      name: 'no-routes-import-module-internals',
+      comment:
+        'The routes shell layer is exempt from no-module-internal-imports only so it ' +
+        'can mount a feature via its code-split page entries (features/*/routes) and ' +
+        'protected-route guard (both governed by no-routes-import-feature-internals). ' +
+        'It must not deep-import any other module internal (module-level store, lib, ' +
+        'hooks, utils, config, types); those still enter through the module index.',
+      severity: 'error',
+      from: { path: '^src/routes/' },
+      to: {
+        path: '^src/modules/[^/]+/(?!index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$|features/).+',
+      },
+    },
+    {
       name: 'no-cross-feature-imports',
       comment:
         'Features within a module must not import from sibling features. Use ' +
@@ -386,6 +417,23 @@ module.exports = {
       },
       to: {
         path: '^src/modules/$1/features/(?!$2/)',
+      },
+    },
+    {
+      name: 'no-feature-internal-imports',
+      comment:
+        'Module-level shared layers (store, types, lib, hooks, utils, config) must ' +
+        'import a feature through its public API (feature index barrel), not deep ' +
+        'feature-internal files. (lib is additionally blocked from every feature ' +
+        'import by no-lib-to-features.) Sibling-feature imports are handled by ' +
+        'no-cross-feature-imports; outside-module imports by no-module-internal-imports.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/([^/]+)/(?:store|types|lib|hooks|utils|config)/',
+      },
+      to: {
+        path:
+          '^src/modules/$1/features/[^/]+/' + '(?!index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$).+',
       },
     },
     {

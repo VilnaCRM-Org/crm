@@ -2,7 +2,7 @@ import { inject, injectable } from 'tsyringe';
 
 import TOKENS from '@/config/tokens';
 import { type UiError } from '@/services/error';
-import AuthErrorHandler from '@auth/utils/auth-error-handler';
+import type { AuthErrorHandler } from '@auth';
 
 @injectable()
 export default class AuthUiErrorMapper {

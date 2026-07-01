@@ -1,5 +1,5 @@
 import type { UiError } from '@/services/error';
-import type { SafeUserInfo } from '@auth/types/api-responses';
+import type { SafeUserInfo } from '@auth';
 
 export type RegistrationMappingResult =
   | { ok: true; value: SafeUserInfo }

@@ -445,9 +445,19 @@ In addition to the project-wide `@/`, the Auth feature has its own scoped
 alias `@auth/* → src/modules/user/features/auth/*` so deeply nested imports
 into Auth stay readable and within the 100-character soft line limit. Use
 `@auth/...` whenever the target lives under `src/modules/user/features/auth/`,
-regardless of whether the importer is inside or outside the feature.
+regardless of whether the importer is inside or outside the feature. The bare
+`@auth` (→ the feature `index` barrel) is the feature's public API entry point.
 
-Both aliases are configured in:
+**Module/feature public API contract (issue #107):** crossing a module or
+feature boundary is allowed **only** through its `index` barrel —
+`@/modules/<m>` for a module, `@auth` (bare) for the Auth feature. Deep imports
+across the boundary fail `no-module-internal-imports` /
+`no-feature-internal-imports` (dependency-cruiser) and scoped
+`no-restricted-imports` (ESLint). The DI composition root and the app-shell
+router's code-split route/guard entries are the only sanctioned exceptions.
+See `src/modules/user/README.md` for the full contract.
+
+These aliases are configured in:
 
 - `tsconfig.paths.json` for TypeScript
 - `rsbuild.config.ts` for RSBuild
