@@ -189,9 +189,11 @@ barrel. Deep imports across the boundary fail the build.
   root (`src/config/dependency-injection-config.ts`) may deep-import impls for
   wiring; the app-shell router (`src/routes/`) mounts the feature's code-split
   route entries and `protected-route` guard directly to preserve lazy-loading.
-- Route imports through the barrel, never with a suppression. See the module
-  README (`src/modules/user/README.md`) for the worked example and the
-  "add a compliant module/feature" steps.
+- Every non-exempt boundary crossing goes through the barrel; only the router's
+  code-split route/guard entries are the sanctioned exception. Fix violations by
+  routing through the barrel, never with a suppression. See the module README
+  (`src/modules/user/README.md`) for the worked example and the "add a compliant
+  module/feature" steps.
 
 #### Modifying Existing Code
 

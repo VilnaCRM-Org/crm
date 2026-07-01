@@ -231,9 +231,9 @@ module.exports = {
       comment:
         'Code outside a module must import it through the module public API ' +
         '(src/modules/<module>/index). Deep imports into module internals are ' +
-        'forbidden. Two consumers are exempt: the DI composition root (DI wiring) ' +
-        'and the app-shell router (src/routes), which mounts the code-split ' +
-        'page/guard entries and is governed by no-routes-import-feature-internals.',
+        'forbidden. Exempt consumers: the DI composition root (DI wiring) and the ' +
+        'app-shell router (src/routes) — the router is instead narrowly scoped by ' +
+        'no-routes-import-feature-internals and no-routes-import-module-internals.',
       severity: 'error',
       from: {
         path: '^src/',
@@ -390,6 +390,20 @@ module.exports = {
           '^src/modules/[^/]+/features/[^/]+/routes/',
           '^src/modules/[^/]+/features/[^/]+/components/protected-route/',
         ],
+      },
+    },
+    {
+      name: 'no-routes-import-module-internals',
+      comment:
+        'The routes shell layer is exempt from no-module-internal-imports only so it ' +
+        'can mount a feature via its code-split page entries (features/*/routes) and ' +
+        'protected-route guard (both governed by no-routes-import-feature-internals). ' +
+        'It must not deep-import any other module internal (module-level store, lib, ' +
+        'hooks, utils, config, types); those still enter through the module index.',
+      severity: 'error',
+      from: { path: '^src/routes/' },
+      to: {
+        path: '^src/modules/[^/]+/(?!index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$|features/).+',
       },
     },
     {

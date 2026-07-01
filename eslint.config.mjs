@@ -498,13 +498,6 @@ export default [
     },
   },
 
-  // Module public API contract (issue #107): deep imports across a module/feature
-  // boundary must enter through the public barrel. dependency-cruiser is the
-  // authoritative graph-level gate; these are the fast in-editor signal.
-  // Scoped to files OUTSIDE the boundary so legal within-module/within-feature
-  // deep imports are not touched. Sanctioned exceptions (DI composition root,
-  // app-shell router code-split entries) are excluded here and governed by
-  // dependency-cruiser.
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     ignores: ['src/modules/**', 'src/routes/**', 'src/config/dependency-injection-config.ts'],
@@ -533,8 +526,6 @@ export default [
     },
   },
 
-  // Module-level shared layers must reach a feature only through its public
-  // barrel (@auth or the feature index), never a deep feature-internal path.
   {
     files: [
       'src/modules/*/store/**/*.ts',
@@ -542,9 +533,13 @@ export default [
       'src/modules/*/types/**/*.ts',
       'src/modules/*/types/**/*.tsx',
       'src/modules/*/lib/**/*.ts',
+      'src/modules/*/lib/**/*.tsx',
       'src/modules/*/hooks/**/*.ts',
+      'src/modules/*/hooks/**/*.tsx',
       'src/modules/*/utils/**/*.ts',
+      'src/modules/*/utils/**/*.tsx',
       'src/modules/*/config/**/*.ts',
+      'src/modules/*/config/**/*.tsx',
     ],
     rules: {
       'no-restricted-imports': [

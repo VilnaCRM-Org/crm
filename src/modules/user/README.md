@@ -11,9 +11,13 @@ barrel — never a deep internal path.
 
 ### Module barrel — `@/modules/user` (`src/modules/user/index.ts`)
 
-- `ApiError` — the module's single public error type.
-- `AuthRepository` (type) — the public repository interface.
-- `LoginResponse`, `SafeUserInfo` (types) — public response shapes.
+- `ApiError` — the module's single public error type, and today its only
+  cross-module consumer (the shared `error-parser`). The barrel exposes exactly
+  what crosses the module boundary and grows as real consumers appear; it does
+  not re-export the auth feature's own surface (that would couple the module
+  barrel to feature internals and, via the shared error path, form a
+  module ↔ feature import cycle). Cross-feature contract lives in the feature
+  barrel below.
 
 ### Feature barrel — `@auth` (`src/modules/user/features/auth/index.ts`)
 
