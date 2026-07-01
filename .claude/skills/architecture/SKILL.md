@@ -78,6 +78,17 @@ These come from `.dependency-cruiser.js`. They run on every PR via
 - `no-components-import-modules` — `src/components/*` depending on any
   `src/modules/*`.
 
+**Public API contract (issue #107):**
+
+- `no-module-internal-imports` — code outside a module reaching a
+  `src/modules/<m>/*` file other than the module `index` barrel. Enter
+  through `@/modules/<m>`. Exceptions: the DI composition root and the
+  app-shell router's code-split route/guard entries.
+- `no-feature-internal-imports` — module-level `store` / `types` / `lib` /
+  `hooks` / `utils` / `config` reaching a feature's internals instead of its
+  `index` barrel (e.g. `@auth`). Sibling features go through
+  `no-cross-feature-imports`.
+
 **Repository boundary:**
 
 - `no-repository-internal-imports` — reaching past a repository's `index`

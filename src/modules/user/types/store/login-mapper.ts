@@ -1,5 +1,5 @@
 import type { UiError } from '@/services/error';
-import type { LoginResponse } from '@auth/types/api-responses';
+import type { LoginResponse } from '@auth';
 
 export type LoginSuccessPayload = LoginResponse & { email: string };
 

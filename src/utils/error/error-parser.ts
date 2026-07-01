@@ -1,6 +1,6 @@
 import { injectable } from 'tsyringe';
 
-import ApiError from '@/modules/user/lib/api-errors/api-error';
+import { ApiError } from '@/modules/user';
 import type ParsedError from '@/utils/error/types';
 import type { Matcher } from '@/utils/types/error/error-parser';
 

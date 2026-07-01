@@ -1,7 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import type { LoginMappingResult } from '@/modules/user/types/store/login-mapper';
-import { LoginResponseSchema } from '@auth/utils/response-schemas';
+import { LoginResponseSchema } from '@auth';
 
 const INVALID_LOGIN_RESPONSE_MESSAGE = 'Unexpected response from server';
 

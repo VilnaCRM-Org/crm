@@ -168,6 +168,31 @@ same Docker-backed environment and avoid host-specific drift.
 6. **Format and lint** - Run `make format` before `make lint`
    (`make format` includes Prettier and `qlty fmt`)
 
+#### Module & Feature Public API Contract (issue #107)
+
+Every module and feature exposes exactly **one** public entry point — its
+`index` barrel — and crossing that boundary is allowed **only** through the
+barrel. Deep imports across the boundary fail the build.
+
+- **Module barrel** `src/modules/<m>/index.ts` (e.g. `@/modules/user`) — the
+  route entry components, public service/repository **interfaces**, DI tokens,
+  and public types. No `*-impl`, mapper, or internal error class.
+- **Feature barrel** `src/modules/<m>/features/<f>/index.ts` (e.g. `@auth`) —
+  the feature's public surface. Export a service's **type** and DI-wire its
+  class when only the type crosses the boundary; keep the barrel lean and
+  one-way so `no-circular` stays green.
+- **Enforcement** — `no-module-internal-imports` and
+  `no-feature-internal-imports` in `.dependency-cruiser.js` (authoritative),
+  plus scoped `no-restricted-imports` in `eslint.config.mjs` (fast signal) that
+  blocks deep `@/modules/*/*` and `@auth/*/*` imports from outside the boundary.
+- **Sanctioned exceptions** (documented, narrow, enforced): the DI composition
+  root (`src/config/dependency-injection-config.ts`) may deep-import impls for
+  wiring; the app-shell router (`src/routes/`) mounts the feature's code-split
+  route entries and `protected-route` guard directly to preserve lazy-loading.
+- Route imports through the barrel, never with a suppression. See the module
+  README (`src/modules/user/README.md`) for the worked example and the
+  "add a compliant module/feature" steps.
+
 #### Modifying Existing Code
 
 1. **Search before changing**:

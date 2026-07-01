@@ -497,4 +497,77 @@ export default [
       'max-len': ['error', { code: 100 }],
     },
   },
+
+  // Module public API contract (issue #107): deep imports across a module/feature
+  // boundary must enter through the public barrel. dependency-cruiser is the
+  // authoritative graph-level gate; these are the fast in-editor signal.
+  // Scoped to files OUTSIDE the boundary so legal within-module/within-feature
+  // deep imports are not touched. Sanctioned exceptions (DI composition root,
+  // app-shell router code-split entries) are excluded here and governed by
+  // dependency-cruiser.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    ignores: ['src/modules/**', 'src/routes/**', 'src/config/dependency-injection-config.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*/*'],
+              message: 'Import a feature through its public API barrel, not a deep internal path.',
+            },
+            {
+              group: ['@/modules/*/*'],
+              message:
+                'Import a module through its public API barrel (e.g. @/modules/user), ' +
+                'not a deep internal path.',
+            },
+            {
+              group: ['@auth/*/*'],
+              message: 'Import the auth feature through its public API (@auth), not a deep path.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
+  // Module-level shared layers must reach a feature only through its public
+  // barrel (@auth or the feature index), never a deep feature-internal path.
+  {
+    files: [
+      'src/modules/*/store/**/*.ts',
+      'src/modules/*/store/**/*.tsx',
+      'src/modules/*/types/**/*.ts',
+      'src/modules/*/types/**/*.tsx',
+      'src/modules/*/lib/**/*.ts',
+      'src/modules/*/hooks/**/*.ts',
+      'src/modules/*/utils/**/*.ts',
+      'src/modules/*/config/**/*.ts',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*/*'],
+              message: 'Import a feature through its public API barrel, not a deep internal path.',
+            },
+            {
+              group: ['@auth/*/*'],
+              message: 'Import the auth feature through its public API (@auth), not a deep path.',
+            },
+            {
+              group: ['@/modules/*/features/*/*'],
+              message:
+                'Import a feature through its public API barrel (feature index), ' +
+                'not a deep internal path.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

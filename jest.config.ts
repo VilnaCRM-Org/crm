@@ -82,6 +82,7 @@ const config: Config = {
   modulePathIgnorePatterns: ['<rootDir>/.stryker-tmp/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mts', 'json', 'node'],
   moduleNameMapper: {
+    '^@auth$': '<rootDir>/src/modules/user/features/auth',
     '^@auth/(.*)$': '<rootDir>/src/modules/user/features/auth/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
