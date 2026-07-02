@@ -42,6 +42,7 @@ const devDependencyPatterns = [
   'jest.setup.ts',
   'playwright.config.ts',
   'rsbuild.config.ts',
+  'codegen.ts',
   ...testFilePatterns,
 ];
 
@@ -171,6 +172,9 @@ export default [
       'out/**',
       'docker/**',
       'playwright-report/**',
+      // Generated API contract artifacts — build output, never hand-edited or linted.
+      // Excluded here the same way generated i18n JSON is kept out of the source gates.
+      'src/api/generated/**',
     ],
   },
 

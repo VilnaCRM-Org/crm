@@ -195,6 +195,26 @@ barrel. Deep imports across the boundary fail the build.
   (`src/modules/user/README.md`) for the worked example and the "add a compliant
   module/feature" steps.
 
+#### API Contracts & the REST-vs-GraphQL Boundary (issue #111)
+
+Backend request/response types are **generated from the upstream user-service specs**, never
+hand-written: GraphQL operations (`@graphql-codegen`) and the OpenAPI REST spec
+(`openapi-typescript`) produce `src/api/generated/**` via `make codegen`. Both boundaries are
+runtime-validated with zod (REST bodies in `HttpResponseProcessor`, the GraphQL result in
+`RegistrationAPI`) — data is parsed, never cast.
+
+- **Which transport?** GraphQL (Apollo) for user/account **domain-graph** reads and mutations;
+  REST (`HttpsClient`) for non-graph endpoints (login/token, health, files). When both expose
+  the same resource, the write goes through GraphQL and the token/session concern through REST.
+- **Generated files are build output** — never hand-edit `src/api/generated/**`; change the
+  spec/operation and rerun `make codegen`. They are excluded from every source gate via the gate
+  configs, never with suppressions. CI (`static testing`) runs `make codegen-check` and fails on
+  a stale diff.
+
+The authoritative rule, validation policy, and version-reconciliation steps live in
+[`src/api/contracts/README.md`](src/api/contracts/README.md). Apply it for every new
+backend-touching feature.
+
 #### Modifying Existing Code
 
 1. **Search before changing**:

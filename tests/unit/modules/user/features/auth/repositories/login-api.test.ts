@@ -2,6 +2,7 @@
 
 import { ApiError } from '@/modules/user/lib/api-errors';
 import LoginAPI from '@auth/repositories/login-api';
+import { LoginResponseSchema } from '@auth/utils/response-schemas';
 import { buildCredentials, buildLoginResponse } from '@tests/builders';
 
 type HttpsClient = import('@/services/types/https-client/https-client').HttpsClient;
@@ -18,7 +19,10 @@ describe('LoginAPI', () => {
     const api = new LoginAPI(httpsClient, { convert: jest.fn() } as never);
 
     await expect(api.login(credentials)).resolves.toEqual(loginResponse);
-    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, undefined);
+    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, {
+      schema: LoginResponseSchema,
+      signal: undefined,
+    });
   });
 
   it('passes request options to the underlying client', async () => {
@@ -30,7 +34,10 @@ describe('LoginAPI', () => {
 
     await expect(api.login(credentials, options)).resolves.toBeUndefined();
 
-    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, options);
+    expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, {
+      schema: LoginResponseSchema,
+      signal: options.signal,
+    });
   });
 
   it('maps non-API failures through BaseAPI handling', async () => {

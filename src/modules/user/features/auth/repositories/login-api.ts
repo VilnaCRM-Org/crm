@@ -3,9 +3,9 @@ import { inject, injectable } from 'tsyringe';
 import API_ENDPOINTS from '@/config/api-config';
 import TOKENS from '@/config/tokens';
 import type { HttpsClient } from '@/services/types/https-client/https-client';
-
-import type { LoginResponse } from '../types/api-responses';
-import type { LoginUserDto } from '../types/credentials';
+import type { LoginResponse } from '@auth/types/api-responses';
+import type { LoginUserDto } from '@auth/types/credentials';
+import { LoginResponseSchema } from '@auth/utils/response-schemas';
 
 import ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
@@ -28,7 +28,10 @@ export default class LoginAPI extends BaseAPI {
       return await this.httpsClient.post<LoginUserDto, LoginResponse>(
         API_ENDPOINTS.LOGIN,
         credentials,
-        options
+        {
+          schema: LoginResponseSchema,
+          signal: options?.signal,
+        }
       );
     } catch (error) {
       throw this.handleApiError(error, 'Login');

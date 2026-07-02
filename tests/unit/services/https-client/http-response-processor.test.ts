@@ -1,6 +1,12 @@
 /** @jest-environment @stryker-mutator/jest-runner/jest-env/jsdom */
 
+import { z } from 'zod';
+
+import { HttpError } from '@/services/https-client/http-error';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
+import ResponseMessages from '@/services/https-client/response-messages';
+
+const passthrough = z.unknown();
 
 function createResponse(
   status: number,
@@ -24,13 +30,17 @@ describe('HttpResponseProcessor', () => {
   it('returns undefined for successful responses with no body', async () => {
     const processor = new HttpResponseProcessor();
 
-    await expect(processor.process(createResponse(204, undefined, ''))).resolves.toBeUndefined();
+    await expect(
+      processor.process(createResponse(204, undefined, ''), passthrough)
+    ).resolves.toBeUndefined();
   });
 
   it('uses the default response parser when constructed with undefined', async () => {
     const processor = new HttpResponseProcessor(undefined);
 
-    await expect(processor.process(createResponse(204, undefined, ''))).resolves.toBeUndefined();
+    await expect(
+      processor.process(createResponse(204, undefined, ''), passthrough)
+    ).resolves.toBeUndefined();
   });
 
   it('uses an injected HttpErrorStatusGuard', async () => {
@@ -38,9 +48,62 @@ describe('HttpResponseProcessor', () => {
     const processor = new HttpResponseProcessor(parser as never);
     const response = createResponse(204, undefined, '');
 
-    await processor.process(response);
+    await processor.process(response, passthrough);
 
     expect(parser.assertOk).toHaveBeenCalledWith(response);
+  });
+
+  it('parses and returns a body that satisfies the schema (positive)', async () => {
+    const processor = new HttpResponseProcessor();
+    const schema = z.object({ token: z.string() });
+
+    await expect(processor.process(createResponse(200, { token: 'abc' }), schema)).resolves.toEqual(
+      { token: 'abc' }
+    );
+  });
+
+  it('strips unknown keys the schema does not declare (edge)', async () => {
+    const processor = new HttpResponseProcessor();
+    const schema = z.object({ token: z.string() });
+
+    await expect(
+      processor.process(createResponse(200, { token: 'abc', extra: 'ignored' }), schema)
+    ).resolves.toEqual({ token: 'abc' });
+  });
+
+  it('throws an HttpError when the body violates the schema (negative)', async () => {
+    const processor = new HttpResponseProcessor();
+    const schema = z.object({ token: z.string() });
+
+    await expect(
+      processor.process(createResponse(200, { token: 123 }), schema)
+    ).rejects.toMatchObject({ message: ResponseMessages.INVALID_RESPONSE_SHAPE });
+  });
+
+  it('surfaces the schema violation as an HttpError instance', async () => {
+    const processor = new HttpResponseProcessor();
+    const schema = z.object({ token: z.string() });
+
+    await expect(processor.process(createResponse(200, {}), schema)).rejects.toBeInstanceOf(
+      HttpError
+    );
+  });
+
+  it('rejects an empty 200 body against a required schema (no validation bypass)', async () => {
+    const processor = new HttpResponseProcessor();
+    const schema = z.object({ token: z.string() });
+
+    await expect(
+      processor.process(createResponse(200, undefined, 'application/json'), schema)
+    ).rejects.toMatchObject({ message: ResponseMessages.INVALID_RESPONSE_SHAPE });
+  });
+
+  it('accepts an empty 200 body against an optional/nullable schema', async () => {
+    const processor = new HttpResponseProcessor();
+
+    await expect(
+      processor.process(createResponse(200, undefined, 'application/json'), passthrough)
+    ).resolves.toBeUndefined();
   });
 
   it('loads when the reflected parser constructor type is unavailable', () => {

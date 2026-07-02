@@ -1,4 +1,5 @@
 import { inject, injectable } from 'tsyringe';
+import type { ZodType } from 'zod';
 
 import TOKENS from '@/config/tokens';
 import { HttpError } from '@/services/https-client/http-error';
@@ -18,7 +19,7 @@ export default class HttpResponseProcessor {
     this.httpErrorResponseParser = httpErrorResponseParser;
   }
 
-  public async process<T>(response: Response): Promise<T | undefined> {
+  public async process<T>(response: Response, schema: ZodType<T>): Promise<T | undefined> {
     await this.httpErrorResponseParser.assertOk(response);
     if (NO_BODY_STATUSES.has(response.status)) {
       return undefined;
@@ -26,24 +27,46 @@ export default class HttpResponseProcessor {
 
     const contentType = (response.headers.get('content-type') || '').toLowerCase();
     return contentType.includes('json')
-      ? this.parseJsonBody<T>(response, response.status)
+      ? this.parseJsonBody<T>(response, response.status, schema)
       : this.readNonJsonBody<T>(response, response.status);
   }
 
-  private async parseJsonBody<T>(response: Response, status: number): Promise<T | undefined> {
-    try {
-      const raw = await response
-        .clone()
-        .text()
-        .catch(() => '');
-      if (!raw || raw.trim().length === 0) {
-        return undefined;
-      }
+  private async parseJsonBody<T>(
+    response: Response,
+    status: number,
+    schema: ZodType<T>
+  ): Promise<T | undefined> {
+    const raw = await response
+      .clone()
+      .text()
+      .catch(() => '');
+    // An empty/whitespace body is still validated against the schema: a required schema
+    // rejects it (no silent bypass), while optional/nullable schemas accept the absent value.
+    if (!raw || raw.trim().length === 0) {
+      return this.validate(undefined, status, schema);
+    }
 
-      return (await response.json()) as T;
+    return this.validate(await this.readJson(response, status), status, schema);
+  }
+
+  private async readJson(response: Response, status: number): Promise<unknown> {
+    try {
+      return await response.json();
     } catch {
       throw new HttpError({ status, message: ResponseMessages.JSON_PARSE_FAILED, cause: response });
     }
+  }
+
+  private validate<T>(body: unknown, status: number, schema: ZodType<T>): T {
+    const result = schema.safeParse(body);
+    if (!result.success) {
+      throw new HttpError({
+        status,
+        message: ResponseMessages.INVALID_RESPONSE_SHAPE,
+        cause: result.error,
+      });
+    }
+    return result.data;
   }
 
   private async readNonJsonBody<T>(response: Response, status: number): Promise<T | undefined> {
