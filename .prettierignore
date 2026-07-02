@@ -17,6 +17,10 @@ lhci-reports-mobile/
 out
 storybook-static/
 
+# Generated API contract artifacts (deterministic codegen output; never reformatted)
+src/api/generated/
+.codegen-cache/
+
 .cache
 .eslintcache
 .npm

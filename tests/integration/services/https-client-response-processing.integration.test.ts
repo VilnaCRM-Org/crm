@@ -1,4 +1,7 @@
 import '../setup';
+
+import { z } from 'zod';
+
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
@@ -7,6 +10,10 @@ import HttpResponseProcessor from '@/services/https-client/http-response-process
 
 const createClient = (): FetchHttpsClient =>
   new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
+
+// Transport/parse-coverage tests: schema validation is covered elsewhere, so pass a
+// passthrough schema and keep these focused on status/content-type/error handling.
+const passthrough = z.unknown();
 
 describe('FetchHttpsClient Response Processing Coverage', () => {
   let client: FetchHttpsClient;
@@ -33,7 +40,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         headers: new Headers(),
       } as Response);
 
-      const result = await client.get('/test');
+      const result = await client.get('/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -45,7 +52,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         headers: new Headers(),
       } as Response);
 
-      const result = await client.get('/test');
+      const result = await client.get('/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -57,7 +64,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         headers: new Headers(),
       } as Response);
 
-      const result = await client.get('/test');
+      const result = await client.get('/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -75,10 +82,12 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      await expect(client.get('/test')).rejects.toThrow(HttpError);
-      await expect(client.get('/test')).rejects.toThrow('Response is not JSON');
-      await expect(client.get('/test')).rejects.toBeInstanceOf(HttpError);
-      await client.get('/test').catch((e) => {
+      await expect(client.get('/test', { schema: passthrough })).rejects.toThrow(HttpError);
+      await expect(client.get('/test', { schema: passthrough })).rejects.toThrow(
+        'Response is not JSON'
+      );
+      await expect(client.get('/test', { schema: passthrough })).rejects.toBeInstanceOf(HttpError);
+      await client.get('/test', { schema: passthrough }).catch((e) => {
         expect(e).toBeInstanceOf(HttpError);
         expect((e as HttpError).status).toBe(200);
       });
@@ -97,7 +106,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.get('/test');
+      const result = await client.get('/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -118,7 +127,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.get('/test');
+      const result = await client.get('/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -139,8 +148,10 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      await expect(client.get('/test')).rejects.toThrow(HttpError);
-      await expect(client.get('/test')).rejects.toThrow('Failed to parse JSON response');
+      await expect(client.get('/test', { schema: passthrough })).rejects.toThrow(HttpError);
+      await expect(client.get('/test', { schema: passthrough })).rejects.toThrow(
+        'Failed to parse JSON response'
+      );
     });
 
     it('should handle whitespace-only JSON body', async () => {
@@ -159,7 +170,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.get('/test');
+      const result = await client.get('/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -172,7 +183,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         text: jest.fn().mockRejectedValue(new Error('Text read error')),
       } as unknown as Response;
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
-      const result = await client.get('/test');
+      const result = await client.get('/test', { schema: passthrough });
       expect(result).toBeUndefined();
     });
 
@@ -182,15 +193,20 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       } as never);
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
-      await expect(processorOnlyClient.get('/test')).resolves.toEqual({ ok: true });
+      await expect(processorOnlyClient.get('/test', { schema: passthrough })).resolves.toEqual({
+        ok: true,
+      });
 
       const processor = new HttpResponseProcessor(undefined);
       await expect(
-        processor.process({
-          ok: true,
-          status: 204,
-          headers: new Headers(),
-        } as Response)
+        processor.process(
+          {
+            ok: true,
+            status: 204,
+            headers: new Headers(),
+          } as Response,
+          passthrough
+        )
       ).resolves.toBeUndefined();
     });
 
@@ -287,7 +303,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.post('/test', { data: 'test' });
+      const result = await client.post('/test', { data: 'test' }, { schema: passthrough });
 
       expect(result).toEqual({ success: true });
     });
@@ -308,7 +324,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.put('/test', { data: 'test' });
+      const result = await client.put('/test', { data: 'test' }, { schema: passthrough });
 
       expect(result).toEqual({ updated: true });
     });
@@ -329,7 +345,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.patch('/test', { data: 'test' });
+      const result = await client.patch('/test', { data: 'test' }, { schema: passthrough });
 
       expect(result).toEqual({ patched: true });
     });
@@ -350,7 +366,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.delete('/test', { id: 123 });
+      const result = await client.delete('/test', { schema: passthrough }, { id: 123 });
 
       expect(result).toEqual({ deleted: true });
     });
@@ -364,7 +380,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.delete('/test');
+      const result = await client.delete('/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -376,7 +392,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockRejectedValue(httpError);
 
-      await expect(client.get('/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should wrap non-HttpError as network error', async () => {
@@ -384,8 +400,8 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockRejectedValue(networkError);
 
-      await expect(client.get('/test')).rejects.toThrow(HttpError);
-      await expect(client.get('/test')).rejects.toThrow('Network error');
+      await expect(client.get('/test', { schema: passthrough })).rejects.toThrow(HttpError);
+      await expect(client.get('/test', { schema: passthrough })).rejects.toThrow('Network error');
     });
 
     it('throws an HttpError for non-ok responses via the response parser', async () => {
@@ -399,7 +415,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         clone: () => ({ json: async (): Promise<unknown> => errorPayload }),
       } as unknown as Response);
 
-      await expect(client.get('/svc')).rejects.toMatchObject({
+      await expect(client.get('/svc', { schema: passthrough })).rejects.toMatchObject({
         status: 503,
         message: 'Service down',
         cause: { contentType: 'application/json', url: '/svc' },
@@ -416,7 +432,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         json: async (): Promise<unknown> => ({ value: 42 }),
       } as unknown as Response;
 
-      await expect(processor.process<{ value: number }>(okResponse)).resolves.toEqual({
+      await expect(processor.process(okResponse, passthrough)).resolves.toEqual({
         value: 42,
       });
     });
@@ -431,7 +447,9 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         clone: () => ({ json: async (): Promise<unknown> => ({ message: 'kaboom' }) }),
       } as unknown as Response;
 
-      await expect(new HttpResponseProcessor().process(errorResponse)).rejects.toMatchObject({
+      await expect(
+        new HttpResponseProcessor().process(errorResponse, passthrough)
+      ).rejects.toMatchObject({
         status: 500,
         message: 'kaboom',
       });
@@ -448,7 +466,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       } as Response);
 
       const response = await global.fetch('/test');
-      await expect(processor.process(response)).resolves.toBeUndefined();
+      await expect(processor.process(response, passthrough)).resolves.toBeUndefined();
     });
   });
 });

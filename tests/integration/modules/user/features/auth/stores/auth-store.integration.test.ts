@@ -292,6 +292,18 @@ describe('Auth Store Integration', () => {
       expect(state.loginError).toBeTruthy();
       expect(state.token).toBeNull();
     });
+
+    it('surfaces a login error when a 200 response has an empty body', async () => {
+      server.use(
+        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.body('')))
+      );
+
+      await authActions.loginUser(buildCredentials());
+
+      const state = AuthStateVar.get();
+      expect(state.loginError).toBeTruthy();
+      expect(state.token).toBeNull();
+    });
   });
 
   describe('registerUser', () => {
@@ -339,6 +351,20 @@ describe('Auth Store Integration', () => {
               },
             })
           )
+        )
+      );
+
+      await authActions.registerUser(registrationCredentials);
+
+      const state = AuthStateVar.get();
+      expect(state.registerLoading).toBe(false);
+      expect(state.registerError).toBeTruthy();
+    });
+
+    it('surfaces a register error when the payload contains no user', async () => {
+      server.use(
+        rest.post(GRAPHQL_URL, (_, res, ctx) =>
+          res(ctx.status(200), ctx.json({ data: { createUser: { user: null } } }))
         )
       );
 

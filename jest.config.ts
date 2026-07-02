@@ -52,6 +52,7 @@ const config: Config = {
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
           '<rootDir>/scripts/localization-generator.js',
+          '!<rootDir>/src/api/generated/**',
           '!<rootDir>/src/**/types/**',
           '!<rootDir>/src/**/types.ts',
           '!<rootDir>/src/**/theme.ts',

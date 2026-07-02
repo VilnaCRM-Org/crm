@@ -142,7 +142,7 @@ MARKDOWNLINT_BIN_DIND       = $(BUNX_DIND) markdownlint
 
 RCA_VERSION                 = 0.0.25
 RCA_SCOPE                   = src/
-RCA_EXCLUDES                = **/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/**
+RCA_EXCLUDES                = **/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/** **/api/generated/**
 METRICS_POLICY_PATH         = config/metrics-policy.json
 RCA_BIN                     = ./bin/rust-code-analysis-cli
 
@@ -331,7 +331,7 @@ lint-md: ## This command executes Markdown linter
 	$(MARKDOWNLINT_BIN) $(MD_LINT_ARGS)
 
 lint-deps: ## This command executes dependency-cruiser
-	$(BUNX) depcruise --exclude '^\.stryker-tmp/' .
+	$(BUNX) depcruise --exclude '^\.stryker-tmp/|^src/api/generated/' .
 
 lint-dup: ## Run the jscpd copy/paste duplication gate (thresholds in .jscpd.json)
 	$(BUNX) jscpd
@@ -366,6 +366,17 @@ lint-metrics-run:
 	RCA_EXCLUDES="$(RCA_EXCLUDES)" \
 	METRICS_POLICY="$(METRICS_POLICY_PATH)" \
 	sh scripts/lint-metrics.sh
+
+codegen: ensure-dev ## Regenerate typed API contract artifacts (src/api/generated) from the pinned upstream specs
+	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
+
+codegen-check: ensure-dev ## Reconcile contract versions and fail if generated API types are stale (CI gate)
+	sh scripts/check-contract-versions.sh
+	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
+	@git diff --exit-code -- src/api/generated || { \
+		printf '\nERROR: generated API types are out of date. Run `make codegen` and commit src/api/generated/.\n' >&2; \
+		exit 1; \
+	}
 
 lint: lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, and rust-code-analysis metrics.
 

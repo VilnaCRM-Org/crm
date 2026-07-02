@@ -1,5 +1,7 @@
 import { ReadableStream } from 'node:stream/web';
 
+import { z } from 'zod';
+
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
@@ -8,6 +10,10 @@ import HttpResponseProcessor from '@/services/https-client/http-response-process
 import ResponseMessages from '@/services/https-client/response-messages';
 
 const httpErrorGuard = new HttpErrorGuard();
+
+// Transport-focused integration: response validation is covered separately, so use a
+// passthrough schema here to keep the request/transport assertions unchanged.
+const passthrough = z.unknown();
 
 const TEST_URL = 'http://localhost:8080/api/test';
 
@@ -44,7 +50,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.get<typeof mockData>(TEST_URL);
+      const result = await client.get(TEST_URL, { schema: passthrough });
 
       expect(result).toEqual(mockData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -64,7 +70,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.get<typeof mockData>(TEST_URL, { signal: controller.signal });
+      const result = await client.get(TEST_URL, { schema: passthrough, signal: controller.signal });
 
       expect(result).toEqual(mockData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -79,7 +85,7 @@ describe('FetchHttpsClient Integration', () => {
       abortError.name = 'AbortError';
       mockFetch.mockRejectedValueOnce(abortError);
 
-      await expect(client.get(TEST_URL)).rejects.toBe(abortError);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toBe(abortError);
     });
 
     it('should return undefined when JSON response body is empty or unreadable', async () => {
@@ -94,7 +100,7 @@ describe('FetchHttpsClient Integration', () => {
         }),
       } as unknown as Response);
 
-      const result = await client.get(TEST_URL);
+      const result = await client.get(TEST_URL, { schema: passthrough });
       expect(result).toBeUndefined();
     });
   });
@@ -111,10 +117,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.post<typeof requestData, typeof responseData>(
-        TEST_URL,
-        requestData
-      );
+      const result = await client.post(TEST_URL, requestData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -137,10 +140,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.put<typeof requestData, typeof responseData>(
-        TEST_URL,
-        requestData
-      );
+      const result = await client.put(TEST_URL, requestData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -163,10 +163,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.patch<typeof requestData, typeof responseData>(
-        TEST_URL,
-        requestData
-      );
+      const result = await client.patch(TEST_URL, requestData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -189,10 +186,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.delete<typeof requestData, typeof responseData>(
-        TEST_URL,
-        requestData
-      );
+      const result = await client.delete(TEST_URL, { schema: passthrough }, requestData);
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -212,7 +206,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.delete<unknown, typeof responseData>(TEST_URL);
+      const result = await client.delete(TEST_URL, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -226,7 +220,7 @@ describe('FetchHttpsClient Integration', () => {
     it('should return undefined for 204 No Content', async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 204 }));
 
-      const result = await client.get<unknown>(TEST_URL);
+      const result = await client.get(TEST_URL, { schema: passthrough });
 
       expect(result).toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -238,7 +232,7 @@ describe('FetchHttpsClient Integration', () => {
     it('should return undefined for 205 Reset Content', async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 205 }));
 
-      const result = await client.get<unknown>(TEST_URL);
+      const result = await client.get(TEST_URL, { schema: passthrough });
 
       expect(result).toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -250,7 +244,7 @@ describe('FetchHttpsClient Integration', () => {
     it('should return undefined for 304 Not Modified', async () => {
       mockFetch.mockResolvedValueOnce(new Response(null, { status: 304 }));
 
-      const result = await client.get<unknown>(TEST_URL);
+      const result = await client.get(TEST_URL, { schema: passthrough });
 
       expect(result).toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -300,7 +294,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      await expect(client.get(TEST_URL)).rejects.toThrow(HttpError);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 500 Internal Server Error', async () => {
@@ -311,7 +305,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      await expect(client.get(TEST_URL)).rejects.toThrow(HttpError);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError with message from response', async () => {
@@ -324,7 +318,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      await expect(client.get(TEST_URL)).rejects.toThrow(errorMessage);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toThrow(errorMessage);
     });
 
     it('should handle plain text error responses', async () => {
@@ -337,19 +331,19 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      await expect(client.get(TEST_URL)).rejects.toThrow(errorText);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toThrow(errorText);
     });
 
     it('should handle empty response body with error status', async () => {
       mockFetch.mockResolvedValueOnce(new Response('', { status: 404 }));
 
-      await expect(client.get(TEST_URL)).rejects.toThrow(HttpError);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on network error', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
 
-      const error = await client.get(TEST_URL).catch((err) => err);
+      const error = await client.get(TEST_URL, { schema: passthrough }).catch((err) => err);
       expect(httpErrorGuard.is(error)).toBe(true);
       if (httpErrorGuard.is(error)) {
         expect(error.status).toBe(0);
@@ -365,7 +359,9 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      await expect(client.get(TEST_URL)).rejects.toThrow(ResponseMessages.JSON_PARSE_FAILED);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toThrow(
+        ResponseMessages.JSON_PARSE_FAILED
+      );
     });
 
     it('should handle empty JSON response', async () => {
@@ -376,7 +372,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.get(TEST_URL);
+      const result = await client.get(TEST_URL, { schema: passthrough });
       expect(result).toBeUndefined();
     });
 
@@ -388,7 +384,9 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      await expect(client.get(TEST_URL)).rejects.toThrow(ResponseMessages.RESPONSE_NOT_JSON);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toThrow(
+        ResponseMessages.RESPONSE_NOT_JSON
+      );
     });
 
     it('should handle errors during body extraction for error responses', async () => {
@@ -411,7 +409,7 @@ describe('FetchHttpsClient Integration', () => {
 
       mockFetch.mockResolvedValueOnce(mockResponse);
 
-      await expect(client.get(TEST_URL)).rejects.toThrow(HttpError);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should use default error message when body extraction fails', async () => {
@@ -431,7 +429,7 @@ describe('FetchHttpsClient Integration', () => {
 
       mockFetch.mockResolvedValueOnce(mockResponse);
 
-      const request = client.get(TEST_URL);
+      const request = client.get(TEST_URL, { schema: passthrough });
 
       await expect(request).rejects.toMatchObject({ status: 500 });
       await expect(request).rejects.toThrow(/500/);
@@ -450,7 +448,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.post<FormData, { success: boolean }>(TEST_URL, formData);
+      const result = await client.post(TEST_URL, formData, { schema: passthrough });
 
       expect(result).toEqual({ success: true });
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -470,7 +468,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.post<string, { success: boolean }>(TEST_URL, stringData);
+      const result = await client.post(TEST_URL, stringData, { schema: passthrough });
 
       expect(result).toEqual({ success: true });
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -498,7 +496,9 @@ describe('FetchHttpsClient Integration', () => {
 
       mockFetch.mockResolvedValueOnce(mockResponse);
 
-      await expect(client.get(TEST_URL)).rejects.toThrow(ResponseMessages.RESPONSE_NOT_JSON);
+      await expect(client.get(TEST_URL, { schema: passthrough })).rejects.toThrow(
+        ResponseMessages.RESPONSE_NOT_JSON
+      );
     });
 
     it('should return undefined for non-JSON response with empty body', async () => {
@@ -517,7 +517,7 @@ describe('FetchHttpsClient Integration', () => {
 
       mockFetch.mockResolvedValueOnce(mockResponse);
 
-      const result = await client.get(TEST_URL);
+      const result = await client.get(TEST_URL, { schema: passthrough });
       expect(result).toBeUndefined();
     });
   });

@@ -5,8 +5,12 @@ import { HttpError } from '@/services/https-client/http-error';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
-import type { RequestOptions, RequestArgs } from '@/services/types/https-client/fetch-https-client';
-import type { HttpsClient, RequestMethod } from '@/services/types/https-client/https-client';
+import type { RequestArgs } from '@/services/types/https-client/fetch-https-client';
+import type {
+  HttpsClient,
+  RequestConfig,
+  RequestMethod,
+} from '@/services/types/https-client/https-client';
 
 @injectable()
 export default class FetchHttpsClient implements HttpsClient {
@@ -22,24 +26,24 @@ export default class FetchHttpsClient implements HttpsClient {
     this.responseProcessor = responseProcessor;
   }
 
-  public get<T>(url: string, options?: RequestOptions): Promise<T | undefined> {
-    return this.request<T>({ url, method: 'GET', options });
+  public get<R>(url: string, config: RequestConfig<R>): Promise<R | undefined> {
+    return this.request<R>({ url, method: 'GET', config });
   }
 
-  public post<T, R>(url: string, data: T, options?: RequestOptions): Promise<R | undefined> {
-    return this.request<R>({ url, method: 'POST', body: data, options });
+  public post<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined> {
+    return this.request<R>({ url, method: 'POST', body: data, config });
   }
 
-  public put<T, R>(url: string, data: T, options?: RequestOptions): Promise<R | undefined> {
-    return this.request<R>({ url, method: 'PUT', body: data, options });
+  public put<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined> {
+    return this.request<R>({ url, method: 'PUT', body: data, config });
   }
 
-  public patch<T, R>(url: string, data: T, options?: RequestOptions): Promise<R | undefined> {
-    return this.request<R>({ url, method: 'PATCH', body: data, options });
+  public patch<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined> {
+    return this.request<R>({ url, method: 'PATCH', body: data, config });
   }
 
-  public delete<T, R>(url: string, data?: T, options?: RequestOptions): Promise<R | undefined> {
-    return this.request<R>({ url, method: 'DELETE', body: data, options });
+  public delete<T, R>(url: string, config: RequestConfig<R>, data?: T): Promise<R | undefined> {
+    return this.request<R>({ url, method: 'DELETE', body: data, config });
   }
 
   private createRequestConfig(
@@ -50,13 +54,13 @@ export default class FetchHttpsClient implements HttpsClient {
     return this.requestConfigBuilder.create(method, body, headers);
   }
 
-  private async request<R>({ url, method, body, options }: RequestArgs): Promise<R | undefined> {
-    if (options?.signal?.aborted) this.throwAbortError();
-    const config = this.createRequestConfig(method, body, options?.headers);
-    if (options?.signal) config.signal = options.signal;
+  private async request<R>({ url, method, config, body }: RequestArgs<R>): Promise<R | undefined> {
+    if (config.signal?.aborted) this.throwAbortError();
+    const requestInit = this.createRequestConfig(method, body, config.headers);
+    if (config.signal) requestInit.signal = config.signal;
     try {
-      const response = await fetch(url, config);
-      return await this.responseProcessor.process<R>(response);
+      const response = await fetch(url, requestInit);
+      return await this.responseProcessor.process<R>(response, config.schema);
     } catch (err) {
       return this.rethrowOrWrapTransportError(err);
     }

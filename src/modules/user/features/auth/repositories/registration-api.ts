@@ -2,12 +2,18 @@ import type { ApolloClient, NormalizedCacheObject } from '@apollo/client';
 import { inject, injectable } from 'tsyringe';
 import { v4 as uuidv4 } from 'uuid';
 
+import type {
+  CreateUserInput,
+  CreateUserMutation,
+  CreateUserMutationVariables,
+} from '@/api/generated/graphql';
 import TOKENS from '@/config/tokens';
+import { ApiError, ApiErrorCodes } from '@/modules/user/lib/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
 import type { RegisterUserDto } from '@auth/types/credentials';
 
 import type { RegistrationResponse } from '../types/api-responses';
-import type { CreateUserInput, CreateUserResponse } from '../types/graphql/types';
+import { CreateUserResultSchema } from '../utils/response-schemas';
 
 import ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
@@ -29,26 +35,45 @@ export default class RegistrationAPI extends BaseAPI {
     options?: RequestOptions
   ): Promise<RegistrationResponse | undefined> {
     try {
-      const { data } = await this.apolloClient.mutate<
-        CreateUserResponse,
-        { input: CreateUserInput }
-      >({
-        mutation: CREATE_USER,
-        variables: { input: this.toCreateUserInput(credentials) },
-        context: { fetchOptions: { signal: options?.signal } },
-      });
-
-      const user = data?.createUser?.user;
-      return user ? { email: user.email, fullName: user.initials } : undefined;
+      const { data } = await this.mutateCreateUser(credentials, options);
+      return this.toRegistrationResponse(data);
     } catch (error) {
       if (options?.signal?.aborted) {
         // Normalize to an AbortError so the store's abort detection stays transport-agnostic.
-        const abortError = new Error('Registration request was aborted');
-        abortError.name = 'AbortError';
-        throw abortError;
+        throw this.abortError();
       }
       throw this.handleApiError(this.normalizeError(error), 'Registration');
     }
+  }
+
+  private mutateCreateUser(
+    credentials: RegisterUserDto,
+    options?: RequestOptions
+  ): Promise<{ data?: CreateUserMutation | null }> {
+    return this.apolloClient.mutate<CreateUserMutation, CreateUserMutationVariables>({
+      mutation: CREATE_USER,
+      variables: { input: this.toCreateUserInput(credentials) },
+      context: { fetchOptions: { signal: options?.signal } },
+    });
+  }
+
+  private toRegistrationResponse(data: unknown): RegistrationResponse | undefined {
+    const parsed = CreateUserResultSchema.safeParse(data);
+    if (!parsed.success) {
+      throw new ApiError({
+        message: 'Registration response did not match the expected contract.',
+        code: ApiErrorCodes.VALIDATION,
+      });
+    }
+
+    const user = parsed.data?.createUser?.user;
+    return user ? { email: user.email, fullName: user.initials } : undefined;
+  }
+
+  private abortError(): Error {
+    const abortError = new Error('Registration request was aborted');
+    abortError.name = 'AbortError';
+    return abortError;
   }
 
   private toCreateUserInput(credentials: RegisterUserDto): CreateUserInput {

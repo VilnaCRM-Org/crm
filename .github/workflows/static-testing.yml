@@ -31,3 +31,6 @@ jobs:
 
       - name: Run all linters
         run: make lint
+
+      - name: Verify API contract versions and generated types are in sync
+        run: make codegen-check
