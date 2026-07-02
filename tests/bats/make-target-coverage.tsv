@@ -104,3 +104,5 @@ require-playwright-browsers	bats	tests/bats/makefile_targets.bats	Validated as t
 start-dev	bats	tests/bats/makefile_targets.bats	Validated as the lean dev-only Docker Compose start target for container-exec jobs.
 test-mutation-shard	bats	tests/bats/makefile_targets.bats	Validated as the per-shard Stryker run dispatched to the running dev container.
 merge-mutation-reports	bats	tests/bats/makefile_targets.bats	Validated as the shard-report merge and break-gate command in the running dev container.
+codegen	ci	.github/workflows/static-testing.yml	Developer regeneration entrypoint; the identical spec-driven generation runs in CI via codegen-check.
+codegen-check	ci	.github/workflows/static-testing.yml	Executed directly by the static testing workflow to reconcile contract versions and fail on stale generated types.

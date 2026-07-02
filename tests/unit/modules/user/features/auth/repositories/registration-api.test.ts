@@ -1,11 +1,13 @@
 import { ApolloError } from '@apollo/client';
 
-import { ApiError, ConflictError } from '@/modules/user/lib/api-errors';
+import type { CreateUserMutation } from '@/api/generated/graphql';
+import { ApiError, ApiErrorCodes, ConflictError } from '@/modules/user/lib/api-errors';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import ApiErrorFactory from '@auth/repositories/api-error-factory';
 import ApiStatusErrorFactory from '@auth/repositories/api-status-error-factory';
 import CREATE_USER from '@auth/repositories/create-user-mutation';
 import RegistrationAPI from '@auth/repositories/registration-api';
+import { CreateUserResultSchema } from '@auth/utils/response-schemas';
 import { buildClientMutationId, buildGraphqlUser, buildUser } from '@tests/builders';
 
 type ApolloClient = import('@apollo/client').ApolloClient<
@@ -53,6 +55,37 @@ describe('RegistrationAPI', () => {
     const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
 
     await expect(api.register(credentials)).resolves.toBeUndefined();
+  });
+
+  it('returns undefined when the payload is present but user is null (edge)', async () => {
+    const mutate = jest.fn().mockResolvedValue({
+      data: { createUser: { user: null, clientMutationId: buildClientMutationId() } },
+    });
+    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
+
+    await expect(api.register(credentials)).resolves.toBeUndefined();
+  });
+
+  it('rejects a contract-violating payload with a typed error (negative)', async () => {
+    const mutate = jest.fn().mockResolvedValue({
+      data: { createUser: { user: { id: 1, confirmed: 'yes', email: 5, initials: null } } },
+    });
+    const api = new RegistrationAPI(mockApollo(mutate), { convert: jest.fn() } as never);
+
+    const rejection = await api.register(credentials).catch((error: unknown) => error);
+    expect(rejection).toBeInstanceOf(ApiError);
+    expect((rejection as ApiError).code).toBe(ApiErrorCodes.VALIDATION);
+  });
+
+  it('accepts the generated CreateUserMutation shape (contract parity)', () => {
+    const sample: CreateUserMutation = {
+      createUser: {
+        clientMutationId: buildClientMutationId(),
+        user: buildGraphqlUser(),
+      },
+    };
+
+    expect(CreateUserResultSchema.parse(sample)).toEqual(sample);
   });
 
   it('forwards the abort signal and throws an AbortError without converting on abort', async () => {

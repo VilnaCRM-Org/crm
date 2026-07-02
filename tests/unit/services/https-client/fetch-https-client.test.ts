@@ -2,11 +2,16 @@
 
 import 'reflect-metadata';
 
+import { z } from 'zod';
+
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+
+// Transport-focused tests: the schema is exercised elsewhere, so validation is a no-op here.
+const passthrough = z.unknown();
 
 function createMockResponse(
   status: number,
@@ -80,14 +85,16 @@ describe('FetchHttpsClient', () => {
       );
       mockFetch.mockResolvedValue(createMockResponse(200, { ok: true }));
 
-      await expect(builderOnlyClient.get('/api/test')).resolves.toEqual({ ok: true });
+      await expect(builderOnlyClient.get('/api/test', { schema: passthrough })).resolves.toEqual({
+        ok: true,
+      });
     });
 
     it('should make successful GET request', async () => {
       const responseData = { id: 1, name: 'Test' };
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      const result = await client.get<typeof responseData>('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith('/api/test', {
@@ -103,7 +110,7 @@ describe('FetchHttpsClient', () => {
       const responseData = { data: 'test' };
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.get('/api/test', { signal: controller.signal });
+      await client.get('/api/test', { schema: passthrough, signal: controller.signal });
 
       expect(mockFetch).toHaveBeenCalledWith('/api/test', {
         method: 'GET',
@@ -118,7 +125,9 @@ describe('FetchHttpsClient', () => {
       const controller = new AbortController();
       controller.abort();
 
-      await expect(client.get('/api/test', { signal: controller.signal })).rejects.toMatchObject({
+      await expect(
+        client.get('/api/test', { schema: passthrough, signal: controller.signal })
+      ).rejects.toMatchObject({
         name: 'AbortError',
       });
 
@@ -128,7 +137,7 @@ describe('FetchHttpsClient', () => {
     it('should return undefined for 204 No Content', async () => {
       mockFetch.mockResolvedValue(createMockResponse(204, undefined, ''));
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -136,7 +145,7 @@ describe('FetchHttpsClient', () => {
     it('should return undefined for 205 Reset Content', async () => {
       mockFetch.mockResolvedValue(createMockResponse(205, undefined, ''));
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -144,7 +153,7 @@ describe('FetchHttpsClient', () => {
     it('should return undefined for 304 Not Modified', async () => {
       mockFetch.mockResolvedValue(createStatusOnlyResponse(304));
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -152,13 +161,13 @@ describe('FetchHttpsClient', () => {
     it('should throw HttpError on 404', async () => {
       mockFetch.mockResolvedValue(createErrorResponse(404, 'Not Found', '/api/test'));
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on network error', async () => {
       mockFetch.mockRejectedValue(new Error('Network failure'));
 
-      await expect(client.get('/api/test')).rejects.toMatchObject({
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toMatchObject({
         status: 0,
         message: ResponseMessages.NETWORK_ERROR,
       });
@@ -172,7 +181,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(201, responseData));
 
-      const result = await client.post('/api/users', requestData);
+      const result = await client.post('/api/users', requestData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith('/api/users', {
@@ -192,7 +201,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      const result = await client.post('/api/upload', formData);
+      const result = await client.post('/api/upload', formData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith('/api/upload', {
@@ -209,7 +218,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.post('/api/data', 'plain text');
+      await client.post('/api/data', 'plain text', { schema: passthrough });
 
       expect(mockFetch).toHaveBeenCalledWith('/api/data', {
         method: 'POST',
@@ -226,7 +235,11 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.post('/api/test', { data: 'test' }, { signal: controller.signal });
+      await client.post(
+        '/api/test',
+        { data: 'test' },
+        { schema: passthrough, signal: controller.signal }
+      );
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
@@ -241,7 +254,11 @@ describe('FetchHttpsClient', () => {
       controller.abort();
 
       await expect(
-        client.post('/api/test', { data: 'test' }, { signal: controller.signal })
+        client.post(
+          '/api/test',
+          { data: 'test' },
+          { schema: passthrough, signal: controller.signal }
+        )
       ).rejects.toMatchObject({
         name: 'AbortError',
         message: 'The operation was aborted',
@@ -258,7 +275,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      const result = await client.put('/api/users/1', requestData);
+      const result = await client.put('/api/users/1', requestData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith('/api/users/1', {
@@ -277,7 +294,11 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.put('/api/test', { data: 'test' }, { signal: controller.signal });
+      await client.put(
+        '/api/test',
+        { data: 'test' },
+        { schema: passthrough, signal: controller.signal }
+      );
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
@@ -292,7 +313,11 @@ describe('FetchHttpsClient', () => {
       controller.abort();
 
       await expect(
-        client.put('/api/test', { data: 'test' }, { signal: controller.signal })
+        client.put(
+          '/api/test',
+          { data: 'test' },
+          { schema: passthrough, signal: controller.signal }
+        )
       ).rejects.toMatchObject({
         name: 'AbortError',
         message: 'The operation was aborted',
@@ -309,7 +334,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      const result = await client.patch('/api/users/1', requestData);
+      const result = await client.patch('/api/users/1', requestData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith('/api/users/1', {
@@ -328,7 +353,11 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.patch('/api/test', { data: 'test' }, { signal: controller.signal });
+      await client.patch(
+        '/api/test',
+        { data: 'test' },
+        { schema: passthrough, signal: controller.signal }
+      );
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
@@ -343,7 +372,11 @@ describe('FetchHttpsClient', () => {
       controller.abort();
 
       await expect(
-        client.patch('/api/test', { data: 'test' }, { signal: controller.signal })
+        client.patch(
+          '/api/test',
+          { data: 'test' },
+          { schema: passthrough, signal: controller.signal }
+        )
       ).rejects.toMatchObject({
         name: 'AbortError',
         message: 'The operation was aborted',
@@ -359,7 +392,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      const result = await client.delete('/api/users/1');
+      const result = await client.delete('/api/users/1', undefined, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith('/api/users/1', {
@@ -376,7 +409,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      const result = await client.delete('/api/users/1', requestData);
+      const result = await client.delete('/api/users/1', requestData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith('/api/users/1', {
@@ -395,7 +428,10 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.delete('/api/test', undefined, { signal: controller.signal });
+      await client.delete('/api/test', undefined, {
+        schema: passthrough,
+        signal: controller.signal,
+      });
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
@@ -410,7 +446,7 @@ describe('FetchHttpsClient', () => {
       controller.abort();
 
       await expect(
-        client.delete('/api/test', undefined, { signal: controller.signal })
+        client.delete('/api/test', undefined, { schema: passthrough, signal: controller.signal })
       ).rejects.toMatchObject({
         name: 'AbortError',
         message: 'The operation was aborted',
@@ -426,7 +462,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toEqual(responseData);
     });
@@ -438,7 +474,7 @@ describe('FetchHttpsClient', () => {
         createMockResponse(200, responseData, 'application/json; charset=utf-8')
       );
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toEqual(responseData);
     });
@@ -454,7 +490,7 @@ describe('FetchHttpsClient', () => {
         }),
       });
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -467,7 +503,7 @@ describe('FetchHttpsClient', () => {
         text: async (): Promise<string> => '<html></html>',
       });
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on JSON parse failure', async () => {
@@ -483,7 +519,7 @@ describe('FetchHttpsClient', () => {
         }),
       });
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should return undefined for whitespace-only response', async () => {
@@ -497,7 +533,7 @@ describe('FetchHttpsClient', () => {
         }),
       });
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -509,7 +545,7 @@ describe('FetchHttpsClient', () => {
         headers: new Headers(),
       });
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
       expect(result).toBeUndefined();
     });
 
@@ -526,7 +562,7 @@ describe('FetchHttpsClient', () => {
         }),
       });
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
       expect(result).toBeUndefined();
     });
   });
@@ -542,7 +578,7 @@ describe('FetchHttpsClient', () => {
         json: async () => ({}),
       });
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 401 Unauthorized', async () => {
@@ -555,7 +591,7 @@ describe('FetchHttpsClient', () => {
         json: async () => ({}),
       });
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 403 Forbidden', async () => {
@@ -568,7 +604,7 @@ describe('FetchHttpsClient', () => {
         json: async () => ({}),
       });
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 500 Internal Server Error', async () => {
@@ -581,14 +617,14 @@ describe('FetchHttpsClient', () => {
         json: async () => ({}),
       });
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError with network error cause', async () => {
       const networkError = new Error('Network error');
       mockFetch.mockRejectedValue(networkError);
 
-      await expect(client.get('/api/test')).rejects.toMatchObject({
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toMatchObject({
         status: 0,
         message: ResponseMessages.NETWORK_ERROR,
         cause: networkError,
@@ -601,7 +637,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockRejectedValue(abortError);
 
-      await expect(client.get('/api/test')).rejects.toMatchObject({
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toMatchObject({
         name: 'AbortError',
         message: 'Aborted during fetch',
       });
@@ -617,7 +653,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.post('/api/upload', blob);
+      await client.post('/api/upload', blob, { schema: passthrough });
 
       expect(mockFetch).toHaveBeenCalledWith('/api/upload', {
         method: 'POST',
@@ -634,7 +670,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.post('/api/binary', buffer);
+      await client.post('/api/binary', buffer, { schema: passthrough });
 
       expect(mockFetch).toHaveBeenCalledWith('/api/binary', {
         method: 'POST',
@@ -663,7 +699,9 @@ describe('FetchHttpsClient', () => {
         const stream = new MockReadableStream();
         const responseData = { success: true };
         mockFetch.mockResolvedValue(createMockResponse(200, responseData));
-        await client.post('/api/stream', stream as unknown as ReadableStream);
+        await client.post('/api/stream', stream as unknown as ReadableStream, {
+          schema: passthrough,
+        });
         expect(mockFetch).toHaveBeenCalledWith('/api/stream', {
           method: 'POST',
           headers: {
@@ -683,7 +721,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.post('/api/test', { data: 'test' });
+      await client.post('/api/test', { data: 'test' }, { schema: passthrough });
 
       const callArgs = mockFetch.mock.calls[0][1];
       expect(callArgs.headers['Content-Type']).toBe('application/json');
@@ -695,7 +733,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.post('/api/upload', formData);
+      await client.post('/api/upload', formData, { schema: passthrough });
 
       const callArgs = mockFetch.mock.calls[0][1];
       expect(callArgs.headers['Content-Type']).toBeUndefined();
@@ -706,7 +744,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.get('/api/test');
+      await client.get('/api/test', { schema: passthrough });
 
       const callArgs = mockFetch.mock.calls[0][1];
       expect(callArgs.headers.Accept).toBe('application/json');
@@ -724,7 +762,7 @@ describe('FetchHttpsClient', () => {
       const customClient = new FetchHttpsClient(mockBuilder as never, mockProcessor as never);
       mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
-      const result = await customClient.get('/api/test');
+      const result = await customClient.get('/api/test', { schema: passthrough });
 
       expect(mockBuilder.create).toHaveBeenCalled();
       expect(mockProcessor.process).toHaveBeenCalled();
@@ -736,7 +774,9 @@ describe('FetchHttpsClient', () => {
       const customClient = createClient(new HttpRequestConfigBuilder(), mockProcessor as never);
       mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
-      await expect(customClient.get('/api/test')).resolves.toEqual({ ok: true });
+      await expect(customClient.get('/api/test', { schema: passthrough })).resolves.toEqual({
+        ok: true,
+      });
 
       expect(mockFetch).toHaveBeenCalledWith('/api/test', {
         method: 'GET',
@@ -769,7 +809,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.post('/api/test', undefined);
+      await client.post('/api/test', undefined, { schema: passthrough });
 
       const callArgs = mockFetch.mock.calls[0][1];
       expect(callArgs.body).toBeUndefined();
@@ -780,7 +820,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, largeData));
 
-      const result = await client.get('/api/large');
+      const result = await client.get('/api/large', { schema: passthrough });
 
       expect(result).toEqual(largeData);
     });
@@ -790,7 +830,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData, 'Application/JSON'));
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toEqual(responseData);
     });
@@ -803,7 +843,7 @@ describe('FetchHttpsClient', () => {
         text: async (): Promise<string> => '',
       });
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
 
       expect(result).toBeUndefined();
     });
@@ -816,7 +856,7 @@ describe('FetchHttpsClient', () => {
         text: async (): Promise<string> => '<html>not json</html>',
       });
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError when non-JSON response includes body text', async () => {
@@ -827,7 +867,7 @@ describe('FetchHttpsClient', () => {
         text: async (): Promise<string> => 'plain text payload',
       });
 
-      await expect(client.get('/api/test')).rejects.toThrow(HttpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should return undefined when non-JSON response body cannot be read', async () => {
@@ -840,7 +880,7 @@ describe('FetchHttpsClient', () => {
         },
       });
 
-      const result = await client.get('/api/test');
+      const result = await client.get('/api/test', { schema: passthrough });
       expect(result).toBeUndefined();
     });
 
@@ -848,7 +888,7 @@ describe('FetchHttpsClient', () => {
       const httpError = new HttpError({ status: 418, message: 'teapot' });
       mockFetch.mockRejectedValue(httpError);
 
-      await expect(client.get('/api/test')).rejects.toBe(httpError);
+      await expect(client.get('/api/test', { schema: passthrough })).rejects.toBe(httpError);
     });
 
     it('should not override an explicitly provided Content-Type header', () => {

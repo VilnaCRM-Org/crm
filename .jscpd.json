@@ -5,7 +5,14 @@
   "mode": "mild",
   "format": ["typescript", "tsx", "javascript", "jsx"],
   "path": ["src"],
-  "ignore": ["**/*.test.*", "**/*.spec.*", "**/*.stories.*", "**/*.d.ts", "**/i18n/**"],
+  "ignore": [
+    "**/*.test.*",
+    "**/*.spec.*",
+    "**/*.stories.*",
+    "**/*.d.ts",
+    "**/i18n/**",
+    "**/api/generated/**"
+  ],
   "reporters": ["consoleFull"],
   "gitignore": true
 }

@@ -34,6 +34,7 @@ module.exports = {
           // test/runtime manual mocks
           '(^|/)__mocks__/.*[.](?:js|cjs|mjs|ts|cts|mts|jsx|tsx)$',
           '^src/index[.]tsx$', // app entrypoint
+          '^codegen[.]ts$', // graphql-codegen config (consumed by the CLI, not imported)
           '^tests/load/utils/test-data[.]js$', // ad-hoc load-test data generator
           '^storybook-static/', // generated Storybook output
           '^coverage/', // generated coverage reports
@@ -636,6 +637,12 @@ module.exports = {
   options: {
     doNotFollow: {
       path: ['node_modules'],
+    },
+    // Generated API contract artifacts are build output: keep them out of the graph the
+    // same way generated i18n JSON is excluded from the source gates. Consumers still
+    // import them normally; dependency-cruiser just does not scrutinize the generated code.
+    exclude: {
+      path: '^src/api/generated/',
     },
     detectProcessBuiltinModuleCalls: true,
     tsPreCompilationDeps: true,

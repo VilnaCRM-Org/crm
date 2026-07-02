@@ -1,19 +1,5 @@
-import { gql, type TypedDocumentNode } from '@apollo/client';
-
-import type { CreateUserInput, CreateUserResponse } from '../types/graphql/types';
-
-const CREATE_USER: TypedDocumentNode<CreateUserResponse, { input: CreateUserInput }> = gql`
-  mutation CreateUser($input: createUserInput!) {
-    createUser(input: $input) {
-      user {
-        id
-        confirmed
-        email
-        initials
-      }
-      clientMutationId
-    }
-  }
-`;
-
-export default CREATE_USER;
+// The CreateUser operation's TypedDocumentNode is generated from the colocated
+// create-user.graphql document (see codegen.ts / src/api/generated/graphql.ts). The
+// repository imports it through this feature-local seam rather than reaching into the
+// generated artifact directly.
+export { CreateUserDocument as default } from '@/api/generated/graphql';
