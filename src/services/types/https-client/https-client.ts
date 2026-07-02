@@ -15,5 +15,5 @@ export interface HttpsClient {
   post<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined>;
   patch<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined>;
   put<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined>;
-  delete<T, R>(url: string, config: RequestConfig<R>, data?: T): Promise<R | undefined>;
+  delete<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined>;
 }

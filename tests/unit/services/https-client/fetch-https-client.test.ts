@@ -392,7 +392,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      const result = await client.delete('/api/users/1', { schema: passthrough });
+      const result = await client.delete('/api/users/1', undefined, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith('/api/users/1', {
@@ -409,7 +409,7 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      const result = await client.delete('/api/users/1', { schema: passthrough }, requestData);
+      const result = await client.delete('/api/users/1', requestData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith('/api/users/1', {
@@ -428,7 +428,10 @@ describe('FetchHttpsClient', () => {
 
       mockFetch.mockResolvedValue(createMockResponse(200, responseData));
 
-      await client.delete('/api/test', { schema: passthrough, signal: controller.signal });
+      await client.delete('/api/test', undefined, {
+        schema: passthrough,
+        signal: controller.signal,
+      });
 
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
@@ -443,7 +446,7 @@ describe('FetchHttpsClient', () => {
       controller.abort();
 
       await expect(
-        client.delete('/api/test', { schema: passthrough, signal: controller.signal })
+        client.delete('/api/test', undefined, { schema: passthrough, signal: controller.signal })
       ).rejects.toMatchObject({
         name: 'AbortError',
         message: 'The operation was aborted',

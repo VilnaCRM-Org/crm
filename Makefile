@@ -373,8 +373,9 @@ codegen: ensure-dev ## Regenerate typed API contract artifacts (src/api/generate
 codegen-check: ensure-dev ## Reconcile contract versions and fail if generated API types are stale (CI gate)
 	sh scripts/check-contract-versions.sh
 	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
-	@git diff --exit-code -- src/api/generated || { \
-		printf '\nERROR: generated API types are out of date. Run `make codegen` and commit src/api/generated/.\n' >&2; \
+	@git diff --exit-code -- src/api/generated \
+		&& [ -z "$$(git ls-files --others --exclude-standard -- src/api/generated)" ] || { \
+		printf '\nERROR: generated API types are out of date or untracked. Run `make codegen` and commit src/api/generated/.\n' >&2; \
 		exit 1; \
 	}
 

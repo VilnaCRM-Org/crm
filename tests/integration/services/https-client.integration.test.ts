@@ -186,7 +186,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.delete(TEST_URL, { schema: passthrough }, requestData);
+      const result = await client.delete(TEST_URL, requestData, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
@@ -206,7 +206,7 @@ describe('FetchHttpsClient Integration', () => {
         })
       );
 
-      const result = await client.delete(TEST_URL, { schema: passthrough });
+      const result = await client.delete(TEST_URL, undefined, { schema: passthrough });
 
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {

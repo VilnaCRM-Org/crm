@@ -42,7 +42,7 @@ export default class FetchHttpsClient implements HttpsClient {
     return this.request<R>({ url, method: 'PATCH', body: data, config });
   }
 
-  public delete<T, R>(url: string, config: RequestConfig<R>, data?: T): Promise<R | undefined> {
+  public delete<T, R>(url: string, data: T, config: RequestConfig<R>): Promise<R | undefined> {
     return this.request<R>({ url, method: 'DELETE', body: data, config });
   }
 

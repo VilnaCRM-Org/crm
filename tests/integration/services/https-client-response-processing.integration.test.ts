@@ -366,7 +366,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.delete('/test', { schema: passthrough }, { id: 123 });
+      const result = await client.delete('/test', { id: 123 }, { schema: passthrough });
 
       expect(result).toEqual({ deleted: true });
     });
@@ -380,7 +380,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
       global.fetch = jest.fn().mockResolvedValue(mockResponse);
 
-      const result = await client.delete('/test', { schema: passthrough });
+      const result = await client.delete('/test', undefined, { schema: passthrough });
 
       expect(result).toBeUndefined();
     });

@@ -26,12 +26,19 @@ if [ -z "$GRAPHQL_VER" ] || [ -z "$OPENAPI_VER" ]; then
   exit 1
 fi
 
+# Fail hard (never silently skip) if the Mockoon pin cannot be parsed — an unparseable
+# version would otherwise let the gate pass without actually verifying the Mockoon pin.
+if [ -z "$MOCKOON_VER" ]; then
+  printf 'ERROR: could not extract the OpenAPI version pinned in Mockoon.Dockerfile\n' >&2
+  exit 1
+fi
+
 skew=0
 if [ "$GRAPHQL_VER" != "$OPENAPI_VER" ]; then
   printf 'contract version skew: GraphQL=%s vs OpenAPI=%s (.env)\n' "$GRAPHQL_VER" "$OPENAPI_VER" >&2
   skew=1
 fi
-if [ -n "$MOCKOON_VER" ] && [ "$MOCKOON_VER" != "$OPENAPI_VER" ]; then
+if [ "$MOCKOON_VER" != "$OPENAPI_VER" ]; then
   printf 'contract version skew: Mockoon.Dockerfile=%s vs OpenAPI=%s (.env)\n' "$MOCKOON_VER" "$OPENAPI_VER" >&2
   skew=1
 fi
