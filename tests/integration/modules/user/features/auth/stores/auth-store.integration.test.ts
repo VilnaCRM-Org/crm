@@ -293,10 +293,8 @@ describe('Auth Store Integration', () => {
       expect(state.token).toBeNull();
     });
 
-    it('surfaces a login error when a 200 response has an empty body', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.body('')))
-      );
+    it('surfaces a login error when the server returns no content (204)', async () => {
+      server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(204))));
 
       await authActions.loginUser(buildCredentials());
 

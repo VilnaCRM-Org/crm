@@ -40,8 +40,10 @@ export default class HttpResponseProcessor {
       .clone()
       .text()
       .catch(() => '');
+    // An empty/whitespace body is still validated against the schema: a required schema
+    // rejects it (no silent bypass), while optional/nullable schemas accept the absent value.
     if (!raw || raw.trim().length === 0) {
-      return undefined;
+      return this.validate(undefined, status, schema);
     }
 
     return this.validate(await this.readJson(response, status), status, schema);

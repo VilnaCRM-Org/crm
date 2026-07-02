@@ -3,10 +3,9 @@ import { inject, injectable } from 'tsyringe';
 import API_ENDPOINTS from '@/config/api-config';
 import TOKENS from '@/config/tokens';
 import type { HttpsClient } from '@/services/types/https-client/https-client';
-
-import type { LoginResponse } from '../types/api-responses';
-import type { LoginUserDto } from '../types/credentials';
-import { LoginResponseSchema } from '../utils/response-schemas';
+import type { LoginResponse } from '@auth/types/api-responses';
+import type { LoginUserDto } from '@auth/types/credentials';
+import { LoginResponseSchema } from '@auth/utils/response-schemas';
 
 import ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';

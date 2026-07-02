@@ -10,10 +10,9 @@ import type {
 import TOKENS from '@/config/tokens';
 import { ApiError, ApiErrorCodes } from '@/modules/user/lib/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
+import type { RegistrationResponse } from '@auth/types/api-responses';
 import type { RegisterUserDto } from '@auth/types/credentials';
-
-import type { RegistrationResponse } from '../types/api-responses';
-import { CreateUserResultSchema } from '../utils/response-schemas';
+import { CreateUserResultSchema } from '@auth/utils/response-schemas';
 
 import ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';

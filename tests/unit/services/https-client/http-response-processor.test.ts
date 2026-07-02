@@ -89,6 +89,23 @@ describe('HttpResponseProcessor', () => {
     );
   });
 
+  it('rejects an empty 200 body against a required schema (no validation bypass)', async () => {
+    const processor = new HttpResponseProcessor();
+    const schema = z.object({ token: z.string() });
+
+    await expect(
+      processor.process(createResponse(200, undefined, 'application/json'), schema)
+    ).rejects.toMatchObject({ message: ResponseMessages.INVALID_RESPONSE_SHAPE });
+  });
+
+  it('accepts an empty 200 body against an optional/nullable schema', async () => {
+    const processor = new HttpResponseProcessor();
+
+    await expect(
+      processor.process(createResponse(200, undefined, 'application/json'), passthrough)
+    ).resolves.toBeUndefined();
+  });
+
   it('loads when the reflected parser constructor type is unavailable', () => {
     jest.isolateModules(() => {
       jest.doMock('@/services/https-client/http-error-response-parser', () => ({
