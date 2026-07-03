@@ -1,6 +1,6 @@
 class RawEnv {
   public mockoonUrl(): string {
-    return process.env.REACT_APP_MOCKOON_URL?.trim() ?? '';
+    return this.trimmed(process.env.REACT_APP_MOCKOON_URL) ?? '';
   }
 
   public lhciPreloadedAuthToken(): string | undefined {
