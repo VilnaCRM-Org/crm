@@ -36,20 +36,28 @@ path (mobile Lighthouse budget).
 ## The contract
 
 ```ts
-// src/routes/types/app-route.ts
-export interface AppRouteObject {
-  readonly path?: string; // omit for an index route
-  readonly index?: boolean;
+// src/routes/types/app-route.ts — a discriminated union: exactly one of index | path
+interface RouteCommon {
   readonly load: () => Promise<{ default: ComponentType }>; // per-route code split
-  readonly guard?: 'protected' | 'public'; // resolved by the composer
+  readonly guard?: 'protected' | 'public'; // top-level only; resolved by the composer
   readonly meta?: { titleKey?: string; permission?: string };
+}
+interface IndexRoute extends RouteCommon {
+  readonly index: true; // a leaf — no path, no children
+}
+interface PathRoute extends RouteCommon {
+  readonly path: string;
   readonly children?: readonly AppRouteObject[];
 }
+export type AppRouteObject = IndexRoute | PathRoute;
 ```
 
 `guard: 'protected'` routes are nested under the `ProtectedRoute` guard and
 `AppLayout`; everything else renders directly under `RootLayout`. The guard is
-declarative data in the contract — it is never hand-wired in the shell.
+declarative data in the contract — it is never hand-wired in the shell. `guard`
+applies to a module's **top-level** routes only; nested children inherit their
+parent's protection context, so declaring a guard on a child is rejected by the
+`RouteValidator` (it would otherwise render outside `ProtectedRoute`).
 
 ## Adding a page
 

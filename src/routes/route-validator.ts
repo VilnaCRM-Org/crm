@@ -4,7 +4,7 @@ import type { RouteModule } from './types/route-module';
 class RouteValidator {
   public validate(modules: readonly RouteModule[]): void {
     this.assertUniqueIds(modules);
-    modules.forEach((module) => this.assertRoutes(module.routes));
+    modules.forEach((module) => module.routes.forEach((route) => this.assertRoute(route, false)));
   }
 
   private assertUniqueIds(modules: readonly RouteModule[]): void {
@@ -15,8 +15,12 @@ class RouteValidator {
     }
   }
 
-  private assertRoutes(routes: readonly AppRouteObject[]): void {
-    routes.forEach((route) => this.assertLocatable(route));
+  private assertRoute(route: AppRouteObject, nested: boolean): void {
+    this.assertLocatable(route);
+    if (nested && route.guard !== undefined) {
+      throw new Error('Nested routes must not declare a guard (guards are top-level only)');
+    }
+    route.children?.forEach((child) => this.assertRoute(child, true));
   }
 
   private assertLocatable(route: AppRouteObject): void {

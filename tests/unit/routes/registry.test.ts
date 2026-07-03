@@ -20,13 +20,15 @@ describe('route registry', () => {
 
   it('declares the app-shell home (protected) and 404 (public) routes', () => {
     const shell = registry.find((module) => module.id === 'app.shell');
-    const [home, notFound] = shell?.routes ?? [];
+    // Select by stable identity, not array position, so reordering can't silently
+    // pass with the wrong fixtures.
+    const home = shell?.routes.find((route) => route.index === true);
+    const notFound = shell?.routes.find((route) => route.path === ROUTE_PATHS.notFound);
 
-    expect(home.index).toBe(true);
-    expect(home.guard).toBe('protected');
-    expect(home.meta?.permission).toBe('app.home');
-    expect(notFound.path).toBe(ROUTE_PATHS.notFound);
-    expect(notFound.guard).toBe('public');
+    expect(home?.guard).toBe('protected');
+    expect(home?.meta?.permission).toBe('app.home');
+    expect(notFound).toBeDefined();
+    expect(notFound?.guard).toBe('public');
   });
 
   it('declares the auth pages as public routes carrying their title metadata', () => {
