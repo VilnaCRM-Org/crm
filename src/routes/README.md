@@ -17,17 +17,17 @@ route set discoverable (audit, nav, sitemap).
 
 ## Files
 
-| File                         | Responsibility                                              |
-| ---------------------------- | ----------------------------------------------------------- |
-| `types/app-route.ts`         | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`) |
-| `types/route-module.ts`      | `RouteModule` (`id` + `routes`) — a module's contract shape |
-| `app-routes.ts`              | The app shell's own contract (home + 404)                   |
-| `registry.ts`                | Collects every module contract into one list                |
-| `route-validator.ts`         | Rejects duplicate module ids / routes with no path or index |
-| `route-mapper.tsx`           | Maps one contract route → a `react-router` route (lazy)     |
-| `route-composer.tsx`         | Validates, partitions by guard, assembles the tree          |
-| `route-paths.ts`             | Canonical URL constants (`home`, `signUp`, `signIn`, 404)   |
-| `routes.tsx`                 | Wiring only: `createBrowserRouter(composer.compose(...))`   |
+| File                    | Responsibility                                              |
+| ----------------------- | ----------------------------------------------------------- |
+| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`) |
+| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape |
+| `app-routes.ts`         | The app shell's own contract (home + 404)                   |
+| `registry.ts`           | Collects every module contract into one list                |
+| `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index |
+| `route-mapper.tsx`      | Maps one contract route → a `react-router` route (lazy)     |
+| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree          |
+| `route-paths.ts`        | Canonical URL constants (`home`, `signUp`, `signIn`, 404)   |
+| `routes.tsx`            | Wiring only: `createBrowserRouter(composer.compose(...))`   |
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
