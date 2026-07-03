@@ -140,6 +140,20 @@ const noStaticOrFreeFunctionSelectors = [
   },
 ];
 
+// Source (issue #112): non-React application code must not read `process.env` directly —
+// import the validated, typed configuration from `@/config/env` (or the paint-safe
+// `@/config/env/raw-env`) instead. The `src/config/env/**` module is the single sanctioned
+// place that touches `process.env`; it is exempted by the override below. Re-included in the
+// non-React `.ts` block because flat config replaces (does not merge) `no-restricted-syntax`.
+const noProcessEnvSelectors = [
+  {
+    selector: "MemberExpression[object.name='process'][property.name='env']",
+    message:
+      'No raw process.env reads in non-React source — import the validated env from ' +
+      '@/config/env (or @/config/env/raw-env on the paint path) (issue #112).',
+  },
+];
+
 const nonReactSourceGlobs = ['src/**/*.ts'];
 const nonReactSourceIgnores = [
   '**/*.stories.*',
@@ -455,6 +469,31 @@ export default [
   {
     files: nonReactSourceGlobs,
     ignores: nonReactSourceIgnores,
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #112): the `src/config/env/**` module IS the sanctioned boundary that
+  // reads `process.env`, so the process.env ban is lifted here. The #90/#88/#100 selectors
+  // are re-included (flat config replaces, does not merge). Ordered after the non-React `.ts`
+  // block so it wins for env files; env type-only files stay governed by the override above.
+  {
+    files: ['src/config/env/**/*.ts'],
+    ignores: [
+      '**/*.stories.*',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.d.ts',
+      'src/config/env/**/types.ts',
+      'src/config/env/**/types/**/*.ts',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',
