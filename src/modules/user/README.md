@@ -20,9 +20,11 @@ Two deliberate deviations from the issue's illustrative example, both forced by
 this codebase:
 
 - **Route entry components stay out of the barrel.** The issue example shows
-  `Authentication` / `ProtectedRoute` here, but the app-shell router
-  **code-splits** the page entries (`@auth/routes/sign-up|sign-in`) and imports
-  the `protected-route` guard directly. Re-exporting components from this barrel
+  `Authentication` / `ProtectedRoute` here, but the feature owns its routes
+  through its `routes/index` **route contract** (`@auth/routes`), which
+  **code-splits** the page entries (`load: () => import('./sign-up|sign-in')`);
+  the app-shell registry consumes that contract and the composer imports the
+  `protected-route` guard directly. Re-exporting components from this barrel
   would (a) defeat lazy-loading (the auth page's mobile Lighthouse budget) and
   (b) pull React into every consumer of the barrel — including the plain
   `error-parser` util. They remain the documented router-only exception below.
@@ -54,12 +56,16 @@ free-for-all.
 1. **DI composition root** (`src/config/dependency-injection-config.ts`) wires
    concrete implementations into the tsyringe container and may deep-import
    them. The impls stay private to everyone else.
-2. **App-shell router** (`src/routes/`) mounts the feature's **code-split**
-   page entries (`@auth/routes/sign-up`, `@auth/routes/sign-in`) and the
-   `protected-route` guard directly. A single eager barrel would pull the whole
-   feature into one chunk and defeat lazy-loading (the auth page's mobile
-   Lighthouse budget), so these entries are consumed only by the router,
-   governed by `no-routes-import-feature-internals`.
+2. **App-shell router** (`src/routes/`) mounts the feature through its
+   module-owned **route contract barrel** (`@auth/routes` →
+   `features/auth/routes/index`), which lazy-`load`s the page entries, plus the
+   `protected-route` guard (resolved by the composer for `guard: 'protected'`).
+   The router may reach a feature **only** through that `routes/index` contract
+   and the guard — deep-importing a page (`@auth/routes/sign-up`) is forbidden.
+   A single eager barrel would pull the whole feature into one chunk and defeat
+   lazy-loading (the auth page's mobile Lighthouse budget), so the pages stay
+   `import()`-split inside the contract. Governed by
+   `no-routes-import-feature-internals` (issue #105); see `src/routes/README.md`.
 
 ## Enforcement
 
