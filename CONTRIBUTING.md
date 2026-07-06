@@ -207,3 +207,24 @@ contracts in the same change:
 Congratulations :tada::tada: The our team thanks you :sparkles:.
 
 Now that you are part of the php service template community.
+
+## Dependency updates
+
+Dependencies are kept current by [Dependabot](.github/dependabot.yml), which opens pull
+requests on a weekly schedule for two ecosystems:
+
+- `bun` — the `package.json` JavaScript dependencies. The Bun ecosystem updates the manifest
+  and `bun.lock` together in one pull request, so the `bun install --frozen-lockfile` step
+  used across the Docker images and CI stays green.
+- `github-actions` — the SHA-pinned actions in `.github/workflows/`.
+
+To keep pull request volume low, minor and patch updates are grouped into a single request
+per ecosystem while major bumps arrive individually, and `open-pull-requests-limit` is capped
+at 5.
+
+Dependabot commit headers use the conventional `chore(deps):` prefix (`chore(github-actions):`
+for the actions entry). Our commitlint `check-task-number-rule` expects a `(#N)` scope, which
+Dependabot cannot emit; that rule runs only in the local Husky `commit-msg` hook (there is no
+commitlint CI gate), so Dependabot pull requests are not blocked. Because the repository is
+squash-merge-only, add the task number to the squash commit title at merge time to keep
+`main`'s history conformant.
