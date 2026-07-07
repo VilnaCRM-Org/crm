@@ -159,11 +159,13 @@ Measured baseline (widened scope, unit + integration; 8-way sharded full run):
 | `…/form-section/validations` | 4     | 100%           |
 | Overall (`break` = 88)       | 134   | 92.5%          |
 
-The logic layer is fully detected; the overall gap is `noCoverage` mutants in non-logic files
-(UI/providers/routes exercised by e2e/visual rather than unit/integration). Detections in the async
-logic layer land as Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test),
-which counts as detected. `break` starts at 88 — below the 92.5% baseline for margin — and ratchets
-toward 90+ as the scheduled full runs confirm stability.
+The mutate scope is 154 files; 134 produced mutants in the report (the other ~20 are pure re-export
+barrels or files whose only mutants are static and skipped by `ignoreStatic`). The logic layer is
+fully detected; the overall gap is `noCoverage` mutants in non-logic files (UI/providers/routes
+exercised by e2e/visual rather than unit/integration). Detections in the async logic layer land as
+Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test), which counts as
+detected. `break` starts at 88 — below the 92.5% baseline for margin — and ratchets toward 90+ as the
+scheduled full runs confirm stability.
 
 ## Code Quality
 

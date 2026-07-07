@@ -1,10 +1,9 @@
-import { collectMutateFiles } from './scripts/ci/mutation-scope.mjs';
 import base from './stryker.config.mjs';
 
 const total = Math.max(1, Number.parseInt(process.env.MUTATION_SHARD_TOTAL ?? '1', 10) || 1);
 const index = Math.max(0, Number.parseInt(process.env.MUTATION_SHARD_INDEX ?? '0', 10) || 0);
 
-const sliced = collectMutateFiles().filter((_, i) => i % total === index % total);
+const sliced = base.mutate.filter((_, i) => i % total === index % total);
 
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 const config = {
