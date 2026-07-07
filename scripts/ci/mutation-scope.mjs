@@ -3,21 +3,23 @@ import path from 'node:path';
 
 const MUTATION_ROOT = 'src';
 
+const EXCLUDED_PATTERNS = [
+  /\.d\.ts$/,
+  /\.(test|stories)\.(ts|tsx)$/,
+  /\/types\.ts$/,
+  /\/types\//,
+  /\/styles\//,
+  /\/theme\.ts$/,
+  /\/__mocks__\//,
+  /\/__fixtures__\//,
+  /^src\/test-utils\//,
+  /^src\/api\/generated\//,
+  /\/i18n\//,
+  /^src\/index\.tsx$/,
+];
+
 function isExcluded(rel) {
-  return (
-    rel.endsWith('.d.ts') ||
-    /\.(test|stories)\.(ts|tsx)$/.test(rel) ||
-    rel.endsWith('/types.ts') ||
-    rel.includes('/types/') ||
-    rel.includes('/styles/') ||
-    rel.endsWith('/theme.ts') ||
-    rel.includes('/__mocks__/') ||
-    rel.includes('/__fixtures__/') ||
-    rel.startsWith('src/test-utils/') ||
-    rel.startsWith('src/api/generated/') ||
-    rel.includes('/i18n/') ||
-    rel === 'src/index.tsx'
-  );
+  return EXCLUDED_PATTERNS.some((pattern) => pattern.test(rel));
 }
 
 function collectSourceFiles(dir) {
