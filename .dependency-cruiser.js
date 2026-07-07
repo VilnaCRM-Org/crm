@@ -514,12 +514,12 @@ module.exports = {
       name: 'tests-top-level-allowed-folders',
       comment:
         'Tests root may only contain allowed folders: apollo-server, builders, ' +
-        'e2e, integration, load, memory-leak, unit, utils, visual.',
+        'e2e, integration, load, memory-leak, mutation, unit, utils, visual.',
       severity: 'error',
       from: {
         path:
           '^tests/(?!(?:apollo-server|builders|e2e|integration|' +
-          'load|memory-leak|unit|utils|visual)/)[^/]+/',
+          'load|memory-leak|mutation|unit|utils|visual)/)[^/]+/',
       },
       to: {},
     },
