@@ -12,9 +12,6 @@ const config = {
   mutate: sliced,
   reporters: ['json', 'clear-text', 'progress'],
   jsonReporter: { fileName: `reports/mutation/mutation-shard-${index}.json` },
-  // Per-shard incremental cache: with `--incremental`, each shard reuses prior results for its own
-  // unchanged slice and only re-runs mutants touched by the diff. The gate stays exact because the
-  // json report still lists every mutant in the slice (reused ones keep their prior status).
   incrementalFile: `reports/stryker-incremental-${index}.json`,
   thresholds: { ...base.thresholds, break: null },
 };

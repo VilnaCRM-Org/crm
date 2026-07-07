@@ -132,9 +132,14 @@ the union of every shard equals the full set exactly. Stryker runs a dedicated J
 suites, so a repository/service/store mutant is killed by the integration test that actually asserts
 on it instead of being left uncovered. (Stryker's jest-runner can't use Jest `projects` with
 `perTest` coverage, so the suites are unioned into one flat config; `tests/mutation/setup.ts` keys
-off the test path so the unit fetch-stub and the integration MSW server never collide.)
+off the test path so the unit fetch-stub and the integration MSW server never collide.) That config
+excludes the `tests/unit/{tooling,scripts,performance,load}` meta-tests — they read source files as
+text and break once Stryker instruments them — and runs ts-jest with `isolatedModules` (no per-file
+type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep the run affordable:
+CI runners are 2-core, so parallelism comes from the shard count (currently 8), not from Stryker's
+in-process concurrency.
 
-`mutation-testing.yml` fans `make test-mutation-shard` across a 4-way matrix; each shard mutates a
+`mutation-testing.yml` fans `make test-mutation-shard` across an 8-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. On pull requests the shards run
 **incrementally** (`MUTATION_INCREMENTAL=1` → Stryker `--incremental`): each shard restores its own
 `reports/stryker-incremental-<index>.json` from an `actions/cache` rolling key and only re-runs
@@ -148,7 +153,7 @@ against a lean dev-only container (`make start-dev`) because mutation tests mock
 need neither Mockoon nor Apollo.
 
 `mutation-testing-full.yml` runs weekly (`schedule:` + `workflow_dispatch`) as the authoritative
-pass: the same 4-way matrix, but **cold and from scratch** so the score can't inherit stale reused
+pass: the same 8-way matrix, but **cold and from scratch** so the score can't inherit stale reused
 results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. nightly
 `0 3 * * *`) against CI cost. It is not a pull-request required check.
 
@@ -168,9 +173,9 @@ Run it locally either way (heavy — prefer letting CI shard it):
 make test-mutation                                   # full, gated, single-process run
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=4   # repeat for 1..3
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=4 MUTATION_INCREMENTAL=1  # PR mode
-make merge-mutation-reports MUTATION_SHARD_TOTAL=4
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8   # repeat for 1..7
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8 MUTATION_INCREMENTAL=1  # PR mode
+make merge-mutation-reports MUTATION_SHARD_TOTAL=8
 ```
 
 To change the shard count, keep the `index` matrix in both `mutation-testing.yml` and

@@ -116,8 +116,8 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 
 ### CI parallelization
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-4-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across an
+8-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -137,7 +137,11 @@ source of truth in `scripts/ci/mutation-scope.mjs`, whose exclusions mirror `jes
 `collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n). Stryker runs unit **and**
 integration tests via `jest.mutation.config.ts` — a flat union of both suites, since Stryker's
 jest-runner cannot use Jest `projects` with `perTest` coverage — so repository/service/store mutants
-are killed by the integration tests that assert on them.
+are killed by the integration tests that assert on them. The mutation config excludes the
+`tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
+instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
+These keep the run affordable — CI runners are 2-core, so parallelism comes from the 8-way shard
+count, not Stryker's in-process concurrency.
 
 `thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`. `break` is the
 enforced floor, set at/just below the measured baseline. **Ratchet policy:** raise `break` toward

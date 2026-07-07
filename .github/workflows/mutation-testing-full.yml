@@ -1,10 +1,8 @@
 name: mutation testing (scheduled full)
 
 on:
-  # Weekly authoritative pass: a full, from-scratch mutation run over the whole widened scope. It
-  # re-establishes the true baseline (catching any incremental-cache drift) and refreshes each
-  # shard's incremental cache so pull-request runs stay fast and accurate. Tune the cadence here
-  # (e.g. nightly '0 3 * * *') against CI cost.
+  # Weekly authoritative pass: full, from-scratch run over the whole scope. Tune
+  # the cadence (e.g. nightly '0 3 * * *') against CI cost.
   schedule:
     - cron: '0 3 * * 1'
   workflow_dispatch:
@@ -24,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        index: [0, 1, 2, 3]
+        index: [0, 1, 2, 3, 4, 5, 6, 7]
 
     steps:
       - name: Checkout code
@@ -40,10 +38,10 @@ jobs:
       - name: Start dev container
         run: make start-dev
 
-      # No cache restore: this pass runs cold and from scratch so the score cannot inherit stale
-      # reused results. MUTATION_INCREMENTAL=1 still makes Stryker write a fresh incremental file.
+      # No cache restore: this pass runs cold and from scratch so the score cannot
+      # inherit stale reused results. --incremental still writes a fresh cache.
       - name: Run full mutation shard
-        run: make test-mutation-shard MUTATION_SHARD_INDEX=${{ matrix.index }} MUTATION_SHARD_TOTAL=4 MUTATION_INCREMENTAL=1
+        run: make test-mutation-shard MUTATION_SHARD_INDEX=${{ matrix.index }} MUTATION_SHARD_TOTAL=8 MUTATION_INCREMENTAL=1
 
       - name: Save refreshed mutation incremental cache
         uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
@@ -101,7 +99,7 @@ jobs:
         run: make start-dev
 
       - name: Merge reports and enforce mutation-score gate
-        run: make merge-mutation-reports MUTATION_SHARD_TOTAL=4
+        run: make merge-mutation-reports MUTATION_SHARD_TOTAL=8
 
       - name: Stop docker test environment
         if: always()

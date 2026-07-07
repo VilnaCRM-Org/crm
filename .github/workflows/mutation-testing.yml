@@ -4,8 +4,6 @@ on:
   pull_request:
     branches:
       - main
-  # Refresh each shard's incremental cache from main so pull requests branch off an accurate,
-  # warm base and only re-run mutants their diff actually touches.
   push:
     branches:
       - main
@@ -25,10 +23,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # To change the shard count, keep this list and the merge job's
-        # MUTATION_SHARD_TOTAL in lock-step: index must be [0 .. TOTAL-1]. A
-        # mismatch fails closed at the merge gate's shard-count/index check.
-        index: [0, 1, 2, 3]
+        # Keep this list and the merge job's MUTATION_SHARD_TOTAL in lock-step:
+        # index must be [0 .. TOTAL-1]. A mismatch fails closed at the merge gate.
+        index: [0, 1, 2, 3, 4, 5, 6, 7]
 
     steps:
       - name: Checkout code
@@ -41,10 +38,6 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      # Rolling cache: the unique run-id key never hits on restore, so the newest
-      # `mutation-incremental-shard-<index>-*` cache is restored via restore-keys and a fresh one is
-      # saved at job end. Pull requests restore main's cache (base branch); the first run ever is a
-      # cold, full sharded pass that seeds it.
       - name: Restore mutation incremental cache
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
@@ -57,7 +50,7 @@ jobs:
         run: make start-dev
 
       - name: Run mutation shard (incremental)
-        run: make test-mutation-shard MUTATION_SHARD_INDEX=${{ matrix.index }} MUTATION_SHARD_TOTAL=4 MUTATION_INCREMENTAL=1
+        run: make test-mutation-shard MUTATION_SHARD_INDEX=${{ matrix.index }} MUTATION_SHARD_TOTAL=8 MUTATION_INCREMENTAL=1
 
       - name: Upload shard report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -74,9 +67,8 @@ jobs:
   merge:
     name: merge and enforce gate
     needs: shard
-    # Run even when a shard failed so the gate fails CLOSED. Without this the job
-    # would be SKIPPED on shard failure, and branch protection treats a skipped
-    # required check as passing — silently bypassing the mutation gate.
+    # Run even when a shard failed so the gate fails CLOSED. A skipped required
+    # check would otherwise count as a pass and bypass the mutation gate.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
@@ -112,7 +104,7 @@ jobs:
         run: make start-dev
 
       - name: Merge reports and enforce mutation-score gate
-        run: make merge-mutation-reports MUTATION_SHARD_TOTAL=4
+        run: make merge-mutation-reports MUTATION_SHARD_TOTAL=8
 
       - name: Stop docker test environment
         if: always()
