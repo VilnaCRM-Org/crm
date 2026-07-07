@@ -2,8 +2,11 @@ import base from './stryker.config.mjs';
 
 const total = Math.max(1, Number.parseInt(process.env.MUTATION_SHARD_TOTAL ?? '1', 10) || 1);
 const index = Math.max(0, Number.parseInt(process.env.MUTATION_SHARD_INDEX ?? '0', 10) || 0);
+if (index >= total) {
+  throw new Error(`MUTATION_SHARD_INDEX (${index}) must be < MUTATION_SHARD_TOTAL (${total}).`);
+}
 
-const sliced = base.mutate.filter((_, i) => i % total === index % total);
+const sliced = base.mutate.filter((_, i) => i % total === index);
 
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 const config = {
