@@ -149,14 +149,21 @@ enforced floor, set at/just below the measured baseline. **Ratchet policy:** rai
 survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
 assertions.
 
-Measured baseline (widened scope, unit + integration; established by the introducing full run):
+Measured baseline (widened scope, unit + integration; 8-way sharded full run):
 
-| Area                     | Files | Mutation score              |
-| ------------------------ | ----- | --------------------------- |
-| `src/services/**`        | —     | _pending first full CI run_ |
-| `…/auth/repositories/**` | —     | _pending first full CI run_ |
-| `…/auth/stores/**`       | —     | _pending first full CI run_ |
-| Overall (`break` floor)  | —     | _pending first full CI run_ |
+| Area                         | Files | Mutation score |
+| ---------------------------- | ----- | -------------- |
+| `src/services/**`            | 9     | 100%           |
+| `…/auth/repositories/**`     | 7     | 100%           |
+| `…/auth/stores/**`           | 8     | 100%           |
+| `…/form-section/validations` | 4     | 100%           |
+| Overall (`break` = 88)       | 134   | 92.5%          |
+
+The logic layer is fully detected; the overall gap is `noCoverage` mutants in non-logic files
+(UI/providers/routes exercised by e2e/visual rather than unit/integration). Detections in the async
+logic layer land as Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test),
+which counts as detected. `break` starts at 88 — below the 92.5% baseline for margin — and ratchets
+toward 90+ as the scheduled full runs confirm stability.
 
 ## Code Quality
 
