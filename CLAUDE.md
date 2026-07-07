@@ -119,12 +119,40 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
 4-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
-threshold read from `stryker.config.mjs` (`make merge-mutation-reports`) — identical gate, much
-faster (~1h → fits the PR budget). Lighthouse desktop/mobile run as a parallel matrix
-(`performance-testing.yml`). Every workflow declares `concurrency` with `cancel-in-progress: true`
-(release/sandbox workflows use `false`) so a new push cancels the previous run. No gate is weakened
-and no threshold changes. See "CI speed and the mutation-testing gate" in `CONTRIBUTING.md` for the
+threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
+run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
+touches re-run while the gate still scores the whole set; `mutation-testing-full.yml` runs the same
+matrix weekly, cold and from scratch, as the authoritative baseline. Lighthouse desktop/mobile run as
+a parallel matrix (`performance-testing.yml`). Every workflow declares `concurrency` with
+`cancel-in-progress: true` (release/sandbox workflows use `false`) so a new push cancels the previous
+run. No gate is weakened. See "CI speed and the mutation-testing gate" in `CONTRIBUTING.md` for the
 full flow and the branch-protection required-checks update.
+
+### Mutation testing scope and baseline
+
+Stryker mutates the **logic layer across all modules**, not just `src/components/`: repositories
+(`src/modules/user/features/auth/repositories/**`), application services (`src/services/**`), auth
+stores/state, validation policies, and the module `.tsx` surface. The mutated file list is the single
+source of truth in `scripts/ci/mutation-scope.mjs`, whose exclusions mirror `jest.config.ts`
+`collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n). Stryker runs unit **and**
+integration tests via `jest.mutation.config.ts` — a flat union of both suites, since Stryker's
+jest-runner cannot use Jest `projects` with `perTest` coverage — so repository/service/store mutants
+are killed by the integration tests that assert on them.
+
+`thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`. `break` is the
+enforced floor, set at/just below the measured baseline. **Ratchet policy:** raise `break` toward
+`high` as suites improve; never lower it to make CI pass, never narrow the mutated scope to dodge a
+survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
+assertions.
+
+Measured baseline (widened scope, unit + integration; established by the introducing full run):
+
+| Area                     | Files | Mutation score              |
+| ------------------------ | ----- | --------------------------- |
+| `src/services/**`        | —     | _pending first full CI run_ |
+| `…/auth/repositories/**` | —     | _pending first full CI run_ |
+| `…/auth/stores/**`       | —     | _pending first full CI run_ |
+| Overall (`break` floor)  | —     | _pending first full CI run_ |
 
 ## Code Quality
 

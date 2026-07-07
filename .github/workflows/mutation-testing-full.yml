@@ -1,33 +1,29 @@
-name: mutation testing
+name: mutation testing (scheduled full)
 
 on:
-  pull_request:
-    branches:
-      - main
-  # Refresh each shard's incremental cache from main so pull requests branch off an accurate,
-  # warm base and only re-run mutants their diff actually touches.
-  push:
-    branches:
-      - main
+  # Weekly authoritative pass: a full, from-scratch mutation run over the whole widened scope. It
+  # re-establishes the true baseline (catching any incremental-cache drift) and refreshes each
+  # shard's incremental cache so pull-request runs stay fast and accurate. Tune the cadence here
+  # (e.g. nightly '0 3 * * *') against CI cost.
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
 
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
 
 jobs:
   shard:
-    name: shard ${{ matrix.index }}
+    name: full shard ${{ matrix.index }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        # To change the shard count, keep this list and the merge job's
-        # MUTATION_SHARD_TOTAL in lock-step: index must be [0 .. TOTAL-1]. A
-        # mismatch fails closed at the merge gate's shard-count/index check.
         index: [0, 1, 2, 3]
 
     steps:
@@ -41,23 +37,19 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      # Rolling cache: the unique run-id key never hits on restore, so the newest
-      # `mutation-incremental-shard-<index>-*` cache is restored via restore-keys and a fresh one is
-      # saved at job end. Pull requests restore main's cache (base branch); the first run ever is a
-      # cold, full sharded pass that seeds it.
-      - name: Restore mutation incremental cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-        with:
-          path: reports/stryker-incremental-${{ matrix.index }}.json
-          key: mutation-incremental-shard-${{ matrix.index }}-${{ github.run_id }}
-          restore-keys: |
-            mutation-incremental-shard-${{ matrix.index }}-
-
       - name: Start dev container
         run: make start-dev
 
-      - name: Run mutation shard (incremental)
+      # No cache restore: this pass runs cold and from scratch so the score cannot inherit stale
+      # reused results. MUTATION_INCREMENTAL=1 still makes Stryker write a fresh incremental file.
+      - name: Run full mutation shard
         run: make test-mutation-shard MUTATION_SHARD_INDEX=${{ matrix.index }} MUTATION_SHARD_TOTAL=4 MUTATION_INCREMENTAL=1
+
+      - name: Save refreshed mutation incremental cache
+        uses: actions/cache/save@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: reports/stryker-incremental-${{ matrix.index }}.json
+          key: mutation-incremental-shard-${{ matrix.index }}-${{ github.run_id }}
 
       - name: Upload shard report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -74,9 +66,6 @@ jobs:
   merge:
     name: merge and enforce gate
     needs: shard
-    # Run even when a shard failed so the gate fails CLOSED. Without this the job
-    # would be SKIPPED on shard failure, and branch protection treats a skipped
-    # required check as passing — silently bypassing the mutation gate.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     permissions:
