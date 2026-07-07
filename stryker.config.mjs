@@ -24,7 +24,7 @@ const config = {
     '.junie/',
     '.qlty/',
   ],
-  thresholds: { high: 95, low: 90, break: 88 },
+  thresholds: { high: 100, low: 90, break: 90 },
 };
 
 export default config;
