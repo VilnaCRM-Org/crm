@@ -34,6 +34,8 @@ describe('ObservabilityCore', () => {
     jest.clearAllMocks();
     isEnabled.mockReturnValue(false);
     correlationIdProvider.currentId = '';
+    (sentryClient.init as jest.Mock).mockResolvedValue(undefined);
+    (webVitalsReporter.subscribe as jest.Mock).mockResolvedValue(undefined);
   });
 
   it('does not start telemetry when the DSN is disabled', () => {
@@ -112,6 +114,21 @@ describe('ObservabilityCore', () => {
 
     expect(sentryClient.init).toHaveBeenCalledTimes(2);
     expect(webVitalsReporter.subscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('resubscribes web vitals after a failed subscription', async () => {
+    isEnabled.mockReturnValue(true);
+    (webVitalsReporter.subscribe as jest.Mock)
+      .mockRejectedValueOnce(new Error('subscribe failed'))
+      .mockResolvedValue(undefined);
+    const core = new ObservabilityCore();
+
+    core.init();
+    await Promise.resolve();
+    await Promise.resolve();
+    core.init();
+
+    expect(webVitalsReporter.subscribe).toHaveBeenCalledTimes(2);
   });
 
   it('captures errors without a correlation id when none is active', () => {

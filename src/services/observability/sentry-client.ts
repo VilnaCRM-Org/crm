@@ -77,12 +77,12 @@ export class SentryClient {
   }
 
   private flush(sdk: SentryApi): void {
-    const buffered = this.pending.splice(0);
-    for (const item of buffered) this.captureException(item.error, item.context);
     if (this.pendingUser) {
       sdk.setUser(this.pendingUser.value);
       this.pendingUser = undefined;
     }
+    const buffered = this.pending.splice(0);
+    for (const item of buffered) this.captureException(item.error, item.context);
   }
 
   private async load(): Promise<SentryApi> {

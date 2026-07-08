@@ -10,8 +10,10 @@ jest.mock('@sentry/react', () => ({
 }));
 
 const mockVitalHandlers: Array<(metric: unknown) => void> = [];
+let mockVitalsShouldFail = false;
 jest.mock('web-vitals', () => {
   const register = (handler: (metric: unknown) => void): void => {
+    if (mockVitalsShouldFail) throw new Error('vitals boom');
     mockVitalHandlers.push(handler);
   };
   return { onLCP: register, onINP: register, onCLS: register, onFCP: register, onTTFB: register };
@@ -46,6 +48,7 @@ describe('observability chain (integration)', () => {
   beforeEach(() => {
     jest.resetModules();
     mockVitalHandlers.length = 0;
+    mockVitalsShouldFail = false;
     delete process.env.REACT_APP_SENTRY_DSN;
   });
 
@@ -156,6 +159,20 @@ describe('observability chain (integration)', () => {
 
     observabilityCore.init();
     await settle();
+    observabilityCore.init();
+    await settle();
+
+    expect(mockVitalHandlers).toHaveLength(5);
+  });
+
+  it('resubscribes web-vitals after a transient subscription failure', async () => {
+    enableDsn();
+    mockVitalsShouldFail = true;
+    const { observabilityCore } = await loadChain();
+
+    observabilityCore.init();
+    await settle();
+    mockVitalsShouldFail = false;
     observabilityCore.init();
     await settle();
 

@@ -49,6 +49,9 @@ describe('sentry client (integration)', () => {
       extra: { requestId: 'r1' },
     });
     expect(Sentry.setUser).toHaveBeenNthCalledWith(1, { id: 'buffered' });
+    expect((Sentry.setUser as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
+      (Sentry.captureException as jest.Mock).mock.invocationCallOrder[0]
+    );
 
     const late = new Error('late');
     sentryClient.captureException(late, { requestId: 'r2' });

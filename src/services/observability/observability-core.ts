@@ -49,15 +49,16 @@ export class ObservabilityCore implements ObservabilityService, ErrorReporter {
   }
 
   private start(): void {
-    const reset = (): void => {
+    const reset = (clearVitals: boolean): void => {
       this.started = false;
+      if (clearVitals) this.vitalsSubscribed = false;
     };
-    void sentryClient.init().catch(reset);
+    void sentryClient.init().catch(reset.bind(null, false));
     if (this.vitalsSubscribed) return;
     this.vitalsSubscribed = true;
     void webVitalsReporter
       .subscribe((metric: WebVitalMetric) => this.reportVital(metric))
-      .catch(reset);
+      .catch(reset.bind(null, true));
   }
 
   private withCorrelation(context?: CaptureContext): CaptureContext | undefined {

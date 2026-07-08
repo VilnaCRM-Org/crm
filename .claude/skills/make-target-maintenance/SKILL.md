@@ -5,7 +5,7 @@ description: Keep the Bats make-target contract in sync when adding or renaming 
 
 ## When to Use
 
-Use this skill whenever you add or rename a public `Makefile` target. The `bats` CI check
+Use this skill whenever you add or rename any non-dot `Makefile` target. The `bats` CI check
 enforces a hard contract that every target is accounted for; skipping the sync below fails CI
 (and the local pre-push hook).
 

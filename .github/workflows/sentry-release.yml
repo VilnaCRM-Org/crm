@@ -35,7 +35,7 @@ jobs:
 
       - name: Build bundle with hidden source maps
         if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
-        run: docker build --target build -t crm-sourcemaps -f Dockerfile .
+        run: docker build --target build --build-arg REACT_APP_RELEASE="$REACT_APP_RELEASE" -t crm-sourcemaps -f Dockerfile .
 
       - name: Extract source maps from the build stage
         if: ${{ env.SENTRY_AUTH_TOKEN != '' }}

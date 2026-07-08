@@ -39,9 +39,13 @@ FROM base AS build
 ENV PATH="/root/.bun/bin:${PATH}"
 ARG REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=""
 ENV REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=${REACT_APP_LHCI_PRELOADED_AUTH_TOKEN}
+ARG REACT_APP_RELEASE=""
+ENV REACT_APP_RELEASE=${REACT_APP_RELEASE}
 
 COPY . .
-RUN bun x rsbuild build
+RUN bun x rsbuild build && \
+    cp -a dist dist-production && \
+    find dist-production -name '*.map' -type f -delete
 
 
 # -------- rust-code-analysis Stage --------
@@ -100,8 +104,7 @@ RUN apk add --no-cache curl=${CURL_VERSION} && \
     npm install -g serve@14.2.0 && \
     mkdir -p /app && chown -R node:node /app
 COPY --chown=node:node serve.json ./serve.json
-COPY --from=build --chown=node:node /app/dist ./dist
-RUN find ./dist -name '*.map' -type f -delete
+COPY --from=build --chown=node:node /app/dist-production ./dist
 USER node
 
 EXPOSE 3001
