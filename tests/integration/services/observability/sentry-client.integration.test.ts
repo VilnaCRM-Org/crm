@@ -1,6 +1,4 @@
-import * as Sentry from '@sentry/react';
-
-import { SentryClient } from '@/services/observability/sentry-client';
+import 'reflect-metadata';
 
 jest.mock('@sentry/react', () => ({
   init: jest.fn(),
@@ -13,95 +11,116 @@ const enableDsn = (): void => {
   process.env.REACT_APP_SENTRY_DSN = 'https://key@sentry.io/1';
 };
 
-describe('SentryClient', () => {
+const loadClient = async (): Promise<{
+  Sentry: typeof import('@sentry/react');
+  sentryClient: typeof import('@/services/observability/sentry-client').default;
+}> => ({
+  Sentry: await import('@sentry/react'),
+  sentryClient: (await import('@/services/observability/sentry-client')).default,
+});
+
+describe('sentry client (integration)', () => {
+  beforeEach(() => {
+    jest.resetModules();
+    delete process.env.REACT_APP_SENTRY_DSN;
+  });
+
   afterEach(() => {
     delete process.env.REACT_APP_SENTRY_DSN;
-    jest.clearAllMocks();
   });
 
-  it('does not initialize the SDK when the DSN is absent', async () => {
-    await new SentryClient().init();
+  it('buffers captures and identity before load, then handles live signals', async () => {
+    enableDsn();
+    const { Sentry, sentryClient } = await loadClient();
+    const early = new Error('early');
+
+    sentryClient.captureException(early, { requestId: 'r1' });
+    sentryClient.setUser({ id: 'buffered' });
+    sentryClient.addBreadcrumb({ message: 'before-load' });
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+    expect(Sentry.setUser).not.toHaveBeenCalled();
+    expect(Sentry.addBreadcrumb).not.toHaveBeenCalled();
+
+    await sentryClient.init();
+    await sentryClient.init();
+
+    expect(Sentry.init).toHaveBeenCalledTimes(1);
+    expect(Sentry.captureException).toHaveBeenNthCalledWith(1, early, {
+      extra: { requestId: 'r1' },
+    });
+    expect(Sentry.setUser).toHaveBeenNthCalledWith(1, { id: 'buffered' });
+
+    const late = new Error('late');
+    sentryClient.captureException(late, { requestId: 'r2' });
+    sentryClient.captureException(late);
+    sentryClient.setUser({ id: 'live' });
+    sentryClient.clearUser();
+    sentryClient.addBreadcrumb({ message: 'crumb' });
+
+    expect(Sentry.captureException).toHaveBeenNthCalledWith(2, late, {
+      extra: { requestId: 'r2' },
+    });
+    expect(Sentry.captureException).toHaveBeenNthCalledWith(3, late, undefined);
+    expect(Sentry.setUser).toHaveBeenNthCalledWith(2, { id: 'live' });
+    expect(Sentry.setUser).toHaveBeenNthCalledWith(3, null);
+    expect(Sentry.addBreadcrumb).toHaveBeenCalledWith({ message: 'crumb' });
+  });
+
+  it('loads nothing and drops signals when the DSN is absent', async () => {
+    const { Sentry, sentryClient } = await loadClient();
+
+    sentryClient.captureException(new Error('x'));
+    sentryClient.setUser({ id: 'x' });
+    sentryClient.clearUser();
+    await sentryClient.init();
 
     expect(Sentry.init).not.toHaveBeenCalled();
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+    expect(Sentry.setUser).not.toHaveBeenCalled();
   });
 
-  it('initializes the SDK only once when the DSN is present', async () => {
+  it('buffers a pre-load identity clear and applies it on init', async () => {
     enableDsn();
-    const client = new SentryClient();
+    const { Sentry, sentryClient } = await loadClient();
 
-    await client.init();
-    await client.init();
+    sentryClient.clearUser();
+    await sentryClient.init();
+
+    expect(Sentry.setUser).toHaveBeenCalledWith(null);
+  });
+
+  it('bounds the pending capture buffer during a degraded session', async () => {
+    enableDsn();
+    const { Sentry, sentryClient } = await loadClient();
+
+    for (let i = 0; i < 130; i += 1) sentryClient.captureException(new Error(`e${i}`));
+    await sentryClient.init();
+
+    expect(Sentry.captureException).toHaveBeenCalledTimes(100);
+  });
+
+  it('serializes concurrent init calls into one SDK initialization', async () => {
+    enableDsn();
+    const { Sentry, sentryClient } = await loadClient();
+
+    await Promise.all([sentryClient.init(), sentryClient.init()]);
 
     expect(Sentry.init).toHaveBeenCalledTimes(1);
   });
 
-  it('drops captures before load when the DSN is absent', () => {
-    new SentryClient().captureException(new Error('early'));
-
-    expect(Sentry.captureException).not.toHaveBeenCalled();
-  });
-
-  it('buffers captures taken before the SDK loads and flushes them on init', async () => {
+  it('rejects when SDK initialization fails so the caller can recover', async () => {
     enableDsn();
-    const client = new SentryClient();
-    const error = new Error('early');
-
-    client.captureException(error, { requestId: 'r1' });
-    expect(Sentry.captureException).not.toHaveBeenCalled();
-
-    await client.init();
-
-    expect(Sentry.captureException).toHaveBeenCalledWith(error, { extra: { requestId: 'r1' } });
-  });
-
-  it('captures exceptions with and without extra context', async () => {
-    enableDsn();
-    const client = new SentryClient();
-    await client.init();
-    const error = new Error('boom');
-
-    client.captureException(error, { requestId: 'r1' });
-    client.captureException(error);
-
-    expect(Sentry.captureException).toHaveBeenNthCalledWith(1, error, {
-      extra: { requestId: 'r1' },
+    const { Sentry, sentryClient } = await loadClient();
+    (Sentry.init as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('boom');
     });
-    expect(Sentry.captureException).toHaveBeenNthCalledWith(2, error, undefined);
+
+    await expect(sentryClient.init()).rejects.toThrow('boom');
   });
 
-  it('only tags identity and breadcrumbs after the SDK is loaded', async () => {
-    const client = new SentryClient();
-
-    client.setUser({ id: 'a' });
-    client.clearUser();
-    client.addBreadcrumb({ message: 'ignored' });
-    expect(Sentry.setUser).not.toHaveBeenCalled();
-    expect(Sentry.addBreadcrumb).not.toHaveBeenCalled();
-
+  it('caches the loaded SDK module across load calls', async () => {
     enableDsn();
-    await client.init();
-    client.setUser({ id: 'a' });
-    client.clearUser();
-    client.addBreadcrumb({ message: 'crumb' });
-
-    expect(Sentry.setUser).toHaveBeenNthCalledWith(1, { id: 'a' });
-    expect(Sentry.setUser).toHaveBeenNthCalledWith(2, null);
-    expect(Sentry.addBreadcrumb).toHaveBeenCalledWith({ message: 'crumb' });
-  });
-
-  it('scrubs PII through the configured beforeSend hook', async () => {
-    enableDsn();
-    const client = new SentryClient();
-    await client.init();
-
-    const options = (Sentry.init as jest.Mock).mock.calls[0][0];
-    const scrubbed = options.beforeSend({ extra: { password: 'secret', route: '/sign-in' } });
-
-    expect(scrubbed).toEqual({ extra: { route: '/sign-in' } });
-  });
-
-  it('caches the loaded SDK module', async () => {
-    enableDsn();
+    const { SentryClient } = await import('@/services/observability/sentry-client');
     const client = new SentryClient();
     const load = (client as unknown as { load: () => Promise<unknown> }).load.bind(client);
 
@@ -109,5 +128,12 @@ describe('SentryClient', () => {
     const second = await load();
 
     expect(first).toBe(second);
+  });
+
+  it('exposes the client as a shared singleton', async () => {
+    const { SentryClient } = await import('@/services/observability/sentry-client');
+    const sentryClient = (await import('@/services/observability/sentry-client')).default;
+
+    expect(sentryClient).toBeInstanceOf(SentryClient);
   });
 });

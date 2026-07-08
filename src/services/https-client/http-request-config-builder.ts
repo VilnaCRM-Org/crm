@@ -59,14 +59,24 @@ export default class HttpRequestConfigBuilder {
     return Object.keys(headers).some((name) => name.toLowerCase() === normalizedTarget);
   }
 
+  private withoutHeader(
+    headers: Record<string, string> | undefined,
+    target: string
+  ): Record<string, string> {
+    const normalizedTarget = target.toLowerCase();
+    const result: Record<string, string> = {};
+    for (const [name, value] of Object.entries(headers ?? {})) {
+      if (name.toLowerCase() !== normalizedTarget) result[name] = value;
+    }
+    return result;
+  }
+
   private createHeaders(
     contentType: string | undefined,
     customHeaders?: Record<string, string>
   ): Record<string, string> {
-    const nextHeaders: Record<string, string> = {
-      [correlationIdProvider.header]: correlationIdProvider.next(),
-      ...customHeaders,
-    };
+    const nextHeaders = this.withoutHeader(customHeaders, correlationIdProvider.header);
+    nextHeaders[correlationIdProvider.header] = correlationIdProvider.next();
 
     if (!this.hasHeader(nextHeaders, 'accept')) {
       nextHeaders.Accept = 'application/json';

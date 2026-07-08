@@ -1,66 +1,69 @@
-import piiScrubber, { PiiScrubber } from '@/services/observability/pii-scrubber';
+import 'reflect-metadata';
+
 import type { SentryEvent } from '@/services/types/observability/sentry';
 
-const DENIED_KEYS = [
-  'password',
-  'token',
-  'accessToken',
-  'refreshToken',
-  'Authorization',
-  'Cookie',
-  'cookies',
-  'Set-Cookie',
-  'secret',
-  'apiKey',
-  'email',
-];
+jest.mock('@sentry/react', () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  setUser: jest.fn(),
+  addBreadcrumb: jest.fn(),
+}));
 
-describe('PiiScrubber', () => {
-  const scrubber = new PiiScrubber();
+const beforeSendOf = async (): Promise<(event: SentryEvent) => SentryEvent> => {
+  process.env.REACT_APP_SENTRY_DSN = 'https://key@sentry.io/1';
+  const Sentry = await import('@sentry/react');
+  const sentryClient = (await import('@/services/observability/sentry-client')).default;
+  await sentryClient.init();
+  return (Sentry.init as jest.Mock).mock.calls[0][0].beforeSend;
+};
 
-  it.each(DENIED_KEYS)('drops the denied key "%s" case-insensitively at any depth', (key) => {
-    const event: SentryEvent = { extra: { nested: { [key]: 'sensitive' }, keep: 'ok' } };
-
-    const result = scrubber.scrub(event);
-
-    expect(result.extra).toEqual({ nested: {}, keep: 'ok' });
+describe('pii scrubber (integration)', () => {
+  beforeEach(() => {
+    jest.resetModules();
+    delete process.env.REACT_APP_SENTRY_DSN;
   });
 
-  it('redacts email, bearer token, and JWT values inside free-text fields', () => {
-    const event: SentryEvent = {
+  afterEach(() => {
+    delete process.env.REACT_APP_SENTRY_DSN;
+  });
+
+  it('scrubs sensitive keys, key names, patterns, and arrays via beforeSend', async () => {
+    const beforeSend = await beforeSendOf();
+
+    const scrubbed = beforeSend({
       message: 'login failed for alice@example.com',
-      exception: { values: [{ value: 'Bearer abc.def-ghi rejected' }] },
-      breadcrumbs: [{ message: 'issued eyJhbGciOi.JeyJzdWIi.Qsdfx now' }],
-    };
+      extra: {
+        access_token: 'a',
+        clientSecret: 'b',
+        emailAddress: 'c',
+        route: '/sign-in',
+        count: 5,
+        nothing: null,
+        list: ['plain', 'bob@corp.io'],
+        'carol@corp.io': 'value',
+        auth: { Cookie: 'x', keep: 'ok' },
+      },
+      breadcrumbs: [{ message: 'issued eyJhbGciOi.JeyJzdWIi.Qsdfx via Bearer abc.def-ghi' }],
+    });
 
-    const result = scrubber.scrub(event);
-
-    expect(result.message).toBe('login failed for [redacted]');
-    expect((result.exception as { values: Array<{ value: string }> }).values[0].value).toBe(
-      '[redacted] rejected'
-    );
-    expect((result.breadcrumbs as Array<{ message: string }>)[0].message).toBe(
-      'issued [redacted] now'
-    );
+    expect(scrubbed).toEqual({
+      message: 'login failed for [redacted]',
+      extra: {
+        route: '/sign-in',
+        count: 5,
+        nothing: null,
+        list: ['plain', '[redacted]'],
+        '[redacted]': 'value',
+        auth: { keep: 'ok' },
+      },
+      breadcrumbs: [{ message: 'issued [redacted] via [redacted]' }],
+    });
   });
 
-  it('keeps non-sensitive strings, numbers, and null untouched', () => {
-    const event: SentryEvent = { extra: { route: '/sign-in', count: 5, nothing: null } };
+  it('exposes the scrubber as a shared singleton', async () => {
+    const { PiiScrubber } = await import('@/services/observability/pii-scrubber');
+    const piiScrubber = (await import('@/services/observability/pii-scrubber')).default;
 
-    const result = scrubber.scrub(event);
-
-    expect(result.extra).toEqual({ route: '/sign-in', count: 5, nothing: null });
-  });
-
-  it('recurses through arrays of values', () => {
-    const event: SentryEvent = { extra: { list: ['plain', 'bob@corp.io'] } };
-
-    const result = scrubber.scrub(event);
-
-    expect(result.extra).toEqual({ list: ['plain', '[redacted]'] });
-  });
-
-  it('exports a shared singleton instance', () => {
     expect(piiScrubber).toBeInstanceOf(PiiScrubber);
   });
 });

@@ -88,6 +88,32 @@ describe('ObservabilityCore', () => {
     });
   });
 
+  it('prefers a correlation id already present in the capture context', () => {
+    correlationIdProvider.currentId = 'global-id';
+    const error = new Error('failed');
+
+    new ObservabilityCore().captureError(error, { 'X-Request-Id': 'op-id', source: 'apollo' });
+
+    expect(sentryClient.captureException).toHaveBeenCalledWith(error, {
+      'X-Request-Id': 'op-id',
+      source: 'apollo',
+    });
+  });
+
+  it('retries startup after a failed Sentry SDK initialization', async () => {
+    isEnabled.mockReturnValue(true);
+    (sentryClient.init as jest.Mock).mockRejectedValueOnce(new Error('init failed'));
+    const core = new ObservabilityCore();
+
+    core.init();
+    await Promise.resolve();
+    await Promise.resolve();
+    core.init();
+
+    expect(sentryClient.init).toHaveBeenCalledTimes(2);
+    expect(webVitalsReporter.subscribe).toHaveBeenCalledTimes(1);
+  });
+
   it('captures errors without a correlation id when none is active', () => {
     const error = new Error('failed');
 

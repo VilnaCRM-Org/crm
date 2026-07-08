@@ -68,6 +68,32 @@ describe('ApolloLinkFactory', () => {
     );
   });
 
+  it('attaches the operation correlation id to captured errors', (done) => {
+    const observability = createObservability();
+    const factory = new ApolloLinkFactory(observability);
+    const networkError = new Error('offline');
+    const terminating = new ApolloLink(
+      () => new Observable((observer) => observer.error(networkError))
+    );
+
+    execute(
+      ApolloLink.from([
+        privateLink(factory, 'correlationLink'),
+        privateLink(factory, 'errorLink'),
+        terminating,
+      ]),
+      { query }
+    ).subscribe({
+      error: () => {
+        expect(observability.captureError).toHaveBeenCalledWith(networkError, {
+          source: 'apollo:network',
+          'X-Request-Id': expect.any(String),
+        });
+        done();
+      },
+    });
+  });
+
   it('captures graphql errors through observability', (done) => {
     const observability = createObservability();
     const factory = new ApolloLinkFactory(observability);

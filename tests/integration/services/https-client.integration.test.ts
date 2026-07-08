@@ -303,6 +303,31 @@ describe('FetchHttpsClient Integration', () => {
     });
   });
 
+  describe('correlation header', () => {
+    it('keeps caller headers but forces the generated X-Request-Id to win', async () => {
+      mockFetch.mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      );
+
+      await client.get(TEST_URL, {
+        schema: passthrough,
+        headers: { 'X-Custom': 'keep', 'x-request-id': 'caller-drops' },
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
+        method: 'GET',
+        headers: {
+          'X-Custom': 'keep',
+          Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
+        },
+      });
+    });
+  });
+
   describe('error handling', () => {
     it('should throw HttpError on 400 Bad Request', async () => {
       mockFetch.mockResolvedValueOnce(

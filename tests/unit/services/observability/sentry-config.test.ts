@@ -39,6 +39,12 @@ describe('SentryConfig', () => {
     expect(config.environment()).toBe(process.env.NODE_ENV);
   });
 
+  it('falls back to NODE_ENV when the explicit environment is blank', () => {
+    process.env.REACT_APP_SENTRY_ENVIRONMENT = '   ';
+
+    expect(config.environment()).toBe(process.env.NODE_ENV);
+  });
+
   it('falls back to development when neither environment nor NODE_ENV is set', () => {
     const originalNodeEnv = process.env.NODE_ENV;
     delete process.env.NODE_ENV;

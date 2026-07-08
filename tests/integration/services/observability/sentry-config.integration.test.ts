@@ -1,84 +1,93 @@
-import sentryConfig, { SentryConfig } from '@/services/observability/sentry-config';
+import 'reflect-metadata';
 
-describe('SentryConfig', () => {
-  const config = new SentryConfig();
+jest.mock('@sentry/react', () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  setUser: jest.fn(),
+  addBreadcrumb: jest.fn(),
+}));
 
-  afterEach(() => {
+const loadClient = async (): Promise<{
+  Sentry: typeof import('@sentry/react');
+  sentryClient: typeof import('@/services/observability/sentry-client').default;
+}> => ({
+  Sentry: await import('@sentry/react'),
+  sentryClient: (await import('@/services/observability/sentry-client')).default,
+});
+
+const optionsFrom = (Sentry: typeof import('@sentry/react')): Record<string, unknown> =>
+  (Sentry.init as jest.Mock).mock.calls[0][0];
+
+describe('sentry config (integration)', () => {
+  const ORIGINAL_NODE_ENV = process.env.NODE_ENV;
+
+  beforeEach(() => {
+    jest.resetModules();
     delete process.env.REACT_APP_SENTRY_DSN;
     delete process.env.REACT_APP_SENTRY_ENVIRONMENT;
     delete process.env.REACT_APP_RELEASE;
   });
 
-  it('trims the configured DSN', () => {
+  afterEach(() => {
+    delete process.env.REACT_APP_SENTRY_DSN;
+    delete process.env.REACT_APP_SENTRY_ENVIRONMENT;
+    delete process.env.REACT_APP_RELEASE;
+    process.env.NODE_ENV = ORIGINAL_NODE_ENV;
+  });
+
+  it('does not build init options or load the SDK when the DSN is absent', async () => {
+    const { Sentry, sentryClient } = await loadClient();
+
+    await sentryClient.init();
+
+    expect(Sentry.init).not.toHaveBeenCalled();
+  });
+
+  it('builds trimmed, guarded init options from the environment with a DSN', async () => {
     process.env.REACT_APP_SENTRY_DSN = '  https://key@sentry.io/1  ';
-
-    expect(config.dsn()).toBe('https://key@sentry.io/1');
-  });
-
-  it('is disabled when the DSN is missing or whitespace', () => {
-    expect(config.isEnabled()).toBe(false);
-
-    process.env.REACT_APP_SENTRY_DSN = '   ';
-
-    expect(config.isEnabled()).toBe(false);
-  });
-
-  it('is enabled when a DSN is present', () => {
-    process.env.REACT_APP_SENTRY_DSN = 'https://key@sentry.io/1';
-
-    expect(config.isEnabled()).toBe(true);
-  });
-
-  it('prefers the explicit environment tag', () => {
-    process.env.REACT_APP_SENTRY_ENVIRONMENT = 'staging';
-
-    expect(config.environment()).toBe('staging');
-  });
-
-  it('falls back to NODE_ENV when no explicit environment is set', () => {
-    expect(config.environment()).toBe(process.env.NODE_ENV);
-  });
-
-  it('falls back to development when neither environment nor NODE_ENV is set', () => {
-    const originalNodeEnv = process.env.NODE_ENV;
-    delete process.env.NODE_ENV;
-
-    expect(config.environment()).toBe('development');
-
-    process.env.NODE_ENV = originalNodeEnv;
-  });
-
-  it('returns the release when set and undefined when empty', () => {
-    expect(config.release()).toBeUndefined();
-
-    process.env.REACT_APP_RELEASE = 'v1.2.3';
-
-    expect(config.release()).toBe('v1.2.3');
-  });
-
-  it('returns no options when disabled', () => {
-    expect(config.buildOptions(() => null)).toBeUndefined();
-  });
-
-  it('builds guarded init options when enabled', () => {
-    process.env.REACT_APP_SENTRY_DSN = 'https://key@sentry.io/1';
     process.env.REACT_APP_SENTRY_ENVIRONMENT = 'production';
     process.env.REACT_APP_RELEASE = 'v9';
-    const beforeSend = jest.fn();
+    const { Sentry, sentryClient } = await loadClient();
 
-    const options = config.buildOptions(beforeSend);
+    await sentryClient.init();
 
-    expect(options).toEqual({
+    expect(optionsFrom(Sentry)).toEqual({
       dsn: 'https://key@sentry.io/1',
       environment: 'production',
       release: 'v9',
       tracesSampleRate: 0,
       sendDefaultPii: false,
-      beforeSend,
+      beforeSend: expect.any(Function),
     });
   });
 
-  it('exports a shared singleton instance', () => {
+  it('omits the release and falls back to NODE_ENV when neither is explicitly set', async () => {
+    process.env.REACT_APP_SENTRY_DSN = 'https://key@sentry.io/1';
+    process.env.NODE_ENV = 'staging';
+    const { Sentry, sentryClient } = await loadClient();
+
+    await sentryClient.init();
+
+    const options = optionsFrom(Sentry);
+    expect(options.environment).toBe('staging');
+    expect(options.release).toBeUndefined();
+  });
+
+  it('falls back to development when the environment is blank and no NODE_ENV is set', async () => {
+    process.env.REACT_APP_SENTRY_DSN = 'https://key@sentry.io/1';
+    process.env.REACT_APP_SENTRY_ENVIRONMENT = '   ';
+    delete process.env.NODE_ENV;
+    const { Sentry, sentryClient } = await loadClient();
+
+    await sentryClient.init();
+
+    expect(optionsFrom(Sentry).environment).toBe('development');
+  });
+
+  it('exposes the config as a shared singleton', async () => {
+    const { SentryConfig } = await import('@/services/observability/sentry-config');
+    const sentryConfig = (await import('@/services/observability/sentry-config')).default;
+
     expect(sentryConfig).toBeInstanceOf(SentryConfig);
   });
 });

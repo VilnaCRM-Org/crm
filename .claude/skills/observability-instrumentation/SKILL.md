@@ -35,8 +35,10 @@ SDKs and the DI container out of the render path:
   render path imports; (b) a thin `@injectable() ObservabilityService` adapter (behind a DI
   token) used only by the service layer (ErrorHandler, ApolloLinkFactory, AuthStoreActions).
 - Load `@sentry/react` and `web-vitals` **only** via dynamic `import()` gated on
-  `REACT_APP_SENTRY_DSN` being non-empty. An empty DSN (dev, CI, Lighthouse) is a verified
-  no-op that never pulls the SDK into the bundle.
+  `REACT_APP_SENTRY_DSN` being non-empty. Rsbuild still emits them as separate async
+  chunks, but an empty DSN (dev, CI, Lighthouse) is a verified no-op: those chunks are
+  never fetched or executed at runtime, so no SDK code runs and no telemetry network
+  requests are made.
 - Never static-import `@sentry/react` or `tsyringe` into anything the auth page renders.
 
 ## Coverage Enforcement Model

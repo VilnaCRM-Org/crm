@@ -1,19 +1,15 @@
 import type { SentryEvent } from '@/services/types/observability/sentry';
 
 export class PiiScrubber {
-  private readonly deniedKeys: ReadonlySet<string> = new Set([
+  private readonly deniedFragments: readonly string[] = [
     'password',
     'token',
-    'accesstoken',
-    'refreshtoken',
     'authorization',
     'cookie',
-    'cookies',
-    'set-cookie',
     'secret',
     'apikey',
     'email',
-  ]);
+  ];
 
   private readonly patterns: readonly RegExp[] = [
     /[^\s@]+@[^\s@]+\.[^\s@]+/g,
@@ -35,11 +31,16 @@ export class PiiScrubber {
   private redactRecord(record: Record<string, unknown>): Record<string, unknown> {
     const result: Record<string, unknown> = {};
     for (const key of Object.keys(record)) {
-      if (!this.deniedKeys.has(key.toLowerCase())) {
-        result[key] = this.redact(record[key]);
+      if (!this.isDeniedKey(key)) {
+        result[this.redactString(key)] = this.redact(record[key]);
       }
     }
     return result;
+  }
+
+  private isDeniedKey(key: string): boolean {
+    const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return this.deniedFragments.some((fragment) => normalized.includes(fragment));
   }
 
   private redactString(value: string): string {

@@ -75,7 +75,9 @@ export class ErrorHandler {
 
   private readonly observability: ObservabilityService;
 
-  constructor(@inject(TOKENS.ObservabilityService) observability?: ObservabilityService) {
+  constructor(
+    @inject(TOKENS.ObservabilityService, { isOptional: true }) observability?: ObservabilityService
+  ) {
     this.observability = observability ?? observabilityCore;
   }
 

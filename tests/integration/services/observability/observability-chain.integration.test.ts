@@ -26,6 +26,12 @@ const flushMicrotasks = async (): Promise<void> => {
   await Promise.resolve();
 };
 
+const settle = async (): Promise<void> => {
+  await new Promise((resolve) => {
+    setTimeout(resolve, 0);
+  });
+};
+
 const loadChain = async (): Promise<{
   Sentry: typeof import('@sentry/react');
   observabilityCore: typeof import('@/services/observability/observability-core').default;
@@ -122,5 +128,37 @@ describe('observability chain (integration)', () => {
 
     expect(() => observabilityCore.init()).not.toThrow();
     await flushMicrotasks();
+  });
+
+  it('prefers a correlation id supplied in the capture context over the global id', async () => {
+    enableDsn();
+    const { Sentry, observabilityCore, correlationIdProvider } = await loadChain();
+    observabilityCore.init();
+    await flushMicrotasks();
+    correlationIdProvider.next();
+
+    observabilityCore.captureError(new Error('boom'), {
+      'X-Request-Id': 'op-42',
+      source: 'apollo',
+    });
+
+    expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(Error), {
+      extra: { 'X-Request-Id': 'op-42', source: 'apollo' },
+    });
+  });
+
+  it('retries a failed startup without re-subscribing web-vitals', async () => {
+    enableDsn();
+    const { Sentry, observabilityCore } = await loadChain();
+    (Sentry.init as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('init boom');
+    });
+
+    observabilityCore.init();
+    await settle();
+    observabilityCore.init();
+    await settle();
+
+    expect(mockVitalHandlers).toHaveLength(5);
   });
 });

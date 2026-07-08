@@ -33,17 +33,20 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
-      - name: Build production bundle with hidden source maps
+      - name: Build bundle with hidden source maps
         if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
-        run: make build-out
+        run: docker build --target build -t crm-sourcemaps -f Dockerfile .
+
+      - name: Extract source maps from the build stage
+        if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
+        run: |
+          container_id=$(docker create crm-sourcemaps)
+          docker cp "$container_id:/app/dist" ./sourcemaps
+          docker rm "$container_id"
 
       - name: Create Sentry release and upload source maps
         if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
         run: |
           npx --yes @sentry/cli@2 releases new "$REACT_APP_RELEASE"
-          npx --yes @sentry/cli@2 sourcemaps upload --release "$REACT_APP_RELEASE" ./dist
+          npx --yes @sentry/cli@2 sourcemaps upload --release "$REACT_APP_RELEASE" ./sourcemaps
           npx --yes @sentry/cli@2 releases finalize "$REACT_APP_RELEASE"
-
-      - name: Strip source maps from the served bundle
-        if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
-        run: find ./dist -name '*.map' -type f -delete

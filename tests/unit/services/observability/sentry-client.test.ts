@@ -54,6 +54,61 @@ describe('SentryClient', () => {
     expect(Sentry.captureException).toHaveBeenCalledWith(error, { extra: { requestId: 'r1' } });
   });
 
+  it('buffers identity set before the SDK loads and applies it on init', async () => {
+    enableDsn();
+    const client = new SentryClient();
+
+    client.setUser({ id: 'buffered' });
+    expect(Sentry.setUser).not.toHaveBeenCalled();
+
+    await client.init();
+
+    expect(Sentry.setUser).toHaveBeenCalledWith({ id: 'buffered' });
+  });
+
+  it('buffers a clear taken before the SDK loads and applies it on init', async () => {
+    enableDsn();
+    const client = new SentryClient();
+
+    client.clearUser();
+    await client.init();
+
+    expect(Sentry.setUser).toHaveBeenCalledWith(null);
+  });
+
+  it('bounds the pending capture buffer while the SDK is unavailable', async () => {
+    enableDsn();
+    const client = new SentryClient();
+
+    for (let i = 0; i < 150; i += 1) client.captureException(new Error(`e${i}`));
+    await client.init();
+
+    expect(Sentry.captureException).toHaveBeenCalledTimes(100);
+  });
+
+  it('rejects on a failed SDK init and re-initializes on a later retry', async () => {
+    enableDsn();
+    (Sentry.init as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('init boom');
+    });
+    const client = new SentryClient();
+
+    await expect(client.init()).rejects.toThrow('init boom');
+
+    await client.init();
+
+    expect(Sentry.init).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores a concurrent init while one is already in flight', async () => {
+    enableDsn();
+    const client = new SentryClient();
+
+    await Promise.all([client.init(), client.init()]);
+
+    expect(Sentry.init).toHaveBeenCalledTimes(1);
+  });
+
   it('captures exceptions with and without extra context', async () => {
     enableDsn();
     const client = new SentryClient();

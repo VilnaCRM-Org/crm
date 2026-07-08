@@ -10,9 +10,9 @@ export class SentryConfig {
   }
 
   public environment(): string {
-    const configured =
-      process.env.REACT_APP_SENTRY_ENVIRONMENT ?? process.env.NODE_ENV ?? 'development';
-    return configured.trim();
+    const explicit = (process.env.REACT_APP_SENTRY_ENVIRONMENT ?? '').trim();
+    if (explicit.length > 0) return explicit;
+    return (process.env.NODE_ENV ?? '').trim() || 'development';
   }
 
   public release(): string | undefined {

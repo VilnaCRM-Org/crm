@@ -3,6 +3,7 @@ import type {
   SentryBreadcrumb,
   SentryCaptureHint,
   SentryEvent,
+  SentryInitOptions,
   SentryUser,
 } from '@/services/types/observability/sentry';
 
@@ -10,20 +11,22 @@ import piiScrubber from './pii-scrubber';
 import sentryConfig from './sentry-config';
 
 export class SentryClient {
+  private readonly maxPending: number = 100;
+
   private sdk?: SentryApi;
 
-  private initialized: boolean = false;
+  private loading: boolean = false;
 
   private readonly pending: Array<{ error: unknown; context?: Record<string, unknown> }> = [];
 
+  private pendingUser?: { value: SentryUser | null };
+
   public async init(): Promise<void> {
-    if (this.initialized) return;
+    if (this.sdk || this.loading) return;
     const options = sentryConfig.buildOptions((event: SentryEvent) => piiScrubber.scrub(event));
     if (!options) return;
-    const sdk = await this.load();
-    sdk.init(options);
-    this.initialized = true;
-    this.flush();
+    this.loading = true;
+    await this.startSdk(options);
   }
 
   public captureException(error: unknown, context?: Record<string, unknown>): void {
@@ -32,27 +35,53 @@ export class SentryClient {
       this.sdk.captureException(error, hint);
       return;
     }
-    if (sentryConfig.isEnabled()) {
-      this.pending.push({ error, context });
-    }
+    if (sentryConfig.isEnabled()) this.buffer(error, context);
   }
 
   public setUser(user: SentryUser): void {
-    this.sdk?.setUser(user);
+    if (this.sdk) {
+      this.sdk.setUser(user);
+      return;
+    }
+    if (sentryConfig.isEnabled()) this.pendingUser = { value: user };
   }
 
   public clearUser(): void {
-    this.sdk?.setUser(null);
+    if (this.sdk) {
+      this.sdk.setUser(null);
+      return;
+    }
+    if (sentryConfig.isEnabled()) this.pendingUser = { value: null };
   }
 
   public addBreadcrumb(breadcrumb: SentryBreadcrumb): void {
     this.sdk?.addBreadcrumb(breadcrumb);
   }
 
-  private flush(): void {
+  private async startSdk(options: SentryInitOptions): Promise<void> {
+    try {
+      const sdk = await this.load();
+      sdk.init(options);
+      this.flush(sdk);
+    } catch (error) {
+      this.sdk = undefined;
+      throw error;
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private buffer(error: unknown, context?: Record<string, unknown>): void {
+    if (this.pending.length >= this.maxPending) return;
+    this.pending.push({ error, context });
+  }
+
+  private flush(sdk: SentryApi): void {
     const buffered = this.pending.splice(0);
-    for (const item of buffered) {
-      this.captureException(item.error, item.context);
+    for (const item of buffered) this.captureException(item.error, item.context);
+    if (this.pendingUser) {
+      sdk.setUser(this.pendingUser.value);
+      this.pendingUser = undefined;
     }
   }
 

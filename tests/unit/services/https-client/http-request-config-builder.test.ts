@@ -24,10 +24,18 @@ describe('HttpRequestConfigBuilder', () => {
     expect(headers['X-Request-Id']).toBe('test-request-id');
   });
 
-  it('does not override a caller-provided X-Request-Id header', () => {
+  it('overrides a caller-provided X-Request-Id with the generated correlation id', () => {
     const config = builder.create('GET', undefined, { 'X-Request-Id': 'caller-id' });
     const headers = config.headers as Record<string, string>;
 
-    expect(headers['X-Request-Id']).toBe('caller-id');
+    expect(headers['X-Request-Id']).toBe('test-request-id');
+  });
+
+  it('replaces a differently-cased caller correlation header with the generated id', () => {
+    const config = builder.create('GET', undefined, { 'x-request-id': 'caller-id' });
+    const headers = config.headers as Record<string, string>;
+
+    expect(headers['X-Request-Id']).toBe('test-request-id');
+    expect(headers['x-request-id']).toBeUndefined();
   });
 });

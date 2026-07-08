@@ -14,6 +14,8 @@ import webVitalsReporter from './web-vitals-reporter';
 export class ObservabilityCore implements ObservabilityService, ErrorReporter {
   private started: boolean = false;
 
+  private vitalsSubscribed: boolean = false;
+
   public init(): void {
     if (this.started || !sentryConfig.isEnabled()) return;
     this.started = true;
@@ -47,17 +49,22 @@ export class ObservabilityCore implements ObservabilityService, ErrorReporter {
   }
 
   private start(): void {
-    const swallow = (): void => {};
-    void sentryClient.init().catch(swallow);
+    const reset = (): void => {
+      this.started = false;
+    };
+    void sentryClient.init().catch(reset);
+    if (this.vitalsSubscribed) return;
+    this.vitalsSubscribed = true;
     void webVitalsReporter
       .subscribe((metric: WebVitalMetric) => this.reportVital(metric))
-      .catch(swallow);
+      .catch(reset);
   }
 
   private withCorrelation(context?: CaptureContext): CaptureContext | undefined {
-    const id = correlationIdProvider.currentId;
+    const header = correlationIdProvider.header;
+    const id = context?.[header] ?? correlationIdProvider.currentId;
     if (!id) return context;
-    return { ...context, [correlationIdProvider.header]: id };
+    return { ...context, [header]: id };
   }
 
   private safe(action: () => void): void {

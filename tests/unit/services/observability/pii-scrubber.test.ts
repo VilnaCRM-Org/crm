@@ -26,6 +26,25 @@ describe('PiiScrubber', () => {
     expect(result.extra).toEqual({ nested: {}, keep: 'ok' });
   });
 
+  it.each(['access_token', 'clientSecret', 'emailAddress', 'api-key', 'X-Auth-Token'])(
+    'drops the separator/variant sensitive key "%s"',
+    (key) => {
+      const event: SentryEvent = { extra: { [key]: 'sensitive', keep: 'ok' } };
+
+      const result = scrubber.scrub(event);
+
+      expect(result.extra).toEqual({ keep: 'ok' });
+    }
+  );
+
+  it('redacts PII embedded in an object key', () => {
+    const event: SentryEvent = { extra: { 'bob@corp.io': 'context' } };
+
+    const result = scrubber.scrub(event);
+
+    expect(result.extra).toEqual({ '[redacted]': 'context' });
+  });
+
   it('redacts email, bearer token, and JWT values inside free-text fields', () => {
     const event: SentryEvent = {
       message: 'login failed for alice@example.com',

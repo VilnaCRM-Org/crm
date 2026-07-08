@@ -101,6 +101,7 @@ RUN apk add --no-cache curl=${CURL_VERSION} && \
     mkdir -p /app && chown -R node:node /app
 COPY --chown=node:node serve.json ./serve.json
 COPY --from=build --chown=node:node /app/dist ./dist
+RUN find ./dist -name '*.map' -type f -delete
 USER node
 
 EXPOSE 3001

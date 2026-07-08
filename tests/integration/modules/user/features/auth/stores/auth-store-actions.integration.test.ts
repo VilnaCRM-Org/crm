@@ -80,6 +80,13 @@ describe('AuthStoreActions integration coverage', () => {
     expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, registerError: null });
   });
 
+  it('tags an opaque observability identity after a successful login', async () => {
+    await loginWith({});
+
+    expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
+    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: null });
+  });
+
   it('applies a repository-reported error result to the auth state', async () => {
     const error: AuthError = {
       kind: 'authentication',
