@@ -41,7 +41,7 @@ export default defineConfig({
       font: '[name].[contenthash][ext]',
     },
     sourceMap: {
-      js: isDev ? 'cheap-module-source-map' : false,
+      js: isDev ? 'cheap-module-source-map' : 'hidden-source-map',
       css: isDev,
     },
   },

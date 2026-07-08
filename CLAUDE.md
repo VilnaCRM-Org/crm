@@ -547,6 +547,12 @@ Key variables in `.env`:
 - `REACT_APP_MAIN_LANGUAGE=uk` - Primary language
 - `REACT_APP_FALLBACK_LANGUAGE=en` - Fallback language
 - `GRAPHQL_SCHEMA_VERSION` - Version of GraphQL schema from user-service
+- `REACT_APP_SENTRY_DSN` - Sentry DSN. **Empty by default**; when empty, observability
+  init is a no-op and the `@sentry/react` SDK is never loaded (local dev, tests, and
+  Lighthouse CI stay silent and paint-path-light). Populate only in real deployments.
+- `REACT_APP_SENTRY_ENVIRONMENT` - Sentry environment tag (falls back to `NODE_ENV`)
+- `REACT_APP_RELEASE` - Release version tag for Sentry release health and source-map
+  symbolication (set per deploy, e.g. the commit SHA)
 
 ## Important Patterns
 
@@ -621,6 +627,23 @@ Key variables in `.env`:
    case or a fixed contract (invalid/edge-case inputs, golden text, config, URLs, error
    codes/messages, i18n strings, mock sentinels). See the "Test Data — Faker builders" section
    in `agents.md` for the full convention and review guideline.
+
+9. **Observability (issue #115)**: A single DI-managed boundary in
+   `src/services/observability/` is the **only** sanctioned path for error capture,
+   web-vitals reporting, and identity tagging. It has two layers so the auth paint path stays
+   tsyringe- and SDK-free: (a) container-free module singletons (`observabilityCore`,
+   `correlationIdProvider`, `sentryClient`, `webVitalsReporter`, `sentryConfig`, `piiScrubber`)
+   used by the render path (`index.tsx` `init()` + `AppErrorBoundary` reporter, `AuthErrorBoundary`
+   capture, the HTTP config builder's `X-Request-Id` header, and logout `clearUser`), and (b) an
+   `@injectable()` `ObservabilityService` adapter (token `TOKENS.ObservabilityService`) injected
+   into `ErrorHandler`, `ApolloLinkFactory`, and `AuthStoreActions`. `@sentry/react` and
+   `web-vitals` are loaded only via **dynamic `import()` gated on DSN presence**, so an empty
+   `REACT_APP_SENTRY_DSN` is a verified no-op. Every REST request (config builder) and Apollo
+   operation (`ApolloLinkFactory`) carries a generated `X-Request-Id` that observability attaches
+   to captured errors. `piiScrubber` strips passwords, tokens, cookies, auth headers, and emails
+   in Sentry `beforeSend`; identity is a random opaque session id only — no PII. All capture paths
+   are wrapped so telemetry failure never breaks a user flow. Do not scatter direct
+   `@sentry/react` calls across feature modules; consume telemetry through this boundary.
 
 ## Node Version Management
 

@@ -15,6 +15,8 @@ import HttpErrorResponseParser from '@/services/https-client/http-error-response
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import HttpClientFactory from '@/services/https-client/https-client-factory';
+import ApolloLinkFactory from '@/services/observability/apollo-link-factory';
+import ObservabilityService from '@/services/observability/observability-service';
 import type { ErrorReporter } from '@/services/types/error-reporting';
 import type { HttpsClient } from '@/services/types/https-client/https-client';
 import AbortErrorDetector from '@/utils/error/abort-error-detector';
@@ -34,13 +36,11 @@ import AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
 
 container.register<ApolloClient<NormalizedCacheObject>>(TOKENS.ApolloClient, {
-  useFactory: instanceCachingFactory(
-    () =>
-      new ApolloClient<NormalizedCacheObject>({
-        uri: container.resolve<GraphQLUrl>(TOKENS.GraphQLUrl).resolve(),
-        cache: new InMemoryCache(),
-      })
-  ),
+  useFactory: instanceCachingFactory((c) => {
+    const uri = c.resolve<GraphQLUrl>(TOKENS.GraphQLUrl).resolve();
+    const link = c.resolve<ApolloLinkFactory>(TOKENS.ApolloLinkFactory).build(uri);
+    return new ApolloClient<NormalizedCacheObject>({ link, cache: new InMemoryCache() });
+  }),
 });
 container.registerSingleton<GraphQLUrl>(TOKENS.GraphQLUrl, GraphQLUrl);
 container.registerSingleton<HttpErrorGuard>(TOKENS.HttpErrorGuard, HttpErrorGuard);
@@ -76,6 +76,11 @@ container.registerSingleton<HttpsClient>(TOKENS.HttpsClient, FetchHttpsClient);
 container.registerSingleton<RegistrationAPI>(TOKENS.RegistrationAPI, RegistrationAPI);
 container.registerSingleton<LoginAPI>(TOKENS.LoginAPI, LoginAPI);
 container.registerSingleton<AbortErrorDetector>(TOKENS.AbortErrorDetector, AbortErrorDetector);
+container.registerSingleton<ObservabilityService>(
+  TOKENS.ObservabilityService,
+  ObservabilityService
+);
+container.registerSingleton<ApolloLinkFactory>(TOKENS.ApolloLinkFactory, ApolloLinkFactory);
 
 container.register<AuthRepositoryDeps>(TOKENS.AuthRepositoryDeps, {
   useFactory: (c) => ({

@@ -9,6 +9,8 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 
+jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
+
 const httpErrorGuard = new HttpErrorGuard();
 
 // Transport-focused integration: response validation is covered separately, so use a
@@ -55,7 +57,7 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(mockData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
       });
     });
 
@@ -75,7 +77,7 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(mockData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
         signal: controller.signal,
       });
     });
@@ -122,7 +124,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'POST',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Request-Id': 'test-request-id',
+        },
         body: JSON.stringify(requestData),
       });
     });
@@ -145,7 +151,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'PUT',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Request-Id': 'test-request-id',
+        },
         body: JSON.stringify(requestData),
       });
     });
@@ -168,7 +178,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'PATCH',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Request-Id': 'test-request-id',
+        },
         body: JSON.stringify(requestData),
       });
     });
@@ -191,7 +205,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'DELETE',
-        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'X-Request-Id': 'test-request-id',
+        },
         body: JSON.stringify(requestData),
       });
     });
@@ -211,7 +229,7 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'DELETE',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
       });
     });
   });
@@ -225,7 +243,7 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
       });
     });
 
@@ -237,7 +255,7 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
       });
     });
 
@@ -249,7 +267,7 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
       });
     });
   });
@@ -453,7 +471,7 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual({ success: true });
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'POST',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
         body: formData,
       });
     });
@@ -473,7 +491,7 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual({ success: true });
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'POST',
-        headers: { Accept: 'application/json' },
+        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
         body: stringData,
       });
     });

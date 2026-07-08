@@ -1,7 +1,17 @@
+import observabilityCore from '@/services/observability/observability-core';
 import { AuthStateVar, authActions } from '@auth/stores';
 
 describe('auth stores composition root', () => {
   afterEach(() => AuthStateVar.reset());
+
+  it('clears the observability identity on logout', () => {
+    const clearSpy = jest.spyOn(observabilityCore, 'clearUser').mockImplementation(() => {});
+
+    authActions.logout();
+
+    expect(clearSpy).toHaveBeenCalledTimes(1);
+    clearSpy.mockRestore();
+  });
 
   it('exposes action wrappers that delegate to the resolved AuthStoreActions', async () => {
     await authActions.loginUser({ email: 'a@b.c', password: 'p' });

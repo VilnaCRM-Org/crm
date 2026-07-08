@@ -1,6 +1,7 @@
 import { ERROR_CODES } from '@/services/error/error-codes';
 import { ErrorHandler } from '@/services/error/error-handler';
 import type { UiError } from '@/services/types/error/error-handler';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import ParsedError from '@/utils/error/types';
 
 const errorHandler = new ErrorHandler();
@@ -589,6 +590,18 @@ describe('ErrorHandler', () => {
       expect(consoleSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
       expect(logger.error).not.toHaveBeenCalled();
 
+      consoleSpy.mockRestore();
+    });
+
+    it('forwards handled errors to the injected observability service', () => {
+      const observability = { captureError: jest.fn() } as unknown as ObservabilityService;
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const handler = new ErrorHandler(observability);
+      const error = new Error('captured');
+
+      handler.handle(error);
+
+      expect(observability.captureError).toHaveBeenCalledWith(error);
       consoleSpy.mockRestore();
     });
   });

@@ -1,0 +1,49 @@
+name: sentry release and source maps
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      SENTRY_ORG: ${{ vars.SENTRY_ORG }}
+      SENTRY_PROJECT: ${{ vars.SENTRY_PROJECT }}
+      REACT_APP_RELEASE: ${{ github.sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Build production bundle with hidden source maps
+        if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
+        run: make build-out
+
+      - name: Create Sentry release and upload source maps
+        if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
+        run: |
+          npx --yes @sentry/cli@2 releases new "$REACT_APP_RELEASE"
+          npx --yes @sentry/cli@2 sourcemaps upload --release "$REACT_APP_RELEASE" ./dist
+          npx --yes @sentry/cli@2 releases finalize "$REACT_APP_RELEASE"
+
+      - name: Strip source maps from the served bundle
+        if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
+        run: find ./dist -name '*.map' -type f -delete
