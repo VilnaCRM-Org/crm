@@ -1,0 +1,124 @@
+name: bundle size
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'rsbuild.config.ts'
+      - 'package.json'
+      - 'bun.lock'
+      - 'config/performance-budget.json'
+      - 'scripts/bundle-size-report.mjs'
+      - '.github/workflows/bundle-size.yml'
+
+permissions: {}
+
+# Only the latest run per PR proceeds: a new push cancels any in-flight run so the
+# sticky comment cannot be overwritten with stale sizes from a superseded commit.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: measure and gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Checkout base branch
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Start container
+        run: make start
+
+      # Non-login shell (sh -c, not sh -lc): a login shell re-sources /etc/profile, which
+      # overwrites PATH and drops /root/.bun/bin, so `bun` would not be found.
+      - name: Build PR bundle
+        run: docker compose exec -T dev sh -c 'bun x rsbuild build && rm -rf dist-head && mv dist dist-head'
+
+      # The base build reuses the PR's installed dependencies; if it fails (e.g. a
+      # dependency change makes them incompatible) the report degrades to head-only.
+      - name: Build base bundle
+        continue-on-error: true
+        run: docker compose exec -T dev sh -c 'cd /app/base && bun x rsbuild build && rm -rf /app/dist-base && mv dist /app/dist-base'
+
+      - name: Generate bundle-size report and enforce gzip budgets
+        id: report
+        continue-on-error: true
+        run: |
+          base_arg=""
+          if [ -d dist-base ]; then base_arg="--base-dir dist-base"; fi
+          node scripts/bundle-size-report.mjs --dir dist-head $base_arg --out bundle-size-report.md
+
+      # Guarantee the artifact exists even when an earlier step failed (e.g. a raw byte
+      # budget breach fails the build before the report is generated), so the comment job's
+      # download never errors and the failure is still explained on the PR.
+      - name: Ensure a report file exists
+        if: always()
+        run: |
+          if [ ! -f bundle-size-report.md ]; then
+            {
+              echo '<!-- bundle-size-report -->'
+              echo '## 📦 Bundle size report'
+              echo
+              echo '> [!CAUTION]'
+              echo '> The build failed before a bundle-size report could be generated.'
+              echo '> See the **measure and gate** job logs — most likely a raw byte budget'
+              echo '> in `config/performance-budget.json` was breached (rsbuild `hints: error`),'
+              echo '> or the build container failed to start.'
+            } > bundle-size-report.md
+          fi
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: bundle-size-report
+          path: bundle-size-report.md
+          retention-days: 14
+
+      - name: Fail when a gzip budget is breached
+        if: steps.report.outcome == 'failure'
+        run: |
+          echo "A gzip budget in config/performance-budget.json was breached. See the PR comment."
+          exit 1
+
+  comment:
+    name: PR report
+    needs: build
+    if: always() && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download report
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: bundle-size-report
+          path: .
+
+      - name: Post or update PR comment
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
+        with:
+          header: bundle-size
+          path: bundle-size-report.md

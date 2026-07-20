@@ -1,16 +1,26 @@
-import { lazy } from 'react';
-import { createBrowserRouter } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter, type RouteObject } from 'react-router-dom';
 
 import RouteError from '@/components/error-boundary/route-error';
 import AppLayout from '@/components/layouts/app-layout';
 import RootLayout from '@/components/layouts/root-layout';
+import routeManifest from '@/routes/route-manifest';
 import ROUTE_PATHS from '@/routes/route-paths';
+import type { RouteDefinition } from '@/routes/types/route-definition';
 import ProtectedRoute from '@auth/components/protected-route';
 
-const ButtonExample = lazy(async () => import('@/button-example'));
-const NotFound = lazy(async () => import('@/components/not-found/not-found'));
-const SignUp = lazy(async () => import('@auth/routes/sign-up'));
-const SignIn = lazy(async () => import('@auth/routes/sign-in'));
+const toRoute = (definition: RouteDefinition): RouteObject => {
+  const Page = lazy(definition.load);
+  const element = (
+    <Suspense fallback={definition.fallback}>
+      <Page />
+    </Suspense>
+  );
+  return definition.index ? { index: true, element } : { path: definition.path, element };
+};
+
+const guardedRoutes = routeManifest.filter((route) => route.protected).map(toRoute);
+const publicRoutes = routeManifest.filter((route) => !route.protected).map(toRoute);
 
 const router = createBrowserRouter([
   {
@@ -20,16 +30,9 @@ const router = createBrowserRouter([
     children: [
       {
         element: <ProtectedRoute />,
-        children: [
-          {
-            element: <AppLayout />,
-            children: [{ index: true, element: <ButtonExample /> }],
-          },
-        ],
+        children: [{ element: <AppLayout />, children: guardedRoutes }],
       },
-      { path: ROUTE_PATHS.signUp, element: <SignUp /> },
-      { path: ROUTE_PATHS.signIn, element: <SignIn /> },
-      { path: ROUTE_PATHS.notFound, element: <NotFound /> },
+      ...publicRoutes,
     ],
   },
 ]);

@@ -1,0 +1,34 @@
+{
+  "description": "Authoritative performance byte budgets for the frontend bundle. This is the SINGLE source of truth; rsbuild.config.ts, the Lighthouse configs, scripts/bundle-size-report.mjs, the make perf-budget target, and the docs tables all read from here. Never scatter these numbers elsewhere. Satisfy a budget by reducing/splitting the bundle, never by raising a limit without rationale (see issue #117).",
+  "raw": {
+    "maxInitialEntrypointBytes": 470000,
+    "maxAssetBytes": 400000
+  },
+  "gzip": {
+    "maxInitialEntrypointBytes": 165000,
+    "maxAssetBytes": 130000
+  },
+  "lighthouse": {
+    "scriptSizeBytes": 800000,
+    "totalSizeBytes": 1600000,
+    "scriptCountWarn": 25
+  },
+  "rationale": {
+    "raw.maxInitialEntrypointBytes": "Uncompressed size of the initial (eager) entrypoint, enforced by Rspack performance hints (hints: 'error') so a build that grows the eager bundle past this fails CI. Measured baseline ~388 KB; budget adds ~21% headroom for incremental growth while catching a doubling.",
+    "raw.maxAssetBytes": "Uncompressed size ceiling for any single emitted JS/CSS asset (async route chunks included), enforced by Rspack performance hints. Measured largest chunk ~318 KB (the deferred auth/DI graph); budget adds ~26% headroom while catching a single page ballooning.",
+    "gzip.maxInitialEntrypointBytes": "Transfer-size (gzip) ceiling for the eager entrypoint total, enforced by scripts/bundle-size-report.mjs (fails the bundle-size workflow when breached). Measured baseline ~128 KB; budget adds ~29% headroom.",
+    "gzip.maxAssetBytes": "Transfer-size (gzip) ceiling for any single named/async JS chunk, enforced by scripts/bundle-size-report.mjs. Measured largest ~101 KB; budget adds ~29% headroom.",
+    "lighthouse.scriptSizeBytes": "Lighthouse resource-summary:script:size (error). The production image serves with serve@14, which does NOT gzip, so Lighthouse transfer size equals uncompressed bytes. Calibrated against the heaviest page's eager+route script total (~0.5 MB raw) to fail deterministically on a large regression without flaking on measurement variance; the tight, fully-measured gates are the Rspack raw hints and the gzip bundle-size report.",
+    "lighthouse.totalSizeBytes": "Lighthouse resource-summary:total:size (error) — ceiling for total transferred bytes (scripts + document + fonts + images), uncompressed as above.",
+    "lighthouse.scriptCountWarn": "Lighthouse resource-summary:script:count (warn) — flags request-count growth without failing CI, since request count varies with route-level splitting."
+  },
+  "measuredBaseline": {
+    "date": "2026-07-20",
+    "server": "serve@14 (no gzip; Lighthouse transfer size == uncompressed)",
+    "initialEntrypointRawBytes": 387749,
+    "initialEntrypointGzipBytes": 127757,
+    "largestAssetRawBytes": 317727,
+    "largestAssetGzipBytes": 101055,
+    "initialEntrypointChunks": ["index", "lib-react", "lib-router", "782 (shared vendor)"]
+  }
+}

@@ -48,21 +48,23 @@ describe('performance serving config', () => {
     expect(rsbuildConfigSource).not.toContain("type: 'async-chunks'");
   });
 
-  it('keeps route-level code splitting in the routes layer', () => {
-    const routesSource = readFile('src/routes/routes.tsx');
+  it('keeps route-level code splitting in the route manifest', () => {
+    // The lazy `import()` loaders moved from routes.tsx into the route manifest (issue #117);
+    // this gate follows them so the pages stay code-split and are never imported eagerly.
+    const manifestSource = readFile('src/routes/route-manifest.tsx');
 
-    expect(routesSource).toContain(
-      "const SignUp = lazy(async () => import('@auth/routes/sign-up'));"
-    );
-    expect(routesSource).toContain(
-      "const SignIn = lazy(async () => import('@auth/routes/sign-in'));"
-    );
-    expect(routesSource).toContain(
-      "const ButtonExample = lazy(async () => import('@/button-example'));"
-    );
-    expect(routesSource).not.toContain("import SignUp from '@auth/routes/sign-up';");
-    expect(routesSource).not.toContain("import SignIn from '@auth/routes/sign-in';");
-    expect(routesSource).not.toContain("import ButtonExample from '@/button-example';");
+    expect(manifestSource).toMatch(/import\([^)]*'@auth\/routes\/sign-up'\)/);
+    expect(manifestSource).toMatch(/import\([^)]*'@auth\/routes\/sign-in'\)/);
+    expect(manifestSource).toMatch(/import\([^)]*'@\/button-example'\)/);
+    expect(manifestSource).not.toContain("from '@auth/routes/sign-up'");
+    expect(manifestSource).not.toContain("from '@auth/routes/sign-in'");
+    expect(manifestSource).not.toContain("from '@/button-example'");
+
+    // routes.tsx now builds the router from the manifest and must not eagerly import pages.
+    const routesSource = readFile('src/routes/routes.tsx');
+    expect(routesSource).toContain("import routeManifest from '@/routes/route-manifest';");
+    expect(routesSource).not.toContain("from '@auth/routes/sign-up'");
+    expect(routesSource).not.toContain("from '@/button-example'");
   });
 
   it('keeps registration notifications out of the initial auth form chunk', () => {

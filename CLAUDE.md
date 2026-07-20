@@ -302,6 +302,54 @@ fragments, constants, factories, or a base object plus overrides — never with
 ignore/suppress directives. The same root-cause-not-suppression policy used for
 ESLint, TypeScript, and metrics applies here.
 
+### Performance Budgets, Bundle Reports, and Route Splitting (issue #117)
+
+Bundle weight is gated deterministically alongside the existing Lighthouse category
+scores. All numbers live in one versioned file, [`config/performance-budget.json`](config/performance-budget.json)
+(the authoritative source); this table mirrors it and must be kept in sync.
+
+| Budget                           | Bytes     | Enforced by                                |
+| -------------------------------- | --------- | ------------------------------------------ |
+| `raw.maxInitialEntrypointBytes`  | 470 000   | Rspack hints (`error`) — build fails       |
+| `raw.maxAssetBytes`              | 400 000   | Rspack hints (`error`) — per JS/CSS asset  |
+| `gzip.maxInitialEntrypointBytes` | 165 000   | `bundle-size-report.mjs` — bundle workflow |
+| `gzip.maxAssetBytes`             | 130 000   | `bundle-size-report.mjs` — per chunk       |
+| `lighthouse.scriptSizeBytes`     | 800 000   | `resource-summary:script:size` (`error`)   |
+| `lighthouse.totalSizeBytes`      | 1 600 000 | `resource-summary:total:size` (`error`)    |
+| `lighthouse.scriptCountWarn`     | 25        | `resource-summary:script:count` (`warn`)   |
+
+Raw budgets are uncompressed (Rspack size hints are raw); gzip budgets are transfer
+size. The production image serves with `serve@14`, which does not gzip, so Lighthouse
+transfer size equals uncompressed bytes — the resource-summary budgets are raw-calibrated
+and deliberately loose (they catch large regressions without flaking on measurement
+variance); the tight, fully-measured gates are the Rspack raw hints and the gzip report.
+Every existing Lighthouse category-score assertion is preserved unchanged.
+
+**Commands:**
+
+```bash
+make build-analyze  # Prod build + analyzer → dist/bundle-report.html + dist/bundle-stats.json
+make perf-budget    # Prod build + enforce the gzip byte budgets (fails on breach)
+```
+
+**PR size report:** `.github/workflows/bundle-size.yml` builds the PR and base bundles,
+diffs per-entrypoint and per-named-chunk gzip sizes, and posts/updates a sticky comment.
+It fails only when a `config/performance-budget.json` gzip budget is breached.
+
+**Route-level splitting (single boring way to add a page):** every page-level route is
+declared in [`src/routes/route-manifest.tsx`](src/routes/route-manifest.tsx) as data — a
+dynamic `import()` loader (named via `webpackChunkName` so the size report can track its
+chunk) and a **non-null** `Suspense` fallback (`<RouteFallback />`). `src/routes/routes.tsx`
+builds the router from the manifest. To add a route: append one entry to the manifest; do
+**not** eagerly import a page. The `route manifest` unit test
+([`tests/unit/routes/route-manifest.test.tsx`](tests/unit/routes/route-manifest.test.tsx))
+and the relocated `performance serving` golden test fail CI if any route is imported
+eagerly or declares a null/empty fallback.
+
+**No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
+limit without rationale, disabling `hints`, or excluding files from the report. The same
+root-cause-not-suppression policy used for ESLint, TypeScript, metrics, and jscpd applies.
+
 ## Architecture
 
 ### Module Structure

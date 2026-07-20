@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as path from 'path';
 
 import { defineConfig, loadEnv } from '@rsbuild/core';
@@ -6,7 +7,25 @@ import { pluginSvgr } from '@rsbuild/plugin-svgr';
 
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
+const isAnalyze = process.env.ANALYZE === 'true';
 const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
+
+const performanceBudget = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'config/performance-budget.json'), 'utf8')
+) as { raw: { maxInitialEntrypointBytes: number; maxAssetBytes: number } };
+
+const isScriptOrStyleAsset = (assetFilename: string): boolean =>
+  /\.(?:js|css)$/.test(assetFilename);
+
+const bundleAnalyze = isAnalyze
+  ? {
+      analyzerMode: 'static' as const,
+      reportFilename: 'bundle-report.html',
+      openAnalyzer: false,
+      generateStatsFile: true,
+      statsFilename: 'bundle-stats.json',
+    }
+  : undefined;
 
 export default defineConfig({
   plugins: [
@@ -34,6 +53,7 @@ export default defineConfig({
     chunkSplit: {
       strategy: 'split-by-experience',
     },
+    bundleAnalyze,
   },
   output: {
     inlineStyles: !isDev,
@@ -55,6 +75,12 @@ export default defineConfig({
       },
       experiments: {
         nativeWatcher: true,
+      },
+      performance: {
+        hints: isDev ? false : 'error',
+        maxEntrypointSize: performanceBudget.raw.maxInitialEntrypointBytes,
+        maxAssetSize: performanceBudget.raw.maxAssetBytes,
+        assetFilter: isScriptOrStyleAsset,
       },
     },
     swc: {
