@@ -16,6 +16,12 @@ on:
       - 'config/performance-budget.json'
       - 'scripts/bundle-size-report.mjs'
       - '.github/workflows/bundle-size.yml'
+      # The image, its compose service, and the make target define HOW the bundle is built
+      # (toolchain versions, build command), so they can move bytes without touching src/.
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'docker-compose.yml'
+      - 'Makefile'
 
 permissions: {}
 
@@ -73,9 +79,10 @@ jobs:
           if [ -d dist-base ]; then base_arg="--base-dir dist-base"; fi
           node scripts/bundle-size-report.mjs --dir dist-head $base_arg --out bundle-size-report.md
 
-      # Guarantee the artifact exists even when an earlier step failed (e.g. a raw byte
-      # budget breach fails the build before the report is generated), so the comment job's
-      # download never errors and the failure is still explained on the PR.
+      # Guarantee the artifact exists whenever no report was written — an earlier step failed,
+      # or the report script itself threw — so the comment job's download never errors and the
+      # failure is still surfaced on the PR. The message stays neutral because this step cannot
+      # tell which of those happened.
       - name: Ensure a report file exists
         if: always()
         run: |
@@ -85,10 +92,8 @@ jobs:
               echo '## 📦 Bundle size report'
               echo
               echo '> [!CAUTION]'
-              echo '> The build failed before a bundle-size report could be generated.'
-              echo '> See the **measure and gate** job logs — most likely a raw byte budget'
-              echo '> in `config/performance-budget.json` was breached (rsbuild `hints: error`),'
-              echo '> or the build container failed to start.'
+              echo '> A bundle-size report could not be generated.'
+              echo '> See the **measure and gate** job logs for the underlying failure.'
             } > bundle-size-report.md
           fi
 

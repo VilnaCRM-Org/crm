@@ -345,10 +345,18 @@ declared in [`src/routes/route-manifest.tsx`](src/routes/route-manifest.tsx) as 
 dynamic `import()` loader (named via `webpackChunkName` so the size report can track its
 chunk) and a **non-null** `Suspense` fallback (`<RouteFallback />`). `src/routes/routes.tsx`
 builds the router from the manifest. To add a route: append one entry to the manifest; do
-**not** eagerly import a page. The `route manifest` unit test
-([`tests/unit/routes/route-manifest.test.tsx`](tests/unit/routes/route-manifest.test.tsx))
-and the relocated `performance serving` golden test fail CI if any route is imported
-eagerly or declares a null/empty fallback.
+**not** eagerly import a page. Three checks fail CI, each covering a different escape:
+
+- `route manifest`
+  ([`tests/unit/routes/route-manifest.test.tsx`](tests/unit/routes/route-manifest.test.tsx)) —
+  every manifest entry must use a dynamic `import()` loader and a non-null, non-empty
+  fallback. This is the **only** fallback check.
+- `routes` ([`tests/unit/routes/routes.test.tsx`](tests/unit/routes/routes.test.tsx)) — the
+  router's page routes must all come from the manifest, so a page hand-written into
+  `routes.tsx` cannot bypass the manifest check above.
+- the relocated `performance serving` golden test — pins the current page specifiers to
+  dynamic `import()` in both `route-manifest.tsx` and `routes.tsx`. **Eager-import only**;
+  it asserts nothing about fallbacks.
 
 **No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
 limit without rationale, disabling `hints`, or excluding files from the report. The same

@@ -1118,15 +1118,20 @@ enforces the gzip budgets and the `bundle size` workflow posts a per-PR sticky s
 comment; both Lighthouse configs add `error`-level `resource-summary` budgets on top of the
 unchanged category scores.
 
+The sticky comment is posted for **same-repository PRs only** — the comment job is skipped
+for fork PRs, whose `GITHUB_TOKEN` is read-only. The budget gate itself still runs and still
+fails on a fork PR; the report is retrievable from the `bundle-size-report` build artifact.
+
 ```bash
 make perf-budget    # Prod build + enforce the gzip byte budgets (fails on breach)
 ```
 
 Every page-level route is declared in `src/routes/route-manifest.tsx` with a dynamic
-`import()` loader and a non-null `Suspense` fallback; a machine check
-(`tests/unit/routes/route-manifest.test.tsx`) fails CI on an eager import or null fallback.
-Satisfy a budget by reducing/splitting the bundle, never by raising a limit without
-rationale or disabling the gate.
+`import()` loader and a non-null `Suspense` fallback. Two machine checks fail CI:
+`tests/unit/routes/route-manifest.test.tsx` rejects an eager loader or a null/empty fallback
+on any manifest entry, and `tests/unit/routes/routes.test.tsx` rejects a page route added to
+the router outside the manifest. Satisfy a budget by reducing/splitting the bundle, never by
+raising a limit without rationale or disabling the gate.
 
 ### Load Testing with K6
 

@@ -33,6 +33,27 @@ const budget = JSON.parse(
   readFileSync(resolve(scriptDir, '..', 'config', 'performance-budget.json'), 'utf8')
 );
 
+// Fail closed, mirroring rsbuild.config.ts's raw-budget guard: an absent or malformed gzip
+// limit would compare against `undefined` (never breaching) and render `NaN KB`, turning the
+// gate green while enforcing nothing.
+function requireBudget(value, key) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    throw new Error(
+      `config/performance-budget.json: "${key}" must be a positive number, got ${String(value)}. ` +
+        'Refusing to report an unenforced size budget.'
+    );
+  }
+  return value;
+}
+
+const gzipBudget = {
+  maxInitialEntrypointBytes: requireBudget(
+    budget.gzip?.maxInitialEntrypointBytes,
+    'gzip.maxInitialEntrypointBytes'
+  ),
+  maxAssetBytes: requireBudget(budget.gzip?.maxAssetBytes, 'gzip.maxAssetBytes'),
+};
+
 function parseArgs(argv) {
   const args = { dir: null, baseDir: null, out: null, json: null };
   for (let i = 0; i < argv.length; i += 1) {
@@ -135,17 +156,17 @@ function buildRows(head, base) {
 function evaluateBudgets(head) {
   const entryGzip = sumGzip(head, (a) => a.eager);
   const breaches = [];
-  if (entryGzip > budget.gzip.maxInitialEntrypointBytes) {
+  if (entryGzip > gzipBudget.maxInitialEntrypointBytes) {
     breaches.push(
       `Initial entrypoint ${kb(entryGzip)} gzip exceeds budget ` +
-        `${kb(budget.gzip.maxInitialEntrypointBytes)}`
+        `${kb(gzipBudget.maxInitialEntrypointBytes)}`
     );
   }
   for (const asset of head.values()) {
-    if (asset.gzip > budget.gzip.maxAssetBytes) {
+    if (asset.gzip > gzipBudget.maxAssetBytes) {
       breaches.push(
         `Chunk ${asset.name} ${kb(asset.gzip)} gzip exceeds per-asset budget ` +
-          `${kb(budget.gzip.maxAssetBytes)}`
+          `${kb(gzipBudget.maxAssetBytes)}`
       );
     }
   }
@@ -166,7 +187,7 @@ function renderMarkdown({ rows, head, base, budgets, hasBase }) {
     '| Chunk | Head (gzip) | Base (gzip) | Δ |',
     '| :-- | --: | --: | --: |',
   ];
-  const entryBudget = budgets.gzip.maxInitialEntrypointBytes;
+  const entryBudget = budgets.maxInitialEntrypointBytes;
   const entryFlag = head.entryGzip > entryBudget ? ' ❌' : ' ✅';
   lines.push(
     renderRow(
@@ -176,7 +197,7 @@ function renderMarkdown({ rows, head, base, budgets, hasBase }) {
       entryFlag
     )
   );
-  const assetBudget = budgets.gzip.maxAssetBytes;
+  const assetBudget = budgets.maxAssetBytes;
   const renderNamed = (row) => {
     const flag = row.head > assetBudget ? ' ❌' : '';
     const tag = row.status === 'new' ? ' 🆕' : row.status === 'removed' ? ' 🗑️' : '';
@@ -206,7 +227,7 @@ function renderMarkdown({ rows, head, base, budgets, hasBase }) {
     );
   }
   lines.push(renderRow('**Total JS**', head.totalGzip, base ? base.totalGzip : 0));
-  lines.push('', `Per-asset gzip budget: **${kb(budgets.gzip.maxAssetBytes)}**.`, '');
+  lines.push('', `Per-asset gzip budget: **${kb(budgets.maxAssetBytes)}**.`, '');
   if (head.breaches.length > 0) {
     lines.push('> [!CAUTION]', '> Budget breached:');
     for (const breach of head.breaches) lines.push(`> - ${breach}`);
@@ -229,7 +250,7 @@ function main() {
   const head = evaluateBudgets(headAssets);
   const base = hasBase ? evaluateBudgets(baseAssets) : null;
   const rows = buildRows(headAssets, baseAssets);
-  const markdown = renderMarkdown({ rows, head, base, budgets: budget, hasBase });
+  const markdown = renderMarkdown({ rows, head, base, budgets: gzipBudget, hasBase });
 
   if (args.out) writeFileSync(args.out, `${markdown}\n`);
   else process.stdout.write(`${markdown}\n`);
