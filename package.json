@@ -48,7 +48,7 @@
     "@graphql-codegen/typescript-operations": "^6.0.5",
     "@graphql-typed-document-node/core": "^3.2.0",
     "@lhci/cli": "^0.10.0",
-    "@memlab/api": "^1.0.41",
+    "@memlab/api": "^2.0.4",
     "@memlab/heap-analysis": "^1.0.39",
     "@microsoft/api-extractor": "^7.52.8",
     "@module-federation/rsbuild-plugin": "^0.22.0",
