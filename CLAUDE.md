@@ -308,15 +308,15 @@ Bundle weight is gated deterministically alongside the existing Lighthouse categ
 scores. All numbers live in one versioned file, [`config/performance-budget.json`](config/performance-budget.json)
 (the authoritative source); this table mirrors it and must be kept in sync.
 
-| Budget                           | Bytes     | Enforced by                                |
-| -------------------------------- | --------- | ------------------------------------------ |
-| `raw.maxInitialEntrypointBytes`  | 470 000   | Rspack hints (`error`) — build fails       |
-| `raw.maxAssetBytes`              | 400 000   | Rspack hints (`error`) — per JS/CSS asset  |
-| `gzip.maxInitialEntrypointBytes` | 165 000   | `bundle-size-report.mjs` — bundle workflow |
-| `gzip.maxAssetBytes`             | 130 000   | `bundle-size-report.mjs` — per chunk       |
-| `lighthouse.scriptSizeBytes`     | 265 000   | `resource-summary:script:size` (`error`)   |
-| `lighthouse.totalSizeBytes`      | 480 000   | `resource-summary:total:size` (`error`)    |
-| `lighthouse.scriptCountWarn`     | 25        | `resource-summary:script:count` (`warn`)   |
+| Budget                           | Bytes   | Enforced by                                |
+| -------------------------------- | ------- | ------------------------------------------ |
+| `raw.maxInitialEntrypointBytes`  | 470 000 | Rspack hints (`error`) — build fails       |
+| `raw.maxAssetBytes`              | 400 000 | Rspack hints (`error`) — per JS/CSS asset  |
+| `gzip.maxInitialEntrypointBytes` | 165 000 | `bundle-size-report.mjs` — bundle workflow |
+| `gzip.maxAssetBytes`             | 130 000 | `bundle-size-report.mjs` — per chunk       |
+| `lighthouse.scriptSizeBytes`     | 265 000 | `resource-summary:script:size` (`error`)   |
+| `lighthouse.totalSizeBytes`      | 480 000 | `resource-summary:total:size` (`error`)    |
+| `lighthouse.scriptCountWarn`     | 25      | `resource-summary:script:count` (`warn`)   |
 
 Raw budgets are uncompressed (Rspack size hints operate on raw bytes); the gzip and
 Lighthouse budgets are transfer size. `serve@14` applies its compression middleware unless
