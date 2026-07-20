@@ -133,6 +133,8 @@ UNIT_TESTS                  = $(MAKE) ensure-dev && $(EXEC_DEV_TTYLESS) env
 MUTATION_SHARD_TOTAL        ?= 1
 MUTATION_SHARD_INDEX        ?= 0
 MUTATION_REPORTS_DIR         = reports/mutation
+MUTATION_INCREMENTAL        ?=
+STRYKER_INCREMENTAL_FLAG     = $(if $(filter 1 true,$(MUTATION_INCREMENTAL)),--incremental,)
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
 STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
@@ -549,7 +551,7 @@ test-mutation: ## Run mutation tests using Stryker after building the app
 	$(STRYKER_CMD)
 
 test-mutation-shard: ## Run mutation shard MUTATION_SHARD_INDEX of MUTATION_SHARD_TOTAL in the running dev container
-	$(DOCKER_COMPOSE) exec -T -e MUTATION_SHARD_INDEX=$(MUTATION_SHARD_INDEX) -e MUTATION_SHARD_TOTAL=$(MUTATION_SHARD_TOTAL) dev bun x stryker run stryker.shard.config.mjs
+	$(DOCKER_COMPOSE) exec -T -e MUTATION_SHARD_INDEX=$(MUTATION_SHARD_INDEX) -e MUTATION_SHARD_TOTAL=$(MUTATION_SHARD_TOTAL) dev bun x stryker run stryker.shard.config.mjs $(STRYKER_INCREMENTAL_FLAG)
 
 merge-mutation-reports: ## Merge mutation shard reports and re-enforce the Stryker break gate in the running dev container
 	$(DOCKER_COMPOSE) exec -T -e MUTATION_SHARD_TOTAL=$(MUTATION_SHARD_TOTAL) dev bun scripts/ci/merge-mutation-reports.ts

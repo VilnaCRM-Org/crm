@@ -116,15 +116,56 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 
 ### CI parallelization
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-4-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across an
+8-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
-threshold read from `stryker.config.mjs` (`make merge-mutation-reports`) — identical gate, much
-faster (~1h → fits the PR budget). Lighthouse desktop/mobile run as a parallel matrix
-(`performance-testing.yml`). Every workflow declares `concurrency` with `cancel-in-progress: true`
-(release/sandbox workflows use `false`) so a new push cancels the previous run. No gate is weakened
-and no threshold changes. See "CI speed and the mutation-testing gate" in `CONTRIBUTING.md` for the
+threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
+run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
+touches re-run while the gate still scores the whole set; `mutation-testing-full.yml` runs the same
+matrix weekly, cold and from scratch, as the authoritative baseline. Lighthouse desktop/mobile run as
+a parallel matrix (`performance-testing.yml`). Every workflow declares `concurrency` with
+`cancel-in-progress: true` (release/sandbox workflows use `false`) so a new push cancels the previous
+run. No gate is weakened. See "CI speed and the mutation-testing gate" in `CONTRIBUTING.md` for the
 full flow and the branch-protection required-checks update.
+
+### Mutation testing scope and baseline
+
+Stryker mutates the **logic layer across all modules**, not just `src/components/`: repositories
+(`src/modules/user/features/auth/repositories/**`), application services (`src/services/**`), auth
+stores/state, validation policies, and the module `.tsx` surface. The mutated file list is the single
+source of truth in `scripts/ci/mutation-scope.mjs`, whose exclusions mirror `jest.config.ts`
+`collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n). Stryker runs unit **and**
+integration tests via `jest.mutation.config.ts` — a flat union of both suites, since Stryker's
+jest-runner cannot use Jest `projects` with `perTest` coverage — so repository/service/store mutants
+are killed by the integration tests that assert on them. The mutation config excludes the
+`tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
+instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
+These keep the run affordable — CI runners are 2-core, so parallelism comes from the 8-way shard
+count, not Stryker's in-process concurrency.
+
+`thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`. `break` is the
+enforced floor, set at/just below the measured baseline. **Ratchet policy:** raise `break` toward
+`high` as suites improve; never lower it to make CI pass, never narrow the mutated scope to dodge a
+survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
+assertions.
+
+Measured baseline (widened scope, unit + integration; 8-way sharded full run):
+
+| Area                         | Files | Mutation score |
+| ---------------------------- | ----- | -------------- |
+| `src/services/**`            | 9     | 100%           |
+| `…/auth/repositories/**`     | 7     | 100%           |
+| `…/auth/stores/**`           | 8     | 100%           |
+| `…/form-section/validations` | 4     | 100%           |
+| Overall (`break` = 90)       | 134   | 92.5%          |
+
+The mutate scope is 154 files; 134 produced mutants in the report (the other ~20 are pure re-export
+barrels or files whose only mutants are static and skipped by `ignoreStatic`). The logic layer is
+fully detected; the overall gap is `noCoverage` mutants in non-logic files (UI/providers/routes
+exercised by e2e/visual rather than unit/integration). Detections in the async logic layer land as
+Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test), which counts as
+detected. `break` is set to 90 — below the 92.5% baseline for margin — and ratchets toward the
+`high` = 100 target as the scheduled full runs confirm stability.
 
 ## Code Quality
 

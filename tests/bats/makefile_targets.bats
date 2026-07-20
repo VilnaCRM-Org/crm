@@ -294,3 +294,10 @@ EOF
   [ "$status" -eq 0 ]
   assert_log_contains 'docker compose exec -T -e MUTATION_SHARD_TOTAL=4 dev bun scripts/ci/merge-mutation-reports.ts'
 }
+
+@test "test-mutation-shard appends --incremental when MUTATION_INCREMENTAL=1" {
+  reset_command_log
+  run_make_target test-mutation-shard MUTATION_SHARD_INDEX=1 MUTATION_SHARD_TOTAL=4 MUTATION_INCREMENTAL=1
+  [ "$status" -eq 0 ]
+  assert_log_contains 'dev bun x stryker run stryker.shard.config.mjs --incremental'
+}
