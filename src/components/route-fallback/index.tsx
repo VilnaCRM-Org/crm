@@ -2,7 +2,6 @@ import Box from '@mui/material/Box';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import SubmitSpinner from '@/components/ui-form/submit-spinner';
 import UILiveStatus from '@/components/ui-live-status';
 
 import styles from './styles';
@@ -27,7 +26,7 @@ export default function RouteFallback(): JSX.Element {
   return (
     <Box sx={styles.wrapper}>
       <Box sx={styles.pill}>
-        <SubmitSpinner />
+        <Box aria-hidden="true" sx={styles.spinner} />
       </Box>
       <UILiveStatus message={message} />
     </Box>

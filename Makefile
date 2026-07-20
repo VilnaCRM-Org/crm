@@ -305,7 +305,7 @@ build-analyze: ## Build production bundle with the analyzer; writes dist/bundle-
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e ANALYZE=true dev $(RSBUILD_BUILD)
 
 perf-budget: ## Build the production bundle and enforce the gzip byte budgets in config/performance-budget.json
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev sh -lc '$(RSBUILD_BUILD) && node scripts/bundle-size-report.mjs --dir dist'
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev sh -c '$(RSBUILD_BUILD) && node scripts/bundle-size-report.mjs --dir dist'
 
 build-out: ## Build production artifacts to ./out directory (via Docker)
 	@echo "🏗️ Building production Docker image for Rsbuild bundle..."

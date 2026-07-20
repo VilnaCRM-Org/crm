@@ -32,9 +32,15 @@ describe('RouteFallback', () => {
     expect(status).toHaveTextContent('route_fallback.loading');
   });
 
-  it('renders the aria-hidden spinner from the grey-pill loader design', () => {
+  it('keeps the spinner decorative and out of the eager MUI graph', () => {
     render(<RouteFallback />);
-    const spinner = screen.getByRole('progressbar', { hidden: true });
-    expect(spinner).toHaveAttribute('aria-hidden', 'true');
+
+    // The grey-pill spinner is a dependency-free CSS ring marked aria-hidden, so the only
+    // a11y-exposed node is the single status region.
+    expect(screen.getAllByRole('status')).toHaveLength(1);
+
+    // Regression guard (issue #117): a MUI CircularProgress here would re-add
+    // CircularProgress + useMediaQuery to the eager bundle and breach the mobile budget.
+    expect(screen.queryByRole('progressbar', { hidden: true })).not.toBeInTheDocument();
   });
 });
