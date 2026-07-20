@@ -323,7 +323,7 @@ src/
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
 ├── config/          # DI configuration, tokens, API config
-├── routes/          # Route definitions
+├── routes/          # Route registry + composer (module-owned route contracts)
 ├── providers/       # React context providers
 └── utils/           # Shared utilities
 ```
@@ -454,14 +454,47 @@ feature boundary is allowed **only** through its `index` barrel —
 across the boundary fail `no-module-internal-imports` /
 `no-feature-internal-imports` (dependency-cruiser) and scoped
 `no-restricted-imports` (ESLint). The DI composition root and the app-shell
-router's code-split route/guard entries are the only sanctioned exceptions.
-See `src/modules/user/README.md` for the full contract.
+router are the only sanctioned exceptions — and the router now reaches a
+feature **only** through its module-owned route contract barrel
+(`features/<f>/routes/index`) plus the `protected-route` guard, enforced by the
+tightened `no-routes-import-feature-internals` rule (issue #105).
+See `src/modules/user/README.md` for the full contract and `src/routes/README.md`
+for the route registry.
 
 These aliases are configured in:
 
 - `tsconfig.paths.json` for TypeScript
 - `rsbuild.config.ts` for RSBuild
 - `jest.config.ts` for Jest
+
+### Route Registry (issue #105)
+
+Routes are **module-owned data**, not a hand-edited tree in the app shell. Each
+module/feature declares its routes through a typed **public route contract** in
+its own `routes/` folder; a central registry collects the contracts and a
+composer builds the `createBrowserRouter` tree. `src/routes/routes.tsx` is pure
+wiring — it contains no route-array literal and no feature/module page imports.
+
+- **Contract types** — `src/routes/types/{app-route,route-module}.ts`
+  (`AppRouteObject`: `path`/`index`, lazy `load`, declarative `guard`, `meta`;
+  `RouteModule`: `id` + `routes`). Type-only files (issue #88).
+- **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a
+  `RouteModule` whose routes lazy-`load` the feature's pages (per-route code
+  splitting preserved). The auth feature: `@auth/routes`. The app shell's own
+  routes (home + 404) live in `src/routes/app-routes.ts`.
+- **Registry** — `src/routes/registry.ts` collects the contracts (one-line
+  append per new module).
+- **Composer** — `src/routes/route-composer.tsx` (+ `route-mapper.tsx`,
+  `route-validator.ts`, all container-free module singletons) validates the
+  contracts, resolves `guard: 'protected'` to the `ProtectedRoute` guard nested
+  under `AppLayout`, keeps public routes directly under `RootLayout`, and wraps
+  each `load` in `React.lazy`.
+
+**Adding a page** — add a route entry to the owning module's
+`routes/index.ts` contract, then (for a new module) append it to
+`src/routes/registry.ts`. Never edit `src/routes/routes.tsx` or the composer.
+Deep-importing a feature page from the shell fails
+`no-routes-import-feature-internals`.
 
 ### GraphQL Setup
 
@@ -559,7 +592,10 @@ Key variables in `.env`:
 
 2. **Form Validation**: Centralized in module features (e.g., `auth/components/form-section/validations/`)
 
-3. **Routing**: Defined in `App.tsx` using `createBrowserRouter`
+3. **Routing**: Module-owned route contracts collected by a registry and
+   assembled by a composer into `createBrowserRouter` (see "Route Registry"
+   above). Add a page in the owning module's `routes/` folder — never in the
+   app shell.
 
 4. **Testing Philosophy**:
    - Unit tests for components and utilities
