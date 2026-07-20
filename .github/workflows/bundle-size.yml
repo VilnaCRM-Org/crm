@@ -96,10 +96,12 @@ jobs:
           path: bundle-size-report.md
           retention-days: 14
 
-      - name: Fail when a gzip budget is breached
+      - name: Fail when the size report errors or a gzip budget is breached
         if: steps.report.outcome == 'failure'
         run: |
-          echo "A gzip budget in config/performance-budget.json was breached. See the PR comment."
+          echo "bundle-size-report.mjs exited non-zero: either a gzip budget in"
+          echo "config/performance-budget.json was breached, or report generation itself failed."
+          echo "See the step logs above and the sticky PR comment for details."
           exit 1
 
   comment:

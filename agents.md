@@ -1356,7 +1356,7 @@ make format             # Prettier and Qlty format
 ```bash
 make build              # Build in Docker
 make build-out          # Extract build to ./build
-make build-analyze      # Bundle analyzer (writes dist/bundle-report.html + stats.json)
+make build-analyze      # Bundle analyzer (writes dist/bundle-report.html + dist/bundle-stats.json)
 make perf-budget        # Build + enforce gzip byte budgets (config/performance-budget.json)
 ```
 

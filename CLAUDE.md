@@ -334,7 +334,10 @@ make perf-budget    # Prod build + enforce the gzip byte budgets (fails on breac
 
 **PR size report:** `.github/workflows/bundle-size.yml` builds the PR and base bundles,
 diffs per-entrypoint and per-named-chunk gzip sizes, and posts/updates a sticky comment.
-It fails only when a `config/performance-budget.json` gzip budget is breached.
+Its report step fails the job when a `config/performance-budget.json` **gzip** budget is
+breached; the size diff itself is informational. The job can also fail earlier, in the build
+step, when an Rspack **raw** budget is exceeded (that gate fails every production build, not
+just this workflow).
 
 **Route-level splitting (single boring way to add a page):** every page-level route is
 declared in [`src/routes/route-manifest.tsx`](src/routes/route-manifest.tsx) as data — a
