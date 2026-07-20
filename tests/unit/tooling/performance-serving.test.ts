@@ -64,6 +64,7 @@ describe('performance serving config', () => {
     const routesSource = readFile('src/routes/routes.tsx');
     expect(routesSource).toContain("import routeManifest from '@/routes/route-manifest';");
     expect(routesSource).not.toContain("from '@auth/routes/sign-up'");
+    expect(routesSource).not.toContain("from '@auth/routes/sign-in'");
     expect(routesSource).not.toContain("from '@/button-example'");
   });
 

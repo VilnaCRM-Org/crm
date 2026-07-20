@@ -101,17 +101,23 @@ function buildRows(head, base) {
   const asyncNamed = [];
   const otherEager = { head: 0, base: 0, count: 0 };
   const otherAsync = { head: 0, base: 0, count: 0 };
+  const bucketOf = (asset) => (asset.eager ? otherEager : otherAsync);
+
   for (const name of names) {
     const h = head.get(name);
     const b = base.get(name);
-    const eager = h ? h.eager : Boolean(b && b.eager);
+
     if (NUMERIC_CHUNK.test(name)) {
-      const bucket = eager ? otherEager : otherAsync;
-      bucket.head += h ? h.gzip : 0;
-      bucket.base += b ? b.gzip : 0;
-      bucket.count += 1;
+      // Classify each side by its OWN eager/async location. A chunk can move between the
+      // entrypoint and async between builds; reusing the head flag for the base value would
+      // add that base size to the wrong bucket and corrupt the entrypoint delta.
+      if (h) bucketOf(h).head += h.gzip;
+      if (b) bucketOf(b).base += b.gzip;
+      bucketOf(h ?? b).count += 1;
       continue;
     }
+
+    const eager = h ? h.eager : b.eager;
     const row = {
       name,
       head: h ? h.gzip : 0,

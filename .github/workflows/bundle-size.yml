@@ -10,6 +10,9 @@ on:
       - 'rsbuild.config.ts'
       - 'package.json'
       - 'bun.lock'
+      # REACT_APP_* values are inlined into the bundle via loadEnv, so .env changes
+      # can change emitted bytes and must re-run the gate.
+      - '.env'
       - 'config/performance-budget.json'
       - 'scripts/bundle-size-report.mjs'
       - '.github/workflows/bundle-size.yml'
@@ -55,11 +58,12 @@ jobs:
       - name: Build PR bundle
         run: docker compose exec -T dev sh -c 'bun x rsbuild build && rm -rf dist-head && mv dist dist-head'
 
-      # The base build reuses the PR's installed dependencies; if it fails (e.g. a
-      # dependency change makes them incompatible) the report degrades to head-only.
+      # Install the BASE lockfile's dependencies before building it, so a PR that changes
+      # dependencies still produces an honest base-vs-head diff. If this fails for any
+      # reason the step is non-fatal and the report degrades to head-only.
       - name: Build base bundle
         continue-on-error: true
-        run: docker compose exec -T dev sh -c 'cd /app/base && bun x rsbuild build && rm -rf /app/dist-base && mv dist /app/dist-base'
+        run: docker compose exec -T dev sh -c 'cd /app/base && bun install --frozen-lockfile && bun x rsbuild build && rm -rf /app/dist-base && mv dist /app/dist-base'
 
       - name: Generate bundle-size report and enforce gzip budgets
         id: report

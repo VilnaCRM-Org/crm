@@ -12,7 +12,25 @@ const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
 
 const performanceBudget = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, 'config/performance-budget.json'), 'utf8')
-) as { raw: { maxInitialEntrypointBytes: number; maxAssetBytes: number } };
+) as { raw?: { maxInitialEntrypointBytes?: number; maxAssetBytes?: number } };
+
+// Fail fast instead of silently falling back to Rspack's 500000-byte default: an absent or
+// malformed budget would leave the build gate weaker than the documented limit (issue #117).
+const requireBudget = (value: unknown, key: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    throw new Error(
+      `config/performance-budget.json: "${key}" must be a positive number, got ${String(value)}. ` +
+        'Refusing to build with an unenforced size budget.'
+    );
+  }
+  return value;
+};
+
+const maxEntrypointSize = requireBudget(
+  performanceBudget.raw?.maxInitialEntrypointBytes,
+  'raw.maxInitialEntrypointBytes'
+);
+const maxAssetSize = requireBudget(performanceBudget.raw?.maxAssetBytes, 'raw.maxAssetBytes');
 
 const isScriptOrStyleAsset = (assetFilename: string): boolean =>
   /\.(?:js|css)$/.test(assetFilename);
@@ -78,8 +96,8 @@ export default defineConfig({
       },
       performance: {
         hints: isDev ? false : 'error',
-        maxEntrypointSize: performanceBudget.raw.maxInitialEntrypointBytes,
-        maxAssetSize: performanceBudget.raw.maxAssetBytes,
+        maxEntrypointSize,
+        maxAssetSize,
         assetFilter: isScriptOrStyleAsset,
       },
     },

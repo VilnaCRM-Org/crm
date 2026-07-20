@@ -314,16 +314,17 @@ scores. All numbers live in one versioned file, [`config/performance-budget.json
 | `raw.maxAssetBytes`              | 400 000   | Rspack hints (`error`) — per JS/CSS asset  |
 | `gzip.maxInitialEntrypointBytes` | 165 000   | `bundle-size-report.mjs` — bundle workflow |
 | `gzip.maxAssetBytes`             | 130 000   | `bundle-size-report.mjs` — per chunk       |
-| `lighthouse.scriptSizeBytes`     | 800 000   | `resource-summary:script:size` (`error`)   |
-| `lighthouse.totalSizeBytes`      | 1 600 000 | `resource-summary:total:size` (`error`)    |
+| `lighthouse.scriptSizeBytes`     | 265 000   | `resource-summary:script:size` (`error`)   |
+| `lighthouse.totalSizeBytes`      | 480 000   | `resource-summary:total:size` (`error`)    |
 | `lighthouse.scriptCountWarn`     | 25        | `resource-summary:script:count` (`warn`)   |
 
-Raw budgets are uncompressed (Rspack size hints are raw); gzip budgets are transfer
-size. The production image serves with `serve@14`, which does not gzip, so Lighthouse
-transfer size equals uncompressed bytes — the resource-summary budgets are raw-calibrated
-and deliberately loose (they catch large regressions without flaking on measurement
-variance); the tight, fully-measured gates are the Rspack raw hints and the gzip report.
-Every existing Lighthouse category-score assertion is preserved unchanged.
+Raw budgets are uncompressed (Rspack size hints operate on raw bytes); the gzip and
+Lighthouse budgets are transfer size. `serve@14` applies its compression middleware unless
+`--no-compression`, so responses ship gzipped (`Content-Encoding: gzip`) and Lighthouse
+`resource-summary` measures **compressed** bytes. The resource-summary budgets are therefore
+calibrated against measured transfer for the audited URLs (heaviest is `/sign-in` at ~196 KB
+script / ~353 KB total, of which ~156 KB is static woff2) plus ~35% headroom. Every existing
+Lighthouse category-score assertion is preserved unchanged.
 
 **Commands:**
 
