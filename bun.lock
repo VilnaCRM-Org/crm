@@ -56,7 +56,7 @@
         "@playwright/test": "^1.57.0",
         "@rsbuild/core": "1.6.15",
         "@rsbuild/plugin-react": "1.4.0",
-        "@rsbuild/plugin-svgr": "^1.2.3",
+        "@rsbuild/plugin-svgr": "^2.0.5",
         "@storybook/addon-docs": "^9.0.18",
         "@storybook/addon-links": "^9.0.18",
         "@storybook/addon-mcp": "^0.6.0",
@@ -900,7 +900,7 @@
 
     "@rsbuild/plugin-react": ["@rsbuild/plugin-react@1.4.0", "", { "dependencies": { "@rspack/plugin-react-refresh": "^1.5.0", "react-refresh": "^0.17.0" }, "peerDependencies": { "@rsbuild/core": "1.x" } }, "sha512-YhhOUOonJBjnKpUf7E4iXKidldPWAGmYBRtDjQgcSmW4tbW0DasFpNCqLn5870Q2Ly6oCU06sLv+8G597I36+w=="],
 
-    "@rsbuild/plugin-svgr": ["@rsbuild/plugin-svgr@1.2.3", "", { "dependencies": { "@rsbuild/plugin-react": "^1.1.0", "@svgr/core": "8.1.0", "@svgr/plugin-jsx": "8.1.0", "@svgr/plugin-svgo": "8.1.0", "deepmerge": "^4.3.1", "loader-utils": "^3.3.1" }, "peerDependencies": { "@rsbuild/core": "1.x" } }, "sha512-ehcEqRGuWqjVkF96Ibz9czFGJJQptl3E2kBC11f9oq81d8xZAFQYqP3gC4Ns9B/G/YSVVlmykfrqAyf7XGoIAQ=="],
+    "@rsbuild/plugin-svgr": ["@rsbuild/plugin-svgr@2.0.5", "", { "dependencies": { "@rsbuild/plugin-react": "^2.0.0", "@svgr/core": "8.1.0", "@svgr/plugin-jsx": "8.1.0", "@svgr/plugin-svgo": "8.1.0", "deepmerge": "^4.3.1", "loader-utils": "^3.3.1" }, "peerDependencies": { "@rsbuild/core": "^2.0.0" }, "optionalPeers": ["@rsbuild/core"] }, "sha512-Ee7HWjxz6Ockv4EtLQn5rFhsVKNPGmAKG3PLHJ4yg3ePYqFMdwHfshcF3HEOVyt67HsNRYpdK2POHE3qv52Dkg=="],
 
     "@rspack/binding": ["@rspack/binding@1.6.8", "", { "optionalDependencies": { "@rspack/binding-darwin-arm64": "1.6.8", "@rspack/binding-darwin-x64": "1.6.8", "@rspack/binding-linux-arm64-gnu": "1.6.8", "@rspack/binding-linux-arm64-musl": "1.6.8", "@rspack/binding-linux-x64-gnu": "1.6.8", "@rspack/binding-linux-x64-musl": "1.6.8", "@rspack/binding-wasm32-wasi": "1.6.8", "@rspack/binding-win32-arm64-msvc": "1.6.8", "@rspack/binding-win32-ia32-msvc": "1.6.8", "@rspack/binding-win32-x64-msvc": "1.6.8" } }, "sha512-lUeL4mbwGo+nqRKqFDCm9vH2jv9FNMVt1X8jqayWRcOCPlj/2UVMEFgqjR7Pp2vlvnTKq//31KbDBJmDZq31RQ=="],
 
@@ -3694,6 +3694,8 @@
 
     "@redocly/openapi-core/minimatch": ["minimatch@5.1.9", "", { "dependencies": { "brace-expansion": "^2.0.1" } }, "sha512-7o1wEA2RyMP7Iu7GNba9vc0RWWGACJOCZBJX2GJWip0ikV+wcOsgVuY9uE8CPiyQhkGFSlhuSkZPavN7u1c2Fw=="],
 
+    "@rsbuild/plugin-svgr/@rsbuild/plugin-react": ["@rsbuild/plugin-react@2.1.0", "", { "dependencies": { "@rspack/plugin-react-refresh": "^2.0.2", "react-refresh": "^0.18.0" }, "peerDependencies": { "@rsbuild/core": "^2.0.0" }, "optionalPeers": ["@rsbuild/core"] }, "sha512-RQTIAWB/CwPjoWt9iAl+8HixeQVgZ7kEIBrWPCixfITyHdiD84h0YpUTpEUuz6kGHw1KXT9mHZ3Rwy6WG7aRDA=="],
+
     "@rspack/binding-wasm32-wasi/@napi-rs/wasm-runtime": ["@napi-rs/wasm-runtime@1.0.7", "", { "dependencies": { "@emnapi/core": "^1.5.0", "@emnapi/runtime": "^1.5.0", "@tybys/wasm-util": "^0.10.1" } }, "sha512-SeDnOO0Tk7Okiq6DbXmmBODgOAb9dp9gjlphokTUxmt8U3liIP1ZsozBahH69j/RJv+Rfs6IwUKHTgQYJ/HBAw=="],
 
     "@rspack/core/@module-federation/runtime-tools": ["@module-federation/runtime-tools@0.21.6", "", { "dependencies": { "@module-federation/runtime": "0.21.6", "@module-federation/webpack-bundler-runtime": "0.21.6" } }, "sha512-fnP+ZOZTFeBGiTAnxve+axGmiYn2D60h86nUISXjXClK3LUY1krUfPgf6MaD4YDJ4i51OGXZWPekeMe16pkd8Q=="],
@@ -4415,6 +4417,10 @@
     "@redocly/openapi-core/https-proxy-agent/agent-base": ["agent-base@7.1.4", "", {}, "sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ=="],
 
     "@redocly/openapi-core/minimatch/brace-expansion": ["brace-expansion@2.0.2", "", { "dependencies": { "balanced-match": "^1.0.0" } }, "sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ=="],
+
+    "@rsbuild/plugin-svgr/@rsbuild/plugin-react/@rspack/plugin-react-refresh": ["@rspack/plugin-react-refresh@2.0.2", "", { "peerDependencies": { "@rspack/core": "^2.0.0", "react-refresh": ">=0.10.0 <1.0.0" }, "optionalPeers": ["@rspack/core"] }, "sha512-dGNZiCxQxgAUI9sah7gd8u+O7OJZRCmqtEJNDOd8xW5RqcieC86F7p5qcShyw6onH5pKf57evpr2VjGbaFGkZg=="],
+
+    "@rsbuild/plugin-svgr/@rsbuild/plugin-react/react-refresh": ["react-refresh@0.18.0", "", {}, "sha512-QgT5//D3jfjJb6Gsjxv0Slpj23ip+HtOpnNgnb2S5zU3CB26G/IDPGoy4RJB42wzFE46DRsstbW6tKHoKbhAxw=="],
 
     "@rspack/core/@module-federation/runtime-tools/@module-federation/runtime": ["@module-federation/runtime@0.21.6", "", { "dependencies": { "@module-federation/error-codes": "0.21.6", "@module-federation/runtime-core": "0.21.6", "@module-federation/sdk": "0.21.6" } }, "sha512-+caXwaQqwTNh+CQqyb4mZmXq7iEemRDrTZQGD+zyeH454JAYnJ3s/3oDFizdH6245pk+NiqDyOOkHzzFQorKhQ=="],
 
