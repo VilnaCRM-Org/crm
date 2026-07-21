@@ -1,6 +1,8 @@
+import rawEnv from '@/config/env/raw-env';
+
 class UrlBuilder {
   public build(endpoint: string): string {
-    const baseUrl = process.env.REACT_APP_MOCKOON_URL?.trim() ?? '';
+    const baseUrl = rawEnv.mockoonUrl();
     const normalizedBase = baseUrl.replace(/\/+$/, '');
     const normalizedEndpoint = endpoint.replace(/^\/+/, '');
 

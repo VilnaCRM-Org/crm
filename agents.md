@@ -1126,12 +1126,13 @@ fails on a fork PR; the report is retrievable from the `bundle-size-report` buil
 make perf-budget    # Prod build + enforce the gzip byte budgets (fails on breach)
 ```
 
-Every page-level route is declared in `src/routes/route-manifest.tsx` with a dynamic
-`import()` loader and a non-null `Suspense` fallback. Two machine checks fail CI:
-`tests/unit/routes/route-manifest.test.tsx` rejects an eager loader or a null/empty fallback
-on any manifest entry, and `tests/unit/routes/routes.test.tsx` rejects a page route added to
-the router outside the manifest. Satisfy a budget by reducing/splitting the bundle, never by
-raising a limit without rationale or disabling the gate.
+Every page-level route is code-split by the module-owned route registry (issue #105): each
+route contract declares a dynamic `import()` loader named via `webpackChunkName`, the composer
+wraps it in `React.lazy`, and the single `Suspense` boundary in `root-layout.tsx` ships a
+non-null deferred `RouteFallback`. The `performance serving` golden test
+(`tests/unit/tooling/performance-serving.test.ts`) fails CI if a page loader loses its named
+dynamic `import()` or the boundary reverts to `fallback={null}`. Satisfy a budget by
+reducing/splitting the bundle, never by raising a limit without rationale or disabling the gate.
 
 ### Load Testing with K6
 

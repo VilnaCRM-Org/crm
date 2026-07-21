@@ -25,14 +25,26 @@ describe('public index performance safeguards', () => {
     expect(config).not.toContain('process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN ??');
   });
 
-  it('keeps route suspense fallback empty to avoid adding a loading spinner to first paint', () => {
+  it('uses a deferred, spinner-free route fallback so first paint adds no loading indicator', () => {
     const rootLayoutSource = fs.readFileSync(
       path.resolve(__dirname, '../../../src/components/layouts/root-layout.tsx'),
       'utf8'
     );
 
-    expect(rootLayoutSource).toContain('fallback={null}');
+    // The route-level Suspense uses the deferred RouteFallback, never an eager MUI
+    // CircularProgress, so a fast chunk load adds no first-paint spinner (issue #117).
+    expect(rootLayoutSource).toContain('<RouteFallback />');
     expect(rootLayoutSource).not.toContain('CircularProgress');
+
+    const fallbackSource = fs.readFileSync(
+      path.resolve(__dirname, '../../../src/components/route-fallback/index.tsx'),
+      'utf8'
+    );
+
+    // RouteFallback paints nothing until a timer elapses and stays off the eager MUI spinner
+    // graph, so the safeguard that motivated `fallback={null}` is preserved.
+    expect(fallbackSource).toContain('setTimeout');
+    expect(fallbackSource).not.toContain('CircularProgress');
   });
 
   it('keeps dependency injection metadata out of the client entry bundle', () => {

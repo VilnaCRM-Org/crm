@@ -118,7 +118,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = lint-eslint lint-tsc lint-md lint-dup lint-metrics
+CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-dup lint-metrics
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -133,6 +133,8 @@ UNIT_TESTS                  = $(MAKE) ensure-dev && $(EXEC_DEV_TTYLESS) env
 MUTATION_SHARD_TOTAL        ?= 1
 MUTATION_SHARD_INDEX        ?= 0
 MUTATION_REPORTS_DIR         = reports/mutation
+MUTATION_INCREMENTAL        ?=
+STRYKER_INCREMENTAL_FLAG     = $(if $(filter 1 true,$(MUTATION_INCREMENTAL)),--incremental,)
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
 STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
@@ -151,7 +153,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
-.PHONY: clean lint lint-dup lint-metrics lint-metrics-run
+.PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -339,6 +341,9 @@ lint-deps: ## This command executes dependency-cruiser
 lint-dup: ## Run the jscpd copy/paste duplication gate (thresholds in .jscpd.json)
 	$(BUNX) jscpd
 
+check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
+	sh scripts/check-env-sync.sh
+
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
 	@summary_path="$$GITHUB_STEP_SUMMARY"; \
 	if [ -n "$$summary_path" ]; then \
@@ -382,7 +387,7 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-lint: lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics ## Runs all linters: ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, and rust-code-analysis metrics.
+lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, and rust-code-analysis metrics.
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision
@@ -549,7 +554,7 @@ test-mutation: ## Run mutation tests using Stryker after building the app
 	$(STRYKER_CMD)
 
 test-mutation-shard: ## Run mutation shard MUTATION_SHARD_INDEX of MUTATION_SHARD_TOTAL in the running dev container
-	$(DOCKER_COMPOSE) exec -T -e MUTATION_SHARD_INDEX=$(MUTATION_SHARD_INDEX) -e MUTATION_SHARD_TOTAL=$(MUTATION_SHARD_TOTAL) dev bun x stryker run stryker.shard.config.mjs
+	$(DOCKER_COMPOSE) exec -T -e MUTATION_SHARD_INDEX=$(MUTATION_SHARD_INDEX) -e MUTATION_SHARD_TOTAL=$(MUTATION_SHARD_TOTAL) dev bun x stryker run stryker.shard.config.mjs $(STRYKER_INCREMENTAL_FLAG)
 
 merge-mutation-reports: ## Merge mutation shard reports and re-enforce the Stryker break gate in the running dev container
 	$(DOCKER_COMPOSE) exec -T -e MUTATION_SHARD_TOTAL=$(MUTATION_SHARD_TOTAL) dev bun scripts/ci/merge-mutation-reports.ts

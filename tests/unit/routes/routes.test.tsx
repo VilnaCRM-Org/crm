@@ -5,7 +5,6 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
-import type { RouteObject } from 'react-router-dom';
 
 let mockCurrentPath = '/sign-up';
 
@@ -76,7 +75,6 @@ jest.mock('@auth/routes/sign-in', () => ({
   default: (): ReactElement => <div>sign in page</div>,
 }));
 
-import routeManifest from '@/routes/route-manifest';
 import router from '@/routes/routes';
 
 describe('routes', () => {
@@ -113,29 +111,5 @@ describe('routes', () => {
     renderAt('/');
     expect(await screen.findByText('button example page')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
-  });
-
-  it('sources every page route from the manifest, each behind a real fallback (issue #117)', () => {
-    // Scope is deliberately the route leaves: the Suspense boundaries in root-layout and
-    // app-providers sit ABOVE the router and are not page routes, so they are not asserted here.
-    const leafRoutes = (routes: RouteObject[]): RouteObject[] =>
-      routes.flatMap((route) => {
-        const { children } = route;
-        return children ? leafRoutes(children) : [route];
-      });
-
-    // createBrowserRouter is mocked to the identity above, so `router` IS the route config.
-    const leaves = leafRoutes(router as unknown as RouteObject[]);
-
-    // A page route hand-written into routes.tsx instead of appended to the manifest moves this
-    // count, so the manifest cannot be bypassed even for a page the manifest test never sees.
-    expect(leaves).toHaveLength(routeManifest.length);
-
-    leaves.forEach((route) => {
-      expect(route.element).toBeDefined();
-      const element = route.element as ReactElement<{ fallback?: unknown }>;
-      expect(element.type).toBe(Suspense);
-      expect(element.props.fallback).toBeTruthy();
-    });
   });
 });

@@ -1,3 +1,4 @@
+import rawEnv from '@/config/env/raw-env';
 import type { AuthState } from '@auth/types/auth-store';
 import type { AuthTokenWindow } from '@auth/types/auth-window';
 import type { ReactiveVar } from '@auth/types/reactive-var';
@@ -66,10 +67,8 @@ export class AuthStateVar {
   }
 
   private readEnvToken(): string | undefined {
-    // Must be a static `process.env.<LITERAL>` access so the bundler can inline it at build
-    // time (LHCI); a dynamic key would never be replaced and is undefined in the browser.
     try {
-      return process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN?.trim() || undefined;
+      return rawEnv.lhciPreloadedAuthToken();
     } catch {
       return undefined;
     }

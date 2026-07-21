@@ -381,14 +381,18 @@ module.exports = {
     {
       name: 'no-routes-import-feature-internals',
       comment:
-        'The routes shell layer must not import from feature internals. ' +
-        'Exceptions: public page entries (routes/) and the routing guard (protected-route).',
+        'The routes shell layer (registry + composer) must not import feature ' +
+        'internals. It consumes a feature only through its module-owned route ' +
+        'contract barrel (features/<f>/routes/index) — never a deep page path — ' +
+        'so pages are declared as data inside the module, not wired in the shell ' +
+        '(issue #105). The routing guard (protected-route) is the one further ' +
+        'exception, resolved by the composer for the declarative `guard` field.',
       severity: 'error',
       from: { path: '^src/routes/' },
       to: {
         path: '^src/modules/[^/]+/features/',
         pathNot: [
-          '^src/modules/[^/]+/features/[^/]+/routes/',
+          '^src/modules/[^/]+/features/[^/]+/routes/index[.](?:js|mjs|cjs|jsx|ts|mts|cts|tsx)$',
           '^src/modules/[^/]+/features/[^/]+/components/protected-route/',
         ],
       },
@@ -514,12 +518,12 @@ module.exports = {
       name: 'tests-top-level-allowed-folders',
       comment:
         'Tests root may only contain allowed folders: apollo-server, builders, ' +
-        'e2e, integration, load, memory-leak, unit, utils, visual.',
+        'e2e, integration, load, memory-leak, mutation, unit, utils, visual.',
       severity: 'error',
       from: {
         path:
           '^tests/(?!(?:apollo-server|builders|e2e|integration|' +
-          'load|memory-leak|unit|utils|visual)/)[^/]+/',
+          'load|memory-leak|mutation|unit|utils|visual)/)[^/]+/',
       },
       to: {},
     },

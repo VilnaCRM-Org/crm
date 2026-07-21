@@ -116,15 +116,56 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 
 ### CI parallelization
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
-4-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across an
+8-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
-threshold read from `stryker.config.mjs` (`make merge-mutation-reports`) — identical gate, much
-faster (~1h → fits the PR budget). Lighthouse desktop/mobile run as a parallel matrix
-(`performance-testing.yml`). Every workflow declares `concurrency` with `cancel-in-progress: true`
-(release/sandbox workflows use `false`) so a new push cancels the previous run. No gate is weakened
-and no threshold changes. See "CI speed and the mutation-testing gate" in `CONTRIBUTING.md` for the
+threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
+run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
+touches re-run while the gate still scores the whole set; `mutation-testing-full.yml` runs the same
+matrix weekly, cold and from scratch, as the authoritative baseline. Lighthouse desktop/mobile run as
+a parallel matrix (`performance-testing.yml`). Every workflow declares `concurrency` with
+`cancel-in-progress: true` (release/sandbox workflows use `false`) so a new push cancels the previous
+run. No gate is weakened. See "CI speed and the mutation-testing gate" in `CONTRIBUTING.md` for the
 full flow and the branch-protection required-checks update.
+
+### Mutation testing scope and baseline
+
+Stryker mutates the **logic layer across all modules**, not just `src/components/`: repositories
+(`src/modules/user/features/auth/repositories/**`), application services (`src/services/**`), auth
+stores/state, validation policies, and the module `.tsx` surface. The mutated file list is the single
+source of truth in `scripts/ci/mutation-scope.mjs`, whose exclusions mirror `jest.config.ts`
+`collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n). Stryker runs unit **and**
+integration tests via `jest.mutation.config.ts` — a flat union of both suites, since Stryker's
+jest-runner cannot use Jest `projects` with `perTest` coverage — so repository/service/store mutants
+are killed by the integration tests that assert on them. The mutation config excludes the
+`tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
+instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
+These keep the run affordable — CI runners are 2-core, so parallelism comes from the 8-way shard
+count, not Stryker's in-process concurrency.
+
+`thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`. `break` is the
+enforced floor, set at/just below the measured baseline. **Ratchet policy:** raise `break` toward
+`high` as suites improve; never lower it to make CI pass, never narrow the mutated scope to dodge a
+survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
+assertions.
+
+Measured baseline (widened scope, unit + integration; 8-way sharded full run):
+
+| Area                         | Files | Mutation score |
+| ---------------------------- | ----- | -------------- |
+| `src/services/**`            | 9     | 100%           |
+| `…/auth/repositories/**`     | 7     | 100%           |
+| `…/auth/stores/**`           | 8     | 100%           |
+| `…/form-section/validations` | 4     | 100%           |
+| Overall (`break` = 90)       | 134   | 92.5%          |
+
+The mutate scope is 154 files; 134 produced mutants in the report (the other ~20 are pure re-export
+barrels or files whose only mutants are static and skipped by `ignoreStatic`). The logic layer is
+fully detected; the overall gap is `noCoverage` mutants in non-logic files (UI/providers/routes
+exercised by e2e/visual rather than unit/integration). Detections in the async logic layer land as
+Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test), which counts as
+detected. `break` is set to 90 — below the 92.5% baseline for margin — and ratchets toward the
+`high` = 100 target as the scheduled full runs confirm stability.
 
 ## Code Quality
 
@@ -340,23 +381,25 @@ breached; the size diff itself is informational. The job can also fail earlier, 
 step, when an Rspack **raw** budget is exceeded (that gate fails every production build, not
 just this workflow).
 
-**Route-level splitting (single boring way to add a page):** every page-level route is
-declared in [`src/routes/route-manifest.tsx`](src/routes/route-manifest.tsx) as data — a
-dynamic `import()` loader (named via `webpackChunkName` so the size report can track its
-chunk) and a **non-null** `Suspense` fallback (`<RouteFallback />`). `src/routes/routes.tsx`
-builds the router from the manifest. To add a route: append one entry to the manifest; do
-**not** eagerly import a page. Three checks fail CI, each covering a different escape:
+**Route-level splitting:** page-level routes are code-split by the module-owned route registry
+(see "Route Registry (issue #105)" below). Each route contract declares a dynamic `import()`
+loader — named via `webpackChunkName` so the bundle-size report can track its chunk per route —
+and the composer wraps every loader in `React.lazy`. The **single** route-level `Suspense`
+boundary lives in [`src/components/layouts/root-layout.tsx`](src/components/layouts/root-layout.tsx)
+and ships a **non-null**, deferred fallback ([`<RouteFallback />`](src/components/route-fallback/index.tsx)):
+it paints nothing for the first 150 ms so fast chunk loads never flash a loader (and avoid the
+layout shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
+announces loading via a polite live region. To add a page, follow the registry ("Adding a page"
+below); never eagerly import a page. Two checks fail CI on a regression:
 
-- `route manifest`
-  ([`tests/unit/routes/route-manifest.test.tsx`](tests/unit/routes/route-manifest.test.tsx)) —
-  every manifest entry must use a dynamic `import()` loader and a non-null, non-empty
-  fallback. This is the **only** fallback check.
-- `routes` ([`tests/unit/routes/routes.test.tsx`](tests/unit/routes/routes.test.tsx)) — the
-  router's page routes must all come from the manifest, so a page hand-written into
-  `routes.tsx` cannot bypass the manifest check above.
-- the relocated `performance serving` golden test — pins the current page specifiers to
-  dynamic `import()` in both `route-manifest.tsx` and `routes.tsx`. **Eager-import only**;
-  it asserts nothing about fallbacks.
+- the `performance serving` golden test
+  ([`tests/unit/tooling/performance-serving.test.ts`](tests/unit/tooling/performance-serving.test.ts))
+  pins each page loader to a `webpackChunkName`-named dynamic `import()`, forbids static page
+  imports, and asserts the RootLayout boundary keeps the non-null `RouteFallback` (never
+  `fallback={null}`). This is the **only** fallback check.
+- `RouteFallback`
+  ([`tests/unit/components/route-fallback/route-fallback.test.tsx`](tests/unit/components/route-fallback/route-fallback.test.tsx))
+  pins the deferred-paint and live-region behavior.
 
 **No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
 limit without rationale, disabling `hints`, or excluding files from the report. The same
@@ -383,7 +426,7 @@ src/
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
 ├── config/          # DI configuration, tokens, API config
-├── routes/          # Route definitions
+├── routes/          # Route registry + composer (module-owned route contracts)
 ├── providers/       # React context providers
 └── utils/           # Shared utilities
 ```
@@ -514,14 +557,47 @@ feature boundary is allowed **only** through its `index` barrel —
 across the boundary fail `no-module-internal-imports` /
 `no-feature-internal-imports` (dependency-cruiser) and scoped
 `no-restricted-imports` (ESLint). The DI composition root and the app-shell
-router's code-split route/guard entries are the only sanctioned exceptions.
-See `src/modules/user/README.md` for the full contract.
+router are the only sanctioned exceptions — and the router now reaches a
+feature **only** through its module-owned route contract barrel
+(`features/<f>/routes/index`) plus the `protected-route` guard, enforced by the
+tightened `no-routes-import-feature-internals` rule (issue #105).
+See `src/modules/user/README.md` for the full contract and `src/routes/README.md`
+for the route registry.
 
 These aliases are configured in:
 
 - `tsconfig.paths.json` for TypeScript
 - `rsbuild.config.ts` for RSBuild
 - `jest.config.ts` for Jest
+
+### Route Registry (issue #105)
+
+Routes are **module-owned data**, not a hand-edited tree in the app shell. Each
+module/feature declares its routes through a typed **public route contract** in
+its own `routes/` folder; a central registry collects the contracts and a
+composer builds the `createBrowserRouter` tree. `src/routes/routes.tsx` is pure
+wiring — it contains no route-array literal and no feature/module page imports.
+
+- **Contract types** — `src/routes/types/{app-route,route-module}.ts`
+  (`AppRouteObject`: `path`/`index`, lazy `load`, declarative `guard`, `meta`;
+  `RouteModule`: `id` + `routes`). Type-only files (issue #88).
+- **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a
+  `RouteModule` whose routes lazy-`load` the feature's pages (per-route code
+  splitting preserved). The auth feature: `@auth/routes`. The app shell's own
+  routes (home + 404) live in `src/routes/app-routes.ts`.
+- **Registry** — `src/routes/registry.ts` collects the contracts (one-line
+  append per new module).
+- **Composer** — `src/routes/route-composer.tsx` (+ `route-mapper.tsx`,
+  `route-validator.ts`, all container-free module singletons) validates the
+  contracts, resolves `guard: 'protected'` to the `ProtectedRoute` guard nested
+  under `AppLayout`, keeps public routes directly under `RootLayout`, and wraps
+  each `load` in `React.lazy`.
+
+**Adding a page** — add a route entry to the owning module's
+`routes/index.ts` contract, then (for a new module) append it to
+`src/routes/registry.ts`. Never edit `src/routes/routes.tsx` or the composer.
+Deep-importing a feature page from the shell fails
+`no-routes-import-feature-internals`.
 
 ### GraphQL Setup
 
@@ -619,7 +695,10 @@ Key variables in `.env`:
 
 2. **Form Validation**: Centralized in module features (e.g., `auth/components/form-section/validations/`)
 
-3. **Routing**: Defined in `App.tsx` using `createBrowserRouter`
+3. **Routing**: Module-owned route contracts collected by a registry and
+   assembled by a composer into `createBrowserRouter` (see "Route Registry"
+   above). Add a page in the owning module's `routes/` folder — never in the
+   app shell.
 
 4. **Testing Philosophy**:
    - Unit tests for components and utilities

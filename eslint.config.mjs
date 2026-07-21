@@ -140,6 +140,24 @@ const noStaticOrFreeFunctionSelectors = [
   },
 ];
 
+// Source (issue #112): non-React application code must not read `process.env` directly —
+// import the validated, typed configuration from `@/config/env` (or the paint-safe
+// `@/config/env/raw-env`) instead. The `src/config/env/**` module is the single sanctioned
+// place that touches `process.env`; it is exempted by the override below. Re-included in the
+// non-React `.ts` block because flat config replaces (does not merge) `no-restricted-syntax`.
+const noProcessEnvSelectors = [
+  {
+    // `[property.name='env']` catches `process.env` and `process?.env`; `[property.value='env']`
+    // catches the computed forms `process['env']` and `process?.['env']`.
+    selector:
+      "MemberExpression[object.name='process'][property.name='env']," +
+      "MemberExpression[object.name='process'][property.value='env']",
+    message:
+      'No raw process.env reads in non-React source — import the validated env from ' +
+      '@/config/env (or @/config/env/raw-env on the paint path) (issue #112).',
+  },
+];
+
 const nonReactSourceGlobs = ['src/**/*.ts'];
 const nonReactSourceIgnores = [
   '**/*.stories.*',
@@ -461,6 +479,54 @@ export default [
         ...dataTestidSelectors,
         ...noStaticOrFreeFunctionSelectors,
         ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #112): the `src/config/env/**` module IS the sanctioned boundary that
+  // reads `process.env`, so the process.env ban is lifted here. The #90/#88/#100 selectors
+  // are re-included (flat config replaces, does not merge). Ordered after the non-React `.ts`
+  // block so it wins for env files; env type-only files stay governed by the override above.
+  {
+    files: ['src/config/env/**/*.ts'],
+    ignores: [
+      '**/*.stories.*',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.d.ts',
+      'src/config/env/**/types.ts',
+      'src/config/env/**/types/**/*.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...typeDeclarationSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #112): React hooks (`src/**/use-*.ts`) are exempt from the #100 no-free-function
+  // rule (they are functions), so the non-React `.ts` block above ignores them — but they must
+  // still not read raw `process.env`. Re-include the #90/#88 selectors plus the process.env ban.
+  {
+    files: ['src/**/use-*.ts'],
+    ignores: [
+      '**/*.stories.*',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.d.ts',
+      'src/**/types.ts',
+      'src/**/types/**/*.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
       ],
     },
   },
