@@ -25,7 +25,7 @@ describe('public index performance safeguards', () => {
     expect(config).not.toContain('process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN ??');
   });
 
-  it('uses a deferred, spinner-free route fallback so first paint adds no loading indicator', () => {
+  it('uses a deferred, spinner-free route fallback so first paint adds no loading spinner', () => {
     const rootLayoutSource = fs.readFileSync(
       path.resolve(__dirname, '../../../src/components/layouts/root-layout.tsx'),
       'utf8'
@@ -51,6 +51,7 @@ describe('public index performance safeguards', () => {
     const entrySource = fs.readFileSync(path.resolve(__dirname, '../../../src/index.tsx'), 'utf8');
 
     expect(entrySource).not.toContain("import '@/config/dependency-injection-config';");
+    expect(entrySource).not.toContain("import 'reflect-metadata';");
   });
 
   it('serves immutable cache headers for static assets in production', () => {
