@@ -107,3 +107,4 @@ test-mutation-shard	bats	tests/bats/makefile_targets.bats	Validated as the per-s
 merge-mutation-reports	bats	tests/bats/makefile_targets.bats	Validated as the shard-report merge and break-gate command in the running dev container.
 codegen	ci	.github/workflows/static-testing.yml	Developer regeneration entrypoint; the identical spec-driven generation runs in CI via codegen-check.
 codegen-check	ci	.github/workflows/static-testing.yml	Executed directly by the static testing workflow to reconcile contract versions and fail on stale generated types.
+perf-budget	bats	tests/bats/makefile_targets.bats	Validated as the production build plus gzip byte-budget enforcement wrapper.

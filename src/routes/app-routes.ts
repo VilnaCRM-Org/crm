@@ -7,13 +7,13 @@ const appRoutes: RouteModule = {
     {
       index: true,
       guard: 'protected',
-      load: () => import('@/button-example'),
+      load: () => import(/* webpackChunkName: "button-example" */ '@/button-example'),
       meta: { permission: 'app.home' },
     },
     {
       path: ROUTE_PATHS.notFound,
       guard: 'public',
-      load: () => import('@/components/not-found/not-found'),
+      load: () => import(/* webpackChunkName: "not-found" */ '@/components/not-found/not-found'),
     },
   ],
 };

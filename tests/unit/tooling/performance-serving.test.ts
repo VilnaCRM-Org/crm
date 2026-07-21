@@ -53,16 +53,26 @@ describe('performance serving config', () => {
     const appRoutesSource = readFile('src/routes/app-routes.ts');
     const authRoutesSource = readFile('src/modules/user/features/auth/routes/index.ts');
     const routesSource = readFile('src/routes/routes.tsx');
+    const rootLayoutSource = readFile('src/components/layouts/root-layout.tsx');
 
     // The composer maps each contract loader through React.lazy, so every page
     // still resolves via its own dynamic import() chunk.
     expect(mapperSource).toContain('lazy(route.load)');
 
-    // Each page is declared as a lazy loader inside its owning module's contract.
-    expect(appRoutesSource).toContain("import('@/button-example')");
-    expect(appRoutesSource).toContain("import('@/components/not-found/not-found')");
-    expect(authRoutesSource).toContain("import('./sign-up')");
-    expect(authRoutesSource).toContain("import('./sign-in')");
+    // Each page is a lazy loader inside its owning module's contract, and its chunk is named
+    // via webpackChunkName so the bundle-size report tracks it per route (issue #117).
+    expect(appRoutesSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'@\/button-example'\)/
+    );
+    expect(appRoutesSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'@\/components\/not-found\/not-found'\)/
+    );
+    expect(authRoutesSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'\.\/sign-up'\)/
+    );
+    expect(authRoutesSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'\.\/sign-in'\)/
+    );
 
     // Pages are never statically imported (which would defeat code splitting).
     expect(routesSource).not.toContain('import SignUp');
@@ -70,6 +80,11 @@ describe('performance serving config', () => {
     expect(routesSource).not.toContain('import ButtonExample');
     expect(authRoutesSource).not.toContain("import SignUp from './sign-up'");
     expect(authRoutesSource).not.toContain("import SignIn from './sign-in'");
+
+    // The single route-level Suspense boundary ships a non-null deferred fallback
+    // (RouteFallback), never `fallback={null}` (issue #117 — the only fallback check).
+    expect(rootLayoutSource).toContain('<RouteFallback />');
+    expect(rootLayoutSource).not.toContain('fallback={null}');
   });
 
   it('keeps registration notifications out of the initial auth form chunk', () => {

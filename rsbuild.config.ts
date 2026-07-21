@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import * as path from 'path';
 
 import { defineConfig, loadEnv } from '@rsbuild/core';
@@ -6,7 +7,43 @@ import { pluginSvgr } from '@rsbuild/plugin-svgr';
 
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
+const isAnalyze = process.env.ANALYZE === 'true';
 const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
+
+const performanceBudget = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'config/performance-budget.json'), 'utf8')
+) as { raw?: { maxInitialEntrypointBytes?: number; maxAssetBytes?: number } };
+
+// Fail fast instead of silently falling back to Rspack's 500000-byte default: an absent or
+// malformed budget would leave the build gate weaker than the documented limit (issue #117).
+const requireBudget = (value: unknown, key: string): number => {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+    throw new Error(
+      `config/performance-budget.json: "${key}" must be a positive number, got ${String(value)}. ` +
+        'Refusing to build with an unenforced size budget.'
+    );
+  }
+  return value;
+};
+
+const maxEntrypointSize = requireBudget(
+  performanceBudget.raw?.maxInitialEntrypointBytes,
+  'raw.maxInitialEntrypointBytes'
+);
+const maxAssetSize = requireBudget(performanceBudget.raw?.maxAssetBytes, 'raw.maxAssetBytes');
+
+const isScriptOrStyleAsset = (assetFilename: string): boolean =>
+  /\.(?:js|css)$/.test(assetFilename);
+
+const bundleAnalyze = isAnalyze
+  ? {
+      analyzerMode: 'static' as const,
+      reportFilename: 'bundle-report.html',
+      openAnalyzer: false,
+      generateStatsFile: true,
+      statsFilename: 'bundle-stats.json',
+    }
+  : undefined;
 
 export default defineConfig({
   plugins: [
@@ -34,6 +71,7 @@ export default defineConfig({
     chunkSplit: {
       strategy: 'split-by-experience',
     },
+    bundleAnalyze,
   },
   output: {
     inlineStyles: !isDev,
@@ -55,6 +93,12 @@ export default defineConfig({
       },
       experiments: {
         nativeWatcher: true,
+      },
+      performance: {
+        hints: isDev ? false : 'error',
+        maxEntrypointSize,
+        maxAssetSize,
+        assetFilter: isScriptOrStyleAsset,
       },
     },
     swc: {

@@ -343,6 +343,68 @@ fragments, constants, factories, or a base object plus overrides — never with
 ignore/suppress directives. The same root-cause-not-suppression policy used for
 ESLint, TypeScript, and metrics applies here.
 
+### Performance Budgets, Bundle Reports, and Route Splitting (issue #117)
+
+Bundle weight is gated deterministically alongside the existing Lighthouse category
+scores. All numbers live in one versioned file, [`config/performance-budget.json`](config/performance-budget.json)
+(the authoritative source); this table mirrors it and must be kept in sync.
+
+| Budget                           | Bytes   | Enforced by                                |
+| -------------------------------- | ------- | ------------------------------------------ |
+| `raw.maxInitialEntrypointBytes`  | 470 000 | Rspack hints (`error`) — build fails       |
+| `raw.maxAssetBytes`              | 400 000 | Rspack hints (`error`) — per JS/CSS asset  |
+| `gzip.maxInitialEntrypointBytes` | 165 000 | `bundle-size-report.mjs` — bundle workflow |
+| `gzip.maxAssetBytes`             | 130 000 | `bundle-size-report.mjs` — per chunk       |
+| `lighthouse.scriptSizeBytes`     | 265 000 | `resource-summary:script:size` (`error`)   |
+| `lighthouse.totalSizeBytes`      | 480 000 | `resource-summary:total:size` (`error`)    |
+| `lighthouse.scriptCountWarn`     | 25      | `resource-summary:script:count` (`warn`)   |
+
+Raw budgets are uncompressed (Rspack size hints operate on raw bytes); the gzip and
+Lighthouse budgets are transfer size. `serve@14` applies its compression middleware unless
+`--no-compression`, so responses ship gzipped (`Content-Encoding: gzip`) and Lighthouse
+`resource-summary` measures **compressed** bytes. The resource-summary budgets are therefore
+calibrated against measured transfer for the audited URLs (heaviest is `/sign-in` at ~196 KB
+script / ~353 KB total, of which ~156 KB is static woff2) plus ~35% headroom. Every existing
+Lighthouse category-score assertion is preserved unchanged.
+
+**Commands:**
+
+```bash
+make build-analyze  # Prod build + analyzer → dist/bundle-report.html + dist/bundle-stats.json
+make perf-budget    # Prod build + enforce the gzip byte budgets (fails on breach)
+```
+
+**PR size report:** `.github/workflows/bundle-size.yml` builds the PR and base bundles,
+diffs per-entrypoint and per-named-chunk gzip sizes, and posts/updates a sticky comment.
+Its report step fails the job when a `config/performance-budget.json` **gzip** budget is
+breached; the size diff itself is informational. The job can also fail earlier, in the build
+step, when an Rspack **raw** budget is exceeded (that gate fails every production build, not
+just this workflow).
+
+**Route-level splitting:** page-level routes are code-split by the module-owned route registry
+(see "Route Registry (issue #105)" below). Each route contract declares a dynamic `import()`
+loader — named via `webpackChunkName` so the bundle-size report can track its chunk per route —
+and the composer wraps every loader in `React.lazy`. The **single** route-level `Suspense`
+boundary lives in [`src/components/layouts/root-layout.tsx`](src/components/layouts/root-layout.tsx)
+and ships a **non-null**, deferred fallback ([`<RouteFallback />`](src/components/route-fallback/index.tsx)):
+it paints nothing for the first 150 ms so fast chunk loads never flash a loader (and avoid the
+layout shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
+announces loading via a polite live region. To add a page, follow the registry ("Adding a page"
+below); never eagerly import a page. Two checks fail CI on a regression:
+
+- the `performance serving` golden test
+  ([`tests/unit/tooling/performance-serving.test.ts`](tests/unit/tooling/performance-serving.test.ts))
+  pins each page loader to a `webpackChunkName`-named dynamic `import()`, forbids static page
+  imports, and asserts the RootLayout boundary keeps the non-null `RouteFallback` (never
+  `fallback={null}`). This is the **only** fallback check.
+- `RouteFallback`
+  ([`tests/unit/components/route-fallback/route-fallback.test.tsx`](tests/unit/components/route-fallback/route-fallback.test.tsx))
+  pins the deferred-paint and live-region behavior.
+
+**No suppression:** satisfy a budget by reducing/splitting the bundle, never by raising a
+limit without rationale, disabling `hints`, or excluding files from the report. The same
+root-cause-not-suppression policy used for ESLint, TypeScript, metrics, and jscpd applies.
+
 ## Architecture
 
 ### Module Structure

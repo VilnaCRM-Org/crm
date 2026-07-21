@@ -67,3 +67,9 @@ _bmad-output/
 
 # Dockerfile build-performance gate (scripts/ci/docker_perf.sh) artifacts
 /.docker-perf/
+
+# Bundle-size report artifacts (issue #117, CI-only)
+/dist-head/
+/dist-base/
+/base/
+/bundle-size-report.md

@@ -7,13 +7,13 @@ const authRoutes: RouteModule = {
     {
       path: ROUTE_PATHS.signUp,
       guard: 'public',
-      load: () => import('./sign-up'),
+      load: () => import(/* webpackChunkName: "sign-up" */ './sign-up'),
       meta: { titleKey: 'sign_up.title' },
     },
     {
       path: ROUTE_PATHS.signIn,
       guard: 'public',
-      load: () => import('./sign-in'),
+      load: () => import(/* webpackChunkName: "sign-in" */ './sign-in'),
       meta: { titleKey: 'sign_in.title' },
     },
   ],

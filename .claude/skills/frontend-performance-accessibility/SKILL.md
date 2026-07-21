@@ -18,6 +18,9 @@ Use `web-vitals` for runtime signals when adding instrumentation.
 
 ## Accessibility Checks
 
+- **Figma design is the source of truth.** Before modifying UI, verify the
+  design spec first. Accessibility guidance applies _on top of_ the design,
+  not instead of it. Do not invent UI from a11y requirements alone.
 - Prefer semantic MUI components and native controls.
 - Use accessible names for buttons, links, fields, dialogs, and icons.
 - Keep form errors connected to their fields.

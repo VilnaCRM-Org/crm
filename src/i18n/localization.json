@@ -6,6 +6,9 @@
         "description": "The page you're looking for doesn't exist.",
         "cta": "Go to homepage"
       },
+      "route_fallback": {
+        "loading": "Loading page"
+      },
       "root_element_missing": "Root element not found",
       "buttons": {
         "back_to_main": "Back to homepage"
@@ -145,6 +148,9 @@
         "title": "Сторінку не знайдено",
         "description": "Сторінку, яку ви шукаєте, не існує.",
         "cta": "На головну сторінку"
+      },
+      "route_fallback": {
+        "loading": "Завантаження сторінки"
       },
       "login": {
         "title": "Автентифікація",

@@ -1098,7 +1098,9 @@ nvm use         # If using nvm
 
 ```bash
 make build-analyze
-# Opens the RSBuild bundle analyzer report in the browser
+# Prod build with the analyzer; writes dist/bundle-report.html (treemap) and
+# dist/bundle-stats.json. Open the HTML file to inspect the bundle (no browser
+# is launched — analyzerMode is 'static').
 ```
 
 **Look for**:
@@ -1106,6 +1108,31 @@ make build-analyze
 - Large dependencies (>500KB)
 - Duplicate packages
 - Unused code
+
+### Performance Budgets (issue #117)
+
+Byte budgets are versioned in `config/performance-budget.json` (single source of truth,
+mirrored in the `CLAUDE.md` table). Rspack `performance` hints (`hints: 'error'`) fail the
+build when the raw entrypoint/asset budgets are exceeded; `scripts/bundle-size-report.mjs`
+enforces the gzip budgets and the `bundle size` workflow posts a per-PR sticky size-delta
+comment; both Lighthouse configs add `error`-level `resource-summary` budgets on top of the
+unchanged category scores.
+
+The sticky comment is posted for **same-repository PRs only** — the comment job is skipped
+for fork PRs, whose `GITHUB_TOKEN` is read-only. The budget gate itself still runs and still
+fails on a fork PR; the report is retrievable from the `bundle-size-report` build artifact.
+
+```bash
+make perf-budget    # Prod build + enforce the gzip byte budgets (fails on breach)
+```
+
+Every page-level route is code-split by the module-owned route registry (issue #105): each
+route contract declares a dynamic `import()` loader named via `webpackChunkName`, the composer
+wraps it in `React.lazy`, and the single `Suspense` boundary in `root-layout.tsx` ships a
+non-null deferred `RouteFallback`. The `performance serving` golden test
+(`tests/unit/tooling/performance-serving.test.ts`) fails CI if a page loader loses its named
+dynamic `import()` or the boundary reverts to `fallback={null}`. Satisfy a budget by
+reducing/splitting the bundle, never by raising a limit without rationale or disabling the gate.
 
 ### Load Testing with K6
 
@@ -1335,7 +1362,8 @@ make format             # Prettier and Qlty format
 ```bash
 make build              # Build in Docker
 make build-out          # Extract build to ./build
-make build-analyze      # Bundle analyzer
+make build-analyze      # Bundle analyzer (writes dist/bundle-report.html + dist/bundle-stats.json)
+make perf-budget        # Build + enforce gzip byte budgets (config/performance-budget.json)
 ```
 
 ### Utilities

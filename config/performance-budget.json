@@ -1,0 +1,39 @@
+{
+  "description": "Authoritative performance byte budgets for the frontend bundle. This is the SINGLE source of truth for the numbers; rsbuild.config.ts, the Lighthouse configs, scripts/bundle-size-report.mjs and the make perf-budget target all read from here. The CLAUDE.md/agents.md tables are documentation MIRRORS of this file and must be updated with it. Satisfy a budget by reducing/splitting the bundle, never by raising a limit without rationale (see issue #117).",
+  "raw": {
+    "maxInitialEntrypointBytes": 470000,
+    "maxAssetBytes": 400000
+  },
+  "gzip": {
+    "maxInitialEntrypointBytes": 165000,
+    "maxAssetBytes": 130000
+  },
+  "lighthouse": {
+    "scriptSizeBytes": 265000,
+    "totalSizeBytes": 480000,
+    "scriptCountWarn": 25
+  },
+  "rationale": {
+    "raw.maxInitialEntrypointBytes": "Uncompressed size of the initial (eager) entrypoint, enforced by Rspack performance hints (hints: 'error') so a build that grows the eager bundle past this fails CI. Measured baseline ~388 KB; budget adds ~21% headroom for incremental growth while catching a doubling.",
+    "raw.maxAssetBytes": "Uncompressed size ceiling for any single emitted JS/CSS asset (async route chunks included), enforced by Rspack performance hints. Measured largest chunk ~318 KB (the deferred auth/DI graph); budget adds ~26% headroom while catching a single page ballooning.",
+    "gzip.maxInitialEntrypointBytes": "Transfer-size (gzip) ceiling for the eager entrypoint total, enforced by scripts/bundle-size-report.mjs (fails the bundle-size workflow when breached). Measured baseline ~125 KB; budget adds ~32% headroom.",
+    "gzip.maxAssetBytes": "Transfer-size (gzip) ceiling for any single named/async JS chunk, enforced by scripts/bundle-size-report.mjs. Measured largest ~101 KB; budget adds ~29% headroom.",
+    "lighthouse.scriptSizeBytes": "Lighthouse resource-summary:script:size (error). The production image serves with serve@14, which DOES gzip (it applies the compression middleware unless --no-compression), so Lighthouse transfer size is COMPRESSED, not raw. Measured against the running production container: / = 126 KB, /sign-up = 192 KB, /sign-in = 196 KB of script transfer. Budget is the heaviest page (~196 KB) plus ~35% headroom.",
+    "lighthouse.totalSizeBytes": "Lighthouse resource-summary:total:size (error) — ceiling for total transferred bytes (script + document + fonts + images), compressed as above. Measured heaviest page /sign-in = 353 KB, of which ~156 KB is static woff2 fonts that do not grow. Budget adds ~36% headroom.",
+    "lighthouse.scriptCountWarn": "Lighthouse resource-summary:script:count (warn) — flags request-count growth without failing CI, since request count varies with route-level splitting."
+  },
+  "measuredBaseline": {
+    "date": "2026-07-20",
+    "server": "serve@14 with compression middleware enabled (responses are gzip; Content-Encoding: gzip verified against the running production container)",
+    "initialEntrypointRawBytes": 387749,
+    "initialEntrypointGzipBytes": 124700,
+    "largestAssetRawBytes": 317727,
+    "largestAssetGzipBytes": 101055,
+    "initialEntrypointChunks": ["index", "lib-react", "lib-router", "shared vendor"],
+    "lighthouseTransferByUrl": {
+      "/": { "scriptBytes": 125884, "totalBytes": 127225 },
+      "/sign-up": { "scriptBytes": 192436, "totalBytes": 349677 },
+      "/sign-in": { "scriptBytes": 195783, "totalBytes": 353024 }
+    }
+  }
+}
