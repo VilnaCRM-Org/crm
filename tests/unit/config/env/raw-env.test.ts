@@ -42,6 +42,9 @@ describe('rawEnv', () => {
       process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = 'seed';
       process.env.REACT_APP_MAIN_LANGUAGE = 'uk';
       process.env.REACT_APP_FALLBACK_LANGUAGE = 'en';
+      process.env.REACT_APP_RELEASE = 'v1.2.3';
+      process.env.REACT_APP_SENTRY_DSN = 'https://key@sentry.io/1';
+      process.env.REACT_APP_SENTRY_ENVIRONMENT = 'staging';
 
       expect(rawEnv.snapshot()).toEqual({
         nodeEnv: 'test',
@@ -50,6 +53,9 @@ describe('rawEnv', () => {
         lhciPreloadedAuthToken: 'seed',
         mainLanguage: 'uk',
         fallbackLanguage: 'en',
+        release: 'v1.2.3',
+        sentryDsn: 'https://key@sentry.io/1',
+        sentryEnvironment: 'staging',
       });
     });
   });

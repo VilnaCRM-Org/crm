@@ -7,6 +7,9 @@ const EnvSchema = z.object({
   lhciPreloadedAuthToken: z.string().optional(),
   mainLanguage: z.enum(['uk', 'en']).optional(),
   fallbackLanguage: z.enum(['uk', 'en']).optional(),
+  release: z.string().optional(),
+  sentryDsn: z.string().optional(),
+  sentryEnvironment: z.string().optional(),
 });
 
 export default EnvSchema;

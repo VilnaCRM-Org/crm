@@ -14,6 +14,9 @@ const SCHEMA_KEY_TO_ENV_VAR: Record<string, string | null> = {
   lhciPreloadedAuthToken: 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN',
   mainLanguage: 'REACT_APP_MAIN_LANGUAGE',
   fallbackLanguage: 'REACT_APP_FALLBACK_LANGUAGE',
+  release: 'REACT_APP_RELEASE',
+  sentryDsn: 'REACT_APP_SENTRY_DSN',
+  sentryEnvironment: 'REACT_APP_SENTRY_ENVIRONMENT',
 };
 
 describe('env schema <-> .env.example sync', () => {

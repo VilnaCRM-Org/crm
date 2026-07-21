@@ -10,6 +10,8 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 
+jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
+
 // Transport-focused tests: the schema is exercised elsewhere, so validation is a no-op here.
 const passthrough = z.unknown();
 
@@ -101,6 +103,7 @@ describe('FetchHttpsClient', () => {
         method: 'GET',
         headers: {
           Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
       });
     });
@@ -116,6 +119,7 @@ describe('FetchHttpsClient', () => {
         method: 'GET',
         headers: {
           Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
         signal: controller.signal,
       });
@@ -189,6 +193,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -208,6 +213,7 @@ describe('FetchHttpsClient', () => {
         method: 'POST',
         headers: {
           Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
         body: formData,
       });
@@ -224,6 +230,7 @@ describe('FetchHttpsClient', () => {
         method: 'POST',
         headers: {
           Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
         body: 'plain text',
       });
@@ -283,6 +290,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -342,6 +350,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -399,6 +408,7 @@ describe('FetchHttpsClient', () => {
         method: 'DELETE',
         headers: {
           Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
       });
     });
@@ -417,6 +427,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -659,6 +670,7 @@ describe('FetchHttpsClient', () => {
         method: 'POST',
         headers: {
           Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
         body: blob,
       });
@@ -676,6 +688,7 @@ describe('FetchHttpsClient', () => {
         method: 'POST',
         headers: {
           Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
         body: buffer,
       });
@@ -706,6 +719,7 @@ describe('FetchHttpsClient', () => {
           method: 'POST',
           headers: {
             Accept: 'application/json',
+            'X-Request-Id': 'test-request-id',
           },
           body: stream,
         });
@@ -782,6 +796,7 @@ describe('FetchHttpsClient', () => {
         method: 'GET',
         headers: {
           Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
         },
       });
       expect(mockProcessor.process).toHaveBeenCalled();

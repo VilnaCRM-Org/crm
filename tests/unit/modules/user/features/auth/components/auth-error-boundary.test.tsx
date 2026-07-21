@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import type { ErrorInfo, ReactElement, ReactNode } from 'react';
 
 import AuthErrorBoundary from '@/modules/user/features/auth/components/auth-error-boundary';
+import authErrorReporter from '@/modules/user/features/auth/utils/auth-error-reporter';
 
 const translations = {
   'auth.error.default': 'Something went wrong. Please try again later.',
@@ -40,6 +41,27 @@ describe('AuthErrorBoundary', () => {
     boundary.componentDidCatch(error, info);
 
     expect(onError).toHaveBeenCalledWith(error, info);
+  });
+
+  it('forwards caught errors to the auth error reporter', () => {
+    const reportSpy = jest.spyOn(authErrorReporter, 'report').mockImplementation(() => {});
+    const error = new Error('captured error');
+    const info = { componentStack: '\n    at ThrowingChild' } as ErrorInfo;
+    const boundary = new AuthErrorBoundary({ children: <SafeChild /> });
+
+    boundary.componentDidCatch(error, info);
+
+    expect(reportSpy).toHaveBeenCalledWith(error, info);
+  });
+
+  it('does not rethrow when the reporter fails', () => {
+    jest.spyOn(authErrorReporter, 'report').mockImplementation(() => {
+      throw new Error('capture failed');
+    });
+    const info = { componentStack: '\n    at ThrowingChild' } as ErrorInfo;
+    const boundary = new AuthErrorBoundary({ children: <SafeChild /> });
+
+    expect(() => boundary.componentDidCatch(new Error('boom'), info)).not.toThrow();
   });
 
   it('does not try to access console in production mode', () => {

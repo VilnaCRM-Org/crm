@@ -1,3 +1,4 @@
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
 import AuthStateVar from '@auth/stores/auth-var';
 import type { AuthError } from '@auth/types/auth-error';
@@ -9,6 +10,14 @@ const authRequestErrors = new AuthRequestErrors({
   handle: (e: unknown) => ({ displayMessage: String(e), retryable: false }),
 } as unknown as AuthErrorHandler);
 
+const observability = {
+  init: jest.fn(),
+  captureError: jest.fn(),
+  setUser: jest.fn(),
+  clearUser: jest.fn(),
+  reportVital: jest.fn(),
+} as unknown as ObservabilityService;
+
 const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   ({
     login: jest.fn().mockResolvedValue({ ok: true, value: { email: 'a@b.c', token: 't' } }),
@@ -17,10 +26,13 @@ const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   }) as AuthRepository;
 
 const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors).login({ email: 'a@b.c', password: 'p' });
+  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).login({
+    email: 'a@b.c',
+    password: 'p',
+  });
 
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors).register({
+  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).register({
     fullName: 'A',
     email: 'a@b.c',
     password: 'p',
@@ -66,6 +78,13 @@ describe('AuthStoreActions integration coverage', () => {
   it('treats a thrown abort-marker register rejection as aborted', async () => {
     await registerWith({ register: jest.fn().mockRejectedValue({ aborted: true }) });
     expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, registerError: null });
+  });
+
+  it('tags an opaque observability identity after a successful login', async () => {
+    await loginWith({});
+
+    expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
+    expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: null });
   });
 
   it('applies a repository-reported error result to the auth state', async () => {

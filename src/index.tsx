@@ -1,5 +1,3 @@
-import 'reflect-metadata';
-
 import * as React from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -7,6 +5,7 @@ import '@/styles/fonts.css';
 
 import AppErrorBoundary from '@/components/error-boundary/app-error-boundary';
 import AppProviders from '@/providers/app-providers';
+import observabilityCore from '@/services/observability/observability-core';
 
 import App from './app';
 import i18n from './i18n';
@@ -19,9 +18,11 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
+observabilityCore.init();
+
 root.render(
   <React.StrictMode>
-    <AppErrorBoundary>
+    <AppErrorBoundary reporter={observabilityCore}>
       <AppProviders>
         <App />
       </AppProviders>

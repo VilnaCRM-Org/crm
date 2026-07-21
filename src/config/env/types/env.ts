@@ -5,4 +5,7 @@ export interface Env {
   readonly lhciPreloadedAuthToken?: string;
   readonly mainLanguage?: 'uk' | 'en';
   readonly fallbackLanguage?: 'uk' | 'en';
+  readonly release?: string;
+  readonly sentryDsn?: string;
+  readonly sentryEnvironment?: string;
 }

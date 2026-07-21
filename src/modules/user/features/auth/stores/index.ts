@@ -1,3 +1,4 @@
+import observabilityCore from '@/services/observability/observability-core';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthActions } from '@auth/types/auth-store';
 import type { LoginUserDto, RegisterUserDto } from '@auth/types/credentials';
@@ -42,6 +43,7 @@ class DeferredAuthActions {
       return await (this.instance ??= this.load());
     } catch (error) {
       console.error('Auth module failed to load; surfacing retryable error to the user.', error);
+      observabilityCore.captureError(error, { source: 'auth:module-load' });
       this.instance = undefined;
       onFailure(this.loadFailure);
       return null;
@@ -62,7 +64,10 @@ const deferredAuthActions = new DeferredAuthActions();
 export const authActions: AuthActions = {
   loginUser: (credentials, signal) => deferredAuthActions.login(credentials, signal),
   registerUser: (credentials, signal) => deferredAuthActions.register(credentials, signal),
-  logout: () => AuthStateVar.reset(),
+  logout: () => {
+    observabilityCore.clearUser();
+    AuthStateVar.reset();
+  },
   reset: () => AuthStateVar.reset(),
   resetRegistration: () => AuthStateVar.resetRegistration(),
   clearLoginError: () => AuthStateVar.clearLoginError(),

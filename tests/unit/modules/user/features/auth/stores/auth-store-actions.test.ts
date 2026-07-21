@@ -1,3 +1,4 @@
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
 import AuthStateVar from '@auth/stores/auth-var';
 import type { AuthError } from '@auth/types/auth-error';
@@ -15,6 +16,14 @@ const authRequestErrors = new AuthRequestErrors({
   handle: (e: unknown) => ({ displayMessage: String(e), retryable: false }),
 } as unknown as AuthErrorHandler);
 
+const observability = {
+  init: jest.fn(),
+  captureError: jest.fn(),
+  setUser: jest.fn(),
+  clearUser: jest.fn(),
+  reportVital: jest.fn(),
+} as unknown as ObservabilityService;
+
 const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   ({
     login: jest.fn().mockResolvedValue({ ok: true, value: { email, token } }),
@@ -23,10 +32,10 @@ const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   }) as AuthRepository;
 
 const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors).login({ email, password });
+  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).login({ email, password });
 
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors).register({
+  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).register({
     fullName,
     email,
     password,
@@ -42,7 +51,7 @@ const abortError = {
 describe('AuthStoreActions', () => {
   beforeEach(() => AuthStateVar.reset());
 
-  it('sets the session on successful login', async () => {
+  it('sets the session and tags an opaque observability identity on successful login', async () => {
     await loginWith({});
     expect(AuthStateVar.get()).toMatchObject({
       loginLoading: false,
@@ -50,9 +59,10 @@ describe('AuthStoreActions', () => {
       token,
       loginError: null,
     });
+    expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
   });
 
-  it('stores a structured error returned by the login repository', async () => {
+  it('stores a structured error and tags no identity when login fails', async () => {
     const error: AuthError = {
       kind: 'authentication',
       displayMessage: 'Invalid',
@@ -60,6 +70,7 @@ describe('AuthStoreActions', () => {
     };
     await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error }) });
     expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, loginError: error });
+    expect(observability.setUser).not.toHaveBeenCalled();
   });
 
   it('keeps login error null when the repository reports an abort', async () => {

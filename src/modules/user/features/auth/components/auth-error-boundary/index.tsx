@@ -6,6 +6,7 @@ import type {
   AuthErrorBoundaryProps,
   AuthErrorBoundaryState,
 } from '@auth/types/auth-error-boundary';
+import authErrorReporter from '@auth/utils/auth-error-reporter';
 
 const DEFAULT_FALLBACK_KEY = 'auth.error.default';
 
@@ -74,6 +75,7 @@ export default class AuthErrorBoundary extends Component<
   public componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const { onError } = this.props;
     onError?.(error, info);
+    this.reportSafely(error, info);
 
     if (process.env.NODE_ENV !== 'production') {
       const resolvedConsole = Reflect.get(globalThis, 'console') as
@@ -94,5 +96,13 @@ export default class AuthErrorBoundary extends Component<
     const rendered =
       typeof fallback === 'function' ? fallback({ error, reset: this.handleReset }) : fallback;
     return <FallbackContainer fallback={rendered} error={error} onReset={this.handleReset} />;
+  }
+
+  private reportSafely(error: Error, info: React.ErrorInfo): void {
+    try {
+      authErrorReporter.report(error, info);
+    } catch (captureFailure) {
+      void captureFailure;
+    }
   }
 }

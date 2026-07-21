@@ -7,6 +7,22 @@ class RawEnv {
     return this.trimmed(process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN);
   }
 
+  public nodeEnv(): string | undefined {
+    return this.trimmed(process.env.NODE_ENV);
+  }
+
+  public release(): string | undefined {
+    return this.trimmed(process.env.REACT_APP_RELEASE);
+  }
+
+  public sentryDsn(): string | undefined {
+    return this.trimmed(process.env.REACT_APP_SENTRY_DSN);
+  }
+
+  public sentryEnvironment(): string | undefined {
+    return this.trimmed(process.env.REACT_APP_SENTRY_ENVIRONMENT);
+  }
+
   public snapshot(): Record<string, string | undefined> {
     return {
       nodeEnv: process.env.NODE_ENV,
@@ -15,6 +31,9 @@ class RawEnv {
       lhciPreloadedAuthToken: this.trimmed(process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN),
       mainLanguage: this.trimmed(process.env.REACT_APP_MAIN_LANGUAGE),
       fallbackLanguage: this.trimmed(process.env.REACT_APP_FALLBACK_LANGUAGE),
+      release: this.trimmed(process.env.REACT_APP_RELEASE),
+      sentryDsn: this.trimmed(process.env.REACT_APP_SENTRY_DSN),
+      sentryEnvironment: this.trimmed(process.env.REACT_APP_SENTRY_ENVIRONMENT),
     };
   }
 

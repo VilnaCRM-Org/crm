@@ -22,6 +22,8 @@ const TOKENS = Object.freeze({
   AuthRepository: Symbol('AuthRepository'),
   AuthRepositoryDeps: Symbol('AuthRepositoryDeps'),
   ErrorReporter: Symbol('ErrorReporter'),
+  ObservabilityService: Symbol('ObservabilityService'),
+  ApolloLinkFactory: Symbol('ApolloLinkFactory'),
 } as const);
 
 export default TOKENS;

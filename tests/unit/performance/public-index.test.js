@@ -39,6 +39,7 @@ describe('public index performance safeguards', () => {
     const entrySource = fs.readFileSync(path.resolve(__dirname, '../../../src/index.tsx'), 'utf8');
 
     expect(entrySource).not.toContain("import '@/config/dependency-injection-config';");
+    expect(entrySource).not.toContain("import 'reflect-metadata';");
   });
 
   it('serves immutable cache headers for static assets in production', () => {
