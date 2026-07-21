@@ -62,7 +62,7 @@ RUN set -eux; \
       tar=1.34+dfsg-1.2+deb12u1 \
       unzip=6.0-28; \
     if [ "${TARGETARCH}" = "amd64" ]; then \
-      apt-get install -y --no-install-recommends curl=7.88.1-10+deb12u14; \
+      apt-get install -y --no-install-recommends curl=7.88.1-10+deb12u15; \
     else \
       apt-get install -y --no-install-recommends \
         build-essential=12.9 \
