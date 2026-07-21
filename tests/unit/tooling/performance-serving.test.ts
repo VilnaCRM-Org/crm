@@ -48,21 +48,28 @@ describe('performance serving config', () => {
     expect(rsbuildConfigSource).not.toContain("type: 'async-chunks'");
   });
 
-  it('keeps route-level code splitting in the routes layer', () => {
+  it('keeps route-level code splitting via the module-owned route contracts', () => {
+    const mapperSource = readFile('src/routes/route-mapper.tsx');
+    const appRoutesSource = readFile('src/routes/app-routes.ts');
+    const authRoutesSource = readFile('src/modules/user/features/auth/routes/index.ts');
     const routesSource = readFile('src/routes/routes.tsx');
 
-    expect(routesSource).toContain(
-      "const SignUp = lazy(async () => import('@auth/routes/sign-up'));"
-    );
-    expect(routesSource).toContain(
-      "const SignIn = lazy(async () => import('@auth/routes/sign-in'));"
-    );
-    expect(routesSource).toContain(
-      "const ButtonExample = lazy(async () => import('@/button-example'));"
-    );
-    expect(routesSource).not.toContain("import SignUp from '@auth/routes/sign-up';");
-    expect(routesSource).not.toContain("import SignIn from '@auth/routes/sign-in';");
-    expect(routesSource).not.toContain("import ButtonExample from '@/button-example';");
+    // The composer maps each contract loader through React.lazy, so every page
+    // still resolves via its own dynamic import() chunk.
+    expect(mapperSource).toContain('lazy(route.load)');
+
+    // Each page is declared as a lazy loader inside its owning module's contract.
+    expect(appRoutesSource).toContain("import('@/button-example')");
+    expect(appRoutesSource).toContain("import('@/components/not-found/not-found')");
+    expect(authRoutesSource).toContain("import('./sign-up')");
+    expect(authRoutesSource).toContain("import('./sign-in')");
+
+    // Pages are never statically imported (which would defeat code splitting).
+    expect(routesSource).not.toContain('import SignUp');
+    expect(routesSource).not.toContain('import SignIn');
+    expect(routesSource).not.toContain('import ButtonExample');
+    expect(authRoutesSource).not.toContain("import SignUp from './sign-up'");
+    expect(authRoutesSource).not.toContain("import SignIn from './sign-in'");
   });
 
   it('keeps registration notifications out of the initial auth form chunk', () => {

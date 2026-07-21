@@ -1,8 +1,9 @@
+import rawEnv from '@/config/env/raw-env';
 import type { SentryBeforeSend, SentryInitOptions } from '@/services/types/observability/sentry';
 
 export class SentryConfig {
   public dsn(): string {
-    return (process.env.REACT_APP_SENTRY_DSN ?? '').trim();
+    return rawEnv.sentryDsn() ?? '';
   }
 
   public isEnabled(): boolean {
@@ -10,14 +11,11 @@ export class SentryConfig {
   }
 
   public environment(): string {
-    const explicit = (process.env.REACT_APP_SENTRY_ENVIRONMENT ?? '').trim();
-    if (explicit.length > 0) return explicit;
-    return (process.env.NODE_ENV ?? '').trim() || 'development';
+    return rawEnv.sentryEnvironment() ?? rawEnv.nodeEnv() ?? 'development';
   }
 
   public release(): string | undefined {
-    const release = (process.env.REACT_APP_RELEASE ?? '').trim();
-    return release.length > 0 ? release : undefined;
+    return rawEnv.release();
   }
 
   public buildOptions(beforeSend: SentryBeforeSend): SentryInitOptions | undefined {

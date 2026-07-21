@@ -1,51 +1,50 @@
 import '../setup';
 
-import GraphQLUrl from '@/utils/get-graphql-url';
-
 describe('getGraphQLUrl Integration', () => {
-  const originalEnv = { ...process.env };
-  const originalNodeEnv = process.env.NODE_ENV;
+  const ORIGINAL_ENV = { ...process.env };
 
   beforeEach(() => {
-    process.env = { ...originalEnv };
+    jest.resetModules();
+    process.env = { ...ORIGINAL_ENV };
   });
 
-  afterEach(() => {
-    process.env = { ...originalEnv };
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
-    } else {
-      process.env.NODE_ENV = originalNodeEnv;
-    }
+  afterAll(() => {
+    process.env = { ...ORIGINAL_ENV };
   });
 
-  it('returns the default localhost url when the env var is not set', () => {
+  const resolveUrl = async (): Promise<string> => {
+    const { default: GraphQLUrl } = await import('@/utils/get-graphql-url');
+    return new GraphQLUrl().resolve();
+  };
+
+  it('returns the default localhost url when the env var is not set', async () => {
     delete process.env.REACT_APP_GRAPHQL_URL;
     process.env.NODE_ENV = 'test';
 
-    expect(new GraphQLUrl().resolve()).toBe('http://localhost:4000/graphql');
+    await expect(resolveUrl()).resolves.toBe('http://localhost:4000/graphql');
   });
 
-  it('returns the configured url trimmed when provided', () => {
+  it('returns the configured url trimmed when provided', async () => {
     process.env.REACT_APP_GRAPHQL_URL = ' http://example.com/graphql ';
+    process.env.NODE_ENV = 'test';
 
-    expect(new GraphQLUrl().resolve()).toBe('http://example.com/graphql');
+    await expect(resolveUrl()).resolves.toBe('http://example.com/graphql');
   });
 
-  it('throws in production when the url is missing', () => {
+  it('throws in production when the url is missing', async () => {
     delete process.env.REACT_APP_GRAPHQL_URL;
     process.env.NODE_ENV = 'production';
 
-    expect(() => new GraphQLUrl().resolve()).toThrow(
+    await expect(resolveUrl()).rejects.toThrow(
       /REACT_APP_GRAPHQL_URL must be defined in production/
     );
   });
 
-  it('throws in production when the url is whitespace-only', () => {
+  it('throws in production when the url is whitespace-only', async () => {
     process.env.REACT_APP_GRAPHQL_URL = '   ';
     process.env.NODE_ENV = 'production';
 
-    expect(() => new GraphQLUrl().resolve()).toThrow(
+    await expect(resolveUrl()).rejects.toThrow(
       /REACT_APP_GRAPHQL_URL must be defined in production/
     );
   });

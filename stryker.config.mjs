@@ -1,16 +1,20 @@
+import { collectMutateFiles } from './scripts/ci/mutation-scope.mjs';
+
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 const config = {
   packageManager: 'npm',
   reporters: ['html', 'clear-text', 'progress'],
   testRunner: 'jest',
   coverageAnalysis: 'perTest',
+  ignoreStatic: true,
   plugins: ['@stryker-mutator/jest-runner'],
   tsconfigFile: 'tsconfig.json',
   jest: {
-    configFile: 'jest.config.ts',
+    configFile: 'jest.mutation.config.ts',
     enableFindRelatedTests: false,
   },
-  mutate: ['./src/components/**/*.tsx'],
+  mutate: collectMutateFiles(),
+  incrementalFile: 'reports/stryker-incremental.json',
   ignorePatterns: [
     '**/*.stories.tsx',
     '**/*.stories.ts',
@@ -20,7 +24,7 @@ const config = {
     '.junie/',
     '.qlty/',
   ],
-  thresholds: { high: 100, break: 2.17 }, // TODO: Update `break` to 90 once full test coverage is implemented
+  thresholds: { high: 100, low: 90, break: 90 },
 };
 
 export default config;
