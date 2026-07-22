@@ -53,9 +53,9 @@
     "@microsoft/api-extractor": "^7.58.11",
     "@module-federation/rsbuild-plugin": "^0.22.0",
     "@playwright/test": "^1.61.1",
-    "@rsbuild/core": "1.6.15",
-    "@rsbuild/plugin-react": "1.4.0",
-    "@rsbuild/plugin-svgr": "^1.2.3",
+    "@rsbuild/core": "2.1.7",
+    "@rsbuild/plugin-react": "2.1.0",
+    "@rsbuild/plugin-svgr": "^2.0.5",
     "@storybook/addon-docs": "^9.0.18",
     "@storybook/addon-links": "^9.0.18",
     "@storybook/addon-mcp": "^0.7.0",
@@ -116,6 +116,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
     "wait-on": "^9.0.10",
+    "webpack-bundle-analyzer": "^5.3.1",
     "yaml": "^2.9.0"
   },
   "engines": {
