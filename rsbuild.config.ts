@@ -64,6 +64,9 @@ export default defineConfig({
   html: {
     template: './public/index.html',
   },
+  server: {
+    host: '0.0.0.0',
+  },
   dev: {
     lazyCompilation: true,
   },
