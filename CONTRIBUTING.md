@@ -174,7 +174,8 @@ make test-mutation                                   # full, gated, single-proce
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
 make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8   # repeat for 1..7
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8 MUTATION_INCREMENTAL=1  # PR mode
+# PR mode (incremental): only mutants the diff touches re-run
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8 MUTATION_INCREMENTAL=1
 make merge-mutation-reports MUTATION_SHARD_TOTAL=8
 ```
 

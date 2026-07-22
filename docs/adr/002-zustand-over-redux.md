@@ -47,7 +47,8 @@ concerns.
   [Bundlephobia: @reduxjs/toolkit][rtk] + [react-redux][rr])
 - Excellent TypeScript inference without extra annotations
 - Redux DevTools compatibility for debugging
-- Optional middleware for persistence and immer (require separate setup; immer requires the 'immer' package)
+- Optional middleware for persistence and immer (require separate setup; immer requires the
+  'immer' package)
 
 ### Negative Consequences
 

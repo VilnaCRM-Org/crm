@@ -159,7 +159,7 @@ claude-opus-4-8
 - README "Fast dev-mode Playwright targets" gained a full-suite example, a `FILE=` single-spec
   example, a quoted-glob example, and the smoke-level / not-CI-gating label;
   `CLAUDE.md` mirrors the dev-mode and smoke-level guidance.
-- Honest runtime follow-ups for this story: (1) no live visual run or browser install happened here —
+- Honest runtime follow-ups for this story: (1) no live visual run or browser install happened —
   the dev container has no outbound network and Alpine is not Playwright's supported bundled-Chromium
   target; the repo-pinned apk Chromium is the PRD's allowed alternative, and the acceptance bar of
   `make -n` wiring + config validity is met. (2) The dev server bakes
