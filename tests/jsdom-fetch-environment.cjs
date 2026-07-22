@@ -7,7 +7,6 @@ class JsdomFetchEnvironment extends JSDOMEnvironment {
     super(...args);
     const target = this.global;
     const nodeGlobals = {
-      fetch: globalThis.fetch,
       Headers: globalThis.Headers,
       Request: globalThis.Request,
       Response: globalThis.Response,
@@ -24,6 +23,8 @@ class JsdomFetchEnvironment extends JSDOMEnvironment {
     for (const key of Object.keys(nodeGlobals)) {
       target[key] = nodeGlobals[key];
     }
+    target.fetch = () =>
+      Promise.reject(new Error('fetch is not implemented in this test environment'));
   }
 }
 
