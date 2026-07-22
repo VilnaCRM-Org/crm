@@ -32,3 +32,4 @@ jobs:
         uses: calibreapp/image-actions@e2cc8db5d49c849e00844dfebf01438318e96fa2 # main
         with:
           githubToken: ${{ secrets.GITHUB_TOKEN }}
+          ignorePaths: 'node_modules/**,tests/**'
