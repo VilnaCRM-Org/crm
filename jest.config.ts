@@ -10,7 +10,7 @@ const rootsMap: Record<string, string[]> = {
 const roots = rootsMap[TEST_ENV ?? ''] || rootsMap.default;
 
 const testEnvironment =
-  TEST_ENV === 'server' ? 'node' : '<rootDir>/tests/jsdom-fetch-environment.ts';
+  TEST_ENV === 'server' ? 'node' : '<rootDir>/tests/jsdom-fetch-environment.cjs';
 
 const testMatchMap: Record<string, string[]> = {
   server: ['<rootDir>/tests/apollo-server/**/*.test.{ts,mts}'],
