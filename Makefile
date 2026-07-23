@@ -165,6 +165,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
+.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -356,11 +357,11 @@ lint-prettier: ## Verify formatting with Prettier (check-only, never writes; sha
 	$(PRETTIER_CHECK_CMD)
 
 lint-shell: ## ShellCheck all repo gate shell scripts at --severity=warning (requires Docker, like lint-metrics)
-	docker run --rm -v "$(PWD):/mnt" -w /mnt $(SHELLCHECK_IMAGE) \
+	docker run --rm -v "$(CURDIR):/mnt" -w /mnt $(SHELLCHECK_IMAGE) \
 		--severity=warning --external-sources $(SHELL_LINT_PATHS)
 
 lint-actionlint: ## Lint the GitHub Actions workflows with actionlint (requires Docker, like lint-metrics)
-	docker run --rm -v "$(PWD):/repo" -w /repo $(ACTIONLINT_IMAGE) -shellcheck=
+	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ACTIONLINT_IMAGE) -shellcheck=
 
 lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry allowlist (issue #176)
 	sh scripts/ci/check-lockfile-registries.sh

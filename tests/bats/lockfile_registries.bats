@@ -125,6 +125,19 @@ EOF
   [ "$status" -eq 1 ]
 }
 
+@test "scp-style git@host specifier is rejected (exit 1)" {
+  write_lock gitat.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "baz": ["baz@git@github.com:evil/baz.git#deadbeef"]
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/gitat.lock"
+  [ "$status" -eq 1 ]
+}
+
 @test "lockfileVersion bump forces re-review (exit 2)" {
   write_lock badversion.lock <<'EOF'
 {

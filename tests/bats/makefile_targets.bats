@@ -78,8 +78,8 @@ EOF
 build-analyze|docker compose -f docker-compose.yml run --rm -e ANALYZE=true dev bun x rsbuild build|
 perf-budget|docker compose -f docker-compose.yml run --rm dev sh -c bun x rsbuild build && node scripts/bundle-size-report.mjs --dir dist|
 build-out|docker build -t rsbuild-bundle -f Dockerfile --target production .|docker cp fake-container-id:/app/dist ./out
-format|bun x prettier **/*.{js,jsx,ts,tsx,mts,json,css,scss,md} --write --ignore-path .prettierignore|qlty fmt --all --trigger agent --no-progress
-fmt-prettier|bun x prettier **/*.{js,jsx,ts,tsx,mts,json,css,scss,md} --write --ignore-path .prettierignore|
+format|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md} --write --ignore-path .prettierignore|qlty fmt --all --trigger agent --no-progress
+fmt-prettier|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md} --write --ignore-path .prettierignore|
 fmt-qlty|qlty fmt --all --trigger agent --no-progress|
 lint-eslint|bun x eslint .|
 lint-tsc|bun x tsc|

@@ -18,7 +18,7 @@ LOCK="${1:-bun.lock}"
 
 # The greps below assume bun.lock v1's plain-text JSONC layout. A format bump forces a
 # deliberate re-review of this gate instead of silently degrading it.
-grep -qE '"lockfileVersion": 1,' "$LOCK" || {
+grep -qE '^[[:space:]]*"lockfileVersion": 1,' "$LOCK" || {
   echo "FATAL: $LOCK lockfileVersion != 1 -- re-review this gate against the new format"
   exit 2
 }
@@ -49,7 +49,7 @@ fi
 # (b) Non-URL bypass: bun.lock records git/GitHub/file resolutions as
 #     pkg@github:owner/repo#hash, pkg@git+ssh://git@github.com/...#hash,
 #     file:..., link:... -- git+ssh/git+https are caught by the git\+[a-z]+ arm.
-rogue_specs=$(grep -oE '"[^"]+@(github|gitlab|bitbucket|git\+[a-z]+|file|link):[^"]*"' "$LOCK" || true)
+rogue_specs=$(grep -oE '"[^"]+@(github|gitlab|bitbucket|git@[^:"]+|git\+[a-z]+|file|link):[^"]*"' "$LOCK" || true)
 if [ -n "$rogue_specs" ]; then
   echo "Disallowed non-registry resolution specifiers in $LOCK:"
   echo "$rogue_specs"
