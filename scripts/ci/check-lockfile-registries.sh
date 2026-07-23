@@ -31,7 +31,7 @@ status=0
 # the matchers below, since bun decodes escapes to their literal characters at
 # install time. Reject any escape outright and force a re-review -- this closes
 # the entire encoding-evasion class without a fragile decoder (issue #176).
-if grep -q '\\' "$LOCK"; then
+if grep -q '[\]' "$LOCK"; then
   echo "Disallowed backslash escape in $LOCK -- possible provenance-gate evasion; re-review the lockfile"
   status=1
 fi
