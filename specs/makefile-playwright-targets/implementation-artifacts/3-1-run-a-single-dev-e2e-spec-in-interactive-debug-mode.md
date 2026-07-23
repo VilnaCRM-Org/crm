@@ -75,7 +75,7 @@ PLAYWRIGHT_TRACE_PORT=$(PLAYWRIGHT_TRACE_PORT) bun x playwright test "$(FILE)" -
   forbids `EXEC_DEV_TTYLESS`, `BUN`, and `BUNX` for this target (architecture "Debug Pattern" and
   "Debug Execution Path").
 - **`FILE` is required for debug:** Unlike `test-e2e-dev`/`test-visual-dev` where an omitted `FILE`
-  means "run the whole suite," debug is single-spec only. The first recipe line fails non-zero with a
+  means "run the whole suite," debug is single-spec. The first recipe line fails non-zero with a
   remediation message naming `FILE=tests/e2e/...` (FR26-style messaging applied to the debug surface).
 - **Same dev-mode config, injected in-container:** `PLAYWRIGHT_DEV_MODE=1` is set via `env` inside the
   container command (not as a host-side prefix), so the single `playwright.config.ts` resolves the

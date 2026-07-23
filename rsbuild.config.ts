@@ -4,6 +4,7 @@ import * as path from 'path';
 import { defineConfig, loadEnv } from '@rsbuild/core';
 import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
+import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
@@ -35,15 +36,17 @@ const maxAssetSize = requireBudget(performanceBudget.raw?.maxAssetBytes, 'raw.ma
 const isScriptOrStyleAsset = (assetFilename: string): boolean =>
   /\.(?:js|css)$/.test(assetFilename);
 
-const bundleAnalyze = isAnalyze
-  ? {
-      analyzerMode: 'static' as const,
-      reportFilename: 'bundle-report.html',
-      openAnalyzer: false,
-      generateStatsFile: true,
-      statsFilename: 'bundle-stats.json',
-    }
-  : undefined;
+const analyzerPlugins = isAnalyze
+  ? [
+      new BundleAnalyzerPlugin({
+        analyzerMode: 'static',
+        reportFilename: 'bundle-report.html',
+        openAnalyzer: false,
+        generateStatsFile: true,
+        statsFilename: 'bundle-stats.json',
+      }),
+    ]
+  : [];
 
 export default defineConfig({
   plugins: [
@@ -61,17 +64,19 @@ export default defineConfig({
   html: {
     template: './public/index.html',
   },
+  server: {
+    host: '0.0.0.0',
+  },
   dev: {
     lazyCompilation: true,
+  },
+  splitChunks: {
+    preset: 'default',
   },
   performance: {
     buildCache: true,
     printFileSize: true,
     removeConsole: !isDev,
-    chunkSplit: {
-      strategy: 'split-by-experience',
-    },
-    bundleAnalyze,
   },
   output: {
     inlineStyles: !isDev,
@@ -85,6 +90,7 @@ export default defineConfig({
   },
   tools: {
     rspack: {
+      plugins: analyzerPlugins,
       resolve: {
         alias: {
           '@': path.resolve(__dirname, 'src'),

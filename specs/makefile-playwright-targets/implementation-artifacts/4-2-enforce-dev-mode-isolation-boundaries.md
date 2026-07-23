@@ -97,8 +97,8 @@ environment.
   `crm-network` while `prod` and `playwright` live only in the test compose file; the dev `start`
   path composes only `docker-compose.yml`.
 - `playwright test --list` confirms the production branch lists `[chromium]/[firefox]/[webkit]` when
-  the flag is absent and `[chromium-dev]` only when `PLAYWRIGHT_DEV_MODE=1`, demonstrating the flag is
-  the sole switch and is off by default for IDE/shell/CI resolution.
+  the flag is absent and `[chromium-dev]` only when `PLAYWRIGHT_DEV_MODE=1`, demonstrating
+  the flag is the sole switch and is off by default for IDE/shell/CI resolution.
 - `markdownlint README.md CLAUDE.md` is clean for the local-only isolation documentation.
 
 ### References

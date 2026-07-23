@@ -842,8 +842,8 @@ strength), `make test-memory-leak` (leaks / OOM), `make test-load` (traffic, K6)
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 4-way
 matrix (`make test-mutation-shard`) and a final job merges the per-shard reports and re-enforces the
-same `break` threshold (`make merge-mutation-reports`) — same gate, much faster. Lighthouse runs as a
-desktop/mobile matrix, and every workflow cancels superseded runs via `concurrency`. See
+same `break` threshold (`make merge-mutation-reports`) — same gate, much faster. Lighthouse runs
+as a desktop/mobile matrix, and every workflow cancels superseded runs via `concurrency`. See
 CONTRIBUTING.md ("CI speed and the mutation-testing gate") for the full flow.
 
 ### Step 2 — Cover Every Applicable Scenario Class

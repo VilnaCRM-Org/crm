@@ -16,7 +16,7 @@ const config: Config = {
     '/tests/unit/performance/',
     '/tests/unit/load/',
   ],
-  testEnvironment: 'jsdom',
+  testEnvironment: require.resolve('./tests/jsdom-fetch-environment.cjs'),
   setupFilesAfterEnv: ['<rootDir>/tests/mutation/setup.ts'],
   transform: {
     ...base.transform,

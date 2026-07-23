@@ -1,9 +1,6 @@
-// @jest-environment jsdom
-
 import './utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { Request as NodeFetchRequest } from 'node-fetch';
 
 type MockI18n = {
   language: string;
@@ -17,10 +14,6 @@ const mockI18n: MockI18n = {
 };
 
 window.history.pushState({}, '', '/');
-
-if (typeof Request === 'undefined') {
-  globalThis.Request = NodeFetchRequest as unknown as typeof Request;
-}
 
 jest.mock('../../src/index.css', () => ({}));
 

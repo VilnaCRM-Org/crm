@@ -204,7 +204,7 @@ Runs tests inside the Playwright container, targeting the production container:
 
 ### Fast dev-mode Playwright targets
 
-The `-dev` Playwright targets run e2e and visual specs from the already-running `dev` container for a
+The `-dev` Playwright targets run e2e and visual specs from the running `dev` container for a
 fast inner loop. They never start the production stack, and the production-parity `make test-e2e` and
 `make test-visual` targets are unchanged — those remain the authoritative, CI-gating path.
 

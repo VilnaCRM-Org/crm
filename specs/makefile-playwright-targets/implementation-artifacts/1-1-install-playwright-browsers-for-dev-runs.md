@@ -15,8 +15,8 @@ so that dev-mode Playwright runs can execute without hidden setup or image-size 
 2. Building the dev image with `INSTALL_PLAYWRIGHT_BROWSERS=true` installs the pinned system apk
    Chromium (the same Alpine-compatible build used for Lighthouse), with no Firefox or WebKit for
    dev-mode scope (FR13).
-3. `make ensure-playwright-browsers` installs Chromium inside the running dev container, exits zero on
-   success, and reports that browsers are ready (FR14).
+3. `make ensure-playwright-browsers` installs Chromium inside the running dev container,
+   exits zero on success, and reports that browsers are ready (FR14).
 4. Re-running `make ensure-playwright-browsers` when Chromium is already installed exits zero without
    re-installing and completes within the NFR3 idempotent budget (FR15).
 5. When the image was built with `INSTALL_PLAYWRIGHT_BROWSERS=false`, invoking `test-e2e-dev`,
