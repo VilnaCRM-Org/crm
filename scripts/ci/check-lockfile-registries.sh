@@ -25,10 +25,15 @@ grep -qE '"lockfileVersion": 1,' "$LOCK" || {
 
 status=0
 
+# Normalize JSON/JSONC escapes for the solidus before matching, so an alternate
+# valid encoding of a rogue URL/spec (e.g. "https:\/\/evil" or "/") cannot
+# slip past the literal matchers below -- bun decodes these to "/" at install time.
+normalized=$(sed -e 's/\\\//\//g' -e 's/\\u002[fF]/\//g' "$LOCK")
+
 # (a) URL resolutions: allowlist anchored so lookalike hosts
 #     (registry.npmjs.org.evil.com) fail.
 ALLOWED='^https://registry\.npmjs\.org(/|$)'
-rogue_urls=$(grep -oE 'https?://[^" ]+' "$LOCK" | grep -vE "$ALLOWED" || true)
+rogue_urls=$(printf '%s\n' "$normalized" | grep -oE 'https?://[^" ]+' | grep -vE "$ALLOWED" || true)
 if [ -n "$rogue_urls" ]; then
   echo "Disallowed resolution URLs in $LOCK:"
   echo "$rogue_urls"
@@ -36,8 +41,9 @@ if [ -n "$rogue_urls" ]; then
 fi
 
 # (b) Non-URL bypass: bun.lock records git/GitHub/file resolutions as
-#     pkg@github:owner/repo#hash, git+ssh://..., file:..., link:...
-rogue_specs=$(grep -oE '"[^"]+@(github|gitlab|bitbucket|git\+[a-z]+|file|link):[^"]*"' "$LOCK" || true)
+#     pkg@github:owner/repo#hash, pkg@git+ssh://git@github.com/...#hash,
+#     file:..., link:... -- git+ssh/git+https are caught by the git\+[a-z]+ arm.
+rogue_specs=$(printf '%s\n' "$normalized" | grep -oE '"[^"]+@(github|gitlab|bitbucket|git\+[a-z]+|file|link):[^"]*"' || true)
 if [ -n "$rogue_specs" ]; then
   echo "Disallowed non-registry resolution specifiers in $LOCK:"
   echo "$rogue_specs"

@@ -71,6 +71,46 @@ EOF
   [ "$status" -eq 1 ]
 }
 
+@test "JSON-escaped rogue tarball URL is rejected after normalization (exit 1)" {
+  write_lock esc-url.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "foo": ["foo@1.0.0", "https:\/\/evil.example\/foo-1.0.0.tgz"]
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/esc-url.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"evil.example/foo-1.0.0.tgz"* ]]
+}
+
+@test "escaped-solidus github specifier is rejected (exit 1)" {
+  write_lock esc-spec.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "bar": ["bar@github:evil\/bar#deadbeef"]
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/esc-spec.lock"
+  [ "$status" -eq 1 ]
+}
+
+@test "git+ssh (git@github.com) specifier is rejected (exit 1)" {
+  write_lock gitssh.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "baz": ["baz@git+ssh://git@github.com/evil/baz.git#deadbeef"]
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/gitssh.lock"
+  [ "$status" -eq 1 ]
+}
+
 @test "lockfileVersion bump forces re-review (exit 2)" {
   write_lock badversion.lock <<'EOF'
 {
