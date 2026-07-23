@@ -97,7 +97,7 @@ ENV                         ?= prod
 DEBUG                       ?=
 
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
-PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}"
+PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md}"
 PRETTIER_CMD                = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --write --ignore-path .prettierignore
 PRETTIER_CHECK_CMD          = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --check --ignore-path .prettierignore
 QLTY_FMT                    = qlty fmt --all --trigger agent --no-progress
