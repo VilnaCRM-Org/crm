@@ -108,3 +108,7 @@ merge-mutation-reports	bats	tests/bats/makefile_targets.bats	Validated as the sh
 codegen	ci	.github/workflows/static-testing.yml	Developer regeneration entrypoint; the identical spec-driven generation runs in CI via codegen-check.
 codegen-check	ci	.github/workflows/static-testing.yml	Executed directly by the static testing workflow to reconcile contract versions and fail on stale generated types.
 perf-budget	bats	tests/bats/makefile_targets.bats	Validated as the production build plus gzip byte-budget enforcement wrapper.
+lint-prettier	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
+lint-shell	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
+lint-lockfile	bats	tests/bats/lockfile_registries.bats	Validated as the bun.lock registry-allowlist gate with rogue-URL, rogue-specifier, lookalike-host, version-bump, and clean-pass fixtures.
+lint-actionlint	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
