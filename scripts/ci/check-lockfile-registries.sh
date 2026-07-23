@@ -25,15 +25,21 @@ grep -qE '"lockfileVersion": 1,' "$LOCK" || {
 
 status=0
 
-# Normalize JSON/JSONC escapes for the solidus before matching, so an alternate
-# valid encoding of a rogue URL/spec (e.g. "https:\/\/evil" or "/") cannot
-# slip past the literal matchers below -- bun decodes these to "/" at install time.
-normalized=$(sed -e 's/\\\//\//g' -e 's/\\u002[fF]/\//g' "$LOCK")
+# A legitimate bun.lock records every resolution as a literal string and never
+# needs JSON string escapes. Any backslash escape (\/, \uXXXX, ...) is therefore
+# anomalous: it could re-encode a rogue https:// or github: source to slip past
+# the matchers below, since bun decodes escapes to their literal characters at
+# install time. Reject any escape outright and force a re-review -- this closes
+# the entire encoding-evasion class without a fragile decoder (issue #176).
+if grep -q '\\' "$LOCK"; then
+  echo "Disallowed backslash escape in $LOCK -- possible provenance-gate evasion; re-review the lockfile"
+  status=1
+fi
 
 # (a) URL resolutions: allowlist anchored so lookalike hosts
 #     (registry.npmjs.org.evil.com) fail.
 ALLOWED='^https://registry\.npmjs\.org(/|$)'
-rogue_urls=$(printf '%s\n' "$normalized" | grep -oE 'https?://[^" ]+' | grep -vE "$ALLOWED" || true)
+rogue_urls=$(grep -oE 'https?://[^" ]+' "$LOCK" | grep -vE "$ALLOWED" || true)
 if [ -n "$rogue_urls" ]; then
   echo "Disallowed resolution URLs in $LOCK:"
   echo "$rogue_urls"
@@ -43,7 +49,7 @@ fi
 # (b) Non-URL bypass: bun.lock records git/GitHub/file resolutions as
 #     pkg@github:owner/repo#hash, pkg@git+ssh://git@github.com/...#hash,
 #     file:..., link:... -- git+ssh/git+https are caught by the git\+[a-z]+ arm.
-rogue_specs=$(printf '%s\n' "$normalized" | grep -oE '"[^"]+@(github|gitlab|bitbucket|git\+[a-z]+|file|link):[^"]*"' || true)
+rogue_specs=$(grep -oE '"[^"]+@(github|gitlab|bitbucket|git\+[a-z]+|file|link):[^"]*"' "$LOCK" || true)
 if [ -n "$rogue_specs" ]; then
   echo "Disallowed non-registry resolution specifiers in $LOCK:"
   echo "$rogue_specs"

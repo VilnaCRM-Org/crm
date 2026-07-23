@@ -71,7 +71,7 @@ EOF
   [ "$status" -eq 1 ]
 }
 
-@test "JSON-escaped rogue tarball URL is rejected after normalization (exit 1)" {
+@test "solidus-escaped rogue tarball URL is rejected as a backslash escape (exit 1)" {
   write_lock esc-url.lock <<'EOF'
 {
   "lockfileVersion": 1,
@@ -82,7 +82,21 @@ EOF
 EOF
   run sh "$SCRIPT" "$FIX/esc-url.lock"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"evil.example/foo-1.0.0.tgz"* ]]
+  [[ "$output" == *"backslash escape"* ]]
+}
+
+@test "unicode-escaped rogue URL (backslash-u hides the scheme) is rejected (exit 1)" {
+  write_lock uni-url.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "foo": ["foo@1.0.0", "\u0068ttps://evil.example/foo-1.0.0.tgz"]
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/uni-url.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"backslash escape"* ]]
 }
 
 @test "escaped-solidus github specifier is rejected (exit 1)" {
