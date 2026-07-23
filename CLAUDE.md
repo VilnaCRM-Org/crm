@@ -177,7 +177,7 @@ make lint-md        # Markdown
 make lint-dup       # jscpd copy/paste duplication gate (see below)
 make lint-metrics   # rust-code-analysis complexity gate (see below)
 make lint-prettier  # Prettier --check formatting gate (verify-only, shares PRETTIER_FILE_GLOB)
-make lint-shell     # ShellCheck gate over the CI gate shell scripts (Docker, like lint-metrics)
+make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, like lint-metrics)
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
 make fmt-prettier   # Prettier
