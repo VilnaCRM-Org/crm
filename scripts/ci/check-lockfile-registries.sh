@@ -49,7 +49,7 @@ fi
 # (b) Non-URL bypass: bun.lock records git/GitHub/file resolutions as
 #     pkg@github:owner/repo#hash, pkg@git+ssh://git@github.com/...#hash,
 #     file:..., link:... -- git+ssh/git+https are caught by the git\+[a-z]+ arm.
-rogue_specs=$(grep -oE '"[^"]+@(github|gitlab|bitbucket|git@[^:"]+|git\+[a-z]+|file|link):[^"]*"' "$LOCK" || true)
+rogue_specs=$(grep -oE '"[^"]+@(github|gitlab|bitbucket|git|git@[^:"]+|git\+[a-z]+|file|link):[^"]*"' "$LOCK" || true)
 if [ -n "$rogue_specs" ]; then
   echo "Disallowed non-registry resolution specifiers in $LOCK:"
   echo "$rogue_specs"

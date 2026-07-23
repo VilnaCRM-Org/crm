@@ -138,6 +138,31 @@ EOF
   [ "$status" -eq 1 ]
 }
 
+@test "plain git:// specifier is rejected (exit 1)" {
+  write_lock gitproto.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "qux": ["qux@git://github.com/evil/qux.git#deadbeef"]
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/gitproto.lock"
+  [ "$status" -eq 1 ]
+}
+
+@test "decoy lockfileVersion inside a JSONC comment does not satisfy the version gate (exit 2)" {
+  write_lock decoy-version.lock <<'EOF'
+{
+  // "lockfileVersion": 1,
+  "lockfileVersion": 2,
+  "packages": {}
+}
+EOF
+  run sh "$SCRIPT" "$FIX/decoy-version.lock"
+  [ "$status" -eq 2 ]
+}
+
 @test "lockfileVersion bump forces re-review (exit 2)" {
   write_lock badversion.lock <<'EOF'
 {
