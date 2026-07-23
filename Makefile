@@ -97,8 +97,19 @@ ENV                         ?= prod
 DEBUG                       ?=
 
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
-PRETTIER_CMD                = $(BUNX) prettier "**/*.{js,jsx,ts,tsx,mts,json,css,scss,md}" --write --ignore-path .prettierignore
+PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md}"
+PRETTIER_CMD                = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --write --ignore-path .prettierignore
+PRETTIER_CHECK_CMD          = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --check --ignore-path .prettierignore
 QLTY_FMT                    = qlty fmt --all --trigger agent --no-progress
+# ShellCheck gate over the CI gate shell scripts (issue #163). Digest-pinned like the
+# other CI images; lints the standalone scripts, git hooks, and the Bats shared helper.
+SHELLCHECK_IMAGE            = koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb
+SHELL_LINT_PATHS            = scripts/*.sh scripts/ci/*.sh .husky/pre-commit .husky/commit-msg tests/bats/*.bash
+# actionlint gate for the GitHub Actions workflows (issue #162). Digest-pinned like the
+# other CI images; shellcheck is disabled (-shellcheck=) so the gate stays zero-noise
+# pure-correctness (expressions, contexts, needs graphs, event names). run: scripts are
+# covered by the separate ShellCheck gate over standalone scripts (lint-shell).
+ACTIONLINT_IMAGE            = rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 BATS_FORMATTER              ?= pretty
@@ -118,7 +129,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-dup lint-metrics
+CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -154,6 +165,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
+.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -341,6 +353,19 @@ lint-deps: ## This command executes dependency-cruiser
 lint-dup: ## Run the jscpd copy/paste duplication gate (thresholds in .jscpd.json)
 	$(BUNX) jscpd
 
+lint-prettier: ## Verify formatting with Prettier (check-only, never writes; shares PRETTIER_FILE_GLOB with fmt-prettier)
+	$(PRETTIER_CHECK_CMD)
+
+lint-shell: ## ShellCheck all repo gate shell scripts at --severity=warning (requires Docker, like lint-metrics)
+	docker run --rm -v "$(CURDIR):/mnt" -w /mnt $(SHELLCHECK_IMAGE) \
+		--severity=warning --external-sources $(SHELL_LINT_PATHS)
+
+lint-actionlint: ## Lint the GitHub Actions workflows with actionlint (requires Docker, like lint-metrics)
+	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ACTIONLINT_IMAGE) -shellcheck=
+
+lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry allowlist (issue #176)
+	sh scripts/ci/check-lockfile-registries.sh
+
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
 
@@ -387,7 +412,7 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, and rust-code-analysis metrics.
+lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, and the bun.lock provenance gate.
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision

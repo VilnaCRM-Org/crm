@@ -34,12 +34,12 @@ setup() {
     [ -z "$expected_two" ] || assert_log_contains "$expected_two"
   done <<'EOF'
 ci-setup|docker compose -f docker-compose.yml up -d --no-recreate dev mockoon|curl -fsS http://localhost:8080/api/users
-ci-lint|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-dup lint-metrics|
+ci-lint|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile|
 ci-test|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration|
 ci-mutation|bun x stryker run|
 ci-prod-setup|docker compose -f docker-compose.yml up -d dev|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --no-recreate prod mockoon playwright
 ci-test-prod|docker compose -f docker-compose.test.yml exec playwright ./node_modules/.bin/playwright test ./tests/e2e|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)
-ci|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-dup lint-metrics|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
+ci|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
 install|docker compose exec -T dev bun install --frozen-lockfile|bun x husky install
 clean|docker compose -f docker-compose.yml down --volumes --remove-orphans --rmi local|docker compose -f docker-compose.test.yml down --volumes --remove-orphans --rmi local
 start-prod-clean|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --force-recreate --build prod mockoon playwright|curl -fsS http://localhost:8080/api/users
@@ -78,8 +78,8 @@ EOF
 build-analyze|docker compose -f docker-compose.yml run --rm -e ANALYZE=true dev bun x rsbuild build|
 perf-budget|docker compose -f docker-compose.yml run --rm dev sh -c bun x rsbuild build && node scripts/bundle-size-report.mjs --dir dist|
 build-out|docker build -t rsbuild-bundle -f Dockerfile --target production .|docker cp fake-container-id:/app/dist ./out
-format|bun x prettier **/*.{js,jsx,ts,tsx,mts,json,css,scss,md} --write --ignore-path .prettierignore|qlty fmt --all --trigger agent --no-progress
-fmt-prettier|bun x prettier **/*.{js,jsx,ts,tsx,mts,json,css,scss,md} --write --ignore-path .prettierignore|
+format|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md} --write --ignore-path .prettierignore|qlty fmt --all --trigger agent --no-progress
+fmt-prettier|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md} --write --ignore-path .prettierignore|
 fmt-qlty|qlty fmt --all --trigger agent --no-progress|
 lint-eslint|bun x eslint .|
 lint-tsc|bun x tsc|
