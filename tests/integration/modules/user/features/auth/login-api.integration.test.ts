@@ -3,7 +3,7 @@ import { rest } from 'msw';
 import '../../../../setup';
 import API_ENDPOINTS from '@/config/api-config';
 import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
 import LoginAPI from '@/modules/user/features/auth/repositories/login-api';
 import { AuthenticationError } from '@/modules/user/lib/api-errors';
 import { buildCredentials, buildLoginResponse } from '@tests/builders';
@@ -19,7 +19,7 @@ describe('LoginAPI Integration', () => {
 
   beforeEach(() => {
     // Resolve from actual DI container
-    loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+    loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
   });
 
   describe('successful login', () => {
@@ -208,8 +208,8 @@ describe('LoginAPI Integration', () => {
 
   describe('DI container integration', () => {
     it('should be resolvable from DI container multiple times', () => {
-      const instance1 = container.resolve<LoginAPI>(TOKENS.LoginAPI);
-      const instance2 = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const instance1 = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
+      const instance2 = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
 
       expect(instance1).toBeInstanceOf(LoginAPI);
       expect(instance2).toBeInstanceOf(LoginAPI);

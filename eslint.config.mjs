@@ -635,4 +635,25 @@ export default [
       ],
     },
   },
+
+  // Issue #109: a module DI composition root (config/di.ts) wires its own module's feature
+  // internals into the container, so it may deep-import them (@auth/*, @/modules/*/features/*),
+  // like the aggregating root. Cross-module isolation stays enforced by dependency-cruiser
+  // (no-composition-root-cross-module-imports + no-cross-module-imports).
+  {
+    files: ['src/modules/*/config/di.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*/*', '!@/features/*/index'],
+              message: 'Import a feature through its public API barrel, not a deep internal path.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

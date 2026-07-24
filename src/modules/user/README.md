@@ -53,8 +53,13 @@ subclasses, factories, and every file under `types/**` and `utils/**`.
 Both are narrow, documented, and enforced by dependency-cruiser — not a
 free-for-all.
 
-1. **DI composition root** (`src/config/dependency-injection-config.ts`) wires
-   concrete implementations into the tsyringe container and may deep-import
+1. **DI composition roots** (issue #109) — the thin aggregator
+   (`src/config/dependency-injection-config.ts`) holds no registrations; it
+   collects the per-module / per-infra registrars. The **user-module root**
+   (`src/modules/user/config/di.ts`) wires this module's concrete
+   implementations (Apollo, auth repositories, mappers, auth utils) into the
+   tsyringe container against its own token module
+   (`src/modules/user/config/tokens.ts`, `AUTH_TOKENS`) and may deep-import
    them. The impls stay private to everyone else.
 2. **App-shell router** (`src/routes/`) mounts the feature through its
    module-owned **route contract barrel** (`@auth/routes` →
@@ -76,7 +81,8 @@ barrel, never with a suppression.
   reach a module only through its `index`.
 - **dependency-cruiser** `no-feature-internal-imports` — module-level
   `store` / `types` / `lib` / `hooks` / `utils` / `config` may reach a feature
-  only through its `index`.
+  only through its `index` (except the module DI composition root
+  `config/di.ts`, which wires the feature's internals — issue #109).
 - **ESLint** `no-restricted-imports` — a fast in-editor signal that blocks deep
   imports under `@/modules/*/*` and `@auth/*/*` from outside the boundary.
 

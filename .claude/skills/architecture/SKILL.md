@@ -112,14 +112,24 @@ These come from `.dependency-cruiser.js`. They run on every PR via
   `components/`, `hooks/`, `routes/`.
 - `no-lib-to-features` — module `lib/` depending on its own `features/`.
 
-**DI containment:**
+**DI containment (per-module composition roots, issue #109):**
 
-- `no-tsyringe-outside-di-and-repositories` — `tsyringe` imports outside
-  composition root, repositories, services, stores, error utils, and
-  module store mappers.
-- `no-di-config-import-outside-composition-root` — importing
-  `src/config/dependency-injection-config.ts` outside `src/index.tsx`,
-  `src/app.tsx`, `src/stores/`, or `src/modules/*/store/*-slice.ts`.
+- Composition roots are the thin aggregator
+  `src/config/dependency-injection-config.ts` (zero registrations) plus each
+  per-module / per-infra registrar: `src/services/<x>/di.ts`,
+  `src/utils/<x>/di.ts`, `src/modules/<m>/config/di.ts`. Each registers only its
+  own bindings against a co-located `tokens.ts`.
+- `no-di-config-import-outside-composition-root` — the aggregator and every
+  registrar `di.ts` may be imported only by the aggregator itself and the
+  store/hook bridges (`src/index.tsx`, `src/app.tsx`, `src/stores/`,
+  `src/modules/*/store/*-slice.ts`,
+  `src/modules/*/features/*/stores/index.ts`); importing one elsewhere pulls the
+  DI graph onto the auth paint path.
+- `no-composition-root-cross-module-imports` — a module's `config/` (root +
+  tokens) may wire only its own module plus shared infra, never a sibling module.
+- The module composition root (`config/di.ts`) is exempt from
+  `no-feature-internal-imports` / `no-repository-internal-imports` so it can
+  register the feature's concrete internals.
 
 **Folder shape:**
 

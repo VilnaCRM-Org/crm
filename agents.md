@@ -162,7 +162,9 @@ same Docker-backed environment and avoid host-specific drift.
    ```
 
 3. **Add translations** - Always provide both `en.json` and `uk.json`
-4. **Register services** - If needed, add to `src/config/dependency-injection-config.ts`
+4. **Register services** - If needed, register in the owning area's composition root
+   `di.ts` against its co-located `tokens.ts`, then add that registrar to the aggregator
+   array in `src/config/dependency-injection-config.ts` (issue #109)
 5. **Add tests** - Unit tests in `tests/unit/`, E2E in `tests/e2e/`. Apply the Mandatory
    Test-Scenario Coverage Policy (positive, negative, and edge cases).
 6. **Format and lint** - Run `make format` before `make lint`
@@ -186,7 +188,8 @@ barrel. Deep imports across the boundary fail the build.
   plus scoped `no-restricted-imports` in `eslint.config.mjs` (fast signal) that
   blocks deep `@/modules/*/*` and `@auth/*/*` imports from outside the boundary.
 - **Sanctioned exceptions** (documented, narrow, enforced): the DI composition
-  root (`src/config/dependency-injection-config.ts`) may deep-import impls for
+  roots — the aggregator (`src/config/dependency-injection-config.ts`) and each
+  module root (`src/modules/<m>/config/di.ts`) — may deep-import impls for
   wiring; the app-shell router (`src/routes/`) mounts the feature's code-split
   route entries and `protected-route` guard directly to preserve lazy-loading.
 - Every non-exempt boundary crossing goes through the barrel; only the router's
@@ -690,8 +693,9 @@ under `src/**/*.ts`) must **not** use `static` class members or standalone (free
 functions. Convert them to **instance methods on an injectable class** so collaborators can
 be swapped for mocks/spies through the tsyringe DI container instead of via module mocking.
 
-- **Behavioral collaborators** → `@injectable()` class + token in `tokens.ts` + registration
-  in `dependency-injection-config.ts`, resolved with `@inject`/`container.resolve`.
+- **Behavioral collaborators** → `@injectable()` class + token in the owning area's
+  `tokens.ts` + registration in that area's `di.ts` composition root (issue #109), resolved
+  with `@inject`/`container.resolve`.
 - **Render-path state primitives** that must stay container-free for the auth-page
   Lighthouse budget (`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`)
   → instance class exported as a **module singleton** (`export default new X()`); call sites
@@ -718,26 +722,40 @@ literal's methods or a misplaced helper) and stays a review-gate concern.
 
 ### Dependency Injection Pattern
 
-```typescript
-// 1. Define token in src/config/tokens.ts
-export const TOKENS = {
-  MyService: Symbol.for('MyService'),
-};
+Per-module / per-infra composition roots (issue #109): tokens and registrations are
+owned by each area, not centralized. `src/config/dependency-injection-config.ts` is a
+thin aggregator that only collects the registrars.
 
-// 2. Create injectable service
+```typescript
+// 1. Declare the token in the owning area's token module, e.g. src/services/my-area/tokens.ts
+const MY_AREA_TOKENS = Object.freeze({
+  MyService: Symbol('MyService'),
+} as const);
+export default MY_AREA_TOKENS;
+
+// 2. Create the injectable service
 import { injectable } from 'tsyringe';
 
 @injectable()
 export class MyService {
-  constructor() {}
-
   doSomething() {
     // Implementation
   }
 }
 
-// 3. Register in src/config/dependency-injection-config.ts
-container.registerSingleton<MyService>(TOKENS.MyService, MyService);
+// 3. Register it in that area's composition root, src/services/my-area/di.ts
+import type { DependencyContainer } from 'tsyringe';
+import type { ModuleRegistrar } from '@/config/types/module-registrar';
+import MyService from './my-service';
+import MY_AREA_TOKENS from './tokens';
+
+class MyAreaRegistrar implements ModuleRegistrar {
+  public register(container: DependencyContainer): void {
+    container.registerSingleton(MY_AREA_TOKENS.MyService, MyService);
+  }
+}
+export default new MyAreaRegistrar();
+// then add `myAreaRegistrar` to the array in src/config/dependency-injection-config.ts (one line)
 
 // 4. Resolve once at the composition root and inject the dependency
 //    (React components, stores, and store actions never call container.resolve themselves)
@@ -1201,8 +1219,9 @@ When creating a new module:
 - [ ] Add `package.json` with module metadata
 - [ ] Create feature structure with `features/`, `store/`, `helpers/`
 - [ ] Add i18n files: `i18n/en.json`, `i18n/uk.json`
-- [ ] Register services in DI container
-- [ ] Add tokens to `src/config/tokens.ts`
+- [ ] Add the module's token module `src/modules/[ModuleName]/config/tokens.ts`
+      and composition root `config/di.ts`, then register it in the aggregator array
+      in `src/config/dependency-injection-config.ts` (issue #109)
 - [ ] Create Zustand store in `features/[Feature]/stores/`
 - [ ] Add a repository / API client if needed
 - [ ] Write unit tests in `tests/unit/modules/[ModuleName]/`

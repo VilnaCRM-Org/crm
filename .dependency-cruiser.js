@@ -1,3 +1,16 @@
+// Issue #109: DI composition roots are the thin aggregator plus each per-module and
+// per-infra registrar (di.ts). They wire dependencies, so they are the only modules
+// allowed to reach into module/feature/repository internals for registration, and the
+// only import targets restricted by no-di-config-import-outside-composition-root (importing
+// one eagerly pulls the whole DI graph, which must stay off the auth paint path).
+const DI_COMPOSITION_ROOTS = [
+  '^src/config/dependency-injection-config[.]ts$',
+  '^src/services/[^/]+/di[.]ts$',
+  '^src/utils/[^/]+/di[.]ts$',
+  '^src/modules/[^/]+/config/di[.]ts$',
+];
+const DI_MODULE_COMPOSITION_ROOT = '^src/modules/[^/]+/config/di[.]ts$';
+
 module.exports = {
   forbidden: [
     {
@@ -258,14 +271,13 @@ module.exports = {
     {
       name: 'no-repository-internal-imports',
       comment:
-        'Imports from repositories must go through the repositories public API (index file).',
+        'Imports from repositories must go through the repositories public API (index file). ' +
+        'Exempt: repositories themselves and the DI composition roots, which register the ' +
+        'concrete repository implementations (issue #109).',
       severity: 'error',
       from: {
         path: '^src/',
-        pathNot: [
-          '^src/modules/[^/]+/features/[^/]+/repositories/',
-          '^src/config/dependency-injection-config[.]ts$',
-        ],
+        pathNot: ['^src/modules/[^/]+/features/[^/]+/repositories/', ...DI_COMPOSITION_ROOTS],
       },
       to: {
         path:
@@ -343,8 +355,10 @@ module.exports = {
     {
       name: 'no-di-config-import-outside-composition-root',
       comment:
-        'The DI container configuration must only be imported by application ' +
-        'composition roots and store/hook bridges that resolve singletons.',
+        'The DI container configuration and every per-module/per-infra registrar (di.ts) ' +
+        'must only be imported by the aggregating composition root itself and the store/hook ' +
+        'bridges that resolve singletons. Importing one elsewhere eagerly pulls the whole DI ' +
+        'graph onto the auth paint path (issue #109).',
       severity: 'error',
       from: {
         path: '^src/',
@@ -354,10 +368,27 @@ module.exports = {
           '^src/stores/',
           '^src/modules/[^/]+/store/[^/]+-slice[.]ts$',
           '^src/modules/[^/]+/features/[^/]+/stores/index[.]ts$',
+          '^src/config/dependency-injection-config[.]ts$',
         ],
       },
       to: {
-        path: '^src/config/dependency-injection-config[.]ts$',
+        path: DI_COMPOSITION_ROOTS,
+      },
+    },
+    {
+      name: 'no-composition-root-cross-module-imports',
+      comment:
+        'A module DI composition root and token module (src/modules/<m>/config/*) may wire ' +
+        "only its own module's internals, tsyringe, and shared infra (services/, utils/). It " +
+        'must never reach into a sibling module — that would recreate the cross-module hub ' +
+        'coupling issue #109 removes. This makes the DI-isolation invariant explicit; general ' +
+        'cross-module imports are also caught by no-cross-module-imports.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/([^/]+)/config/',
+      },
+      to: {
+        path: '^src/modules/(?!$1/)[^/]+/',
       },
     },
     {
@@ -431,10 +462,14 @@ module.exports = {
         'import a feature through its public API (feature index barrel), not deep ' +
         'feature-internal files. (lib is additionally blocked from every feature ' +
         'import by no-lib-to-features.) Sibling-feature imports are handled by ' +
-        'no-cross-feature-imports; outside-module imports by no-module-internal-imports.',
+        'no-cross-feature-imports; outside-module imports by no-module-internal-imports. ' +
+        'Exempt: the module DI composition root (config/di.ts), which wires the feature ' +
+        'internals into the container (issue #109); it stays module-scoped via ' +
+        'no-composition-root-cross-module-imports.',
       severity: 'error',
       from: {
         path: '^src/modules/([^/]+)/(?:store|types|lib|hooks|utils|config)/',
+        pathNot: [DI_MODULE_COMPOSITION_ROOT],
       },
       to: {
         path:

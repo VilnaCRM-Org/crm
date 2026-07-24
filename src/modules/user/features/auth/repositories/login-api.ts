@@ -1,7 +1,8 @@
 import { inject, injectable } from 'tsyringe';
 
 import API_ENDPOINTS from '@/config/api-config';
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
+import HTTP_TOKENS from '@/services/https-client/tokens';
 import type { HttpsClient } from '@/services/types/https-client/https-client';
 import type { LoginResponse } from '@auth/types/api-responses';
 import type { LoginUserDto } from '@auth/types/credentials';
@@ -14,8 +15,8 @@ import type { RequestOptions } from './types';
 @injectable()
 export default class LoginAPI extends BaseAPI {
   constructor(
-    @inject(TOKENS.HttpsClient) private readonly httpsClient: HttpsClient,
-    @inject(TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory
+    @inject(HTTP_TOKENS.HttpsClient) private readonly httpsClient: HttpsClient,
+    @inject(AUTH_TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory
   ) {
     super(apiErrorFactory);
   }

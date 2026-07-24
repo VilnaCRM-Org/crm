@@ -1,9 +1,9 @@
 import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
 import AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
 
-const authErrorHandler = container.resolve<AuthErrorHandler>(TOKENS.AuthErrorHandler);
+const authErrorHandler = container.resolve<AuthErrorHandler>(AUTH_TOKENS.AuthErrorHandler);
 const authRequestErrors = new AuthRequestErrors(authErrorHandler);
 
 describe('auth request errors integration coverage', () => {
