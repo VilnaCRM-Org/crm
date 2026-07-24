@@ -34,12 +34,12 @@ setup() {
     [ -z "$expected_two" ] || assert_log_contains "$expected_two"
   done <<'EOF'
 ci-setup|docker compose -f docker-compose.yml up -d --no-recreate dev mockoon|curl -fsS http://localhost:8080/api/users
-ci-lint|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile|
+ci-lint|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile|
 ci-test|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration|
 ci-mutation|bun x stryker run|
 ci-prod-setup|docker compose -f docker-compose.yml up -d dev|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --no-recreate prod mockoon playwright
 ci-test-prod|docker compose -f docker-compose.test.yml exec playwright ./node_modules/.bin/playwright test ./tests/e2e|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)
-ci|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
+ci|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
 install|docker compose exec -T dev bun install --frozen-lockfile|bun x husky install
 clean|docker compose -f docker-compose.yml down --volumes --remove-orphans --rmi local|docker compose -f docker-compose.test.yml down --volumes --remove-orphans --rmi local
 start-prod-clean|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --force-recreate --build prod mockoon playwright|curl -fsS http://localhost:8080/api/users
@@ -301,4 +301,35 @@ EOF
   run_make_target test-mutation-shard MUTATION_SHARD_INDEX=1 MUTATION_SHARD_TOTAL=4 MUTATION_INCREMENTAL=1
   [ "$status" -eq 0 ]
   assert_log_contains 'dev bun x stryker run stryker.shard.config.mjs --incremental'
+}
+
+@test "CI_LINT_TARGETS mirrors the lint prerequisite set exactly (issue #182)" {
+  # The local CI mirror (make ci / make ci-lint) must run the same lint gates as
+  # CI's `make lint`, so a green local run implies a green `static testing` run.
+  # Bidirectional: the mirror can neither drop a CI gate nor accrue targets CI omits.
+  local makefile="$MAKEFILE_SANDBOX/Makefile"
+
+  local lint_prereqs ci_targets
+  lint_prereqs=$(grep -E '^lint:[[:space:]]' "$makefile" | sed 's/^lint:[[:space:]]*//; s/[[:space:]]*##.*//')
+  ci_targets=$(grep -E '^CI_LINT_TARGETS[[:space:]]*=' "$makefile" | sed 's/^[^=]*=[[:space:]]*//')
+
+  [ -n "$lint_prereqs" ]
+  [ -n "$ci_targets" ]
+
+  # every `lint:` prerequisite must appear in CI_LINT_TARGETS
+  local t
+  for t in $lint_prereqs; do
+    if ! printf '%s\n' $ci_targets | grep -qxF -- "$t"; then
+      echo "lint: prerequisite '$t' is missing from CI_LINT_TARGETS" >&2
+      return 1
+    fi
+  done
+
+  # every CI_LINT_TARGETS entry must be a `lint:` prerequisite
+  for t in $ci_targets; do
+    if ! printf '%s\n' $lint_prereqs | grep -qxF -- "$t"; then
+      echo "CI_LINT_TARGETS entry '$t' is not a lint: prerequisite" >&2
+      return 1
+    fi
+  done
 }
