@@ -22,5 +22,7 @@ load './test_helper.bash'
   ' "$compose"
   [ "$status" -eq 0 ]
 
-  printf '%s\n' "$output" | grep -qF 'CI=${CI-}'
+  # Anchor to the full list item (`- CI=${CI-}`), not just the substring, so a
+  # mis-named/mis-formatted entry (e.g. `- FOO_CI=${CI-}`) cannot satisfy the gate.
+  printf '%s\n' "$output" | grep -qF -- '- CI=${CI-}'
 }
