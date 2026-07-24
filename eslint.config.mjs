@@ -637,9 +637,12 @@ export default [
   },
 
   // Issue #109: a module DI composition root (config/di.ts) wires its own module's feature
-  // internals into the container, so it may deep-import them (@auth/*, @/modules/*/features/*),
-  // like the aggregating root. Cross-module isolation stays enforced by dependency-cruiser
-  // (no-composition-root-cross-module-imports + no-cross-module-imports).
+  // internals into the container, so — like the aggregating root — it must deep-import them
+  // (@auth/*, @/modules/*/features/*). ESLint patterns cannot express "own module only", so this
+  // override deliberately keeps only the shared @/features/* guard and delegates the
+  // module/feature-boundary enforcement to dependency-cruiser: no-feature-internal-imports exempts
+  // this file (allowing the own-module deep imports), while no-composition-root-cross-module-imports
+  // + no-cross-module-imports still forbid reaching into a sibling module.
   {
     files: ['src/modules/*/config/di.ts'],
     rules: {

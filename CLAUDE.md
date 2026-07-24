@@ -441,7 +441,8 @@ The project uses tsyringe for DI with **per-module / per-infra composition roots
 
 1. Each module/infra area owns a **composition root** (`di.ts`) that registers only its own
    bindings, plus a co-located **token module** (`tokens.ts`) that declares only its own
-   symbols. There is no global registration file and no global token literal:
+   symbols. Registration ownership is decentralized — there is no global token literal, and the
+   one global file (`dependency-injection-config.ts`) is a registration-free aggregator (see 2):
    - Infra: `src/services/https-client/{di,tokens}.ts` (`HTTP_TOKENS`),
      `src/services/observability/{di,tokens}.ts` (`OBSERVABILITY_TOKENS`),
      `src/services/error/{di,tokens}.ts` (`ERROR_TOKENS`),
