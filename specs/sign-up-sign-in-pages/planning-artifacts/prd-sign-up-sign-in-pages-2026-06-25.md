@@ -385,9 +385,9 @@ Requirement IDs are stable and are referenced by the Architecture and Epics docu
   (`getByRole`, `getByLabelText`, `getByText`), using a stable `id` only as a last
   resort. The swap link MUST be locatable as `getByRole('link', { name })`.
 - **NFR6 — No `static`/free functions in `src/**/_.ts`.** Any non-React `.ts`logic MUST
-use instance methods on a class (no`static`, no standalone/`export`functions, no
-top-level arrow/function-expression`const`s), per the `no-restricted-syntax`gate;
-React`.tsx`components and`use-_` hooks are exempt.
+  use instance methods on a class (no`static`, no standalone/`export`functions, no
+  top-level arrow/function-expression`const`s), per the `no-restricted-syntax`gate;
+  React`.tsx`components and`use-_` hooks are exempt.
 - **NFR7 — Type-only files (#88).** New component prop types (e.g. `AuthPageLayout`,
   `AuthFormSection`, `AuthSwitcher` props) MUST live in dedicated per-area `types/` files,
   imported via `import type`; logic files MUST declare no `interface`/`type`. Enforced by
@@ -404,15 +404,15 @@ React`.tsx`components and`use-_` hooks are exempt.
 - **NFR10 — All-layers test refactor + 100% integration coverage.** Every test layer MUST
   be updated for the route rename and button→link swap, and the **global 100% coverage
   over `src/**`** gate MUST hold: every NEW source file (pages, layout, sections,
-switcher) is fully covered, and tests for DELETED files are removed. Specifically:
-unit (`app.test.tsx`, `app-root.test.tsx`, `components/protected-route.test.tsx`,
-`tooling/lighthouse-constants.test.ts`, `tooling/auth-test-port.test.ts`,
-`tooling/performance-serving.test.ts`, the form-section/page test rewrite, the deleted
-`index.test.tsx`); integration (route-agnostic store/repo/skeleton tests verified, new
-files covered); e2e (`auth-forms/login-form.spec.ts`AUTH_URL + switcher locator,`auth-forms/constants/constants.ts` `REGISTRATION_URL`, `skeletons/auth-skeleton.spec.ts`AUTH_URL,`back-to-main.spec.ts` goto+URL, plus a NEW swap-nav spec asserting the URL
-changes in both directions); visual (`constants.ts` `PAGES`, split
-`visual-comparison.authentication.spec.ts`into sign-up + sign-in,`visual-comparison.auth-skeleton.spec.ts`); memory-leak (`auth-skeleton.js`,
-`signup.js` route paths); load (verify no SPA route reference).
+  switcher) is fully covered, and tests for DELETED files are removed. Specifically:
+  unit (`app.test.tsx`, `app-root.test.tsx`, `components/protected-route.test.tsx`,
+  `tooling/lighthouse-constants.test.ts`, `tooling/auth-test-port.test.ts`,
+  `tooling/performance-serving.test.ts`, the form-section/page test rewrite, the deleted
+  `index.test.tsx`); integration (route-agnostic store/repo/skeleton tests verified, new
+  files covered); e2e (`auth-forms/login-form.spec.ts`AUTH_URL + switcher locator,`auth-forms/constants/constants.ts` `REGISTRATION_URL`, `skeletons/auth-skeleton.spec.ts`AUTH_URL,`back-to-main.spec.ts` goto+URL, plus a NEW swap-nav spec asserting the URL
+  changes in both directions); visual (`constants.ts` `PAGES`, split
+  `visual-comparison.authentication.spec.ts`into sign-up + sign-in,`visual-comparison.auth-skeleton.spec.ts`); memory-leak (`auth-skeleton.js`,
+  `signup.js` route paths); load (verify no SPA route reference).
 - **NFR11 — Visual baseline regeneration.** Renaming the spec/page keys changes the
   expected PNG filenames; baselines under `tests/visual/__snapshots__*` MUST be
   regenerated (`make test-visual-update`, requiring Docker + the prod stack) and MUST be

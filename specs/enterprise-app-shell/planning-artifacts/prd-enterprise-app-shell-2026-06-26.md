@@ -340,8 +340,8 @@ Requirement IDs are stable and referenced by the Architecture and Epics document
   `getByText`), using a stable `id` only as a last resort. The 404 and fallback MUST be locatable by
   role/heading/text.
 - **NFR6 — No `static`/free functions in `src/**/_.ts`.** Non-React `.ts`logic (the`ErrorReporter`default, any helper) MUST use instance methods on an`@injectable()`class — no`static`, no
-standalone/`export`functions, no top-level arrow`const`s — per the `no-restricted-syntax`gate.
-React`.tsx`components (incl. the class boundary) and`use-_` hooks are exempt.
+  standalone/`export`functions, no top-level arrow`const`s — per the `no-restricted-syntax`gate.
+  React`.tsx`components (incl. the class boundary) and`use-_` hooks are exempt.
 - **NFR7 — Type-only files (#88).** Every new prop/contract type (`AppProvidersProps`,
   `AppErrorBoundaryProps`, `AppErrorBoundaryState`, `ErrorFallbackProps`, `ErrorReporter`,
   `RootLayoutProps`/`AppLayoutProps` as needed) MUST live in dedicated per-area `types/` files,
@@ -357,10 +357,10 @@ React`.tsx`components (incl. the class boundary) and`use-_` hooks are exempt.
   may be hard-coded in `src/**` (the **degraded** boundary baseline copy is the deliberate exception —
   see AR14).
 - **NFR10 — 100% integration coverage over `src/**`.** The global 100% coverage gate (branches/
-functions/lines/statements) MUST hold: every new source file (providers, routes, layouts, boundary,
-fallback, 404, reporter) MUST be fully covered by positive, negative, and edge-case tests; deleted
-side effects (button-example dir) MUST not leave uncovered branches. `src/index.tsx`remains
-coverage-excluded, so coverage-bearing logic MUST live in covered modules, not`index.tsx`.
+  functions/lines/statements) MUST hold: every new source file (providers, routes, layouts, boundary,
+  fallback, 404, reporter) MUST be fully covered by positive, negative, and edge-case tests; deleted
+  side effects (button-example dir) MUST not leave uncovered branches. `src/index.tsx`remains
+  coverage-excluded, so coverage-bearing logic MUST live in covered modules, not`index.tsx`.
 - **NFR11 — No suppressions, no new inline comments.** No `eslint-disable`, `@ts-ignore`,
   `prettier-ignore`, markdownlint/editorconfig disable, and no new inline code comments. Gate failures
   MUST be fixed at the root.

@@ -188,7 +188,7 @@ class AppErrorBoundary extends React.Component<AppErrorBoundaryProps, AppErrorBo
   `report(error, info)` is called (AC7). `AppErrorBoundaryState` (type-only): `{ hasError: boolean;
 error?: Error }`.
 - **Imports nothing from `@auth/*` or `src/modules/**`** and uses **no** `auth.\*`i18n keys (FR8); it
-imports only React,`ErrorFallback`, and the `ErrorReporter`type + default singleton — enforced by`no-components-import-modules`and the new`no-shell-to-di-config` rule (FR12, AC8).
+  imports only React,`ErrorFallback`, and the `ErrorReporter`type + default singleton — enforced by`no-components-import-modules`and the new`no-shell-to-di-config` rule (FR12, AC8).
 - Placement (`index.tsx`): **outermost**, above `AppProviders`, so it catches errors thrown by the
   providers themselves (theme/i18n/router) — which is exactly why its fallback must be
   provider-independent (AR13).
@@ -567,7 +567,7 @@ files are listed because the epics reference them and the loop applies them.
   - **Thin hosts:** `app.test.tsx` updated to assert `RouterProvider` renders the imported `router`;
     `button-example` asserts no `dir` effect (AC2, AC11).
 - **Integration (Jest, 100% over `src/**`).** Every new file is covered by the unit/integration render
-paths so the global 100% gate holds; `src/index.tsx` stays coverage-excluded (AC14, NFR10).
+  paths so the global 100% gate holds; `src/index.tsx` stays coverage-excluded (AC14, NFR10).
 - **dependency-cruiser (`make lint-deps`).** The new rules report **zero** violations; a deliberate
   probe (in review, not committed source) confirms an import from `src/components`/`src/providers`/
   `src/routes` into a feature internal or into `dependency-injection-config` is flagged `error` (AC8).
