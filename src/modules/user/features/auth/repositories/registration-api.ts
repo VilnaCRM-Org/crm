@@ -7,7 +7,7 @@ import type {
   CreateUserMutation,
   CreateUserMutationVariables,
 } from '@/api/generated/graphql';
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
 import { ApiError, ApiErrorCodes } from '@/modules/user/lib/api-errors';
 import { HttpError } from '@/services/https-client/http-error';
 import type { RegistrationResponse } from '@auth/types/api-responses';
@@ -22,9 +22,9 @@ import type { RequestOptions } from './types';
 @injectable()
 export default class RegistrationAPI extends BaseAPI {
   constructor(
-    @inject(TOKENS.ApolloClient)
+    @inject(AUTH_TOKENS.ApolloClient)
     private readonly apolloClient: ApolloClient<NormalizedCacheObject>,
-    @inject(TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory
+    @inject(AUTH_TOKENS.ApiErrorFactory) apiErrorFactory: ApiErrorFactory
   ) {
     super(apiErrorFactory);
   }

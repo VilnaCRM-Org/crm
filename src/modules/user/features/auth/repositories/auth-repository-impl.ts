@@ -1,6 +1,6 @@
 import { inject, injectable } from 'tsyringe';
 
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
 
 import type { AuthError } from '../types/auth-error';
 import type { AuthRepository, LoginResult, RegisterResult } from '../types/auth-repository';
@@ -16,7 +16,7 @@ const ABORTED_ERROR: AuthError = {
 
 @injectable()
 export default class AuthRepositoryImpl implements AuthRepository {
-  constructor(@inject(TOKENS.AuthRepositoryDeps) private readonly deps: AuthRepositoryDeps) {}
+  constructor(@inject(AUTH_TOKENS.AuthRepositoryDeps) private readonly deps: AuthRepositoryDeps) {}
 
   public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<LoginResult> {
     try {

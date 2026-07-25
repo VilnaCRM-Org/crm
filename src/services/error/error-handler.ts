@@ -1,8 +1,8 @@
 import { inject, injectable } from 'tsyringe';
 
-import TOKENS from '@/config/tokens';
 import { ERROR_CODES } from '@/services/error/error-codes';
 import observabilityCore from '@/services/observability/observability-core';
+import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import type { ErrorCode } from '@/services/types/error/error-codes';
 import type { ErrorLogger, UiError } from '@/services/types/error/error-handler';
 import type { ObservabilityService } from '@/services/types/observability/observability';
@@ -76,7 +76,8 @@ export class ErrorHandler {
   private readonly observability: ObservabilityService;
 
   constructor(
-    @inject(TOKENS.ObservabilityService, { isOptional: true }) observability?: ObservabilityService
+    @inject(OBSERVABILITY_TOKENS.ObservabilityService, { isOptional: true })
+    observability?: ObservabilityService
   ) {
     this.observability = observability ?? observabilityCore;
   }

@@ -1,7 +1,8 @@
 import { inject, injectable } from 'tsyringe';
 import { v4 as uuidv4 } from 'uuid';
 
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
+import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository, LoginResult, RegisterResult } from '@auth/types/auth-repository';
@@ -13,9 +14,10 @@ import AuthStateVar from './auth-var';
 @injectable()
 export default class AuthStoreActions {
   constructor(
-    @inject(TOKENS.AuthRepository) private readonly repository: AuthRepository,
-    @inject(TOKENS.AuthRequestErrors) private readonly authRequestErrors: AuthRequestErrors,
-    @inject(TOKENS.ObservabilityService) private readonly observability: ObservabilityService
+    @inject(AUTH_TOKENS.AuthRepository) private readonly repository: AuthRepository,
+    @inject(AUTH_TOKENS.AuthRequestErrors) private readonly authRequestErrors: AuthRequestErrors,
+    @inject(OBSERVABILITY_TOKENS.ObservabilityService)
+    private readonly observability: ObservabilityService
   ) {}
 
   public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {

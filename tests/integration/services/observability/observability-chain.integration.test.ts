@@ -58,9 +58,11 @@ describe('observability chain (integration)', () => {
 
   it('resolves ObservabilityService from DI and stays inert without a DSN', async () => {
     const container = (await import('@/config/dependency-injection-config')).default;
-    const TOKENS = (await import('@/config/tokens')).default;
+    const OBSERVABILITY_TOKENS = (await import('@/services/observability/tokens')).default;
     const Sentry = await import('@sentry/react');
-    const service = container.resolve<ObservabilityServiceInstance>(TOKENS.ObservabilityService);
+    const service = container.resolve<ObservabilityServiceInstance>(
+      OBSERVABILITY_TOKENS.ObservabilityService
+    );
 
     service.init();
     service.captureError(new Error('x'), { source: 'unit' });

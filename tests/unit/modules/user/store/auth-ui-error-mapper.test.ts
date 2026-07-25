@@ -1,11 +1,11 @@
 import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
 
 describe('AuthUiErrorMapper', () => {
   it('maps API errors to a UI-safe auth error', () => {
-    const mapper = container.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper);
+    const mapper = container.resolve<AuthUiErrorMapper>(AUTH_TOKENS.AuthUiErrorMapper);
     const error = new Error('Connection failed');
     const uiError = mapper.map(error);
 
@@ -14,7 +14,7 @@ describe('AuthUiErrorMapper', () => {
   });
 
   it('resolves from the DI container with the registered AuthErrorHandler', () => {
-    const defaultMapper = container.resolve<AuthUiErrorMapper>(TOKENS.AuthUiErrorMapper);
+    const defaultMapper = container.resolve<AuthUiErrorMapper>(AUTH_TOKENS.AuthUiErrorMapper);
 
     expect(defaultMapper.map(new Error('Network error')).displayMessage).toBeTruthy();
   });

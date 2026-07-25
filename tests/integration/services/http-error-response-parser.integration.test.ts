@@ -1,11 +1,11 @@
 import '../setup';
 import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
+import HTTP_TOKENS from '@/services/https-client/tokens';
 
 describe('HttpErrorResponseParser Integration', () => {
-  const parser = container.resolve<HttpErrorResponseParser>(TOKENS.HttpErrorResponseParser);
+  const parser = container.resolve<HttpErrorResponseParser>(HTTP_TOKENS.HttpErrorResponseParser);
 
   it('resolves without throwing for an ok response', async () => {
     const response = { ok: true, status: 200 } as Response;

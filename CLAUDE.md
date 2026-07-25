@@ -437,13 +437,29 @@ src/
 
 ### Dependency Injection
 
-The project uses tsyringe for DI:
+The project uses tsyringe for DI with **per-module / per-infra composition roots** (issue #109):
 
-1. Services are registered in `src/config/dependency-injection-config.ts`
-2. Tokens are defined in `src/config/tokens.ts`
-3. Import `reflect-metadata` at app entry point (already done in `src/index.tsx`)
-4. Use `@injectable()` decorator on classes
-5. Resolve dependencies via `container.resolve<Type>(TOKENS.ServiceName)`
+1. Each module/infra area owns a **composition root** (`di.ts`) that registers only its own
+   bindings, plus a co-located **token module** (`tokens.ts`) that declares only its own
+   symbols. Registration ownership is decentralized — there is no global token literal, and the
+   one global file (`dependency-injection-config.ts`) is a registration-free aggregator (see 2):
+   - Infra: `src/services/https-client/{di,tokens}.ts` (`HTTP_TOKENS`),
+     `src/services/observability/{di,tokens}.ts` (`OBSERVABILITY_TOKENS`),
+     `src/services/error/{di,tokens}.ts` (`ERROR_TOKENS`),
+     `src/services/error-reporting/{di,tokens}.ts` (`ERROR_REPORTING_TOKENS`),
+     `src/utils/error/{di,tokens}.ts` (`ERROR_UTILS_TOKENS`).
+   - Module: `src/modules/user/config/{di,tokens}.ts` (`AUTH_TOKENS`).
+2. Each root is a `ModuleRegistrar` (`src/config/types/module-registrar.ts`) singleton.
+   `src/config/dependency-injection-config.ts` is a **thin aggregator** holding **zero**
+   `container.register*` calls — it collects the registrars and invokes each against the
+   container. Adding a module = one import + one array entry there, plus that module's own
+   `config/{di,tokens}.ts`.
+3. Import `reflect-metadata` at app entry point (already done in `src/index.tsx`).
+4. Use `@injectable()` on classes; register them in the owning area's `di.ts`.
+5. Resolve / inject via the area's namespaced tokens, e.g.
+   `@inject(HTTP_TOKENS.HttpsClient)` or `container.resolve<Type>(AUTH_TOKENS.AuthRepository)`.
+   A source file imports only its own concern's token module plus shared-infra token modules —
+   never a sibling module's token module (dependency-cruiser-enforced).
 
 The auth store stays container-free: only the composition root
 (`src/modules/user/features/auth/stores/index.ts`) touches the DI container, and it

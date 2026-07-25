@@ -1,6 +1,6 @@
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
 import {
   ApiErrorFactory,
   ApiStatusErrorFactory,
@@ -19,13 +19,13 @@ describe('Repositories index integration', () => {
   });
 
   it('should export LoginAPI class resolvable from DI container', () => {
-    const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+    const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
 
     expect(loginAPI).toBeInstanceOf(LoginAPI);
   });
 
   it('should export RegistrationAPI class resolvable from DI container', () => {
-    const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+    const registrationAPI = container.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI);
 
     expect(registrationAPI).toBeInstanceOf(RegistrationAPI);
   });

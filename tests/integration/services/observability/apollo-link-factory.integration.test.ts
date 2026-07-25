@@ -3,8 +3,8 @@ import 'reflect-metadata';
 import { ApolloLink, Observable, execute, gql } from '@apollo/client';
 
 import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
 import type ApolloLinkFactory from '@/services/observability/apollo-link-factory';
+import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 
 const query = gql`
@@ -22,8 +22,10 @@ const failingLink = (error: Error): ApolloLink =>
   new ApolloLink(() => new Observable((observer) => observer.error(error)));
 
 describe('apollo link factory (integration)', () => {
-  const factory = container.resolve<ApolloLinkFactory>(TOKENS.ApolloLinkFactory);
-  const observability = container.resolve<ObservabilityService>(TOKENS.ObservabilityService);
+  const factory = container.resolve<ApolloLinkFactory>(OBSERVABILITY_TOKENS.ApolloLinkFactory);
+  const observability = container.resolve<ObservabilityService>(
+    OBSERVABILITY_TOKENS.ObservabilityService
+  );
   const captureError = jest.spyOn(observability, 'captureError');
 
   afterEach(() => captureError.mockClear());

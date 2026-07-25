@@ -3,7 +3,7 @@ import { rest } from 'msw';
 import '../../../../../setup';
 import API_ENDPOINTS from '@/config/api-config';
 import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type LoginAPI from '@auth/repositories/login-api';
 import type RegistrationAPI from '@auth/repositories/registration-api';
 import { AuthStateVar, AuthStoreSelectors, authActions } from '@auth/stores';
@@ -412,7 +412,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle non-API errors from RegistrationAPI', async () => {
-      const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+      const registrationAPI = container.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI);
       jest.spyOn(registrationAPI, 'register').mockRejectedValue(new Error('Unexpected failure'));
 
       await authActions.registerUser(registrationCredentials);
@@ -452,7 +452,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle DOMException abort from LoginAPI', async () => {
-      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
       jest
         .spyOn(loginAPI, 'login')
         .mockRejectedValue(new DOMException('The operation was aborted', 'AbortError'));
@@ -465,7 +465,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle error with AbortError name from LoginAPI', async () => {
-      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
       const abortError = new Error('Operation cancelled');
       abortError.name = 'AbortError';
       jest.spyOn(loginAPI, 'login').mockRejectedValue(abortError);
@@ -478,7 +478,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle error with abort in message from LoginAPI', async () => {
-      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue(new Error('Request was aborted by user'));
 
       await authActions.loginUser(buildCredentials());
@@ -489,7 +489,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should not treat non-abort errors as abort', async () => {
-      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue(new Error('Network failure'));
 
       await authActions.loginUser(buildCredentials());
@@ -500,7 +500,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should not treat non-Error objects as abort', async () => {
-      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue('string error');
 
       await authActions.loginUser(buildCredentials());
@@ -511,7 +511,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle null error thrown by LoginAPI', async () => {
-      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
       jest.spyOn(loginAPI, 'login').mockRejectedValue(null);
 
       await authActions.loginUser(buildCredentials());
@@ -522,7 +522,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle error with undefined message', async () => {
-      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
       const error = new Error();
       error.message = undefined as unknown as string;
       jest.spyOn(loginAPI, 'login').mockRejectedValue(error);
@@ -573,7 +573,7 @@ describe('Auth Store Integration', () => {
 
   describe('real integration with DI container', () => {
     it('should use real LoginAPI from DI container', async () => {
-      const loginAPI = container.resolve<LoginAPI>(TOKENS.LoginAPI);
+      const loginAPI = container.resolve<LoginAPI>(AUTH_TOKENS.LoginAPI);
       expect(loginAPI).toBeDefined();
 
       const credentials = buildCredentials();
@@ -590,7 +590,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should use real RegistrationAPI from DI container', async () => {
-      const registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+      const registrationAPI = container.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI);
       expect(registrationAPI).toBeDefined();
 
       server.use(

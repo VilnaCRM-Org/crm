@@ -1,6 +1,6 @@
 import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
 import HttpClientFactory from '@/services/https-client/https-client-factory';
+import HTTP_TOKENS from '@/services/https-client/tokens';
 import type { HttpsClient } from '@/services/types/https-client/https-client';
 
 class StubHttpsClient implements HttpsClient {
@@ -27,7 +27,7 @@ class StubHttpsClient implements HttpsClient {
 
 describe('HttpClientFactory Integration', () => {
   it('resolves from the DI container', () => {
-    const factory = container.resolve<HttpClientFactory>(TOKENS.HttpClientFactory);
+    const factory = container.resolve<HttpClientFactory>(HTTP_TOKENS.HttpClientFactory);
 
     expect(factory).toBeInstanceOf(HttpClientFactory);
   });

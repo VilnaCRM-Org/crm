@@ -4,15 +4,16 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { inject, injectable } from 'tsyringe';
 
-import TOKENS from '@/config/tokens';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 
 import correlationIdProvider from './correlation-id-provider';
+import OBSERVABILITY_TOKENS from './tokens';
 
 @injectable()
 export default class ApolloLinkFactory {
   constructor(
-    @inject(TOKENS.ObservabilityService) private readonly observability: ObservabilityService
+    @inject(OBSERVABILITY_TOKENS.ObservabilityService)
+    private readonly observability: ObservabilityService
   ) {}
 
   public build(uri: string): ApolloLink {

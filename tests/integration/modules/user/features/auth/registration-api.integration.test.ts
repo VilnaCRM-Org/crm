@@ -3,7 +3,7 @@ import { rest } from 'msw';
 
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
-import TOKENS from '@/config/tokens';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
 import RegistrationAPI from '@/modules/user/features/auth/repositories/registration-api';
 import { ApiError, ConflictError } from '@/modules/user/lib/api-errors';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
@@ -37,7 +37,7 @@ describe('RegistrationAPI Integration', () => {
   afterAll(() => server.close());
 
   beforeEach(() => {
-    registrationAPI = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+    registrationAPI = container.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI);
   });
 
   describe('successful registration', () => {
@@ -161,8 +161,8 @@ describe('RegistrationAPI Integration', () => {
 
   describe('DI container integration', () => {
     it('is resolvable from the DI container multiple times', () => {
-      const instance1 = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
-      const instance2 = container.resolve<RegistrationAPI>(TOKENS.RegistrationAPI);
+      const instance1 = container.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI);
+      const instance2 = container.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI);
 
       expect(instance1).toBeInstanceOf(RegistrationAPI);
       expect(instance2).toBeInstanceOf(RegistrationAPI);
