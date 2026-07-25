@@ -610,8 +610,8 @@ two housekeeping files are listed because the epics reference them and the loop 
   - Deleted-module tests (`form-section/index.test.tsx`, `form-section.test.tsx`,
     `login-switch-actions.test.ts`, auth `index.test.tsx`) are removed.
 - **Integration (Jest, 100% over `src/**`).** Route-agnostic store/repo/skeleton suites are verified
-unchanged (the auth store is untouched, so the `clearInstances()`spy hazard is not triggered).
-Every new src file (layout, section, switcher, two pages, two sections,`use-page-title`) is fully
+  unchanged (the auth store is untouched, so the `clearInstances()`spy hazard is not triggered).
+  Every new src file (layout, section, switcher, two pages, two sections,`use-page-title`) is fully
   covered by the unit/integration render paths so the global 100% gate holds; deleted-file tests are
   removed in the same change (NFR10, AC17).
 - **E2E (Playwright + Mockoon).** Update `AUTH_URL`/`REGISTRATION_URL` to `/sign-up` and navigate

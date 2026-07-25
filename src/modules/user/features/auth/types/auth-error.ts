@@ -1,10 +1,5 @@
 export type AuthErrorKind =
-  | 'validation'
-  | 'authentication'
-  | 'conflict'
-  | 'server'
-  | 'network'
-  | 'unknown';
+  'validation' | 'authentication' | 'conflict' | 'server' | 'network' | 'unknown';
 
 export interface FieldIssue {
   readonly path: string;

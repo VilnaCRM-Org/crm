@@ -58,7 +58,6 @@
     "@rsbuild/plugin-svgr": "^2.0.5",
     "@storybook/addon-docs": "^9.0.18",
     "@storybook/addon-links": "^9.0.18",
-    "@storybook/addon-mcp": "^0.7.0",
     "@storybook/react": "^9.0.18",
     "@storybook/react-webpack5": "^9.0.18",
     "@storybook/types": "^8.6.14",

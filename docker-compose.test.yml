@@ -30,6 +30,10 @@ services:
       - '9324:9324'
     environment:
       - REACT_APP_PROD_CONTAINER_API_URL=http://prod:3001
+      # GitHub runners export CI=true; empty locally keeps forbidOnly false and
+      # preserves `.only` convenience. Without this, the runner's CI never crosses
+      # the compose boundary and playwright.config.ts's forbidOnly is inert (#190).
+      - CI=${CI-}
     networks:
       - crm-network
 

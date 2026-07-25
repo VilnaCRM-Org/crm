@@ -34,9 +34,18 @@ const devSnapshotPathTemplate =
 export default defineConfig({
   testMatch: ['**/*.spec.ts'],
   fullyParallel: true,
+  // CI is now passed into the playwright container via docker-compose.test.yml, so
+  // forbidOnly actually binds under CI: a stray `test.only` fails the required e2e /
+  // visual checks instead of silently shrinking the suite to a single test (#190).
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Pinned explicit so #190 is behavior-neutral apart from forbidOnly binding.
+  // Enabling CI retries (2) + on-first-retry trace capture is a deliberate follow-up,
+  // reviewed alongside #144; until then retries stay 0 so no flake is retry-masked.
+  retries: 0,
+  // Keep Playwright's default parallelism for the dedicated test container — this
+  // matches the suite's actual pre-#190 CI behavior (CI never reached the container,
+  // so workers resolved to undefined). A reviewed choice, not an accident.
+  workers: undefined,
   reporter: [['html', { open: 'never' }]],
   ...(isDevMode ? { snapshotPathTemplate: devSnapshotPathTemplate } : {}),
   use: {

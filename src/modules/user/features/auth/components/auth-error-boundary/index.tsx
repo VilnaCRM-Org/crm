@@ -79,8 +79,7 @@ export default class AuthErrorBoundary extends Component<
 
     if (process.env.NODE_ENV !== 'production') {
       const resolvedConsole = Reflect.get(globalThis, 'console') as
-        | { error: (...args: unknown[]) => void }
-        | undefined;
+        { error: (...args: unknown[]) => void } | undefined;
       if (resolvedConsole) {
         resolvedConsole.error('AuthErrorBoundary caught an error:', error, info);
       }

@@ -1,0 +1,40 @@
+name: storybook testing
+
+on:
+  pull_request:
+    branches: ['main']
+    paths:
+      - 'src/**/*.stories.*'
+      - '.storybook/**'
+      - 'src/components/**'
+      - 'package.json'
+      - 'bun.lock'
+      - '.github/workflows/storybook-testing.yml'
+      - 'Dockerfile'
+      - '.dockerignore'
+      - 'docker-compose.yml'
+      - 'Makefile'
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  storybook-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      - name: Start dev container
+        run: make start-dev
+
+      - name: Build Storybook
+        run: make storybook-build

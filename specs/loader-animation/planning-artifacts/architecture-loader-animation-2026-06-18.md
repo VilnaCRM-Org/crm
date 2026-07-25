@@ -348,8 +348,8 @@ export default function UILiveStatus({ message }: { message: string }): JSX.Elem
   - Remove `get-submit-label-key` unit test alongside the util; assert each form now passes a
     stable `submit_button` label.
 - **Integration coverage (100% over `src/**`, NFR9/AC11).** The new `submit-spinner.tsx`and`ui-live-status/index.tsx`are tiny and fully covered by the rendering paths above; the new
-loading/idle and`aria-busy`true/false branches in`SubmitControls`/`FormBody`are each hit.
-Per the team's DI/coverage gotcha, the auth store is unaffected (no store change), so no`clearInstances()` spy hazard applies here.
+  loading/idle and`aria-busy`true/false branches in`SubmitControls`/`FormBody`are each hit.
+  Per the team's DI/coverage gotcha, the auth store is unaffected (no store change), so no`clearInstances()` spy hazard applies here.
 - **Reduced-motion guard verification (where it lives).** The guard's correctness is **not** proven
   by the forced-reduced-motion visual snapshot. `tests/visual/take-visual-snapshot.ts` does two
   things: it emulates `reducedMotion: 'reduce'` **and** injects a global

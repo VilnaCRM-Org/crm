@@ -4,5 +4,4 @@ import type { LoginResponse } from '@auth';
 export type LoginSuccessPayload = LoginResponse & { email: string };
 
 export type LoginMappingResult =
-  | { ok: true; value: LoginSuccessPayload }
-  | { ok: false; error: UiError };
+  { ok: true; value: LoginSuccessPayload } | { ok: false; error: UiError };
