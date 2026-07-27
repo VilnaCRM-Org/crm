@@ -193,19 +193,27 @@ separate from the `lint` verification suite.
 ### Dependency license policy (issue #191)
 
 `make lint-licenses` fails the build on any **production** dependency (direct or transitive)
-whose SPDX license is outside the allowlist. It runs [`license-checker-rseidelsohn`](https://github.com/RSeidelsohn/license-checker-rseidelsohn)
-(pinned in `devDependencies` + `bun.lock`) with `--production --excludePrivatePackages
---onlyAllow "$(ALLOWED_LICENSES)"`. It is a member of `CI_LINT_TARGETS` and the `lint:`
+whose SPDX license is not satisfied by the allowlist. It enumerates the production tree with
+[`license-checker-rseidelsohn`](https://github.com/RSeidelsohn/license-checker-rseidelsohn)
+(`--production --excludePrivatePackages --json`) and evaluates each license **semantically** via
+[`spdx-satisfies`](https://www.npmjs.com/package/spdx-satisfies) in `scripts/ci/check-licenses.mjs`
+(both pinned in `devDependencies` + `bun.lock`). Semantic evaluation is required, not a literal
+`--onlyAllow` match: `(MIT OR Apache-2.0)` passes because an allowed operand suffices, `(MIT AND
+BSD-3-Clause)` passes because both operands are allowed, `(GPL-3.0 AND MIT)` is **rejected**
+because the AND binds you to GPL, and any unparseable/unknown string (`UNKNOWN`, `SEE LICENSE IN
+…`, a guessed `MIT*`) is rejected fail-closed. It is a member of `CI_LINT_TARGETS` and the `lint:`
 aggregate, so it rides the existing `static testing` workflow via `make lint` — no dedicated
-workflow. `ALLOWED_LICENSES` (authoritative source: the `Makefile`) is trimmed to exactly the
-license families the production tree contains today, so every new family enters via an explicit,
-reviewed one-line diff. `--production` keeps the 86 devDependencies out of scope. The repo itself
-is CC0-1.0 and the SPA ships minified dependency code to browsers (a distribution event that
-triggers copyleft obligations), so a GPL/AGPL/SSPL or unlicensed dependency is a real defect.
+workflow. `ALLOWED_LICENSES` (authoritative source: the `Makefile`) lists the permitted SPDX
+**operand** ids, trimmed to what the production tree contains today, so every new family enters via
+an explicit, reviewed one-line diff. `--production` keeps the devDependencies out of scope. The
+repo itself is CC0-1.0 and the SPA ships minified dependency code to browsers (a distribution event
+that triggers copyleft obligations), so a GPL/AGPL/SSPL or unlicensed dependency is a real defect.
+The gate's own behaviour is pinned by `tests/unit/scripts/check-licenses.test.ts` (must-fail
+coverage for disallowed AND-compounds and unknown licenses).
 
 **Remediation policy** (mirrors the repo's root-cause-not-suppression rule): 1st — replace the
-offending dependency; 2nd — add its specific SPDX id as a reviewed one-line allowlist diff in the
-`Makefile`. Never bypass or filter the checker's output.
+offending dependency; 2nd — add its specific SPDX id to `ALLOWED_LICENSES` as a reviewed one-line
+diff in the `Makefile`. Never bypass or weaken the gate.
 
 ### ESLint gate integrity (issues #164, #165, #189)
 

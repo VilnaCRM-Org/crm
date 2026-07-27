@@ -1,3 +1,5 @@
+// @jest-environment @stryker-mutator/jest-runner/jest-env/node
+//
 // tests/unit/tooling/eslint-gate-fixtures.test.ts
 //
 // Adversarial, must-fail coverage for the custom ESLint enforcement selectors in

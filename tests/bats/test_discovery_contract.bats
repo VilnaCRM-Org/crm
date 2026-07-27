@@ -47,9 +47,19 @@ list_playwright() {
 }
 
 declared_files() {
-  ( cd "$PROJECT_ROOT" \
-    && grep -rlE '^[[:space:]]*(test|it|describe)(\.[A-Za-z]+)*\(' $TEST_ROOTS ) \
-    | sort -u
+  # Capture grep's exit status BEFORE the sort pipe, which would otherwise mask it: grep exits
+  # 0 (matches), 1 (no matches — valid), or >1 (a real error, e.g. a missing/unreadable root).
+  # A silently-partial declared set would let an entire test root vanish undetected.
+  local matches status
+  matches="$(cd "$PROJECT_ROOT" \
+    && grep -rlE '^[[:space:]]*(test|it|describe)(\.[A-Za-z]+)*\(' -- $TEST_ROOTS)"
+  status=$?
+  if [ "$status" -gt 1 ]; then
+    echo "declared_files: grep failed (status $status) — a test root is missing or unreadable" >&2
+    return "$status"
+  fi
+  [ -n "$matches" ] && printf '%s\n' "$matches" | sort -u
+  return 0
 }
 
 discovered_files() {
@@ -63,7 +73,9 @@ discovered_files() {
 
 @test "every test-declaring file is discovered by a runner" {
   local declared discovered orphans
-  declared="$(declared_files)"
+  # Separate declaration from assignment so the command-substitution status is not masked by
+  # `local`, and propagate a real inventory-scan failure instead of proceeding on a partial list.
+  declared="$(declared_files)" || return 1
   discovered="$(discovered_files)"
   orphans="$(comm -23 <(printf '%s\n' "$declared") <(printf '%s\n' "$discovered"))"
   if [ -n "$orphans" ]; then

@@ -323,25 +323,36 @@ const FIXTURES = [
   },
 ];
 
+/** @param {unknown} entry a resolved rule value @returns {unknown} its severity (index 0 of an array form) */
 function severityOf(entry) {
   return Array.isArray(entry) ? entry[0] : entry;
 }
+/** @param {unknown} entry a resolved `no-restricted-syntax` value @returns {string[]} its selector strings */
 function selectorsOf(entry) {
   return Array.isArray(entry)
     ? entry.slice(1).map((e) => (typeof e === 'string' ? e : e.selector))
     : [];
 }
 
+/**
+ * Resolve the effective `no-restricted-syntax` severity + selectors for a virtual src path.
+ * @param {string} file a representative (possibly non-existent) path under a src override scope
+ * @returns {Promise<{severity: unknown, selectors: string[]}>}
+ */
 async function resolveProbe(file) {
   const cfg = await eslint.calculateConfigForFile(file);
   const nrs = cfg.rules?.['no-restricted-syntax'];
   return { severity: severityOf(nrs), selectors: selectorsOf(nrs) };
 }
 
-// Strip type-aware parser settings: calculateConfigForFile returns `parserOptions.project`
-// (type-checked linting), which rejects the virtual fixture paths ("TSConfig does not include
-// this file"). The gates under test are purely syntactic (no-restricted-syntax /
-// no-restricted-imports), so a non-type-aware parse is both sufficient and correct.
+/**
+ * Strip type-aware parser settings: calculateConfigForFile returns `parserOptions.project`
+ * (type-checked linting), which rejects the virtual fixture paths ("TSConfig does not include
+ * this file"). The gates under test are purely syntactic (no-restricted-syntax /
+ * no-restricted-imports), so a non-type-aware parse is both sufficient and correct.
+ * @param {object} languageOptions resolved languageOptions from calculateConfigForFile
+ * @returns {object} the same options with type-aware project settings removed
+ */
 function sanitizeLanguageOptions(languageOptions) {
   const parserOptions = { ...(languageOptions.parserOptions || {}) };
   delete parserOptions.project;
@@ -352,6 +363,11 @@ function sanitizeLanguageOptions(languageOptions) {
   return { ...languageOptions, parserOptions };
 }
 
+/**
+ * Lint a fixture's code with the RESOLVED languageOptions + rule for its scope.
+ * @param {{file: string, code: string, rule: string}} fx a fixture entry
+ * @returns {Promise<{ruleId: string|null, message: string, line: number}[]>} the rule's messages
+ */
 async function runFixture(fx) {
   const cfg = await eslint.calculateConfigForFile(fx.file);
   const linter = new Linter({ configType: 'flat' });
@@ -369,8 +385,11 @@ async function runFixture(fx) {
   return messages.map((m) => ({ ruleId: m.ruleId, message: m.message, line: m.line }));
 }
 
-const probes = {};
-for (const [key, file] of Object.entries(PROBES)) probes[key] = await resolveProbe(file);
+// Resolve all probes concurrently (independent calculateConfigForFile calls).
+const probeEntries = await Promise.all(
+  Object.entries(PROBES).map(async ([key, file]) => [key, await resolveProbe(file)])
+);
+const probes = Object.fromEntries(probeEntries);
 
 // Universe: every error-severity `no-restricted-syntax` selector in EVERY src-scoped override
 // block, derived from the flat config itself — NOT from the handful of representative probe
@@ -380,9 +399,14 @@ for (const [key, file] of Object.entries(PROBES)) probes[key] = await resolvePro
 // excluded by the severity + scope filters. Config selector strings are identical to those
 // `calculateConfigForFile` resolves (ESLint never rewrites them).
 const SRC_ERROR_SEVERITIES = new Set(['error', 2]);
+/** @param {unknown} files a flat-config block's `files` @returns {boolean} true if any glob targets src/ */
 function isSrcScoped(files) {
   return Array.isArray(files) && files.some((f) => typeof f === 'string' && f.startsWith('src/'));
 }
+/**
+ * @param {Array<{files?: unknown, rules?: Record<string, unknown>}>} config the flat config array
+ * @returns {string[]} sorted union of error-severity no-restricted-syntax selectors in src scopes
+ */
 function deriveUniverse(config) {
   const selectors = new Set();
   for (const entry of config) {
@@ -396,18 +420,17 @@ function deriveUniverse(config) {
 }
 const universe = deriveUniverse(flatConfig);
 
-const fixtures = [];
-for (const fx of FIXTURES) {
-  const messages = await runFixture(fx);
-  fixtures.push({
+// Run all fixtures concurrently; each resolves its own config and lints in isolation.
+const fixtures = await Promise.all(
+  FIXTURES.map(async (fx) => ({
     id: fx.id,
     file: fx.file,
     covers: fx.covers,
     expect: fx.expect,
     rule: fx.rule,
     tag: fx.tag,
-    messages,
-  });
-}
+    messages: await runFixture(fx),
+  }))
+);
 
 process.stdout.write(JSON.stringify({ probes, universe, fixtures }));

@@ -269,13 +269,17 @@ squash-merge-only, add the task number to the squash commit title at merge time 
 
 `make lint-licenses` gates the **license** of every production dependency (direct or transitive).
 It runs as part of `make lint` (it is a member of `CI_LINT_TARGETS` and the `lint:` aggregate),
-so the existing `static testing` workflow enforces it on every pull request — a dependency whose
-SPDX license is outside the allowlist fails the build. The allowlist lives in the `Makefile`
-(`ALLOWED_LICENSES`) and is trimmed to exactly the license families the production tree contains
-today; `--production` keeps devDependencies out of scope.
+so the existing `static testing` workflow enforces it on every pull request. `scripts/ci/check-licenses.mjs`
+enumerates the production tree (`license-checker-rseidelsohn --json`) and evaluates each license
+**semantically** with `spdx-satisfies`, so compound expressions are handled correctly — `(MIT OR
+Apache-2.0)` passes, `(GPL-3.0 AND MIT)` fails (the AND binds you to GPL), and unknown/unparseable
+strings fail closed. This is stricter than a literal allowlist match, which would wrongly accept an
+AND-compound whenever one operand happened to be allowed. The allowlist of permitted SPDX operand
+ids lives in the `Makefile` (`ALLOWED_LICENSES`), trimmed to exactly what the production tree
+contains today; `--production` keeps devDependencies out of scope.
 
 Because a dependency (or a transitive one) can **relicense between versions**, review the
 `make lint-licenses` result whenever you add or bump a dependency. If it fails, follow the
 root-cause-not-suppression remediation policy: first replace the offending dependency; only if
 that is impossible, add its specific SPDX id to `ALLOWED_LICENSES` as a reviewed one-line diff.
-Never bypass or filter the checker's output.
+Never bypass or weaken the gate.

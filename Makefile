@@ -366,15 +366,17 @@ lint-actionlint: ## Lint the GitHub Actions workflows with actionlint (requires 
 lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry allowlist (issue #176)
 	sh scripts/ci/check-lockfile-registries.sh
 
-# License gate remediation policy (issue #191, mirrors the repo's root-cause-not-suppression rule):
-# 1st: replace the offending dependency; 2nd: add the specific SPDX id as a reviewed one-line
-# allowlist diff. Never bypass or filter the checker's output. Compound SPDX expressions are
-# listed verbatim — the safe form if the pinned tool's expression evaluation ever regresses.
-# This list is trimmed to exactly what the production tree contains today.
-ALLOWED_LICENSES            = MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;CC-BY-4.0;(MIT OR Apache-2.0);(MIT AND BSD-3-Clause)
+# License gate allowlist (issue #191). These are the SPDX operand ids the production tree is
+# permitted to use; `scripts/ci/check-licenses.mjs` evaluates each dependency's license
+# expression against them SEMANTICALLY via spdx-satisfies (so `(MIT OR Apache-2.0)` and
+# `(MIT AND BSD-3-Clause)` are derived, not listed, and `(GPL-3.0 AND MIT)` is correctly
+# rejected — a literal `--onlyAllow` list cannot do this). Remediation policy (mirrors the
+# repo's root-cause-not-suppression rule): 1st replace the offending dependency; 2nd add its
+# specific SPDX id here as a reviewed one-line diff. Never bypass the checker.
+ALLOWED_LICENSES            = MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;CC-BY-4.0
 
 lint-licenses: ## Fail on any production dependency whose license is outside the SPDX allowlist (issue #191)
-	$(BUNX) license-checker-rseidelsohn --production --excludePrivatePackages --onlyAllow "$(ALLOWED_LICENSES)"
+	$(EXEC_DEV_TTYLESS) env ALLOWED_LICENSES='$(ALLOWED_LICENSES)' node scripts/ci/check-licenses.mjs
 
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
