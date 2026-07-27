@@ -10,6 +10,7 @@
 // jest.config.ts runs CJS Jest with no --experimental-vm-modules, and ESLint v9 loads the flat
 // eslint.config.mjs via a native dynamic import() that fails inside Jest's vm context.
 import { ESLint, Linter } from 'eslint';
+import flatConfig from '../../eslint.config.mjs';
 
 const eslint = new ESLint({ cwd: process.cwd() });
 
@@ -133,8 +134,19 @@ const FIXTURES = [
     rule: 'no-restricted-syntax',
     tag: 'issue #100',
   },
+  // S.arrowConst is a 3-alternative comma-separated selector; one fixture per branch so a
+  // broken alternative cannot pass unnoticed (plain top-level const, export const, default export).
   {
-    id: 'arrow-const',
+    id: 'arrow-const-plain',
+    file: PROBES.logic,
+    code: 'const a = (): void => {};',
+    covers: [S.arrowConst],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #100',
+  },
+  {
+    id: 'arrow-const-export',
     file: PROBES.logic,
     code: 'export const a = (): void => {};',
     covers: [S.arrowConst],
@@ -143,9 +155,40 @@ const FIXTURES = [
     tag: 'issue #100',
   },
   {
-    id: 'funcexpr-const',
+    id: 'arrow-default-export',
+    file: PROBES.logic,
+    code: 'export default (): void => {};',
+    covers: [S.arrowConst],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #100',
+  },
+  // S.funcExprConst is likewise a 3-alternative selector: plain const, export const, and a
+  // default-exported function EXPRESSION. The expression branch needs parentheses — a bare
+  // `export default function () {}` parses as a FunctionDeclaration (covered by S.defaultFuncDecl,
+  // the `default-generator` fixture), not a FunctionExpression.
+  {
+    id: 'funcexpr-const-plain',
     file: PROBES.logic,
     code: 'const b = function (): void {};',
+    covers: [S.funcExprConst],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #100',
+  },
+  {
+    id: 'funcexpr-const-export',
+    file: PROBES.logic,
+    code: 'export const b = function (): void {};',
+    covers: [S.funcExprConst],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #100',
+  },
+  {
+    id: 'funcexpr-default-export',
+    file: PROBES.logic,
+    code: 'export default (function (): void {});',
     covers: [S.funcExprConst],
     expect: 'fail',
     rule: 'no-restricted-syntax',
@@ -170,7 +213,17 @@ const FIXTURES = [
     rule: 'no-restricted-syntax',
     tag: 'issue #88',
   },
-  // process.env ban (#112) — computed access is the adversarial variant that once bypassed the gate
+  // process.env ban (#112) — a 2-alternative selector; both branches get a fixture. Computed
+  // access (`process['env']`) is the adversarial variant that once bypassed the dot-only gate.
+  {
+    id: 'process-env-dot',
+    file: PROBES.logic,
+    code: 'const e = process.env;',
+    covers: [S.processEnv],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #112',
+  },
   {
     id: 'process-env-computed',
     file: PROBES.logic,
@@ -217,6 +270,10 @@ const FIXTURES = [
     rule: 'no-restricted-syntax',
     tag: 'issue #88',
   },
+  // S.stmtInType bans 13 homogeneous statement node types in one selector. One representative
+  // (IfStatement) proves the selector is wired; a per-branch fixture for every type is not
+  // feasible — `WithStatement` is a hard SyntaxError in a strict ES module, so it cannot be
+  // exercised through the parser at all.
   {
     id: 'statement-in-type',
     file: PROBES.typeOnly,
@@ -315,14 +372,29 @@ async function runFixture(fx) {
 const probes = {};
 for (const [key, file] of Object.entries(PROBES)) probes[key] = await resolveProbe(file);
 
-// Universe: every error-severity no-restricted-syntax selector across the src scopes.
-const universe = [
-  ...new Set(
-    Object.values(probes)
-      .filter((p) => p.severity === 2)
-      .flatMap((p) => p.selectors)
-  ),
-].sort();
+// Universe: every error-severity `no-restricted-syntax` selector in EVERY src-scoped override
+// block, derived from the flat config itself — NOT from the handful of representative probe
+// paths. A selector added to a new/unprobed `src/**` scope therefore still enters the universe
+// (and the rot-guard demands a fixture for it). A block counts as src-scoped when any of its
+// `files` globs targets `src/`; the warn-level base block and the tests-scoped overrides are
+// excluded by the severity + scope filters. Config selector strings are identical to those
+// `calculateConfigForFile` resolves (ESLint never rewrites them).
+const SRC_ERROR_SEVERITIES = new Set(['error', 2]);
+function isSrcScoped(files) {
+  return Array.isArray(files) && files.some((f) => typeof f === 'string' && f.startsWith('src/'));
+}
+function deriveUniverse(config) {
+  const selectors = new Set();
+  for (const entry of config) {
+    const nrs = entry?.rules?.['no-restricted-syntax'];
+    if (!Array.isArray(nrs) || !SRC_ERROR_SEVERITIES.has(nrs[0]) || !isSrcScoped(entry.files)) {
+      continue;
+    }
+    for (const selector of selectorsOf(nrs)) selectors.add(selector);
+  }
+  return [...selectors].sort();
+}
+const universe = deriveUniverse(flatConfig);
 
 const fixtures = [];
 for (const fx of FIXTURES) {

@@ -1,8 +1,9 @@
 #!/usr/bin/env bats
 #
 # Contract (issue #193): every file under the five test roots that DECLARES tests (a top-level
-# `test(` / `it(` / `describe(`, including `.each`/`.skip`/`.only`/`.fixme` modifiers via the
-# `(\.[A-Za-z]+)?` group) must be DISCOVERED by a runner. Jest test-match is suffix-exact and
+# `test(` / `it(` / `describe(`, including CHAINED modifiers — `.each`/`.skip`/`.only`/`.fixme`
+# and combinations like `test.concurrent.each(` / `describe.each.only(` — via the
+# `(\.[A-Za-z]+)*` group) must be DISCOVERED by a runner. Jest test-match is suffix-exact and
 # Playwright's is directory+glob; nothing else proves a declared spec is actually executed. A
 # spec named `tests/e2e/foo.test.ts` (Jest-habit suffix, discovered by no runner) or
 # `tests/integration/bar.test.tsx` (missing the `.integration` infix) type-checks, lints clean,
@@ -47,7 +48,7 @@ list_playwright() {
 
 declared_files() {
   ( cd "$PROJECT_ROOT" \
-    && grep -rlE '^[[:space:]]*(test|it|describe)(\.[A-Za-z]+)?\(' $TEST_ROOTS ) \
+    && grep -rlE '^[[:space:]]*(test|it|describe)(\.[A-Za-z]+)*\(' $TEST_ROOTS ) \
     | sort -u
 }
 
