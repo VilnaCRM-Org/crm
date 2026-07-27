@@ -4,8 +4,8 @@
 // or severity downgrade fails CI (issue #165). Both existing enforcement layers — `make
 // lint-eslint` and the `eslint-suppressions` grep — verify the rules AS CONFIGURED are obeyed
 // and not suppressed inline; neither verifies the rules REMAIN configured. A config-level
-// rule-off or an `eslint.config.mjs` selector deletion contains no `eslint-disable` token and
-// passes the grep by construction, after which `lint-eslint` runs green because the rule it
+// rule-off or an `eslint.config.mjs` selector deletion carries no inline suppression directive
+// and passes the grep by construction, after which `lint-eslint` runs green because the rule it
 // would have fired no longer exists. This test closes that bypass.
 //
 // Assertions pin severities + one distinctive selector/message substring per gate — NEVER
