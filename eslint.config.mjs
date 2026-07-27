@@ -280,11 +280,20 @@ export default [
       ...importPlugin.flatConfigs.typescript.rules,
       ...jsxA11y.flatConfigs.recommended.rules,
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      // issue #164: promoted from 'warn' — a missing hook dependency ships stale-closure
+      // bugs with a green ESLint status; zero violations today, so the flip is free. Since
+      // `eslint-comments/no-use` bans all disable directives, intentional mount-only effects
+      // must be restructured (refs / stored-callback), never suppressed. See CLAUDE.md.
+      'react-hooks/exhaustive-deps': 'error',
       ...eslintComments.configs.recommended.rules,
       'eslint-comments/no-use': 'error',
+      // issue #164: `react/jsx-no-bind` deliberately stays 'warn' — React's guidance does not
+      // treat inline handler props as a defect, and with disables banned, promoting it would
+      // force useCallback everywhere with no escape hatch (see issue #164 scope decision 2).
       'react/jsx-no-bind': 'warn',
-      'no-await-in-loop': 'warn',
+      // issue #164: promoted from 'warn' — sequential-await perf regressions in src merged
+      // silently; zero violations today. Tests stay 'off' (test-file override below).
+      'no-await-in-loop': 'error',
       'no-restricted-syntax': 'warn',
       'no-alert': 'error',
       'no-console': ['error', { allow: ['warn', 'error'] }],
