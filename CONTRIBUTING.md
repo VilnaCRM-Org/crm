@@ -269,8 +269,9 @@ squash-merge-only, add the task number to the squash commit title at merge time 
 
 `make lint-licenses` gates the **license** of every production dependency (direct or transitive).
 It runs as part of `make lint` (it is a member of `CI_LINT_TARGETS` and the `lint:` aggregate),
-so the existing `static testing` workflow enforces it on every pull request. `scripts/ci/check-licenses.mjs`
-enumerates the production tree (`license-checker-rseidelsohn --json`) and evaluates each license
+so the existing `static testing` workflow enforces it on every pull request.
+`scripts/ci/check-licenses.mjs` enumerates the production tree
+(`license-checker-rseidelsohn --json`) and evaluates each license
 **semantically** with `spdx-satisfies`, so compound expressions are handled correctly — `(MIT OR
 Apache-2.0)` passes, `(GPL-3.0 AND MIT)` fails (the AND binds you to GPL), and unknown/unparseable
 strings fail closed. This is stricter than a literal allowlist match, which would wrongly accept an

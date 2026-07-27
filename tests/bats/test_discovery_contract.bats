@@ -22,15 +22,21 @@ TEST_ROOTS='tests/unit tests/integration tests/apollo-server tests/e2e tests/vis
 # status BEFORE the sed pipe (which would mask it): a non-zero exit means broken config OR a
 # crash after partial output — either way the discovered set would be silently partial, so fail
 # hard rather than hand back a truncated list. (`--listTests` exits 1 when no tests match, which
-# also surfaces a silently-narrowed suite.)
+# also surfaces a silently-narrowed suite.) stderr is captured (not discarded) and replayed on
+# failure so a broken config / module-resolution error is visible in the CI log, while stdout
+# stays clean for parsing.
 list_jest() {
-  local out status
-  out="$(cd "$PROJECT_ROOT" && TEST_ENV="$1" bun x jest --listTests 2>/dev/null)"
+  local out status err
+  err="$(mktemp)"
+  out="$(cd "$PROJECT_ROOT" && TEST_ENV="$1" bun x jest --listTests 2>"$err")"
   status=$?
   if [ "$status" -ne 0 ]; then
     echo "list_jest($1): 'jest --listTests' exited $status (broken config or no tests)" >&2
+    cat "$err" >&2 || true
+    rm -f "$err"
     return "$status"
   fi
+  rm -f "$err"
   printf '%s\n' "$out" | sed "s|^$PROJECT_ROOT/||"
 }
 
@@ -44,14 +50,19 @@ list_playwright() {
   # Capture playwright's own exit status before parsing, so a listing failure (broken config, or
   # a crash after partial output) fails the gate instead of being masked by the parse pipe. The
   # trailing `bun -e` parse is the function's last stage, so a malformed-JSON parse error also
-  # propagates as a non-zero return.
-  local raw status
-  raw="$(cd "$PROJECT_ROOT" && bun x playwright test --list --reporter=json tests/e2e tests/visual 2>/dev/null)"
+  # propagates as a non-zero return. stderr is captured and replayed on failure (not discarded to
+  # /dev/null) so the runner's diagnostics reach the CI log, while stdout stays clean JSON.
+  local raw status err
+  err="$(mktemp)"
+  raw="$(cd "$PROJECT_ROOT" && bun x playwright test --list --reporter=json tests/e2e tests/visual 2>"$err")"
   status=$?
   if [ "$status" -ne 0 ]; then
     echo "list_playwright: 'playwright test --list' exited $status" >&2
+    cat "$err" >&2 || true
+    rm -f "$err"
     return "$status"
   fi
+  rm -f "$err"
   printf '%s' "$raw" \
     | sed -n '/^{/,$p' \
     | bun -e '

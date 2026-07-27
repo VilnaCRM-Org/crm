@@ -218,8 +218,8 @@ diff in the `Makefile`. Never bypass or weaken the gate.
 ### ESLint gate integrity (issues #164, #165, #189)
 
 The convention gates in `eslint.config.mjs` encode policy, not style, so their **integrity** is
-itself tested — a config-level rule deletion or severity downgrade contains no `eslint-disable`
-token and would otherwise pass every existing check:
+itself tested — a config-level rule deletion or severity downgrade carries no inline suppression
+directive and would otherwise pass every existing check:
 
 - **`react-hooks/exhaustive-deps` and `no-await-in-loop` are `error`** (issue #164), not `warn` —
   a warning never fails `eslint .`. Because `eslint-comments/no-use` bans all disable directives,
