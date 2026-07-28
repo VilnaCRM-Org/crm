@@ -52,7 +52,10 @@ Read the layers top to bottom:
 
 1. **Components** (`features/<feature>/components/`) — presentation only.
    They consume hooks and render children; they never import repositories,
-   the module store, or `src/services/` directly.
+   the module store, or `src/services/` directly. When a component genuinely
+   needs a behavioral collaborator, it resolves it through the DI bridge
+   `useService(TOKENS.X)` from `@/providers/di` — never `new`-ing the class
+   (issue #128; see "Component DI consumption" below).
 2. **Hooks** (`features/<feature>/hooks/use-*.ts`) — UI logic, Redux state
    access, and the only place that calls repository APIs and dispatches
    mutations.
@@ -130,6 +133,29 @@ These come from `.dependency-cruiser.js`. They run on every PR via
 - The module composition root (`config/di.ts`) is exempt from
   `no-feature-internal-imports` / `no-repository-internal-imports` so it can
   register the feature's concrete internals.
+
+**Component DI consumption (issue #128):**
+
+- A `.tsx` component obtains a behavioral collaborator only through the
+  sanctioned bridge `useService(TOKENS.X)` from `@/providers/di` — never
+  `new MyService()`, never a value-import of an injectable class. `import type`
+  stays allowed (annotations bind nothing). Add the token and register the class
+  in the owning area's `di.ts` first.
+- `components-no-direct-injectable-import` (dependency-cruiser) — a `.tsx`
+  value-importing `src/services/**`, `…/repositories/**`, `src/modules/*/store/**`,
+  `*-factory`, `*-mapper`, or `*error-handler*`. An ESLint `no-restricted-syntax`
+  selector on `src/**/*.tsx` covers the `new` side (built-in constructors are
+  allowlisted out).
+- `no-paint-path-import-di-bridge` — the auth render path and the route shell
+  importing `@/providers/di`. The bridge eagerly imports the composition root, so
+  one such import would pull the DI graph into the auth paint chunk.
+- Carve-outs, all container-free by design: the auth render path, the route shell
+  (issue #105), `src/index.tsx`, and the root error boundary (a class component
+  cannot call a hook). Leave their module singletons as they are.
+- Hooks (`use-*.ts`) are outside the static gate and stay a review-gate concern —
+  prefer DI there too.
+- In component tests, swap the collaborator by registering a mock against the
+  token or by jest-mocking `@/providers/di/use-service`.
 
 **Folder shape:**
 

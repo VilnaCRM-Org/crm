@@ -502,6 +502,58 @@ class AuthStoreSelectors {
 export default new AuthStoreSelectors();
 ```
 
+#### Components consume DI through `useService` only (issue #128)
+
+A React component (`src/**/*.tsx`) obtains a behavioral collaborator — service, repository,
+mapper, factory, error handler — **only** through the single sanctioned bridge
+[`src/providers/di/use-service.ts`](src/providers/di/use-service.ts), re-exported from
+`@/providers/di`:
+
+```typescript
+import { useService } from '@/providers/di';
+import AUTH_TOKENS from '@/modules/user/config/tokens';
+
+const repo = useService<AuthRepository>(AUTH_TOKENS.AuthRepository);
+```
+
+`useService` memoizes on the token and imports the **composition root**
+(`@/config/dependency-injection-config`), not the bare tsyringe `container` — the bare
+container has no registrations applied, so `resolve` would throw _unregistered token_. In
+component tests the collaborator is swapped by registering a mock against the same token
+(`container.register(TOKENS.X, { useValue: mock })`) or by jest-mocking
+`@/providers/di/use-service` — never by monkey-patching module exports. That is the
+substitutability #100 guarantees for non-React code, now extended to the React layer.
+
+A component must **not** `new` a behavioral class, and must not value-import an injectable
+service/repository/mapper/factory/handler. Two gates enforce it, both inside `make lint`:
+
+- **ESLint** (`no-restricted-syntax` on `src/**/*.tsx`) fails a `new <PascalCaseClass>()`.
+  Built-in constructors (`new Error/URL/Date/Map/…`) are allowlisted out of the selector.
+- **dependency-cruiser** `components-no-direct-injectable-import` fails a **value**-import of
+  `src/services/**`, `…/repositories/**`, `src/modules/*/store/**`, `*-factory`, `*-mapper`, or
+  `*error-handler*` into a component. `import type` stays allowed — annotations bind nothing.
+
+**Carve-outs** (container-free by design, not modernization debt): the auth render path
+(`src/modules/user/features/auth/**`, whose mobile Lighthouse budget forbids eager DI), the
+route shell (`src/routes/**`, issue #105), the app entrypoint, and the root error boundary (a
+class component cannot call a hook, and error reporting must survive a DI failure). These keep
+their module singletons (`formValidators`, `useAuthToken`, `auth-var`, `auth-store-selectors`,
+`routeComposer`, `noopErrorReporter`) — do not migrate them onto `useService`. The carve-out is
+itself enforced: `no-paint-path-import-di-bridge` forbids the auth feature and the route shell
+from importing `@/providers/di`, so the bridge's eager composition-root import can never reach
+the auth chunk.
+
+**Honest limitation:** the gate is syntactic and `.tsx`-only. Hooks (`use-*.ts`) are **not**
+covered — `new LoginSwitchController(deps)` in
+`@auth/components/form-section/use-login-switcher.ts` stays a review-gate concern. ESLint cannot
+know which PascalCase identifier is behavioral (the built-in allowlist must be maintained), and
+dependency-cruiser keys on path conventions, so a behavioral class placed outside those paths or
+re-exported through a barrel is not caught. Satisfy both gates by adding the token, registering
+the class, and resolving via `useService` — never with `eslint-disable`, a dependency-cruiser
+ignore, or `@ts-ignore`.
+[`tests/unit/tooling/component-di-gate.test.ts`](tests/unit/tooling/component-di-gate.test.ts)
+proves both gates still fire on a violating fixture and stay silent on every carve-out.
+
 ### No static methods or free functions (issues #100, #89)
 
 Non-React application code (services, repositories, mappers, factories, stores, and

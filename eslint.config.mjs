@@ -158,6 +158,49 @@ const noProcessEnvSelectors = [
   },
 ];
 
+// Source (issue #128): a React component must obtain a behavioral collaborator through the
+// sanctioned DI bridge `useService(TOKENS.X)` from `@/providers/di`, never by `new`-ing the
+// class at the call site — a `new` binds the collaborator statically and cannot be swapped
+// for a mock in a component test, the exact substitutability defeat #100 banned for
+// non-React code. Built-in constructors are allowlisted out of the selector; the companion
+// dependency-cruiser rule `components-no-direct-injectable-import` covers the import side.
+const noNewBehavioralClassInComponentSelectors = [
+  {
+    selector:
+      "NewExpression[callee.type='Identifier'][callee.name=/^[A-Z]/]" +
+      ':not([callee.name=/^(Error|TypeError|RangeError|SyntaxError|EvalError|ReferenceError|' +
+      'URIError|AggregateError|URL|URLSearchParams|Date|Map|WeakMap|Set|WeakSet|Promise|' +
+      'RegExp|Array|Object|Function|Proxy|Number|String|Boolean|Symbol|BigInt|Image|Audio|' +
+      'Event|CustomEvent|AbortController|AbortSignal|FormData|Headers|Request|Response|Blob|' +
+      'File|FileReader|TextEncoder|TextDecoder|Intl|Worker|WebSocket|Notification|' +
+      'IntersectionObserver|ResizeObserver|MutationObserver|PerformanceObserver|' +
+      'ArrayBuffer|SharedArrayBuffer|DataView|Int8Array|Uint8Array|Uint8ClampedArray|' +
+      'Int16Array|Uint16Array|Int32Array|Uint32Array|Float32Array|Float64Array|' +
+      'BigInt64Array|BigUint64Array)$/])',
+    message:
+      'Do not `new` a behavioral class in a component — resolve it via the DI bridge ' +
+      'useService(TOKENS.X) from @/providers/di so it stays swappable/mockable in tests ' +
+      '(issue #128; cf. #100). The auth render path and the route shell are the only carve-outs.',
+  },
+];
+
+// Issue #128: the DI-bridge gate is `.tsx`-only. Hook files (`use-*.ts`) are deliberately
+// out of static scope and stay a review-gate concern (see the "Honest limitation" note in
+// CLAUDE.md). The carve-outs are the two container-free-by-design surfaces: the auth render
+// path (its Lighthouse budget forbids eager DI — issue #109/#115) and the route shell
+// composer/mapper module singletons (issue #105). Test, story, and type-only files are
+// excluded like every other source gate here.
+const componentSourceGlobs = ['src/**/*.tsx'];
+const componentDiGateIgnores = [
+  '**/*.stories.*',
+  '**/*.test.*',
+  '**/*.spec.*',
+  '**/*.d.ts',
+  'src/**/types/**/*.tsx',
+  'src/modules/user/features/auth/**/*.tsx',
+  'src/routes/**/*.tsx',
+];
+
 const nonReactSourceGlobs = ['src/**/*.ts'];
 const nonReactSourceIgnores = [
   '**/*.stories.*',
@@ -411,6 +454,24 @@ export default [
     ],
     rules: {
       'no-restricted-syntax': ['error', ...dataTestidSelectors, ...typeDeclarationSelectors],
+    },
+  },
+
+  // Source (issue #128): components must not `new` a behavioral collaborator — resolve it
+  // through the `useService` DI bridge instead. Scoped to `src/**/*.tsx` (hooks are out of
+  // static scope) and ignoring the container-free auth render path and route shell. The
+  // #90/#88 selectors are re-included because flat config replaces (does not merge)
+  // `no-restricted-syntax` for files matched by more than one block.
+  {
+    files: componentSourceGlobs,
+    ignores: componentDiGateIgnores,
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...typeDeclarationSelectors,
+        ...noNewBehavioralClassInComponentSelectors,
+      ],
     },
   },
 

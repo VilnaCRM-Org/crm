@@ -763,6 +763,34 @@ const myStoreFactory = new MyStoreFactory();
 export const useMyStore = myStoreFactory.create(container.resolve(MyStoreActions));
 ```
 
+#### Components: `useService(token)` is the only bridge (issue #128)
+
+A `.tsx` component obtains a behavioral collaborator through `useService` from
+`@/providers/di` — never `new MyService()`, never a value-import of an injectable class
+(`import type` is fine for annotations):
+
+```typescript
+import { useService } from '@/providers/di';
+import MY_AREA_TOKENS from '@/services/my-area/tokens';
+
+const service = useService<MyService>(MY_AREA_TOKENS.MyService);
+```
+
+Add the token and register the class in the owning area's `di.ts` **before** resolving it; do
+not invent an ad-hoc module singleton of a behavioral class for a component. In component
+tests, swap the collaborator by registering a mock against the token
+(`container.register(TOKENS.X, { useValue: mock })`) or by jest-mocking
+`@/providers/di/use-service`.
+
+Two `make lint` gates enforce this on `src/**/*.tsx`: an ESLint `no-restricted-syntax`
+selector (built-in constructors allowlisted) and dependency-cruiser
+`components-no-direct-injectable-import`. Carve-outs — the auth render path, the route shell,
+the app entrypoint, and the root error boundary — are container-free by design; leave their
+module singletons alone and never eager-import the container into the auth paint path
+(`no-paint-path-import-di-bridge` enforces that). Hooks (`use-*.ts`) are outside the static
+gate; that is not license to `new` a collaborator there — expect review to flag it. Never
+satisfy either gate with `eslint-disable`, a dependency-cruiser ignore, or `@ts-ignore`.
+
 ### Zustand Store Pattern
 
 Stores use Zustand (`create` + `devtools`) and stay container-free. Resolve the DI

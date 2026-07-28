@@ -369,10 +369,70 @@ module.exports = {
           '^src/modules/[^/]+/store/[^/]+-slice[.]ts$',
           '^src/modules/[^/]+/features/[^/]+/stores/index[.]ts$',
           '^src/config/dependency-injection-config[.]ts$',
+          // Issue #128: the sanctioned component DI bridge. `useService` must import the
+          // aggregating composition root (not the bare tsyringe container) or `resolve` would
+          // throw on an unregistered token. It stays off the auth paint path because
+          // no-paint-path-import-di-bridge forbids the auth feature and the route shell from
+          // importing it.
+          '^src/providers/di/use-service[.]ts$',
         ],
       },
       to: {
         path: DI_COMPOSITION_ROOTS,
+      },
+    },
+    {
+      name: 'components-no-direct-injectable-import',
+      comment:
+        'React components must obtain behavioral collaborators (services, repositories, ' +
+        'module store, factories, mappers, error handlers) through the DI bridge ' +
+        'useService(TOKENS.X) from @/providers/di — never by value-importing the class and ' +
+        'calling it directly, which binds the collaborator at the call site and cannot be ' +
+        'swapped for a mock in a component test (issue #128; cf. #100). `import type` stays ' +
+        'allowed: type annotations are erased and bind nothing. Carve-outs are the ' +
+        'container-free-by-design surfaces: the auth render path (Lighthouse budget), the ' +
+        'route shell (issue #105), the app entrypoint, and the root error boundary (a class ' +
+        'component cannot call a hook, and error reporting must survive a DI failure). This ' +
+        'is the consumer side; the producer side (one injectable importing another) is not ' +
+        'owned here, so the two never flag the same edge.',
+      severity: 'error',
+      from: {
+        path: '^src/.+[.]tsx$',
+        pathNot: [
+          '^src/modules/user/features/auth/',
+          '^src/routes/',
+          '^src/index[.]tsx$',
+          '^src/components/error-boundary/',
+          '[.](?:stories|test|spec)[.]tsx$',
+        ],
+      },
+      to: {
+        path: [
+          '^src/services/',
+          '^src/modules/[^/]+/features/[^/]+/repositories/',
+          '^src/modules/[^/]+/store/',
+          '(?:-factory|-mapper)[.]tsx?$',
+          'error-handler',
+        ],
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
+      name: 'no-paint-path-import-di-bridge',
+      comment:
+        'The container-free surfaces — the auth render path and the route shell — must not ' +
+        'import the component DI bridge (@/providers/di). The bridge eagerly imports the ' +
+        'aggregating composition root, so a single import from these modules would pull the ' +
+        'whole DI graph into the chunks needed to paint the authentication page and blow the ' +
+        'mobile Lighthouse budget (issues #128, #109). These modules keep their sanctioned ' +
+        'module singletons instead; this rule is what makes that carve-out enforced rather ' +
+        'than merely documented.',
+      severity: 'error',
+      from: {
+        path: ['^src/modules/user/features/auth/', '^src/routes/'],
+      },
+      to: {
+        path: '^src/providers/di/',
       },
     },
     {
