@@ -21,6 +21,7 @@ type Snapshot = {
 type Finding = {
   file: string;
   key: string;
+  subject: string | null;
   base: string | number;
   head: string | number | null;
   rule: string;
@@ -374,6 +375,42 @@ describe('gate ratchet — set directions', () => {
     ]);
   });
 
+  it('fails when envs is emptied, which would compare zero scopes for that entry', () => {
+    const omitted = `${JSON.stringify(
+      { waiverLabel: 'gate-relaxation', files: [{ path: 'a.js', extract: 'jscpd' }] },
+      null,
+      2
+    )}\n`;
+    const emptied = `${JSON.stringify(
+      { waiverLabel: 'gate-relaxation', files: [{ path: 'a.js', extract: 'jscpd', envs: [] }] },
+      null,
+      2
+    )}\n`;
+    const findings = snapshotPair('manifest.json', 'manifest-self', omitted, emptied);
+    expect(findings).toEqual([
+      expect.objectContaining({ key: 'guardedEnvs', base: 'a.js::{}', rule: 'no-shrink' }),
+    ]);
+  });
+
+  it('treats a reordered envs object as unchanged', () => {
+    const build = (env: Record<string, string>): string =>
+      `${JSON.stringify(
+        {
+          waiverLabel: 'gate-relaxation',
+          files: [{ path: 'a.js', extract: 'jscpd', envs: [env] }],
+        },
+        null,
+        2
+      )}\n`;
+    const findings = snapshotPair(
+      'manifest.json',
+      'manifest-self',
+      build({ TEST_ENV: 'server', EXTRA: '1' }),
+      build({ EXTRA: '1', TEST_ENV: 'server' })
+    );
+    expect(findings).toEqual([]);
+  });
+
   it('fails when the waiver label is renamed', () => {
     const renamed = MANIFEST(['a.json']).replace('gate-relaxation', 'anything-goes');
     const findings = snapshotPair('manifest.json', 'manifest-self', MANIFEST(['a.json']), renamed);
@@ -389,6 +426,7 @@ describe('gate ratchet — set directions', () => {
       MANIFEST(['a.json', 'b.json']),
       MANIFEST(['a.json'])
     );
+    // Dropping the entry removes both its guarded file and its implicit default env scope.
     expect(findings).toEqual([
       expect.objectContaining({
         key: 'guardedFiles',
@@ -396,7 +434,55 @@ describe('gate ratchet — set directions', () => {
         rule: 'no-shrink',
         reason: 'guarded entry removed',
       }),
+      expect.objectContaining({
+        key: 'guardedEnvs',
+        base: 'b.json::{}',
+        rule: 'no-shrink',
+        reason: 'guarded entry removed',
+      }),
     ]);
+  });
+});
+
+describe('gate ratchet — finding identity', () => {
+  // The checker keeps only findings present against BOTH the merge base and the base tip. Every
+  // no-shrink removal shares head '(absent)', so identity must key on `subject` or two removals
+  // collapse into one and a removal already on main gets blamed on the PR.
+  const identity = (finding: Finding): string =>
+    JSON.stringify([finding.file, finding.key, finding.subject]);
+
+  const guardedFiles = (findings: Finding[]): Finding[] =>
+    findings.filter((finding) => finding.key === 'guardedFiles');
+
+  it('gives each removed entry its own identity', () => {
+    const removals = guardedFiles(
+      snapshotPair(
+        'manifest.json',
+        'manifest-self',
+        MANIFEST(['a.json', 'b.json', 'c.json']),
+        MANIFEST(['a.json'])
+      )
+    );
+    expect(removals).toHaveLength(2);
+    expect(new Set(removals.map(identity)).size).toBe(2);
+  });
+
+  it('does not blame the pull request for a removal already present on the base tip', () => {
+    const head = MANIFEST(['a.json']);
+    const againstMergeBase = snapshotPair(
+      'manifest.json',
+      'manifest-self',
+      MANIFEST(['a.json', 'b.json', 'c.json']),
+      head
+    );
+    const againstBaseTip = new Set(
+      snapshotPair('manifest.json', 'manifest-self', MANIFEST(['a.json', 'b.json']), head).map(
+        identity
+      )
+    );
+    const kept = againstMergeBase.filter((finding) => againstBaseTip.has(identity(finding)));
+
+    expect(guardedFiles(kept).map((finding) => finding.base)).toEqual(['b.json::jscpd']);
   });
 });
 

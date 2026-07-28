@@ -1,3 +1,7 @@
+// `subject` is the discriminator used to match a finding across the merge-base and base-tip
+// comparisons. A key yields at most one numeric finding, so `null` is unambiguous there; membership
+// findings need the item itself, because every removal otherwise shares `head: '(absent)'` and a
+// whole set of removals would collapse to a single identity.
 function numericFindings(file, base, head) {
   const findings = [];
   for (const [key, guard] of Object.entries(base.numeric ?? {})) {
@@ -6,6 +10,7 @@ function numericFindings(file, base, head) {
       findings.push({
         file,
         key,
+        subject: null,
         base: guard.value,
         head: null,
         rule: guard.direction,
@@ -19,6 +24,7 @@ function numericFindings(file, base, head) {
       findings.push({
         file,
         key,
+        subject: null,
         base: guard.value,
         head: current.value,
         rule: guard.direction,
@@ -38,6 +44,7 @@ function membershipFindings(file, key, guard, current) {
       .map((item) => ({
         file,
         key,
+        subject: item,
         base: '(absent)',
         head: item,
         rule: 'no-grow',
@@ -49,6 +56,7 @@ function membershipFindings(file, key, guard, current) {
     .map((item) => ({
       file,
       key,
+      subject: item,
       base: item,
       head: '(absent)',
       rule: 'no-shrink',
@@ -64,6 +72,7 @@ function setFindings(file, base, head) {
       findings.push({
         file,
         key,
+        subject: null,
         base: `${guard.items.length} entries`,
         head: null,
         rule: guard.rule,

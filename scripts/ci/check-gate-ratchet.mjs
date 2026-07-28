@@ -129,7 +129,10 @@ function findingsAgainst(referenceTree) {
   return found;
 }
 
-const identity = (finding) => JSON.stringify([finding.file, finding.key, finding.head]);
+// Matched on `subject`, not `head`: every `no-shrink` removal shares `head: '(absent)'`, so keying
+// on head would collapse all removals under one identity and let a single removal already present
+// on the base tip vouch for removals the PR really did make (and vice versa).
+const identity = (finding) => JSON.stringify([finding.file, finding.key, finding.subject]);
 
 let findings = [];
 let evaluationFailure = null;
