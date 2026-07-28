@@ -18,7 +18,9 @@ const isLayout = (route: RouteObject): boolean =>
   route.path === undefined && Boolean(route.children);
 const rootOf = (tree: RouteObject[]): RouteObject => {
   const [root] = tree;
-  if (!root) throw new Error('route composer produced an empty tree');
+  if (tree.length !== 1 || !root) {
+    throw new Error('route composer must produce exactly one root');
+  }
   return root;
 };
 

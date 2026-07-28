@@ -131,7 +131,8 @@ function findingsAgainst(referenceTree) {
 
 const identity = (finding) => JSON.stringify([finding.file, finding.key, finding.head]);
 
-let findings;
+let findings = [];
+let evaluationFailure = null;
 try {
   const againstMergeBase = findingsAgainst(trees.mergeBase);
   const againstBaseTip = new Set(findingsAgainst(trees.baseTip).map(identity));
@@ -139,16 +140,21 @@ try {
 } catch (failure) {
   // An extractor blew up (unparseable or newly-broken guarded config). That is NOT a weakening, and
   // reporting it as one would be an actively wrong diagnosis that the waiver label cannot clear.
-  // Exit 2 so the workflow can name this case separately.
+  // Record it and let `finally` reclaim the materialized trees — `process.exit()` terminates
+  // immediately and would skip that cleanup — then exit 2 so the workflow can name this case.
+  evaluationFailure = failure;
+} finally {
+  for (const tree of Object.values(trees)) rmSync(tree, { recursive: true, force: true });
+}
+
+if (evaluationFailure) {
   report(
     `🛑 gate ratchet: could not evaluate the guarded configs — this is an evaluation failure, ` +
       `not a detected weakening, and the \`${manifest.waiverLabel}\` label will not clear it.\n\n` +
-      `\`\`\`text\n${failure?.message ?? failure}\n\`\`\`\n\n` +
+      `\`\`\`text\n${evaluationFailure?.message ?? evaluationFailure}\n\`\`\`\n\n` +
       `Fix the guarded config so it loads, then re-run.`
   );
   process.exit(2);
-} finally {
-  for (const tree of Object.values(trees)) rmSync(tree, { recursive: true, force: true });
 }
 
 if (findings.length === 0) {
