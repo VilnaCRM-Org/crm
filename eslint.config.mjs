@@ -180,8 +180,8 @@ const noNewBehavioralClassInComponentSelectors = [
     message:
       'Do not `new` a behavioral class in a component — resolve it via the DI bridge ' +
       'useService(TOKENS.X) from @/providers/di so it stays swappable/mockable in tests ' +
-      '(issue #128; cf. #100). The container-free carve-outs — auth render path, route shell, ' +
-      'app entrypoint, root error boundary — are the only exemptions.',
+      '(issue #128; cf. #100). The container-free carve-outs — auth render path, route ' +
+      'composer/mapper, app entrypoint, root error boundary — are the only exemptions.',
   },
 ];
 
@@ -191,10 +191,11 @@ const noNewBehavioralClassInComponentSelectors = [
 // identical to the `from.pathNot` list of the companion dependency-cruiser rule
 // `components-no-direct-injectable-import` so the two gates never disagree about which file
 // is exempt: the auth render path (its Lighthouse budget forbids eager DI — issue #109/#115),
-// the route shell composer/mapper module singletons (issue #105), the app entrypoint, and the
-// root error boundary file alone — a class component cannot call `useService`, while its
-// functional descendants can and stay gated. Test, story, and type-only files are excluded
-// like every other source gate here.
+// the two route-shell module singletons that `new` their own locally declared class
+// (`route-composer` / `route-mapper`, issue #105 — NOT the whole `src/routes/` tree), the app
+// entrypoint, and the root error boundary file alone — a class component cannot call
+// `useService`, while its functional descendants can and stay gated. Test, story, and
+// type-only files are excluded like every other source gate here.
 const componentSourceGlobs = ['src/**/*.tsx'];
 const componentDiGateIgnores = [
   '**/*.stories.*',
@@ -203,7 +204,8 @@ const componentDiGateIgnores = [
   '**/*.d.ts',
   'src/**/types/**/*.tsx',
   'src/modules/user/features/auth/**/*.tsx',
-  'src/routes/**/*.tsx',
+  'src/routes/route-composer.tsx',
+  'src/routes/route-mapper.tsx',
   'src/index.tsx',
   'src/components/error-boundary/app-error-boundary.tsx',
 ];

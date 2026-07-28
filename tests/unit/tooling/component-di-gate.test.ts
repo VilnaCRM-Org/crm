@@ -27,7 +27,7 @@ describe('component DI gate (issue #128)', () => {
   it.each([
     ['built-in constructors', 'builtins'],
     ['the auth render path', 'authCarveOut'],
-    ['the route shell', 'routeShellCarveOut'],
+    ['the route composer/mapper singletons', 'routeShellCarveOut'],
     ['the app entrypoint', 'appEntrypointCarveOut'],
     ['the root error boundary', 'rootErrorBoundaryCarveOut'],
     ['story files', 'story'],
@@ -39,6 +39,10 @@ describe('component DI gate (issue #128)', () => {
 
   it('ESLint still gates a functional error-boundary descendant', () => {
     expect(report.eslint.errorBoundaryDescendant).toHaveLength(1);
+  });
+
+  it('ESLint still gates a non-shell file under src/routes', () => {
+    expect(report.eslint.routeShellOtherFile).toHaveLength(1);
   });
 
   it('dependency-cruiser fails a component value-importing a service', () => {
@@ -61,6 +65,14 @@ describe('component DI gate (issue #128)', () => {
     expect(report.depcruise.authReachesBridgeIndirectly).toEqual([
       'no-paint-path-import-di-bridge',
     ]);
+  });
+
+  it('dependency-cruiser keeps the bridge out of the eagerly evaluated app shell', () => {
+    expect(report.depcruise.eagerShellImportsBridge).toEqual(['no-eager-shell-import-di-bridge']);
+  });
+
+  it('dependency-cruiser allows a lazily routed page to use the bridge', () => {
+    expect(report.depcruise.lazyRouteReachesBridge).toEqual([]);
   });
 
   it('dependency-cruiser exempts the root error boundary but not its descendants', () => {

@@ -401,7 +401,7 @@ module.exports = {
         path: '^src/.+[.]tsx$',
         pathNot: [
           '^src/modules/user/features/auth/',
-          '^src/routes/',
+          '^src/routes/route-(?:composer|mapper)[.]tsx$',
           '^src/index[.]tsx$',
           '^src/components/error-boundary/app-error-boundary[.]tsx$',
           '[.](?:stories|test|spec)[.]tsx$',
@@ -421,21 +421,41 @@ module.exports = {
     {
       name: 'no-paint-path-import-di-bridge',
       comment:
-        'The container-free surfaces — the auth render path and the route shell — must not ' +
-        'reach the component DI bridge (@/providers/di) — not directly and not through an ' +
-        'intermediate shared component, hence `reachable`. The bridge eagerly imports the ' +
-        'aggregating composition root, so any path from these modules would pull the ' +
-        'whole DI graph into the chunks needed to paint the authentication page and blow the ' +
-        'mobile Lighthouse budget (issues #128, #109). These modules keep their sanctioned ' +
-        'module singletons instead; this rule is what makes that carve-out enforced rather ' +
-        'than merely documented.',
+        'The auth render path must not REACH the component DI bridge (@/providers/di) — not ' +
+        'directly and not through an intermediate shared component, hence `reachable`. The ' +
+        'bridge eagerly imports the aggregating composition root, so any path from the auth ' +
+        'feature would pull the whole DI graph into the chunks needed to paint the ' +
+        'authentication page and blow the mobile Lighthouse budget (issues #128, #109). Auth ' +
+        'keeps its sanctioned module singletons instead; this rule is what makes that ' +
+        'carve-out enforced rather than merely documented. Reachability is safe to demand ' +
+        'here because everything auth reaches — including its own lazily loaded pages — is ' +
+        'auth-owned or shared UI, which is held to the same invariant.',
       severity: 'error',
       from: {
-        path: ['^src/modules/user/features/auth/', '^src/routes/'],
+        path: '^src/modules/user/features/auth/',
       },
       to: {
         path: '^src/providers/di/',
         reachable: true,
+      },
+    },
+    {
+      name: 'no-eager-shell-import-di-bridge',
+      comment:
+        'The eagerly evaluated app shell — entrypoint, root component, and route registry — ' +
+        'must not itself import the component DI bridge (@/providers/di), which would put the ' +
+        'composition root in the initial bundle instead of the lazily loaded route chunk that ' +
+        'actually needs it (issue #128). Unlike the auth rule above this is deliberately a ' +
+        'DIRECT-edge rule: the route registry dynamically imports every page in the app, so ' +
+        'demanding reachability here would forbid the bridge in every lazily routed ' +
+        'component — precisely the use case it exists for. The code-split boundary is where ' +
+        'the cost stops, so only the shell own static imports are gated.',
+      severity: 'error',
+      from: {
+        path: ['^src/index[.]tsx$', '^src/app[.]tsx$', '^src/routes/'],
+      },
+      to: {
+        path: '^src/providers/di/',
       },
     },
     {

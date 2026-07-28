@@ -146,15 +146,20 @@ These come from `.dependency-cruiser.js`. They run on every PR via
   `*-factory`, `*-mapper`, or `*error-handler*`. An ESLint `no-restricted-syntax`
   selector on `src/**/*.tsx` covers the `new` side (built-in constructors are
   allowlisted out).
-- `no-paint-path-import-di-bridge` — the auth render path and the route shell
-  **reaching** `@/providers/di`. The bridge eagerly imports the composition root,
-  so any path to it would pull the DI graph into the auth paint chunk; the rule is
-  `reachable`, so an intermediate shared component does not launder the import.
-- Carve-outs, all container-free by design and identical in both gates: the auth
-  render path, the route shell (issue #105), `src/index.tsx`, and the root error
-  boundary file `app-error-boundary.tsx` alone (a class component cannot call a
-  hook — its functional descendants stay gated). Leave their module singletons as
-  they are.
+- `no-paint-path-import-di-bridge` — the auth render path **reaching**
+  `@/providers/di`. The bridge eagerly imports the composition root, so any path to
+  it would pull the DI graph into the auth paint chunk; the rule is `reachable`, so
+  an intermediate shared component does not launder the import.
+- `no-eager-shell-import-di-bridge` — `src/index.tsx`, `src/app.tsx`, or
+  `src/routes/**` importing the bridge, which would move the container into the
+  initial bundle. Direct-edge on purpose: the registry dynamically imports every
+  page, so a `reachable` variant would ban the bridge in every lazily routed
+  component — its intended use.
+- Carve-outs, all container-free by design and identical in both `.tsx` gates: the
+  auth render path, the `route-composer` / `route-mapper` singletons (issue #105 —
+  not all of `src/routes/`), `src/index.tsx`, and the root error boundary file
+  `app-error-boundary.tsx` alone (a class component cannot call a hook — its
+  functional descendants stay gated). Leave their module singletons as they are.
 - Hooks (`use-*.ts`) are outside the static gate and stay a review-gate concern —
   prefer DI there too.
 - In component tests, swap the collaborator by registering a mock against the

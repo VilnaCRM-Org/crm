@@ -49,7 +49,8 @@ const ESLINT_FIXTURES = {
     code: NEW_BEHAVIORAL_CLASS,
     filePath: 'src/modules/user/features/auth/components/fixture.tsx',
   },
-  routeShellCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/fixture.tsx' },
+  routeShellCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/route-composer.tsx' },
+  routeShellOtherFile: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/fixture.tsx' },
   appEntrypointCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/index.tsx' },
   rootErrorBoundaryCarveOut: {
     code: NEW_BEHAVIORAL_CLASS,
@@ -137,6 +138,24 @@ const DEPCRUISE_FIXTURES = {
       'src/modules/user/features/auth/components/widget.tsx': componentImporting(
         "import Shared from '../../../../../components/shared';"
       ),
+    },
+  },
+  eagerShellImportsBridge: {
+    files: {
+      ...BRIDGE_FILES,
+      'src/app.tsx': componentImporting("import useService from './providers/di/use-service';"),
+    },
+  },
+  lazyRouteReachesBridge: {
+    files: {
+      ...BRIDGE_FILES,
+      'src/pages/dashboard.tsx': componentImporting(
+        "import useService from '../providers/di/use-service';"
+      ),
+      'src/routes/routes.tsx':
+        "const load = () => import('../pages/dashboard');\n\n" +
+        'export default function Routes(): JSX.Element {\n  void load;\n  ' +
+        'return <span>routes</span>;\n}\n',
     },
   },
   rootErrorBoundaryCarveOut: {
