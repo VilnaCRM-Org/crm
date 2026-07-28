@@ -4,6 +4,18 @@ import { addNumeric, addSet, emptySnapshot, readJson } from './snapshot.mjs';
 
 const SCENARIOS = ['smoke', 'average', 'stress', 'spike'];
 
+// `ThresholdsBuilder` interpolates whatever the config holds straight into the k6 expression
+// (`rate<=${value}`) and only ever coerces with `Number()`, so a JSON string like "0.9" is a fully
+// binding threshold. Mirror that acceptance here or a string-valued budget would be invisible to
+// the ratchet. `null`/booleans are rejected explicitly — `Number(null)` is a finite 0 and would
+// otherwise be snapshotted as a real value.
+function numericValue(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : undefined;
+  if (typeof value !== 'string' || value.trim() === '') return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 // Three binding k6 budgets live in this file, all of them assertions the load-testing workflow
 // fails on:
 //   - `endpoints.<name>.<scenario>.threshold` → `http_req_duration: p(99)<threshold` (a ceiling);
@@ -21,8 +33,8 @@ const OVERRIDES = [
 function endpointRateOverrides(snapshot, endpoint, config, keys) {
   for (const { group, direction } of OVERRIDES) {
     for (const scenario of SCENARIOS) {
-      const value = config?.thresholds?.[group]?.[scenario];
-      if (typeof value !== 'number') continue;
+      const value = numericValue(config?.thresholds?.[group]?.[scenario]);
+      if (value === undefined) continue;
       const key = `endpoints.${endpoint}.thresholds.${group}.${scenario}`;
       keys.push(key);
       addNumeric(snapshot, key, value, direction);
@@ -37,8 +49,8 @@ export function loadConfigThresholds(absolutePath) {
   const overrideKeys = [];
   for (const [endpoint, config] of Object.entries(endpoints)) {
     for (const scenario of SCENARIOS) {
-      const value = config?.[scenario]?.threshold;
-      if (typeof value !== 'number') continue;
+      const value = numericValue(config?.[scenario]?.threshold);
+      if (value === undefined) continue;
       const key = `endpoints.${endpoint}.${scenario}.threshold`;
       latencyKeys.push(key);
       addNumeric(snapshot, key, value, 'max');

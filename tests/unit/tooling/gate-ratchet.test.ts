@@ -140,7 +140,7 @@ const LOAD_CONFIG = (threshold: number, scenarios = ['smoke', 'average']): strin
     2
   )}\n`;
 
-const LOAD_OVERRIDES = (errorRate: number, checkPassRate: number): string =>
+const LOAD_OVERRIDES = (errorRate: number | string, checkPassRate: number | string): string =>
   `${JSON.stringify(
     {
       endpoints: {
@@ -336,6 +336,31 @@ describe('gate ratchet — numeric directions', () => {
       'load-config-thresholds',
       LOAD_OVERRIDES(0.15, 0.95),
       LOAD_OVERRIDES(0.9, 0.1)
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        key: 'endpoints.signup.thresholds.errorRate.smoke',
+        base: 0.15,
+        head: 0.9,
+        rule: 'max',
+      })
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        key: 'endpoints.signup.thresholds.checkPassRate.smoke',
+        base: 0.95,
+        head: 0.1,
+        rule: 'min',
+      })
+    );
+  });
+
+  it('guards string-valued overrides, which the builder honours verbatim', () => {
+    const findings = snapshotPair(
+      'tests/load/config.json.dist',
+      'load-config-thresholds',
+      LOAD_OVERRIDES('0.15', '0.95'),
+      LOAD_OVERRIDES('0.9', '0.1')
     );
     expect(findings).toContainEqual(
       expect.objectContaining({
