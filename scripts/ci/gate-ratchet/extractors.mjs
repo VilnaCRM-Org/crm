@@ -198,9 +198,10 @@ function manifestSelf(absolutePath) {
     files.flatMap((entry) => (entry.dependsOn ?? []).map((dep) => `${entry.path}::${dep}`)),
     'no-shrink'
   );
-  // `?? [{}]` mirrors the runtime default in check-gate-ratchet.mjs. Snapshotting omitted `envs` as
-  // an empty contribution would make `envs: []` — which compares ZERO scopes, i.e. disables the
-  // entry entirely — indistinguishable from omitting the key, and the guard would fail open.
+  // `?? [{}]` mirrors the runtime default in ../check-gate-ratchet.mjs (one directory up,
+  // where the scope loop lives). Snapshotting omitted `envs` as an empty contribution would
+  // make `envs: []` — which compares ZERO scopes, i.e. disables the entry entirely —
+  // indistinguishable from omitting the key, and the guard would fail open.
   // Keys are sorted so a pure reordering is not reported as a removed scope.
   addSet(
     snapshot,
