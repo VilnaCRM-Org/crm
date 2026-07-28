@@ -360,8 +360,8 @@ ESLint, TypeScript, and metrics applies here.
 - **`noImplicitOverride`** requires the `override` modifier on any member that redeclares a base
   member, so a base-class rename leaves a compile error instead of an orphaned, silently-dead
   "override".
-- **`noPropertyAccessFromIndexSignature` is deliberately NOT enabled** — measured ~277 errors,
-  dominated by `process.env` dot-access in tests and configs, for no defect class.
+- **`noPropertyAccessFromIndexSignature` is deliberately NOT enabled** — measured 367 errors (all
+  `TS4111`), dominated by `process.env` dot-access in tests and configs, for no defect class.
 
 `@typescript-eslint/no-non-null-assertion` is `error` for `src/**` and `warn` for `tests/**`: the
 `!` operator silences a `noUncheckedIndexedAccess` result instead of narrowing it, which is the
@@ -418,12 +418,14 @@ Three invariants for contributors:
 1. Every rule added to `.dependency-cruiser.js` must land with a fixture — the completeness
    assertion is bidirectional and has **no exemption list**, so a new rule cannot ship untested and
    a fixture cannot outlive a deleted rule.
-2. Fixture imports must be **relative** (never `@/` or `@auth` — no `tsConfig` is passed, so aliases
-   resolve to nothing and trip `not-to-unresolvable`), and every fixture file must participate in a
-   dependency edge or it trips `no-orphans`.
+2. Fixture imports must be **relative** (never `@/` or `@auth` — the runner strips `tsConfig` from
+   the cruise options so no `baseUrl`/`paths` alias can resolve out of the sandbox into the real
+   `src/`; an aliased import therefore trips `not-to-unresolvable`), and every fixture file must
+   participate in a dependency edge or it trips `no-orphans`.
 3. A rule that legitimately co-fires with a strict-superset rule must declare it in **both**
-   `alsoFires` in the manifest and `DOCUMENTED_SUBSET_OVERLAPS` in the test — two separate reviewed
-   edits, so padding one to hide a regression is visible.
+   `alsoFires` in the fixture file (`scripts/ci/depcruise-rule-fixtures.mjs`) and
+   `DOCUMENTED_SUBSET_OVERLAPS` in the test — two separate reviewed edits, so padding one to hide a
+   regression is visible.
 
 The programmatic API needs `validate: true`, or `cruise()` returns zero violations and the guard
 itself passes vacuously. **Honest limitation:** the fixtures prove each rule still _fires_; they do

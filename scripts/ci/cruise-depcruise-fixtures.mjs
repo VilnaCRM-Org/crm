@@ -26,9 +26,14 @@ const entryDirectories = (baseDir) =>
     .map((entry) => entry.name)
     .sort();
 
+// `tsConfig` is dropped: it names a cwd-relative `tsconfig.json` whose `baseUrl`/`paths` would let a
+// fixture's aliased import resolve out of the sandbox and into the real `src/`. Fixtures import
+// relatively only, so removing it makes the sandbox actually hermetic.
+const { tsConfig, ...cruiseOptions } = config.options;
+
 const firedRules = async (baseDir, entries) => {
   const result = await cruise(entries, {
-    ...config.options,
+    ...cruiseOptions,
     baseDir,
     validate: true,
     ruleSet: config,

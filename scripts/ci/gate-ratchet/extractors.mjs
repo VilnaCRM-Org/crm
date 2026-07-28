@@ -86,6 +86,21 @@ async function jestCoverage(absolutePath) {
     patterns.filter((pattern) => !isExclusion(pattern)),
     'no-shrink'
   );
+  // Two sibling keys drop files out of the global threshold just as effectively as a `!` entry
+  // above: `coveragePathIgnorePatterns` removes them from the instrumented set, and a path-specific
+  // `coverageThreshold` override both exempts those files and takes them out of the global figure.
+  addSet(
+    snapshot,
+    `coveragePathIgnorePatterns[${scope}]`,
+    Array.isArray(config?.coveragePathIgnorePatterns) ? config.coveragePathIgnorePatterns : [],
+    'no-grow'
+  );
+  addSet(
+    snapshot,
+    `coverageThreshold.pathOverrides[${scope}]`,
+    Object.keys(config?.coverageThreshold ?? {}).filter((key) => key !== 'global'),
+    'no-grow'
+  );
   return snapshot;
 }
 

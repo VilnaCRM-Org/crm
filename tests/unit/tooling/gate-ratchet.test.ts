@@ -47,8 +47,11 @@ function fixture(relativePath: string, contents: string): string {
 
 function extract(root: string, relativePath: string, extractor: string, env = {}): Snapshot {
   const outFile = path.join(workspace, `snap-${process.hrtime.bigint()}.json`);
+  // TEST_ENV is pinned before the caller's overrides so the scope key stays deterministic: the CI
+  // runner invokes this suite as `make test-unit-client`, which exports TEST_ENV=client, and an
+  // inherited value would silently rename every `[default]` key to `[client]`.
   execFileSync(process.execPath, [EXTRACT_CLI, root, relativePath, extractor, outFile], {
-    env: { ...process.env, ...env },
+    env: { ...process.env, TEST_ENV: '', ...env },
   });
   return JSON.parse(readFileSync(outFile, 'utf8')) as Snapshot;
 }
@@ -273,6 +276,44 @@ describe('gate ratchet — set directions', () => {
       'guard removed',
       'guard removed',
       'guarded entry removed',
+    ]);
+  });
+
+  it('fails when coveragePathIgnorePatterns grows', () => {
+    const base = JEST_CONFIG(100, []);
+    const head = base.replace(
+      'const config = {',
+      "const config = {\n  coveragePathIgnorePatterns: ['/node_modules/', '<rootDir>/src/routes/'],"
+    );
+    const withBaseline = base.replace(
+      'const config = {',
+      "const config = {\n  coveragePathIgnorePatterns: ['/node_modules/'],"
+    );
+    const findings = snapshotPair('jest.config.ts', 'jest-coverage', withBaseline, head);
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'coveragePathIgnorePatterns[default]',
+        head: '<rootDir>/src/routes/',
+        rule: 'no-grow',
+        reason: 'exclusion added',
+      }),
+    ]);
+  });
+
+  it('fails when a path-specific coverage threshold override is added', () => {
+    const head = JEST_CONFIG(100, []).replace(
+      'global: { branches: 100, functions: 100, lines: 100, statements: 100 },',
+      'global: { branches: 100, functions: 100, lines: 100, statements: 100 },\n' +
+        "    './src/routes/': { branches: 0, functions: 0, lines: 0, statements: 0 },"
+    );
+    const findings = snapshotPair('jest.config.ts', 'jest-coverage', JEST_CONFIG(100, []), head);
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'coverageThreshold.pathOverrides[default]',
+        head: './src/routes/',
+        rule: 'no-grow',
+        reason: 'exclusion added',
+      }),
     ]);
   });
 

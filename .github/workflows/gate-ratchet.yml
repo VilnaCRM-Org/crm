@@ -38,7 +38,12 @@ jobs:
           GATE_RATCHET_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           GATE_RATCHET_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           GATE_RATCHET_REPORT_FILE: gate-ratchet-report.md
-        run: node scripts/ci/check-gate-ratchet.mjs
+        run: |
+          set +e
+          node scripts/ci/check-gate-ratchet.mjs
+          status=$?
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
 
       - name: Upload report
         if: always()
@@ -51,9 +56,16 @@ jobs:
 
       - name: Fail when a binding threshold was weakened without a waiver
         if: steps.ratchet.outcome == 'failure'
+        env:
+          RATCHET_EXIT: ${{ steps.ratchet.outputs.exit_code }}
         run: |
-          echo "A binding CI budget was weakened relative to the merge base."
-          echo "Strengthen the value, or apply the gate-relaxation label to record the decision."
+          if [ "$RATCHET_EXIT" = "2" ]; then
+            echo "The gate ratchet could not evaluate the guarded configs (see the report above)."
+            echo "This is an evaluation failure, not a detected weakening; the waiver label does not apply."
+          else
+            echo "A binding CI budget was weakened relative to the merge base."
+            echo "Strengthen the value, or apply the gate-relaxation label to record the decision."
+          fi
           exit 1
 
   comment:
