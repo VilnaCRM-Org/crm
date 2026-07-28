@@ -350,6 +350,38 @@ describe('gate ratchet — set directions', () => {
     expect(snapshotPair('tsconfig.json', 'tsconfig-strict-flags', base, head)).toEqual([]);
   });
 
+  it('fails when a dependsOn entry is removed from the manifest', () => {
+    const withDep = `${JSON.stringify(
+      {
+        waiverLabel: 'gate-relaxation',
+        files: [{ path: 'a.js', extract: 'jscpd', dependsOn: ['shared.json'] }],
+      },
+      null,
+      2
+    )}\n`;
+    const withoutDep = `${JSON.stringify(
+      { waiverLabel: 'gate-relaxation', files: [{ path: 'a.js', extract: 'jscpd' }] },
+      null,
+      2
+    )}\n`;
+    const findings = snapshotPair('manifest.json', 'manifest-self', withDep, withoutDep);
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'guardedDependsOn',
+        base: 'a.js::shared.json',
+        rule: 'no-shrink',
+      }),
+    ]);
+  });
+
+  it('fails when the waiver label is renamed', () => {
+    const renamed = MANIFEST(['a.json']).replace('gate-relaxation', 'anything-goes');
+    const findings = snapshotPair('manifest.json', 'manifest-self', MANIFEST(['a.json']), renamed);
+    expect(findings).toEqual([
+      expect.objectContaining({ key: 'waiverLabel', base: 'gate-relaxation', rule: 'no-shrink' }),
+    ]);
+  });
+
   it('fails when an entry is removed from the manifest itself', () => {
     const findings = snapshotPair(
       'manifest.json',

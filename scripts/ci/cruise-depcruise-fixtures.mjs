@@ -26,17 +26,21 @@ const entryDirectories = (baseDir) =>
     .map((entry) => entry.name)
     .sort();
 
-// `tsConfig` is dropped: it names a cwd-relative `tsconfig.json` whose `baseUrl`/`paths` would let a
-// fixture's aliased import resolve out of the sandbox and into the real `src/`. Fixtures import
-// relatively only, so removing it makes the sandbox actually hermetic.
+// `tsConfig` names a cwd-relative `tsconfig.json` whose `baseUrl`/`paths` let a fixture's aliased
+// import resolve out of the sandbox and into the real `src/` (verified: the cruise then dies with
+// "Unusual baseDir passed to package reading function"). It must be dropped from the ruleSet too —
+// dependency-cruiser merges `ruleSet.options` back into the cruise options, so stripping it from
+// only the outer spread leaves it active. Fixtures import relatively; an alias must stay
+// unresolvable so it trips `not-to-unresolvable` instead of escaping.
 const { tsConfig, ...cruiseOptions } = config.options;
+const fixtureRuleSet = { ...config, options: cruiseOptions };
 
 const firedRules = async (baseDir, entries) => {
   const result = await cruise(entries, {
     ...cruiseOptions,
     baseDir,
     validate: true,
-    ruleSet: config,
+    ruleSet: fixtureRuleSet,
     outputType: 'json',
   });
   const output = typeof result.output === 'string' ? JSON.parse(result.output) : result.output;

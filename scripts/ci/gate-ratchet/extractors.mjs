@@ -184,6 +184,24 @@ function manifestSelf(absolutePath) {
     files.map((entry) => `${entry.path}::${entry.extract}`),
     'no-shrink'
   );
+  // `dependsOn` decides which edits wake the check, `envs` decides which scopes are compared, and
+  // `waiverLabel` decides what waives a finding. Dropping any of them weakens the gate while
+  // leaving `guardedFiles` untouched, so each is guarded in its own right.
+  addSet(
+    snapshot,
+    'guardedDependsOn',
+    files.flatMap((entry) => (entry.dependsOn ?? []).map((dep) => `${entry.path}::${dep}`)),
+    'no-shrink'
+  );
+  addSet(
+    snapshot,
+    'guardedEnvs',
+    files.flatMap((entry) =>
+      (entry.envs ?? []).map((env) => `${entry.path}::${JSON.stringify(env)}`)
+    ),
+    'no-shrink'
+  );
+  addSet(snapshot, 'waiverLabel', [String(manifest.waiverLabel ?? '')], 'no-shrink');
   return snapshot;
 }
 
