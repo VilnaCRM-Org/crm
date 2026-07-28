@@ -1,3 +1,5 @@
+import { effectiveValue } from './snapshot.mjs';
+
 // `subject` is the discriminator used to match a finding across the merge-base and base-tip
 // comparisons. A key yields at most one numeric finding, so `null` is unambiguous there; membership
 // findings need the item itself, because every removal otherwise shares `head: '(absent)'` and a
@@ -6,27 +8,28 @@ function numericFindings(file, base, head) {
   const findings = [];
   for (const [key, guard] of Object.entries(base.numeric ?? {})) {
     const current = (head.numeric ?? {})[key];
+    const baseValue = effectiveValue(guard);
     if (!current) {
       findings.push({
         file,
         key,
         subject: null,
-        base: guard.value,
+        base: baseValue,
         head: null,
         rule: guard.direction,
         reason: 'guard removed',
       });
       continue;
     }
-    const weakened =
-      guard.direction === 'min' ? current.value < guard.value : current.value > guard.value;
+    const headValue = effectiveValue(current);
+    const weakened = guard.direction === 'min' ? headValue < baseValue : headValue > baseValue;
     if (weakened) {
       findings.push({
         file,
         key,
         subject: null,
-        base: guard.value,
-        head: current.value,
+        base: baseValue,
+        head: headValue,
         rule: guard.direction,
         reason: 'threshold weakened',
       });

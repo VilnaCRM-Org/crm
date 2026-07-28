@@ -385,9 +385,10 @@ files, `stryker.config.mjs`, `jest.config.ts` (thresholds **and** the `collectCo
 exclusion list, which must not grow), `config/metrics-policy.json`,
 `config/performance-budget.json`, `.jscpd.json`, `tsconfig.json` (the set of enabled strictness
 flags, which must not shrink — this is what stops a later PR silently deleting the issue-#166
-flags), the k6 load budgets (`tests/load/config.json.dist` p99 latency ceilings **and** the
-fallback error-rate / check-pass-rate tables in `tests/load/utils/thresholds-builder.js`, which are
-the effective budget for every endpoint that does not override them), and the manifest itself.
+flags), the k6 load budgets (`tests/load/config.json.dist` p99 latency ceilings **and** its
+per-endpoint `thresholds.errorRate` / `thresholds.checkPassRate` overrides, plus the fallback
+tables in `tests/load/utils/thresholds-builder.js` that apply to every endpoint which does not
+override them), and the manifest itself.
 
 Direction is derived **per key**, never per file — `_max` keys are ceilings (raising weakens),
 `_min` keys are floors (lowering weakens). A per-file direction would score a drop of

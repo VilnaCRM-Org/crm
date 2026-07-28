@@ -9,9 +9,18 @@ export function addNumeric(snapshot, key, value, direction) {
   // Snapshots cross a process boundary as JSON, and JSON.stringify turns ±Infinity into `null`.
   // A null head value makes the weakening test (`head > base` for a ceiling) false, so raising a
   // guarded `maxNumericValue` to Number.POSITIVE_INFINITY — removing the budget outright — would
-  // produce no finding. Clamping to the finite extreme survives the round trip and compares.
-  const finite = Number.isFinite(value) ? value : Math.sign(value) * Number.MAX_VALUE;
-  snapshot.numeric[key] = { value: finite, direction };
+  // produce no finding. Record the sign in an explicit `infinite` flag that survives the round
+  // trip; `compareSnapshots` restores ±Infinity from it. A plain clamp to Number.MAX_VALUE would
+  // instead collide with a literal MAX_VALUE and hide the MAX_VALUE → Infinity relaxation.
+  if (Number.isFinite(value)) {
+    snapshot.numeric[key] = { value, direction };
+    return;
+  }
+  snapshot.numeric[key] = { value: null, direction, infinite: Math.sign(value) };
+}
+
+export function effectiveValue(guard) {
+  return guard.infinite ? guard.infinite * Infinity : guard.value;
 }
 
 export function addSet(snapshot, key, items, rule) {

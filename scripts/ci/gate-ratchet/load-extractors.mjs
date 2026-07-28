@@ -4,24 +4,49 @@ import { addNumeric, addSet, emptySnapshot, readJson } from './snapshot.mjs';
 
 const SCENARIOS = ['smoke', 'average', 'stress', 'spike'];
 
-// Every `endpoints.<name>.<scenario>.threshold` becomes the k6 assertion
-// `http_req_duration{scenario:<scenario>}: p(99)<threshold`, which fails the load-testing
-// workflow when breached. Raising the allowed p99 latency therefore weakens a binding budget
-// exactly like raising a Lighthouse maxNumericValue.
+// Three binding k6 budgets live in this file, all of them assertions the load-testing workflow
+// fails on:
+//   - `endpoints.<name>.<scenario>.threshold` → `http_req_duration: p(99)<threshold` (a ceiling);
+//   - `endpoints.<name>.thresholds.errorRate.<scenario>` → `http_req_failed: rate<=x` (a ceiling);
+//   - `endpoints.<name>.thresholds.checkPassRate.<scenario>` → `checks: rate>=x` (a floor).
+// The last two are per-endpoint OVERRIDES that `ScenarioUtils` feeds to `ThresholdsBuilder`
+// (`new ThresholdsBuilder(this.endpointConfig.thresholds)`), so where they exist they — not the
+// builder's fallback tables — are what k6 enforces. `overrideKeys` is `no-shrink` because deleting
+// an override silently swaps in the builder default, which may be looser.
+const OVERRIDES = [
+  { group: 'errorRate', direction: 'max' },
+  { group: 'checkPassRate', direction: 'min' },
+];
+
+function endpointRateOverrides(snapshot, endpoint, config, keys) {
+  for (const { group, direction } of OVERRIDES) {
+    for (const scenario of SCENARIOS) {
+      const value = config?.thresholds?.[group]?.[scenario];
+      if (typeof value !== 'number') continue;
+      const key = `endpoints.${endpoint}.thresholds.${group}.${scenario}`;
+      keys.push(key);
+      addNumeric(snapshot, key, value, direction);
+    }
+  }
+}
+
 export function loadConfigThresholds(absolutePath) {
   const endpoints = readJson(absolutePath)?.endpoints ?? {};
   const snapshot = emptySnapshot();
-  const keys = [];
+  const latencyKeys = [];
+  const overrideKeys = [];
   for (const [endpoint, config] of Object.entries(endpoints)) {
     for (const scenario of SCENARIOS) {
       const value = config?.[scenario]?.threshold;
       if (typeof value !== 'number') continue;
       const key = `endpoints.${endpoint}.${scenario}.threshold`;
-      keys.push(key);
+      latencyKeys.push(key);
       addNumeric(snapshot, key, value, 'max');
     }
+    endpointRateOverrides(snapshot, endpoint, config, overrideKeys);
   }
-  addSet(snapshot, 'thresholdKeys', keys, 'no-shrink');
+  addSet(snapshot, 'thresholdKeys', latencyKeys, 'no-shrink');
+  addSet(snapshot, 'overrideKeys', overrideKeys, 'no-shrink');
   return snapshot;
 }
 

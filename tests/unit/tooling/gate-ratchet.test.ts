@@ -140,6 +140,20 @@ const LOAD_CONFIG = (threshold: number, scenarios = ['smoke', 'average']): strin
     2
   )}\n`;
 
+const LOAD_OVERRIDES = (errorRate: number, checkPassRate: number): string =>
+  `${JSON.stringify(
+    {
+      endpoints: {
+        signup: {
+          thresholds: { errorRate: { smoke: errorRate }, checkPassRate: { smoke: checkPassRate } },
+          smoke: { threshold: 8000 },
+        },
+      },
+    },
+    null,
+    2
+  )}\n`;
+
 const LOAD_BUILDER = (errorRate: number, checkPassRate: number): string =>
   `export default class ThresholdsBuilder {
   constructor() {
@@ -277,7 +291,7 @@ describe('gate ratchet — numeric directions', () => {
       expect.objectContaining({
         key: 'resource-summary:script:size.maxNumericValue',
         base: 265000,
-        head: Number.MAX_VALUE,
+        head: Infinity,
         rule: 'max',
         reason: 'threshold weakened',
       }),
@@ -314,6 +328,48 @@ describe('gate ratchet — numeric directions', () => {
     expect(findings).toContainEqual(
       expect.objectContaining({ key: 'smoke.checkPassRate', base: 0.95, head: 0.5, rule: 'min' })
     );
+  });
+
+  it('fails when a per-endpoint k6 rate override is weakened', () => {
+    const findings = snapshotPair(
+      'tests/load/config.json.dist',
+      'load-config-thresholds',
+      LOAD_OVERRIDES(0.15, 0.95),
+      LOAD_OVERRIDES(0.9, 0.1)
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        key: 'endpoints.signup.thresholds.errorRate.smoke',
+        base: 0.15,
+        head: 0.9,
+        rule: 'max',
+      })
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        key: 'endpoints.signup.thresholds.checkPassRate.smoke',
+        base: 0.95,
+        head: 0.1,
+        rule: 'min',
+      })
+    );
+  });
+
+  it('fails when a MAX_VALUE ceiling is relaxed to Infinity', () => {
+    const findings = snapshotPair(
+      'lighthouserc.js',
+      'lhci-assertions',
+      LHCI_CEILING('Number.MAX_VALUE'),
+      LHCI_CEILING('Number.POSITIVE_INFINITY')
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'resource-summary:script:size.maxNumericValue',
+        base: Number.MAX_VALUE,
+        head: Infinity,
+        rule: 'max',
+      }),
+    ]);
   });
 
   it('reads the jest config once per TEST_ENV scope', () => {
