@@ -773,11 +773,17 @@ A `.tsx` component obtains a behavioral collaborator through `useService` from
 import { useService } from '@/providers/di';
 import MY_AREA_TOKENS from '@/services/my-area/tokens';
 
-const service = useService<MyService>(MY_AREA_TOKENS.MyService);
+export default function MyWidget(): JSX.Element {
+  const service = useService<MyService>(MY_AREA_TOKENS.MyService);
+  // …
+}
 ```
 
-Add the token and register the class in the owning area's `di.ts` **before** resolving it; do
-not invent an ad-hoc module singleton of a behavioral class for a component. In component
+`useService` is a hook — call it at the top level of a component or of another hook, never at
+module scope. Add the token, register the class in the owning area's `di.ts`, and (for a new
+area) add that registrar to the array in `src/config/dependency-injection-config.ts` **before**
+resolving it — an unregistered token throws. Do not invent an ad-hoc module singleton of a
+behavioral class for a component. In component
 tests, swap the collaborator by registering a mock against the token
 (`container.register(TOKENS.X, { useValue: mock })`) or by jest-mocking
 `@/providers/di/use-service`.

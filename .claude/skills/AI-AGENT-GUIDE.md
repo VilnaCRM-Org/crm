@@ -386,8 +386,13 @@ test harnesses are treated as locked. If a task requires changing them:
 - Respect protected quality thresholds and complexity gates.
 - Use Docker-backed Makefile targets so behavior matches CI.
 - Resolve a behavioral collaborator in a `.tsx` component through
-  `useService(TOKENS.X)` from `@/providers/di`, after adding the token and
-  registering the class in the owning area's `di.ts` (issue #128).
+  `useService(TOKENS.X)` from `@/providers/di` — called at the top level of the
+  component or of another hook, never at module scope (issue #128).
+- Complete the registration before resolving: declare the token in the owning
+  area's `tokens.ts`, register the class in that area's `di.ts`, and — for a new
+  area — add its registrar to the array in
+  `src/config/dependency-injection-config.ts`. A registrar that is never
+  aggregated leaves `useService` throwing an unregistered-token error.
 - Swap collaborators in component tests by registering a mock against the token
   or jest-mocking `@/providers/di/use-service`.
 

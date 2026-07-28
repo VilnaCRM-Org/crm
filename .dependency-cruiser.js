@@ -391,8 +391,9 @@ module.exports = {
         'swapped for a mock in a component test (issue #128; cf. #100). `import type` stays ' +
         'allowed: type annotations are erased and bind nothing. Carve-outs are the ' +
         'container-free-by-design surfaces: the auth render path (Lighthouse budget), the ' +
-        'route shell (issue #105), the app entrypoint, and the root error boundary (a class ' +
-        'component cannot call a hook, and error reporting must survive a DI failure). This ' +
+        'route shell (issue #105), the app entrypoint, and the ROOT error boundary file alone ' +
+        '(a class component cannot call a hook, and error reporting must survive a DI ' +
+        'failure) — its functional descendants can call useService and stay gated. This ' +
         'is the consumer side; the producer side (one injectable importing another) is not ' +
         'owned here, so the two never flag the same edge.',
       severity: 'error',
@@ -402,7 +403,7 @@ module.exports = {
           '^src/modules/user/features/auth/',
           '^src/routes/',
           '^src/index[.]tsx$',
-          '^src/components/error-boundary/',
+          '^src/components/error-boundary/app-error-boundary[.]tsx$',
           '[.](?:stories|test|spec)[.]tsx$',
         ],
       },
@@ -421,8 +422,9 @@ module.exports = {
       name: 'no-paint-path-import-di-bridge',
       comment:
         'The container-free surfaces — the auth render path and the route shell — must not ' +
-        'import the component DI bridge (@/providers/di). The bridge eagerly imports the ' +
-        'aggregating composition root, so a single import from these modules would pull the ' +
+        'reach the component DI bridge (@/providers/di) — not directly and not through an ' +
+        'intermediate shared component, hence `reachable`. The bridge eagerly imports the ' +
+        'aggregating composition root, so any path from these modules would pull the ' +
         'whole DI graph into the chunks needed to paint the authentication page and blow the ' +
         'mobile Lighthouse budget (issues #128, #109). These modules keep their sanctioned ' +
         'module singletons instead; this rule is what makes that carve-out enforced rather ' +
@@ -433,6 +435,7 @@ module.exports = {
       },
       to: {
         path: '^src/providers/di/',
+        reachable: true,
       },
     },
     {

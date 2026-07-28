@@ -513,8 +513,14 @@ mapper, factory, error handler — **only** through the single sanctioned bridge
 import { useService } from '@/providers/di';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 
-const repo = useService<AuthRepository>(AUTH_TOKENS.AuthRepository);
+export default function ProfileCard(): JSX.Element {
+  const repo = useService<AuthRepository>(AUTH_TOKENS.AuthRepository);
+  // …
+}
 ```
+
+`useService` is a hook: call it at the top level of a component or of another hook, never at
+module scope.
 
 `useService` memoizes on the token and imports the **composition root**
 (`@/config/dependency-injection-config`), not the bare tsyringe `container` — the bare
@@ -535,17 +541,23 @@ service/repository/mapper/factory/handler. Two gates enforce it, both inside `ma
 
 **Carve-outs** (container-free by design, not modernization debt): the auth render path
 (`src/modules/user/features/auth/**`, whose mobile Lighthouse budget forbids eager DI), the
-route shell (`src/routes/**`, issue #105), the app entrypoint, and the root error boundary (a
-class component cannot call a hook, and error reporting must survive a DI failure). These keep
-their module singletons (`formValidators`, `useAuthToken`, `auth-var`, `auth-store-selectors`,
+route shell (`src/routes/**`, issue #105), the app entrypoint, and **only** the root error
+boundary file `src/components/error-boundary/app-error-boundary.tsx` (a class component cannot
+call a hook, and error reporting must survive a DI failure) — its functional descendants such as
+`ErrorFallback` and `RouteError` can call `useService` and stay gated. Both gates read the same
+carve-out list, so they never disagree about which file is exempt. The carve-outs keep their
+module singletons (`formValidators`, `useAuthToken`, `auth-var`, `auth-store-selectors`,
 `routeComposer`, `noopErrorReporter`) — do not migrate them onto `useService`. The carve-out is
 itself enforced: `no-paint-path-import-di-bridge` forbids the auth feature and the route shell
-from importing `@/providers/di`, so the bridge's eager composition-root import can never reach
-the auth chunk.
+from **reaching** `@/providers/di` at all — the rule is `reachable`, so routing the bridge
+through an intermediate shared component does not evade it, and its eager composition-root
+import can never land in the auth chunk.
 
 **Honest limitation:** the gate is syntactic and `.tsx`-only. Hooks (`use-*.ts`) are **not**
-covered — `new LoginSwitchController(deps)` in
-`@auth/components/form-section/use-login-switcher.ts` stays a review-gate concern. ESLint cannot
+covered — `new LoginErrorMessageNormalizer()` in
+`@auth/components/form-section/auth-forms/use-login-submitter.ts` and
+`new RegistrationHandlersFactory(…)` in `@auth/hooks/use-registration-handlers.ts` stay
+review-gate concerns. ESLint cannot
 know which PascalCase identifier is behavioral (the built-in allowlist must be maintained), and
 dependency-cruiser keys on path conventions, so a behavioral class placed outside those paths or
 re-exported through a barrel is not caught. Satisfy both gates by adding the token, registering

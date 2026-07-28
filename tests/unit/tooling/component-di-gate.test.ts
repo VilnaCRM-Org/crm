@@ -28,11 +28,17 @@ describe('component DI gate (issue #128)', () => {
     ['built-in constructors', 'builtins'],
     ['the auth render path', 'authCarveOut'],
     ['the route shell', 'routeShellCarveOut'],
+    ['the app entrypoint', 'appEntrypointCarveOut'],
+    ['the root error boundary', 'rootErrorBoundaryCarveOut'],
     ['story files', 'story'],
     ['test files', 'test'],
     ['hooks, which stay a review-gate concern', 'hook'],
   ])('ESLint exempts %s', (_label, fixture) => {
     expect(report.eslint[fixture]).toEqual([]);
+  });
+
+  it('ESLint still gates a functional error-boundary descendant', () => {
+    expect(report.eslint.errorBoundaryDescendant).toHaveLength(1);
   });
 
   it('dependency-cruiser fails a component value-importing a service', () => {
@@ -49,5 +55,18 @@ describe('component DI gate (issue #128)', () => {
 
   it('dependency-cruiser keeps the DI bridge off the container-free paint path', () => {
     expect(report.depcruise.authImportsBridge).toEqual(['no-paint-path-import-di-bridge']);
+  });
+
+  it('dependency-cruiser catches the bridge reached through an intermediate component', () => {
+    expect(report.depcruise.authReachesBridgeIndirectly).toEqual([
+      'no-paint-path-import-di-bridge',
+    ]);
+  });
+
+  it('dependency-cruiser exempts the root error boundary but not its descendants', () => {
+    expect(report.depcruise.rootErrorBoundaryCarveOut).toEqual([]);
+    expect(report.depcruise.errorBoundaryDescendant).toEqual([
+      'components-no-direct-injectable-import',
+    ]);
   });
 });

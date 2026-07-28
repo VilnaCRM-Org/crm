@@ -147,11 +147,14 @@ These come from `.dependency-cruiser.js`. They run on every PR via
   selector on `src/**/*.tsx` covers the `new` side (built-in constructors are
   allowlisted out).
 - `no-paint-path-import-di-bridge` — the auth render path and the route shell
-  importing `@/providers/di`. The bridge eagerly imports the composition root, so
-  one such import would pull the DI graph into the auth paint chunk.
-- Carve-outs, all container-free by design: the auth render path, the route shell
-  (issue #105), `src/index.tsx`, and the root error boundary (a class component
-  cannot call a hook). Leave their module singletons as they are.
+  **reaching** `@/providers/di`. The bridge eagerly imports the composition root,
+  so any path to it would pull the DI graph into the auth paint chunk; the rule is
+  `reachable`, so an intermediate shared component does not launder the import.
+- Carve-outs, all container-free by design and identical in both gates: the auth
+  render path, the route shell (issue #105), `src/index.tsx`, and the root error
+  boundary file `app-error-boundary.tsx` alone (a class component cannot call a
+  hook — its functional descendants stay gated). Leave their module singletons as
+  they are.
 - Hooks (`use-*.ts`) are outside the static gate and stay a review-gate concern —
   prefer DI there too.
 - In component tests, swap the collaborator by registering a mock against the

@@ -50,6 +50,15 @@ const ESLINT_FIXTURES = {
     filePath: 'src/modules/user/features/auth/components/fixture.tsx',
   },
   routeShellCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/fixture.tsx' },
+  appEntrypointCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/index.tsx' },
+  rootErrorBoundaryCarveOut: {
+    code: NEW_BEHAVIORAL_CLASS,
+    filePath: 'src/components/error-boundary/app-error-boundary.tsx',
+  },
+  errorBoundaryDescendant: {
+    code: NEW_BEHAVIORAL_CLASS,
+    filePath: 'src/components/error-boundary/error-fallback.tsx',
+  },
   story: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/components/fixture.stories.tsx' },
   test: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/components/fixture.test.tsx' },
   hook: { code: NEW_IN_HOOK, filePath: 'src/hooks/use-thing.ts' },
@@ -116,6 +125,33 @@ const DEPCRUISE_FIXTURES = {
       ...BRIDGE_FILES,
       'src/modules/user/features/auth/components/widget.tsx': componentImporting(
         "import useService from '../../../../../providers/di/use-service';"
+      ),
+    },
+  },
+  authReachesBridgeIndirectly: {
+    files: {
+      ...BRIDGE_FILES,
+      'src/components/shared.tsx': componentImporting(
+        "import useService from '../providers/di/use-service';"
+      ),
+      'src/modules/user/features/auth/components/widget.tsx': componentImporting(
+        "import Shared from '../../../../../components/shared';"
+      ),
+    },
+  },
+  rootErrorBoundaryCarveOut: {
+    files: {
+      ...SERVICE_FILES,
+      'src/components/error-boundary/app-error-boundary.tsx': componentImporting(
+        "import Thing from '../../services/thing';"
+      ),
+    },
+  },
+  errorBoundaryDescendant: {
+    files: {
+      ...SERVICE_FILES,
+      'src/components/error-boundary/error-fallback.tsx': componentImporting(
+        "import Thing from '../../services/thing';"
       ),
     },
   },
