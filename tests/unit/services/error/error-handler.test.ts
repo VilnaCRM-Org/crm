@@ -350,10 +350,11 @@ describe('ErrorHandler', () => {
         };
 
         const results = Array.from({ length: 10 }, () => errorHandler.handleAuthError(error));
+        const [firstResult] = results;
         const allSame = results.every(
           (result) =>
-            result.displayMessage === results[0].displayMessage &&
-            result.retryable === results[0].retryable
+            result.displayMessage === firstResult?.displayMessage &&
+            result.retryable === firstResult?.retryable
         );
 
         expect(allSame).toBe(true);

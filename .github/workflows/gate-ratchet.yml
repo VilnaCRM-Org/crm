@@ -1,0 +1,81 @@
+name: gate ratchet
+
+on:
+  pull_request:
+    branches: ['main']
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ratchet:
+    name: no binding threshold weakened
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout pull request head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Compare guarded thresholds against the merge base
+        id: ratchet
+        continue-on-error: true
+        env:
+          GATE_RATCHET_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GATE_RATCHET_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GATE_RATCHET_REPORT_FILE: gate-ratchet-report.md
+        run: node scripts/ci/check-gate-ratchet.mjs
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: gate-ratchet-report
+          path: gate-ratchet-report.md
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Fail when a binding threshold was weakened without a waiver
+        if: steps.ratchet.outcome == 'failure'
+        run: |
+          echo "A binding CI budget was weakened relative to the merge base."
+          echo "Strengthen the value, or apply the gate-relaxation label to record the decision."
+          exit 1
+
+  comment:
+    name: PR report
+    needs: ratchet
+    if: always() && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download report
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: gate-ratchet-report
+          path: .
+
+      - name: Post or update PR comment
+        if: steps.download.outcome == 'success'
+        uses: marocchino/sticky-pull-request-comment@0ea0beb66eb9baf113663a64ec522f60e49231c0 # v3.0.4
+        with:
+          header: gate-ratchet
+          path: gate-ratchet-report.md

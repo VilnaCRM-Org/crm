@@ -549,6 +549,25 @@ export default [
     },
   },
 
+  // Source (issue #166): the `!` non-null assertion is a type-level suppression — it silences a
+  // `noUncheckedIndexedAccess` result instead of narrowing it. Production source must narrow for
+  // real (`??`, an explicit guard, `in`, `Map.get` + guard, optional chaining).
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'error',
+    },
+  },
+
+  // Tests (issue #166): `warn`, not `error` — a test may legitimately assert on fixture presence
+  // — but the same sanctioned narrowing is expected in review.
+  {
+    files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+    },
+  },
+
   // K6 load test scripts: console output is the idiomatic logging channel.
   {
     files: ['tests/load/**/*.js'],

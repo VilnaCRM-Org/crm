@@ -1,0 +1,396 @@
+import { execFileSync } from 'child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
+import os from 'os';
+import path from 'path';
+
+import {
+  compareSnapshots,
+  isWaived,
+  formatFindingsTable,
+} from '../../../scripts/ci/gate-ratchet/compare.mjs';
+
+const REPO_ROOT = path.resolve(__dirname, '../../..');
+const EXTRACT_CLI = path.join(REPO_ROOT, 'scripts/ci/gate-ratchet/extract-cli.mjs');
+const MANIFEST_PATH = path.join(REPO_ROOT, 'config/gate-thresholds.manifest.json');
+
+type Snapshot = {
+  numeric: Record<string, { value: number; direction: 'min' | 'max' }>;
+  sets: Record<string, { items: string[]; rule: 'no-grow' | 'no-shrink' }>;
+};
+
+type Finding = {
+  file: string;
+  key: string;
+  base: string | number;
+  head: string | number | null;
+  rule: string;
+  reason: string;
+};
+
+let workspace: string;
+
+beforeAll(() => {
+  workspace = mkdtempSync(path.join(os.tmpdir(), 'gate-ratchet-test-'));
+});
+
+afterAll(() => {
+  rmSync(workspace, { recursive: true, force: true });
+});
+
+function fixture(relativePath: string, contents: string): string {
+  const root = mkdtempSync(path.join(workspace, 'tree-'));
+  const target = path.join(root, relativePath);
+  mkdirSync(path.dirname(target), { recursive: true });
+  writeFileSync(target, contents);
+  return root;
+}
+
+function extract(root: string, relativePath: string, extractor: string, env = {}): Snapshot {
+  const outFile = path.join(workspace, `snap-${process.hrtime.bigint()}.json`);
+  execFileSync(process.execPath, [EXTRACT_CLI, root, relativePath, extractor, outFile], {
+    env: { ...process.env, ...env },
+  });
+  return JSON.parse(readFileSync(outFile, 'utf8')) as Snapshot;
+}
+
+function snapshotPair(
+  relativePath: string,
+  extractor: string,
+  baseContents: string,
+  headContents: string,
+  env = {}
+): Finding[] {
+  const base = extract(fixture(relativePath, baseContents), relativePath, extractor, env);
+  const head = extract(fixture(relativePath, headContents), relativePath, extractor, env);
+  return compareSnapshots(relativePath, base, head) as Finding[];
+}
+
+const LHCI = (score: number, level = 'error'): string => `module.exports = {
+  ci: { assert: { assertions: {
+    'categories:performance': ['${level}', { minScore: ${score} }],
+    'resource-summary:script:size': ['error', { maxNumericValue: 265000 }],
+  } } },
+};
+`;
+
+const METRICS = (cyclomatic: number, miFloor: number): string =>
+  `${JSON.stringify(
+    { hard: { cyclomatic_max: cyclomatic, mi_visual_studio_min: miFloor } },
+    null,
+    2
+  )}\n`;
+
+const JSCPD = (minTokens: number, ignore: string[]): string =>
+  `${JSON.stringify(
+    { threshold: 0, minTokens, minLines: 5, ignore, path: ['src'], format: ['typescript'] },
+    null,
+    2
+  )}\n`;
+
+const JEST_CONFIG = (branches: number, exclusions: string[]): string => `const config = {
+  collectCoverageFrom: ['<rootDir>/src/**/*.{ts,tsx}'${exclusions.map((e) => `, '${e}'`).join('')}],
+  coverageThreshold: {
+    global: { branches: ${branches}, functions: 100, lines: 100, statements: 100 },
+  },
+};
+export default config;
+`;
+
+const STRYKER = (breakAt: number): string =>
+  [
+    `const config = { thresholds: { high: 100, low: 90, break: ${breakAt} } };`,
+    'export default config;',
+    '',
+  ].join('\n');
+
+const TSCONFIG = (uncheckedIndexedAccess: boolean): string =>
+  `${JSON.stringify(
+    {
+      compilerOptions: {
+        strict: true,
+        noImplicitOverride: true,
+        ...(uncheckedIndexedAccess ? { noUncheckedIndexedAccess: true } : {}),
+      },
+    },
+    null,
+    2
+  )}\n`;
+
+const MANIFEST = (paths: string[]): string =>
+  `${JSON.stringify(
+    { waiverLabel: 'gate-relaxation', files: paths.map((p) => ({ path: p, extract: 'jscpd' })) },
+    null,
+    2
+  )}\n`;
+
+describe('gate ratchet — numeric directions', () => {
+  it('fails when a lighthouse minScore floor is lowered', () => {
+    const findings = snapshotPair('lighthouserc.js', 'lhci-assertions', LHCI(0.85), LHCI(0.84));
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'categories:performance.minScore',
+        base: 0.85,
+        head: 0.84,
+        rule: 'min',
+        reason: 'threshold weakened',
+      }),
+    ]);
+  });
+
+  it('passes when a lighthouse minScore floor is raised', () => {
+    expect(snapshotPair('lighthouserc.js', 'lhci-assertions', LHCI(0.84), LHCI(0.85))).toEqual([]);
+  });
+
+  it('fails when an assertion severity is downgraded from error to warn', () => {
+    const findings = snapshotPair(
+      'lighthouserc.js',
+      'lhci-assertions',
+      LHCI(0.85),
+      LHCI(0.85, 'warn')
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'categories:performance.level',
+        base: 2,
+        head: 1,
+        rule: 'min',
+      }),
+    ]);
+  });
+
+  it('fails when a metrics-policy ceiling is raised', () => {
+    const findings = snapshotPair(
+      'metrics.json',
+      'metrics-policy-hard',
+      METRICS(10, 20),
+      METRICS(20, 20)
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({ key: 'hard.cyclomatic_max', base: 10, head: 20, rule: 'max' }),
+    ]);
+  });
+
+  it('fails when a metrics-policy FLOOR (_min key) is lowered', () => {
+    const findings = snapshotPair(
+      'metrics.json',
+      'metrics-policy-hard',
+      METRICS(10, 20),
+      METRICS(10, 5)
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({ key: 'hard.mi_visual_studio_min', base: 20, head: 5, rule: 'min' }),
+    ]);
+  });
+
+  it('passes when a metrics-policy FLOOR is raised', () => {
+    expect(
+      snapshotPair('metrics.json', 'metrics-policy-hard', METRICS(10, 20), METRICS(10, 40))
+    ).toEqual([]);
+  });
+
+  it('fails when the jscpd minimum clone size is raised', () => {
+    const findings = snapshotPair('.jscpd.json', 'jscpd', JSCPD(75, []), JSCPD(200, []));
+    expect(findings).toEqual([
+      expect.objectContaining({ key: 'minTokens', base: 75, head: 200, rule: 'max' }),
+    ]);
+  });
+
+  it('fails when the Stryker break threshold is lowered', () => {
+    const findings = snapshotPair(
+      'stryker.config.mjs',
+      'stryker-thresholds',
+      STRYKER(90),
+      STRYKER(50)
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({ key: 'thresholds.break', base: 90, head: 50, rule: 'min' }),
+    ]);
+  });
+
+  it('fails when a jest coverage threshold is lowered', () => {
+    const findings = snapshotPair(
+      'jest.config.ts',
+      'jest-coverage',
+      JEST_CONFIG(100, []),
+      JEST_CONFIG(80, [])
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'coverageThreshold.global.branches[default]',
+        base: 100,
+        head: 80,
+        rule: 'min',
+      }),
+    ]);
+  });
+
+  it('reads the jest config once per TEST_ENV scope', () => {
+    const findings = snapshotPair(
+      'jest.config.ts',
+      'jest-coverage',
+      JEST_CONFIG(100, []),
+      JEST_CONFIG(80, []),
+      { TEST_ENV: 'server' }
+    );
+    expect(findings[0]?.key).toBe('coverageThreshold.global.branches[server]');
+  });
+});
+
+describe('gate ratchet — set directions', () => {
+  it('fails when the jest coverage exclusion list grows', () => {
+    const findings = snapshotPair(
+      'jest.config.ts',
+      'jest-coverage',
+      JEST_CONFIG(100, []),
+      JEST_CONFIG(100, ['!<rootDir>/src/services/**'])
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'collectCoverageFrom.exclusions[default]',
+        head: '!<rootDir>/src/services/**',
+        rule: 'no-grow',
+        reason: 'exclusion added',
+      }),
+    ]);
+  });
+
+  it('fails when the jscpd ignore list grows', () => {
+    const findings = snapshotPair(
+      '.jscpd.json',
+      'jscpd',
+      JSCPD(75, []),
+      JSCPD(75, ['src/modules/**'])
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({ key: 'ignore', head: 'src/modules/**', rule: 'no-grow' }),
+    ]);
+  });
+
+  it('fails when a whole lighthouse assertion is deleted', () => {
+    const stripped = LHCI(0.85).replace(/^.*resource-summary.*\n/m, '');
+    const findings = snapshotPair('lighthouserc.js', 'lhci-assertions', LHCI(0.85), stripped);
+    expect(findings.map((finding) => finding.reason)).toEqual([
+      'guard removed',
+      'guard removed',
+      'guarded entry removed',
+    ]);
+  });
+
+  it('fails when a tsconfig strictness flag is disabled', () => {
+    const findings = snapshotPair(
+      'tsconfig.json',
+      'tsconfig-strict-flags',
+      TSCONFIG(true),
+      TSCONFIG(false)
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'compilerOptions.enabledStrictFlags',
+        base: 'noUncheckedIndexedAccess',
+        rule: 'no-shrink',
+        reason: 'guarded entry removed',
+      }),
+    ]);
+  });
+
+  it('passes when a tsconfig strictness flag is added', () => {
+    expect(
+      snapshotPair('tsconfig.json', 'tsconfig-strict-flags', TSCONFIG(false), TSCONFIG(true))
+    ).toEqual([]);
+  });
+
+  it('ignores non-strictness compiler options that are turned off', () => {
+    const base = `${JSON.stringify(
+      { compilerOptions: { strict: true, skipLibCheck: true, allowJs: true } },
+      null,
+      2
+    )}\n`;
+    const head = `${JSON.stringify({ compilerOptions: { strict: true } }, null, 2)}\n`;
+    expect(snapshotPair('tsconfig.json', 'tsconfig-strict-flags', base, head)).toEqual([]);
+  });
+
+  it('fails when an entry is removed from the manifest itself', () => {
+    const findings = snapshotPair(
+      'manifest.json',
+      'manifest-self',
+      MANIFEST(['a.json', 'b.json']),
+      MANIFEST(['a.json'])
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'guardedFiles',
+        base: 'b.json::jscpd',
+        rule: 'no-shrink',
+        reason: 'guarded entry removed',
+      }),
+    ]);
+  });
+});
+
+describe('gate ratchet — waiver and reporting', () => {
+  it('treats an unlabelled pull request as not waived', () => {
+    expect(isWaived({ pull_request: { labels: [{ name: 'ci' }] } }, 'gate-relaxation')).toBe(false);
+  });
+
+  it('treats the waiver label as a waiver', () => {
+    expect(
+      isWaived(
+        { pull_request: { labels: [{ name: 'ci' }, { name: 'gate-relaxation' }] } },
+        'gate-relaxation'
+      )
+    ).toBe(true);
+  });
+
+  it('treats a missing event payload as not waived', () => {
+    expect(isWaived({}, 'gate-relaxation')).toBe(false);
+  });
+
+  it('renders every finding as a table row', () => {
+    const table = formatFindingsTable([
+      { file: 'a.json', key: 'k', base: 1, head: 0, rule: 'min', reason: 'threshold weakened' },
+    ]);
+    expect(table).toContain('FILE');
+    expect(table).toContain('a.json');
+    expect(table).toContain('threshold weakened');
+  });
+
+  it('reports nothing for identical snapshots', () => {
+    expect(snapshotPair('.jscpd.json', 'jscpd', JSCPD(75, []), JSCPD(75, []))).toEqual([]);
+  });
+});
+
+describe('gate ratchet — manifest integrity', () => {
+  const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+
+  it('guards every file it names, and every named file exists', () => {
+    for (const entry of manifest.files) {
+      expect(existsSync(path.join(REPO_ROOT, entry.path))).toBe(true);
+      for (const dependency of entry.dependsOn ?? []) {
+        expect(existsSync(path.join(REPO_ROOT, dependency))).toBe(true);
+      }
+    }
+  });
+
+  it('guards itself against entry removal', () => {
+    expect(manifest.files).toContainEqual(
+      expect.objectContaining({
+        path: 'config/gate-thresholds.manifest.json',
+        extract: 'manifest-self',
+      })
+    );
+  });
+
+  it('names every binding gate config the repository enforces', () => {
+    expect(manifest.files.map((entry: { path: string }) => entry.path)).toEqual(
+      expect.arrayContaining([
+        'lighthouse/lighthouserc.mobile.js',
+        'lighthouse/lighthouserc.desktop.js',
+        'stryker.config.mjs',
+        'jest.config.ts',
+        'config/metrics-policy.json',
+        '.jscpd.json',
+        'config/performance-budget.json',
+      ])
+    );
+  });
+});

@@ -200,6 +200,25 @@ The merge job runs `if: ${{ !cancelled() }}` and fails closed if any shard did n
 required check would otherwise count as a pass), so requiring the merge job alone is sufficient — a
 crashed shard turns the gate red rather than bypassing it.
 
+### Relaxing a gate threshold
+
+The `gate ratchet` check compares every binding budget named in
+[`config/gate-thresholds.manifest.json`](config/gate-thresholds.manifest.json) at your PR head
+against the merge base. If a value moved in the weakening direction — a Lighthouse `minScore` or a
+coverage/mutation threshold **lowered**, a metrics/jscpd/bundle ceiling **raised**, a coverage
+exclusion list **grown**, or a guarded entry **deleted** — the job prints a
+`FILE / KEY / BASE / HEAD / RULE / REASON` table and fails.
+
+The first response is always to strengthen the value back. When a relaxation is genuinely the right
+call, make it an explicit, reviewed decision: add the **`gate-relaxation`** label to the PR and state
+the rationale in the PR body. The check then passes, and the same table is written to the job summary
+and a sticky PR comment so the relaxation is visible in review rather than buried in a diff. Do not
+satisfy the check by removing an entry from the manifest — the manifest guards itself.
+
+**Required status check (maintainer action).** Add `gate ratchet / no binding threshold weakened` to
+**Settings → Branches → Branch protection rules**. The job triggers on `labeled`/`unlabeled` in
+addition to the default PR events, so applying the waiver label re-runs it without a manual retry.
+
 ### Pull Request
 
 When you're finished with the changes, create a pull request, also known as a PR.

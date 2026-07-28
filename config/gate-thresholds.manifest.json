@@ -1,0 +1,26 @@
+{
+  "waiverLabel": "gate-relaxation",
+  "files": [
+    {
+      "path": "lighthouse/lighthouserc.mobile.js",
+      "extract": "lhci-assertions",
+      "dependsOn": ["lighthouse/constants.js", "config/performance-budget.json"]
+    },
+    {
+      "path": "lighthouse/lighthouserc.desktop.js",
+      "extract": "lhci-assertions",
+      "dependsOn": ["lighthouse/constants.js", "config/performance-budget.json"]
+    },
+    { "path": "stryker.config.mjs", "extract": "stryker-thresholds" },
+    {
+      "path": "jest.config.ts",
+      "extract": "jest-coverage",
+      "envs": [{ "TEST_ENV": "" }, { "TEST_ENV": "server" }, { "TEST_ENV": "integration" }]
+    },
+    { "path": "config/metrics-policy.json", "extract": "metrics-policy-hard" },
+    { "path": ".jscpd.json", "extract": "jscpd" },
+    { "path": "config/performance-budget.json", "extract": "json-budget-max" },
+    { "path": "tsconfig.json", "extract": "tsconfig-strict-flags" },
+    { "path": "config/gate-thresholds.manifest.json", "extract": "manifest-self" }
+  ]
+}
