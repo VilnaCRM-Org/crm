@@ -623,21 +623,34 @@ describe('gate ratchet — waiver and reporting', () => {
 
   // The workflow only refreshes the sticky PR comment when the run leaves a report file behind.
   // Without one, a green run after a reverted relaxation leaves the old weakened-values table up.
+  // The `git` calls are served by a stub on PATH: the unit suite runs in the dev container, which
+  // ships no git binary, and stubbing keeps the assertion about the report file rather than about
+  // whatever the checkout happens to contain.
   it('writes a report file even when no guarded config changed', () => {
+    const binDir = mkdtempSync(path.join(workspace, 'stub-bin-'));
+    writeFileSync(
+      path.join(binDir, 'git'),
+      ['#!/bin/sh', 'case "$1" in', '  merge-base) echo deadbeefdeadbeef ;;', 'esac', ''].join(
+        '\n'
+      ),
+      { mode: 0o755 }
+    );
     const reportFile = path.join(workspace, `report-${process.hrtime.bigint()}.md`);
+
     execFileSync(process.execPath, [path.join(REPO_ROOT, 'scripts/ci/check-gate-ratchet.mjs')], {
       cwd: REPO_ROOT,
       encoding: 'utf8',
       env: {
         ...process.env,
-        GATE_RATCHET_BASE_SHA: 'HEAD',
-        GATE_RATCHET_HEAD_SHA: 'HEAD',
+        PATH: `${binDir}:${process.env.PATH ?? ''}`,
         GATE_RATCHET_REPORT_FILE: reportFile,
         GITHUB_STEP_SUMMARY: '',
       },
     });
 
-    expect(readFileSync(reportFile, 'utf8')).toContain('no guarded config changed');
+    // The stubbed merge-base sha proves the stub answered, so the assertion cannot pass by
+    // accident on a machine that happens to have git and a clean diff.
+    expect(readFileSync(reportFile, 'utf8')).toContain('no guarded config changed since deadbeef');
   });
 });
 
