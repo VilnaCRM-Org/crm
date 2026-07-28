@@ -89,9 +89,10 @@ const changed = new Set(
 const watched = manifest.files.flatMap((entry) => [entry.path, ...(entry.dependsOn ?? [])]);
 
 if (!watched.some((file) => changed.has(file))) {
-  process.stdout.write(
-    `✅ gate ratchet: no guarded config changed since ${mergeBase.slice(0, 8)}.\n`
-  );
+  // Reported through `report()`, not a bare stdout write: the workflow only updates the sticky
+  // PR comment when this run produces a report file. Exiting quietly would leave an earlier
+  // commit's weakened-values table on the PR after the relaxation was reverted or waived.
+  report(`✅ gate ratchet: no guarded config changed since ${mergeBase.slice(0, 8)}.`);
   process.exit(0);
 }
 

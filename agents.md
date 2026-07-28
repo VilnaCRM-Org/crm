@@ -1261,6 +1261,27 @@ GitHub Actions runs:
 
 See `.github/workflows/` for configuration
 
+#### Gates an agent must not "fix" by editing a threshold
+
+Three checks exist specifically to catch the shortcuts an agent is most likely to take when a
+build goes red. Know them before you touch a config file:
+
+- **`gate ratchet`** (`.github/workflows/gate-ratchet.yml`) — compares every binding budget named
+  in `config/gate-thresholds.manifest.json` (Lighthouse, Stryker, Jest coverage + its exclusion
+  list, metrics policy, jscpd, bundle budgets, `tsconfig` strictness flags, the k6 load budgets,
+  and the manifest itself) at the PR head against the merge base, and fails on any move in the
+  weakening direction. **Never** lower a threshold, grow a coverage-exclusion list, disable a
+  strictness flag, or delete a manifest entry to go green. Strengthen the value instead; if a
+  relaxation is genuinely right, apply the `gate-relaxation` label so it is reviewed — see
+  "Relaxing a gate threshold" in `CONTRIBUTING.md` for the local reproduction commands.
+- **`tsconfig` strictness (issue #166)** — `noUncheckedIndexedAccess` makes every index read
+  `T | undefined`. Narrow it for real (`??`, a guard, `in`, `Map.get` + guard, optional chaining).
+  `@typescript-eslint/no-non-null-assertion` is an error in `src/**` precisely because `!` silences
+  that result instead of handling it; a cast is the same evasion.
+- **dependency-cruiser rule fixtures (issue #181)** — every rule in `.dependency-cruiser.js` must
+  land with a fixture in `scripts/ci/depcruise-rule-fixtures.mjs`; the completeness assertion is
+  bidirectional and has no exemption list, so a new rule cannot ship untested.
+
 ## Security Considerations
 
 ### Environment Variables

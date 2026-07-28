@@ -1,6 +1,8 @@
 import Module, { createRequire } from 'node:module';
-import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+
+import { loadConfigThresholds, loadThresholdFallbacks } from './load-extractors.mjs';
+import { addNumeric, addSet, canonicalJson, emptySnapshot, readJson } from './snapshot.mjs';
 
 const SEVERITY_RANK = { off: 0, warn: 1, error: 2 };
 
@@ -15,28 +17,6 @@ export function installEnvOnlyStubs() {
     if (ENV_ONLY_STUBS.has(request)) return ENV_ONLY_STUBS.get(request);
     return originalLoad.call(this, request, parent, isMain);
   };
-}
-
-function emptySnapshot() {
-  return { numeric: {}, sets: {} };
-}
-
-function addNumeric(snapshot, key, value, direction) {
-  if (typeof value !== 'number' || Number.isNaN(value)) return;
-  snapshot.numeric[key] = { value, direction };
-}
-
-function addSet(snapshot, key, items, rule) {
-  snapshot.sets[key] = { items: [...items].map(String).sort(), rule };
-}
-
-function readJson(absolutePath) {
-  return JSON.parse(readFileSync(absolutePath, 'utf8'));
-}
-
-function canonicalJson(value) {
-  const entries = Object.entries(value ?? {}).sort(([left], [right]) => left.localeCompare(right));
-  return JSON.stringify(Object.fromEntries(entries));
 }
 
 function lhciAssertions(absolutePath) {
@@ -224,4 +204,6 @@ export const EXTRACTORS = {
   'json-budget-max': jsonBudgetMax,
   'tsconfig-strict-flags': tsconfigStrictFlags,
   'manifest-self': manifestSelf,
+  'load-config-thresholds': loadConfigThresholds,
+  'load-threshold-fallbacks': loadThresholdFallbacks,
 };

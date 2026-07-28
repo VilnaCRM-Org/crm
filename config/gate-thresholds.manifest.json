@@ -21,6 +21,8 @@
     { "path": ".jscpd.json", "extract": "jscpd" },
     { "path": "config/performance-budget.json", "extract": "json-budget-max" },
     { "path": "tsconfig.json", "extract": "tsconfig-strict-flags" },
+    { "path": "tests/load/config.json.dist", "extract": "load-config-thresholds" },
+    { "path": "tests/load/utils/thresholds-builder.js", "extract": "load-threshold-fallbacks" },
     { "path": "config/gate-thresholds.manifest.json", "extract": "manifest-self" }
   ]
 }

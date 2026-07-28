@@ -209,11 +209,31 @@ coverage/mutation threshold **lowered**, a metrics/jscpd/bundle ceiling **raised
 exclusion list **grown**, or a guarded entry **deleted** — the job prints a
 `FILE / KEY / BASE / HEAD / RULE / REASON` table and fails.
 
-The first response is always to strengthen the value back. When a relaxation is genuinely the right
-call, make it an explicit, reviewed decision: add the **`gate-relaxation`** label to the PR and state
-the rationale in the PR body. The check then passes, and the same table is written to the job summary
-and a sticky PR comment so the relaxation is visible in review rather than buried in a diff. Do not
-satisfy the check by removing an entry from the manifest — the manifest guards itself.
+The first response is always to strengthen the value back. When a relaxation is genuinely the
+right call, make it an explicit, reviewed decision: add the **`gate-relaxation`** label to the PR
+and state the rationale in the PR body. The check then passes, and the same table is written to the
+job summary and a sticky PR comment so the relaxation is visible in review rather than buried in a
+diff. Do not satisfy the check by removing an entry from the manifest — the manifest guards itself.
+
+**Verification (run locally before pushing).** The check is a plain Node script, so you can
+reproduce exactly what CI will say without opening a PR:
+
+```bash
+# What the gate will report for your branch against main.
+GATE_RATCHET_BASE_SHA=origin/main GATE_RATCHET_HEAD_SHA=HEAD node scripts/ci/check-gate-ratchet.mjs
+echo "exit=$?"   # 0 = held or waived, 1 = weakened, 2 = a guarded config failed to load
+
+# Preview the sticky PR comment body.
+GATE_RATCHET_BASE_SHA=origin/main GATE_RATCHET_HEAD_SHA=HEAD \
+  GATE_RATCHET_REPORT_FILE=gate-ratchet-report.md node scripts/ci/check-gate-ratchet.mjs
+cat gate-ratchet-report.md
+
+# The extractors, directions, and waiver logic are unit-tested.
+docker compose exec -T dev bun x jest tests/unit/tooling/gate-ratchet.test.ts
+```
+
+Exit code `2` means the ratchet could not evaluate a guarded config (an unparseable or newly broken
+file). That is an evaluation failure, not a weakening, and the waiver label does **not** clear it.
 
 **Required status check (maintainer action).** Add `gate ratchet / no binding threshold weakened` to
 **Settings → Branches → Branch protection rules**. The job triggers on `labeled`/`unlabeled` in

@@ -7,7 +7,7 @@ import {
   compareSnapshots,
   isWaived,
   formatFindingsTable,
-} from '../../../scripts/ci/gate-ratchet/compare.mjs';
+} from '@scripts/ci/gate-ratchet/compare.mjs';
 
 const REPO_ROOT = path.resolve(__dirname, '../../..');
 const EXTRACT_CLI = path.join(REPO_ROOT, 'scripts/ci/gate-ratchet/extract-cli.mjs');
@@ -120,6 +120,44 @@ const TSCONFIG = (uncheckedIndexedAccess: boolean): string =>
     2
   )}\n`;
 
+const LHCI_CEILING = (maxNumericValue: string): string => `module.exports = {
+  ci: { assert: { assertions: {
+    'resource-summary:script:size': ['error', { maxNumericValue: ${maxNumericValue} }],
+  } } },
+};
+`;
+
+const LOAD_CONFIG = (threshold: number, scenarios = ['smoke', 'average']): string =>
+  `${JSON.stringify(
+    {
+      endpoints: {
+        homepage: Object.fromEntries(
+          scenarios.map((scenario) => [scenario, { threshold, rps: 5, vus: 5 }])
+        ),
+      },
+    },
+    null,
+    2
+  )}\n`;
+
+const LOAD_BUILDER = (errorRate: number, checkPassRate: number): string =>
+  `export default class ThresholdsBuilder {
+  constructor() {
+    this.thresholds = {};
+  }
+
+  addThreshold(testType) {
+    this.thresholds[\`checks{scenario:\${testType}}\`] = ['rate>=${checkPassRate}'];
+    this.thresholds[\`http_req_failed{scenario:\${testType}}\`] = ['rate<=${errorRate}'];
+    return this;
+  }
+
+  build() {
+    return this.thresholds;
+  }
+}
+`;
+
 const MANIFEST = (paths: string[]): string =>
   `${JSON.stringify(
     { waiverLabel: 'gate-relaxation', files: paths.map((p) => ({ path: p, extract: 'jscpd' })) },
@@ -228,6 +266,56 @@ describe('gate ratchet — numeric directions', () => {
     ]);
   });
 
+  it('fails when a ceiling is raised to Infinity, which JSON would serialize as null', () => {
+    const findings = snapshotPair(
+      'lighthouserc.js',
+      'lhci-assertions',
+      LHCI_CEILING('265000'),
+      LHCI_CEILING('Number.POSITIVE_INFINITY')
+    );
+    expect(findings).toEqual([
+      expect.objectContaining({
+        key: 'resource-summary:script:size.maxNumericValue',
+        base: 265000,
+        head: Number.MAX_VALUE,
+        rule: 'max',
+        reason: 'threshold weakened',
+      }),
+    ]);
+  });
+
+  it('fails when a k6 p99 latency ceiling is raised', () => {
+    const findings = snapshotPair(
+      'tests/load/config.json.dist',
+      'load-config-thresholds',
+      LOAD_CONFIG(5000),
+      LOAD_CONFIG(50000)
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        key: 'endpoints.homepage.smoke.threshold',
+        base: 5000,
+        head: 50000,
+        rule: 'max',
+      })
+    );
+  });
+
+  it('fails when a k6 fallback rate is weakened in either direction', () => {
+    const findings = snapshotPair(
+      'tests/load/utils/thresholds-builder.js',
+      'load-threshold-fallbacks',
+      LOAD_BUILDER(0.02, 0.95),
+      LOAD_BUILDER(0.5, 0.5)
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({ key: 'smoke.errorRate', base: 0.02, head: 0.5, rule: 'max' })
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({ key: 'smoke.checkPassRate', base: 0.95, head: 0.5, rule: 'min' })
+    );
+  });
+
   it('reads the jest config once per TEST_ENV scope', () => {
     const findings = snapshotPair(
       'jest.config.ts',
@@ -256,6 +344,22 @@ describe('gate ratchet — set directions', () => {
         reason: 'exclusion added',
       }),
     ]);
+  });
+
+  it('fails when a whole k6 load scenario is deleted', () => {
+    const findings = snapshotPair(
+      'tests/load/config.json.dist',
+      'load-config-thresholds',
+      LOAD_CONFIG(5000),
+      LOAD_CONFIG(5000, ['smoke'])
+    );
+    expect(findings).toContainEqual(
+      expect.objectContaining({
+        key: 'thresholdKeys',
+        subject: 'endpoints.homepage.average.threshold',
+        rule: 'no-shrink',
+      })
+    );
   });
 
   it('fails when the jscpd ignore list grows', () => {
@@ -516,6 +620,25 @@ describe('gate ratchet — waiver and reporting', () => {
   it('reports nothing for identical snapshots', () => {
     expect(snapshotPair('.jscpd.json', 'jscpd', JSCPD(75, []), JSCPD(75, []))).toEqual([]);
   });
+
+  // The workflow only refreshes the sticky PR comment when the run leaves a report file behind.
+  // Without one, a green run after a reverted relaxation leaves the old weakened-values table up.
+  it('writes a report file even when no guarded config changed', () => {
+    const reportFile = path.join(workspace, `report-${process.hrtime.bigint()}.md`);
+    execFileSync(process.execPath, [path.join(REPO_ROOT, 'scripts/ci/check-gate-ratchet.mjs')], {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        GATE_RATCHET_BASE_SHA: 'HEAD',
+        GATE_RATCHET_HEAD_SHA: 'HEAD',
+        GATE_RATCHET_REPORT_FILE: reportFile,
+        GITHUB_STEP_SUMMARY: '',
+      },
+    });
+
+    expect(readFileSync(reportFile, 'utf8')).toContain('no guarded config changed');
+  });
 });
 
 describe('gate ratchet — manifest integrity', () => {
@@ -549,7 +672,25 @@ describe('gate ratchet — manifest integrity', () => {
         'config/metrics-policy.json',
         '.jscpd.json',
         'config/performance-budget.json',
+        'tests/load/config.json.dist',
+        'tests/load/utils/thresholds-builder.js',
       ])
+    );
+  });
+
+  it('registers an implemented extractor for every manifest entry', () => {
+    const registered = execFileSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        "import {EXTRACTORS} from './scripts/ci/gate-ratchet/extractors.mjs';" +
+          'process.stdout.write(JSON.stringify(Object.keys(EXTRACTORS)));',
+      ],
+      { cwd: REPO_ROOT, encoding: 'utf8' }
+    );
+    expect(JSON.parse(registered)).toEqual(
+      expect.arrayContaining(manifest.files.map((entry: { extract: string }) => entry.extract))
     );
   });
 });

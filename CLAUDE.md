@@ -375,7 +375,8 @@ that would go red could historically edit the threshold in the same diff and mer
 not hypothetical: the mobile Lighthouse budget was quietly lowered three times
 (`ae179ad` 0.90→0.85, `908566d` 0.85→0.84, `d30f418` 0.85→0.84) inside PRs about other things.
 
-The `gate ratchet` check ([`.github/workflows/gate-ratchet.yml`](.github/workflows/gate-ratchet.yml))
+The `gate ratchet` check
+([`.github/workflows/gate-ratchet.yml`](.github/workflows/gate-ratchet.yml))
 compares each guarded value at the PR head against the merge base **and** the base tip, keeping only
 findings present against both, so a PR is never blamed for a relaxation that already landed on
 `main`. The guarded set is the authoritative
@@ -384,7 +385,9 @@ files, `stryker.config.mjs`, `jest.config.ts` (thresholds **and** the `collectCo
 exclusion list, which must not grow), `config/metrics-policy.json`,
 `config/performance-budget.json`, `.jscpd.json`, `tsconfig.json` (the set of enabled strictness
 flags, which must not shrink — this is what stops a later PR silently deleting the issue-#166
-flags), and the manifest itself.
+flags), the k6 load budgets (`tests/load/config.json.dist` p99 latency ceilings **and** the
+fallback error-rate / check-pass-rate tables in `tests/load/utils/thresholds-builder.js`, which are
+the effective budget for every endpoint that does not override them), and the manifest itself.
 
 Direction is derived **per key**, never per file — `_max` keys are ceilings (raising weakens),
 `_min` keys are floors (lowering weakens). A per-file direction would score a drop of
