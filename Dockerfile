@@ -37,10 +37,26 @@ FROM base AS build
 
 # Ensure Bun binaries are in PATH for this stage
 ENV PATH="/root/.bun/bin:${PATH}"
-ARG REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=""
-ENV REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=${REACT_APP_LHCI_PRELOADED_AUTH_TOKEN}
 ARG REACT_APP_RELEASE=""
 ENV REACT_APP_RELEASE=${REACT_APP_RELEASE}
+
+COPY . .
+RUN bun x rsbuild build && \
+    cp -a dist dist-production && \
+    find dist-production -name '*.map' -type f -delete
+
+
+# -------- Test-harness Build Stage --------
+# Playwright, the visual suite and Lighthouse CI seed an authenticated session against a
+# production build, so this is the one build allowed to compile in the preloaded-auth seed
+# (issue #158). It is a separate stage from `build` so the deployable `production` target
+# cannot be handed the seam at all, by ARG or otherwise.
+FROM base AS build-test-harness
+
+ENV PATH="/root/.bun/bin:${PATH}"
+ENV ENABLE_PRELOADED_AUTH_TOKEN_SEED=true
+ARG REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=""
+ENV REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=${REACT_APP_LHCI_PRELOADED_AUTH_TOKEN}
 
 COPY . .
 RUN bun x rsbuild build && \
@@ -92,8 +108,8 @@ ENV RCA_BIN=/usr/local/bin/rust-code-analysis-cli
 WORKDIR /app
 
 
-# -------- Production Image --------
-FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21  AS production
+# -------- Static Server Stage --------
+FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21  AS serve-base
 
 ARG CURL_VERSION=8.14.1-r2
 
@@ -104,9 +120,21 @@ RUN apk add --no-cache curl=${CURL_VERSION} && \
     npm install -g serve@14.2.0 && \
     mkdir -p /app && chown -R node:node /app
 COPY --chown=node:node serve.json ./serve.json
-COPY --from=build --chown=node:node /app/dist-production ./dist
-USER node
 
 EXPOSE 3001
 
 CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]
+
+
+# -------- Production Image --------
+FROM serve-base AS production
+
+COPY --from=build --chown=node:node /app/dist-production ./dist
+USER node
+
+
+# -------- Test-harness Image --------
+FROM serve-base AS test-harness
+
+COPY --from=build-test-harness --chown=node:node /app/dist-production ./dist
+USER node

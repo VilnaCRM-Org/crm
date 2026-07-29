@@ -130,6 +130,7 @@ Linting & Formatting
   make lint-tsc: runs static type checking with TypeScript
   make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
   make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
+  make check-auth-seed-gate: scans the built bundles so the test-only preloaded-auth seed cannot ship
 ```
 
 ### Dependency rules

@@ -109,6 +109,25 @@ or a per-image `docker-perf-exception:<name>` PR label that waives only that
 image. The decision logic is covered by `tests/bats/docker_perf.bats`
 (run with `make test-bats`).
 
+### The preloaded-auth seed gate
+
+The Playwright, visual, and Lighthouse suites reach the protected `/` route by preloading an auth
+token (`window.__PRELOADED_AUTH_TOKEN__` or `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN`). Because
+`isAuthenticated` is `!!token`, that seam is an auth bypass if it ever reaches a deployable build,
+so it is compiled out of every build that did not explicitly opt in — see "Preloaded-auth-token seed
+gate" in [`CLAUDE.md`](CLAUDE.md) and [`src/config/env/README.md`](src/config/env/README.md) for the
+three invariants that keep the guard foldable.
+
+Run it locally with `make check-auth-seed-gate`. It builds `--target production`, scans the image's
+`dist` for the seam, and then re-scans a deliberately opted-in build that **must** still contain it,
+so the check cannot pass against the wrong artifact. In CI it is the `preloaded-auth seed gate` job
+of the `security testing` workflow, and it is the only job that exercises the deployable
+`--target production` image — every other prod-side suite builds the ephemeral `test-harness` target.
+
+Satisfy it by keeping the seam gated. Never relax the scan, narrow its file set, move a seed read
+out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere but the Dockerfile's
+`test-harness` stage.
+
 ### CI speed and the mutation-testing gate
 
 GitHub runs the pull-request workflows in parallel, so PR feedback is gated by the slowest single
@@ -195,6 +214,7 @@ checks:
 - `mutation testing / merge and enforce gate`
 - `performance testing / lighthouse desktop`
 - `performance testing / lighthouse mobile`
+- `security testing / preloaded-auth seed gate`
 
 The merge job runs `if: ${{ !cancelled() }}` and fails closed if any shard did not succeed (a skipped
 required check would otherwise count as a pass), so requiring the merge job alone is sufficient — a

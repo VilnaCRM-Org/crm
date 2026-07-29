@@ -19,27 +19,11 @@ describe('rawEnv', () => {
     });
   });
 
-  describe('lhciPreloadedAuthToken', () => {
-    it('trims the configured token', () => {
-      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = ' token ';
-      expect(rawEnv.lhciPreloadedAuthToken()).toBe('token');
-    });
-
-    it('is undefined for a blank or missing token', () => {
-      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = '   ';
-      expect(rawEnv.lhciPreloadedAuthToken()).toBeUndefined();
-
-      delete process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
-      expect(rawEnv.lhciPreloadedAuthToken()).toBeUndefined();
-    });
-  });
-
   describe('snapshot', () => {
     it('shapes every configuration variable into a single object', () => {
       process.env.NODE_ENV = 'test';
       process.env.REACT_APP_GRAPHQL_URL = 'http://localhost:4000/graphql';
       process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080';
-      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = 'seed';
       process.env.REACT_APP_MAIN_LANGUAGE = 'uk';
       process.env.REACT_APP_FALLBACK_LANGUAGE = 'en';
       process.env.REACT_APP_RELEASE = 'v1.2.3';
@@ -50,7 +34,6 @@ describe('rawEnv', () => {
         nodeEnv: 'test',
         graphqlUrl: 'http://localhost:4000/graphql',
         mockoonUrl: 'http://localhost:8080',
-        lhciPreloadedAuthToken: 'seed',
         mainLanguage: 'uk',
         fallbackLanguage: 'en',
         release: 'v1.2.3',
