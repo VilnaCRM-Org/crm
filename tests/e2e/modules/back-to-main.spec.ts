@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@tests/e2e/utils/fixtures';
 
 import { seedPreloadedAuthToken } from '../../utils/seed-preloaded-auth-token';
 import viewports from '../constants/viewports';
