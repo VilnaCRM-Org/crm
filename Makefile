@@ -326,13 +326,13 @@ build-analyze: ## Build production bundle with the analyzer; writes dist/bundle-
 perf-budget: ## Build the production bundle and enforce the gzip byte budgets in config/performance-budget.json
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev sh -c '$(RSBUILD_BUILD) && node scripts/bundle-size-report.mjs --dir dist'
 
-check-auth-seed-gate: create-network ## Assert the preloaded-auth-token seed is stripped from the deployable image and still detectable in an opted-in build
+check-auth-seed-gate: create-network ## Scan built bundles so the preloaded-auth seed cannot ship
 	@echo "🔒 [1/3] the artifact that actually ships: docker --target production"
 	docker build -t $(AUTH_SEED_PROBE_IMAGE) -f Dockerfile --target production .
-	@cid=$$(docker create $(AUTH_SEED_PROBE_IMAGE)) && \
+	@cid=$$(docker create $(AUTH_SEED_PROBE_IMAGE)); \
+		trap 'docker rm "$$cid" >/dev/null 2>&1 || true' EXIT INT TERM; \
 		rm -rf $(AUTH_SEED_PROBE_DIR) && \
-		docker cp $$cid:/app/dist $(AUTH_SEED_PROBE_DIR) && \
-		docker rm $$cid
+		docker cp "$$cid":/app/dist $(AUTH_SEED_PROBE_DIR)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev node $(AUTH_SEED_GATE_SCRIPT) --dir $(AUTH_SEED_PROBE_DIR) --expect absent --token $(AUTH_SEED_PROBE_TOKEN)
 	@echo "🔒 [2/3] a source build with the token set but no opt-in must still strip it"
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(AUTH_SEED_PROBE_TOKEN) dev sh -c '$(RSBUILD_BUILD) && node $(AUTH_SEED_GATE_SCRIPT) --dir dist --expect absent --token $(AUTH_SEED_PROBE_TOKEN)'

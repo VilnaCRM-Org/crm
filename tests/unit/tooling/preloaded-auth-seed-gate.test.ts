@@ -41,7 +41,10 @@ describe('preloaded-auth-token seed gate (issue #158)', () => {
     expect(seam.indexOf(WINDOW_KEY)).toBeGreaterThan(optInIndex);
     expect(seam.indexOf(ENV_TOKEN_VAR)).toBeGreaterThan(optInIndex);
     // Anchored to line starts so a mention inside the file's own comments cannot pad the count.
+    // `#name()` carries no accessibility modifier, so it would slip past the count while still
+    // being a helper the bundler leaves in place — ban it outright.
     expect(seam.match(/^\s*(?:public|private|protected)\s/gm)).toHaveLength(1);
+    expect(seam).not.toMatch(/^\s*#/m);
   });
 
   it('keeps the seed identifiers out of every other source file', () => {

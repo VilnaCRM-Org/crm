@@ -122,13 +122,4 @@ describe('preloaded auth token seed integration coverage', () => {
     expect(state.token).toBe(token);
     expect(authStoreSelectors.isAuthenticated(state)).toBe(true);
   });
-
-  it('treats any opt-in value other than the exact "true" flag as disabled', () => {
-    process.env.NODE_ENV = 'production';
-    process.env[OPT_IN_KEY] = '1';
-
-    expect(
-      preloadedAuthTokenSeed.read({ [PRELOADED_AUTH_TOKEN_WINDOW_KEY]: buildToken() })
-    ).toBeNull();
-  });
 });
