@@ -50,6 +50,16 @@ describe('preloaded-auth-token seed gate (issue #158)', () => {
     expect(sourceFilesMentioning(OPT_IN_FLAG)).toEqual([SEAM]);
   });
 
+  it('keeps the token key declared so the bundler always has a value to inline', () => {
+    // Deleting the key would leave `process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` unreplaced,
+    // which is a runtime `process` read in a dev build. check-env-sync only enforces parity
+    // between the two files, so neither gate would notice both losing the line together.
+    const declaration = new RegExp(`^${ENV_TOKEN_VAR}=`, 'm');
+
+    expect(readFile('.env')).toMatch(declaration);
+    expect(readFile('.env.example')).toMatch(declaration);
+  });
+
   it('defines the opt-in flag for the bundler so the guard folds instead of throwing', () => {
     const rsbuildConfig = readFile('rsbuild.config.ts');
     const defineIndex = rsbuildConfig.indexOf(`'process.env.${OPT_IN_FLAG}'`);

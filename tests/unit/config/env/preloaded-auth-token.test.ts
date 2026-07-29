@@ -69,7 +69,6 @@ describe('preloadedAuthTokenSeed', () => {
 
       expect(preloadedAuthTokenSeed.read({ [PRELOADED_AUTH_TOKEN_WINDOW_KEY]: '   ' })).toBeNull();
     });
-
   });
 
   describe('in a production build', () => {

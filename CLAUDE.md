@@ -29,7 +29,7 @@ The project uses Docker for all development and testing. Commands are managed vi
 
 ```bash
 make start          # Start dev server (port 3000)
-make start-prod     # Start production build (port 3001)
+make start-prod     # Start the prod-parity stack (port 3001; test-harness image, see #158)
 make sh             # Open shell in dev container
 ```
 
@@ -759,8 +759,10 @@ Two checks enforce this:
 - `make check-auth-seed-gate` (the `preloaded-auth seed gate` job of the `security testing`
   workflow) proves them against the **emitted bundle**, not config source text. It scans the
   `--target production` image itself, then a deliberately opted-in build that must still contain
-  the seam, so the scan cannot pass vacuously against the wrong artifact. It is also the only CI
-  job that builds the deployable image — every other prod-side suite builds `test-harness`.
+  the seam, so the scan cannot pass vacuously against the wrong artifact. It is also the only
+  unconditional CI job that builds the deployable image: every prod-side suite builds
+  `test-harness`, and `dockerfile performance` only builds `production` when the `Dockerfile`
+  itself changes.
 
 Add `security testing / preloaded-auth seed gate` to the branch-protection required checks; until
 then the gate is advisory and a PR that trips it stays mergeable.
