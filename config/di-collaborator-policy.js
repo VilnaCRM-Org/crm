@@ -53,6 +53,15 @@ const LOGIC_SOURCE_PATHS = [
  */
 const EXEMPT_PATTERNS = [
   {
+    id: 'react-components',
+    reason:
+      'React components are `.tsx` and belong to the companion component gate (issue #128). ' +
+      "ESLint's `files` globs are `.ts`-only, so dependency-cruiser needs this explicitly or a " +
+      '`.tsx` placed in a gated directory would be flagged by both rules.',
+    globs: ['src/**/*.tsx'],
+    paths: ['[.]tsx$'],
+  },
+  {
     id: 'tests-and-stories',
     reason: 'Tests and stories are consumers, not collaborators — they may construct anything.',
     globs: ['**/*.test.*', '**/*.spec.*', '**/*.stories.*', '**/*.d.ts'],
@@ -307,20 +316,24 @@ const ALLOWED_TARGETS = [
 ];
 
 /**
- * Third-party policy — position (A) with a minimal explicit allowlist.
+ * Third-party policy — position (A) with a minimal explicit ALLOWLIST.
  *
  * Behavioral libraries are wrapped behind an `@injectable()` adapter plus a token
  * (Apollo → `ApolloLinkFactory` + `AUTH_TOKENS.ApolloClient`; Sentry/web-vitals → the
  * observability boundary; zod → the `response-schemas` contract modules). Only the DI
- * mechanism and pure leaf utilities are consumed directly.
+ * mechanism and pure leaf utilities may be consumed directly.
  *
- * `import type` from any of these stays allowed — the gate matches value imports only.
+ * This is deliberately an allowlist, not a denylist of known-behavioral packages: a denylist
+ * only ever forbids the libraries someone thought to name, so the next behavioral dependency
+ * would slip in unchallenged. Adding a library here is a reviewable decision.
+ *
+ * `import type` from any library stays allowed — the gate matches value imports only.
  */
-const RESTRICTED_LIBRARY_SPECIFIER = '^(?:zod|@apollo/client|@sentry/[^/]+|web-vitals)(?:/.*)?$';
-
 const ALLOWED_LIBRARIES = ['tsyringe', 'reflect-metadata', 'uuid'];
 
-/** Files that ARE the sanctioned adapter over a restricted library. */
+const ALLOWED_LIBRARY_SPECIFIER = `^(?:${ALLOWED_LIBRARIES.join('|')})(?:/.*)?$`;
+
+/** Files that ARE the sanctioned adapter over a behavioral library. */
 const RESTRICTED_LIBRARY_ADAPTERS = [
   {
     path: 'src/services/observability/apollo-link-factory.ts',
@@ -329,6 +342,31 @@ const RESTRICTED_LIBRARY_ADAPTERS = [
 ];
 
 const PROJECT_SPECIFIER = '^(?:@/|@auth(?:$|/)|[.][.]?/)';
+
+/**
+ * An `ImportDeclaration` creates a RUNTIME edge only when it binds a value: a default or
+ * namespace binding, a non-`type` named specifier, or no specifiers at all (a side-effect
+ * import). `import type … from` and `import { type A, type B } from` are erased by the
+ * compiler, so they are not collaborator edges and must not be flagged — that keeps the
+ * ESLint layer agreeing with dependency-cruiser's `type-only` dependency classification.
+ */
+const RUNTIME_IMPORT_SHAPES = [
+  ':has(ImportDefaultSpecifier)',
+  ':has(ImportNamespaceSpecifier)',
+  ":has(ImportSpecifier[importKind!='type'])",
+  ':not(:has(ImportSpecifier))',
+];
+
+const runtimeImportSelector = () => `:matches(${RUNTIME_IMPORT_SHAPES.join(', ')})`;
+
+/**
+ * An esquery attribute regex is delimited by `/.../`, so a literal `/` inside the pattern would
+ * terminate it early. Encode every slash as the `/` escape rather than `\/`: esquery's
+ * handling of a backslash-escaped delimiter is not contractual (eslint/eslint#16555,
+ * estools/esquery#68), and `/` also avoids CodeQL's incomplete-string-escaping finding
+ * because it introduces no backslash that would itself need escaping.
+ */
+const esquerySource = (source) => source.replace(/\//g, '\\u002F');
 
 const exemptGlobs = () => [
   ...EXEMPT_PATTERNS.flatMap((pattern) => pattern.globs),
@@ -346,13 +384,43 @@ const allowedTargetPaths = () =>
 const allowedTargetSpecifier = () =>
   ALLOWED_TARGETS.map((target) => `(?:${target.specifier})`).join('|');
 
-const restrictedLibraryExemptGlobs = () => [
-  ...exemptGlobs(),
-  ...RESTRICTED_LIBRARY_ADAPTERS.map((adapter) => adapter.path),
-];
+/**
+ * The `no-restricted-syntax` entries the ESLint gate installs. Built here rather than in
+ * `eslint.config.mjs` so `tests/unit/tooling/di-collaborator-gate.test.ts` can feed the EXACT
+ * selector strings ESLint consumes through a real `Linter` — a selector that stops parsing or
+ * stops matching then fails the test suite instead of only surfacing in CI.
+ */
+const collaboratorSelectors = () => {
+  const runtimeImport = `ImportDeclaration[importKind!='type']${runtimeImportSelector()}`;
+  const project = esquerySource(PROJECT_SPECIFIER);
+
+  return [
+    {
+      selector:
+        `${runtimeImport}[source.value=/${project}/]` +
+        `:not([source.value=/${esquerySource(allowedTargetSpecifier())}/])`,
+      message:
+        'Value-importing a project module inside a logic class bypasses DI — inject the ' +
+        'collaborator with @inject(TOKENS.X) from its module composition root, or use ' +
+        '`import type` when the import is only an annotation (issue #130).',
+    },
+    {
+      selector:
+        `${runtimeImport}:not([source.value=/${project}/])` +
+        `:not([source.value=/${esquerySource(ALLOWED_LIBRARY_SPECIFIER)}/])`,
+      message:
+        'Value-importing a third-party library inside a logic class bypasses DI — only ' +
+        `${ALLOWED_LIBRARIES.join(', ')} may be consumed directly. Wrap the library behind an ` +
+        '@injectable() adapter plus a token (Apollo via ApolloLinkFactory / ' +
+        'AUTH_TOKENS.ApolloClient, Sentry and web-vitals via the observability boundary, zod ' +
+        'schemas via a response-schemas contract module), or use `import type` (issue #130).',
+    },
+  ];
+};
 
 module.exports = {
   ALLOWED_LIBRARIES,
+  ALLOWED_LIBRARY_SPECIFIER,
   ALLOWED_TARGETS,
   EXEMPT_PATTERNS,
   EXEMPT_RENDER_PATH_FILES,
@@ -360,11 +428,13 @@ module.exports = {
   LOGIC_SOURCE_PATHS,
   PROJECT_SPECIFIER,
   RESTRICTED_LIBRARY_ADAPTERS,
-  RESTRICTED_LIBRARY_SPECIFIER,
+  RUNTIME_IMPORT_SHAPES,
   allowedTargetPaths,
   allowedTargetSpecifier,
+  collaboratorSelectors,
+  esquerySource,
   exemptGlobs,
   exemptPaths,
-  restrictedLibraryExemptGlobs,
+  runtimeImportSelector,
   toExactPathRegex,
 };

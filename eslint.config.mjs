@@ -169,30 +169,9 @@ const noProcessEnvSelectors = [
 // Scope, carve-outs, and allowlists live in `config/di-collaborator-policy.js` so this gate and
 // the dependency-cruiser rule `injectable-classes-no-value-imports` can never drift apart.
 // Consumer-side `.tsx` components are governed by the disjoint issue #128 rule, not this one.
-const esquerySource = (source) => source.replace(/\//g, '\\/');
-
-const noUninjectedCollaboratorSelectors = [
-  {
-    selector:
-      "ImportDeclaration[importKind!='type']" +
-      `[source.value=/${esquerySource(diCollaboratorPolicy.PROJECT_SPECIFIER)}/]` +
-      `:not([source.value=/${esquerySource(diCollaboratorPolicy.allowedTargetSpecifier())}/])`,
-    message:
-      'Value-importing a project module inside a logic class bypasses DI — inject the ' +
-      'collaborator with @inject(TOKENS.X) from its module composition root, or use ' +
-      '`import type` when the import is only an annotation (issue #130).',
-  },
-  {
-    selector:
-      "ImportDeclaration[importKind!='type']" +
-      `[source.value=/${esquerySource(diCollaboratorPolicy.RESTRICTED_LIBRARY_SPECIFIER)}/]`,
-    message:
-      'Value-importing a behavioral third-party library inside a logic class bypasses DI — ' +
-      'consume it through its injectable adapter and token (Apollo via ApolloLinkFactory / ' +
-      'AUTH_TOKENS.ApolloClient, Sentry and web-vitals via the observability boundary, zod ' +
-      'schemas via a response-schemas contract module) (issue #130).',
-  },
-];
+// The selectors themselves are built in the policy module so the gate test can feed the exact
+// strings ESLint consumes through a real Linter.
+const noUninjectedCollaboratorSelectors = diCollaboratorPolicy.collaboratorSelectors();
 
 const nonReactSourceGlobs = ['src/**/*.ts'];
 const nonReactSourceIgnores = [

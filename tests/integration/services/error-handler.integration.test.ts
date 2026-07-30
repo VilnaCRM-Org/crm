@@ -91,7 +91,7 @@ describe('ErrorHandler Coverage Tests', () => {
     expect(logger.error).toHaveBeenCalledTimes(3);
   });
 
-  it('should safely no-op when no logger is configured', () => {
+  it('should not throw and should still capture through observability without a logger', () => {
     const error = new Error('No console available');
 
     expect(() => errorHandler.handle(error)).not.toThrow();

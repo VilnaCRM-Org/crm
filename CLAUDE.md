@@ -538,18 +538,21 @@ allowed carve-outs.
 `@injectable()` adapter and a token rather than called from a feature class: Apollo through
 `ApolloLinkFactory` and `AUTH_TOKENS.ApolloClient`; Sentry and `web-vitals` through the
 observability boundary (issue #115); zod schemas declared in a `response-schemas` contract module
-and passed to collaborators **as data**. The explicit allowlist is minimal — the DI mechanism
-(`tsyringe`, `reflect-metadata`) and pure leaf utilities (`uuid`). `import type` from a restricted
-library stays allowed.
+and passed to collaborators **as data**. This is enforced as an **allowlist**, not a denylist of
+known-behavioral packages: only `tsyringe`, `reflect-metadata`, and `uuid` may be value-imported
+inside a logic class, so a future behavioral dependency cannot slip in unchallenged — adding one
+is a reviewable policy edit. `import type` from any library stays allowed, as do all libraries in
+components and hooks, which this scope excludes.
 
 **Base-class tradeoff.** `extends X` is the one place IoC is bypassed, so a base class must stay a
 thin template (as `base-api.ts` is — it only forwards an injected `apiErrorFactory`). Prefer
 **composition over inheritance** for behavior; a deep behavioral base class defeats the rule's
 intent and is a review-gate concern the gate cannot see.
 
-**Enforcement — two layers, one policy.** [`config/di-collaborator-policy.js`](config/di-collaborator-policy.js)
-is the single source of truth for the scope, the carve-outs, and the allowlist. Both layers read
-it, so they cannot drift:
+**Enforcement — two layers, one policy.** The single source of truth for the scope, the
+carve-outs, and the allowlists is
+[`config/di-collaborator-policy.js`](config/di-collaborator-policy.js). Both layers read it, so
+they cannot drift:
 
 | Layer              | Where                                         | Sees                     |
 | ------------------ | --------------------------------------------- | ------------------------ |
@@ -558,20 +561,34 @@ it, so they cannot drift:
 
 Both run under `make lint` (`lint-eslint` and `lint-deps`), which the `static testing` workflow
 executes, and both are in `CI_LINT_TARGETS` for the parallel lint runner; `lint-deps` additionally
-runs in the standalone `dependency-cruiser.yml` workflow.
+runs in the standalone `dependency-cruiser.yml` workflow. The **project-module** ban is enforced
+by both layers; the **third-party allowlist** is ESLint-only, because the dependency-cruiser rule
+scopes its `to` clause to `^src/`.
 [`tests/unit/tooling/di-collaborator-gate.test.ts`](tests/unit/tooling/di-collaborator-gate.test.ts)
 fails the build when a policy entry goes stale, when the two layers disagree, when a carve-out
 starts hiding an `@injectable()` class, or when an allowlisted barrel starts re-exporting one.
 
 **Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`, and
-`src/modules/*/features/*/{repositories,stores,utils}/**`. Exempt: React components and hooks
-(`.tsx`, `use-*.ts`), type-only files, composition roots (`di.ts` — they must value-import every
-concrete class to register it), token modules, index barrels, and the **container-free
-render-path singletons** (`auth-var`, `reactive-var`, `auth-store-selectors`, `response-schemas`,
-the observability core/sentry/web-vitals leaves, `url-builder`, the auth lazy loaders). Those stay
-off the container so the auth page paints without tsyringe — **never** eager-import
+`src/modules/*/features/*/{repositories,stores,utils}/**`.
+
+Two different things are outside the gate, and the distinction matters when you add a file:
+
+- **Never in scope** (no policy entry needed): React components (`.tsx`) and hooks
+  (`use-*.ts`, e.g. `use-auth-token`), type-only files, and anything under a feature's
+  `components/` folder — which is why the form-section `validations/*` singletons need no
+  carve-out despite being container-free.
+- **In scope but exempted by explicit path** in `EXEMPT_RENDER_PATH_FILES`: composition roots
+  (`di.ts` — they must value-import every concrete class to register it), token modules, index
+  barrels, and the **container-free render-path singletons** — `auth-var`, `reactive-var`,
+  `reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`,
+  `lazy-module-loader`, `load-registration-notification`, `registration-handlers-factory`,
+  `auth-error-reporter`, `url-builder`, and the observability core / correlation-id / sentry /
+  pii-scrubber / web-vitals leaves.
+
+Those stay off the container so the auth page paints without tsyringe — **never** eager-import
 `dependency-injection-config.ts` into the paint path, and never convert one of them into a
-container-resolved class.
+container-resolved class. Adding a new container-free render-path singleton in a gated directory
+means adding it to the policy file.
 
 **Companion gate:** component-side (`.tsx`) consumption is issue #128
 (`components-no-direct-injectable-import`). The two scopes are disjoint (`.ts` vs `.tsx`), so no

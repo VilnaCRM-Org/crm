@@ -725,9 +725,9 @@ literal's methods or a misplaced helper) and stays a review-gate concern.
 Inside a class in a logic directory (`src/services/**`, `src/utils/**`,
 `src/modules/*/store/**`, `src/modules/*/features/*/{repositories,stores,utils}/**`), the only
 behavioral collaborators a method may invoke are those received through DI. Never
-`import SomeService from '…'` and call it — add a token to the owning area's `tokens.ts`, register
-it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If the import is only an
-annotation, make it `import type` (issue #88).
+`import SomeService from '…'` and call it — add a token to the owning area's `tokens.ts`,
+register it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If the import is
+only an annotation, make it `import type` (issue #88).
 
 Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
 `reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
@@ -735,15 +735,21 @@ Allowed value imports: `import type` (always), the base class you `extend`, `tsy
 `error-codes`), runtime data contracts (`response-schemas`, `*-mutation`), the module/feature
 public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
 
-Third-party policy is **(A) adapter + token**: Apollo through `ApolloLinkFactory` /
-`AUTH_TOKENS.ApolloClient`, Sentry and `web-vitals` through the observability boundary, zod
-schemas declared in a `response-schemas` contract module and passed to collaborators as data.
+Third-party policy is **(A) adapter + token**, enforced as an allowlist: only `tsyringe`,
+`reflect-metadata`, and `uuid` may be value-imported inside a logic class. Everything else goes
+behind an adapter — Apollo through `ApolloLinkFactory` / `AUTH_TOKENS.ApolloClient`, Sentry and
+`web-vitals` through the observability boundary, zod schemas declared in a `response-schemas`
+contract module and passed to collaborators as data.
 
 Never push the DI container into the auth paint path: do not eager-import
-`dependency-injection-config.ts`, and do not convert a container-free render-path singleton
-(`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`, `response-schemas`, the
-observability core/sentry/web-vitals leaves, `url-builder`) into a container-resolved class —
-they are exempt by explicit path in `config/di-collaborator-policy.js`.
+`dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
+container-resolved class. Those inside a gated directory (`auth-var`, `reactive-var`,
+`reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`, the
+auth lazy loaders, `auth-error-reporter`, `url-builder`, and the observability
+core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by explicit path in
+`EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token` and the form-section `validations/*`
+singletons are never in scope at all — hooks are `use-*.ts` and `validations/` lives under
+`components/` — so they need no policy entry.
 
 Enforced by two layers reading that one policy file: an ESLint `no-restricted-syntax` selector and
 the dependency-cruiser rule `injectable-classes-no-value-imports`, both under `make lint`, plus

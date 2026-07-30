@@ -23,11 +23,13 @@ type DiCollaboratorPolicy = {
   EXEMPT_RENDER_PATH_FILES: ExemptFile[];
   LOGIC_SOURCE_GLOBS: string[];
   LOGIC_SOURCE_PATHS: string[];
+  ALLOWED_LIBRARY_SPECIFIER: string;
   PROJECT_SPECIFIER: string;
   RESTRICTED_LIBRARY_ADAPTERS: ExemptFile[];
-  RESTRICTED_LIBRARY_SPECIFIER: string;
+  RUNTIME_IMPORT_SHAPES: string[];
   allowedTargetPaths: () => string[];
   allowedTargetSpecifier: () => string;
+  collaboratorSelectors: () => Array<{ selector: string; message: string }>;
   exemptGlobs: () => string[];
   exemptPaths: () => string[];
 };
@@ -75,11 +77,12 @@ const injectableFiles = sourceFiles.filter((file) => readFile(file).includes('@i
 
 const allowedTargetSpecifier = new RegExp(policy.allowedTargetSpecifier());
 const projectSpecifier = new RegExp(policy.PROJECT_SPECIFIER);
-const restrictedLibrary = new RegExp(policy.RESTRICTED_LIBRARY_SPECIFIER);
+const allowedLibrary = new RegExp(policy.ALLOWED_LIBRARY_SPECIFIER);
 
 const isForbiddenSpecifier = (specifier: string): boolean =>
-  (projectSpecifier.test(specifier) && !allowedTargetSpecifier.test(specifier)) ||
-  restrictedLibrary.test(specifier);
+  projectSpecifier.test(specifier)
+    ? !allowedTargetSpecifier.test(specifier)
+    : !allowedLibrary.test(specifier);
 
 describe('DI collaborator gate — one policy, two layers (issue #130)', () => {
   it('wires the dependency-cruiser rule straight from the shared policy', () => {
@@ -99,8 +102,7 @@ describe('DI collaborator gate — one policy, two layers (issue #130)', () => {
     );
     expect(config).toContain('diCollaboratorPolicy.LOGIC_SOURCE_GLOBS');
     expect(config).toContain('diCollaboratorPolicy.exemptGlobs()');
-    expect(config).toContain('diCollaboratorPolicy.allowedTargetSpecifier()');
-    expect(config).toContain('diCollaboratorPolicy.RESTRICTED_LIBRARY_SPECIFIER');
+    expect(config).toContain('diCollaboratorPolicy.collaboratorSelectors()');
     expect(config).toContain('noUninjectedCollaboratorSelectors');
   });
 
@@ -131,11 +133,22 @@ describe('DI collaborator gate — scope covers every injectable class (issue #1
     expect(hidden).toEqual([]);
   });
 
-  it('keeps the scope disjoint from the component-side rule (#128) — no .tsx is matched', () => {
+  it('keeps the scope disjoint from the component-side rule (#128) — no .tsx is gated', () => {
     const components = walk('src').filter((file) => file.endsWith('.tsx'));
 
     expect(components.length).toBeGreaterThan(0);
-    expect(components.filter((file) => matchesAny(policy.LOGIC_SOURCE_PATHS, file))).toEqual([]);
+    expect(components.filter(inScope)).toEqual([]);
+  });
+
+  // ESLint only ever sees `.ts` (its `files` globs say so), so dependency-cruiser needs an
+  // explicit `.tsx` exclusion or a component placed in a gated directory would be flagged by
+  // BOTH this rule and the #128 component rule — the double-flag the policy promises not to do.
+  it('excludes .tsx on the dependency-cruiser layer too, not just by convention', () => {
+    const hypothetical = 'src/services/observability/hypothetical-widget.tsx';
+
+    expect(matchesAny(policy.LOGIC_SOURCE_PATHS, hypothetical)).toBe(true);
+    expect(inScope(hypothetical)).toBe(false);
+    expect(policy.LOGIC_SOURCE_GLOBS.every((glob) => glob.endsWith('.ts'))).toBe(true);
   });
 });
 
@@ -218,6 +231,10 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
     '@sentry/browser',
     'web-vitals',
     'web-vitals/attribution',
+    // UI libraries have no business inside a logic class — they belong to the `.tsx`
+    // components and hooks that this scope deliberately excludes.
+    'react',
+    '@mui/material',
   ];
 
   const allowed = [
@@ -243,8 +260,6 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
     'tsyringe',
     'reflect-metadata',
     'uuid',
-    'react',
-    '@mui/material',
   ];
 
   it.each(forbidden)('rejects the value import %s', (specifier) => {
@@ -255,10 +270,17 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
     expect(isForbiddenSpecifier(specifier)).toBe(false);
   });
 
-  it('keeps every allowlisted library outside the restricted set', () => {
+  it('accepts every declared library and nothing else', () => {
     policy.ALLOWED_LIBRARIES.forEach((library) => {
-      expect(restrictedLibrary.test(library)).toBe(false);
+      expect(isForbiddenSpecifier(library)).toBe(false);
+      expect(isForbiddenSpecifier(`${library}/sub/path`)).toBe(false);
     });
+
+    // The third-party half is an allowlist, not a denylist: an unnamed package is rejected by
+    // default, so a future behavioral dependency cannot slip in without a policy edit.
+    expect(isForbiddenSpecifier('dayjs')).toBe(true);
+    expect(isForbiddenSpecifier('lodash')).toBe(true);
+    expect(isForbiddenSpecifier('tsyringe-extra')).toBe(true);
   });
 });
 
@@ -269,11 +291,18 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
   // past the gate. This pins the invariant the honest-limitation section relies on.
   const barrelPaths = ['src/modules/user/index.ts', 'src/modules/user/features/auth/index.ts'];
 
+  // Collapse the barrel to one statement per line first: a multi-line
+  // `export {\n  A,\n} from './x'` would otherwise be invisible to a line-oriented scan and
+  // silently pass the purity assertion.
   const valueReExports = (barrel: string): string[] =>
     readFile(barrel)
-      .split('\n')
-      .filter((line) => line.startsWith('export ') && !line.startsWith('export type '))
-      .map((line) => /from '([^']+)'/.exec(line)?.[1] ?? '')
+      .replace(/\s+/g, ' ')
+      .split(';')
+      .map((statement) => statement.trim())
+      .filter(
+        (statement) => statement.startsWith('export ') && !statement.startsWith('export type ')
+      )
+      .map((statement) => /from '([^']+)'/.exec(statement)?.[1] ?? '')
       .filter(Boolean);
 
   it.each(barrelPaths)('%s re-exports values only from allowlisted contract modules', (barrel) => {
@@ -293,5 +322,98 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
     );
 
     expect(allowlisted.sort()).toEqual([...barrelPaths].sort());
+  });
+});
+
+describe('DI collaborator gate — the real ESLint selectors compile and match (issue #130)', () => {
+  // The assertions above validate policy DATA. They would still pass if a selector string were
+  // syntactically invalid or silently stopped matching, because they re-derive the semantics in
+  // plain `RegExp` instead of running esquery. This block feeds the EXACT selector strings
+  // `eslint.config.mjs` installs through a real `Linter`, so a selector regression fails here
+  // rather than only surfacing when `make lint-eslint` runs in CI.
+  const { Linter } = require('eslint') as typeof import('eslint');
+  const tsParser = require('@typescript-eslint/parser') as unknown;
+
+  const selectors = policy.collaboratorSelectors();
+
+  const lint = (code: string): number[] => {
+    const messages = new Linter({ configType: 'flat' }).verify(code, {
+      languageOptions: {
+        parser: tsParser as never,
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+      },
+      rules: { 'no-restricted-syntax': ['error', ...selectors] },
+    });
+
+    return messages.map((message) => message.line);
+  };
+
+  it('installs both selectors', () => {
+    expect(selectors).toHaveLength(2);
+    selectors.forEach((entry) => {
+      expect(entry.selector).toContain('ImportDeclaration');
+      expect(entry.message).toContain('issue #130');
+    });
+  });
+
+  it('encodes every slash so the esquery attribute regex cannot terminate early', () => {
+    selectors.forEach((entry) => {
+      const attributeRegexes = entry.selector.match(/\[source\.value=\/(.*?)\/\]/g) ?? [];
+
+      expect(attributeRegexes.length).toBeGreaterThan(0);
+      attributeRegexes.forEach((attribute) => {
+        expect(attribute.slice('[source.value=/'.length, -'/]'.length)).not.toContain('/');
+      });
+    });
+  });
+
+  it('parses and runs against real source without throwing', () => {
+    expect(() => lint("import { injectable } from 'tsyringe';\n")).not.toThrow();
+  });
+
+  it('rejects a value import of a project collaborator', () => {
+    expect(
+      lint("import HttpErrorGuard from '@/services/https-client/http-error-guard';\n")
+    ).toEqual([1]);
+    expect(lint("import Sibling from './api-status-error-factory';\n")).toEqual([1]);
+  });
+
+  it('accepts the contract and data modules on the allowlist', () => {
+    const allowlisted = [
+      "import API_ENDPOINTS from '@/config/api-config';",
+      "import HTTP_TOKENS from './tokens';",
+      "import BaseAPI from './base-api';",
+      "import CREATE_USER from './create-user-mutation';",
+      "import { LoginResponseSchema } from '@auth/utils/response-schemas';",
+      "import { ApiError } from '@/modules/user/lib/api-errors';",
+      "import { HttpError } from '@/services/https-client/http-error';",
+    ].join('\n');
+
+    expect(lint(`${allowlisted}\n`)).toEqual([]);
+  });
+
+  it('accepts type-only imports in both spellings, and rejects a mixed one', () => {
+    expect(lint("import type Guard from '@/services/https-client/http-error-guard';\n")).toEqual(
+      []
+    );
+    // Inline-type specifiers are erased by the compiler, so they are not collaborator edges —
+    // rejecting them would put this layer at odds with dependency-cruiser's `type-only` class.
+    expect(lint("import { type UiError } from '@/services/error';\n")).toEqual([]);
+    expect(lint("import { type UiError, ErrorHandler } from '@/services/error';\n")).toEqual([1]);
+  });
+
+  it('rejects a value import of a library outside the allowlist, and side-effect imports', () => {
+    expect(lint("import dayjs from 'dayjs';\n")).toEqual([1]);
+    expect(lint("import * as lodash from 'lodash';\n")).toEqual([1]);
+    expect(lint("import { z } from 'zod';\n")).toEqual([1]);
+    expect(lint("import '@/services/observability/observability-core';\n")).toEqual([1]);
+  });
+
+  it('accepts the DI mechanism and pure leaf utilities', () => {
+    expect(lint("import { inject, injectable } from 'tsyringe';\n")).toEqual([]);
+    expect(lint("import 'reflect-metadata';\n")).toEqual([]);
+    expect(lint("import { v4 as uuidv4 } from 'uuid';\n")).toEqual([]);
+    expect(lint("import type { ZodType } from 'zod';\n")).toEqual([]);
   });
 });

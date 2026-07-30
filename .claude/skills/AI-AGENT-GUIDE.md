@@ -287,9 +287,14 @@ When writing or editing a class in a logic directory (`src/services/**`,
   rule across extensions.
 - **Never** push the DI container into the auth paint path: do not eager-import
   `dependency-injection-config.ts`, and do not convert a container-free
-  render-path singleton (`validations/*`, `auth-var`, `reactive-var`,
-  `auth-store-selectors`, `use-auth-token`, `response-schemas`, the observability
-  core/sentry/web-vitals leaves, `url-builder`) into a container-resolved class.
+  render-path singleton into a container-resolved class. The ones inside a gated
+  directory (`auth-var`, `reactive-var`, `reactive-var-state`,
+  `auth-store-selectors`, `response-schemas`, `map-registration-error`, the auth
+  lazy loaders, `auth-error-reporter`, `url-builder`, and the observability
+  core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by
+  explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks (`use-auth-token`) and the
+  form-section `validations/*` singletons are never in scope at all, so they have
+  no policy entry — that absence is expected, not an omission.
 - **Never** satisfy this gate with `eslint-disable`, `depcruise-ignore`,
   `@ts-ignore`, or by widening the allowlist in
   `config/di-collaborator-policy.js` — that file is for contract/data modules
