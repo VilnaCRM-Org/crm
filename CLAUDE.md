@@ -176,10 +176,12 @@ make lint-tsc       # TypeScript
 make lint-md        # Markdown
 make lint-dup       # jscpd copy/paste duplication gate (see below)
 make lint-metrics   # rust-code-analysis complexity gate (see below)
-make lint-prettier  # Prettier --check formatting gate (verify-only, shares PRETTIER_FILE_GLOB)
+make lint-prettier  # Prettier --check gate (verify-only, shares PRETTIER_FILE_GLOB; covers YAML)
 make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, like lint-metrics)
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
+make lint-compose   # docker compose config validation (schema, interpolation, duplicate keys)
+make lint-zizmor    # zizmor workflow-security gate (Docker; not part of `make lint`, see below)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
@@ -346,6 +348,70 @@ on styles/markup, so keep the bar at copy-paste mass if you widen coverage.
 fragments, constants, factories, or a base object plus overrides — never with
 ignore/suppress directives. The same root-cause-not-suppression policy used for
 ESLint, TypeScript, and metrics applies here.
+
+### CI configuration gates (issues #161, #174, #175)
+
+The CI configuration surface — 27 workflow files, 4 compose files, the shared healthchecks —
+**is** the enforcement boundary, so it is linted like source rather than trusted as convention.
+
+| Gate                          | Where it runs                     | What it enforces         |
+| ----------------------------- | --------------------------------- | ------------------------ |
+| `make lint-actionlint`        | `make lint` → `static testing`    | Workflow **correctness** |
+| `make lint-zizmor`            | `workflow security / zizmor` (PR) | Workflow **security**    |
+| `make lint-prettier`          | `make lint` → `static testing`    | Formatting, incl. YAML   |
+| `make lint-compose`           | `make lint` → `static testing`    | Compose file validity    |
+| `format yaml files / yamlfmt` | PR, container-free                | YAML formatting          |
+| `scorecard / analysis`        | weekly cron + push to `main`      | Repository **state**     |
+
+- **Correctness vs. security.** actionlint answers "does this workflow do what it says?";
+  zizmor answers "is it safe?" — mutable action refs, over-broad `permissions`, pwn-requests,
+  `${{ github.event.* }}` interpolated into `run:`, restored credential persistence, and
+  actions from archived repositories.
+- **Duplicate mapping keys are _not_ a Prettier check.** Issue #161 assumed they were; they are
+  not. Prettier's bundled YAML plugin passes `uniqueKeys: false`, so its parser's
+  `DUPLICATE_KEY` error is suppressed and both keys survive `--write` verbatim — a duplicated
+  `healthcheck:` or `permissions:` block passes `--check` with exit 0. That class is covered by
+  **`make lint-compose`** (compose's own loader: `mapping key X already defined at line N`) and
+  by **actionlint** (`syntax-check` reports duplicated keys) for the workflows.
+- **Two Prettier YAML paths, one config.** `lint-prettier` covers YAML inside the dev container;
+  the `yamlfmt` job is the container-free half, the one YAML signal that still reports when
+  `make start` cannot run. Both catch format drift and unparseable YAML.
+- **Scorecard is the meter, not the fix.** A scheduled run cannot block a merge; it makes
+  posture drift no PR diff can show — branch protection, required checks, dependency-update
+  health, pin coverage on `main` — diffable run over run. It does **not** discharge the
+  blocking SCA gate tracked in #140.
+
+Notes that matter when touching these:
+
+- **zizmor is pinned exactly** — `ZIZMOR_IMAGE` is digest-pinned and `ZIZMOR_ARGS` runs offline
+  audits at medium severity. A new zizmor minor adds audits and would redden unrelated PRs, so
+  bump it deliberately. It is intentionally **not** in `make lint`: it needs no dev container,
+  so the dedicated workflow reports in seconds and still reports when `make start` fails.
+- **`--persona pedantic` is load-bearing.** At the default persona, `excessive-permissions` does
+  not fire on a workflow-level `permissions: write-all` in a single-job workflow — measured:
+  default exits 0 on that fixture, pedantic reports it high and exits 14. Do not drop the flag.
+  The stricter `auditor` persona is not adopted: it adds four pre-existing medium
+  `secrets-outside-env` findings whose fix (GitHub Environments for the release, Codecov, and
+  Sentry jobs) is a separate decision.
+- **The Makefile owns the flags, the workflow does not.** `workflow-security.yml` runs
+  `make lint-zizmor`; version, severity, persona, and audit scope live only in the Makefile so
+  the CI gate and the local run cannot diverge.
+- **The yamlfmt job pins Prettier to the version `bun.lock` resolves.**
+  [`tests/unit/tooling/ci-config-gates.test.ts`](tests/unit/tooling/ci-config-gates.test.ts) fails
+  the build if that pin, the digest pin, the severity threshold, the persona, or the pin hygiene
+  of any workflow drifts.
+
+Add `workflow security / zizmor` and `format yaml files / yamlfmt` to the branch-protection
+required checks; until then they are advisory and a PR that trips them stays mergeable (the
+repository currently has no branch protection or ruleset configured at all). Do **not** add
+`scorecard / analysis`: it has no `pull_request` trigger, so requiring it would leave every PR
+waiting on a check that never reports. #175 asks for it; that part of the issue is not adoptable
+as written, and the scheduled run is the monitor instead.
+
+**No suppression:** satisfy these gates by fixing the workflow — pin to a reviewed release commit,
+narrow the permission, pass values through `env` instead of `${{ }}` interpolation, reformat the
+YAML. Never add a `zizmor.yml` ignore, raise `--min-severity`, weaken the persona, or narrow the
+audit scope.
 
 ### Performance Budgets, Bundle Reports, and Route Splitting (issue #117)
 

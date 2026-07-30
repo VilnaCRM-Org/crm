@@ -109,6 +109,45 @@ or a per-image `docker-perf-exception:<name>` PR label that waives only that
 image. The decision logic is covered by `tests/bats/docker_perf.bats`
 (run with `make test-bats`).
 
+### Workflow, YAML, and repository-posture gates
+
+The CI configuration is itself gated, because a regression there silently weakens every other
+check. Four gates cover it:
+
+- **`workflow security / zizmor`** (pull request, blocking) runs
+  [zizmor](https://github.com/zizmorcore/zizmor) over `.github/workflows/`. Reproduce it locally
+  with `make lint-zizmor` (Docker, digest-pinned; deliberately not part of `make lint`, so it stays
+  independent of the dev container). It fails on medium-or-higher findings: an action pinned to a
+  mutable tag or branch instead of a reviewed release commit, an over-broad `permissions` block, a
+  `pull_request_target` job that checks out the PR head, restored credential persistence, a
+  `${{ github.event.* }}` value interpolated straight into a `run:` script, or an action from an
+  archived repository.
+  **Fix the workflow, never the gate.** Pin to a release commit, narrow the permission, or pass the
+  value through `env:` and reference it as a shell variable. Do not add a `zizmor.yml` ignore, raise
+  `--min-severity`, drop `--persona pedantic`, or shrink the audit scope.
+- **`format yaml files / yamlfmt`** (pull request, blocking) runs `prettier --check` over every
+  `*.yml` / `*.yaml` file. It replaced a `norwd/fmtya` step that could not push its own fix and so
+  verified nothing. It catches format drift and YAML that does not parse. It does **not** catch
+  duplicate mapping keys — prettier's bundled YAML plugin passes `uniqueKeys: false`, so both keys
+  survive `--write` and `--check` exits 0. Fix a red check with `make format`;
+  `make lint-prettier` verifies the same files inside the dev container.
+- **`make lint-compose`** (part of `make lint`, so it runs in `static testing`) validates every
+  docker compose file combination the repository actually starts. Compose's own loader rejects a
+  duplicate mapping key (`mapping key X already defined at line N`), which is how the
+  last-key-wins defect — a silently discarded `healthcheck:` or `environment:` block — is covered
+  for the compose surface; actionlint's `syntax-check` covers it for the workflows. The gate also
+  catches schema and `${VAR}` interpolation errors before a container ever starts.
+- **`scorecard / analysis`** (weekly cron plus push to `main`, monitoring) runs OpenSSF Scorecard
+  and uploads SARIF to the Security tab. It watches repository _state_ that no pull-request diff
+  can show — branch protection, required checks, dependency-update health, pin coverage on `main`.
+  A scheduled run cannot block a merge; treat a score regression as a bug to file, not a warning to
+  dismiss.
+
+`workflow security / zizmor` and `format yaml files / yamlfmt` should be added to the
+branch-protection required checks for `main`; until they are, they report but do not block. Do not
+add `scorecard / analysis` — it has no `pull_request` trigger, so requiring it would leave every PR
+waiting forever on a check that never reports.
+
 ### CI speed and the mutation-testing gate
 
 GitHub runs the pull-request workflows in parallel, so PR feedback is gated by the slowest single
