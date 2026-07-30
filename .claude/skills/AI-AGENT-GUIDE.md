@@ -78,6 +78,7 @@ What are you trying to do?
 ├─ Refactor existing code
 │   ├─ Move / rename / extract file → code-organization
 │   ├─ Reduce complexity or split file → complexity-management
+│   ├─ Class reaches for a collaborator instead of injecting it → architecture
 │   └─ Improve testability → frontend-testing-workflow / testing-workflow
 │
 ├─ Review / validate work
@@ -262,6 +263,42 @@ lowered:
 `editorconfig-checker-disable`, `prettier-ignore`, or markdownlint disable comments.**
 Fix the root cause. If a rule genuinely does not apply, refactor the code so
 the rule's intent holds.
+
+## Dependency Injection Rules (issue #130)
+
+When writing or editing a class in a logic directory (`src/services/**`,
+`src/utils/**`, `src/modules/*/store/**`,
+`src/modules/*/features/*/{repositories,stores,utils}/**`):
+
+- **Never** `import` another project class or behavioral module as a value in
+  order to call it. Add a token to the owning area's `tokens.ts`, register it in
+  that area's `di.ts` composition root (issue #109), and `@inject(TOKENS.X)` it.
+- If an import is used **only** as a type, make it `import type` (issue #88).
+- Allowed non-type value imports: the base class you `extend`, `tsyringe` /
+  `reflect-metadata`, token modules, config data (`@/config/api-config`,
+  `@/config/env`, `@/routes/route-paths`), domain and transport error classes,
+  constant maps (`response-messages`, `error-codes`), runtime data contracts
+  (`response-schemas`, `*-mutation`), the module/feature public barrels
+  (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
+- Behavioral third-party libraries (Apollo, Sentry, `web-vitals`, zod) go behind
+  an `@injectable()` adapter plus a token — do not add a new ad-hoc direct call.
+- Component (`.tsx`) consumption is a **different** rule (#128). Do not add
+  component-side enforcement here, and do not duplicate the dependency-cruiser
+  rule across extensions.
+- **Never** push the DI container into the auth paint path: do not eager-import
+  `dependency-injection-config.ts`, and do not convert a container-free
+  render-path singleton (`validations/*`, `auth-var`, `reactive-var`,
+  `auth-store-selectors`, `use-auth-token`, `response-schemas`, the observability
+  core/sentry/web-vitals leaves, `url-builder`) into a container-resolved class.
+- **Never** satisfy this gate with `eslint-disable`, `depcruise-ignore`,
+  `@ts-ignore`, or by widening the allowlist in
+  `config/di-collaborator-policy.js` — that file is for contract/data modules
+  only, and `tests/unit/tooling/di-collaborator-gate.test.ts` fails when a
+  carve-out starts hiding an `@injectable()` class.
+
+Full convention: `CLAUDE.md` → "Collaborators arrive through DI, never through a
+value import"; decision tree: `SKILL-DECISION-GUIDE.md` → "A class needs to call
+another class"; boundary rules: `architecture/SKILL.md`.
 
 ## Locked Configuration Policy
 

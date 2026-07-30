@@ -11,6 +11,11 @@ const DI_COMPOSITION_ROOTS = [
 ];
 const DI_MODULE_COMPOSITION_ROOT = '^src/modules/[^/]+/config/di[.]ts$';
 
+// Issue #130: the scope, carve-outs, and contract/data allowlist shared with the ESLint gate
+// (`noUninjectedCollaboratorSelectors` in eslint.config.mjs). Keeping both layers on one source
+// of truth is what stops the module-graph rule and the import-specifier rule from drifting.
+const DI_COLLABORATOR_POLICY = require('./config/di-collaborator-policy.js');
+
 module.exports = {
   forbidden: [
     {
@@ -669,6 +674,28 @@ module.exports = {
       to: {
         path: '^src/',
         pathNot: ['[.]d[.]ts$'],
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
+      name: 'injectable-classes-no-value-imports',
+      comment:
+        'Logic classes must obtain behavioral collaborators through DI. A direct value import ' +
+        'of another project module hard-wires the collaborator at the call site, so it resists ' +
+        'substitution in tests and the class only looks injectable. Use `import type` for ' +
+        'annotations and @inject(TOKENS.X) for collaborators; the contract/data allowlist ' +
+        '(tokens, config, domain error classes, constant maps, zod response contracts, GraphQL ' +
+        'documents, base classes, public barrels) stays importable. Consumer-side .tsx is ' +
+        'governed by issue #128 (components-no-direct-injectable-import) — the two scopes are ' +
+        'disjoint, so no edge is flagged twice (issue #130).',
+      severity: 'error',
+      from: {
+        path: DI_COLLABORATOR_POLICY.LOGIC_SOURCE_PATHS,
+        pathNot: DI_COLLABORATOR_POLICY.exemptPaths(),
+      },
+      to: {
+        path: '^src/',
+        pathNot: DI_COLLABORATOR_POLICY.allowedTargetPaths(),
         dependencyTypesNot: ['type-only'],
       },
     },

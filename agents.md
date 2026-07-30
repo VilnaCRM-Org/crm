@@ -720,6 +720,42 @@ classes, and the blanket ESLint ban is stricter than the helper-zone carve-out #
 Per #89's "honest limitation", the residual gap is **semantic** (logic hidden in an object
 literal's methods or a misplaced helper) and stays a review-gate concern.
 
+### Collaborators arrive through DI, never through a value import (issue #130)
+
+Inside a class in a logic directory (`src/services/**`, `src/utils/**`,
+`src/modules/*/store/**`, `src/modules/*/features/*/{repositories,stores,utils}/**`), the only
+behavioral collaborators a method may invoke are those received through DI. Never
+`import SomeService from '…'` and call it — add a token to the owning area's `tokens.ts`, register
+it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If the import is only an
+annotation, make it `import type` (issue #88).
+
+Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
+`reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
+`@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
+`error-codes`), runtime data contracts (`response-schemas`, `*-mutation`), the module/feature
+public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
+
+Third-party policy is **(A) adapter + token**: Apollo through `ApolloLinkFactory` /
+`AUTH_TOKENS.ApolloClient`, Sentry and `web-vitals` through the observability boundary, zod
+schemas declared in a `response-schemas` contract module and passed to collaborators as data.
+
+Never push the DI container into the auth paint path: do not eager-import
+`dependency-injection-config.ts`, and do not convert a container-free render-path singleton
+(`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`, `response-schemas`, the
+observability core/sentry/web-vitals leaves, `url-builder`) into a container-resolved class —
+they are exempt by explicit path in `config/di-collaborator-policy.js`.
+
+Enforced by two layers reading that one policy file: an ESLint `no-restricted-syntax` selector and
+the dependency-cruiser rule `injectable-classes-no-value-imports`, both under `make lint`, plus
+the rule-rot guard `tests/unit/tooling/di-collaborator-gate.test.ts`. Component-side (`.tsx`)
+consumption is the disjoint companion gate #128 (`components-no-direct-injectable-import`) — do
+not duplicate it here. Never satisfy the gate with `eslint-disable`, `depcruise-ignore`, or
+`@ts-ignore`.
+
+Residual review-gate concerns the gate cannot see: a fat base class smuggling behavior past
+`extends` (prefer composition), collaborators laundered through a barrel re-export or an object
+literal's method, and wiring that registers the wrong implementation behind the right token.
+
 ### Dependency Injection Pattern
 
 Per-module / per-infra composition roots (issue #109): tokens and registrations are

@@ -14,6 +14,8 @@ import globals from 'globals';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import diCollaboratorPolicy from './config/di-collaborator-policy.js';
+
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const tsconfigPath = path.join(rootDir, 'tsconfig.json');
 
@@ -155,6 +157,40 @@ const noProcessEnvSelectors = [
     message:
       'No raw process.env reads in non-React source — import the validated env from ' +
       '@/config/env (or @/config/env/raw-env on the paint path) (issue #112).',
+  },
+];
+
+// Source (issue #130): inside a logic class, behavioral collaborators must arrive through DI.
+// A value import of another project module hard-wires the collaborator at the call site, so the
+// dependency resists substitution in tests and the class only *looks* injectable. `import type`
+// is always allowed — an annotation-only import is the sanctioned carve-out (issue #88) — as are
+// the contract/data modules in the policy allowlist (tokens, config, domain error classes,
+// constant maps, zod response contracts, GraphQL documents, base classes, public barrels).
+// Scope, carve-outs, and allowlists live in `config/di-collaborator-policy.js` so this gate and
+// the dependency-cruiser rule `injectable-classes-no-value-imports` can never drift apart.
+// Consumer-side `.tsx` components are governed by the disjoint issue #128 rule, not this one.
+const esquerySource = (source) => source.replace(/\//g, '\\/');
+
+const noUninjectedCollaboratorSelectors = [
+  {
+    selector:
+      "ImportDeclaration[importKind!='type']" +
+      `[source.value=/${esquerySource(diCollaboratorPolicy.PROJECT_SPECIFIER)}/]` +
+      `:not([source.value=/${esquerySource(diCollaboratorPolicy.allowedTargetSpecifier())}/])`,
+    message:
+      'Value-importing a project module inside a logic class bypasses DI — inject the ' +
+      'collaborator with @inject(TOKENS.X) from its module composition root, or use ' +
+      '`import type` when the import is only an annotation (issue #130).',
+  },
+  {
+    selector:
+      "ImportDeclaration[importKind!='type']" +
+      `[source.value=/${esquerySource(diCollaboratorPolicy.RESTRICTED_LIBRARY_SPECIFIER)}/]`,
+    message:
+      'Value-importing a behavioral third-party library inside a logic class bypasses DI — ' +
+      'consume it through its injectable adapter and token (Apollo via ApolloLinkFactory / ' +
+      'AUTH_TOKENS.ApolloClient, Sentry and web-vitals via the observability boundary, zod ' +
+      'schemas via a response-schemas contract module) (issue #130).',
   },
 ];
 
@@ -480,6 +516,43 @@ export default [
         ...noStaticOrFreeFunctionSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #130): the non-React logic directories that hold `@injectable()` classes.
+  // Ordered after the #100 block so it wins for those files, and it re-includes the #90/#88/#100/
+  // #112 selectors because flat config replaces (does not merge) `no-restricted-syntax`. The
+  // carve-outs cover composition roots, token modules, index barrels, hooks, type-only files, and
+  // the container-free auth/observability render-path singletons that must stay off the container
+  // for the mobile Lighthouse budget.
+  {
+    files: diCollaboratorPolicy.LOGIC_SOURCE_GLOBS,
+    ignores: diCollaboratorPolicy.exemptGlobs(),
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
+        ...noUninjectedCollaboratorSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #130): `apollo-link-factory.ts` IS the injectable adapter over Apollo, so the
+  // restricted-library ban is lifted for it while the project value-import ban still applies.
+  {
+    files: diCollaboratorPolicy.RESTRICTED_LIBRARY_ADAPTERS.map((adapter) => adapter.path),
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
+        noUninjectedCollaboratorSelectors[0],
       ],
     },
   },

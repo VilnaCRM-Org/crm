@@ -502,6 +502,90 @@ class AuthStoreSelectors {
 export default new AuthStoreSelectors();
 ```
 
+### Collaborators arrive through DI, never through a value import (issue #130)
+
+**Convention:** inside a class in a logic directory, the only behavioral collaborators a method
+may invoke are those received through DI — a constructor `@inject(TOKENS.X)` parameter or a
+`useFactory` / `instanceCachingFactory` parameter resolved from the container. A class MUST NOT
+value-import another project module that provides behavior and call it directly. If a class needs
+collaborator `X`, give `X` a token in the owning area's `tokens.ts`, register it in that area's
+`di.ts` composition root (issue #109), and inject it.
+
+This is the next step after #89/#100: those made every behavioral unit an instance method on a
+class; this governs _how those classes obtain each other_. A hard-wired collaborator resists
+substitution in tests, so the class only _looks_ injectable.
+
+`src/modules/user/features/auth/repositories/login-api.ts` is the exemplar — `HttpsClient` and
+`ApiErrorFactory` arrive via `@inject(TOKENS.X)`, and its remaining value imports are exactly the
+allowed carve-outs.
+
+**Allowed value imports inside a logic class:**
+
+| Carve-out            | Examples                                                             |
+| -------------------- | -------------------------------------------------------------------- |
+| `import type`        | any annotation-only import (issue #88)                               |
+| `extends` base class | `BaseAPI` — inheritance cannot be injected                           |
+| DI mechanism         | `tsyringe`, `reflect-metadata`                                       |
+| DI tokens            | `**/tokens.ts`                                                       |
+| Config data          | `@/config/api-config`, `@/config/env`, `@/routes/route-paths`        |
+| Error classes        | `@/modules/*/lib/api-errors/**`, `http-error` (thrown, `instanceof`) |
+| Constant maps        | `response-messages`, `error-codes`                                   |
+| Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` (GraphQL)            |
+| Public barrels       | `@/modules/<m>`, `@auth` — the only cross-boundary path (issue #107) |
+| Pure leaf libraries  | `uuid`                                                               |
+
+**Third-party policy — position (A), adapter + token.** A behavioral library is wrapped behind an
+`@injectable()` adapter and a token rather than called from a feature class: Apollo through
+`ApolloLinkFactory` and `AUTH_TOKENS.ApolloClient`; Sentry and `web-vitals` through the
+observability boundary (issue #115); zod schemas declared in a `response-schemas` contract module
+and passed to collaborators **as data**. The explicit allowlist is minimal — the DI mechanism
+(`tsyringe`, `reflect-metadata`) and pure leaf utilities (`uuid`). `import type` from a restricted
+library stays allowed.
+
+**Base-class tradeoff.** `extends X` is the one place IoC is bypassed, so a base class must stay a
+thin template (as `base-api.ts` is — it only forwards an injected `apiErrorFactory`). Prefer
+**composition over inheritance** for behavior; a deep behavioral base class defeats the rule's
+intent and is a review-gate concern the gate cannot see.
+
+**Enforcement — two layers, one policy.** [`config/di-collaborator-policy.js`](config/di-collaborator-policy.js)
+is the single source of truth for the scope, the carve-outs, and the allowlist. Both layers read
+it, so they cannot drift:
+
+| Layer              | Where                                         | Sees                     |
+| ------------------ | --------------------------------------------- | ------------------------ |
+| ESLint             | `no-restricted-syntax` in `eslint.config.mjs` | the exact `import` line  |
+| dependency-cruiser | `injectable-classes-no-value-imports`         | resolved paths + aliases |
+
+Both run under `make lint` (`lint-eslint` and `lint-deps`), which the `static testing` workflow
+executes, and both are in `CI_LINT_TARGETS` for the parallel lint runner; `lint-deps` additionally
+runs in the standalone `dependency-cruiser.yml` workflow.
+[`tests/unit/tooling/di-collaborator-gate.test.ts`](tests/unit/tooling/di-collaborator-gate.test.ts)
+fails the build when a policy entry goes stale, when the two layers disagree, when a carve-out
+starts hiding an `@injectable()` class, or when an allowlisted barrel starts re-exporting one.
+
+**Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`, and
+`src/modules/*/features/*/{repositories,stores,utils}/**`. Exempt: React components and hooks
+(`.tsx`, `use-*.ts`), type-only files, composition roots (`di.ts` — they must value-import every
+concrete class to register it), token modules, index barrels, and the **container-free
+render-path singletons** (`auth-var`, `reactive-var`, `auth-store-selectors`, `response-schemas`,
+the observability core/sentry/web-vitals leaves, `url-builder`, the auth lazy loaders). Those stay
+off the container so the auth page paints without tsyringe — **never** eager-import
+`dependency-injection-config.ts` into the paint path, and never convert one of them into a
+container-resolved class.
+
+**Companion gate:** component-side (`.tsx`) consumption is issue #128
+(`components-no-direct-injectable-import`). The two scopes are disjoint (`.ts` vs `.tsx`), so no
+edge is flagged twice; keep their names, messages, and carve-outs cross-referenced.
+
+**Honest limitations** (not statically enforceable): a fat base class can still smuggle logic past
+`extends`; a barrel re-export or an object literal's method can launder a collaborator (bounded,
+not closed, by the barrel-purity assertion); the gate proves a collaborator _arrives_ via DI, not
+that the wiring registers the right implementation; and the render-path carve-out is allowlisted
+by path, not inferred — adding a new container-free singleton means updating the policy file.
+
+**No suppression:** satisfy the gate by injecting the collaborator or converting to `import type`.
+Never `eslint-disable`, `depcruise-ignore`, or `@ts-ignore`.
+
 ### No static methods or free functions (issues #100, #89)
 
 Non-React application code (services, repositories, mappers, factories, stores, and

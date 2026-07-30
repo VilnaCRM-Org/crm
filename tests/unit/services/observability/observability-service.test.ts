@@ -1,20 +1,20 @@
-import observabilityCore from '@/services/observability/observability-core';
+import observabilityCore, { ObservabilityCore } from '@/services/observability/observability-core';
 import ObservabilityService from '@/services/observability/observability-service';
 
-jest.mock('@/services/observability/observability-core', () => ({
-  __esModule: true,
-  default: {
-    init: jest.fn(),
-    captureError: jest.fn(),
-    report: jest.fn(),
-    setUser: jest.fn(),
-    clearUser: jest.fn(),
-    reportVital: jest.fn(),
-  },
-}));
+const createCore = (): ObservabilityCore => {
+  const core = new ObservabilityCore();
+  jest.spyOn(core, 'init').mockImplementation();
+  jest.spyOn(core, 'captureError').mockImplementation();
+  jest.spyOn(core, 'report').mockImplementation();
+  jest.spyOn(core, 'setUser').mockImplementation();
+  jest.spyOn(core, 'clearUser').mockImplementation();
+  jest.spyOn(core, 'reportVital').mockImplementation();
+  return core;
+};
 
 describe('ObservabilityService', () => {
-  const service = new ObservabilityService();
+  const core = createCore();
+  const service = new ObservabilityService(core);
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -23,7 +23,7 @@ describe('ObservabilityService', () => {
   it('delegates init to the core', () => {
     service.init();
 
-    expect(observabilityCore.init).toHaveBeenCalledTimes(1);
+    expect(core.init).toHaveBeenCalledTimes(1);
   });
 
   it('delegates captureError to the core', () => {
@@ -31,7 +31,7 @@ describe('ObservabilityService', () => {
 
     service.captureError(error, { source: 'unit' });
 
-    expect(observabilityCore.captureError).toHaveBeenCalledWith(error, { source: 'unit' });
+    expect(core.captureError).toHaveBeenCalledWith(error, { source: 'unit' });
   });
 
   it('delegates report to the core', () => {
@@ -39,19 +39,19 @@ describe('ObservabilityService', () => {
 
     service.report(error, { surface: 'app' });
 
-    expect(observabilityCore.report).toHaveBeenCalledWith(error, { surface: 'app' });
+    expect(core.report).toHaveBeenCalledWith(error, { surface: 'app' });
   });
 
   it('delegates setUser to the core', () => {
     service.setUser({ id: 'opaque' });
 
-    expect(observabilityCore.setUser).toHaveBeenCalledWith({ id: 'opaque' });
+    expect(core.setUser).toHaveBeenCalledWith({ id: 'opaque' });
   });
 
   it('delegates clearUser to the core', () => {
     service.clearUser();
 
-    expect(observabilityCore.clearUser).toHaveBeenCalledTimes(1);
+    expect(core.clearUser).toHaveBeenCalledTimes(1);
   });
 
   it('delegates reportVital to the core', () => {
@@ -59,6 +59,17 @@ describe('ObservabilityService', () => {
 
     service.reportVital(metric);
 
-    expect(observabilityCore.reportVital).toHaveBeenCalledWith(metric);
+    expect(core.reportVital).toHaveBeenCalledWith(metric);
+  });
+
+  it('delegates to the injected core rather than the module singleton', () => {
+    const singletonInit = jest.spyOn(observabilityCore, 'init').mockImplementation();
+
+    service.init();
+
+    expect(core.init).toHaveBeenCalledTimes(1);
+    expect(singletonInit).not.toHaveBeenCalled();
+
+    singletonInit.mockRestore();
   });
 });

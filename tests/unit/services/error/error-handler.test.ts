@@ -4,7 +4,16 @@ import type { UiError } from '@/services/types/error/error-handler';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import ParsedError from '@/utils/error/types';
 
-const errorHandler = new ErrorHandler();
+const createObservability = (): jest.Mocked<ObservabilityService> => ({
+  init: jest.fn(),
+  captureError: jest.fn(),
+  setUser: jest.fn(),
+  clearUser: jest.fn(),
+  reportVital: jest.fn(),
+});
+
+const observability = createObservability();
+const errorHandler = new ErrorHandler(observability);
 
 describe('ErrorHandler', () => {
   describe('handleAuthError', () => {
@@ -589,26 +598,62 @@ describe('ErrorHandler', () => {
       expect(() => errorHandler.handle(error)).not.toThrow();
       expect(consoleSpy).toHaveBeenCalledWith('[ErrorHandler]', error);
       expect(logger.error).not.toHaveBeenCalled();
+      expect(observability.captureError).toHaveBeenCalledWith(error);
 
       consoleSpy.mockRestore();
     });
 
     it('forwards handled errors to the injected observability service', () => {
-      const observability = { captureError: jest.fn() } as unknown as ObservabilityService;
+      const injected = createObservability();
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-      const handler = new ErrorHandler(observability);
+      const handler = new ErrorHandler(injected);
       const error = new Error('captured');
 
       handler.handle(error);
 
-      expect(observability.captureError).toHaveBeenCalledWith(error);
+      expect(injected.captureError).toHaveBeenCalledWith(error);
       consoleSpy.mockRestore();
+    });
+
+    it('captures through the collaborator it was constructed with, not another instance', () => {
+      const injected = createObservability();
+      const other = createObservability();
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const handler = new ErrorHandler(injected);
+      const error = new Error('routed');
+
+      handler.handle(error);
+
+      expect(injected.captureError).toHaveBeenCalledTimes(1);
+      expect(other.captureError).not.toHaveBeenCalled();
+      expect(observability.captureError).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('captures the error after logging it', () => {
+      const injected = createObservability();
+      const order: string[] = [];
+      const handler = new ErrorHandler(injected);
+      const error = new Error('ordered');
+
+      handler.setLogger({
+        error: () => {
+          order.push('log');
+        },
+      });
+      injected.captureError.mockImplementation(() => {
+        order.push('capture');
+      });
+
+      handler.handle(error);
+
+      expect(order).toEqual(['log', 'capture']);
     });
   });
 
   describe('instance methods', () => {
     it('should delegate handleAuthError to static implementation', () => {
-      const handler = new ErrorHandler();
+      const handler = new ErrorHandler(createObservability());
       const error: ParsedError = {
         code: ERROR_CODES.AUTH_INVALID,
         message: 'Auth failed',
@@ -623,7 +668,7 @@ describe('ErrorHandler', () => {
     it('should delegate handle to static implementation', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       try {
-        const handler = new ErrorHandler();
+        const handler = new ErrorHandler(createObservability());
         const error = new Error('instance test');
 
         handler.handle(error);
@@ -637,7 +682,7 @@ describe('ErrorHandler', () => {
 
   describe('instance methods', () => {
     it('should delegate handleAuthError to static implementation', () => {
-      const handler = new ErrorHandler();
+      const handler = new ErrorHandler(createObservability());
       const error: ParsedError = {
         code: ERROR_CODES.AUTH_INVALID,
         message: 'Auth failed',
@@ -652,7 +697,7 @@ describe('ErrorHandler', () => {
     it('should delegate handle to static implementation', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       try {
-        const handler = new ErrorHandler();
+        const handler = new ErrorHandler(createObservability());
         const error = new Error('instance test');
 
         handler.handle(error);

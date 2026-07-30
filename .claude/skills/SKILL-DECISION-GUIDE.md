@@ -147,12 +147,14 @@ What are you trying to do?
 │   ├─ Move / rename / split files → code-organization
 │   ├─ Reduce cyclomatic, cognitive, ABC, or file size → complexity-management
 │   ├─ Improve testability → frontend-testing-workflow / testing-workflow
+│   ├─ A class reaches for a collaborator instead of injecting it → architecture
 │   └─ Tighten observability boundary → observability-instrumentation
 │
 ├─ Review / validate work
 │   ├─ Before commit, push, PR → ci-workflow
 │   ├─ Address PR review comments → code-review
 │   ├─ `make lint-deps` boundary violation → architecture
+│   ├─ `injectable-classes-no-value-imports` fires → architecture
 │   ├─ Confirm protected thresholds → quality-standards
 │   └─ Lighthouse / web-vitals / a11y audit → frontend-performance-accessibility
 │
@@ -244,6 +246,41 @@ module catalog, and every `dependency-cruiser` boundary rule. Use this when
 **ALSO**: [code-organization](code-organization/SKILL.md) for the kebab-case
 naming rules; [frontend-component-development](frontend-component-development/SKILL.md)
 for the component/hook implementation.
+
+---
+
+### "A class needs to call another class"
+
+**Use**: [architecture](architecture/SKILL.md).
+
+Inside a logic directory (`src/services/**`, `src/utils/**`,
+`src/modules/*/store/**`, `src/modules/*/features/*/{repositories,stores,utils}/**`)
+a class must **receive** its behavioral collaborators, never value-import and
+call them (issue #130). Decide in this order:
+
+1. Is the symbol used **only** as a type annotation? → `import type` (issue #88).
+   Done — no token needed.
+2. Is it a **contract or data** module (tokens, `@/config/api-config`,
+   `@/config/env`, `@/routes/route-paths`, a domain/transport error class, a
+   constant map, a `response-schemas` zod contract, a `*-mutation` document, a
+   module/feature public barrel)? → value import is allowed as-is.
+3. Is it the **base class** you `extend`? → allowed, but keep the base a thin
+   template and prefer composition for behavior.
+4. Is it a **behavioral third-party library** (Apollo, Sentry, `web-vitals`,
+   zod)? → wrap it behind an `@injectable()` adapter plus a token; only
+   `tsyringe`, `reflect-metadata`, and pure leaf utilities (`uuid`) are imported
+   directly.
+5. Otherwise it is a **behavioral collaborator** → add a token to the owning
+   area's `tokens.ts`, register it in that area's `di.ts` (issue #109), and
+   `@inject(TOKENS.X)` it.
+
+Component-side (`.tsx`) consumption is the disjoint companion gate #128 — do
+not add component enforcement here. Never satisfy the gate by widening the
+allowlist in `config/di-collaborator-policy.js`, by `eslint-disable`, or by
+`depcruise-ignore`.
+
+**ALSO**: [quality-standards](quality-standards/SKILL.md) for how the gate is
+wired into `make lint`.
 
 ---
 
