@@ -1,3 +1,7 @@
+/**
+ * @jest-environment @stryker-mutator/jest-runner/jest-env/node
+ */
+
 import fs from 'fs';
 import path from 'path';
 

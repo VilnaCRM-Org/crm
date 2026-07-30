@@ -108,6 +108,17 @@ EOF
   run_make_target pr-comments PR=78 FORMAT=markdown
   [ "$status" -eq 0 ]
   assert_log_contains 'get-pr-comments.sh 78 markdown'
+
+  # lint-compose is the duplicate-mapping-key gate (issue #161): prettier accepts duplicate
+  # keys, compose's own loader rejects them. It only covers the surface it actually validates,
+  # so every combination the repo starts must stay in the recipe — assert all four, not a pair.
+  reset_command_log
+  run_make_target lint-compose
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose -f docker-compose.yml config -q'
+  assert_log_contains 'docker compose -f docker-compose.test.yml config -q'
+  assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q'
+  assert_log_contains 'docker compose -f docker-compose.memory-leak.yml config -q'
 }
 
 @test "metrics, ui, and CI-side test targets keep their shell wrappers stable" {

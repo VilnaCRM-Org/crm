@@ -7,6 +7,10 @@ on:
       - '**.jpeg'
       - '**.png'
       - '**.webp'
+      # Self-trigger: without this, a change to this workflow (an action repin, an input
+      # rename) never runs the job it changes, so the regression surfaces on some later PR
+      # that happens to touch an image. With no image in the diff the action is a no-op.
+      - '.github/workflows/image-optimization.yml'
 
 permissions: {}
 
@@ -29,9 +33,15 @@ jobs:
           persist-credentials: false
 
       # Issue #174: this was pinned to a `main`-branch commit, so the pinned code never
-      # corresponded to a reviewed release. Repinned to the 1.5.0 release-tag commit.
+      # corresponded to a reviewed release. Repinned to the 1.5.0 release-tag commit; both
+      # revisions declare the same inputs, so the repin is input-compatible.
+      #
+      # `GITHUB_TOKEN`, not `githubToken`: the action declares the former, and Actions maps
+      # input names verbatim (`INPUT_GITHUBTOKEN` vs `INPUT_GITHUB_TOKEN`), so the old spelling
+      # was an unrecognized input that the action never read. It worked only because the
+      # declared default is `${{ github.token }}` — the same value.
       - name: Compress Images
         uses: calibreapp/image-actions@9d037c06280028c110ff61c433ad4dc7d33c3c43 # 1.5.0
         with:
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ignorePaths: 'node_modules/**,tests/**'

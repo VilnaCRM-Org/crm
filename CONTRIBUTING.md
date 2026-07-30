@@ -112,9 +112,11 @@ image. The decision logic is covered by `tests/bats/docker_perf.bats`
 ### Workflow, YAML, and repository-posture gates
 
 The CI configuration is itself gated, because a regression there silently weakens every other
-check. Four gates cover it:
+check. Four gates cover it. Each one turns its own check red on a regression; that only becomes
+merge-blocking once the check is in the branch-protection required list (see the end of this
+section for which ones belong there).
 
-- **`workflow security / zizmor`** (pull request, blocking) runs
+- **`workflow security / zizmor`** (pull-request gate) runs
   [zizmor](https://github.com/zizmorcore/zizmor) over `.github/workflows/`. Reproduce it locally
   with `make lint-zizmor` (Docker, digest-pinned; deliberately not part of `make lint`, so it stays
   independent of the dev container). It fails on medium-or-higher findings: an action pinned to a
@@ -125,7 +127,7 @@ check. Four gates cover it:
   **Fix the workflow, never the gate.** Pin to a release commit, narrow the permission, or pass the
   value through `env:` and reference it as a shell variable. Do not add a `zizmor.yml` ignore, raise
   `--min-severity`, drop `--persona pedantic`, or shrink the audit scope.
-- **`format yaml files / yamlfmt`** (pull request, blocking) runs `prettier --check` over every
+- **`format yaml files / yamlfmt`** (pull-request gate) runs `prettier --check` over every
   `*.yml` / `*.yaml` file. It replaced a `norwd/fmtya` step that could not push its own fix and so
   verified nothing. It catches format drift and YAML that does not parse. It does **not** catch
   duplicate mapping keys — prettier's bundled YAML plugin passes `uniqueKeys: false`, so both keys

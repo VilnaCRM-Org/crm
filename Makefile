@@ -380,7 +380,9 @@ lint-shell: ## ShellCheck all repo gate shell scripts at --severity=warning (req
 lint-actionlint: ## Lint the GitHub Actions workflows with actionlint (requires Docker, like lint-metrics)
 	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ACTIONLINT_IMAGE) -shellcheck=
 
-lint-zizmor: ## Audit the GitHub Actions workflows for security regressions with zizmor (Docker; standalone, not part of `make lint` — owned by the `workflow security` workflow)
+# Standalone by design, not part of `make lint`: needing no dev container is what lets the
+# `workflow security` job report in seconds and still report when the compose stack cannot start.
+lint-zizmor: ## Audit the workflows for security regressions with zizmor (Docker; standalone)
 	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ZIZMOR_IMAGE) $(ZIZMOR_ARGS) .github/workflows/
 
 # Compose-file validation (issue #161). Prettier normalizes YAML but its bundled parser sets
@@ -389,10 +391,11 @@ lint-zizmor: ## Audit the GitHub Actions workflows for security regressions with
 # ("mapping key X already defined at line N"), so validating each file combination the repo
 # actually starts closes that class for the compose surface with no new tool. actionlint
 # already covers it for the workflows (syntax-check reports duplicated keys).
-lint-compose: ## Validate every docker compose file combination the repo starts (schema, interpolation, duplicate keys)
+lint-compose: ## Validate every compose file combination the repo starts (issue #161)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) config -q
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) config -q
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) $(COMMON_HEALTHCHECKS_FILE) config -q
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) \
+		$(COMMON_HEALTHCHECKS_FILE) config -q
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) config -q
 
 lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry allowlist (issue #176)

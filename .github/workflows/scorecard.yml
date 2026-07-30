@@ -43,12 +43,15 @@ jobs:
         with:
           persist-credentials: false
 
-      # Runs on the job's GITHUB_TOKEN. The Branch-Protection check needs a classic PAT with
-      # `repo` scope (`repo_token`) to read the protection API, so it reports partial data until
-      # one is provisioned; every other check is complete without it.
       - name: Run analysis
         uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
         with:
+          # Branch-Protection reads the protection API, which the job's GITHUB_TOKEN cannot do,
+          # so it reports partial data on the built-in token. Provision a `SCORECARD_TOKEN`
+          # secret to complete it — a fine-grained PAT with read-only Administration and
+          # Metadata, per Scorecard's authentication docs. Until then this falls back to the
+          # job token and every other check is complete.
+          repo_token: ${{ secrets.SCORECARD_TOKEN || github.token }}
           results_file: results.sarif
           results_format: sarif
           publish_results: true
