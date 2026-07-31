@@ -104,9 +104,14 @@ RUN apk add --no-cache curl=${CURL_VERSION} && \
     npm install -g serve@14.2.0 && \
     mkdir -p /app && chown -R node:node /app
 COPY --chown=node:node serve.json ./serve.json
+# Runtime configuration renderer (issue #145): rewrites the inline app-config block in the built
+# HTML shell from APP_CONFIG_* variables at container start, so one image serves any environment.
+# Copied before the bundle so a code change does not invalidate this layer, and vice versa.
+COPY --chown=node:node scripts/docker-entrypoint.sh scripts/render-app-config.js ./scripts/
 COPY --from=build --chown=node:node /app/dist-production ./dist
 USER node
 
 EXPOSE 3001
 
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]

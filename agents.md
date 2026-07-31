@@ -763,6 +763,49 @@ const myStoreFactory = new MyStoreFactory();
 export const useMyStore = myStoreFactory.create(container.resolve(MyStoreActions));
 ```
 
+### Runtime Configuration and Feature Flags (issue #145)
+
+`@/config/env` is build-time (`REACT_APP_*` inlined by RSBuild — changing one needs a rebuild).
+`@/config/runtime` is runtime: an inline JSON block in `public/index.html` that the production
+container entrypoint rewrites from `APP_CONFIG_*` variables at start-up, so the same tested
+artifact is promoted across environments. Runtime values win over build-time defaults.
+
+It is split in two layers for the same reason `@/config/env` is — `zod` must not reach the auth
+paint path (measured: `zod` adds 62 kB raw to the eager entrypoint, `zod/mini` 45 kB, against a
+470 kB budget and a mobile Lighthouse floor of 0.84):
+
+```typescript
+// Paint path / any zod-free code — dependency-free, synchronous, memoized
+import appConfigSource from '@/config/runtime/app-config-source';
+
+// Container-resolved code — zod-validated, frozen, fails fast
+@injectable()
+export default class GraphQLUrl {
+  constructor(@inject(RUNTIME_TOKENS.AppConfig) private readonly appConfig: AppConfigReader) {}
+}
+```
+
+Both `RUNTIME_TOKENS.AppConfig` and `RUNTIME_TOKENS.FeatureFlagService` are registered with
+`useValue` over module singletons rather than decorated `@injectable()` — the observability
+render-path pattern (issue #115).
+
+Read a flag from a component through the container-free bridge:
+
+```typescript
+import useFeatureFlag from '@/hooks/use-feature-flag';
+
+const showForgotPassword = useFeatureFlag('forgotPassword');
+```
+
+Adding a flag means declaring it in four places — the `FeatureFlag` union
+(`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
+(`feature-flag-service.ts`), `app-config-schema.ts`, and the committed block in
+`public/index.html` — plus `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` in `.env`, `.env.example` and the
+`prod` service in `docker-compose.test.yml`.
+`tests/unit/tooling/runtime-config-contract.test.ts` fails the build when those drift.
+Flags default **off**, and the full lifecycle (introduce → roll out → remove) is in
+[`docs/feature-flags.md`](docs/feature-flags.md).
+
 ### Zustand Store Pattern
 
 Stores use Zustand (`create` + `devtools`) and stay container-free. Resolve the DI

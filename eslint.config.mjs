@@ -251,6 +251,17 @@ export default [
     },
   },
 
+  // Playwright specs are not React Testing Library. The `page` fixture is destructured from the
+  // test callback argument, which `testing-library/prefer-screen-queries` misreads as a `render()`
+  // result — so the rule fires on exactly the semantic `page.getByRole(...)` queries the testing
+  // convention in CLAUDE.md requires. Scope the RTL rule set to the suites it was written for.
+  {
+    files: ['tests/e2e/**/*.ts', 'tests/visual/**/*.ts'],
+    rules: Object.fromEntries(
+      Object.keys(testingLibrary.configs['flat/react'].rules).map((rule) => [rule, 'off'])
+    ),
+  },
+
   {
     files: tsGlobs,
     ignores: ['**/*.d.ts'],
