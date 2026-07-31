@@ -164,19 +164,24 @@ describe('appConfigSource', () => {
   });
 
   // The paint path reads endpoints before the zod layer exists, so this accessor carries the same
-  // http(s)-only contract as `z.httpUrl()` in app-config-schema.ts and `assertHttpUrl` in the
+  // http(s)-only contract as the schema in app-config-schema.ts and `assertHttpUrl` in the
   // container entrypoint. Anything else is reported as absent so the caller falls back.
   describe('url', () => {
-    it.each(['http://api.example', 'https://api.example/v1'])(
-      'returns the absolute http(s) URL %s',
-      async (apiBaseUrl) => {
-        writeConfigBlock(JSON.stringify({ apiBaseUrl: `  ${apiBaseUrl}  ` }));
+    it.each([
+      'http://api.example',
+      'https://api.example/v1',
+      // Single-label and numeric hosts: the compose service names and localhost defaults this
+      // repo deploys with must stay acceptable at every layer.
+      'http://localhost:4000',
+      'http://prod:3001',
+      'http://127.0.0.1:8080',
+    ])('returns the absolute http(s) URL %s', async (apiBaseUrl) => {
+      writeConfigBlock(JSON.stringify({ apiBaseUrl: `  ${apiBaseUrl}  ` }));
 
-        const source = await loadSource();
+      const source = await loadSource();
 
-        expect(source.url('apiBaseUrl')).toBe(apiBaseUrl);
-      }
-    );
+      expect(source.url('apiBaseUrl')).toBe(apiBaseUrl);
+    });
 
     it.each([
       ['is missing', {}],

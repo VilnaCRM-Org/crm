@@ -160,6 +160,39 @@ describe('runtime configuration contract', () => {
     expect(registeredFlagNames().filter((flag) => !guide.includes(flag))).toEqual([]);
   });
 
+  // Three independent validators decide whether a runtime URL is acceptable: the zod schema in
+  // the browser, `assertHttpUrl` in the container entrypoint, and `isHttpUrl` on the paint path.
+  // If they disagree, a value can pass container start and then blow up in the browser (or the
+  // reverse). This pins that they accept exactly the same set — including the single-label Docker
+  // hostnames this repo actually deploys with, which `z.httpUrl()` silently rejects.
+  it.each([
+    ['http://localhost:4000/graphql', true],
+    ['http://prod:3001', true],
+    ['http://mockoon:8080/api', true],
+    ['http://127.0.0.1:8080', true],
+    ['https://api.example.com/graphql', true],
+    ['mailto:someone@example.com', false],
+    ['ftp://files.example/api', false],
+    ['javascript:alert(1)', false],
+    ['not-a-url', false],
+    ['/api', false],
+  ])('accepts %s in the schema and the renderer alike (%s)', (url, accepted) => {
+    const schemaAccepts = AppConfigSchema.safeParse({ graphqlUrl: url }).success;
+    const rendererAccepts = ((): boolean => {
+      try {
+        renderAppConfig(readFile(SHELL), { APP_CONFIG_GRAPHQL_URL: url });
+        return true;
+      } catch {
+        return false;
+      }
+    })();
+
+    expect({ schemaAccepts, rendererAccepts }).toEqual({
+      schemaAccepts: accepted,
+      rendererAccepts: accepted,
+    });
+  });
+
   // The sign-in control `forgotPassword` gates links to ROUTE_PATHS.passwordRecovery. Shipping
   // that flag enabled before the route is registered would send an already-locked-out user to the
   // not-found page, so this makes the rollout precondition in docs/feature-flags.md a build gate

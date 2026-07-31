@@ -97,7 +97,11 @@ supplied. Note the REST fallback is `REACT_APP_MOCKOON_URL`, not `REACT_APP_API_
 
 A runtime URL that is not an absolute `http(s)` URL is treated as absent by the paint-path reader,
 so a malformed value falls back to the build-time default instead of reaching `fetch`. The zod
-layer rejects it outright (`z.httpUrl()`), matching what the container entrypoint enforces.
+layer rejects it outright (`z.url({ protocol: /^https?$/ })`), matching what the container
+entrypoint enforces. All three validators accept the same set, including single-label Docker
+hostnames such as `http://prod:3001` — note `z.httpUrl()` would **not**, because it additionally
+requires a dotted hostname, which would let a value pass container start and then fail in the
+browser.
 
 **Not covered:** `mainLanguage` / `fallbackLanguage` stay build-time. `src/i18n.js` initializes
 i18next at module evaluation and is CommonJS, and `src/config/i18n-config.js` is `require`d by
