@@ -5,7 +5,7 @@ class UrlBuilder {
   public build(endpoint: string): string {
     // Runtime configuration wins over the build-time default so the same image can be pointed at
     // a different REST origin without a rebuild (issue #145).
-    const baseUrl = appConfigSource.text('apiBaseUrl') ?? rawEnv.mockoonUrl();
+    const baseUrl = appConfigSource.url('apiBaseUrl') ?? rawEnv.mockoonUrl();
     const normalizedBase = baseUrl.replace(/\/+$/, '');
     const normalizedEndpoint = endpoint.replace(/^\/+/, '');
 

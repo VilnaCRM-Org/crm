@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-import { overrideRuntimeConfig } from '../../../../../utils/override-runtime-config';
-import { t } from '../../../../utils/initialize-localization';
+import { t } from '@tests/e2e/utils/initialize-localization';
+import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
 
 const SIGN_IN_URL = '/sign-in';
 

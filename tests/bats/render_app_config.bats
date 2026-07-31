@@ -15,8 +15,12 @@ STAGING_GRAPHQL_URL='https://staging.vilnacrm.example/graphql'
 PRODUCTION_API_BASE_URL='https://api.vilnacrm.example'
 PRODUCTION_GRAPHQL_URL='https://api.vilnacrm.example/graphql'
 
-STAGING_CONFIG='{"flags":{"forgotPassword":true},"graphqlUrl":"https://staging.vilnacrm.example/graphql"}'
-PRODUCTION_CONFIG='{"flags":{"forgotPassword":false},"apiBaseUrl":"https://api.vilnacrm.example","graphqlUrl":"https://api.vilnacrm.example/graphql"}'
+STAGING_CONFIG='{"flags":{"forgotPassword":true}'
+STAGING_CONFIG="$STAGING_CONFIG,\"graphqlUrl\":\"$STAGING_GRAPHQL_URL\"}"
+
+PRODUCTION_CONFIG='{"flags":{"forgotPassword":false}'
+PRODUCTION_CONFIG="$PRODUCTION_CONFIG,\"apiBaseUrl\":\"$PRODUCTION_API_BASE_URL\""
+PRODUCTION_CONFIG="$PRODUCTION_CONFIG,\"graphqlUrl\":\"$PRODUCTION_GRAPHQL_URL\"}"
 
 setup() {
   SHELL_SOURCE="$PROJECT_ROOT/public/index.html"
@@ -139,7 +143,8 @@ strip_config_block() {
   local artifact
   artifact="$(copy_artifact bad-scheme)"
 
-  run --separate-stderr env APP_CONFIG_API_BASE_URL='ftp://files.example/api' node "$RENDERER" "$artifact"
+  run --separate-stderr env APP_CONFIG_API_BASE_URL='ftp://files.example/api' \
+    node "$RENDERER" "$artifact"
 
   [ "$status" -ne 0 ]
   [[ "$stderr" == *"APP_CONFIG_API_BASE_URL must use http or https"* ]]
@@ -244,6 +249,7 @@ strip_config_block() {
     sh "$ENTRYPOINT" echo started
 
   [ "$status" -ne 0 ]
-  [[ "$stderr" == *"docker-entrypoint: renderer not found at $BATS_TEST_TMPDIR/absent-renderer.js"* ]]
+  local expected="docker-entrypoint: renderer not found at $BATS_TEST_TMPDIR/absent-renderer.js"
+  [[ "$stderr" == *"$expected"* ]]
   [[ "$output" != *"started"* ]]
 }

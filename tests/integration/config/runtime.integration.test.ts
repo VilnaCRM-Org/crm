@@ -135,6 +135,28 @@ describe('runtime configuration Integration', () => {
     expect(urlBuilder.build('/users')).toBe(`${apiBaseUrl}/users`);
   });
 
+  // The paint path reads endpoints before the zod layer loads, so a block that reached the
+  // document without passing through the container entrypoint must not hand a non-http(s) value
+  // to fetch — url-builder falls back to the build-time origin instead.
+  // 'not-a-url' fails to parse at all; 'javascript:alert(1)' parses but carries a scheme no HTTP
+  // client can use. Both must be treated as absent rather than handed to fetch.
+  it.each(['not-a-url', 'javascript:alert(1)'])(
+    'ignores the runtime api base url %s and keeps the build-time origin',
+    async (apiBaseUrl) => {
+      const buildTimeApi = buildHttpUrl();
+      process.env.REACT_APP_MOCKOON_URL = buildTimeApi;
+      renderRuntimeConfig(JSON.stringify({ apiBaseUrl }));
+
+      const { default: urlBuilder } = await import('@/utils/url-builder');
+
+      expect(urlBuilder.build('/users')).toBe(`${buildTimeApi}/users`);
+      // The same value is a hard failure once the validated layer loads.
+      await expect(import('@/config/dependency-injection-config')).rejects.toThrow(
+        /Invalid runtime configuration[\s\S]*apiBaseUrl/
+      );
+    }
+  );
+
   it('keeps the flag default when the rendered block omits the flag', async () => {
     renderRuntimeConfig(buildFeatureFlagConfig({}));
 

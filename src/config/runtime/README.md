@@ -81,14 +81,23 @@ Fail-fast happens at the earliest point that can act on it, not only in the brow
 
 ## Settings
 
-| Key            | Environment variable                 | Consumed by                         |
-| -------------- | ------------------------------------ | ----------------------------------- |
-| `apiBaseUrl`   | `APP_CONFIG_API_BASE_URL`            | `@/utils/url-builder` (REST origin) |
-| `graphqlUrl`   | `APP_CONFIG_GRAPHQL_URL`             | `GraphQLUrl` (Apollo endpoint)      |
-| `flags.<name>` | `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` | `featureFlagService.isEnabled()`    |
+| Key            | Environment variable                 | Falls back to           |
+| -------------- | ------------------------------------ | ----------------------- |
+| `apiBaseUrl`   | `APP_CONFIG_API_BASE_URL`            | `REACT_APP_MOCKOON_URL` |
+| `graphqlUrl`   | `APP_CONFIG_GRAPHQL_URL`             | `REACT_APP_GRAPHQL_URL` |
+| `flags.<name>` | `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` | the declared default    |
 
-Both URL settings fall back to their build-time `REACT_APP_*` counterpart when unset, so existing
-deployments behave exactly as before until an `APP_CONFIG_*` value is supplied.
+`apiBaseUrl` is read by `@/utils/url-builder` (the REST origin), `graphqlUrl` is injected into
+`GraphQLUrl` (the Apollo endpoint), and flags are read through `featureFlagService`.
+
+Each URL setting falls back to the build-time variable its consumer already read before this
+module existed, so existing deployments behave exactly as before until an `APP_CONFIG_*` value is
+supplied. Note the REST fallback is `REACT_APP_MOCKOON_URL`, not `REACT_APP_API_BASE_URL` —
+`url-builder` has always used the former, and this change deliberately does not repoint it.
+
+A runtime URL that is not an absolute `http(s)` URL is treated as absent by the paint-path reader,
+so a malformed value falls back to the build-time default instead of reaching `fetch`. The zod
+layer rejects it outright (`z.httpUrl()`), matching what the container entrypoint enforces.
 
 **Not covered:** `mainLanguage` / `fallbackLanguage` stay build-time. `src/i18n.js` initializes
 i18next at module evaluation and is CommonJS, and `src/config/i18n-config.js` is `require`d by

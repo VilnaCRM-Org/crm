@@ -550,8 +550,9 @@ container-resolved classes inject it instead of value-importing it (issue #130).
    validates the **committed** block in `public/index.html` against the schema so the shipped
    default cannot drift from the contract.
 
-**Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`, consumed by `@/utils/url-builder`),
-`graphqlUrl` (`APP_CONFIG_GRAPHQL_URL`, injected into `GraphQLUrl`), and
+**Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`, consumed by `@/utils/url-builder`, falling
+back to `REACT_APP_MOCKOON_URL`), `graphqlUrl` (`APP_CONFIG_GRAPHQL_URL`, injected into
+`GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
 `flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`). Languages stay build-time — `src/i18n.js`
 initializes i18next at module evaluation and `src/config/i18n-config.js` is `require`d by node
 tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config

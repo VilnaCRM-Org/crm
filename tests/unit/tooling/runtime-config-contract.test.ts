@@ -19,7 +19,12 @@ const UNION = 'src/config/runtime/types/feature-flag.ts';
 const RENDERER = 'scripts/render-app-config.js';
 const DOCS = 'docs/feature-flags.md';
 
-const CONFIG_BLOCK = /<script[^>]*\bid="app-runtime-config"[^>]*>([\s\S]*?)<\/script>/;
+// Both the id AND the JSON type are part of the contract: a block that loses `application/json`
+// would become an executable script, so matching the id alone would let that regression pass.
+const CONFIG_BLOCK = new RegExp(
+  '<script(?=[^>]*\\sid="app-runtime-config")' +
+    '(?=[^>]*\\stype="application/json")[^>]*>([\\s\\S]*?)</script>'
+);
 
 const parseConfigBlock = (html: string): { flags?: Record<string, unknown> } => {
   const match = CONFIG_BLOCK.exec(html);
@@ -78,6 +83,19 @@ const urlSettings = (): Array<{ envVar: string; key: string }> => {
     key: match[2],
   }));
 };
+
+const ROUTE_CONTRACTS = [
+  'src/routes/app-routes.ts',
+  'src/modules/user/features/auth/routes/index.ts',
+];
+
+const isRouteRegistered = (routePathKey: string): boolean =>
+  ROUTE_CONTRACTS.map(readFile).some((source) =>
+    new RegExp(`path:\\s*ROUTE_PATHS\\.${routePathKey}\\b`).test(source)
+  );
+
+const shippedFlagDefault = (flag: string): unknown =>
+  (parseConfigBlock(readFile(SHELL)).flags ?? {})[flag];
 
 // A feature flag is declared in four places that no compiler or bundler ties together:
 // the committed JSON block in the HTML shell, the zod schema, the FeatureFlag union, and
@@ -140,5 +158,20 @@ describe('runtime configuration contract', () => {
     const guide = readFile(DOCS);
 
     expect(registeredFlagNames().filter((flag) => !guide.includes(flag))).toEqual([]);
+  });
+
+  // The sign-in control `forgotPassword` gates links to ROUTE_PATHS.passwordRecovery. Shipping
+  // that flag enabled before the route is registered would send an already-locked-out user to the
+  // not-found page, so this makes the rollout precondition in docs/feature-flags.md a build gate
+  // rather than a promise: the shipped default and the route registration have to move together.
+  it('never ships forgotPassword enabled while its recovery route is unregistered', () => {
+    // Guard the probe itself: a registered route must read as registered, an absent one must not.
+    expect(isRouteRegistered('signIn')).toBe(true);
+    expect(isRouteRegistered('notARealRouteKey')).toBe(false);
+
+    const enabledWithoutRoute =
+      shippedFlagDefault('forgotPassword') === true && !isRouteRegistered('passwordRecovery');
+
+    expect(enabledWithoutRoute).toBe(false);
   });
 });

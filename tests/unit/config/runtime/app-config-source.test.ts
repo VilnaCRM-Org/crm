@@ -163,6 +163,39 @@ describe('appConfigSource', () => {
     });
   });
 
+  // The paint path reads endpoints before the zod layer exists, so this accessor carries the same
+  // http(s)-only contract as `z.httpUrl()` in app-config-schema.ts and `assertHttpUrl` in the
+  // container entrypoint. Anything else is reported as absent so the caller falls back.
+  describe('url', () => {
+    it.each(['http://api.example', 'https://api.example/v1'])(
+      'returns the absolute http(s) URL %s',
+      async (apiBaseUrl) => {
+        writeConfigBlock(JSON.stringify({ apiBaseUrl: `  ${apiBaseUrl}  ` }));
+
+        const source = await loadSource();
+
+        expect(source.url('apiBaseUrl')).toBe(apiBaseUrl);
+      }
+    );
+
+    it.each([
+      ['is missing', {}],
+      ['is not a string', { apiBaseUrl: 42 }],
+      ['is whitespace only', { apiBaseUrl: '   ' }],
+      ['is not a URL at all', { apiBaseUrl: 'not-a-url' }],
+      ['is a relative path', { apiBaseUrl: '/api' }],
+      ['uses the mailto scheme', { apiBaseUrl: 'mailto:someone@example.com' }],
+      ['uses the ftp scheme', { apiBaseUrl: 'ftp://files.example/api' }],
+      ['uses the javascript scheme', { apiBaseUrl: 'javascript:alert(1)' }],
+    ])('is undefined when the value %s', async (_label, values) => {
+      writeConfigBlock(JSON.stringify(values));
+
+      const source = await loadSource();
+
+      expect(source.url('apiBaseUrl')).toBeUndefined();
+    });
+  });
+
   describe('flags', () => {
     it('returns the flags object when the configuration declares one', async () => {
       writeConfigBlock(JSON.stringify({ flags: { forgotPassword: true } }));

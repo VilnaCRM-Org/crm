@@ -44,11 +44,35 @@ describe('appConfig', () => {
     expect(Object.isFrozen(appConfig.get())).toBe(true);
   });
 
+  it('freezes the nested flags object, not just the top level', async () => {
+    writeConfigBlock(JSON.stringify({ flags: { forgotPassword: true } }));
+
+    const { default: appConfig } = await loadAppConfig();
+    const flags = appConfig.get().flags;
+
+    expect(Object.isFrozen(flags)).toBe(true);
+    expect(() => {
+      (flags as { forgotPassword: boolean }).forgotPassword = false;
+    }).toThrow(TypeError);
+    expect(appConfig.get().flags?.forgotPassword).toBe(true);
+  });
+
   it('fails fast and names the field when a URL is malformed', async () => {
     writeConfigBlock(JSON.stringify({ apiBaseUrl: 'not-a-url' }));
 
     await expect(loadAppConfig()).rejects.toThrow(/Invalid runtime configuration[\s\S]*apiBaseUrl/);
   });
+
+  it.each(['mailto:someone@example.com', 'ftp://files.example/api', 'javascript:alert(1)'])(
+    'rejects the non-http(s) URL %s, matching what the container entrypoint enforces',
+    async (apiBaseUrl) => {
+      writeConfigBlock(JSON.stringify({ apiBaseUrl }));
+
+      await expect(loadAppConfig()).rejects.toThrow(
+        /Invalid runtime configuration[\s\S]*apiBaseUrl/
+      );
+    }
+  );
 
   it('fails fast and names the key when the configuration carries an unknown setting', async () => {
     writeConfigBlock(JSON.stringify({ mainLanguage: 'uk' }));

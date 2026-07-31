@@ -24,6 +24,16 @@ describe('urlBuilder', () => {
       expect(urlBuilder.build('users')).toBe('https://build-time.example.com/users');
     });
 
+    it.each(['not-a-url', '/api', 'mailto:someone@example.com', 'javascript:alert(1)'])(
+      'falls back to the build-time origin rather than passing %s to fetch',
+      (apiBaseUrl) => {
+        process.env.REACT_APP_MOCKOON_URL = 'https://build-time.example.com';
+        writeConfigBlock(JSON.stringify({ apiBaseUrl }));
+
+        expect(urlBuilder.build('users')).toBe('https://build-time.example.com/users');
+      }
+    );
+
     it('falls back to the build-time origin when no runtime block is rendered', () => {
       process.env.REACT_APP_MOCKOON_URL = 'https://build-time.example.com';
 

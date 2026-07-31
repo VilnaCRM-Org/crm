@@ -28,6 +28,16 @@ class AppConfigSource {
     return typeof value === 'string' && value.trim() ? value.trim() : undefined;
   }
 
+  // Dependency-free counterpart of the `z.httpUrl()` contract in app-config-schema.ts. The paint
+  // path reads endpoints before the zod layer exists, so a value that is not an absolute http(s)
+  // URL is reported as absent and the caller falls back to its build-time default, rather than
+  // being handed to fetch as-is.
+  public url(key: string): string | undefined {
+    const value = this.text(key);
+
+    return value !== undefined && this.isHttpUrl(value) ? value : undefined;
+  }
+
   public flags(): Record<string, unknown> {
     const value = this.snapshot().flags;
 
@@ -61,6 +71,16 @@ class AppConfigSource {
 
   private isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private isHttpUrl(value: string): boolean {
+    try {
+      const { protocol } = new URL(value);
+
+      return protocol === 'http:' || protocol === 'https:';
+    } catch {
+      return false;
+    }
   }
 }
 

@@ -3,7 +3,6 @@ import { renderHook } from '@testing-library/react';
 import useFeatureFlag from '@/hooks/use-feature-flag';
 import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
-
 describe('useFeatureFlag', () => {
   afterEach(() => {
     clearConfigBlock();

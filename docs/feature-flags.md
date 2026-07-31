@@ -107,6 +107,11 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 the flag defaults to `false`. Enable it only once the recovery flow is implemented, then follow
 stage 3 and delete the flag.
 
+That precondition is enforced, not merely documented:
+`tests/unit/tooling/runtime-config-contract.test.ts` fails the build if the committed default for
+`forgotPassword` is ever flipped to `true` while no route contract registers
+`ROUTE_PATHS.passwordRecovery`. A flag that gates a link should carry the same kind of gate.
+
 ## Rules
 
 - **Default off.** A new flag ships disabled. The only reason to declare a default of `true` is a

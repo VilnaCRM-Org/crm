@@ -34,6 +34,8 @@ describe('committed runtime configuration defaults (public/index.html)', () => {
   it('declares exactly the flags the feature-flag service knows about', () => {
     const values = AppConfigSchema.parse(parsed);
 
-    expect(Object.keys(values.flags ?? {})).toEqual(featureFlagService.names());
+    // Sorted on both sides: the contract is set equality, so declaring the same flags in a
+    // different order than FEATURE_FLAG_DEFAULTS is valid and must not fail here.
+    expect(Object.keys(values.flags ?? {}).sort()).toEqual([...featureFlagService.names()].sort());
   });
 });
