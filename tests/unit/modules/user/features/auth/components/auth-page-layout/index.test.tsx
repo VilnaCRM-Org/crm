@@ -87,5 +87,10 @@ describe('AuthPageLayout', () => {
       expect.objectContaining({ message: 'test chunk-load error' }),
       expect.objectContaining({ componentStack: expect.any(String) })
     );
+    expect(
+      consoleError.mock.calls.filter(
+        ([message]) => message === 'AuthErrorBoundary caught an error:'
+      )
+    ).toHaveLength(1);
   });
 });

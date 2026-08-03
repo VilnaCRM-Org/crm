@@ -42,6 +42,7 @@ describe('AuthErrorBoundary', () => {
     boundary.componentDidCatch(error, info);
 
     expect(onError).toHaveBeenCalledWith(error, info);
+    expect(consoleError).toHaveBeenCalledTimes(1);
     expect(consoleError).toHaveBeenCalledWith('AuthErrorBoundary caught an error:', error, info);
   });
 
@@ -55,6 +56,7 @@ describe('AuthErrorBoundary', () => {
     boundary.componentDidCatch(error, info);
 
     expect(reportSpy).toHaveBeenCalledWith(error, info);
+    expect(consoleError).toHaveBeenCalledTimes(1);
     expect(consoleError).toHaveBeenCalledWith('AuthErrorBoundary caught an error:', error, info);
   });
 
@@ -68,6 +70,7 @@ describe('AuthErrorBoundary', () => {
     const boundary = new AuthErrorBoundary({ children: <SafeChild /> });
 
     expect(() => boundary.componentDidCatch(error, info)).not.toThrow();
+    expect(consoleError).toHaveBeenCalledTimes(1);
     expect(consoleError).toHaveBeenCalledWith('AuthErrorBoundary caught an error:', error, info);
   });
 
@@ -122,6 +125,11 @@ describe('AuthErrorBoundary', () => {
       error,
       expect.objectContaining({ componentStack: expect.any(String) })
     );
+    expect(
+      consoleErrorSpy.mock.calls.filter(
+        ([message]) => message === 'AuthErrorBoundary caught an error:'
+      )
+    ).toHaveLength(1);
     consoleErrorSpy.mockRestore();
   });
 
@@ -144,6 +152,11 @@ describe('AuthErrorBoundary', () => {
       error,
       expect.objectContaining({ componentStack: expect.any(String) })
     );
+    expect(
+      consoleErrorSpy.mock.calls.filter(
+        ([message]) => message === 'AuthErrorBoundary caught an error:'
+      )
+    ).toHaveLength(1);
     consoleErrorSpy.mockRestore();
   });
 

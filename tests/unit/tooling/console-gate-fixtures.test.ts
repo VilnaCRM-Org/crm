@@ -74,6 +74,7 @@ describe('console gate seeded defects', () => {
       'emits-console-error.fixture.ts',
       'emits-console-warn.fixture.ts',
       'spied-console-error.fixture.ts',
+      'unrestored-spy.fixture.ts',
       'warns-during-cleanup.fixture.tsx',
     ]);
   });
@@ -104,6 +105,15 @@ describe('console gate seeded defects', () => {
 
   it('passes a test that spies on and asserts the expected output', () => {
     expect(fixtureResult('spied-console-error.fixture.ts').status).toBe('passed');
+  });
+
+  it('re-arms after a test leaves its console spy unrestored', () => {
+    const result = fixtureResult('unrestored-spy.fixture.ts');
+
+    expect(result.status).toBe('failed');
+    expect(result.message).toContain('is still gated in the next test of the same file');
+    expect(result.message).toContain('emitted after an unrestored spy');
+    expect(result.message).not.toContain('installs a console.error spy and never restores it');
   });
 
   it('passes allowlisted messages and ungated levels', () => {

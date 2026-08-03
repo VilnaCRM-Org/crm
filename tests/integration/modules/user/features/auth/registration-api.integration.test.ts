@@ -161,7 +161,8 @@ describe('RegistrationAPI Integration', () => {
 
       await expect(registrationAPI.register(credentials)).rejects.toBeInstanceOf(ApiError);
 
-      expect(consoleError).toHaveBeenCalledWith(`POST ${GRAPHQL_URL} net::ERR_FAILED`);
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining(`POST ${GRAPHQL_URL}`));
     });
   });
 

@@ -4,7 +4,7 @@ Fails a Jest test when it emits unexpected `console.error` or `console.warn` out
 
 ## Why
 
-ESLint's `no-console` gates code that *writes* `console.*` calls. It cannot see output *emitted by*
+ESLint's `no-console` gates code that _writes_ `console.*` calls. It cannot see output _emitted by_
 React, MUI, react-router, or i18next while a component renders. That channel carried real defects
 past every green build: `act()` warnings from un-awaited state updates, missing list `key` props,
 invalid DOM nesting, duplicate providers, and i18next `missingKey` output — the last of which is a
@@ -34,7 +34,7 @@ can only raise the mutation score; no Stryker threshold changes.
 
 ## Satisfying the gate
 
-**The path legitimately logs.** Spy on it *and assert it*, scoped to the single test that needs it:
+**The path legitimately logs.** Spy on it _and assert it_, scoped to the single test that needs it:
 
 ```ts
 it('returns error when the response is null', () => {
@@ -64,7 +64,8 @@ allowlist entry, and expect it to be reviewed as a defect suppression.
 `allowlist.ts` entries are validated by `tests/unit/tooling/console-gate.test.ts`, which fails the
 build unless every entry:
 
-- has a `^`-anchored `pattern`, so it cannot swallow unrelated output;
+- has a `pattern` anchored at **both** ends (`^` … `$`), so an entry matches the complete message
+  and cannot swallow unrelated output appended to it;
 - carries a substantive `reason`;
 - declares an `expiresWith` package major that the version pinned in `package.json` has **not** yet
   reached.
@@ -79,7 +80,12 @@ fixtures in `tests/fixtures/console-gate/` and pins that the gate:
 
 - fails a test that emits an unexpected `console.error`;
 - fails a test that emits an unexpected `console.warn`;
+- fails a test whose output is emitted during testing-library cleanup, after the test body returned;
 - passes a test that spies on and asserts its expected output;
-- passes an allowlisted message and the ungated `log` / `info` / `debug` levels.
+- re-arms after a test leaves its `console` spy unrestored, so one spied test cannot silently
+  disable the gate for the rest of its file (the library re-installs its patch in its own
+  `beforeEach`, so no `mockRestore()` is required);
+- passes an allowlisted message and the ungated `log` / `info` levels.
 
-The fixtures are named `*.fixture.ts`, not `*.test.ts`, so no runner discovers them directly.
+The fixtures are named `*.fixture.ts` / `*.fixture.tsx`, not `*.test.ts` / `*.test.tsx`, so no
+runner discovers them directly.

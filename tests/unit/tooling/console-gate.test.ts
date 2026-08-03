@@ -60,10 +60,23 @@ describe('console gate wiring', () => {
 });
 
 describe('console gate allowlist discipline', () => {
-  it('anchors every pattern so an entry cannot swallow unrelated output', () => {
+  it('anchors every pattern at both ends so an entry cannot swallow unrelated output', () => {
     for (const entry of CONSOLE_ALLOWLIST) {
       expect(entry.pattern.source.startsWith('^')).toBe(true);
+      expect(entry.pattern.source.endsWith('$')).toBe(true);
     }
+  });
+
+  it('rejects an allowlisted message that carries unrelated trailing output', () => {
+    const rtlActDeprecation = [
+      'Warning: `ReactDOMTestUtils.act` is deprecated in favor of `React.act`.',
+      'Import `act` from `react` instead of `react-dom/test-utils`.',
+      'See https://react.dev/warnings/react-dom-test-utils for more info.',
+    ].join(' ');
+
+    expect(
+      isConsoleAllowed(`${rtlActDeprecation} Warning: Each child in a list needs a key.`)
+    ).toBe(false);
   });
 
   it('documents why every entry exists', () => {
@@ -100,6 +113,7 @@ describe('console gate allowlist discipline', () => {
     const rtlActDeprecation = [
       'Warning: `ReactDOMTestUtils.act` is deprecated in favor of `React.act`.',
       'Import `act` from `react` instead of `react-dom/test-utils`.',
+      'See https://react.dev/warnings/react-dom-test-utils for more info.',
     ].join(' ');
 
     expect(isConsoleAllowed(rtlActDeprecation)).toBe(true);

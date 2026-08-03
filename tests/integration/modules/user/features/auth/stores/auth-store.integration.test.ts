@@ -155,8 +155,9 @@ describe('Auth Store Integration', () => {
 
       await authActions.loginUser(buildCredentials());
 
+      expect(consoleError).toHaveBeenCalledTimes(1);
       expect(consoleError).toHaveBeenCalledWith(
-        expect.stringContaining(`POST ${API_ENDPOINTS.LOGIN} net::ERR_FAILED`)
+        expect.stringContaining(`POST ${API_ENDPOINTS.LOGIN}`)
       );
 
       const state = AuthStateVar.get();
@@ -360,6 +361,7 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
+      expect(consoleError).toHaveBeenCalledTimes(1);
       expect(consoleError).toHaveBeenCalledWith(
         expect.stringContaining('https://go.apollo.dev/c/err')
       );
@@ -379,10 +381,12 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
-      expect(consoleError).toHaveBeenCalledWith(
+      expect(consoleError).toHaveBeenCalledTimes(2);
+      expect(consoleError).toHaveBeenNthCalledWith(
+        1,
         expect.stringContaining('https://go.apollo.dev/c/err')
       );
-      expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+      expect(consoleError).toHaveBeenNthCalledWith(2, 'Registration response validation failed', {
         issueCount: 1,
       });
 
@@ -425,9 +429,8 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
-      expect(consoleError).toHaveBeenCalledWith(
-        expect.stringContaining(`POST ${GRAPHQL_URL} net::ERR_FAILED`)
-      );
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining(`POST ${GRAPHQL_URL}`));
 
       const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);

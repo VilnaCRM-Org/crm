@@ -12,7 +12,7 @@ const AUTH_SKELETON_REGION_NAME = localization.en.translation.auth.loadingForm;
 const renderAuthSkeleton = (disableAnimation = false): ReturnType<typeof render> =>
   render(
     <I18nextProvider i18n={testI18n}>
-      <AuthSkeleton disableAnimation={disableAnimation} />
+      {disableAnimation ? <AuthSkeleton disableAnimation /> : <AuthSkeleton />}
     </I18nextProvider>
   );
 

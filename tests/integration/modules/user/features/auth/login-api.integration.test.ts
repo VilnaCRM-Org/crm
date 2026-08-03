@@ -176,7 +176,10 @@ describe('LoginAPI Integration', () => {
         'Network error. Please check your connection.'
       );
 
-      expect(consoleError).toHaveBeenCalledWith(`POST ${API_ENDPOINTS.LOGIN} net::ERR_FAILED`);
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining(`POST ${API_ENDPOINTS.LOGIN}`)
+      );
     });
   });
 
