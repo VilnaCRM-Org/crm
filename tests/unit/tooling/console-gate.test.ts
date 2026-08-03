@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 
 import CONSOLE_ALLOWLIST from '@tests/console-gate/allowlist';
-import { isConsoleAllowed } from '@tests/console-gate/install';
+import { isConsoleAllowed, isConsoleAllowedBy } from '@tests/console-gate/install';
+import type { ConsoleAllowlistEntry } from '@tests/console-gate/types/console-allowlist-entry';
 
 const repoRoot = path.resolve(__dirname, '..', '..', '..');
 
@@ -60,10 +61,33 @@ describe('console gate wiring', () => {
 });
 
 describe('console gate allowlist discipline', () => {
-  it('anchors every pattern at both ends so an entry cannot swallow unrelated output', () => {
+  it('anchors every pattern at both ends so an entry reads as a whole-message rule', () => {
     for (const entry of CONSOLE_ALLOWLIST) {
       expect(entry.pattern.source.startsWith('^')).toBe(true);
       expect(entry.pattern.source.endsWith('$')).toBe(true);
+    }
+  });
+
+  it('matches whole messages even when an entry is only partially anchored', () => {
+    const partiallyAnchored: ConsoleAllowlistEntry[] = [
+      {
+        pattern: /^an allowed warning|swallowed$/,
+        reason: 'A deliberately broken entry: alternation binds looser than the anchors.',
+        expiresWith: { packageName: '@testing-library/react', removedInMajor: 16 },
+      },
+    ];
+
+    expect(isConsoleAllowedBy('an allowed warning', partiallyAnchored)).toBe(true);
+    expect(isConsoleAllowedBy('an allowed warning plus unrelated output', partiallyAnchored)).toBe(
+      false
+    );
+    expect(isConsoleAllowedBy('unrelated output that is swallowed', partiallyAnchored)).toBe(false);
+  });
+
+  it('never lets a stateful pattern skip a message', () => {
+    for (const entry of CONSOLE_ALLOWLIST) {
+      expect(entry.pattern.global).toBe(false);
+      expect(entry.pattern.sticky).toBe(false);
     }
   });
 

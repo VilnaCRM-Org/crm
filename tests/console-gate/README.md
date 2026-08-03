@@ -64,14 +64,19 @@ allowlist entry, and expect it to be reviewed as a defect suppression.
 `allowlist.ts` entries are validated by `tests/unit/tooling/console-gate.test.ts`, which fails the
 build unless every entry:
 
-- has a `pattern` anchored at **both** ends (`^` … `$`), so an entry matches the complete message
-  and cannot swallow unrelated output appended to it;
+- has a `pattern` anchored at **both** ends (`^` … `$`), and carries neither the `g` nor the `y`
+  flag (a stateful pattern would skip messages);
 - carries a substantive `reason`;
 - declares an `expiresWith` package major that the version pinned in `package.json` has **not** yet
   reached.
 
 The last rule is what stops the allowlist from rotting: the dependency bump that fixes the message
 turns this test red until the stale entry is deleted. An entry cannot outlive its cause.
+
+The whole-message boundary is enforced in `install.ts`, not by those style rules. `isConsoleAllowedBy`
+allows a message only when the pattern matches it **in full** (`match[0] === message`), so an entry
+cannot allow a message that merely contains an allowed fragment — not even when the anchors are
+written in a way that binds to only one branch of an alternation, such as `/^allowed|swallowed$/`.
 
 ## Proof the gate fires
 
