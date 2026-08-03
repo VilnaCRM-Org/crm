@@ -1,8 +1,11 @@
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
 import breakpointsTheme from '@/components/ui-breakpoints';
+import localization from '@/i18n/localization.json';
+import testI18n from '@tests/i18n/test-i18n';
 
 jest.mock('@/components/skeletons/ui-skeleton-text', () => ({
   __esModule: true,
@@ -11,7 +14,15 @@ jest.mock('@/components/skeletons/ui-skeleton-text', () => ({
 
 describe('AuthSkeleton typography parity', () => {
   it('matches top text skeleton sizes to auth form typography', () => {
-    render(<AuthSkeleton />);
+    render(
+      <I18nextProvider i18n={testI18n}>
+        <AuthSkeleton />
+      </I18nextProvider>
+    );
+
+    expect(
+      screen.getByRole('region', { name: localization.en.translation.auth.loadingForm })
+    ).toBeInTheDocument();
 
     const calls = (UISkeletonText as unknown as jest.Mock).mock.calls.map(([props]) => props);
     const titleSkeleton = calls.find((props) => props.id === 'auth-skeleton-title');

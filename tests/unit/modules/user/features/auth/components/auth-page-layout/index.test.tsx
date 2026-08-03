@@ -1,7 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { I18nextProvider } from 'react-i18next';
 
+import localization from '@/i18n/localization.json';
 import AuthPageLayout from '@/modules/user/features/auth/components/auth-page-layout';
+import testI18n from '@tests/i18n/test-i18n';
 
 jest.mock('@/styles/theme', () => ({
   __esModule: true,
@@ -64,16 +67,25 @@ describe('AuthPageLayout', () => {
   });
 
   it('renders the AuthErrorBoundary fallback when the child throws (AC3)', async () => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
     render(
-      <AuthPageLayout>
-        <ThrowingChild />
-      </AuthPageLayout>
+      <I18nextProvider i18n={testI18n}>
+        <AuthPageLayout>
+          <ThrowingChild />
+        </AuthPageLayout>
+      </I18nextProvider>
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        localization.en.translation.auth.error.default
+      );
     });
+    expect(consoleError).toHaveBeenCalledWith(
+      'AuthErrorBoundary caught an error:',
+      expect.objectContaining({ message: 'test chunk-load error' }),
+      expect.objectContaining({ componentStack: expect.any(String) })
+    );
   });
 });

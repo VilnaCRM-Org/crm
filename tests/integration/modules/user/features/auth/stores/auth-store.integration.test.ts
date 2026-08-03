@@ -150,9 +150,14 @@ describe('Auth Store Integration', () => {
     });
 
     it('should set error state on network failure', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Failed to fetch')));
 
       await authActions.loginUser(buildCredentials());
+
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining(`POST ${API_ENDPOINTS.LOGIN} net::ERR_FAILED`)
+      );
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -339,6 +344,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle validation error from API response', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(
         rest.post(GRAPHQL_URL, (_, res, ctx) =>
           res(
@@ -354,12 +360,17 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining('https://go.apollo.dev/c/err')
+      );
+
       const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
 
     it('surfaces a register error when the payload contains no user', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(
         rest.post(GRAPHQL_URL, (_, res, ctx) =>
           res(ctx.status(200), ctx.json({ data: { createUser: { user: null } } }))
@@ -367,6 +378,13 @@ describe('Auth Store Integration', () => {
       );
 
       await authActions.registerUser(registrationCredentials);
+
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining('https://go.apollo.dev/c/err')
+      );
+      expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+        issueCount: 1,
+      });
 
       const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
@@ -402,9 +420,14 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle network failure', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(rest.post(GRAPHQL_URL, (_, res) => res.networkError('Failed to fetch')));
 
       await authActions.registerUser(registrationCredentials);
+
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining(`POST ${GRAPHQL_URL} net::ERR_FAILED`)
+      );
 
       const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);

@@ -12,7 +12,9 @@ export function seedFaker(seed: number = resolveFakerSeed()): number {
   faker.seed(seed);
   if (!process.env.FAKER_SEED_REPORTED) {
     process.env.FAKER_SEED_REPORTED = '1';
-    console.warn(`[faker] deterministic seed=${seed} (override with FAKER_SEED=<integer>)`);
+    process.stdout.write(
+      `[faker] deterministic seed=${seed} (override with FAKER_SEED=<integer>)\n`
+    );
   }
   return seed;
 }

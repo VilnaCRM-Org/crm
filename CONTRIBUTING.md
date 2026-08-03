@@ -95,6 +95,34 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
+### Unexpected console output fails Jest
+
+Every Jest setup file installs `jest-fail-on-console`, so a `console.error` or `console.warn`
+emitted while a test runs **fails that test** (the apollo-server node suite gates `error` only;
+`log` / `info` / `debug` are never gated). This catches the runtime warnings ESLint cannot see —
+React `act()` warnings, missing list `key`s, invalid DOM nesting, i18next `missingKey` — which
+otherwise scroll past in a green log.
+
+If your test legitimately drives a path the application logs on, spy on it **and assert it**,
+scoped to that single test:
+
+```ts
+const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+  issueCount: 2,
+});
+```
+
+Do not put that spy in a file-wide `beforeEach` — it would swallow genuinely unexpected output in
+the file's other tests. If the message is an `act()` warning, it is a real bug in the test: await
+the update instead of spying it away.
+
+`tests/console-gate/allowlist.ts` is the only escape hatch, and
+`tests/unit/tooling/console-gate.test.ts` rejects any entry that is not `^`-anchored, lacks a
+substantive reason, or has outlived the dependency major it declares it expires with. Adding to it
+is reviewed as a defect suppression, exactly like an `eslint-disable`.
+
 ### Dockerfile build performance
 
 If your change touches a configured Dockerfile path (or the gate's own config),
