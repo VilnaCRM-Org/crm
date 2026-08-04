@@ -1,7 +1,7 @@
 import { Page, expect } from '@playwright/test';
 
-import { currentLanguage } from '../constants';
-import stabilizePage from '../stabilize-page';
+import { currentLanguage } from '@tests/visual/constants';
+import stabilizePage from '@tests/visual/stabilize-page';
 
 async function takeMobileSnapshot(page: Page, url: string, name: string): Promise<void> {
   await stabilizePage(page, url);

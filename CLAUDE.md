@@ -95,7 +95,9 @@ more project names.
 - **Touch E2E** — [`tests/e2e/mobile/`](tests/e2e/mobile/): sign-in and sign-up completed with
   `tap()` only, switcher navigation, empty-form validation (no request fired), the
   password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
-  overflow, and submit reachability when an on-screen keyboard shrinks the viewport.
+  overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
+  on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
+  is named for what it measures, not for a keyboard it cannot summon.
 - **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in` and `/sign-up`
   captured with `scale: 'device'`, so the baselines are true 2.625× / 3× rasters and catch the
   asset and raster regressions that CSS-scaled desktop snapshots average away. Baselines live in
@@ -110,9 +112,11 @@ docker compose -f docker-compose.test.yml exec playwright \
   ./node_modules/.bin/playwright test tests/e2e/mobile --project=mobile-safari
 ```
 
-`ENV=dev` carries the touch E2E lane through a `mobile-chrome-dev` project (Pixel 7 descriptor on
-the system Chromium). Mobile **visual** baselines are production-only, so `tests/visual/mobile`
-never runs in dev mode.
+`ENV=dev` is a **reduced** two-project matrix — `chromium-dev` plus `mobile-chrome-dev` (Pixel 7
+descriptor on the system Chromium), the latter scoped to `tests/e2e/mobile` only. There is no
+dev-mode `mobile-safari`, and mobile **visual** baselines are production-only, so
+`tests/visual/mobile` never runs in dev mode. A local `ENV=dev` run therefore does not stand in
+for the CI matrix.
 
 **Measured cost** (local prod stack, same pinned Playwright image CI uses; runner wall-clock will
 be higher but the ratio holds):

@@ -123,9 +123,11 @@ make test-mutation
 - **Jest Config**: Supports both `jsdom` (client) and `node` (server) environments via `TEST_ENV` variable
 - **Path Mapping**: Uses `@/` alias for `src/` directory imports
 - **Coverage**: Enabled by default with V8 provider
-- **Playwright**: 5 projects — 3 desktop browsers (Chromium, Firefox, WebKit) with Docker-specific
-  launch options, plus `mobile-chrome` (Pixel 7) and `mobile-safari` (iPhone 14) device emulation
-  scoped to the `tests/e2e/mobile` and `tests/visual/mobile` lanes
+- **Playwright (default, `ENV=prod`)**: 5 projects — 3 desktop browsers (Chromium, Firefox,
+  WebKit) with Docker-specific launch options, plus `mobile-chrome` (Pixel 7) and `mobile-safari`
+  (iPhone 14) device emulation scoped to the `tests/e2e/mobile` and `tests/visual/mobile` lanes
+- **Playwright (`ENV=dev`)**: 2 projects — `chromium-dev` and `mobile-chrome-dev`; the latter runs
+  `tests/e2e/mobile` only, so mobile visual baselines stay production-only
 
 ### Example Test Creation
 

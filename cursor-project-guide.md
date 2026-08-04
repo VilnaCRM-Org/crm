@@ -308,9 +308,9 @@ make test-e2e-ui
 docker compose -f docker-compose.test.yml exec playwright \
   pnpm exec playwright test tests/e2e/login.spec.ts
 
-# Touch-interaction lane only (Pixel 7 / iPhone 14 device emulation)
+# Touch-interaction lane only (both device projects: Pixel 7 and iPhone 14)
 docker compose -f docker-compose.test.yml exec playwright \
-  pnpm exec playwright test tests/e2e/mobile --project=mobile-chrome
+  pnpm exec playwright test tests/e2e/mobile
 ```
 
 Specs under `tests/e2e/mobile/` run only on the `mobile-chrome` / `mobile-safari` projects, which

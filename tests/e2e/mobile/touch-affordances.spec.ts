@@ -3,6 +3,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test';
 import {
   hidePasswordLabel,
   OAUTH_BUTTON_SELECTOR,
+  OAUTH_PROVIDER_COUNT,
   showPasswordLabel,
   SIGN_IN_URL,
   SIGN_UP_URL,
@@ -20,6 +21,11 @@ async function gotoAuthPage(page: Page, url: string, submitLabel: string): Promi
   await page.goto(url);
   const submit = page.locator('button', { hasText: submitLabel });
   await expect(submit).toBeVisible();
+  await page.evaluate(async () => {
+    if ('fonts' in document) {
+      await document.fonts.ready.catch(() => undefined);
+    }
+  });
   return submit;
 }
 
@@ -38,14 +44,11 @@ async function readPointerCapabilities(page: Page): Promise<{
 }
 
 async function expectNoHorizontalOverflow(page: Page): Promise<void> {
-  const overflow = await page.evaluate(() => ({
-    scrollWidth: document.documentElement.scrollWidth,
-    innerWidth: window.innerWidth,
-  }));
-  expect(
-    overflow.scrollWidth,
-    `document scrollWidth ${overflow.scrollWidth} must not exceed viewport ${overflow.innerWidth}`
-  ).toBeLessThanOrEqual(overflow.innerWidth);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), {
+      message: 'document must not scroll horizontally at the emulated device width',
+    })
+    .toBeLessThanOrEqual(0);
 }
 
 test.describe('Mobile device emulation', () => {
@@ -105,12 +108,9 @@ test.describe('Touch target sizing', () => {
     await gotoAuthPage(page, SIGN_IN_URL, signIn.submitLabel);
 
     const providers = page.locator(OAUTH_BUTTON_SELECTOR);
-    await expect(providers.first()).toBeVisible();
+    await expect(providers).toHaveCount(OAUTH_PROVIDER_COUNT);
 
-    const count = await providers.count();
-    expect(count).toBeGreaterThan(0);
-
-    for (let index = 0; index < count; index += 1) {
+    for (let index = 0; index < OAUTH_PROVIDER_COUNT; index += 1) {
       await expectTouchTarget(providers.nth(index), `social provider button #${index + 1}`);
     }
   });
@@ -150,8 +150,10 @@ test.describe('Touch-only affordances', () => {
   });
 });
 
-test.describe('On-screen keyboard viewport', () => {
-  test('keeps the sign-in submit control reachable when the keyboard shrinks the viewport', async ({
+// Playwright cannot open a native on-screen keyboard, so the layout viewport is shrunk to
+// keyboard height as the closest available proxy for that state.
+test.describe('Short viewport (on-screen-keyboard proxy)', () => {
+  test('keeps the focused sign-in form submittable at keyboard-height viewport', async ({
     page,
   }) => {
     const submit = await gotoAuthPage(page, SIGN_IN_URL, signIn.submitLabel);
@@ -165,10 +167,11 @@ test.describe('On-screen keyboard viewport', () => {
     await page.getByPlaceholder(signIn.passwordPlaceholder).tap();
     await page.setViewportSize({ width, height: shrunkHeight });
 
-    const visualViewportHeight = await page.evaluate(
-      () => window.visualViewport?.height ?? window.innerHeight
-    );
-    expect(visualViewportHeight).toBeLessThanOrEqual(shrunkHeight);
+    await expect
+      .poll(() => page.evaluate(() => window.visualViewport?.height ?? window.innerHeight), {
+        message: 'the visual viewport must follow the shrunk layout viewport',
+      })
+      .toBeLessThanOrEqual(shrunkHeight);
 
     await submit.scrollIntoViewIfNeeded();
     await expectTouchTarget(submit, 'sign-in submit button under a shrunk viewport');

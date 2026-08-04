@@ -11,6 +11,12 @@ const readFile = (relativePath: string): string =>
 const listFiles = (relativePath: string): string[] =>
   fs.readdirSync(path.join(projectRoot, relativePath));
 
+const listFilesRecursively = (relativePath: string): string[] =>
+  fs
+    .readdirSync(path.join(projectRoot, relativePath), { recursive: true, encoding: 'utf8' })
+    .filter((entry) => fs.statSync(path.join(projectRoot, relativePath, entry)).isFile())
+    .map((entry) => path.join(relativePath, entry));
+
 const playwrightConfig = readFile('playwright.config.ts');
 
 const projectSource = (name: string): string => {
@@ -56,18 +62,22 @@ describe('mobile device emulation lane', () => {
 });
 
 describe('mobile touch specs', () => {
-  const specs = listFiles('tests/e2e/mobile').filter((file) => file.endsWith('.spec.ts'));
+  const laneFiles = listFilesRecursively('tests/e2e/mobile').filter((file) => file.endsWith('.ts'));
+  const specs = laneFiles.filter((file) => file.endsWith('.spec.ts'));
 
   it('ships at least one touch spec', () => {
     expect(specs.length).toBeGreaterThan(0);
   });
 
-  it('drives interactions with tap(), never click()', () => {
+  it('drives every spec with tap()', () => {
     specs.forEach((spec) => {
-      const source = readFile(path.join('tests/e2e/mobile', spec));
+      expect(readFile(spec)).toContain('.tap()');
+    });
+  });
 
-      expect(source).toContain('.tap()');
-      expect(source).not.toContain('.click(');
+  it('never falls back to click() anywhere in the lane, helpers included', () => {
+    laneFiles.forEach((file) => {
+      expect(readFile(file)).not.toContain('.click(');
     });
   });
 });
@@ -82,18 +92,23 @@ describe('mobile visual baselines', () => {
     expect(helper).not.toContain('setViewportSize');
   });
 
-  it('records one baseline per page per mobile project', () => {
-    const baselines = listFiles(snapshotDir);
+  it('never reaches for the viewport-resizing desktop helper', () => {
+    listFilesRecursively('tests/visual/mobile')
+      .filter((file) => file.endsWith('.ts'))
+      .forEach((file) => {
+        const source = readFile(file);
 
-    MOBILE_PROJECTS.forEach((project) => {
-      expect(baselines).toContain(`uk-sign-in-${project}-linux.png`);
-      expect(baselines).toContain(`uk-sign-up-${project}-linux.png`);
-    });
+        expect(source).not.toContain('take-visual-snapshot');
+        expect(source).not.toContain('setViewportSize');
+      });
   });
 
-  it('records no desktop-project baseline in the mobile lane', () => {
-    listFiles(snapshotDir).forEach((baseline) => {
-      expect(MOBILE_PROJECTS.some((project) => baseline.includes(`-${project}-`))).toBe(true);
-    });
+  it('records exactly one baseline per page per mobile project, and nothing else', () => {
+    const expected = MOBILE_PROJECTS.flatMap((project) => [
+      `uk-sign-in-${project}-linux.png`,
+      `uk-sign-up-${project}-linux.png`,
+    ]).sort();
+
+    expect(listFiles(snapshotDir).sort()).toEqual(expected);
   });
 });

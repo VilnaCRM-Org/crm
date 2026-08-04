@@ -1,7 +1,5 @@
-import type { LoginUserDto, RegisterUserDto } from '@/modules/user/features/auth/types/credentials';
 import { buildCredentials, buildUser, seedFaker } from '@tests/builders';
-
-import { t } from '../utils/initialize-localization';
+import { t } from '@tests/e2e/utils/initialize-localization';
 
 seedFaker();
 
@@ -13,8 +11,10 @@ export const REGISTRATION_API_URL = '**/graphql';
 
 export const MIN_TOUCH_TARGET_PX = 44;
 
-export const credentials: LoginUserDto = buildCredentials();
-export const newUser: RegisterUserDto = buildUser();
+export const OAUTH_PROVIDER_COUNT = 4;
+
+export const credentials = buildCredentials();
+export const newUser = buildUser();
 
 export const signIn = {
   emailPlaceholder: t('sign_in.form.email_input.placeholder'),

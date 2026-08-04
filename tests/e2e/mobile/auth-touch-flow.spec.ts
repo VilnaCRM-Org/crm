@@ -1,5 +1,7 @@
 import { test, expect, type Page, type Route } from '@playwright/test';
 
+import fulfillCreateUserSuccess from '@tests/e2e/utils/create-user-response';
+
 import {
   credentials,
   LOGIN_API_URL,
@@ -12,7 +14,6 @@ import {
   switcherToSignInLabel,
   switcherToSignUpLabel,
 } from './constants';
-import fulfillRegistrationSuccess from './utils/registration-response';
 
 type ReloadMarkedWindow = Window & { __noReloadMarker?: boolean };
 
@@ -56,7 +57,7 @@ test.describe('Auth flow driven by touch', () => {
   });
 
   test('registers with taps only and shows the success notification', async ({ page }) => {
-    await page.route(REGISTRATION_API_URL, fulfillRegistrationSuccess);
+    await page.route(REGISTRATION_API_URL, fulfillCreateUserSuccess(newUser));
 
     await page.goto(SIGN_UP_URL);
     await tapAndFill(page, signUp.namePlaceholder, newUser.fullName);
@@ -71,9 +72,10 @@ test.describe('Auth flow driven by touch', () => {
   test('tapping submit on an empty form surfaces validation and sends no request', async ({
     page,
   }) => {
-    let requestCount = 0;
+    let postCount = 0;
     await page.route(REGISTRATION_API_URL, async (route: Route) => {
-      requestCount += 1;
+      if (!isPost(route)) return route.fallback();
+      postCount += 1;
       return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     });
 
@@ -82,10 +84,10 @@ test.describe('Auth flow driven by touch', () => {
 
     await expect(page.locator(`text=${signUp.requiredNameError}`).first()).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`${SIGN_UP_URL}$`));
-    expect(requestCount).toBe(0);
+    expect(postCount).toBe(0);
   });
 
-  test('taps the switcher to move /sign-in → /sign-up without a full reload', async ({ page }) => {
+  test('taps the switcher from /sign-in to /sign-up without a full reload', async ({ page }) => {
     await page.goto(SIGN_IN_URL);
     await page.evaluate(() => {
       (window as ReloadMarkedWindow).__noReloadMarker = true;
@@ -104,7 +106,7 @@ test.describe('Auth flow driven by touch', () => {
     expect(survivedNavigation).toBe(true);
   });
 
-  test('taps the switcher to move /sign-up → /sign-in without a full reload', async ({ page }) => {
+  test('taps the switcher from /sign-up to /sign-in without a full reload', async ({ page }) => {
     await page.goto(SIGN_UP_URL);
     await page.evaluate(() => {
       (window as ReloadMarkedWindow).__noReloadMarker = true;

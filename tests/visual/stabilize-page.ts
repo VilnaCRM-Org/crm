@@ -1,6 +1,6 @@
 import { Page, expect } from '@playwright/test';
 
-import { seedPreloadedAuthToken } from '../utils/seed-preloaded-auth-token';
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import { PAGES, timeoutDuration } from './constants';
 
@@ -24,6 +24,14 @@ async function disableAnimations(page: Page): Promise<void> {
   injectedPages.add(page);
 }
 
+async function waitForNetworkIdle(page: Page): Promise<void> {
+  try {
+    await page.waitForLoadState('networkidle', { timeout: timeoutDuration });
+  } catch {
+    //
+  }
+}
+
 async function stabilizePage(page: Page, url: string): Promise<void> {
   await disableAnimations(page);
 
@@ -36,11 +44,7 @@ async function stabilizePage(page: Page, url: string): Promise<void> {
     response && response.ok(),
     `Navigation failed: ${response?.status()} ${response?.statusText()} for ${url}`
   ).toBeTruthy();
-  try {
-    await page.waitForLoadState('networkidle', { timeout: timeoutDuration });
-  } catch {
-    //
-  }
+  await waitForNetworkIdle(page);
 
   await page.evaluate(async () => {
     if ('fonts' in document) {
@@ -55,7 +59,7 @@ async function stabilizePage(page: Page, url: string): Promise<void> {
 
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
 
-  await page.waitForLoadState('networkidle');
+  await waitForNetworkIdle(page);
   await page.waitForTimeout(timeoutDuration);
 }
 

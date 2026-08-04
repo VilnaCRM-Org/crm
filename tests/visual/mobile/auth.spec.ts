@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 
-import { PAGES } from '../constants';
+import { PAGES } from '@tests/visual/constants';
 
 import takeMobileSnapshot from './take-mobile-snapshot';
 
