@@ -23,7 +23,7 @@ async function gotoAuthPage(page: Page, url: string, submitLabel: string): Promi
   await expect(submit).toBeVisible();
   await page.evaluate(async () => {
     if ('fonts' in document) {
-      await document.fonts.ready.catch(() => undefined);
+      await document.fonts.ready;
     }
   });
   return submit;
