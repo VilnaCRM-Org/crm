@@ -307,7 +307,14 @@ make test-e2e-ui
 # Single E2E test
 docker compose -f docker-compose.test.yml exec playwright \
   pnpm exec playwright test tests/e2e/login.spec.ts
+
+# Touch-interaction lane only (Pixel 7 / iPhone 14 device emulation)
+docker compose -f docker-compose.test.yml exec playwright \
+  pnpm exec playwright test tests/e2e/mobile --project=mobile-chrome
 ```
+
+Specs under `tests/e2e/mobile/` run only on the `mobile-chrome` / `mobile-safari` projects, which
+carry `isMobile`, `hasTouch`, the mobile UA and real DPR; drive them with `tap()`, not `click()`.
 
 ### Visual Regression Tests
 
@@ -321,6 +328,9 @@ make test-visual-update
 # Visual tests with UI
 make test-visual-ui
 ```
+
+Mobile baselines for `/sign-in` and `/sign-up` live under `tests/visual/mobile/` and are captured
+with `scale: 'device'`, so they carry the emulated 2.625×/3× device pixel ratio.
 
 ### Performance Tests
 

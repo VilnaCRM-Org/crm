@@ -202,6 +202,11 @@ Runs tests inside the Playwright container, targeting the production container:
   make test-visual-ui: runs UI-focused visual regression tests
 ```
 
+Both targets run five Playwright projects: the desktop `chromium` / `firefox` / `webkit` matrix
+plus `mobile-chrome` (Pixel 7) and `mobile-safari` (iPhone 14) device emulation. The mobile
+projects are scoped to `tests/e2e/mobile` and `tests/visual/mobile`; the desktop projects skip
+those directories. See "Mobile device & touch lane" in `CLAUDE.md`.
+
 ### Fast dev-mode Playwright targets
 
 The `-dev` Playwright targets run e2e and visual specs from the running `dev` container for a

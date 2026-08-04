@@ -854,6 +854,11 @@ than one. Match the change to the suite and run its verification command:
 | E2E (Playwright)    | User-facing flows end to end (Mockoon)    | `make test-e2e`         |
 | Visual regression   | Any change to rendered UI or styling      | `make test-visual`      |
 
+`make test-e2e` and `make test-visual` each run five Playwright projects: the desktop
+`chromium` / `firefox` / `webkit` matrix plus `mobile-chrome` (Pixel 7) and `mobile-safari`
+(iPhone 14), the latter scoped to `tests/e2e/mobile` and `tests/visual/mobile`. No separate
+command or workflow gates the mobile lane.
+
 Add a specialized suite when the change touches its concern: `make test-mutation` (test
 strength), `make test-memory-leak` (leaks / OOM), `make test-load` (traffic, K6), and
 `make lighthouse-desktop` / `make lighthouse-mobile` (performance, a11y, best practices).
@@ -884,6 +889,8 @@ Walk this checklist and add coverage for every item the change can reach:
 - [ ] Permission / auth / role-sensitive flows
 - [ ] Boundary values and off-by-one behavior
 - [ ] Locale / i18n-sensitive behavior (uk primary, en fallback)
+- [ ] Touch / mobile-device behavior for UI changes — `tap()` interaction, tap-target size,
+      and a keyboard-shrunk viewport (`tests/e2e/mobile/`, issue #154)
 - [ ] Visual regressions for UI changes (`make test-visual`)
 - [ ] Previously fixed bug regression coverage (see Step 4)
 
@@ -956,7 +963,11 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 
 ### E2E Testing with Playwright
 
-1. **Test structure**: `tests/e2e/[feature].spec.ts`
+1. **Test structure**: `tests/e2e/[feature].spec.ts`; touch-interaction specs go in
+   `tests/e2e/mobile/` (issue #154), which the `mobile-chrome` (Pixel 7) and `mobile-safari`
+   (iPhone 14) projects run exclusively — the desktop projects carry
+   `testIgnore: '**/mobile/**'`, so a spec placed there gets `isMobile`, `hasTouch`, the
+   mobile UA and real DPR, and must be driven with `tap()` rather than `click()`.
 2. **Use Mockoon**: API responses are mocked via `docker-compose.test.yml`
 3. **Page Object pattern**:
 
@@ -986,6 +997,10 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 1. **Update snapshots**: `make test-visual-update`
 2. **Review changes**: Check `tests/visual/.playwright/` for diffs
 3. **Only update when intentional**: Don't blindly accept visual changes
+4. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated `/sign-in` and
+   `/sign-up` baselines, recorded per mobile project with `scale: 'device'` so the real
+   2.625×/3× DPR raster is gated. Never reuse `take-visual-snapshot.ts` there — its
+   `setViewportSize` call would discard the device viewport.
 
 ## Troubleshooting Guide
 

@@ -20,6 +20,16 @@ description: Use when writing or fixing Jest, Testing Library, Playwright, or vi
 - Use Mockoon-backed responses from `docker-compose.test.yml`.
 - Prefer page helpers only when they remove real duplication.
 
+## Mobile Device & Touch Lane
+
+- Touch specs live in `tests/e2e/mobile/`, mobile baselines in `tests/visual/mobile/`.
+- Only the `mobile-chrome` (Pixel 7) and `mobile-safari` (iPhone 14) projects run them; the
+  desktop projects carry `testIgnore: '**/mobile/**'`. Keep that scoping intact.
+- Drive interactions with `tap()`; `click()` there hides the touch signal.
+- Assert tap-target size with `locator.boundingBox()` — it returns CSS pixels, not device pixels.
+- Mobile baselines use `scale: 'device'`; never call `setViewportSize` in that lane, it discards
+  the device viewport.
+
 ## Visual Tests
 
 - Run visual checks for intentional layout changes.

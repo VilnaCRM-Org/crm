@@ -19,6 +19,10 @@ description: Use when selecting, running, or triaging frontend test suites.
 | Memory leaks            | `make test-memory-leak`   |
 | Mutation                | `make test-mutation`      |
 
+`make test-e2e` and `make test-visual` also run the mobile-device lane (`mobile-chrome` /
+`mobile-safari` projects over `tests/e2e/mobile` and `tests/visual/mobile`); there is no
+separate command for it.
+
 ## Triage
 
 1. Re-run the smallest failing suite.

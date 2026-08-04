@@ -59,7 +59,9 @@ tests/
 │   ├── utils/              # Utility function tests
 │   └── test.test.ts       # Basic test example
 ├── e2e/                    # End-to-end tests (Playwright)
+│   └── mobile/             # Touch-interaction specs (mobile-chrome / mobile-safari only)
 ├── visual/                 # Visual regression tests (Playwright)
+│   └── mobile/             # Device-emulated auth baselines (real DPR)
 ├── apollo-server/          # Server-side unit tests
 ├── memory-leak/            # Memory leak tests (Memlab)
 └── load/                   # Load tests (K6)
@@ -121,7 +123,9 @@ make test-mutation
 - **Jest Config**: Supports both `jsdom` (client) and `node` (server) environments via `TEST_ENV` variable
 - **Path Mapping**: Uses `@/` alias for `src/` directory imports
 - **Coverage**: Enabled by default with V8 provider
-- **Playwright**: Tests 3 browsers (Chromium, Firefox, WebKit) with Docker-specific launch options
+- **Playwright**: 5 projects — 3 desktop browsers (Chromium, Firefox, WebKit) with Docker-specific
+  launch options, plus `mobile-chrome` (Pixel 7) and `mobile-safari` (iPhone 14) device emulation
+  scoped to the `tests/e2e/mobile` and `tests/visual/mobile` lanes
 
 ### Example Test Creation
 
