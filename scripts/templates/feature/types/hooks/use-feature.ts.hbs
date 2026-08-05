@@ -1,0 +1,5 @@
+import type { AsyncListState } from '@/hooks/types/use-async-list';
+
+import type { {{pascalCase feature}}Item } from '../{{feature}}-repository';
+
+export type Use{{pascalCase feature}}Result = AsyncListState<{{pascalCase feature}}Item>;

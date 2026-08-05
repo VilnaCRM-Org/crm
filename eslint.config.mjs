@@ -43,6 +43,7 @@ const devDependencyPatterns = [
   'playwright.config.ts',
   'rsbuild.config.ts',
   'codegen.ts',
+  'plopfile.ts',
   ...testFilePatterns,
 ];
 

@@ -1,0 +1,55 @@
+# `{{module}}` module
+
+Scaffolded with `make new-module name={{module}} feature={{feature}}`. This document is
+the **public API contract** for the module: what other modules and the app shell may
+import, and how the boundary is machine-enforced (issue #107).
+
+Owner: `{{owner}}` (see `.github/CODEOWNERS`).
+
+## Public API
+
+Code outside this module imports it **only** through the module barrel
+`@/modules/{{module}}` (`src/modules/{{module}}/index.ts`). Deep imports fail
+`no-module-internal-imports` in `make lint-deps`. Everything not re-exported there is
+private.
+
+The scaffold exports the repository contract types only. Add a symbol to the barrel
+when — and only when — it genuinely has to cross the boundary.
+
+## Layers
+
+- `config/tokens.ts` — module DI symbols (`{{constantCase module}}_TOKENS`).
+- `config/di.ts` — module composition root implementing `ModuleRegistrar`.
+- `features/{{feature}}/index.tsx` — the feature entry component (the routed page).
+- `features/{{feature}}/components/` — presentational components.
+- `features/{{feature}}/hooks/` — UI logic; the only layer that drives repositories.
+- `features/{{feature}}/repositories/` — data access, entered through its `index.ts`.
+- `features/{{feature}}/stores/index.ts` — the one sanctioned DI seam for this feature.
+- `features/{{feature}}/routes/index.ts` — the module-owned route contract.
+- `features/{{feature}}/types/` — type-only files (issue #88).
+- `features/{{feature}}/i18n/` — `en.json` and `uk.json`.
+
+Allowed folder names come from `config/module-shape.json`, the single source both the
+generator and `.dependency-cruiser.js` read. See
+[the scaffolding guide](../../../docs/scaffolding.md).
+
+## Finish the wiring
+
+The generator writes everything it can create safely. Three hand-maintained,
+order-sensitive spots are left to you, and `make new-module` / `make new-feature` print
+the exact snippets:
+
+1. `src/config/dependency-injection-config.ts` — import this module's registrar and add
+   it to the `registrars` array, otherwise `config/di.ts` never registers anything.
+2. `src/routes/registry.ts` — import `{{camelCase feature}}Routes` and append it to
+   `routeModules`, otherwise the page is unreachable.
+3. `tests/e2e/modules/{{module}}/features/{{feature}}/{{feature}}.spec.ts` — change
+   `test.describe.fixme` back to `test.describe` once the route is registered.
+
+## Verify
+
+```bash
+make format
+make lint
+make test-unit-all
+```

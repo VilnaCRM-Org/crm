@@ -91,8 +91,16 @@ signal. Neither may be weakened to pass.
 
 ## Adding a compliant module or feature
 
-1. Create the barrel(s): `src/modules/<m>/index.ts` (module) and
-   `src/modules/<m>/features/<f>/index.ts` (feature). Export **only** the
+Generate it — `make new-module name=<m> feature=<f>` (or `make new-feature
+module=<m> feature=<f>`) emits the folders, barrels, DI wiring, i18n pair and
+test skeletons already compliant with every gate. The folder law and the full
+file list live in [`docs/scaffolding.md`](../../../docs/scaffolding.md).
+
+The barrel rules the generator follows, and that you must keep following as the
+module grows:
+
+1. Keep the barrel(s): `src/modules/<m>/index.ts` (module) and
+   `src/modules/<m>/features/<f>/index.tsx` (feature). Export **only** the
    symbols that must cross the boundary — if you are unsure, it is private.
 2. Keep the barrel lean and one-way (module `index` → feature internals) so
    `no-circular` stays green. Export a service's **type** and DI-wire its class

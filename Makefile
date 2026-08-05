@@ -114,6 +114,13 @@ ACTIONLINT_IMAGE            = rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 BATS_FORMATTER              ?= pretty
 
+# Module / feature scaffolding (issue #108). The allowed folder sets the generator emits
+# are single-sourced with .dependency-cruiser.js in config/module-shape.json; verify-scaffold
+# proves a freshly generated module still clears every static gate.
+PLOP                        = $(BUNX) plop
+SCAFFOLD_OWNER_DEFAULT      = $(shell awk '$$1 == "*" { print $$2; exit }' .github/CODEOWNERS 2>/dev/null)
+SCAFFOLD_VERIFY_TARGETS     ?= lint-deps lint-tsc lint-eslint lint-dup lint-md lint-prettier lint-metrics
+
 NETWORK_NAME                = crm-network
 
 BUN                         = $(EXEC_DEV_TTYLESS) bun
@@ -411,6 +418,18 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		printf '\nERROR: generated API types are out of date or untracked. Run `make codegen` and commit src/api/generated/.\n' >&2; \
 		exit 1; \
 	}
+
+new-module: ## Scaffold a compliant module + its first feature: make new-module name=orders [feature=order-list] [owner=@handle]
+	@[ -n "$(name)" ] || { printf '❌ name= is required, e.g. make new-module name=orders\n' >&2; exit 1; }
+	$(PLOP) module "$(name)" "$(or $(feature),$(name))" "$(or $(owner),$(SCAFFOLD_OWNER_DEFAULT))"
+
+new-feature: ## Scaffold a compliant feature in an existing module: make new-feature module=orders feature=order-detail
+	@[ -n "$(module)" ] || { printf '❌ module= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
+	@[ -n "$(feature)" ] || { printf '❌ feature= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
+	$(PLOP) feature "$(module)" "$(feature)"
+
+verify-scaffold: ## Generate a throwaway module, run the static gates against it, then remove it (issue #108)
+	SCAFFOLD_VERIFY_TARGETS="$(SCAFFOLD_VERIFY_TARGETS)" sh scripts/ci/verify-scaffold.sh
 
 lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, and the bun.lock provenance gate.
 

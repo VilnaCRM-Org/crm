@@ -303,6 +303,47 @@ EOF
   assert_log_contains 'dev bun x stryker run stryker.shard.config.mjs --incremental'
 }
 
+@test "scaffolding targets drive plop and the self-verification gate (issue #108)" {
+  reset_command_log
+  run_make_target new-module name=orders feature=order-list owner=@octocat
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose exec -T dev bun x plop module orders order-list @octocat'
+
+  reset_command_log
+  run_make_target new-feature module=orders feature=order-detail
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose exec -T dev bun x plop feature orders order-detail'
+
+  reset_command_log
+  run_make_target verify-scaffold
+  [ "$status" -eq 0 ]
+  assert_log_contains 'verify-scaffold.sh SCAFFOLD_VERIFY_TARGETS=lint-deps lint-tsc lint-eslint'
+}
+
+@test "new-module reuses the module name when no feature name is given (issue #108)" {
+  reset_command_log
+  run_make_target new-module name=orders owner=@octocat
+  [ "$status" -eq 0 ]
+  assert_log_contains 'bun x plop module orders orders @octocat'
+}
+
+@test "scaffolding targets fail fast when a required name is missing (issue #108)" {
+  reset_command_log
+  run_make_target new-module
+  [ "$status" -ne 0 ]
+  assert_output_contains 'name= is required'
+
+  reset_command_log
+  run_make_target new-feature module=orders
+  [ "$status" -ne 0 ]
+  assert_output_contains 'feature= is required'
+
+  reset_command_log
+  run_make_target new-feature feature=order-detail
+  [ "$status" -ne 0 ]
+  assert_output_contains 'module= is required'
+}
+
 @test "CI_LINT_TARGETS mirrors the lint prerequisite set exactly (issue #182)" {
   # The local CI mirror (make ci / make ci-lint) must run the same lint gates as
   # CI's `make lint`, so a green local run implies a green `static testing` run.

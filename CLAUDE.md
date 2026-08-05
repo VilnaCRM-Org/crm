@@ -180,6 +180,7 @@ make lint-prettier  # Prettier --check formatting gate (verify-only, shares PRET
 make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, like lint-metrics)
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
+make verify-scaffold # generate a throwaway module and gate it (see Scaffolding below)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
@@ -434,6 +435,36 @@ src/
 ├── providers/       # React context providers
 └── utils/           # Shared utilities
 ```
+
+### Scaffolding a module or feature (issue #108)
+
+Modules and features are **generated, never hand-rolled**:
+
+```bash
+make new-module name=orders feature=order-list        # module + first feature
+make new-feature module=orders feature=order-detail   # feature in an existing module
+make verify-scaffold                                  # gate the templates themselves
+```
+
+The generator (`plopfile.ts` + `scripts/templates/`) emits a skeleton that passes
+`make lint-deps`, `lint-tsc`, `lint-eslint`, `lint-dup`, `lint-md`, `lint-prettier` and
+`lint-metrics` with zero edits: only policy-allowed folders, kebab-case names, a
+repository public index, a DI token plus its registration, a container-free feature entry,
+the `en`+`uk` locale pair, a module-owned route contract, and mirrored unit + E2E test
+skeletons. It appends the CODEOWNERS entry and **prints** — never rewrites — the two
+order-sensitive lines you add by hand (`src/config/dependency-injection-config.ts` and
+`src/routes/registry.ts`).
+
+The allowed folder names live in **one** place, [`config/module-shape.json`](config/module-shape.json),
+which both the generator and `.dependency-cruiser.js` read; `tests/unit/tooling/module-shape.test.ts`
+fails if a second copy ever appears. `make verify-scaffold` (CI check `scaffold`) generates a
+throwaway module, runs the static gates against it, then removes it — so the templates cannot
+silently drift from the policy. Full reference: [`docs/scaffolding.md`](docs/scaffolding.md).
+
+Repeated generation stays DRY under the zero-tolerance jscpd gate because the shared loading
+state machine lives in `src/hooks/use-async-list.ts` and the shared section chrome (heading,
+status copy, polite live region) in `src/components/ui-async-section/`, rather than being
+copied into every scaffold.
 
 ### Dependency Injection
 

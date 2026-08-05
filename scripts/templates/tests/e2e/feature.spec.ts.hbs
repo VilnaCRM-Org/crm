@@ -1,0 +1,25 @@
+import { test, expect } from '@playwright/test';
+
+const {{camelCase feature}}Path = '/{{feature}}';
+const panel = 'section:has(h1)';
+
+test.describe.fixme('{{titleCase feature}} page', () => {
+  test('renders the feature panel heading', async ({ page }) => {
+    await page.goto({{camelCase feature}}Path);
+
+    await expect(page.locator(`${panel} h1`)).toHaveCount(1);
+  });
+
+  test('does not surface the error copy on a healthy load', async ({ page }) => {
+    await page.goto({{camelCase feature}}Path);
+
+    await expect(page.locator('[role="alert"]')).toHaveCount(0);
+  });
+
+  test('keeps the panel visible at the narrowest supported viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.goto({{camelCase feature}}Path);
+
+    await expect(page.locator(panel)).toBeVisible();
+  });
+});

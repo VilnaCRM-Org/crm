@@ -95,6 +95,22 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
+### Adding a module or feature
+
+Do not create the folders by hand — generate them:
+
+```bash
+make new-module name=orders feature=order-list
+make new-feature module=orders feature=order-detail
+```
+
+The generated skeleton passes every static gate with zero edits, and the generator prints
+the two order-sensitive lines you must add yourself (the DI registrar entry and the route
+contract entry). Allowed folder names come from `config/module-shape.json`, the single
+source `.dependency-cruiser.js` also reads. `make verify-scaffold` (CI check `scaffold`)
+generates a throwaway module, gates it, and removes it, so the templates can never silently
+drift from the policy. See [`docs/scaffolding.md`](docs/scaffolding.md).
+
 ### Dockerfile build performance
 
 If your change touches a configured Dockerfile path (or the gate's own config),

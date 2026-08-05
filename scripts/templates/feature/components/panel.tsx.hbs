@@ -1,0 +1,24 @@
+import UIAsyncSection from '@/components/ui-async-section';
+
+import type { {{pascalCase feature}}PanelProps } from '../../types/components/{{feature}}-panel';
+
+export default function {{pascalCase feature}}Panel({
+  items,
+  isLoading,
+  hasError,
+}: {{pascalCase feature}}PanelProps): JSX.Element {
+  return (
+    <UIAsyncSection
+      namespace="{{snakeCase feature}}"
+      isLoading={isLoading}
+      hasError={hasError}
+      count={items.length}
+    >
+      <ul>
+        {items.map((item) => (
+          <li key={item.id}>{item.title}</li>
+        ))}
+      </ul>
+    </UIAsyncSection>
+  );
+}
