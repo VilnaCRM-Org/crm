@@ -86,9 +86,10 @@ and the gate that judges it cannot disagree.
 - **Test module root** — `features`, `helpers`, `lib`, `repositories`, `store`.
 - **Test feature root** — same list as the feature root.
 
-There is no `api/` and no `helpers/`: data access is `repositories/`, shared module code is
-`lib/` or `utils/`. Feature-level state lives in `stores/` (plural); the module-wide store is
-`store/` (singular) at the module root.
+There is no `api/`, and no `helpers/` under `src/`: data access is `repositories/` and shared
+module code is `lib/` or `utils/`. (`helpers/` _is_ allowed under a **test** module root — it
+is a test-only fixture folder there, not a source layer.) Feature-level state lives in
+`stores/` (plural); the module-wide store is `store/` (singular) at the module root.
 
 `tests/unit/tooling/module-shape.test.ts` fails if `.dependency-cruiser.js` ever grows a
 second copy of these lists, or if the generator emits a folder the policy does not allow.

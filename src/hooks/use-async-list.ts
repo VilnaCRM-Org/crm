@@ -4,22 +4,26 @@ import type { AsyncListApply, AsyncListState, AsyncListSubscription } from './ty
 
 const INITIAL_STATE = { items: [], isLoading: true, hasError: false };
 
-export async function runLoad<T>(
-  load: () => Promise<readonly T[]>,
-  subscription: AsyncListSubscription,
-  apply: AsyncListApply<T>
-): Promise<void> {
-  try {
-    const items = await load();
-    if (subscription.active) {
-      apply({ items, isLoading: false, hasError: false });
-    }
-  } catch {
-    if (subscription.active) {
-      apply({ items: [], isLoading: false, hasError: true });
+class AsyncListLoader {
+  public async run<T>(
+    load: () => Promise<readonly T[]>,
+    subscription: AsyncListSubscription,
+    apply: AsyncListApply<T>
+  ): Promise<void> {
+    try {
+      const items = await load();
+      if (subscription.active) {
+        apply({ items, isLoading: false, hasError: false });
+      }
+    } catch {
+      if (subscription.active) {
+        apply({ items: [], isLoading: false, hasError: true });
+      }
     }
   }
 }
+
+export const asyncListLoader = new AsyncListLoader();
 
 export default function useAsyncList<T>(load: () => Promise<readonly T[]>): AsyncListState<T> {
   const [state, setState] = useState<AsyncListState<T>>(INITIAL_STATE);
@@ -28,7 +32,7 @@ export default function useAsyncList<T>(load: () => Promise<readonly T[]>): Asyn
   useEffect(() => {
     const subscription: AsyncListSubscription = { active: true };
 
-    void runLoad(loadRef.current, subscription, setState);
+    void asyncListLoader.run(loadRef.current, subscription, setState);
 
     return (): void => {
       subscription.active = false;

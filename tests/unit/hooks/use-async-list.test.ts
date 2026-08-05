@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 
-import useAsyncList, { runLoad } from '@/hooks/use-async-list';
+import useAsyncList, { asyncListLoader } from '@/hooks/use-async-list';
 
 describe('useAsyncList', () => {
   it('starts in the loading state before the loader settles', () => {
@@ -58,11 +58,11 @@ describe('useAsyncList', () => {
 // `result.current` cannot observe the cancellation guard — an unmounted component never
 // re-renders, so the assertion would hold whether or not the guard exists. Drive the guard
 // directly instead, which is the only way to prove it actually suppresses the update.
-describe('runLoad cancellation guard', () => {
+describe('AsyncListLoader cancellation guard', () => {
   it('applies the resolved items while the subscription is active', async () => {
     const apply = jest.fn();
 
-    await runLoad(() => Promise.resolve(['alpha']), { active: true }, apply);
+    await asyncListLoader.run(() => Promise.resolve(['alpha']), { active: true }, apply);
 
     expect(apply).toHaveBeenCalledWith({
       items: ['alpha'],
@@ -74,7 +74,7 @@ describe('runLoad cancellation guard', () => {
   it('applies the error state while the subscription is active', async () => {
     const apply = jest.fn();
 
-    await runLoad(() => Promise.reject(new Error('gone')), { active: true }, apply);
+    await asyncListLoader.run(() => Promise.reject(new Error('gone')), { active: true }, apply);
 
     expect(apply).toHaveBeenCalledWith({ items: [], isLoading: false, hasError: true });
   });
@@ -82,7 +82,7 @@ describe('runLoad cancellation guard', () => {
   it('suppresses the resolved update once the subscription is cancelled', async () => {
     const apply = jest.fn();
 
-    await runLoad(() => Promise.resolve(['alpha']), { active: false }, apply);
+    await asyncListLoader.run(() => Promise.resolve(['alpha']), { active: false }, apply);
 
     expect(apply).not.toHaveBeenCalled();
   });
@@ -90,7 +90,7 @@ describe('runLoad cancellation guard', () => {
   it('suppresses the error update once the subscription is cancelled', async () => {
     const apply = jest.fn();
 
-    await runLoad(() => Promise.reject(new Error('gone')), { active: false }, apply);
+    await asyncListLoader.run(() => Promise.reject(new Error('gone')), { active: false }, apply);
 
     expect(apply).not.toHaveBeenCalled();
   });
@@ -103,7 +103,7 @@ describe('runLoad cancellation guard', () => {
       settle = resolve;
     });
 
-    const running = runLoad(() => pending, subscription, apply);
+    const running = asyncListLoader.run(() => pending, subscription, apply);
     subscription.active = false;
     settle(['late']);
     await running;

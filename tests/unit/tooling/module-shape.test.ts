@@ -124,7 +124,10 @@ describe('the generator emits only policy-allowed folders (issue #108)', () => {
     });
 
     const featurePrefix = `tests/unit/modules/${MODULE}/features/${FEATURE}/`;
-    folderSegments(paths, featurePrefix).forEach((folder) => {
+    const featureFolders = folderSegments(paths, featurePrefix);
+
+    expect(featureFolders.length).toBeGreaterThan(0);
+    featureFolders.forEach((folder) => {
       expect(moduleShape.tests.featureAllowedFolders).toContain(folder);
     });
   });
@@ -162,5 +165,10 @@ describe('the generator emits only policy-allowed folders (issue #108)', () => {
       expect(pattern.test(name)).toBe(true);
       expect(moduleRule.test(`src/modules/${name}/config/di.ts`)).toBe(false);
     });
+
+    // Prove the gate rule actually rejects something, so the assertions above cannot pass
+    // against a rule that matches nothing at all.
+    expect(moduleRule.test('src/modules/Orders/config/di.ts')).toBe(true);
+    expect(moduleRule.test('src/modules/order_list/config/di.ts')).toBe(true);
   });
 });
