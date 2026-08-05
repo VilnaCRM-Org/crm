@@ -63,4 +63,29 @@ describe('UIAsyncSection', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent(`${NAMESPACE}.loading`);
   });
+
+  it('renders an h1 by default so a routed page owns the top-level heading', () => {
+    renderSection();
+
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+  });
+
+  it('accepts a lower heading level when a page composes more than one section', () => {
+    renderWithProviders(
+      <UIAsyncSection
+        namespace={NAMESPACE}
+        isLoading={false}
+        hasError={false}
+        count={1}
+        headingLevel="h2"
+      >
+        <ul>
+          <li>loaded child</li>
+        </ul>
+      </UIAsyncSection>
+    );
+
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(`${NAMESPACE}.title`);
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+  });
 });

@@ -4,7 +4,7 @@ const {{camelCase feature}}Routes: RouteModule = {
   id: '{{module}}.{{feature}}',
   routes: [
     {
-      path: '/{{feature}}',
+      path: '{{routePath module feature}}',
       guard: 'protected',
       load: () => import(/* webpackChunkName: "{{feature}}" */ '..'),
       meta: { titleKey: '{{snakeCase feature}}.title' },

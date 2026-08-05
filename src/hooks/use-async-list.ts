@@ -4,7 +4,7 @@ import type { AsyncListApply, AsyncListState, AsyncListSubscription } from './ty
 
 const INITIAL_STATE = { items: [], isLoading: true, hasError: false };
 
-async function runLoad<T>(
+export async function runLoad<T>(
   load: () => Promise<readonly T[]>,
   subscription: AsyncListSubscription,
   apply: AsyncListApply<T>

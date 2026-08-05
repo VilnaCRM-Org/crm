@@ -1,7 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-const {{camelCase feature}}Path = '/{{feature}}';
+const {{camelCase feature}}Path = '{{routePath module feature}}';
 const panel = 'section:has(h1)';
+const status = '[role="status"]';
 
 test.describe.fixme('{{titleCase feature}} page', () => {
   test('renders the feature panel heading', async ({ page }) => {
@@ -10,10 +11,11 @@ test.describe.fixme('{{titleCase feature}} page', () => {
     await expect(page.locator(`${panel} h1`)).toHaveCount(1);
   });
 
-  test('does not surface the error copy on a healthy load', async ({ page }) => {
+  test('announces a settled status that is not the error copy', async ({ page }) => {
     await page.goto({{camelCase feature}}Path);
 
-    await expect(page.locator('[role="alert"]')).toHaveCount(0);
+    await expect(page.locator(status)).not.toBeEmpty();
+    await expect(page.locator(status)).not.toHaveText(/went wrong|Щось пішло не так/);
   });
 
   test('keeps the panel visible at the narrowest supported viewport', async ({ page }) => {

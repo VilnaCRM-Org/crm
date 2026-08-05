@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { UIAsyncSectionProps } from '@/components/types/ui-async-section';
@@ -20,18 +21,24 @@ export default function UIAsyncSection({
   hasError,
   count,
   children,
+  headingLevel = 'h1',
 }: UIAsyncSectionProps): JSX.Element {
   const { t } = useTranslation();
+  const [announce, setAnnounce] = useState(false);
   const status = t(`${namespace}.${statusSuffix(isLoading, hasError, count)}`);
   const isReady = !isLoading && !hasError && count > 0;
 
+  useEffect(() => {
+    setAnnounce(true);
+  }, []);
+
   return (
     <section>
-      <UITypography component="h1" variant="h4">
+      <UITypography component={headingLevel} variant="h4">
         {t(`${namespace}.title`)}
       </UITypography>
       {isReady ? children : <UITypography>{status}</UITypography>}
-      <UILiveStatus message={status} />
+      <UILiveStatus message={announce ? status : ''} />
     </section>
   );
 }

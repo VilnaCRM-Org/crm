@@ -793,19 +793,27 @@ class ModuleStoreFactory {
 
 ### API Error Handling Pattern
 
-```typescript
-// Check error type
-import { ApiError } from '@/modules/user';
-import isApiError from '@/modules/user/lib/is-api-error';
-import { ValidationError } from '@/modules/user/lib/api-errors';
+Outside the `user` module, enter through the public barrel and narrow with `instanceof`:
 
-if (isApiError(error)) {
-  if (error instanceof ValidationError) {
-    // Handle validation errors
-    error.errors.forEach((err) => {
-      console.log(err.field, err.message);
-    });
-  }
+```typescript
+import { ApiError } from '@/modules/user';
+
+if (error instanceof ApiError) {
+  console.error(error.code, error.status, error.message);
+}
+```
+
+Inside the module, the concrete subclasses and the structural guard are reachable directly.
+The guard is a singleton instance, so the call is `apiErrorGuard.is(...)`, not a bare function:
+
+```typescript
+import { ValidationError } from '@/modules/user/lib/api-errors';
+import apiErrorGuard from '@/modules/user/lib/is-api-error';
+
+if (error instanceof ValidationError) {
+  console.error('validation failed', error.status);
+} else if (apiErrorGuard.is(error)) {
+  console.error(error.code, error.message);
 }
 ```
 

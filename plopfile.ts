@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import type { ActionType, NodePlopAPI } from 'plop';
@@ -172,6 +172,13 @@ export function defaultOwner(source: string): string {
   return wildcard?.[1] ?? '';
 }
 
+// Feature names are only unique within their module, so an unqualified `/<feature>` URL
+// collides across modules and RouteValidator does not check for duplicate paths — it only
+// rejects duplicate module ids. Qualify the path with the module unless they are the same.
+export function routePath(module: string, feature: string): string {
+  return module === feature ? `/${module}` : `/${module}/${feature}`;
+}
+
 export function overLongLines(source: string): number[] {
   return source
     .split('\n')
@@ -204,7 +211,20 @@ async function formatGenerated(root: string, paths: string[]): Promise<void> {
   const { ESLint } = await import('eslint');
   const eslint = new ESLint({ cwd: root, fix: true });
   const lintable = absolute.filter((path) => LINTABLE.some((ext) => path.endsWith(ext)));
-  await ESLint.outputFixes(await eslint.lintFiles(lintable));
+  const results = await eslint.lintFiles(lintable);
+  await ESLint.outputFixes(results);
+
+  const unfixed = results.filter((result) => result.errorCount > 0);
+  if (unfixed.length > 0) {
+    const detail = unfixed
+      .flatMap((result) =>
+        result.messages
+          .filter((message) => message.severity === 2)
+          .map((message) => `${result.filePath}:${message.line} ${message.message}`)
+      )
+      .join('\n  ');
+    throw new Error(`Generated code still fails ESLint after --fix:\n  ${detail}`);
+  }
 
   const prettier = await import('prettier');
   await Promise.all(
@@ -259,6 +279,8 @@ export default function plopfile(plop: NodePlopAPI): void {
   const pascal = plop.getHelper('pascalCase') as (input: string) => string;
   const constant = plop.getHelper('constantCase') as (input: string) => string;
 
+  plop.setHelper('routePath', (module: string, feature: string) => routePath(module, feature));
+
   const fileActions = (files: ScaffoldFile[]): ActionType[] =>
     files.map((file) => ({
       type: 'add',
@@ -273,9 +295,31 @@ export default function plopfile(plop: NodePlopAPI): void {
     return `kept ${created.length} allowed folder(s) with an empty .gitignore`;
   };
 
-  const finalize = async (module: string, feature: string, paths: string[]): Promise<string> => {
-    await formatGenerated(root, paths);
-    assertLineLength(root, paths);
+  // A half-written scaffold is worse than none: the existence guards would then reject the
+  // retry. Anything the run created is rolled back before the failure propagates.
+  const rollback = (roots: string[], codeowners: string | null): void => {
+    roots
+      .map((relative) => join(root, relative))
+      .filter((absolute) => existsSync(absolute))
+      .forEach((absolute) => rmSync(absolute, { recursive: true, force: true }));
+    if (codeowners !== null) {
+      writeFileSync(codeownersPath, codeowners);
+    }
+  };
+
+  const finalize = async (
+    module: string,
+    feature: string,
+    paths: string[],
+    undo: { roots: string[]; codeowners: string | null }
+  ): Promise<string> => {
+    try {
+      await formatGenerated(root, paths);
+      assertLineLength(root, paths);
+    } catch (error) {
+      rollback(undo.roots, undo.codeowners);
+      throw error;
+    }
     const registrar = `${camel(module)}Registrar`;
     const routes = `${camel(feature)}Routes`;
     process.stdout.write(instructions(module, feature, registrar, routes));
@@ -319,16 +363,23 @@ export default function plopfile(plop: NodePlopAPI): void {
         ...modulePaths(shape, data.module, data.feature),
         ...featurePaths(shape, data.module, data.feature),
       ];
+      const undo = {
+        roots: [
+          `src/modules/${data.module}`,
+          `tests/unit/modules/${data.module}`,
+          `tests/e2e/modules/${data.module}`,
+        ],
+        codeowners: readFileSync(codeownersPath, 'utf8'),
+      };
       return [
         ...fileActions(MODULE_FILES),
         ...fileActions(FEATURE_FILES),
         (): string => writePlaceholders(paths),
         (): string => {
-          const source = readFileSync(codeownersPath, 'utf8');
-          writeFileSync(codeownersPath, codeownersEntry(source, data.module, data.owner));
+          writeFileSync(codeownersPath, codeownersEntry(undo.codeowners, data.module, data.owner));
           return '.github/CODEOWNERS';
         },
-        (): Promise<string> => finalize(data.module, data.feature, paths),
+        (): Promise<string> => finalize(data.module, data.feature, paths, undo),
       ];
     },
   });
@@ -357,25 +408,46 @@ export default function plopfile(plop: NodePlopAPI): void {
         tokenBase: `${pascal(data.feature)}Repository`,
       };
       const paths = featurePaths(shape, data.module, data.feature);
+      const tokensPath = join(configRoot, 'tokens.ts');
+      const diPath = join(configRoot, 'di.ts');
+      const config = {
+        tokens: readFileSync(tokensPath, 'utf8'),
+        di: readFileSync(diPath, 'utf8'),
+      };
+      const undo = {
+        roots: [
+          featureRoot,
+          `tests/unit/modules/${data.module}/features/${data.feature}`,
+          `tests/e2e/modules/${data.module}/features/${data.feature}`,
+        ],
+        codeowners: null,
+      };
       return [
         ...fileActions(FEATURE_FILES),
         (): string => writePlaceholders(paths),
         (): string => {
-          const tokensPath = join(configRoot, 'tokens.ts');
-          const diPath = join(configRoot, 'di.ts');
-          writeFileSync(
-            tokensPath,
-            addTokenEntry(readFileSync(tokensPath, 'utf8'), binding.tokenBase)
-          );
-          writeFileSync(diPath, addRegistrarBinding(readFileSync(diPath, 'utf8'), binding));
+          writeFileSync(tokensPath, addTokenEntry(config.tokens, binding.tokenBase));
+          writeFileSync(diPath, addRegistrarBinding(config.di, binding));
           return `wired ${binding.tokenBase} into src/modules/${data.module}/config`;
         },
-        (): Promise<string> =>
-          finalize(data.module, data.feature, [
-            ...paths,
-            `src/modules/${data.module}/config/tokens.ts`,
-            `src/modules/${data.module}/config/di.ts`,
-          ]),
+        async (): Promise<string> => {
+          try {
+            return await finalize(
+              data.module,
+              data.feature,
+              [
+                ...paths,
+                `src/modules/${data.module}/config/tokens.ts`,
+                `src/modules/${data.module}/config/di.ts`,
+              ],
+              undo
+            );
+          } catch (error) {
+            writeFileSync(tokensPath, config.tokens);
+            writeFileSync(diPath, config.di);
+            throw error;
+          }
+        },
       ];
     },
   });

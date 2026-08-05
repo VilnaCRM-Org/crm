@@ -91,7 +91,7 @@ describe('config/module-shape.json is the single source of the folder law (issue
 });
 
 describe('the generator emits only policy-allowed folders (issue #108)', () => {
-  it('creates module folders that are a subset of module.allowedFolders', () => {
+  it('creates exactly the module folders module.allowedFolders declares', () => {
     const emitted = [
       ...modulePaths(moduleShape, MODULE, FEATURE),
       ...featurePaths(moduleShape, MODULE, FEATURE),
@@ -102,7 +102,7 @@ describe('the generator emits only policy-allowed folders (issue #108)', () => {
     expect(new Set(created)).toEqual(new Set(moduleShape.module.allowedFolders));
   });
 
-  it('creates feature folders that are a subset of feature.allowedFolders', () => {
+  it('creates exactly the feature folders feature.allowedFolders declares', () => {
     const prefix = `src/modules/${MODULE}/features/${FEATURE}/`;
     const created = folderSegments(featurePaths(moduleShape, MODULE, FEATURE), prefix);
 

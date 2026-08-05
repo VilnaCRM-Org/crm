@@ -314,10 +314,17 @@ EOF
   [ "$status" -eq 0 ]
   assert_log_contains 'docker compose exec -T dev bun x plop feature orders order-detail'
 
+  # Match the whole gate list, not a prefix: a prefix assertion would still pass if a gate
+  # were quietly dropped from SCAFFOLD_VERIFY_TARGETS.
+  local expected_targets
+  expected_targets=$(grep -E '^SCAFFOLD_VERIFY_TARGETS[[:space:]]*\?=' "$MAKEFILE_SANDBOX/Makefile" |
+    sed 's/^[^=]*=[[:space:]]*//')
+  [ -n "$expected_targets" ]
+
   reset_command_log
   run_make_target verify-scaffold
   [ "$status" -eq 0 ]
-  assert_log_contains 'verify-scaffold.sh SCAFFOLD_VERIFY_TARGETS=lint-deps lint-tsc lint-eslint'
+  assert_log_contains "verify-scaffold.sh SCAFFOLD_VERIFY_TARGETS=$expected_targets"
 }
 
 @test "new-module reuses the module name when no feature name is given (issue #108)" {

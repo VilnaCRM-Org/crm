@@ -10,7 +10,9 @@
 const MODULE_SHAPE = require('./config/module-shape.json');
 
 const listFolders = (folders) => folders.join(', ');
-const disallowedFolderSegment = (folders) => `(?!(?:${folders.join('|')})/)[^/]+/`;
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const disallowedFolderSegment = (folders) =>
+  `(?!(?:${folders.map(escapeRegExp).join('|')})/)[^/]+/`;
 
 const DI_COMPOSITION_ROOTS = [
   '^src/config/dependency-injection-config[.]ts$',

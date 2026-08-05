@@ -102,7 +102,16 @@ second copy of these lists, or if the generator emits a folder the policy does n
 
 Because the dev container runs as root, the generated files are root-owned on the host; the
 cleanup therefore runs inside the same container. Override the gate list with
-`SCAFFOLD_VERIFY_TARGETS="lint-deps lint-tsc"` for a faster local loop.
+`make verify-scaffold SCAFFOLD_VERIFY_TARGETS="lint-deps lint-tsc"` for a faster local loop.
+The Makefile owns the only definition of that list, so the script refuses to run when the
+variable is unset rather than falling back to a second copy, and it refuses to run at all if
+the list names a target the Makefile does not define — otherwise a typo would silently drop a
+gate, since the Makefile marks every command-line goal phony.
+
+The generated route path is `/<module>/<feature>` (or just `/<module>` when the feature name
+matches the module). Feature names are only unique within a module and `RouteValidator` checks
+only for duplicate module ids, so an unqualified `/<feature>` would let one module's page
+shadow another's.
 
 ## Changing the templates
 

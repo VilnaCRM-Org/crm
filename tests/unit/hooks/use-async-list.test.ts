@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react';
 
-import useAsyncList from '@/hooks/use-async-list';
+import useAsyncList, { runLoad } from '@/hooks/use-async-list';
 
 describe('useAsyncList', () => {
   it('starts in the loading state before the loader settles', () => {
@@ -41,31 +41,73 @@ describe('useAsyncList', () => {
     expect(load).toHaveBeenCalledTimes(1);
   });
 
-  it('does not set state after unmount when the loader settles late', async () => {
+  it('unmounts cleanly while a load is still in flight', async () => {
     let settle: (items: string[]) => void = () => {};
     const pending = new Promise<string[]>((resolve) => {
       settle = resolve;
     });
 
-    const { result, unmount } = renderHook(() => useAsyncList(() => pending));
+    const { unmount } = renderHook(() => useAsyncList(() => pending));
     unmount();
     settle(['late']);
-    await pending;
 
-    expect(result.current).toEqual({ items: [], isLoading: true, hasError: false });
+    await expect(pending).resolves.toEqual(['late']);
+  });
+});
+
+// `result.current` cannot observe the cancellation guard — an unmounted component never
+// re-renders, so the assertion would hold whether or not the guard exists. Drive the guard
+// directly instead, which is the only way to prove it actually suppresses the update.
+describe('runLoad cancellation guard', () => {
+  it('applies the resolved items while the subscription is active', async () => {
+    const apply = jest.fn();
+
+    await runLoad(() => Promise.resolve(['alpha']), { active: true }, apply);
+
+    expect(apply).toHaveBeenCalledWith({
+      items: ['alpha'],
+      isLoading: false,
+      hasError: false,
+    });
   });
 
-  it('does not flag an error after unmount when the loader rejects late', async () => {
-    let fail: (error: Error) => void = () => {};
-    const pending = new Promise<string[]>((_, reject) => {
-      fail = reject;
+  it('applies the error state while the subscription is active', async () => {
+    const apply = jest.fn();
+
+    await runLoad(() => Promise.reject(new Error('gone')), { active: true }, apply);
+
+    expect(apply).toHaveBeenCalledWith({ items: [], isLoading: false, hasError: true });
+  });
+
+  it('suppresses the resolved update once the subscription is cancelled', async () => {
+    const apply = jest.fn();
+
+    await runLoad(() => Promise.resolve(['alpha']), { active: false }, apply);
+
+    expect(apply).not.toHaveBeenCalled();
+  });
+
+  it('suppresses the error update once the subscription is cancelled', async () => {
+    const apply = jest.fn();
+
+    await runLoad(() => Promise.reject(new Error('gone')), { active: false }, apply);
+
+    expect(apply).not.toHaveBeenCalled();
+  });
+
+  it('observes cancellation that happens while the loader is in flight', async () => {
+    const apply = jest.fn();
+    const subscription = { active: true };
+    let settle: (items: string[]) => void = () => {};
+    const pending = new Promise<string[]>((resolve) => {
+      settle = resolve;
     });
 
-    const { result, unmount } = renderHook(() => useAsyncList(() => pending));
-    unmount();
-    fail(new Error('too late'));
-    await pending.catch(() => undefined);
+    const running = runLoad(() => pending, subscription, apply);
+    subscription.active = false;
+    settle(['late']);
+    await running;
 
-    expect(result.current.hasError).toBe(false);
+    expect(apply).not.toHaveBeenCalled();
   });
 });

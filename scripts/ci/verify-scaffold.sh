@@ -21,13 +21,18 @@ set -eu
 
 MODULE="${SCAFFOLD_PROBE_MODULE:-scaffold-probe}"
 FEATURE="${SCAFFOLD_PROBE_FEATURE:-probe-list}"
-DEFAULT_TARGETS="lint-deps lint-tsc lint-eslint lint-dup lint-md lint-prettier lint-metrics"
-TARGETS="${SCAFFOLD_VERIFY_TARGETS:-$DEFAULT_TARGETS}"
+TARGETS="${SCAFFOLD_VERIFY_TARGETS:-}"
 CODEOWNERS=".github/CODEOWNERS"
 
 SRC_DIR="src/modules/$MODULE"
 UNIT_DIR="tests/unit/modules/$MODULE"
 E2E_DIR="tests/e2e/modules/$MODULE"
+
+if [ -z "$TARGETS" ]; then
+  printf 'FATAL: SCAFFOLD_VERIFY_TARGETS is unset. Run "make verify-scaffold", which owns the\n' >&2
+  printf '       single definition of the gate list, instead of invoking this script bare.\n' >&2
+  exit 2
+fi
 
 for probe in "$SRC_DIR" "$UNIT_DIR" "$E2E_DIR"; do
   if [ -e "$probe" ]; then
@@ -60,16 +65,22 @@ cp "$CODEOWNERS" "$BACKUP"
 finish() {
   code="$1"
   trap - EXIT INT TERM
-  docker compose exec -T dev sh -c \
-    "rm -rf '$SRC_DIR' '$UNIT_DIR' '$E2E_DIR'" >/dev/null 2>&1 || true
-  docker compose exec -T dev sh -c "cat > '$CODEOWNERS'" <"$BACKUP" >/dev/null 2>&1 || true
-  rm -f "$BACKUP"
+  # Paths are passed as positional arguments rather than interpolated into the nested `sh -c`
+  # string, so a hostile SCAFFOLD_PROBE_* value cannot be reparsed as shell syntax.
+  docker compose exec -T dev sh -c 'rm -rf "$1" "$2" "$3"' _ \
+    "$SRC_DIR" "$UNIT_DIR" "$E2E_DIR" >/dev/null 2>&1 || true
+  docker compose exec -T dev sh -c 'cat > "$1"' _ "$CODEOWNERS" <"$BACKUP" >/dev/null 2>&1 || true
   for leftover in "$SRC_DIR" "$UNIT_DIR" "$E2E_DIR"; do
     if [ -e "$leftover" ]; then
       printf 'verify-scaffold: could not remove %s; the worktree is dirty\n' "$leftover" >&2
       code=1
     fi
   done
+  if ! cmp -s "$BACKUP" "$CODEOWNERS"; then
+    printf 'verify-scaffold: %s was not restored from its backup\n' "$CODEOWNERS" >&2
+    code=1
+  fi
+  rm -f "$BACKUP"
   exit "$code"
 }
 

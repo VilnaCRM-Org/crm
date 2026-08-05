@@ -99,9 +99,11 @@ file list live in [`docs/scaffolding.md`](../../../docs/scaffolding.md).
 The barrel rules the generator follows, and that you must keep following as the
 module grows:
 
-1. Keep the barrel(s): `src/modules/<m>/index.ts` (module) and
-   `src/modules/<m>/features/<f>/index.tsx` (feature). Export **only** the
-   symbols that must cross the boundary — if you are unsure, it is private.
+1. Keep the barrel(s): `src/modules/<m>/index.ts` (module) and the feature entry
+   `src/modules/<m>/features/<f>/index.*`. This feature uses a re-export barrel
+   (`index.ts`); a generated feature ships an entry component (`index.tsx`) that
+   the route contract lazy-loads. Either way it is the **only** path in, so expose
+   only what must cross the boundary — if you are unsure, it is private.
 2. Keep the barrel lean and one-way (module `index` → feature internals) so
    `no-circular` stays green. Export a service's **type** and DI-wire its class
    when only the type crosses the boundary.

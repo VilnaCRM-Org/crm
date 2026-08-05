@@ -419,16 +419,16 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-new-module: ## Scaffold a compliant module + its first feature: make new-module name=orders [feature=order-list] [owner=@handle]
+new-module: ensure-dev ## Scaffold a compliant module + its first feature: make new-module name=orders [feature=order-list] [owner=@handle]
 	@[ -n "$(name)" ] || { printf '❌ name= is required, e.g. make new-module name=orders\n' >&2; exit 1; }
 	$(PLOP) module "$(name)" "$(or $(feature),$(name))" "$(or $(owner),$(SCAFFOLD_OWNER_DEFAULT))"
 
-new-feature: ## Scaffold a compliant feature in an existing module: make new-feature module=orders feature=order-detail
+new-feature: ensure-dev ## Scaffold a compliant feature in an existing module: make new-feature module=orders feature=order-detail
 	@[ -n "$(module)" ] || { printf '❌ module= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
 	@[ -n "$(feature)" ] || { printf '❌ feature= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
 	$(PLOP) feature "$(module)" "$(feature)"
 
-verify-scaffold: ## Generate a throwaway module, run the static gates against it, then remove it (issue #108)
+verify-scaffold: ensure-dev ## Generate a throwaway module, run the static gates against it, then remove it (issue #108)
 	SCAFFOLD_VERIFY_TARGETS="$(SCAFFOLD_VERIFY_TARGETS)" sh scripts/ci/verify-scaffold.sh
 
 lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, and the bun.lock provenance gate.
