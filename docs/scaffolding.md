@@ -16,8 +16,17 @@ make new-feature module=orders feature=order-detail  # add a feature to an exist
 make verify-scaffold                                 # gate the templates themselves
 ```
 
-`owner` defaults to the owner of the `*` line in `.github/CODEOWNERS`. Names must be
-lowercase kebab-case; the generator refuses anything else.
+`owner` defaults to the owner of the `*` line in `.github/CODEOWNERS` and must be an
+`@user` or `@org/team` handle. Names must be lowercase kebab-case; the generator refuses
+anything else.
+
+The generator runs inside the dev container. `node_modules` there is a named Docker volume
+that is only seeded the first time it is created, so a container built before `plop` was
+added still will not have it and `bun x plop` fails. Recreate the volume once:
+
+```bash
+make clean && make start
+```
 
 ## What `make new-module` writes
 

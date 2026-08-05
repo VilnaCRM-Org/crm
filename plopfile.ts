@@ -287,6 +287,15 @@ export default function plopfile(plop: NodePlopAPI): void {
     assertName(shape, 'Feature name', data.feature);
   };
 
+  const guardOwner = (owner: string): void => {
+    if (!/^@[\w./-]+$/.test(owner ?? '')) {
+      throw new Error(
+        `CODEOWNERS owner "${owner}" must be an @user or @org/team handle. ` +
+          'Pass owner=@handle, or add a `*` owner line to .github/CODEOWNERS.'
+      );
+    }
+  };
+
   plop.setGenerator('module', {
     description: 'Scaffold a compliant module plus its first feature',
     prompts: [
@@ -302,6 +311,7 @@ export default function plopfile(plop: NodePlopAPI): void {
     actions: (answers) => {
       const data = answers as unknown as Record<string, string>;
       guardNames(data);
+      guardOwner(data.owner);
       if (existsSync(join(root, 'src', 'modules', data.module))) {
         throw new Error(`src/modules/${data.module} already exists — use \`make new-feature\``);
       }
