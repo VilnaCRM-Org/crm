@@ -331,6 +331,19 @@ export default function plopfile(plop: NodePlopAPI): void {
     assertName(shape, 'Feature name', data.feature);
   };
 
+  // plop's `add` fails on the first existing destination, and the actions before it have
+  // already written. Refuse the whole run up front instead — this also covers the mirrored
+  // tests/ roots, which a previous aborted run can leave behind without a src/ counterpart.
+  const guardDestinations = (paths: string[]): void => {
+    const taken = paths.filter((path) => existsSync(join(root, path)));
+    if (taken.length > 0) {
+      throw new Error(
+        `Refusing to generate: these paths already exist:\n  ${taken.join('\n  ')}\n` +
+          'Remove them (or pick another name) and generate again.'
+      );
+    }
+  };
+
   const guardOwner = (owner: string): void => {
     if (!/^@[\w./-]+$/.test(owner ?? '')) {
       throw new Error(
@@ -363,6 +376,11 @@ export default function plopfile(plop: NodePlopAPI): void {
         ...modulePaths(shape, data.module, data.feature),
         ...featurePaths(shape, data.module, data.feature),
       ];
+      guardDestinations([
+        ...paths,
+        `tests/unit/modules/${data.module}`,
+        `tests/e2e/modules/${data.module}`,
+      ]);
       const undo = {
         roots: [
           `src/modules/${data.module}`,
@@ -414,6 +432,11 @@ export default function plopfile(plop: NodePlopAPI): void {
         tokens: readFileSync(tokensPath, 'utf8'),
         di: readFileSync(diPath, 'utf8'),
       };
+      guardDestinations([
+        ...paths,
+        `tests/unit/modules/${data.module}/features/${data.feature}`,
+        `tests/e2e/modules/${data.module}/features/${data.feature}`,
+      ]);
       const undo = {
         roots: [
           featureRoot,
