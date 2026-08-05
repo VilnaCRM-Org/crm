@@ -21,6 +21,14 @@ export interface ScaffoldFile {
   path: string;
 }
 
+export type TemplateData = Record<string, string>;
+
+export interface ScaffoldContext {
+  root: string;
+  camel: (input: string) => string;
+  render: (template: string, data: TemplateData) => string;
+}
+
 export interface Undo {
   roots: string[];
   files: Record<string, string>;
@@ -276,6 +284,77 @@ function instructions(module: string, feature: string, registrar: string, routes
   ].join('\n');
 }
 
+// Deliberately not plop's built-in `add`: it renders and writes one file at a time, so a
+// failure part-way leaves the earlier files behind and sits outside the rollback wrapper.
+// Rendering the whole set first makes a template error a no-op, and doing the writes here
+// puts them inside the transaction with every other mutation.
+function writeGenerated(ctx: ScaffoldContext, files: ScaffoldFile[], data: TemplateData): string {
+  const rendered = files.map((file) => ({
+    path: fillPath(file.path, data.module, data.feature),
+    content: ctx.render(
+      readFileSync(join(ctx.root, 'scripts', 'templates', file.template), 'utf8'),
+      data
+    ),
+  }));
+  rendered.forEach((file) => {
+    const target = join(ctx.root, file.path);
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, file.content);
+    process.stdout.write(`  ++ ${file.path}\n`);
+  });
+  return `wrote ${rendered.length} generated file(s)`;
+}
+
+function writePlaceholders(ctx: ScaffoldContext, paths: string[]): string {
+  const created = paths.filter((path) => path.endsWith('.gitignore'));
+  created.forEach((path) => writePlaceholder(ctx.root, path));
+  return `kept ${created.length} allowed folder(s) with an empty .gitignore`;
+}
+
+// A half-written scaffold is worse than none: the existence guards would then reject the
+// retry. Anything the run created is rolled back before the failure propagates.
+function rollback(ctx: ScaffoldContext, undo: Undo): void {
+  undo.roots
+    .map((relative) => join(ctx.root, relative))
+    .filter((absolute) => existsSync(absolute))
+    .forEach((absolute) => rmSync(absolute, { recursive: true, force: true }));
+  Object.entries(undo.files).forEach(([path, content]) => writeFileSync(path, content));
+}
+
+// Every action that mutates the worktree runs through this, so a failure anywhere after the
+// first write still leaves the repository exactly as the run found it.
+function guarded<T>(ctx: ScaffoldContext, undo: Undo, step: () => T): () => T {
+  return () => {
+    try {
+      return step();
+    } catch (error) {
+      rollback(ctx, undo);
+      throw error;
+    }
+  };
+}
+
+// The whole body is guarded, not just the formatting: writing the closing instructions can
+// fail too (a closed or broken stdout), and that must not strand a generated tree either.
+async function finalize(
+  ctx: ScaffoldContext,
+  data: TemplateData,
+  paths: string[],
+  undo: Undo
+): Promise<string> {
+  try {
+    await formatGenerated(ctx.root, paths);
+    assertLineLength(ctx.root, paths);
+    const registrar = `${ctx.camel(data.module)}Registrar`;
+    const routes = `${ctx.camel(data.feature)}Routes`;
+    process.stdout.write(instructions(data.module, data.feature, registrar, routes));
+    return 'formatted, auto-fixed and length-checked the generated files';
+  } catch (error) {
+    rollback(ctx, undo);
+    throw error;
+  }
+}
+
 export default function plopfile(plop: NodePlopAPI): void {
   const root = plop.getPlopfilePath();
   const shape = loadModuleShape(root);
@@ -283,79 +362,13 @@ export default function plopfile(plop: NodePlopAPI): void {
   const camel = plop.getHelper('camelCase') as (input: string) => string;
   const pascal = plop.getHelper('pascalCase') as (input: string) => string;
   const constant = plop.getHelper('constantCase') as (input: string) => string;
+  const ctx: ScaffoldContext = {
+    root,
+    camel,
+    render: (template, data) => plop.renderString(template, data),
+  };
 
   plop.setHelper('routePath', (module: string, feature: string) => routePath(module, feature));
-
-  // Deliberately not plop's built-in `add`: it renders and writes one file at a time, so a
-  // failure part-way leaves the earlier files behind and sits outside the rollback wrapper.
-  // Rendering the whole set first makes a template error a no-op, and doing the writes here
-  // puts them inside the transaction with every other mutation.
-  const writeGenerated = (files: ScaffoldFile[], data: Record<string, string>): string => {
-    const rendered = files.map((file) => ({
-      path: fillPath(file.path, data.module, data.feature),
-      content: plop.renderString(
-        readFileSync(join(root, 'scripts', 'templates', file.template), 'utf8'),
-        data
-      ),
-    }));
-    rendered.forEach((file) => {
-      const target = join(root, file.path);
-      mkdirSync(dirname(target), { recursive: true });
-      writeFileSync(target, file.content);
-      process.stdout.write(`  ++ ${file.path}\n`);
-    });
-    return `wrote ${rendered.length} generated file(s)`;
-  };
-
-  const writePlaceholders = (paths: string[]): string => {
-    const created = paths.filter((path) => path.endsWith('.gitignore'));
-    created.forEach((path) => writePlaceholder(root, path));
-    return `kept ${created.length} allowed folder(s) with an empty .gitignore`;
-  };
-
-  // A half-written scaffold is worse than none: the existence guards would then reject the
-  // retry. Anything the run created is rolled back before the failure propagates.
-  const rollback = (undo: Undo): void => {
-    undo.roots
-      .map((relative) => join(root, relative))
-      .filter((absolute) => existsSync(absolute))
-      .forEach((absolute) => rmSync(absolute, { recursive: true, force: true }));
-    Object.entries(undo.files).forEach(([path, content]) => writeFileSync(path, content));
-  };
-
-  // Every action that mutates the worktree runs through this, so a failure anywhere after the
-  // first write still leaves the repository exactly as the run found it.
-  const guarded =
-    <T>(undo: Undo, step: () => T): (() => T) =>
-    () => {
-      try {
-        return step();
-      } catch (error) {
-        rollback(undo);
-        throw error;
-      }
-    };
-
-  // The whole body is guarded, not just the formatting: writing the closing instructions can
-  // fail too (a closed or broken stdout), and that must not strand a generated tree either.
-  const finalize = async (
-    module: string,
-    feature: string,
-    paths: string[],
-    undo: Undo
-  ): Promise<string> => {
-    try {
-      await formatGenerated(root, paths);
-      assertLineLength(root, paths);
-      const registrar = `${camel(module)}Registrar`;
-      const routes = `${camel(feature)}Routes`;
-      process.stdout.write(instructions(module, feature, registrar, routes));
-      return 'formatted, auto-fixed and length-checked the generated files';
-    } catch (error) {
-      rollback(undo);
-      throw error;
-    }
-  };
 
   const guardNames = (data: Record<string, string>): void => {
     assertName(shape, 'Module name', data.module);
@@ -422,13 +435,13 @@ export default function plopfile(plop: NodePlopAPI): void {
         files: { [codeownersPath]: codeowners },
       };
       return [
-        guarded(undo, () => writeGenerated([...MODULE_FILES, ...FEATURE_FILES], data)),
-        guarded(undo, () => writePlaceholders(paths)),
-        guarded(undo, () => {
+        guarded(ctx, undo, () => writeGenerated(ctx, [...MODULE_FILES, ...FEATURE_FILES], data)),
+        guarded(ctx, undo, () => writePlaceholders(ctx, paths)),
+        guarded(ctx, undo, () => {
           writeFileSync(codeownersPath, codeownersEntry(codeowners, data.module, data.owner));
           return '.github/CODEOWNERS';
         }),
-        (): Promise<string> => finalize(data.module, data.feature, paths, undo),
+        (): Promise<string> => finalize(ctx, data, paths, undo),
       ];
     },
   });
@@ -477,17 +490,17 @@ export default function plopfile(plop: NodePlopAPI): void {
         files: { [tokensPath]: config.tokens, [diPath]: config.di },
       };
       return [
-        guarded(undo, () => writeGenerated(FEATURE_FILES, data)),
-        guarded(undo, () => writePlaceholders(paths)),
-        guarded(undo, () => {
+        guarded(ctx, undo, () => writeGenerated(ctx, FEATURE_FILES, data)),
+        guarded(ctx, undo, () => writePlaceholders(ctx, paths)),
+        guarded(ctx, undo, () => {
           writeFileSync(tokensPath, addTokenEntry(config.tokens, binding.tokenBase));
           writeFileSync(diPath, addRegistrarBinding(config.di, binding));
           return `wired ${binding.tokenBase} into src/modules/${data.module}/config`;
         }),
         (): Promise<string> =>
           finalize(
-            data.module,
-            data.feature,
+            ctx,
+            data,
             [
               ...paths,
               `src/modules/${data.module}/config/tokens.ts`,
