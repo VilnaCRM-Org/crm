@@ -13,10 +13,16 @@
 # Removal therefore happens inside the container; doing it on the runner fails with EACCES.
 #
 # Exit 0 = the generated scaffold cleared every gate and the worktree is clean again
-# Exit 1 = a gate failed, or cleanup left the worktree dirty
-# Exit 2 = refused to run (probe paths already present, or a required file is missing)
+# Exit 1 = a gate failed, or cleanup left the worktree dirty (the CODEOWNERS backup is kept
+#          and its path printed when the restore is what failed)
+# Exit 2 = refused to run: SCAFFOLD_VERIFY_TARGETS unset or naming an undeclared target,
+#          probe paths already present, or a required file is missing
 #
-# Usage: sh scripts/ci/verify-scaffold.sh
+# Usage: make verify-scaffold
+#
+# The Makefile owns the single definition of the gate list, so run it through the target.
+# Invoking this script directly requires SCAFFOLD_VERIFY_TARGETS in the environment:
+#   SCAFFOLD_VERIFY_TARGETS="lint-deps lint-tsc" sh scripts/ci/verify-scaffold.sh
 set -eu
 
 MODULE="${SCAFFOLD_PROBE_MODULE:-scaffold-probe}"
@@ -76,11 +82,15 @@ finish() {
       code=1
     fi
   done
-  if ! cmp -s "$BACKUP" "$CODEOWNERS"; then
-    printf 'verify-scaffold: %s was not restored from its backup\n' "$CODEOWNERS" >&2
+  # Keep the backup when the restore is what failed — deleting it would destroy the only
+  # known-good copy of a file this script has already overwritten.
+  if cmp -s "$BACKUP" "$CODEOWNERS"; then
+    rm -f "$BACKUP"
+  else
+    printf 'verify-scaffold: %s was not restored; recover it from %s\n' \
+      "$CODEOWNERS" "$BACKUP" >&2
     code=1
   fi
-  rm -f "$BACKUP"
   exit "$code"
 }
 

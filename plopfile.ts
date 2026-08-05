@@ -21,6 +21,11 @@ export interface ScaffoldFile {
   path: string;
 }
 
+export interface Undo {
+  roots: string[];
+  files: Record<string, string>;
+}
+
 export interface RegistrarBinding {
   module: string;
   feature: string;
@@ -289,6 +294,16 @@ export default function plopfile(plop: NodePlopAPI): void {
       abortOnFail: true,
     }));
 
+  // Render every template before plop's `add` actions write anything, so a broken template
+  // fails while the worktree is still untouched instead of half-way through the tree.
+  const renderCheck = (files: ScaffoldFile[], data: Record<string, string>): string => {
+    files.forEach((file) => {
+      const source = readFileSync(join(root, 'scripts', 'templates', file.template), 'utf8');
+      plop.renderString(source, data);
+    });
+    return `rendered ${files.length} template(s) without writing`;
+  };
+
   const writePlaceholders = (paths: string[]): string => {
     const created = paths.filter((path) => path.endsWith('.gitignore'));
     created.forEach((path) => writePlaceholder(root, path));
@@ -297,27 +312,38 @@ export default function plopfile(plop: NodePlopAPI): void {
 
   // A half-written scaffold is worse than none: the existence guards would then reject the
   // retry. Anything the run created is rolled back before the failure propagates.
-  const rollback = (roots: string[], codeowners: string | null): void => {
-    roots
+  const rollback = (undo: Undo): void => {
+    undo.roots
       .map((relative) => join(root, relative))
       .filter((absolute) => existsSync(absolute))
       .forEach((absolute) => rmSync(absolute, { recursive: true, force: true }));
-    if (codeowners !== null) {
-      writeFileSync(codeownersPath, codeowners);
-    }
+    Object.entries(undo.files).forEach(([path, content]) => writeFileSync(path, content));
   };
+
+  // Every action that mutates the worktree runs through this, so a failure anywhere after the
+  // first write still leaves the repository exactly as the run found it.
+  const guarded =
+    <T>(undo: Undo, step: () => T): (() => T) =>
+    () => {
+      try {
+        return step();
+      } catch (error) {
+        rollback(undo);
+        throw error;
+      }
+    };
 
   const finalize = async (
     module: string,
     feature: string,
     paths: string[],
-    undo: { roots: string[]; codeowners: string | null }
+    undo: Undo
   ): Promise<string> => {
     try {
       await formatGenerated(root, paths);
       assertLineLength(root, paths);
     } catch (error) {
-      rollback(undo.roots, undo.codeowners);
+      rollback(undo);
       throw error;
     }
     const registrar = `${camel(module)}Registrar`;
@@ -381,22 +407,24 @@ export default function plopfile(plop: NodePlopAPI): void {
         `tests/unit/modules/${data.module}`,
         `tests/e2e/modules/${data.module}`,
       ]);
-      const undo = {
+      const codeowners = readFileSync(codeownersPath, 'utf8');
+      const undo: Undo = {
         roots: [
           `src/modules/${data.module}`,
           `tests/unit/modules/${data.module}`,
           `tests/e2e/modules/${data.module}`,
         ],
-        codeowners: readFileSync(codeownersPath, 'utf8'),
+        files: { [codeownersPath]: codeowners },
       };
       return [
+        (): string => renderCheck([...MODULE_FILES, ...FEATURE_FILES], data),
         ...fileActions(MODULE_FILES),
         ...fileActions(FEATURE_FILES),
-        (): string => writePlaceholders(paths),
-        (): string => {
-          writeFileSync(codeownersPath, codeownersEntry(undo.codeowners, data.module, data.owner));
+        guarded(undo, () => writePlaceholders(paths)),
+        guarded(undo, () => {
+          writeFileSync(codeownersPath, codeownersEntry(codeowners, data.module, data.owner));
           return '.github/CODEOWNERS';
-        },
+        }),
         (): Promise<string> => finalize(data.module, data.feature, paths, undo),
       ];
     },
@@ -437,40 +465,34 @@ export default function plopfile(plop: NodePlopAPI): void {
         `tests/unit/modules/${data.module}/features/${data.feature}`,
         `tests/e2e/modules/${data.module}/features/${data.feature}`,
       ]);
-      const undo = {
+      const undo: Undo = {
         roots: [
           featureRoot,
           `tests/unit/modules/${data.module}/features/${data.feature}`,
           `tests/e2e/modules/${data.module}/features/${data.feature}`,
         ],
-        codeowners: null,
+        files: { [tokensPath]: config.tokens, [diPath]: config.di },
       };
       return [
+        (): string => renderCheck(FEATURE_FILES, data),
         ...fileActions(FEATURE_FILES),
-        (): string => writePlaceholders(paths),
-        (): string => {
+        guarded(undo, () => writePlaceholders(paths)),
+        guarded(undo, () => {
           writeFileSync(tokensPath, addTokenEntry(config.tokens, binding.tokenBase));
           writeFileSync(diPath, addRegistrarBinding(config.di, binding));
           return `wired ${binding.tokenBase} into src/modules/${data.module}/config`;
-        },
-        async (): Promise<string> => {
-          try {
-            return await finalize(
-              data.module,
-              data.feature,
-              [
-                ...paths,
-                `src/modules/${data.module}/config/tokens.ts`,
-                `src/modules/${data.module}/config/di.ts`,
-              ],
-              undo
-            );
-          } catch (error) {
-            writeFileSync(tokensPath, config.tokens);
-            writeFileSync(diPath, config.di);
-            throw error;
-          }
-        },
+        }),
+        (): Promise<string> =>
+          finalize(
+            data.module,
+            data.feature,
+            [
+              ...paths,
+              `src/modules/${data.module}/config/tokens.ts`,
+              `src/modules/${data.module}/config/di.ts`,
+            ],
+            undo
+          ),
       ];
     },
   });
