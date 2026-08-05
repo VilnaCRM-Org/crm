@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import type { ActionType, NodePlopAPI } from 'plop';
+import type { NodePlopAPI } from 'plop';
 
 export interface ModuleShape {
   version: number;
@@ -286,22 +286,25 @@ export default function plopfile(plop: NodePlopAPI): void {
 
   plop.setHelper('routePath', (module: string, feature: string) => routePath(module, feature));
 
-  const fileActions = (files: ScaffoldFile[]): ActionType[] =>
-    files.map((file) => ({
-      type: 'add',
-      path: file.path,
-      templateFile: join('scripts', 'templates', file.template),
-      abortOnFail: true,
+  // Deliberately not plop's built-in `add`: it renders and writes one file at a time, so a
+  // failure part-way leaves the earlier files behind and sits outside the rollback wrapper.
+  // Rendering the whole set first makes a template error a no-op, and doing the writes here
+  // puts them inside the transaction with every other mutation.
+  const writeGenerated = (files: ScaffoldFile[], data: Record<string, string>): string => {
+    const rendered = files.map((file) => ({
+      path: fillPath(file.path, data.module, data.feature),
+      content: plop.renderString(
+        readFileSync(join(root, 'scripts', 'templates', file.template), 'utf8'),
+        data
+      ),
     }));
-
-  // Render every template before plop's `add` actions write anything, so a broken template
-  // fails while the worktree is still untouched instead of half-way through the tree.
-  const renderCheck = (files: ScaffoldFile[], data: Record<string, string>): string => {
-    files.forEach((file) => {
-      const source = readFileSync(join(root, 'scripts', 'templates', file.template), 'utf8');
-      plop.renderString(source, data);
+    rendered.forEach((file) => {
+      const target = join(root, file.path);
+      mkdirSync(dirname(target), { recursive: true });
+      writeFileSync(target, file.content);
+      process.stdout.write(`  ++ ${file.path}\n`);
     });
-    return `rendered ${files.length} template(s) without writing`;
+    return `wrote ${rendered.length} generated file(s)`;
   };
 
   const writePlaceholders = (paths: string[]): string => {
@@ -333,6 +336,8 @@ export default function plopfile(plop: NodePlopAPI): void {
       }
     };
 
+  // The whole body is guarded, not just the formatting: writing the closing instructions can
+  // fail too (a closed or broken stdout), and that must not strand a generated tree either.
   const finalize = async (
     module: string,
     feature: string,
@@ -342,14 +347,14 @@ export default function plopfile(plop: NodePlopAPI): void {
     try {
       await formatGenerated(root, paths);
       assertLineLength(root, paths);
+      const registrar = `${camel(module)}Registrar`;
+      const routes = `${camel(feature)}Routes`;
+      process.stdout.write(instructions(module, feature, registrar, routes));
+      return 'formatted, auto-fixed and length-checked the generated files';
     } catch (error) {
       rollback(undo);
       throw error;
     }
-    const registrar = `${camel(module)}Registrar`;
-    const routes = `${camel(feature)}Routes`;
-    process.stdout.write(instructions(module, feature, registrar, routes));
-    return 'formatted, auto-fixed and length-checked the generated files';
   };
 
   const guardNames = (data: Record<string, string>): void => {
@@ -417,9 +422,7 @@ export default function plopfile(plop: NodePlopAPI): void {
         files: { [codeownersPath]: codeowners },
       };
       return [
-        (): string => renderCheck([...MODULE_FILES, ...FEATURE_FILES], data),
-        ...fileActions(MODULE_FILES),
-        ...fileActions(FEATURE_FILES),
+        guarded(undo, () => writeGenerated([...MODULE_FILES, ...FEATURE_FILES], data)),
         guarded(undo, () => writePlaceholders(paths)),
         guarded(undo, () => {
           writeFileSync(codeownersPath, codeownersEntry(codeowners, data.module, data.owner));
@@ -474,8 +477,7 @@ export default function plopfile(plop: NodePlopAPI): void {
         files: { [tokensPath]: config.tokens, [diPath]: config.di },
       };
       return [
-        (): string => renderCheck(FEATURE_FILES, data),
-        ...fileActions(FEATURE_FILES),
+        guarded(undo, () => writeGenerated(FEATURE_FILES, data)),
         guarded(undo, () => writePlaceholders(paths)),
         guarded(undo, () => {
           writeFileSync(tokensPath, addTokenEntry(config.tokens, binding.tokenBase));
