@@ -41,13 +41,25 @@ if [ ! -f "$CODEOWNERS" ]; then
   exit 2
 fi
 
+# The Makefile declares every command-line goal phony, so `make <typo>` reports "Nothing to
+# be done" and exits 0. Without this guard a misspelled entry in SCAFFOLD_VERIFY_TARGETS
+# would silently drop a gate and still green the check.
+for target in $TARGETS; do
+  if ! grep -qE "^${target}:" Makefile; then
+    printf 'FATAL: SCAFFOLD_VERIFY_TARGETS names a target the Makefile does not define: %s\n' \
+      "$target" >&2
+    exit 2
+  fi
+done
+
 BACKUP="$(mktemp)"
 cp "$CODEOWNERS" "$BACKUP"
 
 # Root-owned generated files cannot be unlinked by the CI runner user, so both the removal
 # and the CODEOWNERS restore run inside the same container that created them.
-cleanup() {
-  code=$?
+finish() {
+  code="$1"
+  trap - EXIT INT TERM
   docker compose exec -T dev sh -c \
     "rm -rf '$SRC_DIR' '$UNIT_DIR' '$E2E_DIR'" >/dev/null 2>&1 || true
   docker compose exec -T dev sh -c "cat > '$CODEOWNERS'" <"$BACKUP" >/dev/null 2>&1 || true
@@ -58,10 +70,11 @@ cleanup() {
       code=1
     fi
   done
-  trap - EXIT
   exit "$code"
 }
-trap cleanup EXIT INT TERM
+
+# The trap covers `set -e` aborts and interrupts; the success path calls finish directly.
+trap 'finish "$?"' EXIT INT TERM
 
 printf '== verify-scaffold: make new-module name=%s feature=%s ==\n' "$MODULE" "$FEATURE"
 make new-module "name=$MODULE" "feature=$FEATURE"
@@ -79,4 +92,4 @@ if [ "$status" -eq 0 ]; then
   printf '\nverify-scaffold: %s/%s cleared %s\n' "$MODULE" "$FEATURE" "$TARGETS"
 fi
 
-exit "$status"
+finish "$status"
