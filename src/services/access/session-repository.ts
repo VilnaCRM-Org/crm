@@ -8,8 +8,4 @@ export default class SessionRepository implements SessionLoader {
   public build(input: SessionInput): SessionSnapshot | null {
     return sessionFactory.build(input);
   }
-
-  public load(input: SessionInput): SessionSnapshot | null {
-    return this.build(input);
-  }
 }

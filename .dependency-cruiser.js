@@ -413,7 +413,16 @@ module.exports = {
         'the one sanctioned importer (issue #114).',
       severity: 'error',
       from: {
-        path: ['^src/components/', '^src/routes/', '^src/providers/', '^src/features/'],
+        path: [
+          '^src/components/',
+          '^src/routes/',
+          '^src/providers/',
+          '^src/features/',
+          '^src/hooks/',
+        ],
+        // `use-access` / `use-access-snapshot` ARE the read seam; every other hook goes
+        // through them rather than reaching the writable primitive itself.
+        pathNot: '^src/hooks/use-access',
       },
       to: {
         path: '^src/lib/access/access-state[.]ts$',

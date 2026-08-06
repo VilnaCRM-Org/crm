@@ -1,6 +1,7 @@
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import { PERMISSIONS, ROLES, ROLE_PERMISSIONS } from '@/lib/access/permission-catalog';
 import permissionResolver from '@/lib/access/permission-resolver';
+import type { SessionLoader } from '@/lib/types/access/session';
 import SessionRepository from '@/services/access/session-repository';
 import { buildAccessToken, buildClaims, buildEmail, buildTenantRef } from '@tests/builders';
 
@@ -10,15 +11,15 @@ describe('SessionRepository', () => {
   const repository = new SessionRepository();
 
   it('returns null for a null token', () => {
-    expect(repository.load({ token: null })).toBeNull();
+    expect(repository.build({ token: null })).toBeNull();
   });
 
   it('returns null for an empty token', () => {
-    expect(repository.load({ token: '' })).toBeNull();
+    expect(repository.build({ token: '' })).toBeNull();
   });
 
   it('returns null for a null token even when an email is supplied', () => {
-    expect(repository.load({ token: null, email: buildEmail() })).toBeNull();
+    expect(repository.build({ token: null, email: buildEmail() })).toBeNull();
   });
 
   it('maps the claims of a signed token onto the session snapshot', () => {
@@ -30,7 +31,7 @@ describe('SessionRepository', () => {
       flags: { [FEATURE_FLAGS.contactsModule]: true },
     });
 
-    const snapshot = repository.load({ token: buildAccessToken(claims) });
+    const snapshot = repository.build({ token: buildAccessToken(claims) });
 
     expect(snapshot).not.toBeNull();
     expect(snapshot?.principal.id).toBe(claims.sub);
@@ -49,7 +50,7 @@ describe('SessionRepository', () => {
   it('falls back to the input email, the read-only viewer role and the default tenant', () => {
     const email = buildEmail();
 
-    const snapshot = repository.load({ token: buildAccessToken({}), email });
+    const snapshot = repository.build({ token: buildAccessToken({}), email });
 
     expect(snapshot?.principal.email).toBe(email);
     expect(snapshot?.principal.roles).toEqual([ROLES.viewer]);
@@ -69,7 +70,7 @@ describe('SessionRepository', () => {
   it('expands an admin token into the whole permission catalogue', () => {
     const claims = buildClaims({ roles: [ROLES.admin] });
 
-    const snapshot = repository.load({ token: buildAccessToken(claims) });
+    const snapshot = repository.build({ token: buildAccessToken(claims) });
 
     expect(snapshot?.principal.id).toBe(claims.sub);
     expect(snapshot?.principal.roles).toEqual([ROLES.admin]);
@@ -79,30 +80,27 @@ describe('SessionRepository', () => {
     expect(snapshot?.flags).toEqual({});
   });
 
-  // The repository is the SessionLoader the AccessSession installs, so build() is the
-  // contract entry point and load() must be a straight delegation to it.
-  it('delegates load() to the build() entry point of the SessionLoader contract', () => {
+  // The repository IS the SessionLoader the AccessSession installs, so `build` is the whole
+  // contract: it must satisfy the structural type the session accepts.
+  it('satisfies the SessionLoader contract the access session installs', () => {
     const claims = buildClaims({ roles: [ROLES.manager] });
     const input = { token: buildAccessToken(claims) };
-    const build = jest.spyOn(repository, 'build');
+    const loader: SessionLoader = repository;
 
-    const snapshot = repository.load(input);
+    const snapshot = loader.build(input);
 
-    expect(build).toHaveBeenCalledTimes(1);
-    expect(build).toHaveBeenCalledWith(input);
     expect(snapshot?.principal.id).toBe(claims.sub);
     expect(snapshot?.principal.roles).toEqual([ROLES.manager]);
-    expect(repository.build(input)?.principal.id).toBe(claims.sub);
   });
 
   it('reads the token it is given rather than a cached one', () => {
     const first = buildClaims({ roles: [ROLES.viewer] });
     const second = buildClaims({ roles: [ROLES.admin] });
 
-    expect(repository.load({ token: buildAccessToken(first) })?.principal.id).toBe(first.sub);
-    expect(repository.load({ token: buildAccessToken(second) })?.principal.roles).toEqual([
+    expect(repository.build({ token: buildAccessToken(first) })?.principal.id).toBe(first.sub);
+    expect(repository.build({ token: buildAccessToken(second) })?.principal.roles).toEqual([
       ROLES.admin,
     ]);
-    expect(repository.load({ token: null })).toBeNull();
+    expect(repository.build({ token: null })).toBeNull();
   });
 });

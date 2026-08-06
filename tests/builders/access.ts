@@ -14,18 +14,24 @@ export function buildTenantRef(overrides: Partial<TenantRef> = {}): TenantRef {
 
 export function buildPrincipal(overrides: Partial<Principal> = {}): Principal {
   const roles: readonly Role[] = overrides.roles ?? [ROLES.member];
-  const tenants: readonly TenantRef[] = overrides.tenants ?? [buildTenantRef()];
-  // A caller may pin an empty membership list to model a principal with no tenants; the
-  // active tenant then comes from the explicit override, or from a generated one.
-  const tenantId: string = tenants.at(0)?.id ?? overrides.tenantId ?? buildTenantRef().id;
+  // The store enforces `tenantId ∈ tenants`, so a principal must never be built with an
+  // active tenant it does not belong to: a pinned-empty membership gains the tenant that
+  // ends up active, and a pinned tenantId is honoured only when it is a real membership.
+  const pinned: readonly TenantRef[] = overrides.tenants ?? [buildTenantRef()];
+  const tenants: readonly TenantRef[] =
+    pinned.length > 0
+      ? pinned
+      : [{ id: overrides.tenantId ?? buildTenantRef().id, name: faker.company.name() }];
+  const requested: string | undefined = overrides.tenantId;
+  const member: boolean = tenants.some((tenant) => tenant.id === requested);
   return {
     id: faker.string.uuid(),
     email: buildEmail(),
     roles,
     permissions: permissionResolver.expand(roles),
-    tenantId,
-    tenants,
     ...overrides,
+    tenantId: member ? (requested as string) : tenants[0].id,
+    tenants,
   };
 }
 

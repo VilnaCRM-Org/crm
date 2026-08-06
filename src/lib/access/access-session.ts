@@ -13,6 +13,9 @@ export class AccessSession {
   // through the container keeps every hydration path — render and DI — on one loader.
   public useLoader(loader: SessionLoader): void {
     this.loader = loader;
+    // Forget the hydrated token too: otherwise the next sync for that same token
+    // short-circuits and the session stays bound to the loader that was just replaced.
+    this.source = null;
   }
 
   public load(input: SessionInput): SessionSnapshot | null {

@@ -5,9 +5,13 @@ import path from 'node:path';
 type EslintMessage = { ruleId: string | null; message: string };
 type EslintResult = { messages: EslintMessage[] };
 
-type CruiseReport = { summary?: { violations?: { rule: { name: string } }[] } };
+type CruiseReport = { summary?: { violations?: { rule: { name: string; severity: string } }[] } };
 
 const repoRoot = path.resolve(__dirname, '../../..');
+// Fixtures must live under src/ for the flat config and the tsconfig project to apply, so
+// they are namespaced per worker: a hard-killed run can never leave a file another worker
+// (or a later lint pass) mistakes for real source.
+const probe = `probe-${process.pid}`;
 const eslintBin = path.join(repoRoot, 'node_modules/eslint/bin/eslint.js');
 const depcruiseBin = path.join(
   repoRoot,
@@ -74,7 +78,12 @@ const cruise = (fixtures: Record<string, string>): string[] => {
   };
   try {
     const report = JSON.parse(run()) as CruiseReport;
-    return (report.summary?.violations ?? []).map((violation) => violation.rule.name);
+    // Name alone is not enough: depcruise lists warn-severity violations in the same
+    // array, so a rule quietly downgraded to `warn` would keep every assertion green
+    // while no longer blocking CI. Only blocking violations count as caught.
+    return (report.summary?.violations ?? [])
+      .filter((violation) => violation.rule.severity === 'error')
+      .map((violation) => violation.rule.name);
   } finally {
     // Remove the fixture *and* any directory it needed: a stray empty folder under src/
     // silently changes how the other gates resolve their own fixtures.
@@ -142,19 +151,20 @@ export default new Probe();
 // apply, so they cannot go to a temp dir. Sweep defensively in case a run is interrupted
 // between the write and the finally.
 const FIXTURE_PATHS = [
-  'src/components/gate-probe.tsx',
-  'src/components/bypass-probe.tsx',
-  'src/components/cruise-probe/index.tsx',
-  'src/hooks/use-gate-probe.ts',
-  'src/lib/access/gate-probe.ts',
+  `src/components/${probe}.tsx`,
+  `src/components/${probe}-bypass.tsx`,
+  `src/components/${probe}-cruise/index.tsx`,
+  `src/hooks/use-${probe}.ts`,
+  `src/lib/access/${probe}.ts`,
 ];
+const [ESLINT_FIXTURE, BYPASS_FIXTURE, CRUISE_FIXTURE, HOOK_FIXTURE, LAYER_FIXTURE] = FIXTURE_PATHS;
 
 const sweepFixtures = (): void => {
   FIXTURE_PATHS.forEach((relative) => {
     const absolute = path.join(repoRoot, relative);
     fs.rmSync(absolute, { force: true });
     const parent = path.dirname(absolute);
-    if (parent.endsWith('cruise-probe') && fs.existsSync(parent)) fs.rmdirSync(parent);
+    if (parent.endsWith('-cruise') && fs.existsSync(parent)) fs.rmdirSync(parent);
   });
 };
 
@@ -163,7 +173,7 @@ afterAll(sweepFixtures);
 
 describe('access-control ESLint gate (issue #114)', () => {
   it('rejects raw permission strings and ad-hoc role checks outside the access layer', () => {
-    const messages = authorizationMessages(lint('src/components/gate-probe.tsx', GATED_COMPONENT));
+    const messages = authorizationMessages(lint(ESLINT_FIXTURE, GATED_COMPONENT));
 
     expect(messages).toHaveLength(3);
     expect(messages.every((message) => message.ruleId === 'no-restricted-syntax')).toBe(true);
@@ -174,9 +184,7 @@ describe('access-control ESLint gate (issue #114)', () => {
   });
 
   it('catches every membership spelling, not just the obvious one', () => {
-    const messages = authorizationMessages(
-      lint('src/components/bypass-probe.tsx', BYPASS_ATTEMPTS)
-    );
+    const messages = authorizationMessages(lint(BYPASS_FIXTURE, BYPASS_ATTEMPTS));
 
     // One per bypass line in the fixture: includes (member, destructured, computed and
     // optional), some, find, indexOf, filter, a Set wrapper, and two bare index reads.
@@ -189,9 +197,7 @@ describe('access-control ESLint gate (issue #114)', () => {
   });
 
   it('exempts the access layer itself, which is where the decisions are made', () => {
-    const messages = authorizationMessages(
-      lint('src/lib/access/gate-probe.ts', ACCESS_LAYER_MODULE)
-    );
+    const messages = authorizationMessages(lint(LAYER_FIXTURE, ACCESS_LAYER_MODULE));
 
     expect(messages).toEqual([]);
   });
@@ -200,7 +206,7 @@ describe('access-control ESLint gate (issue #114)', () => {
 describe('access-control dependency-cruiser boundaries (issue #114)', () => {
   it('rejects a shared component that resolves an access service or writes the state', () => {
     const violations = cruise({
-      'src/components/cruise-probe/index.tsx': `import accessState from '@/lib/access/access-state';
+      [CRUISE_FIXTURE]: `import accessState from '@/lib/access/access-state';
 import permissionService from '@/services/access/permission-service';
 
 export default function GateProbe(): JSX.Element {
@@ -216,7 +222,7 @@ export default function GateProbe(): JSX.Element {
 
   it('rejects a hook that reaches past the seam into an access service', () => {
     const violations = cruise({
-      'src/hooks/use-gate-probe.ts': [
+      [HOOK_FIXTURE]: [
         "import permissionService from '@/services/access/permission-service';",
         '',
 
@@ -231,7 +237,7 @@ export default function GateProbe(): JSX.Element {
 
   it('rejects the paint-safe domain importing the container or a feature module', () => {
     const violations = cruise({
-      'src/lib/access/gate-probe.ts': `import { injectable } from 'tsyringe';
+      [LAYER_FIXTURE]: `import { injectable } from 'tsyringe';
 
 import ApiError from '@/modules/user';
 import permissionService from '@/services/access/permission-service';
@@ -252,7 +258,7 @@ export class GateProbe {
 
   it('accepts the sanctioned seam: a component consuming the access hooks', () => {
     const violations = cruise({
-      'src/components/cruise-probe/index.tsx': `import useCan from '@/hooks/use-can';
+      [CRUISE_FIXTURE]: `import useCan from '@/hooks/use-can';
 import { PERMISSIONS } from '@/lib/access/permission-catalog';
 
 export default function GateProbe(): JSX.Element {

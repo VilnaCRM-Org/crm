@@ -111,11 +111,11 @@ describe('access services DI integration (#114)', () => {
   });
 
   it('loads the same session snapshot through the repository as through the service', () => {
-    const snapshot = sessionRepository.load({ token: managerToken });
+    const snapshot = sessionRepository.build({ token: managerToken });
 
     expect(snapshot?.principal.id).toBe(managerClaims.sub);
     expect(snapshot?.flags).toEqual({ [FEATURE_FLAGS.contactsModule]: true });
-    expect(sessionRepository.load({ token: null })).toBeNull();
+    expect(sessionRepository.build({ token: null })).toBeNull();
 
     // Both halves of the claim: the service hydrates through that same repository, so the
     // principal it installs must match the snapshot the repository just returned.
