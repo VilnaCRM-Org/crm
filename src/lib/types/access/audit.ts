@@ -2,6 +2,8 @@ export type AuditEventType = 'login' | 'logout' | 'tenant_switch' | 'permission_
 
 export type AuditMetadata = Readonly<Record<string, string>>;
 
+export type DenialReason = 'permission' | 'membership';
+
 export interface AuditEventInput {
   readonly type: AuditEventType;
   readonly metadata?: AuditMetadata;

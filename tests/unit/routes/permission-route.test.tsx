@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { RenderResult } from '@testing-library/react';
-import { useCallback } from 'react';
+import { Suspense, useCallback } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 
@@ -44,12 +44,15 @@ const gate = (permission: Permission, path: string, navigator = false): JSX.Elem
     <I18nextProvider i18n={testI18n}>
       <MemoryRouter initialEntries={[path]}>
         {navigator ? <Navigator /> : null}
-        <Routes>
-          <Route element={<PermissionRoute permission={permission} />}>
-            <Route path={FIRST_PATH} element={<p>{NESTED_TEXT}</p>} />
-            <Route path={SECOND_PATH} element={<p>{NESTED_TEXT}</p>} />
-          </Route>
-        </Routes>
+        {/* Mirrors the RootLayout boundary that resolves the code-split refusal panel. */}
+        <Suspense fallback={null}>
+          <Routes>
+            <Route element={<PermissionRoute permission={permission} />}>
+              <Route path={FIRST_PATH} element={<p>{NESTED_TEXT}</p>} />
+              <Route path={SECOND_PATH} element={<p>{NESTED_TEXT}</p>} />
+            </Route>
+          </Routes>
+        </Suspense>
       </MemoryRouter>
     </I18nextProvider>
   </ThemeProvider>
@@ -96,12 +99,14 @@ describe('PermissionRoute (#114)', () => {
     expect(record).not.toHaveBeenCalled();
   });
 
-  it('renders the access denied panel when the principal lacks the permission', () => {
+  it('renders the access denied panel when the principal lacks the permission', async () => {
     seedPrincipal([ROLES.viewer]);
 
     renderGate(PERMISSIONS.contactWrite, FIRST_PATH);
 
-    expect(screen.getByRole('heading', { level: 1, name: DENIED.title })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: DENIED.title })
+    ).toBeInTheDocument();
     expect(screen.getByText(DENIED.description)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: DENIED.cta })).toBeInTheDocument();
     expect(screen.queryByText(NESTED_TEXT)).not.toBeInTheDocument();
@@ -132,7 +137,7 @@ describe('PermissionRoute (#114)', () => {
     expect(record).toHaveBeenCalledTimes(1);
   });
 
-  it('records a fresh denial when navigating to a different denied path', () => {
+  it('records a fresh denial when navigating to a different denied path', async () => {
     seedPrincipal([ROLES.viewer]);
 
     render(gate(PERMISSIONS.contactWrite, FIRST_PATH, true));
@@ -150,6 +155,8 @@ describe('PermissionRoute (#114)', () => {
       path: SECOND_PATH,
       permission: PERMISSIONS.contactWrite,
     });
-    expect(screen.getByRole('heading', { level: 1, name: DENIED.title })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: DENIED.title })
+    ).toBeInTheDocument();
   });
 });

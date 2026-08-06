@@ -1,4 +1,4 @@
-import type { AuditMetadata } from '@/lib/types/access/audit';
+import type { AuditMetadata, DenialReason } from '@/lib/types/access/audit';
 import type { FeatureFlag } from '@/lib/types/access/feature-flag';
 import type { Permission } from '@/lib/types/access/permission';
 import type { Principal, TenantRef } from '@/lib/types/access/principal';
@@ -46,7 +46,7 @@ export class AccessCore {
     auditCore.log({ type: 'permission_denied', metadata: { ...context, permission } });
   }
 
-  private refusalReason(tenantId: string): string | null {
+  private refusalReason(tenantId: string): DenialReason | null {
     if (!this.can(PERMISSIONS.tenantSwitch)) return 'permission';
     return this.tenants().some((tenant) => tenant.id === tenantId) ? null : 'membership';
   }
