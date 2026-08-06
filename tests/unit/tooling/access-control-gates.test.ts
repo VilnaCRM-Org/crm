@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-type EslintMessage = { ruleId: string | null; message: string };
+type EslintMessage = { ruleId: string | null; message: string; severity: number };
 type EslintResult = { messages: EslintMessage[] };
 
 type CruiseReport = { summary?: { violations?: { rule: { name: string; severity: string } }[] } };
@@ -108,9 +108,12 @@ export default function Probe({ principal }: { principal: Principal }): JSX.Elem
 }
 `;
 
-// `includes` is the obvious spelling, not the only one. Destructuring, computed keys,
-// optional chaining, the other array searches, a Set wrapper and a bare index all reach the
-// same decision. A gate that stops only the obvious one is a gate in name only.
+// `includes` is the obvious spelling, not the only one. The fixture below covers every
+// membership pattern the gate must reject — includes / some / every / find / findIndex /
+// indexOf / filter / at, a Set wrapper, and bare indexing — across the member,
+// destructured, computed and optionally-chained receivers. A gate that stops only the
+// obvious one is a gate in name only, so any pattern added to the selector must be added
+// here too or it can silently fall out of the regex unnoticed.
 const BYPASS_ATTEMPTS = `import RequirePermission from '@/components/require-permission';
 import type { Principal } from '@/lib/types/access/principal';
 
@@ -127,9 +130,12 @@ export default function Probe({ principal }: { principal: Principal }): JSX.Elem
   const i = new Set(principal.permissions).has('deal:write');
   const j = principal.roles[0] === 'admin';
   const k = roles[0] === 'admin';
+  const l = principal.roles.every((r) => r === 'admin');
+  const m = principal.permissions.findIndex((p) => p === 'deal:read') !== -1;
+  const n = principal.roles.at(0) === 'admin';
   return (
     <RequirePermission permission={'contact:read'}>
-      <p>{\`\${a}\${b}\${c}\${d}\${e}\${f}\${g}\${h}\${i}\${j}\${k}\`}</p>
+      <p>{\`\${a}\${b}\${c}\${d}\${e}\${f}\${g}\${h}\${i}\${j}\${k}\${l}\${m}\${n}\`}</p>
     </RequirePermission>
   );
 }
@@ -186,11 +192,15 @@ describe('access-control ESLint gate (issue #114)', () => {
   it('catches every membership spelling, not just the obvious one', () => {
     const messages = authorizationMessages(lint(BYPASS_FIXTURE, BYPASS_ATTEMPTS));
 
-    // One per bypass line in the fixture: includes (member, destructured, computed and
-    // optional), some, find, indexOf, filter, a Set wrapper, and two bare index reads.
-    expect(
-      messages.filter((m) => m.message.includes('No ad-hoc role/permission membership'))
-    ).toHaveLength(11);
+    // One per bypass line: includes (member, destructured, computed, optional), some,
+    // find, indexOf, filter, Set-wrapped, two bare index reads, every, findIndex and at.
+    const membership = messages.filter((m) =>
+      m.message.includes('No ad-hoc role/permission membership')
+    );
+    expect(membership).toHaveLength(14);
+    // A severity downgrade would leave every count above green while the gate stopped
+    // failing the build, so pin it: 2 is ESLint's `error`.
+    expect(membership.every((m) => m.severity === 2)).toBe(true);
     expect(
       messages.filter((m) => m.message.includes('No raw permission strings on a permission prop'))
     ).toHaveLength(1);
