@@ -1,5 +1,3 @@
-import { faker } from '@faker-js/faker';
-
 import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
@@ -14,9 +12,9 @@ const FROZEN_AT = '2026-03-04T05:06:07.008Z';
 
 function buildContact(overrides: Partial<ContactSubject> = {}): ContactSubject {
   return {
-    id: faker.string.uuid(),
-    tenantId: faker.string.uuid(),
-    ownerId: faker.string.uuid(),
+    id: buildTenantRef().id,
+    tenantId: buildTenantRef().id,
+    ownerId: buildPrincipal().id,
     ...overrides,
   };
 }

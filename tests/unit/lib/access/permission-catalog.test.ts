@@ -199,6 +199,15 @@ describe('permission catalog', () => {
       expect(ROLE_PERMISSIONS[DEFAULT_ROLE]).toHaveLength(4);
     });
 
+    // AccessDenied offers "go to the homepage" as its recovery route, and that route is
+    // itself gated on 'app:home'. If any role lacked it, the recovery link would lead
+    // straight back into a refusal — so every role must carry it, or the CTA must change.
+    it('is granted by every role, so the access-denied recovery route never loops', () => {
+      Object.values(ROLES).forEach((role) => {
+        expect(ROLE_PERMISSIONS[role]).toContain(PERMISSIONS.appHome);
+      });
+    });
+
     it('partitions the catalogue into the default grants and the write grants', () => {
       expect(sorted([...VIEWER_GRANTS, ...WRITE_GRANTS])).toEqual(sorted(UNION_PERMISSIONS));
       expect(WRITE_GRANTS.some((permission) => VIEWER_GRANTS.includes(permission))).toBe(false);

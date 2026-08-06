@@ -1,4 +1,5 @@
-export type AuditEventType = 'login' | 'logout' | 'tenant_switch' | 'permission_denied';
+export type AuditEventType =
+  'login' | 'logout' | 'tenant_switch' | 'permission_denied' | 'sensitive_action';
 
 export type AuditMetadata = Readonly<Record<string, string>>;
 

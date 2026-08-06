@@ -116,6 +116,13 @@ describe('access services DI integration (#114)', () => {
     expect(snapshot?.principal.id).toBe(managerClaims.sub);
     expect(snapshot?.flags).toEqual({ [FEATURE_FLAGS.contactsModule]: true });
     expect(sessionRepository.load({ token: null })).toBeNull();
+
+    // Both halves of the claim: the service hydrates through that same repository, so the
+    // principal it installs must match the snapshot the repository just returned.
+    sessions.start({ token: managerToken });
+
+    expect(accessState.get().principal).toEqual(snapshot?.principal);
+    expect(accessState.get().flags).toEqual(snapshot?.flags);
   });
 
   it('switches the active tenant and audits the switch', () => {

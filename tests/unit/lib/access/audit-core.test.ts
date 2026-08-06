@@ -117,7 +117,10 @@ describe('AuditCore', () => {
       expect(event.metadata).toBe(metadata);
     });
 
-    it('does not let the stamped fields be overridden by the input', () => {
+    // `AuditEventInput` structurally admits only `type` and `metadata`, so the stamped
+    // fields cannot be overridden by a caller — what is worth pinning is the envelope the
+    // core emits: exactly the stamped keys, and `metadata` omitted when none was given.
+    it('emits exactly the stamped envelope keys and omits an absent metadata', () => {
       const principal = buildPrincipal();
       accessState.setSession(principal, {});
 
@@ -125,6 +128,9 @@ describe('AuditCore', () => {
 
       const event = recordedAt(sink);
       expect(Object.keys(event).sort()).toEqual(['at', 'principalId', 'tenantId', 'type']);
+      expect(event.principalId).toBe(principal.id);
+      expect(event.tenantId).toBe(principal.tenantId);
+      expect('metadata' in event).toBe(false);
     });
   });
 

@@ -428,8 +428,10 @@ src/
 │       └── package.json     # Module metadata
 ├── components/      # Reusable UI components (prefixed with UI*)
 ├── features/        # Shared features
-├── services/        # Singleton services (HttpsClient, error handling)
+├── lib/             # Dependency-free cross-cutting domain (access: RBAC/tenancy/audit)
+├── services/        # Singleton services (HttpsClient, error handling, access)
 ├── config/          # DI configuration, tokens, API config
+├── hooks/           # Shared hooks (useCan, usePrincipal, useTenant, useFeatureFlag)
 ├── routes/          # Route registry + composer (module-owned route contracts)
 ├── providers/       # React context providers
 └── utils/           # Shared utilities
@@ -447,6 +449,7 @@ The project uses tsyringe for DI with **per-module / per-infra composition roots
      `src/services/observability/{di,tokens}.ts` (`OBSERVABILITY_TOKENS`),
      `src/services/error/{di,tokens}.ts` (`ERROR_TOKENS`),
      `src/services/error-reporting/{di,tokens}.ts` (`ERROR_REPORTING_TOKENS`),
+     `src/services/access/{di,tokens}.ts` (`ACCESS_TOKENS`),
      `src/utils/error/{di,tokens}.ts` (`ERROR_UTILS_TOKENS`).
    - Module: `src/modules/user/config/{di,tokens}.ts` (`AUTH_TOKENS`).
 2. Each root is a `ModuleRegistrar` (`src/config/types/module-registrar.ts`) singleton.
@@ -803,6 +806,25 @@ Key variables in `.env`:
    in Sentry `beforeSend`; identity is a random opaque session id only — no PII. All capture paths
    are wrapped so telemetry failure never breaks a user flow. Do not scatter direct
    `@sentry/react` calls across feature modules; consume telemetry through this boundary.
+
+10. **Access control — RBAC, tenancy, feature flags, audit (issue #114)**: authorization is
+    a cross-cutting layer, not a module. The dependency-free domain lives in
+    `src/lib/access/` (permission/role catalog, principal state, policies, audit core) and
+    the `@injectable()` adapters plus the composition root in `src/services/access/`
+    (`ACCESS_TOKENS`) — the same paint-safe two-layer split as observability, so the
+    authenticated paint path never loads tsyringe or zod. React consumes it **only**
+    through `useCan` / `usePrincipal` / `useTenant` / `useFeatureFlag` and
+    `<RequirePermission>`; routes declare `meta.permission` in their module route
+    contract and the composer nests them under `PermissionRoute` inside `AppLayout`.
+    The `Principal` (id, email, roles, permissions, tenantId, tenants) is derived from the
+    signed token's claims by `SessionRepository`/`SessionFactory` and hydrated by
+    `ProtectedRoute`; the server remains the source of truth. Permissions and roles are
+    closed typed sets — never a free string at a call site — and object-level rules are
+    `Policy` classes, never inline conditionals. Enforced by dependency-cruiser
+    (`no-ui-to-access-services`, `no-ui-to-access-state`, `no-access-layer-to-modules`,
+    `no-access-domain-to-container`, `no-access-domain-to-tsyringe`) and an ESLint
+    `no-restricted-syntax` gate scoped outside the access layer. Full reference:
+    [`docs/access-control.md`](docs/access-control.md).
 
 ## Node Version Management
 

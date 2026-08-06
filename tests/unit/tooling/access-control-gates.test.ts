@@ -99,20 +99,28 @@ export default function Probe({ principal }: { principal: Principal }): JSX.Elem
 }
 `;
 
-// The obvious spellings are not the only ones: destructuring the principal, indexing it
-// with a computed key, or wrapping the permission in an expression container all name the
-// same thing. A gate that misses them is a gate in name only.
+// `includes` is the obvious spelling, not the only one. Destructuring, computed keys,
+// optional chaining, the other array searches, a Set wrapper and a bare index all reach the
+// same decision. A gate that stops only the obvious one is a gate in name only.
 const BYPASS_ATTEMPTS = `import RequirePermission from '@/components/require-permission';
 import type { Principal } from '@/lib/types/access/principal';
 
 export default function Probe({ principal }: { principal: Principal }): JSX.Element {
   const { permissions, roles } = principal;
-  const elevated = permissions.includes('contact:manage-all');
-  const admin = roles.includes('admin');
-  const computed = principal['permissions'].includes('deal:write');
+  const a = permissions.includes('contact:manage-all');
+  const b = roles.includes('admin');
+  const c = principal['permissions'].includes('deal:write');
+  const d = principal?.permissions.includes('contact:read');
+  const e = principal.permissions.some((p) => p === 'contact:read');
+  const f = principal.roles.find((r) => r === 'admin') !== undefined;
+  const g = principal.roles.indexOf('admin') !== -1;
+  const h = principal.permissions.filter((p) => p === 'deal:read').length > 0;
+  const i = new Set(principal.permissions).has('deal:write');
+  const j = principal.roles[0] === 'admin';
+  const k = roles[0] === 'admin';
   return (
     <RequirePermission permission={'contact:read'}>
-      <p>{\`\${elevated}\${admin}\${computed}\`}</p>
+      <p>{\`\${a}\${b}\${c}\${d}\${e}\${f}\${g}\${h}\${i}\${j}\${k}\`}</p>
     </RequirePermission>
   );
 }
@@ -165,14 +173,16 @@ describe('access-control ESLint gate (issue #114)', () => {
     ).toHaveLength(2);
   });
 
-  it('catches the destructured, computed and expression-container spellings too', () => {
+  it('catches every membership spelling, not just the obvious one', () => {
     const messages = authorizationMessages(
       lint('src/components/bypass-probe.tsx', BYPASS_ATTEMPTS)
     );
 
+    // One per bypass line in the fixture: includes (member, destructured, computed and
+    // optional), some, find, indexOf, filter, a Set wrapper, and two bare index reads.
     expect(
-      messages.filter((m) => m.message.includes('No ad-hoc role/permission membership checks'))
-    ).toHaveLength(3);
+      messages.filter((m) => m.message.includes('No ad-hoc role/permission membership'))
+    ).toHaveLength(11);
     expect(
       messages.filter((m) => m.message.includes('No raw permission strings on a permission prop'))
     ).toHaveLength(1);

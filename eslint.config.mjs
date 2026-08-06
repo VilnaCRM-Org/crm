@@ -163,20 +163,45 @@ const noProcessEnvSelectors = [
 // (`useCan`, `<RequirePermission>`, `PermissionService`, a `Policy` class) with a typed
 // constant from the permission catalog — never inspect `principal.roles`/`principal.permissions`
 // itself and never pass a raw permission/role string at a call site.
+// The receiver of a membership check spelled three ways: `principal.roles`, a destructured
+// `roles`, and the computed `principal['roles']`. Every decision shape below is checked
+// against all three.
+const ROLE_COLLECTION = '/^(roles|permissions)$/';
+const RECEIVERS = [
+  `[callee.object.property.name=${ROLE_COLLECTION}]`,
+  `[callee.object.name=${ROLE_COLLECTION}]`,
+  `[callee.object.property.value=${ROLE_COLLECTION}]`,
+];
+// Any array read that answers "is X in this set" — not just `includes`. Plain reads are
+// deliberately still allowed: rendering a principal's roles is not an authorization decision.
+const MEMBERSHIP_METHODS =
+  '/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/';
+
+const membershipCallSelectors = RECEIVERS.map(
+  (receiver) => `CallExpression[callee.property.name=${MEMBERSHIP_METHODS}]${receiver}`
+).join(',');
+
+// `new Set(principal.permissions).has(…)` and `principal.roles[0] === 'admin'` reach the same
+// decision without ever calling an array method on the collection.
+const membershipEscapeSelectors = [
+  `NewExpression[callee.name='Set'] > MemberExpression[property.name=${ROLE_COLLECTION}]`,
+  `NewExpression[callee.name='Set'] > MemberExpression[property.value=${ROLE_COLLECTION}]`,
+  `NewExpression[callee.name='Set'] > Identifier[name=${ROLE_COLLECTION}]`,
+  `MemberExpression[computed=true][object.property.name=${ROLE_COLLECTION}]`,
+  `MemberExpression[computed=true][object.property.value=${ROLE_COLLECTION}]`,
+  `MemberExpression[computed=true][object.name=${ROLE_COLLECTION}]`,
+].join(',');
+
 const noAdHocAuthorizationSelectors = [
   {
-    // Covers the member form (`principal.roles.includes`), the destructured/aliased form
-    // (`const { permissions } = …; permissions.includes`), and the computed member form
-    // (`principal['roles'].includes`) — all three are the same bypass.
-    selector:
-      "CallExpression[callee.property.name='includes']" +
-      '[callee.object.property.name=/^(roles|permissions)$/],' +
-      "CallExpression[callee.property.name='includes']" +
-      '[callee.object.name=/^(roles|permissions)$/],' +
-      "CallExpression[callee.property.name='includes']" +
-      '[callee.object.property.value=/^(roles|permissions)$/]',
+    selector: membershipCallSelectors,
     message:
       'No ad-hoc role/permission membership checks outside the access layer — ask useCan/PermissionService or add a Policy class (issue #114).',
+  },
+  {
+    selector: membershipEscapeSelectors,
+    message:
+      'No ad-hoc role/permission membership checks outside the access layer — indexing or wrapping the collection is the same decision (issue #114).',
   },
   {
     selector: "CallExpression[callee.name='useCan'] > Literal",
