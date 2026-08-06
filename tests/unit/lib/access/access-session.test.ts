@@ -117,6 +117,7 @@ describe('AccessSession', () => {
   });
 
   it('leaves an existing session untouched when sync repeats the current empty token', () => {
+    session.sync({ token: null });
     const principal = buildPrincipal();
     accessState.setSession(principal, {});
 
@@ -124,6 +125,27 @@ describe('AccessSession', () => {
 
     expect(accessState.get().principal).toBe(principal);
     expect(sink.record).not.toHaveBeenCalled();
+  });
+
+  // Regression: an un-hydrated session must not mistake itself for one already bound to the
+  // anonymous token, or the very first sync after a loader swap silently keeps the previous
+  // principal — and its permissions — live after the token is cleared.
+  it('clears a live session when the token is cleared after the loader was swapped', () => {
+    const { claims, tenantId, token } = buildHydration();
+    session.sync({ token });
+    session.useLoader(sessionFactory);
+    sink.record.mockClear();
+
+    session.sync({ token: null });
+
+    expect(accessState.get().principal).toBeNull();
+    expect(eventTypes()).toEqual(['logout']);
+    expect(sink.record).toHaveBeenCalledWith({
+      type: 'logout',
+      at: expect.any(String),
+      principalId: claims.sub,
+      tenantId,
+    });
   });
 
   it('logs a logout event carrying the ending principal and clears the state', () => {

@@ -4,8 +4,13 @@ import accessState from './access-state';
 import auditCore from './audit-core';
 import sessionFactory from './session-factory';
 
+// "Nothing has been hydrated yet" has to be distinguishable from "hydrated from the
+// anonymous (null) token": reusing `null` for both would make the sync that clears a
+// signed-out token a no-op, leaving the previous principal and permissions live.
+const NO_SOURCE = Symbol('access-session/no-source');
+
 export class AccessSession {
-  private source: string | null = null;
+  private source: string | null | typeof NO_SOURCE = NO_SOURCE;
 
   private loader: SessionLoader = sessionFactory;
 
@@ -13,9 +18,9 @@ export class AccessSession {
   // through the container keeps every hydration path — render and DI — on one loader.
   public useLoader(loader: SessionLoader): void {
     this.loader = loader;
-    // Forget the hydrated token too: otherwise the next sync for that same token
+    // Invalidate the hydrated token too: otherwise the next sync for that same token
     // short-circuits and the session stays bound to the loader that was just replaced.
-    this.source = null;
+    this.source = NO_SOURCE;
   }
 
   public load(input: SessionInput): SessionSnapshot | null {

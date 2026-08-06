@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
-type EslintMessage = { ruleId: string | null; message: string; severity: number };
+type EslintMessage = { ruleId: string | null; message: string; severity: number; line: number };
 type EslintResult = { messages: EslintMessage[] };
 
 type CruiseReport = { summary?: { violations?: { rule: { name: string; severity: string } }[] } };
@@ -109,11 +109,13 @@ export default function Probe({ principal }: { principal: Principal }): JSX.Elem
 `;
 
 // `includes` is the obvious spelling, not the only one. The fixture below covers every
-// membership pattern the gate must reject — includes / some / every / find / findIndex /
-// indexOf / filter / at, a Set wrapper, and bare indexing — across the member,
-// destructured, computed and optionally-chained receivers. A gate that stops only the
-// obvious one is a gate in name only, so any pattern added to the selector must be added
-// here too or it can silently fall out of the regex unnoticed.
+// membership pattern the gate must reject — every method in `MEMBERSHIP_METHODS` (includes,
+// some, every, find, findIndex, findLast, findLastIndex, indexOf, lastIndexOf, filter, at),
+// spelled as an identifier and as a computed literal, across the member, destructured,
+// computed and optionally-chained receivers, plus the two escapes that never call an array
+// method: a `.has()`-ed Set wrapper and bare indexing. A gate that stops only the obvious
+// one is a gate in name only, so any method added to the selector must be added here and to
+// `docs/access-control.md` too, or it can silently fall out of the regex unnoticed.
 const BYPASS_ATTEMPTS = `import RequirePermission from '@/components/require-permission';
 import type { Principal } from '@/lib/types/access/principal';
 
@@ -133,11 +135,31 @@ export default function Probe({ principal }: { principal: Principal }): JSX.Elem
   const l = principal.roles.every((r) => r === 'admin');
   const m = principal.permissions.findIndex((p) => p === 'deal:read') !== -1;
   const n = principal.roles.at(0) === 'admin';
+  const o = principal.roles.findLast((r) => r === 'admin') !== undefined;
+  const q = principal.permissions.findLastIndex((p) => p === 'deal:read') !== -1;
+  const s = principal.roles.lastIndexOf('admin') !== -1;
+  const t = principal.permissions['includes']('deal:write');
+  const u = new Set(roles).has('admin');
+  const v = new Set(principal['roles']).has('admin');
   return (
     <RequirePermission permission={'contact:read'}>
       <p>{\`\${a}\${b}\${c}\${d}\${e}\${f}\${g}\${h}\${i}\${j}\${k}\${l}\${m}\${n}\`}</p>
+      <p>{\`\${o}\${q}\${s}\${t}\${u}\${v}\`}</p>
     </RequirePermission>
   );
+}
+`;
+
+// The other half of the contract: the gate must NOT fire on a plain read. Rendering a
+// principal's own roles, or de-duplicating them for display, decides nothing — a selector
+// tightened until it rejects these would push callers toward casts instead of the seam.
+const ALLOWED_READS = `import type { Principal } from '@/lib/types/access/principal';
+
+export default function Probe({ principal }: { principal: Principal }): JSX.Element {
+  const distinct = new Set(principal.roles).size;
+  const listed = principal.roles.map((role) => role).join(', ');
+  const count = principal.permissions.length;
+  return <p>{\`\${distinct}\${listed}\${count}\`}</p>;
 }
 `;
 
@@ -162,8 +184,16 @@ const FIXTURE_PATHS = [
   `src/components/${probe}-cruise/index.tsx`,
   `src/hooks/use-${probe}.ts`,
   `src/lib/access/${probe}.ts`,
+  `src/hooks/use-access-${probe}.ts`,
 ];
-const [ESLINT_FIXTURE, BYPASS_FIXTURE, CRUISE_FIXTURE, HOOK_FIXTURE, LAYER_FIXTURE] = FIXTURE_PATHS;
+const [
+  ESLINT_FIXTURE,
+  BYPASS_FIXTURE,
+  CRUISE_FIXTURE,
+  HOOK_FIXTURE,
+  LAYER_FIXTURE,
+  SEAM_LOOKALIKE_FIXTURE,
+] = FIXTURE_PATHS;
 
 const sweepFixtures = (): void => {
   FIXTURE_PATHS.forEach((relative) => {
@@ -192,18 +222,28 @@ describe('access-control ESLint gate (issue #114)', () => {
   it('catches every membership spelling, not just the obvious one', () => {
     const messages = authorizationMessages(lint(BYPASS_FIXTURE, BYPASS_ATTEMPTS));
 
-    // One per bypass line: includes (member, destructured, computed, optional), some,
-    // find, indexOf, filter, Set-wrapped, two bare index reads, every, findIndex and at.
+    // Exactly one per bypass line: includes (member, destructured, computed, optional and
+    // computed-method), some, find, indexOf, lastIndexOf, filter, every, findIndex,
+    // findLast, findLastIndex, at, three `.has()`-ed Set wrappers and two bare index reads.
+    // Counting one per line — not "at least" — also pins that a single decision is reported
+    // once, so a developer is never sent chasing two findings for one fix.
     const membership = messages.filter((m) =>
       m.message.includes('No ad-hoc role/permission membership')
     );
-    expect(membership).toHaveLength(14);
+    expect(membership).toHaveLength(20);
+    expect(new Set(membership.map((m) => m.line)).size).toBe(20);
     // A severity downgrade would leave every count above green while the gate stopped
     // failing the build, so pin it: 2 is ESLint's `error`.
     expect(membership.every((m) => m.severity === 2)).toBe(true);
     expect(
       messages.filter((m) => m.message.includes('No raw permission strings on a permission prop'))
     ).toHaveLength(1);
+  });
+
+  it('leaves plain reads alone: rendering a principal is not an authorization decision', () => {
+    const messages = authorizationMessages(lint(BYPASS_FIXTURE, ALLOWED_READS));
+
+    expect(messages).toEqual([]);
   });
 
   it('exempts the access layer itself, which is where the decisions are made', () => {
@@ -243,6 +283,22 @@ export default function GateProbe(): JSX.Element {
     });
 
     expect(violations).toContain('no-ui-to-access-services');
+  });
+
+  // The read seam is two named files, not a naming convention: a hook merely *called*
+  // `use-access-…` must not inherit their exemption and write the store unaudited.
+  it('rejects a hook that only looks like the read seam writing the access state', () => {
+    const violations = cruise({
+      [SEAM_LOOKALIKE_FIXTURE]: [
+        "import accessState from '@/lib/access/access-state';",
+        '',
+        'export default function useAccessProbe(): void {',
+        "  accessState.setActiveTenant('forged-tenant');",
+        '}',
+      ].join('\n'),
+    });
+
+    expect(violations).toContain('no-ui-to-access-state');
   });
 
   it('rejects the paint-safe domain importing the container or a feature module', () => {

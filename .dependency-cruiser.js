@@ -409,8 +409,8 @@ module.exports = {
         'The access state store is written by the access layer, not by the UI: ' +
         '`setSession` / `setActiveTenant` bypass the permission and membership checks in ' +
         '`AccessCore.switchTenant` and emit no audit event. Shared components and the ' +
-        'routes shell read it through the hooks seam (`src/hooks/use-access*`), which is ' +
-        'the one sanctioned importer (issue #114).',
+        'routes shell read it through the hooks seam (`use-access.ts` / ' +
+        '`use-access-snapshot.ts`), which are the only sanctioned importers (issue #114).',
       severity: 'error',
       from: {
         path: [
@@ -421,8 +421,9 @@ module.exports = {
           '^src/hooks/',
         ],
         // `use-access` / `use-access-snapshot` ARE the read seam; every other hook goes
-        // through them rather than reaching the writable primitive itself.
-        pathNot: '^src/hooks/use-access',
+        // through them rather than reaching the writable primitive itself. Named exactly,
+        // not by prefix: `use-access-<anything>.ts` must not inherit the exemption.
+        pathNot: ['^src/hooks/use-access[.]ts$', '^src/hooks/use-access-snapshot[.]ts$'],
       },
       to: {
         path: '^src/lib/access/access-state[.]ts$',

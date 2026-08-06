@@ -221,7 +221,9 @@ its principal is still known, so the trail reconciles into whole sessions.
   they go through the hooks seam, which keeps tsyringe off the paint path.
 - **dependency-cruiser `no-ui-to-access-state`** — the UI may not import the state store
   directly: `setSession` / `setActiveTenant` bypass the permission and membership checks
-  in `switchTenant` and emit no audit event.
+  in `switchTenant` and emit no audit event. The exemption names exactly two files —
+  `src/hooks/use-access.ts` and `src/hooks/use-access-snapshot.ts` — so a new hook cannot
+  inherit it by being named `use-access-something`.
 - **dependency-cruiser `no-access-domain-to-container` / `no-access-domain-to-tsyringe`**
   — the paint-safe domain may not import the injectable services, tsyringe, or
   reflect-metadata, so the two-layer split cannot be undone by an innocent import.
@@ -238,11 +240,23 @@ Satisfy all of them by going through the policy layer. Never add a suppression, 
 never widen the ESLint exemption beyond `src/lib/access/**` and `src/services/access/**`.
 
 The membership gate covers the shapes that actually reach a decision — `includes`,
-`some`, `every`, `find`, `findIndex`, `indexOf`, `filter` and `at`, each through a
-member, destructured, computed or optionally-chained receiver, plus the two escapes
-that avoid an array method entirely (`new Set(principal.roles).has(…)` and a bare
-`principal.roles[0] === …`). Reading the collection to _render_ it is still allowed:
-showing a user their own roles is not an authorization decision.
+`some`, `every`, `find`, `findIndex`, `findLast`, `findLastIndex`, `indexOf`,
+`lastIndexOf`, `filter` and `at` — each spelled as an identifier (`roles.includes(…)`)
+or as a computed literal (`roles['includes'](…)`), and each through a member,
+destructured, computed or optionally-chained receiver, plus the two escapes that avoid
+an array method entirely (`new Set(principal.roles).has(…)` and a bare
+`principal.roles[0] === …`).
+
+That method list is a three-way contract: the `MEMBERSHIP_METHODS` regex in
+`eslint.config.mjs`, the must-fail fixture in
+`tests/unit/tooling/access-control-gates.test.ts`, and this paragraph. Adding a spelling
+means adding it in all three — the fixture asserts an exact finding count, so a method
+that falls out of the regex fails the suite instead of silently opening a hole.
+
+Reading the collection to _render_ it is still allowed: showing a user their own roles is
+not an authorization decision, and neither is `new Set(principal.roles).size` for display.
+The Set escape is matched at its `.has(…)` use rather than at the constructor for exactly
+that reason.
 
 **Known limitation.** It remains a syntactic guardrail, not a security boundary — a
 determined rewrite can still evade any AST matcher, and an `as Permission` cast will

@@ -172,36 +172,49 @@ const RECEIVERS = [
   `[callee.object.name=${ROLE_COLLECTION}]`,
   `[callee.object.property.value=${ROLE_COLLECTION}]`,
 ];
-// Any array read that answers "is X in this set" — not just `includes`. Plain reads are
-// deliberately still allowed: rendering a principal's roles is not an authorization decision.
+// Any array read that answers "is X in this set" — not just `includes`. This list, the
+// must-fail fixture in `tests/unit/tooling/access-control-gates.test.ts`, and the table in
+// `docs/access-control.md` are one contract: a spelling missing from any of the three is a
+// hole. Plain reads stay deliberately allowed — rendering a principal's roles is not an
+// authorization decision.
 const MEMBERSHIP_METHODS =
   '/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/';
 
-const membershipCallSelectors = RECEIVERS.map(
-  (receiver) => `CallExpression[callee.property.name=${MEMBERSHIP_METHODS}]${receiver}`
-).join(',');
+// `permissions['includes'](…)` is the same call with the method name spelled as a Literal,
+// so the computed form is matched next to the identifier one.
+const membershipCallSelectors = RECEIVERS.flatMap((receiver) => [
+  `CallExpression[callee.property.name=${MEMBERSHIP_METHODS}]${receiver}`,
+  `CallExpression[callee.property.value=${MEMBERSHIP_METHODS}]${receiver}`,
+]);
 
 // `new Set(principal.permissions).has(…)` and `principal.roles[0] === 'admin'` reach the same
-// decision without ever calling an array method on the collection.
+// decision without ever calling an array method on the collection. The Set form is matched at
+// its `.has(…)` membership use rather than at the constructor: wrapping the collection to
+// render or de-duplicate it decides nothing, and banning that would contradict the plain-read
+// allowance above.
+const SET_MEMBERSHIP =
+  "CallExpression[callee.property.name='has'][callee.object.callee.name='Set']";
+const SET_SOURCE = 'callee.object.arguments.0';
+// `permissions['includes']` is a computed read too, but it is the receiver of a call the
+// selectors above already match; excluding it here keeps one decision to one report.
+const NOT_A_CALL = `:not([property.value=${MEMBERSHIP_METHODS}])`;
 const membershipEscapeSelectors = [
-  `NewExpression[callee.name='Set'] > MemberExpression[property.name=${ROLE_COLLECTION}]`,
-  `NewExpression[callee.name='Set'] > MemberExpression[property.value=${ROLE_COLLECTION}]`,
-  `NewExpression[callee.name='Set'] > Identifier[name=${ROLE_COLLECTION}]`,
-  `MemberExpression[computed=true][object.property.name=${ROLE_COLLECTION}]`,
-  `MemberExpression[computed=true][object.property.value=${ROLE_COLLECTION}]`,
-  `MemberExpression[computed=true][object.name=${ROLE_COLLECTION}]`,
-].join(',');
+  `${SET_MEMBERSHIP}[${SET_SOURCE}.property.name=${ROLE_COLLECTION}]`,
+  `${SET_MEMBERSHIP}[${SET_SOURCE}.property.value=${ROLE_COLLECTION}]`,
+  `${SET_MEMBERSHIP}[${SET_SOURCE}.name=${ROLE_COLLECTION}]`,
+  `MemberExpression[computed=true][object.property.name=${ROLE_COLLECTION}]${NOT_A_CALL}`,
+  `MemberExpression[computed=true][object.property.value=${ROLE_COLLECTION}]${NOT_A_CALL}`,
+  `MemberExpression[computed=true][object.name=${ROLE_COLLECTION}]${NOT_A_CALL}`,
+];
 
 const noAdHocAuthorizationSelectors = [
   {
-    selector: membershipCallSelectors,
+    // One entry rather than one per shape: a spelling that is both a computed index and a
+    // call (`permissions['includes'](…)`) matches in both groups and would otherwise be
+    // reported twice for a single decision.
+    selector: [...membershipCallSelectors, ...membershipEscapeSelectors].join(','),
     message:
-      'No ad-hoc role/permission membership checks outside the access layer — ask useCan/PermissionService or add a Policy class (issue #114).',
-  },
-  {
-    selector: membershipEscapeSelectors,
-    message:
-      'No ad-hoc role/permission membership checks outside the access layer — indexing or wrapping the collection is the same decision (issue #114).',
+      'No ad-hoc role/permission membership checks outside the access layer — calling, indexing or wrapping the collection is the same decision: ask useCan/PermissionService or add a Policy class (issue #114).',
   },
   {
     selector: "CallExpression[callee.name='useCan'] > Literal",
