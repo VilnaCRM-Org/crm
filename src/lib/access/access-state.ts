@@ -23,9 +23,12 @@ export class AccessStateStore {
     this.write({ principal, flags });
   }
 
+  // The store keeps its own invariant rather than trusting the caller to: an active tenant
+  // outside the membership list would make every tenant-scoped policy check compare against
+  // a tenant the principal cannot read.
   public setActiveTenant(tenantId: string): void {
     const { principal, flags } = this.snapshot;
-    if (principal === null) return;
+    if (principal === null || !principal.tenants.some((tenant) => tenant.id === tenantId)) return;
     this.write({ principal: { ...principal, tenantId }, flags });
   }
 

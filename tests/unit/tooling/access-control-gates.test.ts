@@ -29,7 +29,13 @@ const lint = (relativePath: string, source: string): EslintMessage[] => {
     });
     return [];
   } catch (error) {
-    const output = (error as { stdout?: string }).stdout ?? '';
+    const failure = error as { stdout?: string; stderr?: string; status?: number };
+    const output = failure.stdout ?? '';
+    // A config or crash failure produces empty/non-JSON stdout; surfacing ESLint's own
+    // reason beats a bare "Unexpected end of JSON input" from the parser.
+    if (!output.trim().startsWith('[')) {
+      throw new Error(`ESLint exited ${failure.status ?? '?'}: ${failure.stderr ?? output}`);
+    }
     const results = JSON.parse(output) as EslintResult[];
     return results.flatMap((result) => result.messages);
   } finally {
@@ -58,7 +64,12 @@ const cruise = (fixtures: Record<string, string>): string[] => {
         { cwd: repoRoot, encoding: 'utf8' }
       );
     } catch (error) {
-      return (error as { stdout?: string }).stdout ?? '{}';
+      const failure = error as { stdout?: string; stderr?: string; status?: number };
+      const output = failure.stdout ?? '';
+      if (!output.trim().startsWith('{')) {
+        throw new Error(`depcruise exited ${failure.status ?? '?'}: ${failure.stderr ?? output}`);
+      }
+      return output;
     }
   };
   try {
@@ -118,6 +129,29 @@ export class Probe {
 
 export default new Probe();
 `;
+
+// The fixtures must live under src/ for the flat-config globs and the tsconfig project to
+// apply, so they cannot go to a temp dir. Sweep defensively in case a run is interrupted
+// between the write and the finally.
+const FIXTURE_PATHS = [
+  'src/components/gate-probe.tsx',
+  'src/components/bypass-probe.tsx',
+  'src/components/cruise-probe/index.tsx',
+  'src/hooks/use-gate-probe.ts',
+  'src/lib/access/gate-probe.ts',
+];
+
+const sweepFixtures = (): void => {
+  FIXTURE_PATHS.forEach((relative) => {
+    const absolute = path.join(repoRoot, relative);
+    fs.rmSync(absolute, { force: true });
+    const parent = path.dirname(absolute);
+    if (parent.endsWith('cruise-probe') && fs.existsSync(parent)) fs.rmdirSync(parent);
+  });
+};
+
+beforeAll(sweepFixtures);
+afterAll(sweepFixtures);
 
 describe('access-control ESLint gate (issue #114)', () => {
   it('rejects raw permission strings and ad-hoc role checks outside the access layer', () => {

@@ -30,12 +30,13 @@ describe('AccessStateStore', () => {
   describe('subscribe', () => {
     it('notifies the listener on every write', () => {
       const listener = jest.fn();
+      const tenants = [buildTenantRef(), buildTenantRef()];
       store.subscribe(listener);
 
-      store.setSession(buildPrincipal(), {});
+      store.setSession(buildPrincipal({ tenants }), {});
       expect(listener).toHaveBeenCalledTimes(1);
 
-      store.setActiveTenant(buildTenantRef().id);
+      store.setActiveTenant(tenants[1].id);
       expect(listener).toHaveBeenCalledTimes(2);
 
       store.clear();
@@ -170,6 +171,22 @@ describe('AccessStateStore', () => {
 
       expect(store.get()).toBe(before);
       expect(store.get().principal).toBeNull();
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    // The store owns the invariant: an active tenant the principal does not belong to
+    // would make every tenant-scoped policy check compare against unreachable data.
+    it('refuses a tenant the principal does not belong to', () => {
+      const tenants = [buildTenantRef(), buildTenantRef()];
+      store.setSession(buildPrincipal({ tenants }), {});
+      const before = store.get();
+      const listener = jest.fn();
+      store.subscribe(listener);
+
+      store.setActiveTenant(buildTenantRef().id);
+
+      expect(store.get()).toBe(before);
+      expect(store.get().principal?.tenantId).toBe(tenants[0].id);
       expect(listener).not.toHaveBeenCalled();
     });
 
