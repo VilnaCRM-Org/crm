@@ -5,6 +5,7 @@ import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { ROLES } from '@/lib/access/permission-catalog';
 import sessionFactory from '@/lib/access/session-factory';
+import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { SessionClaims } from '@/lib/types/access/session';
 import {
   buildAccessToken,
@@ -27,7 +28,10 @@ const buildHydration = (): Hydration => {
 };
 
 describe('AccessSession', () => {
-  const sink = { record: jest.fn() };
+  const sink: { record: jest.Mock<void, [AuditEvent]> } & AuditSink = {
+    record: jest.fn<void, [AuditEvent]>(),
+  };
+  const eventTypes = (): string[] => sink.record.mock.calls.map(([event]) => event.type);
   let session = new AccessSession();
 
   beforeEach(() => {
@@ -62,10 +66,23 @@ describe('AccessSession', () => {
     });
   });
 
-  it('clears the state and reports failure when start receives a null token', () => {
-    session.start({ token: buildHydration().token });
+  it('closes the outgoing principal, clears the state and reports failure for a null token', () => {
+    const { claims, tenantId, token } = buildHydration();
+    session.start({ token });
     sink.record.mockClear();
 
+    expect(session.start({ token: null })).toBe(false);
+    expect(accessState.get().principal).toBeNull();
+    expect(sink.record).toHaveBeenCalledTimes(1);
+    expect(sink.record).toHaveBeenCalledWith({
+      type: 'logout',
+      at: expect.any(String),
+      principalId: claims.sub,
+      tenantId,
+    });
+  });
+
+  it('clears the state and reports failure without a logout when nobody was signed in', () => {
     expect(session.start({ token: null })).toBe(false);
     expect(accessState.get().principal).toBeNull();
     expect(sink.record).not.toHaveBeenCalled();
@@ -83,7 +100,7 @@ describe('AccessSession', () => {
     expect(accessState.get().principal?.id).toBe(claims.sub);
   });
 
-  it('re-hydrates when sync receives a different token', () => {
+  it('re-hydrates when sync receives a different token, closing the outgoing session', () => {
     const first = buildHydration();
     const second = buildHydration();
 
@@ -92,7 +109,11 @@ describe('AccessSession', () => {
 
     expect(accessState.get().principal?.id).toBe(second.claims.sub);
     expect(accessState.get().principal?.tenantId).toBe(second.tenantId);
-    expect(sink.record).toHaveBeenCalledTimes(2);
+    expect(eventTypes()).toEqual(['login', 'logout', 'login']);
+    expect(sink.record.mock.calls[1][0].principalId).toBe(first.claims.sub);
+    expect(sink.record.mock.calls[1][0].tenantId).toBe(first.tenantId);
+    expect(sink.record.mock.calls[2][0].principalId).toBe(second.claims.sub);
+    expect(sink.record).toHaveBeenCalledTimes(3);
   });
 
   it('leaves an existing session untouched when sync repeats the current empty token', () => {
@@ -141,47 +162,60 @@ describe('AccessSession', () => {
     expect(sink.record).toHaveBeenCalledTimes(1);
   });
 
-  it('clears the state and reports failure when apply receives no snapshot', () => {
+  it('clears the state and reports failure when the loader yields no snapshot', () => {
     const { token } = buildHydration();
     session.start({ token });
+    sink.record.mockClear();
+    session.useLoader({ build: () => null });
 
-    expect(session.apply({ token }, null)).toBe(false);
+    expect(session.start({ token })).toBe(false);
     expect(accessState.get().principal).toBeNull();
-  });
-
-  it('writes the applied snapshot into the state and reports success', () => {
-    const principal = buildPrincipal();
-    const flags = { [FEATURE_FLAGS.contactsModule]: true };
-
-    expect(session.apply({ token: buildToken() }, { principal, flags })).toBe(true);
-    expect(accessState.get()).toStrictEqual({ principal, flags });
+    // The outgoing principal is still closed out before the state is cleared.
+    expect(eventTypes()).toEqual(['logout']);
     expect(sink.record).toHaveBeenCalledTimes(1);
   });
 
-  // Regression: apply() owns the hydrated-token bookkeeping, so a failed apply must not
-  // leave a stale token behind — otherwise sync() short-circuits and the principal is
-  // never re-hydrated even though the user holds a valid token.
-  it('resets the hydrated token when apply clears the session, so sync can recover', () => {
-    const { token, claims } = buildHydration();
-    session.sync({ token });
-    sink.record.mockClear();
+  it('routes every hydration through the installed loader', () => {
+    const principal = buildPrincipal();
+    const flags = { [FEATURE_FLAGS.contactsModule]: true };
+    const build = jest.fn().mockReturnValue({ principal, flags });
+    session.useLoader({ build });
+    const input = { token: buildToken() };
 
-    session.apply({ token }, null);
+    expect(session.start(input)).toBe(true);
+    expect(build).toHaveBeenCalledWith(input);
+    expect(accessState.get()).toStrictEqual({ principal, flags });
+    expect(session.load(input)).toStrictEqual({ principal, flags });
+  });
+
+  // Regression: a failed hydration must not leave a stale token behind — otherwise sync()
+  // short-circuits and the principal is never rebuilt even though the token is still valid.
+  it('resets the hydrated token when a hydration fails, so sync can recover', () => {
+    const { token, claims } = buildHydration();
+    session.useLoader({ build: () => null });
+    session.sync({ token });
+    session.useLoader(sessionFactory);
+
     session.sync({ token });
 
     expect(accessState.get().principal?.id).toBe(claims.sub);
   });
 
-  // Regression: the DI path hydrates through apply(), so it must record the token too —
-  // otherwise the next ProtectedRoute sync re-hydrates and emits a duplicate login event.
-  it('records the token applied through the DI path so sync stays idempotent', () => {
-    const { token } = buildHydration();
-    const snapshot = { principal: buildPrincipal(), flags: {} };
-
-    session.apply({ token }, snapshot);
+  // Replacing one principal with another closes the outgoing session, so the audit trail
+  // reconciles into whole sessions instead of a run of logins with no ends.
+  it('logs a logout for the outgoing principal when a session is replaced', () => {
+    const first = buildHydration();
+    const second = buildHydration();
+    session.start({ token: first.token });
     sink.record.mockClear();
-    session.sync({ token });
 
-    expect(sink.record).not.toHaveBeenCalled();
+    session.start({ token: second.token });
+
+    expect(eventTypes()).toEqual(['logout', 'login']);
+    expect(sink.record.mock.calls[0][0].principalId).toBe(first.claims.sub);
+    expect(sink.record.mock.calls[0][0].tenantId).toBe(first.tenantId);
+    expect(sink.record.mock.calls[1][0].principalId).toBe(second.claims.sub);
+    expect(accessState.get().principal?.id).toBe(second.claims.sub);
+    expect(sink.record).toHaveBeenCalledTimes(2);
   });
 });

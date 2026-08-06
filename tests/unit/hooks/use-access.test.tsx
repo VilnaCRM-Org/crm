@@ -79,17 +79,21 @@ describe('useAccess', () => {
     expect(result.current.principal).toBe(principal);
   });
 
-  it('reads the live access state again on every render while no provider is mounted', () => {
+  // The mounted hook subscribes to the store, so the write must be wrapped in act(...) —
+  // the new snapshot is the subscription firing, not a later render happening to re-read.
+  it('republishes the live access state to the mounted hook while no provider is mounted', () => {
     const first = buildPrincipal();
     accessState.setSession(first, {});
-    const { result, rerender } = renderHook(() => useAccess());
+    const { result } = renderHook(() => useAccess());
     expect(result.current.principal).toBe(first);
 
     const second = buildPrincipal();
-    accessState.setSession(second, { [FEATURE_FLAGS.tenantSwitcher]: false });
-    rerender();
+    act(() => {
+      accessState.setSession(second, { [FEATURE_FLAGS.tenantSwitcher]: false });
+    });
 
     expect(result.current.principal).toBe(second);
+    expect(result.current).toBe(accessState.get());
     expect(result.current.flags).toEqual({ [FEATURE_FLAGS.tenantSwitcher]: false });
   });
 });

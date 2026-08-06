@@ -1,5 +1,5 @@
 import { ThemeProvider } from '@mui/material/styles';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { RenderResult } from '@testing-library/react';
 import { Suspense, useCallback } from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -27,6 +27,10 @@ const DENIED = localization.en.translation.access_denied;
 const record = jest.fn<void, [AuditEvent]>();
 const spySink: AuditSink = { record };
 const eventAt = (index: number): AuditEvent => record.mock.calls[index][0];
+
+function focusedElement(): HTMLElement {
+  return document.activeElement as HTMLElement;
+}
 
 function Navigator(): JSX.Element {
   const navigate = useNavigate();
@@ -69,13 +73,19 @@ const seedPrincipal = (roles: readonly Role[]): Principal => {
 
 describe('PermissionRoute (#114)', () => {
   beforeEach(() => {
-    accessSession.end();
+    act(() => {
+      accessSession.end();
+    });
     auditCore.useSink(spySink);
   });
 
+  // The gate is still mounted here, so ending the session notifies its store subscription:
+  // wrapped in act(...) the teardown stays a real React update instead of a stray warning.
   afterEach(() => {
     auditCore.useSink(noopAuditSink);
-    accessSession.end();
+    act(() => {
+      accessSession.end();
+    });
   });
 
   it('renders nothing and records no denial before the session hydrates', () => {
@@ -158,5 +168,31 @@ describe('PermissionRoute (#114)', () => {
     expect(
       await screen.findByRole('heading', { level: 1, name: DENIED.title })
     ).toBeInTheDocument();
+  });
+
+  // `key={pathname}` remounts the panel per path. Without it React would reuse the mounted
+  // instance, the focus-on-mount ref would never fire again, and the second refusal would
+  // leave focus wherever the navigation left it — silent for a screen reader (WCAG 2.4.3).
+  it('re-keys the panel per path so a second denial moves focus to the heading again', async () => {
+    seedPrincipal([ROLES.viewer]);
+
+    render(gate(PERMISSIONS.contactWrite, FIRST_PATH, true));
+
+    const firstHeading = await screen.findByRole('heading', { level: 1, name: DENIED.title });
+    const firstWrapper = focusedElement();
+    expect(firstWrapper).toContainElement(firstHeading);
+
+    const navigate = screen.getByRole('button', { name: NAVIGATE_LABEL });
+    navigate.focus();
+    expect(navigate).toHaveFocus();
+
+    fireEvent.click(navigate);
+
+    const secondHeading = await screen.findByRole('heading', { level: 1, name: DENIED.title });
+    expect(secondHeading).not.toBe(firstHeading);
+    expect(focusedElement()).toContainElement(secondHeading);
+    expect(focusedElement()).not.toBe(firstWrapper);
+    expect(focusedElement()).toHaveAttribute('tabindex', '-1');
+    expect(navigate).not.toHaveFocus();
   });
 });

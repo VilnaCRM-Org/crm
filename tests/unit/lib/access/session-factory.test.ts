@@ -129,14 +129,44 @@ describe('SessionFactory', () => {
     expect(principal.tenants).toStrictEqual([{ id: FALLBACK_TENANT_ID, name: FALLBACK_TENANT_ID }]);
   });
 
-  it('keeps the claimed tenants while defaulting the active tenant id', () => {
+  it('synthesises the membership list from a lone tenantId claim', () => {
     const tenant = buildTenantRef();
-    const token = buildAccessToken({ sub: buildUserId(), tenants: [tenant] });
+    const token = buildAccessToken({ sub: buildUserId(), tenantId: tenant.id });
 
     const { principal } = requireSnapshot({ token });
 
-    expect(principal.tenantId).toBe(FALLBACK_TENANT_ID);
-    expect(principal.tenants).toStrictEqual([tenant]);
+    expect(principal.tenantId).toBe(tenant.id);
+    expect(principal.tenants).toStrictEqual([{ id: tenant.id, name: tenant.id }]);
+  });
+
+  it('activates the first claimed tenant when the token names no active tenant', () => {
+    const tenants = [buildTenantRef(), buildTenantRef()];
+    const token = buildAccessToken({ sub: buildUserId(), tenants });
+
+    const { principal } = requireSnapshot({ token });
+
+    expect(principal.tenantId).toBe(tenants[0].id);
+    expect(principal.tenants).toStrictEqual(tenants);
+  });
+
+  // A claimed active tenant outside the membership list would scope the session to a
+  // tenant the principal cannot read, so it is ignored in favour of a real membership.
+  it('ignores a claimed active tenant the principal does not belong to', () => {
+    const tenants = [buildTenantRef(), buildTenantRef()];
+    const stranger = buildTenantRef();
+    const token = buildAccessToken({ sub: buildUserId(), tenantId: stranger.id, tenants });
+
+    const { principal } = requireSnapshot({ token });
+
+    expect(principal.tenantId).toBe(tenants[0].id);
+    expect(principal.tenants).toStrictEqual(tenants);
+  });
+
+  it('honours a claimed active tenant that is one of the claimed memberships', () => {
+    const tenants = [buildTenantRef(), buildTenantRef()];
+    const token = buildAccessToken({ sub: buildUserId(), tenantId: tenants[1].id, tenants });
+
+    expect(requireSnapshot({ token }).principal.tenantId).toBe(tenants[1].id);
   });
 
   it('keeps only the known feature flags claimed by the token', () => {

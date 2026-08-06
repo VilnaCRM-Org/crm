@@ -255,6 +255,19 @@ describe('access session hydration from token claims (#114)', () => {
     accessSession.end();
   });
 
+  // A token that names an active tenant but no membership list still has to produce a
+  // principal whose active tenant is one it belongs to.
+  it('synthesises the membership list from a lone tenantId claim', () => {
+    const soleTenant = buildTenantRef();
+    const token = buildAccessToken({ sub: buildTenantRef().id, tenantId: soleTenant.id });
+
+    accessSession.sync({ token });
+
+    const { principal } = accessState.get();
+    expect(principal?.tenantId).toBe(soleTenant.id);
+    expect(principal?.tenants).toEqual([{ id: soleTenant.id, name: soleTenant.id }]);
+  });
+
   it('hydrates once per token and treats a repeated sync as a no-op', () => {
     accessSession.sync({ token: managerToken });
     const hydrated = accessState.get();
@@ -265,13 +278,16 @@ describe('access session hydration from token claims (#114)', () => {
     expect(typesOf()).toEqual(['login']);
   });
 
-  it('re-hydrates when the synced token changes', () => {
+  it('re-hydrates when the synced token changes, closing the outgoing session first', () => {
     accessSession.sync({ token: managerToken });
 
     accessSession.sync({ token: viewerToken });
 
     expect(accessState.get().principal?.id).toBe(viewerClaims.sub);
-    expect(typesOf()).toEqual(['login', 'login']);
+    expect(typesOf()).toEqual(['login', 'logout', 'login']);
+    expect(events[1].principalId).toBe(managerClaims.sub);
+    expect(events[1].tenantId).toBe(homeTenant.id);
+    expect(events[2].principalId).toBe(viewerClaims.sub);
   });
 
   it('starts an anonymous state for an empty token', () => {
@@ -280,14 +296,19 @@ describe('access session hydration from token claims (#114)', () => {
     expect(events).toHaveLength(0);
   });
 
-  it('falls back to defaults when the token is not a JWT', () => {
+  // Least privilege on ambiguity: an unparseable token must not be upgraded to a
+  // write-capable role, only to the read-only viewer that still reaches the home route.
+  it('falls back to the read-only viewer defaults when the token is not a JWT', () => {
     const email = buildEmail();
 
     expect(sessions.start({ token: 'not-a-jwt', email })).toBe(true);
 
     const { principal } = accessState.get();
     expect(principal?.email).toBe(email);
-    expect(principal?.roles).toEqual([ROLES.member]);
+    expect(principal?.roles).toEqual([ROLES.viewer]);
+    expect(permissions.can(PERMISSIONS.appHome)).toBe(true);
+    expect(permissions.can(PERMISSIONS.contactWrite)).toBe(false);
+    expect(permissions.can(PERMISSIONS.adminManageUsers)).toBe(false);
     expect(principal?.tenantId).toBe('default');
     expect(principal?.tenants).toEqual([{ id: 'default', name: 'default' }]);
     expect(principal?.id).toEqual(expect.any(String));
@@ -307,8 +328,9 @@ describe('access session hydration from token claims (#114)', () => {
 
     payloads.forEach((payload) => {
       sessions.start({ token: buildAccessToken(payload as unknown as Record<string, unknown>) });
-      expect(accessState.get().principal?.roles).toEqual([ROLES.member]);
+      expect(accessState.get().principal?.roles).toEqual([ROLES.viewer]);
       expect(accessState.get().principal?.tenantId).toBe('default');
+      expect(permissions.can(PERMISSIONS.contactWrite)).toBe(false);
     });
   });
 
@@ -326,8 +348,9 @@ describe('access session hydration from token claims (#114)', () => {
 
     const { principal, flags } = accessState.get();
     expect(principal?.email).toBe('');
-    expect(principal?.roles).toEqual([ROLES.member]);
+    expect(principal?.roles).toEqual([ROLES.viewer]);
     expect(principal?.tenantId).toBe('default');
+    expect(permissions.can(PERMISSIONS.contactWrite)).toBe(false);
     expect(flags).toEqual({});
   });
 
@@ -376,6 +399,27 @@ describe('access state and audit plumbing (#114)', () => {
 
     expect(listener).toHaveBeenCalledTimes(1);
     expect(accessState.get().principal).toBeNull();
+  });
+
+  // A subscriber that throws must not strand the ones behind it, nor propagate out of the
+  // write and abort the login it was reacting to.
+  it('isolates a throwing subscriber from the rest of the notification', () => {
+    const failure = new Error('subscriber exploded');
+    const logged = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const survivor = jest.fn();
+    const stopThrower = accessState.subscribe(() => {
+      throw failure;
+    });
+    const stopSurvivor = accessState.subscribe(survivor);
+
+    expect(() => sessions.start({ token: managerToken })).not.toThrow();
+
+    expect(survivor).toHaveBeenCalledTimes(1);
+    expect(accessState.get().principal?.id).toBe(managerClaims.sub);
+    expect(logged).toHaveBeenCalledWith('Access state listener threw during notification', failure);
+    stopThrower();
+    stopSurvivor();
+    logged.mockRestore();
   });
 
   it('ignores an active-tenant change while nobody is signed in', () => {

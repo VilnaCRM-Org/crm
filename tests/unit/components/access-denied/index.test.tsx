@@ -43,17 +43,25 @@ describe('AccessDenied', () => {
   it('moves focus to the wrapper around the heading on mount (WCAG 2.4.3)', () => {
     renderWithProviders(<AccessDenied />);
 
-    const heading = screen.getByRole('heading', { level: 1 });
+    const heading = screen.getByRole('heading', { level: 1, name: COPY.title });
     const focused = focusedElement();
+    // Focus landing on <body> is the failure mode this guards: the refusal would be
+    // announced to nobody and the next Tab would restart from the top of the document.
     expect(document.body).not.toHaveFocus();
+    expect(focused).not.toBe(document.body);
+    expect(focused).toHaveFocus();
     expect(focused).toHaveAttribute('tabindex', '-1');
     expect(focused).toContainElement(heading);
+    expect(focused).toHaveTextContent(COPY.title);
   });
 
   it('paints a visible focus indicator on the focused wrapper (WCAG 2.4.7)', () => {
     renderWithProviders(<AccessDenied />);
 
-    const styles = window.getComputedStyle(focusedElement());
+    const focused = focusedElement();
+    expect(focused).toContainElement(screen.getByRole('heading', { level: 1, name: COPY.title }));
+
+    const styles = window.getComputedStyle(focused);
     expect(styles.outline).toBe(`2px solid ${paletteColors.primary.main}`);
     expect(styles.outlineOffset).toBe('2px');
   });
@@ -66,9 +74,15 @@ describe('AccessDenied', () => {
     expect(document.title).toBe(`${COPY.title}${TITLE_SUFFIX}`);
   });
 
-  it('does not announce itself as an alert', () => {
+  // The panel is announced by the focus move alone. An assertive alert on top of that would
+  // double-announce the refusal and interrupt whatever the user was already hearing.
+  it('exposes no alert and no live region, so the focus move is the only announcement', () => {
     renderWithProviders(<AccessDenied />);
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByRole('log')).not.toBeInTheDocument();
+    expect(document.body.innerHTML).not.toContain('aria-live');
+    expect(document.body.innerHTML).not.toContain('role="alert"');
   });
 });

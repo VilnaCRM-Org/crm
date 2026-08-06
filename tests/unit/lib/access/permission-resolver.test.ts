@@ -72,6 +72,38 @@ describe('PermissionResolver', () => {
         expect(permissionResolver.isRole(candidate)).toBe(false);
       }
     );
+
+    // The guard exists to protect expand(): a candidate it accepts must index the grant map,
+    // or expand would read `undefined` and throw on the very next line.
+    it('accepts every role name the grant map can expand', () => {
+      const grantable = Object.keys(ROLE_PERMISSIONS) as Role[];
+
+      expect(grantable).toHaveLength(4);
+      grantable.forEach((role) => {
+        expect(permissionResolver.isRole(role)).toBe(true);
+        expect(permissionResolver.expand([role])).toEqual([...ROLE_PERMISSIONS[role]]);
+      });
+    });
+
+    // ROLES is keyed by catalogue key, ROLE_PERMISSIONS by role name. Reading the catalogue
+    // would accept a key the grant map cannot resolve, so the guard reads the grant map and
+    // answers grant-map membership for every catalogue key — divergence, whenever it appears,
+    // must resolve to `false`, never to a silent accept.
+    it('answers grant-map membership, not catalogue membership, for every catalogue key', () => {
+      Object.keys(ROLES).forEach((key) => {
+        expect(permissionResolver.isRole(key)).toBe(
+          Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS, key)
+        );
+      });
+      expect(sorted(Object.keys(ROLES))).toEqual(sorted(Object.keys(ROLE_PERMISSIONS)));
+      expect(sorted(Object.values(ROLES))).toEqual(sorted(Object.keys(ROLE_PERMISSIONS)));
+    });
+
+    it('rejects a catalogue-shaped name the grant map does not carry', () => {
+      expect(Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS, 'rolePermissions')).toBe(false);
+      expect(permissionResolver.isRole('rolePermissions')).toBe(false);
+      expect(permissionResolver.isRole('adminManageUsers')).toBe(false);
+    });
   });
 
   describe('can', () => {

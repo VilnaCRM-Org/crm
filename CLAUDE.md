@@ -821,7 +821,8 @@ Key variables in `.env`:
     `ProtectedRoute`; the server remains the source of truth. Permissions and roles are
     closed typed sets — never a free string at a call site — and object-level rules are
     `Policy` classes, never inline conditionals. Enforced by dependency-cruiser
-    (`no-ui-to-access-services`, `no-access-layer-to-modules`) and an ESLint
+    (`no-ui-to-access-services`, `no-ui-to-access-state`, `no-access-layer-to-modules`,
+    `no-access-domain-to-container`, `no-access-domain-to-tsyringe`) and an ESLint
     `no-restricted-syntax` gate scoped outside the access layer. Full reference:
     [`docs/access-control.md`](docs/access-control.md).
 

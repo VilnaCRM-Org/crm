@@ -8,15 +8,17 @@ const TOKEN_NAMES: readonly TokenName[] = [
   'TenantContextService',
   'FeatureFlagService',
   'AuditLogger',
-  'AuditSink',
   'SessionRepository',
   'AccessSessionService',
 ];
 
 describe('ACCESS_TOKENS', () => {
-  it('declares exactly the eight access tokens, in declaration order', () => {
+  // The audit sink is installed container-free through auditCore.useSink, so it owns no
+  // token: adding one back here would re-introduce a second, container-bound install path.
+  it('declares exactly the seven access tokens, in declaration order, and no audit sink', () => {
     expect(Object.keys(ACCESS_TOKENS)).toEqual([...TOKEN_NAMES]);
-    expect(Object.keys(ACCESS_TOKENS)).toHaveLength(8);
+    expect(Object.keys(ACCESS_TOKENS)).toHaveLength(7);
+    expect(Object.keys(ACCESS_TOKENS)).not.toContain('AuditSink');
   });
 
   it.each([...TOKEN_NAMES])('%s is a local symbol described by its key', (name) => {
@@ -40,6 +42,6 @@ describe('ACCESS_TOKENS', () => {
 
   it('keeps the same symbol across repeated reads', () => {
     expect(ACCESS_TOKENS.PermissionService).toBe(ACCESS_TOKENS.PermissionService);
-    expect(ACCESS_TOKENS.AuditSink).not.toBe(ACCESS_TOKENS.AuditLogger);
+    expect(ACCESS_TOKENS.SessionRepository).not.toBe(ACCESS_TOKENS.AuditLogger);
   });
 });

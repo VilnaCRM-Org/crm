@@ -2,7 +2,7 @@
 
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 
@@ -59,7 +59,13 @@ jest.mock('@auth/routes/sign-in', () => ({
 }));
 
 describe('seeded-session routing (#114 regression guard)', () => {
-  afterEach(() => accessState.clear());
+  // The whole router tree is still mounted here, so clearing the store notifies the gate's
+  // subscription: wrapped in act(...) the teardown stays a real React update.
+  afterEach(() => {
+    act(() => {
+      accessState.clear();
+    });
+  });
 
   it('hydrates the session from the seeded token and renders the gated home page', async () => {
     const actual = jest.requireActual<typeof import('react-router-dom')>('react-router-dom');

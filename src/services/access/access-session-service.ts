@@ -8,12 +8,15 @@ import ACCESS_TOKENS from './tokens';
 
 @injectable()
 export default class AccessSessionService {
-  constructor(
-    @inject(ACCESS_TOKENS.SessionRepository) private readonly sessions: SessionRepository
-  ) {}
+  // Installing the injected repository as the session loader makes the DI-registered source
+  // the one every hydration path uses — the render path included — so replacing the binding
+  // really does replace where a session comes from.
+  constructor(@inject(ACCESS_TOKENS.SessionRepository) repository: SessionRepository) {
+    accessSession.useLoader(repository);
+  }
 
   public start(input: SessionInput): boolean {
-    return accessSession.apply(input, this.sessions.load(input));
+    return accessSession.start(input);
   }
 
   public end(): void {

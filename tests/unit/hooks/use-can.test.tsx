@@ -62,13 +62,16 @@ describe('useCan', () => {
     expect(renderCan(PERMISSIONS.contactWrite)).toBe(false);
   });
 
-  it('re-evaluates the permission for a new session on the next render', () => {
+  // The mounted hook subscribes to the store, so the write must be wrapped in act(...) —
+  // the re-evaluation is the subscription firing, not a later render happening to re-read.
+  it('re-evaluates the permission when a new session is published to the mounted hook', () => {
     accessState.setSession(buildPrincipal({ roles: [ROLES.viewer] }), {});
-    const { result, rerender } = renderHook(() => useCan(PERMISSIONS.contactWrite));
+    const { result } = renderHook(() => useCan(PERMISSIONS.contactWrite));
     expect(result.current).toBe(false);
 
-    accessState.setSession(buildPrincipal({ roles: [ROLES.manager] }), {});
-    rerender();
+    act(() => {
+      accessState.setSession(buildPrincipal({ roles: [ROLES.manager] }), {});
+    });
 
     expect(result.current).toBe(true);
   });

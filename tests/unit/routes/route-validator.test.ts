@@ -81,6 +81,49 @@ describe('route validator', () => {
     );
   });
 
+  // The composer only gates the protected branch, so a permission anywhere else would be
+  // dropped in silence and ship an ungated route — the same hazard as the nested case.
+  it('rejects a permission on a route with no guard (negative, #114)', () => {
+    const modules: RouteModule[] = [
+      {
+        id: 'a',
+        routes: [{ path: '/a', load: page, meta: { permission: PERMISSIONS.contactRead } }],
+      },
+    ];
+
+    expect(() => routeValidator.validate(modules)).toThrow(
+      'Only protected routes may declare a permission'
+    );
+  });
+
+  it('rejects a permission on an explicitly public route (negative, #114)', () => {
+    const modules: RouteModule[] = [
+      {
+        id: 'a',
+        routes: [
+          {
+            path: '/a',
+            guard: 'public',
+            load: page,
+            meta: { permission: PERMISSIONS.contactRead },
+          },
+        ],
+      },
+    ];
+
+    expect(() => routeValidator.validate(modules)).toThrow(
+      'Only protected routes may declare a permission'
+    );
+  });
+
+  it('accepts a guardless top-level route that declares no permission (positive, #114)', () => {
+    const modules: RouteModule[] = [
+      { id: 'a', routes: [{ path: '/a', load: page, meta: { titleKey: 'a.title' } }] },
+    ];
+
+    expect(() => routeValidator.validate(modules)).not.toThrow();
+  });
+
   it('accepts a permission on a top-level route (positive, #114)', () => {
     const modules: RouteModule[] = [
       {

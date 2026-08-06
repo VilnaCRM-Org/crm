@@ -362,10 +362,61 @@ module.exports = {
         'service (issue #114). Feature UI is additionally covered by no-feature-ui-to-services.',
       severity: 'error',
       from: {
-        path: ['^src/components/', '^src/routes/'],
+        path: [
+          '^src/components/',
+          '^src/routes/',
+          '^src/providers/',
+          '^src/features/',
+          '^src/hooks/',
+        ],
       },
       to: {
         path: '^src/services/access/',
+      },
+    },
+    {
+      name: 'no-access-domain-to-container',
+      comment:
+        'The access domain is the paint-safe half of the layer: it is reachable from the ' +
+        'app shell on first render, so it must stay free of tsyringe and of the injectable ' +
+        'services. Importing either here would pull the DI graph into the eager entrypoint ' +
+        'and break the budget the two-layer split exists to protect (issue #114).',
+      severity: 'error',
+      from: {
+        path: '^src/lib/access/',
+      },
+      to: {
+        path: '^src/services/',
+        dependencyTypes: ['npm', 'npm-dev', 'local'],
+      },
+    },
+    {
+      name: 'no-access-domain-to-tsyringe',
+      comment:
+        'Same invariant, stated against the container itself: nothing in the paint-safe ' +
+        'access domain may import tsyringe or reflect-metadata (issue #114).',
+      severity: 'error',
+      from: {
+        path: ['^src/lib/access/', '^src/hooks/use-access', '^src/hooks/use-can[.]ts$'],
+      },
+      to: {
+        path: '^node_modules/(tsyringe|reflect-metadata)/',
+      },
+    },
+    {
+      name: 'no-ui-to-access-state',
+      comment:
+        'The access state store is written by the access layer, not by the UI: ' +
+        '`setSession` / `setActiveTenant` bypass the permission and membership checks in ' +
+        '`AccessCore.switchTenant` and emit no audit event. Shared components and the ' +
+        'routes shell read it through the hooks seam (`src/hooks/use-access*`), which is ' +
+        'the one sanctioned importer (issue #114).',
+      severity: 'error',
+      from: {
+        path: ['^src/components/', '^src/routes/', '^src/providers/', '^src/features/'],
+      },
+      to: {
+        path: '^src/lib/access/access-state[.]ts$',
       },
     },
     {

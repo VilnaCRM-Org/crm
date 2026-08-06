@@ -4,7 +4,7 @@ import container from '@/config/dependency-injection-config';
 import accessSession from '@/lib/access/access-session';
 import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
-import { NoopAuditSink } from '@/lib/access/noop-audit-sink';
+import noopAuditSink, { NoopAuditSink } from '@/lib/access/noop-audit-sink';
 import type { AuditSink } from '@/lib/types/access/audit';
 import AccessSessionService from '@/services/access/access-session-service';
 import AuditLogger from '@/services/access/audit-logger';
@@ -29,7 +29,6 @@ const ACCESS_BINDINGS: readonly { name: string; token: symbol; type: Bound }[] =
   },
   { name: 'FeatureFlagService', token: ACCESS_TOKENS.FeatureFlagService, type: FeatureFlagService },
   { name: 'AuditLogger', token: ACCESS_TOKENS.AuditLogger, type: AuditLogger },
-  { name: 'AuditSink', token: ACCESS_TOKENS.AuditSink, type: NoopAuditSink },
   { name: 'SessionRepository', token: ACCESS_TOKENS.SessionRepository, type: SessionRepository },
   {
     name: 'AccessSessionService',
@@ -66,13 +65,27 @@ describe('access DI registrar', () => {
     expect(container.resolve(token)).toBe(container.resolve(token));
   });
 
-  it('injects the singleton session repository into the session service', () => {
+  // Resolving the service installs the container's SessionRepository as the session loader,
+  // so replacing that binding really does replace where every session comes from — the
+  // container-free render path included. Spying on the resolved singleton proves the
+  // hydration runs through it and not through some other loader.
+  it('installs the singleton session repository as the loader every hydration path uses', () => {
+    const repository = container.resolve<SessionRepository>(ACCESS_TOKENS.SessionRepository);
     const service = container.resolve<AccessSessionService>(ACCESS_TOKENS.AccessSessionService);
+    const build = jest.spyOn(repository, 'build');
     const claims = buildClaims();
+    const input = { token: buildAccessToken(claims) };
 
-    expect(service.start({ token: buildAccessToken(claims) })).toBe(true);
+    expect(accessSession.load(input)?.principal.id).toBe(claims.sub);
+    expect(build).toHaveBeenCalledTimes(1);
+    expect(build).toHaveBeenCalledWith(input);
+
+    expect(service.start(input)).toBe(true);
+    expect(build).toHaveBeenCalledTimes(2);
     expect(accessState.get().principal?.id).toBe(claims.sub);
+
     expect(service.start({ token: null })).toBe(false);
+    expect(build).toHaveBeenCalledTimes(3);
     expect(accessState.get().principal).toBeNull();
   });
 
@@ -89,7 +102,7 @@ describe('access DI registrar', () => {
     });
 
     beforeEach(() => {
-      sink = container.resolve<AuditSink>(ACCESS_TOKENS.AuditSink);
+      sink = noopAuditSink;
       spy = jest.spyOn(sink, 'record');
     });
 
@@ -97,14 +110,14 @@ describe('access DI registrar', () => {
       spy.mockRestore();
     });
 
-    it('resolves the audit sink to a no-op sink', () => {
+    it('defaults the audit core to a no-op sink', () => {
       expect(sink).toBeInstanceOf(NoopAuditSink);
       expect(() =>
         sink.record({ type: 'login', at: FROZEN_AT, principalId: null, tenantId: null })
       ).not.toThrow();
     });
 
-    it('routes the container-free audit core to the DI-resolved sink', () => {
+    it('routes audit events to the sink installed on the container-free core', () => {
       auditCore.log({ type: 'login' });
 
       expect(spy).toHaveBeenCalledTimes(1);

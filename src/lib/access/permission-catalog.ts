@@ -52,6 +52,9 @@ const ROLE_PERMISSIONS: RolePermissions = Object.freeze({
   viewer: Object.freeze(VIEWER_PERMISSIONS),
 });
 
-const DEFAULT_ROLE: Role = ROLES.member;
+// Least privilege on ambiguity: a token whose roles the client does not recognise must not
+// be upgraded to a write-capable role. `viewer` still carries `app:home`, so an opaque
+// server token (or the Lighthouse/Playwright seed) still reaches the authenticated shell.
+const DEFAULT_ROLE: Role = ROLES.viewer;
 
 export { DEFAULT_ROLE, PERMISSIONS, ROLE_PERMISSIONS, ROLES };

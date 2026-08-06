@@ -64,14 +64,18 @@ describe('useFeatureFlag', () => {
     expect(renderFlag(FEATURE_FLAGS.contactsModule)).toBe(false);
   });
 
-  it('re-evaluates the flag for a new session on the next render', () => {
+  // The mounted hook subscribes to the store, so the clear must be wrapped in act(...) —
+  // the fallback to the catalog default is the subscription firing, not a later render.
+  it('falls back to the catalog default once the session is cleared under the mounted hook', () => {
     seedFlags({ [FEATURE_FLAGS.contactsModule]: true });
-    const { result, rerender } = renderHook(() => useFeatureFlag(FEATURE_FLAGS.contactsModule));
+    const { result } = renderHook(() => useFeatureFlag(FEATURE_FLAGS.contactsModule));
     expect(result.current).toBe(true);
 
-    accessState.clear();
-    rerender();
+    act(() => {
+      accessState.clear();
+    });
 
+    expect(result.current).toBe(FEATURE_FLAG_DEFAULTS[FEATURE_FLAGS.contactsModule]);
     expect(result.current).toBe(false);
   });
 });

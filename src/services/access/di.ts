@@ -1,9 +1,6 @@
 import type { DependencyContainer } from 'tsyringe';
 
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
-import auditCore from '@/lib/access/audit-core';
-import { NoopAuditSink } from '@/lib/access/noop-audit-sink';
-import type { AuditSink } from '@/lib/types/access/audit';
 
 import AccessSessionService from './access-session-service';
 import AuditLogger from './audit-logger';
@@ -22,9 +19,7 @@ class AccessRegistrar implements ModuleRegistrar {
   }
 
   private registerAudit(container: DependencyContainer): void {
-    container.registerSingleton(ACCESS_TOKENS.AuditSink, NoopAuditSink);
     container.registerSingleton(ACCESS_TOKENS.AuditLogger, AuditLogger);
-    auditCore.useSink(container.resolve<AuditSink>(ACCESS_TOKENS.AuditSink));
   }
 
   private registerPolicy(container: DependencyContainer): void {

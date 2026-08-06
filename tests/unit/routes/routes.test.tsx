@@ -2,7 +2,7 @@
 
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 
@@ -83,7 +83,13 @@ describe('routes', () => {
   // The home route is permission-gated (#114) and ProtectedRoute — which hydrates the
   // access session from the token — is mocked out here, so seed the principal directly.
   beforeEach(() => accessState.setSession(buildPrincipal(), {}));
-  afterEach(() => accessState.clear());
+  // The router tree is still mounted here, so clearing the store notifies the gate's
+  // subscription: wrapped in act(...) the teardown stays a real React update.
+  afterEach(() => {
+    act(() => {
+      accessState.clear();
+    });
+  });
 
   const RouterProvider =
     jest.requireActual<typeof import('react-router-dom')>('react-router-dom').RouterProvider;

@@ -15,12 +15,15 @@ export function buildTenantRef(overrides: Partial<TenantRef> = {}): TenantRef {
 export function buildPrincipal(overrides: Partial<Principal> = {}): Principal {
   const roles: readonly Role[] = overrides.roles ?? [ROLES.member];
   const tenants: readonly TenantRef[] = overrides.tenants ?? [buildTenantRef()];
+  // A caller may pin an empty membership list to model a principal with no tenants; the
+  // active tenant then comes from the explicit override, or from a generated one.
+  const tenantId: string = tenants.at(0)?.id ?? overrides.tenantId ?? buildTenantRef().id;
   return {
     id: faker.string.uuid(),
     email: buildEmail(),
     roles,
     permissions: permissionResolver.expand(roles),
-    tenantId: tenants[0].id,
+    tenantId,
     tenants,
     ...overrides,
   };
@@ -35,13 +38,13 @@ export function buildAccessToken(claims: SessionClaims | Record<string, unknown>
 }
 
 export function buildClaims(overrides: Partial<SessionClaims> = {}): SessionClaims {
-  const tenant = buildTenantRef();
+  const tenants = overrides.tenants ?? [buildTenantRef()];
   return {
     sub: faker.string.uuid(),
     email: buildEmail(),
     roles: [ROLES.member],
-    tenantId: tenant.id,
-    tenants: [tenant],
+    tenantId: tenants.at(0)?.id,
+    tenants,
     ...overrides,
   };
 }

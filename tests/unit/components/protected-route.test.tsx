@@ -54,8 +54,8 @@ describe('ProtectedRoute', () => {
 
   afterEach(() => {
     auditCore.useSink(noopAuditSink);
-    accessSession.end();
     act(() => {
+      accessSession.end();
       AuthStateVar.reset();
     });
   });
@@ -118,6 +118,27 @@ describe('ProtectedRoute', () => {
     swapToken(buildAccessToken(second));
 
     expect(accessState.get().principal?.id).toBe(second.sub);
-    expect(eventTypes()).toEqual(['login', 'login']);
+    // The outgoing principal is closed out before the replacement logs in, so the trail
+    // reconciles into whole sessions instead of a run of logins with no ends.
+    expect(eventTypes()).toEqual(['login', 'logout', 'login']);
+    expect(record.mock.calls[1][0].principalId).toBe(first.sub);
+    expect(record.mock.calls[2][0].principalId).toBe(second.sub);
+  });
+
+  // Regression: the layout effect depends on the hydrated principal as well as the token,
+  // so a session ended under a still-valid token re-hydrates instead of leaving the gated
+  // page blank forever.
+  it('re-hydrates after the session is ended under a still-valid token (#114)', () => {
+    const claims = buildClaims();
+    renderWithRouter(buildAccessToken(claims));
+    expect(accessState.get().principal?.id).toBe(claims.sub);
+
+    act(() => {
+      accessSession.end();
+    });
+
+    expect(accessState.get().principal?.id).toBe(claims.sub);
+    expect(eventTypes()).toEqual(['login', 'logout', 'login']);
+    expect(screen.getByText('dashboard')).toBeInTheDocument();
   });
 });

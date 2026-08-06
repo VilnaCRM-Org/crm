@@ -1,7 +1,6 @@
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
-import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
+import { PERMISSIONS, ROLES, ROLE_PERMISSIONS } from '@/lib/access/permission-catalog';
 import permissionResolver from '@/lib/access/permission-resolver';
-import sessionFactory from '@/lib/access/session-factory';
 import SessionRepository from '@/services/access/session-repository';
 import { buildAccessToken, buildClaims, buildEmail, buildTenantRef } from '@tests/builders';
 
@@ -45,14 +44,19 @@ describe('SessionRepository', () => {
     expect(snapshot?.flags).toEqual({ [FEATURE_FLAGS.contactsModule]: true });
   });
 
-  it('falls back to the input email, the member role and the default tenant', () => {
+  // Least privilege on ambiguity: unresolvable claims fall back to the read-only viewer,
+  // never to a write-capable role.
+  it('falls back to the input email, the read-only viewer role and the default tenant', () => {
     const email = buildEmail();
 
     const snapshot = repository.load({ token: buildAccessToken({}), email });
 
     expect(snapshot?.principal.email).toBe(email);
-    expect(snapshot?.principal.roles).toEqual([ROLES.member]);
-    expect(snapshot?.principal.permissions).toEqual(permissionResolver.expand([ROLES.member]));
+    expect(snapshot?.principal.roles).toEqual([ROLES.viewer]);
+    expect(snapshot?.principal.permissions).toEqual(permissionResolver.expand([ROLES.viewer]));
+    expect(snapshot?.principal.permissions).toContain(PERMISSIONS.appHome);
+    expect(snapshot?.principal.permissions).not.toContain(PERMISSIONS.contactWrite);
+    expect(snapshot?.principal.permissions).not.toContain(PERMISSIONS.adminManageUsers);
     expect(snapshot?.principal.tenantId).toBe(FALLBACK_TENANT_ID);
     expect(snapshot?.principal.tenants).toEqual([
       { id: FALLBACK_TENANT_ID, name: FALLBACK_TENANT_ID },
@@ -62,11 +66,33 @@ describe('SessionRepository', () => {
     expect(snapshot?.flags).toEqual({});
   });
 
-  it('returns exactly what the session factory builds for the same input', () => {
-    const input = { token: buildAccessToken(buildClaims({ roles: [ROLES.admin] })) };
+  it('expands an admin token into the whole permission catalogue', () => {
+    const claims = buildClaims({ roles: [ROLES.admin] });
 
-    expect(repository.load(input)).toEqual(sessionFactory.build(input));
-    expect(sessionFactory.build(input)).not.toBeNull();
+    const snapshot = repository.load({ token: buildAccessToken(claims) });
+
+    expect(snapshot?.principal.id).toBe(claims.sub);
+    expect(snapshot?.principal.roles).toEqual([ROLES.admin]);
+    expect(snapshot?.principal.permissions).toContain(PERMISSIONS.adminManageUsers);
+    expect(snapshot?.principal.permissions).toEqual([...ROLE_PERMISSIONS[ROLES.admin]]);
+    expect(snapshot?.principal.permissions).toHaveLength(10);
+    expect(snapshot?.flags).toEqual({});
+  });
+
+  // The repository is the SessionLoader the AccessSession installs, so build() is the
+  // contract entry point and load() must be a straight delegation to it.
+  it('delegates load() to the build() entry point of the SessionLoader contract', () => {
+    const claims = buildClaims({ roles: [ROLES.manager] });
+    const input = { token: buildAccessToken(claims) };
+    const build = jest.spyOn(repository, 'build');
+
+    const snapshot = repository.load(input);
+
+    expect(build).toHaveBeenCalledTimes(1);
+    expect(build).toHaveBeenCalledWith(input);
+    expect(snapshot?.principal.id).toBe(claims.sub);
+    expect(snapshot?.principal.roles).toEqual([ROLES.manager]);
+    expect(repository.build(input)?.principal.id).toBe(claims.sub);
   });
 
   it('reads the token it is given rather than a cached one', () => {

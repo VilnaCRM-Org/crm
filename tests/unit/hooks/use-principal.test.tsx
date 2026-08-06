@@ -39,13 +39,16 @@ describe('usePrincipal', () => {
     expect(result.current).toBeNull();
   });
 
-  it('returns null again after the session is cleared', () => {
+  // The mounted hook subscribes to the store, so the clear must be wrapped in act(...) —
+  // the null is the subscription firing, not a later render happening to re-read.
+  it('returns null again once the session is cleared under the mounted hook', () => {
     accessState.setSession(buildPrincipal(), {});
-    const { result, rerender } = renderHook(() => usePrincipal());
+    const { result } = renderHook(() => usePrincipal());
     expect(result.current).not.toBeNull();
 
-    accessState.clear();
-    rerender();
+    act(() => {
+      accessState.clear();
+    });
 
     expect(result.current).toBeNull();
   });

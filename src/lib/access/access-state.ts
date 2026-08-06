@@ -35,7 +35,17 @@ export class AccessStateStore {
 
   private write(next: AccessSnapshot): void {
     this.snapshot = Object.freeze(next);
-    [...this.listeners].forEach((listener) => listener());
+    [...this.listeners].forEach((listener) => this.notify(listener));
+  }
+
+  // One throwing subscriber must not strand the others or abort the login/logout flow
+  // that wrote the snapshot.
+  private notify(listener: () => void): void {
+    try {
+      listener();
+    } catch (error) {
+      console.error('Access state listener threw during notification', error);
+    }
   }
 }
 

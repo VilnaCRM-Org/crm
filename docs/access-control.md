@@ -18,7 +18,7 @@ src/lib/access/                    # dependency-free domain + state (paint-safe,
 ├── feature-flag-catalog.ts        # FEATURE_FLAGS + FEATURE_FLAG_DEFAULTS
 ├── access-state.ts                # the principal/flags store (useSyncExternalStore source)
 ├── access-core.ts                 # façade: can, tenants, switchTenant, recordDenial
-├── access-session.ts              # start / sync / end a session
+├── access-session.ts              # useLoader / start / sync / end a session
 ├── session-claims-reader.ts       # JWT payload → claims (no dependencies)
 ├── claims-mapper.ts               # untyped claims → typed SessionClaims
 ├── session-factory.ts             # claims → Principal + flags
@@ -34,8 +34,8 @@ src/services/access/               # @injectable adapters + the DI composition r
 ├── tenant-context-service.ts      # active / available / switchTo
 ├── feature-flag-service.ts        # isEnabled
 ├── audit-logger.ts                # log(event)
-├── session-repository.ts          # loads the session snapshot (the swap seam)
-└── access-session-service.ts      # start / end, through the repository
+├── session-repository.ts          # the injectable face of the session loader
+└── access-session-service.ts      # installs that loader, then start / end
 
 src/lib/types/access/              # type-only files (Permission, Role, Principal, …)
 
@@ -65,22 +65,39 @@ access token's claims** — the server issues them, the client only reads them:
    anything unexpected is dropped, never coerced.
 3. `SessionFactory` builds the `Principal`: claimed roles are filtered to the known
    `Role` set, permissions are expanded from those roles, and the tenant list defaults
-   to the active tenant. When the token carries **no** recognised role, the principal
-   falls back to `DEFAULT_ROLE` so an opaque server token still yields a usable session.
-   When it carries no `sub`, the principal id is a random opaque uuid — the same
-   no-PII identity rule the observability boundary follows.
+   to the active tenant, and an active tenant outside the claimed membership list is
+   ignored in favour of a real membership. When the token carries **no** recognised
+   role, the principal falls back to `DEFAULT_ROLE` — deliberately the **least**
+   privileged role, so an unrecognised or narrowed server role is never upgraded into
+   write access. When it carries no `sub`, the principal id is a random opaque uuid —
+   the same no-PII identity rule the observability boundary follows.
 
-`SessionRepository` is the seam to replace when the server grows a real session
-endpoint: give it an HTTP-backed `load()` and nothing else in the layer changes.
+The claims are read, not verified: this layer never checks the JWT signature, and it
+must not, because a client cannot establish authenticity about itself. A tampered token
+buys nothing but a misleading UI — every request it accompanies is still rejected by the
+server. Nothing here is an authorization decision; it decides what to render.
+
+`SessionFactory` is the default **session loader**. Replacing where a session comes
+from is one call — `accessSession.useLoader(myLoader)` — and every hydration path,
+render and DI alike, follows it. `SessionRepository` is that loader's injectable
+face: resolving `AccessSessionService` installs the container's binding as the
+loader, so overriding `ACCESS_TOKENS.SessionRepository` also redirects the render
+path. A loader must stay synchronous; an endpoint-backed session belongs behind a
+cache the loader reads, not behind an `await`.
 
 ## When the session is hydrated
 
 - **Login** — the auth composition root (`@auth/stores/index.ts`) calls
   `accessSession.sync()` once the login action settles, which logs a `login` audit event.
-- **Any protected route** — `ProtectedRoute` calls `accessSession.sync()` in a
-  layout effect, so a token that was seeded rather than typed (Playwright, Lighthouse)
-  hydrates before paint. `sync()` is idempotent per token: re-rendering never
-  re-hydrates and never emits a duplicate `login` event.
+- **Any protected route** — `ProtectedRoute` syncs the session at module load, before
+  the first render, so a token that was seeded rather than typed (Playwright,
+  Lighthouse) is already authorized when the gated page first renders. Doing this from
+  an effect would not work: `useSyncExternalStore` subscribes in a _passive_ effect, so
+  a store write issued from a layout effect in the same commit reaches no subscriber and
+  the gated page would paint one empty frame and defer its own chunk request. A layout
+  effect still re-syncs on a token change, and re-hydrates if a session was ended under
+  a still-valid token. `sync()` is idempotent per token: re-rendering never re-hydrates
+  and never emits a duplicate `login` event.
 - **Logout** — `authActions.logout` calls `accessSession.end()`, which logs `logout`
   while the principal is still known, then clears the state.
 
@@ -116,8 +133,9 @@ const contactRoutes: RouteModule = {
 };
 ```
 
-A permission on a **nested** child route is a contract error (`RouteValidator` throws):
-gates, like guards, are declared on a module's top-level routes.
+Two contract errors the `RouteValidator` throws on, because the composer would
+otherwise drop the declaration and ship an **ungated** route: a permission on a nested
+child route, and a permission on a route that is not `guard: 'protected'`.
 
 ## Gating UI
 
@@ -168,12 +186,17 @@ Evaluate one through the injected `PolicyEvaluator`
 ## Audit
 
 `AuditCore` stamps every event with an ISO timestamp plus the current principal and
-tenant, then hands it to the registered `AuditSink`. The default sink drops events;
-a deployment swaps it by registering another implementation against
-`ACCESS_TOKENS.AuditSink`. A sink that throws can never break a user flow.
+tenant, then hands it to the installed `AuditSink`. The default sink drops events;
+a deployment installs a real one with `auditCore.useSink(mySink)` at app entry. That
+seam is deliberately container-free: the DI graph loads lazily on the first auth
+action, so anything wired only during registration would miss every event on a
+reload-with-token session. A sink that throws can never break a user flow.
 
-Recorded events: `login`, `logout`, `tenant_switch`, `permission_denied` (with the
-permission and the refused path).
+Recorded events: `login`, `logout`, `tenant_switch` (with `from`/`to`), and
+`permission_denied` (with the permission, the refused path, and — for a tenant switch —
+whether the refusal was a missing permission or a missing membership). Every session
+that ends, including one replaced by another login, closes with a `logout` event while
+its principal is still known, so the trail reconciles into whole sessions.
 
 ## Extending the model
 
@@ -192,8 +215,15 @@ permission and the refused path).
 
 ## Machine-enforced boundaries
 
-- **dependency-cruiser `no-ui-to-access-services`** — `src/components/**` and
-  `src/routes/**` must not resolve an access service directly; they use the hooks.
+- **dependency-cruiser `no-ui-to-access-services`** — no UI layer (`components`,
+  `routes`, `providers`, `features`, `hooks`) may resolve an access service directly;
+  they go through the hooks seam, which keeps tsyringe off the paint path.
+- **dependency-cruiser `no-ui-to-access-state`** — the UI may not import the state store
+  directly: `setSession` / `setActiveTenant` bypass the permission and membership checks
+  in `switchTenant` and emit no audit event.
+- **dependency-cruiser `no-access-domain-to-container` / `no-access-domain-to-tsyringe`**
+  — the paint-safe domain may not import the injectable services, tsyringe, or
+  reflect-metadata, so the two-layer split cannot be undone by an innocent import.
 - **dependency-cruiser `no-access-layer-to-modules`** — the access layer must not depend
   on a feature module: it is cross-cutting infrastructure, consumed, never consuming.
 - **dependency-cruiser `no-feature-ui-to-services`** (pre-existing) — feature
@@ -205,3 +235,11 @@ permission and the refused path).
 
 Satisfy all of them by going through the policy layer. Never add a suppression, and
 never widen the ESLint exemption beyond `src/lib/access/**` and `src/services/access/**`.
+
+**Known limitation.** The ESLint rule is a syntactic guardrail, not a security
+boundary: it catches the shapes people actually write (`principal.roles.includes`,
+its destructured and computed spellings, and a literal permission at a call site),
+but a determined rewrite — `.some(…)`, `indexOf`, a `Set`, an `as Permission` cast —
+slips past it. Review, not the linter, is the backstop for those. The real
+enforcement is that the server is authoritative: nothing here decides access, it
+only decides what to render.

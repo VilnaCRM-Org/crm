@@ -19,3 +19,7 @@ export interface SessionSnapshot {
   readonly principal: Principal;
   readonly flags: FeatureFlagState;
 }
+
+export interface SessionLoader {
+  build(input: SessionInput): SessionSnapshot | null;
+}

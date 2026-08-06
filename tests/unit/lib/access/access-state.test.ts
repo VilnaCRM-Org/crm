@@ -62,6 +62,29 @@ describe('AccessStateStore', () => {
       expect(listener).toHaveBeenCalledTimes(1);
     });
 
+    // A subscriber that throws must not strand the subscribers behind it, and must not
+    // propagate out of the write and abort the login/logout flow that caused it.
+    it('isolates a throwing listener from the others and from the write', () => {
+      const failure = new Error('listener exploded');
+      const logged = jest.spyOn(console, 'error').mockImplementation(() => {});
+      const survivor = jest.fn();
+      store.subscribe(() => {
+        throw failure;
+      });
+      store.subscribe(survivor);
+
+      const principal = buildPrincipal();
+      expect(() => store.setSession(principal, {})).not.toThrow();
+
+      expect(survivor).toHaveBeenCalledTimes(1);
+      expect(store.get().principal).toBe(principal);
+      expect(logged).toHaveBeenCalledWith(
+        'Access state listener threw during notification',
+        failure
+      );
+      logged.mockRestore();
+    });
+
     it('tolerates unsubscribing twice', () => {
       const listener = jest.fn();
       const unsubscribe = store.subscribe(listener);

@@ -44,6 +44,18 @@ const MANAGER_GRANTS: readonly Permission[] = [
 ];
 const ADMIN_GRANTS: readonly Permission[] = [...MANAGER_GRANTS, 'admin:manage-users'];
 
+// Every permission that mutates state or widens reach. The default role must hold none of
+// them; the partition below is asserted against the catalogue so a newly added permission
+// has to be classified as a read or a write before this file compiles a green run.
+const WRITE_GRANTS: readonly Permission[] = [
+  'contact:write',
+  'contact:manage-all',
+  'deal:write',
+  'activity:write',
+  'tenant:switch',
+  'admin:manage-users',
+];
+
 const sorted = (values: readonly string[]): string[] => [...values].sort();
 
 describe('permission catalog', () => {
@@ -171,14 +183,31 @@ describe('permission catalog', () => {
   describe('DEFAULT_ROLE', () => {
     // The default role must keep 'app:home': the e2e suite and the Lighthouse budget runs
     // sign in as a DEFAULT_ROLE principal and navigate to '/', which is guarded by 'app:home'.
-    it('grants app:home so the default session can still reach the home route', () => {
-      expect(DEFAULT_ROLE).toBe('member');
-      expect(DEFAULT_ROLE).toBe(ROLES.member);
+    it('is viewer and grants app:home, so the default session reaches home', () => {
+      expect(DEFAULT_ROLE).toBe('viewer');
+      expect(DEFAULT_ROLE).toBe(ROLES.viewer);
       expect(ROLE_PERMISSIONS[DEFAULT_ROLE]).toContain(PERMISSIONS.appHome);
+    });
+
+    // Least privilege on ambiguity: a token whose roles the client cannot resolve falls back
+    // to DEFAULT_ROLE, so that role must never carry a write capability.
+    it('grants no write permission, so an unrecognised role set cannot escalate', () => {
+      WRITE_GRANTS.forEach((permission) => {
+        expect(ROLE_PERMISSIONS[DEFAULT_ROLE]).not.toContain(permission);
+      });
+      expect(ROLE_PERMISSIONS[DEFAULT_ROLE]).toEqual(VIEWER_GRANTS);
+      expect(ROLE_PERMISSIONS[DEFAULT_ROLE]).toHaveLength(4);
+    });
+
+    it('partitions the catalogue into the default grants and the write grants', () => {
+      expect(sorted([...VIEWER_GRANTS, ...WRITE_GRANTS])).toEqual(sorted(UNION_PERMISSIONS));
+      expect(WRITE_GRANTS.some((permission) => VIEWER_GRANTS.includes(permission))).toBe(false);
     });
 
     it('is not the most privileged role', () => {
       expect(DEFAULT_ROLE).not.toBe(ROLES.admin);
+      expect(DEFAULT_ROLE).not.toBe(ROLES.manager);
+      expect(DEFAULT_ROLE).not.toBe(ROLES.member);
       expect(ROLE_PERMISSIONS[DEFAULT_ROLE]).not.toContain(PERMISSIONS.adminManageUsers);
     });
   });

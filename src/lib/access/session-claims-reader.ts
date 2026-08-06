@@ -28,7 +28,8 @@ export class SessionClaimsReader {
     const normalized = segment.replace(/-/g, '+').replace(/_/g, '/');
     const padding = (BASE64_BLOCK - (normalized.length % BASE64_BLOCK)) % BASE64_BLOCK;
     const binary = atob(normalized.padEnd(normalized.length + padding, '='));
-    return new TextDecoder().decode(Uint8Array.from(binary, (char) => char.charCodeAt(0)));
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   }
 }
 

@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import type { FeatureFlag, FeatureFlagState } from '@/lib/types/access/feature-flag';
 import type { Role } from '@/lib/types/access/permission';
-import type { Principal } from '@/lib/types/access/principal';
+import type { Principal, TenantRef } from '@/lib/types/access/principal';
 import type { SessionClaims, SessionInput, SessionSnapshot } from '@/lib/types/access/session';
 
 import { FEATURE_FLAG_DEFAULTS } from './feature-flag-catalog';
@@ -21,15 +21,29 @@ export class SessionFactory {
 
   private toPrincipal(claims: SessionClaims | null, input: SessionInput): Principal {
     const roles = this.toRoles(claims?.roles);
-    const tenantId = claims?.tenantId ?? FALLBACK_TENANT_ID;
+    const tenants = this.toTenants(claims);
     return {
       id: claims?.sub ?? uuidv4(),
       email: claims?.email ?? input.email ?? '',
       roles,
       permissions: permissionResolver.expand(roles),
-      tenantId,
-      tenants: claims?.tenants ?? [{ id: tenantId, name: tenantId }],
+      tenantId: this.toActiveTenant(claims, tenants),
+      tenants,
     };
+  }
+
+  private toTenants(claims: SessionClaims | null): readonly TenantRef[] {
+    const claimed = claims?.tenants ?? [];
+    if (claimed.length > 0) return claimed;
+    const tenantId = claims?.tenantId ?? FALLBACK_TENANT_ID;
+    return [{ id: tenantId, name: tenantId }];
+  }
+
+  // The active tenant must be one the principal actually belongs to: a claimed tenantId
+  // outside the membership list would scope the session to a tenant it cannot read.
+  private toActiveTenant(claims: SessionClaims | null, tenants: readonly TenantRef[]): string {
+    const claimed = claims?.tenantId;
+    return tenants.some((tenant) => tenant.id === claimed) ? (claimed as string) : tenants[0].id;
   }
 
   private toRoles(claimed: readonly string[] | undefined): readonly Role[] {

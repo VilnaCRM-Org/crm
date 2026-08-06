@@ -165,9 +165,16 @@ const noProcessEnvSelectors = [
 // itself and never pass a raw permission/role string at a call site.
 const noAdHocAuthorizationSelectors = [
   {
+    // Covers the member form (`principal.roles.includes`), the destructured/aliased form
+    // (`const { permissions } = …; permissions.includes`), and the computed member form
+    // (`principal['roles'].includes`) — all three are the same bypass.
     selector:
       "CallExpression[callee.property.name='includes']" +
-      '[callee.object.property.name=/^(roles|permissions)$/]',
+      '[callee.object.property.name=/^(roles|permissions)$/],' +
+      "CallExpression[callee.property.name='includes']" +
+      '[callee.object.name=/^(roles|permissions)$/],' +
+      "CallExpression[callee.property.name='includes']" +
+      '[callee.object.property.value=/^(roles|permissions)$/]',
     message:
       'No ad-hoc role/permission membership checks outside the access layer — ask useCan/PermissionService or add a Policy class (issue #114).',
   },
@@ -182,7 +189,11 @@ const noAdHocAuthorizationSelectors = [
       'No raw permission strings at call sites — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
   },
   {
-    selector: "JSXAttribute[name.name='permission'] > Literal",
+    // Both the bare-attribute form (`permission="…"`) and the expression-container form
+    // (`permission={'…'}`) name a permission literally at the call site.
+    selector:
+      "JSXAttribute[name.name='permission'] > Literal," +
+      "JSXAttribute[name.name='permission'] > JSXExpressionContainer > Literal",
     message:
       'No raw permission strings on a permission prop — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
   },
@@ -534,7 +545,7 @@ export default [
   // type-only files stay governed by the type-file override above (which this glob excludes).
   {
     files: accessLayerGlobs,
-    ignores: ['**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
+    ignores: ['**/*.test.*', '**/*.spec.*', '**/*.d.ts', 'src/**/types.ts', 'src/**/types/**/*.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',

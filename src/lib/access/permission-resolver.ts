@@ -1,7 +1,7 @@
 import type { Permission, Role } from '@/lib/types/access/permission';
 import type { Principal } from '@/lib/types/access/principal';
 
-import { ROLE_PERMISSIONS, ROLES } from './permission-catalog';
+import { ROLE_PERMISSIONS } from './permission-catalog';
 
 export class PermissionResolver {
   public expand(roles: readonly Role[]): readonly Permission[] {
@@ -12,8 +12,10 @@ export class PermissionResolver {
     return [...granted];
   }
 
+  // Keyed off the grant map, not the catalog: ROLES maps keys to values, so checking its
+  // keys would accept a role name that ROLE_PERMISSIONS cannot resolve (and reject one it can).
   public isRole(candidate: string): candidate is Role {
-    return Object.prototype.hasOwnProperty.call(ROLES, candidate);
+    return Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS, candidate);
   }
 
   public can(principal: Principal | null, permission: Permission): boolean {

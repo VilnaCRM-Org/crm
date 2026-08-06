@@ -4,7 +4,6 @@ const ACCESS_TOKENS = Object.freeze({
   TenantContextService: Symbol('TenantContextService'),
   FeatureFlagService: Symbol('FeatureFlagService'),
   AuditLogger: Symbol('AuditLogger'),
-  AuditSink: Symbol('AuditSink'),
   SessionRepository: Symbol('SessionRepository'),
   AccessSessionService: Symbol('AccessSessionService'),
 } as const);
