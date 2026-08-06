@@ -1,6 +1,11 @@
 {
   "en": {
     "translation": {
+      "access_denied": {
+        "title": "Access denied",
+        "description": "You don't have permission to view this page.",
+        "cta": "Go to homepage"
+      },
       "not_found": {
         "title": "Page not found",
         "description": "The page you're looking for doesn't exist.",
@@ -144,6 +149,11 @@
   },
   "uk": {
     "translation": {
+      "access_denied": {
+        "title": "Доступ заборонено",
+        "description": "У вас немає прав для перегляду цієї сторінки.",
+        "cta": "На головну сторінку"
+      },
       "not_found": {
         "title": "Сторінку не знайдено",
         "description": "Сторінку, яку ви шукаєте, не існує.",

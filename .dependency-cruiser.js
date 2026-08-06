@@ -353,6 +353,36 @@ module.exports = {
       },
     },
     {
+      name: 'no-ui-to-access-services',
+      comment:
+        'UI layers must not reach the injectable access services (authorization, tenancy, ' +
+        'feature flags, audit) directly. They consume the access layer through its React ' +
+        'seam — the `useCan` / `usePrincipal` / `useTenant` / `useFeatureFlag` hooks and the ' +
+        '`RequirePermission` component — so a component never resolves or holds a policy ' +
+        'service (issue #114). Feature UI is additionally covered by no-feature-ui-to-services.',
+      severity: 'error',
+      from: {
+        path: ['^src/components/', '^src/routes/'],
+      },
+      to: {
+        path: '^src/services/access/',
+      },
+    },
+    {
+      name: 'no-access-layer-to-modules',
+      comment:
+        'The access layer (authorization domain in src/lib/access, injectable services in ' +
+        'src/services/access) is cross-cutting infrastructure: it must never depend on a ' +
+        'feature module. Modules consume access, never the reverse (issue #114).',
+      severity: 'error',
+      from: {
+        path: ['^src/lib/access/', '^src/services/access/'],
+      },
+      to: {
+        path: '^src/modules/',
+      },
+    },
+    {
       name: 'no-di-config-import-outside-composition-root',
       comment:
         'The DI container configuration and every per-module/per-infra registrar (di.ts) ' +

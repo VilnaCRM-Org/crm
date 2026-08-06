@@ -158,6 +158,43 @@ const noProcessEnvSelectors = [
   },
 ];
 
+// Source (issue #114): authorization decisions belong to the access layer. Outside
+// `src/lib/access/**` and `src/services/access/**`, code must ask the policy layer
+// (`useCan`, `<RequirePermission>`, `PermissionService`, a `Policy` class) with a typed
+// constant from the permission catalog — never inspect `principal.roles`/`principal.permissions`
+// itself and never pass a raw permission/role string at a call site.
+const noAdHocAuthorizationSelectors = [
+  {
+    selector:
+      "CallExpression[callee.property.name='includes']" +
+      '[callee.object.property.name=/^(roles|permissions)$/]',
+    message:
+      'No ad-hoc role/permission membership checks outside the access layer — ask useCan/PermissionService or add a Policy class (issue #114).',
+  },
+  {
+    selector: "CallExpression[callee.name='useCan'] > Literal",
+    message:
+      'No raw permission strings at call sites — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
+  },
+  {
+    selector: 'CallExpression[callee.property.name=/^(can|canAll|canAny)$/] > Literal',
+    message:
+      'No raw permission strings at call sites — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
+  },
+  {
+    selector: "JSXAttribute[name.name='permission'] > Literal",
+    message:
+      'No raw permission strings on a permission prop — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
+  },
+  {
+    selector: "Property[key.name='permission'] > Literal",
+    message:
+      'No raw permission strings in route meta — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
+  },
+];
+
+const accessLayerGlobs = ['src/lib/access/**/*.ts', 'src/services/access/**/*.ts'];
+
 const nonReactSourceGlobs = ['src/**/*.ts'];
 const nonReactSourceIgnores = [
   '**/*.stories.*',
@@ -410,7 +447,12 @@ export default [
       'src/**/types/**/*.tsx',
     ],
     rules: {
-      'no-restricted-syntax': ['error', ...dataTestidSelectors, ...typeDeclarationSelectors],
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...typeDeclarationSelectors,
+        ...noAdHocAuthorizationSelectors,
+      ],
     },
   },
 
@@ -480,6 +522,26 @@ export default [
         ...noStaticOrFreeFunctionSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noAdHocAuthorizationSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #114): the access layer IS the sanctioned place that reads a principal's
+  // roles/permissions and names permissions literally, so the ad-hoc-authorization ban is
+  // lifted here. Every other selector is re-included (flat config replaces, does not merge).
+  // Ordered after the non-React `.ts` block so it wins for access-layer files; access-layer
+  // type-only files stay governed by the type-file override above (which this glob excludes).
+  {
+    files: accessLayerGlobs,
+    ignores: ['**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
       ],
     },
   },
@@ -527,6 +589,7 @@ export default [
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noAdHocAuthorizationSelectors,
       ],
     },
   },

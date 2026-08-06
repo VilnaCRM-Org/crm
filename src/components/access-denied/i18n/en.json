@@ -1,0 +1,7 @@
+{
+  "access_denied": {
+    "title": "Access denied",
+    "description": "You don't have permission to view this page.",
+    "cta": "Go to homepage"
+  }
+}

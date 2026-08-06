@@ -20,6 +20,9 @@ class RouteValidator {
     if (nested && route.guard !== undefined) {
       throw new Error('Nested routes must not declare a guard (guards are top-level only)');
     }
+    if (nested && route.meta?.permission !== undefined) {
+      throw new Error('Nested routes must not declare a permission (gates are top-level only)');
+    }
     route.children?.forEach((child) => this.assertRoute(child, true));
   }
 

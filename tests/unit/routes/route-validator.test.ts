@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react';
 
+import { PERMISSIONS } from '@/lib/access/permission-catalog';
 import routeValidator from '@/routes/route-validator';
 import type { AppRouteObject } from '@/routes/types/app-route';
 import type { RouteModule } from '@/routes/types/route-module';
@@ -55,5 +56,41 @@ describe('route validator', () => {
     expect(() => routeValidator.validate(modules)).toThrow(
       'Nested routes must not declare a guard'
     );
+  });
+
+  it('rejects a nested child that declares a permission (negative, #114)', () => {
+    // A permission on a child is silently ignored by the composer (only top-level
+    // routes are grouped into a PermissionRoute branch), so it must be a contract error.
+    const modules: RouteModule[] = [
+      {
+        id: 'a',
+        routes: [
+          {
+            path: '/parent',
+            load: page,
+            children: [
+              { path: 'child', load: page, meta: { permission: PERMISSIONS.contactRead } },
+            ],
+          },
+        ],
+      },
+    ];
+
+    expect(() => routeValidator.validate(modules)).toThrow(
+      'Nested routes must not declare a permission'
+    );
+  });
+
+  it('accepts a permission on a top-level route (positive, #114)', () => {
+    const modules: RouteModule[] = [
+      {
+        id: 'a',
+        routes: [
+          { path: '/a', guard: 'protected', load: page, meta: { permission: PERMISSIONS.appHome } },
+        ],
+      },
+    ];
+
+    expect(() => routeValidator.validate(modules)).not.toThrow();
   });
 });
