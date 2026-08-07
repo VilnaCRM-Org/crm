@@ -892,7 +892,7 @@ Add a specialized suite when the change touches its concern: `make test-mutation
 strength), `make test-memory-leak` (leaks / OOM), `make test-load` (traffic, K6), and
 `make lighthouse-desktop` / `make lighthouse-mobile` (performance, a11y, best practices).
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 4-way
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 12-way
 matrix (`make test-mutation-shard`) and a final job merges the per-shard reports and re-enforces the
 same `break` threshold (`make merge-mutation-reports`) — same gate, much faster. Lighthouse runs
 as a desktop/mobile matrix, and every workflow cancels superseded runs via `concurrency`. See

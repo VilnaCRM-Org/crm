@@ -15,9 +15,9 @@ mutation-testing gate" and CLAUDE.md → "Mutation testing scope and baseline".
 
 ```bash
 make test-mutation  # full local run (heavy — prefer CI)
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8  # one shard
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=12  # one shard
 # add MUTATION_INCREMENTAL=1 for PR/incremental mode
-make merge-mutation-reports MUTATION_SHARD_TOTAL=8  # merge shards + enforce gate
+make merge-mutation-reports MUTATION_SHARD_TOTAL=12  # merge shards + enforce gate
 ```
 
 ## Run unit AND integration in one pass
@@ -60,9 +60,11 @@ fix survived mutants with real assertions.
 
 `scripts/ci/mutation-scope.mjs` is the single source of truth for the mutated file list (its
 exclusions mirror `jest.config.ts` `collectCoverageFrom`). The base config sets `mutate` to that
-list; the shard config slices the same list round-robin
-(`collectMutateFiles().filter((_, i) => i % total === index % total)`) so the union of all shards
-equals the full set exactly. Never hand-maintain a second file list.
+list; the shard config packs the same list into shards
+longest-processing-time-first by file size (sort by size desc, hand each file to the lightest
+shard) so the union of all shards equals the full set exactly and no shard carries the tail alone.
+Balance file COUNT and one shard ends up several times slower than the rest — wall clock tracks
+mutant count, which tracks file size. Never hand-maintain a second file list.
 
 ## Sharded incremental CI
 
