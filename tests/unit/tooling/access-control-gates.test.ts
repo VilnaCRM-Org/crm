@@ -165,8 +165,9 @@ export default function Probe({ principal }: { principal: Principal }): JSX.Elem
 }
 `;
 
-// Backticks are quotes too, and `canAll`/`canAny` hide their permissions one level deeper
-// inside an array — the most natural way to call them. Every position that rejects a plain
+// Backticks are quotes too, `canAll`/`canAny` hide their permissions one level deeper inside
+// an array — the most natural way to call them — and a computed method name (`gate['can']`)
+// is the same call spelled to dodge an identifier match. Every position that rejects a plain
 // string must reject these, or the catalog rule is advisory.
 const TEMPLATE_AND_ARRAY_SPELLINGS = [
   "import RequirePermission from '@/components/require-permission';",
@@ -183,9 +184,11 @@ const TEMPLATE_AND_ARRAY_SPELLINGS = [
   '  const b = gate.can(`contact:read`);',
   "  const c = gate.canAll(['contact:read', `deal:write`]);",
   '  const d = gate.canAny([`contact:read`]);',
+  "  const e = gate['can']('contact:read');",
+  "  const f = gate['canAll']([`deal:write`]);",
   '  return (',
   '    <RequirePermission permission={`contact:read`}>',
-  '      <p>{[a, b, c, d].join()}</p>',
+  '      <p>{[a, b, c, d, e, f].join()}</p>',
   '    </RequirePermission>',
   '  );',
   '}',
@@ -286,9 +289,11 @@ describe('access-control ESLint gate (issue #114)', () => {
   it('rejects template-literal permissions and the array arguments of canAll/canAny', () => {
     const messages = authorizationMessages(lint(BYPASS_FIXTURE, TEMPLATE_AND_ARRAY_SPELLINGS));
 
-    // useCan(`…`), gate.can(`…`), both elements of canAll([…]) and the one in canAny([…]).
+    // useCan(`…`), gate.can(`…`), both elements of canAll([…]), the one in canAny([…]) and
+    // the two computed spellings, gate['can'](…) and gate['canAll']([…]).
     const callSites = messages.filter((m) => m.message.includes('No raw permission strings at'));
-    expect(callSites).toHaveLength(5);
+    expect(callSites).toHaveLength(7);
+    expect(new Set(callSites.map((m) => m.line)).size).toBe(6);
     expect(callSites.every((m) => m.severity === 2)).toBe(true);
     expect(
       messages.filter((m) => m.message.includes('No raw permission strings on a permission prop'))

@@ -21,16 +21,18 @@ export default function PermissionRoute({ permission }: PermissionRouteProps): J
   // One refusal is one event. The identity of the refusal — who was refused what, and where —
   // is what the effect keys on, so a principal swapped under a still-mounted denied branch
   // records its own refusal while StrictMode replaying the mount effect for the same one does
-  // not. The remount key stays the pathname alone: re-anchoring focus on a change the user did
-  // not initiate would be the worse bug.
+  // not. The ref tracks the current refusal rather than only the last recorded one, so an
+  // allowance clears it and a later re-denial of that same identity is its own episode. The
+  // remount key stays the pathname alone: re-anchoring focus on a change the user did not
+  // initiate would be the worse bug.
   const refusal =
     principal !== null && !allowed ? [principal.id, permission, pathname].join(' ') : null;
   const recorded = useRef<string | null>(null);
 
   useEffect(() => {
-    if (refusal === null || recorded.current === refusal) return;
+    if (recorded.current === refusal) return;
     recorded.current = refusal;
-    accessCore.recordDenial(permission, { path: pathname });
+    if (refusal !== null) accessCore.recordDenial(permission, { path: pathname });
   }, [refusal, permission, pathname]);
 
   if (principal === null) return null;

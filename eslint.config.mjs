@@ -233,9 +233,13 @@ const noAdHocAuthorizationSelectors = [
   {
     // `canAll`/`canAny` take an array, so the literal sits one level deeper than for `can`:
     // matching only the direct argument would leave their most natural call form ungated.
+    // `.property.value` is the computed spelling — `gate['can'](…)` is the same call and must
+    // not be the way past the catalog, exactly as for the membership methods above.
     selector: [
       `CallExpression[callee.property.name=${PERMISSION_METHODS}] > ${RAW_PERMISSION}`,
       `CallExpression[callee.property.name=${PERMISSION_METHODS}] > ArrayExpression > ${RAW_PERMISSION}`,
+      `CallExpression[callee.property.value=${PERMISSION_METHODS}] > ${RAW_PERMISSION}`,
+      `CallExpression[callee.property.value=${PERMISSION_METHODS}] > ArrayExpression > ${RAW_PERMISSION}`,
       `CallExpression[callee.name=${PERMISSION_METHODS}] > ${RAW_PERMISSION}`,
       `CallExpression[callee.name=${PERMISSION_METHODS}] > ArrayExpression > ${RAW_PERMISSION}`,
     ].join(','),

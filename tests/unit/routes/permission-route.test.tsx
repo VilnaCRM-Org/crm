@@ -11,6 +11,7 @@ import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
+import permissionResolver from '@/lib/access/permission-resolver';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { Permission, Role } from '@/lib/types/access/permission';
 import type { Principal } from '@/lib/types/access/principal';
@@ -145,6 +146,38 @@ describe('PermissionRoute (#114)', () => {
     view.rerender(gate(PERMISSIONS.contactWrite, FIRST_PATH));
 
     expect(record).toHaveBeenCalledTimes(1);
+  });
+
+  // De-duplication is per refusal episode, not for the lifetime of the mount: once the
+  // permission is granted the refusal is over, so losing it again is a new denial the trail
+  // has to carry — even though who/what/where are identical to the first one.
+  it('records the re-denial of an identical refusal after an intervening allowance', () => {
+    const principal = seedPrincipal([ROLES.viewer]);
+    const promoted: Principal = {
+      ...principal,
+      roles: [ROLES.manager],
+      permissions: permissionResolver.expand([ROLES.manager]),
+    };
+
+    renderGate(PERMISSIONS.contactWrite, FIRST_PATH);
+    expect(record).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      accessState.setSession(promoted, {});
+    });
+    expect(screen.getByText(NESTED_TEXT)).toBeInTheDocument();
+    expect(record).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      accessState.setSession(principal, {});
+    });
+
+    expect(record).toHaveBeenCalledTimes(2);
+    expect(eventAt(1).principalId).toBe(principal.id);
+    expect(eventAt(1).metadata).toEqual({
+      path: FIRST_PATH,
+      permission: PERMISSIONS.contactWrite,
+    });
   });
 
   // The app mounts under StrictMode, which replays mount effects. One refusal is one event,

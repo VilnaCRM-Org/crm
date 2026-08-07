@@ -254,7 +254,9 @@ its principal is still known, so the trail reconciles into whole sessions.
   `permission="…"`, or `meta: { permission: '…' }`. A backtick is a quote too, so each of
   those positions rejects a template literal as well as a plain string; `canAll`/`canAny`
   are matched inside their array argument (`canAll(['…'])`), which is their natural call
-  form; and the route-meta key is matched spelled bare or quoted (`{ 'permission': '…' }`).
+  form; the method itself is matched spelled as an identifier or as a computed literal
+  (`gate['can'](…)`), as for the membership methods below; and the route-meta key is
+  matched spelled bare or quoted (`{ 'permission': '…' }`).
 
 Satisfy all of them by going through the policy layer. Never add a suppression, and
 never widen the ESLint exemption beyond `src/lib/access/**` and `src/services/access/**`.
