@@ -207,6 +207,13 @@ const membershipEscapeSelectors = [
   `MemberExpression[computed=true][object.name=${ROLE_COLLECTION}]${NOT_A_CALL}`,
 ];
 
+// A permission is named at a call site by a plain string or by a template literal; the catalog
+// rule covers both spellings everywhere it covers one.
+const RAW_PERMISSION = ':matches(Literal, TemplateLiteral)';
+const PERMISSION_METHODS = '/^(can|canAll|canAny)$/';
+const RAW_PERMISSION_MESSAGE =
+  'No raw permission strings at call sites — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).';
+
 const noAdHocAuthorizationSelectors = [
   {
     // One entry rather than one per shape: a spelling that is both a computed index and a
@@ -217,26 +224,43 @@ const noAdHocAuthorizationSelectors = [
       'No ad-hoc role/permission membership checks outside the access layer — calling, indexing or wrapping the collection is the same decision: ask useCan/PermissionService or add a Policy class (issue #114).',
   },
   {
-    selector: "CallExpression[callee.name='useCan'] > Literal",
-    message:
-      'No raw permission strings at call sites — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
+    // A permission named as a template literal is the same raw string with different quotes —
+    // `useCan(`crm.contact.read`)` must not be the way past the catalog — and an interpolated
+    // one is worse still, so both spellings are matched wherever a plain string is.
+    selector: `CallExpression[callee.name='useCan'] > ${RAW_PERMISSION}`,
+    message: RAW_PERMISSION_MESSAGE,
   },
   {
-    selector: 'CallExpression[callee.property.name=/^(can|canAll|canAny)$/] > Literal',
-    message:
-      'No raw permission strings at call sites — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
+    // `canAll`/`canAny` take an array, so the literal sits one level deeper than for `can`:
+    // matching only the direct argument would leave their most natural call form ungated.
+    selector: [
+      `CallExpression[callee.property.name=${PERMISSION_METHODS}] > ${RAW_PERMISSION}`,
+      `CallExpression[callee.property.name=${PERMISSION_METHODS}] > ArrayExpression > ${RAW_PERMISSION}`,
+      `CallExpression[callee.name=${PERMISSION_METHODS}] > ${RAW_PERMISSION}`,
+      `CallExpression[callee.name=${PERMISSION_METHODS}] > ArrayExpression > ${RAW_PERMISSION}`,
+    ].join(','),
+    message: RAW_PERMISSION_MESSAGE,
   },
   {
     // Both the bare-attribute form (`permission="…"`) and the expression-container form
-    // (`permission={'…'}`) name a permission literally at the call site.
-    selector:
-      "JSXAttribute[name.name='permission'] > Literal," +
-      "JSXAttribute[name.name='permission'] > JSXExpressionContainer > Literal",
+    // (`permission={'…'}` / ``permission={`…`}``) name a permission literally at the call site.
+    selector: [
+      "JSXAttribute[name.name='permission'] > Literal",
+      `JSXAttribute[name.name='permission'] > JSXExpressionContainer > ${RAW_PERMISSION}`,
+    ].join(','),
     message:
       'No raw permission strings on a permission prop — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
   },
   {
-    selector: "Property[key.name='permission'] > Literal",
+    // `{ permission: … }` and `{ 'permission': … }` are the same route-meta key. The `.value`
+    // field is what makes the quoted form work: without it the quoted KEY is a child Literal
+    // of the same Property and one entry would be reported twice.
+    selector: [
+      `Property[key.name='permission'] > ${RAW_PERMISSION}.value`,
+      `Property[key.value='permission'] > ${RAW_PERMISSION}.value`,
+      `Property[key.name='permission'] > ArrayExpression > ${RAW_PERMISSION}`,
+      `Property[key.value='permission'] > ArrayExpression > ${RAW_PERMISSION}`,
+    ].join(','),
     message:
       'No raw permission strings in route meta — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
   },

@@ -89,6 +89,29 @@ describe('SessionFactory', () => {
     expect(principal.permissions).not.toContain(PERMISSIONS.contactManageAll);
   });
 
+  // A blank subject is a missing one: honouring it would give every malformed token the same
+  // empty identity, so audit entries and owner checks would conflate unrelated sessions.
+  it.each(['', '   '])(
+    'generates a fresh uuid identity when the sub claim is blank (%p)',
+    (sub) => {
+      const token = buildAccessToken({ sub, email: buildEmail(), roles: [ROLES.member] });
+
+      const first = requireSnapshot({ token }).principal.id;
+      const second = requireSnapshot({ token }).principal.id;
+
+      expect(first).toMatch(UUID_PATTERN);
+      expect(second).toMatch(UUID_PATTERN);
+      expect(first).not.toBe(second);
+    }
+  );
+
+  it('keeps a sub claim that is padded but real, trimmed to its identity', () => {
+    const id = buildUserId();
+    const token = buildAccessToken({ sub: `  ${id}  `, roles: [ROLES.member] });
+
+    expect(requireSnapshot({ token }).principal.id).toBe(id);
+  });
+
   it('generates a fresh uuid identity when the sub claim is missing', () => {
     const token = buildAccessToken({ email: buildEmail(), roles: [ROLES.member] });
 

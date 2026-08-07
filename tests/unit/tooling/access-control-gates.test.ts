@@ -9,8 +9,10 @@ type CruiseReport = { summary?: { violations?: { rule: { name: string; severity:
 
 const repoRoot = path.resolve(__dirname, '../../..');
 // Fixtures must live under src/ for the flat config and the tsconfig project to apply, so
-// they are namespaced per worker: a hard-killed run can never leave a file another worker
-// (or a later lint pass) mistakes for real source.
+// they are namespaced per worker and swept before and after the suite. In-process cleanup
+// cannot survive a SIGKILL, so the guarantee is bounded: no worker can collide with another,
+// and the next run of this suite removes anything a killed one left behind. A hard-killed run
+// still leaves its fixture until then — `git status` shows it, and `make lint` would flag it.
 const probe = `probe-${process.pid}`;
 const eslintBin = path.join(repoRoot, 'node_modules/eslint/bin/eslint.js');
 const depcruiseBin = path.join(
@@ -163,6 +165,45 @@ export default function Probe({ principal }: { principal: Principal }): JSX.Elem
 }
 `;
 
+// Backticks are quotes too, and `canAll`/`canAny` hide their permissions one level deeper
+// inside an array — the most natural way to call them. Every position that rejects a plain
+// string must reject these, or the catalog rule is advisory.
+const TEMPLATE_AND_ARRAY_SPELLINGS = [
+  "import RequirePermission from '@/components/require-permission';",
+  "import useCan from '@/hooks/use-can';",
+  '',
+  'type Gate = {',
+  '  can: (permission: string) => boolean;',
+  '  canAll: (permissions: string[]) => boolean;',
+  '  canAny: (permissions: string[]) => boolean;',
+  '};',
+  '',
+  'export default function Probe({ gate }: { gate: Gate }): JSX.Element {',
+  '  const a = useCan(`contact:read`);',
+  '  const b = gate.can(`contact:read`);',
+  "  const c = gate.canAll(['contact:read', `deal:write`]);",
+  '  const d = gate.canAny([`contact:read`]);',
+  '  return (',
+  '    <RequirePermission permission={`contact:read`}>',
+  '      <p>{[a, b, c, d].join()}</p>',
+  '    </RequirePermission>',
+  '  );',
+  '}',
+  '',
+].join('\n');
+
+// Route meta names its permission as an object key, spelled bare or quoted.
+const ROUTE_META_SPELLINGS = [
+  'export const routes = [',
+  "  { path: '/contacts', meta: { permission: 'contact:read' } },",
+  "  { path: '/deals', meta: { permission: `deal:read` } },",
+  "  { path: '/reports', meta: { 'permission': 'report:read' } },",
+  '];',
+  '',
+  'export default routes;',
+  '',
+].join('\n');
+
 const ACCESS_LAYER_MODULE = `import type { Permission } from '@/lib/types/access/permission';
 import type { Principal } from '@/lib/types/access/principal';
 
@@ -185,6 +226,7 @@ const FIXTURE_PATHS = [
   `src/hooks/use-${probe}.ts`,
   `src/lib/access/${probe}.ts`,
   `src/hooks/use-access-${probe}.ts`,
+  `src/routes/${probe}-meta.ts`,
 ];
 const [
   ESLINT_FIXTURE,
@@ -193,6 +235,7 @@ const [
   HOOK_FIXTURE,
   LAYER_FIXTURE,
   SEAM_LOOKALIKE_FIXTURE,
+  META_FIXTURE,
 ] = FIXTURE_PATHS;
 
 const sweepFixtures = (): void => {
@@ -238,6 +281,27 @@ describe('access-control ESLint gate (issue #114)', () => {
     expect(
       messages.filter((m) => m.message.includes('No raw permission strings on a permission prop'))
     ).toHaveLength(1);
+  });
+
+  it('rejects template-literal permissions and the array arguments of canAll/canAny', () => {
+    const messages = authorizationMessages(lint(BYPASS_FIXTURE, TEMPLATE_AND_ARRAY_SPELLINGS));
+
+    // useCan(`…`), gate.can(`…`), both elements of canAll([…]) and the one in canAny([…]).
+    const callSites = messages.filter((m) => m.message.includes('No raw permission strings at'));
+    expect(callSites).toHaveLength(5);
+    expect(callSites.every((m) => m.severity === 2)).toBe(true);
+    expect(
+      messages.filter((m) => m.message.includes('No raw permission strings on a permission prop'))
+    ).toHaveLength(1);
+  });
+
+  it('rejects a route-meta permission spelled bare, quoted or as a template literal', () => {
+    const messages = authorizationMessages(lint(META_FIXTURE, ROUTE_META_SPELLINGS));
+
+    const meta = messages.filter((m) => m.message.includes('No raw permission strings in route'));
+    expect(meta).toHaveLength(3);
+    expect(new Set(meta.map((m) => m.line)).size).toBe(3);
+    expect(meta.every((m) => m.severity === 2)).toBe(true);
   });
 
   it('leaves plain reads alone: rendering a principal is not an authorization decision', () => {

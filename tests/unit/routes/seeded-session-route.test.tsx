@@ -7,6 +7,7 @@ import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 
 import accessState from '@/lib/access/access-state';
+import AuthStateVar from '@auth/stores/auth-var';
 import { buildToken } from '@tests/builders';
 
 // Lighthouse and Playwright authenticate by seeding a token rather than logging in, so
@@ -16,11 +17,6 @@ import { buildToken } from '@tests/builders';
 // PermissionRoute, composer and access layer in the graph — only the token source and
 // the leaf pages are stubbed.
 const seededToken = buildToken();
-
-jest.mock('@auth/stores/use-auth-token', () => ({
-  __esModule: true,
-  default: (): string => seededToken,
-}));
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { i18n: { language: string }; t: (k: string) => string } => ({
@@ -65,11 +61,23 @@ describe('seeded-session routing (#114 regression guard)', () => {
     act(() => {
       accessState.clear();
     });
+    AuthStateVar.reset();
   });
 
   it('hydrates the session from the seeded token and renders the gated home page', async () => {
     const actual = jest.requireActual<typeof import('react-router-dom')>('react-router-dom');
+    // The seed is the real one Lighthouse and Playwright use: the token in the auth state,
+    // read by the token hook AND by the module-load hydration in ProtectedRoute. Stubbing the
+    // hook instead would leave that hydration reading a null token, so the pre-render path the
+    // suite is named for would never run and dropping it would keep this test green.
+    AuthStateVar.set({ token: seededToken });
+
     const router = jest.requireActual<typeof import('@/routes/routes')>('@/routes/routes').default;
+
+    // Asserted before the first render: hydration must have happened at module load, not from
+    // an effect — a layout-effect-only session leaves the gated route blank on the first frame.
+    expect(accessState.get().principal).not.toBeNull();
+
     const memory = actual.createMemoryRouter(router as never, { initialEntries: ['/'] });
 
     render(

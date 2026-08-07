@@ -23,13 +23,20 @@ export class SessionFactory {
     const roles = this.toRoles(claims?.roles);
     const tenants = this.toTenants(claims);
     return {
-      id: claims?.sub ?? uuidv4(),
+      id: this.toIdentity(claims),
       email: claims?.email ?? input.email ?? '',
       roles,
       permissions: permissionResolver.expand(roles),
       tenantId: this.toActiveTenant(claims, tenants),
       tenants,
     };
+  }
+
+  // A blank `sub` is a missing subject, not an identity: honouring it would give every
+  // malformed token the same empty id, so owner matching and the audit trail would attribute
+  // unrelated sessions to one another.
+  private toIdentity(claims: SessionClaims | null): string {
+    return claims?.sub?.trim() || uuidv4();
   }
 
   private toTenants(claims: SessionClaims | null): readonly TenantRef[] {

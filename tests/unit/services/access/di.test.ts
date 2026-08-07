@@ -65,6 +65,28 @@ describe('access DI registrar', () => {
     expect(container.resolve(token)).toBe(container.resolve(token));
   });
 
+  // Registration alone changes nothing: the service's constructor is what installs the bound
+  // repository as the loader, and nothing in the application resolves that service. Composing
+  // the container therefore has to do it, or the binding is dead code in production and only
+  // the tests that resolve it by hand ever see the configured repository.
+  it('installs the bound repository as the loader when the container is composed', () => {
+    const original = container.resolve<SessionRepository>(ACCESS_TOKENS.SessionRepository);
+    const scoped = container.createChildContainer();
+    const install = jest.spyOn(accessSession, 'useLoader');
+
+    try {
+      accessRegistrar.register(scoped);
+
+      expect(install).toHaveBeenCalledTimes(1);
+      expect(install).toHaveBeenCalledWith(scoped.resolve(ACCESS_TOKENS.SessionRepository));
+      expect(install.mock.calls[0][0]).toBeInstanceOf(SessionRepository);
+      expect(install.mock.calls[0][0]).not.toBe(original);
+    } finally {
+      install.mockRestore();
+      accessSession.useLoader(original);
+    }
+  });
+
   // Resolving the service installs the container's SessionRepository as the session loader,
   // so replacing that binding really does replace where every session comes from — the
   // container-free render path included. Spying on the resolved singleton proves the
@@ -110,11 +132,13 @@ describe('access DI registrar', () => {
       spy.mockRestore();
     });
 
-    it('defaults the audit core to a no-op sink', () => {
+    it('defaults the audit core to a no-op sink that records nothing observable', () => {
       expect(sink).toBeInstanceOf(NoopAuditSink);
-      expect(() =>
-        sink.record({ type: 'login', at: FROZEN_AT, principalId: null, tenantId: null })
-      ).not.toThrow();
+      // Drive the CORE rather than the sink export: what matters is that logging through the
+      // default installation reaches this sink and returns nothing for anyone to consume.
+      expect(auditCore.log({ type: 'login' })).toBeUndefined();
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(spy.mock.results[0].value).toBeUndefined();
     });
 
     it('routes audit events to the sink installed on the container-free core', () => {
@@ -129,12 +153,13 @@ describe('access DI registrar', () => {
       });
     });
 
-    it('routes the injectable audit logger to the same sink without throwing', () => {
+    it('routes the injectable audit logger to the same sink', () => {
       const logger = container.resolve<AuditLogger>(ACCESS_TOKENS.AuditLogger);
 
-      expect(() => logger.log({ type: 'logout' })).not.toThrow();
+      logger.log({ type: 'logout' });
+
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy).toHaveBeenCalledWith({
+      expect(spy.mock.calls[0][0]).toEqual({
         type: 'logout',
         at: FROZEN_AT,
         principalId: null,

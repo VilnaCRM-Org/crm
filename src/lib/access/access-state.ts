@@ -1,6 +1,8 @@
 import type { FeatureFlagState } from '@/lib/types/access/feature-flag';
 import type { AccessSnapshot, Principal } from '@/lib/types/access/principal';
 
+import accessSnapshotFactory from './access-snapshot-factory';
+
 const ANONYMOUS: AccessSnapshot = Object.freeze({ principal: null, flags: Object.freeze({}) });
 
 export class AccessStateStore {
@@ -19,17 +21,21 @@ export class AccessStateStore {
     };
   }
 
-  public setSession(principal: Principal, flags: FeatureFlagState): void {
-    this.write({ principal, flags });
+  // The store keeps its own invariant rather than trusting the caller to: an active tenant
+  // outside the membership list would make every tenant-scoped policy check — and every audit
+  // event — compare against a tenant the principal cannot read. Such a principal is refused
+  // rather than published, and the caller is told so.
+  public setSession(principal: Principal, flags: FeatureFlagState): boolean {
+    const next = accessSnapshotFactory.seal(principal, flags);
+    if (next === null) return false;
+    this.write(next);
+    return true;
   }
 
-  // The store keeps its own invariant rather than trusting the caller to: an active tenant
-  // outside the membership list would make every tenant-scoped policy check compare against
-  // a tenant the principal cannot read.
   public setActiveTenant(tenantId: string): void {
     const { principal, flags } = this.snapshot;
     if (principal === null || !principal.tenants.some((tenant) => tenant.id === tenantId)) return;
-    this.write({ principal: { ...principal, tenantId }, flags });
+    this.setSession({ ...principal, tenantId }, flags);
   }
 
   public clear(): void {
@@ -37,7 +43,7 @@ export class AccessStateStore {
   }
 
   private write(next: AccessSnapshot): void {
-    this.snapshot = Object.freeze(next);
+    this.snapshot = next;
     [...this.listeners].forEach((listener) => this.notify(listener));
   }
 

@@ -1,4 +1,4 @@
-import { lazy, useEffect } from 'react';
+import { lazy, useEffect, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import useCan from '@/hooks/use-can';
@@ -18,11 +18,20 @@ export default function PermissionRoute({ permission }: PermissionRouteProps): J
   const principal = usePrincipal();
   const allowed = useCan(permission);
   const { pathname } = useLocation();
-  const denied = principal !== null && !allowed;
+  // One refusal is one event. The identity of the refusal — who was refused what, and where —
+  // is what the effect keys on, so a principal swapped under a still-mounted denied branch
+  // records its own refusal while StrictMode replaying the mount effect for the same one does
+  // not. The remount key stays the pathname alone: re-anchoring focus on a change the user did
+  // not initiate would be the worse bug.
+  const refusal =
+    principal !== null && !allowed ? [principal.id, permission, pathname].join(' ') : null;
+  const recorded = useRef<string | null>(null);
 
   useEffect(() => {
-    if (denied) accessCore.recordDenial(permission, { path: pathname });
-  }, [denied, permission, pathname]);
+    if (refusal === null || recorded.current === refusal) return;
+    recorded.current = refusal;
+    accessCore.recordDenial(permission, { path: pathname });
+  }, [refusal, permission, pathname]);
 
   if (principal === null) return null;
 

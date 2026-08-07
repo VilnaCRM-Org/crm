@@ -297,6 +297,31 @@ describe('access session hydration from token claims (#114)', () => {
     expect(events[2].principalId).toBe(viewerClaims.sub);
   });
 
+  // The store is the last line of the tenancy invariant: a loader — the DI-bound repository
+  // included — that produced a principal scoped to a tenant it does not belong to must not
+  // be able to publish it, and the failure has to reach the caller rather than leaving a
+  // half-started session behind.
+  it('refuses a loaded principal whose active tenant is not one of its memberships', () => {
+    const stranger = buildTenantRef();
+    const forged = {
+      id: buildTenantRef().id,
+      email: buildEmail(),
+      roles: [ROLES.manager],
+      permissions: ROLE_PERMISSIONS[ROLES.manager],
+      tenantId: stranger.id,
+      tenants: [homeTenant],
+    };
+    accessSession.useLoader({ build: () => ({ principal: forged, flags: {} }) });
+
+    try {
+      expect(sessions.start({ token: managerToken })).toBe(false);
+      expect(accessState.get().principal).toBeNull();
+      expect(events).toHaveLength(0);
+    } finally {
+      accessSession.useLoader(sessionRepository);
+    }
+  });
+
   it('starts an anonymous state for an empty token', () => {
     expect(accessSession.start({ token: null })).toBe(false);
     expect(accessState.get().principal).toBeNull();

@@ -6,6 +6,7 @@ import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { ROLES } from '@/lib/access/permission-catalog';
 import sessionFactory from '@/lib/access/session-factory';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
+import type { Principal } from '@/lib/types/access/principal';
 import type { SessionClaims } from '@/lib/types/access/session';
 import {
   buildAccessToken,
@@ -114,6 +115,31 @@ describe('AccessSession', () => {
     expect(sink.record.mock.calls[1][0].tenantId).toBe(first.tenantId);
     expect(sink.record.mock.calls[2][0].principalId).toBe(second.claims.sub);
     expect(sink.record).toHaveBeenCalledTimes(3);
+  });
+
+  // A loader that returns a principal the store refuses (an active tenant outside its own
+  // memberships) must not leave the caller believing a session exists, and must not memoize
+  // the token as hydrated — the next sync has to try again rather than trust a session that
+  // never was.
+  it('reports failure and stays anonymous when the store refuses the loaded principal', () => {
+    const token = buildToken();
+    const forged = { ...buildPrincipal(), tenantId: 'a-tenant-it-does-not-belong-to' };
+    const tenant = buildTenantRef();
+    const accepted = buildPrincipal({ tenants: [tenant], tenantId: tenant.id });
+    // One loader, two answers: the retry below therefore proves the refused token was never
+    // memoized as hydrated, rather than a loader swap having reset that bookkeeping.
+    const principals = [forged, accepted];
+    session.useLoader({ build: () => ({ principal: principals.shift() as Principal, flags: {} }) });
+    sink.record.mockClear();
+
+    expect(session.start({ token })).toBe(false);
+    expect(accessState.get().principal).toBeNull();
+    expect(eventTypes()).toEqual([]);
+
+    session.sync({ token });
+
+    expect(accessState.get().principal).toBe(accepted);
+    expect(eventTypes()).toEqual(['login']);
   });
 
   it('leaves an existing session untouched when sync repeats the current empty token', () => {

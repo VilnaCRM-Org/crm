@@ -64,6 +64,12 @@ describe('AccessDenied', () => {
     const styles = window.getComputedStyle(focused);
     expect(styles.outline).toBe(`2px solid ${paletteColors.primary.main}`);
     expect(styles.outlineOffset).toBe('2px');
+
+    // The ring must come from the `:focus-visible` rule, not from a base outline that would
+    // paint on every mouse user too. Blurring is what proves the pseudo-class was matched:
+    // were it ignored here, both branches would report the same value and this would fail.
+    focused.blur();
+    expect(window.getComputedStyle(focused).outline).toBe('none');
   });
 
   it('sets the document title from the localized page title', () => {

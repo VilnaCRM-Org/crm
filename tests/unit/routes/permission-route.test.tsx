@@ -1,7 +1,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { RenderResult } from '@testing-library/react';
-import { Suspense, useCallback } from 'react';
+import { StrictMode, Suspense, useCallback } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 
@@ -145,6 +145,39 @@ describe('PermissionRoute (#114)', () => {
     view.rerender(gate(PERMISSIONS.contactWrite, FIRST_PATH));
 
     expect(record).toHaveBeenCalledTimes(1);
+  });
+
+  // The app mounts under StrictMode, which replays mount effects. One refusal is one event,
+  // so the replay must not double the audit trail.
+  it('records one denial under StrictMode, which replays the mount effect', () => {
+    seedPrincipal([ROLES.viewer]);
+
+    render(<StrictMode>{gate(PERMISSIONS.contactWrite, FIRST_PATH)}</StrictMode>);
+
+    expect(record).toHaveBeenCalledTimes(1);
+  });
+
+  // The refusal belongs to a principal, not to a screen: when the session is replaced while
+  // the denied branch stays mounted, the new principal was refused too and the trail has to
+  // say so — under whose identity the refusal happened is the whole point of the record.
+  it('records a fresh denial when the principal is replaced under a still-denied path', () => {
+    const first = seedPrincipal([ROLES.viewer]);
+
+    renderGate(PERMISSIONS.contactWrite, FIRST_PATH);
+    expect(record).toHaveBeenCalledTimes(1);
+
+    const second = buildPrincipal({ roles: [ROLES.viewer] });
+    act(() => {
+      accessState.setSession(second, {});
+    });
+
+    expect(record).toHaveBeenCalledTimes(2);
+    expect(eventAt(0).principalId).toBe(first.id);
+    expect(eventAt(1).principalId).toBe(second.id);
+    expect(eventAt(1).metadata).toEqual({
+      path: FIRST_PATH,
+      permission: PERMISSIONS.contactWrite,
+    });
   });
 
   it('records a fresh denial when navigating to a different denied path', async () => {

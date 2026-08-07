@@ -43,14 +43,24 @@ export function buildAccessToken(claims: SessionClaims | Record<string, unknown>
   return `${encodeSegment({ alg: 'none', typ: 'JWT' })}.${encodeSegment(claims)}.signature`;
 }
 
+// SessionFactory rewrites an active tenant that is not a membership back to the first one, so
+// claims built with a pinned tenantId and an unrelated tenant list would round-trip into a
+// principal the test never asked for. Claims are reconciled the same way a principal is: a
+// pinned tenantId is honoured by gaining it as a membership, never by being silently dropped.
 export function buildClaims(overrides: Partial<SessionClaims> = {}): SessionClaims {
-  const tenants = overrides.tenants ?? [buildTenantRef()];
+  const pinned: readonly TenantRef[] = overrides.tenants ?? [buildTenantRef()];
+  const requested: string | undefined = overrides.tenantId;
+  const member: boolean = pinned.some((tenant) => tenant.id === requested);
+  const tenants: readonly TenantRef[] =
+    requested === undefined || member
+      ? pinned
+      : [{ id: requested, name: faker.company.name() }, ...pinned];
   return {
     sub: faker.string.uuid(),
     email: buildEmail(),
     roles: [ROLES.member],
-    tenantId: tenants.at(0)?.id,
-    tenants,
     ...overrides,
+    tenantId: requested ?? tenants.at(0)?.id,
+    tenants,
   };
 }

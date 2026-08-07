@@ -17,6 +17,7 @@ src/lib/access/                    # dependency-free domain + state (paint-safe,
 ├── permission-resolver.ts         # role → permission expansion, can/canAll/canAny
 ├── feature-flag-catalog.ts        # FEATURE_FLAGS + FEATURE_FLAG_DEFAULTS
 ├── access-state.ts                # the principal/flags store (useSyncExternalStore source)
+├── access-snapshot-factory.ts     # validates the tenancy invariant + seals a snapshot
 ├── access-core.ts                 # façade: can, tenants, switchTenant, recordDenial
 ├── access-session.ts              # useLoader / start / sync / end a session
 ├── session-claims-reader.ts       # JWT payload → claims (no dependencies)
@@ -69,8 +70,10 @@ access token's claims** — the server issues them, the client only reads them:
    ignored in favour of a real membership. When the token carries **no** recognised
    role, the principal falls back to `DEFAULT_ROLE` — deliberately the **least**
    privileged role, so an unrecognised or narrowed server role is never upgraded into
-   write access. When it carries no `sub`, the principal id is a random opaque uuid —
-   the same no-PII identity rule the observability boundary follows.
+   write access. When it carries no `sub` — absent, or blank once trimmed — the principal
+   id is a random opaque uuid, the same no-PII identity rule the observability boundary
+   follows; a blank subject is never honoured as an identity of its own, which would
+   conflate every malformed token into one.
 
 The claims are read, not verified: this layer never checks the JWT signature, and it
 must not, because a client cannot establish authenticity about itself. A tampered token
@@ -80,9 +83,12 @@ server. Nothing here is an authorization decision; it decides what to render.
 `SessionFactory` is the default **session loader**. Replacing where a session comes
 from is one call — `accessSession.useLoader(myLoader)` — and every hydration path,
 render and DI alike, follows it. `SessionRepository` is that loader's injectable
-face: resolving `AccessSessionService` installs the container's binding as the
+face: constructing `AccessSessionService` installs the container's binding as the
 loader, so overriding `ACCESS_TOKENS.SessionRepository` also redirects the render
-path. A loader must stay synchronous; an endpoint-backed session belongs behind a
+path. The access composition root resolves that service as it registers it — nothing
+in the application does, so registration alone would leave the binding inert — and the
+container itself is only ever imported behind a dynamic `import()`, so this costs the
+paint path nothing. A loader must stay synchronous; an endpoint-backed session belongs behind a
 cache the loader reads, not behind an `await`.
 
 ## When the session is hydrated
@@ -100,6 +106,17 @@ cache the loader reads, not behind an `await`.
   and never emits a duplicate `login` event.
 - **Logout** — `authActions.logout` calls `accessSession.end()`, which logs `logout`
   while the principal is still known, then clears the state.
+
+Every published snapshot is **sealed**, not merely wrapped in a frozen object: the
+principal, its roles, its permissions and each membership are frozen in place, so a
+holder of the principal cannot rewrite a decision after it was made — and the identity
+of the snapshot is preserved, which is what `useSyncExternalStore` compares. A principal
+whose active tenant is not one of its own memberships is **refused**: `setSession`
+returns `false`, the store keeps the session it had, and `accessSession.start` reports
+failure without memoizing the token, so the next `sync` tries again rather than trusting
+a session that never was. `SessionFactory` already reconciles a claimed tenant against
+the membership list, so the refusal is the store keeping its own invariant rather than
+trusting a caller.
 
 Until the session is hydrated the principal is `null`, and `PermissionRoute` renders
 nothing rather than a 403 — a false "access denied" flash (and a false audit event)
@@ -234,7 +251,10 @@ its principal is still known, so the trail reconciles into whole sessions.
 - **ESLint `no-restricted-syntax`** (issue #114 selectors) — no
   `principal.roles.includes(…)` / `principal.permissions.includes(…)` outside the access
   layer, and no raw permission strings at a call site: `useCan('…')`, `can('…')`,
-  `permission="…"`, or `meta: { permission: '…' }`.
+  `permission="…"`, or `meta: { permission: '…' }`. A backtick is a quote too, so each of
+  those positions rejects a template literal as well as a plain string; `canAll`/`canAny`
+  are matched inside their array argument (`canAll(['…'])`), which is their natural call
+  form; and the route-meta key is matched spelled bare or quoted (`{ 'permission': '…' }`).
 
 Satisfy all of them by going through the policy layer. Never add a suppression, and
 never widen the ESLint exemption beyond `src/lib/access/**` and `src/services/access/**`.

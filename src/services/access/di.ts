@@ -29,9 +29,14 @@ class AccessRegistrar implements ModuleRegistrar {
     container.registerSingleton(ACCESS_TOKENS.FeatureFlagService, FeatureFlagService);
   }
 
+  // Registering the session service is not enough: its constructor is what installs the bound
+  // repository as the loader every hydration path reads from, and nothing in the app resolves
+  // it. Composing the container is therefore the install point — the container itself is only
+  // ever imported behind a dynamic import, so the paint path still never sees tsyringe.
   private registerSession(container: DependencyContainer): void {
     container.registerSingleton(ACCESS_TOKENS.SessionRepository, SessionRepository);
     container.registerSingleton(ACCESS_TOKENS.AccessSessionService, AccessSessionService);
+    container.resolve<AccessSessionService>(ACCESS_TOKENS.AccessSessionService);
   }
 }
 

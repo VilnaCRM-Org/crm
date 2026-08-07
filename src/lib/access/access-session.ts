@@ -27,15 +27,18 @@ export class AccessSession {
     return this.loader.build(input);
   }
 
+  // A snapshot the store refuses (a principal scoped to a tenant it does not belong to) is
+  // treated exactly like no snapshot at all: the session stays anonymous and the token is not
+  // memoized as hydrated, so a later sync retries instead of trusting a session that never was.
   public start(input: SessionInput): boolean {
     const snapshot = this.load(input);
     this.close();
-    this.source = snapshot === null ? null : input.token;
-    if (snapshot === null) {
+    const started = snapshot !== null && accessState.setSession(snapshot.principal, snapshot.flags);
+    this.source = started ? input.token : null;
+    if (!started) {
       accessState.clear();
       return false;
     }
-    accessState.setSession(snapshot.principal, snapshot.flags);
     auditCore.log({ type: 'login' });
     return true;
   }

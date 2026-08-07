@@ -1,6 +1,8 @@
 import accessState, { AccessStateStore } from '@/lib/access/access-state';
+import { ROLES } from '@/lib/access/permission-catalog';
 import type { FeatureFlagState } from '@/lib/types/access/feature-flag';
-import type { AccessSnapshot } from '@/lib/types/access/principal';
+import type { Role } from '@/lib/types/access/permission';
+import type { AccessSnapshot, Principal } from '@/lib/types/access/principal';
 import { buildPrincipal, buildTenantRef } from '@tests/builders';
 
 const ANONYMOUS_SNAPSHOT: AccessSnapshot = { principal: null, flags: {} };
@@ -10,6 +12,13 @@ describe('AccessStateStore', () => {
 
   beforeEach(() => {
     store = new AccessStateStore();
+  });
+
+  // A spy restored on the last line of a test survives a failing assertion above it and
+  // silently swallows console.error for the rest of the run; `clearMocks` clears calls, not
+  // the stub. Restoring here is unconditional.
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('get', () => {
@@ -83,7 +92,6 @@ describe('AccessStateStore', () => {
         'Access state listener threw during notification',
         failure
       );
-      logged.mockRestore();
     });
 
     it('tolerates unsubscribing twice', () => {
@@ -158,6 +166,44 @@ describe('AccessStateStore', () => {
       store.setSession(buildPrincipal(), {});
 
       expect(() => Object.assign(store.get(), { principal: null })).toThrow(TypeError);
+    });
+
+    // Freezing the wrapper alone leaves every decision the snapshot feeds rewritable through
+    // the principal the caller still holds — the roles and permissions policies read, and the
+    // membership list tenancy is scoped by.
+    it('seals the principal, its roles, its permissions and its memberships', () => {
+      const principal = buildPrincipal({ tenants: [buildTenantRef(), buildTenantRef()] });
+
+      store.setSession(principal, { 'contacts-module': true });
+
+      const published = store.get().principal as Principal;
+      expect(Object.isFrozen(published)).toBe(true);
+      expect(Object.isFrozen(published.roles)).toBe(true);
+      expect(Object.isFrozen(published.permissions)).toBe(true);
+      expect(Object.isFrozen(published.tenants)).toBe(true);
+      expect(published.tenants.every((tenant) => Object.isFrozen(tenant))).toBe(true);
+      expect(Object.isFrozen(store.get().flags)).toBe(true);
+      expect(() => Object.assign(published, { tenantId: 'forged' })).toThrow(TypeError);
+      expect(() => (published.roles as Role[]).push(ROLES.admin)).toThrow(TypeError);
+      expect(() => Object.assign(published.tenants[0], { id: 'forged' })).toThrow(TypeError);
+    });
+
+    it('refuses a principal whose active tenant is not one of its memberships', () => {
+      const seated = buildPrincipal();
+      store.setSession(seated, {});
+      const listener = jest.fn();
+      store.subscribe(listener);
+      const before = store.get();
+      const forged = { ...buildPrincipal(), tenantId: 'a-tenant-it-does-not-belong-to' };
+
+      expect(store.setSession(forged, { 'deals-module': true })).toBe(false);
+      expect(store.get()).toBe(before);
+      expect(store.get().principal).toBe(seated);
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it('reports the write it accepted', () => {
+      expect(store.setSession(buildPrincipal(), {})).toBe(true);
     });
   });
 
