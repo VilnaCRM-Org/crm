@@ -1,9 +1,9 @@
-import { lazy, useEffect, useRef } from 'react';
+import { lazy } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import useCan from '@/hooks/use-can';
+import useDenialAudit from '@/hooks/use-denial-audit';
 import usePrincipal from '@/hooks/use-principal';
-import accessCore from '@/lib/access/access-core';
 
 import type { PermissionRouteProps } from './types/permission-route';
 
@@ -18,22 +18,13 @@ export default function PermissionRoute({ permission }: PermissionRouteProps): J
   const principal = usePrincipal();
   const allowed = useCan(permission);
   const { pathname } = useLocation();
-  // One refusal is one event. The identity of the refusal — who was refused what, and where —
-  // is what the effect keys on, so a principal swapped under a still-mounted denied branch
-  // records its own refusal while StrictMode replaying the mount effect for the same one does
-  // not. The ref tracks the current refusal rather than only the last recorded one, so an
-  // allowance clears it and a later re-denial of that same identity is its own episode. The
-  // remount key stays the pathname alone: re-anchoring focus on a change the user did not
-  // initiate would be the worse bug.
+  // A principal swapped under a still-mounted denied branch was refused too, so it is part
+  // of the refusal's identity. The remount key below stays the pathname alone: re-anchoring
+  // focus on a change the user did not initiate would be the worse bug.
   const refusal =
     principal !== null && !allowed ? [principal.id, permission, pathname].join(' ') : null;
-  const recorded = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (recorded.current === refusal) return;
-    recorded.current = refusal;
-    if (refusal !== null) accessCore.recordDenial(permission, { path: pathname });
-  }, [refusal, permission, pathname]);
+  useDenialAudit(refusal, permission, pathname);
 
   if (principal === null) return null;
 
