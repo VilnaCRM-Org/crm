@@ -108,6 +108,23 @@ EOF
   assert_log_contains 'get-pr-comments.sh 78 markdown'
 }
 
+@test "commit contract targets lint the header and the range with their own configs" {
+  reset_command_log
+  run_make_target lint-commit-title
+  [ "$status" -eq 0 ]
+  assert_log_contains 'bun x commitlint --verbose --config commitlint.config.js'
+
+  reset_command_log
+  run_make_target lint-commit-message
+  [ "$status" -eq 0 ]
+  assert_log_contains 'bun x commitlint --verbose --config commitlint.ci.config.js'
+
+  reset_command_log
+  run_make_target lint-commit-range COMMIT_RANGE_FROM=abc123 COMMIT_RANGE_TO=def456
+  [ "$status" -eq 0 ]
+  assert_log_contains 'lint-commit-range.sh abc123 def456'
+}
+
 @test "metrics, ui, and CI-side test targets keep their shell wrappers stable" {
   local summary_path="$MAKEFILE_SANDBOX/github-step-summary.md"
 

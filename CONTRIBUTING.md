@@ -77,6 +77,33 @@ Don't forget to self-review to speed up the review process:zap:.
 
 Our commits are based on [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
 
+#### The commit contract is enforced in CI, not only by the local hook
+
+`.husky/commit-msg` still lints your commits locally, but it is opt-in (`make husky`), skipped
+by `git commit --no-verify`, and never sees commits made through the GitHub web UI. Because the
+repository is squash-merge-only with `squash_merge_commit_title=COMMIT_OR_PR_TITLE`, the string
+that actually lands on `main` — and that drives the semver bump and changelog in
+`autorelease.yml` — is the **pull request title**, which no hook can reach.
+
+The `commitlint` workflow closes both holes on every pull request. It lints:
+
+- `"<your PR title> (#<PR number>)"` — the exact header GitHub writes on squash merge — against
+  `commitlint.config.js`;
+- every commit between the merge base with `main` and the PR head, against
+  `commitlint.ci.config.js` (the same rules plus ignores for bot-authored commits).
+
+Fix a red check by editing the pull request title in the web UI (title failure) or by rewording
+and force-pushing (`git rebase -i` + `git push --force-with-lease`, commit failure). Reproduce
+either locally:
+
+```bash
+printf 'feat(#123): add a thing (#456)\n' | make lint-commit-title
+make lint-commit-range COMMIT_RANGE_FROM="$(git merge-base origin/main HEAD)" COMMIT_RANGE_TO=HEAD
+```
+
+Do not relax `commitlint.config.js` to make a header pass — it is the contract the release
+pipeline parses.
+
 ### Make targets as contracts
 
 Repository `make` targets are public workflow contracts. A target must do what its name promises
@@ -108,6 +135,56 @@ marker (its own comment line), the repo-wide `docker-perf-exception` PR label,
 or a per-image `docker-perf-exception:<name>` PR label that waives only that
 image. The decision logic is covered by `tests/bats/docker_perf.bats`
 (run with `make test-bats`).
+
+### The memory-leak gate is binding
+
+`make test-memory-leak` (workflow: `memory leak testing`) no longer just proves the scenarios
+did not throw. `tests/memory-leak/run-memlab-tests.js` runs memlab's `findLeaks()` after every
+scenario and exits non-zero when:
+
+- an unallowlisted leak is detected,
+- a file in `tests/memory-leak/tests/` exports no valid scenario, or
+- no scenario executed at all — a vacuous pass is now a failure.
+
+When you add or edit a scenario, dispose every puppeteer `ElementHandle` you obtain
+(`const handle = await page.waitForSelector(...); await handle?.dispose();`). An undisposed
+handle is held by the DevTools console object group, so the harness retains the element it is
+supposed to be measuring and the gate reports a leak that does not exist in the app.
+
+`MEMLAB_SKIP_WARMUP=true` remains set for the memlab stack. Issue #183 proposed removing it so
+first-visit lazy-chunk allocations fall outside the measured window; that was tried and measured
+to hang the second Chromium launch (`Network.enable` never returns, the run dies on memlab's
+5-minute `protocolTimeout`), so it stays a follow-up on #183 rather than a broken gate.
+
+If the gate flags a leak you believe is not yours to fix (for example retention inside a
+third-party component), waive it with a reviewed entry in
+`tests/memory-leak/leak-allowlist.json`, keyed on the reported detached-node summary:
+
+```json
+{
+  "leaks": [{ "trace": "Detached <div id=\"reg-form-0\">", "reason": "<why this is safe>" }]
+}
+```
+
+Both fields are required and the file is reviewed in the pull request diff. Never satisfy this
+gate by deleting a scenario, skipping the `findLeaks()` call, or widening the allowlist to a
+match-everything string — the same root-cause-not-suppression policy used for ESLint, metrics,
+and jscpd applies. `tests/bats/memlab_gate.bats` pins every exit-code path.
+
+### Post-merge verification of `main`
+
+Every push to `main` runs `main verification`, which re-runs `make lint`, `make codegen-check`,
+and `make test-unit-all` against the merged tree. Pull-request checks run against the PR branch,
+so two individually green PRs can still compose into a broken `main`; this run catches that and
+attributes it to the merge that caused it. Runs are serialized
+(`concurrency: main-verification`, `cancel-in-progress: false`) so no merge is skipped.
+
+A failure opens — or comments on — a single pinned issue labelled `main-is-red`. Treat it as a
+stop-the-line signal: fix `main` before merging further pull requests, because their checks are
+running against a base that is already broken.
+
+This run **detects**; it does not yet gate the release. `autorelease.yml` fires on the same
+push, so sequencing the release behind a green verification is tracked by issue #138.
 
 ### CI speed and the mutation-testing gate
 
@@ -195,6 +272,13 @@ checks:
 - `mutation testing / merge and enforce gate`
 - `performance testing / lighthouse desktop`
 - `performance testing / lighthouse mobile`
+- `conventional commit contract` (the job in `commitlint.yml` — issue #184; without a required
+  status the `edited` trigger is decorative, since a title can be changed after the last green run)
+- `memory-leak-testing` (the job in `memory-leak-testing.yml` — issue #183; the gate only became
+  binding once it could fail)
+
+The last two are the check-run names GitHub reports, which is what the required-checks search box
+matches: a job's check-run name is its `name:` when it declares one, and its job id otherwise.
 
 The merge job runs `if: ${{ !cancelled() }}` and fails closed if any shard did not succeed (a skipped
 required check would otherwise count as a pass), so requiring the merge job alone is sufficient — a
@@ -260,7 +344,8 @@ at 5.
 
 Dependabot commit headers use the conventional `chore(deps):` prefix (`chore(github-actions):`
 for the actions entry). Our commitlint `check-task-number-rule` expects a `(#N)` scope, which
-Dependabot cannot emit; that rule runs only in the local Husky `commit-msg` hook (there is no
-commitlint CI gate), so Dependabot pull requests are not blocked. Because the repository is
-squash-merge-only, add the task number to the squash commit title at merge time to keep
-`main`'s history conformant.
+Dependabot cannot emit. The `commitlint` workflow therefore skips the **title** check for
+Dependabot pull requests (at step level, so the job still reports a result and never leaves a
+required check pending) and its commits are ignored by `commitlint.ci.config.js` through their
+`Signed-off-by: dependabot[bot]` trailer. Because the repository is squash-merge-only, add the
+task number to the squash commit title at merge time to keep `main`'s history conformant.

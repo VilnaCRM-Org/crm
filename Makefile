@@ -101,6 +101,13 @@ PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md}"
 PRETTIER_CMD                = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --write --ignore-path .prettierignore
 PRETTIER_CHECK_CMD          = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --check --ignore-path .prettierignore
 QLTY_FMT                    = qlty fmt --all --trigger agent --no-progress
+# Conventional-commit gate (issue #184). The strict config is the human contract; the CI
+# config adds ignores for bot-authored commits that structurally cannot carry a task number.
+COMMITLINT_CONFIG           = commitlint.config.js
+COMMITLINT_CI_CONFIG        = commitlint.ci.config.js
+COMMITLINT_CMD              = $(BUNX) commitlint --verbose
+COMMIT_RANGE_FROM           ?=
+COMMIT_RANGE_TO             ?= HEAD
 # ShellCheck gate over the CI gate shell scripts (issue #163). Digest-pinned like the
 # other CI images; lints the standalone scripts, git hooks, and the Bats shared helper.
 SHELLCHECK_IMAGE            = koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb
@@ -166,6 +173,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
 .PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile
+.PHONY: lint-commit-title lint-commit-message lint-commit-range
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -368,6 +376,15 @@ lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry
 
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
+
+lint-commit-title: ## Lint one squash-merge commit header read from stdin (issue #184)
+	$(COMMITLINT_CMD) --config $(COMMITLINT_CONFIG)
+
+lint-commit-message: ## Lint one commit message read from stdin, exempting bot commits (issue #184)
+	$(COMMITLINT_CMD) --config $(COMMITLINT_CI_CONFIG)
+
+lint-commit-range: ## Lint every commit in COMMIT_RANGE_FROM..COMMIT_RANGE_TO (issue #184)
+	sh scripts/ci/lint-commit-range.sh "$(COMMIT_RANGE_FROM)" "$(COMMIT_RANGE_TO)"
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
 	@summary_path="$$GITHUB_STEP_SUMMARY"; \

@@ -139,3 +139,82 @@ setup() {
   assert_log_contains 'make test-chromium'
   assert_log_contains 'make lighthouse-mobile-dind'
 }
+
+@test "report-main-verification-failure.sh opens one pinned issue and reuses it afterwards" {
+  local script_path="$PROJECT_ROOT/scripts/ci/report-main-verification-failure.sh"
+
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAILED_SHA=deadbee \
+    RUN_URL=https://example.test/run/1 \
+    FAKE_GH_OPEN_ISSUE='' \
+    sh "$script_path"
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gh label create main-is-red'
+  assert_log_contains 'gh issue create --title main is red: post-merge verification failed'
+
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAILED_SHA=deadbee \
+    RUN_URL=https://example.test/run/2 \
+    FAKE_GH_OPEN_ISSUE=42 \
+    sh "$script_path"
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gh issue comment 42'
+  assert_output_contains 'Updated existing main-is-red issue #42'
+}
+
+@test "report-main-verification-failure.sh fails when the failing revision is unknown" {
+  local script_path="$PROJECT_ROOT/scripts/ci/report-main-verification-failure.sh"
+
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    RUN_URL=https://example.test/run/3 \
+    sh "$script_path"
+  [ "$status" -ne 0 ]
+}
+
+@test "lint-commit-range.sh lints every commit and propagates a failure" {
+  local script_path="$PROJECT_ROOT/scripts/ci/lint-commit-range.sh"
+
+  run_ci_script "$script_path"
+  [ "$status" -eq 1 ]
+  assert_output_contains 'Usage:'
+
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='aaa111 bbb222' \
+    sh "$script_path" base head
+  [ "$status" -eq 0 ]
+  assert_log_contains 'git rev-list base..head'
+  assert_log_contains 'make lint-commit-message'
+  assert_output_contains 'linted 2 commit(s) in base..head'
+
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='aaa111' \
+    FAKE_MAKE_FAIL_TARGET=lint-commit-message \
+    sh "$script_path" base head
+  [ "$status" -eq 1 ]
+  assert_output_contains 'aaa111 has a non-conventional commit header'
+}
+
+@test "lint-commit-range.sh fails instead of passing an empty range vacuously" {
+  local script_path="$PROJECT_ROOT/scripts/ci/lint-commit-range.sh"
+
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='' \
+    sh "$script_path" base head
+  [ "$status" -eq 1 ]
+  assert_output_contains 'contains no commits'
+}

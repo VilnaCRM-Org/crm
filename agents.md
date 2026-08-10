@@ -858,7 +858,12 @@ Add a specialized suite when the change touches its concern: `make test-mutation
 strength), `make test-memory-leak` (leaks / OOM), `make test-load` (traffic, K6), and
 `make lighthouse-desktop` / `make lighthouse-mobile` (performance, a11y, best practices).
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 4-way
+`make test-memory-leak` is binding: memlab's `findLeaks()` verdict decides the exit code, a
+scenario file that exports nothing fails, and zero executed scenarios fails instead of passing
+vacuously. Waive a third-party false positive only through a reviewed `trace` + `reason` entry in
+`tests/memory-leak/leak-allowlist.json`.
+
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across an 8-way
 matrix (`make test-mutation-shard`) and a final job merges the per-shard reports and re-enforces the
 same `break` threshold (`make merge-mutation-reports`) — same gate, much faster. Lighthouse runs
 as a desktop/mobile matrix, and every workflow cancels superseded runs via `concurrency`. See
@@ -1371,6 +1376,8 @@ make lint-eslint        # ESLint only
 make lint-tsc           # TypeScript only
 make lint-md            # Markdown only
 make lint-dup           # Duplication (jscpd) only
+make lint-commit-title  # Squash-merge commit header from stdin
+make lint-commit-range  # Commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
 make fmt-prettier       # Prettier format
 make fmt-qlty           # Qlty format
 make format             # Prettier and Qlty format
