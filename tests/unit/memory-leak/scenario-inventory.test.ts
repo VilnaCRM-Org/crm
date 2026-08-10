@@ -1,7 +1,3 @@
-/**
- * @jest-environment node
- */
-
 import path from 'path';
 
 import ScenarioFinder from '../../memory-leak/utils/scenario-finder';
