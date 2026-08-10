@@ -58,7 +58,7 @@ describe('post-merge main verification (issue #185)', () => {
     }
   });
 
-  it('routes a red main to a single pinned issue', () => {
+  it('routes a red main to a single tracking issue', () => {
     const report = workflow.jobs.report;
 
     expect(report.needs).toEqual(expect.arrayContaining(['lint', 'unit']));
