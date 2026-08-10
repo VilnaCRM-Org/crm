@@ -140,7 +140,7 @@ setup() {
   assert_log_contains 'make lighthouse-mobile-dind'
 }
 
-@test "report-main-verification-failure.sh opens one pinned issue and reuses it afterwards" {
+@test "report-main-verification-failure.sh opens one issue and reuses it afterwards" {
   local script_path="$PROJECT_ROOT/scripts/ci/report-main-verification-failure.sh"
 
   run env \
@@ -148,11 +148,13 @@ setup() {
     COMMAND_LOG="$COMMAND_LOG" \
     FAILED_SHA=deadbee \
     RUN_URL=https://example.test/run/1 \
-    FAKE_GH_OPEN_ISSUE='' \
     sh "$script_path"
   [ "$status" -eq 0 ]
   assert_log_contains 'gh label create main-is-red'
-  assert_log_contains 'gh issue create --title main is red: post-merge verification failed'
+  assert_log_contains 'gh issue list --label main-is-red --state open'
+  assert_log_contains \
+    'gh issue create --title main is red: post-merge verification failed --label main-is-red'
+  ! grep -qF 'gh issue comment' "$COMMAND_LOG"
 
   reset_command_log
   run env \
@@ -164,7 +166,32 @@ setup() {
     sh "$script_path"
   [ "$status" -eq 0 ]
   assert_log_contains 'gh issue comment 42'
-  assert_output_contains 'Updated existing main-is-red issue #42'
+  assert_output_contains 'updated existing main-is-red issue #42'
+  ! grep -qF 'gh issue create' "$COMMAND_LOG"
+}
+
+@test "report-main-verification-failure.sh closes the tracking issue once main recovers" {
+  local script_path="$PROJECT_ROOT/scripts/ci/report-main-verification-failure.sh"
+
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    RUN_URL=https://example.test/run/3 \
+    FAKE_GH_OPEN_ISSUE=42 \
+    sh "$script_path" --resolve
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gh issue close 42'
+  assert_output_contains 'closed main-is-red issue #42'
+
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    RUN_URL=https://example.test/run/4 \
+    sh "$script_path" --resolve
+  [ "$status" -eq 0 ]
+  assert_output_contains 'no main-is-red issue is open'
+  ! grep -qF 'gh issue close' "$COMMAND_LOG"
 }
 
 @test "report-main-verification-failure.sh fails when the failing revision is unknown" {
@@ -195,6 +222,28 @@ setup() {
   assert_log_contains 'git rev-list base..head'
   assert_log_contains 'make lint-commit-message'
   assert_output_contains 'linted 2 commit(s) in base..head'
+
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='ccc333' \
+    FAKE_GIT_AUTHOR='49699333+dependabot[bot]@users.noreply.github.com' \
+    sh "$script_path" base head
+  [ "$status" -eq 0 ]
+  assert_log_contains 'make lint-commit-bot-message'
+  assert_output_contains 'is authored by 49699333+dependabot[bot]@users.noreply.github.com'
+
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='ddd444' \
+    FAKE_GIT_AUTHOR='82976108+RudoiDmytro@users.noreply.github.com' \
+    sh "$script_path" base head
+  [ "$status" -eq 0 ]
+  assert_log_contains 'make lint-commit-message'
+  ! grep -qF 'make lint-commit-bot-message' "$COMMAND_LOG"
 
   reset_command_log
   run env \

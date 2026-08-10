@@ -1376,8 +1376,9 @@ make lint-eslint        # ESLint only
 make lint-tsc           # TypeScript only
 make lint-md            # Markdown only
 make lint-dup           # Duplication (jscpd) only
-make lint-commit-title  # Squash-merge commit header from stdin
-make lint-commit-range  # Commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
+make lint-commit-message     # Commit message or squash header from stdin
+make lint-commit-bot-message # Same, task-number rule relaxed for bot authors
+make lint-commit-range       # Commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
 make fmt-prettier       # Prettier format
 make fmt-qlty           # Qlty format
 make format             # Prettier and Qlty format

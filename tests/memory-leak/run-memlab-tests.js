@@ -1,6 +1,5 @@
 require('dotenv').config();
 
-const fs = require('node:fs');
 const path = require('node:path');
 
 const { run, analyze, findLeaks } = require('@memlab/api');
@@ -9,6 +8,7 @@ const { StringAnalysis } = require('@memlab/heap-analysis');
 const { hasValidScenarioHooks } = require('./utils/scenario-validation');
 const { initializeLocalization } = require('./utils/initialize-localization');
 const { LeakAllowlistLoader, LeakReporter } = require('./utils/leak-allowlist');
+const ScenarioFinder = require('./utils/scenario-finder');
 const logger = require('./utils/logger');
 
 const memoryLeakDir = path.join('.', 'tests', 'memory-leak');
@@ -21,10 +21,7 @@ const consoleMode = 'VERBOSE';
 (async function runMemoryLeakTests() {
   let testFilePaths;
   try {
-    testFilePaths = fs
-      .readdirSync(testsDir)
-      .filter((file) => file.endsWith('.js'))
-      .map((test) => path.resolve(testsDir, test));
+    testFilePaths = new ScenarioFinder().find(testsDir);
   } catch (error) {
     logger.error(`Failed to read tests directory: ${testsDir}`, error);
     process.exit(1);
@@ -91,9 +88,11 @@ const consoleMode = 'VERBOSE';
           skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
           debug: process.env.MEMLAB_DEBUG === 'true',
         });
+        let scenarioLeaks = 0;
         try {
           const leaks = await findLeaks(runResult);
-          totalLeaks += leakReporter.report(leaks, name);
+          scenarioLeaks = leakReporter.report(leaks, name);
+          totalLeaks += scenarioLeaks;
 
           const analyzer = new StringAnalysis();
           await analyze(runResult, analyzer);
@@ -101,7 +100,11 @@ const consoleMode = 'VERBOSE';
           runResult.cleanup();
         }
 
-        logger.info(`✅ Completed scenario: ${name}`);
+        if (scenarioLeaks > 0) {
+          logger.error(`✗ Scenario ${name} leaked — see the retainer trace above.`);
+        } else {
+          logger.info(`✅ Completed scenario: ${name}`);
+        }
       }
     } catch (error) {
       logger.error(`✗ Failed memory leak test: ${path.basename(testFilePath)}`, error);

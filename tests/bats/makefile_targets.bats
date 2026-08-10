@@ -110,14 +110,14 @@ EOF
 
 @test "commit contract targets lint the header and the range with their own configs" {
   reset_command_log
-  run_make_target lint-commit-title
+  run_make_target lint-commit-message
   [ "$status" -eq 0 ]
   assert_log_contains 'bun x commitlint --verbose --config commitlint.config.js'
 
   reset_command_log
-  run_make_target lint-commit-message
+  run_make_target lint-commit-bot-message
   [ "$status" -eq 0 ]
-  assert_log_contains 'bun x commitlint --verbose --config commitlint.ci.config.js'
+  assert_log_contains 'bun x commitlint --verbose --config commitlint.bot.config.js'
 
   reset_command_log
   run_make_target lint-commit-range COMMIT_RANGE_FROM=abc123 COMMIT_RANGE_TO=def456

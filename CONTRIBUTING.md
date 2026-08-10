@@ -87,17 +87,20 @@ that actually lands on `main` — and that drives the semver bump and changelog 
 
 The `commitlint` workflow closes both holes on every pull request. It lints:
 
-- `"<your PR title> (#<PR number>)"` — the exact header GitHub writes on squash merge — against
-  `commitlint.config.js`;
-- every commit between the merge base with `main` and the PR head, against
-  `commitlint.ci.config.js` (the same rules plus ignores for bot-authored commits).
+- `"<your PR title> (#<PR number>)"` — the header GitHub writes on squash merge — against
+  `commitlint.config.js`. The repository uses `squash_merge_commit_title=COMMIT_OR_PR_TITLE`, so a
+  single-commit pull request lands that **commit's** header instead; that path is covered by the
+  commit check below, which lints it against the same strict config;
+- every commit between the merge base with `main` and the PR head. Human commits get the same
+  strict config; only commits whose GitHub author identity is a bot fall back to
+  `commitlint.bot.config.js`, which drops `check-task-number-rule` and nothing else.
 
 Fix a red check by editing the pull request title in the web UI (title failure) or by rewording
 and force-pushing (`git rebase -i` + `git push --force-with-lease`, commit failure). Reproduce
 either locally:
 
 ```bash
-printf 'feat(#123): add a thing (#456)\n' | make lint-commit-title
+printf 'feat(#123): add a thing (#456)\n' | make lint-commit-message
 make lint-commit-range COMMIT_RANGE_FROM="$(git merge-base origin/main HEAD)" COMMIT_RANGE_TO=HEAD
 ```
 
@@ -146,6 +149,10 @@ scenario and exits non-zero when:
 - a file in `tests/memory-leak/tests/` exports no valid scenario, or
 - no scenario executed at all — a vacuous pass is now a failure.
 
+Discovery recurses into subfolders and accepts `.js`, `.mjs`, and `.cjs`, and
+`tests/unit/memory-leak/scenario-inventory.test.ts` pins the committed scenario set, so renaming,
+moving, or deleting a scenario fails a check instead of quietly shrinking coverage.
+
 When you add or edit a scenario, dispose every puppeteer `ElementHandle` you obtain
 (`const handle = await page.waitForSelector(...); await handle?.dispose();`). An undisposed
 handle is held by the DevTools console object group, so the harness retains the element it is
@@ -179,9 +186,10 @@ so two individually green PRs can still compose into a broken `main`; this run c
 attributes it to the merge that caused it. Runs are serialized
 (`concurrency: main-verification`, `cancel-in-progress: false`) so no merge is skipped.
 
-A failure opens — or comments on — a single pinned issue labelled `main-is-red`. Treat it as a
-stop-the-line signal: fix `main` before merging further pull requests, because their checks are
-running against a base that is already broken.
+A failure opens — or comments on — a single tracking issue labelled `main-is-red`, and the next
+green run closes it, so the signal never outlives the breakage. Treat an open one as stop-the-line:
+fix `main` before merging further pull requests, because their checks are running against a base
+that is already broken.
 
 This run **detects**; it does not yet gate the release. `autorelease.yml` fires on the same
 push, so sequencing the release behind a green verification is tracked by issue #138.
@@ -344,8 +352,11 @@ at 5.
 
 Dependabot commit headers use the conventional `chore(deps):` prefix (`chore(github-actions):`
 for the actions entry). Our commitlint `check-task-number-rule` expects a `(#N)` scope, which
-Dependabot cannot emit. The `commitlint` workflow therefore skips the **title** check for
-Dependabot pull requests (at step level, so the job still reports a result and never leaves a
-required check pending) and its commits are ignored by `commitlint.ci.config.js` through their
-`Signed-off-by: dependabot[bot]` trailer. Because the repository is squash-merge-only, add the
-task number to the squash commit title at merge time to keep `main`'s history conformant.
+Dependabot cannot emit. The `commitlint` workflow therefore lints bot pull requests against
+`commitlint.bot.config.js`, which relaxes that one rule and keeps every other conventional-commit
+rule in force — type, scope shape, subject, and header length are still checked. The bot path is
+selected from the GitHub author identity (the PR author for the title, `git log --format=%ae` per
+commit for the range), never from the message text, so it cannot be reached by a human. The
+exemption is a step-level condition, never a job-level one, so the check always reports and can
+never leave a required status pending. Because the repository is squash-merge-only, add the task
+number to the squash commit title at merge time to keep `main`'s history conformant.

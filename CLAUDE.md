@@ -180,8 +180,9 @@ make lint-prettier  # Prettier --check formatting gate (verify-only, shares PRET
 make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, like lint-metrics)
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
-make lint-commit-title # Lint one squash-merge commit header read from stdin (see below)
-make lint-commit-range # Lint COMMIT_RANGE_FROM..COMMIT_RANGE_TO commit headers (see below)
+make lint-commit-message     # Lint one commit message or squash header from stdin (see below)
+make lint-commit-bot-message # Same, for a bot-authored message (see below)
+make lint-commit-range       # Lint COMMIT_RANGE_FROM..COMMIT_RANGE_TO (see below)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
@@ -191,8 +192,8 @@ Git hooks are managed by Husky. Run `make husky` once after cloning.
 Agents should run `make format` before `make lint`. Formatting is intentionally
 separate from the `lint` verification suite.
 
-`lint-commit-title` and `lint-commit-range` are **not** part of `make lint` — they need a
-commit header or a commit range as input and are driven by the `commitlint` PR workflow.
+The three `lint-commit-*` targets are **not** part of `make lint` — they need a commit header
+or a commit range as input and are driven by the `commitlint` PR workflow.
 
 ### Binding CI enforcement (issues #183, #184, #185)
 
@@ -202,10 +203,13 @@ part of `make lint`; each has its own workflow.
 **Memory leaks are a verdict, not a log (`#183`).**
 `tests/memory-leak/run-memlab-tests.js` calls `findLeaks()` for every scenario and exits `1`
 when an unallowlisted leak is found, when a scenario file exports no scenario, or when zero
-scenarios executed (which would otherwise pass vacuously). Leaks are reported as a compact
-list of the detached nodes memlab found (heap ids and retained sizes stripped), which is also
-the key an allowlist entry matches — memlab's own console output above it carries the full
-retainer trace. A false positive is waived only by a reviewed entry in
+scenarios executed (which would otherwise pass vacuously). Scenario discovery recurses into
+subfolders and accepts `.js`/`.mjs`/`.cjs`, and `tests/unit/memory-leak/scenario-inventory.test.ts`
+pins the committed scenario set, so a renamed, moved, or deleted scenario is an error rather than
+silently missing coverage. Leaks are reported as a compact list of the detached nodes memlab
+found (heap ids and retained sizes stripped), which is also the key an allowlist entry matches;
+memlab's own console output above it carries the full retainer trace. A false positive is
+waived only by a reviewed entry in
 `tests/memory-leak/leak-allowlist.json` (`trace` + `reason`, both required), never by
 weakening the gate. `tests/bats/memlab_gate.bats` pins the exit codes: clean → 0, leak → 1,
 allowlisted leak → 0, empty scenario directory → 1, scenario-less file → 1, malformed
@@ -223,18 +227,24 @@ follow-up on #183 rather than shipped as a broken gate.
 **The squash-merge header is linted (`#184`).**
 `.github/workflows/commitlint.yml` runs on `pull_request` (`opened`, `edited`, `synchronize`,
 `reopened`) and lints `"$PR_TITLE (#$PR_NUMBER)"` — the exact header GitHub writes onto `main`
-under squash merge — plus every commit in the PR. `commitlint.config.js` stays the strict
-human contract used by the Husky `commit-msg` hook. `commitlint.ci.config.js` extends it with
-ignores for bot commits that structurally cannot carry a task number (Dependabot's
-`Signed-off-by: dependabot[bot]` trailer, `calibreapp/image-actions`' `Compressed Images`
-header); the Dependabot **title** check is skipped at step level so the job still reports.
+under squash merge — plus every commit in the PR, which also covers the single-commit case
+where `COMMIT_OR_PR_TITLE` promotes the commit's own header instead of the title.
+`commitlint.config.js` stays the strict
+human contract used by the Husky `commit-msg` hook. `commitlint.bot.config.js` drops only
+`check-task-number-rule` — the one rule a bot structurally cannot satisfy — and applies **only**
+where the author is a bot: `scripts/ci/lint-commit-range.sh` decides per commit from the GitHub
+author identity (`git log -1 --format=%ae`), never from the message body, so the exemption cannot
+be spoofed by appending a trailer. A bot pull request's title is linted against the same relaxed
+config at step level, so the job still reports and the title is still checked for type, scope,
+subject, and length.
 
 **`main` is verified after the merge (`#185`).**
 `.github/workflows/main-verification.yml` re-runs `make lint`, `make codegen-check`, and
 `make test-unit-all` against the merged tree on every `push` to `main`, serialized
-(`cancel-in-progress: false`) so no merge is skipped. A failure opens or updates one pinned
-`main-is-red` issue via `scripts/ci/report-main-verification-failure.sh`, so a logical merge
-conflict is attributed to the merge that caused it instead of surfacing on an unrelated PR.
+(`cancel-in-progress: false`) so no merge is skipped. A failure opens or updates one
+`main-is-red` tracking issue via `scripts/ci/report-main-verification-failure.sh` and the next
+green run closes it, so a logical merge conflict is attributed to the merge that caused it
+instead of surfacing on an unrelated PR.
 This is detection and attribution only — sequencing `autorelease.yml` behind it belongs to
 issue #138.
 

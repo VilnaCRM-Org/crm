@@ -1,12 +1,16 @@
 const fs = require('node:fs');
 
+const MOTIF_SEPARATOR = ' | ';
+
 class LeakAllowlist {
   constructor(entries) {
     this.entries = entries;
   }
 
   match(leakText) {
-    return this.entries.find((entry) => leakText.includes(entry.trace)) ?? null;
+    const motifs = leakText.split(MOTIF_SEPARATOR);
+
+    return this.entries.find((entry) => motifs.includes(entry.trace)) ?? null;
   }
 }
 
@@ -60,7 +64,7 @@ class LeakTraceSummarizer {
     const serialized = JSON.stringify(leak) ?? '';
     const detached = [...new Set(this.detachedNodes(serialized))].sort();
 
-    return detached.length > 0 ? detached.join(' | ') : serialized.slice(0, 500);
+    return detached.length > 0 ? detached.join(MOTIF_SEPARATOR) : serialized.slice(0, 500);
   }
 
   detachedNodes(serialized) {

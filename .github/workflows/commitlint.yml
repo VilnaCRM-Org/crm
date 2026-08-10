@@ -34,21 +34,18 @@ jobs:
         run: make start-dev
 
       - name: Lint the pull request title as the squash-merge commit header
-        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        if: ${{ !endsWith(github.event.pull_request.user.login, '[bot]') }}
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: printf '%s (#%s)\n' "$PR_TITLE" "$PR_NUMBER" | make lint-commit-title
+        run: printf '%s (#%s)\n' "$PR_TITLE" "$PR_NUMBER" | make lint-commit-message
 
-      - name: Record the Dependabot title exemption
-        if: github.event.pull_request.user.login == 'dependabot[bot]'
-        run: |
-          {
-            printf '### commitlint\n\n'
-            printf 'Dependabot cannot emit the `(#N)` task number this repository requires, so the\n'
-            printf 'squash-merge title check is skipped for its pull requests. A maintainer must add\n'
-            printf 'the task number to the squash commit title at merge time.\n'
-          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Lint a bot pull request title without the task-number rule
+        if: ${{ endsWith(github.event.pull_request.user.login, '[bot]') }}
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: printf '%s (#%s)\n' "$PR_TITLE" "$PR_NUMBER" | make lint-commit-bot-message
 
       - name: Lint every commit in the pull request
         env:

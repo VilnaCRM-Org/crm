@@ -75,10 +75,32 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Open or update the pinned "main is red" issue
+      - name: Open or update the main-is-red tracking issue
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           FAILED_SHA: ${{ github.sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: sh scripts/ci/report-main-verification-failure.sh
+
+  resolve:
+    name: clear a recovered main
+    needs: [lint, unit]
+    if: ${{ needs.lint.result == 'success' && needs.unit.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      - name: Close the main-is-red tracking issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: sh scripts/ci/report-main-verification-failure.sh --resolve

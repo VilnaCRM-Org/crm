@@ -101,10 +101,11 @@ PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md}"
 PRETTIER_CMD                = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --write --ignore-path .prettierignore
 PRETTIER_CHECK_CMD          = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --check --ignore-path .prettierignore
 QLTY_FMT                    = qlty fmt --all --trigger agent --no-progress
-# Conventional-commit gate (issue #184). The strict config is the human contract; the CI
-# config adds ignores for bot-authored commits that structurally cannot carry a task number.
+# Conventional-commit gate (issue #184). The strict config is the contract for every human
+# header; the bot config drops only the task-number rule, and applies only where the GitHub
+# author identity is a bot.
 COMMITLINT_CONFIG           = commitlint.config.js
-COMMITLINT_CI_CONFIG        = commitlint.ci.config.js
+COMMITLINT_BOT_CONFIG       = commitlint.bot.config.js
 COMMITLINT_CMD              = $(BUNX) commitlint --verbose
 COMMIT_RANGE_FROM           ?=
 COMMIT_RANGE_TO             ?= HEAD
@@ -173,7 +174,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
 .PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile
-.PHONY: lint-commit-title lint-commit-message lint-commit-range
+.PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -377,11 +378,11 @@ lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
 
-lint-commit-title: ## Lint one squash-merge commit header read from stdin (issue #184)
+lint-commit-message: ## Lint one commit message or squash header read from stdin (issue #184)
 	$(COMMITLINT_CMD) --config $(COMMITLINT_CONFIG)
 
-lint-commit-message: ## Lint one commit message read from stdin, exempting bot commits (issue #184)
-	$(COMMITLINT_CMD) --config $(COMMITLINT_CI_CONFIG)
+lint-commit-bot-message: ## Lint one bot-authored commit message read from stdin (issue #184)
+	$(COMMITLINT_CMD) --config $(COMMITLINT_BOT_CONFIG)
 
 lint-commit-range: ## Lint every commit in COMMIT_RANGE_FROM..COMMIT_RANGE_TO (issue #184)
 	sh scripts/ci/lint-commit-range.sh "$(COMMIT_RANGE_FROM)" "$(COMMIT_RANGE_TO)"

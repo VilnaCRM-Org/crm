@@ -1,39 +1,82 @@
-// @jest-environment @stryker-mutator/jest-runner/jest-env/node
+/**
+ * @jest-environment node
+ */
 
 import fs from 'fs';
 import path from 'path';
 
+import { parse } from 'yaml';
+
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
-const readFile = (relativePath: string): string =>
-  fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
+type Job = {
+  name?: string;
+  needs?: string[];
+  if?: string;
+  'continue-on-error'?: boolean;
+  permissions?: Record<string, string>;
+  steps?: Array<{ run?: string }>;
+};
+
+type Workflow = {
+  on: { push?: { branches?: string[]; 'paths-ignore'?: string[]; paths?: string[] } };
+  concurrency: { group: string; 'cancel-in-progress': boolean };
+  jobs: Record<string, Job>;
+};
+
+const workflow = parse(
+  fs.readFileSync(path.join(projectRoot, '.github/workflows/main-verification.yml'), 'utf8')
+) as Workflow;
+
+const runCommands = (job: Job): string[] => (job.steps ?? []).flatMap((step) => step.run ?? []);
 
 describe('post-merge main verification (issue #185)', () => {
-  const workflow = readFile('.github/workflows/main-verification.yml');
-
-  it('verifies every push to main', () => {
-    expect(workflow).toContain("on:\n  push:\n    branches: ['main']");
+  it('triggers on every push to main, unfiltered', () => {
+    expect(workflow.on.push?.branches).toEqual(['main']);
+    expect(workflow.on.push?.['paths-ignore']).toBeUndefined();
+    expect(workflow.on.push?.paths).toBeUndefined();
   });
 
   it('verifies merges in order instead of cancelling superseded runs', () => {
-    expect(workflow).toContain('group: main-verification');
-    expect(workflow).toContain('cancel-in-progress: false');
+    expect(workflow.concurrency.group).toBe('main-verification');
+    expect(workflow.concurrency['cancel-in-progress']).toBe(false);
   });
 
   it('re-runs the deterministic PR gates against the merged tree', () => {
-    expect(workflow).toContain('run: make lint\n');
-    expect(workflow).toContain('run: make codegen-check\n');
-    expect(workflow).toContain('run: make test-unit-all\n');
+    expect(runCommands(workflow.jobs.lint)).toEqual(
+      expect.arrayContaining(['make start', 'make lint', 'make codegen-check'])
+    );
+    expect(runCommands(workflow.jobs.unit)).toEqual(
+      expect.arrayContaining(['make start', 'make test-unit-all'])
+    );
+  });
+
+  it('lets no verification job swallow its own failure', () => {
+    for (const jobName of ['lint', 'unit'] as const) {
+      expect(workflow.jobs[jobName]['continue-on-error']).toBeUndefined();
+      expect(workflow.jobs[jobName].if).toBeUndefined();
+    }
   });
 
   it('routes a red main to a single pinned issue', () => {
-    expect(workflow).toContain("contains(needs.*.result, 'failure')");
-    expect(workflow).toContain('needs: [lint, unit]');
-    expect(workflow).toContain('issues: write');
-    expect(workflow).toContain('sh scripts/ci/report-main-verification-failure.sh');
+    const report = workflow.jobs.report;
+
+    expect(report.needs).toEqual(expect.arrayContaining(['lint', 'unit']));
+    expect(report.if).toContain('always()');
+    expect(report.if).toContain("contains(needs.*.result, 'failure')");
+    expect(report.permissions?.issues).toBe('write');
+    expect(runCommands(report)).toContain('sh scripts/ci/report-main-verification-failure.sh');
   });
 
-  it('still reports when a verification job fails rather than skipping', () => {
-    expect(workflow).toContain('if: ${{ always() &&');
+  it('clears the tracking issue once main recovers', () => {
+    const resolve = workflow.jobs.resolve;
+
+    expect(resolve.needs).toEqual(expect.arrayContaining(['lint', 'unit']));
+    expect(resolve.if).toContain("needs.lint.result == 'success'");
+    expect(resolve.if).toContain("needs.unit.result == 'success'");
+    expect(resolve.permissions?.issues).toBe('write');
+    expect(runCommands(resolve)).toContain(
+      'sh scripts/ci/report-main-verification-failure.sh --resolve'
+    );
   });
 });

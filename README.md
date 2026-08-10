@@ -130,7 +130,8 @@ Linting & Formatting
   make lint-tsc: runs static type checking with TypeScript
   make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
   make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
-  make lint-commit-title: lints one squash-merge commit header read from stdin
+  make lint-commit-message: lints one commit message or squash header read from stdin
+  make lint-commit-bot-message: same, with the task-number rule relaxed for bot authors
   make lint-commit-range: lints the commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
 ```
 

@@ -104,7 +104,18 @@ create_gh_stub() {
 printf 'gh %s\n' "$*" >> "${COMMAND_LOG:?}"
 
 if [ "$1" = "issue" ] && [ "$2" = "list" ]; then
-  printf '%s\n' "${FAKE_GH_OPEN_ISSUE:-}"
+  case " $* " in
+    *" --label ${FAKE_GH_EXPECTED_LABEL:-main-is-red} --state open "*)
+      if [ -n "${FAKE_GH_OPEN_ISSUE:-}" ]; then
+        printf '%s\n' "$FAKE_GH_OPEN_ISSUE"
+      else
+        case " $* " in
+          *'// empty'*) ;;
+          *) printf 'null\n' ;;
+        esac
+      fi
+      ;;
+  esac
 fi
 
 exit 0
@@ -124,7 +135,14 @@ if [ "$1" = "rev-list" ]; then
 fi
 
 if [ "$1" = "log" ]; then
-  printf '%s\n' "${FAKE_GIT_MESSAGE:-chore(#1): stub commit}"
+  case " $* " in
+    *" --format=%ae "*)
+      printf '%s\n' "${FAKE_GIT_AUTHOR:-dev@example.test}"
+      ;;
+    *)
+      printf '%s\n' "${FAKE_GIT_MESSAGE:-chore(#1): stub commit}"
+      ;;
+  esac
   exit 0
 fi
 
