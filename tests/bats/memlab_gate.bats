@@ -46,6 +46,18 @@ SCENARIO
   assert_output_contains '1 unallowlisted memory leak(s) detected'
 }
 
+@test "memlab runner does not waive a leak whose motifs are only partly allowlisted" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)"
+  write_memlab_allowlist \
+    '{ "leaks": [{ "trace": "Detached <div id=\"a\">", "reason": "only one of two motifs" }] }'
+
+  FAKE_MEMLAB_LEAKS='[{"node":{"value":"[Detached <div id=\"a\">](native) @1"},
+    "retainer":{"value":"[Detached <span id=\"b\">](native) @2"}}]' run_memlab_runner
+  [ "$status" -eq 1 ]
+  assert_output_contains 'Detached <span id="b">'
+  assert_output_contains '1 unallowlisted memory leak(s) detected'
+}
+
 @test "memlab runner exits 0 when every detected leak is allowlisted" {
   write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)"
   write_memlab_allowlist \

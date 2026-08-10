@@ -93,7 +93,10 @@ The `commitlint` workflow closes both holes on every pull request. It lints:
   commit check below, which lints it against the same strict config;
 - every commit between the merge base with `main` and the PR head. Human commits get the same
   strict config; only commits whose GitHub author identity is a bot fall back to
-  `commitlint.bot.config.js`, which drops `check-task-number-rule` and nothing else.
+  `commitlint.bot.config.js`, which drops `check-task-number-rule` and adds one narrow ignore for
+  the `Compressed Images` header that `calibreapp/image-actions` writes. That ignore matches on
+  message text, but it is only ever reached for a commit already proven bot-authored, so a human
+  cannot reach it by copying the header.
 
 Fix a red check by editing the pull request title in the web UI (title failure) or by rewording
 and force-pushing (`git rebase -i` + `git push --force-with-lease`, commit failure). Reproduce

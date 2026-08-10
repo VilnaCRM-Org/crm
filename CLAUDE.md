@@ -230,11 +230,13 @@ follow-up on #183 rather than shipped as a broken gate.
 under squash merge — plus every commit in the PR, which also covers the single-commit case
 where `COMMIT_OR_PR_TITLE` promotes the commit's own header instead of the title.
 `commitlint.config.js` stays the strict
-human contract used by the Husky `commit-msg` hook. `commitlint.bot.config.js` drops only
-`check-task-number-rule` — the one rule a bot structurally cannot satisfy — and applies **only**
-where the author is a bot: `scripts/ci/lint-commit-range.sh` decides per commit from the GitHub
-author identity (`git log -1 --format=%ae`), never from the message body, so the exemption cannot
-be spoofed by appending a trailer. A bot pull request's title is linted against the same relaxed
+human contract used by the Husky `commit-msg` hook. `commitlint.bot.config.js` drops
+`check-task-number-rule` — the one rule a bot structurally cannot satisfy — and ignores the
+`Compressed Images` header written by `calibreapp/image-actions`, which is not conventional at
+all. Both relaxations apply **only** where the author is a bot:
+`scripts/ci/lint-commit-range.sh` decides per commit from the GitHub author identity
+(`git log -1 --format=%ae`), never from the message body, so neither can be spoofed by copying a
+header or appending a trailer. A bot pull request's title is linted against the same relaxed
 config at step level, so the job still reports and the title is still checked for type, scope,
 subject, and length.
 

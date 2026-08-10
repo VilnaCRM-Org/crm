@@ -9,8 +9,9 @@ class LeakAllowlist {
 
   match(leakText) {
     const motifs = leakText.split(MOTIF_SEPARATOR);
+    const waivers = motifs.map((motif) => this.entries.find((entry) => entry.trace === motif));
 
-    return this.entries.find((entry) => motifs.includes(entry.trace)) ?? null;
+    return waivers.every(Boolean) ? waivers : null;
   }
 }
 
@@ -91,12 +92,12 @@ class LeakReporter {
 
     for (const leak of leaks) {
       const leakText = this.summarizer.summarize(leak);
-      const waiver = this.allowlist.match(leakText);
+      const waivers = this.allowlist.match(leakText);
 
-      if (waiver) {
-        this.logger.warn(
-          `⚠️  Allowlisted leak in scenario ${scenarioName} (${waiver.trace}): ${waiver.reason}`
-        );
+      if (waivers) {
+        const reasons = waivers.map((entry) => `${entry.trace}: ${entry.reason}`).join('; ');
+
+        this.logger.warn(`⚠️  Allowlisted leak in scenario ${scenarioName} (${reasons})`);
       } else {
         unexpected += 1;
         this.logger.error(`✗ Memory leak in scenario ${scenarioName}:\n${leakText}`);
