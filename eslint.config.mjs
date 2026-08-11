@@ -640,9 +640,15 @@ export default [
     },
   },
   {
+    // These globs mirror `jest.config.ts` `testMatch` exactly — the client runner executes
+    // `tests/unit/**/*.test.{ts,tsx,js,jsx}`, so the `.js`/`.jsx` suites (localization
+    // generator, load config, memlab scenario validation, performance meta-tests) must be
+    // gated too or the policy stops at the file extension rather than at the runner.
     files: [
       'tests/unit/**/*.ts',
       'tests/unit/**/*.tsx',
+      'tests/unit/**/*.js',
+      'tests/unit/**/*.jsx',
       'tests/integration/**/*.ts',
       'tests/integration/**/*.tsx',
       'tests/apollo-server/**/*.ts',
@@ -653,6 +659,9 @@ export default [
       // `expectReviewRangePairOrder`) by naming convention rather than one-off allowances.
       'jest/expect-expect': ['error', { assertFunctionNames: ['expect', 'expect*'] }],
       'jest/no-disabled-tests': 'error',
+      // `no-disabled-tests` covers `.skip`/`xit` only. Jest has no `forbidOnly` equivalent
+      // to Playwright's, so a committed `it.only` would silently shrink the CI suite.
+      'jest/no-focused-tests': 'error',
       'jest/no-conditional-expect': 'error',
     },
   },

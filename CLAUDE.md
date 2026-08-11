@@ -390,7 +390,11 @@ ESLint blocks close that, again through `make lint` with no new workflow:
   `playwright/no-wait-for-timeout` at `warn`, pending the conditional-assertion burndown
   in `back-to-main.spec.ts`, then promoted.
 - `tests/{unit,integration,apollo-server}/**` — `jest/expect-expect`,
-  `jest/no-disabled-tests`, and `jest/no-conditional-expect` at `error`.
+  `jest/no-disabled-tests`, `jest/no-focused-tests` (Jest has no `forbidOnly` equivalent,
+  so a committed `it.only` would silently shrink the CI suite), and
+  `jest/no-conditional-expect` at `error`. The unit globs include `.js`/`.jsx` because
+  `jest.config.ts` `testMatch` runs `tests/unit/**/*.test.{ts,tsx,js,jsx}` — the gate
+  follows the runner, not the file extension.
 
 Shared assertion helpers are **declared, not suppressed**: `assertFunctionPatterns`
 recognizes the `take*Snapshot` visual-spec convention and `assertFunctionNames` recognizes
