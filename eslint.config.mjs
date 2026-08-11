@@ -456,8 +456,9 @@ export default [
   // Source (issue #173): deterministic lint-level SAST over the dominant SPA XSS and
   // code-execution sink classes. This is the only security analysis that runs pre-commit
   // (Husky) and fails in seconds; CodeQL (`security testing`) is the complementary
-  // dataflow layer. `eslint-suppressions.yml` already forbids inline `eslint-disable`,
-  // so these rules cannot be bypassed at the call site — fix the sink, never silence it.
+  // dataflow layer. `eslint-suppressions.yml` already forbids inline suppression
+  // directives, so these rules cannot be bypassed at the call site — fix the sink,
+  // never silence it.
   // The rule set is deliberately frozen: `eslint-plugin-security`'s recommended preset is
   // NOT adopted (`detect-object-injection` et al. is noise), and
   // `security/detect-non-literal-regexp` is omitted because the auth name/email validators
