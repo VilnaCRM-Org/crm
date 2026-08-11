@@ -7,6 +7,7 @@ import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 const createClient = (): FetchHttpsClient =>
   new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
@@ -87,10 +88,12 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         'Response is not JSON'
       );
       await expect(client.get('/test', { schema: passthrough })).rejects.toBeInstanceOf(HttpError);
-      await client.get('/test', { schema: passthrough }).catch((e) => {
-        expect(e).toBeInstanceOf(HttpError);
-        expect((e as HttpError).status).toBe(200);
-      });
+      const failure = await client
+        .get('/test', { schema: passthrough })
+        .catch((caught: unknown) => caught);
+
+      assertInstanceOf(failure, HttpError);
+      expect(failure.status).toBe(200);
     });
 
     it('should handle empty text response for non-JSON content type', async () => {

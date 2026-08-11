@@ -347,6 +347,62 @@ fragments, constants, factories, or a base object plus overrides — never with
 ignore/suppress directives. The same root-cause-not-suppression policy used for
 ESLint, TypeScript, and metrics applies here.
 
+### Lint-level SAST (issue #173)
+
+CodeQL (`security testing`) is dataflow SAST with cloud latency. The deterministic,
+seconds-fast, pre-commit-capable layer is a frozen set of ESLint rules scoped to
+`src/**/*.{ts,tsx}`, delivered by the existing `make lint` → `lint-eslint` path — no new
+workflow. Because `eslint-suppressions.yml` forbids inline `eslint-disable` repo-wide,
+these rules cannot be bypassed at the call site.
+
+| Rule                                          | Sink class it closes                      |
+| --------------------------------------------- | ----------------------------------------- |
+| `no-unsanitized/method`                       | `insertAdjacentHTML`, `document.write`, … |
+| `no-unsanitized/property`                     | `innerHTML` / `outerHTML` assignment      |
+| `react/no-danger`                             | `dangerouslySetInnerHTML`                 |
+| `security/detect-eval-with-expression`        | `eval(expr)`                              |
+| `security/detect-unsafe-regex`                | catastrophic-backtracking regex literals  |
+| `no-eval` / `no-implied-eval` / `no-new-func` | code-execution sinks                      |
+
+The set is **frozen**; widening it requires a fresh signal/noise review.
+`eslint-plugin-security`'s `recommended` preset is deliberately not adopted
+(`detect-object-injection` et al. is noise), and `security/detect-non-literal-regexp` is
+omitted because the auth validators legitimately compose `RegExp` from constant template
+literals.
+
+`detect-unsafe-regex` is a **star-height heuristic**: `X(Y*X)?` and `X+(?:sepX+)+` trip it
+even when the separator makes them unambiguous and linear. Satisfy it by rewriting the
+pattern to star height 1 (alternation instead of an optional group; `split()` + a
+per-segment regex instead of a nested quantifier) — never by dropping the rule or
+suppressing the finding.
+
+### Test liveness (issue #167)
+
+The Jest 100/100/100/100 `coverageThreshold` measures execution, not verification: a test
+whose `expect` was deleted still satisfies it, and `.skip` / `.fixme` / `xit` merged
+silently (`playwright.config.ts` `forbidOnly` only ever caught `.only`). Two scoped
+ESLint blocks close that, again through `make lint` with no new workflow:
+
+- `tests/{e2e,visual}/**/*.spec.ts` — `playwright/no-skipped-test`
+  (**with `disallowFixme: true`** — the rule's default covers only `.skip`, and `.fixme`
+  was the bypass actually in use), `playwright/no-focused-test`, and
+  `playwright/expect-expect` at `error`; `playwright/no-conditional-in-test` and
+  `playwright/no-wait-for-timeout` at `warn`, pending the conditional-assertion burndown
+  in `back-to-main.spec.ts`, then promoted.
+- `tests/{unit,integration,apollo-server}/**` — `jest/expect-expect`,
+  `jest/no-disabled-tests`, and `jest/no-conditional-expect` at `error`.
+
+Shared assertion helpers are **declared, not suppressed**: `assertFunctionPatterns`
+recognizes the `take*Snapshot` visual-spec convention and `assertFunctionNames` recognizes
+`expect*` Jest helpers.
+
+Narrowing a discriminated union is not a reason to nest `expect` in an `if`. Use the
+throwing helpers in [`tests/utils/assert-result.ts`](tests/utils/assert-result.ts)
+(`assertOk`, `assertError`, `assertInstanceOf`) so the negative branch fails loudly
+instead of skipping the assertions; for throwing calls prefer
+`expect(...).toThrow(...)` / `await expect(...).rejects.toThrow(...)`, or capture the
+error unconditionally with `.catch((caught: unknown) => caught)` and then assert.
+
 ### Performance Budgets, Bundle Reports, and Route Splitting (issue #117)
 
 Bundle weight is gated deterministically alongside the existing Lighthouse category
@@ -502,12 +558,14 @@ class AuthStoreSelectors {
 export default new AuthStoreSelectors();
 ```
 
-### No static methods or free functions (issues #100, #89)
+### No static methods or free functions (issues #100, #89, #180)
 
 Non-React application code (services, repositories, mappers, factories, stores, and
-utilities under `src/**/*.ts`) must **not** use `static` class members or standalone
+utilities under `src/**/*.ts`) must **not** use `static` class members, standalone
 (free) functions — neither `export function foo()` / `export default function foo()` nor
-`export const foo = () => …`. Use **instance methods on an injectable class** instead.
+`export const foo = () => …` — **nor function-valued properties of a top-level object
+literal** (`export default { map(r) { … } }`, `const helpers = { validate: (x) => … }`).
+Use **instance methods on an injectable class** instead.
 
 **Why:** mockability and testability. Static methods and free functions bind at the call
 site and resist substitution, pushing tests toward module mocking and monkey-patching.
@@ -534,16 +592,27 @@ functions by definition.
 **Enforcement:** an ESLint `no-restricted-syntax` gate (in `eslint.config.mjs`, scoped to
 `src/**/*.ts` excluding `use-*`) fails the build on `static` members and standalone
 functions — `function` declarations (including generators), default-exported functions,
-and top-level arrow / function-expression `const`s. It runs in `make lint-eslint` and the
-`static testing` workflow. Satisfy it by refactoring to instance methods — never with
-`eslint-disable`.
+and top-level arrow / function-expression `const`s — **plus function-valued properties of
+top-level object literals**, including `as const` / `satisfies` wrappers (issue #180).
+ESTree gives method shorthand `value.type === 'FunctionExpression'`, so `{ m() {} }` and
+`{ m: () => {} }` are both matched. It runs in `make lint-eslint` and the `static testing`
+workflow. Satisfy it by refactoring to instance methods — never with `eslint-disable`.
+
+When a singleton's methods are consumed, call them **on the singleton**
+(`authActions.loginUser(…)`) and pass the object, never a destructured or otherwise
+detached method reference — a prototype method loses its receiver and throws at runtime,
+and TypeScript cannot see it because `AuthActions` types its members as plain function
+properties. `use-login-submitter` and `use-registration-handlers` pin this with
+`mock.contexts` assertions.
 
 This gate is the canonical enforcement of the **only classes outside React components**
 convention (issue #89, closed as covered here): with free functions banned in non-React
 `.ts`, all such logic is class-encapsulated, so #89 needs no separate ESLint or
-dependency-cruiser rule. Per #89's own "honest limitation", the residual gap is **semantic,
-not syntactic** — logic smuggled into an object literal's methods (or a misplaced helper) is
-not statically detectable and stays a review-gate concern.
+dependency-cruiser rule. Issue #180 closed the common statically-detectable half of #89's
+acknowledged residual. What remains a **review-gate** concern — deliberately not matched,
+because widening to arbitrary-depth `Property` would flag idiomatic nested MUI `sx`
+callbacks and zustand-style slices — is nested (depth > 1) object literals,
+`Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
 
 ### Path Aliases
 
@@ -737,6 +806,8 @@ Key variables in `.env`:
      `eslint.config.mjs` via `no-restricted-syntax`: `error` on `data-testid` in
      `src/**`, `warn` on `*ByTestId` in tests (mock-stub queries stay valid).
      Satisfy the gate by refactoring, never with `eslint-disable`.
+   - **Liveness**: no skipped, focused, or assertion-free tests, and no `expect`
+     nested in a conditional — see "Test liveness (issue #167)" above.
 
 5. **Submit-button loader**: The auth submit button (shared `UIForm` →
    `SubmitControls`) shows its busy state with MUI v7's native `Button`
