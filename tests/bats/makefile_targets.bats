@@ -146,7 +146,9 @@ EOF
 }
 
 @test "the flake audit injects its toggles into the Playwright container (issue #186)" {
-  while IFS='|' read -r target expected_one expected_two; do
+  # The table is read on fd 3: run_make_target inherits stdin, so a stub that consumed it
+  # would starve the loop and the test would pass after checking only the first row.
+  while IFS='|' read -r target expected_one expected_two <&3; do
     [ -n "$target" ] || continue
 
     reset_command_log
@@ -154,10 +156,10 @@ EOF
     [ "$status" -eq 0 ]
     assert_log_contains "$expected_one"
     [ -z "$expected_two" ] || assert_log_contains "$expected_two"
-  done <<'EOF'
+  done 3<<'EOF'
 test-e2e-flake-audit|-e PLAYWRIGHT_JSON_REPORT=reports/playwright/report.json -e PLAYWRIGHT_HTML_REPORT=reports/playwright/html -e PLAYWRIGHT_OUTPUT_DIR=reports/playwright/output -e PLAYWRIGHT_FLAKE_RETRIES=2 -e PLAYWRIGHT_FAIL_ON_FLAKY=1 playwright|playwright test ./tests/e2e
 test-visual-flake-audit|-e PLAYWRIGHT_JSON_REPORT=reports/playwright/report.json -e PLAYWRIGHT_HTML_REPORT=reports/playwright/html -e PLAYWRIGHT_OUTPUT_DIR=reports/playwright/output -e PLAYWRIGHT_FLAKE_RETRIES=2 -e PLAYWRIGHT_FAIL_ON_FLAKY=1 playwright|playwright test ./tests/visual
-print-flake-env|-e PLAYWRIGHT_FAIL_ON_FLAKY=1 playwright|flake audit env: retries=%s
+print-flake-env|-e PLAYWRIGHT_FLAKE_RETRIES=2 -e PLAYWRIGHT_FAIL_ON_FLAKY=1 playwright|flake audit env: retries=%s
 EOF
 }
 
@@ -174,20 +176,18 @@ EOF
 }
 
 @test "the required PR Playwright lanes never see the flake toggles" {
-  reset_command_log
-  run_make_target ci-test-e2e
-  [ "$status" -eq 0 ]
+  for target in ci-test-e2e ci-test-visual; do
+    reset_command_log
+    run_make_target "$target"
+    [ "$status" -eq 0 ]
 
-  reset_command_log
-  run_make_target ci-test-visual
-  [ "$status" -eq 0 ]
-
-  run grep -c 'PLAYWRIGHT_FAIL_ON_FLAKY' "$COMMAND_LOG"
-  [ "$output" -eq 0 ]
+    run grep -c 'PLAYWRIGHT_FAIL_ON_FLAKY' "$COMMAND_LOG"
+    [ "$output" -eq 0 ]
+  done
 }
 
 @test "the contract, drift, route-coverage and flake gates dispatch to their scripts" {
-  while IFS='|' read -r target expected_one expected_two; do
+  while IFS='|' read -r target expected_one expected_two <&3; do
     [ -n "$target" ] || continue
 
     reset_command_log
@@ -195,7 +195,7 @@ EOF
     [ "$status" -eq 0 ]
     assert_log_contains "$expected_one"
     [ -z "$expected_two" ] || assert_log_contains "$expected_two"
-  done <<'EOF'
+  done 3<<'EOF'
 contract-diff|contract-diff.sh|
 check-contract-drift|check-contract-drift.sh|
 check-e2e-route-coverage|node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ci/check-e2e-route-coverage.ts|

@@ -20,14 +20,14 @@ describe('CodeQL security-extended enforcement (issue #172)', () => {
   });
 
   it('excludes the test tree so the extended suite stays high-signal', () => {
-    expect(workflow).toContain('paths-ignore:');
-    expect(workflow).toContain('- tests');
+    const configBlock = workflow.slice(workflow.indexOf('config: |'));
+    expect(configBlock).toMatch(/config: \|\s*\n\s+paths-ignore:\s*\n\s+- tests(?:\s|$)/);
   });
 
   it('analyzes push to main so pull-request alert diffing has a baseline', () => {
     const triggers = workflow.slice(workflow.indexOf('on:'), workflow.indexOf('permissions:'));
-    expect(triggers).toContain('pull_request:');
-    expect(triggers).toContain('push:');
+    expect(triggers).toMatch(/pull_request:\s*\n\s+branches:\s*\[\s*['"]main['"]\s*\]/);
+    expect(triggers).toMatch(/push:\s*\n\s+branches:\s*\[\s*['"]main['"]\s*\]/);
     expect(triggers).toContain("cron: '0 6 * * 1'");
   });
 
@@ -37,7 +37,7 @@ describe('CodeQL security-extended enforcement (issue #172)', () => {
   });
 
   it('bounds the analysis so a hung run cannot occupy a runner indefinitely', () => {
-    expect(workflow).toContain('timeout-minutes:');
+    expect(workflow).toContain('timeout-minutes: 30');
   });
 
   it('pins every CodeQL action by commit SHA', () => {

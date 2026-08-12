@@ -11,7 +11,8 @@ import { dirname, resolve } from 'node:path';
  * breach, while a hard failure on a scheduled run is a different and more urgent problem
  * that must never be reported as "just a flake".
  *
- * Exit codes let the audit workflow route them to different tracking issues:
+ * The exit code names which of the two happened, so the audit can escalate them differently
+ * (scripts/ci/report-flake-audit.sh titles and labels a hard-failure audit distinctly):
  *   0 — within budget
  *   1 — flake budget breached
  *   2 — hard failures, or the report itself could not be trusted
@@ -54,7 +55,9 @@ const SUMMARY_PATH = process.env.FLAKE_SUMMARY_FILE ?? 'reports/playwright/flake
 const RAW_BUDGET = process.env.FLAKE_BUDGET ?? '0';
 
 const FLAKY_STATUS = 'flaky';
-const FAILED_STATUSES = ['unexpected', 'timedOut', 'interrupted'];
+// Allowlisted rather than denylisted: a Playwright upgrade that renames or adds a failure
+// status must not silently become a clean audit, so anything unrecognised counts against it.
+const PASSING_STATUSES = ['expected', 'skipped'];
 
 /** Depth-first walk of the suite tree, yielding every spec exactly once. */
 function collectSpecs(suites: readonly ReportSuite[] | undefined): ReportSpec[] {
@@ -74,10 +77,10 @@ function tallyFlakes(report: PlaywrightReport): FlakeTally {
   collectSpecs(report.suites).forEach((spec) => {
     (spec.tests ?? []).forEach((test) => {
       tally.total += 1;
-      const status = test.status ?? '';
+      const status = test.status ?? '<missing>';
       if (status === FLAKY_STATUS) {
         tally.flaky.push({ id: entryId(spec, test), status });
-      } else if (FAILED_STATUSES.includes(status)) {
+      } else if (!PASSING_STATUSES.includes(status)) {
         tally.failed.push({ id: entryId(spec, test), status });
       }
     });
@@ -127,8 +130,10 @@ function buildSummary(tally: FlakeTally, budget: number): string {
 }
 
 function main(): void {
-  const budget = Number.parseInt(RAW_BUDGET, 10);
-  if (!Number.isInteger(budget) || budget < 0) {
+  // Number.parseInt('2abc') is 2, so a typo would silently raise the budget. Require the
+  // whole value to be a non-negative integer and fail closed otherwise.
+  const budget = /^\d+$/.test(RAW_BUDGET.trim()) ? Number(RAW_BUDGET.trim()) : Number.NaN;
+  if (!Number.isSafeInteger(budget)) {
     throw new Error(`FLAKE_BUDGET must be a non-negative integer, got "${RAW_BUDGET}"`);
   }
 

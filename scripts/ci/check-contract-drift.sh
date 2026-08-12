@@ -123,20 +123,25 @@ if [ "$OPENAPI_PIN" = "$LATEST" ] && [ "$GRAPHQL_PIN" = "$LATEST" ]; then
 fi
 
 # A pin ahead of everything upstream can resolve is a broken lookup or a typo, not drift.
-if [ "$(higher_version "$OPENAPI_PIN" "$LATEST")" = "$OPENAPI_PIN" ] \
-  && [ "$OPENAPI_PIN" != "$LATEST" ]; then
-  fail "pinned $OPENAPI_KEY=$OPENAPI_PIN is ahead of the resolved upstream latest $LATEST"
-fi
+# Both pins are checked: check-contract-versions.sh keeps them equal, but a monitor that
+# trusted that invariant would report a misleading gap the moment it was broken.
+ahead_of_upstream() {
+  if [ "$(higher_version "$2" "$LATEST")" = "$2" ] && [ "$2" != "$LATEST" ]; then
+    fail "pinned $1=$2 is ahead of the resolved upstream latest $LATEST"
+  fi
+}
+ahead_of_upstream "$OPENAPI_KEY" "$OPENAPI_PIN"
+ahead_of_upstream "$GRAPHQL_KEY" "$GRAPHQL_PIN"
 
 MARKER="last-seen: $LATEST"
 BODY_FILE="${CONTRACT_DRIFT_BODY_FILE:-reports/contract-drift/issue-body.md}"
 mkdir -p "$(dirname "$BODY_FILE")"
 {
-  printf 'Pinned OpenAPI: `%s`\n\n' "$OPENAPI_PIN"
-  printf 'Pinned GraphQL: `%s`\n\n' "$GRAPHQL_PIN"
-  printf 'Upstream latest (`%s`): `%s`\n\n' "$CONTRACT_UPSTREAM_REPO" "$LATEST"
-  printf 'Bumping the pins in `%s` runs the semantic breaking-change gate in\n' "$CONTRACT_ENV_FILE"
-  printf '`scripts/ci/contract-diff.sh`, which classifies the delta before it can merge.\n\n'
+  printf 'Pinned OpenAPI: %s\n\n' "$OPENAPI_PIN"
+  printf 'Pinned GraphQL: %s\n\n' "$GRAPHQL_PIN"
+  printf 'Upstream latest (%s): %s\n\n' "$CONTRACT_UPSTREAM_REPO" "$LATEST"
+  printf 'Bumping the pins in %s runs the semantic breaking-change gate in\n' "$CONTRACT_ENV_FILE"
+  printf 'scripts/ci/contract-diff.sh, which classifies the delta before it can merge.\n\n'
   printf '<!-- %s -->\n' "$MARKER"
 } > "$BODY_FILE"
 

@@ -18,6 +18,7 @@ setup() {
 
   write_env "$SANDBOX/.env" v2.7.1
   export FAKE_BASE_PIN='v2.7.1'
+  export FAKE_BASE_SPEC_URL="$SPEC_URL"
 
   cat > "$STUB_BIN_DIR/git" <<'EOF'
 #!/usr/bin/env bash
@@ -27,6 +28,7 @@ if [ "$1" = "show" ]; then
     exit 128
   fi
   printf 'OPENAPI_SPEC_VERSION=%s\n' "${FAKE_BASE_PIN:?}"
+  printf 'OPENAPI_SPEC_URL=%s\n' "${FAKE_BASE_SPEC_URL:?}"
   exit 0
 fi
 exit 0
@@ -87,6 +89,7 @@ run_gate() {
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_BASE_PIN="${FAKE_BASE_PIN:-}" \
+    FAKE_BASE_SPEC_URL="${FAKE_BASE_SPEC_URL:-}" \
     FAKE_GIT_SHOW_FAIL="${FAKE_GIT_SHOW_FAIL:-}" \
     FAKE_CURL_FAIL="${FAKE_CURL_FAIL:-}" \
     FAKE_OASDIFF_BREAKING_EXIT="${FAKE_OASDIFF_BREAKING_EXIT:-0}" \
@@ -100,6 +103,7 @@ run_gate_without_step_summary() {
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_BASE_PIN="${FAKE_BASE_PIN:-}" \
+    FAKE_BASE_SPEC_URL="${FAKE_BASE_SPEC_URL:-}" \
     FAKE_OASDIFF_BREAKING_EXIT=0 \
     bash -c 'cd "$1" && shift && sh "$1" > "$2" 2>&1' _ "$SANDBOX" "$SCRIPT" \
     "$BATS_TEST_TMPDIR/stdout.txt"
@@ -205,6 +209,31 @@ run_gate_without_step_summary() {
   run_gate
   [ "$status" -eq 1 ]
   assert_output_contains 'breaking-changes-approved.txt is missing'
+}
+
+# Each side is fetched with its own template, so a bump that also relocates the upstream spec
+# still compares the two real contracts instead of the head URL against itself.
+@test "the base spec is fetched with the base ref's own URL template" {
+  write_env "$SANDBOX/.env" v2.8.0
+  export FAKE_BASE_SPEC_URL='https://old.example.invalid/${OPENAPI_SPEC_VERSION}/spec.yaml'
+
+  run_gate
+  [ "$status" -eq 0 ]
+  assert_log_contains 'https://old.example.invalid/v2.7.1/spec.yaml'
+  assert_log_contains 'user-service/v2.8.0/spec.yaml'
+}
+
+# Without the placeholder both fetches resolve to the same document and every bump would
+# report "no breaking changes" -- a false green rather than a gate.
+@test "a URL template without the version placeholder fails the gate" {
+  {
+    printf 'OPENAPI_SPEC_VERSION=%s\n' v2.8.0
+    printf 'OPENAPI_SPEC_URL=%s\n' 'https://raw.githubusercontent.com/x/y/v2.7.1/spec.yaml'
+  } > "$SANDBOX/.env"
+
+  run_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'must contain the ${OPENAPI_SPEC_VERSION} placeholder'
 }
 
 # The committed allowlist must be inert: stripping its comments has to leave nothing, or the

@@ -44,10 +44,19 @@ gh label create "$AUDIT_ISSUE_LABEL" \
   --color "${AUDIT_ISSUE_LABEL_COLOR:-D93F0B}" --force >/dev/null \
   || fail "could not ensure the $AUDIT_ISSUE_LABEL label exists"
 
-NUMBER=''
-if ! NUMBER="$(gh issue list --label "$AUDIT_ISSUE_LABEL" --state open --json number --jq '.[0].number // empty')"; then
+OPEN_ISSUES=''
+if ! OPEN_ISSUES="$(gh issue list --label "$AUDIT_ISSUE_LABEL" --state open --json number --jq '.[].number')"; then
   fail "could not list open $AUDIT_ISSUE_LABEL issues"
 fi
+
+# One open issue per label is the invariant the whole comment-only-on-change scheme rests on.
+# With duplicates, updates would land on an arbitrary one while the others rot in the backlog.
+COUNT="$(printf '%s' "$OPEN_ISSUES" | grep -c '[0-9]' || true)"
+if [ "$COUNT" -gt 1 ]; then
+  fail "found $COUNT open $AUDIT_ISSUE_LABEL issues; close all but one so the monitor has a single tracker"
+fi
+
+NUMBER="$(printf '%s' "$OPEN_ISSUES" | head -n1)"
 
 if [ -z "$NUMBER" ]; then
   gh issue create --label "$AUDIT_ISSUE_LABEL" --title "$AUDIT_ISSUE_TITLE" \
@@ -67,8 +76,10 @@ if printf '%s' "$EXISTING_BODY" | grep -qF "$AUDIT_ISSUE_MARKER"; then
   exit 0
 fi
 
-gh issue comment "$NUMBER" --body "$AUDIT_ISSUE_COMMENT" \
-  || fail "could not comment on issue #$NUMBER"
+# The body carries the marker, so it is persisted first: if the comment then fails, the retry
+# sees the new marker and stays quiet instead of re-notifying for the same state.
 gh issue edit "$NUMBER" --title "$AUDIT_ISSUE_TITLE" --body-file "$AUDIT_ISSUE_BODY_FILE" \
   || fail "could not update issue #$NUMBER"
+gh issue comment "$NUMBER" --body "$AUDIT_ISSUE_COMMENT" \
+  || fail "could not comment on issue #$NUMBER"
 printf 'updated issue #%s\n' "$NUMBER"

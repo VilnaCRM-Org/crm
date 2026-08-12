@@ -55,6 +55,13 @@ Record the ruleset ID here once it is created, so drift can be checked against
 
 - Ruleset ID: _not yet created_
 
+> **Outstanding prerequisite.** Until this ruleset exists and is set to **Active**, CodeQL
+> findings annotate a pull request but do not block merging into `main`. Creating it needs
+> repository **admin**, which the contributor who landed the `security-extended` upgrade does not
+> have, so it is tracked here as a post-merge action rather than silently assumed. The in-repo
+> half — the extended query suite, the `main` baseline, and the weekly re-scan — is already in
+> effect and is pinned by `tests/unit/tooling/codeql-security-suite.test.ts`.
+
 The two thresholds are pinned deliberately. `security-extended` includes medium-precision
 queries; pinning security alerts at **High or higher** and other alerts at **Errors** is what
 keeps those queries from blocking merges on low-confidence findings while still binding the

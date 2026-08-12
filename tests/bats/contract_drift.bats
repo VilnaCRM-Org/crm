@@ -9,7 +9,6 @@ load './test_helper.bash'
 setup() {
   setup_stub_dir
 
-  SCRIPT="$PROJECT_ROOT/scripts/ci/check-contract-drift.sh"
   SANDBOX="$BATS_TEST_TMPDIR/sandbox"
   mkdir -p "$SANDBOX/scripts/ci"
   cp "$PROJECT_ROOT/scripts/ci/check-contract-drift.sh" "$SANDBOX/scripts/ci/"
@@ -192,6 +191,64 @@ run_monitor() {
   run_monitor
   [ "$status" -eq 1 ]
   assert_output_contains 'is ahead of the resolved upstream latest'
+}
+
+# check-contract-versions.sh keeps the two pins equal, but a monitor that assumed the
+# invariant would report a misleading version gap the moment it was broken.
+@test "a GraphQL pin ahead of upstream is reported even when the OpenAPI pin is behind" {
+  write_pins v3.5.0 v2.7.1
+  export FAKE_GH_RELEASE_TAG='v2.8.0'
+  export FAKE_GH_TAGS='v2.8.0 v2.7.1'
+
+  run_monitor
+  [ "$status" -eq 1 ]
+  assert_output_contains 'GRAPHQL_SCHEMA_VERSION=v3.5.0 is ahead'
+
+  run grep -c 'gh issue create' "$COMMAND_LOG"
+  [ "$output" -eq 0 ]
+}
+
+@test "duplicate open tracking issues fail instead of updating an arbitrary one" {
+  printf 'has marker\n' > "$BATS_TEST_TMPDIR/body.md"
+  printf '<!-- last-seen: v9.9.9 -->\n' >> "$BATS_TEST_TMPDIR/body.md"
+
+  cat > "$STUB_BIN_DIR/gh" <<'EOF'
+#!/usr/bin/env bash
+printf 'gh %s\n' "$*" >> "${COMMAND_LOG:?}"
+if [ "$1" = "issue" ] && [ "$2" = "list" ]; then
+  printf '41\n42\n'
+fi
+exit 0
+EOF
+  chmod +x "$STUB_BIN_DIR/gh"
+
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    AUDIT_ISSUE_LABEL=contract-drift \
+    AUDIT_ISSUE_TITLE='drift' \
+    AUDIT_ISSUE_BODY_FILE="$BATS_TEST_TMPDIR/body.md" \
+    AUDIT_ISSUE_MARKER='last-seen: v9.9.9' \
+    AUDIT_ISSUE_COMMENT='moved' \
+    sh "$SANDBOX/scripts/ci/upsert-audit-issue.sh"
+  [ "$status" -eq 1 ]
+  assert_output_contains 'found 2 open contract-drift issues'
+}
+
+@test "the issue body is persisted before the comment so a retry cannot re-notify" {
+  export FAKE_GH_RELEASE_TAG='v2.9.0'
+  export FAKE_GH_TAGS='v2.9.0 v2.8.0'
+  export FAKE_GH_ISSUE_NUMBER=42
+  export FAKE_GH_ISSUE_BODY='<!-- last-seen: v2.8.0 -->'
+
+  run_monitor
+  [ "$status" -eq 0 ]
+
+  edit_line="$(grep -n 'gh issue edit 42' "$COMMAND_LOG" | head -n1 | cut -d: -f1)"
+  comment_line="$(grep -n 'gh issue comment 42' "$COMMAND_LOG" | head -n1 | cut -d: -f1)"
+  [ -n "$edit_line" ]
+  [ -n "$comment_line" ]
+  [ "$edit_line" -lt "$comment_line" ]
 }
 
 @test "a body without the marker is refused so the next run can still detect a change" {

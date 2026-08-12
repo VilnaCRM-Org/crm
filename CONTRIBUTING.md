@@ -95,23 +95,24 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
-### Scheduled gates that never run on your pull request
+### Scheduled runs you will not see on your pull request
 
-Three checks are deliberately invisible on a pull request, so it is worth knowing they exist
-before you change the code they watch:
+Some checks do work outside the pull-request lane, so it is worth knowing they exist before you
+change the code they watch:
 
-- **`contract drift`** (weekly) reports when the pinned `user-service` contract versions fall
-  behind upstream by opening or updating one `contract-drift` issue. A bare version gap does not
-  fail it; an upstream lookup failure does.
-- **`nightly flake audit`** re-runs the full Playwright E2E and visual suites **with retries
-  enabled** and a zero flake budget, so a test that fails and passes on retry turns the audit red
-  and lands in a `flaky-tests` issue naming the spec. Pull-request runs keep `retries: 0`, where a
-  flake is already a hard failure.
-- **`security testing`** additionally analyzes `push` to `main` and re-scans weekly, which is what
-  gives pull-request CodeQL alert diffing a baseline to compare against.
+- **`contract drift`** (weekly, no pull-request trigger) reports when the pinned `user-service`
+  contract versions fall behind upstream by opening or updating one `contract-drift` issue. A bare
+  version gap does not fail it; an upstream lookup failure does.
+- **`nightly flake audit`** (nightly, no pull-request trigger) re-runs the full Playwright E2E and
+  visual suites **with retries enabled** and a zero flake budget, so a test that fails and passes
+  on retry turns the audit red and lands in a tracking issue naming the spec. Pull-request runs
+  keep `retries: 0`, where a flake is already a hard failure.
+- **`security testing`** _does_ run on every pull request. What is extra is its `push` to `main`
+  and weekly re-scan: those maintain the CodeQL baseline that pull-request alert diffing compares
+  against, and re-check old code against new query-pack releases.
 
-Because `schedule` triggers only ever fire from the default branch, changes to these workflows
-cannot be proven by the pull request that makes them — they are covered by Bats fixtures instead
+Because `schedule` triggers only ever fire from the default branch, schedule-only behaviour cannot
+be proven by the pull request that changes it — it is covered by Bats fixtures instead
 (`tests/bats/contract_drift.bats`, `tests/bats/flake_budget.bats`), and verified after merge with
 `gh workflow run <workflow>`. Note that GitHub disables scheduled workflows after 60 days without
 repository activity.

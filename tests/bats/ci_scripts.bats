@@ -196,6 +196,40 @@ home	visual	tests/e2e/home.spec.ts	Wrong root."
   assert_output_contains 'is not under "tests/visual/"'
 }
 
+# `tests/e2e/../../src/x` starts with the suite root and exists, so containment has to be
+# checked on the resolved path or a route could be "covered" by a non-spec file.
+@test "check-e2e-route-coverage.ts rejects a traversal path that escapes its suite root" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/../../src/routes/route-paths.ts	Traversal."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not under "tests/e2e/"'
+}
+
+@test "check-e2e-route-coverage.ts rejects a real file Playwright would never run" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/helper.ts	Helper, not a spec."
+  printf 'export const x = 1;\n' > "$ROUTE_SANDBOX/tests/e2e/helper.ts"
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not a .spec.ts file'
+}
+
+@test "check-e2e-route-coverage.ts rejects a directory posing as a covering spec" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/nested.spec.ts	Directory, not a file."
+  mkdir -p "$ROUTE_SANDBOX/tests/e2e/nested.spec.ts"
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'does not exist'
+}
+
 @test "check-e2e-route-coverage.ts refuses a manifest whose header was removed" {
   write_route_fixture "  home: '/',
 " "home	e2e	tests/e2e/home.spec.ts	Covered."

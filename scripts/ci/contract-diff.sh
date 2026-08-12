@@ -43,9 +43,22 @@ fail() {
   exit 1
 }
 
+# oasdiff runs in a container whose only mount is the checkout, so every path handed to it
+# must be repo-relative. An absolute override would fetch fine on the host and then fail to
+# open inside the container, which is a confusing way to learn about the contract.
+require_relative() {
+  case "$2" in
+    /*) fail "$1 must be a repo-relative path (the oasdiff container only mounts the checkout)" ;;
+    *) ;;
+  esac
+}
+
 oasdiff() {
   docker run --rm -v "$PWD:/mnt" -w /mnt "$OASDIFF_IMAGE" "$@"
 }
+
+require_relative CONTRACT_DIFF_DIR "$CONTRACT_DIFF_DIR"
+require_relative CONTRACT_BREAKING_ALLOWLIST "$CONTRACT_BREAKING_ALLOWLIST"
 
 [ -f "$CONTRACT_ENV_FILE" ] || fail "$CONTRACT_ENV_FILE not found"
 
@@ -68,12 +81,24 @@ fi
 
 # The upstream URL template is read from the env file rather than hardcoded here, so the
 # contract location keeps exactly one source of truth. ${OPENAPI_SPEC_VERSION} is the
-# literal placeholder in that value.
-URL_TEMPLATE="$(read_pin "$URL_KEY" < "$CONTRACT_ENV_FILE")"
-[ -n "$URL_TEMPLATE" ] || fail "$URL_KEY is not set in $CONTRACT_ENV_FILE"
+# literal placeholder in that value. Each side is fetched with ITS OWN template, so a bump
+# that also moves the upstream repository or spec path still compares like with like.
+BASE_URL_TEMPLATE="$(printf '%s\n' "$BASE_ENV" | read_pin "$URL_KEY")"
+HEAD_URL_TEMPLATE="$(read_pin "$URL_KEY" < "$CONTRACT_ENV_FILE")"
+[ -n "$BASE_URL_TEMPLATE" ] || fail "$URL_KEY is not set in $CONTRACT_ENV_FILE at $CONTRACT_BASE_REF"
+[ -n "$HEAD_URL_TEMPLATE" ] || fail "$URL_KEY is not set in $CONTRACT_ENV_FILE"
+
+# Without the placeholder both sides would resolve to the same document and every bump would
+# report "no breaking changes" — a false green the gate must never produce.
+for template in "$BASE_URL_TEMPLATE" "$HEAD_URL_TEMPLATE"; do
+  case "$template" in
+    *"\${$PIN_KEY}"*) ;;
+    *) fail "$URL_KEY must contain the \${$PIN_KEY} placeholder, got: $template" ;;
+  esac
+done
 
 spec_url() {
-  printf '%s\n' "$URL_TEMPLATE" | sed "s|\${$PIN_KEY}|$1|g"
+  printf '%s\n' "$1" | sed "s|\${$PIN_KEY}|$2|g"
 }
 
 mkdir -p "$CONTRACT_DIFF_DIR"
@@ -84,9 +109,9 @@ printf 'diffing OpenAPI %s -> %s\n' "$BASE_PIN" "$HEAD_PIN"
 
 # -fsS: any fetch failure fails the job loudly. A spec that silently 404s into an empty file
 # would leave oasdiff reporting "no breaking changes" about a contract it never read.
-curl -fsS "$(spec_url "$BASE_PIN")" -o "$BASE_SPEC" \
+curl -fsS "$(spec_url "$BASE_URL_TEMPLATE" "$BASE_PIN")" -o "$BASE_SPEC" \
   || fail "could not fetch the OpenAPI spec pinned at $BASE_PIN"
-curl -fsS "$(spec_url "$HEAD_PIN")" -o "$HEAD_SPEC" \
+curl -fsS "$(spec_url "$HEAD_URL_TEMPLATE" "$HEAD_PIN")" -o "$HEAD_SPEC" \
   || fail "could not fetch the OpenAPI spec pinned at $HEAD_PIN"
 
 [ -s "$BASE_SPEC" ] || fail "the OpenAPI spec fetched for $BASE_PIN is empty"

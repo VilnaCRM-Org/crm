@@ -1,5 +1,5 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 /**
@@ -20,6 +20,7 @@ const ROUTE_PATHS_PATH = process.env.ROUTE_PATHS_FILE ?? 'src/routes/route-paths
 
 const HEADER = ['route', 'suite', 'spec', 'details'].join('\t');
 const ALLOWLISTED = 'allowlisted';
+const SPEC_SUFFIX = '.spec.ts';
 const SUITE_ROOTS: Record<string, string> = {
   e2e: 'tests/e2e/',
   visual: 'tests/visual/',
@@ -97,11 +98,21 @@ function rowProblems(row: CoverageRow): string[] {
     const known = [...Object.keys(SUITE_ROOTS), ALLOWLISTED].join(', ');
     return [`${at}: unknown suite "${row.suite}" for route "${row.route}" (expected ${known}).`];
   }
-  if (!row.spec.startsWith(root)) {
+
+  // Containment is checked on the resolved path, not the raw string: `tests/e2e/../../src/x`
+  // starts with the suite root and exists, yet names no spec in that suite.
+  const specFile = fromRoot(row.spec);
+  const withinRoot = relative(fromRoot(root), specFile);
+  if (withinRoot === '' || withinRoot.startsWith(`..${sep}`) || isAbsolute(withinRoot)) {
     return [`${at}: "${row.spec}" is not under "${root}" as its "${row.suite}" suite requires.`];
   }
-  if (!existsSync(fromRoot(row.spec))) {
+  if (!existsSync(specFile) || !statSync(specFile).isFile()) {
     return [`${at}: covering spec "${row.spec}" for route "${row.route}" does not exist.`];
+  }
+  // Playwright's testMatch is `**/*.spec.ts`, so anything else is never executed and cannot
+  // be evidence of coverage however real the file is.
+  if (!row.spec.endsWith(SPEC_SUFFIX)) {
+    return [`${at}: "${row.spec}" is not a ${SPEC_SUFFIX} file, so Playwright never runs it.`];
   }
   return [];
 }
@@ -130,7 +141,8 @@ function inventoryProblems(rows: CoverageRow[], routeKeys: string[]): string[] {
     }
     if (allowlisted.length > 0 && allowlisted.length !== forRoute.length) {
       problems.push(
-        `route "${route}" is both allowlisted and covered in ${MANIFEST_PATH}; drop the stale allowlist row.`
+        `route "${route}" is both allowlisted and covered in ${MANIFEST_PATH}; ` +
+          'drop the stale allowlist row.'
       );
     }
   });

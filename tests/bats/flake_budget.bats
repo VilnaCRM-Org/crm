@@ -223,13 +223,62 @@ failed_report() {
   [ "$FLAKY_MARKER" != "$MISSING_MARKER" ]
 }
 
-@test "a suite that produced no summary is routed, not silently treated as clean" {
+# A hard failure on the scheduled run is a different, more urgent problem than accumulated
+# nondeterminism, so it must not be filed as "flaky tests".
+@test "a suite that produced no summary escalates under the failure label, not as a flake" {
   export FLAKE_SUMMARY_FILES='reports/playwright/missing-flakes.md'
 
   run_router
   [ "$status" -eq 0 ]
-  assert_log_contains 'gh issue create --label flaky-tests'
+  assert_log_contains 'gh issue create --label audit-failure'
+  assert_log_contains 'Scheduled Playwright audit failed outright'
 
   run grep -F 'No summary produced' "$SANDBOX/reports/playwright/audit-issue-body.md"
   [ "$status" -eq 0 ]
+}
+
+@test "a hard-failure run escalates distinctly from a flake-only run" {
+  write_report report.json "$(failed_report)"
+  run_check
+  [ "$status" -eq 2 ]
+
+  reset_command_log
+  run_router
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gh issue create --label audit-failure'
+
+  run grep -F 'HARD FAILURES' "$SANDBOX/reports/playwright/audit-issue-body.md"
+  [ "$status" -eq 0 ]
+}
+
+@test "a summary without the offenders marker is untrustworthy, never clean" {
+  printf '## Playwright flake audit\n\n- tests analysed: 3\n' \
+    > "$SANDBOX/reports/playwright/flake-summary.md"
+
+  run_router
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gh issue create --label audit-failure'
+
+  run grep -F 'Summary is unreadable' "$SANDBOX/reports/playwright/audit-issue-body.md"
+  [ "$status" -eq 0 ]
+}
+
+# Playwright could rename or add a failure status in a future release; an allowlist of
+# passing statuses keeps that from silently becoming a clean audit.
+@test "an unrecognised test status counts as a hard failure, not a pass" {
+  write_report report.json '{"suites":[{"specs":[{"title":"weird","file":"tests/e2e/e.spec.ts","line":2,
+    "tests":[{"status":"someNewStatus","projectName":"chromium"}]}]}]}'
+
+  run_check
+  [ "$status" -eq 2 ]
+  assert_output_contains 'hard failures: 1'
+}
+
+@test "a budget with trailing garbage is rejected instead of silently truncated" {
+  write_report report.json "$(clean_report)"
+  export FLAKE_BUDGET='2abc'
+
+  run_check
+  [ "$status" -eq 2 ]
+  assert_output_contains 'FLAKE_BUDGET must be a non-negative integer'
 }
