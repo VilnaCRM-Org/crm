@@ -167,6 +167,86 @@ Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test)
 detected. `break` is set to 90 — below the 92.5% baseline for margin — and ratchets toward the
 `high` = 100 target as the scheduled full runs confirm stability.
 
+### Route coverage inventory (issue #169)
+
+The browser-level suites are hand-written, and nothing verified they tracked the route table —
+which is how `notFound` reached production with zero e2e, visual, or Lighthouse coverage.
+`make check-e2e-route-coverage` (first step of the `e2e testing` job, so a miss fails in seconds)
+reconciles every key in `src/routes/route-paths.ts` against
+[`tests/e2e/route-coverage.tsv`](tests/e2e/route-coverage.tsv), which names the spec that
+actually exercises each route.
+
+Validation runs in both directions: a route with no row, a row for a route that no longer
+exists, a row naming a missing spec, a spec outside its suite root, and a route that is both
+allowlisted and covered all fail. Route path _values_ are deliberately never matched against
+spec text — `/` appears in every spec (so `home` could never fail) and `*` appears in none (so
+`notFound` could never pass); the manifest maps route **keys**.
+
+**Adding a page:** land the route contract (see "Route Registry"), then add its manifest rows.
+A route intentionally out of browser scope takes an `allowlisted` row with a stated reason and
+must not also carry a suite row.
+
+### Scheduled flake budget (issue #186)
+
+`playwright.config.ts` keeps `retries: 0`, so on a pull request a flake is already a hard red.
+What was missing is the other half: Playwright can only classify a test as **flaky** (failed,
+then passed on retry) when it is allowed to retry, so a binding zero-flake bar has to run
+somewhere with retries on. That is `nightly-flake-audit.yml`.
+
+| Toggle                     | PR lanes  | Nightly audit |
+| -------------------------- | --------- | ------------- |
+| `PLAYWRIGHT_FLAKE_RETRIES` | unset (0) | `2`           |
+| `PLAYWRIGHT_JSON_REPORT`   | unset     | set           |
+| `PLAYWRIGHT_FAIL_ON_FLAKY` | unset     | `1`           |
+
+All three are inert unless set, so the required `e2e testing` and `visual tests` checks behave
+exactly as before. `docker compose exec` does not carry host environment across the container
+boundary, so `make test-e2e-flake-audit` / `make test-visual-flake-audit` inject them with `-e`
+(the same reason `PLAYWRIGHT_DEV_MODE` is passed through `env` on the `ENV=dev` branch);
+`make print-flake-env` echoes them from inside the container as proof they arrived.
+
+`make check-flakes` then enforces `FLAKE_BUDGET` (0) over the JSON report, keeping the two
+signals distinct: exit 1 = flake-budget breach, exit 2 = hard failure or an untrustworthy
+report. `scripts/ci/report-flake-audit.sh` files or updates one `flaky-tests` issue naming the
+offending specs, commenting only when the offending set changes. A suite that produced no
+summary is routed as an offence, never as a pass.
+
+**No suppression:** satisfy the budget by fixing the nondeterminism. Raising `FLAKE_BUDGET`,
+re-running until green, and re-baselining a visual snapshot to force a pass are all out of
+policy — the same root-cause rule the ESLint, TypeScript, metrics, jscpd, and performance gates
+follow.
+
+### Contract gates: semantic diff and upstream drift (issues #177, #178)
+
+`make codegen-check` is syntactic — it proves the pins agree and the generated artifacts are
+fresh. Two gates close what it cannot see; both are documented in full in
+[`src/api/contracts/README.md`](src/api/contracts/README.md).
+
+- **`make contract-diff`** (`contract testing`, every PR) runs digest-pinned
+  `oasdiff breaking --fail-on ERR` when `OPENAPI_SPEC_VERSION` moves against the base branch,
+  and fast-exits 0 when it does not. Acknowledged upstream breaks live in
+  `src/api/contracts/breaking-changes-approved.txt` — a reviewed diff, never an env-var bypass.
+- **`make check-contract-drift`** (`contract drift`, weekly) reports when the pins fall behind
+  user-service. It takes the latest upstream version as the maximum of `releases/latest` and the
+  highest semver tag, because `releases/latest` is the most recently _published_ release rather
+  than the highest one. A bare version gap opens a tracking issue but never reds the run; an
+  upstream lookup failure always does.
+
+### Lint-level SAST depth (issue #172)
+
+`security-testing.yml` runs CodeQL with `queries: security-extended`, not the shallow default
+suite — the default omits exactly the lower-precision queries a React SPA needs (DOM XSS,
+client-side unvalidated URL redirection, prototype pollution, client-side request forgery).
+It analyzes `pull_request` **and** `push` to `main`: without a `main` baseline, GitHub has
+nothing to diff a PR against and every pre-existing alert reports as new. A weekly `schedule`
+re-scans old code against new query-pack releases.
+
+Findings do not fail the `Analyze` job; they are enforced by a repository ruleset that lives in
+GitHub settings and is therefore recorded in
+[`docs/governance/branch-protection.md`](docs/governance/branch-protection.md). Fix a finding at
+the source — never by widening `paths-ignore`, dismissing it as "won't fix", or reverting to the
+default suite.
+
 ## Code Quality
 
 ```bash
@@ -180,6 +260,8 @@ make lint-prettier  # Prettier --check formatting gate (verify-only, shares PRET
 make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, like lint-metrics)
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
+make contract-diff  # semantic OpenAPI breaking-change gate on pin bumps (see above)
+make check-e2e-route-coverage # route-coverage inventory gate (see above)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt

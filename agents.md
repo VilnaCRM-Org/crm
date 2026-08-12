@@ -981,11 +981,24 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
      bunx playwright test tests/e2e/login.spec.ts
    ```
 
+5. **Every route needs a spec**: adding a key to `src/routes/route-paths.ts` without a row in
+   `tests/e2e/route-coverage.tsv` fails `make check-e2e-route-coverage`, the first step of the
+   `e2e testing` job (issue #169). Name the covering spec, or allowlist the route with a reason.
+
+6. **Flakes are not free**: pull-request runs use `retries: 0`, so an intermittent test is a hard
+   red. The scheduled `nightly flake audit` re-runs both suites with retries on and a zero flake
+   budget, so a retried pass is caught there too (issue #186). Never satisfy either by raising
+   `FLAKE_BUDGET`, re-running, or re-baselining — fix the nondeterminism.
+
 ### Visual Regression Testing
 
 1. **Update snapshots**: `make test-visual-update`
 2. **Review changes**: Check `tests/visual/.playwright/` for diffs
 3. **Only update when intentional**: Don't blindly accept visual changes
+4. **Scope new baselines**: a full-matrix visual spec generates 13 screen sizes × 3 browsers = 39
+   binaries. For a static page, follow the `notFound` / submit-loader precedent and use a small
+   local screens array instead; regenerate with a spec-scoped `--update-snapshots`, never the
+   repo-wide `make test-visual-update`, then re-run **without** the flag and require green.
 
 ## Troubleshooting Guide
 

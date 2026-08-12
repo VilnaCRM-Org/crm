@@ -1,0 +1,33 @@
+name: contract testing
+
+on:
+  pull_request:
+    branches: ['main']
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-diff:
+    name: OpenAPI breaking-change gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      # fetch-depth: 0 so `git show origin/main:.env` resolves. The gate compares the pin
+      # against the base branch in-job; there is deliberately no `paths:` filter, because a
+      # path-filtered required check never reports on pull requests it skips.
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Diff the OpenAPI contract on pin bumps
+        run: sh scripts/ci/contract-diff.sh
+        env:
+          CONTRACT_BASE_REF: origin/${{ github.base_ref }}

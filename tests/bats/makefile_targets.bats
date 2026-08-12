@@ -145,6 +145,64 @@ test-integration-watch|docker compose exec -T dev env TEST_ENV=integration node 
 EOF
 }
 
+@test "the flake audit injects its toggles into the Playwright container (issue #186)" {
+  while IFS='|' read -r target expected_one expected_two; do
+    [ -n "$target" ] || continue
+
+    reset_command_log
+    run_make_target "$target"
+    [ "$status" -eq 0 ]
+    assert_log_contains "$expected_one"
+    [ -z "$expected_two" ] || assert_log_contains "$expected_two"
+  done <<'EOF'
+test-e2e-flake-audit|-e PLAYWRIGHT_JSON_REPORT=reports/playwright/report.json -e PLAYWRIGHT_HTML_REPORT=reports/playwright/html -e PLAYWRIGHT_OUTPUT_DIR=reports/playwright/output -e PLAYWRIGHT_FLAKE_RETRIES=2 -e PLAYWRIGHT_FAIL_ON_FLAKY=1 playwright|playwright test ./tests/e2e
+test-visual-flake-audit|-e PLAYWRIGHT_JSON_REPORT=reports/playwright/report.json -e PLAYWRIGHT_HTML_REPORT=reports/playwright/html -e PLAYWRIGHT_OUTPUT_DIR=reports/playwright/output -e PLAYWRIGHT_FLAKE_RETRIES=2 -e PLAYWRIGHT_FAIL_ON_FLAKY=1 playwright|playwright test ./tests/visual
+print-flake-env|-e PLAYWRIGHT_FAIL_ON_FLAKY=1 playwright|flake audit env: retries=%s
+EOF
+}
+
+# Each suite needs its own html/output destination: Playwright clears both at the start of a
+# run, so a shared folder would delete the e2e evidence when the visual suite starts.
+@test "the flake audit gives each suite its own report and trace destination" {
+  reset_command_log
+  run_make_target test-e2e-flake-audit \
+    PLAYWRIGHT_HTML_REPORT=reports/playwright/e2e-html \
+    PLAYWRIGHT_OUTPUT_DIR=reports/playwright/e2e-output
+  [ "$status" -eq 0 ]
+  assert_log_contains '-e PLAYWRIGHT_HTML_REPORT=reports/playwright/e2e-html'
+  assert_log_contains '-e PLAYWRIGHT_OUTPUT_DIR=reports/playwright/e2e-output'
+}
+
+@test "the required PR Playwright lanes never see the flake toggles" {
+  reset_command_log
+  run_make_target ci-test-e2e
+  [ "$status" -eq 0 ]
+
+  reset_command_log
+  run_make_target ci-test-visual
+  [ "$status" -eq 0 ]
+
+  run grep -c 'PLAYWRIGHT_FAIL_ON_FLAKY' "$COMMAND_LOG"
+  [ "$output" -eq 0 ]
+}
+
+@test "the contract, drift, route-coverage and flake gates dispatch to their scripts" {
+  while IFS='|' read -r target expected_one expected_two; do
+    [ -n "$target" ] || continue
+
+    reset_command_log
+    run_make_target "$target"
+    [ "$status" -eq 0 ]
+    assert_log_contains "$expected_one"
+    [ -z "$expected_two" ] || assert_log_contains "$expected_two"
+  done <<'EOF'
+contract-diff|contract-diff.sh|
+check-contract-drift|check-contract-drift.sh|
+check-e2e-route-coverage|node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ci/check-e2e-route-coverage.ts|
+check-flakes|node scripts/ci/check-flakes.ts|
+EOF
+}
+
 @test "container-backed helper targets fail fast when required names are missing" {
   while IFS='|' read -r target required_var; do
     [ -n "$target" ] || continue

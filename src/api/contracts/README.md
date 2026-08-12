@@ -72,3 +72,51 @@ pinned versions, regenerates, and fails on any diff under `src/api/generated/**`
 2. Run `make codegen` and commit the regenerated `src/api/generated/**`.
 3. `make codegen-check` must pass. A deliberate, temporary skew must be documented here and
    opted in with `ALLOW_CONTRACT_VERSION_SKEW=1`.
+4. `make contract-diff` must pass — the semantic gate below classifies what the bump actually
+   changed.
+
+## Semantic breaking-change gate (issue #177)
+
+`make codegen-check` is **syntactic**: it proves the pins agree and that `src/api/generated/**`
+was regenerated. It cannot see what the delta _means_, so a bump that makes a request field
+required, narrows an enum, changes a branched-on status code, or removes an error response
+regenerates cleanly and merges green while breaking this client against the real backend.
+
+`scripts/ci/contract-diff.sh` (`make contract-diff`, run by the `contract testing` workflow on
+every pull request) closes that. It compares `OPENAPI_SPEC_VERSION` against the base branch and:
+
+- fast-exits 0 when the pin is unchanged, so the check is safe to require on every pull request
+  — there is deliberately no `paths:` filter, because a path-filtered required check never
+  reports on the pull requests it skips;
+- otherwise fetches both pinned specs and runs digest-pinned `oasdiff breaking --fail-on ERR`,
+  appending the full `oasdiff changelog` to the job summary for review;
+- fails loudly on any fetch or base-ref failure, never skipping as a pass.
+
+WARN-level findings do not fail the gate; they appear in the changelog. `ERR` is the bar that
+binds, which keeps the false-positive rate low enough that the gate is never routed around.
+
+### Acknowledging an upstream break
+
+An upstream break that this client is verified unaffected by is recorded in
+[`breaking-changes-approved.txt`](breaking-changes-approved.txt), which the gate passes to
+`oasdiff --err-ignore`. There is no env-var bypass: every acknowledgement is a reviewed diff.
+Each entry needs a comment naming the change and why it is safe here, and stale entries are
+pruned on the next bump.
+
+**Scope: OpenAPI only.** The GraphQL half of the same bump — whose version
+`scripts/check-contract-versions.sh` asserts equal — still has no semantic diff. That follow-up
+(a pinned `graphql-inspector diff`) is tracked in issue #178's phase 2 and is deliberately out
+of scope here.
+
+## Upstream drift monitor (issue #178)
+
+Every gate above answers "does the app match the pin?". `scripts/ci/check-contract-drift.sh`
+(`make check-contract-drift`, run weekly by the `contract drift` workflow) answers the other
+question: "does the pin still match reality?" It resolves the highest upstream version as the
+maximum of `releases/latest` and the highest semver tag — `releases/latest` is the most
+recently _published_ release, which upstream does not publish in version order — and upserts a
+single `contract-drift`-labelled issue when the pins fall behind.
+
+The policy is asymmetric on purpose: a bare version gap never fails the run (red-run spam while
+intentionally behind trains everyone to ignore the signal), while an upstream lookup failure
+always does — a dead monitor is worse than none.

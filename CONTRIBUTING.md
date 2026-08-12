@@ -95,6 +95,31 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
+### Scheduled gates that never run on your pull request
+
+Three checks are deliberately invisible on a pull request, so it is worth knowing they exist
+before you change the code they watch:
+
+- **`contract drift`** (weekly) reports when the pinned `user-service` contract versions fall
+  behind upstream by opening or updating one `contract-drift` issue. A bare version gap does not
+  fail it; an upstream lookup failure does.
+- **`nightly flake audit`** re-runs the full Playwright E2E and visual suites **with retries
+  enabled** and a zero flake budget, so a test that fails and passes on retry turns the audit red
+  and lands in a `flaky-tests` issue naming the spec. Pull-request runs keep `retries: 0`, where a
+  flake is already a hard failure.
+- **`security testing`** additionally analyzes `push` to `main` and re-scans weekly, which is what
+  gives pull-request CodeQL alert diffing a baseline to compare against.
+
+Because `schedule` triggers only ever fire from the default branch, changes to these workflows
+cannot be proven by the pull request that makes them — they are covered by Bats fixtures instead
+(`tests/bats/contract_drift.bats`, `tests/bats/flake_budget.bats`), and verified after merge with
+`gh workflow run <workflow>`. Note that GitHub disables scheduled workflows after 60 days without
+repository activity.
+
+The one contract check that _does_ run on every pull request is `contract testing`
+(`make contract-diff`). It fast-exits when `OPENAPI_SPEC_VERSION` is unchanged and runs
+`oasdiff breaking` when you bump it; see [`src/api/contracts/README.md`](src/api/contracts/README.md).
+
 ### Dockerfile build performance
 
 If your change touches a configured Dockerfile path (or the gate's own config),

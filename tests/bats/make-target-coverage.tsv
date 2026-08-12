@@ -112,3 +112,10 @@ lint-prettier	bats	tests/bats/makefile_targets.bats	Validated as a member of the
 lint-shell	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
 lint-lockfile	bats	tests/bats/lockfile_registries.bats	Validated as the bun.lock registry-allowlist gate with rogue-URL, rogue-specifier, lookalike-host, version-bump, and clean-pass fixtures.
 lint-actionlint	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
+contract-diff	bats	tests/bats/contract_diff.bats	Validated as the semantic OpenAPI breaking-change gate over base/head contract pins.
+check-contract-drift	bats	tests/bats/contract_drift.bats	Validated as the scheduled upstream contract drift monitor and its issue upsert.
+check-e2e-route-coverage	bats	tests/bats/ci_scripts.bats	Validated as the route-coverage inventory gate over the route table and its manifest.
+test-e2e-flake-audit	bats	tests/bats/makefile_targets.bats	Validated as the retry-enabled E2E audit run that injects the flake toggles into the Playwright container.
+test-visual-flake-audit	bats	tests/bats/makefile_targets.bats	Validated as the retry-enabled visual audit run that injects the flake toggles into the Playwright container.
+check-flakes	bats	tests/bats/flake_budget.bats	Validated as the FLAKE_BUDGET enforcement over a Playwright JSON report.
+print-flake-env	bats	tests/bats/makefile_targets.bats	Validated as the in-container echo proving the flake toggles crossed the compose boundary.

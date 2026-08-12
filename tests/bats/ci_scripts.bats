@@ -112,6 +112,110 @@ setup() {
   assert_log_contains 'make run-load-tests-dind K6_HELPER_NAME=crm-k6-helper-signup K6_TEST_SCRIPT=/loadTests/signup.js K6_RESULTS_FILE=/loadTests/results/signup.html'
 }
 
+# Route-coverage inventory gate (issue #169): scripts/ci/check-e2e-route-coverage.ts,
+# wired as `make check-e2e-route-coverage`.
+write_route_fixture() {
+  ROUTE_SANDBOX="$BATS_TEST_TMPDIR/routes"
+  mkdir -p "$ROUTE_SANDBOX/src/routes" "$ROUTE_SANDBOX/tests/e2e" "$ROUTE_SANDBOX/tests/visual"
+  printf 'const ROUTE_PATHS = {\n%s} as const;\n\nexport default ROUTE_PATHS;\n' "$1" \
+    > "$ROUTE_SANDBOX/src/routes/route-paths.ts"
+  printf 'import "x";\n' > "$ROUTE_SANDBOX/tests/e2e/home.spec.ts"
+  printf 'import "x";\n' > "$ROUTE_SANDBOX/tests/visual/home.spec.ts"
+  printf '%s\n' "$2" > "$ROUTE_SANDBOX/tests/e2e/route-coverage.tsv"
+}
+
+run_route_gate() {
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    bash -c 'cd "$1" && shift && "$@"' _ "$ROUTE_SANDBOX" \
+    node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \
+    "$PROJECT_ROOT/scripts/ci/check-e2e-route-coverage.ts"
+}
+
+@test "check-e2e-route-coverage.ts passes when every route names an existing spec" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered."
+
+  run_route_gate
+  [ "$status" -eq 0 ]
+  assert_output_contains 'every route covered'
+}
+
+@test "check-e2e-route-coverage.ts fails on a route added without a manifest row" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'route "settings" has no row'
+}
+
+@test "check-e2e-route-coverage.ts fails when a manifest row names a missing spec" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/deleted.spec.ts	Covered."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'does not exist'
+}
+
+@test "check-e2e-route-coverage.ts fails on a stale row for a route that no longer exists" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+retired	e2e	tests/e2e/home.spec.ts	Stale."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not declared in src/routes/route-paths.ts'
+}
+
+@test "check-e2e-route-coverage.ts fails when an allowlisted route is also covered" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+home	allowlisted	-	Out of browser scope."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'both allowlisted and covered'
+}
+
+@test "check-e2e-route-coverage.ts fails when a spec sits outside its suite root" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	visual	tests/e2e/home.spec.ts	Wrong root."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not under "tests/visual/"'
+}
+
+@test "check-e2e-route-coverage.ts refuses a manifest whose header was removed" {
+  write_route_fixture "  home: '/',
+" "home	e2e	tests/e2e/home.spec.ts	Covered."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'must start with the tab-separated header'
+}
+
+@test "the committed route manifest covers the real route table" {
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    bash -c 'cd "$1" && shift && "$@"' _ "$PROJECT_ROOT" \
+    node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \
+    scripts/ci/check-e2e-route-coverage.ts
+  [ "$status" -eq 0 ]
+  assert_output_contains 'every route covered'
+}
+
 @test "batch_lhci_leak.sh dispatches memory-leak and Lighthouse DIND flows through make" {
   local script_path="$PROJECT_ROOT/scripts/ci/batch_lhci_leak.sh"
 
