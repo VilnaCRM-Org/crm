@@ -249,3 +249,33 @@ run_gate_without_step_summary() {
     "$PROJECT_ROOT/src/api/contracts/breaking-changes-approved.txt"
   [ "$status" -eq 0 ]
 }
+
+# An allowlist from outside the checkout would suppress findings without ever showing up in a
+# pull-request diff, and the oasdiff container cannot read it either.
+@test "a parent-relative override is rejected so overrides stay reviewable" {
+  write_env "$SANDBOX/.env" v2.8.0
+
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_BASE_PIN="$FAKE_BASE_PIN" \
+    FAKE_BASE_SPEC_URL="$FAKE_BASE_SPEC_URL" \
+    CONTRACT_BREAKING_ALLOWLIST='../outside/approved.txt' \
+    bash -c 'cd "$1" && shift && "$@"' _ "$SANDBOX" sh "$SCRIPT"
+  [ "$status" -eq 1 ]
+  assert_output_contains 'must stay inside the checkout'
+}
+
+@test "an absolute override is rejected too" {
+  write_env "$SANDBOX/.env" v2.8.0
+
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_BASE_PIN="$FAKE_BASE_PIN" \
+    FAKE_BASE_SPEC_URL="$FAKE_BASE_SPEC_URL" \
+    CONTRACT_DIFF_DIR='/tmp/contract-diff' \
+    bash -c 'cd "$1" && shift && "$@"' _ "$SANDBOX" sh "$SCRIPT"
+  [ "$status" -eq 1 ]
+  assert_output_contains 'must stay inside the checkout'
+}

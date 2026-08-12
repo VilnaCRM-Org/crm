@@ -85,8 +85,14 @@ fi
   [ "$hard_failures" -eq 0 ] || printf 'This run contains HARD FAILURES, not only flakes.\n\n'
   [ -z "$missing" ] || printf 'Suites without a usable summary:%s\n\n' "$missing"
   [ -z "${FLAKE_AUDIT_RUN_URL:-}" ] || printf 'Run: %s\n\n' "$FLAKE_AUDIT_RUN_URL"
-  printf 'Fix the nondeterminism at its source. Raising FLAKE_BUDGET, retrying until green,\n'
-  printf 'and re-baselining a visual snapshot to force a pass are all out of policy.\n\n'
+  if [ "$hard_failures" -ne 0 ] || [ -n "$missing" ]; then
+    printf 'This is not a flake-budget breach. Either a spec failed every attempt, or a suite\n'
+    printf 'never produced a report -- treat it as a broken suite or a broken audit and fix the\n'
+    printf 'failure itself before reading anything into the flake numbers below.\n\n'
+  else
+    printf 'Fix the nondeterminism at its source. Raising FLAKE_BUDGET, retrying until green,\n'
+    printf 'and re-baselining a visual snapshot to force a pass are all out of policy.\n\n'
+  fi
   printf '<!-- %s -->\n' "$MARKER"
 } >> "$FLAKE_AUDIT_BODY_FILE"
 

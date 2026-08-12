@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -85,8 +85,40 @@ function readManifest(): CoverageRow[] {
   });
 }
 
+/** True when `candidate` is strictly inside `root` after both are fully resolved. */
+function isInside(root: string, candidate: string): boolean {
+  const within = relative(root, candidate);
+  return within !== '' && within !== '..' && !within.startsWith(`..${sep}`) && !isAbsolute(within);
+}
+
+function suiteProblems(row: CoverageRow, at: string, root: string): string[] {
+  // Containment is checked on the *real* path: `tests/e2e/../../src/x` starts with the suite
+  // root as a string, and a symlink out of the suite would survive `resolve()` alone because
+  // it does not dereference while `statSync` does.
+  const specFile = fromRoot(row.spec);
+  const outside = [
+    `${at}: "${row.spec}" is not under "${root}" as its "${row.suite}" suite requires.`,
+  ];
+  if (!isInside(fromRoot(root), specFile)) {
+    return outside;
+  }
+  if (!existsSync(specFile) || !statSync(specFile).isFile()) {
+    return [`${at}: covering spec "${row.spec}" for route "${row.route}" does not exist.`];
+  }
+  if (!isInside(realpathSync(fromRoot(root)), realpathSync(specFile))) {
+    return outside;
+  }
+  // Playwright's testMatch is `**/*.spec.ts`, so anything else is never executed and cannot
+  // be evidence of coverage however real the file is.
+  if (!row.spec.endsWith(SPEC_SUFFIX)) {
+    return [`${at}: "${row.spec}" is not a ${SPEC_SUFFIX} file, so Playwright never runs it.`];
+  }
+  return [];
+}
+
 function rowProblems(row: CoverageRow): string[] {
   const at = `${MANIFEST_PATH}:${row.line}`;
+
   if (row.suite === ALLOWLISTED) {
     return row.details.trim() === ''
       ? [`${at}: allowlisted route "${row.route}" must state why it is out of browser scope.`]
@@ -98,23 +130,7 @@ function rowProblems(row: CoverageRow): string[] {
     const known = [...Object.keys(SUITE_ROOTS), ALLOWLISTED].join(', ');
     return [`${at}: unknown suite "${row.suite}" for route "${row.route}" (expected ${known}).`];
   }
-
-  // Containment is checked on the resolved path, not the raw string: `tests/e2e/../../src/x`
-  // starts with the suite root and exists, yet names no spec in that suite.
-  const specFile = fromRoot(row.spec);
-  const withinRoot = relative(fromRoot(root), specFile);
-  if (withinRoot === '' || withinRoot.startsWith(`..${sep}`) || isAbsolute(withinRoot)) {
-    return [`${at}: "${row.spec}" is not under "${root}" as its "${row.suite}" suite requires.`];
-  }
-  if (!existsSync(specFile) || !statSync(specFile).isFile()) {
-    return [`${at}: covering spec "${row.spec}" for route "${row.route}" does not exist.`];
-  }
-  // Playwright's testMatch is `**/*.spec.ts`, so anything else is never executed and cannot
-  // be evidence of coverage however real the file is.
-  if (!row.spec.endsWith(SPEC_SUFFIX)) {
-    return [`${at}: "${row.spec}" is not a ${SPEC_SUFFIX} file, so Playwright never runs it.`];
-  }
-  return [];
+  return suiteProblems(row, at, root);
 }
 
 function inventoryProblems(rows: CoverageRow[], routeKeys: string[]): string[] {

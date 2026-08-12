@@ -277,3 +277,28 @@ home	e2e	tests/e2e/nested.spec.ts	Directory, not a file."
   assert_log_contains 'make test-chromium'
   assert_log_contains 'make lighthouse-mobile-dind'
 }
+
+# resolve() does not dereference symlinks but statSync() does, so containment has to be
+# re-checked on the real path or a symlink could smuggle an out-of-suite file in as coverage.
+@test "check-e2e-route-coverage.ts rejects a symlink escaping its suite root" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/linked.spec.ts	Symlink out of the suite."
+  printf 'import "x";\n' > "$ROUTE_SANDBOX/outside.spec.ts"
+  ln -s ../../outside.spec.ts "$ROUTE_SANDBOX/tests/e2e/linked.spec.ts"
+  [ -f "$ROUTE_SANDBOX/tests/e2e/linked.spec.ts" ]
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not under "tests/e2e/"'
+}
+
+@test "check-e2e-route-coverage.ts rejects a row naming the suite root's parent" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/..	Parent of the suite root."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not under "tests/e2e/"'
+}

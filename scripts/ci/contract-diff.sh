@@ -43,12 +43,15 @@ fail() {
   exit 1
 }
 
-# oasdiff runs in a container whose only mount is the checkout, so every path handed to it
-# must be repo-relative. An absolute override would fetch fine on the host and then fail to
-# open inside the container, which is a confusing way to learn about the contract.
-require_relative() {
+# Every configurable path must stay inside the checkout. For CONTRACT_DIFF_DIR that is a hard
+# requirement -- oasdiff runs in a container whose only mount is the checkout. For the
+# allowlist it is a review requirement: an approved-breaking-changes file from outside the
+# repository would suppress findings without ever appearing in a pull request diff.
+require_inside_checkout() {
   case "$2" in
-    /*) fail "$1 must be a repo-relative path (the oasdiff container only mounts the checkout)" ;;
+    /*) fail "$1 must stay inside the checkout, got an absolute path: $2" ;;
+    ../*|*/../*|*/..) fail "$1 must stay inside the checkout, got a parent-relative path: $2" ;;
+    ..) fail "$1 must stay inside the checkout, got a parent-relative path: $2" ;;
     *) ;;
   esac
 }
@@ -57,8 +60,8 @@ oasdiff() {
   docker run --rm -v "$PWD:/mnt" -w /mnt "$OASDIFF_IMAGE" "$@"
 }
 
-require_relative CONTRACT_DIFF_DIR "$CONTRACT_DIFF_DIR"
-require_relative CONTRACT_BREAKING_ALLOWLIST "$CONTRACT_BREAKING_ALLOWLIST"
+require_inside_checkout CONTRACT_DIFF_DIR "$CONTRACT_DIFF_DIR"
+require_inside_checkout CONTRACT_BREAKING_ALLOWLIST "$CONTRACT_BREAKING_ALLOWLIST"
 
 [ -f "$CONTRACT_ENV_FILE" ] || fail "$CONTRACT_ENV_FILE not found"
 

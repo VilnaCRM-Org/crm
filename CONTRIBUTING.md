@@ -95,10 +95,11 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
-### Scheduled runs you will not see on your pull request
+### Scheduled runs and extra scans
 
 Some checks do work outside the pull-request lane, so it is worth knowing they exist before you
-change the code they watch:
+change the code they watch — the first two never run on a pull request at all, the third runs
+there _and_ does more elsewhere:
 
 - **`contract drift`** (weekly, no pull-request trigger) reports when the pinned `user-service`
   contract versions fall behind upstream by opening or updating one `contract-drift` issue. A bare
