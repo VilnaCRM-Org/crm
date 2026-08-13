@@ -21,9 +21,11 @@ const anchorsOf = (markdown: string): Set<string> => {
     anchors.add(occurrence === 0 ? base : `${base}-${occurrence}`);
   }
 
+  // Lowercased on the way in because the fragment lookup is case-insensitive; storing an
+  // uppercase HTML id verbatim would make a correct link report as broken.
   for (const match of markdown.matchAll(/<a\s+[^>]*(?:name|id)="([^"]+)"/g)) {
     if (match[1]) {
-      anchors.add(match[1]);
+      anchors.add(match[1].toLowerCase());
     }
   }
 
@@ -47,14 +49,30 @@ const containedPath = (root: string, candidate: string): string | null => {
   return absolute === resolve(root) || absolute.startsWith(boundary) ? absolute : null;
 };
 
+/** A malformed percent-escape must be reported, not thrown out of the gate. */
+const decode = (value: string): string | null => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+};
+
 const checkFileLink = (
   root: string,
   file: string,
   target: string,
   cache: Map<string, Set<string>>
 ): string | null => {
-  const [rawPath = '', rawAnchor] = target.split('#');
-  const decoded = decodeURIComponent(rawPath);
+  const [beforeAnchor = '', rawAnchor] = target.split('#');
+  // A relative documentation path carries no query string; `?` is part of the file name only in
+  // pathological cases, and treating it as a query keeps `./x.md?plain=1` resolvable.
+  const [rawPath = ''] = beforeAnchor.split('?');
+  const decoded = decode(rawPath);
+
+  if (decoded === null) {
+    return 'link contains a malformed percent-escape';
+  }
 
   const base = decoded === '' ? file : normalize(join(dirname(file), decoded));
   const resolved = decoded.startsWith('/')
@@ -74,8 +92,14 @@ const checkFileLink = (
     return `anchor "#${rawAnchor}" points at a non-markdown target, which has no headings`;
   }
 
-  const anchor = decodeURIComponent(rawAnchor).toLowerCase();
-  return readAnchors(resolved, cache).has(anchor) ? null : `no heading anchors to "#${rawAnchor}"`;
+  const anchor = decode(rawAnchor);
+  if (anchor === null) {
+    return 'link contains a malformed percent-escape';
+  }
+
+  return readAnchors(resolved, cache).has(anchor.toLowerCase())
+    ? null
+    : `no heading anchors to "#${rawAnchor}"`;
 };
 
 /**

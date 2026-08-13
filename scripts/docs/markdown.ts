@@ -15,9 +15,11 @@ export interface MarkdownHeading {
 
 const MARKDOWN_EXTENSION = '.md';
 const FENCE = /^\s{0,3}(`{3,}|~{3,})(.*)$/;
-const INLINE_LINK = /(?<!!)\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
-const REFERENCE_DEFINITION = /^\s{0,3}\[[^\]]+\]:\s*(\S+)/;
-const HEADING = /^(#{1,6})\s+(.+?)\s*$/;
+const INLINE_LINK = /(?<!!)\[[^\]]*\]\(\s*<?([^)>\s]+)>?(?:\s+"[^"]*")?\s*\)/g;
+// `[^1]: …` is a GitHub footnote definition, not a link reference; matching it produced
+// false broken-link failures for a target that is body text.
+const REFERENCE_DEFINITION = /^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?([^>\s]+)>?/;
+const HEADING = /^\s{0,3}(#{1,6})\s+(.+?)\s*$/;
 
 export interface FenceScanLine {
   text: string;
@@ -61,28 +63,30 @@ export const scanFences = (markdown: string): FenceScanLine[] => {
 const isIgnored = (name: string, policy: DocsScanPolicy): boolean =>
   policy.ignoredPaths.includes(name);
 
-const walk = (directory: string, policy: DocsScanPolicy, found: Set<string>): void => {
-  let entries: string[];
+const readEntries = (directory: string): string[] => {
   try {
-    entries = readdirSync(directory);
+    return readdirSync(directory);
   } catch {
-    return;
+    return [];
   }
+};
 
-  for (const entry of entries) {
+const isDirectory = (absolute: string): boolean => {
+  try {
+    return statSync(absolute).isDirectory();
+  } catch {
+    return false;
+  }
+};
+
+const walk = (directory: string, policy: DocsScanPolicy, found: Set<string>): void => {
+  for (const entry of readEntries(directory)) {
     if (isIgnored(entry, policy) || entry.startsWith('.git')) {
       continue;
     }
 
     const absolute = join(directory, entry);
-    let stats;
-    try {
-      stats = statSync(absolute);
-    } catch {
-      continue;
-    }
-
-    if (stats.isDirectory()) {
+    if (isDirectory(absolute)) {
       walk(absolute, policy, found);
     } else if (entry.endsWith(MARKDOWN_EXTENSION) && !policy.ignoredFiles.includes(entry)) {
       found.add(absolute);
@@ -112,6 +116,30 @@ const allowedByPolicy = (repoPath: string, policy: DocsScanPolicy): boolean => {
  * `tracked` (repository-relative paths, normally `git ls-files`) keeps the gate deterministic:
  * without it an untracked scratch file would fail a developer's `make lint` but never CI.
  */
+const isMarkdownEntry = (name: string, policy: DocsScanPolicy): boolean =>
+  name.endsWith(MARKDOWN_EXTENSION) &&
+  !policy.ignoredFiles.includes(name) &&
+  !isIgnored(name, policy) &&
+  !name.startsWith('.git');
+
+const isFile = (absolute: string): boolean => {
+  try {
+    return statSync(absolute).isFile();
+  } catch {
+    return false;
+  }
+};
+
+/** Top-level markdown only; the repository root is not descended into as a whole. */
+const rootMarkdown = (directory: string, policy: DocsScanPolicy, found: Set<string>): void => {
+  for (const entry of readdirSync(directory)) {
+    const absolute = join(directory, entry);
+    if (isMarkdownEntry(entry, policy) && isFile(absolute)) {
+      found.add(absolute);
+    }
+  }
+};
+
 export const listMarkdownFiles = (
   root: string,
   policy: DocsScanPolicy,
@@ -127,28 +155,11 @@ export const listMarkdownFiles = (
   const found = new Set<string>();
 
   for (const scanRoot of policy.roots) {
-    const absolute = scanRoot === '.' ? root : join(root, scanRoot);
     if (scanRoot === '.') {
-      for (const entry of readdirSync(absolute)) {
-        if (isIgnored(entry, policy) || entry.startsWith('.git')) {
-          continue;
-        }
-        if (!entry.endsWith(MARKDOWN_EXTENSION) || policy.ignoredFiles.includes(entry)) {
-          continue;
-        }
-
-        const child = join(absolute, entry);
-        try {
-          if (statSync(child).isFile()) {
-            found.add(child);
-          }
-        } catch {
-          continue;
-        }
-      }
-      continue;
+      rootMarkdown(root, policy, found);
+    } else {
+      walk(join(root, scanRoot), policy, found);
     }
-    walk(absolute, policy, found);
   }
 
   return [...found].sort((a, b) => a.localeCompare(b));

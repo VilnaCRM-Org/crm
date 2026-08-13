@@ -31,6 +31,19 @@ const globToRegExp = (glob: string): RegExp => {
 export const matchesAny = (path: string, globs: readonly string[]): boolean =>
   globs.some((glob) => globToRegExp(glob).test(path));
 
+/** Key order is presentation, not meaning: a package manager rewriting the order is not drift. */
+const canonical = (value: unknown): unknown => {
+  if (Array.isArray(value) || value === null || typeof value !== 'object') {
+    return value;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, entry]) => [key, canonical(entry)])
+  );
+};
+
 const dependencyMaps = (manifest: string | null, keys: readonly string[]): string => {
   if (manifest === null) {
     return '';
@@ -43,7 +56,7 @@ const dependencyMaps = (manifest: string | null, keys: readonly string[]): strin
     return '';
   }
 
-  return JSON.stringify(keys.map((key) => parsed[key] ?? null));
+  return JSON.stringify(keys.map((key) => canonical(parsed[key] ?? null)));
 };
 
 /**
@@ -98,7 +111,12 @@ export const detectAdrDrift = (policy: DocsPolicy, context: DriftContext): Drift
     return { violations: [], triggers, waived: false };
   }
 
-  if (context.changedPaths.some((path) => recordsDecision(policy, path))) {
+  // The ADR must still exist at HEAD: `git diff --name-only` also lists deletions and the old
+  // half of a rename, so accepting the path alone would let removing an ADR satisfy the gate.
+  const recorded = context.changedPaths.some(
+    (path) => recordsDecision(policy, path) && context.readHeadFile(path) !== null
+  );
+  if (recorded) {
     return { violations: [], triggers, waived: false };
   }
 

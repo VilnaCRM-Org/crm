@@ -48,7 +48,8 @@ jobs:
       - name: Record pull-request context for the ADR drift gate
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
-          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          # JSON, not a joined string: a label may legitimately contain the separator.
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: |
           mkdir -p reports/adr-drift
           printf '%s' "$PR_BODY" > reports/adr-drift/pr-body.txt

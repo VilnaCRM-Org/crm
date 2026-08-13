@@ -51,13 +51,34 @@ export interface DocsViolation {
   message: string;
 }
 
+type FieldKind = 'string' | 'string[]' | 'string[]?';
+
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((entry) => typeof entry === 'string' && entry.length > 0);
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.length > 0;
 
-const SHAPE: Record<keyof DocsPolicy, Record<string, 'string' | 'string[]'>> = {
+const EXPECTATION: Record<FieldKind, string> = {
+  string: 'a non-empty string',
+  'string[]': 'a non-empty array of non-empty strings',
+  'string[]?': 'an array of non-empty strings',
+};
+
+const isValid = (kind: FieldKind, value: unknown): boolean => {
+  if (kind === 'string') {
+    return isNonEmptyString(value);
+  }
+  if (kind === 'string[]?') {
+    return isStringArray(value);
+  }
+  return isStringArray(value) && value.length > 0;
+};
+
+// `string[]` fields drive enforcement, so an empty one would silently disable a check and must
+// be rejected. `string[]?` marks the ignore lists, where empty legitimately means "ignore
+// nothing" (issue #122).
+const SHAPE: Record<keyof DocsPolicy, Record<string, FieldKind>> = {
   adr: {
     directory: 'string',
     indexFile: 'string',
@@ -70,7 +91,7 @@ const SHAPE: Record<keyof DocsPolicy, Record<string, 'string' | 'string[]'>> = {
     requiredSections: 'string[]',
   },
   moduleDocs: { roots: 'string[]', requiredFile: 'string' },
-  docs: { roots: 'string[]', ignoredPaths: 'string[]', ignoredFiles: 'string[]' },
+  docs: { roots: 'string[]', ignoredPaths: 'string[]?', ignoredFiles: 'string[]?' },
   commandReferences: { makefile: 'string', packageJson: 'string' },
   architectureDrift: {
     significantPaths: 'string[]',
@@ -104,11 +125,8 @@ export const parseDocsPolicy = (raw: unknown, source: string): DocsPolicy => {
 
     const values = block as Record<string, unknown>;
     for (const [field, kind] of Object.entries(fields)) {
-      const valid =
-        kind === 'string' ? isNonEmptyString(values[field]) : isStringArray(values[field]);
-      if (!valid) {
-        const expectation = kind === 'string' ? 'a non-empty string' : 'a non-empty string array';
-        reject(`"${section}.${field}" must be ${expectation}`);
+      if (!isValid(kind, values[field])) {
+        reject(`"${section}.${field}" must be ${EXPECTATION[kind]}`);
       }
     }
   }

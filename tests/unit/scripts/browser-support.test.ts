@@ -256,6 +256,21 @@ describe('checkResolution', () => {
 });
 
 describe('checkReadme', () => {
+  it('binds to the exact heading rather than one that merely mentions it', () => {
+    const policy = readPolicy();
+    const decoy = [
+      `## How the ${policy.readmeSection} matrix is enforced`,
+      '',
+      '| Browser | Minimum version |',
+      '| ------- | --------------- |',
+      '| Chrome  | 1               |',
+      '',
+    ].join('\n');
+    const readme = `${decoy}\n${renderReadme(policy.readmeSection, allRows(policy))}`;
+
+    expect(checkReadme(policy, readme)).toEqual([]);
+  });
+
   it('passes against the published README matrix', () => {
     const policy = readPolicy();
 

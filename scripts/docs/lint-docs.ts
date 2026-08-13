@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { reportViolations } from '../ci/violation-table';
@@ -21,26 +21,35 @@ type Check = (typeof CHECKS)[number];
 const isCheck = (value: string): value is Check => (CHECKS as readonly string[]).includes(value);
 
 /**
+ * Throws when git fails. An empty diff and a failed diff are indistinguishable by output alone,
+ * so swallowing errors here would let the gate pass vacuously on any git problem — use
+ * `gitOrNull` only where a missing object is an expected answer.
+ *
  * `safe.directory` is scoped to this checkout because the gate runs as root inside the dev
  * container against a bind-mounted worktree owned by the host user, which git otherwise
  * refuses as "dubious ownership".
  */
-const git = (args: string[]): string => {
+const git = (args: string[]): string =>
+  execFileSync('git', ['-c', `safe.directory=${ROOT}`, ...args], {
+    cwd: ROOT,
+    encoding: 'utf8',
+    maxBuffer: 32 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+/** For lookups where "no such object" is a legitimate result, such as `git show` of a new file. */
+const gitOrNull = (args: string[]): string | null => {
   try {
-    return execFileSync('git', ['-c', `safe.directory=${ROOT}`, ...args], {
-      cwd: ROOT,
-      encoding: 'utf8',
-      maxBuffer: 32 * 1024 * 1024,
-    });
+    return git(args);
   } catch {
-    return '';
+    return null;
   }
 };
 
 const baseRef = (): string => process.env.ADR_DRIFT_BASE_REF || 'origin/main';
 
 const mergeBase = (): string => {
-  const base = git(['merge-base', 'HEAD', baseRef()]).trim();
+  const base = gitOrNull(['merge-base', 'HEAD', baseRef()])?.trim() ?? '';
   if (base === '') {
     throw new Error(
       `adr-drift: cannot resolve a merge base against "${baseRef()}". ` +
@@ -68,6 +77,30 @@ const readContext = (variable: string, file: string): string => {
   }
 };
 
+/** CI writes a JSON array; a comma-separated fallback keeps a hand-set PR_LABELS usable. */
+const parseLabels = (raw: string): string[] => {
+  const trimmed = raw.trim();
+  if (trimmed === '') {
+    return [];
+  }
+
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed: unknown = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) {
+        return parsed.filter((label): label is string => typeof label === 'string');
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return trimmed
+    .split(',')
+    .map((label) => label.trim())
+    .filter((label) => label !== '');
+};
+
 const driftViolations = (policy: DocsPolicy): DocsViolation[] => {
   const base = mergeBase();
   const changedPaths = git(['diff', '--name-only', `${base}..HEAD`])
@@ -78,12 +111,9 @@ const driftViolations = (policy: DocsPolicy): DocsViolation[] => {
   const result = detectAdrDrift(policy, {
     changedPaths,
     pullRequestBody: readContext('PR_BODY', 'reports/adr-drift/pr-body.txt'),
-    labels: readContext('PR_LABELS', 'reports/adr-drift/pr-labels.txt')
-      .split(',')
-      .map((label) => label.trim())
-      .filter((label) => label !== ''),
-    readBaseFile: (path) => git(['show', `${base}:${path}`]) || null,
-    readHeadFile: (path) => git(['show', `HEAD:${path}`]) || null,
+    labels: parseLabels(readContext('PR_LABELS', 'reports/adr-drift/pr-labels.txt')),
+    readBaseFile: (path) => gitOrNull(['show', `${base}:${path}`]),
+    readHeadFile: (path) => gitOrNull(['show', `HEAD:${path}`]),
   });
 
   if (result.triggers.length > 0 && result.violations.length === 0) {
@@ -108,7 +138,12 @@ const trackedMarkdown = (): string[] => {
         'refusing to pass vacuously.'
     );
   }
-  return listed.split('\0').filter((path) => path !== '');
+
+  // A file deleted in the worktree but still in the index would otherwise ENOENT downstream.
+  return listed
+    .split('\0')
+    .filter((path) => path !== '')
+    .filter((path) => existsSync(resolve(ROOT, path)));
 };
 
 const run = (check: Check, policy: DocsPolicy): DocsViolation[] => {

@@ -31,14 +31,16 @@ const readDeclaredQueries = (path: string): string[] => {
   const manifest = readJson(path) as { browserslist?: { production?: unknown } };
   const declared = manifest.browserslist?.production;
 
-  if (!Array.isArray(declared)) {
+  // Every entry must already be a string: `String(["chrome >= 111"])` would coerce a nested
+  // array into a query that compares equal to the policy while meaning something else.
+  if (!Array.isArray(declared) || !declared.every((query) => typeof query === 'string')) {
     throw new Error(
-      `${path}: "browserslist.production" must be an array. ` +
+      `${path}: "browserslist.production" must be an array of strings. ` +
         'Refusing to run with an undeclared browser matrix.'
     );
   }
 
-  return declared.map((query) => String(query));
+  return declared;
 };
 
 const policy = parsePolicy(readJson(POLICY_PATH), POLICY_PATH);

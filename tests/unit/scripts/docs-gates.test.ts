@@ -159,6 +159,18 @@ afterEach(() => {
 });
 
 describe('parseDocsPolicy', () => {
+  it('rejects an empty enforcement array but accepts an empty ignore list', () => {
+    expect(() => parseDocsPolicy(withAdrField('requiredSections', []), docsPolicyPath)).toThrow(
+      /"adr.requiredSections" must be a non-empty array of non-empty strings/
+    );
+
+    const raw = rawDocsPolicy();
+    const docs = raw.docs as Record<string, unknown>;
+    expect(() =>
+      parseDocsPolicy({ ...raw, docs: { ...docs, ignoredPaths: [] } }, docsPolicyPath)
+    ).not.toThrow();
+  });
+
   it('accepts the committed documentation policy', () => {
     expect(docsPolicy.adr.directory).toBe('docs/adr');
     expect(docsPolicy.moduleDocs.requiredFile).toBe('README.md');
@@ -187,10 +199,10 @@ describe('parseDocsPolicy', () => {
   it('rejects a required array field that is not an array of non-empty strings', () => {
     expect(() =>
       parseDocsPolicy(withAdrField('requiredSections', ['Links', '']), docsPolicyPath)
-    ).toThrow(/"adr.requiredSections" must be a non-empty string array/);
+    ).toThrow(/"adr.requiredSections" must be a non-empty array of non-empty strings/);
     expect(() =>
       parseDocsPolicy(withAdrField('allowedStatuses', 'Approved'), docsPolicyPath)
-    ).toThrow(/"adr.allowedStatuses" must be a non-empty string array/);
+    ).toThrow(/"adr.allowedStatuses" must be a non-empty array of non-empty strings/);
   });
 
   it('rejects a policy file that is not valid JSON', () => {
@@ -461,6 +473,22 @@ describe('extractCommandText', () => {
 });
 
 describe('checkDocReferences', () => {
+  it('skips make options and variable assignments when naming the target', () => {
+    const doc = ['```bash', 'make -C . lint', 'make ENV=dev lint', '```'].join('\n');
+
+    expect(
+      checkDocReferences(referenceRoot(doc), fixtureScan, docsPolicy.commandReferences)
+    ).toEqual([]);
+  });
+
+  it('accepts every target of a multi-target Makefile rule', () => {
+    expect([...parseMakeTargets('build test lint: deps\n\techo hi\n')].sort()).toEqual([
+      'build',
+      'lint',
+      'test',
+    ]);
+  });
+
   const check = (root: string): ReturnType<typeof checkDocReferences> =>
     checkDocReferences(root, fixtureScan, docsPolicy.commandReferences);
 
@@ -539,6 +567,31 @@ describe('isRemoteTarget', () => {
 });
 
 describe('checkDocLinks', () => {
+  it('ignores a footnote definition, which is body text rather than a link', () => {
+    const doc = ['Text with a note.[^1]', '', '[^1]: not-a-file.md is only prose.', ''].join('\n');
+
+    expect(checkDocLinks(linkRoot(doc), fixtureScan)).toEqual([]);
+  });
+
+  it('resolves a relative target that carries a query string', () => {
+    expect(checkDocLinks(linkRoot('[t](./target.md?plain=1)'), fixtureScan)).toEqual([]);
+  });
+
+  it('reports a malformed percent-escape instead of throwing', () => {
+    const violations = checkDocLinks(linkRoot('[t](./%E0%A4%A.md)'), fixtureScan);
+
+    expect(rulesOf(violations)).toEqual(['broken-link']);
+    expect(violations[0].message).toMatch(/malformed percent-escape/);
+  });
+
+  it('matches an uppercase HTML anchor id case-insensitively', () => {
+    const root = makeRoot();
+    write(root, 'docs/target.md', '# Target\n\n<a id="Section-One"></a>\n');
+    write(root, 'docs/guide.md', '[t](./target.md#section-one)');
+
+    expect(checkDocLinks(root, fixtureScan)).toEqual([]);
+  });
+
   const check = (root: string): ReturnType<typeof checkDocLinks> =>
     checkDocLinks(root, fixtureScan);
 
@@ -876,12 +929,42 @@ describe('detectAdrDrift', () => {
   it('reports nothing when a significant change ships a real ADR', () => {
     const result = detectAdrDrift(
       policy,
-      driftContext({ changedPaths: ['src/config/env/index.ts', 'docs/adr/004-thing.md'] })
+      driftContext({
+        changedPaths: ['src/config/env/index.ts', 'docs/adr/004-thing.md'],
+        readHeadFile: () => '# ADR-004: A decision',
+      })
     );
 
     expect(result.violations).toEqual([]);
     expect(result.triggers).toEqual(['src/config/env/index.ts']);
     expect(result.waived).toBe(false);
+  });
+
+  it('treats a reordered dependency map as unchanged', () => {
+    const before = JSON.stringify({ dependencies: { b: '1.0.0', a: '2.0.0' } });
+    const after = JSON.stringify({ dependencies: { a: '2.0.0', b: '1.0.0' } });
+    const result = detectAdrDrift(
+      policy,
+      driftContext({
+        changedPaths: ['package.json'],
+        readBaseFile: () => before,
+        readHeadFile: () => after,
+      })
+    );
+
+    expect(result.triggers).toEqual([]);
+  });
+
+  it('does not accept a deleted ADR as a recorded decision', () => {
+    const result = detectAdrDrift(
+      policy,
+      driftContext({
+        changedPaths: ['src/config/env/index.ts', 'docs/adr/004-thing.md'],
+        readHeadFile: () => null,
+      })
+    );
+
+    expect(rulesOf(result.violations)).toEqual(['undocumented-architecture-change']);
   });
 
   it('reports an undocumented architecture change when no ADR is touched', () => {
@@ -1032,7 +1115,10 @@ describe('detectAdrDrift', () => {
     );
     const result = detectAdrDrift(
       relocated,
-      driftContext({ changedPaths: ['rsbuild.config.ts', 'docs/decisions/004-thing.md'] })
+      driftContext({
+        changedPaths: ['rsbuild.config.ts', 'docs/decisions/004-thing.md'],
+        readHeadFile: () => '# ADR-004: A decision',
+      })
     );
 
     expect(result.violations).toEqual([]);

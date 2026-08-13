@@ -2,7 +2,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 
 import type { AdrPolicy, DocsViolation } from './docs-policy';
-import { extractHeadings, extractLinks } from './markdown';
+import { extractHeadings, extractLinks, stripFencedBlocks } from './markdown';
 
 const METADATA_LINE = (field: string): RegExp => new RegExp(`^-\\s*${field}:\\s*(.+?)\\s*$`, 'm');
 
@@ -68,9 +68,12 @@ const checkTitle = (name: string, body: string, policy: AdrPolicy): DocsViolatio
 
 const checkMetadata = (name: string, body: string, policy: AdrPolicy): DocsViolation[] => {
   const subject = `${policy.directory}/${name}`;
+  // Fenced samples are illustration; an ADR that only shows `- Status: Approved` inside a code
+  // block has not declared one.
+  const prose = stripFencedBlocks(body).join('\n');
 
   return policy.requiredMetadata.flatMap<DocsViolation>((field) => {
-    const match = METADATA_LINE(field).exec(body);
+    const match = METADATA_LINE(field).exec(prose);
     if (!match?.[1]) {
       return [
         {

@@ -4,9 +4,12 @@ import { join } from 'node:path';
 import type { CommandReferencePolicy, DocsScanPolicy, DocsViolation } from './docs-policy';
 import { fencedBlocks, listMarkdownFiles, stripFencedBlocks, toRepoPath } from './markdown';
 
-const MAKE_TARGET_DEFINITION = /^([A-Za-z0-9_.-]+)\s*:(?!=)/;
+// A rule may declare several targets before the colon (`a b c: deps`), and each is invocable.
+const MAKE_TARGET_DEFINITION = /^([A-Za-z0-9_.\-\s]+?)\s*:(?!=)/;
 const INLINE_CODE = /`([^`\n]+)`/g;
-const MAKE_INVOCATION = /(?:^|[\s;&|(])make\s+([A-Za-z0-9_.-]+)/g;
+// Options and variable assignments precede the target; skip them so `make -C dir lint` and
+// `make ENV=dev test-e2e` resolve to `lint` and `test-e2e` rather than to `-C` and `ENV=dev`.
+const MAKE_INVOCATION = /(?:^|[\s;&|(])make\s+(?:(?:-\S+|[A-Za-z0-9_]+=\S*)\s+)*([A-Za-z0-9_.-]+)/g;
 const RUN_INVOCATION = /(?:^|[\s;&|(])(?:bun|npm|yarn|pnpm)\s+run\s+([A-Za-z0-9_.:-]+)/g;
 
 export const parseMakeTargets = (makefile: string): Set<string> => {
@@ -14,8 +17,10 @@ export const parseMakeTargets = (makefile: string): Set<string> => {
 
   for (const line of makefile.split('\n')) {
     const match = MAKE_TARGET_DEFINITION.exec(line);
-    if (match?.[1] && !match[1].startsWith('.')) {
-      targets.add(match[1]);
+    for (const name of match?.[1]?.split(/\s+/) ?? []) {
+      if (name !== '' && !name.startsWith('.')) {
+        targets.add(name);
+      }
     }
   }
 
@@ -42,8 +47,13 @@ export const extractCommandText = (markdown: string): string[] => {
   return segments;
 };
 
-/** `make ...` in a guide is a placeholder, not a target; a real name has an alphanumeric. */
-const isNamedCommand = (token: string): boolean => /[A-Za-z0-9]/.test(token);
+/**
+ * `make ...` in a guide is a placeholder, not a target; a real name has an alphanumeric.
+ * `make -C dir lint` and `make FOO=bar lint` name an option and a variable, neither of which is
+ * a target, so treating them as one would report a documented command as broken.
+ */
+const isNamedCommand = (token: string): boolean =>
+  /[A-Za-z0-9]/.test(token) && !token.startsWith('-') && !token.includes('=');
 
 const collect = (segments: readonly string[], pattern: RegExp): Set<string> => {
   const found = new Set<string>();

@@ -170,9 +170,13 @@ export const checkResolution = (
   return [...violations, ...unexpected];
 };
 
+const HEADING_LINE = /^#{2,6}\s+(.+?)\s*$/;
+
 const sectionBody = (markdown: string, heading: string): string => {
   const lines = markdown.split('\n');
-  const start = lines.findIndex((line) => /^#{2,6}\s+/.test(line) && line.includes(heading));
+  // Exact heading text, not a substring: an earlier heading that merely mentions the configured
+  // name would otherwise capture the section and the real matrix would never be read.
+  const start = lines.findIndex((line) => HEADING_LINE.exec(line)?.[1] === heading);
   if (start === -1) {
     return '';
   }
@@ -288,6 +292,53 @@ const isFamilyPolicy = (value: unknown): value is BrowserFamilyPolicy => {
  * Fail fast rather than let a malformed policy silently disable the gate — an unreadable
  * matrix would leave the declared browser range unenforced (issue #153).
  */
+const POLYFILL_MODES = ['off', 'usage', 'entry'] as const;
+
+const isPolyfillMode = (value: unknown): value is BrowserSupportPolicy['polyfill'] =>
+  (POLYFILL_MODES as readonly unknown[]).includes(value);
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 0;
+
+/** First failing rule, or null when the shape is sound. */
+const shapeFailure = (candidate: Record<string, unknown>): string | null => {
+  const { polyfill, baseline, queries, families, readmeSection } = candidate;
+
+  if (!isPolyfillMode(polyfill)) {
+    return `"polyfill" must be one of ${POLYFILL_MODES.map((mode) => `"${mode}"`).join(', ')}`;
+  }
+  if (!isNonEmptyString(baseline)) {
+    return '"baseline" must be a non-empty string';
+  }
+  if (!isNonEmptyString(readmeSection)) {
+    return '"readmeSection" must be a non-empty string';
+  }
+  if (!Array.isArray(queries) || queries.length === 0) {
+    return '"queries" must be a non-empty array';
+  }
+  if (!queries.every(isNonEmptyString)) {
+    return '"queries" must contain only non-empty strings';
+  }
+  if (typeof families !== 'object' || families === null) {
+    return '"families" must be an object';
+  }
+
+  const entries = Object.entries(families as Record<string, unknown>);
+  if (entries.length === 0) {
+    return '"families" must declare at least one browser';
+  }
+
+  const invalid = entries.filter(([, value]) => !isFamilyPolicy(value)).map(([family]) => family);
+  return invalid.length === 0
+    ? null
+    : `families [${describeList(invalid)}] must each declare a label and exactly one of ` +
+        '"floor" or "trackLatest"';
+};
+
+/**
+ * Fail fast rather than let a malformed policy silently disable the gate — an unreadable
+ * matrix would leave the declared browser range unenforced (issue #153).
+ */
 export const parsePolicy = (raw: unknown, source: string): BrowserSupportPolicy => {
   const reject = (reason: string): never => {
     throw new Error(`${source}: ${reason}. Refusing to run with an unenforced browser matrix.`);
@@ -298,44 +349,10 @@ export const parsePolicy = (raw: unknown, source: string): BrowserSupportPolicy 
   }
 
   const candidate = raw as Record<string, unknown>;
-  const { polyfill, baseline, queries, families, readmeSection } = candidate;
-
-  if (polyfill !== 'off' && polyfill !== 'usage' && polyfill !== 'entry') {
-    return reject('"polyfill" must be one of "off", "usage", "entry"');
-  }
-  if (typeof baseline !== 'string' || baseline.length === 0) {
-    return reject('"baseline" must be a non-empty string');
-  }
-  if (typeof readmeSection !== 'string' || readmeSection.length === 0) {
-    return reject('"readmeSection" must be a non-empty string');
-  }
-  if (!Array.isArray(queries) || queries.length === 0) {
-    return reject('"queries" must be a non-empty array');
-  }
-  if (!queries.every((query): query is string => typeof query === 'string' && query.length > 0)) {
-    return reject('"queries" must contain only non-empty strings');
-  }
-  if (typeof families !== 'object' || families === null) {
-    return reject('"families" must be an object');
+  const failure = shapeFailure(candidate);
+  if (failure !== null) {
+    return reject(failure);
   }
 
-  const entries = Object.entries(families as Record<string, unknown>);
-  if (entries.length === 0) {
-    return reject('"families" must declare at least one browser');
-  }
-  const invalid = entries.filter(([, value]) => !isFamilyPolicy(value)).map(([family]) => family);
-  if (invalid.length > 0) {
-    return reject(
-      `families [${describeList(invalid)}] must each declare a label and exactly one of ` +
-        '"floor" or "trackLatest"'
-    );
-  }
-
-  return {
-    polyfill,
-    baseline,
-    queries,
-    families: Object.fromEntries(entries) as Record<string, BrowserFamilyPolicy>,
-    readmeSection,
-  };
+  return candidate as unknown as BrowserSupportPolicy;
 };

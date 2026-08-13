@@ -667,7 +667,8 @@ export default [
   // query that RSBuild transpiles against, which keeps the support promise machine-checked rather
   // than aspirational. A finding means the API is unavailable on a browser we claim to support:
   // use a supported API, or re-decide and raise the floor in config/browser-support.json — never
-  // suppress. ES built-ins are down-levelled by SWC from the same query.
+  // suppress. Note this covers Web/DOM APIs only: SWC down-levels *syntax* from the same query
+  // but adds no runtime shims, so a missing ES built-in method is out of scope for both.
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*', '**/*.d.ts'],

@@ -22,18 +22,20 @@ export const checkDocCoverage = (root: string, policy: ModuleDocsPolicy): DocsVi
   policy.roots.flatMap((moduleRoot) =>
     listModules(root, moduleRoot).flatMap<DocsViolation>((name) => {
       const docPath = `${moduleRoot}/${name}/${policy.requiredFile}`;
+      const absolute = join(root, docPath);
 
-      if (!existsSync(join(root, docPath))) {
+      // isFile, not existsSync: a *directory* named README.md documents nothing.
+      if (!existsSync(absolute) || !statSync(absolute).isFile()) {
         return [
           {
             rule: 'missing-module-doc',
             subject: `${moduleRoot}/${name}`,
-            message: `has no ${policy.requiredFile} — document the module's purpose and public API`,
+            message: `has no ${policy.requiredFile} file — document its purpose and public API`,
           },
         ];
       }
 
-      if (readFileSync(join(root, docPath), 'utf8').trim() === '') {
+      if (readFileSync(absolute, 'utf8').trim() === '') {
         return [
           {
             rule: 'empty-module-doc',
