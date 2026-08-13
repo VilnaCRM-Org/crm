@@ -375,6 +375,12 @@ describe('fencedBlocks', () => {
 });
 
 describe('extractLinks and extractHeadings', () => {
+  it('does not let a longer closing backtick run expose the rest of the line', () => {
+    const line = 'Use ```a ` b``` then [x](./real.md)';
+
+    expect(extractLinks(line).map((link) => link.target)).toEqual(['./real.md']);
+  });
+
   it('does not let a backtick inside a double-backtick span expose later links', () => {
     const line = 'Use ``a ` b`` then [x](./nope.md) is an example: `[y](./gone.md)`';
 

@@ -203,7 +203,13 @@ const VERSION_CELL = /^[0-9]+(\.[0-9]+)*$/;
  * removing the underscore would let it read as a valid `111`.
  */
 const labelText = (cell: string): string => cell.replace(/[*_`]/g, '').trim();
-const versionText = (cell: string): string => cell.replace(/[*`]/g, '').trim();
+
+/** Only a matched pair of outer underscores is emphasis; an interior one stays part of the text. */
+const versionText = (cell: string): string =>
+  cell
+    .replace(/[*`]/g, '')
+    .trim()
+    .replace(/^(_{1,2})([0-9]+(?:\.[0-9]+)*)\1$/, '$2');
 
 /**
  * Row-wise, not substring: a whole-section `includes` would accept a Chrome row reading

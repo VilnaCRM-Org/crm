@@ -420,6 +420,11 @@ describe('parseMatrixRows', () => {
     expect(parseMatrixRows('| _Chrome_ | 111 |').get('Chrome')).toBe('111');
   });
 
+  it('strips matched outer underscore emphasis from a version cell', () => {
+    expect(parseMatrixRows('| Chrome | _111_ |').get('Chrome')).toBe('111');
+    expect(parseMatrixRows('| Chrome | __16.4__ |').get('Chrome')).toBe('16.4');
+  });
+
   it('skips the header and divider rows and trims every cell', () => {
     const body = [
       '| Browser                | Minimum version |',

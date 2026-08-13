@@ -24,8 +24,9 @@ const REFERENCE_DEFINITION = /^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?([^>\s]+)>?/;
 const HEADING = /^ {0,3}(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/;
 // Delimiter-aware: a span opened with N backticks closes on a run of exactly N, so a single
 // backtick inside a ``double-backtick`` span does not terminate it early and leave the rest of
-// the line — including example links — exposed as real markdown.
-const INLINE_CODE_SPAN = /(`+)(?:(?!\1)[^\n])*\1/g;
+// the line — including example links — exposed as real markdown. The lookarounds keep both runs
+// maximal; without them a longer closing run would be matched N-at-a-time and expose the tail.
+const INLINE_CODE_SPAN = /(?<!`)(`+)(?!`)(?:(?!\1)[^\n])*\1(?!`)/g;
 
 export interface FenceScanLine {
   text: string;
