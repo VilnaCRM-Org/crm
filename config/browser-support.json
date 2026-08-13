@@ -7,8 +7,8 @@
     "firefox >= 111",
     "safari >= 16.4",
     "ios_saf >= 16.4",
-    "and_chr >= 111",
-    "and_ff >= 111",
+    "last 1 and_chr version",
+    "last 1 and_ff version",
     "samsung >= 22",
     "opera >= 97"
   ],

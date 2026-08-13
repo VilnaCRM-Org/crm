@@ -69,9 +69,16 @@ const manifestChangedDependencies = (policy: DocsPolicy, context: DriftContext):
     return false;
   }
 
-  const before = dependencyMaps(context.readBaseFile(significantManifest), manifestKeys);
-  const after = dependencyMaps(context.readHeadFile(significantManifest), manifestKeys);
-  return before !== after;
+  const baseSource = context.readBaseFile(significantManifest);
+  const headSource = context.readHeadFile(significantManifest);
+
+  // Neither revision readable means the comparison is uninformative, not that the maps agree.
+  // Treating that as "unchanged" would silently drop ADR enforcement whenever git misbehaves.
+  if (baseSource === null && headSource === null) {
+    return true;
+  }
+
+  return dependencyMaps(baseSource, manifestKeys) !== dependencyMaps(headSource, manifestKeys);
 };
 
 /**

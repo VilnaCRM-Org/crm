@@ -5,12 +5,15 @@ import type { CommandReferencePolicy, DocsScanPolicy, DocsViolation } from './do
 import { fencedBlocks, listMarkdownFiles, stripFencedBlocks, toRepoPath } from './markdown';
 
 // A rule may declare several targets before the colon (`a b c: deps`), and each is invocable.
-const MAKE_TARGET_DEFINITION = /^([A-Za-z0-9_.\-\s]+?)\s*:(?!=)/;
+// Anchored at column zero: recipe lines start with a tab, and matching them would register
+// fragments of shell commands ("curl", "http") as callable targets.
+const MAKE_TARGET_DEFINITION = /^([A-Za-z0-9_.-]+(?:[ \t]+[A-Za-z0-9_.-]+)*)[ \t]*:(?!=)/;
 const INLINE_CODE = /`([^`\n]+)`/g;
 // Options and variable assignments precede the target; skip them so `make -C dir lint` and
 // `make ENV=dev test-e2e` resolve to `lint` and `test-e2e` rather than to `-C` and `ENV=dev`.
 const MAKE_INVOCATION = /(?:^|[\s;&|(])make\s+(?:(?:-\S+|[A-Za-z0-9_]+=\S*)\s+)*([A-Za-z0-9_.-]+)/g;
-const RUN_INVOCATION = /(?:^|[\s;&|(])(?:bun|npm|yarn|pnpm)\s+run\s+([A-Za-z0-9_.:-]+)/g;
+const RUN_INVOCATION =
+  /(?:^|[\s;&|(])(?:bun|npm|yarn|pnpm)\s+run\s+(?:-\S+\s+)*([A-Za-z0-9_.:-]+)/g;
 
 export const parseMakeTargets = (makefile: string): Set<string> => {
   const targets = new Set<string>();

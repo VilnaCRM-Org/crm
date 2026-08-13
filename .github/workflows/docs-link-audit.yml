@@ -27,16 +27,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Restore link cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .lycheecache
-          key: lychee-${{ github.run_id }}
-          restore-keys: lychee-
-
+      # Deliberately uncached. The point of a weekly audit is to re-resolve every link against
+      # the live web; a cache that outlived the interval would just replay last week's answers,
+      # and one that expired within it would never be read.
       - name: Audit remote documentation links
         uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
         with:
-          args: --config .lychee.toml --cache --no-progress './**/*.md'
+          args: --config .lychee.toml --no-progress './**/*.md'
           fail: true
           jobSummary: true

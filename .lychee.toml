@@ -18,10 +18,6 @@ max_concurrency = 8
 # Identify the crawler; several hosts reject the default client outright.
 user_agent = "Mozilla/5.0 (compatible; VilnaCRM-crm-link-audit/1.0; +https://github.com/VilnaCRM-Org/crm)"
 
-# Cache between runs so a weekly audit re-checks only what it has to.
-cache = true
-max_cache_age = "6d"
-
 # Anchors and relative paths are covered deterministically by `make lint-doc-links`; this run is
 # only about reachability of remote URLs.
 include_fragments = false

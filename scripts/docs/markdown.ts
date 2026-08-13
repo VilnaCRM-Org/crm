@@ -19,7 +19,10 @@ const INLINE_LINK = /(?<!!)\[[^\]]*\]\(\s*<?([^)>\s]+)>?(?:\s+"[^"]*")?\s*\)/g;
 // `[^1]: …` is a GitHub footnote definition, not a link reference; matching it produced
 // false broken-link failures for a target that is body text.
 const REFERENCE_DEFINITION = /^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?([^>\s]+)>?/;
-const HEADING = /^\s{0,3}(#{1,6})\s+(.+?)\s*$/;
+// Four spaces of indent is an indented code block, not a heading; a trailing run of hashes is
+// an optional ATX closing sequence and is not part of the heading text.
+const HEADING = /^ {0,3}(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/;
+const INLINE_CODE_SPAN = /`+[^`\n]*`+/g;
 
 export interface FenceScanLine {
   text: string;
@@ -197,7 +200,10 @@ export const fencedBlocks = (markdown: string): string[] => {
 export const extractLinks = (markdown: string): MarkdownLink[] => {
   const links: MarkdownLink[] = [];
 
-  stripFencedBlocks(markdown).forEach((line, index) => {
+  stripFencedBlocks(markdown).forEach((rawLine, index) => {
+    // A link shown inside a code span is an example of syntax, not a link to resolve.
+    const line = rawLine.replace(INLINE_CODE_SPAN, '');
+
     for (const match of line.matchAll(INLINE_LINK)) {
       const [, target] = match;
       if (target) {

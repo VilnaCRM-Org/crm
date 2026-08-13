@@ -125,15 +125,20 @@ const checkFamily = (
   }
 
   if (expected.trackLatest) {
-    return actual.versions === 1
+    // Resolving to one version is not enough — a pinned old version also resolves to one. The
+    // single version must actually be the newest browserslist knows for that family.
+    const latest = resolveFamilies([`last 1 ${family} version`]).get(family)?.floor ?? '';
+    const isLatest = latest !== '' && compareVersions(actual.floor, latest) === 0;
+
+    return actual.versions === 1 && isLatest
       ? []
       : [
           {
             rule: 'latest-only-drift',
             subject: family,
             message:
-              `${expected.label} is declared latest-only but resolved to ${actual.versions} ` +
-              'versions — re-decide the floor and pin it',
+              `${expected.label} is declared latest-only but the query resolved ` +
+              `${actual.versions} version(s) at ${actual.floor}; the current release is ${latest}`,
           },
         ];
   }
@@ -159,8 +164,9 @@ export const checkResolution = (
     checkFamily(family, expected, resolved.get(family))
   );
 
+  // hasOwn, not `in`: `constructor` and friends are inherited and would silently pass.
   const unexpected = [...resolved.keys()]
-    .filter((family) => !(family in policy.families))
+    .filter((family) => !Object.hasOwn(policy.families, family))
     .map<SupportViolation>((family) => ({
       rule: 'unexpected-family',
       subject: family,
@@ -170,7 +176,8 @@ export const checkResolution = (
   return [...violations, ...unexpected];
 };
 
-const HEADING_LINE = /^#{2,6}\s+(.+?)\s*$/;
+// The trailing run of hashes is an optional ATX closing sequence, not part of the heading text.
+const HEADING_LINE = /^#{2,6}\s+(.+?)(?:\s+#+)?\s*$/;
 
 const sectionBody = (markdown: string, heading: string): string => {
   const lines = markdown.split('\n');
@@ -188,15 +195,17 @@ const sectionBody = (markdown: string, heading: string): string => {
 
 const TABLE_DIVIDER = /^[\s|:-]+$/;
 const LATEST = 'latest';
+const VERSION_CELL = /^[0-9]+(\.[0-9]+)*$/;
+
+/** Emphasis and code markers are presentation; a bolded cell still states the same value. */
+const cellText = (cell: string): string => cell.replace(/[*_`]/g, '').trim();
 
 /**
  * Row-wise, not substring: a whole-section `includes` would accept a Chrome row reading
  * "latest" purely because some other row happens to contain Chrome's floor, which is exactly
- * the mislabelled-matrix drift this gate exists to catch.
+ * the mislabelled-matrix drift this gate exists to catch. A repeated label keeps its LAST
+ * value, so `checkReadme` still compares against what a reader sees at the bottom of the table.
  */
-/** Emphasis and code markers are presentation; a bolded cell still states the same value. */
-const cellText = (cell: string): string => cell.replace(/[*_`]/g, '').trim();
-
 export const parseMatrixRows = (body: string): Map<string, string> => {
   const rows = new Map<string, string>();
   let previousLabel: string | null = null;
@@ -247,35 +256,51 @@ export const checkReadme = (policy: BrowserSupportPolicy, readme: string): Suppo
   }
 
   const rows = parseMatrixRows(body);
+  const declared = new Set(Object.values(policy.families).map((family) => family.label));
 
-  return Object.entries(policy.families).flatMap<SupportViolation>(([family, expected]) => {
-    const stated = rows.get(expected.label);
+  // A row for a browser the policy does not declare is a published promise nothing enforces.
+  const extra = [...rows.keys()]
+    .filter((label) => !declared.has(label))
+    .map<SupportViolation>((label) => ({
+      rule: 'readme-drift',
+      subject: label,
+      message: `README lists "${label}", which config/browser-support.json does not declare`,
+    }));
 
-    if (stated === undefined) {
-      return [
-        {
-          rule: 'readme-drift',
-          subject: family,
-          message: `README section "${policy.readmeSection}" has no row for ${expected.label}`,
-        },
-      ];
-    }
+  const perFamily = Object.entries(policy.families).flatMap<SupportViolation>(
+    ([family, expected]) => {
+      const stated = rows.get(expected.label);
 
-    const wanted = expected.trackLatest ? LATEST : (expected.floor ?? '');
-    const matches = expected.trackLatest
-      ? stated.toLowerCase() === LATEST
-      : compareVersions(stated, wanted) === 0;
-
-    return matches
-      ? []
-      : [
+      if (stated === undefined) {
+        return [
           {
             rule: 'readme-drift',
             subject: family,
-            message: `README states ${expected.label} "${stated}", policy pins "${wanted}"`,
+            message: `README section "${policy.readmeSection}" has no row for ${expected.label}`,
           },
         ];
-  });
+      }
+
+      const wanted = expected.trackLatest ? LATEST : (expected.floor ?? '');
+      const matches = expected.trackLatest
+        ? stated.toLowerCase() === LATEST
+        : // The whole cell must be the version. `parseVersion` reads a numeric prefix, so
+          // without this an annotated cell like "111 (or newer)" would silently compare equal.
+          VERSION_CELL.test(stated) && compareVersions(stated, wanted) === 0;
+
+      return matches
+        ? []
+        : [
+            {
+              rule: 'readme-drift',
+              subject: family,
+              message: `README states ${expected.label} "${stated}", policy pins "${wanted}"`,
+            },
+          ];
+    }
+  );
+
+  return [...perFamily, ...extra];
 };
 
 const isFamilyPolicy = (value: unknown): value is BrowserFamilyPolicy => {

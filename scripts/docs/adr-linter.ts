@@ -142,10 +142,31 @@ const checkIndex = (root: string, names: string[], policy: AdrPolicy): DocsViola
 
   // Resolve each entry against the index's own directory rather than matching basenames: a
   // link to `../elsewhere/001-a.md` must not count as listing `docs/adr/001-a.md`.
-  const targets = extractLinks(readFileSync(indexPath, 'utf8'))
-    .map((link) => decodeURIComponent(link.target.split('#')[0] ?? ''))
-    .filter((target) => target.endsWith('.md'))
-    .map((target) => ({ target, absolute: resolve(indexDirectory, target) }));
+  // A malformed percent-escape must surface as a violation, not crash the gate.
+  const decode = (value: string): string | null => {
+    try {
+      return decodeURIComponent(value);
+    } catch {
+      return null;
+    }
+  };
+
+  const rawTargets = extractLinks(readFileSync(indexPath, 'utf8'))
+    .map((link) => link.target.split('#')[0] ?? '')
+    .filter((target) => target.endsWith('.md'));
+
+  const malformed = rawTargets
+    .filter((target) => decode(target) === null)
+    .map<DocsViolation>((target) => ({
+      rule: 'orphan-in-index',
+      subject: `${policy.indexFile} → ${target}`,
+      message: 'index entry contains a malformed percent-escape',
+    }));
+
+  const targets = rawTargets.flatMap((target) => {
+    const decoded = decode(target);
+    return decoded === null ? [] : [{ target, absolute: resolve(indexDirectory, decoded) }];
+  });
 
   const linked = new Set(
     targets
@@ -176,7 +197,7 @@ const checkIndex = (root: string, names: string[], policy: AdrPolicy): DocsViola
           : `index links outside ${policy.directory}`,
     }));
 
-  return [...missing, ...orphans];
+  return [...missing, ...orphans, ...malformed];
 };
 
 const checkTemplate = (root: string, policy: AdrPolicy): DocsViolation[] => {

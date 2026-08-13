@@ -584,10 +584,46 @@ describe('checkDocLinks', () => {
     expect(violations[0].message).toMatch(/malformed percent-escape/);
   });
 
-  it('matches an uppercase HTML anchor id case-insensitively', () => {
+  it('matches an explicit HTML anchor id exactly, as the DOM does', () => {
     const root = makeRoot();
     write(root, 'docs/target.md', '# Target\n\n<a id="Section-One"></a>\n');
-    write(root, 'docs/guide.md', '[t](./target.md#section-one)');
+    write(root, 'docs/guide.md', '[exact](./target.md#Section-One)');
+
+    expect(checkDocLinks(root, fixtureScan)).toEqual([]);
+  });
+
+  it('reports a case-mismatched HTML anchor id', () => {
+    const root = makeRoot();
+    write(root, 'docs/target.md', '# Target\n\n<a id="Section-One"></a>\n');
+    write(root, 'docs/guide.md', '[wrong case](./target.md#section-one)');
+
+    expect(rulesOf(checkDocLinks(root, fixtureScan))).toEqual(['broken-link']);
+  });
+
+  it('accepts a single-quoted HTML anchor id', () => {
+    const root = makeRoot();
+    write(root, 'docs/target.md', "# Target\n\n<A ID='install'></A>\n");
+    write(root, 'docs/guide.md', '[t](./target.md#install)');
+
+    expect(checkDocLinks(root, fixtureScan)).toEqual([]);
+  });
+
+  it('ignores an anchor shown inside a fenced example', () => {
+    const root = makeRoot();
+    write(root, 'docs/target.md', '# Target\n\n```html\n<a id="fake"></a>\n```\n');
+    write(root, 'docs/guide.md', '[t](./target.md#fake)');
+
+    expect(rulesOf(checkDocLinks(root, fixtureScan))).toEqual(['broken-link']);
+  });
+
+  it('ignores a link written inside an inline code span', () => {
+    expect(checkDocLinks(linkRoot('Write `[x](./nope.md)` to link.'), fixtureScan)).toEqual([]);
+  });
+
+  it('matches a generated heading slug case-insensitively', () => {
+    const root = makeRoot();
+    write(root, 'docs/target.md', '# Target\n\n## Mixed Case Heading\n');
+    write(root, 'docs/guide.md', '[t](./target.md#MIXED-case-heading)');
 
     expect(checkDocLinks(root, fixtureScan)).toEqual([]);
   });

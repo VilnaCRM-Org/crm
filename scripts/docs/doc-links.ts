@@ -2,7 +2,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, normalize, resolve, sep } from 'node:path';
 
 import type { DocsScanPolicy, DocsViolation } from './docs-policy';
-import { extractHeadings, extractLinks, listMarkdownFiles, slugify, toRepoPath } from './markdown';
+import {
+  extractHeadings,
+  extractLinks,
+  listMarkdownFiles,
+  slugify,
+  stripFencedBlocks,
+  toRepoPath,
+} from './markdown';
 
 const REMOTE_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 const PROTOCOL_RELATIVE = /^\/\//;
@@ -10,29 +17,40 @@ const PROTOCOL_RELATIVE = /^\/\//;
 export const isRemoteTarget = (target: string): boolean =>
   REMOTE_SCHEME.test(target) || PROTOCOL_RELATIVE.test(target);
 
-const anchorsOf = (markdown: string): Set<string> => {
-  const anchors = new Set<string>();
+const EXPLICIT_ANCHOR = /<a\s+[^>]*\b(?:name|id)\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+
+export interface DocumentAnchors {
+  /** Generated heading slugs: GitHub lowercases these, so the lookup is case-insensitive. */
+  slugs: Set<string>;
+  /** Author-written HTML ids: the DOM matches these exactly, so the lookup is case-sensitive. */
+  ids: Set<string>;
+}
+
+const anchorsOf = (markdown: string): DocumentAnchors => {
+  const slugs = new Set<string>();
+  const ids = new Set<string>();
   const seen = new Map<string, number>();
 
   for (const heading of extractHeadings(markdown)) {
     const base = slugify(heading.text);
     const occurrence = seen.get(base) ?? 0;
     seen.set(base, occurrence + 1);
-    anchors.add(occurrence === 0 ? base : `${base}-${occurrence}`);
+    slugs.add(occurrence === 0 ? base : `${base}-${occurrence}`);
   }
 
-  // Lowercased on the way in because the fragment lookup is case-insensitive; storing an
-  // uppercase HTML id verbatim would make a correct link report as broken.
-  for (const match of markdown.matchAll(/<a\s+[^>]*(?:name|id)="([^"]+)"/g)) {
-    if (match[1]) {
-      anchors.add(match[1].toLowerCase());
+  // Scanned over the stripped source: an `<a id=…>` shown inside a fenced example is
+  // illustration, and accepting it would let a link to a non-existent anchor pass.
+  for (const match of stripFencedBlocks(markdown).join('\n').matchAll(EXPLICIT_ANCHOR)) {
+    const id = match[1] ?? match[2];
+    if (id !== undefined && id !== '') {
+      ids.add(id);
     }
   }
 
-  return anchors;
+  return { slugs, ids };
 };
 
-const readAnchors = (path: string, cache: Map<string, Set<string>>): Set<string> => {
+const readAnchors = (path: string, cache: Map<string, DocumentAnchors>): DocumentAnchors => {
   const cached = cache.get(path);
   if (cached) {
     return cached;
@@ -41,6 +59,9 @@ const readAnchors = (path: string, cache: Map<string, Set<string>>): Set<string>
   cache.set(path, anchors);
   return anchors;
 };
+
+const hasAnchor = (anchors: DocumentAnchors, fragment: string): boolean =>
+  anchors.ids.has(fragment) || anchors.slugs.has(fragment.toLowerCase());
 
 /** Reject paths that escape the repository so a link can never smuggle a traversal. */
 const containedPath = (root: string, candidate: string): string | null => {
@@ -62,7 +83,7 @@ const checkFileLink = (
   root: string,
   file: string,
   target: string,
-  cache: Map<string, Set<string>>
+  cache: Map<string, DocumentAnchors>
 ): string | null => {
   const [beforeAnchor = '', rawAnchor] = target.split('#');
   // A relative documentation path carries no query string; `?` is part of the file name only in
@@ -97,7 +118,7 @@ const checkFileLink = (
     return 'link contains a malformed percent-escape';
   }
 
-  return readAnchors(resolved, cache).has(anchor.toLowerCase())
+  return hasAnchor(readAnchors(resolved, cache), anchor)
     ? null
     : `no heading anchors to "#${rawAnchor}"`;
 };
@@ -112,7 +133,7 @@ export const checkDocLinks = (
   scan: DocsScanPolicy,
   tracked?: readonly string[]
 ): DocsViolation[] => {
-  const cache = new Map<string, Set<string>>();
+  const cache = new Map<string, DocumentAnchors>();
 
   return listMarkdownFiles(root, scan, tracked).flatMap<DocsViolation>((file) => {
     const markdown = readFileSync(file, 'utf8');

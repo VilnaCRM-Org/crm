@@ -340,3 +340,16 @@ EOF
     fi
   done
 }
+
+@test "lint-docs runs every documentation sub-gate (issue #122)" {
+  # The two-expectation fixture table can only assert two commands, so the aggregate is
+  # verified here instead: dropping any prerequisite must fail a test, not slip through.
+  reset_command_log
+  run_make_target lint-docs
+  [ "$status" -eq 0 ]
+
+  local check
+  for check in adr coverage references links; do
+    assert_log_contains "docker compose exec -T dev bun scripts/docs/lint-docs.ts $check"
+  done
+}

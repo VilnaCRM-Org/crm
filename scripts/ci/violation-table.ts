@@ -33,12 +33,10 @@ export const renderViolationTable = (
       .join('  ')
       .trimEnd();
 
-  const separator = '-'.repeat(
-    Math.min(
-      widths.reduce((sum, width) => sum + width + 2, 0),
-      120
-    )
-  );
+  // Cells are joined by two spaces, so the rendered width is the sum of the columns plus two
+  // per gap — one fewer gap than there are columns.
+  const rendered = widths.reduce((sum, width) => sum + width, 0) + (widths.length - 1) * 2;
+  const separator = '-'.repeat(Math.min(rendered, 120));
 
   return [renderRow(HEADERS), separator, ...rows.map(renderRow)].join('\n');
 };

@@ -256,6 +256,34 @@ describe('checkResolution', () => {
 });
 
 describe('checkReadme', () => {
+  it('reports a README row for a browser the policy does not declare', () => {
+    const policy = readPolicy();
+    const rows = [...allRows(policy), '| Internet Explorer | 11 |'];
+    const violations = checkReadme(policy, renderReadme(policy.readmeSection, rows));
+
+    expect(rulesOf(violations)).toEqual(['readme-drift']);
+    expect(violations[0].subject).toBe('Internet Explorer');
+  });
+
+  it('rejects an annotated version cell rather than reading its numeric prefix', () => {
+    const policy = readPolicy();
+    const rows = rowsWithStated(policy, 'chrome', '111 (or newer)');
+
+    expect(rulesOf(checkReadme(policy, renderReadme(policy.readmeSection, rows)))).toEqual([
+      'readme-drift',
+    ]);
+  });
+
+  it('accepts a heading written with a closing hash sequence', () => {
+    const policy = readPolicy();
+    const readme = renderReadme(policy.readmeSection, allRows(policy)).replace(
+      `## ${policy.readmeSection}`,
+      `## ${policy.readmeSection} ##`
+    );
+
+    expect(checkReadme(policy, readme)).toEqual([]);
+  });
+
   it('binds to the exact heading rather than one that merely mentions it', () => {
     const policy = readPolicy();
     const decoy = [

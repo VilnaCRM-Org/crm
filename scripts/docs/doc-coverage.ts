@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 
 import type { DocsViolation, ModuleDocsPolicy } from './docs-policy';
 
@@ -18,8 +18,16 @@ const listModules = (root: string, moduleRoot: string): string[] => {
  * Every module must ship a README describing its purpose and public surface, so a module can
  * never be added undocumented (issue #122).
  */
-export const checkDocCoverage = (root: string, policy: ModuleDocsPolicy): DocsViolation[] =>
-  policy.roots.flatMap((moduleRoot) =>
+export const checkDocCoverage = (root: string, policy: ModuleDocsPolicy): DocsViolation[] => {
+  // A policy edit must not be able to point the required file outside the module directory.
+  if (policy.requiredFile !== basename(policy.requiredFile) || policy.requiredFile.includes('..')) {
+    throw new Error(
+      `docs-policy moduleDocs: "requiredFile" must be a bare filename, got ` +
+        `"${policy.requiredFile}". Refusing to run with an escapable doc-coverage gate.`
+    );
+  }
+
+  return policy.roots.flatMap((moduleRoot) =>
     listModules(root, moduleRoot).flatMap<DocsViolation>((name) => {
       const docPath = `${moduleRoot}/${name}/${policy.requiredFile}`;
       const absolute = join(root, docPath);
@@ -48,3 +56,4 @@ export const checkDocCoverage = (root: string, policy: ModuleDocsPolicy): DocsVi
       return [];
     })
   );
+};
