@@ -351,7 +351,7 @@ describe('checkReadme', () => {
 });
 
 describe('parseMatrixRows', () => {
-  it('skips the divider row and trims every cell', () => {
+  it('skips the header and divider rows and trims every cell', () => {
     const body = [
       '| Browser                | Minimum version |',
       '| ---------------------- | --------------- |',
@@ -360,10 +360,26 @@ describe('parseMatrixRows', () => {
     ].join('\n');
 
     expect([...parseMatrixRows(body)]).toEqual([
-      ['Browser', 'Minimum version'],
       ['Chrome', '111'],
       ['Safari (macOS)', '16.4'],
     ]);
+  });
+
+  it('reads a family whose label collides with the header cell', () => {
+    const body = [
+      '| Browser | Minimum version |',
+      '| ------- | --------------- |',
+      '| Browser | 42              |',
+    ].join('\n');
+
+    expect(parseMatrixRows(body).get('Browser')).toBe('42');
+  });
+
+  it('ignores emphasis and code markers so a bolded cell still states its value', () => {
+    const body = ['| **Chrome** | `111` |', '| _Edge_ | **112** |'].join('\n');
+
+    expect(parseMatrixRows(body).get('Chrome')).toBe('111');
+    expect(parseMatrixRows(body).get('Edge')).toBe('112');
   });
 
   it('reads rows written with and without a trailing pipe', () => {

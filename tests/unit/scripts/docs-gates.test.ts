@@ -723,6 +723,24 @@ describe('lintAdrs', () => {
     );
   });
 
+  it('does not let a broken link named like the template escape the orphan check', () => {
+    const index = [
+      '# ADRs',
+      '',
+      '- [ADR entry](./001-a-decision.md)',
+      '- [Relocated](../elsewhere/template.md)',
+      '- [Nested](./sub/template.md)',
+      '',
+    ].join('\n');
+    const violations = lintAdrs(scaffoldAdrs({ index }), adrPolicy);
+
+    expect(rulesOf(violations)).toEqual(['orphan-in-index', 'orphan-in-index']);
+    expect(violations.map((violation) => violation.subject)).toEqual([
+      'docs/adr/README.md → ../elsewhere/template.md',
+      'docs/adr/README.md → ./sub/template.md',
+    ]);
+  });
+
   it('does not treat the template linked from the index as an orphan', () => {
     const index = [
       '# ADRs',
@@ -1003,13 +1021,27 @@ describe('detectAdrDrift', () => {
   });
 
   it('recognises a decision recorded under a policy-configured ADR prefix', () => {
-    const relocated = driftPolicy({ adrPathPrefix: 'docs/decisions/' });
+    const raw = rawDocsPolicy();
+    const relocated = parseDocsPolicy(
+      {
+        ...raw,
+        adr: { ...docsPolicy.adr, directory: 'docs/decisions' },
+        architectureDrift: { ...docsPolicy.architectureDrift, adrPathPrefix: 'docs/decisions/' },
+      },
+      docsPolicyPath
+    );
     const result = detectAdrDrift(
       relocated,
       driftContext({ changedPaths: ['rsbuild.config.ts', 'docs/decisions/004-thing.md'] })
     );
 
     expect(result.violations).toEqual([]);
+  });
+
+  it('refuses a policy whose ADR prefix and ADR directory disagree', () => {
+    expect(() => driftPolicy({ adrPathPrefix: 'docs/decisions/' })).toThrow(
+      /"architectureDrift.adrPathPrefix" must be "docs\/adr\/" to match "adr.directory"/
+    );
   });
 });
 

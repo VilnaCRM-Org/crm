@@ -158,9 +158,11 @@ const checkIndex = (root: string, names: string[], policy: AdrPolicy): DocsViola
       message: `not listed in ${policy.indexFile}`,
     }));
 
-  const templateName = policy.templateFile.split('/').pop() ?? '';
+  // Compare the resolved path, not the basename: exempting by name would let any broken link
+  // called `template.md` slip past both the location and the existence check.
+  const templatePath = resolve(root, policy.templateFile);
   const orphans = targets
-    .filter(({ absolute }) => basename(absolute) !== templateName)
+    .filter(({ absolute }) => absolute !== templatePath)
     .filter(({ absolute }) => dirname(absolute) !== adrDirectory || !existsSync(absolute))
     .map<DocsViolation>(({ target }) => ({
       rule: 'orphan-in-index',

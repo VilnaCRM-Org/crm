@@ -125,6 +125,17 @@ export const parseDocsPolicy = (raw: unknown, source: string): DocsPolicy => {
     }
   }
 
+  // The ADR linter reads `adr.directory` while the drift gate reads `architectureDrift
+  // .adrPathPrefix`. Relocating ADRs by editing only one would leave the drift gate watching a
+  // directory nothing can be written to, making every significant change unsatisfiable.
+  const expectedPrefix = `${policy.adr.directory}/`;
+  if (policy.architectureDrift.adrPathPrefix !== expectedPrefix) {
+    reject(
+      `"architectureDrift.adrPathPrefix" must be "${expectedPrefix}" to match "adr.directory", ` +
+        `got "${policy.architectureDrift.adrPathPrefix}"`
+    );
+  }
+
   return policy;
 };
 

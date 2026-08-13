@@ -190,23 +190,38 @@ const LATEST = 'latest';
  * "latest" purely because some other row happens to contain Chrome's floor, which is exactly
  * the mislabelled-matrix drift this gate exists to catch.
  */
+/** Emphasis and code markers are presentation; a bolded cell still states the same value. */
+const cellText = (cell: string): string => cell.replace(/[*_`]/g, '').trim();
+
 export const parseMatrixRows = (body: string): Map<string, string> => {
   const rows = new Map<string, string>();
+  let previousLabel: string | null = null;
 
   for (const line of body.split('\n')) {
     const trimmed = line.trim();
-    if (!trimmed.startsWith('|') || TABLE_DIVIDER.test(trimmed)) {
+    if (!trimmed.startsWith('|')) {
+      previousLabel = null;
+      continue;
+    }
+
+    // A divider means the row above it was the header, not data.
+    if (TABLE_DIVIDER.test(trimmed)) {
+      if (previousLabel !== null) {
+        rows.delete(previousLabel);
+        previousLabel = null;
+      }
       continue;
     }
 
     const cells = trimmed
       .slice(1, trimmed.endsWith('|') ? -1 : undefined)
       .split('|')
-      .map((cell) => cell.trim());
+      .map(cellText);
 
     const [label, version] = cells;
     if (label !== undefined && label !== '' && version !== undefined) {
       rows.set(label, version);
+      previousLabel = label;
     }
   }
 
