@@ -1,0 +1,58 @@
+# Remote link audit (issue #122). Deliberately NOT a pull-request gate: resolving third-party
+# URLs depends on the public internet, and the repository's zero-flake policy forbids that in a
+# required check. Relative links and heading anchors — the deterministic half — are enforced on
+# every pull request by `make lint-doc-links`. This configuration backs the weekly
+# `docs link audit` workflow, which fails loudly when a published link actually rots.
+
+# Follow redirects and treat only real successes as success.
+accept = ["200..=299"]
+max_redirects = 5
+
+# Third-party hosts are slow and rate-limited far more often than they are broken; retry before
+# calling a link dead so a blip does not read as rot.
+max_retries = 3
+retry_wait_time = 5
+timeout = 30
+max_concurrency = 8
+
+# Identify the crawler; several hosts reject the default client outright.
+user_agent = "Mozilla/5.0 (compatible; VilnaCRM-crm-link-audit/1.0; +https://github.com/VilnaCRM-Org/crm)"
+
+# Cache between runs so a weekly audit re-checks only what it has to.
+cache = true
+max_cache_age = "6d"
+
+# Anchors and relative paths are covered deterministically by `make lint-doc-links`; this run is
+# only about reachability of remote URLs.
+include_fragments = false
+offline = false
+
+exclude_path = [
+  "node_modules",
+  "coverage",
+  "dist",
+  "out",
+  "build",
+  "reports",
+  "specs",
+  "storybook-static",
+  "test-results",
+  "playwright-report",
+  "lhci-reports-desktop",
+  "lhci-reports-mobile",
+  ".stryker-tmp",
+  ".ralph",
+  "_bmad",
+  "CHANGELOG.md",
+]
+
+exclude = [
+  # Loopback and container hostnames used in the development docs.
+  "^https?://localhost",
+  "^https?://127\\.0\\.0\\.1",
+  "^https?://0\\.0\\.0\\.0",
+  "^https?://host\\.docker\\.internal",
+  "^https?://(dev|prod|mockoon|apollo|playwright):",
+  # Example and placeholder hosts that are documentation, not destinations.
+  "^https?://([a-z0-9-]+\\.)*example\\.(com|org|net)",
+]

@@ -162,6 +162,8 @@ same Docker-backed environment and avoid host-specific drift.
    ```
 
 3. **Add translations** - Always provide both `en.json` and `uk.json`
+   - A **new module** under `src/modules/` must also ship a `README.md` describing its purpose
+     and public surface, or `make lint-doc-coverage` fails (issue #122)
 4. **Register services** - If needed, register in the owning area's composition root
    `di.ts` against its co-located `tokens.ts`, then add that registrar to the aggregator
    array in `src/config/dependency-injection-config.ts` (issue #109)

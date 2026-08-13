@@ -27,6 +27,26 @@ const requireBudget = (value: unknown, key: string): number => {
   return value;
 };
 
+const browserSupport = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'config/browser-support.json'), 'utf8')
+) as { polyfill?: unknown };
+
+// The declared browser matrix and the polyfill decision are one choice (issue #153): an absent
+// or unknown mode would silently fall back to RSBuild's default and break the promise the
+// README publishes. `make check-browser-support` reconciles both against the same policy file.
+const requirePolyfillMode = (value: unknown): 'off' | 'usage' | 'entry' => {
+  if (value !== 'off' && value !== 'usage' && value !== 'entry') {
+    throw new Error(
+      `config/browser-support.json: "polyfill" must be "off", "usage" or "entry", got ${String(
+        value
+      )}. Refusing to build against an undeclared browser matrix.`
+    );
+  }
+  return value;
+};
+
+const browserSupportPolyfill = requirePolyfillMode(browserSupport.polyfill);
+
 const maxEntrypointSize = requireBudget(
   performanceBudget.raw?.maxInitialEntrypointBytes,
   'raw.maxInitialEntrypointBytes'
@@ -80,6 +100,7 @@ export default defineConfig({
   },
   output: {
     inlineStyles: !isDev,
+    polyfill: browserSupportPolyfill,
     filename: {
       font: '[name].[contenthash][ext]',
     },

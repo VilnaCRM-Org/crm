@@ -129,7 +129,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile
+CI_LINT_TARGETS             = check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -164,8 +164,9 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
-.PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
+.PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync check-browser-support
 .PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile
+.PHONY: lint-docs lint-adr lint-doc-coverage lint-doc-references lint-doc-links check-adr-drift
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -369,6 +370,28 @@ lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
 
+check-browser-support: ## Reconcile browserslist, the resolved floors, and the README matrix with config/browser-support.json (issue #153)
+	$(BUN) scripts/ci/check-browser-support.ts
+
+lint-docs: lint-adr lint-doc-coverage lint-doc-references lint-doc-links ## Documentation drift gates: ADR policy, module docs, command references, relative links (issue #122)
+
+lint-adr: ## Validate ADR filenames, metadata, statuses, sections, index sync, and the template (issue #122)
+	$(BUN) scripts/docs/lint-docs.ts adr
+
+lint-doc-coverage: ## Fail when a module under src/modules/* ships no README (issue #122)
+	$(BUN) scripts/docs/lint-docs.ts coverage
+
+lint-doc-references: ## Fail when documentation references a make target or package script that does not exist (issue #122)
+	$(BUN) scripts/docs/lint-docs.ts references
+
+lint-doc-links: ## Fail when a relative documentation link or heading anchor does not resolve (issue #122)
+	$(BUN) scripts/docs/lint-docs.ts links
+
+# Diff-driven, so it needs the base branch and the pull-request context that only CI has.
+# Deliberately outside `lint`: a local run has no PR body or labels to read the waiver from.
+check-adr-drift: ## Fail a pull request that changes an architecturally significant surface without touching docs/adr (issue #122)
+	$(BUN) scripts/docs/lint-docs.ts drift
+
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
 	@summary_path="$$GITHUB_STEP_SUMMARY"; \
 	if [ -n "$$summary_path" ]; then \
@@ -412,7 +435,7 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, and the bun.lock provenance gate.
+lint: check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile ## Runs all linters: env-sync, browser-support, ESLint, TypeScript, Markdown, documentation drift, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, and the bun.lock provenance gate.
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision

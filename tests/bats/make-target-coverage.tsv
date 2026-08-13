@@ -112,3 +112,10 @@ lint-prettier	bats	tests/bats/makefile_targets.bats	Validated as a member of the
 lint-shell	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
 lint-lockfile	bats	tests/bats/lockfile_registries.bats	Validated as the bun.lock registry-allowlist gate with rogue-URL, rogue-specifier, lookalike-host, version-bump, and clean-pass fixtures.
 lint-actionlint	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
+check-browser-support	bats	tests/bats/makefile_targets.bats	Validated as the direct browser-support gate invocation in the lint target table.
+lint-docs	bats	tests/bats/makefile_targets.bats	Validated as the documentation drift aggregate, asserting it runs the ADR and link checks.
+lint-adr	bats	tests/bats/makefile_targets.bats	Validated as the direct ADR policy gate invocation in the lint target table.
+lint-doc-coverage	bats	tests/bats/makefile_targets.bats	Validated as the direct module documentation coverage gate invocation.
+lint-doc-references	bats	tests/bats/makefile_targets.bats	Validated as the direct documented-command reference gate invocation.
+lint-doc-links	bats	tests/bats/makefile_targets.bats	Validated as the direct relative-link and anchor gate invocation.
+check-adr-drift	bats	tests/bats/makefile_targets.bats	Validated as the direct architecture drift gate invocation in the lint target table.

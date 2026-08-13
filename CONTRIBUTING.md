@@ -95,6 +95,28 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
+### Architecture decisions and documentation drift
+
+Documentation is gated like code. `make lint-docs` (inside `make lint`) fails on an ADR that
+breaks the policy in `config/docs-policy.json`, a module under `src/modules/` with no
+`README.md`, a documented `make`/`bun run` command that does not exist, and a relative link or
+heading anchor that does not resolve. Remote URLs are audited weekly by the `docs link audit`
+workflow instead of on pull requests, because third-party reachability is not deterministic
+enough for a required check.
+
+On top of that, the `static testing` workflow runs `make check-adr-drift`: a pull request that
+changes an architecturally significant surface — `.dependency-cruiser.js`, `rsbuild.config.ts`,
+`config/browser-support.json`, `src/config/**`, the route registry or composer, or the
+`dependencies` map in `package.json` — must also add or update a file under `docs/adr/`.
+
+To record a decision, copy [`docs/adr/template.md`](docs/adr/template.md) to
+`docs/adr/NNN-kebab-case-slug.md`, fill every section, and add the row to `docs/adr/README.md`.
+
+If the change genuinely carries no architectural decision, waive the gate the one documented
+way: add the `adr:not-required` label to the pull request, or put a `[no-adr]` line in its body.
+Say why in the pull-request description — the waiver is a reviewed judgement, not a bypass.
+Never silence a documentation gate with an ignore entry or by widening the policy file.
+
 ### Dockerfile build performance
 
 If your change touches a configured Dockerfile path (or the gate's own config),
