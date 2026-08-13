@@ -64,7 +64,10 @@ browsers no user of this product runs.
 
 - The published matrix is machine-checked in both directions, so it cannot rot into a false claim
 - No `core-js` payload, so the initial-entrypoint budget keeps its headroom
-- `caniuse-lite` refreshes can no longer widen the supported set silently
+- `caniuse-lite` refreshes can no longer widen the pinned floors silently. Chrome and Firefox
+  for Android are the deliberate exception: browserslist tracks a single current release for
+  each, so they are declared `trackLatest` and move with upstream by design — the gate asserts
+  they resolve to exactly that current release rather than to a stale pin
 - Reaching for an unsupported Web API fails at lint time rather than in a user's browser
 - Downstream microservices inherit an enforced, stated matrix instead of an aspirational one
 

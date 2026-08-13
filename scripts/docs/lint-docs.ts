@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { lstatSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { reportViolations } from '../ci/violation-table';
@@ -140,10 +140,19 @@ const trackedMarkdown = (): string[] => {
   }
 
   // A file deleted in the worktree but still in the index would otherwise ENOENT downstream.
+  // lstat, so a broken symlink stays in the scan and fails loudly on read rather than being
+  // silently dropped from every check.
   return listed
     .split('\0')
     .filter((path) => path !== '')
-    .filter((path) => existsSync(resolve(ROOT, path)));
+    .filter((path) => {
+      try {
+        lstatSync(resolve(ROOT, path));
+        return true;
+      } catch {
+        return false;
+      }
+    });
 };
 
 const run = (check: Check, policy: DocsPolicy): DocsViolation[] => {

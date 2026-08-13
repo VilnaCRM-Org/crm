@@ -31,18 +31,31 @@ const browserSupport = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, 'config/browser-support.json'), 'utf8')
 ) as { polyfill?: unknown };
 
+// The allowed modes are read from the policy's own schema rather than repeated here, so the
+// build, the schema, and `scripts/ci/browser-support.ts` cannot drift apart.
+const browserSupportSchema = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'config/browser-support.schema.json'), 'utf8')
+) as { properties?: { polyfill?: { enum?: unknown } } };
+
+const polyfillModes = browserSupportSchema.properties?.polyfill?.enum;
+
 // The declared browser matrix and the polyfill decision are one choice (issue #153): an absent
 // or unknown mode would silently fall back to RSBuild's default and break the promise the
 // README publishes. `make check-browser-support` reconciles both against the same policy file.
 const requirePolyfillMode = (value: unknown): 'off' | 'usage' | 'entry' => {
-  if (value !== 'off' && value !== 'usage' && value !== 'entry') {
+  if (!Array.isArray(polyfillModes) || polyfillModes.length === 0) {
     throw new Error(
-      `config/browser-support.json: "polyfill" must be "off", "usage" or "entry", got ${String(
-        value
-      )}. Refusing to build against an undeclared browser matrix.`
+      'config/browser-support.schema.json: "properties.polyfill.enum" must list the allowed ' +
+        'modes. Refusing to build without a validated polyfill decision.'
     );
   }
-  return value;
+  if (!polyfillModes.includes(value)) {
+    throw new Error(
+      `config/browser-support.json: "polyfill" must be one of ${polyfillModes.join(', ')}, got ` +
+        `${String(value)}. Refusing to build against an undeclared browser matrix.`
+    );
+  }
+  return value as 'off' | 'usage' | 'entry';
 };
 
 const browserSupportPolyfill = requirePolyfillMode(browserSupport.polyfill);

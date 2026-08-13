@@ -1,4 +1,4 @@
-import { readdirSync, statSync } from 'node:fs';
+import { lstatSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 import type { DocsScanPolicy } from './docs-policy';
@@ -74,9 +74,21 @@ const readEntries = (directory: string): string[] => {
   }
 };
 
+/**
+ * lstat, not stat: descending through a symlinked directory can leave the repository or loop
+ * forever, and neither is acceptable in a gate.
+ */
 const isDirectory = (absolute: string): boolean => {
   try {
-    return statSync(absolute).isDirectory();
+    return lstatSync(absolute).isDirectory();
+  } catch {
+    return false;
+  }
+};
+
+const isRegularFile = (absolute: string): boolean => {
+  try {
+    return lstatSync(absolute).isFile();
   } catch {
     return false;
   }
@@ -125,19 +137,11 @@ const isMarkdownEntry = (name: string, policy: DocsScanPolicy): boolean =>
   !isIgnored(name, policy) &&
   !name.startsWith('.git');
 
-const isFile = (absolute: string): boolean => {
-  try {
-    return statSync(absolute).isFile();
-  } catch {
-    return false;
-  }
-};
-
 /** Top-level markdown only; the repository root is not descended into as a whole. */
 const rootMarkdown = (directory: string, policy: DocsScanPolicy, found: Set<string>): void => {
   for (const entry of readdirSync(directory)) {
     const absolute = join(directory, entry);
-    if (isMarkdownEntry(entry, policy) && isFile(absolute)) {
+    if (isMarkdownEntry(entry, policy) && isRegularFile(absolute)) {
       found.add(absolute);
     }
   }

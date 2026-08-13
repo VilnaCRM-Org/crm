@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, normalize, resolve, sep } from 'node:path';
 
 import type { DocsScanPolicy, DocsViolation } from './docs-policy';
@@ -63,11 +63,26 @@ const readAnchors = (path: string, cache: Map<string, DocumentAnchors>): Documen
 const hasAnchor = (anchors: DocumentAnchors, fragment: string): boolean =>
   anchors.ids.has(fragment) || anchors.slugs.has(fragment.toLowerCase());
 
-/** Reject paths that escape the repository so a link can never smuggle a traversal. */
+const within = (root: string, absolute: string): boolean =>
+  absolute === resolve(root) || absolute.startsWith(resolve(root) + sep);
+
+/**
+ * Reject paths that escape the repository so a link can never smuggle a traversal. The lexical
+ * check is not sufficient on its own: an in-repository symlink can resolve outside the root, and
+ * the anchor reader would follow it, so the real path is checked too when the target exists.
+ */
 const containedPath = (root: string, candidate: string): string | null => {
   const absolute = resolve(candidate);
-  const boundary = resolve(root) + sep;
-  return absolute === resolve(root) || absolute.startsWith(boundary) ? absolute : null;
+  if (!within(root, absolute)) {
+    return null;
+  }
+
+  try {
+    return within(root, realpathSync(absolute)) ? absolute : null;
+  } catch {
+    // Nonexistent target: the caller reports that separately.
+    return absolute;
+  }
 };
 
 /** A malformed percent-escape must be reported, not thrown out of the gate. */
