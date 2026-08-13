@@ -22,7 +22,10 @@ const REFERENCE_DEFINITION = /^\s{0,3}\[(?!\^)[^\]]+\]:\s*<?([^>\s]+)>?/;
 // Four spaces of indent is an indented code block, not a heading; a trailing run of hashes is
 // an optional ATX closing sequence and is not part of the heading text.
 const HEADING = /^ {0,3}(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/;
-const INLINE_CODE_SPAN = /`+[^`\n]*`+/g;
+// Delimiter-aware: a span opened with N backticks closes on a run of exactly N, so a single
+// backtick inside a ``double-backtick`` span does not terminate it early and leave the rest of
+// the line — including example links — exposed as real markdown.
+const INLINE_CODE_SPAN = /(`+)(?:(?!\1)[^\n])*\1/g;
 
 export interface FenceScanLine {
   text: string;
@@ -103,7 +106,12 @@ const walk = (directory: string, policy: DocsScanPolicy, found: Set<string>): vo
     const absolute = join(directory, entry);
     if (isDirectory(absolute)) {
       walk(absolute, policy, found);
-    } else if (entry.endsWith(MARKDOWN_EXTENSION) && !policy.ignoredFiles.includes(entry)) {
+    } else if (
+      entry.endsWith(MARKDOWN_EXTENSION) &&
+      !policy.ignoredFiles.includes(entry) &&
+      // A symlinked `*.md` would otherwise pull an external document into the scan.
+      isRegularFile(absolute)
+    ) {
       found.add(absolute);
     }
   }

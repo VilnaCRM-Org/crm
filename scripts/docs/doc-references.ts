@@ -12,8 +12,12 @@ const INLINE_CODE = /`([^`\n]+)`/g;
 // Options and variable assignments precede the target; skip them so `make -C dir lint` and
 // `make ENV=dev test-e2e` resolve to `lint` and `test-e2e` rather than to `-C` and `ENV=dev`.
 const MAKE_INVOCATION = /(?:^|[\s;&|(])make\s+(?:(?:-\S+|[A-Za-z0-9_]+=\S*)\s+)*([A-Za-z0-9_.-]+)/g;
-const RUN_INVOCATION =
-  /(?:^|[\s;&|(])(?:bun|npm|yarn|pnpm)\s+run\s+(?:-\S+\s+)*([A-Za-z0-9_.:-]+)/g;
+// Deliberately does NOT skip leading flags. Which run-flags take a separate value is
+// package-manager specific (`--filter my-app build`, `--env-file .env build`), so skipping them
+// would capture the flag's value as the script name and report a script that was never
+// referenced. A flagged invocation is captured as `--flag`, which `isNamedCommand` discards:
+// the gate stays silent rather than raising a false failure.
+const RUN_INVOCATION = /(?:^|[\s;&|(])(?:bun|npm|yarn|pnpm)\s+run\s+([A-Za-z0-9_.:-]+)/g;
 
 export const parseMakeTargets = (makefile: string): Set<string> => {
   const targets = new Set<string>();

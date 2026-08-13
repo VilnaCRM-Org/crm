@@ -44,16 +44,21 @@ const canonical = (value: unknown): unknown => {
   );
 };
 
-const dependencyMaps = (manifest: string | null, keys: readonly string[]): string => {
+/**
+ * `null` means "not comparable" — unreadable or unparseable. It is deliberately distinct from a
+ * readable manifest that happens to declare nothing, because collapsing the two would let an
+ * absent revision and a corrupt one compare equal and silently bypass the gate.
+ */
+const dependencyMaps = (manifest: string | null, keys: readonly string[]): string | null => {
   if (manifest === null) {
-    return '';
+    return null;
   }
 
   let parsed: Record<string, unknown>;
   try {
     parsed = JSON.parse(manifest) as Record<string, unknown>;
   } catch {
-    return '';
+    return null;
   }
 
   return JSON.stringify(keys.map((key) => canonical(parsed[key] ?? null)));
@@ -69,16 +74,17 @@ const manifestChangedDependencies = (policy: DocsPolicy, context: DriftContext):
     return false;
   }
 
-  const baseSource = context.readBaseFile(significantManifest);
-  const headSource = context.readHeadFile(significantManifest);
+  const before = dependencyMaps(context.readBaseFile(significantManifest), manifestKeys);
+  const after = dependencyMaps(context.readHeadFile(significantManifest), manifestKeys);
 
-  // Neither revision readable means the comparison is uninformative, not that the maps agree.
-  // Treating that as "unchanged" would silently drop ADR enforcement whenever git misbehaves.
-  if (baseSource === null && headSource === null) {
+  // Either side not comparable means the comparison is uninformative, not that the maps agree.
+  // Treating that as "unchanged" would silently drop ADR enforcement whenever git misbehaves or
+  // a revision of the manifest is corrupt.
+  if (before === null || after === null) {
     return true;
   }
 
-  return dependencyMaps(baseSource, manifestKeys) !== dependencyMaps(headSource, manifestKeys);
+  return before !== after;
 };
 
 /**

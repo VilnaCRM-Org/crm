@@ -13,6 +13,7 @@ import {
   parseMatrixRows,
   parsePolicy,
   parseVersion,
+  POLYFILL_MODES,
   resolveFamilies,
 } from '../../../scripts/ci/browser-support';
 
@@ -111,6 +112,14 @@ describe('compareVersions', () => {
 });
 
 describe('parsePolicy', () => {
+  it('keeps POLYFILL_MODES pinned to the schema enum', () => {
+    const schema = JSON.parse(readFileSync(schemaPath, 'utf8')) as {
+      properties: { polyfill: { enum: string[] } };
+    };
+
+    expect([...POLYFILL_MODES]).toEqual(schema.properties.polyfill.enum);
+  });
+
   it('accepts the committed browser support policy', () => {
     const policy = readPolicy();
 
@@ -256,6 +265,15 @@ describe('checkResolution', () => {
 });
 
 describe('checkReadme', () => {
+  it('rejects a version cell whose digits are separated by an underscore', () => {
+    const policy = readPolicy();
+    const rows = rowsWithStated(policy, 'chrome', '1_11');
+
+    expect(rulesOf(checkReadme(policy, renderReadme(policy.readmeSection, rows)))).toEqual([
+      'readme-drift',
+    ]);
+  });
+
   it('reports a README row for a browser the policy does not declare', () => {
     const policy = readPolicy();
     const rows = [...allRows(policy), '| Internet Explorer | 11 |'];
@@ -394,6 +412,14 @@ describe('checkReadme', () => {
 });
 
 describe('parseMatrixRows', () => {
+  it('keeps an underscore in a version cell so malformed text cannot read as a version', () => {
+    expect(parseMatrixRows('| Chrome | 1_11 |').get('Chrome')).toBe('1_11');
+  });
+
+  it('still strips an underscore from a label', () => {
+    expect(parseMatrixRows('| _Chrome_ | 111 |').get('Chrome')).toBe('111');
+  });
+
   it('skips the header and divider rows and trims every cell', () => {
     const body = [
       '| Browser                | Minimum version |',

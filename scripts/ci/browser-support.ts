@@ -197,8 +197,13 @@ const TABLE_DIVIDER = /^[\s|:-]+$/;
 const LATEST = 'latest';
 const VERSION_CELL = /^[0-9]+(\.[0-9]+)*$/;
 
-/** Emphasis and code markers are presentation; a bolded cell still states the same value. */
-const cellText = (cell: string): string => cell.replace(/[*_`]/g, '').trim();
+/**
+ * Emphasis and code markers are presentation; a bolded cell still states the same value.
+ * Underscores are stripped from a label but NOT from a version: `1_11` is malformed text, and
+ * removing the underscore would let it read as a valid `111`.
+ */
+const labelText = (cell: string): string => cell.replace(/[*_`]/g, '').trim();
+const versionText = (cell: string): string => cell.replace(/[*`]/g, '').trim();
 
 /**
  * Row-wise, not substring: a whole-section `includes` would accept a Chrome row reading
@@ -226,13 +231,11 @@ export const parseMatrixRows = (body: string): Map<string, string> => {
       continue;
     }
 
-    const cells = trimmed
-      .slice(1, trimmed.endsWith('|') ? -1 : undefined)
-      .split('|')
-      .map(cellText);
+    const cells = trimmed.slice(1, trimmed.endsWith('|') ? -1 : undefined).split('|');
 
-    const [label, version] = cells;
-    if (label !== undefined && label !== '' && version !== undefined) {
+    const label = cells[0] === undefined ? '' : labelText(cells[0]);
+    const version = cells[1] === undefined ? undefined : versionText(cells[1]);
+    if (label !== '' && version !== undefined) {
       rows.set(label, version);
       previousLabel = label;
     }
@@ -317,7 +320,12 @@ const isFamilyPolicy = (value: unknown): value is BrowserFamilyPolicy => {
  * Fail fast rather than let a malformed policy silently disable the gate — an unreadable
  * matrix would leave the declared browser range unenforced (issue #153).
  */
-const POLYFILL_MODES = ['off', 'usage', 'entry'] as const;
+/**
+ * Mirrors `properties.polyfill.enum` in config/browser-support.schema.json, which is the source
+ * of truth `rsbuild.config.ts` reads at build time. A unit test pins this list to that enum, so
+ * the two cannot drift apart silently.
+ */
+export const POLYFILL_MODES = ['off', 'usage', 'entry'] as const;
 
 const isPolyfillMode = (value: unknown): value is BrowserSupportPolicy['polyfill'] =>
   (POLYFILL_MODES as readonly unknown[]).includes(value);

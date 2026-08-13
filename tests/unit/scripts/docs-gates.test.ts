@@ -375,6 +375,12 @@ describe('fencedBlocks', () => {
 });
 
 describe('extractLinks and extractHeadings', () => {
+  it('does not let a backtick inside a double-backtick span expose later links', () => {
+    const line = 'Use ``a ` b`` then [x](./nope.md) is an example: `[y](./gone.md)`';
+
+    expect(extractLinks(line).map((link) => link.target)).toEqual(['./nope.md']);
+  });
+
   const markdown = [
     '# Title',
     '',
@@ -416,6 +422,24 @@ describe('extractLinks and extractHeadings', () => {
 });
 
 describe('parseMakeTargets and parsePackageScripts', () => {
+  it('ignores a colon inside a tab-indented recipe line', () => {
+    const makefile = [
+      'lint:',
+      '\tcurl -fsS http://localhost:8080/api',
+      '\tif [ -n "$X" ]; then',
+    ].join('\n');
+
+    expect([...parseMakeTargets(makefile)]).toEqual(['lint']);
+  });
+
+  it('skips a run invocation carrying a flag rather than guessing the script name', () => {
+    const doc = ['```bash', 'bun run --filter my-app build', '```'].join('\n');
+
+    expect(
+      checkDocReferences(referenceRoot(doc), fixtureScan, docsPolicy.commandReferences)
+    ).toEqual([]);
+  });
+
   it('collects real targets while skipping variable assignments and dot targets', () => {
     const makefile = 'lint:\n\techo\n\nVAR := 1\n.PHONY: lint\ntest-unit: lint\n';
 
@@ -897,6 +921,16 @@ describe('lintAdrs', () => {
 });
 
 describe('checkDocCoverage', () => {
+  it('refuses a requiredFile that could escape the module directory', () => {
+    const root = makeRoot();
+
+    for (const requiredFile of ['../README.md', 'docs/README.md', '..']) {
+      expect(() => checkDocCoverage(root, { roots: ['src/modules'], requiredFile })).toThrow(
+        /Refusing to run with an escapable doc-coverage gate/
+      );
+    }
+  });
+
   const moduleDocs = docsPolicy.moduleDocs;
 
   it('passes for a module that ships a README', () => {
@@ -1126,7 +1160,7 @@ describe('detectAdrDrift', () => {
     expect(rulesOf(result.violations)).toEqual(['undocumented-architecture-change']);
   });
 
-  it('ignores a manifest edit whose content cannot be parsed on either side', () => {
+  it('fails closed when a manifest revision cannot be parsed', () => {
     const result = detectAdrDrift(
       policy,
       driftContext({
@@ -1136,7 +1170,20 @@ describe('detectAdrDrift', () => {
       })
     );
 
-    expect(result.triggers).toEqual([]);
+    expect(result.triggers).toEqual([drift.significantManifest]);
+  });
+
+  it('fails closed when one revision is readable and the other is corrupt', () => {
+    const result = detectAdrDrift(
+      policy,
+      driftContext({
+        changedPaths: [drift.significantManifest],
+        readBaseFile: () => null,
+        readHeadFile: () => 'not json',
+      })
+    );
+
+    expect(result.triggers).toEqual([drift.significantManifest]);
   });
 
   it('recognises a decision recorded under a policy-configured ADR prefix', () => {

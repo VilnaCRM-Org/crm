@@ -78,7 +78,9 @@ const containedPath = (root: string, candidate: string): string | null => {
   }
 
   try {
-    return within(root, realpathSync(absolute)) ? absolute : null;
+    // Both sides canonicalised: comparing a resolved target against a symlinked spelling of the
+    // root would reject every in-repository link when the checkout itself is reached by a link.
+    return within(realpathSync(root), realpathSync(absolute)) ? absolute : null;
   } catch {
     // Nonexistent target: the caller reports that separately.
     return absolute;

@@ -31,8 +31,9 @@ const browserSupport = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, 'config/browser-support.json'), 'utf8')
 ) as { polyfill?: unknown };
 
-// The allowed modes are read from the policy's own schema rather than repeated here, so the
-// build, the schema, and `scripts/ci/browser-support.ts` cannot drift apart.
+// The allowed modes are read from the policy's own schema rather than repeated here. The gate in
+// `scripts/ci/browser-support.ts` keeps its own list for purity, and a unit test pins that list
+// to this same enum, so the three cannot drift apart silently.
 const browserSupportSchema = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, 'config/browser-support.schema.json'), 'utf8')
 ) as { properties?: { polyfill?: { enum?: unknown } } };
