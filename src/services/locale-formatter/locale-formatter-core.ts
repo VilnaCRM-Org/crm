@@ -27,7 +27,7 @@ export class LocaleFormatterCore implements LocaleFormatter {
 
   private languageSource: LanguageSource | null = null;
 
-  public bindLanguageSource(source: LanguageSource): void {
+  public bindLanguageSource(source: LanguageSource | null): void {
     this.languageSource = source;
   }
 

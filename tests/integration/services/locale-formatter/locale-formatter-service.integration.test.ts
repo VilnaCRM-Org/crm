@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 
 import container from '@/config/dependency-injection-config';
+import localeFormatterCore from '@/services/locale-formatter/locale-formatter-core';
 import LOCALE_FORMATTER_TOKENS from '@/services/locale-formatter/tokens';
 import type { LocaleFormatter } from '@/services/types/locale-formatter/locale-formatter';
 
@@ -14,22 +15,26 @@ describe('locale formatter service (integration)', () => {
 
   afterEach(() => {
     process.env = { ...ORIGINAL_ENV };
+    localeFormatterCore.bindLanguageSource(null);
   });
 
   it('resolves a singleton through the aggregated DI container', () => {
     expect(container.resolve(LOCALE_FORMATTER_TOKENS.LocaleFormatterService)).toBe(service);
   });
 
-  it('resolves the locale from the environment first, then the bound i18n language', async () => {
+  it('falls back to the environment main language while no language source is bound', () => {
     delete process.env.REACT_APP_MAIN_LANGUAGE;
     expect(service.currency(1234.5)).toBe('1\u00A0234,50\u00A0₴');
 
     process.env.REACT_APP_MAIN_LANGUAGE = 'en';
     expect(service.number(1234.5)).toBe('1,234.5');
+  });
 
+  it('prefers the bound i18n language over the environment main language', async () => {
     const { default: i18n } = await import('@/i18n');
     await i18n.changeLanguage('en');
-    delete process.env.REACT_APP_MAIN_LANGUAGE;
+    process.env.REACT_APP_MAIN_LANGUAGE = 'uk';
+
     expect(service.currency(1234.5)).toBe('₴1,234.50');
   });
 
