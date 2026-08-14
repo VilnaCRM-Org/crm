@@ -642,8 +642,8 @@ Localization files are auto-generated during build:
 - Generated via `scripts/localization-generator.js`
 - Skip generation: `SKIP_LOCALE_GEN=1`
 
-Dates, numbers, currency, and relative time are rendered through the locale-aware
-formatting layer (issue #155): `src/i18n.js` registers the `date`, `datetime`, `number`,
+Dates, numbers, currency, percentages, and relative time are rendered through the
+locale-aware formatting layer (issue #155): `src/i18n.js` registers the `date`, `datetime`, `number`,
 `currency`, `percent`, and `relativetime` i18next formatters, so translation strings use
 `{{value, datetime}}` / `{{value, currency}}`, and non-translation code uses the
 `LocaleFormatter` service. See "Important Patterns" item 10 for the full convention and

@@ -684,8 +684,9 @@ const { t } = useTranslation();
 <h1>{t('login.title')}</h1>
 ```
 
-Dates, numbers, and currency inside translations use the registered i18next formatters
-(`{{value, datetime}}`, `{{value, currency}}`) instead of pre-formatted strings — see
+Dates, numbers, currency, percentages, and relative time inside translations use the
+registered i18next formatters (`{{value, datetime}}`, `{{value, currency}}`,
+`{{value, percent}}`, `{{value, relativetime}}`) instead of pre-formatted strings — see
 "Locale-aware Intl formatting (issue #155)" under Architecture Patterns.
 
 ## Architecture Patterns

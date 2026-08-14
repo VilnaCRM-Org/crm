@@ -182,9 +182,10 @@ const noRawIntlSelectors = [
   {
     selector: "MemberExpression[object.name='Intl']",
     message:
-      'No ad-hoc Intl formatter construction — use the LocaleFormatter service ' +
+      'No raw Intl.* usage — use the LocaleFormatter service ' +
       '(@/services/locale-formatter) or an i18next formatter such as ' +
-      '{{value, currency}} (issue #155).',
+      '{{value, currency}}, extending the service when it lacks a needed ' +
+      'Intl capability (issue #155).',
   },
 ];
 
@@ -557,7 +558,14 @@ export default [
   // override above.
   {
     files: ['src/services/locale-formatter/**/*.ts'],
-    ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
+    ignores: [
+      '**/*.stories.*',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.d.ts',
+      'src/services/locale-formatter/**/types.ts',
+      'src/services/locale-formatter/**/types/**/*.ts',
+    ],
     rules: {
       'no-restricted-syntax': [
         'error',

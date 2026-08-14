@@ -1,7 +1,8 @@
-import i18next from 'i18next';
-
 import rawEnv from '@/config/env/raw-env';
-import type { LocaleFormatter } from '@/services/types/locale-formatter/locale-formatter';
+import type {
+  LanguageSource,
+  LocaleFormatter,
+} from '@/services/types/locale-formatter/locale-formatter';
 
 import { IntlFormatterCache } from './intl-formatter-cache';
 
@@ -23,6 +24,12 @@ export class LocaleFormatterCore implements LocaleFormatter {
   };
 
   private readonly relativeTimeOptions: Intl.RelativeTimeFormatOptions = { numeric: 'auto' };
+
+  private languageSource: LanguageSource | null = null;
+
+  public bindLanguageSource(source: LanguageSource): void {
+    this.languageSource = source;
+  }
 
   public date(value: Date | number, locale?: string): string {
     return this.cache.dateTime(this.resolveLocale(locale), this.dateOptions).format(value);
@@ -56,7 +63,7 @@ export class LocaleFormatterCore implements LocaleFormatter {
   }
 
   private resolveLocale(locale?: string): string {
-    return locale ?? i18next.language ?? rawEnv.mainLanguage();
+    return locale ?? this.languageSource?.language ?? rawEnv.mainLanguage();
   }
 }
 

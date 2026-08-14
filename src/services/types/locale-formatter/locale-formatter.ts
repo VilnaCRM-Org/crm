@@ -1,3 +1,7 @@
+export interface LanguageSource {
+  language?: string;
+}
+
 export interface LocaleFormatter {
   date(value: Date | number, locale?: string): string;
   dateTime(value: Date | number, locale?: string): string;
