@@ -34,11 +34,6 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
         'auth-skeleton-input-2',
         'auth-skeleton-input-3',
         'auth-skeleton-submit',
-        'auth-skeleton-divider',
-        'auth-skeleton-social-google',
-        'auth-skeleton-social-facebook',
-        'auth-skeleton-social-apple',
-        'auth-skeleton-social-linkedin',
         'auth-skeleton-switcher',
       ];
 
@@ -50,6 +45,18 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
 
       // subtitle-line2 is rendered but hidden via display:none above 336px viewports
       await expect(page.locator('#auth-skeleton-subtitle-line2')).toBeAttached();
+
+      // REACT_APP_FEATURE_OAUTH_PROVIDERS defaults off, so no divider/social placeholders
+      const flaggedOffIds = [
+        'auth-skeleton-divider',
+        'auth-skeleton-social-google',
+        'auth-skeleton-social-facebook',
+        'auth-skeleton-social-apple',
+        'auth-skeleton-social-linkedin',
+      ];
+      await Promise.all(
+        flaggedOffIds.map((testId) => expect(page.locator(`#${testId}`)).toHaveCount(0))
+      );
     });
 
     test('should have accessible loading label on skeleton section', async ({ page }) => {
@@ -59,7 +66,7 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
     });
 
     test('should transition from skeleton to authentication form', async ({ page }) => {
-      await expect(page.locator('#auth-skeleton-divider')).toBeVisible({ timeout: 5000 });
+      await expect(page.locator('#auth-skeleton-submit')).toBeVisible({ timeout: 5000 });
 
       await releaseDelayedChunk?.();
       await page.unroute(AUTH_ASYNC_JS_GLOB);

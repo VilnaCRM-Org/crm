@@ -4,6 +4,7 @@ import { ReactComponent as GitHub } from '@auth/assets/social-links/github-color
 import { ReactComponent as Google } from '@auth/assets/social-links/google-color.svg';
 import { ReactComponent as Twitter } from '@auth/assets/social-links/twitter-color.svg';
 import type { OAuthProvider } from '@auth/types/auth-provider-buttons/oauth-providers';
+import browserNavigator from '@auth/utils/browser-navigator';
 
 const PROVIDERS = [
   { key: 'google', label: 'Google', SvgComponent: Google },
@@ -18,20 +19,11 @@ class OAuthProviders {
       label: p.label,
       SvgComponent: p.SvgComponent,
       onClick: () => this.signInWithProvider(p.key),
-      ariaLabel: `Sign in with ${p.label}`,
     }));
   }
 
   private signInWithProvider(service: (typeof PROVIDERS)[number]['key']): void {
-    if (typeof window === 'undefined') return;
-    // TODO: Implement actual OAuth authentication
-    //  example:
-    const url = urlBuilder.build(`/auth/${encodeURIComponent(service)}`);
-    const win = window.open(url, '_blank', 'noopener,noreferrer');
-
-    if (!win) {
-      window.location.href = url;
-    }
+    browserNavigator.openInNewTab(urlBuilder.build(`/auth/${encodeURIComponent(service)}`));
   }
 }
 

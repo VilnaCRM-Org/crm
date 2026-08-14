@@ -15,12 +15,13 @@ off the paint path via the dynamic-import composition root. A single zod-backed 
 
 The module is therefore split in two:
 
-| File            | Deps        | Reads          | Use it from                         |
-| --------------- | ----------- | -------------- | ----------------------------------- |
-| `raw-env.ts`    | none        | lazy, per call | paint path / any zod-free code      |
-| `env.ts`        | `zod`       | once, frozen   | non-paint code wanting typed config |
-| `env-schema.ts` | `zod`       | —              | the zod contract (constraints)      |
-| `types/env.ts`  | none (type) | —              | the hand-authored `Env` interface   |
+| File               | Deps        | Reads          | Use it from                         |
+| ------------------ | ----------- | -------------- | ----------------------------------- |
+| `raw-env.ts`       | none        | lazy, per call | paint path / any zod-free code      |
+| `env.ts`           | `zod`       | once, frozen   | non-paint code wanting typed config |
+| `env-schema.ts`    | `zod`       | —              | the zod contract (constraints)      |
+| `types/env.ts`     | none (type) | —              | the hand-authored `Env` interface   |
+| `feature-flags.ts` | none        | lazy, per call | paint path — boolean feature flags  |
 
 - **`raw-env`** (`@/config/env/raw-env`) — a dependency-free singleton and the **only**
   sanctioned place that touches `process.env`. Accessors are lazy (read on each call) so the
@@ -37,6 +38,21 @@ The hand-authored `Env` interface (not `z.infer`) mirrors the existing
 schema (dependency-cruiser `type-files-no-runtime-imports`). The schema and interface are kept in
 sync by the typed `private readonly values: Env` assignment in `env.ts` (a compile-time check that
 the parse result matches `Env`).
+
+## Feature flags (`@/config/env/feature-flags`)
+
+Boolean, default-off feature flags (issue #150) live in their own dependency-free singleton,
+`feature-flags.ts`, next to `raw-env`. Each flag is a lazy accessor over a static
+`process.env.REACT_APP_FEATURE_*` literal; only the strings `true` and `1` (after trimming)
+enable a flag, so an absent or empty variable is always **off**. Flags stay **out of the zod
+schema and the `Env` interface** on purpose: a string-to-boolean parse cannot fail validation,
+the readers sit on the Lighthouse-budgeted auth paint path (which must stay zod-free), and the
+default-off contract is the whole behavior. Current flags:
+
+- `REACT_APP_FEATURE_OAUTH_PROVIDERS` — renders the auth OAuth provider row (hidden until the
+  real OAuth flow exists).
+- `REACT_APP_FEATURE_REMEMBER_ME` — renders the remember-me checkbox (hidden until session
+  persistence exists).
 
 ## Validation policy
 
@@ -82,3 +98,7 @@ lint matrix) fails if the two drift. A separate unit test
    lazy accessor if a paint-path reader needs it), then expose a typed getter on `env.ts` for
    non-paint readers.
 4. Never read `process.env` outside this module.
+
+Boolean feature flags are the exception: add the key to both env files (step 1), then add an
+accessor to `feature-flags.ts` — they are deliberately not part of the schema (see
+"Feature flags" above).

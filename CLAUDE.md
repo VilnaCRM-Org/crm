@@ -709,6 +709,10 @@ Key variables in `.env`:
 - `REACT_APP_SENTRY_ENVIRONMENT` - Sentry environment tag (falls back to `NODE_ENV`)
 - `REACT_APP_RELEASE` - Release version tag for Sentry release health and source-map
   symbolication (set per deploy, e.g. the commit SHA)
+- `REACT_APP_FEATURE_OAUTH_PROVIDERS` - **Default off** (empty). Renders the auth OAuth
+  provider row; hidden until the real OAuth flow exists (issue #150). Only `true`/`1` enable.
+- `REACT_APP_FEATURE_REMEMBER_ME` - **Default off** (empty). Renders the remember-me
+  checkbox; hidden until session persistence exists (issue #150). Only `true`/`1` enable.
 
 ## Important Patterns
 
@@ -724,7 +728,12 @@ Key variables in `.env`:
 3. **Routing**: Module-owned route contracts collected by a registry and
    assembled by a composer into `createBrowserRouter` (see "Route Registry"
    above). Add a page in the owning module's `routes/` folder — never in the
-   app shell.
+   app shell. `ProtectedRoute` preserves the intended destination in its
+   redirect state (`state.from`), and the sign-in page redirects back to it
+   after a successful login (issue #150). The redirect fires only on a
+   null→token transition — never on mount — so the Lighthouse seeded-token
+   audit of `/sign-in` is unaffected; the target must be an internal path and
+   `AppLayout` moves focus to `<main>` when it lands.
 
 4. **Testing Philosophy**:
    - Unit tests for components and utilities

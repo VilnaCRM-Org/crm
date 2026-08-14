@@ -1,30 +1,45 @@
-// @jest-environment jsdom
-
-import '@tests/unit/utils/setup-bun-dom';
-import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-jest.mock('react-router-dom', () => ({
-  Outlet: (): ReactElement => <span>route-outlet</span>,
-}));
+import AppLayout from '@/components/layouts/app-layout';
 
-const AppLayout = jest.requireActual<typeof import('@/components/layouts/app-layout')>(
-  '@/components/layouts/app-layout'
-).default;
+type Entry = Parameters<typeof MemoryRouter>[0]['initialEntries'];
+
+function renderLayout(entries: Entry): void {
+  render(
+    <MemoryRouter initialEntries={entries}>
+      <Routes>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<div>home page</div>} />
+        </Route>
+      </Routes>
+    </MemoryRouter>
+  );
+}
 
 describe('AppLayout', () => {
-  it('renders Outlet inside a main landmark (AC1)', () => {
-    render(<AppLayout />);
+  it('renders the routed content inside a main landmark', () => {
+    renderLayout(['/']);
 
-    const main = screen.getByRole('main');
-    expect(main).toBeInTheDocument();
-    expect(main).toContainElement(screen.getByText('route-outlet'));
+    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByText('home page')).toBeInTheDocument();
   });
 
-  it('main landmark is the direct wrapper of Outlet (AC1)', () => {
-    render(<AppLayout />);
+  it('moves focus to the main landmark after a post-login redirect', () => {
+    renderLayout([{ pathname: '/', state: { focusMain: true } }] as Entry);
 
-    expect(screen.getByRole('main').tagName).toBe('MAIN');
+    expect(screen.getByRole('main')).toHaveFocus();
+  });
+
+  it('does not steal focus on ordinary navigation', () => {
+    renderLayout(['/']);
+
+    expect(screen.getByRole('main')).not.toHaveFocus();
+  });
+
+  it('does not steal focus when navigation state exists without the focus marker', () => {
+    renderLayout([{ pathname: '/', state: { from: { pathname: '/deals' } } }] as Entry);
+
+    expect(screen.getByRole('main')).not.toHaveFocus();
   });
 });

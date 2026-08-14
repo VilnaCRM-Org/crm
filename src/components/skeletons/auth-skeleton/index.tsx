@@ -8,6 +8,7 @@ import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
 import type { AuthSkeletonProps, Wrap } from '@/components/types/auth-skeleton';
+import featureFlags from '@/config/env/feature-flags';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },
@@ -96,8 +97,12 @@ function FormBody({
       <TitleBlock wrap={wrap} />
       <FieldRows wrap={wrap} disableAnimation={disableAnimation} />
       <UISkeletonButton id="auth-skeleton-submit" sx={wrap(styles.buttonSkeleton)} />
-      <DividerBlock wrap={wrap} />
-      <SocialBlocks wrap={wrap} />
+      {featureFlags.oauthProviders() && (
+        <>
+          <DividerBlock wrap={wrap} />
+          <SocialBlocks wrap={wrap} />
+        </>
+      )}
     </Box>
   );
 }

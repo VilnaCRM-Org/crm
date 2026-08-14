@@ -47,9 +47,16 @@ jest.mock('@/components/skeletons/auth-skeleton', () => ({
   default: (): ReactElement => <div data-testid="auth-shell-skeleton" />,
 }));
 
+const OAUTH_FLAG = 'REACT_APP_FEATURE_OAUTH_PROVIDERS';
+const ORIGINAL_ENV = { ...process.env };
+
 describe('SignIn page', () => {
   beforeEach(() => {
     document.title = '';
+  });
+
+  afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
   });
 
   it('renders chrome, the h1, the swap link, and the page title (AC1-AC3)', async () => {
@@ -61,10 +68,20 @@ describe('SignIn page', () => {
     expect(screen.getByText('auth shell header')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByText('auth shell footer')).toBeInTheDocument();
-    expect(screen.getByText('oauth-row')).toBeInTheDocument();
+    expect(screen.queryByText('oauth-row')).not.toBeInTheDocument();
 
     const link = screen.getByRole('link', { name: 'Don’t have an account yet?' });
     expect(link).toHaveAttribute('href', '/sign-up');
     expect(document.title).toBe('Authentication - VilnaCRM');
+  });
+
+  it('renders the OAuth row only when the OAuth flag is on (issue #150)', async () => {
+    process.env[OAUTH_FLAG] = 'true';
+    renderWithProviders(<SignIn />);
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Authentication' })
+    ).toBeInTheDocument();
+    expect(screen.getByText('oauth-row')).toBeInTheDocument();
   });
 });

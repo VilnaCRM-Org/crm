@@ -19,13 +19,13 @@ export default function AuthProviderButtons(): JSX.Element {
         </Divider>
 
         <List sx={styles.servicesList}>
-          {oauthProviders.map(({ label, SvgComponent, ariaLabel, onClick }) => (
+          {oauthProviders.map(({ label, SvgComponent, onClick }) => (
             <ListItem disablePadding key={label} sx={styles.servicesItem}>
               <UIButton
                 variant="outlined"
                 sx={styles.serviceItemButton}
                 onClick={onClick}
-                aria-label={ariaLabel}
+                aria-label={t('sign_up.socials_aria_label', { provider: label })}
                 type="button"
               >
                 <SvgIcon

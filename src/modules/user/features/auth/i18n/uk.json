@@ -19,6 +19,7 @@
     "title": "Реєстрація",
     "subtitle": "Створіть обліковий запис у VilnaCRM",
     "socials_main_heading": "Або",
+    "socials_aria_label": "Продовжити через {{provider}}",
     "form": {
       "name_input": {
         "label": "Ваше ім’я та прізвище",

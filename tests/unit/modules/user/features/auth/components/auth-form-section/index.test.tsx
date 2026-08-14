@@ -30,7 +30,30 @@ function renderSection(oauthInert: boolean): void {
   );
 }
 
-describe('AuthFormSection', () => {
+const OAUTH_FLAG = 'REACT_APP_FEATURE_OAUTH_PROVIDERS';
+const ORIGINAL_ENV = { ...process.env };
+
+afterEach(() => {
+  process.env = { ...ORIGINAL_ENV };
+});
+
+describe('AuthFormSection with the OAuth flag off (default)', () => {
+  it('renders the children and switcher but no OAuth row (issue #150)', () => {
+    delete process.env[OAUTH_FLAG];
+    renderSection(false);
+
+    expect(screen.getByText('form-child')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'switch' })).toBeInTheDocument();
+    expect(screen.queryByText('oauth-row')).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'OAuth providers' })).not.toBeInTheDocument();
+  });
+});
+
+describe('AuthFormSection with the OAuth flag on', () => {
+  beforeEach(() => {
+    process.env[OAUTH_FLAG] = 'true';
+  });
+
   it('renders the children, the OAuth row, and the switcher slot (AC1)', () => {
     renderSection(false);
 

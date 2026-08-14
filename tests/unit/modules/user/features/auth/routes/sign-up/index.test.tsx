@@ -100,11 +100,18 @@ jest.mock('@/components/skeletons/auth-skeleton', () => ({
   default: (): ReactElement => <div data-testid="auth-shell-skeleton" />,
 }));
 
+const OAUTH_FLAG = 'REACT_APP_FEATURE_OAUTH_PROVIDERS';
+const ORIGINAL_ENV = { ...process.env };
+
 describe('SignUp page', () => {
   beforeEach(() => {
     capturedOnViewChange = undefined;
     mockFormState.view = 'form';
     document.title = '';
+  });
+
+  afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
   });
 
   it('renders chrome, the h1, the swap link, and the page title (AC1-AC3)', async () => {
@@ -122,7 +129,15 @@ describe('SignUp page', () => {
     expect(document.title).toBe('Registration - VilnaCRM');
   });
 
+  it('hides the OAuth row while the OAuth flag is off (issue #150)', () => {
+    renderWithProviders(<SignUpFormSection />);
+
+    expect(screen.queryByTestId('auth-provider-buttons-container')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('oauth-row')).not.toBeInTheDocument();
+  });
+
   it('marks the OAuth row inert once the registration view leaves the form (AC5)', () => {
+    process.env[OAUTH_FLAG] = 'true';
     renderWithProviders(<SignUpFormSection />);
 
     const oauthRow = (): HTMLElement => screen.getByTestId('auth-provider-buttons-container');

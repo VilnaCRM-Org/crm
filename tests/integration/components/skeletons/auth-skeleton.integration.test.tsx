@@ -9,10 +9,10 @@ function getGenericSkeletonElements(): HTMLElement[] {
 }
 
 function getPresentationSkeletonElements(): HTMLElement[] {
-  return screen.getAllByRole('presentation') as HTMLElement[];
+  return screen.queryAllByRole('presentation') as HTMLElement[];
 }
 
-function assertAuthSkeletonElements(): void {
+function assertAuthSkeletonElements(oauthEnabled = false): void {
   const genericIds = getGenericSkeletonElements()
     .map((element) => element.id)
     .filter(Boolean);
@@ -31,9 +31,18 @@ function assertAuthSkeletonElements(): void {
   );
   expect(genericIds.filter((id) => id.startsWith('auth-skeleton-field-label-'))).toHaveLength(3);
   expect(genericIds.filter((id) => id.startsWith('auth-skeleton-input-'))).toHaveLength(3);
-  expect(genericIds.filter((id) => id.startsWith('auth-skeleton-social-'))).toHaveLength(4);
-  expect(presentationIds).toContain('auth-skeleton-divider');
+  expect(genericIds.filter((id) => id.startsWith('auth-skeleton-social-'))).toHaveLength(
+    oauthEnabled ? 4 : 0
+  );
+  if (oauthEnabled) {
+    expect(presentationIds).toContain('auth-skeleton-divider');
+  } else {
+    expect(presentationIds).not.toContain('auth-skeleton-divider');
+  }
 }
+
+const OAUTH_FLAG = 'REACT_APP_FEATURE_OAUTH_PROVIDERS';
+const ORIGINAL_ENV = { ...process.env };
 
 describe('AuthSkeleton Integration Tests', () => {
   const originalInnerWidth = window.innerWidth;
@@ -45,6 +54,7 @@ describe('AuthSkeleton Integration Tests', () => {
   ];
 
   afterEach(() => {
+    process.env = { ...ORIGINAL_ENV };
     Object.defineProperty(window, 'innerWidth', {
       writable: true,
       configurable: true,
@@ -53,7 +63,7 @@ describe('AuthSkeleton Integration Tests', () => {
     window.dispatchEvent(new Event('resize'));
   });
 
-  it('renders all skeleton elements', () => {
+  it('renders all skeleton elements without the flag-gated OAuth placeholders', () => {
     expect(React).toBeDefined();
     render(<AuthSkeleton />);
     assertAuthSkeletonElements();
@@ -64,6 +74,12 @@ describe('AuthSkeleton Integration Tests', () => {
 
     assertAuthSkeletonElements();
     expect(screen.getByRole('region')).toBeInTheDocument();
+  });
+
+  it('renders the divider and social placeholders when the OAuth flag is on', () => {
+    process.env[OAUTH_FLAG] = 'true';
+    render(<AuthSkeleton />);
+    assertAuthSkeletonElements(true);
   });
 
   viewportCases.forEach(({ label, width }) => {
