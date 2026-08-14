@@ -7,6 +7,21 @@ describe('rawEnv', () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
+  describe('mainLanguage', () => {
+    it('trims the configured main language', () => {
+      process.env.REACT_APP_MAIN_LANGUAGE = '  en  ';
+      expect(rawEnv.mainLanguage()).toBe('en');
+    });
+
+    it('falls back to uk for a blank or missing main language', () => {
+      process.env.REACT_APP_MAIN_LANGUAGE = '   ';
+      expect(rawEnv.mainLanguage()).toBe('uk');
+
+      delete process.env.REACT_APP_MAIN_LANGUAGE;
+      expect(rawEnv.mainLanguage()).toBe('uk');
+    });
+  });
+
   describe('mockoonUrl', () => {
     it('trims the configured mockoon url', () => {
       process.env.REACT_APP_MOCKOON_URL = '  http://localhost:8080  ';
