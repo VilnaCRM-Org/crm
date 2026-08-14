@@ -31,8 +31,9 @@ describe('LocaleFormatterCore', () => {
 
   describe('dateTime', () => {
     it('formats a medium date with short time for the uk and en locales', () => {
-      expect(formatter.dateTime(JANUARY_15_2026_13_45_UTC, 'uk')).toBe('15 січ. 2026 р., 13:45');
-      expect(formatter.dateTime(JANUARY_15_2026_13_45_UTC, 'en')).toBe('Jan 15, 2026, 1:45 PM');
+      const value = JANUARY_15_2026_13_45_UTC;
+      expect(formatter.dateTime(value, 'uk')).toBe('15 січ. 2026 р., 13:45');
+      expect(formatter.dateTime(value, 'en')).toBe('Jan 15, 2026, 1:45 PM');
     });
   });
 
