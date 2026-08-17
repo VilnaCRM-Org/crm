@@ -378,14 +378,34 @@ for folders named `i18n`, so a new feature is covered the moment it ships one.
 3. **Merged-catalog freshness** — the committed `src/i18n/localization.json` is semantically
    equal (key order aside) to what `scripts/localization-generator.js` produces from those
    catalogs, and its own per-locale key sets match.
-4. **Key resolvability** — every `t()` call site, and every namespaced key-shaped literal whose
-   first segment is a real catalog namespace, resolves to a leaf string in **both** locales. An
-   undefined key fails. Scope is `src/**/*.{ts,tsx}`, excluding `.d.ts`, stories, tests, and
-   generated API code.
+4. **Key resolvability** — every `t()` call site, and every key-shaped literal bound to a
+   `*Key`-named constant whose first segment is a real catalog namespace, resolves to a leaf
+   string in **both** locales. An undefined key fails. Scope is `src/**/*.{ts,tsx}`, excluding
+   `.d.ts`, stories, tests, and generated API code. Dynamic `t(variable)` call sites cannot be
+   resolved statically and are ignored, never reported.
+
+It additionally rejects the ways those four could be gamed or silently defeated: a translation
+that is present but empty or whitespace-only; two catalogs claiming the same key (the generator
+merges last-writer-wins over an **unsorted** directory walk, so the winner would depend on
+filesystem order); a source translation file parked in the generated `src/i18n/` directory; a
+duplicate JSON key (`JSON.parse` keeps the last one and reports nothing, so a repeated key
+silently discards a translation); and a run that discovers no catalogs or no keys, which fails
+rather than reporting a vacuous pass.
+
+CLDR pluralization is supported deliberately: parity compares plural **families**, because `en`
+uses `one`/`other` while `uk` uses `one`/`few`/`many`/`other`, and a base key resolves when any of
+its categories exists. Requiring byte-identical key sets would make correct i18next
+pluralization unsatisfiable.
+
+The gate is three modules: `check-i18n-parity.mjs` (catalog validation, freshness, reporting),
+[`i18n-key-scan.mjs`](scripts/ci/i18n-key-scan.mjs) (source scanning and key resolution), and
+[`json-duplicate-keys.mjs`](scripts/ci/json-duplicate-keys.mjs).
 
 **Remediation:** add the missing translation for checks 1, 2, and 4; run `make i18n-generate`
 and commit the result for check 3. `make i18n-generate` re-verifies after writing, so it still
-fails on a real parity or undefined-key problem instead of papering over it. Both locales are
+fails on a real parity or undefined-key problem instead of papering over it, and it **refuses to
+write** when a catalog is unhealthy — an unparseable locale file merges as an absent locale, so
+writing first would strip a whole language from the committed catalog. Both locales are
 mandatory — `uk` is the main language and `en` the fallback, so neither may lag behind.
 
 **No suppression:** satisfy the gate by adding the missing translation or fixing the key —
