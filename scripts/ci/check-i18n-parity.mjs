@@ -28,8 +28,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
-import { findDuplicateKeys } from './json-duplicate-keys.mjs';
 import { collectKeyReferences, pluralFamily, resolvesKey } from './i18n-key-scan.mjs';
+import { findDuplicateKeys } from './json-duplicate-keys.mjs';
 
 const requireCjs = createRequire(import.meta.url);
 
@@ -113,24 +113,24 @@ function findCatalogDirs(dir, generatedDirs, found) {
  * JSON.parse keeps the last of two identical keys and reports nothing, so a repeated key
  * silently discards a translation. Returns null when the file cannot be trusted.
  */
-function parseCatalogFile(file, violations) {
+function parseCatalogFile(file, violations, label = '[locale-files]') {
   const raw = fs.readFileSync(file, 'utf8');
   let parsed;
   try {
     parsed = JSON.parse(raw);
   } catch (error) {
-    violations.push(`[locale-files] ${relative(file)}: invalid JSON — ${error.message}`);
+    violations.push(`${label} ${relative(file)}: invalid JSON — ${error.message}`);
     return null;
   }
   if (!isPlainObject(parsed)) {
-    violations.push(`[locale-files] ${relative(file)}: must contain a JSON object`);
+    violations.push(`${label} ${relative(file)}: must contain a JSON object`);
     return null;
   }
   const duplicates = findDuplicateKeys(raw);
   if (duplicates.length > 0) {
     violations.push(
       describeKeys(
-        `[locale-files] ${relative(file)}: keys are defined twice, so one translation is ` +
+        `${label} ${relative(file)}: keys are defined twice, so one translation is ` +
           'silently discarded',
         duplicates
       )
@@ -309,7 +309,7 @@ function readMerged(mergedPath, violations) {
     violations.push(`[merged-catalog] ${relative(mergedPath)} is missing — run ${REMEDY}`);
     return null;
   }
-  return parseCatalogFile(mergedPath, violations);
+  return parseCatalogFile(mergedPath, violations, '[merged-catalog]');
 }
 
 /** Check 3a: the committed merged catalog matches a fresh regeneration, key order aside. */
@@ -475,8 +475,10 @@ function main() {
     }
   } else {
     const committed = readMerged(mergedPath, violations);
-    if (committed) checkMergedFreshness(regenerated, committed, mergedPath, violations);
-    if (committed) checkMergedLocaleParity(committed, violations);
+    if (committed) {
+      checkMergedFreshness(regenerated, committed, mergedPath, violations);
+      checkMergedLocaleParity(committed, violations);
+    }
   }
 
   // Call sites resolve against the catalogs, not the committed merge: a developer who edited
