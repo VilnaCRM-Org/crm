@@ -9,21 +9,33 @@
  * this a scanner over well-formed input rather than a second JSON implementation.
  */
 
+/**
+ * Decodes the literal, so `"ab"` and `"ab"` are recognised as the same key. The caller has
+ * already parsed the document, so every literal here is valid JSON.
+ */
+function decode(raw) {
+  try {
+    return JSON.parse(`"${raw}"`);
+  } catch {
+    return raw;
+  }
+}
+
 function readStringLiteral(text, start) {
   let index = start + 1;
-  let value = '';
+  let raw = '';
   while (index < text.length) {
     const char = text[index];
     if (char === '\\') {
-      value += text.slice(index, index + 2);
+      raw += text.slice(index, index + 2);
       index += 2;
       continue;
     }
-    if (char === '"') return { value, next: index + 1 };
-    value += char;
+    if (char === '"') return { value: decode(raw), next: index + 1 };
+    raw += char;
     index += 1;
   }
-  return { value, next: index };
+  return { value: decode(raw), next: index };
 }
 
 function nextMeaningful(text, from) {

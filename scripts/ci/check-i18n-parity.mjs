@@ -177,19 +177,26 @@ function readCatalogs(scanRoot, generatedDirs, violations) {
   });
 }
 
-/** Check 1b: the merged-catalog directory is generator output only, never a source catalog. */
-function checkOutputDirIsGeneratedOnly(outputDir, violations) {
-  if (!fs.existsSync(outputDir)) return;
-  const strays = fs
-    .readdirSync(outputDir, { withFileTypes: true })
-    .filter((entry) => !(entry.isFile() && entry.name === MERGED_FILE))
-    .map((entry) => entry.name)
-    .sort();
-  if (strays.length === 0) return;
-  violations.push(
-    `[output-dir] ${relative(outputDir)} may hold only ${MERGED_FILE}, found ` +
-      `${strays.join(', ')} — move source translations into a feature ${CATALOG_DIR}/ folder`
-  );
+/**
+ * Check 1b: a generated catalog directory is output only, never a source catalog. Every generated
+ * directory is checked, not just the configured one: LocalizationGenerator still merges any
+ * locale file it finds in the canonical directory, so a stray there would reach the merged
+ * catalog unvalidated even when I18N_OUTPUT_DIR points somewhere else.
+ */
+function checkGeneratedDirsHoldOnlyOutput(generatedDirs, violations) {
+  for (const dir of [...generatedDirs].sort()) {
+    if (!fs.existsSync(dir)) continue;
+    const strays = fs
+      .readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => !(entry.isFile() && entry.name === MERGED_FILE))
+      .map((entry) => entry.name)
+      .sort();
+    if (strays.length === 0) continue;
+    violations.push(
+      `[output-dir] ${relative(dir)} may hold only ${MERGED_FILE}, found ` +
+        `${strays.join(', ')} — move source translations into a feature ${CATALOG_DIR}/ folder`
+    );
+  }
 }
 
 /** Check 2: en.json and uk.json agree on the key set, folder by folder. */
@@ -452,7 +459,7 @@ function main() {
 
   const violations = [];
   const catalogs = readCatalogs(scanRoot, generatedDirs, violations);
-  checkOutputDirIsGeneratedOnly(outputDir, violations);
+  checkGeneratedDirsHoldOnlyOutput(generatedDirs, violations);
   checkFolderParity(catalogs, violations);
   checkValueQuality(catalogs, violations);
   checkKeyOwnership(catalogs, violations);

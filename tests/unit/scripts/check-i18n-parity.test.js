@@ -434,6 +434,55 @@ describe('check-i18n-parity gate', () => {
     expect(result.status).toBe(0);
   });
 
+  it('ignores a key name that only appears inside unrelated prose', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'prose.ts'),
+      'export const doc = "call t(\'greeting.missing\') somewhere";\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('fails when a key is repeated behind a different JSON escape', () => {
+    const fixture = cleanFixture();
+    const file = path.join(fixture.scanRoot, 'greeting-feature', 'i18n', 'uk.json');
+    writeText(
+      file,
+      '{\n  "greeting": {\n    "hello": "Привіт",\n    "h\\u0065llo": "Вітаю"\n  }\n}\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain(`${file}: keys are defined twice`);
+    expect(result.stderr).toContain('greeting.hello');
+    expect(result.status).toBe(1);
+  });
+
+  it('rejects a stray locale file in the canonical directory under a custom output dir', () => {
+    const fixture = cleanFixture();
+    const customOutput = path.join(fixture.scanRoot, '..', 'generated');
+    fs.mkdirSync(customOutput, { recursive: true });
+    fs.copyFileSync(fixture.mergedPath, path.join(customOutput, 'localization.json'));
+    writeJson(path.join(fixture.outputDir, 'en.json'), { stray: 'Stray' });
+
+    const result = spawnSync(process.execPath, [scriptPath], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        I18N_SCAN_ROOT: fixture.scanRoot,
+        I18N_OUTPUT_DIR: customOutput,
+      },
+    });
+
+    expect(result.stderr).toContain('may hold only localization.json, found en.json');
+    expect(result.status).toBe(1);
+  });
+
   it('prints usage and exits 2 for an unknown argument', () => {
     const result = runGate(cleanFixture(), ['--bogus']);
 
