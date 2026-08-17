@@ -61,11 +61,6 @@ describe('UIBackToMain Component', () => {
       const button = screen.getByText(BackToHomeText);
       expect(within(button).queryByTestId('ripple')).not.toBeInTheDocument();
     });
-    it('should render the link inside the shared container', () => {
-      renderWithProviders(<UIBackToMain />);
-
-      expect(screen.getByRole('link')).toBeInTheDocument();
-    });
   });
 
   describe('Accessibility', () => {

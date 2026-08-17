@@ -5,16 +5,14 @@ import { AuthStoreSelectors, authActions, useAuthState } from '@auth/stores';
 import type { LoginSubmitter, LoginUser } from '@auth/types/auth-forms/use-login-submitter';
 import type { LoginUserDto } from '@auth/types/credentials';
 
-import LoginErrorMessageNormalizer from './login-error-message';
+import LoginErrorMessageNormalizer, { UNKNOWN_KEY } from './login-error-message';
 
 const I18N_KEY_RE = /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/i;
 const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();
 
-const UNKNOWN_REASON_KEY = 'auth.error.unknown';
-
 function resolveLoginReason(normalized: string, t: TFunction): string {
-  if (!I18N_KEY_RE.test(normalized)) return t(UNKNOWN_REASON_KEY);
-  return t(normalized, { defaultValue: '' }) || t(UNKNOWN_REASON_KEY);
+  if (!I18N_KEY_RE.test(normalized)) return t(UNKNOWN_KEY);
+  return t(normalized, { defaultValue: '' }) || t(UNKNOWN_KEY);
 }
 
 function formatLoginError(raw: string | null, t: TFunction): string {

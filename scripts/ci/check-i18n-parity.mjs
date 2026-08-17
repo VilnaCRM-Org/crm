@@ -29,6 +29,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 
 import { findDuplicateKeys } from './json-duplicate-keys.mjs';
+import { collectKeyReferences, pluralFamily, resolvesKey } from './i18n-key-scan.mjs';
 
 const requireCjs = createRequire(import.meta.url);
 
@@ -37,27 +38,6 @@ const CATALOG_DIR = 'i18n';
 const MERGED_FILE = 'localization.json';
 const REPORT_LIMIT = 20;
 const REMEDY = 'node scripts/ci/check-i18n-parity.mjs --write';
-
-// i18next suffixes a base key with a CLDR plural category, and locales legitimately use
-// different category sets (en: one/other; uk: one/few/many/other). Parity therefore compares
-// plural families, and a base key resolves when any of its categories exists.
-const PLURAL_CATEGORIES = ['zero', 'one', 'two', 'few', 'many', 'other'];
-const PLURAL_SUFFIX = new RegExp(`_(?:${PLURAL_CATEGORIES.join('|')})$`);
-
-const KEY_SHAPE = /^[a-z][a-zA-Z0-9_]*(?:\.[a-z][a-zA-Z0-9_]*)+$/;
-
-// A bare `t(` must not be the tail of a longer identifier (format(, expect(, parseInt();
-// the dotted receiver form is allowed only for i18n/i18next.
-const TRANSLATE_CALL =
-  /(?:\b(?:i18n|i18next)\.|(?<![\w$.]))t\(\s*(['"`])((?:\\.|(?!\1)[^\\\r\n])*)\1/g;
-
-// Keys also reach t() indirectly through a constant, which is how the auth.errors.unknown
-// defect escaped review. Requiring a *Key-named binding keeps the far more common non-i18n
-// dotted literals out — Sentry breadcrumb categories, feature-flag names, store names.
-const KEY_NAME = String.raw`\b[A-Za-z_$][\w$]*(?:[Kk]ey|KEY)\b`;
-const KEY_TYPE = String.raw`(?:\s*:\s*[^=;'"\`\n]+)?`;
-const QUOTED = String.raw`(['"\`])((?:\\.|(?!\1)[^\\\r\n])*)\1`;
-const KEY_BINDING = new RegExp(`${KEY_NAME}${KEY_TYPE}\\s*[=:]\\s*${QUOTED}`, 'g');
 
 function usage() {
   return [
@@ -97,7 +77,7 @@ function leafKeys(value) {
 }
 
 function pluralFamilies(value) {
-  return new Set([...leafKeys(value)].map((key) => key.replace(PLURAL_SUFFIX, '')));
+  return new Set([...leafKeys(value)].map(pluralFamily));
 }
 
 function formatKeys(keys) {
@@ -118,13 +98,13 @@ function relative(target) {
   return rel.startsWith('..') ? target : rel;
 }
 
-function findCatalogDirs(dir, outputDir, found) {
+function findCatalogDirs(dir, generatedDirs, found) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const full = path.join(dir, entry.name);
-    if (path.resolve(full) === outputDir) continue;
+    if (generatedDirs.has(path.resolve(full))) continue;
     if (entry.name === CATALOG_DIR) found.push(full);
-    else findCatalogDirs(full, outputDir, found);
+    else findCatalogDirs(full, generatedDirs, found);
   }
   return found;
 }
@@ -171,8 +151,8 @@ function readCatalogLocales(dir, jsonFiles, violations) {
 }
 
 /** Check 1: every catalog folder holds exactly the required, parseable locales. */
-function readCatalogs(scanRoot, outputDir, violations) {
-  const dirs = findCatalogDirs(scanRoot, outputDir, []).sort();
+function readCatalogs(scanRoot, generatedDirs, violations) {
+  const dirs = findCatalogDirs(scanRoot, generatedDirs, []).sort();
   return dirs.map((dir) => {
     const jsonFiles = fs
       .readdirSync(dir, { withFileTypes: true })
@@ -381,103 +361,6 @@ function checkMergedLocaleParity(catalog, violations) {
   violations.push(parts.join('\n'));
 }
 
-function isScannableSource(name) {
-  if (!/\.tsx?$/.test(name)) return false;
-  if (name.endsWith('.d.ts')) return false;
-  return !name.includes('.stories.') && !name.includes('.test.');
-}
-
-function collectSourceFiles(dir, skipped, found) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (!skipped.has(path.resolve(full))) collectSourceFiles(full, skipped, found);
-    } else if (entry.isFile() && isScannableSource(entry.name)) {
-      found.push(full);
-    }
-  }
-  return found;
-}
-
-/**
- * Blanks comments while preserving every byte offset, so a key name mentioned in a migration
- * note or JSDoc block is not mistaken for a live call site.
- */
-function blankComments(source) {
-  const blanked = (text) => text.replace(/[^\n]/g, ' ');
-  let out = '';
-  let i = 0;
-  while (i < source.length) {
-    const ch = source[i];
-    const pair = source.slice(i, i + 2);
-    if (pair === '//' || pair === '/*') {
-      const close = pair === '//' ? source.indexOf('\n', i) : source.indexOf('*/', i + 2);
-      const stop = close === -1 ? source.length : close + (pair === '//' ? 0 : 2);
-      out += blanked(source.slice(i, stop));
-      i = stop;
-    } else if (ch === "'" || ch === '"' || ch === '`') {
-      const start = i;
-      i += 1;
-      while (i < source.length) {
-        if (source[i] === '\\') i += 1;
-        else if (source[i] === ch) break;
-        else if (ch !== '`' && source[i] === '\n') break;
-        i += 1;
-      }
-      if (source[i] === ch) i += 1;
-      out += source.slice(start, i);
-    } else {
-      out += ch;
-      i += 1;
-    }
-  }
-  return out;
-}
-
-function lineOf(source, index) {
-  let line = 1;
-  for (let i = 0; i < index; i += 1) {
-    if (source[i] === '\n') line += 1;
-  }
-  return line;
-}
-
-function collectCandidates(source, namespaces) {
-  const scanned = blankComments(source);
-  const candidates = new Map();
-  const remember = (key, index) => {
-    // A namespace-qualified key needs namespace resolution this app does not use, and an
-    // interpolated template is not a static key; neither is a defect worth reporting.
-    if (key.includes(':') || key.includes('${')) return;
-    const line = lineOf(scanned, index);
-    candidates.set(`${line}:${key}`, { key, line });
-  };
-  for (const match of scanned.matchAll(TRANSLATE_CALL)) {
-    remember(match[2], match.index + match[0].length - match[2].length - 1);
-  }
-  for (const match of scanned.matchAll(KEY_BINDING)) {
-    const literal = match[2];
-    if (!KEY_SHAPE.test(literal)) continue;
-    if (!namespaces.has(literal.split('.')[0])) continue;
-    remember(literal, match.index + match[0].length - literal.length - 1);
-  }
-  return [...candidates.values()];
-}
-
-function resolvesLeaf(translation, key) {
-  let node = translation;
-  for (const segment of key.split('.')) {
-    if (!isPlainObject(node) || !Object.prototype.hasOwnProperty.call(node, segment)) return false;
-    node = node[segment];
-  }
-  return !isPlainObject(node);
-}
-
-function resolvesIn(translation, key) {
-  if (resolvesLeaf(translation, key)) return true;
-  return PLURAL_CATEGORIES.some((category) => resolvesLeaf(translation, `${key}_${category}`));
-}
-
 /** Check 4: every statically known translation key resolves in every locale. */
 function checkCallSites(scanRoot, catalog, violations) {
   const translations = new Map(
@@ -487,23 +370,18 @@ function checkCallSites(scanRoot, catalog, violations) {
   for (const translation of translations.values()) {
     for (const key of Object.keys(translation)) namespaces.add(key);
   }
-  const skipped = new Set([path.resolve(scanRoot, 'api', 'generated')]);
-  let referenceCount = 0;
-  for (const file of collectSourceFiles(scanRoot, skipped, []).sort()) {
-    const source = fs.readFileSync(file, 'utf8');
-    for (const candidate of collectCandidates(source, namespaces)) {
-      referenceCount += 1;
-      const absent = REQUIRED_LOCALES.filter(
-        (locale) => !resolvesIn(translations.get(locale), candidate.key)
-      );
-      if (absent.length === 0) continue;
-      violations.push(
-        `[undefined-key] ${relative(file)}:${candidate.line}: "${candidate.key}" ` +
-          `is not defined in ${absent.join(', ')}`
-      );
-    }
+  const references = collectKeyReferences(scanRoot, namespaces);
+  for (const reference of references) {
+    const absent = REQUIRED_LOCALES.filter(
+      (locale) => !resolvesKey(translations.get(locale), reference.key)
+    );
+    if (absent.length === 0) continue;
+    violations.push(
+      `[undefined-key] ${relative(reference.file)}:${reference.line}: "${reference.key}" ` +
+        `is not defined in ${absent.join(', ')}`
+    );
   }
-  return referenceCount;
+  return references.length;
 }
 
 /** A gate that finds nothing to check must fail, never report a vacuous pass. */
@@ -546,10 +424,14 @@ function resolveScanRoot() {
   if (!fs.statSync(scanRoot).isDirectory()) {
     return { error: `scan root is not a directory: ${scanRoot}` };
   }
+  const canonicalOutput = path.join(scanRoot, CATALOG_DIR);
   const outputDir = process.env.I18N_OUTPUT_DIR
     ? path.resolve(process.cwd(), process.env.I18N_OUTPUT_DIR)
-    : path.join(scanRoot, CATALOG_DIR);
-  return { scanRoot, outputDir, mergedPath: path.join(outputDir, MERGED_FILE) };
+    : canonicalOutput;
+  // The canonical directory is generator output whether or not it is the configured target, so
+  // an overridden I18N_OUTPUT_DIR must not turn src/i18n into a discovered source catalog.
+  const generatedDirs = new Set([path.resolve(outputDir), path.resolve(canonicalOutput)]);
+  return { scanRoot, outputDir, generatedDirs, mergedPath: path.join(outputDir, MERGED_FILE) };
 }
 
 function main() {
@@ -566,10 +448,10 @@ function main() {
     process.exitCode = 1;
     return;
   }
-  const { scanRoot, outputDir, mergedPath } = roots;
+  const { scanRoot, outputDir, generatedDirs, mergedPath } = roots;
 
   const violations = [];
-  const catalogs = readCatalogs(scanRoot, outputDir, violations);
+  const catalogs = readCatalogs(scanRoot, generatedDirs, violations);
   checkOutputDirIsGeneratedOnly(outputDir, violations);
   checkFolderParity(catalogs, violations);
   checkValueQuality(catalogs, violations);

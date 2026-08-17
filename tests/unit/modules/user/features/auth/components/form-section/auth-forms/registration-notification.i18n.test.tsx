@@ -1,33 +1,17 @@
 import { screen, fireEvent } from '@testing-library/react';
-import i18n from 'i18next';
 import { act } from 'react';
-import { initReactI18next } from 'react-i18next';
 
 import localization from '@/i18n/localization.json';
 import RegistrationNotification, {
   BACK_CLOSE_ANIMATION_MS,
 } from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification';
 
+import createLocaleI18n from '../../../../../../../utils/create-locale-i18n';
 import renderWithProviders from '../../../../../../../utils/render-with-providers';
 
 jest.mock('@/assets/notification/confetti.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/notification/error.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/notification/settings.svg', () => ({ ReactComponent: 'svg' }));
-
-const createUkrainianI18n = (): ReturnType<typeof i18n.createInstance> => {
-  const instance = i18n.createInstance();
-  instance.use(initReactI18next).init({
-    lng: 'uk',
-    fallbackLng: 'uk',
-    resources: {
-      uk: { translation: localization.uk.translation },
-    },
-    interpolation: { escapeValue: false },
-    initImmediate: false,
-  });
-
-  return instance;
-};
 
 const ukrainianTranslation = localization.uk.translation;
 
@@ -51,7 +35,7 @@ describe('RegistrationNotification', () => {
         view={baseProps.view}
         errorText="Invalid data provided"
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getByText(ukrainianTranslation.sign_up.errors.signup_error)).toBeInTheDocument();
@@ -65,7 +49,7 @@ describe('RegistrationNotification', () => {
         view={baseProps.view}
         errorText="Unexpected response from server"
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getByText(ukrainianTranslation.sign_up.errors.signup_error)).toBeInTheDocument();
@@ -80,7 +64,7 @@ describe('RegistrationNotification', () => {
         view={baseProps.view}
         errorText="This email already exists"
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getByText(ukrainianTranslation.sign_up.errors.email_used)).toBeInTheDocument();
@@ -94,7 +78,7 @@ describe('RegistrationNotification', () => {
         view={baseProps.view}
         errorText="   "
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(
@@ -109,7 +93,7 @@ describe('RegistrationNotification', () => {
         onBack={baseProps.onBack}
         view={baseProps.view}
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(
@@ -120,7 +104,7 @@ describe('RegistrationNotification', () => {
   it('renders the success notification', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getByText('Вітаємо!')).toBeInTheDocument();
@@ -135,7 +119,7 @@ describe('RegistrationNotification', () => {
         view="success"
         onShown={onShown}
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(onShown).toHaveBeenCalledTimes(1);
@@ -145,7 +129,7 @@ describe('RegistrationNotification', () => {
     const onBack = jest.fn();
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={onBack} view="success" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     fireEvent.click(screen.getByText('Назад'));
@@ -157,7 +141,7 @@ describe('RegistrationNotification', () => {
     const onBack = jest.fn();
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     fireEvent.click(screen.getByText('Назад'));
@@ -173,7 +157,7 @@ describe('RegistrationNotification', () => {
     const onBack = jest.fn();
     const { unmount } = renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     fireEvent.click(screen.getByText('Назад'));
@@ -189,7 +173,7 @@ describe('RegistrationNotification', () => {
 
     renderWithProviders(
       <RegistrationNotification isSubmitting onBack={jest.fn()} onRetry={onRetry} view="error" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     const retryButton = screen.getByRole('button', { name: 'Спробувати ще раз' });
@@ -209,7 +193,7 @@ describe('RegistrationNotification', () => {
         onRetry={onRetry}
         view="error"
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));
