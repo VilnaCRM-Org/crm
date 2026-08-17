@@ -161,7 +161,8 @@ same Docker-backed environment and avoid host-specific drift.
    └── index.ts         # Public exports
    ```
 
-3. **Add translations** - Always provide both `en.json` and `uk.json`
+3. **Add translations** - Always provide both `en.json` and `uk.json` with identical key sets,
+   then run `make i18n-generate` and commit the refreshed `src/i18n/localization.json`
 4. **Register services** - If needed, register in the owning area's composition root
    `di.ts` against its co-located `tokens.ts`, then add that registrar to the aggregator
    array in `src/config/dependency-injection-config.ts` (issue #109)
@@ -217,6 +218,27 @@ runtime-validated with zod (REST bodies in `HttpResponseProcessor`, the GraphQL 
 The authoritative rule, validation policy, and version-reconciliation steps live in
 [`src/api/contracts/README.md`](src/api/contracts/README.md). Apply it for every new
 backend-touching feature.
+
+#### Localization & the Locale-Parity Gate (issue #151)
+
+Every user-facing string is a translated key, and every key exists in **both** locales. The
+per-feature catalogs `src/**/i18n/{en,uk}.json` are the source of truth; the committed
+`src/i18n/localization.json` is their merge, produced by `scripts/localization-generator.js`
+and refreshed with `make i18n-generate`. The build never regenerates it.
+
+- **Add a string** — add the key to the owning feature's `i18n/en.json` **and** `i18n/uk.json`,
+  run `make i18n-generate`, and commit the regenerated merged catalog together with the catalog
+  edit. Never hand-edit `src/i18n/localization.json`.
+- **Gate** — `make lint-i18n` (in `make lint` and in the CI lint phase, so it gates every pull
+  request) fails on a missing or stray locale file in a `src/**/i18n/` catalog, an `en`/`uk`
+  key-set mismatch inside a catalog, a stale `src/i18n/localization.json`, or a `t()` key —
+  including a namespaced key-shaped constant that feeds one — undefined in either locale.
+- **Fix a failure** by adding the missing translation or correcting the key, then rerunning
+  `make i18n-generate`. Never narrow the scan scope, drop a locale from the required set, or add
+  an ignore entry; the same root-cause-not-suppression policy as ESLint, TypeScript, metrics,
+  and jscpd applies here.
+
+The full gate description lives under "Localization Parity (issue #151)" in `CLAUDE.md`.
 
 #### Modifying Existing Code
 
@@ -683,6 +705,10 @@ import { useTranslation } from 'react-i18next';
 const { t } = useTranslation();
 <h1>{t('login.title')}</h1>
 ```
+
+Mirror every new key into `uk.json`, then run `make i18n-generate` and commit the refreshed
+`src/i18n/localization.json`. `make lint-i18n` fails the pull request on a key present in one
+locale only, on a stale merged catalog, and on a `t()` key that no locale defines.
 
 ## Architecture Patterns
 
@@ -1218,7 +1244,8 @@ When creating a new module:
 - [ ] Create module directory: `src/modules/[ModuleName]/`
 - [ ] Add `package.json` with module metadata
 - [ ] Create feature structure with `features/`, `store/`, `helpers/`
-- [ ] Add i18n files: `i18n/en.json`, `i18n/uk.json`
+- [ ] Add i18n files: `i18n/en.json`, `i18n/uk.json` with identical key sets, then run
+      `make i18n-generate` and verify with `make lint-i18n`
 - [ ] Add the module's token module `src/modules/[ModuleName]/config/tokens.ts`
       and composition root `config/di.ts`, then register it in the aggregator array
       in `src/config/dependency-injection-config.ts` (issue #109)
@@ -1335,7 +1362,7 @@ Run monthly or when dependabot alerts
 - [ ] Follows project conventions
 - [ ] No hardcoded values (use config)
 - [ ] Proper error handling
-- [ ] Translations provided (en + uk)
+- [ ] Translations provided (en + uk, identical key sets) and `make lint-i18n` passes
 
 ## Useful Commands Reference
 
@@ -1371,6 +1398,8 @@ make lint-eslint        # ESLint only
 make lint-tsc           # TypeScript only
 make lint-md            # Markdown only
 make lint-dup           # Duplication (jscpd) only
+make lint-i18n          # Locale parity (en/uk) and t() key resolution only
+make i18n-generate      # Regenerate src/i18n/localization.json
 make fmt-prettier       # Prettier format
 make fmt-qlty           # Qlty format
 make format             # Prettier and Qlty format

@@ -7,7 +7,7 @@ import styles from './styles';
 
 export default function UIContainer({ children }: ContainerProps): React.ReactElement {
   return (
-    <Box sx={styles.container} aria-label="container">
+    <Box sx={styles.container}>
       {children}
     </Box>
   );

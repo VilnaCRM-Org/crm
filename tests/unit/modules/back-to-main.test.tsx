@@ -61,11 +61,10 @@ describe('UIBackToMain Component', () => {
       const button = screen.getByText(BackToHomeText);
       expect(within(button).queryByTestId('ripple')).not.toBeInTheDocument();
     });
-    it('should contain UIContainer wrapper', () => {
+    it('should render the link inside the shared container', () => {
       renderWithProviders(<UIBackToMain />);
 
-      const containerElement = screen.getByLabelText(/container/i);
-      expect(containerElement).toBeInTheDocument();
+      expect(screen.getByRole('link')).toBeInTheDocument();
     });
   });
 

@@ -10,11 +10,17 @@ import LoginErrorMessageNormalizer from './login-error-message';
 const I18N_KEY_RE = /^[a-z0-9_]+(?:\.[a-z0-9_]+)+$/i;
 const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();
 
+const UNKNOWN_REASON_KEY = 'auth.error.unknown';
+
+function resolveLoginReason(normalized: string, t: TFunction): string {
+  if (!I18N_KEY_RE.test(normalized)) return t(UNKNOWN_REASON_KEY);
+  return t(normalized, { defaultValue: '' }) || t(UNKNOWN_REASON_KEY);
+}
+
 function formatLoginError(raw: string | null, t: TFunction): string {
   if (!raw) return '';
   const normalized = loginErrorMessageNormalizer.normalize(raw);
-  const reason = I18N_KEY_RE.test(normalized) ? t(normalized) : normalized;
-  return t('sign_in.errors.login', { reason });
+  return t('sign_in.errors.login', { reason: resolveLoginReason(normalized, t) });
 }
 
 function clearLoginError(controllers: Set<AbortController>): void {

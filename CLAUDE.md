@@ -180,6 +180,8 @@ make lint-prettier  # Prettier --check formatting gate (verify-only, shares PRET
 make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, like lint-metrics)
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
+make lint-i18n      # en/uk locale-parity + undefined-key gate (see below)
+make i18n-generate  # Regenerate src/i18n/localization.json from the i18n catalogs
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
@@ -346,6 +348,50 @@ on styles/markup, so keep the bar at copy-paste mass if you widen coverage.
 fragments, constants, factories, or a base object plus overrides — never with
 ignore/suppress directives. The same root-cause-not-suppression policy used for
 ESLint, TypeScript, and metrics applies here.
+
+### Localization Parity (issue #151)
+
+The repository enforces locale parity and key resolvability with
+[`scripts/ci/check-i18n-parity.mjs`](scripts/ci/check-i18n-parity.mjs), so a half-translated
+screen can no longer reach `main` and be found by a user instead of by CI. `lint-i18n` belongs
+to both aggregate `make lint` — which the `static testing` workflow runs on every pull request
+targeting `main` — and the parallel CI lint phase (`CI_LINT_TARGETS`) that `make ci` drives.
+
+**Run locally:**
+
+```bash
+make lint-i18n      # verify
+make i18n-generate  # remediate a stale src/i18n/localization.json
+```
+
+Both are plain Node over the working tree — no Docker and no dev container, like
+`make lint-lockfile` and `make check-env-sync`. Catalogs are discovered by walking `src/`
+for folders named `i18n`, so a new feature is covered the moment it ships one.
+
+**What the gate enforces:**
+
+1. **Locale completeness** — every `src/**/i18n/` catalog holds exactly the required locales
+   (`en` and `uk`), each parsing as a JSON object. A missing locale file fails, and so does a
+   stray extra locale.
+2. **Key parity** — within each catalog the `en` and `uk` key sets are identical, so no key can
+   be translated in one locale only.
+3. **Merged-catalog freshness** — the committed `src/i18n/localization.json` is semantically
+   equal (key order aside) to what `scripts/localization-generator.js` produces from those
+   catalogs, and its own per-locale key sets match.
+4. **Key resolvability** — every `t()` call site, and every namespaced key-shaped literal whose
+   first segment is a real catalog namespace, resolves to a leaf string in **both** locales. An
+   undefined key fails. Scope is `src/**/*.{ts,tsx}`, excluding `.d.ts`, stories, tests, and
+   generated API code.
+
+**Remediation:** add the missing translation for checks 1, 2, and 4; run `make i18n-generate`
+and commit the result for check 3. `make i18n-generate` re-verifies after writing, so it still
+fails on a real parity or undefined-key problem instead of papering over it. Both locales are
+mandatory — `uk` is the main language and `en` the fallback, so neither may lag behind.
+
+**No suppression:** satisfy the gate by adding the missing translation or fixing the key —
+never by narrowing the scan scope, dropping a locale from the required set, or adding an ignore
+entry. The same root-cause-not-suppression policy used for ESLint, TypeScript, metrics, jscpd,
+and the performance budgets applies here.
 
 ### Performance Budgets, Bundle Reports, and Route Splitting (issue #117)
 
@@ -636,11 +682,26 @@ Apollo Server runs in development for local GraphQL API:
 
 ### Localization
 
-Localization files are auto-generated during build:
+Per-feature catalogs are the source of truth; the merged catalog is a committed derived
+artifact. Nothing in the build or the dev server regenerates it — it is refreshed on demand and
+verified in CI.
 
-- Module i18n files: `src/modules/*/features/*/i18n/{en,uk}.json`
-- Generated via `scripts/localization-generator.js`
-- Skip generation: `SKIP_LOCALE_GEN=1`
+- **Source of truth**: `src/**/i18n/{en,uk}.json`, one catalog folder per feature or component
+  (for example `src/modules/user/features/auth/i18n/` and `src/components/not-found/i18n/`).
+  Both locales are mandatory and their key sets must stay identical.
+- **Derived artifact**: `src/i18n/localization.json`, the merge of every catalog into
+  `{ [locale]: { translation: … } }` by `scripts/localization-generator.js`. It is committed,
+  so a catalog edit is only half a change until the merged file is regenerated.
+- **Regenerate**: `make i18n-generate` after adding, renaming, or removing any key.
+- **Verify**: `make lint-i18n`, part of `make lint` (which the `static testing` workflow runs on
+  every pull request) and of the CI lint phase, so locale drift never lands.
+- **Runtime**: `src/i18n.js` feeds the merged catalog to react-i18next as `resources`, with
+  `REACT_APP_MAIN_LANGUAGE` (`uk`) as `lng` and `REACT_APP_FALLBACK_LANGUAGE` (`en`) as
+  `fallbackLng`. A key missing from `uk` silently renders the `en` string, which is exactly the
+  drift the gate catches.
+
+See "Localization Parity (issue #151)" under Code Quality for what the gate checks and how to
+fix each failure.
 
 ## Storybook
 

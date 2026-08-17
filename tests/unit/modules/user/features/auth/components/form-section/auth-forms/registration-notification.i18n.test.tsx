@@ -57,18 +57,49 @@ describe('RegistrationNotification', () => {
     expect(screen.getByText(ukrainianTranslation.sign_up.errors.signup_error)).toBeInTheDocument();
   });
 
-  it('keeps custom backend error text when it is not the generic validation fallback', () => {
+  it('replaces unrecognized backend error text with the localized generic error', () => {
     renderWithProviders(
       <RegistrationNotification
         isSubmitting={baseProps.isSubmitting}
         onBack={baseProps.onBack}
         view={baseProps.view}
-        errorText="Custom backend error"
+        errorText="Unexpected response from server"
       />,
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByText('Custom backend error')).toBeInTheDocument();
+    expect(screen.getByText(ukrainianTranslation.sign_up.errors.signup_error)).toBeInTheDocument();
+    expect(screen.queryByText('Unexpected response from server')).not.toBeInTheDocument();
+  });
+
+  it('maps a duplicate-email backend error to the localized email-in-use message', () => {
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={baseProps.isSubmitting}
+        onBack={baseProps.onBack}
+        view={baseProps.view}
+        errorText="This email already exists"
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(screen.getByText(ukrainianTranslation.sign_up.errors.email_used)).toBeInTheDocument();
+  });
+
+  it('treats whitespace-only backend error text as absent', () => {
+    renderWithProviders(
+      <RegistrationNotification
+        isSubmitting={baseProps.isSubmitting}
+        onBack={baseProps.onBack}
+        view={baseProps.view}
+        errorText="   "
+      />,
+      { i18nMock: createUkrainianI18n() }
+    );
+
+    expect(
+      screen.getByText(ukrainianTranslation.failure_responses.client_errors.something_went_wrong)
+    ).toBeInTheDocument();
   });
 
   it('falls back to the default localized error when no error text is provided', () => {

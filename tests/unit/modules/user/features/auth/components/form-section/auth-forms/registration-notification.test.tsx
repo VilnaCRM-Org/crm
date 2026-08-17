@@ -60,7 +60,7 @@ describe('RegistrationNotification', () => {
     expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
-  it('keeps custom backend error text when it is not the generic validation fallback', () => {
+  it('never renders unrecognized backend error text verbatim', () => {
     renderWithProviders(
       <RegistrationNotification
         isSubmitting={baseProps.isSubmitting}
@@ -71,7 +71,8 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    expect(screen.getByText('Custom backend error')).toBeInTheDocument();
+    expect(screen.queryByText('Custom backend error')).not.toBeInTheDocument();
+    expect(screen.getByText('Помилка реєстрації. Спробуйте пізніше')).toBeInTheDocument();
   });
 
   it('falls back to the default localized error when no error text is provided', () => {
