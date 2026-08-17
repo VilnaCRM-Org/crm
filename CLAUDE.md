@@ -397,13 +397,20 @@ uses `one`/`other` while `uk` uses `one`/`few`/`many`/`other`, and a base key re
 its categories exists. Requiring byte-identical key sets would make correct i18next
 pluralization unsatisfiable.
 
-The gate is four modules: `check-i18n-parity.mjs` (catalog validation, freshness, reporting),
-[`i18n-key-scan.mjs`](scripts/ci/i18n-key-scan.mjs) (source scanning and key resolution),
-[`i18n-source-tokens.mjs`](scripts/ci/i18n-source-tokens.mjs) (the lexical pass that separates
-code from prose — it blanks comments and tokenizes regex literals and template interpolations so
-a key in a comment or a string is never read as a call site, and a real call site inside a
-`${…}` is never missed), and
-[`json-duplicate-keys.mjs`](scripts/ci/json-duplicate-keys.mjs).
+The gate is six modules:
+
+- `check-i18n-parity.mjs` — catalog validation, merged-catalog freshness, reporting.
+- [`i18n-key-scan.mjs`](scripts/ci/i18n-key-scan.mjs) — source scanning and key resolution.
+- [`i18n-source-tokens.mjs`](scripts/ci/i18n-source-tokens.mjs) — the lexical pass that separates
+  code from prose, so a key inside a comment or a string is never read as a call site and a real
+  call site inside a `${…}` interpolation is never missed.
+- [`i18n-lexemes.mjs`](scripts/ci/i18n-lexemes.mjs) — where one comment, string, or regex literal
+  ends.
+- [`i18n-lex-mode.mjs`](scripts/ci/i18n-lex-mode.mjs) — whether a `/` opens a regex literal or
+  divides. Getting this wrong corrupts the scan in both directions: a regex read as division lets
+  its quotes open a phantom string that hides the rest of the line, and a division read as a regex
+  swallows a following string whose prose is then reported as live keys.
+- [`json-duplicate-keys.mjs`](scripts/ci/json-duplicate-keys.mjs) — duplicate JSON keys.
 
 **Remediation:** add the missing translation for checks 1, 2, and 4; run `make i18n-generate`
 and commit the result for check 3. `make i18n-generate` re-verifies after writing, so it still

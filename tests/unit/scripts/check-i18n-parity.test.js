@@ -486,6 +486,32 @@ describe('check-i18n-parity gate', () => {
     expect(result.status).toBe(1);
   });
 
+  it('fails for a key referenced after a regex that follows a control-flow parenthesis', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'control-regex.ts'),
+      "export const f = (t, s) => { if (s) /['\"]/.test(s); return t('greeting.missing'); };\n"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain('greeting.missing');
+    expect(result.status).toBe(1);
+  });
+
+  it('ignores prose reached past an unflagged regex literal and a division', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'unflagged-regex.ts'),
+      'export const odd = /a/ / 2, doc = "call t(\'greeting.missing\') here" / 2;\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
   it('fails for a key referenced after a division on the same line', () => {
     const fixture = cleanFixture();
     writeText(
