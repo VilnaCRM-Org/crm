@@ -378,6 +378,62 @@ describe('check-i18n-parity gate', () => {
     expect(result.status).toBe(0);
   });
 
+  it('fails when a locale file repeats a nested translation key', () => {
+    const fixture = cleanFixture();
+    const file = path.join(fixture.scanRoot, 'greeting-feature', 'i18n', 'uk.json');
+    writeText(
+      file,
+      [
+        '{',
+        '  "greeting": {',
+        '    "hello": "Привіт",',
+        '    "bye": "Бувай",',
+        '    "hello": "Вітаю"',
+        '  }',
+        '}',
+        '',
+      ].join('\n')
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain(`${file}: keys are defined twice`);
+    expect(result.stderr).toContain('greeting.hello');
+    expect(result.status).toBe(1);
+  });
+
+  it('fails when the committed merged catalog repeats a key', () => {
+    const fixture = cleanFixture();
+    writeText(
+      fixture.mergedPath,
+      [
+        '{',
+        '  "en": { "translation": { "a": "1", "a": "2" } },',
+        '  "uk": { "translation": { "a": "1" } }',
+        '}',
+        '',
+      ].join('\n')
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain('keys are defined twice');
+    expect(result.status).toBe(1);
+  });
+
+  it('accepts the same key name reused in sibling objects', () => {
+    const fixture = createFixture();
+    const en = { greeting: { hello: 'Hello' }, farewell: { hello: 'Bye' } };
+    const uk = { greeting: { hello: 'Привіт' }, farewell: { hello: 'Бувай' } };
+    seedCatalog(fixture, 'greeting-feature', en, uk);
+    seedMerged(fixture, mergedFrom(en, uk));
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
   it('prints usage and exits 2 for an unknown argument', () => {
     const result = runGate(cleanFixture(), ['--bogus']);
 

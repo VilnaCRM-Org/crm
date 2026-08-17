@@ -28,6 +28,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
+import { findDuplicateKeys } from './json-duplicate-keys.mjs';
+
 const requireCjs = createRequire(import.meta.url);
 
 const REQUIRED_LOCALES = ['en', 'uk'];
@@ -127,23 +129,43 @@ function findCatalogDirs(dir, outputDir, found) {
   return found;
 }
 
+/**
+ * JSON.parse keeps the last of two identical keys and reports nothing, so a repeated key
+ * silently discards a translation. Returns null when the file cannot be trusted.
+ */
+function parseCatalogFile(file, violations) {
+  const raw = fs.readFileSync(file, 'utf8');
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    violations.push(`[locale-files] ${relative(file)}: invalid JSON — ${error.message}`);
+    return null;
+  }
+  if (!isPlainObject(parsed)) {
+    violations.push(`[locale-files] ${relative(file)}: must contain a JSON object`);
+    return null;
+  }
+  const duplicates = findDuplicateKeys(raw);
+  if (duplicates.length > 0) {
+    violations.push(
+      describeKeys(
+        `[locale-files] ${relative(file)}: keys are defined twice, so one translation is ` +
+          'silently discarded',
+        duplicates
+      )
+    );
+    return null;
+  }
+  return parsed;
+}
+
 function readCatalogLocales(dir, jsonFiles, violations) {
   const locales = {};
   for (const name of jsonFiles) {
     const file = path.join(dir, name);
-    const locale = path.basename(name, '.json');
-    let parsed;
-    try {
-      parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
-    } catch (error) {
-      violations.push(`[locale-files] ${relative(file)}: invalid JSON — ${error.message}`);
-      continue;
-    }
-    if (!isPlainObject(parsed)) {
-      violations.push(`[locale-files] ${relative(file)}: must contain a JSON object`);
-      continue;
-    }
-    locales[locale] = parsed;
+    const parsed = parseCatalogFile(file, violations);
+    if (parsed) locales[path.basename(name, '.json')] = parsed;
   }
   return locales;
 }
@@ -307,17 +329,7 @@ function readMerged(mergedPath, violations) {
     violations.push(`[merged-catalog] ${relative(mergedPath)} is missing — run ${REMEDY}`);
     return null;
   }
-  try {
-    const parsed = JSON.parse(fs.readFileSync(mergedPath, 'utf8'));
-    if (!isPlainObject(parsed)) {
-      violations.push(`[merged-catalog] ${relative(mergedPath)}: must contain a JSON object`);
-      return null;
-    }
-    return parsed;
-  } catch (error) {
-    violations.push(`[merged-catalog] ${relative(mergedPath)}: invalid JSON — ${error.message}`);
-    return null;
-  }
+  return parseCatalogFile(mergedPath, violations);
 }
 
 /** Check 3a: the committed merged catalog matches a fresh regeneration, key order aside. */
