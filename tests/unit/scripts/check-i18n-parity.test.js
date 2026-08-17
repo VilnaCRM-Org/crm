@@ -525,6 +525,85 @@ describe('check-i18n-parity gate', () => {
     expect(result.status).toBe(1);
   });
 
+  it('ignores prose reached past a member call named like a control keyword', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'member-call.ts'),
+      'export const o = p.catch(f) / 2, d = "call t(\'greeting.missing\') here" / 2;\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('ignores prose reached past a member named like an expression keyword', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'member-name.ts'),
+      'export const o = it.return / 2, d = "call t(\'greeting.missing\') here" / 2;\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('ignores prose reached past a postfix increment and a division', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'postfix.ts'),
+      'let i = 0;\nexport const o = i++ / 2, d = "call t(\'greeting.missing\') here" / 2;\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('ignores prose continued onto the next line by a CRLF escape', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'continuation.ts'),
+      'export const d = "prefix \\\r\ncall t(\'greeting.missing\') here";\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('fails for a key referenced after a regex introduced by default', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'default-regex.ts'),
+      "export default /['\"]/.source + t('greeting.missing');\n"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain('greeting.missing');
+    expect(result.status).toBe(1);
+  });
+
+  it('fails for a key on a line a bare carriage return separated from a comment', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'carriage-return.ts'),
+      "// legacy t('greeting.gone')\rexport const s = t('greeting.missing');\n"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain('greeting.missing');
+    expect(result.stderr).not.toContain('greeting.gone');
+    expect(result.status).toBe(1);
+  });
+
   it('fails when a key is repeated behind a different JSON escape', () => {
     const fixture = cleanFixture();
     const file = path.join(fixture.scanRoot, 'greeting-feature', 'i18n', 'uk.json');

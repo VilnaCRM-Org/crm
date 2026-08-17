@@ -25,6 +25,7 @@ const KEYWORD_BEFORE_REGEX = new Set([
   'in',
   'of',
   'case',
+  'default',
   'do',
   'else',
   'void',
@@ -39,12 +40,34 @@ export function createMode() {
   return { last: 'operand', parens: [] };
 }
 
-function previousWord(emitted) {
+// A token that ends a value, so a `+`/`-` doubled onto it is a postfix operator rather than the
+// start of one: `i++ / 2` divides, while `i + +x` does not even reach this question.
+const VALUE_END = /[\w$)\]'"`]/;
+
+function precededByDot(emitted, start) {
+  let cursor = start;
+  while (cursor > 0 && /\s/.test(emitted[cursor - 1])) cursor -= 1;
+  return emitted[cursor - 1] === '.';
+}
+
+/**
+ * The word before the cursor, but only when it reads as a keyword. `obj.catch(…)` and
+ * `iterator.return` are property names, and treating them as keywords mislexes the `/` after
+ * them — optional chaining included, since `?.` also ends in a dot.
+ */
+function keywordBefore(emitted) {
   let end = emitted.length;
   while (end > 0 && /\s/.test(emitted[end - 1])) end -= 1;
   let start = end;
   while (start > 0 && /[\w$]/.test(emitted[start - 1])) start -= 1;
-  return emitted.slice(start, end);
+  return precededByDot(emitted, start) ? '' : emitted.slice(start, end);
+}
+
+function isPostfix(char, emitted) {
+  if (char !== '+' && char !== '-') return false;
+  if (emitted[emitted.length - 1] !== char) return false;
+  const before = emitted[emitted.length - 2];
+  return before !== undefined && VALUE_END.test(before);
 }
 
 /** A completed string, template or regex literal — the next `/` divides it. */
@@ -61,7 +84,7 @@ export function noteOperand(mode) {
 export function noteChar(mode, char, emitted) {
   if (/\s/.test(char)) return;
   if (char === '(') {
-    mode.parens.push(CONTROL_KEYWORDS.has(previousWord(emitted)));
+    mode.parens.push(CONTROL_KEYWORDS.has(keywordBefore(emitted)));
     mode.last = 'operand';
     return;
   }
@@ -69,12 +92,13 @@ export function noteChar(mode, char, emitted) {
     mode.last = mode.parens.pop() === true ? 'operand' : 'value';
     return;
   }
-  if (/[\w$]/.test(char)) mode.last = 'word';
+  if (isPostfix(char, emitted)) mode.last = 'value';
+  else if (/[\w$]/.test(char)) mode.last = 'word';
   else mode.last = char === ']' ? 'value' : 'operand';
 }
 
 export function startsRegex(mode, emitted) {
   if (mode.last === 'value') return false;
-  if (mode.last === 'word') return KEYWORD_BEFORE_REGEX.has(previousWord(emitted));
+  if (mode.last === 'word') return KEYWORD_BEFORE_REGEX.has(keywordBefore(emitted));
   return true;
 }
