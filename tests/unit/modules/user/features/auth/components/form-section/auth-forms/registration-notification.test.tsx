@@ -17,6 +17,7 @@ jest.mock('@/assets/notification/settings.svg', () => ({ ReactComponent: 'svg' }
 const UK_ERR_LEAD = 'Щось пішло не так із запитом.';
 const UK_ERR_TRAIL = 'Спробуйте ще раз пізніше';
 const GENERIC_UK_ERROR = `${UK_ERR_LEAD} ${UK_ERR_TRAIL}`;
+const UK_SIGNUP_ERROR = 'Помилка реєстрації. Спробуйте пізніше';
 
 const createUkrainianI18n = (): ReturnType<typeof i18n.createInstance> => {
   const instance = i18n.createInstance();
@@ -56,8 +57,7 @@ describe('RegistrationNotification', () => {
       { i18nMock: createUkrainianI18n() }
     );
 
-    const expected = 'Помилка реєстрації. Спробуйте пізніше';
-    expect(screen.getByText(expected)).toBeInTheDocument();
+    expect(screen.getByText(UK_SIGNUP_ERROR)).toBeInTheDocument();
   });
 
   it('never renders unrecognized backend error text verbatim', () => {
@@ -72,7 +72,7 @@ describe('RegistrationNotification', () => {
     );
 
     expect(screen.queryByText('Custom backend error')).not.toBeInTheDocument();
-    expect(screen.getByText('Помилка реєстрації. Спробуйте пізніше')).toBeInTheDocument();
+    expect(screen.getByText(UK_SIGNUP_ERROR)).toBeInTheDocument();
   });
 
   it('falls back to the default localized error when no error text is provided', () => {

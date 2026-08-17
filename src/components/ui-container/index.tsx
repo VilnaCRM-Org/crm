@@ -6,9 +6,5 @@ import type { ContainerProps } from '@/components/types/ui-container';
 import styles from './styles';
 
 export default function UIContainer({ children }: ContainerProps): React.ReactElement {
-  return (
-    <Box sx={styles.container}>
-      {children}
-    </Box>
-  );
+  return <Box sx={styles.container}>{children}</Box>;
 }

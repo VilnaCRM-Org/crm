@@ -289,7 +289,7 @@ describe('check-i18n-parity gate', () => {
         '/**',
         ' * The legacy `greeting.removed` key became `greeting.hello`.',
         ' */',
-        'export const NOTE = 1;',
+        'export const DOC_ONLY = 1;',
         '',
       ].join('\n')
     );

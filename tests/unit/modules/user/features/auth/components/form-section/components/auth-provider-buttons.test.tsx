@@ -9,6 +9,9 @@ import renderWithProviders from '../../../../../../../utils/render-with-provider
 
 const mockClicks: string[] = [];
 
+const UK_GOOGLE = 'Продовжити через Google';
+const UK_GITHUB = 'Продовжити через GitHub';
+
 jest.mock('@auth/components/form-section/components/auth-provider-buttons/oauth-providers', () => ({
   __esModule: true,
   default: [
@@ -57,8 +60,8 @@ describe('AuthProviderButtons', () => {
   it('names every provider button in Ukrainian when Ukrainian is active', () => {
     renderWithProviders(<AuthProviderButtons />, { i18nMock: createUkrainianI18n() });
 
-    expect(screen.getByRole('button', { name: 'Продовжити через Google' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Продовжити через GitHub' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: UK_GOOGLE })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: UK_GITHUB })).toBeInTheDocument();
   });
 
   it('leaks no hardcoded English accessible name into the Ukrainian UI', () => {
@@ -77,7 +80,7 @@ describe('AuthProviderButtons', () => {
   it('forwards a click to the provider that owns the button', () => {
     renderWithProviders(<AuthProviderButtons />, { i18nMock: createUkrainianI18n() });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Продовжити через GitHub' }));
+    fireEvent.click(screen.getByRole('button', { name: UK_GITHUB }));
 
     expect(mockClicks).toEqual(['GitHub']);
   });

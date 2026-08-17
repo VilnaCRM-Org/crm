@@ -52,8 +52,10 @@ const TRANSLATE_CALL =
 // Keys also reach t() indirectly through a constant, which is how the auth.errors.unknown
 // defect escaped review. Requiring a *Key-named binding keeps the far more common non-i18n
 // dotted literals out — Sentry breadcrumb categories, feature-flag names, store names.
-const KEY_BINDING =
-  /\b[A-Za-z_$][\w$]*(?:[Kk]ey|KEY)\b(?:\s*:\s*[^=;'"`\n]+)?\s*[=:]\s*(['"`])((?:\\.|(?!\1)[^\\\r\n])*)\1/g;
+const KEY_NAME = String.raw`\b[A-Za-z_$][\w$]*(?:[Kk]ey|KEY)\b`;
+const KEY_TYPE = String.raw`(?:\s*:\s*[^=;'"\`\n]+)?`;
+const QUOTED = String.raw`(['"\`])((?:\\.|(?!\1)[^\\\r\n])*)\1`;
+const KEY_BINDING = new RegExp(`${KEY_NAME}${KEY_TYPE}\\s*[=:]\\s*${QUOTED}`, 'g');
 
 function usage() {
   return [
@@ -227,20 +229,30 @@ function checkValueQuality(catalogs, violations) {
  * Check 2c: LocalizationGenerator merges catalogs last-writer-wins over an unsorted
  * directory walk, so two folders claiming one key resolve by filesystem order.
  */
-function checkKeyOwnership(catalogs, violations) {
+function catalogKeys(catalog) {
+  const keys = new Set();
+  for (const locale of REQUIRED_LOCALES) {
+    const translation = catalog.locales[locale];
+    if (!translation) continue;
+    for (const key of leafKeys(translation)) keys.add(key);
+  }
+  return keys;
+}
+
+function keyOwners(catalogs) {
   const owners = new Map();
   for (const catalog of catalogs) {
-    const keys = new Set();
-    for (const locale of REQUIRED_LOCALES) {
-      const translation = catalog.locales[locale];
-      if (translation) for (const key of leafKeys(translation)) keys.add(key);
-    }
-    for (const key of keys) {
-      if (!owners.has(key)) owners.set(key, []);
-      owners.get(key).push(relative(catalog.dir));
+    for (const key of catalogKeys(catalog)) {
+      const dirs = owners.get(key) ?? [];
+      dirs.push(relative(catalog.dir));
+      owners.set(key, dirs);
     }
   }
-  for (const [key, dirs] of owners) {
+  return owners;
+}
+
+function checkKeyOwnership(catalogs, violations) {
+  for (const [key, dirs] of keyOwners(catalogs)) {
     if (dirs.length < 2) continue;
     violations.push(
       `[key-ownership] "${key}" is defined by ${dirs.length} catalogs (${dirs.join(', ')}) — ` +
@@ -510,7 +522,8 @@ function report(violations, summary) {
   process.stderr.write(`check-i18n-parity: ${violations.length} violation(s) found.\n\n`);
   for (const violation of violations) process.stderr.write(`${violation}\n`);
   process.stderr.write(
-    `\nFix the source catalogs (never widen the gate). Regenerate the merged catalog with: ${REMEDY}\n`
+    '\nFix the source catalogs (never widen the gate). Regenerate the merged ' +
+      `catalog with: ${REMEDY}\n`
   );
   process.exitCode = 1;
 }
