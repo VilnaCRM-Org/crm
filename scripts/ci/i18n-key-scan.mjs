@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { LINE_BREAK, TERMINATORS } from './i18n-lexemes.mjs';
 import { isInsideString, tokenizeSource } from './i18n-source-tokens.mjs';
 
 // i18next suffixes a base key with a CLDR plural category, and locales legitimately use
@@ -19,15 +20,16 @@ const PLURAL_SUFFIX = new RegExp(`_(?:${PLURAL_CATEGORIES.join('|')})$`);
 const KEY_SHAPE = /^[a-z][a-zA-Z0-9_]*(?:\.[a-z][a-zA-Z0-9_]*)+$/;
 
 // A bare `t(` must not be the tail of a longer identifier (format(, expect(, parseInt();
-// any receiver ending in .i18n / .i18next is an i18next instance, so its literal key counts.
+// any receiver ending in .i18n / .i18next is an i18next instance, so its literal key counts,
+// reached through optional chaining or not.
 const TRANSLATE_CALL =
-  /(?:\b(?:i18n|i18next)\.|(?<![\w$.]))t\(\s*(['"`])((?:\\.|(?!\1)[^\\\r\n])*)\1/g;
+  /(?:\b(?:i18n|i18next)\??\.|(?<![\w$.]))t\(\s*(['"`])((?:\\.|(?!\1)[^\\\r\n])*)\1/g;
 
 // Keys also reach t() indirectly through a constant, which is how the auth.errors.unknown
 // defect escaped review. Requiring a *Key-named binding keeps the far more common non-i18n
 // dotted literals out — Sentry breadcrumb categories, feature-flag names, store names.
 const KEY_NAME = String.raw`\b[A-Za-z_$][\w$]*(?:[Kk]ey|KEY)\b`;
-const KEY_TYPE = String.raw`(?:\s*:\s*[^=;'"\`\n]+)?`;
+const KEY_TYPE = String.raw`(?:\s*:\s*[^=;'"\`${TERMINATORS}]+)?`;
 const QUOTED = String.raw`(['"\`])((?:\\.|(?!\1)[^\\\r\n])*)\1`;
 const KEY_BINDING = new RegExp(`${KEY_NAME}${KEY_TYPE}\\s*[=:]\\s*${QUOTED}`, 'g');
 
@@ -72,11 +74,8 @@ function collectSourceFiles(dir, skipped, found) {
 }
 
 function lineOf(source, index) {
-  let line = 1;
-  for (let cursor = 0; cursor < index; cursor += 1) {
-    if (source[cursor] === '\n') line += 1;
-  }
-  return line;
+  const breaks = source.slice(0, index).match(LINE_BREAK);
+  return breaks === null ? 1 : breaks.length + 1;
 }
 
 function isReportableKey(key) {

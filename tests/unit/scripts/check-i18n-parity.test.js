@@ -313,6 +313,19 @@ describe('check-i18n-parity gate', () => {
     expect(result.status).toBe(0);
   });
 
+  it('ignores a dotted literal a bare carriage return separated from a key-named binding', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'split-binding.ts'),
+      "declare const errorKey: LabelKey\rexport const crumb = 'greeting.missing';\r"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
   it('ignores a namespace-qualified key it cannot resolve', () => {
     const fixture = cleanFixture();
     writeText(
@@ -564,6 +577,167 @@ describe('check-i18n-parity gate', () => {
     expect(result.status).toBe(0);
   });
 
+  it('ignores prose reached past a spaced postfix increment and a division', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'spaced-postfix.ts'),
+      'let i = 0;\nexport const o = i ++ / 2, d = "call t(\'greeting.missing\') here" / 2;\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('ignores prose reached past a non-ASCII identifier and a division', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'unicode-identifier.ts'),
+      'export const кількість = 4;\n' +
+        'export const o = кількість / 2, d = "call t(\'greeting.missing\') here" / 2;\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('ignores prose reached past an astral-plane identifier and a division', () => {
+    const fixture = cleanFixture();
+    const name = '\u{1D434}';
+    writeText(
+      sourceFile(fixture, 'astral-identifier.ts'),
+      `export const ${name} = 4;\n` +
+        `export const o = ${name} / 2, d = "call t('greeting.missing') here" / 2;\n`
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('ignores prose reached past a private member named like an expression keyword', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'private-member.ts'),
+      [
+        'export class Ratio {',
+        '  #default = 4;',
+        '',
+        '  value = this.#default / 2 + "call t(\'greeting.missing\') here".length / 2;',
+        '}',
+        '',
+      ].join('\n')
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('ignores prose reached past a non-null assertion and a division', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'non-null.ts'),
+      'export const o = total! / 2, d = "call t(\'greeting.missing\') here" / 2;\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('fails for a key referenced after a regex a prefix negation introduced', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'negated-regex.ts'),
+      "export const label = (t, s) => (!/['\"]/.test(s) ? t('greeting.missing') : '');\n"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain('greeting.missing');
+    expect(result.status).toBe(1);
+  });
+
+  it('ignores prose reached past a JSX spread attribute and a self-closing tag', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'spread-attribute.tsx'),
+      [
+        'export const Row = () => (',
+        '  <div>',
+        '    <Icon {...iconProps} /> <span title="write t(\'greeting.missing\') here" />',
+        '  </div>',
+        ');',
+        '',
+      ].join('\n')
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('ignores prose reached past a regex candidate a backslash cannot continue', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'escaped-break.ts'),
+      [
+        'export const f = () => {',
+        '  return /^a\\',
+        '  "call t(\'greeting.missing\') here" / 2;',
+        '};',
+        '',
+      ].join('\n')
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('reports the real line for a key a bare carriage return moved down the file', () => {
+    const fixture = cleanFixture();
+    const file = sourceFile(fixture, 'carriage-return-lines.ts');
+    writeText(
+      file,
+      "// legacy note\r/* block\rcomment */\rexport const s = t('greeting.missing');\n"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain(`${file}:4:`);
+    expect(result.status).toBe(1);
+  });
+
+  it('counts a CRLF pair as one line when reporting a key', () => {
+    const fixture = cleanFixture();
+    const file = sourceFile(fixture, 'crlf-lines.ts');
+    writeText(
+      file,
+      [
+        '// legacy note',
+        '/* block',
+        'comment */',
+        "export const s = t('greeting.missing');",
+        '',
+      ].join('\r\n')
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain(`${file}:4:`);
+    expect(result.status).toBe(1);
+  });
+
   it('ignores prose continued onto the next line by a CRLF escape', () => {
     const fixture = cleanFixture();
     writeText(
@@ -575,6 +749,80 @@ describe('check-i18n-parity gate', () => {
 
     expect(result.stdout).toContain('check-i18n-parity: OK');
     expect(result.status).toBe(0);
+  });
+
+  it('fails for a key in a JSX element that follows a closing tag on the same line', () => {
+    const fixture = cleanFixture();
+    const file = sourceFile(fixture, 'closing-tag.tsx');
+    writeText(
+      file,
+      'export const Legal = () => (\n' +
+        '  <a href="/terms">terms</a> <a href="/privacy">{t(\'greeting.missing\')}</a>\n' +
+        ');\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain(`${file}:2: "greeting.missing"`);
+    expect(result.status).toBe(1);
+  });
+
+  it('ignores a key that only appears inside a JSX comment', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'jsx-comment.tsx'),
+      'export const Row = () => (\n' +
+        "  <b>{t('greeting.hello')}</b> {/* <span>{t('greeting.removed')}</span> */}\n" +
+        ');\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('fails for a key on a line whose JSX prose holds a bare URL', () => {
+    const fixture = cleanFixture();
+    const file = sourceFile(fixture, 'jsx-url.tsx');
+    writeText(
+      file,
+      'export const Note = () => (\n' +
+        "  <p>See https://vilna.crm for details. {t('greeting.missing')}</p>\n" +
+        ');\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain(`${file}:2: "greeting.missing"`);
+    expect(result.status).toBe(1);
+  });
+
+  it('fails for a key referenced after a regex that opens a statement', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'statement-regex.ts'),
+      'export const f = (t, x) => {\n' +
+        '  if (x) { g(); }\n' +
+        "  /['\"]/.test(x) ? t('greeting.missing') : '';\n" +
+        '};\n'
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain('greeting.missing');
+    expect(result.status).toBe(1);
+  });
+
+  it('fails for a key reached through an optional-chained i18next instance', () => {
+    const fixture = cleanFixture();
+    const file = sourceFile(fixture, 'optional-chain.ts');
+    writeText(file, "export const label = (i18n) => i18n?.t('greeting.missing');\n");
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain(`${file}:1: "greeting.missing"`);
+    expect(result.status).toBe(1);
   });
 
   it('fails for a key referenced after a regex introduced by default', () => {

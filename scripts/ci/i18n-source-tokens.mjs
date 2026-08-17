@@ -83,7 +83,8 @@ function consumedLiteral(state, source) {
     noteValue(state.mode);
     return true;
   }
-  if (source[state.cursor] !== '/' || !startsRegex(state.mode, state.code)) return false;
+  const next = source[state.cursor + 1];
+  if (source[state.cursor] !== '/' || !startsRegex(state.mode, state.code, next)) return false;
   const regex = regexEnd(source, state.cursor);
   if (regex === -1) return false;
   copySpan(state, source, regex);

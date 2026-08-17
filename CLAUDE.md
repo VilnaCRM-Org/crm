@@ -405,7 +405,8 @@ The gate is six modules:
   code from prose, so a key inside a comment or a string is never read as a call site and a real
   call site inside a `${…}` interpolation is never missed.
 - [`i18n-lexemes.mjs`](scripts/ci/i18n-lexemes.mjs) — where one comment, string, or regex literal
-  ends.
+  ends, and where a line ends. All four JavaScript line terminators count, CRLF as one, so a
+  reported line points at the real source line whatever the file's line endings are.
 - [`i18n-lex-mode.mjs`](scripts/ci/i18n-lex-mode.mjs) — whether a `/` opens a regex literal or
   divides. Getting this wrong corrupts the scan in both directions: a regex read as division lets
   its quotes open a phantom string that hides the rest of the line, and a division read as a regex
