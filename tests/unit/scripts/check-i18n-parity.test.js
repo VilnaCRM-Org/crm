@@ -447,6 +447,58 @@ describe('check-i18n-parity gate', () => {
     expect(result.status).toBe(0);
   });
 
+  it('fails for a key referenced inside a template-literal interpolation', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'title.ts'),
+      "export const title = (t) => `${t('greeting.missing')} - VilnaCRM`;\n"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain('greeting.missing');
+    expect(result.status).toBe(1);
+  });
+
+  it('still ignores a key name written in template-literal prose', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'template-prose.ts'),
+      "export const doc = (n) => `legacy t('greeting.missing') dropped in ${n}`;\n"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stdout).toContain('check-i18n-parity: OK');
+    expect(result.status).toBe(0);
+  });
+
+  it('fails for a key referenced after a regex literal holding a quote', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'quoted-regex.ts'),
+      "export const label = (t) => (/['\"]/.test('x') ? t('greeting.missing') : '');\n"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain('greeting.missing');
+    expect(result.status).toBe(1);
+  });
+
+  it('fails for a key referenced after a division on the same line', () => {
+    const fixture = cleanFixture();
+    writeText(
+      sourceFile(fixture, 'division.ts'),
+      "export const label = (t, a, b) => (a / b > 1 ? t('greeting.missing') : '');\n"
+    );
+
+    const result = runGate(fixture);
+
+    expect(result.stderr).toContain('greeting.missing');
+    expect(result.status).toBe(1);
+  });
+
   it('fails when a key is repeated behind a different JSON escape', () => {
     const fixture = cleanFixture();
     const file = path.join(fixture.scanRoot, 'greeting-feature', 'i18n', 'uk.json');

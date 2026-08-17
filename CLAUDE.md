@@ -397,8 +397,12 @@ uses `one`/`other` while `uk` uses `one`/`few`/`many`/`other`, and a base key re
 its categories exists. Requiring byte-identical key sets would make correct i18next
 pluralization unsatisfiable.
 
-The gate is three modules: `check-i18n-parity.mjs` (catalog validation, freshness, reporting),
-[`i18n-key-scan.mjs`](scripts/ci/i18n-key-scan.mjs) (source scanning and key resolution), and
+The gate is four modules: `check-i18n-parity.mjs` (catalog validation, freshness, reporting),
+[`i18n-key-scan.mjs`](scripts/ci/i18n-key-scan.mjs) (source scanning and key resolution),
+[`i18n-source-tokens.mjs`](scripts/ci/i18n-source-tokens.mjs) (the lexical pass that separates
+code from prose — it blanks comments and tokenizes regex literals and template interpolations so
+a key in a comment or a string is never read as a call site, and a real call site inside a
+`${…}` is never missed), and
 [`json-duplicate-keys.mjs`](scripts/ci/json-duplicate-keys.mjs).
 
 **Remediation:** add the missing translation for checks 1, 2, and 4; run `make i18n-generate`
