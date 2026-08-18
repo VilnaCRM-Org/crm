@@ -1,15 +1,20 @@
-import {
-  fieldGapMargins,
-  formSection,
-  formWrapper,
-} from '@/components/skeletons/base/auth-form-shared-styles';
-
 /**
  * Style modules are design contracts: the literal IS the test case, so these are pinned values
  * rather than Faker data. A dropped or edited token fails here instead of silently shipping.
  */
 describe('auth form shared skeleton styles', () => {
-  it('pins every fieldGapMargins token', () => {
+  /**
+   * The module is loaded inside the test, not at the top of the file. These are top-level object
+   * literals, so importing them statically evaluates every value before any test runs and a mutant
+   * there is never exercised by an assertion.
+   */
+  beforeEach(() => {
+    jest.resetModules();
+  });
+
+  it('pins every fieldGapMargins token', async () => {
+    const { fieldGapMargins } = await import('@/components/skeletons/base/auth-form-shared-styles');
+
     expect(fieldGapMargins).toEqual({
       marginBottom: '0.5rem',
       '@media (min-width:480px)': {
@@ -27,7 +32,9 @@ describe('auth form shared skeleton styles', () => {
     });
   });
 
-  it('pins every formSection token', () => {
+  it('pins every formSection token', async () => {
+    const { formSection } = await import('@/components/skeletons/base/auth-form-shared-styles');
+
     expect(formSection).toEqual({
       flexGrow: 1,
       display: 'flex',
@@ -49,7 +56,9 @@ describe('auth form shared skeleton styles', () => {
     });
   });
 
-  it('pins every formWrapper token', () => {
+  it('pins every formWrapper token', async () => {
+    const { formWrapper } = await import('@/components/skeletons/base/auth-form-shared-styles');
+
     expect(formWrapper).toEqual({
       position: 'relative',
       width: '100%',

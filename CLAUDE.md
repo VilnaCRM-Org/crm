@@ -167,8 +167,12 @@ claims. Three settings in `stryker.config.mjs` keep that true, and
   under the CI budget.
 
 `typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
-independent mutants in one pass (it re-splits a group whenever an error cannot be attributed to a
-single mutant, so classification stays exact). The checker compiles
+independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only
+groups mutants whose files do not reference one another, and when an error cannot be tied to a
+mutant in the group it re-checks those mutants individually — but a mutant can still be credited
+with a neighbour's error in a dependency shape the grouper treats as independent. Turn it off when
+a published baseline has to be exact per mutant; the two-file probe that measured 1m03s with it on
+took 12m54s with it off. The checker compiles
 [`tsconfig.stryker.json`](tsconfig.stryker.json) — the root tsconfig narrowed to `src/**/*`, the
 only tree that is mutated — because the checker builds a full program per worker and compiling
 `scripts/`, `docker/`, `lighthouse/`, `tests/`, and `.storybook/` alongside it costs time and

@@ -1,11 +1,20 @@
-import styles from '@/components/ui-form/styles';
-
 /**
  * Style modules are design contracts: the literal IS the test case, so these are pinned values
  * rather than Faker data. A dropped or edited token fails here instead of silently shipping.
  */
 describe('ui-form styles', () => {
-  it('pins every styles token', () => {
+  /**
+   * The module is loaded inside the test, not at the top of the file. These are top-level object
+   * literals, so importing them statically evaluates every value before any test runs and a mutant
+   * there is never exercised by an assertion.
+   */
+  beforeEach(() => {
+    jest.resetModules();
+  });
+
+  it('pins every styles token', async () => {
+    const { default: styles } = await import('@/components/ui-form/styles');
+
     expect(styles).toEqual({
       errorBannerFocus: {
         outline: 'none',

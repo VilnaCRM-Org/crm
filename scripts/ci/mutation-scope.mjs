@@ -57,6 +57,15 @@ function lightestShard(loads) {
  * [0, total) is still exactly `collectMutateFiles()`.
  */
 export function shardMutateFiles(total, index) {
+  if (!Number.isInteger(total) || total < 1) {
+    throw new RangeError(`MUTATION_SHARD_TOTAL must be a positive integer, received ${total}.`);
+  }
+  if (!Number.isInteger(index) || index < 0 || index >= total) {
+    throw new RangeError(
+      `MUTATION_SHARD_INDEX must be an integer in [0, ${total}), received ${index}.`
+    );
+  }
+
   const shards = Array.from({ length: total }, () => []);
   const loads = new Array(total).fill(0);
 
