@@ -53,7 +53,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: reports/stryker-incremental-${{ matrix.index }}.json
-          key: mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'scripts/ci/mutation-scope.mjs') }}-${{ github.run_id }}
+          key: mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs') }}-${{ github.run_id }}
 
       - name: Upload shard report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -72,7 +72,10 @@ jobs:
     needs: shard
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Hang guard only — this job runs no mutants. It measures ~1m30s (container
+    # start plus the merge script), so the cap is headroom, not a budget: timing
+    # out here would fail the gate closed over work the shards already paid for.
+    timeout-minutes: 8
     permissions:
       contents: read
 

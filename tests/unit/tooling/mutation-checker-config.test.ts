@@ -38,7 +38,7 @@ describe('stryker mutant-classification config', () => {
   const base = loadStrykerConfig('stryker.config.mjs');
   const shard = loadStrykerConfig('stryker.shard.config.mjs');
 
-  describe('the TypeScript checker is wired and can actually see type errors', () => {
+  describe('the TypeScript checker wiring a regression could silently undo', () => {
     it('registers the typescript checker plugin and enables it', () => {
       expect(base.plugins).toContain('@stryker-mutator/typescript-checker');
       expect(base.checkers).toEqual(['typescript']);
@@ -84,6 +84,9 @@ describe('stryker mutant-classification config', () => {
       expect(shard.plugins).toEqual(base.plugins);
       expect(shard.disableTypeChecks).toBe(false);
       expect(shard.tsconfigFile).toBe(base.tsconfigFile);
+      expect(shard.typescriptChecker?.prioritizePerformanceOverAccuracy).toBe(
+        base.typescriptChecker?.prioritizePerformanceOverAccuracy
+      );
       expect(shard.jest?.enableFindRelatedTests).toBe(true);
     });
 

@@ -37,6 +37,11 @@ export function collectMutateFiles() {
     .sort();
 }
 
+function byPath(a, b) {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
 function lightestShard(loads) {
   let lightest = 0;
   for (let i = 1; i < loads.length; i += 1) {
@@ -55,9 +60,11 @@ export function shardMutateFiles(total, index) {
   const shards = Array.from({ length: total }, () => []);
   const loads = new Array(total).fill(0);
 
+  // Code-unit ordering, not localeCompare: the tiebreak decides which shard a file lands in, and
+  // each shard carries its own incremental cache, so it has to agree across every machine's locale.
   const heaviestFirst = collectMutateFiles()
     .map((file) => ({ file, weight: fs.statSync(file).size }))
-    .sort((a, b) => b.weight - a.weight || a.file.localeCompare(b.file));
+    .sort((a, b) => b.weight - a.weight || byPath(a.file, b.file));
 
   for (const { file, weight } of heaviestFirst) {
     const target = lightestShard(loads);
