@@ -1,4 +1,5 @@
-import { act, renderHook } from '@testing-library/react';
+import { act, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react';
+import { type ReactElement, createElement } from 'react';
 
 import useUIForm from '@/components/ui-form/use-ui-form';
 import { buildEmail, buildPassword } from '@tests/builders';
@@ -18,12 +19,36 @@ describe('useUIForm', () => {
     expect(result.current.methods.formState.defaultValues).toEqual(defaultValues);
   });
 
-  it('validates on touch rather than waiting for a submit', () => {
-    const defaultValues: Credentials = { email: buildEmail(), password: buildPassword() };
+  it('validates on touch rather than waiting for a submit', async () => {
+    function Harness(): ReactElement {
+      const { methods } = useUIForm<Credentials>({
+        defaultValues: { email: '', password: buildPassword() },
+        formOptions: {},
+      });
+      const field = methods.register('email', { required: 'Email is required' });
 
-    const { result } = renderHook(() => useUIForm<Credentials>({ defaultValues, formOptions: {} }));
+      return createElement(
+        'form',
+        null,
+        createElement('input', {
+          'aria-label': 'Email',
+          name: field.name,
+          ref: field.ref,
+          onBlur: field.onBlur,
+          onChange: field.onChange,
+        }),
+        createElement('p', null, methods.formState.errors.email?.message ?? '')
+      );
+    }
 
-    expect(result.current.methods.control._options.mode).toBe('onTouched');
+    render(createElement(Harness));
+    fireEvent.blur(screen.getByLabelText('Email'));
+
+    // Blur alone surfaces the error. Under react-hook-form's default onSubmit mode nothing would
+    // appear until the form was submitted, so this fails if the hook stops asking for onTouched.
+    await waitFor(() => {
+      expect(screen.getByText('Email is required')).toBeInTheDocument();
+    });
   });
 
   it('restores the supplied defaults on reset', () => {

@@ -3,6 +3,14 @@ import { render } from '@testing-library/react';
 
 import usePageTitle from '@/hooks/use-page-title';
 
+/**
+ * Deliberately separate from the auth module's suite, which reaches the same hook through the
+ * `export { default } from '@/hooks/use-page-title'` re-export. Importing the implementation
+ * directly is what puts its module-level values under an assertion: before this suite existed the
+ * file carried ten mutants that no test ever executed. Merging the two suites would read as
+ * de-duplication and silently give those kills back.
+ */
+
 type LanguageListener = () => void;
 
 interface MockI18n {

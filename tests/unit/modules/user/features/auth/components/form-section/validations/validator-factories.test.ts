@@ -12,6 +12,12 @@ const tMock = tKey as unknown as TFunction;
  * inside each test (rather than once at module scope) keeps that arrow under test instead of
  * letting it be constructed while the suite is still being collected.
  */
+/**
+ * Overlaps the email/password/name suites by design. Those exercise the module-scope
+ * `formValidators.create()` singleton, whose validator objects are built when the module loads, so
+ * mutants inside them are static and never reach an assertion. Calling each `create()`-returned
+ * function directly, from a module loaded inside the test, is what executes them.
+ */
 describe('validator factories', () => {
   beforeEach(() => {
     jest.resetModules();
