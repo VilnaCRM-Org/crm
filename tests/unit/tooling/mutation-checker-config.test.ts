@@ -1,5 +1,3 @@
-// @jest-environment @stryker-mutator/jest-runner/jest-env/node
-
 import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -90,8 +88,23 @@ describe('stryker mutant-classification config', () => {
     });
 
     it('leaves the break gate to the merge job while keeping the base band intact', () => {
-      expect(base.thresholds?.break).toBe(57);
       expect(shard.thresholds?.break).toBeNull();
+    });
+  });
+
+  describe('the enforced floor only ever ratchets up', () => {
+    // The first honest measurement (checker on, findRelatedTests on) scored 59.90%.
+    const MEASURED_FLOOR = 57;
+
+    it('never drops below the floor derived from that measurement', () => {
+      expect(base.thresholds?.break).toBeGreaterThanOrEqual(MEASURED_FLOOR);
+    });
+
+    it('keeps the band coherent so break can climb toward high', () => {
+      const { high = 0, low = 0, break: floor = 0 } = base.thresholds ?? {};
+      expect(floor).toBeLessThanOrEqual(low);
+      expect(low).toBeLessThanOrEqual(high);
+      expect(high).toBe(100);
     });
   });
 });

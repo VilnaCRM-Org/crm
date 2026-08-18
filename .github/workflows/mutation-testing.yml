@@ -18,8 +18,9 @@ jobs:
   shard:
     name: shard ${{ matrix.index }}
     runs-on: ubuntu-latest
-    # Budget: the whole workflow must stay under 15 minutes. Shards fail rather
-    # than silently regress the runtime the honest-classification settings buy.
+    # Kill switch, not a target. A cold shard measures ~6-7 min (whole workflow
+    # 8m37s end to end), so a shard approaching twice that has regressed the
+    # runtime the honest-classification settings buy and should fail loudly.
     timeout-minutes: 12
     permissions:
       contents: read

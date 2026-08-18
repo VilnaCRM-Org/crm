@@ -54,11 +54,14 @@ to buy wall-clock — that trades the gate's honesty for speed:
   `Timeout` — counted as detected, but earned by hanging. Turning it on is also the single biggest
   runtime lever (the full sharded run went from ~110 min to a few minutes per shard).
 
-`typescriptChecker.prioritizePerformanceOverAccuracy: true` batches independent mutants into one
-type-check pass (a group is re-split when an error cannot be pinned on a single mutant, so
-classification stays exact), and `tsconfigFile: 'tsconfig.stryker.json'` narrows the checker's
-program to the mutated `src/**/*` tree — with the root tsconfig each checker worker compiles
-`scripts/`, `docker/`, `lighthouse/`, `tests/`, and `.storybook/` too, which measured ~12x slower.
+Two more settings keep the checker affordable, and they must be measured together rather than
+credited individually: `typescriptChecker.prioritizePerformanceOverAccuracy: true` batches
+independent mutants into one type-check pass (a group is re-split when an error cannot be pinned on
+a single mutant, so classification stays exact), and `tsconfigFile: 'tsconfig.stryker.json'` narrows
+the checker's program to the mutated `src/**/*` tree instead of also compiling `scripts/`,
+`docker/`, `lighthouse/`, `tests/`, and `.storybook/` in every checker worker. Adding the checker
+with neither took 12m54s on a two-file probe; with both it took 1m03s. The narrower tsconfig on its
+own is the smaller half of that (~1.7x) — the per-mutant recompile is what dominates.
 
 A wall of `Timeout` with empty `killedBy` and no `statusReason` is the signature of this bug, not of
 async logic being detected. Check a shard report before trusting a score.
