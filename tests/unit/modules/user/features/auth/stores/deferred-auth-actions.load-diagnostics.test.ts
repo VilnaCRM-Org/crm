@@ -2,6 +2,7 @@ import type { ObservabilityCore } from '@/services/observability/observability-c
 import type AuthStateVarSingleton from '@auth/stores/auth-var';
 import type { AuthActions } from '@auth/types/auth-store';
 import { buildCredentials, buildUser } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const resolveMock = jest.fn();
 
@@ -27,15 +28,12 @@ interface Loaded {
   observability: ObservabilityCore;
 }
 
-const loadBarrel = async (): Promise<Loaded> => {
-  let loaded: Loaded | undefined;
-  await jest.isolateModulesAsync(async () => {
+const loadBarrel = (): Promise<Loaded> =>
+  loadIsolated(async () => {
     const observability = (await import('@/services/observability/observability-core')).default;
     const barrel = (await import('@auth/stores')) as unknown as Omit<Loaded, 'observability'>;
-    loaded = { ...barrel, observability };
+    return { ...barrel, observability };
   });
-  return loaded as Loaded;
-};
 
 describe('deferred auth actions load-failure diagnostics', () => {
   let consoleSpy: jest.SpyInstance;

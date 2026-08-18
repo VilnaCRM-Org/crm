@@ -147,4 +147,18 @@ describe('mutation shard slicing', () => {
   it('degrades to a single shard holding everything', () => {
     expect(shardMutateFiles(1, 0)).toEqual([...everyFile].sort());
   });
+
+  it.each([0, -1, 2.5, Number.NaN])('refuses %p as a shard total', (total) => {
+    expect(() => shardMutateFiles(total, 0)).toThrow(RangeError);
+  });
+
+  it.each([-1, 8, 9, 1.5])('refuses %p as a shard index of 8', (index) => {
+    expect(() => shardMutateFiles(TOTAL, index)).toThrow(RangeError);
+  });
+
+  it('names the offending bound so a misconfigured matrix is diagnosable', () => {
+    expect(() => shardMutateFiles(TOTAL, TOTAL)).toThrow(
+      `MUTATION_SHARD_INDEX must be an integer in [0, ${TOTAL}), received ${TOTAL}.`
+    );
+  });
 });

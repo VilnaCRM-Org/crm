@@ -46,10 +46,10 @@ describe('colorTheme', () => {
   });
 
   it('keeps every brand token a distinct, fully specified hex value', () => {
-    const swatches = BRAND_PALETTE.map(([, hex]) => hex);
+    const swatches = BRAND_PALETTE.map(([token]) => readSwatch(token)?.main);
 
-    expect(swatches.every((hex) => /^#[0-9a-fA-F]{6}$/.test(hex))).toBe(true);
-    expect(new Set(swatches.map((hex) => hex.toLowerCase())).size).toBeGreaterThan(
+    expect(swatches.every((hex) => hex !== undefined && /^#[0-9a-fA-F]{6}$/.test(hex))).toBe(true);
+    expect(new Set(swatches.map((hex) => hex?.toLowerCase())).size).toBeGreaterThan(
       swatches.length - 3
     );
   });
