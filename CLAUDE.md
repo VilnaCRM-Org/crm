@@ -143,6 +143,38 @@ instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `
 These keep the run affordable — CI runners are 2-core, so parallelism comes from the 8-way shard
 count, not Stryker's in-process concurrency.
 
+### Honest mutant classification (issue #171)
+
+A mutation score is only worth enforcing if every mutant is classified for the reason the status
+claims. Three settings in `stryker.config.mjs` keep that true, and
+`tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of them regresses:
+
+- **`checkers: ['typescript']`** (plugin `@stryker-mutator/typescript-checker`, pinned to the same
+  major as `@stryker-mutator/core`) type-checks every mutant before it runs. Type-invalid mutants
+  are reported `CompileError`, which `scripts/ci/mutation-report.ts` excludes from the denominator,
+  instead of executing and being miscounted — crashing ones as `Killed` (a kill no assertion
+  earned), limping ones as `Survived` noise.
+- **`disableTypeChecks: false`.** Stryker's default injects `// @ts-nocheck` at the top of every
+  sandbox file, which would blind the checker to every error and make it a silent no-op. Leave this
+  off or the checker gates nothing. The test runner is unaffected: `jest.mutation.config.ts` uses
+  ts-jest `isolatedModules`, so it transpiles without type-checking either way.
+- **`jest.enableFindRelatedTests: true`.** With it off, each mutant run reloaded _every_ test file
+  in the suite and was filtered down by `testNamePattern` only after the fact, so a mutant run cost
+  a full-suite reload and reliably exceeded the timeout window. Every mutant then landed as
+  `Timeout` — counted as detected, but earned by hanging rather than by an assertion. Turning it on
+  restricts each run to the test files that actually reach the mutated file; mutants now come back
+  `Killed` or `Survived` on their merits, and the full sharded run dropped from ~110 min to well
+  under the CI budget.
+
+`typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
+independent mutants in one pass (it re-splits a group whenever an error cannot be attributed to a
+single mutant, so classification stays exact). The checker compiles
+[`tsconfig.stryker.json`](tsconfig.stryker.json) — the root tsconfig narrowed to `src/**/*`, the
+only tree that is mutated — because the checker builds a full program per worker and compiling
+`scripts/`, `docker/`, `lighthouse/`, `tests/`, and `.storybook/` alongside it costs time and
+memory for files that hold no mutants. Never widen `disableTypeChecks` or drop the checker to make
+a run faster; that trades the gate's honesty for wall-clock.
+
 `thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`. `break` is the
 enforced floor, set at/just below the measured baseline. **Ratchet policy:** raise `break` toward
 `high` as suites improve; never lower it to make CI pass, never narrow the mutated scope to dodge a

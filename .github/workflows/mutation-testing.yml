@@ -18,6 +18,9 @@ jobs:
   shard:
     name: shard ${{ matrix.index }}
     runs-on: ubuntu-latest
+    # Budget: the whole workflow must stay under 15 minutes. Shards fail rather
+    # than silently regress the runtime the honest-classification settings buy.
+    timeout-minutes: 12
     permissions:
       contents: read
     strategy:
@@ -71,6 +74,7 @@ jobs:
     # check would otherwise count as a pass and bypass the mutation gate.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
 

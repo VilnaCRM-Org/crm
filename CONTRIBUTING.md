@@ -139,6 +139,21 @@ type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep th
 CI runners are 2-core, so parallelism comes from the shard count (currently 8), not from Stryker's
 in-process concurrency.
 
+**Every mutant is classified on its merits.** A score is only worth enforcing when each status was
+earned for the reason it names, so `stryker.config.mjs` runs the
+`@stryker-mutator/typescript-checker` (`checkers: ['typescript']`) over
+[`tsconfig.stryker.json`](tsconfig.stryker.json) — the root tsconfig narrowed to the mutated
+`src/**/*` tree. Type-invalid mutants come back `CompileError` and drop out of the denominator
+instead of executing and being miscounted as kills nobody's assertion earned. Two companion
+settings make that real: `disableTypeChecks: false`, because Stryker's default writes
+`// @ts-nocheck` into every sandbox file and would blind the checker completely, and
+`jest.enableFindRelatedTests: true`, because with it off each mutant run reloaded the whole test
+suite, blew past the timeout window, and came back `Timeout` — detected by hanging rather than by
+an assertion. `typescriptChecker.prioritizePerformanceOverAccuracy: true` batches independent
+mutants into one type-check pass and re-splits any group whose error cannot be pinned on a single
+mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
+regresses; never relax them to buy wall-clock.
+
 `mutation-testing.yml` fans `make test-mutation-shard` across an 8-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. On pull requests the shards run
 **incrementally** (`MUTATION_INCREMENTAL=1` → Stryker `--incremental`): each shard restores its own

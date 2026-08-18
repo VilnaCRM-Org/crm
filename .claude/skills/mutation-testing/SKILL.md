@@ -38,6 +38,33 @@ file** on the test path — `expect.getState().testPath` is populated at `setupF
 module-eval time in jest-circus. The integration branch just `require()`s the existing integration
 setup so nothing is duplicated (`tests/mutation/setup.ts`).
 
+## Classification must be earned, not accidental
+
+Three settings in `stryker.config.mjs` decide whether a status means what it says. Never relax them
+to buy wall-clock — that trades the gate's honesty for speed:
+
+- `checkers: ['typescript']` + `plugins: [... '@stryker-mutator/typescript-checker']` (pinned to the
+  same major as `@stryker-mutator/core`). Type-invalid mutants become `CompileError` and leave the
+  denominator instead of executing and being miscounted.
+- `disableTypeChecks: false`. Stryker's default injects `// @ts-nocheck` into every sandbox file,
+  which makes the checker a silent no-op. The test runner is unaffected — `jest.mutation.config.ts`
+  uses ts-jest `isolatedModules` and never type-checks.
+- `jest.enableFindRelatedTests: true`. With it off, every mutant run reloads the entire test suite
+  and only then filters by `testNamePattern`; runs blow past the timeout window and land as
+  `Timeout` — counted as detected, but earned by hanging. Turning it on is also the single biggest
+  runtime lever (the full sharded run went from ~110 min to a few minutes per shard).
+
+`typescriptChecker.prioritizePerformanceOverAccuracy: true` batches independent mutants into one
+type-check pass (a group is re-split when an error cannot be pinned on a single mutant, so
+classification stays exact), and `tsconfigFile: 'tsconfig.stryker.json'` narrows the checker's
+program to the mutated `src/**/*` tree — with the root tsconfig each checker worker compiles
+`scripts/`, `docker/`, `lighthouse/`, `tests/`, and `.storybook/` too, which measured ~12x slower.
+
+A wall of `Timeout` with empty `killedBy` and no `statusReason` is the signature of this bug, not of
+async logic being detected. Check a shard report before trusting a score.
+
+`tests/unit/tooling/mutation-checker-config.test.ts` pins all of the above.
+
 ## Never measure the baseline locally
 
 A widened mutation run over ts-jest is far too heavy for a dev machine: Stryker's default concurrency
