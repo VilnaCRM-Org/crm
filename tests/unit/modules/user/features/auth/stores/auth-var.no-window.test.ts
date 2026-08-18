@@ -1,5 +1,8 @@
 /**
- * @jest-environment node
+ * Stryker's enriched node environment, not bare `node`: the plain one reports no coverage back to
+ * the mutation runner and fails its dry run.
+ *
+ * @jest-environment @stryker-mutator/jest-runner/jest-env/node
  */
 import type { AuthStateVar } from '@auth/stores/auth-var';
 import { buildToken } from '@tests/builders';
