@@ -96,8 +96,9 @@ describe('stryker mutant-classification config', () => {
   });
 
   describe('the enforced floor only ever ratchets up', () => {
-    // The first honest measurement (checker on, findRelatedTests on) scored 59.90%.
-    const MEASURED_FLOOR = 57;
+    // Ratcheted from the 57 first derived when honest classification landed: the suite now
+    // scores 91.88%, so the floor moves up with it and may never move back down.
+    const MEASURED_FLOOR = 90;
 
     it('never drops below the floor derived from that measurement', () => {
       expect(base.thresholds?.break).toBeGreaterThanOrEqual(MEASURED_FLOOR);
