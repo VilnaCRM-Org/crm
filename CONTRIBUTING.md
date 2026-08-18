@@ -126,8 +126,8 @@ plus module UI — repositories, `src/services/**`, auth stores/state, validatio
 module `.tsx` surface — not just `src/components/**/*.tsx`. The mutated set is the single source of
 truth in [`scripts/ci/mutation-scope.mjs`](scripts/ci/mutation-scope.mjs), whose exclusions mirror
 `jest.config.ts` `collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n);
-`stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (per-shard slice) both consume it, so
-the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
+`stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (via `shardMutateFiles`) both consume
+it, so the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
 ([`jest.mutation.config.ts`](jest.mutation.config.ts)) that unions the unit **and** integration
 suites, so a repository/service/store mutant is killed by the integration test that actually asserts
 on it instead of being left uncovered. (Stryker's jest-runner can't use Jest `projects` with
@@ -155,10 +155,16 @@ mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if 
 regresses; never relax them to buy wall-clock.
 
 `mutation-testing.yml` fans `make test-mutation-shard` across an 8-way matrix; each shard mutates a
-deterministic, disjoint slice and uploads a per-shard JSON report. On pull requests the shards run
+deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
+file size (heaviest file to the lightest shard), not sliced round-robin, because the run costs
+whatever its slowest shard costs — round-robin left one shard carrying 1.54x the mean load.
+On pull requests the shards run
 **incrementally** (`MUTATION_INCREMENTAL=1` → Stryker `--incremental`): each shard restores its own
 `reports/stryker-incremental-<index>.json` from an `actions/cache` rolling key and only re-runs
-mutants the diff touches — the report still lists every mutant, so the gate stays exact. The first
+mutants the diff touches — the report still lists every mutant, so the gate stays exact. That key
+carries a hash of the mutation configuration, because Stryker's incremental file invalidates only
+on source and test changes: without it a shard would reuse statuses decided under different
+classification settings and skip the checker for them entirely. The first
 run (cold cache) is a full sharded pass that seeds the cache; a `push:` trigger on `main` refreshes
 it so PRs branch off a warm base. A final `merge and enforce gate` job runs
 `make merge-mutation-reports`, which unions the shard reports and enforces the Stryker `break`

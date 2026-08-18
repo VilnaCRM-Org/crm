@@ -87,9 +87,14 @@ fix survived mutants with real assertions.
 
 `scripts/ci/mutation-scope.mjs` is the single source of truth for the mutated file list (its
 exclusions mirror `jest.config.ts` `collectCoverageFrom`). The base config sets `mutate` to that
-list; the shard config slices the same list round-robin
-(`collectMutateFiles().filter((_, i) => i % total === index % total)`) so the union of all shards
-equals the full set exactly. Never hand-maintain a second file list.
+list; the shard config takes its slice from `shardMutateFiles(total, index)` in the same module, so
+the union of all shards equals the full set exactly. Never hand-maintain a second file list.
+
+`shardMutateFiles` bin-packs by file size (longest-processing-time: heaviest file to the lightest
+shard) rather than slicing round-robin, because a sharded run costs whatever its **slowest** shard
+costs. Round-robin left the worst shard carrying 1.54x the mean mutant load — measured 7m47s
+against a 3m14s best — while size packing brings the spread to about 1.15x. It stays deterministic
+(weight desc, path as tiebreak), so re-running one shard mutates exactly the same files.
 
 ## Sharded incremental CI
 

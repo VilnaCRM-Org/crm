@@ -181,23 +181,34 @@ enforced floor, set at/just below the measured baseline. **Ratchet policy:** rai
 survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
 assertions.
 
-Measured baseline (widened scope, unit + integration; 8-way sharded full run):
+Measured baseline — the **first honest measurement**, taken with the checker and
+`findRelatedTests` on (cold 8-way sharded run):
 
 | Area                         | Files | Mutation score |
 | ---------------------------- | ----- | -------------- |
-| `src/services/**`            | 9     | 100%           |
-| `…/auth/repositories/**`     | 7     | 100%           |
-| `…/auth/stores/**`           | 8     | 100%           |
-| `…/form-section/validations` | 4     | 100%           |
-| Overall (`break` = 90)       | 134   | 92.5%          |
+| `…/form-section/validations` | 4     | 91.8%          |
+| `src/services/**`            | 21    | 83.7%          |
+| `…/auth/stores/**`           | 8     | 80.3%          |
+| `…/auth/repositories/**`     | 7     | 65.5%          |
+| Overall (`break` = 57)       | 159   | 59.9%          |
 
-The mutate scope is 154 files; 134 produced mutants in the report (the other ~20 are pure re-export
-barrels or files whose only mutants are static and skipped by `ignoreStatic`). The logic layer is
-fully detected; the overall gap is `noCoverage` mutants in non-logic files (UI/providers/routes
-exercised by e2e/visual rather than unit/integration). Detections in the async logic layer land as
-Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test), which counts as
-detected. `break` is set to 90 — below the 92.5% baseline for margin — and ratchets toward the
-`high` = 100 target as the scheduled full runs confirm stability.
+Merged tally: `killed=1001 timeout=0 survived=525 noCoverage=145`, `compileError=883
+runtimeError=19 ignored=527`, `valid=1671`. The mutate scope is 186 files; 159 produced mutants in
+the report (the rest are pure re-export barrels or files whose only mutants are static and skipped
+by `ignoreStatic`).
+
+**`break` was re-derived, not lowered.** The previously recorded baseline (92.5%, `break` = 90) was
+measured before honest classification: 2405 of its 2410 "detections" were `Timeout` with an empty
+`killedBy` — including boolean flips in `src/app.tsx` that cannot hang — so it scored how often a
+mutant outran the timeout window, not how often an assertion caught one. The same suite, unchanged,
+scores 59.9% once mutants are classified on their merits, so 90 was never a floor these tests
+cleared. The ratchet policy applies from this number forward: raise it, never lower it.
+
+The gap is real work, and it belongs to issue #121 (test strength), not to this gate's wiring: 295
+of the 525 survivors are `StringLiteral` mutants inside style-object files (`ui-form/styles.ts`,
+`auth-form-shared-styles.ts`, …) whose CSS values only the visual suite asserts on, and the rest
+cluster in `error-handler.ts`, `api-error-factory.ts`, and `auth-store-actions.ts`. Fix them with
+assertions; `high` = 100 stays the ratchet target.
 
 ## Code Quality
 
