@@ -139,7 +139,20 @@ describe('HttpRequestConfigBuilder request shape', () => {
   });
 
   describe('runtimes without binary globals', () => {
-    it('serializes a JSON body when the runtime exposes no ArrayBuffer', () => {
+    it('serializes a typed array as JSON when the runtime exposes no ArrayBuffer', () => {
+      // Captured before the global is removed: a plain object would take the same JSON path with
+      // or without ArrayBuffer, so it could never show that the guard short-circuits.
+      const view = new Uint8Array([1, 2, 3]);
+
+      expect(builder.create('POST', view, undefined).body).toBe(view);
+
+      const config = createWithoutArrayBuffer(view);
+
+      expect(config.body).toBe(JSON.stringify(view));
+      expect(headersOf(config)['Content-Type']).toBe('application/json');
+    });
+
+    it('still serializes a plain object when the runtime exposes no ArrayBuffer', () => {
       const credentials = buildCredentials();
 
       const config = createWithoutArrayBuffer(credentials);

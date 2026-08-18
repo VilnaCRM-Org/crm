@@ -1,8 +1,9 @@
 import { render, screen } from '@testing-library/react';
-import type { TFunction } from 'i18next';
 
 import { RegistrationFormFields } from '@auth/components/form-section/auth-forms';
 import type { Validators } from '@auth/types/auth-forms/registration-form-fields';
+
+import { identityTranslator, stubValidators } from '@tests/unit/utils/auth-form-i18n';
 
 type FieldProps = {
   name?: string;
@@ -48,13 +49,9 @@ jest.mock('@auth/components/form-section/components/password-field', () => ({
   },
 }));
 
-const t = ((key: string): string => key) as unknown as TFunction;
+const t = identityTranslator;
 
-const validators = {
-  email: jest.fn(),
-  password: jest.fn(),
-  fullName: jest.fn(),
-} as unknown as Validators;
+const validators = stubValidators<Validators>();
 
 function renderFields(): void {
   render(<RegistrationFormFields t={t} validators={validators} />);
