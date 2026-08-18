@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { type ReactElement, type ReactNode, createElement } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
+import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import FormField from '@auth/components/form-section/components/form-field';
 import type { FormFieldProps } from '@auth/types/components/form-field';
 
@@ -27,7 +28,8 @@ const BASE = {
 function Wrapper({ children }: { children: ReactNode }): ReactElement {
   const methods = useForm();
 
-  return createElement(FormProvider, { ...methods, children });
+  // The app's own bridge, so this stays clear of the prop-spreading rule.
+  return <FormProviderBridge methods={methods}>{children}</FormProviderBridge>;
 }
 
 const renderField = (props: FormFieldProps): void => {
