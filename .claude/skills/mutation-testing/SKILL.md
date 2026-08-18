@@ -56,8 +56,11 @@ to buy wall-clock — that trades the gate's honesty for speed:
 
 Two more settings keep the checker affordable, and they must be measured together rather than
 credited individually: `typescriptChecker.prioritizePerformanceOverAccuracy: true` batches
-independent mutants into one type-check pass (a group is re-split when an error cannot be pinned on
-a single mutant, so classification stays exact), and `tsconfigFile: 'tsconfig.stryker.json'` narrows
+independent mutants into one type-check pass — a deliberate accuracy-for-speed trade, since it
+groups only mutants whose files do not reference one another and re-checks individually any mutant
+whose error cannot be tied to it, but a grouped mutant can still be credited with a neighbour's
+error; turn it off when a baseline has to be exact per mutant — and
+`tsconfigFile: 'tsconfig.stryker.json'` narrows
 the checker's program to the mutated `src/**/*` tree instead of also compiling `scripts/`,
 `docker/`, `lighthouse/`, `tests/`, and `.storybook/` in every checker worker. Adding the checker
 with neither took 12m54s on a two-file probe; with both it took 1m03s. The narrower tsconfig on its
