@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { ApolloLink, Observable, execute, gql } from '@apollo/client';
 import { container, type DependencyContainer } from 'tsyringe';
 
 import errorRegistrar from '@/services/error/di';
@@ -30,6 +31,12 @@ function unboundContainer(tokens: readonly symbol[]): DependencyContainer {
 
   return child;
 }
+
+const PROBE_QUERY = gql`
+  query {
+    field
+  }
+`;
 
 describe('error utils composition root', () => {
   const tokens = [ERROR_UTILS_TOKENS.ErrorParser, ERROR_UTILS_TOKENS.AbortErrorDetector];
@@ -101,16 +108,36 @@ describe('observability composition root', () => {
     expect(child.isRegistered(OBSERVABILITY_TOKENS.ApolloLinkFactory)).toBe(true);
   });
 
-  it('resolves an apollo link factory wired to the same observability singleton', () => {
+  it('resolves an apollo link factory wired to the same observability singleton', async () => {
     const child = unboundContainer(tokens);
 
     observabilityRegistrar.register(child);
 
-    const service = child.resolve(OBSERVABILITY_TOKENS.ObservabilityService);
-    const linkFactory = child.resolve(OBSERVABILITY_TOKENS.ApolloLinkFactory);
+    const service = child.resolve<ObservabilityService>(OBSERVABILITY_TOKENS.ObservabilityService);
+    const linkFactory = child.resolve<ApolloLinkFactory>(OBSERVABILITY_TOKENS.ApolloLinkFactory);
     expect(service).toBeInstanceOf(ObservabilityService);
     expect(linkFactory).toBeInstanceOf(ApolloLinkFactory);
     expect(child.resolve(OBSERVABILITY_TOKENS.ObservabilityService)).toBe(service);
+
+    // Prove the binding rather than assume it: the factory's error link reports through whichever
+    // service instance it was injected with, so spying on the resolved singleton catches a factory
+    // that was handed a different one.
+    const captureError = jest.spyOn(service, 'captureError').mockImplementation(() => undefined);
+    const networkError = new Error('offline');
+    const failing = new ApolloLink(
+      () => new Observable((observer) => observer.error(networkError))
+    );
+    const errorLink = (linkFactory as unknown as { errorLink: () => ApolloLink }).errorLink();
+
+    await new Promise<void>((resolve) => {
+      execute(ApolloLink.from([errorLink, failing]), { query: PROBE_QUERY }).subscribe({
+        error: () => resolve(),
+        complete: () => resolve(),
+      });
+    });
+
+    expect(captureError).toHaveBeenCalledWith(networkError, { source: 'apollo:network' });
+    captureError.mockRestore();
   });
 });
 
