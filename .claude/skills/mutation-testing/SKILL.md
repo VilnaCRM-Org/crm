@@ -69,6 +69,14 @@ own is the smaller half of that (~1.7x) — the per-mutant recompile is what dom
 A wall of `Timeout` with empty `killedBy` and no `statusReason` is the signature of this bug, not of
 async logic being detected. Check a shard report before trusting a score.
 
+The mirror failure is `Survived` with `testsCompleted: 0`: a mutant in a top-level object literal,
+const map or `styled()` call is evaluated at import, so Stryker marks it static, credits its
+per-test coverage to whichever unrelated file loaded the module first, and `findRelatedTests` then
+filters that file out — nothing runs, and no assertion can reach it. Load such modules inside the
+test (`jest.resetModules()` plus `import()` in the body, or `jest.isolateModulesAsync`); see
+`tests/unit/utils/isolated-module.ts`. Grep a shard report for `testsCompleted: 0` before concluding
+a survivor is a test-strength gap.
+
 `tests/unit/tooling/mutation-checker-config.test.ts` pins all of the above.
 
 ## Never measure the baseline locally

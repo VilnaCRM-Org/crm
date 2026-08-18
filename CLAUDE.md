@@ -185,34 +185,38 @@ enforced floor, set at/just below the measured baseline. **Ratchet policy:** rai
 survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
 assertions.
 
-Measured baseline — the **first honest measurement**, taken with the checker and
-`findRelatedTests` on (cold 8-way sharded run):
+Measured baseline (checker on, `findRelatedTests` on; cold 8-way sharded run):
 
 | Area                         | Files | Mutation score |
 | ---------------------------- | ----- | -------------- |
-| `…/form-section/validations` | 4     | 91.8%          |
-| `src/services/**`            | 21    | 83.7%          |
-| `…/auth/stores/**`           | 8     | 80.3%          |
-| `…/auth/repositories/**`     | 7     | 65.5%          |
-| Overall (`break` = 57)       | 159   | 59.9%          |
+| `src/components/**`          | 45    | 99.4%          |
+| `…/auth/stores/**`           | 8     | 98.7%          |
+| `…/auth/repositories/**`     | 7     | 98.2%          |
+| `src/services/**`            | 21    | 97.6%          |
+| `…/form-section/validations` | 4     | 92.1%          |
+| Overall (`break` = 90)       | 159   | 91.9%          |
 
-Merged tally: `killed=1001 timeout=0 survived=525 noCoverage=145`, `compileError=883
-runtimeError=19 ignored=527`, `valid=1671`. The mutate scope is 186 files; 159 produced mutants in
+Merged tally: `killed=1539 timeout=0 survived=136 noCoverage=0`, `compileError=903
+runtimeError=21 ignored=501`, `valid=1675`. The mutate scope is 186 files; 159 produced mutants in
 the report (the rest are pure re-export barrels or files whose only mutants are static and skipped
 by `ignoreStatic`).
 
-**`break` was re-derived, not lowered.** The previously recorded baseline (92.5%, `break` = 90) was
-measured before honest classification: 2405 of its 2410 "detections" were `Timeout` with an empty
-`killedBy` — including boolean flips in `src/app.tsx` that cannot hang — so it scored how often a
-mutant outran the timeout window, not how often an assertion caught one. The same suite, unchanged,
-scores 59.9% once mutants are classified on their merits, so 90 was never a floor these tests
-cleared. The ratchet policy applies from this number forward: raise it, never lower it.
+**How this number was reached, and why the earlier one was not comparable.** The previously
+recorded baseline (92.5%, `break` = 90) was measured before honest classification: 2405 of its 2410
+"detections" were `Timeout` with an empty `killedBy` — including boolean flips in `src/app.tsx` that
+cannot hang — so it scored how often a mutant outran the timeout window, not how often an assertion
+caught one. The same suite, unchanged, scored **59.9%** once mutants were classified on their
+merits. `break` was re-derived to 57 at that point, then ratcheted back to 90 as real assertions
+were added (issue #121's work): 60.0% → 65.1% → 80.5% → 91.4% → 91.9%. Every point of that came
+from tests, not from narrowing scope or relaxing the gate.
 
-The gap is real work, and it belongs to issue #121 (test strength), not to this gate's wiring: 295
-of the 525 survivors are `StringLiteral` mutants inside style-object files (`ui-form/styles.ts`,
-`auth-form-shared-styles.ts`, …) whose CSS values only the visual suite asserts on, and the rest
-cluster in `error-handler.ts`, `api-error-factory.ts`, and `auth-store-actions.ts`. Fix them with
-assertions; `high` = 100 stays the ratchet target.
+**Static values need loading inside the test.** A mutant in a top-level object literal, const map or
+`styled()` call is evaluated at import, so Stryker marks it static, attributes its per-test coverage
+to whichever unrelated file happened to load the module first, and `findRelatedTests` then filters
+that file out — the mutant comes back `Survived` with `testsCompleted: 0` and no assertion can ever
+reach it. Load such modules with `jest.resetModules()` plus an `import()` inside the test body (or
+`jest.isolateModulesAsync`) so the literal is evaluated during the test. This moved 154 mutants from
+`Survived` to `Killed` in a single run. `tests/unit/utils/isolated-module.ts` wraps the pattern.
 
 ## Code Quality
 
