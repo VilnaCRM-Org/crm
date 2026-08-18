@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react';
 
 import { RegistrationFormFields } from '@auth/components/form-section/auth-forms';
 import type { Validators } from '@auth/types/auth-forms/registration-form-fields';
-
 import { identityTranslator, stubValidators } from '@tests/unit/utils/auth-form-i18n';
 
 type FieldProps = {

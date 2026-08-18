@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 
 import ButtonExample from '@/button-example';
 
@@ -20,5 +20,13 @@ describe('ButtonExample', () => {
 
     expect(button).toHaveAttribute('type', 'button');
     expect(button).toHaveTextContent('hello');
+  });
+
+  it('stays on the page when clicked, because its handler does nothing', () => {
+    render(<ButtonExample />);
+    const button = screen.getByRole('button', { name: 'hello' });
+
+    expect(() => fireEvent.click(button)).not.toThrow();
+    expect(button).toBeInTheDocument();
   });
 });
