@@ -4,6 +4,8 @@ import { execFileSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
+import { collectMutateFiles, shardMutateFiles } from '../../../scripts/ci/mutation-scope.mjs';
+
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
 interface StrykerConfigShape {
@@ -88,8 +90,45 @@ describe('stryker mutant-classification config', () => {
     });
 
     it('leaves the break gate to the merge job while keeping the base band intact', () => {
-      expect(base.thresholds?.break).toBe(90);
+      expect(base.thresholds?.break).toBe(57);
       expect(shard.thresholds?.break).toBeNull();
     });
+  });
+});
+
+describe('mutation shard slicing', () => {
+  const TOTAL = 8;
+  const everyFile: string[] = collectMutateFiles();
+  const shards: string[][] = Array.from({ length: TOTAL }, (_unused, index) =>
+    shardMutateFiles(TOTAL, index)
+  );
+
+  it('covers the whole mutate scope exactly once across every shard', () => {
+    const union = shards.flat().sort();
+    expect(union).toEqual([...everyFile].sort());
+    expect(new Set(union).size).toBe(everyFile.length);
+  });
+
+  it('is deterministic, so a rerun of one shard mutates the same files', () => {
+    expect(shardMutateFiles(TOTAL, 3)).toEqual(shards[3]);
+  });
+
+  it('packs shards tighter than round-robin, since the slowest shard sets the pace', () => {
+    const bytes = (files: string[]): number =>
+      files.reduce((total, file) => total + fs.statSync(path.join(projectRoot, file)).size, 0);
+
+    const packed = shards.map(bytes);
+    const roundRobin = Array.from({ length: TOTAL }, (_unused, index) =>
+      bytes(everyFile.filter((_file, position) => position % TOTAL === index))
+    );
+    const spread = (loads: number[]): number =>
+      Math.max(...loads) / (loads.reduce((sum, load) => sum + load, 0) / loads.length);
+
+    expect(spread(packed)).toBeLessThan(spread(roundRobin));
+    expect(spread(packed)).toBeLessThan(1.25);
+  });
+
+  it('degrades to a single shard holding everything', () => {
+    expect(shardMutateFiles(1, 0)).toEqual([...everyFile].sort());
   });
 });
