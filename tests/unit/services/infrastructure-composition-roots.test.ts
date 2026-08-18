@@ -129,15 +129,20 @@ describe('observability composition root', () => {
     );
     const errorLink = (linkFactory as unknown as { errorLink: () => ApolloLink }).errorLink();
 
-    await new Promise<void>((resolve) => {
-      execute(ApolloLink.from([errorLink, failing]), { query: PROBE_QUERY }).subscribe({
-        error: () => resolve(),
-        complete: () => resolve(),
+    try {
+      await new Promise<void>((resolve) => {
+        execute(ApolloLink.from([errorLink, failing]), { query: PROBE_QUERY }).subscribe({
+          error: () => resolve(),
+          complete: () => resolve(),
+        });
       });
-    });
 
-    expect(captureError).toHaveBeenCalledWith(networkError, { source: 'apollo:network' });
-    captureError.mockRestore();
+      expect(captureError).toHaveBeenCalledWith(networkError, { source: 'apollo:network' });
+    } finally {
+      // clearMocks resets call history but not implementations, and restoreMocks is off, so a
+      // failing assertion here would otherwise leave the singleton stubbed for the rest of the run.
+      captureError.mockRestore();
+    }
   });
 });
 
