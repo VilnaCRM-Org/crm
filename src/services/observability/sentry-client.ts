@@ -87,8 +87,9 @@ export class SentryClient {
 
   private async load(): Promise<SentryApi> {
     if (this.sdk) return this.sdk;
-    const module = await import('@sentry/react');
-    this.sdk = module as unknown as SentryApi;
+    const { init, captureException, setUser, setTag, addBreadcrumb } =
+      await import('@sentry/react');
+    this.sdk = { init, captureException, setUser, setTag, addBreadcrumb } as unknown as SentryApi;
     return this.sdk;
   }
 }
