@@ -51,7 +51,7 @@ describe('UIForm error banner', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent(ERROR_TEXT);
-    expect(alert).toHaveStyle({ color: 'red', marginBottom: '1rem' });
+    expect(alert).toHaveStyle({ color: 'rgb(255, 0, 0)', marginBottom: '1rem' });
   });
 
   it('moves focus to the banner without inserting it into the tab order', () => {

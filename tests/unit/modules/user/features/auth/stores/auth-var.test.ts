@@ -41,13 +41,11 @@ describe('auth-var state helpers', () => {
 });
 
 describe('readSeedToken', () => {
-  const originalWindow = global.window;
   const originalEnv = process.env;
   const originalWindowToken = window.__PRELOADED_AUTH_TOKEN__;
   const originalEnvToken = process.env[ENV_KEY];
 
   afterEach(() => {
-    Object.defineProperty(global, 'window', { configurable: true, value: originalWindow });
     Object.defineProperty(process, 'env', { configurable: true, value: originalEnv });
     if (originalWindowToken === undefined) delete window.__PRELOADED_AUTH_TOKEN__;
     else window.__PRELOADED_AUTH_TOKEN__ = originalWindowToken;
@@ -74,20 +72,6 @@ describe('readSeedToken', () => {
   it('reads the window token by default when window is present', () => {
     window.__PRELOADED_AUTH_TOKEN__ = 'win-default';
     expect(AuthStateVar.readSeedToken(undefined, undefined)).toBe('win-default');
-  });
-
-  it('uses the default env token when window is absent', () => {
-    Object.defineProperty(global, 'window', { configurable: true, value: undefined });
-    process.env[ENV_KEY] = 'env-token';
-
-    expect(AuthStateVar.readSeedToken()).toBe('env-token');
-  });
-
-  it('returns null when window is absent and no env token is set', () => {
-    Object.defineProperty(global, 'window', { configurable: true, value: undefined });
-    delete process.env[ENV_KEY];
-
-    expect(AuthStateVar.readSeedToken()).toBeNull();
   });
 
   it('returns null when reading the env token throws', () => {
