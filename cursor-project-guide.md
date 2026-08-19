@@ -5,7 +5,7 @@ AI-powered development environments.
 
 ## Project Overview
 
-This is a modern SPA template based on React 18.3, TypeScript, Material-UI v7,
+This is a modern SPA template based on React 19, TypeScript, Material-UI v7,
 featuring extensive CI checks, configured testing tools (Playwright, Jest),
 and a modular architecture inspired by bulletproof-react.
 

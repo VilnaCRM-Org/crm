@@ -184,7 +184,7 @@ make format         # Prettier formatting
 
 ### Core Technologies
 
-- **Frontend**: React 18.3.1 with TypeScript
+- **Frontend**: React 19.2.8 with TypeScript
 - **State Management**: Redux Toolkit + React Redux
 - **Styling**: Material-UI (MUI) v7 with Emotion
 - **GraphQL**: Apollo Client v3 with Apollo Server v4
