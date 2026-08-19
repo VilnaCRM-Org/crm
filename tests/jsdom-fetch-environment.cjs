@@ -19,6 +19,12 @@ class JsdomFetchEnvironment extends JSDOMEnvironment {
       TextEncoder: globalThis.TextEncoder,
       TextDecoder: globalThis.TextDecoder,
       structuredClone: globalThis.structuredClone,
+      TransformStream: globalThis.TransformStream,
+      WritableStream: globalThis.WritableStream,
+      BroadcastChannel: globalThis.BroadcastChannel,
+      MessageChannel: globalThis.MessageChannel,
+      MessagePort: globalThis.MessagePort,
+      crypto: globalThis.crypto,
     };
     for (const key of Object.keys(nodeGlobals)) {
       target[key] = nodeGlobals[key];

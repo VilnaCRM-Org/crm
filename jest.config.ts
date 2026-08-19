@@ -69,6 +69,9 @@ const config: Config = {
 
   roots,
   testEnvironment,
+  // msw 2 marks its ./node entry with a browser condition; jsdom's default
+  // ['browser'] would resolve the interceptors to the browser build.
+  testEnvironmentOptions: { customExportConditions: [''] },
   testMatch,
   extensionsToTreatAsEsm: ['.mts'],
   transform: {
@@ -79,7 +82,15 @@ const config: Config = {
       { presets: [['@babel/preset-env', { targets: { node: 'current' } }]] },
     ],
   },
-  transformIgnorePatterns: ['/node_modules/(?!@faker-js/)', '\\.pnp\\.[^\\/]+$'],
+  transformIgnorePatterns: [
+    [
+      '/node_modules/(?!',
+      '@faker-js/|msw/|@mswjs/|@bundled-es-modules/|until-async/|rettime/|',
+      'outvariant/|strict-event-emitter/|headers-polyfill/|is-node-process/|@open-draft/',
+      ')',
+    ].join(''),
+    '\\.pnp\\.[^\\/]+$',
+  ],
   setupFilesAfterEnv: setupFiles,
   modulePathIgnorePatterns: ['<rootDir>/.stryker-tmp/'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'mts', 'json', 'node'],
