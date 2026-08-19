@@ -23,6 +23,31 @@ const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 const createClient = (): FetchHttpsClient =>
   new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
 
+describe('HttpRequestConfigBuilder header and body-init resolution', () => {
+  const builder = new HttpRequestConfigBuilder();
+
+  it('keeps a caller-supplied Accept header instead of defaulting to JSON', () => {
+    const config = builder.create('GET', undefined, { Accept: 'text/csv' });
+
+    expect(config.headers).toMatchObject({ Accept: 'text/csv' });
+  });
+
+  it('skips body-init constructors the runtime does not expose', () => {
+    const globalObject = globalThis as Record<string, unknown>;
+    const originalStream = globalObject.ReadableStream;
+    delete globalObject.ReadableStream;
+
+    try {
+      const config = builder.create('POST', { id: 1 }, undefined);
+
+      expect(config.headers).toMatchObject({ 'Content-Type': 'application/json' });
+      expect(config.body).toBe(JSON.stringify({ id: 1 }));
+    } finally {
+      globalObject.ReadableStream = originalStream;
+    }
+  });
+});
+
 describe('FetchHttpsClient Integration', () => {
   let client: FetchHttpsClient;
   const originalFetch = global.fetch;
