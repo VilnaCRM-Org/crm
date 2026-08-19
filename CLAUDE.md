@@ -10,16 +10,17 @@ This template is used for all VilnaCRM microservices.
 
 ## Tech Stack
 
-- **Frontend**: React 18.3, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
+- **Frontend**: React 19, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
 - **State Management**: Zustand (lightweight store with `create` and `devtools`)
-- **Routing**: React Router v6
+- **Routing**: React Router v7 (the `react-router` package; `react-router-dom` was folded into it)
 - **DI Container**: tsyringe with reflect-metadata decorators
-- **i18n**: react-i18next (main language: uk, fallback: en)
+- **i18n**: i18next v26 + react-i18next v17 (main language: uk, fallback: en)
 - **Build**: RSBuild (Rspack-based bundler, configured via `rsbuild.config.ts`)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
 - **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
   Bun is used only to manage dependencies using `bun.lock`.
-- **Node**: >=24.8.0 (enforced via engineStrict)
+- **Node**: >=24.8.0 (enforced via engineStrict); `@types/node` tracks the same major
+- **Testing**: Jest 30 (jsdom 26), Testing Library 16, msw 2, Playwright
 
 ## Development Environment
 
@@ -236,9 +237,31 @@ make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
 ```
 
-Git hooks are managed by Husky. Run `make husky` once after cloning.
+Git hooks are managed by Husky v9. Run `make husky` after cloning **and after any Husky
+upgrade** — v9 moved `core.hooksPath` from `.husky` to `.husky/_`, and a clone that skips it
+runs no hooks at all. The hook scripts keep their `#!/usr/bin/env sh` shebang (`make lint-shell`
+fails `SC2148` without it) but no longer source `_/husky.sh`, which v9 removed.
 Agents should run `make format` before `make lint`. Formatting is intentionally
 separate from the `lint` verification suite.
+
+### Dependency updates and major upgrades (issue #143)
+
+Dependabot groups **minor and patch** updates into one weekly pull request per ecosystem and
+leaves majors ungrouped, so each major arrives as its own reviewable, revertable pull request.
+The step-by-step procedure for taking one — including the ordering constraints, the budget
+re-measurement, and the "never satisfy a gate with a suppression" rule — is the
+**Major-version upgrade playbook** in [`CONTRIBUTING.md`](CONTRIBUTING.md). Read it before
+raising any major.
+
+Two constraints in this repository are easy to trip over:
+
+- **`@types/node` tracks the Node engine, not npm `latest`.** `engines.node` is `>=24.8.0`, so
+  the types stay on the 24 line; a newer major would make type-checking describe a runtime the
+  project does not run.
+- **The test runner moves as a set.** `jest`, `jest-environment-jsdom`, `@types/jest`,
+  `ts-jest`, `jsdom`, and `@types/jsdom` are coupled: `jest-environment-jsdom` pins the jsdom
+  the tests actually execute against, so bumping the standalone `jsdom` alone installs a second,
+  nested copy and changes nothing.
 
 ## Agent Skill Layout
 
