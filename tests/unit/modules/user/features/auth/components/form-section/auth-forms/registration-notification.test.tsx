@@ -27,7 +27,7 @@ const createUkrainianI18n = (): ReturnType<typeof i18n.createInstance> => {
       uk: { translation: localization.uk.translation },
     },
     interpolation: { escapeValue: false },
-    initImmediate: false,
+    initAsync: false,
   });
 
   return instance;
