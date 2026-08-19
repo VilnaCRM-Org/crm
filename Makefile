@@ -463,8 +463,8 @@ lint-eslint-suppressions: ## Report ESLint suppression directives with file/line
 		exit "$$grep_status"; \
 	fi
 
-husky: ## One-time Husky setup to enable Git hooks (deprecated if already set)
-	$(BUNX) husky install
+husky: ## One-time Husky setup to enable Git hooks (re-run after cloning or upgrading Husky)
+	$(BUNX) husky
 
 test-bats: create-network ## Run Bats coverage for Makefile shell flows and CI helper scripts inside Docker
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev sh -c 'bun install --frozen-lockfile && bun x bats --formatter "$(BATS_FORMATTER)" -r tests/bats'

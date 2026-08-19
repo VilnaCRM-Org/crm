@@ -1,6 +1,7 @@
 // @jest-environment jsdom
 
 import { render, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 
 import * as AuthForms from '@auth/components/form-section/auth-forms';
 

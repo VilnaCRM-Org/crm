@@ -1,6 +1,6 @@
 import type { TextFieldProps } from '@mui/material/TextField';
 import { render } from '@testing-library/react';
-import type { PropsWithChildren, ReactNode } from 'react';
+import type { JSX, PropsWithChildren, ReactNode } from 'react';
 
 import UITextField from '@/components/ui-text-field';
 

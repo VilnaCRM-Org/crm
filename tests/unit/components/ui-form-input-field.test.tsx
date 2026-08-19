@@ -1,6 +1,6 @@
 import type { TextFieldProps } from '@mui/material/TextField';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import type { PropsWithChildren, ReactNode } from 'react';
+import type { JSX, PropsWithChildren, ReactNode } from 'react';
 import { useForm, type Mode, type RegisterOptions } from 'react-hook-form';
 
 import UIFormInputField from '@/components/ui-form-input-field';

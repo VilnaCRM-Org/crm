@@ -1,4 +1,5 @@
 import { createEvent, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { JSX } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
 import PasswordField from '@auth/components/form-section/components/password-field';

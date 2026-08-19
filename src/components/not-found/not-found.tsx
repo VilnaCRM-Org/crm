@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIBackToMain from '@/components/ui-back-to-main';

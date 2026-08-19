@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { type JSX, useEffect, useRef } from 'react';
 
 import type { ErrorFallbackProps } from '@/components/types/error-boundary';
 

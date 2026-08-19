@@ -1,4 +1,5 @@
 import { CircularProgress, useMediaQuery } from '@mui/material';
+import type { JSX } from 'react';
 
 import breakpointsTheme from '@/components/ui-breakpoints';
 import { paletteColors } from '@/styles/colors';

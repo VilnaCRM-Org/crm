@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type JSX, useState } from 'react';
 
 import AuthFormSection from '@auth/components/auth-form-section';
 import AuthSwitcher from '@auth/components/auth-switcher';

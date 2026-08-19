@@ -1,4 +1,5 @@
 import { Grid } from '@mui/material';
+import type { JSX } from 'react';
 import { FieldValues, Path, PathValue, RegisterOptions, useFormContext } from 'react-hook-form';
 
 import UIFormInputField from '@/components/ui-form-input-field';

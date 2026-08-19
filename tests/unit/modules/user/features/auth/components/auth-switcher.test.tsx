@@ -3,6 +3,7 @@
 import '../../../../../utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { fireEvent, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import localization from '@/i18n/localization.json';

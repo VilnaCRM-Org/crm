@@ -1,5 +1,5 @@
 import Box from '@mui/material/Box';
-import { useEffect, useState } from 'react';
+import { type JSX, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UILiveStatus from '@/components/ui-live-status';
