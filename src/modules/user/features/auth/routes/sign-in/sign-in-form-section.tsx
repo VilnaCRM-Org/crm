@@ -1,3 +1,5 @@
+import type { JSX } from 'react';
+
 import AuthFormSection from '@auth/components/auth-form-section';
 import AuthSwitcher from '@auth/components/auth-switcher';
 import LoginForm from '@auth/components/form-section/auth-forms/login-form';

@@ -1,7 +1,7 @@
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import type { TFunction } from 'i18next';
-import { type MouseEvent, useCallback, useState } from 'react';
+import { type JSX, type MouseEvent, useCallback, useState } from 'react';
 import { FieldValues, Path, PathValue } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 

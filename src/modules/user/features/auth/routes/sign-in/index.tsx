@@ -1,4 +1,4 @@
-import { lazy } from 'react';
+import { type JSX, lazy } from 'react';
 
 import AuthPageLayout from '@auth/components/auth-page-layout';
 import usePageTitle from '@auth/hooks/use-page-title';

@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 

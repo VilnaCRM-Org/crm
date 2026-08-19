@@ -1,4 +1,5 @@
 import type { TFunction } from 'i18next';
+import type { JSX } from 'react';
 
 import FormField from '@auth/components/form-section/components/form-field';
 import PasswordField from '@auth/components/form-section/components/password-field';

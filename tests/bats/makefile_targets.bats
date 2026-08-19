@@ -40,7 +40,7 @@ ci-mutation|bun x stryker run|
 ci-prod-setup|docker compose -f docker-compose.yml up -d dev|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --no-recreate prod mockoon playwright
 ci-test-prod|docker compose -f docker-compose.test.yml exec playwright ./node_modules/.bin/playwright test ./tests/e2e|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)
 ci|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
-install|docker compose exec -T dev bun install --frozen-lockfile|bun x husky install
+install|docker compose exec -T dev bun install --frozen-lockfile|bun x husky
 clean|docker compose -f docker-compose.yml down --volumes --remove-orphans --rmi local|docker compose -f docker-compose.test.yml down --volumes --remove-orphans --rmi local
 start-prod-clean|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --force-recreate --build prod mockoon playwright|curl -fsS http://localhost:8080/api/users
 wait-for-prod|bun x wait-on http://localhost:3001|
@@ -87,7 +87,7 @@ lint-md|bun x markdownlint -i CHANGELOG.md -i test-results/**/*.md -i playwright
 lint-dup|bun x jscpd|
 check-env-sync|check-env-sync.sh|
 lint-metrics-run|lint-metrics.sh RCA_BIN=./bin/rust-code-analysis-cli RCA_VERSION=0.0.25 RCA_SCOPE=src/ RCA_EXCLUDES=**/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/** **/api/generated/** METRICS_POLICY=config/metrics-policy.json|
-husky|bun x husky install|
+husky|bun x husky|
 storybook-start|bun x storybook dev -p 6006 --host 0.0.0.0 --no-open|
 storybook-build|bun x storybook build|
 update|docker compose exec -T dev bun update|

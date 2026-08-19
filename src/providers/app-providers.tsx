@@ -1,7 +1,7 @@
 import CssBaseline from '@mui/material/CssBaseline';
 import { StyledEngineProvider, ThemeProvider } from '@mui/material/styles';
 import type { i18n as I18nType } from 'i18next';
-import React from 'react';
+import React, { type JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
 import type { AppProvidersProps } from '@/components/types/providers';

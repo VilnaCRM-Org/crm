@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 
 import LoginFormFields from '@auth/components/form-section/auth-forms/login-form-fields';
 import type { Props } from '@auth/types/auth-forms/login-form-fields';

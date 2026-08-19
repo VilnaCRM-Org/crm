@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 
 import { RegistrationFormFields } from '@auth/components/form-section/auth-forms';
 import type { Validators } from '@auth/types/auth-forms/registration-form-fields';

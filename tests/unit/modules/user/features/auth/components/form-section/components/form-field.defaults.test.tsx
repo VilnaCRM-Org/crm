@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { type ReactElement, type ReactNode, createElement } from 'react';
+import { createElement, type JSX, type ReactElement, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';

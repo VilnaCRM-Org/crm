@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ComponentProps } from 'react';
+import { ComponentProps, type JSX } from 'react';
 
 import localization from '@/i18n/localization.json';
 import AuthErrorBoundary from '@/modules/user/features/auth/components/auth-error-boundary';

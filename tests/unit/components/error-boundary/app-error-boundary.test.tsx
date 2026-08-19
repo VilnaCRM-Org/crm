@@ -3,6 +3,7 @@
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { JSX } from 'react';
 
 import AppErrorBoundary from '@/components/error-boundary/app-error-boundary';
 import type { ErrorReporter } from '@/services/types/error-reporting';

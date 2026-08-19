@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { isRouteErrorResponse, useNavigate, useRouteError } from 'react-router-dom';
 
 import ROUTE_PATHS from '@/routes/route-paths';

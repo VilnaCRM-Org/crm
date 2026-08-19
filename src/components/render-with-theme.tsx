@@ -6,7 +6,7 @@ export default function renderWithTheme<Props extends object>(
   theme: Theme,
   Component: React.ComponentType<Props>,
   props: Props
-): JSX.Element {
+): React.JSX.Element {
   return (
     <ThemeProvider theme={theme}>{React.createElement<Props>(Component, props)}</ThemeProvider>
   );

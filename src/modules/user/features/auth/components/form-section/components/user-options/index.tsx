@@ -1,5 +1,5 @@
 import { Box, FormControlLabel, Checkbox } from '@mui/material';
-import { useCallback, useState } from 'react';
+import { type JSX, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { CheckBoxChecked, CheckBoxIcon } from './checkbox-icons';

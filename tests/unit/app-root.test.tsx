@@ -1,6 +1,7 @@
 import './utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 
 type MockI18n = {
   language: string;

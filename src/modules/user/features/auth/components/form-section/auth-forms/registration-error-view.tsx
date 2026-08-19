@@ -1,5 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ErrorImage } from '@/assets/notification/error.svg';
