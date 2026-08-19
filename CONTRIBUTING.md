@@ -276,8 +276,14 @@ requests on a weekly schedule for two ecosystems:
 - `github-actions` — the SHA-pinned actions in `.github/workflows/`.
 
 To keep pull request volume low, minor and patch updates are grouped into a single request
-per ecosystem while major bumps arrive individually, and `open-pull-requests-limit` is capped
-at 5.
+per ecosystem — that is what `update-types: ['minor', 'patch']` on each group means. Majors
+match no group, so **every major opens its own pull request** and can be reviewed, gated, and
+reverted on its own. `open-pull-requests-limit` is 10 for `bun` (the grouped minor/patch
+request takes one slot and each pending major takes one) and 5 for `github-actions`.
+
+Dependabot has no equivalent of Renovate's `lockFileMaintenance`, so `bun.lock` is never
+re-resolved against unchanged ranges on its own. Refresh it deliberately when transitive
+drift matters.
 
 Dependabot commit headers use the conventional `chore(deps):` prefix (`chore(github-actions):`
 for the actions entry). Our commitlint `check-task-number-rule` expects a `(#N)` scope, which
@@ -285,3 +291,44 @@ Dependabot cannot emit; that rule runs only in the local Husky `commit-msg` hook
 commitlint CI gate), so Dependabot pull requests are not blocked. Because the repository is
 squash-merge-only, add the task number to the squash commit title at merge time to keep
 `main`'s history conformant.
+
+## Major-version upgrade playbook
+
+Majors arrive one per pull request (see above). Run each one through these steps; they are the
+sequence issue #143 was executed with, and they are ordered so a failure has exactly one
+candidate cause.
+
+1. **Establish the blast radius before installing anything.** Grep for every call site,
+   `jest.mock` path, and golden-text assertion that names the package. A missed
+   `jest.mock('<old-name>')` string leaves the real module loaded with no error, and a golden
+   assertion on a string that can no longer appear keeps passing while enforcing nothing.
+2. **Check the peer and engine ranges of the target**, and of everything that peers on it, with
+   `npm view <pkg>@<major> peerDependencies engines`. Some upgrades are gated by another one —
+   `@testing-library/react` 16 unbundles `@testing-library/dom`, which then has to become a
+   direct devDependency because `user-event` peers on it too.
+3. **Bump one lane at a time** and re-run `make test-unit-all` and `make test-integration`
+   between lanes. Where a lane needs a code change first (the JSX namespace before
+   `@types/react` 19), land the code change under the old version — it must compile on both
+   sides.
+4. **Verify the runner, not just the tests.** A test-infrastructure major can move a
+   transitive dependency the manifest still advertises. Confirm the resolved tree with
+   `find node_modules -name package.json -path '*<pkg>/package.json'`; a nested second copy
+   means the upgrade did not take.
+5. **Re-measure the budgets.** `bun x rsbuild build` fails on the raw byte budgets by itself;
+   `node scripts/bundle-size-report.mjs --dir dist` enforces the gzip ones. Satisfy a breach by
+   reducing the bundle — narrowing a namespace `import()` so unused exports tree-shake, or
+   moving a CommonJS bootstrap to ESM so the bundler can analyse it — never by raising a limit.
+6. **Run the whole static lane**: `make format` then `make lint`, plus `make lint-metrics`,
+   `make lint-shell`, `make lint-actionlint`, and `make lint-lockfile`. Remove `dist/` first —
+   ESLint and dependency-cruiser do not ignore it.
+7. **Prove the SDK contract where the code casts around it.** Any boundary that reaches a
+   vendor through `as unknown as` is invisible to the compiler, and tests that replace the
+   module wholesale cannot fail on a real API break. Add a conformance test that imports the
+   real package and asserts the members exist.
+8. **Re-run the full mutation gate cold.** Every dependency change invalidates the incremental
+   cache key, so the run is honest; check the merged `valid` and `compileError` counts, not only
+   the score. A program that no longer type-checks turns every mutant into `compileError`,
+   which the report excludes from the denominator — a vacuous pass, not a loud failure.
+9. **Never satisfy a gate with a suppression.** No `eslint-disable`, no `@ts-ignore`, no
+   threshold edit, no narrowed mutation scope, no regenerated visual baseline that hides a real
+   rendering change.

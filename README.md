@@ -278,7 +278,7 @@ Lighthouse
 Git
 
 ```bash
-  make husky: sets up Husky (Git hooks manager) — run once after cloning the repo
+  make husky: sets up Husky (Git hooks manager) — run after cloning the repo and after any Husky upgrade
 ```
 
 Storybook
