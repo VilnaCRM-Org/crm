@@ -1,5 +1,5 @@
 import { type JSX, Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 
 import RouteFallback from '@/components/route-fallback';
 

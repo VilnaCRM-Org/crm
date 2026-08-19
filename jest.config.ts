@@ -69,8 +69,6 @@ const config: Config = {
 
   roots,
   testEnvironment,
-  // msw 2 marks its ./node entry with a browser condition; jsdom's default
-  // ['browser'] would resolve the interceptors to the browser build.
   testEnvironmentOptions: { customExportConditions: [''] },
   testMatch,
   extensionsToTreatAsEsm: ['.mts'],

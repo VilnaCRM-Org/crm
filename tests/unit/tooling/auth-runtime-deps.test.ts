@@ -28,7 +28,7 @@ describe('auth client runtime dependencies', () => {
 
     expect(authHook).not.toContain("from '@/stores/hooks'");
     expect(authHook).not.toContain("from '@/stores'");
-    expect(uiButton).not.toContain("from 'react-router-dom'");
+    expect(uiButton).not.toContain("from 'react-router'");
   });
 
   it('keeps module federation disabled to prevent async bootstrap waterfall on mobile', () => {

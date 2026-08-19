@@ -13,7 +13,7 @@ jest.mock('@/routes/routes', () => ({
   default: mockRouter,
 }));
 
-jest.mock('react-router-dom', () => ({
+jest.mock('react-router', () => ({
   __esModule: true,
   RouterProvider: (props: Record<string, unknown>): ReactElement => {
     mockRouterProviderProps.push(props);
@@ -35,9 +35,9 @@ describe('App router wiring', () => {
     expect(mockRouterProviderProps[0].router).toBe(mockRouter);
   });
 
-  it('opts the router into the v7 startTransition future flag', () => {
+  it('passes no legacy future opt-in alongside the router', () => {
     render(<App />);
 
-    expect(mockRouterProviderProps[0].future).toEqual({ v7_startTransition: true });
+    expect(mockRouterProviderProps[0]).toEqual({ router: mockRouter });
   });
 });

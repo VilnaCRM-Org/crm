@@ -4,7 +4,7 @@ import '../../../../../utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { fireEvent, screen } from '@testing-library/react';
 import type { JSX } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 
 import localization from '@/i18n/localization.json';
 import AuthSwitcher from '@/modules/user/features/auth/components/auth-switcher';

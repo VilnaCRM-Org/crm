@@ -18,7 +18,7 @@ jest.mock('react-i18next', () => ({
   useTranslation: (): { i18n: MockI18n } => ({ i18n: mockI18n }),
 }));
 
-jest.mock('react-router-dom', () => ({
+jest.mock('react-router', () => ({
   Outlet: (): ReactElement => <span>route-outlet</span>,
 }));
 
