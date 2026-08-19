@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import type { JSX } from 'react';
 
 import blockSkeletonStyles from '@/components/skeletons/ui-skeleton-block/styles';
 import type { UISkeletonBlockProps } from '@/components/skeletons/ui-skeleton-block/types';

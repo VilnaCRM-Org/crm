@@ -1,6 +1,7 @@
 import './utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 
 type MockI18n = {
   language: string;
@@ -25,17 +26,17 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('@auth/components/protected-route', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): JSX.Element => <Outlet /> };
 });
 
 jest.mock('@/components/layouts/root-layout', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): JSX.Element => <Outlet /> };
 });
 
 jest.mock('@/components/layouts/app-layout', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): JSX.Element => <Outlet /> };
 });
 

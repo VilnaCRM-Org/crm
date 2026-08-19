@@ -1,6 +1,6 @@
 import type { LinkProps } from '@mui/material/Link';
 import { render } from '@testing-library/react';
-import type { PropsWithChildren, ReactNode } from 'react';
+import type { JSX, PropsWithChildren, ReactNode } from 'react';
 
 import UILink from '@/components/ui-link';
 

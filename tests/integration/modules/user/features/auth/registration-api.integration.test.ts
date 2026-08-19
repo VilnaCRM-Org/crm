@@ -1,5 +1,5 @@
 import { ApolloError } from '@apollo/client';
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 
 import '../../../../setup';
 import container from '@/config/dependency-injection-config';
@@ -32,9 +32,7 @@ const createUserSuccessBody = {
 describe('RegistrationAPI Integration', () => {
   let registrationAPI: RegistrationAPI;
 
-  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
   afterEach(() => server.resetHandlers());
-  afterAll(() => server.close());
 
   beforeEach(() => {
     registrationAPI = container.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI);
@@ -45,10 +43,10 @@ describe('RegistrationAPI Integration', () => {
       let capturedInput: Record<string, string> | undefined;
 
       server.use(
-        rest.post(GRAPHQL_URL, async (req, res, ctx) => {
-          const body = (await req.json()) as { variables?: { input?: Record<string, string> } };
+        http.post(GRAPHQL_URL, async ({ request }) => {
+          const body = (await request.json()) as { variables?: { input?: Record<string, string> } };
           capturedInput = body.variables?.input;
-          return res(ctx.status(200), ctx.json(createUserSuccessBody));
+          return HttpResponse.json(createUserSuccessBody);
         })
       );
 
@@ -67,10 +65,10 @@ describe('RegistrationAPI Integration', () => {
       let capturedInput: Record<string, string> | undefined;
 
       server.use(
-        rest.post(GRAPHQL_URL, async (req, res, ctx) => {
-          const body = (await req.json()) as { variables?: { input?: Record<string, string> } };
+        http.post(GRAPHQL_URL, async ({ request }) => {
+          const body = (await request.json()) as { variables?: { input?: Record<string, string> } };
           capturedInput = body.variables?.input;
-          return res(ctx.status(200), ctx.json(createUserSuccessBody));
+          return HttpResponse.json(createUserSuccessBody);
         })
       );
 
@@ -86,7 +84,7 @@ describe('RegistrationAPI Integration', () => {
       ['createUser is null', { data: { createUser: null } }],
       ['user is null', { data: { createUser: { user: null } } }],
     ])('resolves to undefined when %s', async (_label, body) => {
-      server.use(rest.post(GRAPHQL_URL, (_req, res, ctx) => res(ctx.status(200), ctx.json(body))));
+      server.use(http.post(GRAPHQL_URL, () => HttpResponse.json(body)));
 
       await expect(registrationAPI.register(credentials)).resolves.toBeUndefined();
     });
@@ -95,17 +93,17 @@ describe('RegistrationAPI Integration', () => {
   describe('error handling', () => {
     it('maps a 409 duplicate-email response to a ConflictError', async () => {
       server.use(
-        rest.post(GRAPHQL_URL, (_req, res, ctx) =>
-          res(
-            ctx.status(409),
-            ctx.json({
+        http.post(GRAPHQL_URL, () =>
+          HttpResponse.json(
+            {
               errors: [
                 {
                   message: 'Email already exists',
                   extensions: { code: 'CONFLICT', http: { status: 409 } },
                 },
               ],
-            })
+            },
+            { status: 409 }
           )
         )
       );
@@ -115,8 +113,8 @@ describe('RegistrationAPI Integration', () => {
 
     it('throws an ApiError on a GraphQL error response without a status', async () => {
       server.use(
-        rest.post(GRAPHQL_URL, (_req, res, ctx) =>
-          res(ctx.status(200), ctx.json({ data: null, errors: [{ message: 'Something wrong' }] }))
+        http.post(GRAPHQL_URL, () =>
+          HttpResponse.json({ data: null, errors: [{ message: 'Something wrong' }] })
         )
       );
 
@@ -136,7 +134,7 @@ describe('RegistrationAPI Integration', () => {
     });
 
     it('throws an ApiError on a network failure', async () => {
-      server.use(rest.post(GRAPHQL_URL, (_req, res) => res.networkError('Failed to fetch')));
+      server.use(http.post(GRAPHQL_URL, () => HttpResponse.error()));
 
       await expect(registrationAPI.register(credentials)).rejects.toBeInstanceOf(ApiError);
     });
@@ -148,8 +146,8 @@ describe('RegistrationAPI Integration', () => {
       controller.abort();
 
       server.use(
-        rest.post(GRAPHQL_URL, (_req, res, ctx) =>
-          res(ctx.status(500), ctx.json({ errors: [{ message: 'unused' }] }))
+        http.post(GRAPHQL_URL, () =>
+          HttpResponse.json({ errors: [{ message: 'unused' }] }, { status: 500 })
         )
       );
 

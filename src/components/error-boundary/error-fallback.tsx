@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react';
+import type { JSX } from 'react';
 
 import type { ErrorFallbackProps } from '@/components/types/error-boundary';
+import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import errorFallbackStyles from './styles';
 
@@ -15,17 +16,13 @@ function ErrorDiagnostics({ error }: { error?: Error }): JSX.Element | null {
 }
 
 export default function ErrorFallback({ error, reset }: ErrorFallbackProps): JSX.Element {
-  const headingRef = useRef<HTMLHeadingElement>(null);
+  const focusOnMount = useFocusOnMount<HTMLHeadingElement>();
   const styles = errorFallbackStyles.build();
-
-  useEffect(() => {
-    if (headingRef.current) headingRef.current.focus();
-  }, []);
 
   return (
     <main lang="en" style={styles.container}>
       <div style={styles.messageBlock}>
-        <h1 ref={headingRef} tabIndex={-1} style={styles.heading}>
+        <h1 ref={focusOnMount} tabIndex={-1} style={styles.heading}>
           Something went wrong
         </h1>
         <p role="alert" style={styles.description}>

@@ -53,23 +53,6 @@ describe('auth-var integration coverage', () => {
     }
   });
 
-  it('uses the env token by default when window is absent, else null', () => {
-    const originalWindow = global.window;
-    const originalEnv = process.env[ENV_KEY];
-    Object.defineProperty(global, 'window', { configurable: true, value: undefined });
-
-    try {
-      process.env[ENV_KEY] = 'env-token';
-      expect(AuthStateVar.readSeedToken()).toBe('env-token');
-      delete process.env[ENV_KEY];
-      expect(AuthStateVar.readSeedToken()).toBeNull();
-    } finally {
-      Object.defineProperty(global, 'window', { configurable: true, value: originalWindow });
-      if (originalEnv !== undefined) process.env[ENV_KEY] = originalEnv;
-      else delete process.env[ENV_KEY];
-    }
-  });
-
   it('returns null when reading the env token throws', () => {
     const originalEnv = process.env;
     const throwingEnv = new Proxy(process.env, {

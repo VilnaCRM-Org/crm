@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { FieldValues, FormProvider } from 'react-hook-form';
 
 import type { FormProviderBridgeProps } from '@/components/types/ui-form/form-provider-bridge';

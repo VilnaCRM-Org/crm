@@ -1,4 +1,5 @@
 import { Box, Typography } from '@mui/material';
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { ReactComponent as ConfettiImage } from '@/assets/notification/confetti.svg';

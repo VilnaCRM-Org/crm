@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import type { JSX } from 'react';
 
 const visuallyHidden = {
   border: 0,

@@ -1,5 +1,6 @@
 import { Link } from '@mui/material';
 import type { LinkProps } from '@mui/material/Link';
+import type { JSX } from 'react';
 
 import renderWithTheme from '@/components/render-with-theme';
 import Theme from '@/components/ui-link/theme';

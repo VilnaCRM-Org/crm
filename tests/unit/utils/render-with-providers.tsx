@@ -3,7 +3,7 @@ import { render, RenderResult } from '@testing-library/react';
 import i18n, { i18n as I18nType } from 'i18next';
 import React from 'react';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 import enTranslations from '@/i18n/localization.json';
 
@@ -16,7 +16,7 @@ testI18n.use(initReactI18next).init({
     en: { translation: enTranslations.en.translation },
   },
   interpolation: { escapeValue: false },
-  initImmediate: false, // synchronous init
+  initAsync: false, // synchronous init
 });
 
 export const testTheme = createTheme({

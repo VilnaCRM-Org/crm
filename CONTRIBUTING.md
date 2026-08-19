@@ -126,8 +126,8 @@ plus module UI — repositories, `src/services/**`, auth stores/state, validatio
 module `.tsx` surface — not just `src/components/**/*.tsx`. The mutated set is the single source of
 truth in [`scripts/ci/mutation-scope.mjs`](scripts/ci/mutation-scope.mjs), whose exclusions mirror
 `jest.config.ts` `collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n);
-`stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (per-shard slice) both consume it, so
-the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
+`stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (via `shardMutateFiles`) both consume
+it, so the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
 ([`jest.mutation.config.ts`](jest.mutation.config.ts)) that unions the unit **and** integration
 suites, so a repository/service/store mutant is killed by the integration test that actually asserts
 on it instead of being left uncovered. (Stryker's jest-runner can't use Jest `projects` with
@@ -139,11 +139,32 @@ type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep th
 CI runners are 2-core, so parallelism comes from the shard count (currently 8), not from Stryker's
 in-process concurrency.
 
+**Every mutant is classified on its merits.** A score is only worth enforcing when each status was
+earned for the reason it names, so `stryker.config.mjs` runs the
+`@stryker-mutator/typescript-checker` (`checkers: ['typescript']`) over
+[`tsconfig.stryker.json`](tsconfig.stryker.json) — the root tsconfig narrowed to the mutated
+`src/**/*` tree. Type-invalid mutants come back `CompileError` and drop out of the denominator
+instead of executing and being miscounted as kills nobody's assertion earned. Two companion
+settings make that real: `disableTypeChecks: false`, because Stryker's default writes
+`// @ts-nocheck` into every sandbox file and would blind the checker completely, and
+`jest.enableFindRelatedTests: true`, because with it off each mutant run reloaded the whole test
+suite, blew past the timeout window, and came back `Timeout` — detected by hanging rather than by
+an assertion. `typescriptChecker.prioritizePerformanceOverAccuracy: true` batches independent
+mutants into one type-check pass and re-splits any group whose error cannot be pinned on a single
+mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
+regresses; never relax them to buy wall-clock.
+
 `mutation-testing.yml` fans `make test-mutation-shard` across an 8-way matrix; each shard mutates a
-deterministic, disjoint slice and uploads a per-shard JSON report. On pull requests the shards run
+deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
+file size (heaviest file to the lightest shard), not sliced round-robin, because the run costs
+whatever its slowest shard costs — round-robin left one shard carrying 1.54x the mean load.
+On pull requests the shards run
 **incrementally** (`MUTATION_INCREMENTAL=1` → Stryker `--incremental`): each shard restores its own
 `reports/stryker-incremental-<index>.json` from an `actions/cache` rolling key and only re-runs
-mutants the diff touches — the report still lists every mutant, so the gate stays exact. The first
+mutants the diff touches — the report still lists every mutant, so the gate stays exact. That key
+carries a hash of the mutation configuration, because Stryker's incremental file invalidates only
+on source and test changes: without it a shard would reuse statuses decided under different
+classification settings and skip the checker for them entirely. The first
 run (cold cache) is a full sharded pass that seeds the cache; a `push:` trigger on `main` refreshes
 it so PRs branch off a warm base. A final `merge and enforce gate` job runs
 `make merge-mutation-reports`, which unions the shard reports and enforces the Stryker `break`
@@ -255,8 +276,14 @@ requests on a weekly schedule for two ecosystems:
 - `github-actions` — the SHA-pinned actions in `.github/workflows/`.
 
 To keep pull request volume low, minor and patch updates are grouped into a single request
-per ecosystem while major bumps arrive individually, and `open-pull-requests-limit` is capped
-at 5.
+per ecosystem — that is what `update-types: ['minor', 'patch']` on each group means. Majors
+match no group, so **every major opens its own pull request** and can be reviewed, gated, and
+reverted on its own. `open-pull-requests-limit` is 10 for `bun` (the grouped minor/patch
+request takes one slot and each pending major takes one) and 5 for `github-actions`.
+
+Dependabot has no equivalent of Renovate's `lockFileMaintenance`, so `bun.lock` is never
+re-resolved against unchanged ranges on its own. Refresh it deliberately when transitive
+drift matters.
 
 Dependabot commit headers use the conventional `chore(deps):` prefix (`chore(github-actions):`
 for the actions entry). Our commitlint `check-task-number-rule` expects a `(#N)` scope, which
@@ -264,3 +291,44 @@ Dependabot cannot emit; that rule runs only in the local Husky `commit-msg` hook
 commitlint CI gate), so Dependabot pull requests are not blocked. Because the repository is
 squash-merge-only, add the task number to the squash commit title at merge time to keep
 `main`'s history conformant.
+
+## Major-version upgrade playbook
+
+Majors arrive one per pull request (see above). Run each one through these steps; they are the
+sequence issue #143 was executed with, and they are ordered so a failure has exactly one
+candidate cause.
+
+1. **Establish the blast radius before installing anything.** Grep for every call site,
+   `jest.mock` path, and golden-text assertion that names the package. A missed
+   `jest.mock('<old-name>')` string leaves the real module loaded with no error, and a golden
+   assertion on a string that can no longer appear keeps passing while enforcing nothing.
+2. **Check the peer and engine ranges of the target**, and of everything that peers on it, with
+   `npm view <pkg>@<major> peerDependencies engines`. Some upgrades are gated by another one —
+   `@testing-library/react` 16 unbundles `@testing-library/dom`, which then has to become a
+   direct devDependency because `user-event` peers on it too.
+3. **Bump one lane at a time** and re-run `make test-unit-all` and `make test-integration`
+   between lanes. Where a lane needs a code change first (the JSX namespace before
+   `@types/react` 19), land the code change under the old version — it must compile on both
+   sides.
+4. **Verify the runner, not just the tests.** A test-infrastructure major can move a
+   transitive dependency the manifest still advertises. Confirm the resolved tree with
+   `find node_modules -name package.json -path '*<pkg>/package.json'`; a nested second copy
+   means the upgrade did not take.
+5. **Re-measure the budgets.** `bun x rsbuild build` fails on the raw byte budgets by itself;
+   `node scripts/bundle-size-report.mjs --dir dist` enforces the gzip ones. Satisfy a breach by
+   reducing the bundle — narrowing a namespace `import()` so unused exports tree-shake, or
+   moving a CommonJS bootstrap to ESM so the bundler can analyse it — never by raising a limit.
+6. **Run the whole static lane**: `make format` then `make lint`, plus `make lint-metrics`,
+   `make lint-shell`, `make lint-actionlint`, and `make lint-lockfile`. Remove `dist/` first —
+   ESLint and dependency-cruiser do not ignore it.
+7. **Prove the SDK contract where the code casts around it.** Any boundary that reaches a
+   vendor through `as unknown as` is invisible to the compiler, and tests that replace the
+   module wholesale cannot fail on a real API break. Add a conformance test that imports the
+   real package and asserts the members exist.
+8. **Re-run the full mutation gate cold.** Every dependency change invalidates the incremental
+   cache key, so the run is honest; check the merged `valid` and `compileError` counts, not only
+   the score. A program that no longer type-checks turns every mutant into `compileError`,
+   which the report excludes from the denominator — a vacuous pass, not a loud failure.
+9. **Never satisfy a gate with a suppression.** No `eslint-disable`, no `@ts-ignore`, no
+   threshold edit, no narrowed mutation scope, no regenerated visual baseline that hides a real
+   rendering change.

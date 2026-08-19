@@ -36,3 +36,50 @@ export function collectMutateFiles() {
     .filter((file) => !isExcluded(file))
     .sort();
 }
+
+function byPath(a, b) {
+  if (a === b) return 0;
+  return a < b ? -1 : 1;
+}
+
+function lightestShard(loads) {
+  let lightest = 0;
+  for (let i = 1; i < loads.length; i += 1) {
+    if (loads[i] < loads[lightest]) lightest = i;
+  }
+  return lightest;
+}
+
+/**
+ * Deterministic longest-processing-time bin packing over the same file list, keyed on file size
+ * because mutant count scales with it. Round-robin left the slowest shard carrying 1.54x the mean
+ * mutant load, and a sharded run is only as fast as its slowest shard. The union of every index in
+ * [0, total) is still exactly `collectMutateFiles()`.
+ */
+export function shardMutateFiles(total, index) {
+  if (!Number.isInteger(total) || total < 1) {
+    throw new RangeError(`MUTATION_SHARD_TOTAL must be a positive integer, received ${total}.`);
+  }
+  if (!Number.isInteger(index) || index < 0 || index >= total) {
+    throw new RangeError(
+      `MUTATION_SHARD_INDEX must be an integer in [0, ${total}), received ${index}.`
+    );
+  }
+
+  const shards = Array.from({ length: total }, () => []);
+  const loads = new Array(total).fill(0);
+
+  // Code-unit ordering, not localeCompare: the tiebreak decides which shard a file lands in, and
+  // each shard carries its own incremental cache, so it has to agree across every machine's locale.
+  const heaviestFirst = collectMutateFiles()
+    .map((file) => ({ file, weight: fs.statSync(file).size }))
+    .sort((a, b) => b.weight - a.weight || byPath(a.file, b.file));
+
+  for (const { file, weight } of heaviestFirst) {
+    const target = lightestShard(loads);
+    shards[target].push(file);
+    loads[target] += weight;
+  }
+
+  return shards[index].sort();
+}

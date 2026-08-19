@@ -10,16 +10,17 @@ This template is used for all VilnaCRM microservices.
 
 ## Tech Stack
 
-- **Frontend**: React 18.3, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
+- **Frontend**: React 19, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
 - **State Management**: Zustand (lightweight store with `create` and `devtools`)
-- **Routing**: React Router v6
+- **Routing**: React Router v7 (the `react-router` package; `react-router-dom` was folded into it)
 - **DI Container**: tsyringe with reflect-metadata decorators
-- **i18n**: react-i18next (main language: uk, fallback: en)
+- **i18n**: i18next v26 + react-i18next v17 (main language: uk, fallback: en)
 - **Build**: RSBuild (Rspack-based bundler, configured via `rsbuild.config.ts`)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
 - **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
   Bun is used only to manage dependencies using `bun.lock`.
-- **Node**: >=24.8.0 (enforced via engineStrict)
+- **Node**: >=24.8.0 (enforced via engineStrict); `@types/node` tracks the same major
+- **Testing**: Jest 30 (jsdom 26), Testing Library 16, msw 2, Playwright
 
 ## Development Environment
 
@@ -143,29 +144,80 @@ instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `
 These keep the run affordable — CI runners are 2-core, so parallelism comes from the 8-way shard
 count, not Stryker's in-process concurrency.
 
+### Honest mutant classification (issue #171)
+
+A mutation score is only worth enforcing if every mutant is classified for the reason the status
+claims. Three settings in `stryker.config.mjs` keep that true, and
+`tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of them regresses:
+
+- **`checkers: ['typescript']`** (plugin `@stryker-mutator/typescript-checker`, pinned to the same
+  major as `@stryker-mutator/core`) type-checks every mutant before it runs. Type-invalid mutants
+  are reported `CompileError`, which `scripts/ci/mutation-report.ts` excludes from the denominator,
+  instead of executing and being miscounted — crashing ones as `Killed` (a kill no assertion
+  earned), limping ones as `Survived` noise.
+- **`disableTypeChecks: false`.** Stryker's default injects `// @ts-nocheck` at the top of every
+  sandbox file, which would blind the checker to every error and make it a silent no-op. Leave this
+  off or the checker gates nothing. The test runner is unaffected: `jest.mutation.config.ts` uses
+  ts-jest `isolatedModules`, so it transpiles without type-checking either way.
+- **`jest.enableFindRelatedTests: true`.** With it off, each mutant run reloaded _every_ test file
+  in the suite and was filtered down by `testNamePattern` only after the fact, so a mutant run cost
+  a full-suite reload and reliably exceeded the timeout window. Every mutant then landed as
+  `Timeout` — counted as detected, but earned by hanging rather than by an assertion. Turning it on
+  restricts each run to the test files that actually reach the mutated file; mutants now come back
+  `Killed` or `Survived` on their merits, and the full sharded run dropped from ~110 min to well
+  under the CI budget.
+
+`typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
+independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only
+groups mutants whose files do not reference one another, and when an error cannot be tied to a
+mutant in the group it re-checks those mutants individually — but a mutant can still be credited
+with a neighbour's error in a dependency shape the grouper treats as independent. Turn it off when
+a published baseline has to be exact per mutant; the two-file probe that measured 1m03s with it on
+took 12m54s with it off. The checker compiles
+[`tsconfig.stryker.json`](tsconfig.stryker.json) — the root tsconfig narrowed to `src/**/*`, the
+only tree that is mutated — because the checker builds a full program per worker and compiling
+`scripts/`, `docker/`, `lighthouse/`, `tests/`, and `.storybook/` alongside it costs time and
+memory for files that hold no mutants. Never widen `disableTypeChecks` or drop the checker to make
+a run faster; that trades the gate's honesty for wall-clock.
+
 `thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`. `break` is the
 enforced floor, set at/just below the measured baseline. **Ratchet policy:** raise `break` toward
 `high` as suites improve; never lower it to make CI pass, never narrow the mutated scope to dodge a
 survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
 assertions.
 
-Measured baseline (widened scope, unit + integration; 8-way sharded full run):
+Measured baseline (checker on, `findRelatedTests` on; cold 8-way sharded run):
 
 | Area                         | Files | Mutation score |
 | ---------------------------- | ----- | -------------- |
-| `src/services/**`            | 9     | 100%           |
-| `…/auth/repositories/**`     | 7     | 100%           |
-| `…/auth/stores/**`           | 8     | 100%           |
-| `…/form-section/validations` | 4     | 100%           |
-| Overall (`break` = 90)       | 134   | 92.5%          |
+| `src/components/**`          | 45    | 99.4%          |
+| `…/auth/stores/**`           | 8     | 98.7%          |
+| `…/auth/repositories/**`     | 7     | 98.2%          |
+| `src/services/**`            | 21    | 97.6%          |
+| `…/form-section/validations` | 4     | 92.1%          |
+| Overall (`break` = 90)       | 159   | 91.9%          |
 
-The mutate scope is 154 files; 134 produced mutants in the report (the other ~20 are pure re-export
-barrels or files whose only mutants are static and skipped by `ignoreStatic`). The logic layer is
-fully detected; the overall gap is `noCoverage` mutants in non-logic files (UI/providers/routes
-exercised by e2e/visual rather than unit/integration). Detections in the async logic layer land as
-Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test), which counts as
-detected. `break` is set to 90 — below the 92.5% baseline for margin — and ratchets toward the
-`high` = 100 target as the scheduled full runs confirm stability.
+Merged tally: `killed=1539 timeout=0 survived=136 noCoverage=0`, `compileError=903
+runtimeError=21 ignored=501`, `valid=1675`. The mutate scope is 186 files; 159 produced mutants in
+the report (the rest are pure re-export barrels or files whose only mutants are static and skipped
+by `ignoreStatic`).
+
+**How this number was reached, and why the earlier one was not comparable.** The previously
+recorded baseline (92.5%, `break` = 90) was measured before honest classification: 2405 of its 2410
+"detections" were `Timeout` with an empty `killedBy` — including boolean flips in `src/app.tsx` that
+cannot hang — so it scored how often a mutant outran the timeout window, not how often an assertion
+caught one. The same suite, unchanged, scored **59.9%** once mutants were classified on their
+merits. `break` was re-derived to 57 at that point, then ratcheted back to 90 as real assertions
+were added (issue #121's work): 60.0% → 65.1% → 80.5% → 91.4% → 91.9%. Every point of that came
+from tests, not from narrowing scope or relaxing the gate.
+
+**Static values need loading inside the test.** A mutant in a top-level object literal, const map or
+`styled()` call is evaluated at import, so Stryker marks it static, attributes its per-test coverage
+to whichever unrelated file happened to load the module first, and `findRelatedTests` then filters
+that file out — the mutant comes back `Survived` with `testsCompleted: 0` and no assertion can ever
+reach it. Load such modules with `jest.resetModules()` plus an `import()` inside the test body (or
+`jest.isolateModulesAsync`) so the literal is evaluated during the test. This moved 154 mutants from
+`Survived` to `Killed` in a single run. `tests/unit/utils/isolated-module.ts` wraps the pattern.
 
 ## Code Quality
 
@@ -185,9 +237,31 @@ make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
 ```
 
-Git hooks are managed by Husky. Run `make husky` once after cloning.
+Git hooks are managed by Husky v9. Run `make husky` after cloning **and after any Husky
+upgrade** — v9 moved `core.hooksPath` from `.husky` to `.husky/_`, and a clone that skips it
+runs no hooks at all. The hook scripts keep their `#!/usr/bin/env sh` shebang (`make lint-shell`
+fails `SC2148` without it) but no longer source `_/husky.sh`, which v9 removed.
 Agents should run `make format` before `make lint`. Formatting is intentionally
 separate from the `lint` verification suite.
+
+### Dependency updates and major upgrades (issue #143)
+
+Dependabot groups **minor and patch** updates into one weekly pull request per ecosystem and
+leaves majors ungrouped, so each major arrives as its own reviewable, revertable pull request.
+The step-by-step procedure for taking one — including the ordering constraints, the budget
+re-measurement, and the "never satisfy a gate with a suppression" rule — is the
+**Major-version upgrade playbook** in [`CONTRIBUTING.md`](CONTRIBUTING.md). Read it before
+raising any major.
+
+Two constraints in this repository are easy to trip over:
+
+- **`@types/node` tracks the Node engine, not npm `latest`.** `engines.node` is `>=24.8.0`, so
+  the types stay on the 24 line; a newer major would make type-checking describe a runtime the
+  project does not run.
+- **The test runner moves as a set.** `jest`, `jest-environment-jsdom`, `@types/jest`,
+  `ts-jest`, `jsdom`, and `@types/jsdom` are coupled: `jest-environment-jsdom` pins the jsdom
+  the tests actually execute against, so bumping the standalone `jsdom` alone installs a second,
+  nested copy and changes nothing.
 
 ## Agent Skill Layout
 

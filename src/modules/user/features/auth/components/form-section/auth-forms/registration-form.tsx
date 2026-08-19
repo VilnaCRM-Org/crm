@@ -1,5 +1,5 @@
 import type { TFunction } from 'i18next';
-import { lazy, Suspense } from 'react';
+import { type JSX, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIForm from '@/components/ui-form';

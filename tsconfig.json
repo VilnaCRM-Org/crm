@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "ES6",
+    "target": "ES2022",
+    "useDefineForClassFields": false,
     "lib": ["dom", "dom.iterable", "esnext"],
     "types": ["jest", "node"],
     "allowJs": true,
@@ -17,6 +18,7 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "baseUrl": ".",
     "incremental": true,

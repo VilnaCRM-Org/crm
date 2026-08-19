@@ -5,7 +5,7 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
-jest.mock('react-router-dom', () => ({
+jest.mock('react-router', () => ({
   Outlet: (): ReactElement => <span>route-outlet</span>,
 }));
 

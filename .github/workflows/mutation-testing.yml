@@ -18,6 +18,10 @@ jobs:
   shard:
     name: shard ${{ matrix.index }}
     runs-on: ubuntu-latest
+    # Kill switch, not a target. A cold shard measures ~6-7 min (whole workflow
+    # 8m37s end to end), so a shard approaching twice that has regressed the
+    # runtime the honest-classification settings buy and should fail loudly.
+    timeout-minutes: 12
     permissions:
       contents: read
     strategy:
@@ -38,13 +42,19 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
+      # The mutation-config hash is part of the key: Stryker's incremental file
+      # only invalidates on source/test changes, so without it a run would reuse
+      # per-mutant statuses decided under different classification settings. The
+      # hash spans the whole tsconfig extends chain the checker compiles, because
+      # a compiler option can flip a mutant between type-valid and CompileError, and
+      # the dependency and container inputs that decide which tooling produced them.
       - name: Restore mutation incremental cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: reports/stryker-incremental-${{ matrix.index }}.json
-          key: mutation-incremental-shard-${{ matrix.index }}-${{ github.run_id }}
+          key: mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile') }}-${{ github.run_id }}
           restore-keys: |
-            mutation-incremental-shard-${{ matrix.index }}-
+            mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile') }}-
 
       - name: Start dev container
         run: make start-dev
@@ -71,6 +81,10 @@ jobs:
     # check would otherwise count as a pass and bypass the mutation gate.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
+    # Hang guard only — this job runs no mutants. It measures ~1m30s (container
+    # start plus the merge script), so the cap is headroom, not a budget: timing
+    # out here would fail the gate closed over work the shards already paid for.
+    timeout-minutes: 8
     permissions:
       contents: read
 
