@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 
 import API_ENDPOINTS from '@/config/api-config';
@@ -12,21 +12,16 @@ export const defaultGraphqlUser = buildGraphqlUser();
 export const defaultClientMutationId = buildClientMutationId();
 
 const handlers = [
-  rest.post(API_ENDPOINTS.LOGIN, (_req, res, ctx) =>
-    res(ctx.status(200), ctx.json(defaultLoginResponse))
-  ),
-  rest.post(GRAPHQL_URL, (_req, res, ctx) =>
-    res(
-      ctx.status(200),
-      ctx.json({
-        data: {
-          createUser: {
-            user: defaultGraphqlUser,
-            clientMutationId: defaultClientMutationId,
-          },
+  http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json(defaultLoginResponse)),
+  http.post(GRAPHQL_URL, () =>
+    HttpResponse.json({
+      data: {
+        createUser: {
+          user: defaultGraphqlUser,
+          clientMutationId: defaultClientMutationId,
         },
-      })
-    )
+      },
+    })
   ),
 ];
 

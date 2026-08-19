@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 
 import '../../../../setup';
 import API_ENDPOINTS from '@/config/api-config';
@@ -13,9 +13,7 @@ import server from '../../../../mocks/server';
 describe('LoginAPI Integration', () => {
   let loginAPI: LoginAPI;
 
-  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
   afterEach(() => server.resetHandlers());
-  afterAll(() => server.close());
 
   beforeEach(() => {
     // Resolve from actual DI container
@@ -26,11 +24,7 @@ describe('LoginAPI Integration', () => {
     it('should successfully login with valid credentials', async () => {
       const mockResponse = buildLoginResponse();
 
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json(mockResponse))
-        )
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json(mockResponse)));
 
       const result = await loginAPI.login(buildCredentials());
 
@@ -42,9 +36,9 @@ describe('LoginAPI Integration', () => {
       const credentials = buildCredentials();
 
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, async (req, res, ctx) => {
-          requestBody = await req.json();
-          return res(ctx.status(200), ctx.json(buildLoginResponse()));
+        http.post(API_ENDPOINTS.LOGIN, async ({ request }) => {
+          requestBody = (await request.json()) as Record<string, string>;
+          return HttpResponse.json(buildLoginResponse());
         })
       );
 
@@ -57,8 +51,8 @@ describe('LoginAPI Integration', () => {
   describe('error handling', () => {
     it('should throw AuthenticationError on 401 response', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(401), ctx.json({ message: 'Invalid credentials' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Invalid credentials' }, { status: 401 })
         )
       );
 
@@ -67,8 +61,8 @@ describe('LoginAPI Integration', () => {
 
     it('should throw ApiError with correct message for 400 status', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(400), ctx.json({ message: 'Bad request' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Bad request' }, { status: 400 })
         )
       );
 
@@ -77,8 +71,8 @@ describe('LoginAPI Integration', () => {
 
     it('should throw ApiError for 403 status', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(403), ctx.json({ message: 'Forbidden' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         )
       );
 
@@ -87,8 +81,8 @@ describe('LoginAPI Integration', () => {
 
     it('should throw ApiError for 404 status', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(404), ctx.json({ message: 'Not found' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Not found' }, { status: 404 })
         )
       );
 
@@ -97,8 +91,8 @@ describe('LoginAPI Integration', () => {
 
     it('should map 408 to a timeout ApiError', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(408), ctx.json({ message: 'Request timeout' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Request timeout' }, { status: 408 })
         )
       );
 
@@ -109,8 +103,8 @@ describe('LoginAPI Integration', () => {
 
     it('should throw ApiError for 429 rate limit', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(429), ctx.json({ message: 'Too many requests' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Too many requests' }, { status: 429 })
         )
       );
 
@@ -121,8 +115,8 @@ describe('LoginAPI Integration', () => {
 
     it('should throw ApiError for 500 server error', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(500), ctx.json({ message: 'Internal server error' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Internal server error' }, { status: 500 })
         )
       );
 
@@ -133,8 +127,8 @@ describe('LoginAPI Integration', () => {
 
     it('should throw ApiError for 502 bad gateway', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(502), ctx.json({ message: 'Bad gateway' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Bad gateway' }, { status: 502 })
         )
       );
 
@@ -145,8 +139,8 @@ describe('LoginAPI Integration', () => {
 
     it('should throw ApiError for 503 service unavailable', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(503), ctx.json({ message: 'Service unavailable' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Service unavailable' }, { status: 503 })
         )
       );
 
@@ -157,8 +151,8 @@ describe('LoginAPI Integration', () => {
 
     it('should map 504 to a service unavailable ApiError', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(504), ctx.json({ message: 'Gateway timeout' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Gateway timeout' }, { status: 504 })
         )
       );
 
@@ -168,7 +162,7 @@ describe('LoginAPI Integration', () => {
     });
 
     it('should handle network errors', async () => {
-      server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Failed to fetch')));
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.error()));
 
       await expect(loginAPI.login(buildCredentials())).rejects.toThrow(
         'Network error. Please check your connection.'
@@ -192,11 +186,7 @@ describe('LoginAPI Integration', () => {
       const controller = new AbortController();
       const mockResponse = buildLoginResponse();
 
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json(mockResponse))
-        )
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json(mockResponse)));
 
       const result = await loginAPI.login(buildCredentials(), { signal: controller.signal });
 

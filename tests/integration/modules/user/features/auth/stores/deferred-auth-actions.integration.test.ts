@@ -7,12 +7,10 @@ import { buildCredentials, buildUser } from '@tests/builders';
 import server, { defaultLoginResponse } from '../../../../../mocks/server';
 
 describe('deferred auth actions integration', () => {
-  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
   afterEach(() => {
     server.resetHandlers();
     AuthStateVar.reset();
   });
-  afterAll(() => server.close());
 
   it('surfaces a retryable error when the DI graph fails to load, then recovers', async () => {
     const credentials = buildCredentials();
