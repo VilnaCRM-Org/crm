@@ -4,7 +4,11 @@ import { buildCredentials, buildEmail } from '@tests/builders';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
-const BASE_HEADERS = { Accept: 'application/json', 'X-Request-Id': 'test-request-id' };
+const BASE_HEADERS = {
+  Accept: 'application/json',
+  'X-Request-Id': 'test-request-id',
+  'X-Correlation-Id': 'test-request-id',
+};
 
 const builder = new HttpRequestConfigBuilder();
 

@@ -5,6 +5,7 @@ import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository, LoginResult, RegisterResult } from '@auth/types/auth-repository';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
+import AuthSecuritySignals from '@auth/utils/auth-security-signals';
 import {
   buildCredentials,
   buildEmail,
@@ -39,6 +40,14 @@ const observability = {
   reportVital: jest.fn(),
 } as unknown as ObservabilityService;
 
+const recorder = {
+  authFailure: jest.fn(),
+  unauthorizedResponse: jest.fn(),
+  boundaryCatch: jest.fn(),
+};
+
+const securitySignals = new AuthSecuritySignals(recorder, observability);
+
 interface Deferred<T> {
   promise: Promise<T>;
   settle: (value: T) => void;
@@ -60,7 +69,7 @@ const makeActions = (over: Partial<AuthRepository>): AuthStoreActions =>
       ...over,
     } as unknown as AuthRepository,
     authRequestErrors,
-    observability
+    securitySignals
   );
 
 const rejectLogin = (error: unknown): Promise<void> =>

@@ -104,6 +104,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
       });
     });
@@ -120,6 +121,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
         signal: controller.signal,
       });
@@ -194,6 +196,7 @@ describe('FetchHttpsClient', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -214,6 +217,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
         body: formData,
       });
@@ -231,6 +235,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
         body: 'plain text',
       });
@@ -291,6 +296,7 @@ describe('FetchHttpsClient', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -351,6 +357,7 @@ describe('FetchHttpsClient', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -409,6 +416,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
       });
     });
@@ -428,6 +436,7 @@ describe('FetchHttpsClient', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -671,6 +680,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
         body: blob,
       });
@@ -689,6 +699,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
         body: buffer,
       });
@@ -720,6 +731,7 @@ describe('FetchHttpsClient', () => {
           headers: {
             Accept: 'application/json',
             'X-Request-Id': 'test-request-id',
+            'X-Correlation-Id': 'test-request-id',
           },
           body: stream,
         });
@@ -797,6 +809,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-request-id',
         },
       });
       expect(mockProcessor.process).toHaveBeenCalled();

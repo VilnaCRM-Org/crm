@@ -8,4 +8,11 @@ export interface Env {
   readonly release?: string;
   readonly sentryDsn?: string;
   readonly sentryEnvironment?: string;
+  readonly authFailureAlertThreshold?: number;
+  readonly authFailureAlertWindowMs?: number;
+}
+
+export interface AuthFailureAlertEnv {
+  readonly threshold?: string;
+  readonly windowMs?: string;
 }

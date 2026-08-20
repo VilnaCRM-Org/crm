@@ -1,6 +1,7 @@
 import { injectable } from 'tsyringe';
 
 import { HttpError } from '@/services/https-client/http-error';
+import securityEventCore from '@/services/security-events/security-event-core';
 import type {
   ExtractedBody,
   JsonWithMessage,
@@ -8,11 +9,17 @@ import type {
 
 const MAX_ERROR_BODY_CHARS = 500;
 
+const SECURITY_RELEVANT_STATUSES: ReadonlySet<number> = new Set([401, 403]);
+
 @injectable()
 export default class HttpErrorResponseParser {
   public async assertOk(response: Response): Promise<void> {
     if (response.ok || response.status === 304) {
       return;
+    }
+
+    if (SECURITY_RELEVANT_STATUSES.has(response.status)) {
+      securityEventCore.unauthorizedResponse(response.status);
     }
 
     const fallback = `${response.status} ${response.statusText}`;

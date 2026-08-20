@@ -5,6 +5,7 @@ import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
+import AuthSecuritySignals from '@auth/utils/auth-security-signals';
 
 const authRequestErrors = new AuthRequestErrors({
   handle: (e: unknown) => ({ displayMessage: String(e), retryable: false }),
@@ -18,6 +19,14 @@ const observability = {
   reportVital: jest.fn(),
 } as unknown as ObservabilityService;
 
+const recorder = {
+  authFailure: jest.fn(),
+  unauthorizedResponse: jest.fn(),
+  boundaryCatch: jest.fn(),
+};
+
+const securitySignals = new AuthSecuritySignals(recorder, observability);
+
 const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   ({
     login: jest.fn().mockResolvedValue({ ok: true, value: { email: 'a@b.c', token: 't' } }),
@@ -26,13 +35,13 @@ const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   }) as AuthRepository;
 
 const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).login({
+  new AuthStoreActions(makeRepo(over), authRequestErrors, securitySignals).login({
     email: 'a@b.c',
     password: 'p',
   });
 
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).register({
+  new AuthStoreActions(makeRepo(over), authRequestErrors, securitySignals).register({
     fullName: 'A',
     email: 'a@b.c',
     password: 'p',

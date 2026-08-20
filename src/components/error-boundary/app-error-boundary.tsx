@@ -5,6 +5,7 @@ import type {
   AppErrorBoundaryState,
 } from '@/components/types/error-boundary';
 import { noopErrorReporter } from '@/services/error-reporting';
+import securityEventCore from '@/services/security-events/security-event-core';
 
 import ErrorFallback from './error-fallback';
 
@@ -21,6 +22,7 @@ export default class AppErrorBoundary extends React.Component<
   public componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const reporter = this.props.reporter ?? noopErrorReporter;
     try {
+      securityEventCore.boundaryCatch('app');
       reporter.report(error, { componentStack: info.componentStack });
     } catch (reportingError) {
       this.logDev('[AppErrorBoundary:report]', reportingError);

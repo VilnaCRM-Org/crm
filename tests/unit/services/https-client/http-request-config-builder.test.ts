@@ -13,6 +13,7 @@ describe('HttpRequestConfigBuilder', () => {
       headers: {
         Accept: 'application/json',
         'X-Request-Id': 'test-request-id',
+        'X-Correlation-Id': 'test-request-id',
       },
     });
   });
