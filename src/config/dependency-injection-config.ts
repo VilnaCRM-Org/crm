@@ -8,6 +8,7 @@ import errorRegistrar from '@/services/error/di';
 import errorReportingRegistrar from '@/services/error-reporting/di';
 import httpClientRegistrar from '@/services/https-client/di';
 import observabilityRegistrar from '@/services/observability/di';
+import securityEventRegistrar from '@/services/security-events/di';
 import errorUtilsRegistrar from '@/utils/error/di';
 
 const registrars: ModuleRegistrar[] = [
@@ -16,6 +17,7 @@ const registrars: ModuleRegistrar[] = [
   errorReportingRegistrar,
   httpClientRegistrar,
   observabilityRegistrar,
+  securityEventRegistrar,
   userModuleRegistrar,
 ];
 

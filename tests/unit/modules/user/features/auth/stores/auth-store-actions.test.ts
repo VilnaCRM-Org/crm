@@ -5,6 +5,7 @@ import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
+import AuthSecuritySignals from '@auth/utils/auth-security-signals';
 import { buildEmail, buildFullName, buildPassword, buildToken } from '@tests/builders';
 
 const email = buildEmail();
@@ -24,6 +25,14 @@ const observability = {
   reportVital: jest.fn(),
 } as unknown as ObservabilityService;
 
+const recorder = {
+  authFailure: jest.fn(),
+  unauthorizedResponse: jest.fn(),
+  boundaryCatch: jest.fn(),
+};
+
+const securitySignals = new AuthSecuritySignals(recorder, observability);
+
 const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   ({
     login: jest.fn().mockResolvedValue({ ok: true, value: { email, token } }),
@@ -32,10 +41,13 @@ const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   }) as AuthRepository;
 
 const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).login({ email, password });
+  new AuthStoreActions(makeRepo(over), authRequestErrors, securitySignals).login({
+    email,
+    password,
+  });
 
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).register({
+  new AuthStoreActions(makeRepo(over), authRequestErrors, securitySignals).register({
     fullName,
     email,
     password,
@@ -140,5 +152,69 @@ describe('AuthStoreActions', () => {
   it('treats a thrown abort-marker register rejection as aborted', async () => {
     await registerWith({ register: jest.fn().mockRejectedValue({ aborted: true }) });
     expect(AuthStateVar.get()).toMatchObject({ registerLoading: false, registerError: null });
+  });
+
+  describe('security-event instrumentation (#159)', () => {
+    const invalidCredentials: AuthError = {
+      kind: 'authentication',
+      displayMessage: 'Invalid credentials',
+      retryable: false,
+    };
+
+    it('emits a login auth_failure when the repository reports rejected credentials', async () => {
+      await loginWith({
+        login: jest.fn().mockResolvedValue({ ok: false, error: invalidCredentials }),
+      });
+
+      expect(recorder.authFailure).toHaveBeenCalledWith('login', 'authentication');
+    });
+
+    it('emits a login auth_failure when applyLoginRejection handles a throw', async () => {
+      await loginWith({ login: jest.fn().mockRejectedValue(invalidCredentials) });
+
+      expect(recorder.authFailure).toHaveBeenCalledWith('login', 'authentication');
+    });
+
+    it('emits a registration auth_failure for a rejected registration result', async () => {
+      await registerWith({
+        register: jest
+          .fn()
+          .mockResolvedValue({ ok: false, error: { ...invalidCredentials, kind: 'conflict' } }),
+      });
+
+      expect(recorder.authFailure).toHaveBeenCalledWith('registration', 'conflict');
+    });
+
+    it('emits a registration auth_failure on a register throw', async () => {
+      await registerWith({ register: jest.fn().mockRejectedValue(invalidCredentials) });
+
+      expect(recorder.authFailure).toHaveBeenCalledWith('registration', 'authentication');
+    });
+
+    it('stays silent on a successful login and on an aborted attempt', async () => {
+      await loginWith({});
+      await loginWith({ login: jest.fn().mockResolvedValue({ ok: false, error: abortError }) });
+      await loginWith({ login: jest.fn().mockRejectedValue({ aborted: true }) });
+
+      expect(recorder.authFailure).not.toHaveBeenCalled();
+    });
+
+    it('stays silent on an aborted registration attempt', async () => {
+      await registerWith({
+        register: jest.fn().mockResolvedValue({ ok: false, error: abortError }),
+      });
+      await registerWith({ register: jest.fn().mockRejectedValue({ aborted: true }) });
+
+      expect(recorder.authFailure).not.toHaveBeenCalled();
+    });
+
+    it('never passes the submitted password or session token to the recorder', async () => {
+      await loginWith({ login: jest.fn().mockRejectedValue(invalidCredentials) });
+
+      const emitted = JSON.stringify((recorder.authFailure as jest.Mock).mock.calls);
+      expect(emitted).not.toContain(password);
+      expect(emitted).not.toContain(token);
+      expect(emitted).not.toContain(email);
+    });
   });
 });

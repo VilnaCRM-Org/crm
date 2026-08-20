@@ -38,10 +38,12 @@ const loadChain = async (): Promise<{
   Sentry: typeof import('@sentry/react');
   observabilityCore: typeof import('@/services/observability/observability-core').default;
   correlationIdProvider: typeof import('@/services/observability/correlation-id-provider').default;
+  sessionCorrelation: typeof import('@/services/observability/session-correlation').default;
 }> => ({
   Sentry: await import('@sentry/react'),
   observabilityCore: (await import('@/services/observability/observability-core')).default,
   correlationIdProvider: (await import('@/services/observability/correlation-id-provider')).default,
+  sessionCorrelation: (await import('@/services/observability/session-correlation')).default,
 });
 
 describe('observability chain (integration)', () => {
@@ -108,14 +110,19 @@ describe('observability chain (integration)', () => {
 
   it('attaches the active correlation id and never throws when SDK capture fails', async () => {
     enableDsn();
-    const { Sentry, observabilityCore, correlationIdProvider } = await loadChain();
+    const { Sentry, observabilityCore, correlationIdProvider, sessionCorrelation } =
+      await loadChain();
     observabilityCore.init();
     await flushMicrotasks();
     const id = correlationIdProvider.next();
 
     observabilityCore.captureError(new Error('boom'), { source: 'apollo' });
     expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(Error), {
-      extra: { source: 'apollo', 'X-Request-Id': id },
+      extra: {
+        source: 'apollo',
+        'X-Request-Id': id,
+        'X-Correlation-Id': sessionCorrelation.id(),
+      },
     });
 
     (Sentry.captureException as jest.Mock).mockImplementation(() => {
@@ -137,7 +144,8 @@ describe('observability chain (integration)', () => {
 
   it('prefers a correlation id supplied in the capture context over the global id', async () => {
     enableDsn();
-    const { Sentry, observabilityCore, correlationIdProvider } = await loadChain();
+    const { Sentry, observabilityCore, correlationIdProvider, sessionCorrelation } =
+      await loadChain();
     observabilityCore.init();
     await flushMicrotasks();
     correlationIdProvider.next();
@@ -148,7 +156,11 @@ describe('observability chain (integration)', () => {
     });
 
     expect(Sentry.captureException).toHaveBeenCalledWith(expect.any(Error), {
-      extra: { 'X-Request-Id': 'op-42', source: 'apollo' },
+      extra: {
+        'X-Request-Id': 'op-42',
+        source: 'apollo',
+        'X-Correlation-Id': sessionCorrelation.id(),
+      },
     });
   });
 

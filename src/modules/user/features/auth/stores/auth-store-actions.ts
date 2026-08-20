@@ -1,13 +1,11 @@
 import { inject, injectable } from 'tsyringe';
-import { v4 as uuidv4 } from 'uuid';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
-import type { ObservabilityService } from '@/services/types/observability/observability';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository, LoginResult, RegisterResult } from '@auth/types/auth-repository';
 import type { LoginUserDto, RegisterUserDto } from '@auth/types/credentials';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
+import AuthSecuritySignals from '@auth/utils/auth-security-signals';
 
 import AuthStateVar from './auth-var';
 
@@ -16,8 +14,8 @@ export default class AuthStoreActions {
   constructor(
     @inject(AUTH_TOKENS.AuthRepository) private readonly repository: AuthRepository,
     @inject(AUTH_TOKENS.AuthRequestErrors) private readonly authRequestErrors: AuthRequestErrors,
-    @inject(OBSERVABILITY_TOKENS.ObservabilityService)
-    private readonly observability: ObservabilityService
+    @inject(AUTH_TOKENS.AuthSecuritySignals)
+    private readonly securitySignals: AuthSecuritySignals
   ) {}
 
   public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
@@ -25,7 +23,7 @@ export default class AuthStoreActions {
     try {
       const result = await this.repository.login(credentials, signal);
       this.applyLogin(result);
-      if (result.ok) this.observability.setUser({ id: uuidv4() });
+      this.securitySignals.loginSettled(result);
     } catch (error) {
       this.applyLoginRejection(error);
     }
@@ -34,7 +32,9 @@ export default class AuthStoreActions {
   public async register(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
     AuthStateVar.set({ registerLoading: true, registerError: null, user: null });
     try {
-      this.applyRegister(await this.repository.register(credentials, signal));
+      const result = await this.repository.register(credentials, signal);
+      this.applyRegister(result);
+      this.securitySignals.registerSettled(result);
     } catch (error) {
       this.applyRegisterRejection(error);
     }
@@ -102,6 +102,7 @@ export default class AuthStoreActions {
       AuthStateVar.set({ loginLoading: false });
       return;
     }
+    this.securitySignals.loginFailed(error);
     AuthStateVar.set({ loginLoading: false, loginError: this.toAuthError(error) });
   }
 
@@ -122,6 +123,7 @@ export default class AuthStoreActions {
       AuthStateVar.set({ registerLoading: false });
       return;
     }
+    this.securitySignals.registerFailed(error);
     AuthStateVar.set({
       registerLoading: false,
       registerError: this.toAuthError(error),

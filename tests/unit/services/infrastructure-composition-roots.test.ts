@@ -7,6 +7,7 @@ import { ErrorHandler } from '@/services/error/error-handler';
 import ERROR_TOKENS from '@/services/error/tokens';
 import errorReportingRegistrar from '@/services/error-reporting/di';
 import NoopErrorReporter from '@/services/error-reporting/noop-error-reporter';
+import ObservabilityErrorReporter from '@/services/error-reporting/observability-error-reporter';
 import ERROR_REPORTING_TOKENS from '@/services/error-reporting/tokens';
 import httpClientRegistrar from '@/services/https-client/di';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
@@ -81,14 +82,15 @@ describe('error composition root', () => {
 describe('error reporting composition root', () => {
   const tokens = [ERROR_REPORTING_TOKENS.ErrorReporter];
 
-  it('binds the error reporter token to the no-op reporter singleton', () => {
+  it('binds the error reporter token to the observability-backed singleton', () => {
     const child = unboundContainer(tokens);
 
     errorReportingRegistrar.register(child);
 
     expect(child.isRegistered(ERROR_REPORTING_TOKENS.ErrorReporter)).toBe(true);
     const reporter = child.resolve(ERROR_REPORTING_TOKENS.ErrorReporter);
-    expect(reporter).toBeInstanceOf(NoopErrorReporter);
+    expect(reporter).toBeInstanceOf(ObservabilityErrorReporter);
+    expect(reporter).not.toBeInstanceOf(NoopErrorReporter);
     expect(child.resolve(ERROR_REPORTING_TOKENS.ErrorReporter)).toBe(reporter);
   });
 });

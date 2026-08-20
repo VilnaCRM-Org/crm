@@ -760,6 +760,10 @@ Key variables in `.env`:
 - `REACT_APP_SENTRY_ENVIRONMENT` - Sentry environment tag (falls back to `NODE_ENV`)
 - `REACT_APP_RELEASE` - Release version tag for Sentry release health and source-map
   symbolication (set per deploy, e.g. the commit SHA)
+- `REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD` - Auth failures inside the rolling window that
+  escalate a client security event to `auth_failure_burst` / `critical`. Default 5.
+- `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` - Length of that rolling window in milliseconds.
+  Default 60000.
 
 ## Important Patterns
 
@@ -854,6 +858,45 @@ Key variables in `.env`:
    in Sentry `beforeSend`; identity is a random opaque session id only — no PII. All capture paths
    are wrapped so telemetry failure never breaks a user flow. Do not scatter direct
    `@sentry/react` calls across feature modules; consume telemetry through this boundary.
+
+10. **Client security events (issue #159)**: `src/services/security-events/` is the **only**
+    sanctioned path for emitting a security signal from the client. It mirrors the two-layer
+    observability shape: the container-free `securityEventCore` singleton serves the render
+    path, and the `@injectable()` `SecurityEventReporter` adapter
+    (token `SECURITY_EVENT_TOKENS.SecurityEventReporter`) serves the DI graph. Every signal
+    leaves as a `SecurityEventSignal` error through `observabilityCore.report`, so it inherits
+    the correlation IDs and the `piiScrubber` `beforeSend` pass, and is a verified no-op when
+    `REACT_APP_SENTRY_DSN` is empty.
+
+    Emitters and their events:
+
+    | Call site                                | Event                                 |
+    | ---------------------------------------- | ------------------------------------- |
+    | `AuthSecuritySignals` (login)            | `auth_failure` / `auth_failure_burst` |
+    | `AuthSecuritySignals` (registration)     | `auth_failure` / `auth_failure_burst` |
+    | `HttpErrorResponseParser` (401 / 403)    | `unauthorized_response`               |
+    | `AppErrorBoundary` / `AuthErrorReporter` | `error_boundary_catch`                |
+
+    The payload is **credential-free by construction**: a bounded `reason` code derived from the
+    `AuthError` kind (or `rate_limited` for HTTP 429), a category, a severity, and the rolling
+    failure counters — never a password, token, email, or user id. Aborted attempts emit nothing.
+    `AuthStoreActions` never touches the reporter directly; it calls `loginSettled` /
+    `registerSettled` / `loginFailed` / `registerFailed` on the injected `AuthSecuritySignals`.
+
+11. **Correlation IDs (issues #115, #159)**: two identifiers travel with every signal. The
+    per-request `X-Request-Id` (`correlationIdProvider`) is regenerated per REST request and per
+    Apollo operation. The per-session `X-Correlation-Id` (`sessionCorrelation`) is generated once
+    at module load and is attached to **every** outbound REST request, every Apollo operation, and
+    every captured event, so a client session can be joined to backend log lines during incident
+    response. Both are opaque v4 UUIDs carrying no user data.
+
+12. **Auth-failure alert threshold (issue #159)**: `AuthFailureMonitor` keeps a rolling window of
+    auth failures. Reaching `REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD` failures inside
+    `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` escalates the emitted event from `auth_failure` to
+    `auth_failure_burst` with `severity: 'critical'` and stamps `thresholdBreached: true`.
+    Defaults are 5 failures / 60 000 ms; both are optional and validated by `EnvSchema`. Configure
+    the matching backend alert rule as described in the "Client security events" section of
+    [`SECURITY.md`](SECURITY.md).
 
 ## Node Version Management
 
