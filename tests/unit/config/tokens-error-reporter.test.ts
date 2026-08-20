@@ -8,10 +8,11 @@ describe('DI container — ErrorReporter token', () => {
   });
 
   it('resolves a non-noop, observability-backed reporter in the production graph', async () => {
-    const [ERROR_REPORTING_TOKENS, { NoopErrorReporter, ObservabilityErrorReporter }] =
+    const [ERROR_REPORTING_TOKENS, { NoopErrorReporter }, { default: ObservabilityErrorReporter }] =
       await Promise.all([
         import('@/services/error-reporting/tokens').then((m) => m.default),
         import('@/services/error-reporting'),
+        import('@/services/error-reporting/observability-error-reporter'),
       ]);
 
     await import('@/config/dependency-injection-config');
