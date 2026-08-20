@@ -126,8 +126,8 @@ plus module UI — repositories, `src/services/**`, auth stores/state, validatio
 module `.tsx` surface — not just `src/components/**/*.tsx`. The mutated set is the single source of
 truth in [`scripts/ci/mutation-scope.mjs`](scripts/ci/mutation-scope.mjs), whose exclusions mirror
 `jest.config.ts` `collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n);
-`stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (per-shard slice) both consume it, so
-the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
+`stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (via `shardMutateFiles`) both consume
+it, so the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
 ([`jest.mutation.config.ts`](jest.mutation.config.ts)) that unions the unit **and** integration
 suites, so a repository/service/store mutant is killed by the integration test that actually asserts
 on it instead of being left uncovered. (Stryker's jest-runner can't use Jest `projects` with
@@ -139,11 +139,32 @@ type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep th
 CI runners are 2-core, so parallelism comes from the shard count (currently 8), not from Stryker's
 in-process concurrency.
 
-`mutation-testing.yml` fans `make test-mutation-shard` across an 8-way matrix; each shard mutates a
-deterministic, disjoint slice and uploads a per-shard JSON report. On pull requests the shards run
+**Every mutant is classified on its merits.** A score is only worth enforcing when each status was
+earned for the reason it names, so `stryker.config.mjs` runs the
+`@stryker-mutator/typescript-checker` (`checkers: ['typescript']`) over
+[`tsconfig.stryker.json`](tsconfig.stryker.json) — the root tsconfig narrowed to the mutated
+`src/**/*` tree. Type-invalid mutants come back `CompileError` and drop out of the denominator
+instead of executing and being miscounted as kills nobody's assertion earned. Two companion
+settings make that real: `disableTypeChecks: false`, because Stryker's default writes
+`// @ts-nocheck` into every sandbox file and would blind the checker completely, and
+`jest.enableFindRelatedTests: true`, because with it off each mutant run reloaded the whole test
+suite, blew past the timeout window, and came back `Timeout` — detected by hanging rather than by
+an assertion. `typescriptChecker.prioritizePerformanceOverAccuracy: true` batches independent
+mutants into one type-check pass and re-splits any group whose error cannot be pinned on a single
+mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
+regresses; never relax them to buy wall-clock.
+
+`mutation-testing.yml` fans `make test-mutation-shard` across a 16-way matrix; each shard mutates a
+deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
+file size (heaviest file to the lightest shard), not sliced round-robin, because the run costs
+whatever its slowest shard costs — round-robin left one shard carrying 1.54x the mean load.
+On pull requests the shards run
 **incrementally** (`MUTATION_INCREMENTAL=1` → Stryker `--incremental`): each shard restores its own
 `reports/stryker-incremental-<index>.json` from an `actions/cache` rolling key and only re-runs
-mutants the diff touches — the report still lists every mutant, so the gate stays exact. The first
+mutants the diff touches — the report still lists every mutant, so the gate stays exact. That key
+carries a hash of the mutation configuration, because Stryker's incremental file invalidates only
+on source and test changes: without it a shard would reuse statuses decided under different
+classification settings and skip the checker for them entirely. The first
 run (cold cache) is a full sharded pass that seeds the cache; a `push:` trigger on `main` refreshes
 it so PRs branch off a warm base. A final `merge and enforce gate` job runs
 `make merge-mutation-reports`, which unions the shard reports and enforces the Stryker `break`
@@ -153,7 +174,7 @@ against a lean dev-only container (`make start-dev`) because mutation tests mock
 need neither Mockoon nor Apollo.
 
 `mutation-testing-full.yml` runs weekly (`schedule:` + `workflow_dispatch`) as the authoritative
-pass: the same 8-way matrix, but **cold and from scratch** so the score can't inherit stale reused
+pass: the same 16-way matrix, but **cold and from scratch** so the score can't inherit stale reused
 results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. nightly
 `0 3 * * *`) against CI cost. It is not a pull-request required check.
 
@@ -173,10 +194,10 @@ Run it locally either way (heavy — prefer letting CI shard it):
 make test-mutation                                   # full, gated, single-process run
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8   # repeat for 1..7
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=16  # repeat for 1..15
 # PR mode (incremental): only mutants the diff touches re-run
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8 MUTATION_INCREMENTAL=1
-make merge-mutation-reports MUTATION_SHARD_TOTAL=8
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=16 MUTATION_INCREMENTAL=1
+make merge-mutation-reports MUTATION_SHARD_TOTAL=16
 ```
 
 To change the shard count, keep the `index` matrix in both `mutation-testing.yml` and

@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 
 import AppErrorBoundary from '@/components/error-boundary/app-error-boundary';
+import securityEventCore from '@/services/security-events/security-event-core';
 import type { ErrorReporter } from '@/services/types/error-reporting';
 
 function Bomb({ shouldThrow = false }: { shouldThrow?: boolean }): JSX.Element {
@@ -21,6 +22,19 @@ describe('AppErrorBoundary', () => {
 
   afterEach(() => {
     consoleSpy.mockRestore();
+  });
+
+  it('emits an app boundary-catch security event when a child throws (#159)', () => {
+    const boundaryCatch = jest.spyOn(securityEventCore, 'boundaryCatch').mockImplementation();
+
+    render(
+      <AppErrorBoundary>
+        <Bomb shouldThrow />
+      </AppErrorBoundary>
+    );
+
+    expect(boundaryCatch).toHaveBeenCalledWith('app');
+    boundaryCatch.mockRestore();
   });
 
   it('renders children when no error occurs (AC1)', () => {

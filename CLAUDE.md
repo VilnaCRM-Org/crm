@@ -117,7 +117,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across an
-8-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+16-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -140,8 +140,48 @@ jest-runner cannot use Jest `projects` with `perTest` coverage — so repository
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — CI runners are 2-core, so parallelism comes from the 8-way shard
-count, not Stryker's in-process concurrency.
+These keep the run affordable — parallelism comes from the 16-way shard count rather than
+Stryker's in-process concurrency. The shard count is a wall-clock lever, not a gate: the split is
+weight-balanced over the whole mutate scope, but an incremental run only re-runs the mutants a diff
+invalidates, and those cluster by area. A diff touching one area can therefore land most of its
+re-run cost in a single shard; 16 shards keep that hot shard inside the `timeout-minutes` kill
+switch. Raise the count if a shard starts approaching it — never the kill switch.
+
+### Honest mutant classification (issue #171)
+
+A mutation score is only worth enforcing if every mutant is classified for the reason the status
+claims. Three settings in `stryker.config.mjs` keep that true, and
+`tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of them regresses:
+
+- **`checkers: ['typescript']`** (plugin `@stryker-mutator/typescript-checker`, pinned to the same
+  major as `@stryker-mutator/core`) type-checks every mutant before it runs. Type-invalid mutants
+  are reported `CompileError`, which `scripts/ci/mutation-report.ts` excludes from the denominator,
+  instead of executing and being miscounted — crashing ones as `Killed` (a kill no assertion
+  earned), limping ones as `Survived` noise.
+- **`disableTypeChecks: false`.** Stryker's default injects `// @ts-nocheck` at the top of every
+  sandbox file, which would blind the checker to every error and make it a silent no-op. Leave this
+  off or the checker gates nothing. The test runner is unaffected: `jest.mutation.config.ts` uses
+  ts-jest `isolatedModules`, so it transpiles without type-checking either way.
+- **`jest.enableFindRelatedTests: true`.** With it off, each mutant run reloaded _every_ test file
+  in the suite and was filtered down by `testNamePattern` only after the fact, so a mutant run cost
+  a full-suite reload and reliably exceeded the timeout window. Every mutant then landed as
+  `Timeout` — counted as detected, but earned by hanging rather than by an assertion. Turning it on
+  restricts each run to the test files that actually reach the mutated file; mutants now come back
+  `Killed` or `Survived` on their merits, and the full sharded run dropped from ~110 min to well
+  under the CI budget.
+
+`typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
+independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only
+groups mutants whose files do not reference one another, and when an error cannot be tied to a
+mutant in the group it re-checks those mutants individually — but a mutant can still be credited
+with a neighbour's error in a dependency shape the grouper treats as independent. Turn it off when
+a published baseline has to be exact per mutant; the two-file probe that measured 1m03s with it on
+took 12m54s with it off. The checker compiles
+[`tsconfig.stryker.json`](tsconfig.stryker.json) — the root tsconfig narrowed to `src/**/*`, the
+only tree that is mutated — because the checker builds a full program per worker and compiling
+`scripts/`, `docker/`, `lighthouse/`, `tests/`, and `.storybook/` alongside it costs time and
+memory for files that hold no mutants. Never widen `disableTypeChecks` or drop the checker to make
+a run faster; that trades the gate's honesty for wall-clock.
 
 `thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`. `break` is the
 enforced floor, set at/just below the measured baseline. **Ratchet policy:** raise `break` toward
@@ -149,23 +189,38 @@ enforced floor, set at/just below the measured baseline. **Ratchet policy:** rai
 survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
 assertions.
 
-Measured baseline (widened scope, unit + integration; 8-way sharded full run):
+Measured baseline (checker on, `findRelatedTests` on; cold sharded run):
 
 | Area                         | Files | Mutation score |
 | ---------------------------- | ----- | -------------- |
-| `src/services/**`            | 9     | 100%           |
-| `…/auth/repositories/**`     | 7     | 100%           |
-| `…/auth/stores/**`           | 8     | 100%           |
-| `…/form-section/validations` | 4     | 100%           |
-| Overall (`break` = 90)       | 134   | 92.5%          |
+| `src/components/**`          | 45    | 99.4%          |
+| `…/auth/stores/**`           | 8     | 98.7%          |
+| `…/auth/repositories/**`     | 7     | 98.2%          |
+| `src/services/**`            | 21    | 97.6%          |
+| `…/form-section/validations` | 4     | 92.1%          |
+| Overall (`break` = 90)       | 159   | 91.9%          |
 
-The mutate scope is 154 files; 134 produced mutants in the report (the other ~20 are pure re-export
-barrels or files whose only mutants are static and skipped by `ignoreStatic`). The logic layer is
-fully detected; the overall gap is `noCoverage` mutants in non-logic files (UI/providers/routes
-exercised by e2e/visual rather than unit/integration). Detections in the async logic layer land as
-Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test), which counts as
-detected. `break` is set to 90 — below the 92.5% baseline for margin — and ratchets toward the
-`high` = 100 target as the scheduled full runs confirm stability.
+Merged tally: `killed=1539 timeout=0 survived=136 noCoverage=0`, `compileError=903
+runtimeError=21 ignored=501`, `valid=1675`. The mutate scope is 186 files; 159 produced mutants in
+the report (the rest are pure re-export barrels or files whose only mutants are static and skipped
+by `ignoreStatic`).
+
+**How this number was reached, and why the earlier one was not comparable.** The previously
+recorded baseline (92.5%, `break` = 90) was measured before honest classification: 2405 of its 2410
+"detections" were `Timeout` with an empty `killedBy` — including boolean flips in `src/app.tsx` that
+cannot hang — so it scored how often a mutant outran the timeout window, not how often an assertion
+caught one. The same suite, unchanged, scored **59.9%** once mutants were classified on their
+merits. `break` was re-derived to 57 at that point, then ratcheted back to 90 as real assertions
+were added (issue #121's work): 60.0% → 65.1% → 80.5% → 91.4% → 91.9%. Every point of that came
+from tests, not from narrowing scope or relaxing the gate.
+
+**Static values need loading inside the test.** A mutant in a top-level object literal, const map or
+`styled()` call is evaluated at import, so Stryker marks it static, attributes its per-test coverage
+to whichever unrelated file happened to load the module first, and `findRelatedTests` then filters
+that file out — the mutant comes back `Survived` with `testsCompleted: 0` and no assertion can ever
+reach it. Load such modules with `jest.resetModules()` plus an `import()` inside the test body (or
+`jest.isolateModulesAsync`) so the literal is evaluated during the test. This moved 154 mutants from
+`Survived` to `Killed` in a single run. `tests/unit/utils/isolated-module.ts` wraps the pattern.
 
 ## Code Quality
 
@@ -709,6 +764,10 @@ Key variables in `.env`:
 - `REACT_APP_SENTRY_ENVIRONMENT` - Sentry environment tag (falls back to `NODE_ENV`)
 - `REACT_APP_RELEASE` - Release version tag for Sentry release health and source-map
   symbolication (set per deploy, e.g. the commit SHA)
+- `REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD` - Auth failures inside the rolling window that
+  escalate a client security event to `auth_failure_burst` / `critical`. Default 5.
+- `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` - Length of that rolling window in milliseconds.
+  Default 60000.
 
 ## Important Patterns
 
@@ -803,6 +862,45 @@ Key variables in `.env`:
    in Sentry `beforeSend`; identity is a random opaque session id only — no PII. All capture paths
    are wrapped so telemetry failure never breaks a user flow. Do not scatter direct
    `@sentry/react` calls across feature modules; consume telemetry through this boundary.
+
+10. **Client security events (issue #159)**: `src/services/security-events/` is the **only**
+    sanctioned path for emitting a security signal from the client. It mirrors the two-layer
+    observability shape: the container-free `securityEventCore` singleton serves the render
+    path, and the `@injectable()` `SecurityEventReporter` adapter
+    (token `SECURITY_EVENT_TOKENS.SecurityEventReporter`) serves the DI graph. Every signal
+    leaves as a `SecurityEventSignal` error through `observabilityCore.report`, so it inherits
+    the correlation IDs and the `piiScrubber` `beforeSend` pass, and is a verified no-op when
+    `REACT_APP_SENTRY_DSN` is empty.
+
+    Emitters and their events:
+
+    | Call site                                | Event                                 |
+    | ---------------------------------------- | ------------------------------------- |
+    | `AuthSecuritySignals` (login)            | `auth_failure` / `auth_failure_burst` |
+    | `AuthSecuritySignals` (registration)     | `auth_failure` / `auth_failure_burst` |
+    | `HttpErrorResponseParser` (401 / 403)    | `unauthorized_response`               |
+    | `AppErrorBoundary` / `AuthErrorReporter` | `error_boundary_catch`                |
+
+    The payload is **credential-free by construction**: a bounded `reason` code derived from the
+    `AuthError` kind (or `rate_limited` for HTTP 429), a category, a severity, and the rolling
+    failure counters — never a password, token, email, or user id. Aborted attempts emit nothing.
+    `AuthStoreActions` never touches the reporter directly; it calls `loginSettled` /
+    `registerSettled` / `loginFailed` / `registerFailed` on the injected `AuthSecuritySignals`.
+
+11. **Correlation IDs (issues #115, #159)**: two identifiers travel with every signal. The
+    per-request `X-Request-Id` (`correlationIdProvider`) is regenerated per REST request and per
+    Apollo operation. The per-session `X-Correlation-Id` (`sessionCorrelation`) is generated once
+    at module load and is attached to **every** outbound REST request, every Apollo operation, and
+    every captured event, so a client session can be joined to backend log lines during incident
+    response. Both are opaque v4 UUIDs carrying no user data.
+
+12. **Auth-failure alert threshold (issue #159)**: `AuthFailureMonitor` keeps a rolling window of
+    auth failures. Reaching `REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD` failures inside
+    `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` escalates the emitted event from `auth_failure` to
+    `auth_failure_burst` with `severity: 'critical'` and stamps `thresholdBreached: true`.
+    Defaults are 5 failures / 60 000 ms; both are optional and validated by `EnvSchema`. Configure
+    the matching backend alert rule as described in the "Client security events" section of
+    [`SECURITY.md`](SECURITY.md).
 
 ## Node Version Management
 

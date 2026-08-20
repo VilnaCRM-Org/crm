@@ -1,3 +1,5 @@
+import type { AuthFailureAlertEnv } from './types/env';
+
 class RawEnv {
   public mockoonUrl(): string {
     return this.trimmed(process.env.REACT_APP_MOCKOON_URL) ?? '';
@@ -23,7 +25,15 @@ class RawEnv {
     return this.trimmed(process.env.REACT_APP_SENTRY_ENVIRONMENT);
   }
 
+  public authFailureAlert(): AuthFailureAlertEnv {
+    return {
+      threshold: this.trimmed(process.env.REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD),
+      windowMs: this.trimmed(process.env.REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS),
+    };
+  }
+
   public snapshot(): Record<string, string | undefined> {
+    const authFailureAlert = this.authFailureAlert();
     return {
       nodeEnv: process.env.NODE_ENV,
       graphqlUrl: this.trimmed(process.env.REACT_APP_GRAPHQL_URL),
@@ -34,6 +44,8 @@ class RawEnv {
       release: this.trimmed(process.env.REACT_APP_RELEASE),
       sentryDsn: this.trimmed(process.env.REACT_APP_SENTRY_DSN),
       sentryEnvironment: this.trimmed(process.env.REACT_APP_SENTRY_ENVIRONMENT),
+      authFailureAlertThreshold: authFailureAlert.threshold,
+      authFailureAlertWindowMs: authFailureAlert.windowMs,
     };
   }
 

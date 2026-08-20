@@ -2,12 +2,68 @@
 
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
+import securityEventCore from '@/services/security-events/security-event-core';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 function makeResponse(ok: boolean, status: number, statusText = ''): Response {
   return { ok, status, statusText, url: '/test', headers: new Headers() } as Response;
 }
 
 describe('HttpErrorResponseParser', () => {
+  describe('security-event emission (#159)', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it.each([[401], [403]])('emits an unauthorized_response event for %i', async (status) => {
+      const emit = jest.spyOn(securityEventCore, 'unauthorizedResponse').mockImplementation();
+      const parser = new HttpErrorResponseParser();
+
+      await expect(parser.assertOk(makeResponse(false, status, 'Denied'))).rejects.toThrow(
+        HttpError
+      );
+
+      expect(emit).toHaveBeenCalledWith(status);
+    });
+
+    // The status set is a module-level literal, so the module is evaluated inside the test body
+    // to keep a mutant in it reachable by an assertion (issue #171).
+    it('pins the security-relevant status set at module scope', async () => {
+      const isolated = await loadIsolated(async () => ({
+        Parser: (await import('@/services/https-client/http-error-response-parser')).default,
+        core: (await import('@/services/security-events/security-event-core')).default,
+      }));
+      const emit = jest.spyOn(isolated.core, 'unauthorizedResponse').mockImplementation();
+      const parser = new isolated.Parser();
+
+      await expect(parser.assertOk(makeResponse(false, 401, 'Denied'))).rejects.toThrow();
+      await expect(parser.assertOk(makeResponse(false, 403, 'Denied'))).rejects.toThrow();
+      await expect(parser.assertOk(makeResponse(false, 404, 'Nope'))).rejects.toThrow();
+
+      expect(emit.mock.calls).toEqual([[401], [403]]);
+    });
+
+    it.each([[400], [404], [500]])('stays silent for the non-auth status %i', async (status) => {
+      const emit = jest.spyOn(securityEventCore, 'unauthorizedResponse').mockImplementation();
+      const parser = new HttpErrorResponseParser();
+
+      await expect(parser.assertOk(makeResponse(false, status, 'Nope'))).rejects.toThrow(HttpError);
+
+      expect(emit).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      [200, true],
+      [304, false],
+    ])('stays silent for the successful status %i', async (status, ok) => {
+      const emit = jest.spyOn(securityEventCore, 'unauthorizedResponse').mockImplementation();
+
+      await new HttpErrorResponseParser().assertOk(makeResponse(ok, status));
+
+      expect(emit).not.toHaveBeenCalled();
+    });
+  });
+
   it('resolves without throwing for a 200 response', async () => {
     const parser = new HttpErrorResponseParser();
     await expect(parser.assertOk(makeResponse(true, 200))).resolves.toBeUndefined();
