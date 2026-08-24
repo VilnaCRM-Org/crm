@@ -180,6 +180,7 @@ make lint-prettier  # Prettier --check formatting gate (verify-only, shares PRET
 make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, like lint-metrics)
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
+make lint-licenses  # dependency license SPDX-allowlist gate over the production tree (see below)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
@@ -188,6 +189,52 @@ make format         # Prettier + qlty fmt
 Git hooks are managed by Husky. Run `make husky` once after cloning.
 Agents should run `make format` before `make lint`. Formatting is intentionally
 separate from the `lint` verification suite.
+
+### Dependency license policy (issue #191)
+
+`make lint-licenses` fails the build on any **production** dependency (direct or transitive)
+whose SPDX license is not satisfied by the allowlist. It enumerates the production tree with
+[`license-checker-rseidelsohn`](https://github.com/RSeidelsohn/license-checker-rseidelsohn)
+(`--production --excludePrivatePackages --json`) and evaluates each license **semantically** via
+[`spdx-satisfies`](https://www.npmjs.com/package/spdx-satisfies) in `scripts/ci/check-licenses.mjs`
+(both pinned in `devDependencies` + `bun.lock`). Semantic evaluation is required, not a literal
+`--onlyAllow` match: `(MIT OR Apache-2.0)` passes because an allowed operand suffices, `(MIT AND
+BSD-3-Clause)` passes because both operands are allowed, `(GPL-3.0 AND MIT)` is **rejected**
+because the AND binds you to GPL, and any unparseable/unknown string (`UNKNOWN`, `SEE LICENSE IN
+…`, a guessed `MIT*`) is rejected fail-closed. It is a member of `CI_LINT_TARGETS` and the `lint:`
+aggregate, so it rides the existing `static testing` workflow via `make lint` — no dedicated
+workflow. `ALLOWED_LICENSES` (authoritative source: the `Makefile`) lists the permitted SPDX
+**operand** ids, trimmed to what the production tree contains today, so every new family enters via
+an explicit, reviewed one-line diff. `--production` keeps the devDependencies out of scope. The
+repo itself is CC0-1.0 and the SPA ships minified dependency code to browsers (a distribution event
+that triggers copyleft obligations), so a GPL/AGPL/SSPL or unlicensed dependency is a real defect.
+The gate's own behaviour is pinned by `tests/unit/scripts/check-licenses.test.ts` (must-fail
+coverage for disallowed AND-compounds and unknown licenses).
+
+**Remediation policy** (mirrors the repo's root-cause-not-suppression rule): 1st — replace the
+offending dependency; 2nd — add its specific SPDX id to `ALLOWED_LICENSES` as a reviewed one-line
+diff in the `Makefile`. Never bypass or weaken the gate.
+
+### ESLint gate integrity (issues #164, #165, #189)
+
+The convention gates in `eslint.config.mjs` encode policy, not style, so their **integrity** is
+itself tested — a config-level rule deletion or severity downgrade carries no inline suppression
+directive and would otherwise pass every existing check:
+
+- **`react-hooks/exhaustive-deps` and `no-await-in-loop` are `error`** (issue #164), not `warn` —
+  a warning never fails `eslint .`. Because `eslint-comments/no-use` bans all disable directives,
+  an intentional mount-only effect must be **restructured** (refs / stored-callback pattern),
+  never suppressed. `react/jsx-no-bind` deliberately stays `warn` (issue #164 scope decision).
+- **`tests/unit/config/eslint-policy.test.ts`** (issue #165) pins the resolved severity + one
+  distinctive selector per load-bearing gate (issues #88/#90/#100/#107), resolved through a child
+  `node` process (`scripts/ci/print-eslint-policy-config.mjs`). A rule rename must update both the
+  config and this test.
+- **`tests/unit/tooling/eslint-gate-fixtures.test.ts`** (issue #189) runs a must-fail fixture
+  through each error-severity `no-restricted-syntax` selector (via the resolved config) and a
+  rot-guard asserting the fixture set exactly covers the live selector universe — so a **new**
+  error-severity selector added to `eslint.config.mjs` (scoped to `src/**`) cannot ship without a
+  must-fail fixture in `scripts/ci/eslint-gate-fixtures.mjs`, and a dropped/edited selector fails
+  loudly. Both tests ride the existing `unit testing` workflow via `make test-unit-all`.
 
 ## Agent Skill Layout
 
