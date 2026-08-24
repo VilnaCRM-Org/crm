@@ -822,6 +822,13 @@ Localization files are auto-generated during build:
 - Generated via `scripts/localization-generator.js`
 - Skip generation: `SKIP_LOCALE_GEN=1`
 
+Dates, numbers, currency, percentages, and relative time are rendered through the
+locale-aware formatting layer (issue #155): `src/i18n.js` registers the `date`, `datetime`, `number`,
+`currency`, `percent`, and `relativetime` i18next formatters, so translation strings use
+`{{value, datetime}}` / `{{value, currency}}`, and non-translation code uses the
+`LocaleFormatter` service. See "Important Patterns" item 10 for the full convention and
+its ESLint gate.
+
 ## Storybook
 
 ```bash
@@ -985,6 +992,31 @@ Key variables in `.env`:
    in Sentry `beforeSend`; identity is a random opaque session id only — no PII. All capture paths
    are wrapped so telemetry failure never breaks a user flow. Do not scatter direct
    `@sentry/react` calls across feature modules; consume telemetry through this boundary.
+
+10. **Locale-aware Intl formatting (issue #155)**: All user-facing dates, numbers,
+    currency amounts, percentages, and relative times are formatted through the
+    `LocaleFormatter` boundary in `src/services/locale-formatter/` — never with raw
+    `toLocaleString()` variants or ad-hoc `new Intl.*Format(...)` at call sites. Like
+    observability (pattern 9), it has two layers: (a) the container-free
+    `localeFormatterCore` singleton (cached `Intl.DateTimeFormat`, `Intl.NumberFormat`
+    for decimal/currency/percent, and `Intl.RelativeTimeFormat` instances keyed by
+    locale + options, resolving the locale from the active i18next language and falling
+    back to `rawEnv.mainLanguage()`), consumed on the paint path by `src/i18n.js`, which
+    registers the `date`, `datetime`, `number`, `currency`, `percent`, and
+    `relativetime` i18next formatters so translation strings can use
+    `{{value, datetime}}` / `{{value, currency}}`; and (b) an `@injectable()`
+    `LocaleFormatterService` adapter (token
+    `LOCALE_FORMATTER_TOKENS.LocaleFormatterService`, registered by its own
+    `di.ts` composition root per issue #109). Defaults: medium date style, short time
+    style, `UAH` with a narrow symbol, `numeric: 'auto'` relative time. An ESLint
+    `no-restricted-syntax` gate in `eslint.config.mjs` (the `noRawIntlSelectors`
+    array, scoped to `src/**` and lifted only inside
+    `src/services/locale-formatter/`) fails the build on raw `toLocale*` calls and
+    `Intl.*` member access; it runs in `make lint-eslint` and the `static testing`
+    workflow. Unit and integration tests pin exact uk/en outputs (e.g. `1234.5` →
+    `1 234,50 ₴` vs `₴1,234.50`), so locale regressions fail CI. Satisfy the gate by
+    routing through the formatter service — never with `eslint-disable`. See the
+    "Locale-aware Intl formatting" section in `agents.md` for the full convention.
 
 ## Node Version Management
 

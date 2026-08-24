@@ -684,6 +684,11 @@ const { t } = useTranslation();
 <h1>{t('login.title')}</h1>
 ```
 
+Dates, numbers, currency, percentages, and relative time inside translations use the
+registered i18next formatters (`{{value, datetime}}`, `{{value, currency}}`,
+`{{value, percent}}`, `{{value, relativetime}}`) instead of pre-formatted strings — see
+"Locale-aware Intl formatting (issue #155)" under Architecture Patterns.
+
 ## Architecture Patterns
 
 ### No static methods or free functions (issues #100, #89, #180)
@@ -730,6 +735,49 @@ object-literal methods, including `as const` / `satisfies` wrappers). What stays
 **review-gate** concern — deliberately unmatched, so idiomatic nested MUI `sx` callbacks
 and zustand-style slices are not flagged — is nested (depth > 1) object literals,
 `Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
+
+### Locale-aware Intl formatting (issue #155)
+
+The template is bilingual (uk primary, en fallback), so every user-facing date, number,
+currency amount, percentage, and relative time renders through one locale-aware boundary —
+`src/services/locale-formatter/` — never through raw `toLocaleString()` /
+`toLocaleDateString()` / `toLocaleTimeString()` calls or ad-hoc `new Intl.*Format(...)`
+construction at call sites. Scattered call-site construction drifts locales (en-US defaults
+under a uk primary locale), defeats formatter caching, and makes output impossible to pin in
+tests.
+
+How to format, by context:
+
+- **Translation strings** → use the i18next formatters registered in `src/i18n.js`
+  (`date`, `datetime`, `number`, `currency`, `percent`, `relativetime`):
+  `"updated_at": "Last updated {{value, datetime}}"`, `"price": "Price: {{value, currency}}"`
+  (see `src/features/example/i18n/`). Components pass the raw value:
+  `t('formatting.updated_at', { value: new Date(timestamp) })`.
+- **Non-translation logic (services, repositories, stores)** → inject the
+  `@injectable()` `LocaleFormatterService` adapter via
+  `LOCALE_FORMATTER_TOKENS.LocaleFormatterService` (its own `di.ts` composition root,
+  issue #109) and call `date` / `dateTime` / `number` / `currency` / `percent` /
+  `relativeTime`.
+- **Paint-path / container-free code** → import the `localeFormatterCore` module
+  singleton from `@/services/locale-formatter/locale-formatter-core` (the same two-layer
+  split as observability: the core is tsyringe-free, so `src/i18n.js` stays light).
+
+The core caches `Intl.DateTimeFormat`, `Intl.NumberFormat` (decimal, currency, percent),
+and `Intl.RelativeTimeFormat` instances keyed by locale + options, and resolves the locale
+as: explicit argument → active i18next language → `rawEnv.mainLanguage()` (default `uk`).
+Presets: medium date style, short time style, `UAH` with a narrow symbol (`currency` takes
+an optional ISO 4217 code), `numeric: 'auto'` relative time. Extend the service with a new
+preset instead of passing one-off options at call sites.
+
+Enforced by an ESLint `no-restricted-syntax` gate in `eslint.config.mjs`
+(`noRawIntlSelectors`, re-included in every overlapping block that carries the shared
+selector spreads — the type-only-file override forbids all runtime syntax, so it needs no
+Intl selectors — and lifted only inside `src/services/locale-formatter/`), run by
+`make lint-eslint` and the `static testing`
+workflow. Tests are exempt — they construct `Intl` formatters freely and pin **exact**
+uk/en outputs as fixed contracts (hardcoded literals per the Faker convention, e.g.
+`1234.5` → `1 234,50 ₴` (uk, U+00A0 separators) vs `₴1,234.50` (en)). Fix violations by
+routing through the formatter — never with `eslint-disable`.
 
 ### Dependency Injection Pattern
 

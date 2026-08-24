@@ -197,6 +197,37 @@ const noProcessEnvSelectors = [
   },
 ];
 
+// Source (issue #155): locale-sensitive rendering must go through the LocaleFormatter
+// service (src/services/locale-formatter/) or the i18next formatters registered in
+// src/i18n.js — never ad-hoc `Intl.*` construction or `toLocale*` calls at call sites.
+// The service caches formatter instances and keys the locale off the active i18next
+// language; scattered call-site construction drifts locales and defeats that cache.
+// Re-included in every overlapping block because flat config replaces `no-restricted-syntax`.
+const noRawIntlSelectors = [
+  {
+    selector: 'CallExpression[callee.property.name=/^toLocale(String|DateString|TimeString)$/]',
+    message:
+      'No raw toLocale* formatting — use the LocaleFormatter service ' +
+      '(@/services/locale-formatter) or an i18next formatter such as ' +
+      '{{value, datetime}} (issue #155).',
+  },
+  {
+    selector: 'CallExpression[callee.property.value=/^toLocale(String|DateString|TimeString)$/]',
+    message:
+      'No raw toLocale* formatting via computed access — use the LocaleFormatter service ' +
+      '(@/services/locale-formatter) or an i18next formatter such as ' +
+      '{{value, datetime}} (issue #155).',
+  },
+  {
+    selector: "MemberExpression[object.name='Intl']",
+    message:
+      'No raw Intl.* usage — use the LocaleFormatter service ' +
+      '(@/services/locale-formatter) or an i18next formatter such as ' +
+      '{{value, currency}}, extending the service when it lacks a needed ' +
+      'Intl capability (issue #155).',
+  },
+];
+
 const nonReactSourceGlobs = ['src/**/*.ts'];
 const nonReactSourceIgnores = [
   '**/*.stories.*',
@@ -442,10 +473,12 @@ export default [
     },
   },
 
-  // Source: production source must not ship `data-testid` (issue #90), and logic
+  // Source: production source must not ship `data-testid` (issue #90), logic
   // files must not declare types — types live in dedicated type-only files:
-  // `types.ts` or the per-feature/area `types/**` folders (issue #88). Stories/tests/`.d.ts`
-  // and the type-only files (governed by the separate override below) are excluded.
+  // `types.ts` or the per-feature/area `types/**` folders (issue #88) — and locale-sensitive
+  // rendering must go through the LocaleFormatter service, never raw `Intl`/`toLocale*`
+  // (issue #155). Stories/tests/`.d.ts` and the type-only files (governed by the separate
+  // override below) are excluded.
   {
     files: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx'],
     ignores: [
@@ -458,7 +491,12 @@ export default [
       'src/**/types/**/*.tsx',
     ],
     rules: {
-      'no-restricted-syntax': ['error', ...dataTestidSelectors, ...typeDeclarationSelectors],
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...typeDeclarationSelectors,
+        ...noRawIntlSelectors,
+      ],
     },
   },
 
@@ -541,9 +579,10 @@ export default [
   // Source (issue #100): forbid `static` members and standalone functions in non-React
   // application code. This block matches `src/**/*.ts` only (so `.tsx` components and
   // class error boundaries are exempt) and ignores `use-*` hook files plus the type-only
-  // files (governed by the override above). It re-includes the data-testid (#90) and
-  // type-declaration (#88) selectors because flat config replaces (does not merge)
-  // `no-restricted-syntax` for files matched by multiple blocks.
+  // files (governed by the override above). It re-includes the data-testid (#90),
+  // type-declaration (#88), process.env (#112), and raw-Intl (#155) selectors because
+  // flat config replaces (does not merge) `no-restricted-syntax` for files matched by
+  // multiple blocks.
   {
     files: nonReactSourceGlobs,
     ignores: nonReactSourceIgnores,
@@ -555,14 +594,16 @@ export default [
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noRawIntlSelectors,
       ],
     },
   },
 
   // Source (issue #112): the `src/config/env/**` module IS the sanctioned boundary that
-  // reads `process.env`, so the process.env ban is lifted here. The #90/#88/#100 selectors
-  // are re-included (flat config replaces, does not merge). Ordered after the non-React `.ts`
-  // block so it wins for env files; env type-only files stay governed by the override above.
+  // reads `process.env`, so the process.env ban is lifted here. The #90/#88/#100/#155
+  // selectors are re-included (flat config replaces, does not merge). Ordered after the
+  // non-React `.ts` block so it wins for env files; env type-only files stay governed by
+  // the override above.
   {
     files: ['src/config/env/**/*.ts'],
     ignores: [
@@ -580,13 +621,42 @@ export default [
         ...noStaticOrFreeFunctionSelectors,
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
+        ...noRawIntlSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #155): the `src/services/locale-formatter/**` service IS the sanctioned
+  // Intl boundary, so the raw-Intl ban is lifted here (and only here). Every other selector
+  // — #90, #100, #88, #112 — is re-included (flat config replaces, does not merge). Ordered
+  // after the non-React `.ts` block so it wins for the formatter's files; the formatter's
+  // contract types live under `src/services/types/` and stay governed by the type-only
+  // override above.
+  {
+    files: ['src/services/locale-formatter/**/*.ts'],
+    ignores: [
+      '**/*.stories.*',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.d.ts',
+      'src/services/locale-formatter/**/types.ts',
+      'src/services/locale-formatter/**/types/**/*.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
       ],
     },
   },
 
   // Source (issue #112): React hooks (`src/**/use-*.ts`) are exempt from the #100 no-free-function
   // rule (they are functions), so the non-React `.ts` block above ignores them — but they must
-  // still not read raw `process.env`. Re-include the #90/#88 selectors plus the process.env ban.
+  // still not read raw `process.env` or construct raw Intl formatters. Re-include the #90/#88
+  // selectors plus the process.env (#112) and raw-Intl (#155) bans.
   {
     files: ['src/**/use-*.ts'],
     ignores: [
@@ -603,6 +673,7 @@ export default [
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noRawIntlSelectors,
       ],
     },
   },
