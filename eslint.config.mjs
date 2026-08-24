@@ -3,10 +3,14 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import eslintComments from 'eslint-plugin-eslint-comments';
 import importPlugin from 'eslint-plugin-import';
+import jest from 'eslint-plugin-jest';
 import jestDom from 'eslint-plugin-jest-dom';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
+import noUnsanitized from 'eslint-plugin-no-unsanitized';
+import playwright from 'eslint-plugin-playwright';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
+import security from 'eslint-plugin-security';
 import storybook from 'eslint-plugin-storybook';
 import testingLibrary from 'eslint-plugin-testing-library';
 import prettier from 'eslint-config-prettier';
@@ -137,6 +141,41 @@ const noStaticOrFreeFunctionSelectors = [
       "Program > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression'], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression'], ExportDefaultDeclaration > FunctionExpression",
     message:
       'No top-level function expressions in non-React source — make it an instance method on an injectable class (issue #100).',
+  },
+];
+
+// Source (issue #180): close the acknowledged issue-#89/#100 residual. The selectors above
+// match only `Program`/export-level function declarations, so logic smuggled into a TOP-LEVEL
+// object literal's function-valued properties (`export default { map(r) { … } }`) bypasses the
+// whole gate — the trivially discoverable evasion is "wrap your free functions in an object".
+// ESTree gives method shorthand (`{ m() {} }`) `value.type === 'FunctionExpression'`, so one
+// value-type match covers shorthand, arrow, and function-expression properties alike; the
+// `as const` / `satisfies` holders close the wrapper bypass. Accepted residuals (review-gate,
+// deliberately NOT matched — widening to arbitrary-depth `Property` would flag idiomatic nested
+// MUI `sx` callbacks and zustand-style slices): nested (depth > 1) literals, `Object.freeze()`
+// wrappers, and dynamic property assignment (`obj.method = fn`).
+const objectLiteralFnProperty =
+  'Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/]';
+const objectLiteralHolders = [
+  'ObjectExpression',
+  'TSAsExpression > ObjectExpression',
+  'TSSatisfiesExpression > ObjectExpression',
+];
+const objectLiteralRoots = [
+  'Program > VariableDeclaration > VariableDeclarator',
+  'Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator',
+  'ExportDefaultDeclaration',
+];
+const noObjectLiteralMethodSelectors = [
+  {
+    selector: objectLiteralRoots
+      .flatMap((root) =>
+        objectLiteralHolders.map((holder) => `${root} > ${holder} > ${objectLiteralFnProperty}`)
+      )
+      .join(', '),
+    message:
+      'No logic in top-level object-literal methods in non-React source — make it an instance ' +
+      'method on an injectable class or module-singleton class (issues #89/#100/#180).',
   },
 ];
 
@@ -423,6 +462,32 @@ export default [
     },
   },
 
+  // Source (issue #173): deterministic lint-level SAST over the dominant SPA XSS and
+  // code-execution sink classes. This is the only security analysis that runs pre-commit
+  // (Husky) and fails in seconds; CodeQL (`security testing`) is the complementary
+  // dataflow layer. `eslint-suppressions.yml` already forbids inline suppression
+  // directives, so these rules cannot be bypassed at the call site — fix the sink,
+  // never silence it.
+  // The rule set is deliberately frozen: `eslint-plugin-security`'s recommended preset is
+  // NOT adopted (`detect-object-injection` et al. is noise), and
+  // `security/detect-non-literal-regexp` is omitted because the auth name/email validators
+  // legitimately compose `RegExp` from constant template literals.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
+    plugins: { 'no-unsanitized': noUnsanitized, security },
+    rules: {
+      'no-unsanitized/method': 'error',
+      'no-unsanitized/property': 'error',
+      'react/no-danger': 'error',
+      'security/detect-eval-with-expression': 'error',
+      'security/detect-unsafe-regex': 'error',
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+    },
+  },
+
   // Type-only files (issue #88): `types.ts` and the per-feature/area `types/` folders must
   // contain ONLY type-level constructs (interface, type, type-only import/re-export,
   // `declare`). Forbid runtime syntax so type files never carry logic. Ordered after the
@@ -487,6 +552,7 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...noStaticOrFreeFunctionSelectors,
+        ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
       ],
@@ -512,6 +578,7 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...noStaticOrFreeFunctionSelectors,
+        ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
       ],
     },
@@ -555,6 +622,56 @@ export default [
             'Prefer getByRole/getByLabelText/getByText; *ByTestId is a last resort (issue #90).',
         },
       ],
+    },
+  },
+
+  // Tests (issue #167): a test that is skipped, focused, or asserts nothing reports
+  // verification while verifying nothing — and the 100/100/100/100 Jest coverage gate
+  // measures execution, not assertion, so it stays green either way. `forbidOnly` in
+  // `playwright.config.ts` catches only `.only`; `.skip`/`.fixme`/`xit` merged silently.
+  // Structural rules land at `error`; the two behavioral rules start at `warn` pending the
+  // conditional-assertion burndown, then get promoted. Spec files only — helpers under
+  // `tests/visual/` and `tests/utils/` are not test bodies.
+  {
+    files: ['tests/e2e/**/*.spec.ts', 'tests/visual/**/*.spec.ts'],
+    plugins: { playwright },
+    rules: {
+      // `disallowFixme` is required: the rule's default only covers `.skip`, and the
+      // repo's live bypasses were `test.fixme`. `allowConditional` stays at its `false`
+      // default so a runtime-conditional skip is a finding too.
+      'playwright/no-skipped-test': ['error', { disallowFixme: true }],
+      'playwright/no-focused-test': 'error',
+      // A `take*Snapshot` helper IS the assertion in every visual spec (it calls
+      // `expect(...).toHaveScreenshot()`), so the convention is declared, not suppressed.
+      'playwright/expect-expect': ['error', { assertFunctionPatterns: ['^take\\w*Snapshot$'] }],
+      'playwright/no-conditional-in-test': 'warn',
+      'playwright/no-wait-for-timeout': 'warn',
+    },
+  },
+  {
+    // These globs mirror `jest.config.ts` `testMatch` exactly — the client runner executes
+    // `tests/unit/**/*.test.{ts,tsx,js,jsx}`, so the `.js`/`.jsx` suites (localization
+    // generator, load config, memlab scenario validation, performance meta-tests) must be
+    // gated too or the policy stops at the file extension rather than at the runner.
+    files: [
+      'tests/unit/**/*.ts',
+      'tests/unit/**/*.tsx',
+      'tests/unit/**/*.js',
+      'tests/unit/**/*.jsx',
+      'tests/integration/**/*.ts',
+      'tests/integration/**/*.tsx',
+      'tests/apollo-server/**/*.ts',
+    ],
+    plugins: { jest },
+    rules: {
+      // `expect*` declares the repo's shared assertion helpers (e.g.
+      // `expectReviewRangePairOrder`) by naming convention rather than one-off allowances.
+      'jest/expect-expect': ['error', { assertFunctionNames: ['expect', 'expect*'] }],
+      'jest/no-disabled-tests': 'error',
+      // `no-disabled-tests` covers `.skip`/`xit` only. Jest has no `forbidOnly` equivalent
+      // to Playwright's, so a committed `it.only` would silently shrink the CI suite.
+      'jest/no-focused-tests': 'error',
+      'jest/no-conditional-expect': 'error',
     },
   },
 

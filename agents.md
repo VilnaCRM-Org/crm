@@ -686,12 +686,14 @@ const { t } = useTranslation();
 
 ## Architecture Patterns
 
-### No static methods or free functions (issues #100, #89)
+### No static methods or free functions (issues #100, #89, #180)
 
 Non-React application code (services, repositories, mappers, factories, stores, utilities
-under `src/**/*.ts`) must **not** use `static` class members or standalone (free)
-functions. Convert them to **instance methods on an injectable class** so collaborators can
-be swapped for mocks/spies through the tsyringe DI container instead of via module mocking.
+under `src/**/*.ts`) must **not** use `static` class members, standalone (free)
+functions, or **function-valued properties of a top-level object literal**
+(`export default { map(r) { … } }`). Convert them to **instance methods on an injectable
+class** so collaborators can be swapped for mocks/spies through the tsyringe DI container
+instead of via module mocking.
 
 - **Behavioral collaborators** → `@injectable()` class + token in the owning area's
   `tokens.ts` + registration in that area's `di.ts` composition root (issue #109), resolved
@@ -711,14 +713,23 @@ workflow. Fix violations by refactoring — never with `eslint-disable`. In test
 mock collaborator (or pass a stub to the constructor / resolve from a child container)
 rather than mocking the module.
 
+Call a singleton's methods **on the singleton** and pass the object itself to collaborators
+— never a destructured or otherwise detached method reference. A prototype method loses its
+receiver and throws at runtime, and TypeScript cannot see it because these action
+interfaces type their members as plain function properties. Pin the receiver in tests with
+`expect(spy.mock.contexts).toEqual([theSingleton])`.
+
 This gate is the canonical enforcement of the **only classes outside React components**
 convention (issue #89, closed as covered here): banning free functions in non-React `.ts`
 makes all such logic class-encapsulated, so #89 needs no separate ESLint or
 dependency-cruiser rule. The dependency-cruiser placement rule #89 originally proposed is
 superseded — dep-cruiser reasons about the import graph, not whether a module's exports are
 classes, and the blanket ESLint ban is stricter than the helper-zone carve-out #89 sketched.
-Per #89's "honest limitation", the residual gap is **semantic** (logic hidden in an object
-literal's methods or a misplaced helper) and stays a review-gate concern.
+Issue #180 closed the common statically-detectable half of #89's residual (top-level
+object-literal methods, including `as const` / `satisfies` wrappers). What stays a
+**review-gate** concern — deliberately unmatched, so idiomatic nested MUI `sx` callbacks
+and zustand-style slices are not flagged — is nested (depth > 1) object literals,
+`Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
 
 ### Dependency Injection Pattern
 
@@ -840,6 +851,16 @@ happy-path test is **not** adequate coverage and does **not** make the work done
 
 Follow the five steps below in order. Skipping a scenario class or step is allowed **only**
 with a recorded, concrete justification (see Step 3) — never by silent omission.
+
+**Every test you write must be alive and asserting (issue #167).** `make lint-eslint` fails
+on a skipped (`.skip` / `.fixme` / `xit`), focused, or assertion-free test, and on `expect`
+nested inside a conditional. To narrow a discriminated union, use the throwing helpers in
+`tests/utils/assert-result.ts` (`assertOk`, `assertError`, `assertInstanceOf`) instead of
+an `if`; for throwing calls use `expect(...).toThrow(...)` /
+`await expect(...).rejects.toThrow(...)`, or capture the error unconditionally with
+`.catch((caught: unknown) => caught)` and assert on it. A shared assertion helper is
+declared through `assertFunctionNames` / `assertFunctionPatterns` (`expect*` for Jest,
+`take*Snapshot` for visual specs) — never through a suppression.
 
 ### Step 1 — Pick the Right Test Layer
 

@@ -11,7 +11,7 @@ import useAuthToken from './use-auth-token';
 // Composition root: the DI graph (Apollo, zod, repositories) loads on the first auth
 // action, not at module load, so the authentication page never waits on it. Loading
 // flags must be set before the await so submit feedback stays synchronous (WCAG 4.1.3).
-class DeferredAuthActions {
+class DeferredAuthActions implements AuthActions {
   private instance?: Promise<AuthStoreActions>;
 
   private readonly loadFailure: AuthError = {
@@ -20,7 +20,7 @@ class DeferredAuthActions {
     retryable: true,
   };
 
-  public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
+  public async loginUser(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
     AuthStateVar.set({ loginLoading: true, loginError: null });
     const actions = await this.resolveSafely((error) =>
       AuthStateVar.set({ loginLoading: false, loginError: error })
@@ -28,12 +28,29 @@ class DeferredAuthActions {
     if (actions) await actions.login(credentials, signal);
   }
 
-  public async register(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
+  public async registerUser(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
     AuthStateVar.set({ registerLoading: true, registerError: null, user: null });
     const actions = await this.resolveSafely((error) =>
       AuthStateVar.set({ registerLoading: false, registerError: error })
     );
     if (actions) await actions.register(credentials, signal);
+  }
+
+  public logout(): void {
+    observabilityCore.clearUser();
+    AuthStateVar.reset();
+  }
+
+  public reset(): void {
+    AuthStateVar.reset();
+  }
+
+  public resetRegistration(): void {
+    AuthStateVar.resetRegistration();
+  }
+
+  public clearLoginError(): void {
+    AuthStateVar.clearLoginError();
   }
 
   private async resolveSafely(
@@ -59,19 +76,7 @@ class DeferredAuthActions {
   }
 }
 
-const deferredAuthActions = new DeferredAuthActions();
-
-export const authActions: AuthActions = {
-  loginUser: (credentials, signal) => deferredAuthActions.login(credentials, signal),
-  registerUser: (credentials, signal) => deferredAuthActions.register(credentials, signal),
-  logout: () => {
-    observabilityCore.clearUser();
-    AuthStateVar.reset();
-  },
-  reset: () => AuthStateVar.reset(),
-  resetRegistration: () => AuthStateVar.resetRegistration(),
-  clearLoginError: () => AuthStateVar.clearLoginError(),
-};
+export const authActions: AuthActions = new DeferredAuthActions();
 
 export { default as AuthStoreSelectors } from './auth-store-selectors';
 export { AuthStateVar, useAuthState, useAuthToken };
