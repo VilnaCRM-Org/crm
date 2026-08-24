@@ -75,6 +75,66 @@ make test-visual-update    # Update visual snapshots
 The mock server automatically starts via docker-compose.test.yml and serves
 the OpenAPI spec from user-service repository on port 8080.
 
+#### Mobile device & touch lane (issue #154)
+
+Shrinking a desktop window is not mobile coverage: the context still reports `isMobile: false`,
+`hasTouch: false`, DPR 1 and a desktop user agent, so touch-only regressions ship undetected.
+Two projects built from Playwright's stock device descriptors close that gap:
+
+| Project         | Descriptor  | Engine   | Viewport  | DPR   |
+| --------------- | ----------- | -------- | --------- | ----- |
+| `mobile-chrome` | `Pixel 7`   | chromium | 412 × 839 | 2.625 |
+| `mobile-safari` | `iPhone 14` | webkit   | 390 × 664 | 3     |
+
+Scoping is by directory and runs **both ways**: the mobile projects match only
+`**/mobile/**/*.spec.ts`, and `chromium` / `firefox` / `webkit` carry
+`testIgnore: '**/mobile/**'`. Desktop projects cannot execute `tap()` (no `hasTouch`), and
+unscoped mobile projects would re-record the entire 13-screen desktop visual suite under two
+more project names.
+
+- **Touch E2E** — [`tests/e2e/mobile/`](tests/e2e/mobile/): sign-in and sign-up completed with
+  `tap()` only, switcher navigation, empty-form validation (no request fired), the
+  password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
+  overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
+  on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
+  is named for what it measures, not for a keyboard it cannot summon.
+- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in` and `/sign-up`
+  captured with `scale: 'device'`, so the baselines are true 2.625× / 3× rasters and catch the
+  asset and raster regressions that CSS-scaled desktop snapshots average away. Baselines live in
+  `tests/visual/mobile/auth.spec.ts-snapshots/`, one per mobile project.
+
+Both lanes run inside the existing `make test-e2e` / `make test-visual` targets, so the
+`e2e testing` and `visual tests` PR checks gate them with no new workflow, no `--project` flag in
+the Makefile, and no branch-protection change. Run one lane directly:
+
+```bash
+docker compose -f docker-compose.test.yml exec playwright \
+  ./node_modules/.bin/playwright test tests/e2e/mobile --project=mobile-safari
+```
+
+`ENV=dev` is a **reduced** two-project matrix — `chromium-dev` plus `mobile-chrome-dev` (Pixel 7
+descriptor on the system Chromium), the latter scoped to `tests/e2e/mobile` only. There is no
+dev-mode `mobile-safari`, and mobile **visual** baselines are production-only, so
+`tests/visual/mobile` never runs in dev mode. A local `ENV=dev` run therefore does not stand in
+for the CI matrix.
+
+**Measured cost** (local prod stack, same pinned Playwright image CI uses; runner wall-clock will
+be higher but the ratio holds):
+
+| Target             | Before          | After           | Delta             |
+| ------------------ | --------------- | --------------- | ----------------- |
+| `make test-e2e`    | 87 tests, 0:39  | 115 tests, 1:10 | +28 tests, ~+31 s |
+| `make test-visual` | 240 tests, 3:59 | 244 tests, 4:16 | +4 tests, ~+17 s  |
+
+Keep the lane bounded: `retries: 0` repo-wide, so every mobile spec has to be deterministic, and
+these two checks are single-job (no sharding).
+
+**Known sizing gap, deliberately not fixed here:** the auth switcher link (18 px tall), the
+remember-me checkbox (20 px) and the password toggle (32 px) fall under the 44 px floor, so the
+sizing gate covers the primary controls only (text inputs, submit button, provider buttons).
+Enlarging them changes rendered height and invalidates every recorded desktop baseline — a
+design-owned follow-up, out of scope for a test-coverage change.
+
 #### Fast dev-mode runs (`ENV=dev`, run from the dev container)
 
 The same `test-e2e` / `test-visual` targets accept `ENV=dev` to run inside the dev
