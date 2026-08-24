@@ -1,6 +1,7 @@
-import { test, expect, type Page, type Route } from '@playwright/test';
+import { type Page, type Route } from '@playwright/test';
 
 import { buildCredentials } from '@tests/builders';
+import { test, expect } from '@tests/e2e/utils/fixtures';
 
 import fillInput from '../../../../../../../utils/fill-input';
 import { t } from '../../../../../../../utils/initialize-localization';
