@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@tests/e2e/utils/fixtures';
 
 import { seedPreloadedAuthToken } from '../../utils/seed-preloaded-auth-token';
 import viewports from '../constants/viewports';
@@ -158,48 +158,6 @@ test.describe('BackToMain Component E2E Tests', () => {
       await expect(backButton).toBeFocused();
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL('/');
-    });
-  });
-
-  test.describe('Performance', () => {
-    test.fixme('should load and render quickly (non-deterministic in CI)', async ({ page }) => {
-      const startTime = Date.now();
-
-      await page.goto('/');
-
-      const backButton = page
-        .locator(`a[href="${backToHomeSpec.href}"]`)
-        .filter({ hasText: /back/i });
-
-      if ((await backButton.count()) > 0) {
-        await expect(backButton).toBeVisible();
-
-        const endTime = Date.now();
-        const loadTime = endTime - startTime;
-
-        expect(loadTime).toBeLessThan(5000);
-      }
-    });
-
-    test.fixme('should not cause layout shifts (heuristic is flaky)', async ({ page }) => {
-      await page.goto('/');
-
-      await page.waitForTimeout(1000);
-
-      const backButton = page.locator('a[href="/"]').filter({ hasText: /back/i });
-
-      if ((await backButton.count()) > 0) {
-        const initialPosition = await backButton.boundingBox();
-
-        await page.waitForTimeout(2000);
-
-        const finalPosition = await backButton.boundingBox();
-
-        if (initialPosition && finalPosition) {
-          expect(Math.abs(initialPosition.x - finalPosition.x)).toBeLessThan(5);
-          expect(Math.abs(initialPosition.y - finalPosition.y)).toBeLessThan(5);
-        }
-      }
     });
   });
 });

@@ -303,3 +303,23 @@ Dependabot cannot emit; that rule runs only in the local Husky `commit-msg` hook
 commitlint CI gate), so Dependabot pull requests are not blocked. Because the repository is
 squash-merge-only, add the task number to the squash commit title at merge time to keep
 `main`'s history conformant.
+
+### Dependency license policy (issue #191)
+
+`make lint-licenses` gates the **license** of every production dependency (direct or transitive).
+It runs as part of `make lint` (it is a member of `CI_LINT_TARGETS` and the `lint:` aggregate),
+so the existing `static testing` workflow enforces it on every pull request.
+`scripts/ci/check-licenses.mjs` enumerates the production tree
+(`license-checker-rseidelsohn --json`) and evaluates each license
+**semantically** with `spdx-satisfies`, so compound expressions are handled correctly — `(MIT OR
+Apache-2.0)` passes, `(GPL-3.0 AND MIT)` fails (the AND binds you to GPL), and unknown/unparseable
+strings fail closed. This is stricter than a literal allowlist match, which would wrongly accept an
+AND-compound whenever one operand happened to be allowed. The allowlist of permitted SPDX operand
+ids lives in the `Makefile` (`ALLOWED_LICENSES`), trimmed to exactly what the production tree
+contains today; `--production` keeps devDependencies out of scope.
+
+Because a dependency (or a transitive one) can **relicense between versions**, review the
+`make lint-licenses` result whenever you add or bump a dependency. If it fails, follow the
+root-cause-not-suppression remediation policy: first replace the offending dependency; only if
+that is impossible, add its specific SPDX id to `ALLOWED_LICENSES` as a reviewed one-line diff.
+Never bypass or weaken the gate.
