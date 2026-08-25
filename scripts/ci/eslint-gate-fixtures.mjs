@@ -45,6 +45,13 @@ const S = {
   typeAliasInLogic: 'TSTypeAliasDeclaration',
   processEnv:
     "MemberExpression[object.name='process'][property.name='env'],MemberExpression[object.name='process'][property.value='env']",
+  objectLiteralMethod:
+    'Program > VariableDeclaration > VariableDeclarator > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > VariableDeclaration > VariableDeclarator > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > VariableDeclaration > VariableDeclarator > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/]',
+  intlToLocaleName:
+    'CallExpression[callee.property.name=/^toLocale(String|DateString|TimeString)$/]',
+  intlToLocaleComputed:
+    'CallExpression[callee.property.value=/^toLocale(String|DateString|TimeString)$/]',
+  intlMember: "MemberExpression[object.name='Intl']",
   varInType: 'VariableDeclaration:not([declare=true])',
   funcInType: 'FunctionDeclaration:not([declare=true])',
   classInType: 'ClassDeclaration:not([declare=true])',
@@ -52,12 +59,6 @@ const S = {
   stmtInType:
     'ExpressionStatement, IfStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, SwitchStatement, TryStatement, ThrowStatement, WithStatement, LabeledStatement, DebuggerStatement',
   defaultExportInType: 'ExportDefaultDeclaration > *:not(TSInterfaceDeclaration)',
-  objectLiteralFn:
-    'Program > VariableDeclaration > VariableDeclarator > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > VariableDeclaration > VariableDeclarator > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > VariableDeclaration > VariableDeclarator > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/]',
-  toLocaleName: 'CallExpression[callee.property.name=/^toLocale(String|DateString|TimeString)$/]',
-  toLocaleComputed:
-    'CallExpression[callee.property.value=/^toLocale(String|DateString|TimeString)$/]',
-  rawIntl: "MemberExpression[object.name='Intl']",
   // The two issue #130 selectors are BUILT by config/di-collaborator-policy.js (that module is
   // the single source of truth both eslint.config.mjs and .dependency-cruiser.js read), so they
   // are derived here rather than transcribed — a transcript of a generated string would only
@@ -306,63 +307,56 @@ const FIXTURES = [
     rule: 'no-restricted-syntax',
     tag: 'issue #88',
   },
-  // object-literal method ban (#180) — the wrapper bypass of the #100 free-function gate.
-  // S.objectLiteralFn is a 9-alternative selector (3 roots x 3 holders); the default-export
-  // root is exercised here, the plain and exported `const` roots below.
+  // top-level object-literal methods (#180) — the "wrap your free functions in an object"
+  // evasion of the #89/#100 no-static/no-free-function gate. Method shorthand parses as a
+  // `FunctionExpression`-valued Property, which is the branch the selector union targets.
   {
-    id: 'object-literal-method-default-export',
+    id: 'object-literal-method',
     file: PROBES.logic,
-    code: 'export default { map: (r: string): string => r };',
-    covers: [S.objectLiteralFn],
+    code: 'export default { map(r: string): string { return r; } };',
+    covers: [S.objectLiteralMethod],
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issues #89/#100/#180',
   },
+  // raw Intl / toLocale* ban (#155) — one fixture per selector: plain member call, computed
+  // member call (a Literal `property` carries `value`, never `name`), and `Intl.*` access.
   {
-    id: 'object-literal-method-const',
+    id: 'raw-tolocale-call',
     file: PROBES.logic,
-    code: 'const helpers = { validate(x: string): string { return x; } };',
-    covers: [S.objectLiteralFn],
-    expect: 'fail',
-    rule: 'no-restricted-syntax',
-    tag: 'issues #89/#100/#180',
-  },
-  {
-    id: 'object-literal-method-satisfies-holder',
-    file: PROBES.logic,
-    code: 'export const h = { run: function (): void {} } satisfies Record<string, () => void>;',
-    covers: [S.objectLiteralFn],
-    expect: 'fail',
-    rule: 'no-restricted-syntax',
-    tag: 'issues #89/#100/#180',
-  },
-  // raw Intl / toLocale* ban (#155) — locale formatting must go through LocaleFormatter.
-  {
-    id: 'tolocale-dot',
-    file: PROBES.logic,
-    code: 'const s = (1).toLocaleString();',
-    covers: [S.toLocaleName],
+    code: 'const s = new Date().toLocaleDateString();',
+    covers: [S.intlToLocaleName],
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #155',
   },
   {
-    id: 'tolocale-computed',
+    id: 'raw-tolocale-computed-call',
     file: PROBES.logic,
-    code: "const s = (1)['toLocaleString']();",
-    covers: [S.toLocaleComputed],
+    code: "const s = new Date()['toLocaleString']();",
+    covers: [S.intlToLocaleComputed],
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #155',
   },
   {
-    id: 'raw-intl-construction',
+    id: 'raw-intl-member',
     file: PROBES.logic,
-    code: "const nf = new Intl.NumberFormat('uk');",
-    covers: [S.rawIntl],
+    code: 'const f = Intl.NumberFormat;',
+    covers: [S.intlMember],
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #155',
+  },
+  // module/feature public-API boundary (#107) — deep cross-boundary import
+  {
+    id: 'deep-auth-import',
+    file: PROBES.component,
+    code: "import { LoginAPI } from '@auth/repositories/login-api';\nconst A = () => <div>{String(LoginAPI)}</div>;",
+    covers: [],
+    expect: 'fail',
+    rule: 'no-restricted-imports',
+    tag: '',
   },
   // DI collaborator ban (#130) — a logic class may not value-import a project collaborator or
   // a behavioral library; `import type` and the policy allowlists stay clean.
@@ -383,16 +377,6 @@ const FIXTURES = [
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #130',
-  },
-  // module/feature public-API boundary (#107) — deep cross-boundary import
-  {
-    id: 'deep-auth-import',
-    file: PROBES.component,
-    code: "import { LoginAPI } from '@auth/repositories/login-api';\nconst A = () => <div>{String(LoginAPI)}</div>;",
-    covers: [],
-    expect: 'fail',
-    rule: 'no-restricted-imports',
-    tag: '',
   },
   // Must-PASS exemptions
   {

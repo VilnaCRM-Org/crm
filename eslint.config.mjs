@@ -181,19 +181,6 @@ const noObjectLiteralMethodSelectors = [
   },
 ];
 
-// Source (issue #130): inside a logic class, behavioral collaborators must arrive through DI.
-// A value import of another project module hard-wires the collaborator at the call site, so the
-// dependency resists substitution in tests and the class only *looks* injectable. `import type`
-// is always allowed — an annotation-only import is the sanctioned carve-out (issue #88) — as are
-// the contract/data modules in the policy allowlist (tokens, config, domain error classes,
-// constant maps, zod response contracts, GraphQL documents, base classes, public barrels).
-// Scope, carve-outs, and allowlists live in `config/di-collaborator-policy.js` so this gate and
-// the dependency-cruiser rule `injectable-classes-no-value-imports` can never drift apart.
-// Consumer-side `.tsx` components are governed by the disjoint issue #128 rule, not this one.
-// The selectors themselves are built in the policy module so the gate test can feed the exact
-// strings ESLint consumes through a real Linter.
-const noUninjectedCollaboratorSelectors = diCollaboratorPolicy.collaboratorSelectors();
-
 // Source (issue #112): non-React application code must not read `process.env` directly —
 // import the validated, typed configuration from `@/config/env` (or the paint-safe
 // `@/config/env/raw-env`) instead. The `src/config/env/**` module is the single sanctioned
@@ -211,6 +198,19 @@ const noProcessEnvSelectors = [
       '@/config/env (or @/config/env/raw-env on the paint path) (issue #112).',
   },
 ];
+
+// Source (issue #130): inside a logic class, behavioral collaborators must arrive through DI.
+// A value import of another project module hard-wires the collaborator at the call site, so the
+// dependency resists substitution in tests and the class only *looks* injectable. `import type`
+// is always allowed — an annotation-only import is the sanctioned carve-out (issue #88) — as are
+// the contract/data modules in the policy allowlist (tokens, config, domain error classes,
+// constant maps, zod response contracts, GraphQL documents, base classes, public barrels).
+// Scope, carve-outs, and allowlists live in `config/di-collaborator-policy.js` so this gate and
+// the dependency-cruiser rule `injectable-classes-no-value-imports` can never drift apart.
+// Consumer-side `.tsx` components are governed by the disjoint issue #128 rule, not this one.
+// The selectors themselves are built in the policy module so the gate test can feed the exact
+// strings ESLint consumes through a real Linter.
+const noUninjectedCollaboratorSelectors = diCollaboratorPolicy.collaboratorSelectors();
 
 // Source (issue #155): locale-sensitive rendering must go through the LocaleFormatter
 // service (src/services/locale-formatter/) or the i18next formatters registered in

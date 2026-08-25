@@ -669,6 +669,62 @@ class AuthStoreSelectors {
 export default new AuthStoreSelectors();
 ```
 
+### No static methods or free functions (issues #100, #89, #180)
+
+Non-React application code (services, repositories, mappers, factories, stores, and
+utilities under `src/**/*.ts`) must **not** use `static` class members, standalone
+(free) functions — neither `export function foo()` / `export default function foo()` nor
+`export const foo = () => …` — **nor function-valued properties of a top-level object
+literal** (`export default { map(r) { … } }`, `const helpers = { validate: (x) => … }`).
+Use **instance methods on an injectable class** instead.
+
+**Why:** mockability and testability. Static methods and free functions bind at the call
+site and resist substitution, pushing tests toward module mocking and monkey-patching.
+Instance methods behind a tsyringe token can be swapped for mocks/spies via the DI
+container — collaborators are injected, not reached for.
+
+**How to apply:**
+
+- Behavioral collaborators (services, repos, mappers, factories, error handlers) are
+  `@injectable()` classes registered in `dependency-injection-config.ts` against a token
+  in `tokens.ts`, and resolved via `container.resolve<Type>(TOKENS.X)` or constructor
+  `@inject`.
+- Render-path state primitives that must stay container-free for the auth-page Lighthouse
+  budget (`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`) are
+  instance classes exported as a **module singleton** (`export default new X()`), so call
+  sites stay `X.method(...)` and no tsyringe is pulled into the paint path.
+- Pure helpers/validators/type-guards/style-helpers/lazy-loaders also become instance
+  methods on a singleton class rather than free functions.
+
+**Exempt:** React components (`*.tsx`, including class error boundaries that need
+`static getDerivedStateFromError`) and hooks (`use-*.ts` / `use-*.tsx`) — they are
+functions by definition.
+
+**Enforcement:** an ESLint `no-restricted-syntax` gate (in `eslint.config.mjs`, scoped to
+`src/**/*.ts` excluding `use-*`) fails the build on `static` members and standalone
+functions — `function` declarations (including generators), default-exported functions,
+and top-level arrow / function-expression `const`s — **plus function-valued properties of
+top-level object literals**, including `as const` / `satisfies` wrappers (issue #180).
+ESTree gives method shorthand `value.type === 'FunctionExpression'`, so `{ m() {} }` and
+`{ m: () => {} }` are both matched. It runs in `make lint-eslint` and the `static testing`
+workflow. Satisfy it by refactoring to instance methods — never with `eslint-disable`.
+
+When a singleton's methods are consumed, call them **on the singleton**
+(`authActions.loginUser(…)`) and pass the object, never a destructured or otherwise
+detached method reference — a prototype method loses its receiver and throws at runtime,
+and TypeScript cannot see it because `AuthActions` types its members as plain function
+properties. `use-login-submitter` and `use-registration-handlers` pin this with
+`mock.contexts` assertions.
+
+This gate is the canonical enforcement of the **only classes outside React components**
+convention (issue #89, closed as covered here): with free functions banned in non-React
+`.ts`, all such logic is class-encapsulated, so #89 needs no separate ESLint or
+dependency-cruiser rule. Issue #180 closed the common statically-detectable half of #89's
+acknowledged residual. What remains a **review-gate** concern — deliberately not matched,
+because widening to arbitrary-depth `Property` would flag idiomatic nested MUI `sx`
+callbacks and zustand-style slices — is nested (depth > 1) object literals,
+`Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
+
 ### Collaborators arrive through DI, never through a value import (issue #130)
 
 **Convention:** inside a class in a logic directory, the only behavioral collaborators a method
@@ -769,62 +825,6 @@ by path, not inferred — adding a new container-free singleton means updating t
 
 **No suppression:** satisfy the gate by injecting the collaborator or converting to `import type`.
 Never `eslint-disable`, `depcruise-ignore`, or `@ts-ignore`.
-
-### No static methods or free functions (issues #100, #89, #180)
-
-Non-React application code (services, repositories, mappers, factories, stores, and
-utilities under `src/**/*.ts`) must **not** use `static` class members, standalone
-(free) functions — neither `export function foo()` / `export default function foo()` nor
-`export const foo = () => …` — **nor function-valued properties of a top-level object
-literal** (`export default { map(r) { … } }`, `const helpers = { validate: (x) => … }`).
-Use **instance methods on an injectable class** instead.
-
-**Why:** mockability and testability. Static methods and free functions bind at the call
-site and resist substitution, pushing tests toward module mocking and monkey-patching.
-Instance methods behind a tsyringe token can be swapped for mocks/spies via the DI
-container — collaborators are injected, not reached for.
-
-**How to apply:**
-
-- Behavioral collaborators (services, repos, mappers, factories, error handlers) are
-  `@injectable()` classes registered in `dependency-injection-config.ts` against a token
-  in `tokens.ts`, and resolved via `container.resolve<Type>(TOKENS.X)` or constructor
-  `@inject`.
-- Render-path state primitives that must stay container-free for the auth-page Lighthouse
-  budget (`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`) are
-  instance classes exported as a **module singleton** (`export default new X()`), so call
-  sites stay `X.method(...)` and no tsyringe is pulled into the paint path.
-- Pure helpers/validators/type-guards/style-helpers/lazy-loaders also become instance
-  methods on a singleton class rather than free functions.
-
-**Exempt:** React components (`*.tsx`, including class error boundaries that need
-`static getDerivedStateFromError`) and hooks (`use-*.ts` / `use-*.tsx`) — they are
-functions by definition.
-
-**Enforcement:** an ESLint `no-restricted-syntax` gate (in `eslint.config.mjs`, scoped to
-`src/**/*.ts` excluding `use-*`) fails the build on `static` members and standalone
-functions — `function` declarations (including generators), default-exported functions,
-and top-level arrow / function-expression `const`s — **plus function-valued properties of
-top-level object literals**, including `as const` / `satisfies` wrappers (issue #180).
-ESTree gives method shorthand `value.type === 'FunctionExpression'`, so `{ m() {} }` and
-`{ m: () => {} }` are both matched. It runs in `make lint-eslint` and the `static testing`
-workflow. Satisfy it by refactoring to instance methods — never with `eslint-disable`.
-
-When a singleton's methods are consumed, call them **on the singleton**
-(`authActions.loginUser(…)`) and pass the object, never a destructured or otherwise
-detached method reference — a prototype method loses its receiver and throws at runtime,
-and TypeScript cannot see it because `AuthActions` types its members as plain function
-properties. `use-login-submitter` and `use-registration-handlers` pin this with
-`mock.contexts` assertions.
-
-This gate is the canonical enforcement of the **only classes outside React components**
-convention (issue #89, closed as covered here): with free functions banned in non-React
-`.ts`, all such logic is class-encapsulated, so #89 needs no separate ESLint or
-dependency-cruiser rule. Issue #180 closed the common statically-detectable half of #89's
-acknowledged residual. What remains a **review-gate** concern — deliberately not matched,
-because widening to arbitrary-depth `Property` would flag idiomatic nested MUI `sx`
-callbacks and zustand-style slices — is nested (depth > 1) object literals,
-`Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
 
 ### Path Aliases
 
