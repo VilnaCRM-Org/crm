@@ -85,13 +85,14 @@ declared_files() {
   # A silently-partial declared set would let an entire test root vanish undetected.
   local matches status
   matches="$(cd "$PROJECT_ROOT" \
-    && grep -rlE --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
-      '^[[:space:]]*(test|it|describe)(\.[A-Za-z]+)*\(' -- $TEST_ROOTS)"
+    && grep -rlE '^[[:space:]]*(test|it|describe)(\.[A-Za-z]+)*\(' -- $TEST_ROOTS)"
   status=$?
   if [ "$status" -gt 1 ]; then
     echo "declared_files: grep failed (status $status) — a test root is missing or unreadable" >&2
     return "$status"
   fi
+  # Extension filter as a second step: the dev container's BusyBox grep has no --include.
+  matches="$(printf '%s\n' "$matches" | grep -E '\.(ts|tsx|js|jsx)$' || :)"
   [ -n "$matches" ] && printf '%s\n' "$matches" | sort -u
   return 0
 }
