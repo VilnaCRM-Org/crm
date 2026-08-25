@@ -129,7 +129,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile
+CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -165,7 +165,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
-.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile
+.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -366,6 +366,18 @@ lint-actionlint: ## Lint the GitHub Actions workflows with actionlint (requires 
 lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry allowlist (issue #176)
 	sh scripts/ci/check-lockfile-registries.sh
 
+# License gate allowlist (issue #191). These are the SPDX operand ids the production tree is
+# permitted to use; `scripts/ci/check-licenses.mjs` evaluates each dependency's license
+# expression against them SEMANTICALLY via spdx-satisfies (so `(MIT OR Apache-2.0)` and
+# `(MIT AND BSD-3-Clause)` are derived, not listed, and `(GPL-3.0 AND MIT)` is correctly
+# rejected — a literal `--onlyAllow` list cannot do this). Remediation policy (mirrors the
+# repo's root-cause-not-suppression rule): 1st replace the offending dependency; 2nd add its
+# specific SPDX id here as a reviewed one-line diff. Never bypass the checker.
+ALLOWED_LICENSES            = MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;CC-BY-4.0
+
+lint-licenses: ## Fail on any production dependency whose license is outside the SPDX allowlist (issue #191)
+	$(EXEC_DEV_TTYLESS) env ALLOWED_LICENSES='$(ALLOWED_LICENSES)' node scripts/ci/check-licenses.mjs
+
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
 
@@ -412,7 +424,7 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, and the bun.lock provenance gate.
+lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, the bun.lock provenance gate, and the dependency license-policy gate.
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision

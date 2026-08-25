@@ -3,10 +3,14 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
 import eslintComments from 'eslint-plugin-eslint-comments';
 import importPlugin from 'eslint-plugin-import';
+import jest from 'eslint-plugin-jest';
 import jestDom from 'eslint-plugin-jest-dom';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
+import noUnsanitized from 'eslint-plugin-no-unsanitized';
+import playwright from 'eslint-plugin-playwright';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
+import security from 'eslint-plugin-security';
 import storybook from 'eslint-plugin-storybook';
 import testingLibrary from 'eslint-plugin-testing-library';
 import prettier from 'eslint-config-prettier';
@@ -140,30 +144,48 @@ const noStaticOrFreeFunctionSelectors = [
   },
 ];
 
-// Source (issue #112): non-React application code must not read `process.env` directly —
-// import the validated, typed configuration from `@/config/env` (or the paint-safe
-// `@/config/env/raw-env`) instead. The `src/config/env/**` module is the single sanctioned
-// place that touches `process.env`; it is exempted by the override below. Re-included in the
-// non-React `.ts` block because flat config replaces (does not merge) `no-restricted-syntax`.
-const noProcessEnvSelectors = [
+// Source (issue #180): close the acknowledged issue-#89/#100 residual. The selectors above
+// match only `Program`/export-level function declarations, so logic smuggled into a TOP-LEVEL
+// object literal's function-valued properties (`export default { map(r) { … } }`) bypasses the
+// whole gate — the trivially discoverable evasion is "wrap your free functions in an object".
+// ESTree gives method shorthand (`{ m() {} }`) `value.type === 'FunctionExpression'`, so one
+// value-type match covers shorthand, arrow, and function-expression properties alike; the
+// `as const` / `satisfies` holders close the wrapper bypass. Accepted residuals (review-gate,
+// deliberately NOT matched — widening to arbitrary-depth `Property` would flag idiomatic nested
+// MUI `sx` callbacks and zustand-style slices): nested (depth > 1) literals, `Object.freeze()`
+// wrappers, and dynamic property assignment (`obj.method = fn`).
+const objectLiteralFnProperty =
+  'Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/]';
+const objectLiteralHolders = [
+  'ObjectExpression',
+  'TSAsExpression > ObjectExpression',
+  'TSSatisfiesExpression > ObjectExpression',
+];
+const objectLiteralRoots = [
+  'Program > VariableDeclaration > VariableDeclarator',
+  'Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator',
+  'ExportDefaultDeclaration',
+];
+const noObjectLiteralMethodSelectors = [
   {
-    // `[property.name='env']` catches `process.env` and `process?.env`; `[property.value='env']`
-    // catches the computed forms `process['env']` and `process?.['env']`.
-    selector:
-      "MemberExpression[object.name='process'][property.name='env']," +
-      "MemberExpression[object.name='process'][property.value='env']",
+    selector: objectLiteralRoots
+      .flatMap((root) =>
+        objectLiteralHolders.map((holder) => `${root} > ${holder} > ${objectLiteralFnProperty}`)
+      )
+      .join(', '),
     message:
-      'No raw process.env reads in non-React source — import the validated env from ' +
-      '@/config/env (or @/config/env/raw-env on the paint path) (issue #112).',
+      'No logic in top-level object-literal methods in non-React source — make it an instance ' +
+      'method on an injectable class or module-singleton class (issues #89/#100/#180).',
   },
 ];
 
-// Source (issue #128): a React component must obtain a behavioral collaborator through the
-// sanctioned DI bridge `useService(TOKENS.X)` from `@/providers/di`, never by `new`-ing the
-// class at the call site — a `new` binds the collaborator statically and cannot be swapped
-// for a mock in a component test, the exact substitutability defeat #100 banned for
-// non-React code. Built-in constructors are allowlisted out of the selector; the companion
-// dependency-cruiser rule `components-no-direct-injectable-import` covers the import side.
+// Source (issue #128): the React-layer counterpart of the #100/#180 bans above. A component must
+// obtain a behavioral collaborator through the sanctioned DI bridge `useService(TOKENS.X)` from
+// `@/providers/di`, never by `new`-ing the class at the call site — a `new` binds the collaborator
+// statically and cannot be swapped for a mock in a component test, the exact substitutability
+// defeat #100 banned for non-React code. Built-in constructors are allowlisted out of the
+// selector; the companion dependency-cruiser rule `components-no-direct-injectable-import` covers
+// the import side.
 const noNewBehavioralClassInComponentSelectors = [
   {
     selector:
@@ -183,6 +205,66 @@ const noNewBehavioralClassInComponentSelectors = [
       '(issue #128; cf. #100). The container-free carve-outs — auth render path, route ' +
       'composer/mapper, app entrypoint, root error boundary — are the only exemptions.',
   },
+];
+
+// Source (issue #112): non-React application code must not read `process.env` directly —
+// import the validated, typed configuration from `@/config/env` (or the paint-safe
+// `@/config/env/raw-env`) instead. The `src/config/env/**` module is the single sanctioned
+// place that touches `process.env`; it is exempted by the override below. Re-included in the
+// non-React `.ts` block because flat config replaces (does not merge) `no-restricted-syntax`.
+const noProcessEnvSelectors = [
+  {
+    // `[property.name='env']` catches `process.env` and `process?.env`; `[property.value='env']`
+    // catches the computed forms `process['env']` and `process?.['env']`.
+    selector:
+      "MemberExpression[object.name='process'][property.name='env']," +
+      "MemberExpression[object.name='process'][property.value='env']",
+    message:
+      'No raw process.env reads in non-React source — import the validated env from ' +
+      '@/config/env (or @/config/env/raw-env on the paint path) (issue #112).',
+  },
+];
+
+// Source (issue #155): locale-sensitive rendering must go through the LocaleFormatter
+// service (src/services/locale-formatter/) or the i18next formatters registered in
+// src/i18n.js — never ad-hoc `Intl.*` construction or `toLocale*` calls at call sites.
+// The service caches formatter instances and keys the locale off the active i18next
+// language; scattered call-site construction drifts locales and defeats that cache.
+// Re-included in every overlapping block because flat config replaces `no-restricted-syntax`.
+const noRawIntlSelectors = [
+  {
+    selector: 'CallExpression[callee.property.name=/^toLocale(String|DateString|TimeString)$/]',
+    message:
+      'No raw toLocale* formatting — use the LocaleFormatter service ' +
+      '(@/services/locale-formatter) or an i18next formatter such as ' +
+      '{{value, datetime}} (issue #155).',
+  },
+  {
+    selector: 'CallExpression[callee.property.value=/^toLocale(String|DateString|TimeString)$/]',
+    message:
+      'No raw toLocale* formatting via computed access — use the LocaleFormatter service ' +
+      '(@/services/locale-formatter) or an i18next formatter such as ' +
+      '{{value, datetime}} (issue #155).',
+  },
+  {
+    selector: "MemberExpression[object.name='Intl']",
+    message:
+      'No raw Intl.* usage — use the LocaleFormatter service ' +
+      '(@/services/locale-formatter) or an i18next formatter such as ' +
+      '{{value, currency}}, extending the service when it lacks a needed ' +
+      'Intl capability (issue #155).',
+  },
+];
+
+const nonReactSourceGlobs = ['src/**/*.ts'];
+const nonReactSourceIgnores = [
+  '**/*.stories.*',
+  '**/*.test.*',
+  '**/*.spec.*',
+  '**/*.d.ts',
+  'src/**/use-*.ts',
+  'src/**/types.ts',
+  'src/**/types/**/*.ts',
 ];
 
 // Issue #128: the DI-bridge gate is `.tsx`-only. Hook files (`use-*.ts`) are deliberately
@@ -208,17 +290,6 @@ const componentDiGateIgnores = [
   'src/routes/route-mapper.tsx',
   'src/index.tsx',
   'src/components/error-boundary/app-error-boundary.tsx',
-];
-
-const nonReactSourceGlobs = ['src/**/*.ts'];
-const nonReactSourceIgnores = [
-  '**/*.stories.*',
-  '**/*.test.*',
-  '**/*.spec.*',
-  '**/*.d.ts',
-  'src/**/use-*.ts',
-  'src/**/types.ts',
-  'src/**/types/**/*.ts',
 ];
 const storyGlobs = ['**/*.stories.js', '**/*.stories.jsx', '**/*.stories.ts', '**/*.stories.tsx'];
 
@@ -332,11 +403,20 @@ export default [
       ...importPlugin.flatConfigs.typescript.rules,
       ...jsxA11y.flatConfigs.recommended.rules,
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      // issue #164: promoted from 'warn' — a missing hook dependency ships stale-closure
+      // bugs with a green ESLint status; zero violations today, so the flip is free. Since
+      // `eslint-comments/no-use` bans all disable directives, intentional mount-only effects
+      // must be restructured (refs / stored-callback), never suppressed. See CLAUDE.md.
+      'react-hooks/exhaustive-deps': 'error',
       ...eslintComments.configs.recommended.rules,
       'eslint-comments/no-use': 'error',
+      // issue #164: `react/jsx-no-bind` deliberately stays 'warn' — React's guidance does not
+      // treat inline handler props as a defect, and with disables banned, promoting it would
+      // force useCallback everywhere with no escape hatch (see issue #164 scope decision 2).
       'react/jsx-no-bind': 'warn',
-      'no-await-in-loop': 'warn',
+      // issue #164: promoted from 'warn' — sequential-await perf regressions in src merged
+      // silently; zero violations today. Tests stay 'off' (test-file override below).
+      'no-await-in-loop': 'error',
       'no-restricted-syntax': 'warn',
       'no-alert': 'error',
       'no-console': ['error', { allow: ['warn', 'error'] }],
@@ -446,10 +526,12 @@ export default [
     },
   },
 
-  // Source: production source must not ship `data-testid` (issue #90), and logic
+  // Source: production source must not ship `data-testid` (issue #90), logic
   // files must not declare types — types live in dedicated type-only files:
-  // `types.ts` or the per-feature/area `types/**` folders (issue #88). Stories/tests/`.d.ts`
-  // and the type-only files (governed by the separate override below) are excluded.
+  // `types.ts` or the per-feature/area `types/**` folders (issue #88) — and locale-sensitive
+  // rendering must go through the LocaleFormatter service, never raw `Intl`/`toLocale*`
+  // (issue #155). Stories/tests/`.d.ts` and the type-only files (governed by the separate
+  // override below) are excluded.
   {
     files: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx'],
     ignores: [
@@ -462,15 +544,47 @@ export default [
       'src/**/types/**/*.tsx',
     ],
     rules: {
-      'no-restricted-syntax': ['error', ...dataTestidSelectors, ...typeDeclarationSelectors],
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...typeDeclarationSelectors,
+        ...noRawIntlSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #173): deterministic lint-level SAST over the dominant SPA XSS and
+  // code-execution sink classes. This is the only security analysis that runs pre-commit
+  // (Husky) and fails in seconds; CodeQL (`security testing`) is the complementary
+  // dataflow layer. `eslint-suppressions.yml` already forbids inline suppression
+  // directives, so these rules cannot be bypassed at the call site — fix the sink,
+  // never silence it.
+  // The rule set is deliberately frozen: `eslint-plugin-security`'s recommended preset is
+  // NOT adopted (`detect-object-injection` et al. is noise), and
+  // `security/detect-non-literal-regexp` is omitted because the auth name/email validators
+  // legitimately compose `RegExp` from constant template literals.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
+    plugins: { 'no-unsanitized': noUnsanitized, security },
+    rules: {
+      'no-unsanitized/method': 'error',
+      'no-unsanitized/property': 'error',
+      'react/no-danger': 'error',
+      'security/detect-eval-with-expression': 'error',
+      'security/detect-unsafe-regex': 'error',
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
     },
   },
 
   // Source (issue #128): components must not `new` a behavioral collaborator — resolve it
   // through the `useService` DI bridge instead. Scoped to `src/**/*.tsx` (hooks are out of
   // static scope) and ignoring the container-free auth render path and route shell. The
-  // #90/#88 selectors are re-included because flat config replaces (does not merge)
-  // `no-restricted-syntax` for files matched by more than one block.
+  // #90/#88/#155 selectors are re-included because flat config replaces (does not merge)
+  // `no-restricted-syntax` for files matched by more than one block — dropping them here would
+  // silently un-gate data-testid, type declarations, and raw Intl for every component.
   {
     files: componentSourceGlobs,
     ignores: componentDiGateIgnores,
@@ -479,6 +593,7 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
+        ...noRawIntlSelectors,
         ...noNewBehavioralClassInComponentSelectors,
       ],
     },
@@ -537,9 +652,10 @@ export default [
   // Source (issue #100): forbid `static` members and standalone functions in non-React
   // application code. This block matches `src/**/*.ts` only (so `.tsx` components and
   // class error boundaries are exempt) and ignores `use-*` hook files plus the type-only
-  // files (governed by the override above). It re-includes the data-testid (#90) and
-  // type-declaration (#88) selectors because flat config replaces (does not merge)
-  // `no-restricted-syntax` for files matched by multiple blocks.
+  // files (governed by the override above). It re-includes the data-testid (#90),
+  // type-declaration (#88), process.env (#112), and raw-Intl (#155) selectors because
+  // flat config replaces (does not merge) `no-restricted-syntax` for files matched by
+  // multiple blocks.
   {
     files: nonReactSourceGlobs,
     ignores: nonReactSourceIgnores,
@@ -548,16 +664,19 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...noStaticOrFreeFunctionSelectors,
+        ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noRawIntlSelectors,
       ],
     },
   },
 
   // Source (issue #112): the `src/config/env/**` module IS the sanctioned boundary that
-  // reads `process.env`, so the process.env ban is lifted here. The #90/#88/#100 selectors
-  // are re-included (flat config replaces, does not merge). Ordered after the non-React `.ts`
-  // block so it wins for env files; env type-only files stay governed by the override above.
+  // reads `process.env`, so the process.env ban is lifted here. The #90/#88/#100/#155
+  // selectors are re-included (flat config replaces, does not merge). Ordered after the
+  // non-React `.ts` block so it wins for env files; env type-only files stay governed by
+  // the override above.
   {
     files: ['src/config/env/**/*.ts'],
     ignores: [
@@ -573,14 +692,44 @@ export default [
         'error',
         ...dataTestidSelectors,
         ...noStaticOrFreeFunctionSelectors,
+        ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
+        ...noRawIntlSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #155): the `src/services/locale-formatter/**` service IS the sanctioned
+  // Intl boundary, so the raw-Intl ban is lifted here (and only here). Every other selector
+  // — #90, #100, #88, #112 — is re-included (flat config replaces, does not merge). Ordered
+  // after the non-React `.ts` block so it wins for the formatter's files; the formatter's
+  // contract types live under `src/services/types/` and stay governed by the type-only
+  // override above.
+  {
+    files: ['src/services/locale-formatter/**/*.ts'],
+    ignores: [
+      '**/*.stories.*',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.d.ts',
+      'src/services/locale-formatter/**/types.ts',
+      'src/services/locale-formatter/**/types/**/*.ts',
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
       ],
     },
   },
 
   // Source (issue #112): React hooks (`src/**/use-*.ts`) are exempt from the #100 no-free-function
   // rule (they are functions), so the non-React `.ts` block above ignores them — but they must
-  // still not read raw `process.env`. Re-include the #90/#88 selectors plus the process.env ban.
+  // still not read raw `process.env` or construct raw Intl formatters. Re-include the #90/#88
+  // selectors plus the process.env (#112) and raw-Intl (#155) bans.
   {
     files: ['src/**/use-*.ts'],
     ignores: [
@@ -597,6 +746,7 @@ export default [
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noRawIntlSelectors,
       ],
     },
   },
@@ -616,6 +766,56 @@ export default [
             'Prefer getByRole/getByLabelText/getByText; *ByTestId is a last resort (issue #90).',
         },
       ],
+    },
+  },
+
+  // Tests (issue #167): a test that is skipped, focused, or asserts nothing reports
+  // verification while verifying nothing — and the 100/100/100/100 Jest coverage gate
+  // measures execution, not assertion, so it stays green either way. `forbidOnly` in
+  // `playwright.config.ts` catches only `.only`; `.skip`/`.fixme`/`xit` merged silently.
+  // Structural rules land at `error`; the two behavioral rules start at `warn` pending the
+  // conditional-assertion burndown, then get promoted. Spec files only — helpers under
+  // `tests/visual/` and `tests/utils/` are not test bodies.
+  {
+    files: ['tests/e2e/**/*.spec.ts', 'tests/visual/**/*.spec.ts'],
+    plugins: { playwright },
+    rules: {
+      // `disallowFixme` is required: the rule's default only covers `.skip`, and the
+      // repo's live bypasses were `test.fixme`. `allowConditional` stays at its `false`
+      // default so a runtime-conditional skip is a finding too.
+      'playwright/no-skipped-test': ['error', { disallowFixme: true }],
+      'playwright/no-focused-test': 'error',
+      // A `take*Snapshot` helper IS the assertion in every visual spec (it calls
+      // `expect(...).toHaveScreenshot()`), so the convention is declared, not suppressed.
+      'playwright/expect-expect': ['error', { assertFunctionPatterns: ['^take\\w*Snapshot$'] }],
+      'playwright/no-conditional-in-test': 'warn',
+      'playwright/no-wait-for-timeout': 'warn',
+    },
+  },
+  {
+    // These globs mirror `jest.config.ts` `testMatch` exactly — the client runner executes
+    // `tests/unit/**/*.test.{ts,tsx,js,jsx}`, so the `.js`/`.jsx` suites (localization
+    // generator, load config, memlab scenario validation, performance meta-tests) must be
+    // gated too or the policy stops at the file extension rather than at the runner.
+    files: [
+      'tests/unit/**/*.ts',
+      'tests/unit/**/*.tsx',
+      'tests/unit/**/*.js',
+      'tests/unit/**/*.jsx',
+      'tests/integration/**/*.ts',
+      'tests/integration/**/*.tsx',
+      'tests/apollo-server/**/*.ts',
+    ],
+    plugins: { jest },
+    rules: {
+      // `expect*` declares the repo's shared assertion helpers (e.g.
+      // `expectReviewRangePairOrder`) by naming convention rather than one-off allowances.
+      'jest/expect-expect': ['error', { assertFunctionNames: ['expect', 'expect*'] }],
+      'jest/no-disabled-tests': 'error',
+      // `no-disabled-tests` covers `.skip`/`xit` only. Jest has no `forbidOnly` equivalent
+      // to Playwright's, so a committed `it.only` would silently shrink the CI suite.
+      'jest/no-focused-tests': 'error',
+      'jest/no-conditional-expect': 'error',
     },
   },
 
