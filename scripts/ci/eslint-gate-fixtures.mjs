@@ -55,6 +55,13 @@ const S = {
   typeAliasInLogic: 'TSTypeAliasDeclaration',
   processEnv:
     "MemberExpression[object.name='process'][property.name='env'],MemberExpression[object.name='process'][property.value='env']",
+  objectLiteralMethod:
+    'Program > VariableDeclaration > VariableDeclarator > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > VariableDeclaration > VariableDeclarator > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > VariableDeclaration > VariableDeclarator > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/]',
+  intlToLocaleName:
+    'CallExpression[callee.property.name=/^toLocale(String|DateString|TimeString)$/]',
+  intlToLocaleComputed:
+    'CallExpression[callee.property.value=/^toLocale(String|DateString|TimeString)$/]',
+  intlMember: "MemberExpression[object.name='Intl']",
   varInType: 'VariableDeclaration:not([declare=true])',
   funcInType: 'FunctionDeclaration:not([declare=true])',
   classInType: 'ClassDeclaration:not([declare=true])',
@@ -315,6 +322,47 @@ const FIXTURES = [
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #88',
+  },
+  // top-level object-literal methods (#180) — the "wrap your free functions in an object"
+  // evasion of the #89/#100 no-static/no-free-function gate. Method shorthand parses as a
+  // `FunctionExpression`-valued Property, which is the branch the selector union targets.
+  {
+    id: 'object-literal-method',
+    file: PROBES.logic,
+    code: 'export default { map(r: string): string { return r; } };',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  // raw Intl / toLocale* ban (#155) — one fixture per selector: plain member call, computed
+  // member call (a Literal `property` carries `value`, never `name`), and `Intl.*` access.
+  {
+    id: 'raw-tolocale-call',
+    file: PROBES.logic,
+    code: 'const s = new Date().toLocaleDateString();',
+    covers: [S.intlToLocaleName],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #155',
+  },
+  {
+    id: 'raw-tolocale-computed-call',
+    file: PROBES.logic,
+    code: "const s = new Date()['toLocaleString']();",
+    covers: [S.intlToLocaleComputed],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #155',
+  },
+  {
+    id: 'raw-intl-member',
+    file: PROBES.logic,
+    code: 'const f = Intl.NumberFormat;',
+    covers: [S.intlMember],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #155',
   },
   // module/feature public-API boundary (#107) — deep cross-boundary import
   {
