@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 #
-# Contract (issue #193): every file under the five test roots that DECLARES tests (a top-level
+# Contract (issue #193): every source file (`.ts`/`.tsx`/`.js`/`.jsx` — the only extensions a
+# runner can execute) under the five test roots that DECLARES tests (a top-level
 # `test(` / `it(` / `describe(`, including CHAINED modifiers — `.each`/`.skip`/`.only`/`.fixme`
 # and combinations like `test.concurrent.each(` / `describe.each.only(` — via the
 # `(\.[A-Za-z]+)*` group) must be DISCOVERED by a runner. Jest test-match is suffix-exact and
@@ -84,7 +85,8 @@ declared_files() {
   # A silently-partial declared set would let an entire test root vanish undetected.
   local matches status
   matches="$(cd "$PROJECT_ROOT" \
-    && grep -rlE '^[[:space:]]*(test|it|describe)(\.[A-Za-z]+)*\(' -- $TEST_ROOTS)"
+    && grep -rlE --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' \
+      '^[[:space:]]*(test|it|describe)(\.[A-Za-z]+)*\(' -- $TEST_ROOTS)"
   status=$?
   if [ "$status" -gt 1 ]; then
     echo "declared_files: grep failed (status $status) — a test root is missing or unreadable" >&2
