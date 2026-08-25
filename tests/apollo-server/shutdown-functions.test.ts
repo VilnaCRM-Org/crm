@@ -2,6 +2,8 @@
  * @jest-environment @stryker-mutator/jest-runner/jest-env/node
  */
 
+import { assertInstanceOf } from '@tests/utils/assert-result';
+
 import {
   cleanupResources,
   shouldShutdown,
@@ -108,11 +110,9 @@ describe('shutdownFunctions', () => {
         );
 
       try {
-        await cleanupResources(true);
-        expect(true).toBe(false); // Should not reach here
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-        expect((error as Error).message).toBe('Database connection timeout');
+        const error = await cleanupResources(true).catch((caught: unknown) => caught);
+        assertInstanceOf(error, Error);
+        expect(error.message).toBe('Database connection timeout');
       } finally {
         setTimeoutSpy.mockRestore();
       }

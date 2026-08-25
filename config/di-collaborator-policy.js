@@ -140,6 +140,12 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free web-vitals leaf; dynamic import of web-vitals.',
   },
   {
+    path: 'src/services/locale-formatter/locale-formatter-core.ts',
+    reason:
+      'Container-free Intl formatting core; `src/i18n.js` binds its language source at module ' +
+      'load, so it composes the IntlFormatterCache leaf off the container (issue #155).',
+  },
+  {
     path: 'src/utils/url-builder.ts',
     reason: 'Container-free URL builder consumed by api-config at module load.',
   },
