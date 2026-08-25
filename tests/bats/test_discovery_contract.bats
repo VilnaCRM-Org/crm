@@ -20,6 +20,18 @@ load './test_helper.bash'
 
 TEST_ROOTS='tests/unit tests/integration tests/apollo-server tests/e2e tests/visual'
 
+# The extension-probe test plants transient files in the tracked tests/unit tree. Sweep them
+# before AND after every test so a hard interrupt (timeout, OOM, SIGKILL) cannot strand probes
+# that would spuriously fail the orphan gate on the next run — setup() makes the suite
+# self-healing, teardown() covers every bats-visible exit path. They are also gitignored.
+setup() {
+  rm -f "$PROJECT_ROOT"/tests/unit/__discovery_probe__.*
+}
+
+teardown() {
+  rm -f "$PROJECT_ROOT"/tests/unit/__discovery_probe__.*
+}
+
 # jest --listTests prints ABSOLUTE container paths; strip to repo-relative. Capture jest's exit
 # status BEFORE the sed pipe (which would mask it): a non-zero exit means broken config OR a
 # crash after partial output — either way the discovered set would be silently partial, so fail
@@ -153,18 +165,14 @@ discovered_files() {
 
 @test "declared inventory admits every JS/TS-family extension (filter not silently narrowed)" {
   local ext declared missed
-  local -a probes=()
   for ext in ts tsx mts cts js jsx mjs cjs; do
     printf 'describe("discovery probe", () => {});\n' \
       > "$PROJECT_ROOT/tests/unit/__discovery_probe__.$ext"
-    probes+=("$PROJECT_ROOT/tests/unit/__discovery_probe__.$ext")
   done
   declared="$(declared_files)" || {
-    rm -f "${probes[@]}"
     echo 'declared_files failed while probes were planted' >&2
     return 1
   }
-  rm -f "${probes[@]}"
   missed=0
   for ext in ts tsx mts cts js jsx mjs cjs; do
     if ! printf '%s\n' "$declared" | grep -qx "tests/unit/__discovery_probe__.$ext"; then

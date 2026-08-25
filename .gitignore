@@ -71,6 +71,6 @@ _bmad-output/
 # Bundle-size report artifacts (issue #117, CI-only)
 /dist-head/
 /dist-base/
-/dist-auth-seed-probe/
 /base/
 /bundle-size-report.md
+tests/unit/__discovery_probe__.*
