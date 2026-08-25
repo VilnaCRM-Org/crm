@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
 #
-# Contract (issue #193): every source file (`.ts`/`.tsx`/`.js`/`.jsx` — the only extensions a
-# runner can execute) under the five test roots that DECLARES tests (a top-level
+# Contract (issue #193): every JS/TS-family source file (`ts`/`tsx`/`mts`/`cts`/`js`/`jsx`/
+# `mjs`/`cjs` — documentation cannot declare a runnable test, so `.md` files with fenced
+# `test(` examples are excluded) under the five test roots that DECLARES tests (a top-level
 # `test(` / `it(` / `describe(`, including CHAINED modifiers — `.each`/`.skip`/`.only`/`.fixme`
 # and combinations like `test.concurrent.each(` / `describe.each.only(` — via the
 # `(\.[A-Za-z]+)*` group) must be DISCOVERED by a runner. Jest test-match is suffix-exact and
@@ -92,7 +93,7 @@ declared_files() {
     return "$status"
   fi
   # Extension filter as a second step: the dev container's BusyBox grep has no --include.
-  matches="$(printf '%s\n' "$matches" | grep -E '\.(ts|tsx|js|jsx)$' || :)"
+  matches="$(printf '%s\n' "$matches" | grep -E '\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$' || :)"
   [ -n "$matches" ] && printf '%s\n' "$matches" | sort -u
   return 0
 }
