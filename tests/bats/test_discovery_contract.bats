@@ -150,3 +150,27 @@ discovered_files() {
     return 1
   fi
 }
+
+@test "declared inventory admits every JS/TS-family extension (filter not silently narrowed)" {
+  local ext declared missed
+  local -a probes=()
+  for ext in ts tsx mts cts js jsx mjs cjs; do
+    printf 'describe("discovery probe", () => {});\n' \
+      > "$PROJECT_ROOT/tests/unit/__discovery_probe__.$ext"
+    probes+=("$PROJECT_ROOT/tests/unit/__discovery_probe__.$ext")
+  done
+  declared="$(declared_files)" || {
+    rm -f "${probes[@]}"
+    echo 'declared_files failed while probes were planted' >&2
+    return 1
+  }
+  rm -f "${probes[@]}"
+  missed=0
+  for ext in ts tsx mts cts js jsx mjs cjs; do
+    if ! printf '%s\n' "$declared" | grep -qx "tests/unit/__discovery_probe__.$ext"; then
+      echo "declared_files missed extension .$ext" >&2
+      missed=1
+    fi
+  done
+  [ "$missed" -eq 0 ]
+}
