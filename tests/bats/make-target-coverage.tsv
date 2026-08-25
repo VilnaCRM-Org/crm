@@ -114,3 +114,4 @@ lint-lockfile	bats	tests/bats/lockfile_registries.bats	Validated as the bun.lock
 lint-actionlint	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
 lint-zizmor	bats	tests/bats/makefile_targets.bats	Validated as the Docker-based zizmor workflow-security gate, asserting the digest-pinned image, the medium severity threshold, and the .github/workflows audit scope.
 lint-compose	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh, and directly as the docker compose config validation over every file combination the repo starts.
+lint-licenses	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
