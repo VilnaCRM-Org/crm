@@ -506,7 +506,8 @@ ESLint blocks close that, again through `make lint` with no new workflow:
   follows the runner, not the file extension.
 
 Shared assertion helpers are **declared, not suppressed**: `assertFunctionPatterns`
-recognizes the `take*Snapshot` visual-spec convention and `assertFunctionNames` recognizes
+recognizes the `take*Snapshot` visual-spec convention and the `expect*` mobile-lane helpers
+(`expectTouchTarget`, `expectNoHorizontalOverflow`), and `assertFunctionNames` recognizes
 `expect*` Jest helpers.
 
 Narrowing a discriminated union is not a reason to nest `expect` in an `if`. Use the
