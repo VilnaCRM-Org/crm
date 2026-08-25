@@ -950,8 +950,8 @@ nested inside a conditional. To narrow a discriminated union, use the throwing h
 an `if`; for throwing calls use `expect(...).toThrow(...)` /
 `await expect(...).rejects.toThrow(...)`, or capture the error unconditionally with
 `.catch((caught: unknown) => caught)` and assert on it. A shared assertion helper is
-declared through `assertFunctionNames` / `assertFunctionPatterns` (`expect*` for Jest,
-`take*Snapshot` for visual specs) — never through a suppression.
+declared through `assertFunctionNames` / `assertFunctionPatterns` (`expect*` for Jest and
+Playwright, `take*Snapshot` for visual specs) — never through a suppression.
 
 ### Step 1 — Pick the Right Test Layer
 

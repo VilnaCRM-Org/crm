@@ -325,7 +325,7 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
   });
 });
 
-describe('DI collaborator gate — the real ESLint selectors compile and match (issue #130)', () => {
+describe('DI collaborator gate — the real ESLint selectors compile and match (#130)', () => {
   // The assertions above validate policy DATA. They would still pass if a selector string were
   // syntactically invalid or silently stopped matching, because they re-derive the semantics in
   // plain `RegExp` instead of running esquery. This block feeds the EXACT selector strings
