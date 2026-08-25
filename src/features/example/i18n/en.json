@@ -1,0 +1,10 @@
+{
+  "login": {
+    "title": "Authentication",
+    "info_desc": "Sign in to your account in two clicks"
+  },
+  "formatting": {
+    "updated_at": "Last updated {{value, datetime}}",
+    "price": "Price: {{value, currency}}"
+  }
+}

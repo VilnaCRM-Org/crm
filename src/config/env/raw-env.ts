@@ -1,4 +1,8 @@
 class RawEnv {
+  public mainLanguage(): string {
+    return this.trimmed(process.env.REACT_APP_MAIN_LANGUAGE) ?? 'uk';
+  }
+
   public mockoonUrl(): string {
     return this.trimmed(process.env.REACT_APP_MOCKOON_URL) ?? '';
   }

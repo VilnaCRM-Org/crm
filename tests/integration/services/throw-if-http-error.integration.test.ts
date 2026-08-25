@@ -1,6 +1,7 @@
 import '../setup';
 import { HttpError } from '@/services/https-client/http-error';
 import httpErrorThrower from '@/services/https-client/throw-if-http-error';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 describe('throwIfHttpError Coverage Tests', () => {
   it('should handle errors during body extraction (catch block coverage)', async () => {
@@ -40,15 +41,12 @@ describe('throwIfHttpError Coverage Tests', () => {
       }),
     } as unknown as Response;
 
-    try {
-      await httpErrorThrower.throwIfError(mockResponse);
-      fail('Should have thrown HttpError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(HttpError);
-      if (error instanceof HttpError) {
-        expect(error.message).toBe(errorText);
-      }
-    }
+    const error = await httpErrorThrower
+      .throwIfError(mockResponse)
+      .catch((caught: unknown) => caught);
+
+    assertInstanceOf(error, HttpError);
+    expect(error.message).toBe(errorText);
   });
 
   it('should handle non-JSON content type', async () => {
