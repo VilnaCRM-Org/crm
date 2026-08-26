@@ -69,8 +69,9 @@ instead of rewriting them:
 - `src/routes/registry.ts` — import the route contract and append it to `routeModules`. Until
   you do, the page is unreachable.
 
-The generated Playwright spec ships as `test.describe.fixme(...)` for the same reason. Drop
-the `.fixme` once the route is registered.
+The generated Playwright spec is not skipped: `.skip` and `.fixme` are banned outright, so the
+spec ships live and fails until the route contract above is registered. Register it first, then
+run the E2E suite.
 
 ## The folder law is single-sourced
 

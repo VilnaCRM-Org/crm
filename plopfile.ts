@@ -278,8 +278,9 @@ function instructions(module: string, feature: string, registrar: string, routes
     `    import ${routes} from '@/modules/${module}/features/${feature}/routes';`,
     `    const routeModules: readonly RouteModule[] = [/* ... */, ${routes}];`,
     '',
-    `Then drop .fixme from tests/e2e/modules/${module}/features/${feature}/${feature}.spec.ts`,
-    'and run: make format && make lint && make test-unit-all',
+    `The spec tests/e2e/modules/${module}/features/${feature}/${feature}.spec.ts ships live`,
+    '(the suite bans skipped tests) and fails until that route line is added.',
+    'Then run: make format && make lint && make test-unit-all',
     '',
   ].join('\n');
 }

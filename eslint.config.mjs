@@ -714,8 +714,13 @@ export default [
       'playwright/no-skipped-test': ['error', { disallowFixme: true }],
       'playwright/no-focused-test': 'error',
       // A `take*Snapshot` helper IS the assertion in every visual spec (it calls
-      // `expect(...).toHaveScreenshot()`), so the convention is declared, not suppressed.
-      'playwright/expect-expect': ['error', { assertFunctionPatterns: ['^take\\w*Snapshot$'] }],
+      // `expect(...).toHaveScreenshot()`), and an `expect*` helper IS the assertion in the
+      // mobile lane (`expectTouchTarget`, `expectNoHorizontalOverflow`) — the same convention
+      // the Jest block declares via `assertFunctionNames`. Declared, not suppressed.
+      'playwright/expect-expect': [
+        'error',
+        { assertFunctionPatterns: ['^take\\w*Snapshot$', '^expect\\w+$'] },
+      ],
       'playwright/no-conditional-in-test': 'warn',
       'playwright/no-wait-for-timeout': 'warn',
     },

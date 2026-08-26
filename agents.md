@@ -1312,7 +1312,8 @@ When creating a new module:
       by hand. See [`docs/scaffolding.md`](docs/scaffolding.md).
 - [ ] Add the printed registrar line to `src/config/dependency-injection-config.ts` (#109)
 - [ ] Add the printed route-contract line to `src/routes/registry.ts` (#105)
-- [ ] Drop `test.describe.fixme` from the generated E2E spec once the route is registered
+- [ ] Register that route before running the E2E suite — the generated spec ships live, not
+      skipped, so it fails until the page is reachable
 - [ ] Fill in the generated repository, hook, component, and both i18n locales
 - [ ] Extend the generated unit and E2E suites so positive, negative, and edge cases stay
       covered per the Mandatory Test-Scenario Coverage Policy

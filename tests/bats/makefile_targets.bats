@@ -330,11 +330,12 @@ EOF
 @test "SCAFFOLD_VERIFY_TARGETS runs every lint gate that reads generated source (issue #108)" {
   # Derived from the `lint:` prerequisites, NOT from the SCAFFOLD_VERIFY_TARGETS line itself:
   # re-deriving from the line under test cannot detect a gate being dropped from it, because
-  # the expectation would shrink with it. The exclusions are the four gates that never read
-  # src/ or tests/ — env parity, shell scripts, workflow YAML, and the lockfile — so adding a
-  # new lint gate fails this test until it is classified one way or the other.
+  # the expectation would shrink with it. The exclusions are the five gates that never read
+  # src/ or tests/ — env parity, shell scripts, workflow YAML, the lockfile, and the licenses
+  # of the production dependency tree — so adding a new lint gate fails this test until it is
+  # classified one way or the other.
   local makefile="$MAKEFILE_SANDBOX/Makefile"
-  local excluded=" check-env-sync lint-shell lint-actionlint lint-lockfile "
+  local excluded=" check-env-sync lint-shell lint-actionlint lint-lockfile lint-licenses "
 
   local lint_prereqs scaffold_targets expected actual target
   lint_prereqs=$(grep -E '^lint:[[:space:]]' "$makefile" | sed 's/^lint:[[:space:]]*//; s/[[:space:]]*##.*//')

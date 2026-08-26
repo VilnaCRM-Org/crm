@@ -35,7 +35,7 @@ generator and `.dependency-cruiser.js` read. See
 
 ## Finish the wiring
 
-The generator writes everything it can create safely. Three hand-maintained,
+The generator writes everything it can create safely. Two hand-maintained,
 order-sensitive spots are left to you, and `make new-module` / `make new-feature` print
 the exact snippets:
 
@@ -43,8 +43,9 @@ the exact snippets:
    it to the `registrars` array, otherwise `config/di.ts` never registers anything.
 2. `src/routes/registry.ts` — import `{{camelCase feature}}Routes` and append it to
    `routeModules`, otherwise the page is unreachable.
-3. `tests/e2e/modules/{{module}}/features/{{feature}}/{{feature}}.spec.ts` — change
-   `test.describe.fixme` back to `test.describe` once the route is registered.
+
+Do the route one first: `tests/e2e/modules/{{module}}/features/{{feature}}/{{feature}}.spec.ts`
+ships live, because the suite bans skipped tests, so it fails until the page is reachable.
 
 ## Verify
 

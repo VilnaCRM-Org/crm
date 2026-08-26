@@ -4,7 +4,7 @@ const {{camelCase feature}}Path = '{{routePath module feature}}';
 const panel = 'section:has(h1)';
 const status = '[role="status"]';
 
-test.describe.fixme('{{titleCase feature}} page', () => {
+test.describe('{{titleCase feature}} page', () => {
   test('renders the feature panel heading', async ({ page }) => {
     await page.goto({{camelCase feature}}Path);
 
