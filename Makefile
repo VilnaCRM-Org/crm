@@ -174,9 +174,9 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
 .PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses
-.PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
 .PHONY: storybook
 .PHONY: all test
+.PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
 all: help
 test: test-unit-all
 

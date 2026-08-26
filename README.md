@@ -128,11 +128,11 @@ Linting & Formatting
 ```bash
   make lint-eslint: lints the codebase using eslint rules
   make lint-tsc: runs static type checking with TypeScript
-  make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
-  make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
   make lint-commit-message: lints one commit message or squash header read from stdin
   make lint-commit-bot-message: same, with the task-number rule relaxed for bot authors
   make lint-commit-range: lints the commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
+  make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
+  make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
 ```
 
 ### Dependency rules

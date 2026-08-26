@@ -142,61 +142,6 @@ or a per-image `docker-perf-exception:<name>` PR label that waives only that
 image. The decision logic is covered by `tests/bats/docker_perf.bats`
 (run with `make test-bats`).
 
-### The memory-leak gate is binding
-
-`make test-memory-leak` (workflow: `memory leak testing`) no longer just proves the scenarios
-did not throw. `tests/memory-leak/run-memlab-tests.js` runs memlab's `findLeaks()` after every
-scenario and exits non-zero when:
-
-- an unallowlisted leak is detected,
-- a file in `tests/memory-leak/tests/` exports no valid scenario, or
-- no scenario executed at all — a vacuous pass is now a failure.
-
-Discovery recurses into subfolders and accepts `.js`, `.mjs`, and `.cjs`, and
-`tests/unit/memory-leak/scenario-inventory.test.ts` pins the committed scenario set, so renaming,
-moving, or deleting a scenario fails a check instead of quietly shrinking coverage.
-
-When you add or edit a scenario, dispose every puppeteer `ElementHandle` you obtain
-(`const handle = await page.waitForSelector(...); await handle?.dispose();`). An undisposed
-handle is held by the DevTools console object group, so the harness retains the element it is
-supposed to be measuring and the gate reports a leak that does not exist in the app.
-
-`MEMLAB_SKIP_WARMUP=true` remains set for the memlab stack. Issue #183 proposed removing it so
-first-visit lazy-chunk allocations fall outside the measured window; that was tried and measured
-to hang the second Chromium launch (`Network.enable` never returns, the run dies on memlab's
-5-minute `protocolTimeout`), so it stays a follow-up on #183 rather than a broken gate.
-
-If the gate flags a leak you believe is not yours to fix (for example retention inside a
-third-party component), waive it with a reviewed entry in
-`tests/memory-leak/leak-allowlist.json`, keyed on the reported detached-node summary:
-
-```json
-{
-  "leaks": [{ "trace": "Detached <div id=\"reg-form-0\">", "reason": "<why this is safe>" }]
-}
-```
-
-Both fields are required and the file is reviewed in the pull request diff. Never satisfy this
-gate by deleting a scenario, skipping the `findLeaks()` call, or widening the allowlist to a
-match-everything string — the same root-cause-not-suppression policy used for ESLint, metrics,
-and jscpd applies. `tests/bats/memlab_gate.bats` pins every exit-code path.
-
-### Post-merge verification of `main`
-
-Every push to `main` runs `main verification`, which re-runs `make lint`, `make codegen-check`,
-and `make test-unit-all` against the merged tree. Pull-request checks run against the PR branch,
-so two individually green PRs can still compose into a broken `main`; this run catches that and
-attributes it to the merge that caused it. Runs are serialized
-(`concurrency: main-verification`, `cancel-in-progress: false`) so no merge is skipped.
-
-A failure opens — or comments on — a single tracking issue labelled `main-is-red`, and the next
-green run closes it, so the signal never outlives the breakage. Treat an open one as stop-the-line:
-fix `main` before merging further pull requests, because their checks are running against a base
-that is already broken.
-
-This run **detects**; it does not yet gate the release. `autorelease.yml` fires on the same
-push, so sequencing the release behind a green verification is tracked by issue #138.
-
 ### CI speed and the mutation-testing gate
 
 GitHub runs the pull-request workflows in parallel, so PR feedback is gated by the slowest single
@@ -280,15 +225,15 @@ job.
 **Settings → Branches → Branch protection rules** to require these jobs in place of the old single
 checks:
 
-- `mutation testing / merge and enforce gate`
-- `performance testing / lighthouse desktop`
-- `performance testing / lighthouse mobile`
 - `conventional commit contract` (the job in `commitlint.yml` — issue #184; without a required
   status the `edited` trigger is decorative, since a title can be changed after the last green run)
 - `memory-leak-testing` (the job in `memory-leak-testing.yml` — issue #183; the gate only became
   binding once it could fail)
+- `mutation testing / merge and enforce gate`
+- `performance testing / lighthouse desktop`
+- `performance testing / lighthouse mobile`
 
-The last two are the check-run names GitHub reports, which is what the required-checks search box
+The first two are the check-run names GitHub reports, which is what the required-checks search box
 matches: a job's check-run name is its `name:` when it declares one, and its job id otherwise.
 
 The merge job runs `if: ${{ !cancelled() }}` and fails closed if any shard did not succeed (a skipped
@@ -338,6 +283,61 @@ contracts in the same change:
 Congratulations :tada::tada: The our team thanks you :sparkles:.
 
 Now that you are part of the php service template community.
+
+### The memory-leak gate is binding
+
+`make test-memory-leak` (workflow: `memory leak testing`) no longer just proves the scenarios
+did not throw. `tests/memory-leak/run-memlab-tests.js` runs memlab's `findLeaks()` after every
+scenario and exits non-zero when:
+
+- an unallowlisted leak is detected,
+- a file in `tests/memory-leak/tests/` exports no valid scenario, or
+- no scenario executed at all — a vacuous pass is now a failure.
+
+Discovery recurses into subfolders and accepts `.js`, `.mjs`, and `.cjs`, and
+`tests/unit/memory-leak/scenario-inventory.test.ts` pins the committed scenario set, so renaming,
+moving, or deleting a scenario fails a check instead of quietly shrinking coverage.
+
+When you add or edit a scenario, dispose every puppeteer `ElementHandle` you obtain
+(`const handle = await page.waitForSelector(...); await handle?.dispose();`). An undisposed
+handle is held by the DevTools console object group, so the harness retains the element it is
+supposed to be measuring and the gate reports a leak that does not exist in the app.
+
+`MEMLAB_SKIP_WARMUP=true` remains set for the memlab stack. Issue #183 proposed removing it so
+first-visit lazy-chunk allocations fall outside the measured window; that was tried and measured
+to hang the second Chromium launch (`Network.enable` never returns, the run dies on memlab's
+5-minute `protocolTimeout`), so it stays a follow-up on #183 rather than a broken gate.
+
+If the gate flags a leak you believe is not yours to fix (for example retention inside a
+third-party component), waive it with a reviewed entry in
+`tests/memory-leak/leak-allowlist.json`, keyed on the reported detached-node summary:
+
+```json
+{
+  "leaks": [{ "trace": "Detached <div id=\"reg-form-0\">", "reason": "<why this is safe>" }]
+}
+```
+
+Both fields are required and the file is reviewed in the pull request diff. Never satisfy this
+gate by deleting a scenario, skipping the `findLeaks()` call, or widening the allowlist to a
+match-everything string — the same root-cause-not-suppression policy used for ESLint, metrics,
+and jscpd applies. `tests/bats/memlab_gate.bats` pins every exit-code path.
+
+### Post-merge verification of `main`
+
+Every push to `main` runs `main verification`, which re-runs `make lint`, `make codegen-check`,
+and `make test-unit-all` against the merged tree. Pull-request checks run against the PR branch,
+so two individually green PRs can still compose into a broken `main`; this run catches that and
+attributes it to the merge that caused it. Runs are serialized
+(`concurrency: main-verification`, `cancel-in-progress: false`) so no merge is skipped.
+
+A failure opens — or comments on — a single tracking issue labelled `main-is-red`, and the next
+green run closes it, so the signal never outlives the breakage. Treat an open one as stop-the-line:
+fix `main` before merging further pull requests, because their checks are running against a base
+that is already broken.
+
+This run **detects**; it does not yet gate the release. `autorelease.yml` fires on the same
+push, so sequencing the release behind a green verification is tracked by issue #138.
 
 ## Dependency updates
 

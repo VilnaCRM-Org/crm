@@ -233,6 +233,9 @@ detected. `break` is set to 90 — below the 92.5% baseline for margin — and r
 make lint           # Run all linters
 make lint-eslint    # ESLint
 make lint-tsc       # TypeScript
+make lint-commit-message     # Lint one commit message or squash header from stdin (see below)
+make lint-commit-bot-message # Same, for a bot-authored message (see below)
+make lint-commit-range       # Lint COMMIT_RANGE_FROM..COMMIT_RANGE_TO (see below)
 make lint-md        # Markdown
 make lint-dup       # jscpd copy/paste duplication gate (see below)
 make lint-metrics   # rust-code-analysis complexity gate (see below)
@@ -241,9 +244,6 @@ make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, 
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
 make lint-licenses  # dependency license SPDX-allowlist gate over the production tree (see below)
-make lint-commit-message     # Lint one commit message or squash header from stdin (see below)
-make lint-commit-bot-message # Same, for a bot-authored message (see below)
-make lint-commit-range       # Lint COMMIT_RANGE_FROM..COMMIT_RANGE_TO (see below)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
