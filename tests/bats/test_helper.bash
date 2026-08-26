@@ -145,6 +145,13 @@ printf 'get-pr-comments.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
 exit 0
 EOF
 
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/verify-scaffold.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'verify-scaffold.sh SCAFFOLD_VERIFY_TARGETS=%s\n' "${SCAFFOLD_VERIFY_TARGETS:-}" \
+  >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
   cat > "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-lint.sh" <<'EOF'
 #!/usr/bin/env sh
 printf 'run-parallel-lint.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
@@ -163,20 +170,13 @@ printf 'check-env-sync.sh\n' >> "${COMMAND_LOG:?}"
 exit 0
 EOF
 
-  cat > "$MAKEFILE_SANDBOX/scripts/ci/verify-scaffold.sh" <<'EOF'
-#!/usr/bin/env sh
-printf 'verify-scaffold.sh SCAFFOLD_VERIFY_TARGETS=%s\n' "${SCAFFOLD_VERIFY_TARGETS:-}" \
-  >> "${COMMAND_LOG:?}"
-exit 0
-EOF
-
   chmod +x \
     "$MAKEFILE_SANDBOX/scripts/lint-metrics.sh" \
     "$MAKEFILE_SANDBOX/scripts/get-pr-comments.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/verify-scaffold.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-lint.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-tests.sh" \
-    "$MAKEFILE_SANDBOX/scripts/check-env-sync.sh" \
-    "$MAKEFILE_SANDBOX/scripts/ci/verify-scaffold.sh"
+    "$MAKEFILE_SANDBOX/scripts/check-env-sync.sh"
 }
 
 setup_makefile_test_env() {

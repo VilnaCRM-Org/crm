@@ -419,18 +419,6 @@ lint-metrics-run:
 	METRICS_POLICY="$(METRICS_POLICY_PATH)" \
 	sh scripts/lint-metrics.sh
 
-codegen: ensure-dev ## Regenerate typed API contract artifacts (src/api/generated) from the pinned upstream specs
-	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
-
-codegen-check: ensure-dev ## Reconcile contract versions and fail if generated API types are stale (CI gate)
-	sh scripts/check-contract-versions.sh
-	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
-	@git diff --exit-code -- src/api/generated \
-		&& [ -z "$$(git ls-files --others --exclude-standard -- src/api/generated)" ] || { \
-		printf '\nERROR: generated API types are out of date or untracked. Run `make codegen` and commit src/api/generated/.\n' >&2; \
-		exit 1; \
-	}
-
 new-module: ensure-dev ## Scaffold a compliant module + its first feature: make new-module name=orders [feature=order-list] [owner=@handle]
 	@[ -n "$(name)" ] || { printf '❌ name= is required, e.g. make new-module name=orders\n' >&2; exit 1; }
 	$(PLOP) module "$(name)" "$(or $(feature),$(name))" "$(or $(owner),$(SCAFFOLD_OWNER_DEFAULT))"
@@ -442,6 +430,18 @@ new-feature: ensure-dev ## Scaffold a compliant feature in an existing module: m
 
 verify-scaffold: ensure-dev ## Generate a throwaway module, run the static gates against it, then remove it (issue #108)
 	SCAFFOLD_VERIFY_TARGETS="$(SCAFFOLD_VERIFY_TARGETS)" sh scripts/ci/verify-scaffold.sh
+
+codegen: ensure-dev ## Regenerate typed API contract artifacts (src/api/generated) from the pinned upstream specs
+	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
+
+codegen-check: ensure-dev ## Reconcile contract versions and fail if generated API types are stale (CI gate)
+	sh scripts/check-contract-versions.sh
+	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
+	@git diff --exit-code -- src/api/generated \
+		&& [ -z "$$(git ls-files --others --exclude-standard -- src/api/generated)" ] || { \
+		printf '\nERROR: generated API types are out of date or untracked. Run `make codegen` and commit src/api/generated/.\n' >&2; \
+		exit 1; \
+	}
 
 lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, the bun.lock provenance gate, and the dependency license-policy gate.
 

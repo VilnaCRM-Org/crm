@@ -241,10 +241,10 @@ make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, 
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
 make lint-licenses  # dependency license SPDX-allowlist gate over the production tree (see below)
-make verify-scaffold # generate a throwaway module and gate it (see Scaffolding below)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
+make verify-scaffold # generate a throwaway module and gate it (see Scaffolding below)
 ```
 
 Git hooks are managed by Husky. Run `make husky` once after cloning.
