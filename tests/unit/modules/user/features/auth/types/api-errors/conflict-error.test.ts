@@ -2,6 +2,7 @@ import ApiError from '@/modules/user/lib/api-errors/api-error';
 import { ApiErrorCodes } from '@/modules/user/lib/api-errors/api-error-codes';
 import ConflictError from '@/modules/user/lib/api-errors/conflict-error';
 import apiErrorGuard from '@/modules/user/lib/is-api-error';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 describe('ConflictError', () => {
   describe('constructor', () => {
@@ -156,16 +157,18 @@ describe('ConflictError', () => {
     });
 
     it('should preserve error details when caught', () => {
+      let thrown: unknown;
+
       try {
         throw new ConflictError('Username is taken');
       } catch (error) {
-        expect(error).toBeInstanceOf(ConflictError);
-        if (error instanceof ConflictError) {
-          expect(error.message).toBe('Username is taken');
-          expect(error.status).toBe(409);
-          expect(error.code).toBe(ApiErrorCodes.CONFLICT);
-        }
+        thrown = error;
       }
+
+      assertInstanceOf(thrown, ConflictError);
+      expect(thrown.message).toBe('Username is taken');
+      expect(thrown.status).toBe(409);
+      expect(thrown.code).toBe(ApiErrorCodes.CONFLICT);
     });
 
     it('should work with Promise.reject', async () => {

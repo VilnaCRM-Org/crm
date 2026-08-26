@@ -75,6 +75,66 @@ make test-visual-update    # Update visual snapshots
 The mock server automatically starts via docker-compose.test.yml and serves
 the OpenAPI spec from user-service repository on port 8080.
 
+#### Mobile device & touch lane (issue #154)
+
+Shrinking a desktop window is not mobile coverage: the context still reports `isMobile: false`,
+`hasTouch: false`, DPR 1 and a desktop user agent, so touch-only regressions ship undetected.
+Two projects built from Playwright's stock device descriptors close that gap:
+
+| Project         | Descriptor  | Engine   | Viewport  | DPR   |
+| --------------- | ----------- | -------- | --------- | ----- |
+| `mobile-chrome` | `Pixel 7`   | chromium | 412 × 839 | 2.625 |
+| `mobile-safari` | `iPhone 14` | webkit   | 390 × 664 | 3     |
+
+Scoping is by directory and runs **both ways**: the mobile projects match only
+`**/mobile/**/*.spec.ts`, and `chromium` / `firefox` / `webkit` carry
+`testIgnore: '**/mobile/**'`. Desktop projects cannot execute `tap()` (no `hasTouch`), and
+unscoped mobile projects would re-record the entire 13-screen desktop visual suite under two
+more project names.
+
+- **Touch E2E** — [`tests/e2e/mobile/`](tests/e2e/mobile/): sign-in and sign-up completed with
+  `tap()` only, switcher navigation, empty-form validation (no request fired), the
+  password-visibility toggle, a 44 CSS px floor on the primary auth controls, no horizontal
+  overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
+  on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
+  is named for what it measures, not for a keyboard it cannot summon.
+- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in` and `/sign-up`
+  captured with `scale: 'device'`, so the baselines are true 2.625× / 3× rasters and catch the
+  asset and raster regressions that CSS-scaled desktop snapshots average away. Baselines live in
+  `tests/visual/mobile/auth.spec.ts-snapshots/`, one per mobile project.
+
+Both lanes run inside the existing `make test-e2e` / `make test-visual` targets, so the
+`e2e testing` and `visual tests` PR checks gate them with no new workflow, no `--project` flag in
+the Makefile, and no branch-protection change. Run one lane directly:
+
+```bash
+docker compose -f docker-compose.test.yml exec playwright \
+  ./node_modules/.bin/playwright test tests/e2e/mobile --project=mobile-safari
+```
+
+`ENV=dev` is a **reduced** two-project matrix — `chromium-dev` plus `mobile-chrome-dev` (Pixel 7
+descriptor on the system Chromium), the latter scoped to `tests/e2e/mobile` only. There is no
+dev-mode `mobile-safari`, and mobile **visual** baselines are production-only, so
+`tests/visual/mobile` never runs in dev mode. A local `ENV=dev` run therefore does not stand in
+for the CI matrix.
+
+**Measured cost** (local prod stack, same pinned Playwright image CI uses; runner wall-clock will
+be higher but the ratio holds):
+
+| Target             | Before          | After           | Delta             |
+| ------------------ | --------------- | --------------- | ----------------- |
+| `make test-e2e`    | 87 tests, 0:39  | 115 tests, 1:10 | +28 tests, ~+31 s |
+| `make test-visual` | 240 tests, 3:59 | 244 tests, 4:16 | +4 tests, ~+17 s  |
+
+Keep the lane bounded: `retries: 0` repo-wide, so every mobile spec has to be deterministic, and
+these two checks are single-job (no sharding).
+
+**Known sizing gap, deliberately not fixed here:** the auth switcher link (18 px tall), the
+remember-me checkbox (20 px) and the password toggle (32 px) fall under the 44 px floor, so the
+sizing gate covers the primary controls only (text inputs, submit button, provider buttons).
+Enlarging them changes rendered height and invalidates every recorded desktop baseline — a
+design-owned follow-up, out of scope for a test-coverage change.
+
 #### Fast dev-mode runs (`ENV=dev`, run from the dev container)
 
 The same `test-e2e` / `test-visual` targets accept `ENV=dev` to run inside the dev
@@ -180,6 +240,7 @@ make lint-prettier  # Prettier --check formatting gate (verify-only, shares PRET
 make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, like lint-metrics)
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
+make lint-licenses  # dependency license SPDX-allowlist gate over the production tree (see below)
 make verify-scaffold # generate a throwaway module and gate it (see Scaffolding below)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
@@ -189,6 +250,52 @@ make format         # Prettier + qlty fmt
 Git hooks are managed by Husky. Run `make husky` once after cloning.
 Agents should run `make format` before `make lint`. Formatting is intentionally
 separate from the `lint` verification suite.
+
+### Dependency license policy (issue #191)
+
+`make lint-licenses` fails the build on any **production** dependency (direct or transitive)
+whose SPDX license is not satisfied by the allowlist. It enumerates the production tree with
+[`license-checker-rseidelsohn`](https://github.com/RSeidelsohn/license-checker-rseidelsohn)
+(`--production --excludePrivatePackages --json`) and evaluates each license **semantically** via
+[`spdx-satisfies`](https://www.npmjs.com/package/spdx-satisfies) in `scripts/ci/check-licenses.mjs`
+(both pinned in `devDependencies` + `bun.lock`). Semantic evaluation is required, not a literal
+`--onlyAllow` match: `(MIT OR Apache-2.0)` passes because an allowed operand suffices, `(MIT AND
+BSD-3-Clause)` passes because both operands are allowed, `(GPL-3.0 AND MIT)` is **rejected**
+because the AND binds you to GPL, and any unparseable/unknown string (`UNKNOWN`, `SEE LICENSE IN
+…`, a guessed `MIT*`) is rejected fail-closed. It is a member of `CI_LINT_TARGETS` and the `lint:`
+aggregate, so it rides the existing `static testing` workflow via `make lint` — no dedicated
+workflow. `ALLOWED_LICENSES` (authoritative source: the `Makefile`) lists the permitted SPDX
+**operand** ids, trimmed to what the production tree contains today, so every new family enters via
+an explicit, reviewed one-line diff. `--production` keeps the devDependencies out of scope. The
+repo itself is CC0-1.0 and the SPA ships minified dependency code to browsers (a distribution event
+that triggers copyleft obligations), so a GPL/AGPL/SSPL or unlicensed dependency is a real defect.
+The gate's own behaviour is pinned by `tests/unit/scripts/check-licenses.test.ts` (must-fail
+coverage for disallowed AND-compounds and unknown licenses).
+
+**Remediation policy** (mirrors the repo's root-cause-not-suppression rule): 1st — replace the
+offending dependency; 2nd — add its specific SPDX id to `ALLOWED_LICENSES` as a reviewed one-line
+diff in the `Makefile`. Never bypass or weaken the gate.
+
+### ESLint gate integrity (issues #164, #165, #189)
+
+The convention gates in `eslint.config.mjs` encode policy, not style, so their **integrity** is
+itself tested — a config-level rule deletion or severity downgrade carries no inline suppression
+directive and would otherwise pass every existing check:
+
+- **`react-hooks/exhaustive-deps` and `no-await-in-loop` are `error`** (issue #164), not `warn` —
+  a warning never fails `eslint .`. Because `eslint-comments/no-use` bans all disable directives,
+  an intentional mount-only effect must be **restructured** (refs / stored-callback pattern),
+  never suppressed. `react/jsx-no-bind` deliberately stays `warn` (issue #164 scope decision).
+- **`tests/unit/config/eslint-policy.test.ts`** (issue #165) pins the resolved severity + one
+  distinctive selector per load-bearing gate (issues #88/#90/#100/#107), resolved through a child
+  `node` process (`scripts/ci/print-eslint-policy-config.mjs`). A rule rename must update both the
+  config and this test.
+- **`tests/unit/tooling/eslint-gate-fixtures.test.ts`** (issue #189) runs a must-fail fixture
+  through each error-severity `no-restricted-syntax` selector (via the resolved config) and a
+  rot-guard asserting the fixture set exactly covers the live selector universe — so a **new**
+  error-severity selector added to `eslint.config.mjs` (scoped to `src/**`) cannot ship without a
+  must-fail fixture in `scripts/ci/eslint-gate-fixtures.mjs`, and a dropped/edited selector fails
+  loudly. Both tests ride the existing `unit testing` workflow via `make test-unit-all`.
 
 ## Agent Skill Layout
 
@@ -347,6 +454,66 @@ on styles/markup, so keep the bar at copy-paste mass if you widen coverage.
 fragments, constants, factories, or a base object plus overrides — never with
 ignore/suppress directives. The same root-cause-not-suppression policy used for
 ESLint, TypeScript, and metrics applies here.
+
+### Lint-level SAST (issue #173)
+
+CodeQL (`security testing`) is dataflow SAST with cloud latency. The deterministic,
+seconds-fast, pre-commit-capable layer is a frozen set of ESLint rules scoped to
+`src/**/*.{ts,tsx}`, delivered by the existing `make lint` → `lint-eslint` path — no new
+workflow. Because `eslint-suppressions.yml` forbids inline `eslint-disable` repo-wide,
+these rules cannot be bypassed at the call site.
+
+| Rule                                          | Sink class it closes                      |
+| --------------------------------------------- | ----------------------------------------- |
+| `no-unsanitized/method`                       | `insertAdjacentHTML`, `document.write`, … |
+| `no-unsanitized/property`                     | `innerHTML` / `outerHTML` assignment      |
+| `react/no-danger`                             | `dangerouslySetInnerHTML`                 |
+| `security/detect-eval-with-expression`        | `eval(expr)`                              |
+| `security/detect-unsafe-regex`                | catastrophic-backtracking regex literals  |
+| `no-eval` / `no-implied-eval` / `no-new-func` | code-execution sinks                      |
+
+The set is **frozen**; widening it requires a fresh signal/noise review.
+`eslint-plugin-security`'s `recommended` preset is deliberately not adopted
+(`detect-object-injection` et al. is noise), and `security/detect-non-literal-regexp` is
+omitted because the auth validators legitimately compose `RegExp` from constant template
+literals.
+
+`detect-unsafe-regex` is a **star-height heuristic**: `X(Y*X)?` and `X+(?:sepX+)+` trip it
+even when the separator makes them unambiguous and linear. Satisfy it by rewriting the
+pattern to star height 1 (alternation instead of an optional group; `split()` + a
+per-segment regex instead of a nested quantifier) — never by dropping the rule or
+suppressing the finding.
+
+### Test liveness (issue #167)
+
+The Jest 100/100/100/100 `coverageThreshold` measures execution, not verification: a test
+whose `expect` was deleted still satisfies it, and `.skip` / `.fixme` / `xit` merged
+silently (`playwright.config.ts` `forbidOnly` only ever caught `.only`). Two scoped
+ESLint blocks close that, again through `make lint` with no new workflow:
+
+- `tests/{e2e,visual}/**/*.spec.ts` — `playwright/no-skipped-test`
+  (**with `disallowFixme: true`** — the rule's default covers only `.skip`, and `.fixme`
+  was the bypass actually in use), `playwright/no-focused-test`, and
+  `playwright/expect-expect` at `error`; `playwright/no-conditional-in-test` and
+  `playwright/no-wait-for-timeout` at `warn`, pending the conditional-assertion burndown
+  in `back-to-main.spec.ts`, then promoted.
+- `tests/{unit,integration,apollo-server}/**` — `jest/expect-expect`,
+  `jest/no-disabled-tests`, `jest/no-focused-tests` (Jest has no `forbidOnly` equivalent,
+  so a committed `it.only` would silently shrink the CI suite), and
+  `jest/no-conditional-expect` at `error`. The unit globs include `.js`/`.jsx` because
+  `jest.config.ts` `testMatch` runs `tests/unit/**/*.test.{ts,tsx,js,jsx}` — the gate
+  follows the runner, not the file extension.
+
+Shared assertion helpers are **declared, not suppressed**: `assertFunctionPatterns`
+recognizes the `take*Snapshot` visual-spec convention and `assertFunctionNames` recognizes
+`expect*` Jest helpers.
+
+Narrowing a discriminated union is not a reason to nest `expect` in an `if`. Use the
+throwing helpers in [`tests/utils/assert-result.ts`](tests/utils/assert-result.ts)
+(`assertOk`, `assertError`, `assertInstanceOf`) so the negative branch fails loudly
+instead of skipping the assertions; for throwing calls prefer
+`expect(...).toThrow(...)` / `await expect(...).rejects.toThrow(...)`, or capture the
+error unconditionally with `.catch((caught: unknown) => caught)` and then assert.
 
 ### Performance Budgets, Bundle Reports, and Route Splitting (issue #117)
 
@@ -533,12 +700,14 @@ class AuthStoreSelectors {
 export default new AuthStoreSelectors();
 ```
 
-### No static methods or free functions (issues #100, #89)
+### No static methods or free functions (issues #100, #89, #180)
 
 Non-React application code (services, repositories, mappers, factories, stores, and
-utilities under `src/**/*.ts`) must **not** use `static` class members or standalone
+utilities under `src/**/*.ts`) must **not** use `static` class members, standalone
 (free) functions — neither `export function foo()` / `export default function foo()` nor
-`export const foo = () => …`. Use **instance methods on an injectable class** instead.
+`export const foo = () => …` — **nor function-valued properties of a top-level object
+literal** (`export default { map(r) { … } }`, `const helpers = { validate: (x) => … }`).
+Use **instance methods on an injectable class** instead.
 
 **Why:** mockability and testability. Static methods and free functions bind at the call
 site and resist substitution, pushing tests toward module mocking and monkey-patching.
@@ -565,16 +734,27 @@ functions by definition.
 **Enforcement:** an ESLint `no-restricted-syntax` gate (in `eslint.config.mjs`, scoped to
 `src/**/*.ts` excluding `use-*`) fails the build on `static` members and standalone
 functions — `function` declarations (including generators), default-exported functions,
-and top-level arrow / function-expression `const`s. It runs in `make lint-eslint` and the
-`static testing` workflow. Satisfy it by refactoring to instance methods — never with
-`eslint-disable`.
+and top-level arrow / function-expression `const`s — **plus function-valued properties of
+top-level object literals**, including `as const` / `satisfies` wrappers (issue #180).
+ESTree gives method shorthand `value.type === 'FunctionExpression'`, so `{ m() {} }` and
+`{ m: () => {} }` are both matched. It runs in `make lint-eslint` and the `static testing`
+workflow. Satisfy it by refactoring to instance methods — never with `eslint-disable`.
+
+When a singleton's methods are consumed, call them **on the singleton**
+(`authActions.loginUser(…)`) and pass the object, never a destructured or otherwise
+detached method reference — a prototype method loses its receiver and throws at runtime,
+and TypeScript cannot see it because `AuthActions` types its members as plain function
+properties. `use-login-submitter` and `use-registration-handlers` pin this with
+`mock.contexts` assertions.
 
 This gate is the canonical enforcement of the **only classes outside React components**
 convention (issue #89, closed as covered here): with free functions banned in non-React
 `.ts`, all such logic is class-encapsulated, so #89 needs no separate ESLint or
-dependency-cruiser rule. Per #89's own "honest limitation", the residual gap is **semantic,
-not syntactic** — logic smuggled into an object literal's methods (or a misplaced helper) is
-not statically detectable and stays a review-gate concern.
+dependency-cruiser rule. Issue #180 closed the common statically-detectable half of #89's
+acknowledged residual. What remains a **review-gate** concern — deliberately not matched,
+because widening to arbitrary-depth `Property` would flag idiomatic nested MUI `sx`
+callbacks and zustand-style slices — is nested (depth > 1) object literals,
+`Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
 
 ### Path Aliases
 
@@ -673,6 +853,13 @@ Localization files are auto-generated during build:
 - Generated via `scripts/localization-generator.js`
 - Skip generation: `SKIP_LOCALE_GEN=1`
 
+Dates, numbers, currency, percentages, and relative time are rendered through the
+locale-aware formatting layer (issue #155): `src/i18n.js` registers the `date`, `datetime`, `number`,
+`currency`, `percent`, and `relativetime` i18next formatters, so translation strings use
+`{{value, datetime}}` / `{{value, currency}}`, and non-translation code uses the
+`LocaleFormatter` service. See "Important Patterns" item 10 for the full convention and
+its ESLint gate.
+
 ## Storybook
 
 ```bash
@@ -768,6 +955,8 @@ Key variables in `.env`:
      `eslint.config.mjs` via `no-restricted-syntax`: `error` on `data-testid` in
      `src/**`, `warn` on `*ByTestId` in tests (mock-stub queries stay valid).
      Satisfy the gate by refactoring, never with `eslint-disable`.
+   - **Liveness**: no skipped, focused, or assertion-free tests, and no `expect`
+     nested in a conditional — see "Test liveness (issue #167)" above.
 
 5. **Submit-button loader**: The auth submit button (shared `UIForm` →
    `SubmitControls`) shows its busy state with MUI v7's native `Button`
@@ -834,6 +1023,31 @@ Key variables in `.env`:
    in Sentry `beforeSend`; identity is a random opaque session id only — no PII. All capture paths
    are wrapped so telemetry failure never breaks a user flow. Do not scatter direct
    `@sentry/react` calls across feature modules; consume telemetry through this boundary.
+
+10. **Locale-aware Intl formatting (issue #155)**: All user-facing dates, numbers,
+    currency amounts, percentages, and relative times are formatted through the
+    `LocaleFormatter` boundary in `src/services/locale-formatter/` — never with raw
+    `toLocaleString()` variants or ad-hoc `new Intl.*Format(...)` at call sites. Like
+    observability (pattern 9), it has two layers: (a) the container-free
+    `localeFormatterCore` singleton (cached `Intl.DateTimeFormat`, `Intl.NumberFormat`
+    for decimal/currency/percent, and `Intl.RelativeTimeFormat` instances keyed by
+    locale + options, resolving the locale from the active i18next language and falling
+    back to `rawEnv.mainLanguage()`), consumed on the paint path by `src/i18n.js`, which
+    registers the `date`, `datetime`, `number`, `currency`, `percent`, and
+    `relativetime` i18next formatters so translation strings can use
+    `{{value, datetime}}` / `{{value, currency}}`; and (b) an `@injectable()`
+    `LocaleFormatterService` adapter (token
+    `LOCALE_FORMATTER_TOKENS.LocaleFormatterService`, registered by its own
+    `di.ts` composition root per issue #109). Defaults: medium date style, short time
+    style, `UAH` with a narrow symbol, `numeric: 'auto'` relative time. An ESLint
+    `no-restricted-syntax` gate in `eslint.config.mjs` (the `noRawIntlSelectors`
+    array, scoped to `src/**` and lifted only inside
+    `src/services/locale-formatter/`) fails the build on raw `toLocale*` calls and
+    `Intl.*` member access; it runs in `make lint-eslint` and the `static testing`
+    workflow. Unit and integration tests pin exact uk/en outputs (e.g. `1234.5` →
+    `1 234,50 ₴` vs `₴1,234.50`), so locale regressions fail CI. Satisfy the gate by
+    routing through the formatter service — never with `eslint-disable`. See the
+    "Locale-aware Intl formatting" section in `agents.md` for the full convention.
 
 ## Node Version Management
 

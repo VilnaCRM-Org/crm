@@ -1,4 +1,5 @@
 import ApiError from '@/modules/user/lib/api-errors/api-error';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 describe('ApiError', () => {
   describe('constructor', () => {
@@ -288,16 +289,18 @@ describe('ApiError', () => {
     });
 
     it('should preserve error details when caught', () => {
+      let thrown: unknown;
+
       try {
         throw new ApiError({ message: 'Test error', code: 'TEST_CODE', status: 400 });
       } catch (error) {
-        expect(error).toBeInstanceOf(ApiError);
-        if (error instanceof ApiError) {
-          expect(error.message).toBe('Test error');
-          expect(error.code).toBe('TEST_CODE');
-          expect(error.status).toBe(400);
-        }
+        thrown = error;
       }
+
+      assertInstanceOf(thrown, ApiError);
+      expect(thrown.message).toBe('Test error');
+      expect(thrown.code).toBe('TEST_CODE');
+      expect(thrown.status).toBe(400);
     });
 
     it('should work with Promise.reject', async () => {

@@ -25,6 +25,12 @@ const devSnapshotPathTemplate =
   'tests/visual/__snapshots__-dev/' +
   '{testFileName}-snapshots/{arg}{-projectName}{-snapshotSuffix}{ext}';
 
+// Mobile lane (#154). Specs under a `mobile/` folder run ONLY on the mobile-device
+// projects, which carry isMobile/hasTouch/DPR from the built-in descriptors; the
+// desktop projects must skip them or `tap()` fails and the touch signal is lost.
+const MOBILE_LANE = '**/mobile/**/*.spec.ts';
+const DESKTOP_LANE_IGNORE = '**/mobile/**';
+
 // Snapshot path: relies on Playwright defaults, which match the repo convention
 // of `{spec-file-name}-snapshots/{snapshot-name}-{projectName}-{platform}.png`.
 // Snapshot names passed to `toHaveScreenshot('<locale>-<screen-name>')` produce
@@ -64,8 +70,20 @@ export default defineConfig({
     ? [
         {
           name: 'chromium-dev',
+          testIgnore: DESKTOP_LANE_IGNORE,
           use: {
             ...devices['Desktop Chrome'],
+            launchOptions: { args: chromiumLaunchArgs, executablePath: devChromiumPath },
+          },
+        },
+
+        // Dev mode carries the touch E2E lane only: mobile visual baselines are
+        // recorded against the production build, so `tests/visual/mobile` stays out.
+        {
+          name: 'mobile-chrome-dev',
+          testMatch: '**/e2e/mobile/**/*.spec.ts',
+          use: {
+            ...devices['Pixel 7'],
             launchOptions: { args: chromiumLaunchArgs, executablePath: devChromiumPath },
           },
         },
@@ -73,6 +91,7 @@ export default defineConfig({
     : [
         {
           name: 'chromium',
+          testIgnore: DESKTOP_LANE_IGNORE,
           use: {
             ...devices['Desktop Chrome'],
             launchOptions: { args: chromiumLaunchArgs },
@@ -81,12 +100,29 @@ export default defineConfig({
 
         {
           name: 'firefox',
+          testIgnore: DESKTOP_LANE_IGNORE,
           use: { ...devices['Desktop Firefox'] },
         },
 
         {
           name: 'webkit',
+          testIgnore: DESKTOP_LANE_IGNORE,
           use: { ...devices['Desktop Safari'] },
+        },
+
+        {
+          name: 'mobile-chrome',
+          testMatch: MOBILE_LANE,
+          use: {
+            ...devices['Pixel 7'],
+            launchOptions: { args: chromiumLaunchArgs },
+          },
+        },
+
+        {
+          name: 'mobile-safari',
+          testMatch: MOBILE_LANE,
+          use: { ...devices['iPhone 14'] },
         },
       ],
 });

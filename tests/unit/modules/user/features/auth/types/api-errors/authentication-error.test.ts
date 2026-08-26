@@ -1,6 +1,7 @@
 import ApiError from '@/modules/user/lib/api-errors/api-error';
 import { ApiErrorCodes } from '@/modules/user/lib/api-errors/api-error-codes';
 import AuthenticationError from '@/modules/user/lib/api-errors/authentication-error';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 describe('AuthenticationError', () => {
   describe('constructor', () => {
@@ -165,16 +166,18 @@ describe('AuthenticationError', () => {
     });
 
     it('should preserve error details when caught', () => {
+      let thrown: unknown;
+
       try {
         throw new AuthenticationError('Session expired');
       } catch (error) {
-        expect(error).toBeInstanceOf(AuthenticationError);
-        if (error instanceof AuthenticationError) {
-          expect(error.message).toBe('Session expired');
-          expect(error.status).toBe(401);
-          expect(error.code).toBe(ApiErrorCodes.AUTH);
-        }
+        thrown = error;
       }
+
+      assertInstanceOf(thrown, AuthenticationError);
+      expect(thrown.message).toBe('Session expired');
+      expect(thrown.status).toBe(401);
+      expect(thrown.code).toBe(ApiErrorCodes.AUTH);
     });
 
     it('should work with Promise.reject', async () => {
