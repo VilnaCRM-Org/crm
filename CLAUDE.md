@@ -29,7 +29,7 @@ The project uses Docker for all development and testing. Commands are managed vi
 
 ```bash
 make start          # Start dev server (port 3000)
-make start-prod     # Start production build (port 3001)
+make start-prod     # Start the prod-parity stack (port 3001; test-harness image, see #158)
 make sh             # Open shell in dev container
 ```
 
@@ -241,6 +241,7 @@ make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, 
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
 make lint-licenses  # dependency license SPDX-allowlist gate over the production tree (see below)
+make check-auth-seed-gate # preloaded-auth seed bundle scan (Docker; not part of `make lint`)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
@@ -1057,6 +1058,71 @@ Key variables in `.env`:
 - `REACT_APP_SENTRY_ENVIRONMENT` - Sentry environment tag (falls back to `NODE_ENV`)
 - `REACT_APP_RELEASE` - Release version tag for Sentry release health and source-map
   symbolication (set per deploy, e.g. the commit SHA)
+- `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` - Test-only auth seed for the Lighthouse/Playwright
+  runs. **Inert on its own**: only a build that also set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` reads
+  it, which is exclusively the ephemeral `test-harness` image. See "Preloaded-auth-token seed
+  gate" below.
+
+`ENABLE_PRELOADED_AUTH_TOKEN_SEED` is deliberately **not** in the list above: it is a build-
+environment flag set only by the Dockerfile's `test-harness` stage, and it must never appear in
+`.env`, `.env.local`, or any other dotenv file. RSBuild's `loadEnv` merges every key it finds in
+those files into `process.env` — including non-`REACT_APP_` ones — so a dotenv entry really would
+turn the seed back on.
+
+### Preloaded-auth-token seed gate (issue #158)
+
+`isAuthenticated` is `!!token`, so anything that presets the auth token presets an
+authenticated session. The Playwright, visual, and Lighthouse suites need exactly that — they
+run against a production build and must reach the protected `/` route without a real login —
+so the seed seam cannot simply be deleted. It is instead **compiled out of every build that
+did not explicitly opt in**.
+
+The whole seam is one method in
+[`src/config/env/preloaded-auth-token.ts`](src/config/env/preloaded-auth-token.ts) that returns
+`null` up front unless
+`NODE_ENV !== 'production' || ENABLE_PRELOADED_AUTH_TOKEN_SEED === 'true'`.
+Rspack folds that to `if (true) return null` and drops the rest, so a deployable bundle
+contains neither `__PRELOADED_AUTH_TOKEN__` nor the token literal: a stray
+`REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` cannot seed a session, and an XSS-set `window` global has
+nothing left to read. `rsbuild.config.ts` reads the opt-in flag **before** calling `loadEnv`, and
+`.dockerignore` excludes `.env*.local`, so an untracked local dotenv cannot supply it either.
+
+Three invariants keep the guard real — breaking any of them is a security regression:
+
+1. **The guard and both reads stay in that one method.** Constant folding is scope-local; a
+   private helper or a cross-module call survives minification and ships the identifiers.
+   `rsbuild.config.ts` must keep the `process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED` define, or
+   the expression is left as a runtime `process` read that throws in the browser.
+2. **No other `src/` file names either identifier.** `raw-env.ts` is reachable from every
+   chunk, so exposing the token there inlined it into all production bundles regardless of the
+   guard. It no longer does, and neither `EnvSchema` nor `Env` carries the field.
+3. **Only the ephemeral image opts in.** The Dockerfile's `test-harness` target — what
+   `docker-compose.test.yml` builds — sets the flag; the deployable `production` target is
+   assembled from a `build` stage that takes no seed ARG.
+
+Two checks enforce this:
+
+- [`tests/unit/tooling/preloaded-auth-seed-gate.test.ts`](tests/unit/tooling/preloaded-auth-seed-gate.test.ts)
+  pins invariants 1-3 as source contracts.
+- `make check-auth-seed-gate` (the `preloaded-auth seed gate` job of the `security testing`
+  workflow) proves them against the **emitted bundle**, not config source text. It scans the
+  `--target production` image itself, then a deliberately opted-in build that must still contain
+  the seam, so the scan cannot pass vacuously against the wrong artifact. It is also the only
+  unconditional CI job that builds the deployable image: every prod-side suite builds
+  `test-harness`, and `dockerfile performance` only builds `production` when the `Dockerfile`
+  itself changes.
+
+Add `security testing / preloaded-auth seed gate` to the branch-protection required checks; until
+then the gate is advisory and a PR that trips it stays mergeable.
+
+**Honest scope:** this stops the seam from reaching a deployable artifact; it is not a server-side
+authorization boundary. `ProtectedRoute` is a client-only UI guard, so route protection still rests
+on the API rejecting an unauthenticated token. And an author who edits the guard, the manifest of
+identifiers, and the workflow in one PR defeats the gate — CODEOWNERS path rules are the complement,
+as they are for the issue-#188 ratchet.
+
+**No suppression:** satisfy the gate by keeping the seam gated, never by relaxing the scan,
+narrowing its file set, or moving a read out of the guarded method.
 
 ## Important Patterns
 

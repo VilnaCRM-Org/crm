@@ -1414,17 +1414,22 @@ build goes red. Know them before you touch a config file:
   it is never persisted to `localStorage`, cookies, or disk
 - **Testing/LHCI only**: a token may be preloaded at runtime via
   `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
-  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. The Make-driven Lighthouse/Playwright
-  workflows build this image (`docker-compose.test.yml`, `target: production`) and inject a
-  **default** token automatically — `Makefile` sets
+  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var, so the Lighthouse, Playwright and visual
+  suites reach the protected home route without a real login. `Makefile` sets
   `LHCI_PRELOADED_AUTH_TOKEN ?= lighthouse-preloaded-auth-token` and bare-`export`s it, so
-  the prod-target test image always carries a token even if the user set nothing. It
-  **must never be shipped as a real production artifact**
-- This is enforced operationally, not by a `NODE_ENV` gate: `PreloadedAuthToken.read()`
-  uses the token whenever it is present, so `LHCI_PRELOADED_AUTH_TOKEN` and
-  `window.__PRELOADED_AUTH_TOKEN__` must be kept out of production builds and CI secrets.
-  `rsbuild.config.ts` must not add an explicit `define` for the token (guarded by
-  `tests/unit/performance/public-index.test.js`)
+  the harness image always carries a token even if the user set nothing
+- The seam is **gated out of production builds** (issue #158). Both reads live in one method
+  in `src/config/env/preloaded-auth-token.ts`, behind
+  `NODE_ENV === 'production' && ENABLE_PRELOADED_AUTH_TOKEN_SEED !== 'true'`. The bundler
+  folds that guard away, so a deployable bundle carries neither the window key nor the token
+  literal: a stray `.env` value cannot seed a session, and an XSS-set `window` global has
+  nothing left to read
+- Only the ephemeral harness image opts in. The Dockerfile's `test-harness` target — what
+  `docker-compose.test.yml` builds — sets `ENABLE_PRELOADED_AUTH_TOKEN_SEED=true`, while the
+  deployable `production` target is assembled from a `build` stage that takes no seed ARG
+- `make check-auth-seed-gate` (run by the `security testing` workflow) scans the **emitted
+  bundle** rather than config source text: it fails when a deployable build carries the seam,
+  and equally when an opted-in build has lost it, so the gate cannot pass vacuously
 - No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Dependency Audits
@@ -1522,6 +1527,7 @@ make build              # Build in Docker
 make build-out          # Extract build to ./build
 make build-analyze      # Bundle analyzer (writes dist/bundle-report.html + dist/bundle-stats.json)
 make perf-budget        # Build + enforce gzip byte budgets (config/performance-budget.json)
+make check-auth-seed-gate  # Scan the built bundles so the test-only preloaded-auth seed cannot ship
 ```
 
 ### Utilities
