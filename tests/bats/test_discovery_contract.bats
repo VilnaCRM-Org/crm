@@ -1,6 +1,8 @@
 #!/usr/bin/env bats
 #
-# Contract (issue #193): every file under the five test roots that DECLARES tests (a top-level
+# Contract (issue #193): every JS/TS-family source file (`ts`/`tsx`/`mts`/`cts`/`js`/`jsx`/
+# `mjs`/`cjs` — documentation cannot declare a runnable test, so `.md` files with fenced
+# `test(` examples are excluded) under the five test roots that DECLARES tests (a top-level
 # `test(` / `it(` / `describe(`, including CHAINED modifiers — `.each`/`.skip`/`.only`/`.fixme`
 # and combinations like `test.concurrent.each(` / `describe.each.only(` — via the
 # `(\.[A-Za-z]+)*` group) must be DISCOVERED by a runner. Jest test-match is suffix-exact and
@@ -17,6 +19,18 @@
 load './test_helper.bash'
 
 TEST_ROOTS='tests/unit tests/integration tests/apollo-server tests/e2e tests/visual'
+
+# The extension-probe test plants transient files in the tracked tests/unit tree. Sweep them
+# before AND after every test so a hard interrupt (timeout, OOM, SIGKILL) cannot strand probes
+# that would spuriously fail the orphan gate on the next run — setup() makes the suite
+# self-healing, teardown() covers every bats-visible exit path. They are also gitignored.
+setup() {
+  rm -f "$PROJECT_ROOT"/tests/unit/__discovery_probe__.*
+}
+
+teardown() {
+  rm -f "$PROJECT_ROOT"/tests/unit/__discovery_probe__.*
+}
 
 # jest --listTests prints ABSOLUTE container paths; strip to repo-relative. Capture jest's exit
 # status BEFORE the sed pipe (which would mask it): a non-zero exit means broken config OR a
@@ -90,6 +104,8 @@ declared_files() {
     echo "declared_files: grep failed (status $status) — a test root is missing or unreadable" >&2
     return "$status"
   fi
+  # Extension filter as a second step: the dev container's BusyBox grep has no --include.
+  matches="$(printf '%s\n' "$matches" | grep -E '\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$' || :)"
   [ -n "$matches" ] && printf '%s\n' "$matches" | sort -u
   return 0
 }
@@ -145,4 +161,24 @@ discovered_files() {
     echo 'playwright discovered zero spec files' >&2
     return 1
   fi
+}
+
+@test "declared inventory admits every JS/TS-family extension (filter not silently narrowed)" {
+  local ext declared missed
+  for ext in ts tsx mts cts js jsx mjs cjs; do
+    printf 'describe("discovery probe", () => {});\n' \
+      > "$PROJECT_ROOT/tests/unit/__discovery_probe__.$ext"
+  done
+  declared="$(declared_files)" || {
+    echo 'declared_files failed while probes were planted' >&2
+    return 1
+  }
+  missed=0
+  for ext in ts tsx mts cts js jsx mjs cjs; do
+    if ! printf '%s\n' "$declared" | grep -qx "tests/unit/__discovery_probe__.$ext"; then
+      echo "declared_files missed extension .$ext" >&2
+      missed=1
+    fi
+  done
+  [ "$missed" -eq 0 ]
 }

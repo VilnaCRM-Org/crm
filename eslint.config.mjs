@@ -500,6 +500,16 @@ export default [
     },
   },
 
+  // Source (issue #166): the `!` non-null assertion is a type-level suppression — it silences a
+  // `noUncheckedIndexedAccess` result instead of narrowing it. Production source must narrow for
+  // real (`??`, an explicit guard, `in`, `Map.get` + guard, optional chaining).
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'error',
+    },
+  },
+
   // Source (issue #173): deterministic lint-level SAST over the dominant SPA XSS and
   // code-execution sink classes. This is the only security analysis that runs pre-commit
   // (Husky) and fails in seconds; CodeQL (`security testing`) is the complementary
@@ -678,6 +688,15 @@ export default [
     },
   },
 
+  // Tests (issue #166): `warn`, not `error` — a test may legitimately assert on fixture presence
+  // — but the same sanctioned narrowing is expected in review.
+  {
+    files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'warn',
+    },
+  },
+
   // Tests (issue #90): discourage *ByTestId — prefer getByRole/getByLabelText/
   // getByText, falling back to a stable id. `warn` during staged migration
   // (mock-stub queries remain valid); promote to `error` once the suite is clean.
@@ -713,8 +732,13 @@ export default [
       'playwright/no-skipped-test': ['error', { disallowFixme: true }],
       'playwright/no-focused-test': 'error',
       // A `take*Snapshot` helper IS the assertion in every visual spec (it calls
-      // `expect(...).toHaveScreenshot()`), so the convention is declared, not suppressed.
-      'playwright/expect-expect': ['error', { assertFunctionPatterns: ['^take\\w*Snapshot$'] }],
+      // `expect(...).toHaveScreenshot()`), and an `expect*` helper IS the assertion in the
+      // mobile lane (`expectTouchTarget`, `expectNoHorizontalOverflow`) — the same convention
+      // the Jest block declares via `assertFunctionNames`. Declared, not suppressed.
+      'playwright/expect-expect': [
+        'error',
+        { assertFunctionPatterns: ['^take\\w*Snapshot$', '^expect\\w+$'] },
+      ],
       'playwright/no-conditional-in-test': 'warn',
       'playwright/no-wait-for-timeout': 'warn',
     },

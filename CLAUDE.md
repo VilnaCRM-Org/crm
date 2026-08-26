@@ -454,6 +454,95 @@ fragments, constants, factories, or a base object plus overrides — never with
 ignore/suppress directives. The same root-cause-not-suppression policy used for
 ESLint, TypeScript, and metrics applies here.
 
+### TypeScript strictness: indexed access and overrides (issue #166)
+
+`tsconfig.json` sets `noUncheckedIndexedAccess: true` and `noImplicitOverride: true` on top of
+`strict`, enforced by the existing `make lint-tsc` gate in the `static testing` workflow.
+
+- **`noUncheckedIndexedAccess`** types every index read (`arr[i]`, `record[key]` on a
+  `Record<string, T>`) as `T | undefined`. This closes the gap this file's own metrics advice
+  ("replace switch-case chains with lookup maps") steers contributors into: an unguarded
+  `mapper[code].handle()` type-checks under plain `strict` and throws in production the first
+  time a backend adds an unmapped key.
+- **`noImplicitOverride`** requires the `override` modifier on any member that redeclares a base
+  member, so a base-class rename leaves a compile error instead of an orphaned, silently-dead
+  "override".
+- **`noPropertyAccessFromIndexSignature` is deliberately NOT enabled** — measured 367 errors (all
+  `TS4111`), dominated by `process.env` dot-access in tests and configs, for no defect class.
+
+`@typescript-eslint/no-non-null-assertion` is `error` for `src/**` and `warn` for `tests/**`: the
+`!` operator silences a `noUncheckedIndexedAccess` result instead of narrowing it, which is the
+suppression this gate exists to prevent. Narrow for real — `??` fallback, explicit guard, `in`
+check, `Map.get` plus guard, or optional chaining — never with `!` and never with a cast.
+
+### Gate-threshold ratchet (issue #188)
+
+Every binding budget in this repo reads its threshold from a config file in the same repo, so a PR
+that would go red could historically edit the threshold in the same diff and merge green. That is
+not hypothetical: the mobile Lighthouse budget was quietly lowered three times
+(`ae179ad` 0.90→0.85, `908566d` 0.85→0.84, `d30f418` 0.85→0.84) inside PRs about other things.
+
+The `gate ratchet` check
+([`.github/workflows/gate-ratchet.yml`](.github/workflows/gate-ratchet.yml))
+compares each guarded value at the PR head against the merge base **and** the base tip, keeping only
+findings present against both, so a PR is never blamed for a relaxation that already landed on
+`main`. The guarded set is the authoritative
+[`config/gate-thresholds.manifest.json`](config/gate-thresholds.manifest.json): both `lighthouserc`
+files, `stryker.config.mjs`, `jest.config.ts` (thresholds **and** the `collectCoverageFrom`
+exclusion list, which must not grow), `config/metrics-policy.json`,
+`config/performance-budget.json`, `.jscpd.json`, `tsconfig.json` (the set of enabled strictness
+flags, which must not shrink — this is what stops a later PR silently deleting the issue-#166
+flags), the k6 load budgets (`tests/load/config.json.dist` p99 latency ceilings **and** its
+per-endpoint `thresholds.errorRate` / `thresholds.checkPassRate` overrides, plus the fallback
+tables in `tests/load/utils/thresholds-builder.js` that apply to every endpoint which does not
+override them), and the manifest itself.
+
+Direction is derived **per key**, never per file — `_max` keys are ceilings (raising weakens),
+`_min` keys are floors (lowering weakens). A per-file direction would score a drop of
+`mi_visual_studio_min` as a strengthening.
+
+**Remediation:** strengthen the value, or take the deliberate relaxation by adding the
+`gate-relaxation` label — the weakened-values table is then written to the job summary and a sticky
+PR comment so the decision is reviewed, never a buried diff line. Never satisfy the ratchet by
+removing a manifest entry (the manifest self-guards). **Honest scope:** this is an
+anti-accidental-erosion visibility gate, not an insider-proof boundary — an author editing the
+workflow or the manifest in the same PR defeats it; CODEOWNERS path rules (issue #141) are the
+complement.
+
+### Architecture gate integrity (issue #181)
+
+`.dependency-cruiser.js` encodes the barrel/public-API contract, DI composition-root isolation,
+layer bans, type-file purity, and folder/naming conventions in 45 rules of hand-written path
+regexes. Nothing in CI distinguished "no violations because the code is clean" from "no violations
+because a regex went dead" — a typo'd anchor makes a rule match nothing and the gate passes
+**vacuously** for every future PR.
+
+[`tests/unit/tooling/depcruise-rules.test.ts`](tests/unit/tooling/depcruise-rules.test.ts) closes
+that hole. It materializes one miniature project tree per rule from
+[`scripts/ci/depcruise-rule-fixtures.mjs`](scripts/ci/depcruise-rule-fixtures.mjs) into a temp
+directory, cruises each through the programmatic `cruise()` API, and asserts the rule fires **and
+that nothing else fires** (which also catches an over-broad regex). It rides the existing
+`unit testing` workflow and runs in ~3 s.
+
+Three invariants for contributors:
+
+1. Every rule added to `.dependency-cruiser.js` must land with a fixture — the completeness
+   assertion is bidirectional and has **no exemption list**, so a new rule cannot ship untested and
+   a fixture cannot outlive a deleted rule.
+2. Fixture imports must be **relative** (never `@/` or `@auth` — the runner strips `tsConfig` from
+   the cruise options so no `baseUrl`/`paths` alias can resolve out of the sandbox into the real
+   `src/`; an aliased import therefore trips `not-to-unresolvable`), and every fixture file must
+   participate in a dependency edge or it trips `no-orphans`.
+3. A rule that legitimately co-fires with a strict-superset rule must declare it in **both**
+   `alsoFires` in the fixture file (`scripts/ci/depcruise-rule-fixtures.mjs`) and
+   `DOCUMENTED_SUBSET_OVERLAPS` in the test — two separate reviewed edits, so padding one to hide a
+   regression is visible.
+
+The programmatic API needs `validate: true`, or `cruise()` returns zero violations and the guard
+itself passes vacuously. **Honest limitation:** the fixtures prove each rule still _fires_; they do
+not prove each rule's _exemption_ clauses still exempt, so a mutated `pathNot` is caught only if it
+leaks into another fixture.
+
 ### Lint-level SAST (issue #173)
 
 CodeQL (`security testing`) is dataflow SAST with cloud latency. The deterministic,
@@ -504,7 +593,8 @@ ESLint blocks close that, again through `make lint` with no new workflow:
   follows the runner, not the file extension.
 
 Shared assertion helpers are **declared, not suppressed**: `assertFunctionPatterns`
-recognizes the `take*Snapshot` visual-spec convention and `assertFunctionNames` recognizes
+recognizes the `take*Snapshot` visual-spec convention and the `expect*` mobile-lane helpers
+(`expectTouchTarget`, `expectNoHorizontalOverflow`), and `assertFunctionNames` recognizes
 `expect*` Jest helpers.
 
 Narrowing a discriminated union is not a reason to nest `expect` in an `if`. Use the
