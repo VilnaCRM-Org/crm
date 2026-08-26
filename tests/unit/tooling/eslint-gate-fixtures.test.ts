@@ -47,8 +47,8 @@ const report: GateReport = JSON.parse(
 
 describe('custom ESLint selector coverage (issue #189)', () => {
   describe('wiring: no-restricted-syntax is error-severity in every src scope', () => {
-    it.each(Object.keys(report.probes))('scope %s resolves at error (2)', (scope) => {
-      expect(report.probes[scope].severity).toBe(2);
+    it.each(Object.entries(report.probes))('scope %s resolves at error (2)', (_scope, probe) => {
+      expect(probe.severity).toBe(2);
     });
 
     it('the error-severity selector universe is non-empty and includes load-bearing gates', () => {
@@ -75,9 +75,12 @@ describe('custom ESLint selector coverage (issue #189)', () => {
         expect(ruleMatches.length).toBeGreaterThan(0);
         // No parse errors masquerading as "clean".
         expect(fx.messages.some((m) => m.ruleId === null)).toBe(false);
-        if (fx.tag) {
-          expect(ruleMatches.some((m) => m.message.includes(fx.tag))).toBe(true);
-        }
+        // Branch on the DATA, assert unconditionally (`jest/no-conditional-expect`, issue #167):
+        // an untagged fixture is satisfied by its rule matches alone.
+        const taggedMatches = fx.tag
+          ? ruleMatches.filter((m) => m.message.includes(fx.tag))
+          : ruleMatches;
+        expect(taggedMatches.length).toBeGreaterThan(0);
       }
     );
 
