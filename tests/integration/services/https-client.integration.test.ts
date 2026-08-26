@@ -8,6 +8,7 @@ import HttpErrorGuard from '@/services/https-client/http-error-guard';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
@@ -387,11 +388,11 @@ describe('FetchHttpsClient Integration', () => {
       mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
 
       const error = await client.get(TEST_URL, { schema: passthrough }).catch((err) => err);
+
       expect(httpErrorGuard.is(error)).toBe(true);
-      if (httpErrorGuard.is(error)) {
-        expect(error.status).toBe(0);
-        expect(error.message).toBe(ResponseMessages.NETWORK_ERROR);
-      }
+      assertInstanceOf(error, HttpError);
+      expect(error.status).toBe(0);
+      expect(error.message).toBe(ResponseMessages.NETWORK_ERROR);
     });
 
     it('should throw HttpError on non-JSON response when JSON expected', async () => {
