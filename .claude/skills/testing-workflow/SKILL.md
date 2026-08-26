@@ -19,6 +19,11 @@ description: Use when selecting, running, or triaging frontend test suites.
 | Memory leaks            | `make test-memory-leak`   |
 | Mutation                | `make test-mutation`      |
 
+`make test-e2e` and `make test-visual` also run the mobile-device lane (`mobile-chrome` /
+`mobile-safari` projects over `tests/e2e/mobile` and `tests/visual/mobile`); there is no
+separate command for it. This holds for the default `ENV=prod` only — with `ENV=dev` the
+touch E2E lane runs on `mobile-chrome-dev` alone and the mobile visual lane does not run.
+
 ## Triage
 
 1. Re-run the smallest failing suite.
