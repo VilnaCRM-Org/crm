@@ -684,14 +684,21 @@ const { t } = useTranslation();
 <h1>{t('login.title')}</h1>
 ```
 
+Dates, numbers, currency, percentages, and relative time inside translations use the
+registered i18next formatters (`{{value, datetime}}`, `{{value, currency}}`,
+`{{value, percent}}`, `{{value, relativetime}}`) instead of pre-formatted strings — see
+"Locale-aware Intl formatting (issue #155)" under Architecture Patterns.
+
 ## Architecture Patterns
 
-### No static methods or free functions (issues #100, #89)
+### No static methods or free functions (issues #100, #89, #180)
 
 Non-React application code (services, repositories, mappers, factories, stores, utilities
-under `src/**/*.ts`) must **not** use `static` class members or standalone (free)
-functions. Convert them to **instance methods on an injectable class** so collaborators can
-be swapped for mocks/spies through the tsyringe DI container instead of via module mocking.
+under `src/**/*.ts`) must **not** use `static` class members, standalone (free)
+functions, or **function-valued properties of a top-level object literal**
+(`export default { map(r) { … } }`). Convert them to **instance methods on an injectable
+class** so collaborators can be swapped for mocks/spies through the tsyringe DI container
+instead of via module mocking.
 
 - **Behavioral collaborators** → `@injectable()` class + token in the owning area's
   `tokens.ts` + registration in that area's `di.ts` composition root (issue #109), resolved
@@ -711,14 +718,66 @@ workflow. Fix violations by refactoring — never with `eslint-disable`. In test
 mock collaborator (or pass a stub to the constructor / resolve from a child container)
 rather than mocking the module.
 
+Call a singleton's methods **on the singleton** and pass the object itself to collaborators
+— never a destructured or otherwise detached method reference. A prototype method loses its
+receiver and throws at runtime, and TypeScript cannot see it because these action
+interfaces type their members as plain function properties. Pin the receiver in tests with
+`expect(spy.mock.contexts).toEqual([theSingleton])`.
+
 This gate is the canonical enforcement of the **only classes outside React components**
 convention (issue #89, closed as covered here): banning free functions in non-React `.ts`
 makes all such logic class-encapsulated, so #89 needs no separate ESLint or
 dependency-cruiser rule. The dependency-cruiser placement rule #89 originally proposed is
 superseded — dep-cruiser reasons about the import graph, not whether a module's exports are
 classes, and the blanket ESLint ban is stricter than the helper-zone carve-out #89 sketched.
-Per #89's "honest limitation", the residual gap is **semantic** (logic hidden in an object
-literal's methods or a misplaced helper) and stays a review-gate concern.
+Issue #180 closed the common statically-detectable half of #89's residual (top-level
+object-literal methods, including `as const` / `satisfies` wrappers). What stays a
+**review-gate** concern — deliberately unmatched, so idiomatic nested MUI `sx` callbacks
+and zustand-style slices are not flagged — is nested (depth > 1) object literals,
+`Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
+
+### Locale-aware Intl formatting (issue #155)
+
+The template is bilingual (uk primary, en fallback), so every user-facing date, number,
+currency amount, percentage, and relative time renders through one locale-aware boundary —
+`src/services/locale-formatter/` — never through raw `toLocaleString()` /
+`toLocaleDateString()` / `toLocaleTimeString()` calls or ad-hoc `new Intl.*Format(...)`
+construction at call sites. Scattered call-site construction drifts locales (en-US defaults
+under a uk primary locale), defeats formatter caching, and makes output impossible to pin in
+tests.
+
+How to format, by context:
+
+- **Translation strings** → use the i18next formatters registered in `src/i18n.js`
+  (`date`, `datetime`, `number`, `currency`, `percent`, `relativetime`):
+  `"updated_at": "Last updated {{value, datetime}}"`, `"price": "Price: {{value, currency}}"`
+  (see `src/features/example/i18n/`). Components pass the raw value:
+  `t('formatting.updated_at', { value: new Date(timestamp) })`.
+- **Non-translation logic (services, repositories, stores)** → inject the
+  `@injectable()` `LocaleFormatterService` adapter via
+  `LOCALE_FORMATTER_TOKENS.LocaleFormatterService` (its own `di.ts` composition root,
+  issue #109) and call `date` / `dateTime` / `number` / `currency` / `percent` /
+  `relativeTime`.
+- **Paint-path / container-free code** → import the `localeFormatterCore` module
+  singleton from `@/services/locale-formatter/locale-formatter-core` (the same two-layer
+  split as observability: the core is tsyringe-free, so `src/i18n.js` stays light).
+
+The core caches `Intl.DateTimeFormat`, `Intl.NumberFormat` (decimal, currency, percent),
+and `Intl.RelativeTimeFormat` instances keyed by locale + options, and resolves the locale
+as: explicit argument → active i18next language → `rawEnv.mainLanguage()` (default `uk`).
+Presets: medium date style, short time style, `UAH` with a narrow symbol (`currency` takes
+an optional ISO 4217 code), `numeric: 'auto'` relative time. Extend the service with a new
+preset instead of passing one-off options at call sites.
+
+Enforced by an ESLint `no-restricted-syntax` gate in `eslint.config.mjs`
+(`noRawIntlSelectors`, re-included in every overlapping block that carries the shared
+selector spreads — the type-only-file override forbids all runtime syntax, so it needs no
+Intl selectors — and lifted only inside `src/services/locale-formatter/`), run by
+`make lint-eslint` and the `static testing`
+workflow. Tests are exempt — they construct `Intl` formatters freely and pin **exact**
+uk/en outputs as fixed contracts (hardcoded literals per the Faker convention, e.g.
+`1234.5` → `1 234,50 ₴` (uk, U+00A0 separators) vs `₴1,234.50` (en)). Fix violations by
+routing through the formatter — never with `eslint-disable`.
 
 ### Dependency Injection Pattern
 
@@ -884,6 +943,16 @@ happy-path test is **not** adequate coverage and does **not** make the work done
 Follow the five steps below in order. Skipping a scenario class or step is allowed **only**
 with a recorded, concrete justification (see Step 3) — never by silent omission.
 
+**Every test you write must be alive and asserting (issue #167).** `make lint-eslint` fails
+on a skipped (`.skip` / `.fixme` / `xit`), focused, or assertion-free test, and on `expect`
+nested inside a conditional. To narrow a discriminated union, use the throwing helpers in
+`tests/utils/assert-result.ts` (`assertOk`, `assertError`, `assertInstanceOf`) instead of
+an `if`; for throwing calls use `expect(...).toThrow(...)` /
+`await expect(...).rejects.toThrow(...)`, or capture the error unconditionally with
+`.catch((caught: unknown) => caught)` and assert on it. A shared assertion helper is
+declared through `assertFunctionNames` / `assertFunctionPatterns` (`expect*` for Jest,
+`take*Snapshot` for visual specs) — never through a suppression.
+
 ### Step 1 — Pick the Right Test Layer
 
 Choose the layer(s) that actually exercise the change; a single change often needs more
@@ -896,6 +965,11 @@ than one. Match the change to the suite and run its verification command:
 | Integration         | Cross-module flows, DI wiring (100% gate) | `make test-integration` |
 | E2E (Playwright)    | User-facing flows end to end (Mockoon)    | `make test-e2e`         |
 | Visual regression   | Any change to rendered UI or styling      | `make test-visual`      |
+
+`make test-e2e` and `make test-visual` each run five Playwright projects: the desktop
+`chromium` / `firefox` / `webkit` matrix plus `mobile-chrome` (Pixel 7) and `mobile-safari`
+(iPhone 14), the latter scoped to `tests/e2e/mobile` and `tests/visual/mobile`. No separate
+command or workflow gates the mobile lane.
 
 Add a specialized suite when the change touches its concern: `make test-mutation` (test
 strength), `make test-memory-leak` (leaks / OOM), `make test-load` (traffic, K6), and
@@ -927,6 +1001,8 @@ Walk this checklist and add coverage for every item the change can reach:
 - [ ] Permission / auth / role-sensitive flows
 - [ ] Boundary values and off-by-one behavior
 - [ ] Locale / i18n-sensitive behavior (uk primary, en fallback)
+- [ ] Touch / mobile-device behavior for UI changes — `tap()` interaction, tap-target size,
+      and a keyboard-shrunk viewport (`tests/e2e/mobile/`, issue #154)
 - [ ] Visual regressions for UI changes (`make test-visual`)
 - [ ] Previously fixed bug regression coverage (see Step 4)
 
@@ -999,7 +1075,11 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 
 ### E2E Testing with Playwright
 
-1. **Test structure**: `tests/e2e/[feature].spec.ts`
+1. **Test structure**: `tests/e2e/[feature].spec.ts`; touch-interaction specs go in
+   `tests/e2e/mobile/` (issue #154), which the `mobile-chrome` (Pixel 7) and `mobile-safari`
+   (iPhone 14) projects run exclusively — the desktop projects carry
+   `testIgnore: '**/mobile/**'`, so a spec placed there gets `isMobile`, `hasTouch`, the
+   mobile UA and real DPR, and must be driven with `tap()` rather than `click()`.
 2. **Use Mockoon**: API responses are mocked via `docker-compose.test.yml`
 3. **Page Object pattern**:
 
@@ -1029,6 +1109,10 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 1. **Update snapshots**: `make test-visual-update`
 2. **Review changes**: Check `tests/visual/.playwright/` for diffs
 3. **Only update when intentional**: Don't blindly accept visual changes
+4. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated `/sign-in` and
+   `/sign-up` baselines, recorded per mobile project with `scale: 'device'` so the real
+   2.625×/3× DPR raster is gated. Never reuse `take-visual-snapshot.ts` there — its
+   `setViewportSize` call would discard the device viewport.
 
 ## Troubleshooting Guide
 

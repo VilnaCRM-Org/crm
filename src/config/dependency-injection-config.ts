@@ -8,6 +8,7 @@ import userModuleRegistrar from '@/modules/user/config/di';
 import errorRegistrar from '@/services/error/di';
 import errorReportingRegistrar from '@/services/error-reporting/di';
 import httpClientRegistrar from '@/services/https-client/di';
+import localeFormatterRegistrar from '@/services/locale-formatter/di';
 import observabilityRegistrar from '@/services/observability/di';
 import errorUtilsRegistrar from '@/utils/error/di';
 
@@ -17,6 +18,7 @@ const registrars: ModuleRegistrar[] = [
   errorRegistrar,
   errorReportingRegistrar,
   httpClientRegistrar,
+  localeFormatterRegistrar,
   observabilityRegistrar,
   userModuleRegistrar,
 ];
