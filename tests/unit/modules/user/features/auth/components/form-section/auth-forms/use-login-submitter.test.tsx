@@ -83,6 +83,19 @@ describe('useLoginSubmitter', () => {
     expect(loginUser).toHaveBeenCalledWith(credentials, expect.any(AbortSignal));
   });
 
+  it('calls loginUser on the store singleton so the deferred root keeps its receiver', async () => {
+    const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
+
+    const { result } = renderHook(() => useLoginSubmitter(t));
+
+    await act(async () => {
+      await result.current.handleLogin(buildCredentials());
+    });
+
+    expect(loginUser.mock.contexts).toHaveLength(1);
+    expect(loginUser.mock.contexts[0]).toBe(authActions);
+  });
+
   it('does not restore a late login error after unmount', async () => {
     const deferred = createDeferred();
     const lateError = {

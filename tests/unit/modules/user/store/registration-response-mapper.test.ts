@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import { buildRegistrationResponse } from '@tests/builders';
+import { assertError, assertOk } from '@tests/utils/assert-result';
 
 describe('RegistrationResponseMapper', () => {
   const mapper = new RegistrationResponseMapper();
@@ -10,11 +11,9 @@ describe('RegistrationResponseMapper', () => {
     const response = buildRegistrationResponse();
     const result = mapper.map(response);
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.fullName).toBe(response.fullName);
-      expect(result.value.email).toBe(response.email);
-    }
+    assertOk(result);
+    expect(result.value.fullName).toBe(response.fullName);
+    expect(result.value.email).toBe(response.email);
   });
 
   it('returns error when response fields have wrong types', () => {
@@ -25,11 +24,9 @@ describe('RegistrationResponseMapper', () => {
     expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
       issueCount: 2,
     });
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBeTruthy();
-      expect(result.error.retryable).toBe(false);
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBeTruthy();
+    expect(result.error.retryable).toBe(false);
   });
 
   it('returns error when the response is null', () => {

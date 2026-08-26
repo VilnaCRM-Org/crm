@@ -39,7 +39,6 @@ describe('AuthSkeleton typography parity', () => {
         size: 'l',
       })
     );
-    const titleSx = titleSkeleton.sx;
     const titleSxExpected = {
       width: '7.5rem',
       height: '1.375rem',
@@ -50,18 +49,13 @@ describe('AuthSkeleton typography parity', () => {
         marginBottom: '0.9375rem',
       }),
     };
-    if (Array.isArray(titleSx)) {
-      expect(titleSx).toEqual(expect.arrayContaining([expect.objectContaining(titleSxExpected)]));
-    } else {
-      expect(titleSx).toEqual(expect.objectContaining(titleSxExpected));
-    }
+    expect(titleSkeleton.sx).toEqual([expect.objectContaining(titleSxExpected)]);
 
     expect(subtitleSkeleton).toEqual(
       expect.objectContaining({
         size: 'm',
       })
     );
-    const subtitleSx = subtitleSkeleton.sx;
     const subtitleSxExpected = {
       width: '17.25rem',
       height: '1.5625rem',
@@ -70,12 +64,6 @@ describe('AuthSkeleton typography parity', () => {
         width: '18.5rem',
       }),
     };
-    if (Array.isArray(subtitleSx)) {
-      expect(subtitleSx).toEqual(
-        expect.arrayContaining([expect.objectContaining(subtitleSxExpected)])
-      );
-    } else {
-      expect(subtitleSx).toEqual(expect.objectContaining(subtitleSxExpected));
-    }
+    expect(subtitleSkeleton.sx).toEqual([expect.objectContaining(subtitleSxExpected)]);
   });
 });
