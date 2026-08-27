@@ -156,6 +156,27 @@ export const FIXTURES = {
       'src/config/dependency-injection-config.ts': leaf('container'),
     },
   },
+  'components-no-direct-injectable-import': {
+    files: {
+      'src/components/ui-button/index.tsx': reexport('../../services/error'),
+      'src/services/error/index.ts': leaf('error'),
+    },
+  },
+  'no-paint-path-import-di-bridge': {
+    files: {
+      'src/modules/user/features/auth/components/login-form.ts': reexport(
+        '../../../../../components/ui-button'
+      ),
+      'src/components/ui-button/index.ts': reexport('../../providers/di/use-service'),
+      'src/providers/di/use-service.ts': leaf('use-service'),
+    },
+  },
+  'no-eager-shell-import-di-bridge': {
+    files: {
+      'src/routes/routes.ts': reexport('../providers/di/use-service'),
+      'src/providers/di/use-service.ts': leaf('use-service'),
+    },
+  },
   'no-composition-root-cross-module-imports': {
     alsoFires: ['no-cross-module-imports'],
     files: {
