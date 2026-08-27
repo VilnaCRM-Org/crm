@@ -27,16 +27,16 @@ const CONFIG_BLOCK = new RegExp(
 );
 
 const parseConfigBlock = (html: string): { flags?: Record<string, unknown> } => {
-  const match = CONFIG_BLOCK.exec(html);
+  const json = CONFIG_BLOCK.exec(html)?.[1];
 
-  if (!match) {
+  if (json === undefined) {
     throw new Error(
       `${SHELL} has no <script id="app-runtime-config"> block. The runtime configuration ` +
         'contract (issue #145) starts there — restore the block before changing anything else.'
     );
   }
 
-  return JSON.parse(match[1]) as { flags?: Record<string, unknown> };
+  return JSON.parse(json) as { flags?: Record<string, unknown> };
 };
 
 const shellFlagNames = (): string[] =>
@@ -46,16 +46,18 @@ const schemaFlagNames = (): string[] =>
   Object.keys(AppConfigSchema.shape.flags.unwrap().shape).sort();
 
 const unionFlagNames = (): string[] => {
-  const declaration = /export type FeatureFlag\s*=\s*([^;]+);/.exec(readFile(UNION));
+  const members = /export type FeatureFlag\s*=\s*([^;]+);/.exec(readFile(UNION))?.[1];
 
-  if (!declaration) {
+  if (members === undefined) {
     throw new Error(
       `${UNION} no longer declares "export type FeatureFlag = ...". That union is what makes an ` +
         'unknown flag name a compile error, so it cannot be removed or renamed.'
     );
   }
 
-  return Array.from(declaration[1].matchAll(/'([^']+)'/g), (match) => match[1]).sort();
+  return Array.from(members.matchAll(/'([^']+)'/g), ([, name]) => name)
+    .filter((name): name is string => name !== undefined)
+    .sort();
 };
 
 const registeredFlagNames = (): string[] => [...featureFlagService.names()].sort();
@@ -63,25 +65,23 @@ const registeredFlagNames = (): string[] => [...featureFlagService.names()].sort
 const appConfigEnvKeys = (relativePath: string): string[] =>
   readFile(relativePath)
     .split('\n')
-    .map((line) => /^(APP_CONFIG_[A-Z0-9_]*)=/.exec(line.trim()))
-    .filter((match): match is RegExpExecArray => match !== null)
-    .map((match) => match[1])
+    .map((line) => /^(APP_CONFIG_[A-Z0-9_]*)=/.exec(line.trim())?.[1])
+    .filter((key): key is string => key !== undefined)
     .sort();
 
 const urlSettings = (): Array<{ envVar: string; key: string }> => {
-  const block = /const URL_SETTINGS = \[([\s\S]*?)\];/.exec(readFile(RENDERER));
+  const body = /const URL_SETTINGS = \[([\s\S]*?)\];/.exec(readFile(RENDERER))?.[1];
 
-  if (!block) {
+  if (body === undefined) {
     throw new Error(
       `${RENDERER} no longer declares a URL_SETTINGS array. It is the list of APP_CONFIG_* URL ` +
         'variables the container entrypoint renders into the HTML shell.'
     );
   }
 
-  return Array.from(block[1].matchAll(/envVar:\s*'([^']+)',\s*key:\s*'([^']+)'/g), (match) => ({
-    envVar: match[1],
-    key: match[2],
-  }));
+  return [...body.matchAll(/envVar:\s*'([^']+)',\s*key:\s*'([^']+)'/g)].flatMap(
+    ([, envVar, key]) => (envVar === undefined || key === undefined ? [] : [{ envVar, key }])
+  );
 };
 
 const ROUTE_CONTRACTS = [

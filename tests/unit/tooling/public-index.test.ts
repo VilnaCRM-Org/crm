@@ -10,16 +10,16 @@ const readPublicJson = <T>(filename: string): T =>
 const RUNTIME_CONFIG_BLOCK = /<script[^>]*\bid="app-runtime-config"[^>]*>([\s\S]*?)<\/script>/;
 
 const readRuntimeConfigJson = (indexHtml: string): string => {
-  const match = RUNTIME_CONFIG_BLOCK.exec(indexHtml);
+  const json = RUNTIME_CONFIG_BLOCK.exec(indexHtml)?.[1];
 
-  if (!match) {
+  if (json === undefined) {
     throw new Error(
       'public/index.html is missing the <script id="app-runtime-config"> block that ' +
         'src/config/runtime/app-config-source.ts reads synchronously at boot (issue #145).'
     );
   }
 
-  return match[1];
+  return json;
 };
 
 describe('public index shell', () => {

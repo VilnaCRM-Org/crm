@@ -11,13 +11,13 @@ const BLOCK_PATTERN = new RegExp(
 
 function readCommittedConfigBlock(): string {
   const html = readFileSync(join(process.cwd(), 'public', 'index.html'), 'utf8');
-  const match = BLOCK_PATTERN.exec(html);
+  const block = BLOCK_PATTERN.exec(html)?.[1];
 
-  if (!match) {
+  if (block === undefined) {
     throw new Error(`public/index.html is missing the #${APP_CONFIG_ELEMENT_ID} block.`);
   }
 
-  return match[1];
+  return block;
 }
 
 describe('committed runtime configuration defaults (public/index.html)', () => {
