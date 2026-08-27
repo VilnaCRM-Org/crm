@@ -822,6 +822,40 @@ const myStoreFactory = new MyStoreFactory();
 export const useMyStore = myStoreFactory.create(container.resolve(MyStoreActions));
 ```
 
+#### Components: `useService(token)` is the only bridge (issue #128)
+
+A `.tsx` component obtains a behavioral collaborator through `useService` from
+`@/providers/di` — never `new MyService()`, never a value-import of an injectable class
+(`import type` is fine for annotations):
+
+```typescript
+import { useService } from '@/providers/di';
+import MY_AREA_TOKENS from '@/services/my-area/tokens';
+
+export default function MyWidget(): JSX.Element {
+  const service = useService<MyService>(MY_AREA_TOKENS.MyService);
+  // …
+}
+```
+
+`useService` is a hook — call it at the top level of a component or of another hook, never at
+module scope. Add the token, register the class in the owning area's `di.ts`, and (for a new
+area) add that registrar to the array in `src/config/dependency-injection-config.ts` **before**
+resolving it — an unregistered token throws. Do not invent an ad-hoc module singleton of a
+behavioral class for a component. In component
+tests, swap the collaborator by registering a mock against the token
+(`container.register(TOKENS.X, { useValue: mock })`) or by jest-mocking
+`@/providers/di/use-service`.
+
+Two `make lint` gates enforce this on `src/**/*.tsx`: an ESLint `no-restricted-syntax`
+selector (built-in constructors allowlisted) and dependency-cruiser
+`components-no-direct-injectable-import`. Carve-outs — the auth render path, the route shell,
+the app entrypoint, and the root error boundary — are container-free by design; leave their
+module singletons alone and never eager-import the container into the auth paint path
+(`no-paint-path-import-di-bridge` enforces that). Hooks (`use-*.ts`) are outside the static
+gate; that is not license to `new` a collaborator there — expect review to flag it. Never
+satisfy either gate with `eslint-disable`, a dependency-cruiser ignore, or `@ts-ignore`.
+
 ### Zustand Store Pattern
 
 Stores use Zustand (`create` + `devtools`) and stay container-free. Resolve the DI
@@ -1345,6 +1379,27 @@ GitHub Actions runs:
 
 See `.github/workflows/` for configuration
 
+#### Gates an agent must not "fix" by editing a threshold
+
+Three checks exist specifically to catch the shortcuts an agent is most likely to take when a
+build goes red. Know them before you touch a config file:
+
+- **`gate ratchet`** (`.github/workflows/gate-ratchet.yml`) — compares every binding budget named
+  in `config/gate-thresholds.manifest.json` (Lighthouse, Stryker, Jest coverage + its exclusion
+  list, metrics policy, jscpd, bundle budgets, `tsconfig` strictness flags, the k6 load budgets,
+  and the manifest itself) at the PR head against the merge base, and fails on any move in the
+  weakening direction. **Never** lower a threshold, grow a coverage-exclusion list, disable a
+  strictness flag, or delete a manifest entry to go green. Strengthen the value instead; if a
+  relaxation is genuinely right, apply the `gate-relaxation` label so it is reviewed — see
+  "Relaxing a gate threshold" in `CONTRIBUTING.md` for the local reproduction commands.
+- **`tsconfig` strictness (issue #166)** — `noUncheckedIndexedAccess` makes every index read
+  `T | undefined`. Narrow it for real (`??`, a guard, `in`, `Map.get` + guard, optional chaining).
+  `@typescript-eslint/no-non-null-assertion` is an error in `src/**` precisely because `!` silences
+  that result instead of handling it; a cast is the same evasion.
+- **dependency-cruiser rule fixtures (issue #181)** — every rule in `.dependency-cruiser.js` must
+  land with a fixture in `scripts/ci/depcruise-rule-fixtures.mjs`; the completeness assertion is
+  bidirectional and has no exemption list, so a new rule cannot ship untested.
+
 ## Security Considerations
 
 ### Environment Variables
@@ -1359,17 +1414,22 @@ See `.github/workflows/` for configuration
   it is never persisted to `localStorage`, cookies, or disk
 - **Testing/LHCI only**: a token may be preloaded at runtime via
   `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
-  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. The Make-driven Lighthouse/Playwright
-  workflows build this image (`docker-compose.test.yml`, `target: production`) and inject a
-  **default** token automatically — `Makefile` sets
+  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var, so the Lighthouse, Playwright and visual
+  suites reach the protected home route without a real login. `Makefile` sets
   `LHCI_PRELOADED_AUTH_TOKEN ?= lighthouse-preloaded-auth-token` and bare-`export`s it, so
-  the prod-target test image always carries a token even if the user set nothing. It
-  **must never be shipped as a real production artifact**
-- This is enforced operationally, not by a `NODE_ENV` gate: `PreloadedAuthToken.read()`
-  uses the token whenever it is present, so `LHCI_PRELOADED_AUTH_TOKEN` and
-  `window.__PRELOADED_AUTH_TOKEN__` must be kept out of production builds and CI secrets.
-  `rsbuild.config.ts` must not add an explicit `define` for the token (guarded by
-  `tests/unit/performance/public-index.test.js`)
+  the harness image always carries a token even if the user set nothing
+- The seam is **gated out of production builds** (issue #158). Both reads live in one method
+  in `src/config/env/preloaded-auth-token.ts`, behind
+  `NODE_ENV === 'production' && ENABLE_PRELOADED_AUTH_TOKEN_SEED !== 'true'`. The bundler
+  folds that guard away, so a deployable bundle carries neither the window key nor the token
+  literal: a stray `.env` value cannot seed a session, and an XSS-set `window` global has
+  nothing left to read
+- Only the ephemeral harness image opts in. The Dockerfile's `test-harness` target — what
+  `docker-compose.test.yml` builds — sets `ENABLE_PRELOADED_AUTH_TOKEN_SEED=true`, while the
+  deployable `production` target is assembled from a `build` stage that takes no seed ARG
+- `make check-auth-seed-gate` (run by the `security testing` workflow) scans the **emitted
+  bundle** rather than config source text: it fails when a deployable build carries the seam,
+  and equally when an opted-in build has lost it, so the gate cannot pass vacuously
 - No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Dependency Audits
@@ -1467,6 +1527,7 @@ make build              # Build in Docker
 make build-out          # Extract build to ./build
 make build-analyze      # Bundle analyzer (writes dist/bundle-report.html + dist/bundle-stats.json)
 make perf-budget        # Build + enforce gzip byte budgets (config/performance-budget.json)
+make check-auth-seed-gate  # Scan the built bundles so the test-only preloaded-auth seed cannot ship
 ```
 
 ### Utilities

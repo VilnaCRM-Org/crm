@@ -93,7 +93,7 @@ describe('observability chain (integration)', () => {
       extra: {},
     });
 
-    mockVitalHandlers[0]({ name: 'LCP', value: 3, id: 'v1' });
+    mockVitalHandlers[0]?.({ name: 'LCP', value: 3, id: 'v1' });
     expect(Sentry.addBreadcrumb).toHaveBeenCalledWith({
       category: 'web-vitals',
       message: 'LCP',

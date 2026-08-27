@@ -5,7 +5,7 @@ export default class ApiError extends Error {
 
   public readonly status?: number;
 
-  public readonly cause?: unknown;
+  public override readonly cause?: unknown;
 
   constructor(options: ApiErrorOptions) {
     super(options.message);
