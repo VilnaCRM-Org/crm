@@ -1,12 +1,19 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@tests/e2e/utils/fixtures';
+
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 const {{camelCase feature}}Path = '{{routePath module feature}}';
 const panel = 'section:has(h1)';
 const status = '[role="status"]';
 
 test.describe('{{titleCase feature}} page', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedPreloadedAuthToken(page);
+  });
+
   test('renders the feature panel heading', async ({ page }) => {
     await page.goto({{camelCase feature}}Path);
+    await expect(page).toHaveURL({{camelCase feature}}Path);
 
     await expect(page.locator(`${panel} h1`)).toHaveCount(1);
   });
