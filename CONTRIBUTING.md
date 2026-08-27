@@ -109,6 +109,25 @@ or a per-image `docker-perf-exception:<name>` PR label that waives only that
 image. The decision logic is covered by `tests/bats/docker_perf.bats`
 (run with `make test-bats`).
 
+### The preloaded-auth seed gate
+
+The Playwright, visual, and Lighthouse suites reach the protected `/` route by preloading an auth
+token (`window.__PRELOADED_AUTH_TOKEN__` or `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN`). Because
+`isAuthenticated` is `!!token`, that seam is an auth bypass if it ever reaches a deployable build,
+so it is compiled out of every build that did not explicitly opt in — see "Preloaded-auth-token seed
+gate" in [`CLAUDE.md`](CLAUDE.md) and [`src/config/env/README.md`](src/config/env/README.md) for the
+three invariants that keep the guard foldable.
+
+Run it locally with `make check-auth-seed-gate`. It builds `--target production`, scans the image's
+`dist` for the seam, and then re-scans a deliberately opted-in build that **must** still contain it,
+so the check cannot pass against the wrong artifact. In CI it is the `preloaded-auth seed gate` job
+of the `security testing` workflow, and it is the only job that exercises the deployable
+`--target production` image — every other prod-side suite builds the ephemeral `test-harness` target.
+
+Satisfy it by keeping the seam gated. Never relax the scan, narrow its file set, move a seed read
+out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere but the Dockerfile's
+`test-harness` stage.
+
 ### CI speed and the mutation-testing gate
 
 GitHub runs the pull-request workflows in parallel, so PR feedback is gated by the slowest single
@@ -195,10 +214,50 @@ checks:
 - `mutation testing / merge and enforce gate`
 - `performance testing / lighthouse desktop`
 - `performance testing / lighthouse mobile`
+- `security testing / preloaded-auth seed gate`
 
 The merge job runs `if: ${{ !cancelled() }}` and fails closed if any shard did not succeed (a skipped
 required check would otherwise count as a pass), so requiring the merge job alone is sufficient — a
 crashed shard turns the gate red rather than bypassing it.
+
+### Relaxing a gate threshold
+
+The `gate ratchet` check compares every binding budget named in
+[`config/gate-thresholds.manifest.json`](config/gate-thresholds.manifest.json) at your PR head
+against the merge base. If a value moved in the weakening direction — a Lighthouse `minScore` or a
+coverage/mutation threshold **lowered**, a metrics/jscpd/bundle ceiling **raised**, a coverage
+exclusion list **grown**, or a guarded entry **deleted** — the job prints a
+`FILE / KEY / BASE / HEAD / RULE / REASON` table and fails.
+
+The first response is always to strengthen the value back. When a relaxation is genuinely the
+right call, make it an explicit, reviewed decision: add the **`gate-relaxation`** label to the PR
+and state the rationale in the PR body. The check then passes, and the same table is written to the
+job summary and a sticky PR comment so the relaxation is visible in review rather than buried in a
+diff. Do not satisfy the check by removing an entry from the manifest — the manifest guards itself.
+
+**Verification (run locally before pushing).** The check is a plain Node script, so you can
+reproduce exactly what CI will say without opening a PR:
+
+```bash
+# What the gate will report for your branch against main.
+GATE_RATCHET_BASE_SHA=origin/main GATE_RATCHET_HEAD_SHA=HEAD node scripts/ci/check-gate-ratchet.mjs
+echo "exit=$?"   # 0 = held or waived, 1 = weakened, 2 = a guarded config failed to load
+
+# Preview the sticky PR comment body.
+GATE_RATCHET_BASE_SHA=origin/main GATE_RATCHET_HEAD_SHA=HEAD \
+  GATE_RATCHET_REPORT_FILE=gate-ratchet-report.md node scripts/ci/check-gate-ratchet.mjs
+cat gate-ratchet-report.md
+
+# The extractors, directions, and waiver logic are unit-tested.
+docker compose exec -T dev bun x jest tests/unit/tooling/gate-ratchet.test.ts
+```
+
+Exit code `2` means the ratchet could not evaluate a guarded config (an unparseable or newly broken
+file). That is an evaluation failure, not a weakening, and the waiver label does **not** clear it.
+
+**Required status check (maintainer action).** Add `gate ratchet / no binding threshold weakened` to
+**Settings → Branches → Branch protection rules**. The job triggers on `labeled`/`unlabeled` in
+addition to the default PR events, so applying the waiver label re-runs it without a manual retry.
 
 ### Pull Request
 

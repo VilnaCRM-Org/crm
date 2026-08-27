@@ -15,15 +15,17 @@ off the paint path via the dynamic-import composition root. A single zod-backed 
 
 The module is therefore split in two:
 
-| File            | Deps        | Reads          | Use it from                         |
-| --------------- | ----------- | -------------- | ----------------------------------- |
-| `raw-env.ts`    | none        | lazy, per call | paint path / any zod-free code      |
-| `env.ts`        | `zod`       | once, frozen   | non-paint code wanting typed config |
-| `env-schema.ts` | `zod`       | —              | the zod contract (constraints)      |
-| `types/env.ts`  | none (type) | —              | the hand-authored `Env` interface   |
+| File                      | Deps        | Reads          | Use it from                          |
+| ------------------------- | ----------- | -------------- | ------------------------------------ |
+| `raw-env.ts`              | none        | lazy, per call | paint path / any zod-free code       |
+| `env.ts`                  | `zod`       | once, frozen   | non-paint code wanting typed config  |
+| `env-schema.ts`           | `zod`       | —              | the zod contract (constraints)       |
+| `types/env.ts`            | none (type) | —              | the hand-authored `Env` interface    |
+| `preloaded-auth-token.ts` | none        | lazy, per call | the auth store's initial seed (only) |
 
-- **`raw-env`** (`@/config/env/raw-env`) — a dependency-free singleton and the **only**
-  sanctioned place that touches `process.env`. Accessors are lazy (read on each call) so the
+- **`raw-env`** (`@/config/env/raw-env`) — a dependency-free singleton and, with the seed seam
+  below, one of the two sanctioned places that touch `process.env`. Accessors are lazy (read on
+  each call) so the
   build-inlined literals stay static and tests can mutate `process.env` per case. Import it
   **directly** (not via the barrel) on the paint path so the barrel's `zod` edge is not pulled in.
 - **`env`** (`@/config/env`) — parses `raw-env`'s snapshot through the zod schema **once** at
@@ -31,6 +33,9 @@ The module is therefore split in two:
   naming every offending variable. It is consumed by `get-graphql-url` (which lives behind the
   dynamic-import Apollo/DI composition root, where `zod` already resides), so validation runs when
   that functional-core chunk loads — never on the auth paint path.
+- **`preloaded-auth-token`** — the test-only seed seam, see below. It reads `process.env` directly
+  and is deliberately **not** part of `raw-env`/`env`: routing it through either would inline the
+  token into every production bundle, because both are reachable from every chunk.
 
 The hand-authored `Env` interface (not `z.infer`) mirrors the existing
 `api-responses.ts` ↔ `response-schemas.ts` split: a `types/` file may not import the runtime
@@ -73,6 +78,41 @@ lint matrix) fails if the two drift. A separate unit test
 (`tests/unit/config/env/env-example-schema-sync.test.ts`) fails if a zod schema field and its
 `.env.example` entry diverge, so schema-vs-template drift is caught in CI.
 
+## The preloaded-auth-token seed (issue #158)
+
+`preloaded-auth-token.ts` seeds the auth store's initial token from
+`window.__PRELOADED_AUTH_TOKEN__` or `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN`, so the Playwright,
+visual, and Lighthouse suites reach the protected `/` route without a real login. Since
+`isAuthenticated` is `!!token`, an ungated seed is an auth bypass, so the whole seam sits behind
+
+```ts
+if (
+  process.env.NODE_ENV === 'production' &&
+  process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED !== 'true'
+) {
+  return null;
+}
+```
+
+Three invariants keep that guard real, and breaking any of them is a security regression:
+
+1. **The guard and both reads stay in one method.** Rspack folds the condition to a constant and
+   drops the rest of the body, but only within a single scope: a private helper method or a
+   cross-module call survives minification and ships the window key and the token literal.
+   `rsbuild.config.ts` must keep the `process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED` define — without
+   it the expression is left as a runtime `process` read that throws in the browser.
+2. **No other `src/` file names either identifier.** `raw-env.ts` used to expose the token; because
+   `raw-env` is reachable from every chunk, that inlined the value into all production bundles no
+   matter what the auth store did.
+3. **Only the ephemeral image opts in.** The Dockerfile's `test-harness` target sets
+   `ENABLE_PRELOADED_AUTH_TOKEN_SEED=true`; the deployable `production` target is built from a
+   `build` stage that takes no seed ARG.
+
+`tests/unit/tooling/preloaded-auth-seed-gate.test.ts` pins invariants 1–3 as source contracts, and
+`make check-auth-seed-gate` (in the `security testing` workflow) proves them against the emitted
+bundle: one build must not contain the seam, and the opted-in build must, so the scan cannot pass
+against the wrong artifact.
+
 ## Adding a variable
 
 1. Add the `REACT_APP_*` key to `.env` **and** `.env.example` (same key set — the sync gate
@@ -82,3 +122,8 @@ lint matrix) fails if the two drift. A separate unit test
    lazy accessor if a paint-path reader needs it), then expose a typed getter on `env.ts` for
    non-paint readers.
 4. Never read `process.env` outside this module.
+
+A variable whose **value must not reach a production bundle** is the exception: it does not belong
+in `raw-env`/`env` at all, because both are in every chunk's graph and the build-inlined literal
+ships regardless of who reads it. Follow `preloaded-auth-token.ts` instead — read it inside a single
+guarded method the bundler can fold away.
