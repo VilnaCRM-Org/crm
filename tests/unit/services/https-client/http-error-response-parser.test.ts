@@ -4,7 +4,18 @@ import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 
 function makeResponse(ok: boolean, status: number, statusText = ''): Response {
-  return { ok, status, statusText, url: '/test', headers: new Headers() } as Response;
+  const response = {
+    ok,
+    status,
+    statusText,
+    url: '/test',
+    headers: new Headers(),
+    json: async (): Promise<unknown> => ({}),
+    text: async (): Promise<string> => '',
+    clone: (): unknown => response,
+  };
+
+  return response as unknown as Response;
 }
 
 describe('HttpErrorResponseParser', () => {
@@ -20,13 +31,8 @@ describe('HttpErrorResponseParser', () => {
 
   it('throws HttpError for a non-ok response', async () => {
     const parser = new HttpErrorResponseParser();
-    const response = {
-      ok: false,
-      status: 400,
-      statusText: 'Bad Request',
-      url: '/test',
-      headers: new Headers(),
-    } as Response;
+    const response = makeResponse(false, 400, 'Bad Request');
+
     await expect(parser.assertOk(response)).rejects.toThrow(HttpError);
   });
 

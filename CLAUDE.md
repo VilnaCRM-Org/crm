@@ -59,6 +59,61 @@ Test structure:
 - Server tests: `tests/apollo-server/server.test.ts`
 - Test environment controlled by `TEST_ENV` variable
 
+### Unexpected console output fails the suite (issue #192)
+
+`jest-fail-on-console` is installed by `installConsoleGate()`
+([`tests/console-gate/install.ts`](tests/console-gate/install.ts)) in **every** Jest setup file, so
+an unexpected `console.error` or `console.warn` **fails the emitting test**:
+
+| Setup file                     | Suite                      | Gated levels |
+| ------------------------------ | -------------------------- | ------------ |
+| `jest.setup.ts`                | unit (jsdom)               | error + warn |
+| `tests/integration/setup.ts`   | integration                | error + warn |
+| `tests/mutation/setup.ts`      | Stryker (unit+integration) | error + warn |
+| `tests/apollo-server/setup.ts` | apollo server (node)       | error only   |
+
+The server environment is error-only: it runs no React, and its intentional `console.error` paths
+are already spied in `format-error.test.ts` / `shutdown-functions.test.ts`. `console.log` / `info` /
+`debug` are **never** gated — the apollo-server shutdown path logs on purpose and level-gating them
+adds noise without defect coverage.
+
+**Why it matters.** ESLint's `no-console` gates code that _writes_ `console.*`; it cannot see output
+_emitted by_ React, MUI, react-router, or i18next at render time. This gate closes that channel —
+`act()` warnings from un-awaited state updates, missing list `key`s, invalid DOM nesting, and
+i18next `missingKey` output now fail instead of scrolling past in a green log.
+
+**When a test legitimately triggers logging** (it exercises an error path the application logs on),
+spy on it _and assert it_, scoped to that one test — never a file-wide `beforeEach`, which would
+swallow genuinely unexpected output in the file's other tests:
+
+```ts
+const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+  issueCount: 2,
+});
+```
+
+**When the warning is an `act()` warning, it is a real latent bug** — the test asserts against a
+tree that is still settling. Await the update (`await waitFor(...)`, `await screen.findBy…`, or
+`act(() => …)`); do not spy it away.
+
+**Allowlist.** [`tests/console-gate/allowlist.ts`](tests/console-gate/allowlist.ts) is the only
+escape hatch and is deliberately hostile to growth —
+[`tests/unit/tooling/console-gate.test.ts`](tests/unit/tooling/console-gate.test.ts) fails the build
+unless every entry is `^`-anchored, carries a substantive `reason`, and declares an `expiresWith`
+dependency major that the pinned version has **not** yet reached. An entry therefore cannot outlive
+its cause: the dependency bump that fixes the message turns the allowlist red until the entry is
+deleted. The single current entry covers the `ReactDOMTestUtils.act` deprecation that the pinned
+`@testing-library/react` 13.4 emits on every render; it expires at major 16.
+
+**No suppression:** satisfy the gate by fixing the emitting path or by spying **and asserting** the
+expected output — never by broadening an allowlist pattern, never by dropping the gate from a setup
+file. [`tests/unit/tooling/console-gate-fixtures.test.ts`](tests/unit/tooling/console-gate-fixtures.test.ts)
+runs a child Jest against seeded fixtures in `tests/fixtures/console-gate/` and pins that the gate
+really fails on unexpected `error`/`warn`, really passes a spied-and-asserted call, and really
+ignores `log`/`info`/`debug`.
+
 ### E2E & Visual Tests
 
 Uses Playwright inside Docker containers:
