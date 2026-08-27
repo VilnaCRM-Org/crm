@@ -115,6 +115,7 @@ export const FIXTURES = {
     },
   },
   'no-repositories-to-ui-hooks': {
+    alsoFires: ['injectable-classes-no-value-imports'],
     files: {
       'src/modules/user/features/auth/repositories/auth-repository.ts': reexport(
         '../components/login-form'
@@ -129,6 +130,7 @@ export const FIXTURES = {
     },
   },
   'no-feature-direct-http-client': {
+    alsoFires: ['injectable-classes-no-value-imports'],
     files: {
       'src/modules/user/features/auth/stores/auth-store.ts': reexport(
         '../../../../../services/https-client'
@@ -137,6 +139,7 @@ export const FIXTURES = {
     },
   },
   'no-store-direct-http-client': {
+    alsoFires: ['injectable-classes-no-value-imports'],
     files: {
       'src/modules/user/store/user-slice.ts': reexport('../../../services/https-client'),
       'src/services/https-client/index.ts': leaf('https-client'),
@@ -154,6 +157,33 @@ export const FIXTURES = {
     files: {
       'src/utils/thing/index.ts': reexport('../../config/dependency-injection-config'),
       'src/config/dependency-injection-config.ts': leaf('container'),
+    },
+  },
+  'components-no-direct-injectable-import': {
+    files: {
+      'src/components/ui-button/index.tsx': reexport('../../services/error'),
+      'src/services/error/index.ts': leaf('error'),
+    },
+  },
+  'no-paint-path-import-di-bridge': {
+    files: {
+      'src/modules/user/features/auth/components/login-form.ts': reexport(
+        '../../../../../components/ui-button'
+      ),
+      'src/components/ui-button/index.ts': reexport('../../providers/di/use-service'),
+      'src/providers/di/use-service.ts': leaf('use-service'),
+    },
+  },
+  'no-eager-shell-import-di-bridge': {
+    files: {
+      'src/routes/routes.ts': reexport('../providers/di/use-service'),
+      'src/providers/di/use-service.ts': leaf('use-service'),
+    },
+  },
+  'injectable-classes-no-value-imports': {
+    files: {
+      'src/services/error/error-handler.ts': reexport('../https-client/fetch-https-client'),
+      'src/services/https-client/fetch-https-client.ts': leaf('fetch-https-client'),
     },
   },
   'no-composition-root-cross-module-imports': {
@@ -200,6 +230,7 @@ export const FIXTURES = {
     },
   },
   'no-feature-internal-imports': {
+    alsoFires: ['injectable-classes-no-value-imports'],
     files: {
       'src/modules/user/store/user-slice.ts': reexport('../features/auth/auth-internals'),
       'src/modules/user/features/auth/auth-internals.ts': leaf('auth-internals'),
@@ -220,7 +251,7 @@ export const FIXTURES = {
     },
   },
   'no-store-to-feature-ui': {
-    alsoFires: ['no-feature-internal-imports'],
+    alsoFires: ['injectable-classes-no-value-imports', 'no-feature-internal-imports'],
     files: {
       'src/modules/user/store/user-slice.ts': reexport('../features/auth/components/login-form'),
       'src/modules/user/features/auth/components/login-form.ts': leaf('login-form'),
@@ -281,6 +312,7 @@ export const FIXTURES = {
     },
   },
   'src-module-name-kebab-case': {
+    alsoFires: ['injectable-classes-no-value-imports'],
     files: {
       'src/modules/user_profile/store/thing.ts': reexport('./helper'),
       'src/modules/user_profile/store/helper.ts': leaf('helper'),

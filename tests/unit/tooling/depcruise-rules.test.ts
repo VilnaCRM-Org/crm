@@ -30,7 +30,12 @@ const DOCUMENTED_SUBSET_OVERLAPS: Record<string, string[]> = {
     'no-components-import-modules',
     'no-module-internal-imports',
   ],
-  'no-store-to-feature-ui': ['no-feature-internal-imports'],
+  'no-feature-direct-http-client': ['injectable-classes-no-value-imports'],
+  'no-feature-internal-imports': ['injectable-classes-no-value-imports'],
+  'no-repositories-to-ui-hooks': ['injectable-classes-no-value-imports'],
+  'no-store-direct-http-client': ['injectable-classes-no-value-imports'],
+  'src-module-name-kebab-case': ['injectable-classes-no-value-imports'],
+  'no-store-to-feature-ui': ['injectable-classes-no-value-imports', 'no-feature-internal-imports'],
 };
 
 const fixtureNames = Object.keys(report.expected).sort();
