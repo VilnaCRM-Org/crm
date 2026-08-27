@@ -3,7 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: production
+      # The ephemeral harness image, never the deployable `production` target: only this
+      # stage compiles in the preloaded-auth seed the Playwright, visual and Lighthouse
+      # suites rely on to reach the protected home route (issue #158).
+      target: test-harness
       args:
         REACT_APP_LHCI_PRELOADED_AUTH_TOKEN: ${LHCI_PRELOADED_AUTH_TOKEN-}
     restart: unless-stopped

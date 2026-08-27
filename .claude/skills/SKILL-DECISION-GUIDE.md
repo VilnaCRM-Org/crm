@@ -222,6 +222,16 @@ RTK / RTK Query interactions, and route registration.
 **ALSO**: [code-organization](code-organization/SKILL.md) for placement,
 [frontend-testing-workflow](frontend-testing-workflow/SKILL.md) for tests.
 
+**DI rule (issue #128)**: a `.tsx` component obtains a behavioral collaborator only
+through `useService(TOKENS.X)` from `@/providers/di` — never `new MyService()`, never a
+value-import of an injectable service/repository/mapper/factory/handler (`import type` is
+fine). Register the class in the owning area's `di.ts` first. In tests, swap it by
+registering a mock against the token or jest-mocking `@/providers/di/use-service`. The auth
+render path, the route shell, `src/index.tsx`, and the root error boundary are the
+container-free carve-outs — leave their module singletons alone. Hooks (`use-*.ts`) are
+outside the static gate but held to the same intent in review. See
+[architecture](architecture/SKILL.md) for the enforcing rules.
+
 ---
 
 ### "I need to move, rename, or split a frontend file"

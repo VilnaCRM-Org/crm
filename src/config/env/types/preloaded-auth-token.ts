@@ -4,4 +4,4 @@ declare global {
   }
 }
 
-export type AuthTokenWindow = Pick<Window, '__PRELOADED_AUTH_TOKEN__'>;
+export type PreloadedAuthTokenWindow = Pick<Window, '__PRELOADED_AUTH_TOKEN__'>;
