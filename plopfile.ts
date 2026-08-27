@@ -315,11 +315,17 @@ function writePlaceholders(ctx: ScaffoldContext, paths: string[]): string {
 // A half-written scaffold is worse than none: the existence guards would then reject the
 // retry. Anything the run created is rolled back before the failure propagates.
 function rollback(ctx: ScaffoldContext, undo: Undo): void {
+  Object.entries(undo.files).forEach(([path, content]) => writeFileSync(path, content));
   undo.roots
     .map((relative) => join(ctx.root, relative))
     .filter((absolute) => existsSync(absolute))
-    .forEach((absolute) => rmSync(absolute, { recursive: true, force: true }));
-  Object.entries(undo.files).forEach(([path, content]) => writeFileSync(path, content));
+    .forEach((absolute) => {
+      try {
+        rmSync(absolute, { recursive: true, force: true });
+      } catch (error) {
+        process.stderr.write(`  !! could not remove ${absolute}: ${String(error)}\n`);
+      }
+    });
 }
 
 // Every action that mutates the worktree runs through this, so a failure anywhere after the
