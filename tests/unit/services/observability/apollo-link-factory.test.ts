@@ -51,8 +51,10 @@ describe('ApolloLinkFactory', () => {
       query,
     }).subscribe({
       complete: () => {
-        expect(headers['X-Request-Id']).toEqual(expect.any(String));
-        expect(headers['X-Request-Id'].length).toBeGreaterThan(0);
+        const requestId = headers['X-Request-Id'];
+
+        expect(requestId).toEqual(expect.any(String));
+        expect(requestId ?? '').not.toHaveLength(0);
         done();
       },
     });

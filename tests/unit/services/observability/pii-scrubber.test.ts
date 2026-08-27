@@ -55,10 +55,10 @@ describe('PiiScrubber', () => {
     const result = scrubber.scrub(event);
 
     expect(result.message).toBe('login failed for [redacted]');
-    expect((result.exception as { values: Array<{ value: string }> }).values[0].value).toBe(
+    expect((result.exception as { values: Array<{ value: string }> }).values[0]?.value).toBe(
       '[redacted] rejected'
     );
-    expect((result.breadcrumbs as Array<{ message: string }>)[0].message).toBe(
+    expect((result.breadcrumbs as Array<{ message: string }>)[0]?.message).toBe(
       'issued [redacted] now'
     );
   });

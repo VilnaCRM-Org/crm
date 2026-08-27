@@ -181,6 +181,34 @@ const noObjectLiteralMethodSelectors = [
   },
 ];
 
+// Source (issue #128): the React-layer counterpart of the #100/#180 bans above. A component must
+// obtain a behavioral collaborator through the sanctioned DI bridge `useService(TOKENS.X)` from
+// `@/providers/di`, never by `new`-ing the class at the call site — a `new` binds the collaborator
+// statically and cannot be swapped for a mock in a component test, the exact substitutability
+// defeat #100 banned for non-React code. Built-in constructors are allowlisted out of the
+// selector; the companion dependency-cruiser rule `components-no-direct-injectable-import` covers
+// the import side.
+const noNewBehavioralClassInComponentSelectors = [
+  {
+    selector:
+      "NewExpression[callee.type='Identifier'][callee.name=/^[A-Z]/]" +
+      ':not([callee.name=/^(Error|TypeError|RangeError|SyntaxError|EvalError|ReferenceError|' +
+      'URIError|AggregateError|URL|URLSearchParams|Date|Map|WeakMap|Set|WeakSet|Promise|' +
+      'RegExp|Array|Object|Function|Proxy|Number|String|Boolean|Symbol|BigInt|Image|Audio|' +
+      'Event|CustomEvent|AbortController|AbortSignal|FormData|Headers|Request|Response|Blob|' +
+      'File|FileReader|TextEncoder|TextDecoder|Intl|Worker|WebSocket|Notification|' +
+      'IntersectionObserver|ResizeObserver|MutationObserver|PerformanceObserver|' +
+      'ArrayBuffer|SharedArrayBuffer|DataView|Int8Array|Uint8Array|Uint8ClampedArray|' +
+      'Int16Array|Uint16Array|Int32Array|Uint32Array|Float32Array|Float64Array|' +
+      'BigInt64Array|BigUint64Array)$/])',
+    message:
+      'Do not `new` a behavioral class in a component — resolve it via the DI bridge ' +
+      'useService(TOKENS.X) from @/providers/di so it stays swappable/mockable in tests ' +
+      '(issue #128; cf. #100). The container-free carve-outs — auth render path, route ' +
+      'composer/mapper, app entrypoint, root error boundary — are the only exemptions.',
+  },
+];
+
 // Source (issue #112): non-React application code must not read `process.env` directly —
 // import the validated, typed configuration from `@/config/env` (or the paint-safe
 // `@/config/env/raw-env`) instead. The `src/config/env/**` module is the single sanctioned
@@ -252,6 +280,31 @@ const nonReactSourceIgnores = [
   'src/**/use-*.ts',
   'src/**/types.ts',
   'src/**/types/**/*.ts',
+];
+
+// Issue #128: the DI-bridge gate is `.tsx`-only. Hook files (`use-*.ts`) are deliberately
+// out of static scope and stay a review-gate concern (see the "Honest limitation" note in
+// CLAUDE.md). The carve-outs are the container-free-by-design surfaces, and they are kept
+// identical to the `from.pathNot` list of the companion dependency-cruiser rule
+// `components-no-direct-injectable-import` so the two gates never disagree about which file
+// is exempt: the auth render path (its Lighthouse budget forbids eager DI — issue #109/#115),
+// the two route-shell module singletons that `new` their own locally declared class
+// (`route-composer` / `route-mapper`, issue #105 — NOT the whole `src/routes/` tree), the app
+// entrypoint, and the root error boundary file alone — a class component cannot call
+// `useService`, while its functional descendants can and stay gated. Test, story, and
+// type-only files are excluded like every other source gate here.
+const componentSourceGlobs = ['src/**/*.tsx'];
+const componentDiGateIgnores = [
+  '**/*.stories.*',
+  '**/*.test.*',
+  '**/*.spec.*',
+  '**/*.d.ts',
+  'src/**/types/**/*.tsx',
+  'src/modules/user/features/auth/**/*.tsx',
+  'src/routes/route-composer.tsx',
+  'src/routes/route-mapper.tsx',
+  'src/index.tsx',
+  'src/components/error-boundary/app-error-boundary.tsx',
 ];
 const storyGlobs = ['**/*.stories.js', '**/*.stories.jsx', '**/*.stories.ts', '**/*.stories.tsx'];
 
@@ -515,6 +568,16 @@ export default [
     },
   },
 
+  // Source (issue #166): the `!` non-null assertion is a type-level suppression — it silences a
+  // `noUncheckedIndexedAccess` result instead of narrowing it. Production source must narrow for
+  // real (`??`, an explicit guard, `in`, `Map.get` + guard, optional chaining).
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'error',
+    },
+  },
+
   // Source (issue #173): deterministic lint-level SAST over the dominant SPA XSS and
   // code-execution sink classes. This is the only security analysis that runs pre-commit
   // (Husky) and fails in seconds; CodeQL (`security testing`) is the complementary
@@ -538,6 +601,26 @@ export default [
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-new-func': 'error',
+    },
+  },
+
+  // Source (issue #128): components must not `new` a behavioral collaborator — resolve it
+  // through the `useService` DI bridge instead. Scoped to `src/**/*.tsx` (hooks are out of
+  // static scope) and ignoring the container-free auth render path and route shell. The
+  // #90/#88/#155 selectors are re-included because flat config replaces (does not merge)
+  // `no-restricted-syntax` for files matched by more than one block — dropping them here would
+  // silently un-gate data-testid, type declarations, and raw Intl for every component.
+  {
+    files: componentSourceGlobs,
+    ignores: componentDiGateIgnores,
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...typeDeclarationSelectors,
+        ...noRawIntlSelectors,
+        ...noNewBehavioralClassInComponentSelectors,
+      ],
     },
   },
 
@@ -739,6 +822,15 @@ export default [
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
       ],
+    },
+  },
+
+  // Tests (issue #166): `warn`, not `error` — a test may legitimately assert on fixture presence
+  // — but the same sanctioned narrowing is expected in review.
+  {
+    files: ['tests/**/*.ts', 'tests/**/*.tsx'],
+    rules: {
+      '@typescript-eslint/no-non-null-assertion': 'warn',
     },
   },
 

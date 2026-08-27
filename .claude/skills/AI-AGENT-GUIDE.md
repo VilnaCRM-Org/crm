@@ -427,8 +427,26 @@ test harnesses are treated as locked. If a task requires changing them:
 - Run `make format` before `make lint`.
 - Respect protected quality thresholds and complexity gates.
 - Use Docker-backed Makefile targets so behavior matches CI.
+- Resolve a behavioral collaborator in a `.tsx` component through
+  `useService(TOKENS.X)` from `@/providers/di` — called at the top level of the
+  component or of another hook, never at module scope (issue #128).
+- Complete the registration before resolving: declare the token in the owning
+  area's `tokens.ts`, register the class in that area's `di.ts`, and — for a new
+  area — add its registrar to the array in
+  `src/config/dependency-injection-config.ts`. A registrar that is never
+  aggregated leaves `useService` throwing an unregistered-token error.
+- Swap collaborators in component tests by registering a mock against the token
+  or jest-mocking `@/providers/di/use-service`.
 
 ### Do Not
+
+- `new` a behavioral class in a component, or value-import an injectable
+  service/repository/mapper/factory/handler into one (`import type` is fine).
+- Migrate the container-free carve-outs — the auth render path, the route shell,
+  `src/index.tsx`, the root error boundary — onto `useService`, or eager-import
+  the DI container into the auth paint path.
+- Treat the `.tsx`-only scope of that gate as license to `new` a collaborator
+  inside a hook (`use-*.ts`); review flags it.
 
 - Skip the decision guide.
 - Jump to execution without reading the full skill.

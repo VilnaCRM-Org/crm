@@ -41,6 +41,17 @@ const S = {
     "Program > VariableDeclaration > VariableDeclarator[init.type='ArrowFunctionExpression'], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='ArrowFunctionExpression'], ExportDefaultDeclaration > ArrowFunctionExpression",
   funcExprConst:
     "Program > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression'], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression'], ExportDefaultDeclaration > FunctionExpression",
+  newBehavioralClassInComponent:
+    "NewExpression[callee.type='Identifier'][callee.name=/^[A-Z]/]" +
+    ':not([callee.name=/^(Error|TypeError|RangeError|SyntaxError|EvalError|ReferenceError|' +
+    'URIError|AggregateError|URL|URLSearchParams|Date|Map|WeakMap|Set|WeakSet|Promise|' +
+    'RegExp|Array|Object|Function|Proxy|Number|String|Boolean|Symbol|BigInt|Image|Audio|' +
+    'Event|CustomEvent|AbortController|AbortSignal|FormData|Headers|Request|Response|Blob|' +
+    'File|FileReader|TextEncoder|TextDecoder|Intl|Worker|WebSocket|Notification|' +
+    'IntersectionObserver|ResizeObserver|MutationObserver|PerformanceObserver|' +
+    'ArrayBuffer|SharedArrayBuffer|DataView|Int8Array|Uint8Array|Uint8ClampedArray|' +
+    'Int16Array|Uint16Array|Int32Array|Uint32Array|Float32Array|Float64Array|' +
+    'BigInt64Array|BigUint64Array)$/])',
   interfaceInLogic: 'TSInterfaceDeclaration',
   typeAliasInLogic: 'TSTypeAliasDeclaration',
   processEnv:
@@ -208,6 +219,19 @@ const FIXTURES = [
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #100',
+  },
+  // component DI bridge (#128) — the React-layer counterpart of the #100 bans above. The
+  // built-in-constructor allowlist is proven separately, on real carve-out paths, by
+  // tests/unit/tooling/component-di-gate.test.ts; this fixture pins the selector into the
+  // rot-guard universe so it cannot be deleted from eslint.config.mjs unnoticed.
+  {
+    id: 'new-behavioral-class-in-component',
+    file: PROBES.component,
+    code: 'class Thing { run(): string { return "x"; } }\nconst A = () => <div>{new Thing().run()}</div>;',
+    covers: [S.newBehavioralClassInComponent],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #128',
   },
   // type declarations in logic files (#88)
   {
