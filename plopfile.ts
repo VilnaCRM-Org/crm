@@ -315,7 +315,13 @@ function writePlaceholders(ctx: ScaffoldContext, paths: string[]): string {
 // A half-written scaffold is worse than none: the existence guards would then reject the
 // retry. Anything the run created is rolled back before the failure propagates.
 function rollback(ctx: ScaffoldContext, undo: Undo): void {
-  Object.entries(undo.files).forEach(([path, content]) => writeFileSync(path, content));
+  Object.entries(undo.files).forEach(([path, content]) => {
+    try {
+      writeFileSync(path, content);
+    } catch (error) {
+      process.stderr.write(`  !! could not restore ${path}: ${String(error)}\n`);
+    }
+  });
   undo.roots
     .map((relative) => join(ctx.root, relative))
     .filter((absolute) => existsSync(absolute))

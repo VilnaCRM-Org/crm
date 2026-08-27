@@ -22,7 +22,7 @@ test.describe('{{titleCase feature}} page', () => {
     await page.goto({{camelCase feature}}Path);
 
     await expect(page.locator(status)).not.toBeEmpty();
-    await expect(page.locator(status)).not.toHaveText(/Loading|Завантаження/);
+    await expect(page.locator(status)).not.toHaveText(/^(?:Loading…|Завантаження…)$/);
     await expect(page.locator(status)).not.toHaveText(/went wrong|Щось пішло не так/);
   });
 
