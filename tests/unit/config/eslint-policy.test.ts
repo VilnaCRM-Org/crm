@@ -36,16 +36,27 @@ const configs: Record<string, ResolvedConfig> = JSON.parse(
 const severityOf = (rule: unknown): unknown => (Array.isArray(rule) ? rule[0] : rule);
 const jsonOf = (rule: unknown): string => JSON.stringify(rule ?? []);
 
+// `noUncheckedIndexedAccess` (issue #166) types this lookup as possibly undefined. Guard for
+// real rather than asserting: a missing entry means the probe file dropped out of the resolved
+// config, which must fail loudly here instead of surfacing as a confusing property access.
+const rulesFor = (file: string): Record<string, unknown> => {
+  const resolved = configs[file];
+  if (!resolved) {
+    throw new Error(`No resolved ESLint config for probe file ${file}`);
+  }
+  return resolved.rules;
+};
+
 describe('eslint.config.mjs policy integrity (issue #165)', () => {
   it('pins the no-static gate (#100) at error on non-hook logic files', () => {
-    const nrs = configs[LOGIC_TS].rules['no-restricted-syntax'];
+    const nrs = rulesFor(LOGIC_TS)['no-restricted-syntax'];
     expect(severityOf(nrs)).toBe(2);
     expect(jsonOf(nrs)).toContain('PropertyDefinition[static=true]');
     expect(jsonOf(nrs)).toContain('MethodDefinition[static=true]');
   });
 
   it('keeps hooks EXEMPT from the no-static gate (issue #100 override for use-*)', () => {
-    const nrs = configs[HOOK_TS].rules['no-restricted-syntax'];
+    const nrs = rulesFor(HOOK_TS)['no-restricted-syntax'];
     // The gate itself stays active on hooks (data-testid / type-purity)...
     expect(severityOf(nrs)).toBe(2);
     // ...but the static/free-function selectors must NOT apply — hooks are functions by design.
@@ -54,22 +65,22 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
   });
 
   it('keeps the data-testid ban (issue #90) at error on components and logic files', () => {
-    const componentNrs = configs[COMPONENT_TSX].rules['no-restricted-syntax'];
+    const componentNrs = rulesFor(COMPONENT_TSX)['no-restricted-syntax'];
     expect(severityOf(componentNrs)).toBe(2);
     expect(jsonOf(componentNrs)).toContain("JSXAttribute[name.name='data-testid']");
-    expect(jsonOf(configs[LOGIC_TS].rules['no-restricted-syntax'])).toContain(
+    expect(jsonOf(rulesFor(LOGIC_TS)['no-restricted-syntax'])).toContain(
       "JSXAttribute[name.name='data-testid']"
     );
   });
 
   it('keeps the type-only-file purity gate (issue #88) at error on files under types/', () => {
-    const nrs = configs[TYPE_ONLY_TS].rules['no-restricted-syntax'];
+    const nrs = rulesFor(TYPE_ONLY_TS)['no-restricted-syntax'];
     expect(severityOf(nrs)).toBe(2);
     expect(jsonOf(nrs)).toContain('VariableDeclaration:not([declare=true])');
   });
 
   it('keeps eslint-comments/no-use and max-len pinned on logic files', () => {
-    const rules = configs[LOGIC_TS].rules;
+    const rules = rulesFor(LOGIC_TS);
     expect(severityOf(rules['eslint-comments/no-use'])).toBe(2);
     expect(rules['max-len']).toEqual([2, { code: 100 }]);
   });
@@ -77,7 +88,7 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
   it('keeps the module/feature public-API import boundary (issue #107) pinned', () => {
     // The @auth/*/* deep-import ban resolves onto cross-boundary logic files (services) and
     // type files, guarding the feature public-API contract for ESLint's half of the gate.
-    expect(jsonOf(configs[LOGIC_TS].rules['no-restricted-imports'])).toContain('@auth/*/*');
-    expect(severityOf(configs[LOGIC_TS].rules['no-restricted-imports'])).toBe(2);
+    expect(jsonOf(rulesFor(LOGIC_TS)['no-restricted-imports'])).toContain('@auth/*/*');
+    expect(severityOf(rulesFor(LOGIC_TS)['no-restricted-imports'])).toBe(2);
   });
 });

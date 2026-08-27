@@ -37,7 +37,9 @@ const folderSegments = (paths: string[], prefix: string): string[] =>
   paths
     .filter((entry) => entry.startsWith(prefix))
     .map((entry) => entry.slice(prefix.length).split('/')[0])
-    .filter((segment) => segment.includes('.') === false);
+    .filter(
+      (segment): segment is string => segment !== undefined && segment.includes('.') === false
+    );
 
 describe('config/module-shape.json is the single source of the folder law (issue #108)', () => {
   it.each([

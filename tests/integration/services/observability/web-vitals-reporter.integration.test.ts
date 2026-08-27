@@ -40,7 +40,7 @@ describe('web-vitals reporter (integration)', () => {
 
     expect(vitalHandlers).toHaveLength(5);
 
-    vitalHandlers[0]({ name: 'LCP', value: 2.5, id: 'v1' });
+    vitalHandlers[0]?.({ name: 'LCP', value: 2.5, id: 'v1' });
 
     expect(Sentry.addBreadcrumb).toHaveBeenCalledWith({
       category: 'web-vitals',

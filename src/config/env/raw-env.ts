@@ -7,10 +7,6 @@ class RawEnv {
     return this.trimmed(process.env.REACT_APP_MOCKOON_URL) ?? '';
   }
 
-  public lhciPreloadedAuthToken(): string | undefined {
-    return this.trimmed(process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN);
-  }
-
   public nodeEnv(): string | undefined {
     return this.trimmed(process.env.NODE_ENV);
   }
@@ -32,7 +28,6 @@ class RawEnv {
       nodeEnv: process.env.NODE_ENV,
       graphqlUrl: this.trimmed(process.env.REACT_APP_GRAPHQL_URL),
       mockoonUrl: this.trimmed(process.env.REACT_APP_MOCKOON_URL),
-      lhciPreloadedAuthToken: this.trimmed(process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN),
       mainLanguage: this.trimmed(process.env.REACT_APP_MAIN_LANGUAGE),
       fallbackLanguage: this.trimmed(process.env.REACT_APP_FALLBACK_LANGUAGE),
       release: this.trimmed(process.env.REACT_APP_RELEASE),

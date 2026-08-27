@@ -21,7 +21,7 @@ export interface ScaffoldFile {
   path: string;
 }
 
-export type TemplateData = Record<string, string>;
+export type TemplateData = Record<string, string> & { module: string; feature: string };
 
 export interface ScaffoldContext {
   root: string;
@@ -371,7 +371,7 @@ export default function plopfile(plop: NodePlopAPI): void {
 
   plop.setHelper('routePath', (module: string, feature: string) => routePath(module, feature));
 
-  const guardNames = (data: Record<string, string>): void => {
+  const guardNames = (data: TemplateData): void => {
     assertName(shape, 'Module name', data.module);
     assertName(shape, 'Feature name', data.feature);
   };
@@ -411,7 +411,7 @@ export default function plopfile(plop: NodePlopAPI): void {
       },
     ],
     actions: (answers) => {
-      const data = answers as unknown as Record<string, string>;
+      const data = answers as unknown as TemplateData & { owner: string };
       guardNames(data);
       guardOwner(data.owner);
       if (existsSync(join(root, 'src', 'modules', data.module))) {
@@ -454,7 +454,7 @@ export default function plopfile(plop: NodePlopAPI): void {
       { type: 'input', name: 'feature', message: 'Feature name (kebab-case)' },
     ],
     actions: (answers) => {
-      const data = answers as unknown as Record<string, string>;
+      const data = answers as unknown as TemplateData;
       guardNames(data);
       const configRoot = join(root, 'src', 'modules', data.module, 'config');
       if (!existsSync(configRoot)) {

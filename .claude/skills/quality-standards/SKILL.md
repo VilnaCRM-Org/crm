@@ -36,6 +36,19 @@ suite and should not be used as a mutating formatter.
   `markdownlint-disable`. Fix the root cause.
 - Do not accept markdownlint failures in skills or docs.
 - Do not commit generated snapshots unless the visual change is intentional.
+- Do not weaken any budget named in `config/gate-thresholds.manifest.json` — the
+  `gate ratchet` check fails the PR (issue #188). Strengthen the value instead, or
+  take the relaxation deliberately with the `gate-relaxation` label plus a rationale
+  in the PR body. Never drop a manifest entry to pass the check.
+- Do not use the `!` non-null assertion in `src/**` — it suppresses a
+  `noUncheckedIndexedAccess` result rather than narrowing it (issue #166). Use `??`,
+  an explicit guard, `in`, `Map.get` plus guard, or optional chaining.
+- Any new rule added to `.dependency-cruiser.js` must land with a violating fixture in
+  `scripts/ci/depcruise-rule-fixtures.mjs`, or the completeness guard in
+  `tests/unit/tooling/depcruise-rules.test.ts` fails the build (issue #181). Never
+  satisfy that guard by deleting the rule or by padding a fixture's `alsoFires` list —
+  a legitimate co-fire must also be added to `DOCUMENTED_SUBSET_OVERLAPS` in the test,
+  which is a separate reviewed edit.
 - Do not weaken a dependency license failure (`make lint-licenses`) by editing the gate;
   replace the dependency or add its SPDX id to `ALLOWED_LICENSES` in the `Makefile` as a
   reviewed one-line diff (issue #191). The gate evaluates SPDX expressions semantically via
