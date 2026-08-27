@@ -13,6 +13,18 @@ description: Use when writing or fixing Jest, Testing Library, Playwright, or vi
 - Test behavior through the public UI or exported API.
 - Mock network and service boundaries intentionally; do not test mock internals.
 
+## Console Gate (issue #192)
+
+- Every Jest setup file installs `jest-fail-on-console`; an unexpected `console.error` or
+  `console.warn` fails the emitting test. The apollo-server node suite gates `error` only, and
+  `log` / `info` / `debug` are never gated.
+- When a test drives a path that logs on purpose, spy with `jest.spyOn(console, 'error')` **and
+  assert the call**, scoped to that one test — a file-wide `beforeEach` spy swallows real defects.
+- An `act()` warning means the assertion ran against a settling tree: `await waitFor(...)` or
+  `await screen.findBy…` instead of spying it away.
+- `tests/console-gate/allowlist.ts` is the only escape hatch; see
+  [tests/console-gate/README.md](../../../tests/console-gate/README.md).
+
 ## Playwright
 
 - Use accessible locators first: role, label, text, and test IDs where needed.

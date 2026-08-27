@@ -32,6 +32,11 @@ touch E2E lane runs on `mobile-chrome-dev` alone and the mobile visual lane does
 4. Fix the cause, not the symptom.
 5. Re-run the focused suite, then run `make format` and `make lint`.
 
+A test that fails only because it emitted `console.error` / `console.warn` is the console gate
+(issue #192), installed in every Jest setup file. Fix the emitting path, or spy on the call **and
+assert it** in that one test; never widen `tests/console-gate/allowlist.ts`. See
+[tests/console-gate/README.md](../../../tests/console-gate/README.md).
+
 ## Frontend Rules
 
 - Testing Library assertions should reflect user-observable behavior.

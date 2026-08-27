@@ -36,12 +36,26 @@ const runFixtureSuite = (): Map<string, FixtureRunResult> => {
     }
   );
 
-  const jsonStart = result.stdout.indexOf('{');
-  if (jsonStart < 0) {
-    throw new Error(`fixture jest run produced no JSON report:\n${result.stderr}`);
+  if (result.error) {
+    throw new Error(`fixture jest run failed to spawn: ${result.error.message}`);
   }
 
-  const report = JSON.parse(result.stdout.slice(jsonStart)) as {
+  const stdout = typeof result.stdout === 'string' ? result.stdout : '';
+  const stderr = typeof result.stderr === 'string' ? result.stderr : '';
+  const jsonStart = stdout.indexOf('{');
+  if (jsonStart < 0) {
+    throw new Error(
+      [
+        'fixture jest run produced no JSON report',
+        `status: ${result.status}`,
+        `signal: ${result.signal}`,
+        `stdout:\n${stdout}`,
+        `stderr:\n${stderr}`,
+      ].join('\n')
+    );
+  }
+
+  const report = JSON.parse(stdout.slice(jsonStart)) as {
     testResults: { name: string; status: string; message: string }[];
   };
 
