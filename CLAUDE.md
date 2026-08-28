@@ -59,6 +59,61 @@ Test structure:
 - Server tests: `tests/apollo-server/server.test.ts`
 - Test environment controlled by `TEST_ENV` variable
 
+### Unexpected console output fails the suite (issue #192)
+
+`jest-fail-on-console` is installed by `installConsoleGate()`
+([`tests/console-gate/install.ts`](tests/console-gate/install.ts)) in **every** Jest setup file, so
+an unexpected `console.error` or `console.warn` **fails the emitting test**:
+
+| Setup file                     | Suite                      | Gated levels |
+| ------------------------------ | -------------------------- | ------------ |
+| `jest.setup.ts`                | unit (jsdom)               | error + warn |
+| `tests/integration/setup.ts`   | integration                | error + warn |
+| `tests/mutation/setup.ts`      | Stryker (unit+integration) | error + warn |
+| `tests/apollo-server/setup.ts` | apollo server (node)       | error only   |
+
+The server environment is error-only: it runs no React, and its intentional `console.error` paths
+are already spied in `format-error.test.ts` / `shutdown-functions.test.ts`. `console.log` / `info` /
+`debug` are **never** gated — the apollo-server shutdown path logs on purpose and level-gating them
+adds noise without defect coverage.
+
+**Why it matters.** ESLint's `no-console` gates code that _writes_ `console.*`; it cannot see output
+_emitted by_ React, MUI, react-router, or i18next at render time. This gate closes that channel —
+`act()` warnings from un-awaited state updates, missing list `key`s, invalid DOM nesting, and
+i18next `missingKey` output now fail instead of scrolling past in a green log.
+
+**When a test legitimately triggers logging** (it exercises an error path the application logs on),
+spy on it _and assert it_, scoped to that one test — never a file-wide `beforeEach`, which would
+swallow genuinely unexpected output in the file's other tests:
+
+```ts
+const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+  issueCount: 2,
+});
+```
+
+**When the warning is an `act()` warning, it is a real latent bug** — the test asserts against a
+tree that is still settling. Await the update (`await waitFor(...)`, `await screen.findBy…`, or
+`act(() => …)`); do not spy it away.
+
+**Allowlist.** [`tests/console-gate/allowlist.ts`](tests/console-gate/allowlist.ts) is the only
+escape hatch and is deliberately hostile to growth —
+[`tests/unit/tooling/console-gate.test.ts`](tests/unit/tooling/console-gate.test.ts) fails the build
+unless every entry is `^`-anchored, carries a substantive `reason`, and declares an `expiresWith`
+dependency major that the pinned version has **not** yet reached. An entry therefore cannot outlive
+its cause: the dependency bump that fixes the message turns the allowlist red until the entry is
+deleted. The single current entry covers the `ReactDOMTestUtils.act` deprecation that the pinned
+`@testing-library/react` 13.4 emits on every render; it expires at major 16.
+
+**No suppression:** satisfy the gate by fixing the emitting path or by spying **and asserting** the
+expected output — never by broadening an allowlist pattern, never by dropping the gate from a setup
+file. [`tests/unit/tooling/console-gate-fixtures.test.ts`](tests/unit/tooling/console-gate-fixtures.test.ts)
+runs a child Jest against seeded fixtures in `tests/fixtures/console-gate/` and pins that the gate
+really fails on unexpected `error`/`warn`, really passes a spied-and-asserted call, and really
+ignores `log`/`info`/`debug`.
+
 ### E2E & Visual Tests
 
 Uses Playwright inside Docker containers:
@@ -236,9 +291,11 @@ make lint-tsc       # TypeScript
 make lint-md        # Markdown
 make lint-dup       # jscpd copy/paste duplication gate (see below)
 make lint-metrics   # rust-code-analysis complexity gate (see below)
-make lint-prettier  # Prettier --check formatting gate (verify-only, shares PRETTIER_FILE_GLOB)
+make lint-prettier  # Prettier --check gate (verify-only, shares PRETTIER_FILE_GLOB; covers YAML)
 make lint-shell     # ShellCheck over scripts, git hooks, Bats helpers (Docker, like lint-metrics)
 make lint-actionlint # actionlint gate over the GitHub Actions workflows (Docker, like lint-metrics)
+make lint-zizmor    # zizmor workflow-security gate (Docker; not part of `make lint`, see below)
+make lint-compose   # docker compose config validation (schema, interpolation, duplicate keys)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
 make lint-licenses  # dependency license SPDX-allowlist gate over the production tree (see below)
 make check-auth-seed-gate # preloaded-auth seed bundle scan (Docker; not part of `make lint`)
@@ -604,6 +661,70 @@ throwing helpers in [`tests/utils/assert-result.ts`](tests/utils/assert-result.t
 instead of skipping the assertions; for throwing calls prefer
 `expect(...).toThrow(...)` / `await expect(...).rejects.toThrow(...)`, or capture the
 error unconditionally with `.catch((caught: unknown) => caught)` and then assert.
+
+### CI configuration gates (issues #161, #174, #175)
+
+The CI configuration surface — 27 workflow files, 4 compose files, the shared healthchecks —
+**is** the enforcement boundary, so it is linted like source rather than trusted as convention.
+
+| Gate                          | Where it runs                     | What it enforces         |
+| ----------------------------- | --------------------------------- | ------------------------ |
+| `make lint-actionlint`        | `make lint` → `static testing`    | Workflow **correctness** |
+| `make lint-zizmor`            | `workflow security / zizmor` (PR) | Workflow **security**    |
+| `make lint-prettier`          | `make lint` → `static testing`    | Formatting, incl. YAML   |
+| `make lint-compose`           | `make lint` → `static testing`    | Compose file validity    |
+| `format yaml files / yamlfmt` | PR, container-free                | YAML formatting          |
+| `scorecard / analysis`        | weekly cron + push to `main`      | Repository **state**     |
+
+- **Correctness vs. security.** actionlint answers "does this workflow do what it says?";
+  zizmor answers "is it safe?" — mutable action refs, over-broad `permissions`, pwn-requests,
+  `${{ github.event.* }}` interpolated into `run:`, restored credential persistence, and
+  actions from archived repositories.
+- **Duplicate mapping keys are _not_ a Prettier check.** Issue #161 assumed they were; they are
+  not. Prettier's bundled YAML plugin passes `uniqueKeys: false`, so its parser's
+  `DUPLICATE_KEY` error is suppressed and both keys survive `--write` verbatim — a duplicated
+  `healthcheck:` or `permissions:` block passes `--check` with exit 0. That class is covered by
+  **`make lint-compose`** (compose's own loader: `mapping key X already defined at line N`) and
+  by **actionlint** (`syntax-check` reports duplicated keys) for the workflows.
+- **Two Prettier YAML paths, one config.** `lint-prettier` covers YAML inside the dev container;
+  the `yamlfmt` job is the container-free half, the one YAML signal that still reports when
+  `make start` cannot run. Both catch format drift and unparseable YAML.
+- **Scorecard is the meter, not the fix.** A scheduled run cannot block a merge; it makes
+  posture drift no PR diff can show — branch protection, required checks, dependency-update
+  health, pin coverage on `main` — diffable run over run. It does **not** discharge the
+  blocking SCA gate tracked in #140.
+
+Notes that matter when touching these:
+
+- **zizmor is pinned exactly** — `ZIZMOR_IMAGE` is digest-pinned and `ZIZMOR_ARGS` runs offline
+  audits at medium severity. A new zizmor minor adds audits and would redden unrelated PRs, so
+  bump it deliberately. It is intentionally **not** in `make lint`: it needs no dev container,
+  so the dedicated workflow reports in seconds and still reports when `make start` fails.
+- **`--persona pedantic` is load-bearing.** At the default persona, `excessive-permissions` does
+  not fire on a workflow-level `permissions: write-all` in a single-job workflow — measured:
+  default exits 0 on that fixture, pedantic reports it high and exits 14. Do not drop the flag.
+  The stricter `auditor` persona is not adopted: it adds four pre-existing medium
+  `secrets-outside-env` findings whose fix (GitHub Environments for the release, Codecov, and
+  Sentry jobs) is a separate decision.
+- **The Makefile owns the flags, the workflow does not.** `workflow-security.yml` runs
+  `make lint-zizmor`; version, severity, persona, and audit scope live only in the Makefile so
+  the CI gate and the local run cannot diverge.
+- **The yamlfmt job pins Prettier to the version `bun.lock` resolves.**
+  [`tests/unit/tooling/ci-config-gates.test.ts`](tests/unit/tooling/ci-config-gates.test.ts) fails
+  the build if that pin, the digest pin, the severity threshold, the persona, or the pin hygiene
+  of any workflow drifts.
+
+Add `workflow security / zizmor` and `format yaml files / yamlfmt` to the branch-protection
+required checks; until then they are advisory and a PR that trips them stays mergeable (the
+repository currently has no branch protection or ruleset configured at all). Do **not** add
+`scorecard / analysis`: it has no `pull_request` trigger, so requiring it would leave every PR
+waiting on a check that never reports. #175 asks for it; that part of the issue is not adoptable
+as written, and the scheduled run is the monitor instead.
+
+**No suppression:** satisfy these gates by fixing the workflow — pin to a reviewed release commit,
+narrow the permission, pass values through `env` instead of `${{ }}` interpolation, reformat the
+YAML. Never add a `zizmor.yml` ignore, raise `--min-severity`, weaken the persona, or narrow the
+audit scope.
 
 ### Performance Budgets, Bundle Reports, and Route Splitting (issue #117)
 

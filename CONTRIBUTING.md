@@ -95,6 +95,47 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
+### Workflow, YAML, and repository-posture gates
+
+The CI configuration is itself gated, because a regression there silently weakens every other
+check. Four gates cover it. Each one turns its own check red on a regression; that only becomes
+merge-blocking once the check is in the branch-protection required list (see the end of this
+section for which ones belong there).
+
+- **`workflow security / zizmor`** (pull-request gate) runs
+  [zizmor](https://github.com/zizmorcore/zizmor) over `.github/workflows/`. Reproduce it locally
+  with `make lint-zizmor` (Docker, digest-pinned; deliberately not part of `make lint`, so it stays
+  independent of the dev container). It fails on medium-or-higher findings: an action pinned to a
+  mutable tag or branch instead of a reviewed release commit, an over-broad `permissions` block, a
+  `pull_request_target` job that checks out the PR head, restored credential persistence, a
+  `${{ github.event.* }}` value interpolated straight into a `run:` script, or an action from an
+  archived repository.
+  **Fix the workflow, never the gate.** Pin to a release commit, narrow the permission, or pass the
+  value through `env:` and reference it as a shell variable. Do not add a `zizmor.yml` ignore, raise
+  `--min-severity`, drop `--persona pedantic`, or shrink the audit scope.
+- **`format yaml files / yamlfmt`** (pull-request gate) runs `prettier --check` over every
+  `*.yml` / `*.yaml` file. It replaced a `norwd/fmtya` step that could not push its own fix and so
+  verified nothing. It catches format drift and YAML that does not parse. It does **not** catch
+  duplicate mapping keys — prettier's bundled YAML plugin passes `uniqueKeys: false`, so both keys
+  survive `--write` and `--check` exits 0. Fix a red check with `make format`;
+  `make lint-prettier` verifies the same files inside the dev container.
+- **`make lint-compose`** (part of `make lint`, so it runs in `static testing`) validates every
+  docker compose file combination the repository actually starts. Compose's own loader rejects a
+  duplicate mapping key (`mapping key X already defined at line N`), which is how the
+  last-key-wins defect — a silently discarded `healthcheck:` or `environment:` block — is covered
+  for the compose surface; actionlint's `syntax-check` covers it for the workflows. The gate also
+  catches schema and `${VAR}` interpolation errors before a container ever starts.
+- **`scorecard / analysis`** (weekly cron plus push to `main`, monitoring) runs OpenSSF Scorecard
+  and uploads SARIF to the Security tab. It watches repository _state_ that no pull-request diff
+  can show — branch protection, required checks, dependency-update health, pin coverage on `main`.
+  A scheduled run cannot block a merge; treat a score regression as a bug to file, not a warning to
+  dismiss.
+
+`workflow security / zizmor` and `format yaml files / yamlfmt` should be added to the
+branch-protection required checks for `main`; until they are, they report but do not block. Do not
+add `scorecard / analysis` — it has no `pull_request` trigger, so requiring it would leave every PR
+waiting forever on a check that never reports.
+
 ### Dockerfile build performance
 
 If your change touches a configured Dockerfile path (or the gate's own config),
@@ -343,3 +384,31 @@ Because a dependency (or a transitive one) can **relicense between versions**, r
 root-cause-not-suppression remediation policy: first replace the offending dependency; only if
 that is impossible, add its specific SPDX id to `ALLOWED_LICENSES` as a reviewed one-line diff.
 Never bypass or weaken the gate.
+
+## Unexpected console output fails Jest
+
+Every Jest setup file installs `jest-fail-on-console`, so a `console.error` or `console.warn`
+emitted while a test runs **fails that test** (the apollo-server node suite gates `error` only;
+`log` / `info` / `debug` are never gated). This catches the runtime warnings ESLint cannot see —
+React `act()` warnings, missing list `key`s, invalid DOM nesting, i18next `missingKey` — which
+otherwise scroll past in a green log.
+
+If your test legitimately drives a path the application logs on, spy on it **and assert it**,
+scoped to that single test:
+
+```ts
+const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+  issueCount: 2,
+});
+```
+
+Do not put that spy in a file-wide `beforeEach` — it would swallow genuinely unexpected output in
+the file's other tests. If the message is an `act()` warning, it is a real bug in the test: await
+the update instead of spying it away.
+
+`tests/console-gate/allowlist.ts` is the only escape hatch, and
+`tests/unit/tooling/console-gate.test.ts` rejects any entry that is not `^`-anchored, lacks a
+substantive reason, or has outlived the dependency major it declares it expires with. Adding to it
+is reviewed as a defect suppression, exactly like an `eslint-disable`.

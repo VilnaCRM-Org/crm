@@ -1080,6 +1080,22 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 > suite below, cover positive, negative, and edge cases (or record a concrete "Not applicable"
 > reason) and run the verification commands before calling test work done.
 
+### Unexpected console output fails Jest (issue #192)
+
+Every Jest setup file installs `jest-fail-on-console` via `installConsoleGate()`, so an
+unexpected `console.error` or `console.warn` emitted while a test runs **fails that test**. The
+apollo-server node suite gates `error` only; `log` / `info` / `debug` are never gated. This
+closes the channel ESLint's `no-console` cannot see: React `act()` warnings, missing list
+`key`s, invalid DOM nesting, and i18next `missingKey` output.
+
+When a test legitimately drives a path the application logs on, spy on it **and assert it**,
+scoped to that single test — never a file-wide `beforeEach`. An `act()` warning is a real bug in
+the test: await the update rather than spying it away. `tests/console-gate/allowlist.ts` is the
+only escape hatch and is reviewed as a defect suppression.
+
+Full rules: "Unexpected console output fails the suite (issue #192)" in [CLAUDE.md](CLAUDE.md)
+and [tests/console-gate/README.md](tests/console-gate/README.md).
+
 ### Unit Testing Best Practices
 
 1. **Test file location**: Mirror `src/` structure in `tests/unit/`
