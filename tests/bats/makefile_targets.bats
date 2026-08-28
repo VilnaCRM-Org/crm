@@ -66,14 +66,22 @@ EOF
   [ "$status" -eq 0 ]
   assert_log_contains 'docker build -t crm-dev -f Dockerfile --target base .'
 
-  while IFS='|' read -r target expected_one expected_two; do
+  while IFS='|' read -r target expected_commands; do
     [ -n "$target" ] || continue
 
     reset_command_log
     run_make_target "$target"
     [ "$status" -eq 0 ]
-    [ -z "$expected_one" ] || assert_log_contains "$expected_one"
-    [ -z "$expected_two" ] || assert_log_contains "$expected_two"
+    local expected remaining="$expected_commands"
+    while [ -n "$remaining" ]; do
+      expected="${remaining%%|*}"
+      if [ "$remaining" = "$expected" ]; then
+        remaining=""
+      else
+        remaining="${remaining#*|}"
+      fi
+      [ -z "$expected" ] || assert_log_contains "$expected"
+    done
   done <<'EOF'
 build-analyze|docker compose -f docker-compose.yml run --rm -e ANALYZE=true dev bun x rsbuild build|
 perf-budget|docker compose -f docker-compose.yml run --rm dev sh -c bun x rsbuild build && node scripts/bundle-size-report.mjs --dir dist|
@@ -87,7 +95,7 @@ lint-tsc|bun x tsc|
 lint-md|bun x markdownlint -i CHANGELOG.md -i test-results/**/*.md -i playwright-report/data/**/*.md **/*.md|
 lint-dup|bun x jscpd|
 lint-zizmor|ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d --no-online-audits --min-severity medium --persona pedantic --format plain .github/workflows/|
-lint-compose|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q|docker compose -f docker-compose.memory-leak.yml config -q
+lint-compose|docker compose -f docker-compose.yml config -q|docker compose -f docker-compose.test.yml config -q|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q|docker compose -f docker-compose.memory-leak.yml config -q
 check-env-sync|check-env-sync.sh|
 lint-metrics-run|lint-metrics.sh RCA_BIN=./bin/rust-code-analysis-cli RCA_VERSION=0.0.25 RCA_SCOPE=src/ RCA_EXCLUDES=**/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/** **/api/generated/** METRICS_POLICY=config/metrics-policy.json|
 husky|bun x husky install|
