@@ -20,7 +20,12 @@ type Workflow = {
 };
 
 const workflow = parse(readFile('.github/workflows/commitlint.yml')) as Workflow;
-const job = workflow.jobs.commitlint;
+const jobNamed = (name: string): Workflow['jobs'][string] => {
+  const found = workflow.jobs[name];
+  if (found === undefined) throw new Error(`commitlint.yml declares no "${name}" job`);
+  return found;
+};
+const job = jobNamed('commitlint');
 const steps = job.steps ?? [];
 const stepFor = (fragment: string): Step | undefined =>
   steps.find((step) => (step.run ?? '').includes(fragment));

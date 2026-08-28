@@ -28,6 +28,12 @@ const workflow = parse(
   fs.readFileSync(path.join(projectRoot, '.github/workflows/main-verification.yml'), 'utf8')
 ) as Workflow;
 
+const jobNamed = (name: string): Job => {
+  const found = workflow.jobs[name];
+  if (found === undefined) throw new Error(`main-verification.yml declares no "${name}" job`);
+  return found;
+};
+
 const runCommands = (job: Job): string[] => (job.steps ?? []).flatMap((step) => step.run ?? []);
 
 describe('post-merge main verification (issue #185)', () => {
@@ -43,23 +49,23 @@ describe('post-merge main verification (issue #185)', () => {
   });
 
   it('re-runs the deterministic PR gates against the merged tree', () => {
-    expect(runCommands(workflow.jobs.lint)).toEqual(
+    expect(runCommands(jobNamed('lint'))).toEqual(
       expect.arrayContaining(['make start', 'make lint', 'make codegen-check'])
     );
-    expect(runCommands(workflow.jobs.unit)).toEqual(
+    expect(runCommands(jobNamed('unit'))).toEqual(
       expect.arrayContaining(['make start', 'make test-unit-all'])
     );
   });
 
   it('lets no verification job swallow its own failure', () => {
     for (const jobName of ['lint', 'unit'] as const) {
-      expect(workflow.jobs[jobName]['continue-on-error']).toBeUndefined();
-      expect(workflow.jobs[jobName].if).toBeUndefined();
+      expect(jobNamed(jobName)['continue-on-error']).toBeUndefined();
+      expect(jobNamed(jobName).if).toBeUndefined();
     }
   });
 
   it('routes a red main to a single tracking issue', () => {
-    const report = workflow.jobs.report;
+    const report = jobNamed('report');
 
     expect(report.needs).toEqual(expect.arrayContaining(['lint', 'unit']));
     expect(report.if).toContain('always()');
@@ -69,7 +75,7 @@ describe('post-merge main verification (issue #185)', () => {
   });
 
   it('clears the tracking issue once main recovers', () => {
-    const resolve = workflow.jobs.resolve;
+    const resolve = jobNamed('resolve');
 
     expect(resolve.needs).toEqual(expect.arrayContaining(['lint', 'unit']));
     expect(resolve.if).toContain("needs.lint.result == 'success'");
