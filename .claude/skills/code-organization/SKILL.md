@@ -10,6 +10,12 @@ description: Use when placing, moving, naming, or splitting frontend files.
 Place code by ownership first, then by type. Prefer the existing module and
 feature structure over new top-level abstractions.
 
+**Never hand-roll a module or feature.** Run `make new-module name=<kebab>
+feature=<kebab>` (or `make new-feature module=<kebab> feature=<kebab>`); the
+generated skeleton already satisfies every structural gate. The allowed folder
+names below are read from `config/module-shape.json`, the single source shared
+by the generator and `.dependency-cruiser.js`. See `docs/scaffolding.md`.
+
 ## Frontend Structure
 
 ```text
@@ -25,6 +31,7 @@ src/
           i18n/
           repositories/
           routes/
+          stores/
           types/
           utils/
       hooks/
@@ -77,9 +84,10 @@ All rules below are enforced by `dependency-cruiser` (see
   `store`, `types`, `utils` (`module-allowed-folders`). Use `lib/` or
   `utils/` instead of `helpers/`.
 - Feature root may only contain: `assets`, `components`, `hooks`, `i18n`,
-  `repositories`, `routes`, `types`, `utils` (`feature-allowed-folders`).
-  Do not add `api/`, `helpers/`, or `store/` at feature level — data
-  access is `repositories/`; store stays at module level.
+  `repositories`, `routes`, `stores`, `types`, `utils`
+  (`feature-allowed-folders`). Do not add `api/` or `helpers/` — data access
+  is `repositories/`. Feature-scoped state is `stores/` (plural); the
+  module-wide store is `store/` (singular) at the module root.
 - Test module and feature folder names under `tests/{e2e,integration,unit}/
 modules/` are lowercase kebab-case (`tests-module-name-lowercase`,
   `tests-feature-name-lowercase`).

@@ -66,14 +66,22 @@ EOF
   [ "$status" -eq 0 ]
   assert_log_contains 'docker build -t crm-dev -f Dockerfile --target base .'
 
-  while IFS='|' read -r target expected_one expected_two; do
+  while IFS='|' read -r target expected_commands; do
     [ -n "$target" ] || continue
 
     reset_command_log
     run_make_target "$target"
     [ "$status" -eq 0 ]
-    [ -z "$expected_one" ] || assert_log_contains "$expected_one"
-    [ -z "$expected_two" ] || assert_log_contains "$expected_two"
+    local expected remaining="$expected_commands"
+    while [ -n "$remaining" ]; do
+      expected="${remaining%%|*}"
+      if [ "$remaining" = "$expected" ]; then
+        remaining=""
+      else
+        remaining="${remaining#*|}"
+      fi
+      [ -z "$expected" ] || assert_log_contains "$expected"
+    done
   done <<'EOF'
 build-analyze|docker compose -f docker-compose.yml run --rm -e ANALYZE=true dev bun x rsbuild build|
 perf-budget|docker compose -f docker-compose.yml run --rm dev sh -c bun x rsbuild build && node scripts/bundle-size-report.mjs --dir dist|
@@ -87,7 +95,7 @@ lint-tsc|bun x tsc|
 lint-md|bun x markdownlint -i CHANGELOG.md -i test-results/**/*.md -i playwright-report/data/**/*.md **/*.md|
 lint-dup|bun x jscpd|
 lint-zizmor|ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d --no-online-audits --min-severity medium --persona pedantic --format plain .github/workflows/|
-lint-compose|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q|docker compose -f docker-compose.memory-leak.yml config -q
+lint-compose|docker compose -f docker-compose.yml config -q|docker compose -f docker-compose.test.yml config -q|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q|docker compose -f docker-compose.memory-leak.yml config -q
 check-env-sync|check-env-sync.sh|
 lint-metrics-run|lint-metrics.sh RCA_BIN=./bin/rust-code-analysis-cli RCA_VERSION=0.0.25 RCA_SCOPE=src/ RCA_EXCLUDES=**/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/** **/api/generated/** METRICS_POLICY=config/metrics-policy.json|
 husky|bun x husky install|
@@ -315,6 +323,85 @@ EOF
   run_make_target test-mutation-shard MUTATION_SHARD_INDEX=1 MUTATION_SHARD_TOTAL=4 MUTATION_INCREMENTAL=1
   [ "$status" -eq 0 ]
   assert_log_contains 'dev bun x stryker run stryker.shard.config.mjs --incremental'
+}
+
+@test "scaffolding targets drive plop and the self-verification gate (issue #108)" {
+  reset_command_log
+  run_make_target new-module name=orders feature=order-list owner=@octocat
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose exec -T dev bun x plop module orders order-list @octocat'
+
+  reset_command_log
+  run_make_target new-feature module=orders feature=order-detail
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose exec -T dev bun x plop feature orders order-detail'
+
+  # This only proves the recipe forwards the variable; whether the list is complete is the
+  # separate test below, which derives its expectation from an independent source.
+  local forwarded
+  forwarded=$(grep -E '^SCAFFOLD_VERIFY_TARGETS[[:space:]]*\?=' "$MAKEFILE_SANDBOX/Makefile" |
+    sed 's/^[^=]*=[[:space:]]*//')
+  [ -n "$forwarded" ]
+
+  reset_command_log
+  run_make_target verify-scaffold
+  [ "$status" -eq 0 ]
+  assert_log_contains "verify-scaffold.sh SCAFFOLD_VERIFY_TARGETS=$forwarded"
+}
+
+@test "SCAFFOLD_VERIFY_TARGETS runs every lint gate that reads generated source (issue #108)" {
+  # Derived from the `lint:` prerequisites, NOT from the SCAFFOLD_VERIFY_TARGETS line itself:
+  # re-deriving from the line under test cannot detect a gate being dropped from it, because
+  # the expectation would shrink with it. The exclusions are the six gates that never read
+  # src/ or tests/ — env parity, shell scripts, workflow YAML, compose files, the lockfile,
+  # and the licenses of the production dependency tree — so adding a new lint gate fails this
+  # test until it is classified one way or the other.
+  local makefile="$MAKEFILE_SANDBOX/Makefile"
+  local excluded=" check-env-sync lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses "
+
+  local lint_prereqs scaffold_targets expected actual target
+  lint_prereqs=$(grep -E '^lint:[[:space:]]' "$makefile" | sed 's/^lint:[[:space:]]*//; s/[[:space:]]*##.*//')
+  scaffold_targets=$(grep -E '^SCAFFOLD_VERIFY_TARGETS[[:space:]]*\?=' "$makefile" |
+    sed 's/^[^=]*=[[:space:]]*//')
+
+  [ -n "$lint_prereqs" ]
+  [ -n "$scaffold_targets" ]
+
+  expected=""
+  for target in $lint_prereqs; do
+    case "$excluded" in
+      *" $target "*) continue ;;
+    esac
+    expected="$expected$target"$'\n'
+  done
+  expected=$(printf '%s' "$expected" | sort)
+  actual=$(printf '%s\n' $scaffold_targets | sort)
+
+  [ "$expected" = "$actual" ]
+}
+
+@test "new-module reuses the module name when no feature name is given (issue #108)" {
+  reset_command_log
+  run_make_target new-module name=orders owner=@octocat
+  [ "$status" -eq 0 ]
+  assert_log_contains 'bun x plop module orders orders @octocat'
+}
+
+@test "scaffolding targets fail fast when a required name is missing (issue #108)" {
+  reset_command_log
+  run_make_target new-module
+  [ "$status" -ne 0 ]
+  assert_output_contains 'name= is required'
+
+  reset_command_log
+  run_make_target new-feature module=orders
+  [ "$status" -ne 0 ]
+  assert_output_contains 'feature= is required'
+
+  reset_command_log
+  run_make_target new-feature feature=order-detail
+  [ "$status" -ne 0 ]
+  assert_output_contains 'module= is required'
 }
 
 @test "CI_LINT_TARGETS mirrors the lint prerequisite set exactly (issue #182)" {

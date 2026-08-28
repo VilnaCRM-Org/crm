@@ -5,7 +5,7 @@
 Use for module-level contributor guidance:
 
 ```text
-src/modules/User/features/Auth/README.md
+src/modules/user/features/auth/README.md
 ```
 
 Include purpose, entry points, translations, tests, and verification commands.

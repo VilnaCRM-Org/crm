@@ -70,6 +70,22 @@ If you find an issue to work on, you are welcome to open a PR with a fix.
 
 3. Create a working branch and start with your changes!
 
+#### Adding a module or feature
+
+Do not create the folders by hand — generate them:
+
+```bash
+make new-module name=orders feature=order-list
+make new-feature module=orders feature=order-detail
+```
+
+The generated skeleton passes every static gate with zero edits, and the generator prints
+the two order-sensitive lines you must add yourself (the DI registrar entry and the route
+contract entry). Allowed folder names come from `config/module-shape.json`, the single
+source `.dependency-cruiser.js` also reads. `make verify-scaffold` (CI check `scaffold`)
+generates a throwaway module, gates it, and removes it, so the templates can never silently
+drift from the policy. See [`docs/scaffolding.md`](docs/scaffolding.md).
+
 ### Commit your update
 
 Commit the changes once you are happy with them.

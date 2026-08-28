@@ -147,28 +147,28 @@ same Docker-backed environment and avoid host-specific drift.
 
 ### Common Agent Tasks
 
-#### Adding a New Feature
+#### Adding a New Module or Feature
 
-1. **Identify the module** - Features belong in `src/modules/` or `src/features/`
-2. **Create feature structure**:
+**Run the generator. Do not hand-roll the folder structure.**
 
-   ```bash
-   src/modules/[Module]/features/[Feature]/
-   ├── components/       # Feature UI components
-   ├── api/             # API client and types
-   ├── i18n/            # Translations (en.json, uk.json)
-   ├── helpers/         # Feature utilities
-   └── index.ts         # Public exports
-   ```
+```bash
+make new-module name=orders feature=order-list        # new module + its first feature
+make new-feature module=orders feature=order-detail   # feature inside an existing module
+```
 
-3. **Add translations** - Always provide both `en.json` and `uk.json`
-4. **Register services** - If needed, register in the owning area's composition root
-   `di.ts` against its co-located `tokens.ts`, then add that registrar to the aggregator
-   array in `src/config/dependency-injection-config.ts` (issue #109)
-5. **Add tests** - Unit tests in `tests/unit/`, E2E in `tests/e2e/`. Apply the Mandatory
-   Test-Scenario Coverage Policy (positive, negative, and edge cases).
-6. **Format and lint** - Run `make format` before `make lint`
-   (`make format` includes Prettier and `qlty fmt`)
+The generated skeleton already satisfies dependency-cruiser, TypeScript, ESLint, jscpd,
+markdownlint, Prettier and the metrics gate, and it ships both `i18n/en.json` and
+`i18n/uk.json` plus mirrored unit and E2E test skeletons covering positive, negative, and
+edge cases per the Mandatory Test-Scenario Coverage Policy.
+
+The generator prints the two lines you must add by hand — the module registrar entry in
+`src/config/dependency-injection-config.ts` (issue #109) and the route contract entry in
+`src/routes/registry.ts` (issue #105). Then run `make format` before `make lint`
+(`make format` includes Prettier and `qlty fmt`).
+
+The allowed folder names, the emitted files, and the self-verification gate are documented
+in [`docs/scaffolding.md`](docs/scaffolding.md), which reads its folder law from
+`config/module-shape.json` — the same file `.dependency-cruiser.js` reads.
 
 #### Module & Feature Public API Contract (issue #107)
 
@@ -562,8 +562,8 @@ make pr-comments > review-comments.txt
 #   - Update component to use it
 #   - Commit: "refactor: extract email validation to helper function"
 
-git add src/modules/user/features/auth/helpers/validators.ts
-git add src/modules/user/features/auth/components/LoginForm.tsx
+git add src/modules/user/features/auth/utils/validators.ts
+git add src/modules/user/features/auth/components/form-section/auth-forms/login-form.tsx
 git commit -m "refactor: extract email validation to helper function
 
 Per review suggestion in PR #123"
@@ -638,9 +638,9 @@ const handleSubmit = (data: LoginFormData) => { ... }
 **Solution**:
 
 ```typescript
-// Create: src/modules/user/features/auth/hooks/useLoginForm.ts
+// Create: src/modules/user/features/auth/hooks/use-login-form.ts
 // Update component to use hook
-// Add tests: tests/unit/modules/user/features/auth/hooks/useLoginForm.test.ts
+// Add tests: tests/unit/modules/user/features/auth/hooks/use-login-form.test.ts
 ```
 
 #### Pattern 4: Error Handling
@@ -654,7 +654,7 @@ try {
   const result = await loginAPI.login(credentials);
   return result;
 } catch (error) {
-  if (isAPIError(error)) {
+  if (isApiError(error)) {
     // Handle specific API errors
     if (error instanceof ValidationError) {
       setFieldErrors(error.errors);
@@ -929,18 +929,27 @@ class ModuleStoreFactory {
 
 ### API Error Handling Pattern
 
-```typescript
-// Check error type
-import { isAPIError } from '@/modules/user/features/auth/api/api-errors';
-import { ValidationError } from '@/modules/user/features/auth/api/api-errors/validation-error';
+Outside the `user` module, enter through the public barrel and narrow with `instanceof`:
 
-if (isAPIError(error)) {
-  if (error instanceof ValidationError) {
-    // Handle validation errors
-    error.errors.forEach((err) => {
-      console.log(err.field, err.message);
-    });
-  }
+```typescript
+import { ApiError } from '@/modules/user';
+
+if (error instanceof ApiError) {
+  console.error(error.code, error.status, error.message);
+}
+```
+
+Inside the module, the concrete subclasses and the structural guard are reachable directly.
+The guard is a singleton instance, so the call is `apiErrorGuard.is(...)`, not a bare function:
+
+```typescript
+import { ValidationError } from '@/modules/user/lib/api-errors';
+import apiErrorGuard from '@/modules/user/lib/is-api-error';
+
+if (error instanceof ValidationError) {
+  console.error('validation failed', error.status);
+} else if (apiErrorGuard.is(error)) {
+  console.error(error.code, error.message);
 }
 ```
 
@@ -1392,20 +1401,17 @@ Husky runs automatically:
 
 When creating a new module:
 
-- [ ] Create module directory: `src/modules/[ModuleName]/`
-- [ ] Add `package.json` with module metadata
-- [ ] Create feature structure with `features/`, `store/`, `helpers/`
-- [ ] Add i18n files: `i18n/en.json`, `i18n/uk.json`
-- [ ] Add the module's token module `src/modules/[ModuleName]/config/tokens.ts`
-      and composition root `config/di.ts`, then register it in the aggregator array
-      in `src/config/dependency-injection-config.ts` (issue #109)
-- [ ] Create Zustand store in `features/[Feature]/stores/`
-- [ ] Add a repository / API client if needed
-- [ ] Write unit tests in `tests/unit/modules/[ModuleName]/`
-- [ ] Add E2E and visual tests if user-facing
-- [ ] Update routes in `App.tsx` if needed
-- [ ] Document public APIs in module README
-- [ ] Cover positive, negative, and edge cases per the Mandatory Test-Scenario Coverage Policy
+- [ ] Generate it: `make new-module name=<kebab> feature=<kebab>` — never create the folders
+      by hand. See [`docs/scaffolding.md`](docs/scaffolding.md).
+- [ ] Add the printed registrar line to `src/config/dependency-injection-config.ts` (#109)
+- [ ] Add the printed route-contract line to `src/routes/registry.ts` (#105)
+- [ ] Register that route before running the E2E suite — the generated spec ships live, not
+      skipped, so it fails until the page is reachable
+- [ ] Fill in the generated repository, hook, component, and both i18n locales
+- [ ] Extend the generated unit and E2E suites so positive, negative, and edge cases stay
+      covered per the Mandatory Test-Scenario Coverage Policy
+- [ ] Add visual tests if user-facing
+- [ ] Document the module's public API in its generated README
 - [ ] Run full test suite: `make test-unit-all && make test-e2e && make test-visual`
 
 ## Environment-Specific Notes
