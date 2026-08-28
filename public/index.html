@@ -16,6 +16,17 @@
     <link rel="manifest" href="/site.webmanifest" />
     <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#000000" />
     <title>VilnaCRM</title>
+    <!--
+      Runtime configuration (issue #145). Read synchronously at boot by
+      src/config/runtime/app-config-source.ts. The production entrypoint
+      (scripts/docker-entrypoint.sh -> scripts/render-app-config.js) rewrites the JSON below
+      from APP_CONFIG_* environment variables at container start, so the same built image
+      serves any environment without a rebuild. The values here are the committed defaults;
+      see src/config/runtime/README.md and docs/feature-flags.md.
+    -->
+    <script id="app-runtime-config" type="application/json">
+      { "flags": { "forgotPassword": false } }
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

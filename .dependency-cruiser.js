@@ -5,6 +5,7 @@
 // one eagerly pulls the whole DI graph, which must stay off the auth paint path).
 const DI_COMPOSITION_ROOTS = [
   '^src/config/dependency-injection-config[.]ts$',
+  '^src/config/runtime/di[.]ts$',
   '^src/services/[^/]+/di[.]ts$',
   '^src/utils/[^/]+/di[.]ts$',
   '^src/modules/[^/]+/config/di[.]ts$',

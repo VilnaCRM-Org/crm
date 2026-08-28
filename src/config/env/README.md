@@ -4,6 +4,13 @@ Single, typed, validated source of truth for the environment-derived configurati
 `src/` consumes. Replaces the scattered, contradictory raw `process.env` reads that used to
 live in `url-builder`, `get-graphql-url`, and the auth store (issue #112).
 
+This is the **build-time** layer: `REACT_APP_*` values are inlined into the bundle, so changing one
+requires a rebuild. Configuration an administrator can change **without** a rebuild lives in the
+sibling **runtime** layer, `@/config/runtime` (issue #145), which reuses the two-layer split below
+for the same paint-path reason. Where both define a setting (`graphqlUrl`, the REST base URL), the
+runtime value wins and the build-time value is the default. See
+[`../runtime/README.md`](../runtime/README.md).
+
 ## Why a two-layer module
 
 `REACT_APP_*` variables are inlined by RSBuild at **build time** (`loadEnv` +
@@ -58,8 +65,7 @@ _present but malformed_ value fails.
 
 `eslint.config.mjs` bans raw `process.env` reads in non-React application code
 (`src/**/*.ts`, the same scope as the no-free-functions gate #100) via `no-restricted-syntax`.
-`src/config/env/**` is the single exemption. Intentionally **out of this `.ts` scope** (and
-deferred, tracked with #145):
+`src/config/env/**` is the single exemption. Intentionally **out of this `.ts` scope**:
 
 - React components (`.tsx`) reading `NODE_ENV` — e.g. the error boundaries and
   `auth-error-boundary/index.tsx`. `.tsx` is exempt from the non-React `.ts` boundary the ban
