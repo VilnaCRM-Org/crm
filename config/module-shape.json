@@ -22,7 +22,10 @@
     "rootAllowedFolders": [
       "apollo-server",
       "builders",
+      "console-gate",
       "e2e",
+      "fixtures",
+      "i18n",
       "integration",
       "load",
       "memory-leak",

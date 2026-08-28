@@ -82,7 +82,12 @@ describe('ErrorHandler Coverage Tests', () => {
   });
 
   it('should safely no-op when no logger is configured', () => {
-    expect(() => errorHandler.handle(new Error('No console available'))).not.toThrow();
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const error = new Error('No console available');
+
+    expect(() => errorHandler.handle(error)).not.toThrow();
+
+    expect(consoleError).toHaveBeenCalledWith('[ErrorHandler]', error);
   });
 
   it('exposes instance methods for auth-error mapping and error handling', () => {

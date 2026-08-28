@@ -101,7 +101,7 @@ ENV                         ?= prod
 DEBUG                       ?=
 
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
-PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md}"
+PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md,yml,yaml}"
 PRETTIER_CMD                = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --write --ignore-path .prettierignore
 PRETTIER_CHECK_CMD          = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --check --ignore-path .prettierignore
 QLTY_FMT                    = qlty fmt --all --trigger agent --no-progress
@@ -114,6 +114,23 @@ SHELL_LINT_PATHS            = scripts/*.sh scripts/ci/*.sh .husky/pre-commit .hu
 # pure-correctness (expressions, contexts, needs graphs, event names). run: scripts are
 # covered by the separate ShellCheck gate over standalone scripts (lint-shell).
 ACTIONLINT_IMAGE            = rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9
+# zizmor workflow-security gate (issue #174). Digest-pinned like the other CI images.
+# actionlint answers "is this workflow correct?"; zizmor answers "is it safe?" — mutable
+# action refs, widened permissions, pwn-requests, template injection, credential
+# persistence. Offline audits only: no token, deterministic, and still severity-medium
+# accurate (the archived-action detections below were found with --no-online-audits).
+# Pinned exactly: a new zizmor minor adds audits and would redden unrelated PRs.
+#
+# --persona pedantic is load-bearing, not decoration: at the default persona
+# excessive-permissions does not fire on a workflow-level `permissions: write-all` in a
+# single-job workflow, so #174's own seeded-defect example would merge green. Measured on
+# an isolated fixture: default persona exits 0, pedantic reports it as high and exits 14.
+# Pedantic keeps this repository green (its extra audits are informational/low, filtered by
+# --min-severity medium). The stricter `auditor` persona is not adopted: it adds four
+# pre-existing medium secrets-outside-env findings whose fix (moving release, Codecov, and
+# Sentry jobs behind GitHub Environments) is a separate decision.
+ZIZMOR_IMAGE                = ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d
+ZIZMOR_ARGS                 = --no-online-audits --min-severity medium --persona pedantic --format plain
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 BATS_FORMATTER              ?= pretty
@@ -140,7 +157,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses
+CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -176,7 +193,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
-.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses
+.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-zizmor lint-compose lint-lockfile lint-licenses
 .PHONY: storybook
 .PHONY: all test
 all: help
@@ -388,6 +405,24 @@ lint-shell: ## ShellCheck all repo gate shell scripts at --severity=warning (req
 lint-actionlint: ## Lint the GitHub Actions workflows with actionlint (requires Docker, like lint-metrics)
 	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ACTIONLINT_IMAGE) -shellcheck=
 
+# Standalone by design, not part of `make lint`: needing no dev container is what lets the
+# `workflow security` job report in seconds and still report when the compose stack cannot start.
+lint-zizmor: ## Audit the workflows for security regressions with zizmor (Docker; standalone)
+	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ZIZMOR_IMAGE) $(ZIZMOR_ARGS) .github/workflows/
+
+# Compose-file validation (issue #161). Prettier normalizes YAML but its bundled parser sets
+# uniqueKeys: false, so it silently accepts a duplicate mapping key — the last-key-wins defect
+# that can drop a healthcheck or environment block. Compose's own loader rejects it
+# ("mapping key X already defined at line N"), so validating each file combination the repo
+# actually starts closes that class for the compose surface with no new tool. actionlint
+# already covers it for the workflows (syntax-check reports duplicated keys).
+lint-compose: ## Validate every compose file combination the repo starts (issue #161)
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) config -q
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) config -q
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) \
+		$(COMMON_HEALTHCHECKS_FILE) config -q
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) config -q
+
 lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry allowlist (issue #176)
 	sh scripts/ci/check-lockfile-registries.sh
 
@@ -461,7 +496,7 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, the bun.lock provenance gate, and the dependency license-policy gate.
+lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, compose validation, the bun.lock provenance gate, and the dependency license-policy gate.
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision

@@ -60,6 +60,8 @@ module.exports = {
           '^src/index[.]tsx$', // app entrypoint
           '^codegen[.]ts$', // graphql-codegen config (consumed by the CLI, not imported)
           '^tests/load/utils/test-data[.]js$', // ad-hoc load-test data generator
+          // console-gate fixtures: run by a child Jest process, never imported (issue #192)
+          '^tests/fixtures/console-gate/.*[.]fixture[.](?:ts|tsx)$',
           '^storybook-static/', // generated Storybook output
           '^coverage/', // generated coverage reports
           '^test-results/', // generated Playwright/Jest test artifacts
