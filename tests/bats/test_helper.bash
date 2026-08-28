@@ -103,6 +103,14 @@ create_gh_stub() {
 #!/usr/bin/env bash
 printf 'gh %s\n' "$*" >> "${COMMAND_LOG:?}"
 
+# Stands in for `gh api repos/<repo>/commits/<sha> --jq <verified-and-bot filter>`. The real
+# call prints a login only when GitHub reports the commit signature-verified AND the author a
+# `[bot]` account, so the fixture prints one only when the test says both hold.
+if [ "$1" = "api" ]; then
+  printf '%s' "${FAKE_GH_VERIFIED_BOT_LOGIN:-}"
+  exit 0
+fi
+
 if [ "$1" = "issue" ] && [ "$2" = "list" ]; then
   case " $* " in
     *" --label ${FAKE_GH_EXPECTED_LABEL:-main-is-red} --state open "*)
@@ -150,21 +158,6 @@ exit 0
 EOF
 
   chmod +x "$STUB_BIN_DIR/git"
-}
-
-create_gh_stub() {
-  cat > "$STUB_BIN_DIR/gh" <<'EOF'
-#!/usr/bin/env bash
-printf 'gh %s\n' "$*" >> "${COMMAND_LOG:?}"
-
-# Stands in for `gh api repos/<repo>/commits/<sha> --jq <verified-and-bot filter>`. The real
-# call prints a login only when GitHub reports the commit signature-verified AND the author a
-# `[bot]` account, so the fixture prints one only when the test says both hold.
-printf '%s' "${FAKE_GH_VERIFIED_BOT_LOGIN:-}"
-exit 0
-EOF
-
-  chmod +x "$STUB_BIN_DIR/gh"
 }
 
 create_make_stub() {
@@ -272,7 +265,6 @@ setup_ci_script_test_env() {
   create_make_stub
   create_gh_stub
   create_git_stub
-  create_gh_stub
   create_generic_stub tar
 
   export SCRIPT_SANDBOX="$BATS_TEST_TMPDIR/script-sandbox"
