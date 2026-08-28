@@ -2,7 +2,7 @@
 
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
-import { cleanup, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 
@@ -55,11 +55,14 @@ jest.mock('@auth/routes/sign-in', () => ({
   default: (): ReactElement => <div>sign in page</div>,
 }));
 
+let view: ReturnType<typeof render> | null = null;
+
 describe('seeded-session routing (#114 regression guard)', () => {
   // Unmount first: this spec keeps the REAL ProtectedRoute, so resetting the token under a
   // mounted tree redirects to /sign-in and suspends on a chunk the spec never loads.
   afterEach(() => {
-    cleanup();
+    view?.unmount();
+    view = null;
     accessState.clear();
     AuthStateVar.reset();
   });
@@ -80,7 +83,7 @@ describe('seeded-session routing (#114 regression guard)', () => {
 
     const memory = actual.createMemoryRouter(router as never, { initialEntries: ['/'] });
 
-    render(
+    view = render(
       <Suspense fallback={null}>
         <actual.RouterProvider router={memory} future={ROUTER_FUTURE_FLAGS} />
       </Suspense>
