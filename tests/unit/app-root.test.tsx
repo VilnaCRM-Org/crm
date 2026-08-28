@@ -1,6 +1,6 @@
 import './utils/setup-bun-dom';
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 
 import accessState from '@/lib/access/access-state';
 import { buildPrincipal } from '@tests/builders';
@@ -73,7 +73,11 @@ describe('App root route', () => {
   // ProtectedRoute (which hydrates the access session) is mocked here, so the
   // permission-gated home route (#114) needs its principal seeded directly.
   beforeEach(() => accessState.setSession(buildPrincipal(), {}));
-  afterEach(() => accessState.clear());
+  afterEach(() => {
+    act(() => {
+      accessState.clear();
+    });
+  });
 
   it('renders the button example page through the protected outlet', async () => {
     render(<App />);

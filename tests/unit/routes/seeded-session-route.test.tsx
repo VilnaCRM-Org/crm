@@ -61,8 +61,8 @@ describe('seeded-session routing (#114 regression guard)', () => {
   afterEach(() => {
     act(() => {
       accessState.clear();
+      AuthStateVar.reset();
     });
-    AuthStateVar.reset();
   });
 
   it('hydrates the session from the seeded token and renders the gated home page', async () => {
