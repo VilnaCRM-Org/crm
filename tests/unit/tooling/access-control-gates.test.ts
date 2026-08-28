@@ -55,10 +55,12 @@ const authorizationMessages = (messages: EslintMessage[]): EslintMessage[] =>
 // Same principle for the import boundaries: cruise a throwaway fixture and read the rule
 // names out of the report, rather than regex-matching the config against itself.
 const cruise = (fixtures: Record<string, string>): string[] => {
-  const written = Object.keys(fixtures).map((relative) => path.join(repoRoot, relative));
-  written.forEach((absolute, index) => {
+  const entries = Object.entries(fixtures);
+  const written = entries.map(([relative]) => path.join(repoRoot, relative));
+  entries.forEach(([relative, source]) => {
+    const absolute = path.join(repoRoot, relative);
     fs.mkdirSync(path.dirname(absolute), { recursive: true });
-    fs.writeFileSync(absolute, Object.values(fixtures)[index], 'utf8');
+    fs.writeFileSync(absolute, source, 'utf8');
   });
   // depcruise reports violations on stdout whether or not it exits non-zero, so read the
   // report in both branches — trusting the exit code alone would make this pass vacuously.
@@ -222,16 +224,14 @@ export default new Probe();
 // The fixtures must live under src/ for the flat-config globs and the tsconfig project to
 // apply, so they cannot go to a temp dir. Sweep defensively in case a run is interrupted
 // between the write and the finally.
+const ESLINT_FIXTURE = `src/components/${probe}.tsx`;
+const BYPASS_FIXTURE = `src/components/${probe}-bypass.tsx`;
+const CRUISE_FIXTURE = `src/components/${probe}-cruise/index.tsx`;
+const HOOK_FIXTURE = `src/hooks/use-${probe}.ts`;
+const LAYER_FIXTURE = `src/lib/access/${probe}.ts`;
+const SEAM_LOOKALIKE_FIXTURE = `src/hooks/use-access-${probe}.ts`;
+const META_FIXTURE = `src/routes/${probe}-meta.ts`;
 const FIXTURE_PATHS = [
-  `src/components/${probe}.tsx`,
-  `src/components/${probe}-bypass.tsx`,
-  `src/components/${probe}-cruise/index.tsx`,
-  `src/hooks/use-${probe}.ts`,
-  `src/lib/access/${probe}.ts`,
-  `src/hooks/use-access-${probe}.ts`,
-  `src/routes/${probe}-meta.ts`,
-];
-const [
   ESLINT_FIXTURE,
   BYPASS_FIXTURE,
   CRUISE_FIXTURE,
@@ -239,7 +239,7 @@ const [
   LAYER_FIXTURE,
   SEAM_LOOKALIKE_FIXTURE,
   META_FIXTURE,
-] = FIXTURE_PATHS;
+];
 
 const sweepFixtures = (): void => {
   FIXTURE_PATHS.forEach((relative) => {

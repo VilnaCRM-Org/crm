@@ -19,6 +19,16 @@ import { buildAccessToken, buildClaims } from '@tests/builders';
 
 type Bound = new (...args: never[]) => object;
 
+const at = <T>(list: readonly T[], index: number): T => {
+  const item = list[index];
+
+  if (item === undefined) {
+    throw new Error(`missing index ${index}`);
+  }
+
+  return item;
+};
+
 const ACCESS_BINDINGS: readonly { name: string; token: symbol; type: Bound }[] = [
   { name: 'PermissionService', token: ACCESS_TOKENS.PermissionService, type: PermissionService },
   { name: 'PolicyEvaluator', token: ACCESS_TOKENS.PolicyEvaluator, type: PolicyEvaluator },
@@ -79,8 +89,8 @@ describe('access DI registrar', () => {
 
       expect(install).toHaveBeenCalledTimes(1);
       expect(install).toHaveBeenCalledWith(scoped.resolve(ACCESS_TOKENS.SessionRepository));
-      expect(install.mock.calls[0][0]).toBeInstanceOf(SessionRepository);
-      expect(install.mock.calls[0][0]).not.toBe(original);
+      expect(at(install.mock.calls, 0)[0]).toBeInstanceOf(SessionRepository);
+      expect(at(install.mock.calls, 0)[0]).not.toBe(original);
     } finally {
       install.mockRestore();
       accessSession.useLoader(original);
@@ -138,7 +148,7 @@ describe('access DI registrar', () => {
       // default installation reaches this sink and returns nothing for anyone to consume.
       expect(auditCore.log({ type: 'login' })).toBeUndefined();
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(spy.mock.results[0].value).toBeUndefined();
+      expect(at(spy.mock.results, 0).value).toBeUndefined();
     });
 
     it('routes audit events to the sink installed on the container-free core', () => {

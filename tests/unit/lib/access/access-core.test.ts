@@ -12,7 +12,13 @@ const createSink = (): jest.Mocked<AuditSink> => ({ record: jest.fn() });
 describe('AccessCore', () => {
   let sink: jest.Mocked<AuditSink>;
 
-  const recorded = (call = 0): AuditEvent => sink.record.mock.calls[call][0];
+  const recorded = (call = 0): AuditEvent => {
+    const args = sink.record.mock.calls[call];
+    if (args === undefined) {
+      throw new Error(`no audit event recorded at call ${call}`);
+    }
+    return args[0];
+  };
 
   beforeEach(() => {
     accessState.clear();
@@ -112,10 +118,11 @@ describe('AccessCore', () => {
     });
 
     it('is the tenant id of the hydrated principal', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const home = buildTenantRef();
+      const tenants = [home, buildTenantRef()];
       accessState.setSession(buildPrincipal({ tenants }), {});
 
-      expect(accessCore.activeTenant()).toBe(tenants[0].id);
+      expect(accessCore.activeTenant()).toBe(home.id);
     });
   });
 
@@ -137,17 +144,19 @@ describe('AccessCore', () => {
 
   describe('switchTenant', () => {
     it('refuses and records a denial for a principal without tenant:switch', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const home = buildTenantRef();
+      const target = buildTenantRef();
+      const tenants = [home, target];
       const principal = buildPrincipal({ roles: [ROLES.viewer], tenants });
       accessState.setSession(principal, {});
 
-      expect(accessCore.switchTenant(tenants[1].id)).toBe(false);
+      expect(accessCore.switchTenant(target.id)).toBe(false);
 
-      expect(accessCore.activeTenant()).toBe(tenants[0].id);
+      expect(accessCore.activeTenant()).toBe(home.id);
       expect(sink.record).toHaveBeenCalledTimes(1);
       expect(recorded().type).toBe('permission_denied');
       expect(recorded().metadata).toEqual({
-        tenantId: tenants[1].id,
+        tenantId: target.id,
         reason: 'permission',
         permission: 'tenant:switch',
       });
@@ -155,7 +164,8 @@ describe('AccessCore', () => {
     });
 
     it('refuses and records a denial when the tenant is not one of the principal tenants', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const home = buildTenantRef();
+      const tenants = [home, buildTenantRef()];
       const principal = buildPrincipal({ roles: [ROLES.manager], tenants });
       accessState.setSession(principal, {});
       const stranger = buildTenantRef();
@@ -163,7 +173,7 @@ describe('AccessCore', () => {
       expect(accessCore.can(PERMISSIONS.tenantSwitch)).toBe(true);
       expect(accessCore.switchTenant(stranger.id)).toBe(false);
 
-      expect(accessCore.activeTenant()).toBe(tenants[0].id);
+      expect(accessCore.activeTenant()).toBe(home.id);
       expect(sink.record).toHaveBeenCalledTimes(1);
       expect(recorded().type).toBe('permission_denied');
       expect(recorded().metadata).toEqual({
@@ -191,40 +201,45 @@ describe('AccessCore', () => {
     });
 
     it('moves the active tenant and logs a tenant_switch on the happy path', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const home = buildTenantRef();
+      const target = buildTenantRef();
+      const tenants = [home, target];
       const principal = buildPrincipal({ roles: [ROLES.manager], tenants });
       accessState.setSession(principal, {});
 
-      expect(accessCore.switchTenant(tenants[1].id)).toBe(true);
+      expect(accessCore.switchTenant(target.id)).toBe(true);
 
-      expect(accessCore.activeTenant()).toBe(tenants[1].id);
-      expect(accessCore.principal()).toEqual({ ...principal, tenantId: tenants[1].id });
+      expect(accessCore.activeTenant()).toBe(target.id);
+      expect(accessCore.principal()).toEqual({ ...principal, tenantId: target.id });
       expect(accessCore.tenants()).toEqual(tenants);
       expect(sink.record).toHaveBeenCalledTimes(1);
       expect(recorded().type).toBe('tenant_switch');
       // The audit trail names both ends of the move, so a reviewer can reconstruct it.
-      expect(recorded().metadata).toEqual({ from: tenants[0].id, to: tenants[1].id });
+      expect(recorded().metadata).toEqual({ from: home.id, to: target.id });
       expect(recorded().principalId).toBe(principal.id);
-      expect(recorded().tenantId).toBe(tenants[1].id);
+      expect(recorded().tenantId).toBe(target.id);
     });
 
     it('accepts a switch to the already active tenant', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const home = buildTenantRef();
+      const tenants = [home, buildTenantRef()];
       accessState.setSession(buildPrincipal({ roles: [ROLES.manager], tenants }), {});
 
-      expect(accessCore.switchTenant(tenants[0].id)).toBe(true);
+      expect(accessCore.switchTenant(home.id)).toBe(true);
 
-      expect(accessCore.activeTenant()).toBe(tenants[0].id);
+      expect(accessCore.activeTenant()).toBe(home.id);
       expect(recorded().type).toBe('tenant_switch');
     });
 
     it('lets an admin switch as well', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const home = buildTenantRef();
+      const target = buildTenantRef();
+      const tenants = [home, target];
       accessState.setSession(buildPrincipal({ roles: [ROLES.admin], tenants }), {});
 
-      expect(accessCore.switchTenant(tenants[1].id)).toBe(true);
+      expect(accessCore.switchTenant(target.id)).toBe(true);
 
-      expect(accessCore.activeTenant()).toBe(tenants[1].id);
+      expect(accessCore.activeTenant()).toBe(target.id);
     });
   });
 

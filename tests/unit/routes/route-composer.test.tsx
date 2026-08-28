@@ -19,20 +19,28 @@ const page = (): Promise<{ default: ComponentType }> =>
 const typeOf = (route: RouteObject): unknown => (route.element as ReactElement).type;
 const isLayout = (route: RouteObject): boolean =>
   route.path === undefined && Boolean(route.children);
+const rootOf = (tree: RouteObject[]): RouteObject => {
+  const [root] = tree;
+  if (tree.length !== 1 || !root) {
+    throw new Error('route composer must produce exactly one root');
+  }
+  return root;
+};
 
 describe('route composer', () => {
   it('wraps every route in a single RootLayout with a route error boundary (invariant A)', () => {
     const tree = routeComposer.compose(registry);
+    const root = rootOf(tree);
 
     expect(tree).toHaveLength(1);
-    expect(tree[0].path).toBe(ROUTE_PATHS.home);
-    expect(typeOf(tree[0])).toBe(RootLayout);
-    expect((tree[0].errorElement as ReactElement).type).toBe(RouteError);
+    expect(root.path).toBe(ROUTE_PATHS.home);
+    expect(typeOf(root)).toBe(RootLayout);
+    expect((root.errorElement as ReactElement).type).toBe(RouteError);
   });
 
   it('nests protected routes under ProtectedRoute then AppLayout (invariants B, D)', () => {
     const tree = routeComposer.compose(registry);
-    const branch = tree[0].children?.find(isLayout) as RouteObject;
+    const branch = rootOf(tree).children?.find(isLayout) as RouteObject;
     const layout = branch.children?.[0] as RouteObject;
 
     expect(typeOf(branch)).toBe(ProtectedRoute);
@@ -41,7 +49,7 @@ describe('route composer', () => {
 
   it('gates a permission-carrying route behind PermissionRoute inside AppLayout (#114)', () => {
     const tree = routeComposer.compose(registry);
-    const branch = tree[0].children?.find(isLayout) as RouteObject;
+    const branch = rootOf(tree).children?.find(isLayout) as RouteObject;
     const layout = branch.children?.[0] as RouteObject;
     const gate = layout.children?.find((route) => typeOf(route) === PermissionRoute);
 
@@ -57,7 +65,7 @@ describe('route composer', () => {
       { id: 'plain', routes: [{ path: '/plain', guard: 'protected', load: page }] },
     ];
     const tree = routeComposer.compose(modules);
-    const branch = tree[0].children?.find(isLayout) as RouteObject;
+    const branch = rootOf(tree).children?.find(isLayout) as RouteObject;
     const layout = branch.children?.[0] as RouteObject;
 
     expect(layout.children?.map((route) => route.path)).toEqual(['/plain']);
@@ -66,7 +74,7 @@ describe('route composer', () => {
   it('keeps public routes directly under RootLayout, never under AppLayout (invariant B)', () => {
     const tree = routeComposer.compose(registry);
     // Everything that is not the protected layout branch is a flat public route.
-    const flat = (tree[0].children ?? []).filter((child) => !isLayout(child));
+    const flat = (rootOf(tree).children ?? []).filter((child) => !isLayout(child));
 
     // A protected route (the home index route) must never leak into the flat list.
     expect(flat.every((child) => child.index !== true)).toBe(true);
@@ -83,15 +91,16 @@ describe('route composer', () => {
     ];
     const tree = routeComposer.compose(modules);
 
-    expect(tree[0].children?.some(isLayout)).toBe(false);
+    expect(rootOf(tree).children?.some(isLayout)).toBe(false);
   });
 
   it('composes a module that declares no routes into a childless root (edge: empty module)', () => {
     const tree = routeComposer.compose([{ id: 'empty', routes: [] }]);
+    const root = rootOf(tree);
 
     expect(tree).toHaveLength(1);
-    expect(typeOf(tree[0])).toBe(RootLayout);
-    expect(tree[0].children).toEqual([]);
+    expect(typeOf(root)).toBe(RootLayout);
+    expect(root.children).toEqual([]);
   });
 
   it('maps nested child routes recursively (edge: nested children)', () => {
@@ -109,9 +118,9 @@ describe('route composer', () => {
       },
     ];
     const tree = routeComposer.compose(modules);
-    const parent = tree[0].children?.find((child) => child.path === '/parent') as RouteObject;
+    const parent = rootOf(tree).children?.find((child) => child.path === '/parent') as RouteObject;
 
     expect(parent.children).toHaveLength(1);
-    expect(parent.children?.[0].path).toBe('child');
+    expect(parent.children?.[0]?.path).toBe('child');
   });
 });

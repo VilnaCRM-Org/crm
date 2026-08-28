@@ -95,6 +95,47 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
+### Workflow, YAML, and repository-posture gates
+
+The CI configuration is itself gated, because a regression there silently weakens every other
+check. Four gates cover it. Each one turns its own check red on a regression; that only becomes
+merge-blocking once the check is in the branch-protection required list (see the end of this
+section for which ones belong there).
+
+- **`workflow security / zizmor`** (pull-request gate) runs
+  [zizmor](https://github.com/zizmorcore/zizmor) over `.github/workflows/`. Reproduce it locally
+  with `make lint-zizmor` (Docker, digest-pinned; deliberately not part of `make lint`, so it stays
+  independent of the dev container). It fails on medium-or-higher findings: an action pinned to a
+  mutable tag or branch instead of a reviewed release commit, an over-broad `permissions` block, a
+  `pull_request_target` job that checks out the PR head, restored credential persistence, a
+  `${{ github.event.* }}` value interpolated straight into a `run:` script, or an action from an
+  archived repository.
+  **Fix the workflow, never the gate.** Pin to a release commit, narrow the permission, or pass the
+  value through `env:` and reference it as a shell variable. Do not add a `zizmor.yml` ignore, raise
+  `--min-severity`, drop `--persona pedantic`, or shrink the audit scope.
+- **`format yaml files / yamlfmt`** (pull-request gate) runs `prettier --check` over every
+  `*.yml` / `*.yaml` file. It replaced a `norwd/fmtya` step that could not push its own fix and so
+  verified nothing. It catches format drift and YAML that does not parse. It does **not** catch
+  duplicate mapping keys — prettier's bundled YAML plugin passes `uniqueKeys: false`, so both keys
+  survive `--write` and `--check` exits 0. Fix a red check with `make format`;
+  `make lint-prettier` verifies the same files inside the dev container.
+- **`make lint-compose`** (part of `make lint`, so it runs in `static testing`) validates every
+  docker compose file combination the repository actually starts. Compose's own loader rejects a
+  duplicate mapping key (`mapping key X already defined at line N`), which is how the
+  last-key-wins defect — a silently discarded `healthcheck:` or `environment:` block — is covered
+  for the compose surface; actionlint's `syntax-check` covers it for the workflows. The gate also
+  catches schema and `${VAR}` interpolation errors before a container ever starts.
+- **`scorecard / analysis`** (weekly cron plus push to `main`, monitoring) runs OpenSSF Scorecard
+  and uploads SARIF to the Security tab. It watches repository _state_ that no pull-request diff
+  can show — branch protection, required checks, dependency-update health, pin coverage on `main`.
+  A scheduled run cannot block a merge; treat a score regression as a bug to file, not a warning to
+  dismiss.
+
+`workflow security / zizmor` and `format yaml files / yamlfmt` should be added to the
+branch-protection required checks for `main`; until they are, they report but do not block. Do not
+add `scorecard / analysis` — it has no `pull_request` trigger, so requiring it would leave every PR
+waiting forever on a check that never reports.
+
 ### Dockerfile build performance
 
 If your change touches a configured Dockerfile path (or the gate's own config),
@@ -108,6 +149,25 @@ marker (its own comment line), the repo-wide `docker-perf-exception` PR label,
 or a per-image `docker-perf-exception:<name>` PR label that waives only that
 image. The decision logic is covered by `tests/bats/docker_perf.bats`
 (run with `make test-bats`).
+
+### The preloaded-auth seed gate
+
+The Playwright, visual, and Lighthouse suites reach the protected `/` route by preloading an auth
+token (`window.__PRELOADED_AUTH_TOKEN__` or `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN`). Because
+`isAuthenticated` is `!!token`, that seam is an auth bypass if it ever reaches a deployable build,
+so it is compiled out of every build that did not explicitly opt in — see "Preloaded-auth-token seed
+gate" in [`CLAUDE.md`](CLAUDE.md) and [`src/config/env/README.md`](src/config/env/README.md) for the
+three invariants that keep the guard foldable.
+
+Run it locally with `make check-auth-seed-gate`. It builds `--target production`, scans the image's
+`dist` for the seam, and then re-scans a deliberately opted-in build that **must** still contain it,
+so the check cannot pass against the wrong artifact. In CI it is the `preloaded-auth seed gate` job
+of the `security testing` workflow, and it is the only job that exercises the deployable
+`--target production` image — every other prod-side suite builds the ephemeral `test-harness` target.
+
+Satisfy it by keeping the seam gated. Never relax the scan, narrow its file set, move a seed read
+out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere but the Dockerfile's
+`test-harness` stage.
 
 ### CI speed and the mutation-testing gate
 
@@ -200,10 +260,50 @@ checks:
 - `mutation testing / merge and enforce gate`
 - `performance testing / lighthouse desktop`
 - `performance testing / lighthouse mobile`
+- `security testing / preloaded-auth seed gate`
 
 The merge job runs `if: ${{ !cancelled() }}` and fails closed if any shard did not succeed (a skipped
 required check would otherwise count as a pass), so requiring the merge job alone is sufficient — a
 crashed shard turns the gate red rather than bypassing it.
+
+### Relaxing a gate threshold
+
+The `gate ratchet` check compares every binding budget named in
+[`config/gate-thresholds.manifest.json`](config/gate-thresholds.manifest.json) at your PR head
+against the merge base. If a value moved in the weakening direction — a Lighthouse `minScore` or a
+coverage/mutation threshold **lowered**, a metrics/jscpd/bundle ceiling **raised**, a coverage
+exclusion list **grown**, or a guarded entry **deleted** — the job prints a
+`FILE / KEY / BASE / HEAD / RULE / REASON` table and fails.
+
+The first response is always to strengthen the value back. When a relaxation is genuinely the
+right call, make it an explicit, reviewed decision: add the **`gate-relaxation`** label to the PR
+and state the rationale in the PR body. The check then passes, and the same table is written to the
+job summary and a sticky PR comment so the relaxation is visible in review rather than buried in a
+diff. Do not satisfy the check by removing an entry from the manifest — the manifest guards itself.
+
+**Verification (run locally before pushing).** The check is a plain Node script, so you can
+reproduce exactly what CI will say without opening a PR:
+
+```bash
+# What the gate will report for your branch against main.
+GATE_RATCHET_BASE_SHA=origin/main GATE_RATCHET_HEAD_SHA=HEAD node scripts/ci/check-gate-ratchet.mjs
+echo "exit=$?"   # 0 = held or waived, 1 = weakened, 2 = a guarded config failed to load
+
+# Preview the sticky PR comment body.
+GATE_RATCHET_BASE_SHA=origin/main GATE_RATCHET_HEAD_SHA=HEAD \
+  GATE_RATCHET_REPORT_FILE=gate-ratchet-report.md node scripts/ci/check-gate-ratchet.mjs
+cat gate-ratchet-report.md
+
+# The extractors, directions, and waiver logic are unit-tested.
+docker compose exec -T dev bun x jest tests/unit/tooling/gate-ratchet.test.ts
+```
+
+Exit code `2` means the ratchet could not evaluate a guarded config (an unparseable or newly broken
+file). That is an evaluation failure, not a weakening, and the waiver label does **not** clear it.
+
+**Required status check (maintainer action).** Add `gate ratchet / no binding threshold weakened` to
+**Settings → Branches → Branch protection rules**. The job triggers on `labeled`/`unlabeled` in
+addition to the default PR events, so applying the waiver label re-runs it without a manual retry.
 
 ### Pull Request
 
@@ -269,3 +369,51 @@ Dependabot cannot emit; that rule runs only in the local Husky `commit-msg` hook
 commitlint CI gate), so Dependabot pull requests are not blocked. Because the repository is
 squash-merge-only, add the task number to the squash commit title at merge time to keep
 `main`'s history conformant.
+
+### Dependency license policy (issue #191)
+
+`make lint-licenses` gates the **license** of every production dependency (direct or transitive).
+It runs as part of `make lint` (it is a member of `CI_LINT_TARGETS` and the `lint:` aggregate),
+so the existing `static testing` workflow enforces it on every pull request.
+`scripts/ci/check-licenses.mjs` enumerates the production tree
+(`license-checker-rseidelsohn --json`) and evaluates each license
+**semantically** with `spdx-satisfies`, so compound expressions are handled correctly — `(MIT OR
+Apache-2.0)` passes, `(GPL-3.0 AND MIT)` fails (the AND binds you to GPL), and unknown/unparseable
+strings fail closed. This is stricter than a literal allowlist match, which would wrongly accept an
+AND-compound whenever one operand happened to be allowed. The allowlist of permitted SPDX operand
+ids lives in the `Makefile` (`ALLOWED_LICENSES`), trimmed to exactly what the production tree
+contains today; `--production` keeps devDependencies out of scope.
+
+Because a dependency (or a transitive one) can **relicense between versions**, review the
+`make lint-licenses` result whenever you add or bump a dependency. If it fails, follow the
+root-cause-not-suppression remediation policy: first replace the offending dependency; only if
+that is impossible, add its specific SPDX id to `ALLOWED_LICENSES` as a reviewed one-line diff.
+Never bypass or weaken the gate.
+
+## Unexpected console output fails Jest
+
+Every Jest setup file installs `jest-fail-on-console`, so a `console.error` or `console.warn`
+emitted while a test runs **fails that test** (the apollo-server node suite gates `error` only;
+`log` / `info` / `debug` are never gated). This catches the runtime warnings ESLint cannot see —
+React `act()` warnings, missing list `key`s, invalid DOM nesting, i18next `missingKey` — which
+otherwise scroll past in a green log.
+
+If your test legitimately drives a path the application logs on, spy on it **and assert it**,
+scoped to that single test:
+
+```ts
+const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+  issueCount: 2,
+});
+```
+
+Do not put that spy in a file-wide `beforeEach` — it would swallow genuinely unexpected output in
+the file's other tests. If the message is an `act()` warning, it is a real bug in the test: await
+the update instead of spying it away.
+
+`tests/console-gate/allowlist.ts` is the only escape hatch, and
+`tests/unit/tooling/console-gate.test.ts` rejects any entry that is not `^`-anchored, lacks a
+substantive reason, or has outlived the dependency major it declares it expires with. Adding to it
+is reviewed as a defect suppression, exactly like an `eslint-disable`.

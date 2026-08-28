@@ -8,8 +8,11 @@ const ISO_8601 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 
 const createSink = (): jest.Mocked<AuditSink> => ({ record: jest.fn() });
 
-const recordedAt = (sink: jest.Mocked<AuditSink>, call = 0): AuditEvent =>
-  sink.record.mock.calls[call][0];
+const recordedAt = (sink: jest.Mocked<AuditSink>, call = 0): AuditEvent => {
+  const recorded = sink.record.mock.calls[call];
+  if (recorded === undefined) throw new Error(`no audit event recorded at index ${call}`);
+  return recorded[0];
+};
 
 describe('AuditCore', () => {
   let sink: jest.Mocked<AuditSink>;

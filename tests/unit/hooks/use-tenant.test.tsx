@@ -31,7 +31,9 @@ function switchTo(context: TenantContextValue, tenantId: string): boolean {
   act(() => {
     outcome.push(context.switchTenant(tenantId));
   });
-  return outcome[0];
+  const [result] = outcome;
+  if (result === undefined) throw new Error('switchTenant did not run inside act()');
+  return result;
 }
 
 describe('useTenant', () => {

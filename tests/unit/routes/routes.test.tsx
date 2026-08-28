@@ -6,6 +6,11 @@ import { act, render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 
+import accessState from '@/lib/access/access-state';
+import router from '@/routes/routes';
+import { buildPrincipal } from '@tests/builders';
+import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
+
 let mockCurrentPath = '/sign-up';
 
 jest.mock('react-i18next', () => ({
@@ -21,9 +26,9 @@ jest.mock('react-router-dom', () => {
     __esModule: true,
     ...actual,
     createBrowserRouter: (routes: unknown): unknown => routes,
-    RouterProvider: ({ router }: { router: unknown }): ReactElement => {
+    RouterProvider: ({ router, future }: { router: unknown; future?: unknown }): ReactElement => {
       const mem = actual.createMemoryRouter(router, { initialEntries: [mockCurrentPath] });
-      return <actual.RouterProvider router={mem} />;
+      return <actual.RouterProvider router={mem} future={future} />;
     },
   };
 });
@@ -75,10 +80,6 @@ jest.mock('@auth/routes/sign-in', () => ({
   default: (): ReactElement => <div>sign in page</div>,
 }));
 
-import accessState from '@/lib/access/access-state';
-import router from '@/routes/routes';
-import { buildPrincipal } from '@tests/builders';
-
 describe('routes', () => {
   // The home route is permission-gated (#114) and ProtectedRoute — which hydrates the
   // access session from the token — is mocked out here, so seed the principal directly.
@@ -99,7 +100,7 @@ describe('routes', () => {
     const { RouterProvider: MockedRP } = jest.requireMock('react-router-dom');
     render(
       <Suspense fallback={null}>
-        <MockedRP router={router} />
+        <MockedRP router={router} future={ROUTER_FUTURE_FLAGS} />
       </Suspense>
     );
   };

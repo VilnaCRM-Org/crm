@@ -10,6 +10,22 @@ import type { PermissionRouteProps } from '@/routes/types/permission-route';
 const page = (): Promise<{ default: ComponentType }> =>
   Promise.resolve({ default: (): null => null });
 
+const at = <T,>(list: readonly T[], index: number): T => {
+  const item = list[index];
+  if (item === undefined) {
+    throw new Error(`missing index ${index}`);
+  }
+  return item;
+};
+
+const childrenOf = (route: RouteObject): RouteObject[] => {
+  const { children } = route;
+  if (children === undefined) {
+    throw new Error('route has no children');
+  }
+  return children;
+};
+
 const elementTypeOf = (route: RouteObject): unknown => (route.element as ReactElement).type;
 
 const permissionOf = (route: RouteObject): unknown =>
@@ -27,9 +43,9 @@ describe('permission branch builder (#114)', () => {
     const built = permissionBranchBuilder.build(routes);
 
     expect(built).toHaveLength(1);
-    expect(built[0].path).toBe('/plain');
-    expect(built[0].children).toBeUndefined();
-    expect(isBranch(built[0])).toBe(false);
+    expect(at(built, 0).path).toBe('/plain');
+    expect(at(built, 0).children).toBeUndefined();
+    expect(isBranch(at(built, 0))).toBe(false);
   });
 
   it('maps a route whose meta carries no permission straight through', () => {
@@ -40,8 +56,8 @@ describe('permission branch builder (#114)', () => {
     const built = permissionBranchBuilder.build(routes);
 
     expect(built).toHaveLength(1);
-    expect(built[0].path).toBe('/titled');
-    expect(isBranch(built[0])).toBe(false);
+    expect(at(built, 0).path).toBe('/titled');
+    expect(isBranch(at(built, 0))).toBe(false);
   });
 
   it('groups routes sharing one permission under a single PermissionRoute element', () => {
@@ -53,10 +69,10 @@ describe('permission branch builder (#114)', () => {
     const built = permissionBranchBuilder.build(routes);
 
     expect(built).toHaveLength(1);
-    expect(isBranch(built[0])).toBe(true);
-    expect(permissionOf(built[0])).toBe(PERMISSIONS.contactRead);
-    expect(built[0].path).toBeUndefined();
-    expect(pathsOf(built[0].children)).toEqual(['/contacts', '/contacts/:id']);
+    expect(isBranch(at(built, 0))).toBe(true);
+    expect(permissionOf(at(built, 0))).toBe(PERMISSIONS.contactRead);
+    expect(at(built, 0).path).toBeUndefined();
+    expect(pathsOf(at(built, 0).children)).toEqual(['/contacts', '/contacts/:id']);
   });
 
   it('creates one branch per distinct permission, in first-seen order', () => {
@@ -70,10 +86,10 @@ describe('permission branch builder (#114)', () => {
 
     expect(built).toHaveLength(2);
     expect(built.every(isBranch)).toBe(true);
-    expect(permissionOf(built[0])).toBe(PERMISSIONS.dealRead);
-    expect(pathsOf(built[0].children)).toEqual(['/deals', '/deals/new']);
-    expect(permissionOf(built[1])).toBe(PERMISSIONS.contactRead);
-    expect(pathsOf(built[1].children)).toEqual(['/contacts']);
+    expect(permissionOf(at(built, 0))).toBe(PERMISSIONS.dealRead);
+    expect(pathsOf(at(built, 0).children)).toEqual(['/deals', '/deals/new']);
+    expect(permissionOf(at(built, 1))).toBe(PERMISSIONS.contactRead);
+    expect(pathsOf(at(built, 1).children)).toEqual(['/contacts']);
   });
 
   it('keeps an index route as index:true inside its permission branch', () => {
@@ -84,10 +100,10 @@ describe('permission branch builder (#114)', () => {
     const built = permissionBranchBuilder.build(routes);
 
     expect(built).toHaveLength(1);
-    expect(permissionOf(built[0])).toBe(PERMISSIONS.appHome);
-    expect(built[0].children).toHaveLength(1);
-    expect(built[0].children?.[0].index).toBe(true);
-    expect(built[0].children?.[0].path).toBeUndefined();
+    expect(permissionOf(at(built, 0))).toBe(PERMISSIONS.appHome);
+    expect(childrenOf(at(built, 0))).toHaveLength(1);
+    expect(at(childrenOf(at(built, 0)), 0).index).toBe(true);
+    expect(at(childrenOf(at(built, 0)), 0).path).toBeUndefined();
   });
 
   it('emits ungated routes before the gated branches (ordering invariant)', () => {
@@ -99,11 +115,11 @@ describe('permission branch builder (#114)', () => {
     const built = permissionBranchBuilder.build(routes);
 
     expect(built).toHaveLength(2);
-    expect(built[0].path).toBe('/open');
-    expect(isBranch(built[0])).toBe(false);
-    expect(isBranch(built[1])).toBe(true);
-    expect(permissionOf(built[1])).toBe(PERMISSIONS.adminManageUsers);
-    expect(pathsOf(built[1].children)).toEqual(['/gated']);
+    expect(at(built, 0).path).toBe('/open');
+    expect(isBranch(at(built, 0))).toBe(false);
+    expect(isBranch(at(built, 1))).toBe(true);
+    expect(permissionOf(at(built, 1))).toBe(PERMISSIONS.adminManageUsers);
+    expect(pathsOf(at(built, 1).children)).toEqual(['/gated']);
   });
 
   it('builds an empty tree from an empty route list (edge case)', () => {

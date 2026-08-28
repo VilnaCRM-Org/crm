@@ -39,16 +39,25 @@ export class SessionFactory {
     return claims?.sub?.trim() || uuidv4();
   }
 
-  private toTenants(claims: SessionClaims | null): readonly TenantRef[] {
+  private toTenants(claims: SessionClaims | null): readonly [TenantRef, ...TenantRef[]] {
     const claimed = claims?.tenants ?? [];
-    if (claimed.length > 0) return claimed;
+    if (this.isPopulated(claimed)) return claimed;
     const tenantId = claims?.tenantId ?? FALLBACK_TENANT_ID;
     return [{ id: tenantId, name: tenantId }];
   }
 
+  private isPopulated(
+    tenants: readonly TenantRef[]
+  ): tenants is readonly [TenantRef, ...TenantRef[]] {
+    return tenants.length > 0;
+  }
+
   // The active tenant must be one the principal actually belongs to: a claimed tenantId
   // outside the membership list would scope the session to a tenant it cannot read.
-  private toActiveTenant(claims: SessionClaims | null, tenants: readonly TenantRef[]): string {
+  private toActiveTenant(
+    claims: SessionClaims | null,
+    tenants: readonly [TenantRef, ...TenantRef[]]
+  ): string {
     const claimed = claims?.tenantId;
     return tenants.some((tenant) => tenant.id === claimed) ? (claimed as string) : tenants[0].id;
   }

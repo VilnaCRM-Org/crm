@@ -688,14 +688,21 @@ const { t } = useTranslation();
 <h1>{t('login.title')}</h1>
 ```
 
+Dates, numbers, currency, percentages, and relative time inside translations use the
+registered i18next formatters (`{{value, datetime}}`, `{{value, currency}}`,
+`{{value, percent}}`, `{{value, relativetime}}`) instead of pre-formatted strings — see
+"Locale-aware Intl formatting (issue #155)" under Architecture Patterns.
+
 ## Architecture Patterns
 
-### No static methods or free functions (issues #100, #89)
+### No static methods or free functions (issues #100, #89, #180)
 
 Non-React application code (services, repositories, mappers, factories, stores, utilities
-under `src/**/*.ts`) must **not** use `static` class members or standalone (free)
-functions. Convert them to **instance methods on an injectable class** so collaborators can
-be swapped for mocks/spies through the tsyringe DI container instead of via module mocking.
+under `src/**/*.ts`) must **not** use `static` class members, standalone (free)
+functions, or **function-valued properties of a top-level object literal**
+(`export default { map(r) { … } }`). Convert them to **instance methods on an injectable
+class** so collaborators can be swapped for mocks/spies through the tsyringe DI container
+instead of via module mocking.
 
 - **Behavioral collaborators** → `@injectable()` class + token in the owning area's
   `tokens.ts` + registration in that area's `di.ts` composition root (issue #109), resolved
@@ -715,14 +722,66 @@ workflow. Fix violations by refactoring — never with `eslint-disable`. In test
 mock collaborator (or pass a stub to the constructor / resolve from a child container)
 rather than mocking the module.
 
+Call a singleton's methods **on the singleton** and pass the object itself to collaborators
+— never a destructured or otherwise detached method reference. A prototype method loses its
+receiver and throws at runtime, and TypeScript cannot see it because these action
+interfaces type their members as plain function properties. Pin the receiver in tests with
+`expect(spy.mock.contexts).toEqual([theSingleton])`.
+
 This gate is the canonical enforcement of the **only classes outside React components**
 convention (issue #89, closed as covered here): banning free functions in non-React `.ts`
 makes all such logic class-encapsulated, so #89 needs no separate ESLint or
 dependency-cruiser rule. The dependency-cruiser placement rule #89 originally proposed is
 superseded — dep-cruiser reasons about the import graph, not whether a module's exports are
 classes, and the blanket ESLint ban is stricter than the helper-zone carve-out #89 sketched.
-Per #89's "honest limitation", the residual gap is **semantic** (logic hidden in an object
-literal's methods or a misplaced helper) and stays a review-gate concern.
+Issue #180 closed the common statically-detectable half of #89's residual (top-level
+object-literal methods, including `as const` / `satisfies` wrappers). What stays a
+**review-gate** concern — deliberately unmatched, so idiomatic nested MUI `sx` callbacks
+and zustand-style slices are not flagged — is nested (depth > 1) object literals,
+`Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
+
+### Locale-aware Intl formatting (issue #155)
+
+The template is bilingual (uk primary, en fallback), so every user-facing date, number,
+currency amount, percentage, and relative time renders through one locale-aware boundary —
+`src/services/locale-formatter/` — never through raw `toLocaleString()` /
+`toLocaleDateString()` / `toLocaleTimeString()` calls or ad-hoc `new Intl.*Format(...)`
+construction at call sites. Scattered call-site construction drifts locales (en-US defaults
+under a uk primary locale), defeats formatter caching, and makes output impossible to pin in
+tests.
+
+How to format, by context:
+
+- **Translation strings** → use the i18next formatters registered in `src/i18n.js`
+  (`date`, `datetime`, `number`, `currency`, `percent`, `relativetime`):
+  `"updated_at": "Last updated {{value, datetime}}"`, `"price": "Price: {{value, currency}}"`
+  (see `src/features/example/i18n/`). Components pass the raw value:
+  `t('formatting.updated_at', { value: new Date(timestamp) })`.
+- **Non-translation logic (services, repositories, stores)** → inject the
+  `@injectable()` `LocaleFormatterService` adapter via
+  `LOCALE_FORMATTER_TOKENS.LocaleFormatterService` (its own `di.ts` composition root,
+  issue #109) and call `date` / `dateTime` / `number` / `currency` / `percent` /
+  `relativeTime`.
+- **Paint-path / container-free code** → import the `localeFormatterCore` module
+  singleton from `@/services/locale-formatter/locale-formatter-core` (the same two-layer
+  split as observability: the core is tsyringe-free, so `src/i18n.js` stays light).
+
+The core caches `Intl.DateTimeFormat`, `Intl.NumberFormat` (decimal, currency, percent),
+and `Intl.RelativeTimeFormat` instances keyed by locale + options, and resolves the locale
+as: explicit argument → active i18next language → `rawEnv.mainLanguage()` (default `uk`).
+Presets: medium date style, short time style, `UAH` with a narrow symbol (`currency` takes
+an optional ISO 4217 code), `numeric: 'auto'` relative time. Extend the service with a new
+preset instead of passing one-off options at call sites.
+
+Enforced by an ESLint `no-restricted-syntax` gate in `eslint.config.mjs`
+(`noRawIntlSelectors`, re-included in every overlapping block that carries the shared
+selector spreads — the type-only-file override forbids all runtime syntax, so it needs no
+Intl selectors — and lifted only inside `src/services/locale-formatter/`), run by
+`make lint-eslint` and the `static testing`
+workflow. Tests are exempt — they construct `Intl` formatters freely and pin **exact**
+uk/en outputs as fixed contracts (hardcoded literals per the Faker convention, e.g.
+`1234.5` → `1 234,50 ₴` (uk, U+00A0 separators) vs `₴1,234.50` (en)). Fix violations by
+routing through the formatter — never with `eslint-disable`.
 
 ### Access Control Pattern (issue #114)
 
@@ -796,6 +855,40 @@ export default new MyAreaRegistrar();
 const myStoreFactory = new MyStoreFactory();
 export const useMyStore = myStoreFactory.create(container.resolve(MyStoreActions));
 ```
+
+#### Components: `useService(token)` is the only bridge (issue #128)
+
+A `.tsx` component obtains a behavioral collaborator through `useService` from
+`@/providers/di` — never `new MyService()`, never a value-import of an injectable class
+(`import type` is fine for annotations):
+
+```typescript
+import { useService } from '@/providers/di';
+import MY_AREA_TOKENS from '@/services/my-area/tokens';
+
+export default function MyWidget(): JSX.Element {
+  const service = useService<MyService>(MY_AREA_TOKENS.MyService);
+  // …
+}
+```
+
+`useService` is a hook — call it at the top level of a component or of another hook, never at
+module scope. Add the token, register the class in the owning area's `di.ts`, and (for a new
+area) add that registrar to the array in `src/config/dependency-injection-config.ts` **before**
+resolving it — an unregistered token throws. Do not invent an ad-hoc module singleton of a
+behavioral class for a component. In component
+tests, swap the collaborator by registering a mock against the token
+(`container.register(TOKENS.X, { useValue: mock })`) or by jest-mocking
+`@/providers/di/use-service`.
+
+Two `make lint` gates enforce this on `src/**/*.tsx`: an ESLint `no-restricted-syntax`
+selector (built-in constructors allowlisted) and dependency-cruiser
+`components-no-direct-injectable-import`. Carve-outs — the auth render path, the route shell,
+the app entrypoint, and the root error boundary — are container-free by design; leave their
+module singletons alone and never eager-import the container into the auth paint path
+(`no-paint-path-import-di-bridge` enforces that). Hooks (`use-*.ts`) are outside the static
+gate; that is not license to `new` a collaborator there — expect review to flag it. Never
+satisfy either gate with `eslint-disable`, a dependency-cruiser ignore, or `@ts-ignore`.
 
 ### Zustand Store Pattern
 
@@ -875,6 +968,16 @@ happy-path test is **not** adequate coverage and does **not** make the work done
 Follow the five steps below in order. Skipping a scenario class or step is allowed **only**
 with a recorded, concrete justification (see Step 3) — never by silent omission.
 
+**Every test you write must be alive and asserting (issue #167).** `make lint-eslint` fails
+on a skipped (`.skip` / `.fixme` / `xit`), focused, or assertion-free test, and on `expect`
+nested inside a conditional. To narrow a discriminated union, use the throwing helpers in
+`tests/utils/assert-result.ts` (`assertOk`, `assertError`, `assertInstanceOf`) instead of
+an `if`; for throwing calls use `expect(...).toThrow(...)` /
+`await expect(...).rejects.toThrow(...)`, or capture the error unconditionally with
+`.catch((caught: unknown) => caught)` and assert on it. A shared assertion helper is
+declared through `assertFunctionNames` / `assertFunctionPatterns` (`expect*` for Jest and
+Playwright, `take*Snapshot` for visual specs) — never through a suppression.
+
 ### Step 1 — Pick the Right Test Layer
 
 Choose the layer(s) that actually exercise the change; a single change often needs more
@@ -887,6 +990,11 @@ than one. Match the change to the suite and run its verification command:
 | Integration         | Cross-module flows, DI wiring (100% gate) | `make test-integration` |
 | E2E (Playwright)    | User-facing flows end to end (Mockoon)    | `make test-e2e`         |
 | Visual regression   | Any change to rendered UI or styling      | `make test-visual`      |
+
+`make test-e2e` and `make test-visual` each run five Playwright projects: the desktop
+`chromium` / `firefox` / `webkit` matrix plus `mobile-chrome` (Pixel 7) and `mobile-safari`
+(iPhone 14), the latter scoped to `tests/e2e/mobile` and `tests/visual/mobile`. No separate
+command or workflow gates the mobile lane.
 
 Add a specialized suite when the change touches its concern: `make test-mutation` (test
 strength), `make test-memory-leak` (leaks / OOM), `make test-load` (traffic, K6), and
@@ -918,6 +1026,8 @@ Walk this checklist and add coverage for every item the change can reach:
 - [ ] Permission / auth / role-sensitive flows
 - [ ] Boundary values and off-by-one behavior
 - [ ] Locale / i18n-sensitive behavior (uk primary, en fallback)
+- [ ] Touch / mobile-device behavior for UI changes — `tap()` interaction, tap-target size,
+      and a keyboard-shrunk viewport (`tests/e2e/mobile/`, issue #154)
 - [ ] Visual regressions for UI changes (`make test-visual`)
 - [ ] Previously fixed bug regression coverage (see Step 4)
 
@@ -961,6 +1071,22 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 > suite below, cover positive, negative, and edge cases (or record a concrete "Not applicable"
 > reason) and run the verification commands before calling test work done.
 
+### Unexpected console output fails Jest (issue #192)
+
+Every Jest setup file installs `jest-fail-on-console` via `installConsoleGate()`, so an
+unexpected `console.error` or `console.warn` emitted while a test runs **fails that test**. The
+apollo-server node suite gates `error` only; `log` / `info` / `debug` are never gated. This
+closes the channel ESLint's `no-console` cannot see: React `act()` warnings, missing list
+`key`s, invalid DOM nesting, and i18next `missingKey` output.
+
+When a test legitimately drives a path the application logs on, spy on it **and assert it**,
+scoped to that single test — never a file-wide `beforeEach`. An `act()` warning is a real bug in
+the test: await the update rather than spying it away. `tests/console-gate/allowlist.ts` is the
+only escape hatch and is reviewed as a defect suppression.
+
+Full rules: "Unexpected console output fails the suite (issue #192)" in [CLAUDE.md](CLAUDE.md)
+and [tests/console-gate/README.md](tests/console-gate/README.md).
+
 ### Unit Testing Best Practices
 
 1. **Test file location**: Mirror `src/` structure in `tests/unit/`
@@ -990,7 +1116,11 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 
 ### E2E Testing with Playwright
 
-1. **Test structure**: `tests/e2e/[feature].spec.ts`
+1. **Test structure**: `tests/e2e/[feature].spec.ts`; touch-interaction specs go in
+   `tests/e2e/mobile/` (issue #154), which the `mobile-chrome` (Pixel 7) and `mobile-safari`
+   (iPhone 14) projects run exclusively — the desktop projects carry
+   `testIgnore: '**/mobile/**'`, so a spec placed there gets `isMobile`, `hasTouch`, the
+   mobile UA and real DPR, and must be driven with `tap()` rather than `click()`.
 2. **Use Mockoon**: API responses are mocked via `docker-compose.test.yml`
 3. **Page Object pattern**:
 
@@ -1020,6 +1150,10 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 1. **Update snapshots**: `make test-visual-update`
 2. **Review changes**: Check `tests/visual/.playwright/` for diffs
 3. **Only update when intentional**: Don't blindly accept visual changes
+4. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated `/sign-in` and
+   `/sign-up` baselines, recorded per mobile project with `scale: 'device'` so the real
+   2.625×/3× DPR raster is gated. Never reuse `take-visual-snapshot.ts` there — its
+   `setViewportSize` call would discard the device viewport.
 
 ## Troubleshooting Guide
 
@@ -1295,6 +1429,27 @@ GitHub Actions runs:
 
 See `.github/workflows/` for configuration
 
+#### Gates an agent must not "fix" by editing a threshold
+
+Three checks exist specifically to catch the shortcuts an agent is most likely to take when a
+build goes red. Know them before you touch a config file:
+
+- **`gate ratchet`** (`.github/workflows/gate-ratchet.yml`) — compares every binding budget named
+  in `config/gate-thresholds.manifest.json` (Lighthouse, Stryker, Jest coverage + its exclusion
+  list, metrics policy, jscpd, bundle budgets, `tsconfig` strictness flags, the k6 load budgets,
+  and the manifest itself) at the PR head against the merge base, and fails on any move in the
+  weakening direction. **Never** lower a threshold, grow a coverage-exclusion list, disable a
+  strictness flag, or delete a manifest entry to go green. Strengthen the value instead; if a
+  relaxation is genuinely right, apply the `gate-relaxation` label so it is reviewed — see
+  "Relaxing a gate threshold" in `CONTRIBUTING.md` for the local reproduction commands.
+- **`tsconfig` strictness (issue #166)** — `noUncheckedIndexedAccess` makes every index read
+  `T | undefined`. Narrow it for real (`??`, a guard, `in`, `Map.get` + guard, optional chaining).
+  `@typescript-eslint/no-non-null-assertion` is an error in `src/**` precisely because `!` silences
+  that result instead of handling it; a cast is the same evasion.
+- **dependency-cruiser rule fixtures (issue #181)** — every rule in `.dependency-cruiser.js` must
+  land with a fixture in `scripts/ci/depcruise-rule-fixtures.mjs`; the completeness assertion is
+  bidirectional and has no exemption list, so a new rule cannot ship untested.
+
 ## Security Considerations
 
 ### Environment Variables
@@ -1309,17 +1464,22 @@ See `.github/workflows/` for configuration
   it is never persisted to `localStorage`, cookies, or disk
 - **Testing/LHCI only**: a token may be preloaded at runtime via
   `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
-  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. The Make-driven Lighthouse/Playwright
-  workflows build this image (`docker-compose.test.yml`, `target: production`) and inject a
-  **default** token automatically — `Makefile` sets
+  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var, so the Lighthouse, Playwright and visual
+  suites reach the protected home route without a real login. `Makefile` sets
   `LHCI_PRELOADED_AUTH_TOKEN ?= lighthouse-preloaded-auth-token` and bare-`export`s it, so
-  the prod-target test image always carries a token even if the user set nothing. It
-  **must never be shipped as a real production artifact**
-- This is enforced operationally, not by a `NODE_ENV` gate: `PreloadedAuthToken.read()`
-  uses the token whenever it is present, so `LHCI_PRELOADED_AUTH_TOKEN` and
-  `window.__PRELOADED_AUTH_TOKEN__` must be kept out of production builds and CI secrets.
-  `rsbuild.config.ts` must not add an explicit `define` for the token (guarded by
-  `tests/unit/performance/public-index.test.js`)
+  the harness image always carries a token even if the user set nothing
+- The seam is **gated out of production builds** (issue #158). Both reads live in one method
+  in `src/config/env/preloaded-auth-token.ts`, behind
+  `NODE_ENV === 'production' && ENABLE_PRELOADED_AUTH_TOKEN_SEED !== 'true'`. The bundler
+  folds that guard away, so a deployable bundle carries neither the window key nor the token
+  literal: a stray `.env` value cannot seed a session, and an XSS-set `window` global has
+  nothing left to read
+- Only the ephemeral harness image opts in. The Dockerfile's `test-harness` target — what
+  `docker-compose.test.yml` builds — sets `ENABLE_PRELOADED_AUTH_TOKEN_SEED=true`, while the
+  deployable `production` target is assembled from a `build` stage that takes no seed ARG
+- `make check-auth-seed-gate` (run by the `security testing` workflow) scans the **emitted
+  bundle** rather than config source text: it fails when a deployable build carries the seam,
+  and equally when an opted-in build has lost it, so the gate cannot pass vacuously
 - No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Dependency Audits
@@ -1417,6 +1577,7 @@ make build              # Build in Docker
 make build-out          # Extract build to ./build
 make build-analyze      # Bundle analyzer (writes dist/bundle-report.html + dist/bundle-stats.json)
 make perf-budget        # Build + enforce gzip byte budgets (config/performance-budget.json)
+make check-auth-seed-gate  # Scan the built bundles so the test-only preloaded-auth seed cannot ship
 ```
 
 ### Utilities

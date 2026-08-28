@@ -33,6 +33,11 @@ describe('AccessSession', () => {
     record: jest.fn<void, [AuditEvent]>(),
   };
   const eventTypes = (): string[] => sink.record.mock.calls.map(([event]) => event.type);
+  const recorded = (index: number): AuditEvent => {
+    const call = sink.record.mock.calls[index];
+    if (call === undefined) throw new Error(`no audit event recorded at index ${index}`);
+    return call[0];
+  };
   let session = new AccessSession();
 
   beforeEach(() => {
@@ -111,9 +116,9 @@ describe('AccessSession', () => {
     expect(accessState.get().principal?.id).toBe(second.claims.sub);
     expect(accessState.get().principal?.tenantId).toBe(second.tenantId);
     expect(eventTypes()).toEqual(['login', 'logout', 'login']);
-    expect(sink.record.mock.calls[1][0].principalId).toBe(first.claims.sub);
-    expect(sink.record.mock.calls[1][0].tenantId).toBe(first.tenantId);
-    expect(sink.record.mock.calls[2][0].principalId).toBe(second.claims.sub);
+    expect(recorded(1).principalId).toBe(first.claims.sub);
+    expect(recorded(1).tenantId).toBe(first.tenantId);
+    expect(recorded(2).principalId).toBe(second.claims.sub);
     expect(sink.record).toHaveBeenCalledTimes(3);
   });
 
@@ -260,9 +265,9 @@ describe('AccessSession', () => {
     session.start({ token: second.token });
 
     expect(eventTypes()).toEqual(['logout', 'login']);
-    expect(sink.record.mock.calls[0][0].principalId).toBe(first.claims.sub);
-    expect(sink.record.mock.calls[0][0].tenantId).toBe(first.tenantId);
-    expect(sink.record.mock.calls[1][0].principalId).toBe(second.claims.sub);
+    expect(recorded(0).principalId).toBe(first.claims.sub);
+    expect(recorded(0).tenantId).toBe(first.tenantId);
+    expect(recorded(1).principalId).toBe(second.claims.sub);
     expect(accessState.get().principal?.id).toBe(second.claims.sub);
     expect(sink.record).toHaveBeenCalledTimes(2);
   });

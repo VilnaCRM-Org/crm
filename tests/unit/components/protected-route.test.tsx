@@ -10,11 +10,19 @@ import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import ProtectedRoute from '@auth/components/protected-route';
 import { AuthStateVar } from '@auth/stores';
 import { buildAccessToken, buildClaims } from '@tests/builders';
+import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 const record = jest.fn<void, [AuditEvent]>();
 const spySink: AuditSink = { record };
 
 const eventTypes = (): string[] => record.mock.calls.map(([event]) => event.type);
+const eventAt = (index: number): AuditEvent => {
+  const call = record.mock.calls[index];
+  if (call === undefined) {
+    throw new Error(`no audit event recorded at index ${index}`);
+  }
+  return call[0];
+};
 
 function seedToken(token: string | null): void {
   act(() => {
@@ -30,7 +38,7 @@ function swapToken(token: string): void {
 }
 
 const routerTree = (): JSX.Element => (
-  <MemoryRouter initialEntries={['/']}>
+  <MemoryRouter initialEntries={['/']} future={ROUTER_FUTURE_FLAGS}>
     <Routes>
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<div>dashboard</div>} />
@@ -121,8 +129,8 @@ describe('ProtectedRoute', () => {
     // The outgoing principal is closed out before the replacement logs in, so the trail
     // reconciles into whole sessions instead of a run of logins with no ends.
     expect(eventTypes()).toEqual(['login', 'logout', 'login']);
-    expect(record.mock.calls[1][0].principalId).toBe(first.sub);
-    expect(record.mock.calls[2][0].principalId).toBe(second.sub);
+    expect(eventAt(1).principalId).toBe(first.sub);
+    expect(eventAt(2).principalId).toBe(second.sub);
   });
 
   // Regression: the layout effect depends on the hydrated principal as well as the token,

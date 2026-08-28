@@ -49,6 +49,8 @@ module.exports = {
           '^src/index[.]tsx$', // app entrypoint
           '^codegen[.]ts$', // graphql-codegen config (consumed by the CLI, not imported)
           '^tests/load/utils/test-data[.]js$', // ad-hoc load-test data generator
+          // console-gate fixtures: run by a child Jest process, never imported (issue #192)
+          '^tests/fixtures/console-gate/.*[.]fixture[.](?:ts|tsx)$',
           '^storybook-static/', // generated Storybook output
           '^coverage/', // generated coverage reports
           '^test-results/', // generated Playwright/Jest test artifacts
@@ -460,10 +462,94 @@ module.exports = {
           '^src/modules/[^/]+/store/[^/]+-slice[.]ts$',
           '^src/modules/[^/]+/features/[^/]+/stores/index[.]ts$',
           '^src/config/dependency-injection-config[.]ts$',
+          // Issue #128: the sanctioned component DI bridge. `useService` must import the
+          // aggregating composition root (not the bare tsyringe container) or `resolve` would
+          // throw on an unregistered token. It stays off the auth paint path because
+          // no-paint-path-import-di-bridge forbids the auth feature and the route shell from
+          // importing it.
+          '^src/providers/di/use-service[.]ts$',
         ],
       },
       to: {
         path: DI_COMPOSITION_ROOTS,
+      },
+    },
+    {
+      name: 'components-no-direct-injectable-import',
+      comment:
+        'React components must obtain behavioral collaborators (services, repositories, ' +
+        'module store, factories, mappers, error handlers) through the DI bridge ' +
+        'useService(TOKENS.X) from @/providers/di — never by value-importing the class and ' +
+        'calling it directly, which binds the collaborator at the call site and cannot be ' +
+        'swapped for a mock in a component test (issue #128; cf. #100). `import type` stays ' +
+        'allowed: type annotations are erased and bind nothing. Carve-outs are the ' +
+        'container-free-by-design surfaces: the auth render path (Lighthouse budget), the ' +
+        'route-shell module singletons that `new` their own locally declared class ' +
+        '(issues #105/#114), the app entrypoint, and the ROOT error boundary file alone ' +
+        '(a class component cannot call a hook, and error reporting must survive a DI ' +
+        'failure) — its functional descendants can call useService and stay gated. This ' +
+        'is the consumer side; the producer side (one injectable importing another) is not ' +
+        'owned here, so the two never flag the same edge.',
+      severity: 'error',
+      from: {
+        path: '^src/.+[.]tsx$',
+        pathNot: [
+          '^src/modules/user/features/auth/',
+          '^src/routes/(?:route-(?:composer|mapper)|permission-branch-builder)[.]tsx$',
+          '^src/index[.]tsx$',
+          '^src/components/error-boundary/app-error-boundary[.]tsx$',
+          '[.](?:stories|test|spec)[.]tsx$',
+        ],
+      },
+      to: {
+        path: [
+          '^src/services/',
+          '^src/modules/[^/]+/features/[^/]+/repositories/',
+          '^src/modules/[^/]+/store/',
+          '(?:-factory|-mapper)[.]tsx?$',
+          'error-handler',
+        ],
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
+      name: 'no-paint-path-import-di-bridge',
+      comment:
+        'The auth render path must not REACH the component DI bridge (@/providers/di) — not ' +
+        'directly and not through an intermediate shared component, hence `reachable`. The ' +
+        'bridge eagerly imports the aggregating composition root, so any path from the auth ' +
+        'feature would pull the whole DI graph into the chunks needed to paint the ' +
+        'authentication page and blow the mobile Lighthouse budget (issues #128, #109). Auth ' +
+        'keeps its sanctioned module singletons instead; this rule is what makes that ' +
+        'carve-out enforced rather than merely documented. Reachability is safe to demand ' +
+        'here because everything auth reaches — including its own lazily loaded pages — is ' +
+        'auth-owned or shared UI, which is held to the same invariant.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/user/features/auth/',
+      },
+      to: {
+        path: '^src/providers/di/',
+        reachable: true,
+      },
+    },
+    {
+      name: 'no-eager-shell-import-di-bridge',
+      comment:
+        'The eagerly evaluated app shell — entrypoint, root component, and route registry — ' +
+        'must not itself import the component DI bridge (@/providers/di), which would put the ' +
+        'composition root in the initial bundle instead of the lazily loaded route chunk that ' +
+        'actually needs it (issue #128). Unlike the auth rule above this is deliberately a ' +
+        'DIRECT-edge rule: the route registry dynamically imports every page in the app, so ' +
+        'demanding reachability here would forbid the bridge in every lazily routed ' +
+        'component — precisely the use case it exists for. The code-split boundary is where ' +
+        'the cost stops, so only the shell own static imports are gated.',
+      severity: 'error',
+      from: {
+        path: ['^src/index[.]tsx$', '^src/app[.]tsx$', '^src/routes/'],
+      },
+      to: {
+        path: '^src/providers/di/',
       },
     },
     {
@@ -644,11 +730,12 @@ module.exports = {
       name: 'tests-top-level-allowed-folders',
       comment:
         'Tests root may only contain allowed folders: apollo-server, builders, ' +
-        'e2e, integration, load, memory-leak, mutation, unit, utils, visual.',
+        'console-gate, e2e, fixtures, i18n, integration, load, memory-leak, mutation, ' +
+        'unit, utils, visual.',
       severity: 'error',
       from: {
         path:
-          '^tests/(?!(?:apollo-server|builders|e2e|integration|' +
+          '^tests/(?!(?:apollo-server|builders|console-gate|e2e|fixtures|i18n|integration|' +
           'load|memory-leak|mutation|unit|utils|visual)/)[^/]+/',
       },
       to: {},

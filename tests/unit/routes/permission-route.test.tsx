@@ -18,6 +18,7 @@ import type { Principal } from '@/lib/types/access/principal';
 import PermissionRoute from '@/routes/permission-route';
 import { buildPrincipal } from '@tests/builders';
 import { testI18n, testTheme } from '@tests/unit/utils/render-with-providers';
+import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 const FIRST_PATH = '/contacts';
 const SECOND_PATH = '/contacts/archive';
@@ -27,7 +28,13 @@ const DENIED = localization.en.translation.access_denied;
 
 const record = jest.fn<void, [AuditEvent]>();
 const spySink: AuditSink = { record };
-const eventAt = (index: number): AuditEvent => record.mock.calls[index][0];
+const eventAt = (index: number): AuditEvent => {
+  const call = record.mock.calls[index];
+  if (call === undefined) {
+    throw new Error(`no audit event recorded at index ${index}`);
+  }
+  return call[0];
+};
 
 function focusedElement(): HTMLElement {
   return document.activeElement as HTMLElement;
@@ -47,7 +54,7 @@ function Navigator(): JSX.Element {
 const gate = (permission: Permission, path: string, navigator = false): JSX.Element => (
   <ThemeProvider theme={testTheme}>
     <I18nextProvider i18n={testI18n}>
-      <MemoryRouter initialEntries={[path]}>
+      <MemoryRouter initialEntries={[path]} future={ROUTER_FUTURE_FLAGS}>
         {navigator ? <Navigator /> : null}
         {/* Mirrors the RootLayout boundary that resolves the code-split refusal panel. */}
         <Suspense fallback={null}>

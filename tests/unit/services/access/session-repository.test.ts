@@ -23,10 +23,11 @@ describe('SessionRepository', () => {
   });
 
   it('maps the claims of a signed token onto the session snapshot', () => {
-    const tenants = [buildTenantRef(), buildTenantRef()];
+    const home = buildTenantRef();
+    const tenants = [home, buildTenantRef()];
     const claims = buildClaims({
       roles: [ROLES.manager],
-      tenantId: tenants[0].id,
+      tenantId: home.id,
       tenants,
       flags: { [FEATURE_FLAGS.contactsModule]: true },
     });
@@ -37,7 +38,7 @@ describe('SessionRepository', () => {
     expect(snapshot?.principal.id).toBe(claims.sub);
     expect(snapshot?.principal.email).toBe(claims.email);
     expect(snapshot?.principal.roles).toEqual([ROLES.manager]);
-    expect(snapshot?.principal.tenantId).toBe(tenants[0].id);
+    expect(snapshot?.principal.tenantId).toBe(home.id);
     expect(snapshot?.principal.tenants).toEqual(tenants);
     expect(snapshot?.principal.permissions).toEqual(permissionResolver.expand([ROLES.manager]));
     expect(snapshot?.principal.permissions).toContain(PERMISSIONS.tenantSwitch);

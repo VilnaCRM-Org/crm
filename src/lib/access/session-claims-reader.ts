@@ -12,8 +12,12 @@ export class SessionClaimsReader {
   }
 
   private payloadSegment(token: string | null): string | null {
-    const parts = token === null ? [] : token.split('.');
-    return parts.length === JWT_SEGMENTS ? parts[1] : null;
+    const parts: readonly string[] = token === null ? [] : token.split('.');
+    return this.isJwtParts(parts) ? parts[1] : null;
+  }
+
+  private isJwtParts(parts: readonly string[]): parts is readonly [string, string, string] {
+    return parts.length === JWT_SEGMENTS;
   }
 
   private decode(segment: string): unknown {

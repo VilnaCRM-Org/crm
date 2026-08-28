@@ -2,10 +2,16 @@ import accessState, { AccessStateStore } from '@/lib/access/access-state';
 import { ROLES } from '@/lib/access/permission-catalog';
 import type { FeatureFlagState } from '@/lib/types/access/feature-flag';
 import type { Role } from '@/lib/types/access/permission';
-import type { AccessSnapshot, Principal } from '@/lib/types/access/principal';
+import type { AccessSnapshot, Principal, TenantRef } from '@/lib/types/access/principal';
 import { buildPrincipal, buildTenantRef } from '@tests/builders';
 
 const ANONYMOUS_SNAPSHOT: AccessSnapshot = { principal: null, flags: {} };
+
+const tenantAt = (tenants: readonly TenantRef[], index: number): TenantRef => {
+  const tenant = tenants[index];
+  if (tenant === undefined) throw new Error(`no tenant published at index ${index}`);
+  return tenant;
+};
 
 describe('AccessStateStore', () => {
   let store: AccessStateStore;
@@ -39,13 +45,14 @@ describe('AccessStateStore', () => {
   describe('subscribe', () => {
     it('notifies the listener on every write', () => {
       const listener = jest.fn();
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const other = buildTenantRef();
+      const tenants = [buildTenantRef(), other];
       store.subscribe(listener);
 
       store.setSession(buildPrincipal({ tenants }), {});
       expect(listener).toHaveBeenCalledTimes(1);
 
-      store.setActiveTenant(tenants[1].id);
+      store.setActiveTenant(other.id);
       expect(listener).toHaveBeenCalledTimes(2);
 
       store.clear();
@@ -185,7 +192,9 @@ describe('AccessStateStore', () => {
       expect(Object.isFrozen(store.get().flags)).toBe(true);
       expect(() => Object.assign(published, { tenantId: 'forged' })).toThrow(TypeError);
       expect(() => (published.roles as Role[]).push(ROLES.admin)).toThrow(TypeError);
-      expect(() => Object.assign(published.tenants[0], { id: 'forged' })).toThrow(TypeError);
+      expect(() => Object.assign(tenantAt(published.tenants, 0), { id: 'forged' })).toThrow(
+        TypeError
+      );
     });
 
     it('refuses a principal whose active tenant is not one of its memberships', () => {
@@ -223,7 +232,8 @@ describe('AccessStateStore', () => {
     // The store owns the invariant: an active tenant the principal does not belong to
     // would make every tenant-scoped policy check compare against unreachable data.
     it('refuses a tenant the principal does not belong to', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const home = buildTenantRef();
+      const tenants = [home, buildTenantRef()];
       store.setSession(buildPrincipal({ tenants }), {});
       const before = store.get();
       const listener = jest.fn();
@@ -232,24 +242,25 @@ describe('AccessStateStore', () => {
       store.setActiveTenant(buildTenantRef().id);
 
       expect(store.get()).toBe(before);
-      expect(store.get().principal?.tenantId).toBe(tenants[0].id);
+      expect(store.get().principal?.tenantId).toBe(home.id);
       expect(listener).not.toHaveBeenCalled();
     });
 
     it('publishes a new frozen snapshot with only the tenant id changed', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const other = buildTenantRef();
+      const tenants = [buildTenantRef(), other];
       const principal = buildPrincipal({ tenants });
       const flags: FeatureFlagState = { 'tenant-switcher': true };
       store.setSession(principal, flags);
       const before = store.get();
 
-      store.setActiveTenant(tenants[1].id);
+      store.setActiveTenant(other.id);
 
       const after = store.get();
       expect(after).not.toBe(before);
       expect(Object.isFrozen(after)).toBe(true);
-      expect(after.principal).toEqual({ ...principal, tenantId: tenants[1].id });
-      expect(after.principal?.tenantId).toBe(tenants[1].id);
+      expect(after.principal).toEqual({ ...principal, tenantId: other.id });
+      expect(after.principal?.tenantId).toBe(other.id);
       expect(after.principal?.id).toBe(principal.id);
       expect(after.principal?.email).toBe(principal.email);
       expect(after.principal?.roles).toEqual(principal.roles);
@@ -259,26 +270,29 @@ describe('AccessStateStore', () => {
     });
 
     it('leaves the previous snapshot and the source principal untouched', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const home = buildTenantRef();
+      const other = buildTenantRef();
+      const tenants = [home, other];
       const principal = buildPrincipal({ tenants });
       store.setSession(principal, {});
       const before = store.get();
 
-      store.setActiveTenant(tenants[1].id);
+      store.setActiveTenant(other.id);
 
       expect(before.principal).toBe(principal);
-      expect(before.principal?.tenantId).toBe(tenants[0].id);
-      expect(principal.tenantId).toBe(tenants[0].id);
+      expect(before.principal?.tenantId).toBe(home.id);
+      expect(principal.tenantId).toBe(home.id);
       expect(store.get().principal).not.toBe(principal);
     });
 
     it('notifies subscribers about the tenant change', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const other = buildTenantRef();
+      const tenants = [buildTenantRef(), other];
       store.setSession(buildPrincipal({ tenants }), {});
       const listener = jest.fn();
       store.subscribe(listener);
 
-      store.setActiveTenant(tenants[1].id);
+      store.setActiveTenant(other.id);
 
       expect(listener).toHaveBeenCalledTimes(1);
     });
@@ -300,12 +314,13 @@ describe('AccessStateStore', () => {
     });
 
     it('makes a subsequent setActiveTenant a no-op again', () => {
-      const tenants = [buildTenantRef(), buildTenantRef()];
+      const other = buildTenantRef();
+      const tenants = [buildTenantRef(), other];
       store.setSession(buildPrincipal({ tenants }), {});
       store.clear();
       const cleared = store.get();
 
-      store.setActiveTenant(tenants[1].id);
+      store.setActiveTenant(other.id);
 
       expect(store.get()).toBe(cleared);
     });

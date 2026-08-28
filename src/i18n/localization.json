@@ -14,6 +14,14 @@
       "route_fallback": {
         "loading": "Loading page"
       },
+      "login": {
+        "title": "Authentication",
+        "info_desc": "Sign in to your account in two clicks"
+      },
+      "formatting": {
+        "updated_at": "Last updated {{value, datetime}}",
+        "price": "Price: {{value, currency}}"
+      },
       "root_element_missing": "Root element not found",
       "buttons": {
         "back_to_main": "Back to homepage"
@@ -165,6 +173,10 @@
       "login": {
         "title": "Автентифікація",
         "info_desc": "Увійдіть до свого аккаунту за два кліки"
+      },
+      "formatting": {
+        "updated_at": "Оновлено {{value, datetime}}",
+        "price": "Ціна: {{value, currency}}"
       },
       "root_element_missing": "Кореневий елемент не знайдено",
       "buttons": {

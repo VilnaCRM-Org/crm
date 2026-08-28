@@ -1,6 +1,6 @@
 import '../../../../../setup';
 
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 
 import { AuthStateVar, authActions, useAuthState, useAuthToken } from '@auth/stores';
 import { buildCredentials, buildUser } from '@tests/builders';
@@ -11,7 +11,9 @@ describe('auth stores composition root integration', () => {
   beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
   afterEach(() => {
     server.resetHandlers();
-    AuthStateVar.reset();
+    act(() => {
+      AuthStateVar.reset();
+    });
   });
   afterAll(() => server.close());
 

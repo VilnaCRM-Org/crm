@@ -54,7 +54,14 @@ const collector: AuditSink = {
 };
 
 const typesOf = (): string[] => events.map((event) => event.type);
-const lastEvent = (): AuditEvent => events[events.length - 1];
+const eventAt = (index: number): AuditEvent => {
+  const event = events[index];
+  if (event === undefined) {
+    throw new Error(`no audit event recorded at index ${index}`);
+  }
+  return event;
+};
+const lastEvent = (): AuditEvent => eventAt(events.length - 1);
 
 const contact = (overrides: Partial<ContactSubject> = {}): ContactSubject => ({
   id: buildTenantRef().id,
@@ -292,9 +299,9 @@ describe('access session hydration from token claims (#114)', () => {
 
     expect(accessState.get().principal?.id).toBe(viewerClaims.sub);
     expect(typesOf()).toEqual(['login', 'logout', 'login']);
-    expect(events[1].principalId).toBe(managerClaims.sub);
-    expect(events[1].tenantId).toBe(homeTenant.id);
-    expect(events[2].principalId).toBe(viewerClaims.sub);
+    expect(eventAt(1).principalId).toBe(managerClaims.sub);
+    expect(eventAt(1).tenantId).toBe(homeTenant.id);
+    expect(eventAt(2).principalId).toBe(viewerClaims.sub);
   });
 
   // The store is the last line of the tenancy invariant: a loader — the DI-bound repository

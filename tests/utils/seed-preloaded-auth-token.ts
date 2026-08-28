@@ -1,9 +1,10 @@
 import type { Page } from '@playwright/test';
 
-import AuthStateVar from '@auth/stores/auth-var';
-
 export const PRELOADED_AUTH_TOKEN = 'playwright-preloaded-auth-token';
 export const preloadedAuthTokenEnvVar = 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN' as const;
+// Held in lockstep with src/config/env/preloaded-auth-token.ts by that module's unit test,
+// which seeds this exact key on `window` and asserts the seam reads it back.
+export const PRELOADED_AUTH_TOKEN_WINDOW_KEY = '__PRELOADED_AUTH_TOKEN__' as const;
 
 type PageRouteTarget = Pick<Page, 'route'>;
 
@@ -13,7 +14,7 @@ export async function seedPreloadedAuthToken(
 ): Promise<void> {
   const escapeForInlineScript = (json: string): string =>
     json.replace(/<\/script/gi, '<\\/script').replace(/<!--/g, '<\\!--');
-  const keyJson = escapeForInlineScript(JSON.stringify(AuthStateVar.windowKey));
+  const keyJson = escapeForInlineScript(JSON.stringify(PRELOADED_AUTH_TOKEN_WINDOW_KEY));
   const tokenJson = escapeForInlineScript(JSON.stringify(token));
   const inlineScript = `<script>window[${keyJson}]=${tokenJson};</script>`;
 

@@ -18,10 +18,12 @@ export function buildPrincipal(overrides: Partial<Principal> = {}): Principal {
   // active tenant it does not belong to: a pinned-empty membership gains the tenant that
   // ends up active, and a pinned tenantId is honoured only when it is a real membership.
   const pinned: readonly TenantRef[] = overrides.tenants ?? [buildTenantRef()];
-  const tenants: readonly TenantRef[] =
-    pinned.length > 0
-      ? pinned
-      : [{ id: overrides.tenantId ?? buildTenantRef().id, name: faker.company.name() }];
+  const [head] = pinned;
+  const active: TenantRef = head ?? {
+    id: overrides.tenantId ?? buildTenantRef().id,
+    name: faker.company.name(),
+  };
+  const tenants: readonly TenantRef[] = head === undefined ? [active] : pinned;
   const requested: string | undefined = overrides.tenantId;
   const member: boolean = tenants.some((tenant) => tenant.id === requested);
   return {
@@ -30,7 +32,7 @@ export function buildPrincipal(overrides: Partial<Principal> = {}): Principal {
     roles,
     permissions: permissionResolver.expand(roles),
     ...overrides,
-    tenantId: member ? (requested as string) : tenants[0].id,
+    tenantId: member ? (requested as string) : active.id,
     tenants,
   };
 }

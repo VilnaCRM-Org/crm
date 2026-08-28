@@ -9,6 +9,7 @@ import type { ReactElement } from 'react';
 import accessState from '@/lib/access/access-state';
 import AuthStateVar from '@auth/stores/auth-var';
 import { buildToken } from '@tests/builders';
+import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 // Lighthouse and Playwright authenticate by seeding a token rather than logging in, so
 // nothing calls the login path that starts an access session. The real ProtectedRoute
@@ -82,7 +83,7 @@ describe('seeded-session routing (#114 regression guard)', () => {
 
     render(
       <Suspense fallback={null}>
-        <actual.RouterProvider router={memory} />
+        <actual.RouterProvider router={memory} future={ROUTER_FUTURE_FLAGS} />
       </Suspense>
     );
 
