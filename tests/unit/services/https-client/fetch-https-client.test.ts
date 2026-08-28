@@ -41,15 +41,20 @@ const createStatusOnlyResponse = (status: number): Response =>
     headers: new Headers(),
   }) as unknown as Response;
 
-const createErrorResponse = (status: number, statusText: string, url: string): Response =>
-  ({
+const createErrorResponse = (status: number, statusText: string, url: string): Response => {
+  const response = {
     ok: false,
     status,
     statusText,
     url,
     headers: new Headers(),
-    json: async () => ({}),
-  }) as unknown as Response;
+    json: async (): Promise<unknown> => ({}),
+    text: async (): Promise<string> => '',
+    clone: (): unknown => response,
+  };
+
+  return response as unknown as Response;
+};
 
 const createRequestConfigBuilder = (): HttpRequestConfigBuilder =>
   new HttpRequestConfigBuilder(correlationIdProvider);
@@ -588,53 +593,25 @@ describe('FetchHttpsClient', () => {
 
   describe('error handling', () => {
     it('should throw HttpError on 400 Bad Request', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 400,
-        statusText: 'Bad Request',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(400, 'Bad Request', '/api/test'));
 
       await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 401 Unauthorized', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(401, 'Unauthorized', '/api/test'));
 
       await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 403 Forbidden', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 403,
-        statusText: 'Forbidden',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(403, 'Forbidden', '/api/test'));
 
       await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 500 Internal Server Error', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(500, 'Internal Server Error', '/api/test'));
 
       await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });

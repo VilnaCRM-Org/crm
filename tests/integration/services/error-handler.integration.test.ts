@@ -91,11 +91,18 @@ describe('ErrorHandler Coverage Tests', () => {
     expect(logger.error).toHaveBeenCalledTimes(3);
   });
 
-  it('should not throw and should still capture through observability without a logger', () => {
+  it('should log to console and still capture through observability without a logger', () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     const error = new Error('No console available');
 
-    expect(() => errorHandler.handle(error)).not.toThrow();
-    expect(observability.captureError).toHaveBeenCalledWith(error);
+    try {
+      expect(() => errorHandler.handle(error)).not.toThrow();
+
+      expect(consoleError).toHaveBeenCalledWith('[ErrorHandler]', error);
+      expect(observability.captureError).toHaveBeenCalledWith(error);
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it('exposes instance methods for auth-error mapping and error handling', () => {
