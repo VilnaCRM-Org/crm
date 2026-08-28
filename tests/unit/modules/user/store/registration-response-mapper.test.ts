@@ -17,16 +17,26 @@ describe('RegistrationResponseMapper', () => {
   });
 
   it('returns error when response fields have wrong types', () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
     const result = mapper.map({ fullName: 123, email: 456 });
 
+    expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+      issueCount: 2,
+    });
     assertError(result);
     expect(result.error.displayMessage).toBeTruthy();
     expect(result.error.retryable).toBe(false);
   });
 
   it('returns error when the response is null', () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
     const result = mapper.map(null);
 
+    expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+      issueCount: 1,
+    });
     expect(result.ok).toBe(false);
   });
 });

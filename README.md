@@ -133,6 +133,7 @@ Linting & Formatting
   make lint-commit-range: lints the commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
   make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
   make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
+  make check-auth-seed-gate: scans the built bundles so the test-only preloaded-auth seed cannot ship
 ```
 
 ### Dependency rules
@@ -302,7 +303,7 @@ Docker
 ```bash
   make down: stops the Docker containers and removes orphaned containers
   make stop: stops dev container
-  make start-prod: builds image and starts the prod container (production mode)
+  make start-prod: builds and starts the prod-parity container (test-harness image, see issue #158)
   make ps: displays currently running Docker containers with their details
   make sh: starts a terminal inside the dev Docker container for manual commands
   make logs: shows all logs of dev container

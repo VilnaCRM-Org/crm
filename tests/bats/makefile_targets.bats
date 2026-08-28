@@ -34,12 +34,12 @@ setup() {
     [ -z "$expected_two" ] || assert_log_contains "$expected_two"
   done <<'EOF'
 ci-setup|docker compose -f docker-compose.yml up -d --no-recreate dev mockoon|curl -fsS http://localhost:8080/api/users
-ci-lint|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses|
+ci-lint|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses|
 ci-test|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration|
 ci-mutation|bun x stryker run|
 ci-prod-setup|docker compose -f docker-compose.yml up -d dev|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --no-recreate prod mockoon playwright
 ci-test-prod|docker compose -f docker-compose.test.yml exec playwright ./node_modules/.bin/playwright test ./tests/e2e|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)
-ci|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile lint-licenses|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
+ci|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
 install|docker compose exec -T dev bun install --frozen-lockfile|bun x husky install
 clean|docker compose -f docker-compose.yml down --volumes --remove-orphans --rmi local|docker compose -f docker-compose.test.yml down --volumes --remove-orphans --rmi local
 start-prod-clean|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --force-recreate --build prod mockoon playwright|curl -fsS http://localhost:8080/api/users
@@ -77,14 +77,17 @@ EOF
   done <<'EOF'
 build-analyze|docker compose -f docker-compose.yml run --rm -e ANALYZE=true dev bun x rsbuild build|
 perf-budget|docker compose -f docker-compose.yml run --rm dev sh -c bun x rsbuild build && node scripts/bundle-size-report.mjs --dir dist|
+check-auth-seed-gate|docker build -t crm-auth-seed-probe -f Dockerfile --target production .|dev node scripts/ci/check-auth-seed-gate.mjs --dir ./dist-auth-seed-probe --expect absent --token auth-seed-gate-probe-token
 build-out|docker build -t rsbuild-bundle -f Dockerfile --target production .|docker cp fake-container-id:/app/dist ./out
-format|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md} --write --ignore-path .prettierignore|qlty fmt --all --trigger agent --no-progress
-fmt-prettier|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md} --write --ignore-path .prettierignore|
+format|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md,yml,yaml} --write --ignore-path .prettierignore|qlty fmt --all --trigger agent --no-progress
+fmt-prettier|bun x prettier **/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md,yml,yaml} --write --ignore-path .prettierignore|
 fmt-qlty|qlty fmt --all --trigger agent --no-progress|
 lint-eslint|bun x eslint .|
 lint-tsc|bun x tsc|
 lint-md|bun x markdownlint -i CHANGELOG.md -i test-results/**/*.md -i playwright-report/data/**/*.md **/*.md|
 lint-dup|bun x jscpd|
+lint-zizmor|ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d --no-online-audits --min-severity medium --persona pedantic --format plain .github/workflows/|
+lint-compose|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q|docker compose -f docker-compose.memory-leak.yml config -q
 check-env-sync|check-env-sync.sh|
 lint-metrics-run|lint-metrics.sh RCA_BIN=./bin/rust-code-analysis-cli RCA_VERSION=0.0.25 RCA_SCOPE=src/ RCA_EXCLUDES=**/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/** **/api/generated/** METRICS_POLICY=config/metrics-policy.json|
 husky|bun x husky install|
@@ -106,6 +109,17 @@ EOF
   run_make_target pr-comments PR=78 FORMAT=markdown
   [ "$status" -eq 0 ]
   assert_log_contains 'get-pr-comments.sh 78 markdown'
+
+  # lint-compose is the duplicate-mapping-key gate (issue #161): prettier accepts duplicate
+  # keys, compose's own loader rejects them. It only covers the surface it actually validates,
+  # so every combination the repo starts must stay in the recipe — assert all four, not a pair.
+  reset_command_log
+  run_make_target lint-compose
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose -f docker-compose.yml config -q'
+  assert_log_contains 'docker compose -f docker-compose.test.yml config -q'
+  assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q'
+  assert_log_contains 'docker compose -f docker-compose.memory-leak.yml config -q'
 }
 
 @test "commit contract targets lint the header and the range with their own configs" {
