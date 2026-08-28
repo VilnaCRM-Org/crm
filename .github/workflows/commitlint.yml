@@ -50,6 +50,10 @@ jobs:
       - name: Lint every commit in the pull request
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          # Bot detection asks GitHub whether it signed the commit, so the step needs a token
+          # and the repository to ask about. Read-only: the job declares `contents: read`.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_PROVENANCE_REPO: ${{ github.repository }}
         run: |
           git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
           range_from="$(git merge-base origin/main "$HEAD_SHA")"

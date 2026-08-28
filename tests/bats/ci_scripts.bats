@@ -228,17 +228,21 @@ setup() {
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_GIT_REVISIONS='ccc333' \
-    FAKE_GIT_AUTHOR='49699333+dependabot[bot]@users.noreply.github.com' \
+    GH_TOKEN=stub-token \
+    COMMIT_PROVENANCE_REPO=VilnaCRM-Org/crm \
+    FAKE_GH_VERIFIED_BOT_LOGIN='dependabot[bot]' \
     sh "$script_path" base head
   [ "$status" -eq 0 ]
   assert_log_contains 'make lint-commit-bot-message'
-  assert_output_contains 'is authored by 49699333+dependabot[bot]@users.noreply.github.com'
+  assert_output_contains 'is a GitHub-verified commit by dependabot[bot]'
 
   reset_command_log
   run env \
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_GIT_REVISIONS='ddd444' \
+    GH_TOKEN=stub-token \
+    COMMIT_PROVENANCE_REPO=VilnaCRM-Org/crm \
     FAKE_GIT_AUTHOR='82976108+RudoiDmytro@users.noreply.github.com' \
     sh "$script_path" base head
   [ "$status" -eq 0 ]
@@ -254,6 +258,39 @@ setup() {
     sh "$script_path" base head
   [ "$status" -eq 1 ]
   assert_output_contains 'aaa111 has a non-conventional commit header'
+}
+
+@test "lint-commit-range.sh refuses a bot exemption forged in commit metadata" {
+  local script_path="$PROJECT_ROOT/scripts/ci/lint-commit-range.sh"
+
+  # The commit claims a bot noreply address, but GitHub vouches for nothing, so the strict
+  # contract must still apply. Author email is contributor-controlled and must buy nothing.
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='eee555' \
+    GH_TOKEN=stub-token \
+    COMMIT_PROVENANCE_REPO=VilnaCRM-Org/crm \
+    FAKE_GIT_AUTHOR='1+attacker[bot]@users.noreply.github.com' \
+    sh "$script_path" base head
+  [ "$status" -eq 0 ]
+  assert_log_contains 'make lint-commit-message'
+  ! grep -qF 'make lint-commit-bot-message' "$COMMAND_LOG"
+
+  # Same forged address, and this time GitHub would confirm a bot — but with no token the
+  # script cannot ask, so it must fail closed onto the strict contract rather than open.
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='fff666' \
+    FAKE_GIT_AUTHOR='1+attacker[bot]@users.noreply.github.com' \
+    FAKE_GH_VERIFIED_BOT_LOGIN='dependabot[bot]' \
+    sh "$script_path" base head
+  [ "$status" -eq 0 ]
+  assert_log_contains 'make lint-commit-message'
+  ! grep -qF 'make lint-commit-bot-message' "$COMMAND_LOG"
 }
 
 @test "lint-commit-range.sh fails instead of passing an empty range vacuously" {

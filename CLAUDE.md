@@ -398,12 +398,16 @@ where `COMMIT_OR_PR_TITLE` promotes the commit's own header instead of the title
 human contract used by the Husky `commit-msg` hook. `commitlint.bot.config.js` drops
 `check-task-number-rule` — the one rule a bot structurally cannot satisfy — and ignores the
 `Compressed Images` header written by `calibreapp/image-actions`, which is not conventional at
-all. Both relaxations apply **only** where the author is a bot:
-`scripts/ci/lint-commit-range.sh` decides per commit from the GitHub author identity
-(`git log -1 --format=%ae`), never from the message body, so neither can be spoofed by copying a
-header or appending a trailer. A bot pull request's title is linted against the same relaxed
-config at step level, so the job still reports and the title is still checked for type, scope,
-subject, and length.
+all. Both relaxations apply **only** to a commit GitHub itself vouches for:
+`scripts/ci/lint-commit-range.sh` asks the commits API per revision and takes the relaxed
+config only when the signature is **verified** and the resolved author is a `[bot]` account.
+The commit object is never consulted — an author email is contributor-controlled, so keying
+the exemption off it would let anyone set `user.email` to a `[bot]` noreply address and both
+drop the task-number rule and inherit the `Compressed Images` ignore. Only GitHub can sign a
+commit it creates, so the exemption cannot be forged; with no token to ask with, every commit
+falls back to the strict contract, so it fails closed rather than open. A bot pull request's
+title is linted against the same relaxed config at step level, so the job still reports and
+the title is still checked for type, scope, subject, and length.
 
 **`main` is verified after the merge (`#185`).**
 `.github/workflows/main-verification.yml` re-runs `make lint`, `make codegen-check`, and

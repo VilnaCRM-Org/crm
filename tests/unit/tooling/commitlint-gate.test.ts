@@ -77,11 +77,22 @@ describe('commitlint CI gate (issue #184)', () => {
     expect(makefile).toContain('COMMITLINT_BOT_CONFIG       = commitlint.bot.config.js');
   });
 
-  it('decides the bot exemption from the author identity, not the message body', () => {
+  it('decides the bot exemption from GitHub-verified provenance, never commit metadata', () => {
     const rangeScript = readFile('scripts/ci/lint-commit-range.sh');
+    const workflow = readFile('.github/workflows/commitlint.yml');
 
-    expect(rangeScript).toContain('git log -1 --format=%ae');
-    expect(rangeScript).toContain('\\[bot\\]@users\\.noreply\\.github\\.com$');
+    expect(rangeScript).toContain('.commit.verification.verified == true');
+    expect(rangeScript).toContain('.author.login');
+    expect(rangeScript).toContain("*'[bot]')");
+    // The author email is contributor-controlled, so it must not reach the decision at all:
+    // reading it back would re-open the forged-`[bot]`-noreply bypass this gate closed.
+    expect(rangeScript).not.toContain('--format=%ae');
+    expect(rangeScript).not.toContain('users.noreply.github.com');
+    // No token means nothing to verify against, so the exemption has to fail closed.
+    expect(rangeScript).toContain('GH_TOKEN');
+    expect(rangeScript).toContain('COMMIT_PROVENANCE_REPO');
+    expect(workflow).toContain('GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}');
+    expect(workflow).toContain('COMMIT_PROVENANCE_REPO: ${{ github.repository }}');
     expect(rangeScript).toContain('contains no commits');
   });
 
