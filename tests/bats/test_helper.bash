@@ -105,9 +105,13 @@ printf 'gh %s\n' "$*" >> "${COMMAND_LOG:?}"
 
 # Stands in for `gh api repos/<repo>/commits/<sha> --jq <verified-and-bot filter>`. The real
 # call prints a login only when GitHub reports the commit signature-verified AND the author a
-# `[bot]` account, so the fixture prints one only when the test says both hold.
+# `[bot]` account, so the fixture prints one only when the test says both hold. The endpoint
+# is matched, not just the `api` subcommand: a caller that asked a different endpoint would
+# otherwise inherit the bot login and keep the exemption tests passing against a regression.
 if [ "$1" = "api" ]; then
-  printf '%s' "${FAKE_GH_VERIFIED_BOT_LOGIN:-}"
+  case "$2" in
+    repos/*/commits/*) printf '%s' "${FAKE_GH_VERIFIED_BOT_LOGIN:-}" ;;
+  esac
   exit 0
 fi
 

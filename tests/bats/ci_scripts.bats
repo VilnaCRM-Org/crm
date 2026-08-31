@@ -233,6 +233,7 @@ setup() {
     FAKE_GH_VERIFIED_BOT_LOGIN='dependabot[bot]' \
     sh "$script_path" base head
   [ "$status" -eq 0 ]
+  assert_log_contains 'gh api repos/VilnaCRM-Org/crm/commits/ccc333'
   assert_log_contains 'make lint-commit-bot-message'
   assert_output_contains 'is a GitHub-verified commit by dependabot[bot]'
 
