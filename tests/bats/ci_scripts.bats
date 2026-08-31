@@ -294,6 +294,35 @@ setup() {
   ! grep -qF 'make lint-commit-bot-message' "$COMMAND_LOG"
 }
 
+@test "lint-commit-range.sh grants no exemption when it asks the wrong endpoint" {
+  # The gh fixture answers only `gh api repos/<repo>/commits/<sha>`, and this pins that contract
+  # from the caller's side. A copy of the script that asks GitHub a different question must fall
+  # back to the strict contract instead of inheriting the fixture's bot login -- otherwise an
+  # endpoint regression would keep every exemption test green against a script that no longer
+  # checks commit provenance at all.
+  local regressed="$BATS_TEST_TMPDIR/lint-commit-range-wrong-endpoint.sh"
+
+  sed 's#gh api "[^"]*"#gh api "user"#' \
+    "$PROJECT_ROOT/scripts/ci/lint-commit-range.sh" > "$regressed"
+  grep -qF 'gh api "user"' "$regressed"
+  ! grep -qF 'commits/' "$regressed"
+
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='ggg777' \
+    GH_TOKEN=stub-token \
+    COMMIT_PROVENANCE_REPO=VilnaCRM-Org/crm \
+    FAKE_GH_VERIFIED_BOT_LOGIN='dependabot[bot]' \
+    sh "$regressed" base head
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gh api user'
+  assert_log_contains 'make lint-commit-message'
+  ! grep -qF 'make lint-commit-bot-message' "$COMMAND_LOG"
+  ! printf '%s' "$output" | grep -qF 'is a GitHub-verified commit by'
+}
+
 @test "lint-commit-range.sh fails instead of passing an empty range vacuously" {
   local script_path="$PROJECT_ROOT/scripts/ci/lint-commit-range.sh"
 
