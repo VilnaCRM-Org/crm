@@ -116,6 +116,11 @@ ARG CURL_VERSION=8.14.1-r2
 WORKDIR /app
 
 ENV NODE_ENV=production
+# Runtime configuration renderer (issue #145): rewrites the inline app-config block in the built
+# HTML shell from APP_CONFIG_* variables at container start, so one image serves any environment.
+# Copied before the bundle so a code change does not invalidate this layer, and vice versa.
+COPY --chown=node:node scripts/docker-entrypoint.sh scripts/render-app-config.js ./scripts/
+ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 RUN apk add --no-cache curl=${CURL_VERSION} && \
     npm install -g serve@14.2.0 && \
     mkdir -p /app && chown -R node:node /app

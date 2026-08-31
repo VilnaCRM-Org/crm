@@ -135,6 +135,13 @@ ZIZMOR_ARGS                 = --no-online-audits --min-severity medium --persona
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 BATS_FORMATTER              ?= pretty
 
+# Module / feature scaffolding (issue #108). The allowed folder sets the generator emits
+# are single-sourced with .dependency-cruiser.js in config/module-shape.json; verify-scaffold
+# proves a freshly generated module still clears every static gate.
+PLOP                        = $(BUNX) plop
+SCAFFOLD_OWNER_DEFAULT      = $(shell awk '$$1 == "*" { print $$2; exit }' .github/CODEOWNERS 2>/dev/null)
+SCAFFOLD_VERIFY_TARGETS     ?= lint-deps lint-tsc lint-eslint lint-dup lint-md lint-prettier lint-metrics
+
 NETWORK_NAME                = crm-network
 
 BUN                         = $(EXEC_DEV_TTYLESS) bun
@@ -464,6 +471,18 @@ lint-metrics-run:
 	RCA_EXCLUDES="$(RCA_EXCLUDES)" \
 	METRICS_POLICY="$(METRICS_POLICY_PATH)" \
 	sh scripts/lint-metrics.sh
+
+new-module: ensure-dev ## Scaffold a compliant module + its first feature: make new-module name=orders [feature=order-list] [owner=@handle]
+	@[ -n "$(name)" ] || { printf '❌ name= is required, e.g. make new-module name=orders\n' >&2; exit 1; }
+	$(PLOP) module "$(name)" "$(or $(feature),$(name))" "$(or $(owner),$(SCAFFOLD_OWNER_DEFAULT))"
+
+new-feature: ensure-dev ## Scaffold a compliant feature in an existing module: make new-feature module=orders feature=order-detail
+	@[ -n "$(module)" ] || { printf '❌ module= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
+	@[ -n "$(feature)" ] || { printf '❌ feature= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
+	$(PLOP) feature "$(module)" "$(feature)"
+
+verify-scaffold: ensure-dev ## Generate a throwaway module, run the static gates against it, then remove it (issue #108)
+	SCAFFOLD_VERIFY_TARGETS="$(SCAFFOLD_VERIFY_TARGETS)" sh scripts/ci/verify-scaffold.sh
 
 codegen: ensure-dev ## Regenerate typed API contract artifacts (src/api/generated) from the pinned upstream specs
 	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh

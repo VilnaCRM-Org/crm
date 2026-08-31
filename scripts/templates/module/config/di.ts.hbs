@@ -1,0 +1,17 @@
+import type { DependencyContainer } from 'tsyringe';
+
+import type { ModuleRegistrar } from '@/config/types/module-registrar';
+import { {{pascalCase feature}}RepositoryImpl } from '@/modules/{{module}}/features/{{feature}}/repositories';
+
+import {{constantCase module}}_TOKENS from './tokens';
+
+class {{pascalCase module}}ModuleRegistrar implements ModuleRegistrar {
+  public register(container: DependencyContainer): void {
+    container.registerSingleton(
+      {{constantCase module}}_TOKENS.{{pascalCase feature}}Repository,
+      {{pascalCase feature}}RepositoryImpl
+    );
+  }
+}
+
+export default new {{pascalCase module}}ModuleRegistrar();

@@ -116,3 +116,6 @@ lint-actionlint	bats	tests/bats/makefile_targets.bats	Validated as a member of t
 lint-zizmor	bats	tests/bats/makefile_targets.bats	Validated as the Docker-based zizmor workflow-security gate, asserting the digest-pinned image, the medium severity threshold, and the .github/workflows audit scope.
 lint-compose	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh, and directly as the docker compose config validation over every file combination the repo starts.
 lint-licenses	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
+new-module	bats	tests/bats/makefile_targets.bats	Validated as driving `bun x plop module` in the dev container, defaulting the feature name and failing fast without name=.
+new-feature	bats	tests/bats/makefile_targets.bats	Validated as driving `bun x plop feature` in the dev container and failing fast without module= or feature=.
+verify-scaffold	bats	tests/bats/makefile_targets.bats	Validated as invoking scripts/ci/verify-scaffold.sh with the SCAFFOLD_VERIFY_TARGETS gate list.
