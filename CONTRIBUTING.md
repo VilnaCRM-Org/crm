@@ -108,11 +108,13 @@ The `commitlint` workflow closes both holes on every pull request. It lints:
   single-commit pull request lands that **commit's** header instead; that path is covered by the
   commit check below, which lints it against the same strict config;
 - every commit between the merge base with `main` and the PR head. Human commits get the same
-  strict config; only commits whose GitHub author identity is a bot fall back to
-  `commitlint.bot.config.js`, which drops `check-task-number-rule` and adds one narrow ignore for
-  the `Compressed Images` header that `calibreapp/image-actions` writes. That ignore matches on
-  message text, but it is only ever reached for a commit already proven bot-authored, so a human
-  cannot reach it by copying the header.
+  strict config; a commit falls back to `commitlint.bot.config.js` only when GitHub reports it
+  signature-verified, its author identity a bot, and its committer an identity only GitHub
+  writes (`web-flow`, or the app account). The bot config drops `check-task-number-rule` and adds
+  one narrow ignore for the `Compressed Images` header that `calibreapp/image-actions` writes.
+  That ignore matches on message text, but it is only ever reached for a commit GitHub itself
+  wrote, so a human cannot reach it by copying the header — nor by signing a commit they authored
+  under a bot's noreply address, since the signature attests the committer, not the author.
 
 Fix a red check by editing the pull request title in the web UI (title failure) or by rewording
 and force-pushing (`git rebase -i` + `git push --force-with-lease`, commit failure). Reproduce
@@ -474,8 +476,9 @@ for the actions entry). Our commitlint `check-task-number-rule` expects a `(#N)`
 Dependabot cannot emit. The `commitlint` workflow therefore lints bot pull requests against
 `commitlint.bot.config.js`, which relaxes that one rule and keeps every other conventional-commit
 rule in force — type, scope shape, subject, and header length are still checked. The bot path is
-selected from the GitHub author identity (the PR author for the title, `git log --format=%ae` per
-commit for the range), never from the message text, so it cannot be reached by a human. The
+selected from provenance GitHub reports (the PR author for the title; per commit for the range, a
+verified signature plus a bot author under a GitHub-written committer), never from the message
+text or from anything the contributor controls, so it cannot be reached by a human. The
 exemption is a step-level condition, never a job-level one, so the check always reports and can
 never leave a required status pending. Because the repository is squash-merge-only, add the task
 number to the squash commit title at merge time to keep `main`'s history conformant.

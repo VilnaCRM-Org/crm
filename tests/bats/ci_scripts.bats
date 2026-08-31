@@ -230,7 +230,9 @@ setup() {
     FAKE_GIT_REVISIONS='ccc333' \
     GH_TOKEN=stub-token \
     COMMIT_PROVENANCE_REPO=VilnaCRM-Org/crm \
-    FAKE_GH_VERIFIED_BOT_LOGIN='dependabot[bot]' \
+    FAKE_GH_COMMIT_VERIFIED=true \
+    FAKE_GH_COMMIT_AUTHOR_LOGIN='dependabot[bot]' \
+    FAKE_GH_COMMIT_COMMITTER_LOGIN='web-flow' \
     sh "$script_path" base head
   [ "$status" -eq 0 ]
   assert_log_contains 'gh api repos/VilnaCRM-Org/crm/commits/ccc333'
@@ -287,11 +289,70 @@ setup() {
     COMMAND_LOG="$COMMAND_LOG" \
     FAKE_GIT_REVISIONS='fff666' \
     FAKE_GIT_AUTHOR='1+attacker[bot]@users.noreply.github.com' \
-    FAKE_GH_VERIFIED_BOT_LOGIN='dependabot[bot]' \
+    FAKE_GH_COMMIT_VERIFIED=true \
+    FAKE_GH_COMMIT_AUTHOR_LOGIN='dependabot[bot]' \
+    FAKE_GH_COMMIT_COMMITTER_LOGIN='web-flow' \
     sh "$script_path" base head
   [ "$status" -eq 0 ]
   assert_log_contains 'make lint-commit-message'
   ! grep -qF 'make lint-commit-bot-message' "$COMMAND_LOG"
+}
+
+@test "lint-commit-range.sh refuses a bot exemption signed under a borrowed author" {
+  local script_path="$PROJECT_ROOT/scripts/ci/lint-commit-range.sh"
+
+  # GitHub resolves the author from a contributor-controlled email, and the signature attests
+  # the committer, not the author. A contributor holding a verified key can therefore author a
+  # commit as a bot and still have GitHub report it verified. Only the committer identity says
+  # GitHub wrote the commit object, so a verified bot author under a human committer must stay
+  # on the strict contract.
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='hhh888' \
+    GH_TOKEN=stub-token \
+    COMMIT_PROVENANCE_REPO=VilnaCRM-Org/crm \
+    FAKE_GH_COMMIT_VERIFIED=true \
+    FAKE_GH_COMMIT_AUTHOR_LOGIN='dependabot[bot]' \
+    FAKE_GH_COMMIT_COMMITTER_LOGIN='attacker' \
+    sh "$script_path" base head
+  [ "$status" -eq 0 ]
+  assert_log_contains 'make lint-commit-message'
+  ! grep -qF 'make lint-commit-bot-message' "$COMMAND_LOG"
+
+  # An unsigned or unverifiable commit buys nothing either, whoever it claims to be from.
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='iii999' \
+    GH_TOKEN=stub-token \
+    COMMIT_PROVENANCE_REPO=VilnaCRM-Org/crm \
+    FAKE_GH_COMMIT_VERIFIED=false \
+    FAKE_GH_COMMIT_AUTHOR_LOGIN='dependabot[bot]' \
+    FAKE_GH_COMMIT_COMMITTER_LOGIN='web-flow' \
+    sh "$script_path" base head
+  [ "$status" -eq 0 ]
+  assert_log_contains 'make lint-commit-message'
+  ! grep -qF 'make lint-commit-bot-message' "$COMMAND_LOG"
+
+  # A GitHub App that commits as itself rather than through `web-flow` is still GitHub-written,
+  # so that committer keeps the exemption the release and image bots depend on.
+  reset_command_log
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    FAKE_GIT_REVISIONS='jjj000' \
+    GH_TOKEN=stub-token \
+    COMMIT_PROVENANCE_REPO=VilnaCRM-Org/crm \
+    FAKE_GH_COMMIT_VERIFIED=true \
+    FAKE_GH_COMMIT_AUTHOR_LOGIN='github-actions[bot]' \
+    FAKE_GH_COMMIT_COMMITTER_LOGIN='github-actions[bot]' \
+    sh "$script_path" base head
+  [ "$status" -eq 0 ]
+  assert_log_contains 'make lint-commit-bot-message'
+  assert_output_contains 'is a GitHub-verified commit by github-actions[bot]'
 }
 
 @test "lint-commit-range.sh grants no exemption when it asks the wrong endpoint" {
@@ -314,7 +375,9 @@ setup() {
     FAKE_GIT_REVISIONS='ggg777' \
     GH_TOKEN=stub-token \
     COMMIT_PROVENANCE_REPO=VilnaCRM-Org/crm \
-    FAKE_GH_VERIFIED_BOT_LOGIN='dependabot[bot]' \
+    FAKE_GH_COMMIT_VERIFIED=true \
+    FAKE_GH_COMMIT_AUTHOR_LOGIN='dependabot[bot]' \
+    FAKE_GH_COMMIT_COMMITTER_LOGIN='web-flow' \
     sh "$regressed" base head
   [ "$status" -eq 0 ]
   assert_log_contains 'gh api user'

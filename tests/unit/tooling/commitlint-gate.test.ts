@@ -84,6 +84,12 @@ describe('commitlint CI gate (issue #184)', () => {
     expect(rangeScript).toContain('.commit.verification.verified == true');
     expect(rangeScript).toContain('.author.login');
     expect(rangeScript).toContain("*'[bot]')");
+    // A verified signature attests the committer, not the author, and GitHub resolves the author
+    // from a contributor-controlled email. Without the committer binding a contributor holding a
+    // verified key could author a commit as a bot and still be vouched for, so the exemption has
+    // to require an identity only GitHub writes -- `web-flow`, or the app account itself.
+    expect(rangeScript).toContain('.committer.login');
+    expect(rangeScript).toContain("web-flow | *'[bot]')");
     // The author email is contributor-controlled, so it must not reach the decision at all:
     // reading it back would re-open the forged-`[bot]`-noreply bypass this gate closed.
     expect(rangeScript).not.toContain('--format=%ae');

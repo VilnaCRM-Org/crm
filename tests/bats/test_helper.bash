@@ -103,16 +103,33 @@ create_gh_stub() {
 #!/usr/bin/env bash
 printf 'gh %s\n' "$*" >> "${COMMAND_LOG:?}"
 
-# Stands in for `gh api repos/<repo>/commits/<sha> --jq <verified-and-bot filter>`. The real
-# call prints a login only when GitHub reports the commit signature-verified AND the author a
-# `[bot]` account, so the fixture prints one only when the test says both hold. The endpoint
-# is matched, not just the `api` subcommand: a caller that asked a different endpoint would
-# otherwise inherit the bot login and keep the exemption tests passing against a regression.
+# Stands in for `gh api repos/<repo>/commits/<sha> --jq <filter>` the way GitHub answers it:
+# the fixture serves a commit payload built from what the test says GitHub reports, and runs
+# the caller's own `--jq` filter over it. Nothing here re-implements the caller's predicate, so
+# a caller that stopped requiring a verified signature, or that read a different identity, gets
+# a different answer from the fixture instead of the one its test expected. The endpoint is
+# matched too: a caller that asked GitHub something else gets no answer at all.
 if [ "$1" = "api" ]; then
   case "$2" in
-    repos/*/commits/*) printf '%s' "${FAKE_GH_VERIFIED_BOT_LOGIN:-}" ;;
+    repos/*/commits/*) ;;
+    *) exit 0 ;;
   esac
-  exit 0
+
+  gh_stub_filter=''
+  while [ "$#" -gt 0 ]; do
+    if [ "$1" = "--jq" ]; then
+      gh_stub_filter="${2:-}"
+      break
+    fi
+    shift
+  done
+  [ -n "$gh_stub_filter" ] || exit 0
+
+  printf '{"commit":{"verification":{"verified":%s}},"author":{"login":"%s"},"committer":{"login":"%s"}}' \
+    "${FAKE_GH_COMMIT_VERIFIED:-false}" \
+    "${FAKE_GH_COMMIT_AUTHOR_LOGIN:-}" \
+    "${FAKE_GH_COMMIT_COMMITTER_LOGIN:-}" | jq -r "$gh_stub_filter"
+  exit $?
 fi
 
 if [ "$1" = "issue" ] && [ "$2" = "list" ]; then

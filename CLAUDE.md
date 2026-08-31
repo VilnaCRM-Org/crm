@@ -401,12 +401,17 @@ human contract used by the Husky `commit-msg` hook. `commitlint.bot.config.js` d
 `Compressed Images` header written by `calibreapp/image-actions`, which is not conventional at
 all. Both relaxations apply **only** to a commit GitHub itself vouches for:
 `scripts/ci/lint-commit-range.sh` asks the commits API per revision and takes the relaxed
-config only when the signature is **verified** and the resolved author is a `[bot]` account.
-The commit object is never consulted — an author email is contributor-controlled, so keying
-the exemption off it would let anyone set `user.email` to a `[bot]` noreply address and both
-drop the task-number rule and inherit the `Compressed Images` ignore. Only GitHub can sign a
-commit it creates, so the exemption cannot be forged; with no token to ask with, every commit
-falls back to the strict contract, so it fails closed rather than open. A bot pull request's
+config only when GitHub reports the signature **verified**, the resolved **author** a `[bot]`
+account, **and** the **committer** an identity only GitHub writes — `web-flow`, which signs
+everything created through its API or web UI, or the app account itself. The commit object is
+never consulted — an author email is contributor-controlled, so keying the exemption off it
+would let anyone set `user.email` to a `[bot]` noreply address and both drop the task-number
+rule and inherit the `Compressed Images` ignore. A verified signature alone does not close
+that either, because the signature attests the **committer**: a contributor holding a verified
+key can author a commit under a bot's noreply address and GitHub still reports it verified.
+Requiring both identities does close it — neither can be borrowed while holding the other.
+With no token to ask with, every commit falls back to the strict contract, so it fails closed
+rather than open. A bot pull request's
 title is linted against the same relaxed config at step level, so the job still reports and
 the title is still checked for type, scope, subject, and length.
 

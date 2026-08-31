@@ -6,11 +6,15 @@
 # Bot detection asks GitHub, never the commit object. The commit author email is contributor
 # metadata: anyone can set user.email to a `[bot]` noreply address and claim the exemption,
 # which also unlocks the bot config's `Compressed Images` ignore and skips commitlint for
-# that commit outright. Only GitHub can sign a commit it creates, so the relaxed config is
-# reachable only for a commit GitHub reports as BOTH signature-verified and authored by a
-# `[bot]` account. With no token there is nothing to verify against, so every commit gets
-# the strict contract: the exemption fails closed, never open. An empty range fails too --
-# it would otherwise pass vacuously.
+# that commit outright. A verified signature alone does not fix that, because the signature
+# attests the COMMITTER, not the author -- a contributor holding a verified key can sign a
+# commit they authored under a bot's noreply address and GitHub still reports it verified.
+# So the relaxed config needs three things at once: GitHub reports the signature verified,
+# the resolved author is a `[bot]` account, and the committer is an identity only GitHub can
+# write -- `web-flow`, which signs everything created through its API or web UI, or the app
+# account itself. Those two identities cannot be borrowed at the same time. With no token
+# there is nothing to ask, so every commit gets the strict contract: the exemption fails
+# closed, never open. An empty range fails too -- it would otherwise pass vacuously.
 set -eu
 
 usage() {
@@ -19,18 +23,27 @@ usage() {
 }
 
 # Prints the bot login for a commit GitHub vouches for, and fails for everything else:
-# unsigned commits, signatures GitHub cannot verify, human accounts, and any environment
-# without the token needed to ask.
+# unsigned commits, signatures GitHub cannot verify, commits a contributor signed under a
+# borrowed bot author address, human accounts, and any environment without the token to ask.
 verified_bot_login() {
   if [ -z "${GH_TOKEN:-}" ] || [ -z "${COMMIT_PROVENANCE_REPO:-}" ]; then
     return 1
   fi
 
-  login="$(gh api "repos/${COMMIT_PROVENANCE_REPO}/commits/$1" \
-    --jq 'select(.commit.verification.verified == true) | .author.login // ""' 2>/dev/null)" || return 1
+  provenance="$(gh api "repos/${COMMIT_PROVENANCE_REPO}/commits/$1" \
+    --jq 'select(.commit.verification.verified == true)
+      | "\(.author.login // "") \(.committer.login // "")"' 2>/dev/null)" || return 1
 
-  case "$login" in
-    *'[bot]') printf '%s' "$login" ;;
+  author_login="${provenance%% *}"
+  committer_login="${provenance##* }"
+
+  case "$committer_login" in
+    web-flow | *'[bot]') ;;
+    *) return 1 ;;
+  esac
+
+  case "$author_login" in
+    *'[bot]') printf '%s' "$author_login" ;;
     *) return 1 ;;
   esac
 }
