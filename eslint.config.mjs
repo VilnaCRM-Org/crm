@@ -47,6 +47,7 @@ const devDependencyPatterns = [
   'playwright.config.ts',
   'rsbuild.config.ts',
   'codegen.ts',
+  'plopfile.ts',
   ...testFilePatterns,
 ];
 
@@ -371,6 +372,18 @@ export default [
     rules: {
       ...testingLibrary.configs['flat/react'].rules,
       ...jestDom.configs['flat/recommended'].rules,
+    },
+  },
+
+  // Playwright specs are not React Testing Library. The `page` fixture is destructured from the
+  // test callback argument, which `testing-library/prefer-screen-queries` misreads as a `render()`
+  // result — so this ONE rule fires on exactly the semantic `page.getByRole(...)` queries the
+  // testing convention in CLAUDE.md requires, and its advice (`screen.getByRole`) is unavailable
+  // there. Every other testing-library rule stays on for these suites.
+  {
+    files: ['tests/e2e/**/*.ts', 'tests/visual/**/*.ts'],
+    rules: {
+      'testing-library/prefer-screen-queries': 'off',
     },
   },
 

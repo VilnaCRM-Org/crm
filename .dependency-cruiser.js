@@ -3,8 +3,20 @@
 // allowed to reach into module/feature/repository internals for registration, and the
 // only import targets restricted by no-di-config-import-outside-composition-root (importing
 // one eagerly pulls the whole DI graph, which must stay off the auth paint path).
+// Issue #108: the module/feature/test folder law has exactly one source of truth,
+// config/module-shape.json, which the scaffolding generator (plopfile.ts) also reads.
+// The regexes and comments below are derived from it, so a generated skeleton and the
+// gate that judges it can never disagree. Change the folder sets there, not here.
+const MODULE_SHAPE = require('./config/module-shape.json');
+
+const listFolders = (folders) => folders.join(', ');
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const disallowedFolderSegment = (folders) =>
+  `(?!(?:${folders.map(escapeRegExp).join('|')})/)[^/]+/`;
+
 const DI_COMPOSITION_ROOTS = [
   '^src/config/dependency-injection-config[.]ts$',
+  '^src/config/runtime/di[.]ts$',
   '^src/services/[^/]+/di[.]ts$',
   '^src/utils/[^/]+/di[.]ts$',
   '^src/modules/[^/]+/config/di[.]ts$',
@@ -612,39 +624,36 @@ module.exports = {
     },
     {
       name: 'module-allowed-folders',
-      comment:
-        'Module root may only contain allowed folders: config, features, hooks, ' +
-        'lib, store, types, utils.',
+      comment: `Module root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.module.allowedFolders
+      )}. Scaffold one with \`make new-module\` (config/module-shape.json).`,
       severity: 'error',
       from: {
-        path: '^src/modules/[^/]+/(?!(?:config|features|hooks|lib|store|types|utils)/)[^/]+/',
+        path: `^src/modules/[^/]+/${disallowedFolderSegment(MODULE_SHAPE.module.allowedFolders)}`,
       },
       to: {},
     },
     {
       name: 'feature-allowed-folders',
-      comment:
-        'Feature root may only contain allowed folders: assets, components, ' +
-        'hooks, i18n, repositories, routes, stores, types, utils.',
+      comment: `Feature root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.feature.allowedFolders
+      )}. Scaffold one with \`make new-feature\` (config/module-shape.json).`,
       severity: 'error',
       from: {
         path:
           '^src/modules/[^/]+/features/[^/]+/' +
-          '(?!(?:assets|components|hooks|i18n|repositories|routes|stores|types|utils)/)[^/]+/',
+          disallowedFolderSegment(MODULE_SHAPE.feature.allowedFolders),
       },
       to: {},
     },
     {
       name: 'tests-top-level-allowed-folders',
-      comment:
-        'Tests root may only contain allowed folders: apollo-server, builders, ' +
-        'console-gate, e2e, fixtures, i18n, integration, load, memory-leak, mutation, ' +
-        'unit, utils, visual.',
+      comment: `Tests root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.tests.rootAllowedFolders
+      )}.`,
       severity: 'error',
       from: {
-        path:
-          '^tests/(?!(?:apollo-server|builders|console-gate|e2e|fixtures|i18n|integration|' +
-          'load|memory-leak|mutation|unit|utils|visual)/)[^/]+/',
+        path: `^tests/${disallowedFolderSegment(MODULE_SHAPE.tests.rootAllowedFolders)}`,
       },
       to: {},
     },
@@ -672,14 +681,14 @@ module.exports = {
     },
     {
       name: 'tests-module-allowed-folders',
-      comment:
-        'Test module root may only contain allowed folders: features, helpers, ' +
-        'lib, repositories, store.',
+      comment: `Test module root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.tests.moduleAllowedFolders
+      )}.`,
       severity: 'error',
       from: {
         path:
           '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/' +
-          '(?!(?:features|helpers|lib|repositories|store)/)[^/]+/',
+          disallowedFolderSegment(MODULE_SHAPE.tests.moduleAllowedFolders),
       },
       to: {},
     },
@@ -694,14 +703,14 @@ module.exports = {
     },
     {
       name: 'tests-feature-allowed-folders',
-      comment:
-        'Test feature root may only contain allowed folders: assets, components, ' +
-        'hooks, i18n, repositories, routes, stores, types, utils.',
+      comment: `Test feature root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.tests.featureAllowedFolders
+      )}.`,
       severity: 'error',
       from: {
         path:
           '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/features/[a-z0-9-]+/' +
-          '(?!(?:assets|components|hooks|i18n|repositories|routes|stores|types|utils)/)[^/]+/',
+          disallowedFolderSegment(MODULE_SHAPE.tests.featureAllowedFolders),
       },
       to: {},
     },

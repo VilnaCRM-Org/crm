@@ -313,6 +313,24 @@ Docker
   make wait-for-prod: waits for the prod service to be ready on port 3001
 ```
 
+### Runtime configuration
+
+The production image is configured at **container start**, not at build time, so one tested
+artifact can be promoted across environments. Set `APP_CONFIG_*` variables and restart — no
+rebuild:
+
+```bash
+  APP_CONFIG_GRAPHQL_URL=https://api.example.com/graphql \
+  APP_CONFIG_FLAG_FORGOT_PASSWORD=false \
+  docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --force-recreate prod
+```
+
+The entrypoint validates every value and exits non-zero on an invalid URL, a flag value that is
+not exactly `true`/`false`, or a variable naming a flag that does not exist, so a misconfigured
+deployment never starts serving. Build-time `REACT_APP_*` values remain as defaults.
+See [runtime configuration](src/config/runtime/README.md) and
+[feature flags](docs/feature-flags.md).
+
 ### Load Testing with K6
 
 This project includes a dedicated load testing service using K6, configured via a Docker Compose profile.
@@ -351,6 +369,8 @@ If you're having trouble, head for
 as it's frequently updated.
 
 - [Architecture Decision Records (ADRs)](docs/adr/README.md)
+- [Feature flags — lifecycle and rollout](docs/feature-flags.md)
+- [Runtime configuration (`@/config/runtime`)](src/config/runtime/README.md)
 
 You can generate complete API-level documentation by running `doc` in the top-level
 folder, and documentation will appear in the `docs` folder, though you'll need to have
