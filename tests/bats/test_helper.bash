@@ -98,6 +98,89 @@ EOF
   chmod +x "$STUB_BIN_DIR/docker"
 }
 
+create_gh_stub() {
+  cat > "$STUB_BIN_DIR/gh" <<'EOF'
+#!/usr/bin/env bash
+printf 'gh %s\n' "$*" >> "${COMMAND_LOG:?}"
+
+# Stands in for `gh api repos/<repo>/commits/<sha> --jq <filter>` the way GitHub answers it:
+# the fixture serves a commit payload built from what the test says GitHub reports, and runs
+# the caller's own `--jq` filter over it. Nothing here re-implements the caller's predicate, so
+# a caller that stopped requiring a verified signature, or that read a different identity, gets
+# a different answer from the fixture instead of the one its test expected. The endpoint is
+# matched too: a caller that asked GitHub something else gets no answer at all.
+if [ "$1" = "api" ]; then
+  case "$2" in
+    repos/*/commits/*) ;;
+    *) exit 0 ;;
+  esac
+
+  gh_stub_filter=''
+  while [ "$#" -gt 0 ]; do
+    if [ "$1" = "--jq" ]; then
+      gh_stub_filter="${2:-}"
+      break
+    fi
+    shift
+  done
+  [ -n "$gh_stub_filter" ] || exit 0
+
+  printf '{"commit":{"verification":{"verified":%s}},"author":{"login":"%s"},"committer":{"login":"%s"}}' \
+    "${FAKE_GH_COMMIT_VERIFIED:-false}" \
+    "${FAKE_GH_COMMIT_AUTHOR_LOGIN:-}" \
+    "${FAKE_GH_COMMIT_COMMITTER_LOGIN:-}" | jq -r "$gh_stub_filter"
+  exit $?
+fi
+
+if [ "$1" = "issue" ] && [ "$2" = "list" ]; then
+  case " $* " in
+    *" --label ${FAKE_GH_EXPECTED_LABEL:-main-is-red} --state open "*)
+      if [ -n "${FAKE_GH_OPEN_ISSUE:-}" ]; then
+        printf '%s\n' "$FAKE_GH_OPEN_ISSUE"
+      else
+        case " $* " in
+          *'// empty'*) ;;
+          *) printf 'null\n' ;;
+        esac
+      fi
+      ;;
+  esac
+fi
+
+exit 0
+EOF
+
+  chmod +x "$STUB_BIN_DIR/gh"
+}
+
+create_git_stub() {
+  cat > "$STUB_BIN_DIR/git" <<'EOF'
+#!/usr/bin/env bash
+printf 'git %s\n' "$*" >> "${COMMAND_LOG:?}"
+
+if [ "$1" = "rev-list" ]; then
+  printf '%s\n' ${FAKE_GIT_REVISIONS:-}
+  exit 0
+fi
+
+if [ "$1" = "log" ]; then
+  case " $* " in
+    *" --format=%ae "*)
+      printf '%s\n' "${FAKE_GIT_AUTHOR:-dev@example.test}"
+      ;;
+    *)
+      printf '%s\n' "${FAKE_GIT_MESSAGE:-chore(#1): stub commit}"
+      ;;
+  esac
+  exit 0
+fi
+
+exit 0
+EOF
+
+  chmod +x "$STUB_BIN_DIR/git"
+}
+
 create_make_stub() {
   cat > "$STUB_BIN_DIR/make" <<'EOF'
 #!/usr/bin/env bash
@@ -170,12 +253,19 @@ printf 'check-env-sync.sh\n' >> "${COMMAND_LOG:?}"
 exit 0
 EOF
 
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/lint-commit-range.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'lint-commit-range.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
   chmod +x \
     "$MAKEFILE_SANDBOX/scripts/lint-metrics.sh" \
     "$MAKEFILE_SANDBOX/scripts/get-pr-comments.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/verify-scaffold.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-lint.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-tests.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/lint-commit-range.sh" \
     "$MAKEFILE_SANDBOX/scripts/check-env-sync.sh"
 }
 
@@ -202,6 +292,8 @@ setup_ci_script_test_env() {
 
   create_docker_stub
   create_make_stub
+  create_gh_stub
+  create_git_stub
   create_generic_stub tar
 
   export SCRIPT_SANDBOX="$BATS_TEST_TMPDIR/script-sandbox"
@@ -231,6 +323,63 @@ run_ci_script() {
     PATH="$STUB_BIN_DIR:$PATH" \
     COMMAND_LOG="$COMMAND_LOG" \
     bash -c 'cd "$1" && shift && "$@"' _ "$SCRIPT_SANDBOX" "$script_path" "$@"
+}
+
+create_memlab_stub_module() {
+  local module_path="$1"
+  local body="$2"
+  local module_dir="$MEMLAB_SANDBOX/node_modules/$module_path"
+
+  mkdir -p "$module_dir"
+  printf '%s\n' "$body" > "$module_dir/index.js"
+  printf '{ "name": "%s", "version": "0.0.0", "main": "index.js" }\n' "$module_path" \
+    > "$module_dir/package.json"
+}
+
+setup_memlab_test_env() {
+  export MEMLAB_SANDBOX="$BATS_TEST_TMPDIR/memlab-sandbox"
+  export MEMLAB_RUNNER_DIR="$MEMLAB_SANDBOX/tests/memory-leak"
+
+  mkdir -p "$MEMLAB_RUNNER_DIR/tests"
+  cp -R "$PROJECT_ROOT/tests/memory-leak/utils" "$MEMLAB_RUNNER_DIR/utils"
+  cp "$PROJECT_ROOT/tests/memory-leak/run-memlab-tests.js" "$MEMLAB_RUNNER_DIR/run-memlab-tests.js"
+  cp "$PROJECT_ROOT/tests/memory-leak/leak-allowlist.json" "$MEMLAB_RUNNER_DIR/leak-allowlist.json"
+
+  cat > "$MEMLAB_RUNNER_DIR/utils/initialize-localization.js" <<'STUB'
+module.exports = { initializeLocalization: async () => {}, i18n: {} };
+STUB
+
+  create_memlab_stub_module dotenv 'module.exports = { config: () => ({}) };'
+  create_memlab_stub_module '@memlab/heap-analysis' \
+    'module.exports = { StringAnalysis: class StringAnalysis {} };'
+  create_memlab_stub_module '@memlab/api' "$(
+    cat <<'STUB'
+module.exports = {
+  run: async () => ({ runResult: { cleanup: () => {} } }),
+  analyze: async () => {},
+  findLeaks: async () => JSON.parse(process.env.FAKE_MEMLAB_LEAKS || '[]'),
+};
+STUB
+  )"
+}
+
+write_memlab_scenario_file() {
+  local file_name="$1"
+  local body="$2"
+
+  printf '%s\n' "$body" > "$MEMLAB_RUNNER_DIR/tests/$file_name"
+}
+
+write_memlab_allowlist() {
+  printf '%s\n' "$1" > "$MEMLAB_RUNNER_DIR/leak-allowlist.json"
+}
+
+run_memlab_runner() {
+  cd "$MEMLAB_SANDBOX" || return 1
+
+  run env \
+    FAKE_MEMLAB_LEAKS="${FAKE_MEMLAB_LEAKS:-[]}" \
+    node tests/memory-leak/run-memlab-tests.js
 }
 
 assert_log_contains() {

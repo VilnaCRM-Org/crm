@@ -288,6 +288,9 @@ detected. `break` is set to 90 — below the 92.5% baseline for margin — and r
 make lint           # Run all linters
 make lint-eslint    # ESLint
 make lint-tsc       # TypeScript
+make lint-commit-message     # Lint one commit message or squash header from stdin (see below)
+make lint-commit-bot-message # Same, for a bot-authored message (see below)
+make lint-commit-range       # Lint COMMIT_RANGE_FROM..COMMIT_RANGE_TO (see below)
 make lint-md        # Markdown
 make lint-dup       # jscpd copy/paste duplication gate (see below)
 make lint-metrics   # rust-code-analysis complexity gate (see below)
@@ -308,6 +311,9 @@ make verify-scaffold # generate a throwaway module and gate it (see Scaffolding 
 Git hooks are managed by Husky. Run `make husky` once after cloning.
 Agents should run `make format` before `make lint`. Formatting is intentionally
 separate from the `lint` verification suite.
+
+The three `lint-commit-*` targets are **not** part of `make lint` — they need a commit header
+or a commit range as input and are driven by the `commitlint` PR workflow.
 
 ### Dependency license policy (issue #191)
 
@@ -354,6 +360,70 @@ directive and would otherwise pass every existing check:
   error-severity selector added to `eslint.config.mjs` (scoped to `src/**`) cannot ship without a
   must-fail fixture in `scripts/ci/eslint-gate-fixtures.mjs`, and a dropped/edited selector fails
   loudly. Both tests ride the existing `unit testing` workflow via `make test-unit-all`.
+
+### Binding CI enforcement (issues #183, #184, #185)
+
+Three gates that previously ran without deciding anything now fail closed. None of them is
+part of `make lint`; each has its own workflow.
+
+**Memory leaks are a verdict, not a log (`#183`).**
+`tests/memory-leak/run-memlab-tests.js` calls `findLeaks()` for every scenario and exits `1`
+when an unallowlisted leak is found, when a scenario file exports no scenario, or when zero
+scenarios executed (which would otherwise pass vacuously). Scenario discovery recurses into
+subfolders and accepts `.js`/`.mjs`/`.cjs`, and `tests/unit/memory-leak/scenario-inventory.test.ts`
+pins the committed scenario set, so a renamed, moved, or deleted scenario is an error rather than
+silently missing coverage. Leaks are reported as a compact list of the detached nodes memlab
+found (heap ids and retained sizes stripped), which is also the key an allowlist entry matches;
+memlab's own console output above it carries the full retainer trace. A false positive is
+waived only by a reviewed entry in
+`tests/memory-leak/leak-allowlist.json` (`trace` + `reason`, both required), never by
+weakening the gate. `tests/bats/memlab_gate.bats` pins the exit codes: clean → 0, leak → 1,
+allowlisted leak → 0, empty scenario directory → 1, scenario-less file → 1, malformed
+allowlist → 1.
+
+Scenarios must dispose every puppeteer `ElementHandle` they obtain (`await handle.dispose()`).
+An undisposed handle is retained by the DevTools console object group and is reported as a
+detached node — the harness leaking the very element it measures.
+
+`MEMLAB_SKIP_WARMUP=true` stays set in `docker-compose.memory-leak.yml`. Issue #183 proposed
+removing it, but enabling warmup was measured to wedge the second Chromium launch: `Network.enable`
+never returns and the run dies on memlab's 5-minute `protocolTimeout`. That is tracked as a
+follow-up on #183 rather than shipped as a broken gate.
+
+**The squash-merge header is linted (`#184`).**
+`.github/workflows/commitlint.yml` runs on `pull_request` (`opened`, `edited`, `synchronize`,
+`reopened`) and lints `"$PR_TITLE (#$PR_NUMBER)"` — the exact header GitHub writes onto `main`
+under squash merge — plus every commit in the PR, which also covers the single-commit case
+where `COMMIT_OR_PR_TITLE` promotes the commit's own header instead of the title.
+`commitlint.config.js` stays the strict
+human contract used by the Husky `commit-msg` hook. `commitlint.bot.config.js` drops
+`check-task-number-rule` — the one rule a bot structurally cannot satisfy — and ignores the
+`Compressed Images` header written by `calibreapp/image-actions`, which is not conventional at
+all. Both relaxations apply **only** to a commit GitHub itself vouches for:
+`scripts/ci/lint-commit-range.sh` asks the commits API per revision and takes the relaxed
+config only when GitHub reports the signature **verified**, the resolved **author** a `[bot]`
+account, **and** the **committer** an identity only GitHub writes — `web-flow`, which signs
+everything created through its API or web UI, or the app account itself. The commit object is
+never consulted — an author email is contributor-controlled, so keying the exemption off it
+would let anyone set `user.email` to a `[bot]` noreply address and both drop the task-number
+rule and inherit the `Compressed Images` ignore. A verified signature alone does not close
+that either, because the signature attests the **committer**: a contributor holding a verified
+key can author a commit under a bot's noreply address and GitHub still reports it verified.
+Requiring both identities does close it — neither can be borrowed while holding the other.
+With no token to ask with, every commit falls back to the strict contract, so it fails closed
+rather than open. A bot pull request's
+title is linted against the same relaxed config at step level, so the job still reports and
+the title is still checked for type, scope, subject, and length.
+
+**`main` is verified after the merge (`#185`).**
+`.github/workflows/main-verification.yml` re-runs `make lint`, `make codegen-check`, and
+`make test-unit-all` against the merged tree on every `push` to `main`, serialized
+(`cancel-in-progress: false`) so no merge is skipped. A failure opens or updates one
+`main-is-red` tracking issue via `scripts/ci/report-main-verification-failure.sh` and the next
+green run closes it, so a logical merge conflict is attributed to the merge that caused it
+instead of surfacing on an unrelated PR.
+This is detection and attribution only — sequencing `autorelease.yml` behind it belongs to
+issue #138.
 
 ## Agent Skill Layout
 
