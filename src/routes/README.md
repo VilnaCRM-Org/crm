@@ -28,7 +28,7 @@ route set discoverable (audit, nav, sitemap).
 | `route-composer.tsx`            | Validates, partitions by guard, assembles the tree           |
 | `permission-branch-builder.tsx` | Groups protected routes by `meta.permission` (issue #114)    |
 | `permission-route.tsx`          | Gates a branch: renders the page, or the access-denied panel |
-| `route-paths.ts`                | Canonical URL constants (`home`, `signUp`, `signIn`, 404)    |
+| `route-paths.ts`                | Canonical URL constants — one key per route                  |
 | `routes.tsx`                    | Wiring only: `createBrowserRouter(composer.compose(...))`    |
 
 The composer, mapper, and validator are container-free **module singletons**
