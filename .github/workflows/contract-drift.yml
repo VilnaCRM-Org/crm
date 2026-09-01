@@ -1,0 +1,33 @@
+name: contract drift
+
+on:
+  schedule:
+    # Weekly. user-service releases roughly monthly, so weekday polling is over-polling.
+    - cron: '0 6 * * 1'
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    name: Upstream contract drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      - name: Compare the pinned contract versions against upstream
+        run: sh scripts/ci/check-contract-drift.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}

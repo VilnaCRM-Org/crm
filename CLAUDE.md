@@ -181,8 +181,9 @@ be higher but the ratio holds):
 | `make test-e2e`    | 87 tests, 0:39  | 115 tests, 1:10 | +28 tests, ~+31 s |
 | `make test-visual` | 240 tests, 3:59 | 244 tests, 4:16 | +4 tests, ~+17 s  |
 
-Keep the lane bounded: `retries: 0` repo-wide, so every mobile spec has to be deterministic, and
-these two checks are single-job (no sharding).
+Keep the lane bounded: pull-request runs use `retries: 0`, so every mobile spec has to be
+deterministic (the nightly flake audit is the one caller that opts into retries — see "Scheduled
+flake budget (issue #186)"), and these two checks are single-job (no sharding).
 
 **Known sizing gap, deliberately not fixed here:** the auth switcher link (18 px tall), the
 remember-me checkbox (20 px) and the password toggle (32 px) fall under the 44 px floor, so the
@@ -282,6 +283,90 @@ Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test)
 detected. `break` is set to 90 — below the 92.5% baseline for margin — and ratchets toward the
 `high` = 100 target as the scheduled full runs confirm stability.
 
+### Route coverage inventory (issue #169)
+
+The browser-level suites are hand-written, and nothing verified they tracked the route table —
+which is how `notFound` reached production with zero e2e, visual, or Lighthouse coverage.
+`make check-e2e-route-coverage` (first step of the `e2e testing` job, so a miss fails in seconds)
+reconciles every key in `src/routes/route-paths.ts` against
+[`tests/e2e/route-coverage.tsv`](tests/e2e/route-coverage.tsv), which names the spec that
+actually exercises each route.
+
+Validation runs in both directions: a route with no row, a row for a route that no longer
+exists, a row naming a missing spec, a spec outside its suite root, and a route that is both
+allowlisted and covered all fail. An `allowlisted` row also expires on its own: the gate scans
+`src/` for `path: ROUTE_PATHS.<key>` bindings and fails a row whose route a contract already
+registers, so a justification that is only true for now ("nothing renders it yet") cannot
+outlive the flow that invalidates it. Route path _values_ are deliberately never matched against
+spec text — `/` appears in every spec (so `home` could never fail) and `*` appears in none (so
+`notFound` could never pass); the manifest maps route **keys**.
+
+**Adding a page:** land the route contract (see "Route Registry"), then add its manifest rows.
+A route intentionally out of browser scope takes an `allowlisted` row with a stated reason and
+must not also carry a suite row.
+
+### Scheduled flake budget (issue #186)
+
+`playwright.config.ts` defaults to `retries: 0`, so on a pull request a flake is already a hard
+red.
+What was missing is the other half: Playwright can only classify a test as **flaky** (failed,
+then passed on retry) when it is allowed to retry, so a binding zero-flake bar has to run
+somewhere with retries on. That is `nightly-flake-audit.yml`.
+
+| Toggle                     | PR lanes  | Nightly audit |
+| -------------------------- | --------- | ------------- |
+| `PLAYWRIGHT_FLAKE_RETRIES` | unset (0) | `2`           |
+| `PLAYWRIGHT_JSON_REPORT`   | unset     | set           |
+| `PLAYWRIGHT_FAIL_ON_FLAKY` | unset     | `1`           |
+
+All three are inert unless set, so the required `e2e testing` and `visual tests` checks behave
+exactly as before. `docker compose exec` does not carry host environment across the container
+boundary, so `make test-e2e-flake-audit` / `make test-visual-flake-audit` inject them with `-e`
+(the same reason `PLAYWRIGHT_DEV_MODE` is passed through `env` on the `ENV=dev` branch);
+`make print-flake-env` echoes them from inside the container as proof they arrived.
+
+`make check-flakes` then enforces `FLAKE_BUDGET` (0) over the JSON report, keeping the two
+signals distinct: exit 1 = flake-budget breach, exit 2 = hard failure or an untrustworthy
+report. `scripts/ci/report-flake-audit.sh` files or updates one `flaky-tests` issue naming the
+offending specs, commenting only when the offending set or its flaky/hard-failure split changes.
+A suite that produced no summary is routed as an offence, never as a pass.
+
+**No suppression:** satisfy the budget by fixing the nondeterminism. Raising `FLAKE_BUDGET`,
+re-running until green, and re-baselining a visual snapshot to force a pass are all out of
+policy — the same root-cause rule the ESLint, TypeScript, metrics, jscpd, and performance gates
+follow.
+
+### Contract gates: semantic diff and upstream drift (issues #177, #178)
+
+`make codegen-check` is syntactic — it proves the pins agree and the generated artifacts are
+fresh. Two gates close what it cannot see; both are documented in full in
+[`src/api/contracts/README.md`](src/api/contracts/README.md).
+
+- **`make contract-diff`** (`contract testing`, every PR) runs digest-pinned
+  `oasdiff breaking --fail-on ERR` when `OPENAPI_SPEC_VERSION` moves against the base branch,
+  and fast-exits 0 when it does not. Acknowledged upstream breaks live in
+  `src/api/contracts/breaking-changes-approved.txt` — a reviewed diff, never an env-var bypass.
+- **`make check-contract-drift`** (`contract drift`, weekly) reports when the pins fall behind
+  user-service. It takes the latest upstream version as the maximum of `releases/latest` and the
+  highest semver tag, because `releases/latest` is the most recently _published_ release rather
+  than the highest one. A bare version gap opens a tracking issue but never reds the run; an
+  upstream lookup failure always does.
+
+### CodeQL SAST depth (issue #172)
+
+`security-testing.yml` runs CodeQL with `queries: security-extended`, not the shallow default
+suite — the default omits exactly the lower-precision queries a React SPA needs (DOM XSS,
+client-side unvalidated URL redirection, prototype pollution, client-side request forgery).
+It analyzes `pull_request` **and** `push` to `main`: without a `main` baseline, GitHub has
+nothing to diff a PR against and every pre-existing alert reports as new. A weekly `schedule`
+re-scans old code against new query-pack releases.
+
+Findings do not fail the `Analyze` job; they are enforced by a repository ruleset that lives in
+GitHub settings and is therefore recorded in
+[`docs/governance/branch-protection.md`](docs/governance/branch-protection.md). Fix a finding at
+the source — never by widening `paths-ignore`, dismissing it as "won't fix", or reverting to the
+default suite.
+
 ## Code Quality
 
 ```bash
@@ -301,6 +386,8 @@ make lint-zizmor    # zizmor workflow-security gate (Docker; not part of `make l
 make lint-compose   # docker compose config validation (schema, interpolation, duplicate keys)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
 make lint-licenses  # dependency license SPDX-allowlist gate over the production tree (see below)
+make contract-diff  # semantic OpenAPI breaking-change gate on pin bumps (see above)
+make check-e2e-route-coverage # route-coverage inventory gate (see above)
 make check-auth-seed-gate # preloaded-auth seed bundle scan (Docker; not part of `make lint`)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
@@ -641,7 +728,7 @@ complement.
 ### Architecture gate integrity (issue #181)
 
 `.dependency-cruiser.js` encodes the barrel/public-API contract, DI composition-root isolation,
-layer bans, type-file purity, and folder/naming conventions in 45 rules of hand-written path
+layer bans, type-file purity, and folder/naming conventions in 48 rules of hand-written path
 regexes. Nothing in CI distinguished "no violations because the code is clean" from "no violations
 because a regex went dead" — a typo'd anchor makes a rule match nothing and the gate passes
 **vacuously** for every future PR.
@@ -735,7 +822,8 @@ error unconditionally with `.catch((caught: unknown) => caught)` and then assert
 
 ### CI configuration gates (issues #161, #174, #175)
 
-The CI configuration surface — 27 workflow files, 4 compose files, the shared healthchecks —
+The CI configuration surface — every file under `.github/workflows/`, the compose files, and the
+shared healthchecks —
 **is** the enforcement boundary, so it is linted like source rather than trusted as convention.
 
 | Gate                          | Where it runs                     | What it enforces         |

@@ -253,6 +253,18 @@ printf 'check-env-sync.sh\n' >> "${COMMAND_LOG:?}"
 exit 0
 EOF
 
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/contract-diff.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'contract-diff.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/check-contract-drift.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'check-contract-drift.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
   cat > "$MAKEFILE_SANDBOX/scripts/ci/lint-commit-range.sh" <<'EOF'
 #!/usr/bin/env sh
 printf 'lint-commit-range.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
@@ -265,6 +277,8 @@ EOF
     "$MAKEFILE_SANDBOX/scripts/ci/verify-scaffold.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-lint.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-tests.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/contract-diff.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/check-contract-drift.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/lint-commit-range.sh" \
     "$MAKEFILE_SANDBOX/scripts/check-env-sync.sh"
 }

@@ -187,6 +187,33 @@ branch-protection required checks for `main`; until they are, they report but do
 add `scorecard / analysis` — it has no `pull_request` trigger, so requiring it would leave every PR
 waiting forever on a check that never reports.
 
+### Scheduled runs and extra scans
+
+Some checks do work outside the pull-request lane, so it is worth knowing they exist before you
+change the code they watch — the first two never run on a pull request at all, the third runs
+there _and_ does more elsewhere:
+
+- **`contract drift`** (weekly, no pull-request trigger) reports when the pinned `user-service`
+  contract versions fall behind upstream by opening or updating one `contract-drift` issue. A bare
+  version gap does not fail it; an upstream lookup failure does.
+- **`nightly flake audit`** (nightly, no pull-request trigger) re-runs the full Playwright E2E and
+  visual suites **with retries enabled** and a zero flake budget, so a test that fails and passes
+  on retry turns the audit red and lands in a tracking issue naming the spec. Pull-request runs
+  keep `retries: 0`, where a flake is already a hard failure.
+- **`security testing`** _does_ run on every pull request. What is extra is its `push` to `main`
+  and weekly re-scan: those maintain the CodeQL baseline that pull-request alert diffing compares
+  against, and re-check old code against new query-pack releases.
+
+Because `schedule` triggers only ever fire from the default branch, schedule-only behaviour cannot
+be proven by the pull request that changes it — it is covered by Bats fixtures instead
+(`tests/bats/contract_drift.bats`, `tests/bats/flake_budget.bats`), and verified after merge with
+`gh workflow run <workflow>`. Note that GitHub disables scheduled workflows after 60 days without
+repository activity.
+
+The one contract check that _does_ run on every pull request is `contract testing`
+(`make contract-diff`). It fast-exits when `OPENAPI_SPEC_VERSION` is unchanged and runs
+`oasdiff breaking` when you bump it; see [`src/api/contracts/README.md`](src/api/contracts/README.md).
+
 ### Dockerfile build performance
 
 If your change touches a configured Dockerfile path (or the gate's own config),
@@ -311,6 +338,9 @@ checks:
 - `performance testing / lighthouse desktop`
 - `performance testing / lighthouse mobile`
 - `security testing / preloaded-auth seed gate`
+- `contract testing / OpenAPI breaking-change gate` (the job in `contract-testing.yml` — issue
+  #177; `contract drift` and `nightly flake audit` must not be added, because neither has a
+  `pull_request` trigger)
 
 The first two are the check-run names GitHub reports, which is what the required-checks search box
 matches: a job's check-run name is its `name:` when it declares one, and its job id otherwise.

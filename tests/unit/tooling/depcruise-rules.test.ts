@@ -1,15 +1,9 @@
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-const CRUISE_SCRIPT = path.join(
-  __dirname,
-  '..',
-  '..',
-  '..',
-  'scripts',
-  'ci',
-  'cruise-depcruise-fixtures.mjs'
-);
+const ROOT = path.join(__dirname, '..', '..', '..');
+const CRUISE_SCRIPT = path.join(ROOT, 'scripts', 'ci', 'cruise-depcruise-fixtures.mjs');
 
 const report = JSON.parse(
   execFileSync(process.execPath, [CRUISE_SCRIPT], {
@@ -51,5 +45,11 @@ describe('dependency-cruiser rule-rot guard', () => {
 
   it('only the documented strict-subset rules are allowed to co-fire', () => {
     expect(report.alsoFires).toEqual(DOCUMENTED_SUBSET_OVERLAPS);
+  });
+
+  it('CLAUDE.md names the live rule count, so the documented scope cannot drift', () => {
+    const documentation = readFileSync(path.join(ROOT, 'CLAUDE.md'), 'utf8');
+
+    expect(documentation).toContain(`in ${report.rules.length} rules of hand-written path`);
   });
 });
