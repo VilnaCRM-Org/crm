@@ -112,9 +112,18 @@ printf 'diffing OpenAPI %s -> %s\n' "$BASE_PIN" "$HEAD_PIN"
 
 # -fsS: any fetch failure fails the job loudly. A spec that silently 404s into an empty file
 # would leave oasdiff reporting "no breaking changes" about a contract it never read.
-curl -fsS "$(spec_url "$BASE_URL_TEMPLATE" "$BASE_PIN")" -o "$BASE_SPEC" \
+#
+# Both fetches share one wrapper, like oasdiff() above, so the two call sites cannot drift.
+# curl has no default transfer timeout: a server that accepts and then stalls hangs until the
+# job's 10-minute ceiling, reported as a cancelled job instead of by fail(), and an unbounded
+# chunked body streams into CONTRACT_DIFF_DIR. The pinned spec is tens of kilobytes.
+fetch_spec() {
+  curl -fsS --connect-timeout 10 --max-time 120 --max-filesize 20M "$1" -o "$2"
+}
+
+fetch_spec "$(spec_url "$BASE_URL_TEMPLATE" "$BASE_PIN")" "$BASE_SPEC" \
   || fail "could not fetch the OpenAPI spec pinned at $BASE_PIN"
-curl -fsS "$(spec_url "$HEAD_URL_TEMPLATE" "$HEAD_PIN")" -o "$HEAD_SPEC" \
+fetch_spec "$(spec_url "$HEAD_URL_TEMPLATE" "$HEAD_PIN")" "$HEAD_SPEC" \
   || fail "could not fetch the OpenAPI spec pinned at $HEAD_PIN"
 
 [ -s "$BASE_SPEC" ] || fail "the OpenAPI spec fetched for $BASE_PIN is empty"

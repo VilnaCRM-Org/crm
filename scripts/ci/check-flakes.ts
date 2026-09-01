@@ -108,10 +108,10 @@ function section(title: string, entries: readonly FlakeEntry[]): string[] {
     : ['', `### ${title}`, '', ...entries.map((entry) => `- \`${entry.id}\` (${entry.status})`)];
 }
 
-/** Stable identity of the offending set, so the tracking issue only re-comments on a change. */
-function flakeMarker(tally: FlakeTally): string {
-  const ids = [...tally.flaky, ...tally.failed].map((entry) => entry.id).sort();
-  return `offenders: ${ids.length === 0 ? 'none' : ids.join(' | ')}`;
+/** Stable identity of one classified set, so the tracking issue only re-comments on a change. */
+function idMarker(entries: readonly FlakeEntry[]): string {
+  const ids = entries.map((entry) => entry.id).sort();
+  return ids.length === 0 ? 'none' : ids.join(' | ');
 }
 
 function buildSummary(tally: FlakeTally, budget: number): string {
@@ -124,7 +124,8 @@ function buildSummary(tally: FlakeTally, budget: number): string {
     ...section('Flaky tests', tally.flaky),
     ...section('Hard failures', tally.failed),
     '',
-    `<!-- ${flakeMarker(tally)} -->`,
+    `<!-- offenders: ${idMarker([...tally.flaky, ...tally.failed])} -->`,
+    `<!-- hard-failures: ${idMarker(tally.failed)} -->`,
     '',
   ].join('\n');
 }

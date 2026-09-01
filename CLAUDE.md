@@ -328,8 +328,8 @@ boundary, so `make test-e2e-flake-audit` / `make test-visual-flake-audit` inject
 `make check-flakes` then enforces `FLAKE_BUDGET` (0) over the JSON report, keeping the two
 signals distinct: exit 1 = flake-budget breach, exit 2 = hard failure or an untrustworthy
 report. `scripts/ci/report-flake-audit.sh` files or updates one `flaky-tests` issue naming the
-offending specs, commenting only when the offending set changes. A suite that produced no
-summary is routed as an offence, never as a pass.
+offending specs, commenting only when the offending set or its flaky/hard-failure split changes.
+A suite that produced no summary is routed as an offence, never as a pass.
 
 **No suppression:** satisfy the budget by fixing the nondeterminism. Raising `FLAKE_BUDGET`,
 re-running until green, and re-baselining a visual snapshot to force a pass are all out of

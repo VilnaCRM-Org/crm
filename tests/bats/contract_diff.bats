@@ -202,6 +202,26 @@ run_gate_without_step_summary() {
   assert_output_contains 'could not fetch the OpenAPI spec'
 }
 
+# curl applies no transfer timeout and no size ceiling by default, so an upstream that accepts
+# the connection and then stalls burns the job's whole 10-minute budget -- surfacing as a
+# cancelled job, never as this gate's own "could not fetch" -- and an unbounded body streams
+# into CONTRACT_DIFF_DIR. Asserting a count of 2, not mere presence, is what pins BOTH fetches.
+@test "both spec fetches are bounded in time and size" {
+  write_env "$SANDBOX/.env" v2.8.0
+
+  run_gate
+  [ "$status" -eq 0 ]
+
+  run grep -c -- '--connect-timeout' "$COMMAND_LOG"
+  [ "$output" -eq 2 ]
+
+  run grep -c -- '--max-time' "$COMMAND_LOG"
+  [ "$output" -eq 2 ]
+
+  run grep -c -- '--max-filesize' "$COMMAND_LOG"
+  [ "$output" -eq 2 ]
+}
+
 @test "a missing approved-breaking-changes file fails the gate" {
   write_env "$SANDBOX/.env" v2.8.0
   rm "$SANDBOX/src/api/contracts/breaking-changes-approved.txt"

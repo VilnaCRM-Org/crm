@@ -208,6 +208,18 @@ run_monitor() {
   [ "$output" -eq 0 ]
 }
 
+# A title reading "v2.8.0 -> v2.8.0" reads as current in every issue list while the body it
+# links reports drift. Only one of the two pins has to move for that to happen.
+@test "the tracking issue title names both pins when only one of them has drifted" {
+  write_pins v2.7.1 v2.8.0
+  export FAKE_GH_RELEASE_TAG='v2.8.0'
+  export FAKE_GH_TAGS='v2.8.0 v2.7.1'
+
+  run_monitor
+  [ "$status" -eq 0 ]
+  assert_log_contains '--title user-service contract drift: OpenAPI v2.8.0; GraphQL v2.7.1 -> v2.8.0'
+}
+
 @test "duplicate open tracking issues fail instead of updating an arbitrary one" {
   printf 'has marker\n' > "$BATS_TEST_TMPDIR/body.md"
   printf '<!-- last-seen: v9.9.9 -->\n' >> "$BATS_TEST_TMPDIR/body.md"

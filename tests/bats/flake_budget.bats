@@ -185,6 +185,39 @@ failed_report() {
   assert_log_contains 'gh issue edit 7'
 }
 
+# Two specs swapping roles -- one now failing every attempt, the other now merely retried --
+# is a different situation, not the same one. Folding only the union of ids into the state
+# would leave the tracking issue naming the wrong spec as the hard failure, with no comment.
+@test "swapping the flaky and hard-failing specs is a state change, not the same state" {
+  write_report report.json '{"suites":[{"specs":[
+    {"title":"races","file":"tests/e2e/b.spec.ts","line":9,
+     "tests":[{"status":"flaky","projectName":"webkit"}]},
+    {"title":"broken","file":"tests/e2e/c.spec.ts","line":4,
+     "tests":[{"status":"unexpected","projectName":"firefox"}]}]}]}'
+  run_check
+  [ "$status" -eq 2 ]
+  run_router
+  [ "$status" -eq 0 ]
+  cp "$SANDBOX/reports/playwright/audit-issue-body.md" "$BATS_TEST_TMPDIR/night1.md"
+
+  write_report report.json '{"suites":[{"specs":[
+    {"title":"races","file":"tests/e2e/b.spec.ts","line":9,
+     "tests":[{"status":"unexpected","projectName":"webkit"}]},
+    {"title":"broken","file":"tests/e2e/c.spec.ts","line":4,
+     "tests":[{"status":"flaky","projectName":"firefox"}]}]}]}'
+  run_check
+  [ "$status" -eq 2 ]
+
+  reset_command_log
+  export FAKE_GH_ISSUE_NUMBER=7
+  FAKE_GH_ISSUE_BODY="$(cat "$BATS_TEST_TMPDIR/night1.md")"
+  export FAKE_GH_ISSUE_BODY
+  run_router
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gh issue edit 7'
+  assert_log_contains 'gh issue comment 7'
+}
+
 @test "an unchanged offender set stays quiet so the audit never becomes nightly noise" {
   write_report report.json "$(flaky_report)"
   run_check

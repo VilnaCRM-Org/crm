@@ -148,7 +148,7 @@ mkdir -p "$(dirname "$BODY_FILE")"
 # Routing, comment-only-on-change, and the one-open-issue invariant are shared with the
 # nightly flake audit (#186) so both scheduled monitors behave identically.
 AUDIT_ISSUE_LABEL="$CONTRACT_DRIFT_LABEL" \
-AUDIT_ISSUE_TITLE="user-service contract drift: $OPENAPI_PIN -> $LATEST" \
+AUDIT_ISSUE_TITLE="user-service contract drift: OpenAPI $OPENAPI_PIN; GraphQL $GRAPHQL_PIN -> $LATEST" \
 AUDIT_ISSUE_BODY_FILE="$BODY_FILE" \
 AUDIT_ISSUE_MARKER="$MARKER" \
 AUDIT_ISSUE_COMMENT="Upstream moved: latest is now $LATEST (pins: OpenAPI $OPENAPI_PIN, GraphQL $GRAPHQL_PIN)." \

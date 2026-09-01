@@ -202,6 +202,52 @@ settings	allowlisted	-	Nothing renders it yet."
   assert_output_contains 'is allowlisted in tests/e2e/route-coverage.tsv but src registers'
 }
 
+# Prettier's `as-needed` quoteProps rewrites a quoted `'path':` key, so that spelling cannot land -
+# but it leaves `ROUTE_PATHS['key']` untouched, so bracket access is reachable source a `.`-only
+# pattern would wave through.
+@test "check-e2e-route-coverage.ts fails on a bracket-access route registration" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+settings	allowlisted	-	Nothing renders it yet."
+  printf "export default [{ path: ROUTE_PATHS['settings'] }];\n" \
+    > "$ROUTE_SANDBOX/src/routes/settings-routes.ts"
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is allowlisted in tests/e2e/route-coverage.tsv but src registers'
+}
+
+@test "check-e2e-route-coverage.ts fails on a double-quoted bracket-access route registration" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+settings	allowlisted	-	Nothing renders it yet."
+  printf 'export default [{ path: ROUTE_PATHS["settings"] }];\n' \
+    > "$ROUTE_SANDBOX/src/routes/settings-routes.ts"
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is allowlisted in tests/e2e/route-coverage.tsv but src registers'
+}
+
+# The widened alternation must not start counting references that render no route.
+@test "check-e2e-route-coverage.ts leaves an allowlisted route green for a bracket-access link" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+settings	allowlisted	-	No contract renders /settings yet."
+  printf "export default <a href={ROUTE_PATHS['settings']} />;\n" \
+    > "$ROUTE_SANDBOX/src/routes/settings-link.tsx"
+
+  run_route_gate
+  [ "$status" -eq 0 ]
+  assert_output_contains 'every route covered'
+}
+
 # The committed `passwordRecovery` shape: referenced only as a link target, registered by nothing.
 @test "check-e2e-route-coverage.ts leaves an allowlisted route green while only a link names it" {
   write_route_fixture "  home: '/',

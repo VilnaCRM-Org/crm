@@ -21,9 +21,10 @@ mkdir -p "$(dirname "$FLAKE_AUDIT_BODY_FILE")"
 offenders=''
 missing=''
 hard_failures=0
-# The marker is derived from WHICH specs offended, not from which summary files had offenders:
-# hashing the file names would leave the tracking issue frozen on the first night's spec list
-# while the real offenders changed underneath it.
+# The marker is derived from WHICH specs offended AND HOW they were classified, not from which
+# summary files had offenders: hashing the file names would leave the tracking issue frozen on
+# the first night's spec list while the real offenders (or their flaky/hard-failure split)
+# changed underneath it.
 state=''
 : > "$FLAKE_AUDIT_BODY_FILE"
 
@@ -47,12 +48,20 @@ for summary in $FLAKE_SUMMARY_FILES; do
       >> "$FLAKE_AUDIT_BODY_FILE"
     continue
   fi
-  if grep -qE '^- hard failures: [1-9]' "$summary"; then
+  hard_found="$(sed -n 's|^<!-- hard-failures: \(.*\) -->$|\1|p' "$summary" | head -n1)"
+  if [ -z "$hard_found" ]; then
+    missing="$missing $summary"
+    state="$(printf '%sunreadable=%s\n' "$state" "$summary")"
+    printf '### %s\n\nSummary is unreadable -- no hard-failures marker.\n\n' "$summary" \
+      >> "$FLAKE_AUDIT_BODY_FILE"
+    continue
+  fi
+  if [ "$hard_found" != 'none' ]; then
     hard_failures=1
   fi
   if [ "$found" != 'none' ]; then
     offenders="$offenders $summary"
-    state="$(printf '%soffenders=%s=%s\n' "$state" "$summary" "$found")"
+    state="$(printf '%soffenders=%s=%s\nhard=%s=%s\n' "$state" "$summary" "$found" "$summary" "$hard_found")"
   fi
 done
 
