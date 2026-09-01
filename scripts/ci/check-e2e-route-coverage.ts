@@ -30,8 +30,11 @@ const SUITE_ROOTS: Record<string, string> = {
 // any `ROUTE_PATHS.<key>` reference keeps a link `href` (which renders no route) out of the set.
 // Both member spellings count: Prettier's `as-needed` quoteProps normalises a quoted `'path':`
 // key away, but it leaves `ROUTE_PATHS['key']` alone, so bracket access is reachable source.
-const REGISTERED_ROUTE =
-  /\bpath:\s*ROUTE_PATHS(?:\.([A-Za-z0-9_$]+)|\[\s*'([A-Za-z0-9_$]+)'\s*\]|\[\s*"([A-Za-z0-9_$]+)"\s*\])/g;
+const ROUTE_KEY = String.raw`([A-Za-z0-9_$]+)`;
+const REGISTERED_ROUTE = new RegExp(
+  String.raw`\bpath:\s*ROUTE_PATHS(?:\.${ROUTE_KEY}|\[\s*['"]${ROUTE_KEY}['"]\s*\])`,
+  'g'
+);
 const SOURCE_FILE = /\.tsx?$/;
 
 interface CoverageRow {
@@ -86,8 +89,8 @@ function registeredRouteKeys(): Set<string> {
     .filter((entry) => entry.isFile() && SOURCE_FILE.test(entry.name))
     .forEach((entry) => {
       const source = readFileSync(resolve(entry.parentPath, entry.name), 'utf8');
-      [...source.matchAll(REGISTERED_ROUTE)].forEach(([, dotKey, singleQuoted, doubleQuoted]) => {
-        const key = dotKey ?? singleQuoted ?? doubleQuoted;
+      [...source.matchAll(REGISTERED_ROUTE)].forEach(([, dotKey, quotedKey]) => {
+        const key = dotKey ?? quotedKey;
         if (key !== undefined) keys.add(key);
       });
     });
