@@ -10,9 +10,13 @@ the reason in the same pull request.
 
 ## Required status checks on `main`
 
-Every workflow that runs on `pull_request` to `main` is a required status check. The list is
-maintained in repository settings; the workflow files under `.github/workflows/` are the
-source of truth for which checks exist.
+There is no branch protection rule or ruleset on `main` yet, so **no** check is required: every
+pull-request workflow reports its result, and a red one still merges. The checks a maintainer
+has to add, and why each one matters, are enumerated in CONTRIBUTING.md under "Required status
+checks (maintainer action)", "Relaxing a gate threshold", and "Workflow, YAML, and
+repository-posture gates"; the workflow files under `.github/workflows/` are the source of
+truth for which checks exist. Until that configuration lands, treat every gate described in this
+repository as advisory at the merge boundary and binding only by convention.
 
 ## Code scanning results (CodeQL) — issue #172
 

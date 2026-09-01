@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@tests/e2e/utils/fixtures';
 
 import {
   interceptAuthFormChunks,
@@ -90,18 +90,21 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
   });
 
   test.describe('Error Handling', () => {
-    test('should load authentication page without critical errors', async ({ page }) => {
-      const criticalErrors: string[] = [];
-      page.on('pageerror', (error) => {
-        criticalErrors.push(error.message);
-      });
+    // The suite-wide `consoleGuard` fixture (tests/e2e/utils/fixtures.ts, issue #168)
+    // now enforces the zero-tolerance `pageerror` half for every spec, so this test
+    // keeps only its targeted, page-specific assertion: no unexpected non-ok response
+    // while the authentication page loads.
+    test('loads the authentication page without unexpected non-ok responses', async ({ page }) => {
+      const failedResponses: string[] = [];
       page.on('response', (response) => {
         const status = response.status();
         if (status >= 300 && status < 400) return;
-        // The auth page can trigger an expected 400 from the user API
-        // during form bootstrap in test mode.
-        if (status === 400 && response.url().includes('/api/users')) return;
-        if (!response.ok()) criticalErrors.push(`${status} ${response.url()}`);
+        // The auth page can trigger an expected 400 from the user API during form
+        // bootstrap in test mode. Match the exact endpoint pathname (not a
+        // substring) so an unrelated `/api/users/...` 400 still fails the check.
+        const { pathname } = new URL(response.url());
+        if (status === 400 && pathname === '/api/users') return;
+        if (!response.ok()) failedResponses.push(`${status} ${response.url()}`);
       });
 
       await page.goto(AUTH_URL);
@@ -109,7 +112,7 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
       const form = page.locator('form, [role="form"]');
       await expect(form).toBeVisible({ timeout: 10000 });
 
-      expect(criticalErrors).toHaveLength(0);
+      expect(failedResponses).toHaveLength(0);
     });
   });
 });

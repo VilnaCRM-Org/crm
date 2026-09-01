@@ -51,3 +51,36 @@ jobs:
         uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
         with:
           category: '/language:${{matrix.language}}'
+
+  # Issue #158: the preloaded-auth-token seed is a test-only seam. This gate scans the emitted
+  # bundle, not config source text, so a build that would ship an ungated auth-state seed fails
+  # here. It runs on every pull request rather than behind a paths filter — the seam can be
+  # reintroduced from src/, rsbuild.config.ts, .env, or the container wiring alike. The `push`
+  # and `schedule` triggers above exist for the CodeQL baseline only, so this job opts out of
+  # them: two docker image builds per merge and per week buy nothing the pull-request run
+  # already proved.
+  auth-seed-gate:
+    name: preloaded-auth seed gate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      # Only the dev image is needed: the gate builds its own production image and runs the
+      # scanner with `docker compose run`, so mockoon/apollo readiness is pure flake surface.
+      - name: Start container
+        run: make start-dev
+
+      - name: Scan the deployable image and the opted-in bundle
+        run: make check-auth-seed-gate

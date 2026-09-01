@@ -12,5 +12,6 @@ signUp	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-for
 signUp	visual	tests/visual/visual-comparison.sign-up.spec.ts	Full-viewport-matrix screenshots of /sign-up.
 signIn	e2e	tests/e2e/modules/user/features/auth/components/form-section/auth-forms/login-form.spec.ts	Drives the login form on /sign-in end to end.
 signIn	visual	tests/visual/visual-comparison.sign-in.spec.ts	Full-viewport-matrix screenshots of /sign-in.
+passwordRecovery	allowlisted	-	Declared ahead of the flow it names (issue #145): no route contract renders /password-recovery yet and the sign-in link to it is gated off by the forgotPassword feature flag, so there is nothing to exercise in a browser.
 notFound	e2e	tests/e2e/modules/not-found.spec.ts	Renders the catch-all route on an unknown path and follows its call to action home.
 notFound	visual	tests/visual/visual-comparison.not-found.spec.ts	Desktop and mobile screenshots of the catch-all route.

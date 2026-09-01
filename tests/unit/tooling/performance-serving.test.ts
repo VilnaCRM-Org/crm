@@ -35,6 +35,47 @@ describe('performance serving config', () => {
     expect(dockerfile).toContain('"/app/serve.json"');
   });
 
+  it('renders runtime configuration at container start without changing the serve command', () => {
+    const dockerfile = readFile('Dockerfile');
+
+    // The ENTRYPOINT renders APP_CONFIG_* into the built HTML shell, then execs CMD (issue #145).
+    expect(dockerfile).toContain(
+      'COPY --chown=node:node scripts/docker-entrypoint.sh scripts/render-app-config.js ./scripts/'
+    );
+    expect(dockerfile).toContain('ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]');
+
+    // The serve command itself must stay byte-identical: the entrypoint wraps it, never
+    // replaces it, so the production image keeps serving `dist` with the explicit serve config.
+    expect(dockerfile).toContain(
+      'CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]'
+    );
+  });
+
+  it('reads runtime configuration at boot synchronously, free of fetch, zod and tsyringe', () => {
+    // Issue #145. The runtime config lives inline in the HTML shell precisely so that reading it
+    // costs nothing on the critical path. Two regressions this pins against, both of which would
+    // blow the auth-page Lighthouse mobile budget (lighthouse/lighthouserc.mobile.js):
+    //   * an `await fetch('/app-config.json')` before render() is invisible to the preload
+    //     scanner, so it serializes a full round trip onto FCP and LCP;
+    //   * importing `@/config/runtime/app-config` (zod), or the tsyringe composition root, from
+    //     the entry module drags both into the eager entrypoint chunk — the exact cost the
+    //     deferred-DI auth store was built to avoid.
+    const entrySource = readFile('src/index.tsx');
+    // Comments legitimately discuss `await` and `fetch`; the gate is about executable code.
+    const entryCode = entrySource.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+    expect(entrySource).toContain(
+      "import appConfigSource from '@/config/runtime/app-config-source';"
+    );
+    expect(entrySource).toContain('appConfigSource.load()');
+
+    expect(entryCode).not.toMatch(/\bawait\b/);
+    expect(entryCode).not.toContain('fetch(');
+    expect(entryCode).not.toContain("'@/config/dependency-injection-config'");
+    expect(entryCode).not.toContain("'@/config/runtime/app-config'");
+    expect(entryCode).not.toContain("from 'zod'");
+  });
+
   it('does not inject preload hints for every async chunk into the HTML shell', () => {
     const rsbuildConfigSource = readFile('rsbuild.config.ts');
 

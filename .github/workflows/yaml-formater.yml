@@ -1,3 +1,17 @@
+# Issue #161: this workflow used to run `norwd/fmtya`, an auto-format-and-commit action, under
+# `contents: read` with `persist-credentials: false` — it could not push its fix, so the job was
+# a silent green no-op that never reported malformed or drifting YAML. It now runs a real
+# `prettier --check`, which fails on format drift and on YAML that does not parse.
+#
+# It does NOT cover duplicate mapping keys, contrary to what #161 assumed: prettier's bundled
+# YAML plugin passes `uniqueKeys: false` into its parser, so the vendored parser's DUPLICATE_KEY
+# error is suppressed and both keys round-trip verbatim through `--write`. That class is covered
+# by `make lint-compose` (compose's own loader rejects it) and by actionlint's syntax-check for
+# the workflows.
+#
+# `make lint-prettier` covers the same files inside the dev container. This job is the
+# deliberately container-free half: a malformed `docker-compose.yml` is exactly the defect that
+# stops `make start` — and therefore `make lint` — from ever running.
 name: format yaml files
 
 on:
@@ -13,10 +27,24 @@ concurrency:
 jobs:
   yamlfmt:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           persist-credentials: false
-      - uses: norwd/fmtya@11c4eb4d55f8a465564cbef9aabb3e149d4a6247 # v1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      # Pinned to the exact version bun.lock resolves, so this gate and `make lint-prettier`
+      # can never disagree on formatting; tests/unit/tooling/ci-config-gates.test.ts fails the
+      # build if the two drift. Installing only prettier keeps the job independent of the full
+      # dev-dependency tree, which is the point of the container-free path.
+      - name: Check YAML formatting
+        env:
+          PRETTIER_VERSION: 3.9.6
+        run: npx --yes "prettier@$PRETTIER_VERSION" "**/*.{yml,yaml}" --check --ignore-path .prettierignore

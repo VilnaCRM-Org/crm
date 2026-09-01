@@ -3,9 +3,16 @@ import { setupServer } from 'msw/node';
 
 import API_ENDPOINTS from '@/config/api-config';
 import GraphQLUrl from '@/utils/get-graphql-url';
-import { buildClientMutationId, buildGraphqlUser, buildLoginResponse } from '@tests/builders';
+import {
+  buildAppConfigReader,
+  buildClientMutationId,
+  buildGraphqlUser,
+  buildLoginResponse,
+} from '@tests/builders';
 
-export const GRAPHQL_URL = new GraphQLUrl().resolve();
+// No runtime configuration is rendered into the jsdom document, so the URL resolves from the
+// build-time environment exactly as it did before issue #145.
+export const GRAPHQL_URL = new GraphQLUrl(buildAppConfigReader()).resolve();
 
 export const defaultLoginResponse = buildLoginResponse();
 export const defaultGraphqlUser = buildGraphqlUser();

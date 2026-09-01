@@ -7,3 +7,5 @@ export type LoginSubmitter = {
 };
 
 export type LoginUser = (data: LoginUserDto, signal?: AbortSignal) => Promise<void>;
+
+export type LoginActions = { loginUser: LoginUser };

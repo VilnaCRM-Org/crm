@@ -16,7 +16,9 @@ jest.mock('react-i18next', () => ({
 describe('RouteFallback', () => {
   beforeEach(() => jest.useFakeTimers());
   afterEach(() => {
-    jest.runOnlyPendingTimers();
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
     jest.useRealTimers();
   });
 
@@ -34,6 +36,10 @@ describe('RouteFallback', () => {
 
   it('keeps the spinner decorative and out of the eager MUI graph', () => {
     render(<RouteFallback />);
+
+    act(() => {
+      jest.advanceTimersByTime(ANNOUNCE_DELAY_MS);
+    });
 
     // The grey-pill spinner is a dependency-free CSS ring marked aria-hidden, so the only
     // a11y-exposed node is the single status region.

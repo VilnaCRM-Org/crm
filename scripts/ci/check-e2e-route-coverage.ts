@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -17,6 +17,7 @@ import { pathToFileURL } from 'node:url';
 
 const MANIFEST_PATH = process.env.ROUTE_COVERAGE_MANIFEST ?? 'tests/e2e/route-coverage.tsv';
 const ROUTE_PATHS_PATH = process.env.ROUTE_PATHS_FILE ?? 'src/routes/route-paths.ts';
+const ROUTE_SOURCE_ROOT = process.env.ROUTE_SOURCE_ROOT ?? 'src';
 
 const HEADER = ['route', 'suite', 'spec', 'details'].join('\t');
 const ALLOWLISTED = 'allowlisted';
@@ -25,6 +26,10 @@ const SUITE_ROOTS: Record<string, string> = {
   e2e: 'tests/e2e/',
   visual: 'tests/visual/',
 };
+// A route contract registers a key by binding it to a `path:`. Matching the binding rather than
+// any `ROUTE_PATHS.<key>` reference keeps a link `href` (which renders no route) out of the set.
+const REGISTERED_ROUTE = /\bpath:\s*ROUTE_PATHS\.([A-Za-z0-9_$]+)/g;
+const SOURCE_FILE = /\.tsx?$/;
 
 interface CoverageRow {
   route: string;
@@ -59,6 +64,29 @@ async function loadRouteKeys(): Promise<string[]> {
   if (keys.length === 0) {
     throw new Error(`"${ROUTE_PATHS_PATH}" declares no routes; refusing to pass vacuously.`);
   }
+  return keys;
+}
+
+/**
+ * Route keys some contract under `ROUTE_SOURCE_ROOT` actually registers as a route `path:`.
+ * An `allowlisted` row is a claim that nothing renders the route, so it has to expire the moment
+ * a contract does — otherwise a temporal justification survives the flow that invalidates it.
+ */
+function registeredRouteKeys(): Set<string> {
+  const root = fromRoot(ROUTE_SOURCE_ROOT);
+  if (!existsSync(root)) {
+    throw new Error(`Route source root "${ROUTE_SOURCE_ROOT}" not found; refusing to pass.`);
+  }
+
+  const keys = new Set<string>();
+  readdirSync(root, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && SOURCE_FILE.test(entry.name))
+    .forEach((entry) => {
+      const source = readFileSync(resolve(entry.parentPath, entry.name), 'utf8');
+      [...source.matchAll(REGISTERED_ROUTE)].forEach(([, key]) => {
+        if (key !== undefined) keys.add(key);
+      });
+    });
   return keys;
 }
 
@@ -133,7 +161,11 @@ function rowProblems(row: CoverageRow): string[] {
   return suiteProblems(row, at, root);
 }
 
-function inventoryProblems(rows: CoverageRow[], routeKeys: string[]): string[] {
+function inventoryProblems(
+  rows: CoverageRow[],
+  routeKeys: string[],
+  registered: Set<string>
+): string[] {
   const problems: string[] = [];
   const known = new Set(routeKeys);
 
@@ -161,6 +193,12 @@ function inventoryProblems(rows: CoverageRow[], routeKeys: string[]): string[] {
           'drop the stale allowlist row.'
       );
     }
+    if (allowlisted.length > 0 && registered.has(route)) {
+      problems.push(
+        `route "${route}" is allowlisted in ${MANIFEST_PATH} but ${ROUTE_SOURCE_ROOT} registers ` +
+          'it as a route path; replace the allowlist row with a covering spec.'
+      );
+    }
   });
 
   return problems;
@@ -169,7 +207,11 @@ function inventoryProblems(rows: CoverageRow[], routeKeys: string[]): string[] {
 async function main(): Promise<void> {
   const routeKeys = await loadRouteKeys();
   const rows = readManifest();
-  const problems = [...rows.flatMap(rowProblems), ...inventoryProblems(rows, routeKeys)];
+  const registered = registeredRouteKeys();
+  const problems = [
+    ...rows.flatMap(rowProblems),
+    ...inventoryProblems(rows, routeKeys, registered),
+  ];
 
   if (problems.length > 0) {
     process.stderr.write(`Route coverage gate failed (${problems.length} problem(s)):\n`);
