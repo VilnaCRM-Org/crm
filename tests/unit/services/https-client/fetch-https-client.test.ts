@@ -6,9 +6,11 @@ import { z } from 'zod';
 
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
+import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+import correlationIdProvider from '@/services/observability/correlation-id-provider';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
@@ -54,9 +56,15 @@ const createErrorResponse = (status: number, statusText: string, url: string): R
   return response as unknown as Response;
 };
 
+const createRequestConfigBuilder = (): HttpRequestConfigBuilder =>
+  new HttpRequestConfigBuilder(correlationIdProvider);
+
+const createResponseProcessor = (): HttpResponseProcessor =>
+  new HttpResponseProcessor(new HttpErrorResponseParser());
+
 const createClient = (
-  requestConfigBuilder: HttpRequestConfigBuilder = new HttpRequestConfigBuilder(),
-  responseProcessor: HttpResponseProcessor = new HttpResponseProcessor()
+  requestConfigBuilder: HttpRequestConfigBuilder = createRequestConfigBuilder(),
+  responseProcessor: HttpResponseProcessor = createResponseProcessor()
 ): FetchHttpsClient => new FetchHttpsClient(requestConfigBuilder, responseProcessor);
 
 describe('FetchHttpsClient', () => {
@@ -88,7 +96,7 @@ describe('FetchHttpsClient', () => {
       };
       const builderOnlyClient = createClient(
         requestConfigBuilder as never,
-        new HttpResponseProcessor()
+        createResponseProcessor()
       );
       mockFetch.mockResolvedValue(createMockResponse(200, { ok: true }));
 
@@ -762,7 +770,7 @@ describe('FetchHttpsClient', () => {
 
     it('uses an injected response processor with an explicit request builder', async () => {
       const mockProcessor = { process: jest.fn().mockResolvedValue({ ok: true }) };
-      const customClient = createClient(new HttpRequestConfigBuilder(), mockProcessor as never);
+      const customClient = createClient(createRequestConfigBuilder(), mockProcessor as never);
       mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
       await expect(customClient.get('/api/test', { schema: passthrough })).resolves.toEqual({

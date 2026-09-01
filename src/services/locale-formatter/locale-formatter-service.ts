@@ -1,32 +1,37 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
 import type { LocaleFormatter } from '@/services/types/locale-formatter/locale-formatter';
 
-import localeFormatterCore from './locale-formatter-core';
+import type { LocaleFormatterCore } from './locale-formatter-core';
+import LOCALE_FORMATTER_TOKENS from './tokens';
 
 @injectable()
 export default class LocaleFormatterService implements LocaleFormatter {
+  constructor(
+    @inject(LOCALE_FORMATTER_TOKENS.LocaleFormatterCore) private readonly core: LocaleFormatterCore
+  ) {}
+
   public date(value: Date | number, locale?: string): string {
-    return localeFormatterCore.date(value, locale);
+    return this.core.date(value, locale);
   }
 
   public dateTime(value: Date | number, locale?: string): string {
-    return localeFormatterCore.dateTime(value, locale);
+    return this.core.dateTime(value, locale);
   }
 
   public number(value: number, locale?: string): string {
-    return localeFormatterCore.number(value, locale);
+    return this.core.number(value, locale);
   }
 
   public currency(value: number, currencyCode?: string, locale?: string): string {
-    return localeFormatterCore.currency(value, currencyCode, locale);
+    return this.core.currency(value, currencyCode, locale);
   }
 
   public percent(value: number, locale?: string): string {
-    return localeFormatterCore.percent(value, locale);
+    return this.core.percent(value, locale);
   }
 
   public relativeTime(value: number, unit: Intl.RelativeTimeFormatUnit, locale?: string): string {
-    return localeFormatterCore.relativeTime(value, unit, locale);
+    return this.core.relativeTime(value, unit, locale);
   }
 }

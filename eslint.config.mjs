@@ -18,6 +18,8 @@ import globals from 'globals';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import diCollaboratorPolicy from './config/di-collaborator-policy.js';
+
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const tsconfigPath = path.join(rootDir, 'tsconfig.json');
 
@@ -225,6 +227,19 @@ const noProcessEnvSelectors = [
       '@/config/env (or @/config/env/raw-env on the paint path) (issue #112).',
   },
 ];
+
+// Source (issue #130): inside a logic class, behavioral collaborators must arrive through DI.
+// A value import of another project module hard-wires the collaborator at the call site, so the
+// dependency resists substitution in tests and the class only *looks* injectable. `import type`
+// is always allowed — an annotation-only import is the sanctioned carve-out (issue #88) — as are
+// the contract/data modules in the policy allowlist (tokens, config, domain error classes,
+// constant maps, zod response contracts, GraphQL documents, base classes, public barrels).
+// Scope, carve-outs, and allowlists live in `config/di-collaborator-policy.js` so this gate and
+// the dependency-cruiser rule `injectable-classes-no-value-imports` can never drift apart.
+// Consumer-side `.tsx` components are governed by the disjoint issue #128 rule, not this one.
+// The selectors themselves are built in the policy module so the gate test can feed the exact
+// strings ESLint consumes through a real Linter.
+const noUninjectedCollaboratorSelectors = diCollaboratorPolicy.collaboratorSelectors();
 
 // Source (issue #155): locale-sensitive rendering must go through the LocaleFormatter
 // service (src/services/locale-formatter/) or the i18next formatters registered in
@@ -695,6 +710,47 @@ export default [
     },
   },
 
+  // Source (issue #130): the non-React logic directories that hold `@injectable()` classes.
+  // Ordered after the #100 block so it wins for those files, and it re-includes the #90/#88/#100/
+  // #180/#112/#155 selectors because flat config replaces (does not merge) `no-restricted-syntax`.
+  // The carve-outs cover composition roots, token modules, index barrels, hooks, type-only files,
+  // and the container-free auth/observability render-path singletons that must stay off the
+  // container for the mobile Lighthouse budget.
+  {
+    files: diCollaboratorPolicy.LOGIC_SOURCE_GLOBS,
+    ignores: diCollaboratorPolicy.exemptGlobs(),
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...noObjectLiteralMethodSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
+        ...noRawIntlSelectors,
+        ...noUninjectedCollaboratorSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #130): `apollo-link-factory.ts` IS the injectable adapter over Apollo, so the
+  // restricted-library ban is lifted for it while the project value-import ban still applies.
+  {
+    files: diCollaboratorPolicy.RESTRICTED_LIBRARY_ADAPTERS.map((adapter) => adapter.path),
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...noObjectLiteralMethodSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
+        ...noRawIntlSelectors,
+        noUninjectedCollaboratorSelectors[0],
+      ],
+    },
+  },
+
   // Source (issue #112): the `src/config/env/**` module IS the sanctioned boundary that
   // reads `process.env`, so the process.env ban is lifted here. The #90/#88/#100/#155
   // selectors are re-included (flat config replaces, does not merge). Ordered after the
@@ -728,6 +784,12 @@ export default [
   // after the non-React `.ts` block so it wins for the formatter's files; the formatter's
   // contract types live under `src/services/types/` and stay governed by the type-only
   // override above.
+  //
+  // The formatter also lives inside the issue #130 logic scope (`src/services/**`), and this
+  // block is ordered after the #130 block, so the DI collaborator selectors are re-included
+  // here too — lifting the Intl ban must not silently lift the collaborator ban with it. The
+  // #130 carve-outs (composition root, token module, render-path singletons) are folded into
+  // `ignores` from the shared policy so the two blocks cannot drift apart.
   {
     files: ['src/services/locale-formatter/**/*.ts'],
     ignores: [
@@ -737,6 +799,7 @@ export default [
       '**/*.d.ts',
       'src/services/locale-formatter/**/types.ts',
       'src/services/locale-formatter/**/types/**/*.ts',
+      ...diCollaboratorPolicy.exemptGlobs(),
     ],
     rules: {
       'no-restricted-syntax': [
@@ -745,6 +808,7 @@ export default [
         ...noStaticOrFreeFunctionSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noUninjectedCollaboratorSelectors,
       ],
     },
   },

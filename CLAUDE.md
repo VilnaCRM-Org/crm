@@ -1110,6 +1110,110 @@ because widening to arbitrary-depth `Property` would flag idiomatic nested MUI `
 callbacks and zustand-style slices — is nested (depth > 1) object literals,
 `Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
 
+### Collaborators arrive through DI, never through a value import (issue #130)
+
+**Convention:** inside a class in a logic directory, the only behavioral collaborators a method
+may invoke are those received through DI — a constructor `@inject(TOKENS.X)` parameter or a
+`useFactory` / `instanceCachingFactory` parameter resolved from the container. A class MUST NOT
+value-import another project module that provides behavior and call it directly. If a class needs
+collaborator `X`, give `X` a token in the owning area's `tokens.ts`, register it in that area's
+`di.ts` composition root (issue #109), and inject it.
+
+This is the next step after #89/#100: those made every behavioral unit an instance method on a
+class; this governs _how those classes obtain each other_. A hard-wired collaborator resists
+substitution in tests, so the class only _looks_ injectable.
+
+`src/modules/user/features/auth/repositories/login-api.ts` is the exemplar — `HttpsClient` and
+`ApiErrorFactory` arrive via `@inject(TOKENS.X)`, and its remaining value imports are exactly the
+allowed carve-outs.
+
+**Allowed value imports inside a logic class:**
+
+| Carve-out            | Examples                                                             |
+| -------------------- | -------------------------------------------------------------------- |
+| `import type`        | any annotation-only import (issue #88)                               |
+| `extends` base class | `BaseAPI` — inheritance cannot be injected                           |
+| DI mechanism         | `tsyringe`, `reflect-metadata`                                       |
+| DI tokens            | `**/tokens.ts`                                                       |
+| Config data          | `@/config/api-config`, `@/config/env`, `@/routes/route-paths`        |
+| Error classes        | `@/modules/*/lib/api-errors/**`, `http-error` (thrown, `instanceof`) |
+| Constant maps        | `response-messages`, `error-codes`                                   |
+| Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` (GraphQL)            |
+| Public barrels       | `@/modules/<m>`, `@auth` — the only cross-boundary path (issue #107) |
+| Pure leaf libraries  | `uuid`                                                               |
+
+**Third-party policy — position (A), adapter + token.** A behavioral library is wrapped behind an
+`@injectable()` adapter and a token rather than called from a feature class: Apollo through
+`ApolloLinkFactory` and `AUTH_TOKENS.ApolloClient`; Sentry and `web-vitals` through the
+observability boundary (issue #115); zod schemas declared in a `response-schemas` contract module
+and passed to collaborators **as data**. This is enforced as an **allowlist**, not a denylist of
+known-behavioral packages: only `tsyringe`, `reflect-metadata`, and `uuid` may be value-imported
+inside a logic class, so a future behavioral dependency cannot slip in unchallenged — adding one
+is a reviewable policy edit. `import type` from any library stays allowed, as do all libraries in
+components and hooks, which this scope excludes.
+
+**Base-class tradeoff.** `extends X` is the one place IoC is bypassed, so a base class must stay a
+thin template (as `base-api.ts` is — it only forwards an injected `apiErrorFactory`). Prefer
+**composition over inheritance** for behavior; a deep behavioral base class defeats the rule's
+intent and is a review-gate concern the gate cannot see.
+
+**Enforcement — two layers, one policy.** The single source of truth for the scope, the
+carve-outs, and the allowlists is
+[`config/di-collaborator-policy.js`](config/di-collaborator-policy.js). Both layers read it, so
+they cannot drift:
+
+| Layer              | Where                                         | Sees                     |
+| ------------------ | --------------------------------------------- | ------------------------ |
+| ESLint             | `no-restricted-syntax` in `eslint.config.mjs` | the exact `import` line  |
+| dependency-cruiser | `injectable-classes-no-value-imports`         | resolved paths + aliases |
+
+Both run under `make lint` (`lint-eslint` and `lint-deps`), which the `static testing` workflow
+executes, and both are in `CI_LINT_TARGETS` for the parallel lint runner; `lint-deps` additionally
+runs in the standalone `dependency-cruiser.yml` workflow. The **project-module** ban is enforced
+by both layers; the **third-party allowlist** is ESLint-only, because the dependency-cruiser rule
+scopes its `to` clause to `^src/`.
+[`tests/unit/tooling/di-collaborator-gate.test.ts`](tests/unit/tooling/di-collaborator-gate.test.ts)
+fails the build when a policy entry goes stale, when the two layers disagree, when a carve-out
+starts hiding an `@injectable()` class, or when an allowlisted barrel starts re-exporting one.
+
+**Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`, and
+`src/modules/*/features/*/{repositories,stores,utils}/**`.
+
+Three different things are outside the gate, and the distinction matters when you add a file:
+
+- **Never in scope** (no policy entry needed): anything outside those globs — a feature's
+  `components/` folder, plus `src/components/**`, `src/styles/**`, `src/routes/**`,
+  `src/providers/**` and `src/config/**` — which is why the form-section `validations/*`
+  singletons need no carve-out despite being container-free.
+- **In scope but exempted by file kind** in `EXEMPT_PATTERNS`: React components (`.tsx`),
+  tests/stories/`.d.ts`, type-only files, hooks (`use-*.ts` — `use-auth-token` sits inside the
+  gated `stores/` folder), composition roots (`di.ts` — they must value-import every concrete
+  class to register it), token modules, and index barrels.
+- **In scope but exempted by explicit path** in `EXEMPT_RENDER_PATH_FILES`: the
+  **container-free render-path singletons** — `auth-var`, `reactive-var`,
+  `reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`,
+  `lazy-module-loader`, `load-registration-notification`, `registration-handlers-factory`,
+  `auth-error-reporter`, `url-builder`, `locale-formatter-core`, and the observability core /
+  correlation-id / sentry / pii-scrubber / web-vitals leaves.
+
+Those stay off the container so the auth page paints without tsyringe — **never** eager-import
+`dependency-injection-config.ts` into the paint path, and never convert one of them into a
+container-resolved class. Adding a new container-free render-path singleton in a gated directory
+means adding it to the policy file.
+
+**Companion gate:** component-side (`.tsx`) consumption is issue #128
+(`components-no-direct-injectable-import`). The two scopes are disjoint (`.ts` vs `.tsx`), so no
+edge is flagged twice; keep their names, messages, and carve-outs cross-referenced.
+
+**Honest limitations** (not statically enforceable): a fat base class can still smuggle logic past
+`extends`; a barrel re-export or an object literal's method can launder a collaborator (bounded,
+not closed, by the barrel-purity assertion); the gate proves a collaborator _arrives_ via DI, not
+that the wiring registers the right implementation; and the render-path carve-out is allowlisted
+by path, not inferred — adding a new container-free singleton means updating the policy file.
+
+**No suppression:** satisfy the gate by injecting the collaborator or converting to `import type`.
+Never `eslint-disable`, `depcruise-ignore`, or `@ts-ignore`.
+
 ### Path Aliases
 
 This project follows the Bulletproof React import convention:
