@@ -73,7 +73,14 @@ const inScope = (file: string): boolean =>
 
 const sourceFiles = walk('src').filter((file) => file.endsWith('.ts') && !file.endsWith('.d.ts'));
 
-const injectableFiles = sourceFiles.filter((file) => readFile(file).includes('@injectable()'));
+const withoutComments = (source: string): string =>
+  source.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+
+const INJECTABLE_DECORATOR = /(^|[^\w$.])@injectable\s*\(/;
+
+const injectableFiles = sourceFiles.filter((file) =>
+  INJECTABLE_DECORATOR.test(withoutComments(readFile(file)))
+);
 
 const allowedTargetSpecifier = new RegExp(policy.allowedTargetSpecifier());
 const projectSpecifier = new RegExp(policy.PROJECT_SPECIFIER);
@@ -322,7 +329,7 @@ describe('DI collaborator gate — allowlisted barrels expose data only (issue #
       .filter(
         (statement) => statement.startsWith('export ') && !statement.startsWith('export type ')
       )
-      .map((statement) => /from '([^']+)'/.exec(statement)?.[1] ?? '')
+      .map((statement) => /from ['"]([^'"]+)['"]/.exec(statement)?.[1] ?? '')
       .filter(Boolean);
 
   it.each(barrelPaths)('%s re-exports values only from allowlisted contract modules', (barrel) => {
