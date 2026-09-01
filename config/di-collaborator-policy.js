@@ -356,12 +356,25 @@ const PROJECT_SPECIFIER = '^(?:@/|@auth(?:$|/)|[.][.]?/)';
  * import). `import type … from` and `import { type A, type B } from` are erased by the
  * compiler, so they are not collaborator edges and must not be flagged — that keeps the
  * ESLint layer agreeing with dependency-cruiser's `type-only` dependency classification.
+ *
+ * The four alternatives are kept mutually exclusive: a bare `:not(:has(ImportSpecifier))`
+ * also matches a default or namespace import, which would make those two branches
+ * unobservable — deleting either would change no behaviour and no must-fail fixture could
+ * pin it. Excluding both bindings narrows the last branch to the side-effect import it
+ * names, so every alternative is separately load-bearing and separately pinned by
+ * scripts/ci/eslint-gate-fixtures.mjs.
  */
+const SIDE_EFFECT_IMPORT = [
+  ':not(:has(ImportSpecifier))',
+  ':not(:has(ImportDefaultSpecifier))',
+  ':not(:has(ImportNamespaceSpecifier))',
+].join('');
+
 const RUNTIME_IMPORT_SHAPES = [
   ':has(ImportDefaultSpecifier)',
   ':has(ImportNamespaceSpecifier)',
   ":has(ImportSpecifier[importKind!='type'])",
-  ':not(:has(ImportSpecifier))',
+  SIDE_EFFECT_IMPORT,
 ];
 
 const runtimeImportSelector = () => `:matches(${RUNTIME_IMPORT_SHAPES.join(', ')})`;
