@@ -92,6 +92,7 @@ run_gate() {
     FAKE_BASE_SPEC_URL="${FAKE_BASE_SPEC_URL:-}" \
     FAKE_GIT_SHOW_FAIL="${FAKE_GIT_SHOW_FAIL:-}" \
     FAKE_CURL_FAIL="${FAKE_CURL_FAIL:-}" \
+    CONTRACT_SPEC_MAX_BYTES="${CONTRACT_SPEC_MAX_BYTES:-}" \
     FAKE_OASDIFF_BREAKING_EXIT="${FAKE_OASDIFF_BREAKING_EXIT:-0}" \
     ERR_IGNORE_COPY="${ERR_IGNORE_COPY:-}" \
     GITHUB_STEP_SUMMARY="$BATS_TEST_TMPDIR/summary.md" \
@@ -298,4 +299,24 @@ run_gate_without_step_summary() {
     bash -c 'cd "$1" && shift && "$@"' _ "$SANDBOX" sh "$SCRIPT"
   [ "$status" -eq 1 ]
   assert_output_contains 'must stay inside the checkout'
+}
+
+# curl documents --max-filesize as having no effect when the response declares no
+# Content-Length, so a chunked body streams straight past it. The cap is only real because
+# the fetched file is measured afterwards.
+@test "contract-diff.sh rejects a spec that streamed past the size cap" {
+  write_env "$SANDBOX/.env" v2.8.0
+  export CONTRACT_SPEC_MAX_BYTES=8
+
+  run_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'exceeds 8 bytes'
+}
+
+@test "contract-diff.sh accepts a spec inside the size cap" {
+  write_env "$SANDBOX/.env" v2.8.0
+  export CONTRACT_SPEC_MAX_BYTES=4096
+
+  run_gate
+  [ "$status" -eq 0 ]
 }

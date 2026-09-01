@@ -104,6 +104,8 @@ spec_url() {
   printf '%s\n' "$1" | sed "s|\${$PIN_KEY}|$2|g"
 }
 
+MAX_SPEC_BYTES="${CONTRACT_SPEC_MAX_BYTES:-20971520}"
+
 mkdir -p "$CONTRACT_DIFF_DIR"
 BASE_SPEC="$CONTRACT_DIFF_DIR/base.yaml"
 HEAD_SPEC="$CONTRACT_DIFF_DIR/head.yaml"
@@ -115,10 +117,19 @@ printf 'diffing OpenAPI %s -> %s\n' "$BASE_PIN" "$HEAD_PIN"
 #
 # Both fetches share one wrapper, like oasdiff() above, so the two call sites cannot drift.
 # curl has no default transfer timeout: a server that accepts and then stalls hangs until the
-# job's 10-minute ceiling, reported as a cancelled job instead of by fail(), and an unbounded
-# chunked body streams into CONTRACT_DIFF_DIR. The pinned spec is tens of kilobytes.
+# job's 10-minute ceiling, reported as a cancelled job instead of by fail().
+#
+# --max-filesize refuses a body only when the server declares a Content-Length that already
+# exceeds the cap; curl documents it as having no effect when the size is not known up front,
+# so a chunked response streams past it and is bounded only in time by --max-time. The size
+# assertion after each fetch is what actually holds the line. The pinned spec is tens of
+# kilobytes.
 fetch_spec() {
-  curl -fsS --connect-timeout 10 --max-time 120 --max-filesize 20M "$1" -o "$2"
+  curl -fsS --connect-timeout 10 --max-time 120 --max-filesize "$MAX_SPEC_BYTES" "$1" -o "$2"
+}
+
+spec_within_cap() {
+  [ "$(wc -c < "$1")" -le "$MAX_SPEC_BYTES" ]
 }
 
 fetch_spec "$(spec_url "$BASE_URL_TEMPLATE" "$BASE_PIN")" "$BASE_SPEC" \
@@ -128,6 +139,11 @@ fetch_spec "$(spec_url "$HEAD_URL_TEMPLATE" "$HEAD_PIN")" "$HEAD_SPEC" \
 
 [ -s "$BASE_SPEC" ] || fail "the OpenAPI spec fetched for $BASE_PIN is empty"
 [ -s "$HEAD_SPEC" ] || fail "the OpenAPI spec fetched for $HEAD_PIN is empty"
+
+spec_within_cap "$BASE_SPEC" \
+  || fail "the OpenAPI spec fetched for $BASE_PIN exceeds $MAX_SPEC_BYTES bytes"
+spec_within_cap "$HEAD_SPEC" \
+  || fail "the OpenAPI spec fetched for $HEAD_PIN exceeds $MAX_SPEC_BYTES bytes"
 
 [ -f "$CONTRACT_BREAKING_ALLOWLIST" ] \
   || fail "the approved-breaking-changes file $CONTRACT_BREAKING_ALLOWLIST is missing"
