@@ -847,12 +847,13 @@ Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
 container-resolved class. Those inside a gated directory (`auth-var`, `reactive-var`,
 `reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`, the
-auth lazy loaders, `auth-error-reporter`, `url-builder`, `locale-formatter-core`, and the
-observability core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by explicit
-path in
-`EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token` and the form-section `validations/*`
-singletons are never in scope at all — hooks are `use-*.ts` and `validations/` lives under
-`components/` — so they need no policy entry.
+auth lazy loaders, `registration-handlers-factory`, `auth-error-reporter`, `url-builder`,
+`locale-formatter-core`, and the observability core/correlation-id/sentry/pii-scrubber/web-vitals
+leaves) are exempt by explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
+`use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
+structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
+load-bearing, so do not delete it. The form-section `validations/*` singletons live under
+`components/`, which no scope glob matches, so they alone need no policy entry.
 
 Enforced by two layers reading that one policy file: an ESLint `no-restricted-syntax` selector and
 the dependency-cruiser rule `injectable-classes-no-value-imports`, both under `make lint`, plus
@@ -1061,7 +1062,12 @@ Add a specialized suite when the change touches its concern: `make test-mutation
 strength), `make test-memory-leak` (leaks / OOM), `make test-load` (traffic, K6), and
 `make lighthouse-desktop` / `make lighthouse-mobile` (performance, a11y, best practices).
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 4-way
+`make test-memory-leak` is binding: memlab's `findLeaks()` verdict decides the exit code, a
+scenario file that exports nothing fails, and zero executed scenarios fails instead of passing
+vacuously. Waive a third-party false positive only through a reviewed `trace` + `reason` entry in
+`tests/memory-leak/leak-allowlist.json`.
+
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across an 8-way
 matrix (`make test-mutation-shard`) and a final job merges the per-shard reports and re-enforces the
 same `break` threshold (`make merge-mutation-reports`) — same gate, much faster. Lighthouse runs
 as a desktop/mobile matrix, and every workflow cancels superseded runs via `concurrency`. See
@@ -1623,6 +1629,9 @@ make lint-eslint        # ESLint only
 make lint-tsc           # TypeScript only
 make lint-md            # Markdown only
 make lint-dup           # Duplication (jscpd) only
+make lint-commit-message     # Commit message or squash header from stdin
+make lint-commit-bot-message # Same, task-number rule relaxed for bot authors
+make lint-commit-range       # Commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
 make fmt-prettier       # Prettier format
 make fmt-qlty           # Qlty format
 make format             # Prettier and Qlty format

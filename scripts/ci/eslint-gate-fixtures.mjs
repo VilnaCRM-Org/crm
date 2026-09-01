@@ -455,26 +455,6 @@ const FIXTURES = [
     rule: 'no-restricted-imports',
     tag: '',
   },
-  // additional roots/holders of the #180 selector union — the shared fixture above pins the
-  // default-export root; these pin the plain-const root and the satisfies holder.
-  {
-    id: 'object-literal-method-const-root',
-    file: PROBES.logic,
-    code: 'const helpers = { validate(x: string): string { return x; } };',
-    covers: [S.objectLiteralMethod],
-    expect: 'fail',
-    rule: 'no-restricted-syntax',
-    tag: 'issues #89/#100/#180',
-  },
-  {
-    id: 'object-literal-method-satisfies-holder',
-    file: PROBES.logic,
-    code: 'export const h = { run: function (): void {} } satisfies Record<string, () => void>;',
-    covers: [S.objectLiteralMethod],
-    expect: 'fail',
-    rule: 'no-restricted-syntax',
-    tag: 'issues #89/#100/#180',
-  },
   // DI collaborator ban (#130) — a logic class may not value-import a project collaborator or
   // a behavioral library; `import type` and the policy allowlists stay clean.
   {

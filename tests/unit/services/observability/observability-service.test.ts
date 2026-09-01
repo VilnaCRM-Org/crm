@@ -65,11 +65,13 @@ describe('ObservabilityService', () => {
   it('delegates to the injected core rather than the module singleton', () => {
     const singletonInit = jest.spyOn(observabilityCore, 'init').mockImplementation();
 
-    service.init();
+    try {
+      service.init();
 
-    expect(core.init).toHaveBeenCalledTimes(1);
-    expect(singletonInit).not.toHaveBeenCalled();
-
-    singletonInit.mockRestore();
+      expect(core.init).toHaveBeenCalledTimes(1);
+      expect(singletonInit).not.toHaveBeenCalled();
+    } finally {
+      singletonInit.mockRestore();
+    }
   });
 });

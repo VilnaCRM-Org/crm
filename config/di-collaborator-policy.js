@@ -197,6 +197,7 @@ const EXEMPT_RENDER_PATH_FILES = [
 const RELATIVE = '^[.][.]?/(?:[^/]+/)*';
 const REPOSITORIES = '^@auth/repositories/|^@/modules/[^/]+/features/[^/]+/repositories/';
 const FEATURE_UTILS = '^@auth/utils/|^@/modules/[^/]+/features/[^/]+/utils/';
+const ALLOWED_DEEP_PATH = '(?:/(?![.][.]?(?:/|$))[^/]+)*$';
 
 /**
  * Import targets a logic class MAY value-import: contract and data modules, not behavior.
@@ -226,7 +227,7 @@ const ALLOWED_TARGETS = [
     id: 'typed-env',
     reason: 'The validated environment (issue #112) is frozen configuration data.',
     path: '^src/config/env/',
-    specifier: '^@/config/env(?:/.*)?$',
+    specifier: `^@/config/env${ALLOWED_DEEP_PATH}`,
     sample: 'src/config/env/env.ts',
     sampleSpecifier: '@/config/env',
   },
@@ -244,7 +245,7 @@ const ALLOWED_TARGETS = [
       'Domain error classes and their code map are data carriers that are thrown and matched ' +
       'with `instanceof` — substituting them through DI would defeat the type guard.',
     path: '^src/modules/[^/]+/lib/api-errors/',
-    specifier: '(?:^@/modules/[^/]+|\\.\\.?)/lib/api-errors(?:/.*)?$',
+    specifier: `(?:^@/modules/[^/]+/|^\\.\\.?/)lib/api-errors${ALLOWED_DEEP_PATH}`,
     sample: 'src/modules/user/lib/api-errors/api-error.ts',
     sampleSpecifier: '@/modules/user/lib/api-errors',
   },
@@ -315,7 +316,7 @@ const ALLOWED_TARGETS = [
     id: 'type-only-files',
     reason: 'Type-only files carry no runtime payload (issue #88).',
     path: ['/types[.]ts$', '/types/', '[.]d[.]ts$'],
-    specifier: '(?:^|/)types(?:/.*)?$',
+    specifier: `(?:^|/)types${ALLOWED_DEEP_PATH}`,
     sample: 'src/services/types/observability/observability.ts',
     sampleSpecifier: '@/services/types/observability/observability',
   },

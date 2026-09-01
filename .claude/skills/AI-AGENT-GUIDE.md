@@ -290,11 +290,16 @@ When writing or editing a class in a logic directory (`src/services/**`,
   render-path singleton into a container-resolved class. The ones inside a gated
   directory (`auth-var`, `reactive-var`, `reactive-var-state`,
   `auth-store-selectors`, `response-schemas`, `map-registration-error`, the auth
-  lazy loaders, `auth-error-reporter`, `url-builder`, and the observability
+  lazy loaders, `registration-handlers-factory`, `auth-error-reporter`,
+  `url-builder`, `locale-formatter-core`, and the observability
   core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by
-  explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks (`use-auth-token`) and the
-  form-section `validations/*` singletons are never in scope at all, so they have
-  no policy entry — that absence is expected, not an omission.
+  explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks in a gated directory
+  (`use-auth-token`, `use-auth-state`, `use-focus-on-mount`) are in scope and are
+  carved out by the structural `react-hooks` entry in `EXEMPT_PATTERNS`
+  (`src/**/use-*.ts`) — that entry is load-bearing, so do not delete it. The
+  form-section `validations/*` singletons live under `components/`, which no
+  scope glob matches, so they have no policy entry at all — that absence is
+  expected, not an omission.
 - **Never** satisfy this gate with `eslint-disable`, `depcruise-ignore`,
   `@ts-ignore`, or by widening the allowlist in
   `config/di-collaborator-policy.js` — that file is for contract/data modules

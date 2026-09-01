@@ -150,6 +150,21 @@ describe('DI collaborator gate — scope covers every injectable class (issue #1
     expect(inScope(hypothetical)).toBe(false);
     expect(policy.LOGIC_SOURCE_GLOBS.every((glob) => glob.endsWith('.ts'))).toBe(true);
   });
+
+  it('gates the directories hooks live in, so the react-hooks carve-out is load-bearing', () => {
+    const hookPatterns = policy.EXEMPT_PATTERNS.filter((pattern) => pattern.id === 'react-hooks');
+    const carveOutPaths = hookPatterns.flatMap((pattern) => pattern.paths);
+    const carveOutGlobs = hookPatterns.flatMap((pattern) => pattern.globs);
+    const gatedHooks = sourceFiles.filter(
+      (file) => /\/use-[a-z0-9-]+\.ts$/.test(file) && matchesAny(policy.LOGIC_SOURCE_PATHS, file)
+    );
+
+    expect(hookPatterns).toHaveLength(1);
+    expect(carveOutGlobs).toEqual(['src/**/use-*.ts']);
+    expect(gatedHooks).toContain('src/modules/user/features/auth/stores/use-auth-token.ts');
+    expect(gatedHooks.filter((file) => !matchesAny(carveOutPaths, file))).toEqual([]);
+    expect(gatedHooks.filter(inScope)).toEqual([]);
+  });
 });
 
 describe('DI collaborator gate — the policy lists stay honest (issue #130)', () => {
@@ -220,6 +235,10 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
     '@/utils/error-codes',
     '@auth/stores/response-schemas',
     '@/modules/user/lib/api-errors-extra',
+    '@/services/error/../lib/api-errors',
+    '@/modules/user/lib/api-errors/../../store/response-mapper',
+    '@/config/env/../../services/observability/observability-core',
+    '@auth/types/../repositories/registration-api',
     '@/config/api-config-builder',
     '@/config/environment',
     '@/routes/route-paths-extra',
@@ -257,6 +276,7 @@ describe('DI collaborator gate — the ESLint specifier policy behaves (issue #1
     '@/modules/user',
     '@/modules/user/features/auth',
     '@auth',
+    '@/services/types/observability/observability',
     'tsyringe',
     'reflect-metadata',
     'uuid',
@@ -388,9 +408,22 @@ describe('DI collaborator gate — the real ESLint selectors compile and match (
       "import { LoginResponseSchema } from '@auth/utils/response-schemas';",
       "import { ApiError } from '@/modules/user/lib/api-errors';",
       "import { HttpError } from '@/services/https-client/http-error';",
+      "import Contract from '@/services/types/observability/observability';",
     ].join('\n');
 
     expect(lint(`${allowlisted}\n`)).toEqual([]);
+  });
+
+  it('rejects an allowlisted prefix that traverses back out of its directory', () => {
+    const traversals = [
+      "import M from '@/modules/user/lib/api-errors/../../store/response-mapper';",
+      "import C from '@/config/env/../../services/observability/observability-core';",
+      "import R from '@auth/types/../repositories/registration-api';",
+    ];
+
+    traversals.forEach((traversal) => {
+      expect(lint(`${traversal}\n`)).toEqual([1]);
+    });
   });
 
   it('accepts type-only imports in both spellings, and rejects a mixed one', () => {

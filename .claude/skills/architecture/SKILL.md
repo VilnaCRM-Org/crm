@@ -142,11 +142,11 @@ These come from `.dependency-cruiser.js`. They run on every PR via
   annotation. Allowed value imports: the base class you `extend`, `tsyringe` /
   `reflect-metadata`, token modules, config data, domain/transport error
   classes, constant maps, runtime data contracts (`response-schemas`,
-  `*-mutation`), and the module/feature public barrels. Behavioral third-party
-  libraries (Apollo, Sentry, `web-vitals`, zod) go behind an injectable adapter
-  and a token. Scope, carve-outs, and allowlist live in
-  `config/di-collaborator-policy.js`, shared with the ESLint half of the gate.
-  Component-side (`.tsx`) consumption is the disjoint companion rule #128.
+  `*-mutation`), the module/feature public barrels, and pure leaf libraries
+  (`uuid`). Behavioral third-party libraries (Apollo, Sentry, `web-vitals`, zod)
+  go behind an injectable adapter and a token. Scope, carve-outs, and allowlist
+  live in `config/di-collaborator-policy.js`, shared with the ESLint half of the
+  gate. Component-side (`.tsx`) consumption is the disjoint companion rule #128.
 
 **Component DI consumption (issue #128):**
 
