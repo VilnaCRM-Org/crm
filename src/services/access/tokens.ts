@@ -2,7 +2,7 @@ const ACCESS_TOKENS = Object.freeze({
   PermissionService: Symbol('PermissionService'),
   PolicyEvaluator: Symbol('PolicyEvaluator'),
   TenantContextService: Symbol('TenantContextService'),
-  FeatureFlagService: Symbol('FeatureFlagService'),
+  AccessFeatureFlagService: Symbol('AccessFeatureFlagService'),
   AuditLogger: Symbol('AuditLogger'),
   SessionRepository: Symbol('SessionRepository'),
   AccessSessionService: Symbol('AccessSessionService'),

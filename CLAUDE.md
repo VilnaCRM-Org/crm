@@ -289,6 +289,9 @@ detected. `break` is set to 90 — below the 92.5% baseline for margin — and r
 make lint           # Run all linters
 make lint-eslint    # ESLint
 make lint-tsc       # TypeScript
+make lint-commit-message     # Lint one commit message or squash header from stdin (see below)
+make lint-commit-bot-message # Same, for a bot-authored message (see below)
+make lint-commit-range       # Lint COMMIT_RANGE_FROM..COMMIT_RANGE_TO (see below)
 make lint-md        # Markdown
 make lint-dup       # jscpd copy/paste duplication gate (see below)
 make lint-metrics   # rust-code-analysis complexity gate (see below)
@@ -303,11 +306,15 @@ make check-auth-seed-gate # preloaded-auth seed bundle scan (Docker; not part of
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
 make format         # Prettier + qlty fmt
+make verify-scaffold # generate a throwaway module and gate it (see Scaffolding below)
 ```
 
 Git hooks are managed by Husky. Run `make husky` once after cloning.
 Agents should run `make format` before `make lint`. Formatting is intentionally
 separate from the `lint` verification suite.
+
+The three `lint-commit-*` targets are **not** part of `make lint` — they need a commit header
+or a commit range as input and are driven by the `commitlint` PR workflow.
 
 ### Dependency license policy (issue #191)
 
@@ -354,6 +361,70 @@ directive and would otherwise pass every existing check:
   error-severity selector added to `eslint.config.mjs` (scoped to `src/**`) cannot ship without a
   must-fail fixture in `scripts/ci/eslint-gate-fixtures.mjs`, and a dropped/edited selector fails
   loudly. Both tests ride the existing `unit testing` workflow via `make test-unit-all`.
+
+### Binding CI enforcement (issues #183, #184, #185)
+
+Three gates that previously ran without deciding anything now fail closed. None of them is
+part of `make lint`; each has its own workflow.
+
+**Memory leaks are a verdict, not a log (`#183`).**
+`tests/memory-leak/run-memlab-tests.js` calls `findLeaks()` for every scenario and exits `1`
+when an unallowlisted leak is found, when a scenario file exports no scenario, or when zero
+scenarios executed (which would otherwise pass vacuously). Scenario discovery recurses into
+subfolders and accepts `.js`/`.mjs`/`.cjs`, and `tests/unit/memory-leak/scenario-inventory.test.ts`
+pins the committed scenario set, so a renamed, moved, or deleted scenario is an error rather than
+silently missing coverage. Leaks are reported as a compact list of the detached nodes memlab
+found (heap ids and retained sizes stripped), which is also the key an allowlist entry matches;
+memlab's own console output above it carries the full retainer trace. A false positive is
+waived only by a reviewed entry in
+`tests/memory-leak/leak-allowlist.json` (`trace` + `reason`, both required), never by
+weakening the gate. `tests/bats/memlab_gate.bats` pins the exit codes: clean → 0, leak → 1,
+allowlisted leak → 0, empty scenario directory → 1, scenario-less file → 1, malformed
+allowlist → 1.
+
+Scenarios must dispose every puppeteer `ElementHandle` they obtain (`await handle.dispose()`).
+An undisposed handle is retained by the DevTools console object group and is reported as a
+detached node — the harness leaking the very element it measures.
+
+`MEMLAB_SKIP_WARMUP=true` stays set in `docker-compose.memory-leak.yml`. Issue #183 proposed
+removing it, but enabling warmup was measured to wedge the second Chromium launch: `Network.enable`
+never returns and the run dies on memlab's 5-minute `protocolTimeout`. That is tracked as a
+follow-up on #183 rather than shipped as a broken gate.
+
+**The squash-merge header is linted (`#184`).**
+`.github/workflows/commitlint.yml` runs on `pull_request` (`opened`, `edited`, `synchronize`,
+`reopened`) and lints `"$PR_TITLE (#$PR_NUMBER)"` — the exact header GitHub writes onto `main`
+under squash merge — plus every commit in the PR, which also covers the single-commit case
+where `COMMIT_OR_PR_TITLE` promotes the commit's own header instead of the title.
+`commitlint.config.js` stays the strict
+human contract used by the Husky `commit-msg` hook. `commitlint.bot.config.js` drops
+`check-task-number-rule` — the one rule a bot structurally cannot satisfy — and ignores the
+`Compressed Images` header written by `calibreapp/image-actions`, which is not conventional at
+all. Both relaxations apply **only** to a commit GitHub itself vouches for:
+`scripts/ci/lint-commit-range.sh` asks the commits API per revision and takes the relaxed
+config only when GitHub reports the signature **verified**, the resolved **author** a `[bot]`
+account, **and** the **committer** an identity only GitHub writes — `web-flow`, which signs
+everything created through its API or web UI, or the app account itself. The commit object is
+never consulted — an author email is contributor-controlled, so keying the exemption off it
+would let anyone set `user.email` to a `[bot]` noreply address and both drop the task-number
+rule and inherit the `Compressed Images` ignore. A verified signature alone does not close
+that either, because the signature attests the **committer**: a contributor holding a verified
+key can author a commit under a bot's noreply address and GitHub still reports it verified.
+Requiring both identities does close it — neither can be borrowed while holding the other.
+With no token to ask with, every commit falls back to the strict contract, so it fails closed
+rather than open. A bot pull request's
+title is linted against the same relaxed config at step level, so the job still reports and
+the title is still checked for type, scope, subject, and length.
+
+**`main` is verified after the merge (`#185`).**
+`.github/workflows/main-verification.yml` re-runs `make lint`, `make codegen-check`, and
+`make test-unit-all` against the merged tree on every `push` to `main`, serialized
+(`cancel-in-progress: false`) so no merge is skipped. A failure opens or updates one
+`main-is-red` tracking issue via `scripts/ci/report-main-verification-failure.sh` and the next
+green run closes it, so a logical merge conflict is attributed to the merge that caused it
+instead of surfacing on an unrelated PR.
+This is detection and attribution only — sequencing `autorelease.yml` behind it belongs to
+issue #138.
 
 ## Agent Skill Layout
 
@@ -811,11 +882,41 @@ src/
 ├── lib/             # Dependency-free cross-cutting domain (access: RBAC/tenancy/audit)
 ├── services/        # Singleton services (HttpsClient, error handling, access)
 ├── config/          # DI configuration, tokens, API config
-├── hooks/           # Shared hooks (useCan, usePrincipal, useTenant, useFeatureFlag)
+├── hooks/           # Shared hooks (useCan, usePrincipal, useTenant, useAccessFlag)
 ├── routes/          # Route registry + composer (module-owned route contracts)
 ├── providers/       # React context providers
 └── utils/           # Shared utilities
 ```
+
+### Scaffolding a module or feature (issue #108)
+
+Modules and features are **generated, never hand-rolled**:
+
+```bash
+make new-module name=orders feature=order-list        # module + first feature
+make new-feature module=orders feature=order-detail   # feature in an existing module
+make verify-scaffold                                  # gate the templates themselves
+```
+
+The generator (`plopfile.ts` + `scripts/templates/`) emits a skeleton that passes
+`make lint-deps`, `lint-tsc`, `lint-eslint`, `lint-dup`, `lint-md`, `lint-prettier` and
+`lint-metrics` with zero edits: only policy-allowed folders, kebab-case names, a
+repository public index, a DI token plus its registration, a container-free feature entry,
+the `en`+`uk` locale pair, a module-owned route contract, and mirrored unit + E2E test
+skeletons. It appends the CODEOWNERS entry and **prints** — never rewrites — the two
+order-sensitive lines you add by hand (`src/config/dependency-injection-config.ts` and
+`src/routes/registry.ts`).
+
+The allowed folder names live in **one** place, [`config/module-shape.json`](config/module-shape.json),
+which both the generator and `.dependency-cruiser.js` read; `tests/unit/tooling/module-shape.test.ts`
+fails if a second copy ever appears. `make verify-scaffold` (CI check `scaffold`) generates a
+throwaway module, runs the static gates against it, then removes it — so the templates cannot
+silently drift from the policy. Full reference: [`docs/scaffolding.md`](docs/scaffolding.md).
+
+Repeated generation stays DRY under the zero-tolerance jscpd gate because the shared loading
+state machine lives in `src/hooks/use-async-list.ts` and the shared section chrome (heading,
+status copy, polite live region) in `src/components/ui-async-section/`, rather than being
+copied into every scaffold.
 
 ### Dependency Injection
 
@@ -830,7 +931,8 @@ The project uses tsyringe for DI with **per-module / per-infra composition roots
      `src/services/error/{di,tokens}.ts` (`ERROR_TOKENS`),
      `src/services/error-reporting/{di,tokens}.ts` (`ERROR_REPORTING_TOKENS`),
      `src/services/access/{di,tokens}.ts` (`ACCESS_TOKENS`),
-     `src/utils/error/{di,tokens}.ts` (`ERROR_UTILS_TOKENS`).
+     `src/utils/error/{di,tokens}.ts` (`ERROR_UTILS_TOKENS`),
+     `src/config/runtime/{di,tokens}.ts` (`RUNTIME_TOKENS`).
    - Module: `src/modules/user/config/{di,tokens}.ts` (`AUTH_TOKENS`).
 2. Each root is a `ModuleRegistrar` (`src/config/types/module-registrar.ts`) singleton.
    `src/config/dependency-injection-config.ts` is a **thin aggregator** holding **zero**
@@ -924,8 +1026,9 @@ service/repository/mapper/factory/handler. Two gates enforce it, both inside `ma
 
 **Carve-outs** (container-free by design, not modernization debt): the auth render path
 (`src/modules/user/features/auth/**`, whose mobile Lighthouse budget forbids eager DI), the
-route composer/mapper singletons (`src/routes/route-{composer,mapper}.tsx`, issue #105 — not the
-whole `src/routes/` tree), the app entrypoint, and **only** the root error
+route-shell module singletons (`src/routes/route-{composer,mapper}.tsx` and
+`src/routes/permission-branch-builder.tsx`, issues #105/#114 — not the whole `src/routes/`
+tree), the app entrypoint, and **only** the root error
 boundary file `src/components/error-boundary/app-error-boundary.tsx` (a class component cannot
 call a hook, and error reporting must survive a DI failure) — its functional descendants such as
 `ErrorFallback` and `RouteError` can call `useService` and stay gated. Both gates read the same
@@ -1056,6 +1159,78 @@ These aliases are configured in:
 - `tsconfig.paths.json` for TypeScript
 - `rsbuild.config.ts` for RSBuild
 - `jest.config.ts` for Jest
+
+### Runtime configuration and feature flags (issue #145)
+
+Everything under `@/config/env` is **build-time** configuration: RSBuild inlines `REACT_APP_*` into
+the bundle, so changing one needs a rebuild. `@/config/runtime` is the **runtime** layer — an
+administrator changes a value and restarts the container, and the _same_ built artifact is promoted
+across environments ("build once, deploy many"). Build-time values remain the defaults; runtime
+values win.
+
+**Where it lives.** An inline JSON block in the HTML shell (`public/index.html`), carried by a
+`script` element with `id="app-runtime-config"` and `type="application/json"` — a data block, not
+executable code, so it needs no CSP nonce. `serve.json` already sends `Cache-Control: no-cache`
+for `/index.html`, so a redeploy is never served stale.
+
+**Why inline rather than a fetched `app-config.json`.** The mobile Lighthouse floor (0.84) has no
+headroom. A config request is not preload-scanner-discoverable — it can only start after
+`index.js` executes — so awaiting it before `root.render()` serializes a round trip onto FCP/LCP.
+The inline block is read synchronously at zero request cost, which also keeps the module-eval
+router construction in `src/routes/routes.tsx` working unchanged.
+
+**Two layers, mirroring `@/config/env`** (measured, not assumed: importing `zod` from the boot path
+grows the eager entrypoint from 373 kB to 436 kB raw, or 418 kB with `zod/mini`, against the
+470 kB `raw.maxInitialEntrypointBytes` budget):
+
+| File                              | Deps  | Use it from                                      |
+| --------------------------------- | ----- | ------------------------------------------------ |
+| `runtime/app-config-source.ts`    | none  | paint path / any zod-free code                   |
+| `runtime/app-config.ts`           | `zod` | container code (`RUNTIME_TOKENS.AppConfig`)      |
+| `runtime/app-config-schema.ts`    | `zod` | the zod contract                                 |
+| `runtime/feature-flag-service.ts` | none  | flag reads (`RUNTIME_TOKENS.FeatureFlagService`) |
+
+Both singletons are registered with `useValue` rather than decorated `@injectable()`, exactly like
+the observability render-path leaves (issue #115): the auth page must be able to read a flag
+without pulling tsyringe into the eager chunk, and registering the instance is what lets
+container-resolved classes inject it instead of value-importing it (issue #130).
+
+**Fail-fast, at the earliest point that can act:**
+
+1. **Container start** — `scripts/docker-entrypoint.sh` runs `scripts/render-app-config.js`, which
+   rejects a non-`http(s)` URL, a flag value that is not exactly `true`/`false`, and an
+   `APP_CONFIG_FLAG_*` variable naming a flag that does not exist; the entrypoint exits non-zero,
+   so a misconfigured deployment never serves.
+2. **Browser boot** — `src/index.tsx` calls `appConfigSource.load()` before `createRoot`, so a
+   malformed block throws immediately instead of silently degrading to defaults.
+3. **Container-resolved code** — `appConfig` zod-validates with `z.prettifyError`, and a unit test
+   validates the **committed** block in `public/index.html` against the schema so the shipped
+   default cannot drift from the contract.
+
+**Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`, consumed by `@/utils/url-builder`, falling
+back to `REACT_APP_MOCKOON_URL`), `graphqlUrl` (`APP_CONFIG_GRAPHQL_URL`, injected into
+`GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
+`flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`). Languages stay build-time — `src/i18n.js`
+initializes i18next at module evaluation and `src/config/i18n-config.js` is `require`d by node
+tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config
+change.
+
+**Reading a flag** — components use the container-free bridge; the flag name is a `FeatureFlag`
+union member, so a typo is a compile error:
+
+```typescript
+const showForgotPassword = useFeatureFlag('forgotPassword');
+```
+
+**Flag lifecycle** (introduce default-off → roll out per environment → remove) is documented in
+[`docs/feature-flags.md`](docs/feature-flags.md); the module contract is
+[`src/config/runtime/README.md`](src/config/runtime/README.md). A new flag must be declared in four
+places — the `FeatureFlag` union, `FEATURE_FLAG_DEFAULTS`, `app-config-schema.ts`, and the
+committed block in `public/index.html` — and
+`tests/unit/tooling/runtime-config-contract.test.ts` fails the build when those drift apart.
+
+**No suppression:** satisfy the gate by declaring the flag everywhere it belongs, never by
+loosening the schema, and never by moving the config read onto a blocking fetch.
 
 ### Route Registry (issue #105)
 
@@ -1370,13 +1545,13 @@ narrowing its file set, or moving a read out of the guarded method.
     routing through the formatter service — never with `eslint-disable`. See the
     "Locale-aware Intl formatting" section in `agents.md` for the full convention.
 
-11. **Access control — RBAC, tenancy, feature flags, audit (issue #114)**: authorization is
+11. **Access control — RBAC, tenancy, access flags, audit (issue #114)**: authorization is
     a cross-cutting layer, not a module. The dependency-free domain lives in
     `src/lib/access/` (permission/role catalog, principal state, policies, audit core) and
     the `@injectable()` adapters plus the composition root in `src/services/access/`
     (`ACCESS_TOKENS`) — the same paint-safe two-layer split as observability, so the
     authenticated paint path never loads tsyringe or zod. React consumes it **only**
-    through `useCan` / `usePrincipal` / `useTenant` / `useFeatureFlag` and
+    through `useCan` / `usePrincipal` / `useTenant` / `useAccessFlag` and
     `<RequirePermission>`; routes declare `meta.permission` in their module route
     contract and the composer nests them under `PermissionRoute` inside `AppLayout`.
     The `Principal` (id, email, roles, permissions, tenantId, tenants) is derived from the
@@ -1386,8 +1561,10 @@ narrowing its file set, or moving a read out of the guarded method.
     `Policy` classes, never inline conditionals. Enforced by dependency-cruiser
     (`no-ui-to-access-services`, `no-ui-to-access-state`, `no-access-layer-to-modules`,
     `no-access-domain-to-container`, `no-access-domain-to-tsyringe`) and an ESLint
-    `no-restricted-syntax` gate scoped outside the access layer. Full reference:
-    [`docs/access-control.md`](docs/access-control.md).
+    `no-restricted-syntax` gate scoped outside the access layer. `useAccessFlag` reads a
+    **per-principal** entitlement from the session claims and is a different catalogue from the
+    **deployment-level** `useFeatureFlag` of issue #145 above — the two never share a flag name.
+    Full reference: [`docs/access-control.md`](docs/access-control.md).
 
 ## Node Version Management
 

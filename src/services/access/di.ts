@@ -26,7 +26,7 @@ class AccessRegistrar implements ModuleRegistrar {
     container.registerSingleton(ACCESS_TOKENS.PermissionService, PermissionService);
     container.registerSingleton(ACCESS_TOKENS.PolicyEvaluator, PolicyEvaluator);
     container.registerSingleton(ACCESS_TOKENS.TenantContextService, TenantContextService);
-    container.registerSingleton(ACCESS_TOKENS.FeatureFlagService, FeatureFlagService);
+    container.registerSingleton(ACCESS_TOKENS.AccessFeatureFlagService, FeatureFlagService);
   }
 
   // Registering the session service is not enough: its constructor is what installs the bound

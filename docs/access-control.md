@@ -1,4 +1,4 @@
-# Access control: authorization, tenancy, feature flags, audit (issue #114)
+# Access control: authorization, tenancy, access flags, audit (issue #114)
 
 Authentication answers _who are you_; this layer answers _what may you do, in which
 tenant, and what did you just try_. It is a **client-side mirror** of the server's
@@ -46,7 +46,7 @@ src/hooks/use-access-snapshot.ts   # useSyncExternalStore subscription over acce
 src/hooks/use-can.ts               # useCan(permission) -> boolean
 src/hooks/use-principal.ts
 src/hooks/use-tenant.ts
-src/hooks/use-feature-flag.ts
+src/hooks/use-access-flag.ts
 src/providers/access-context.ts    # context published by AccessProvider
 src/providers/access-provider.tsx  # mounted by AppProviders
 src/components/require-permission/ # <RequirePermission permission={…}>
@@ -227,9 +227,14 @@ its principal is still known, so the trail reconciles into whole sessions.
 - **A policy** — add a class under `src/lib/access/policies/` implementing
   `Policy<TSubject>` and unit-test the positive, negative, cross-tenant, and
   missing-permission cases.
-- **A feature flag** — add it to the `FeatureFlag` union, to `FEATURE_FLAGS`, and to
-  `FEATURE_FLAG_DEFAULTS`. The server may override a default per session through the
-  `flags` claim; unknown flag keys in the claim are ignored.
+- **An access flag** — add it to the `FeatureFlag` union
+  (`src/lib/types/access/feature-flag.ts`), to `FEATURE_FLAGS`, and to
+  `FEATURE_FLAG_DEFAULTS` (`src/lib/access/feature-flag-catalog.ts`). The server may
+  override a default per session through the `flags` claim; unknown flag keys in the
+  claim are ignored. These are **per-principal entitlements** and are a separate
+  catalogue from the deployment-level runtime flags of
+  [`docs/feature-flags.md`](feature-flags.md), which are read with `useFeatureFlag`, not
+  `useAccessFlag` — never declare an access flag as runtime configuration.
 
 ## Machine-enforced boundaries
 

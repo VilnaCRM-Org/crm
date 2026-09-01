@@ -37,7 +37,11 @@ const ACCESS_BINDINGS: readonly { name: string; token: symbol; type: Bound }[] =
     token: ACCESS_TOKENS.TenantContextService,
     type: TenantContextService,
   },
-  { name: 'FeatureFlagService', token: ACCESS_TOKENS.FeatureFlagService, type: FeatureFlagService },
+  {
+    name: 'AccessFeatureFlagService',
+    token: ACCESS_TOKENS.AccessFeatureFlagService,
+    type: FeatureFlagService,
+  },
   { name: 'AuditLogger', token: ACCESS_TOKENS.AuditLogger, type: AuditLogger },
   { name: 'SessionRepository', token: ACCESS_TOKENS.SessionRepository, type: SessionRepository },
   {

@@ -16,13 +16,15 @@ Redux slices, RTK Query hooks, or route-specific state.
 fails `make lint-deps`.
 
 - Feature root (`feature-allowed-folders`): `assets`, `components`, `hooks`,
-  `i18n`, `repositories`, `routes`, `types`, `utils`.
+  `i18n`, `repositories`, `routes`, `stores`, `types`, `utils`.
 - Module root (`module-allowed-folders`): `config`, `features`, `hooks`,
   `lib`, `store`, `types`, `utils`.
 
-Do not introduce `helpers/`, `api/`, or feature-level `store/` — data access
-is `repositories/`, store stays at module level, and shared module code
-goes in `lib/` or `utils/`. Avoid `misc`, `common`, and `manager` names.
+Both lists are generated from `config/module-shape.json`; `make new-module`
+emits exactly these folders. Do not introduce `helpers/` or `api/` — data
+access is `repositories/`, feature-scoped state is `stores/` (plural), the
+module-wide store is `store/` (singular), and shared module code goes in
+`lib/` or `utils/`. Avoid `misc`, `common`, and `manager` names.
 
 ## Tests Are Hard To Place
 

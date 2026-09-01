@@ -27,7 +27,9 @@ describe('component DI gate (issue #128)', () => {
   it.each([
     ['built-in constructors', 'builtins'],
     ['the auth render path', 'authCarveOut'],
-    ['the route composer/mapper singletons', 'routeShellCarveOut'],
+    ['the route composer', 'routeComposerCarveOut'],
+    ['the route mapper', 'routeMapperCarveOut'],
+    ['the permission branch builder', 'permissionBranchBuilderCarveOut'],
     ['the app entrypoint', 'appEntrypointCarveOut'],
     ['the root error boundary', 'rootErrorBoundaryCarveOut'],
     ['story files', 'story'],
@@ -73,6 +75,16 @@ describe('component DI gate (issue #128)', () => {
 
   it('dependency-cruiser allows a lazily routed page to use the bridge', () => {
     expect(report.depcruise.lazyRouteReachesBridge).toEqual([]);
+  });
+
+  // The ESLint half probes each route-shell carve-out file above; this is the other half, so
+  // CLAUDE.md's "both gates read the same carve-out list" is pinned on the newest entry on it
+  // (`permission-branch-builder`, issue #114) rather than asserted of one gate only.
+  it('dependency-cruiser exempts the route-shell singletons but not the rest of src/routes', () => {
+    expect(report.depcruise.routeShellCarveOut).toEqual([]);
+    expect(report.depcruise.routeShellOtherFile).toEqual([
+      'components-no-direct-injectable-import',
+    ]);
   });
 
   it('dependency-cruiser exempts the root error boundary but not its descendants', () => {

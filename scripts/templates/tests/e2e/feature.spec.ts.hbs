@@ -1,0 +1,35 @@
+import { test, expect } from '@tests/e2e/utils/fixtures';
+
+import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
+
+const {{camelCase feature}}Path = '{{routePath module feature}}';
+const panel = 'section:has(h1)';
+const status = '[role="status"]';
+
+test.describe('{{titleCase feature}} page', () => {
+  test.beforeEach(async ({ page }) => {
+    await seedPreloadedAuthToken(page);
+  });
+
+  test('renders the feature panel heading', async ({ page }) => {
+    await page.goto({{camelCase feature}}Path);
+    await expect(page).toHaveURL({{camelCase feature}}Path);
+
+    await expect(page.locator(`${panel} h1`)).toHaveCount(1);
+  });
+
+  test('announces a settled status that is not the error copy', async ({ page }) => {
+    await page.goto({{camelCase feature}}Path);
+
+    await expect(page.locator(status)).not.toBeEmpty();
+    await expect(page.locator(status)).not.toHaveText(/^(?:Loading…|Завантаження…)$/);
+    await expect(page.locator(status)).not.toHaveText(/went wrong|Щось пішло не так/);
+  });
+
+  test('keeps the panel visible at the narrowest supported viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.goto({{camelCase feature}}Path);
+
+    await expect(page.locator(panel)).toBeVisible();
+  });
+});

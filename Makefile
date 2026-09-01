@@ -105,6 +105,14 @@ PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md,yml,
 PRETTIER_CMD                = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --write --ignore-path .prettierignore
 PRETTIER_CHECK_CMD          = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --check --ignore-path .prettierignore
 QLTY_FMT                    = qlty fmt --all --trigger agent --no-progress
+# Conventional-commit gate (issue #184). The strict config is the contract for every human
+# header; the bot config drops only the task-number rule, and applies only where the GitHub
+# author identity is a bot.
+COMMITLINT_CONFIG           = commitlint.config.js
+COMMITLINT_BOT_CONFIG       = commitlint.bot.config.js
+COMMITLINT_CMD              = $(BUNX) commitlint --verbose
+COMMIT_RANGE_FROM           ?=
+COMMIT_RANGE_TO             ?= HEAD
 # ShellCheck gate over the CI gate shell scripts (issue #163). Digest-pinned like the
 # other CI images; lints the standalone scripts, git hooks, and the Bats shared helper.
 SHELLCHECK_IMAGE            = koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb
@@ -134,6 +142,13 @@ ZIZMOR_ARGS                 = --no-online-audits --min-severity medium --persona
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 BATS_FORMATTER              ?= pretty
+
+# Module / feature scaffolding (issue #108). The allowed folder sets the generator emits
+# are single-sourced with .dependency-cruiser.js in config/module-shape.json; verify-scaffold
+# proves a freshly generated module still clears every static gate.
+PLOP                        = $(BUNX) plop
+SCAFFOLD_OWNER_DEFAULT      = $(shell awk '$$1 == "*" { print $$2; exit }' .github/CODEOWNERS 2>/dev/null)
+SCAFFOLD_VERIFY_TARGETS     ?= lint-deps lint-tsc lint-eslint lint-dup lint-md lint-prettier lint-metrics
 
 NETWORK_NAME                = crm-network
 
@@ -189,6 +204,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-zizmor lint-compose lint-lockfile lint-licenses
 .PHONY: storybook
 .PHONY: all test
+.PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
 all: help
 test: test-unit-all
 
@@ -434,6 +450,15 @@ lint-licenses: ## Fail on any production dependency whose license is outside the
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
 
+lint-commit-message: ## Lint one commit message or squash header read from stdin (issue #184)
+	$(COMMITLINT_CMD) --config $(COMMITLINT_CONFIG)
+
+lint-commit-bot-message: ## Lint one bot-authored commit message read from stdin (issue #184)
+	$(COMMITLINT_CMD) --config $(COMMITLINT_BOT_CONFIG)
+
+lint-commit-range: ## Lint every commit in COMMIT_RANGE_FROM..COMMIT_RANGE_TO (issue #184)
+	sh scripts/ci/lint-commit-range.sh "$(COMMIT_RANGE_FROM)" "$(COMMIT_RANGE_TO)"
+
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
 	@summary_path="$$GITHUB_STEP_SUMMARY"; \
 	if [ -n "$$summary_path" ]; then \
@@ -464,6 +489,18 @@ lint-metrics-run:
 	RCA_EXCLUDES="$(RCA_EXCLUDES)" \
 	METRICS_POLICY="$(METRICS_POLICY_PATH)" \
 	sh scripts/lint-metrics.sh
+
+new-module: ensure-dev ## Scaffold a compliant module + its first feature: make new-module name=orders [feature=order-list] [owner=@handle]
+	@[ -n "$(name)" ] || { printf '❌ name= is required, e.g. make new-module name=orders\n' >&2; exit 1; }
+	$(PLOP) module "$(name)" "$(or $(feature),$(name))" "$(or $(owner),$(SCAFFOLD_OWNER_DEFAULT))"
+
+new-feature: ensure-dev ## Scaffold a compliant feature in an existing module: make new-feature module=orders feature=order-detail
+	@[ -n "$(module)" ] || { printf '❌ module= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
+	@[ -n "$(feature)" ] || { printf '❌ feature= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
+	$(PLOP) feature "$(module)" "$(feature)"
+
+verify-scaffold: ensure-dev ## Generate a throwaway module, run the static gates against it, then remove it (issue #108)
+	SCAFFOLD_VERIFY_TARGETS="$(SCAFFOLD_VERIFY_TARGETS)" sh scripts/ci/verify-scaffold.sh
 
 codegen: ensure-dev ## Regenerate typed API contract artifacts (src/api/generated) from the pinned upstream specs
 	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh

@@ -170,8 +170,10 @@ These come from `.dependency-cruiser.js`. They run on every PR via
 - `module-allowed-folders` — module root may only contain `config`,
   `features`, `hooks`, `lib`, `store`, `types`, `utils`.
 - `feature-allowed-folders` — feature root may only contain `assets`,
-  `components`, `hooks`, `i18n`, `repositories`, `routes`, `types`,
-  `utils`.
+  `components`, `hooks`, `i18n`, `repositories`, `routes`, `stores`,
+  `types`, `utils`.
+- Both lists come from `config/module-shape.json`, the single source
+  `.dependency-cruiser.js` and the `make new-module` generator share.
 - `feature-hooks-file-convention` — files inside `features/*/hooks/`
   must be `index.*` or `use-<kebab>.*`.
 

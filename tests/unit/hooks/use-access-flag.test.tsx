@@ -4,21 +4,21 @@ import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { act, renderHook } from '@testing-library/react';
 
-import useFeatureFlag from '@/hooks/use-feature-flag';
+import useAccessFlag from '@/hooks/use-access-flag';
 import accessState from '@/lib/access/access-state';
 import { FEATURE_FLAG_DEFAULTS, FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import type { FeatureFlag, FeatureFlagState } from '@/lib/types/access/feature-flag';
 import { buildPrincipal } from '@tests/builders';
 
 function renderFlag(flag: FeatureFlag): boolean {
-  return renderHook(() => useFeatureFlag(flag)).result.current;
+  return renderHook(() => useAccessFlag(flag)).result.current;
 }
 
 function seedFlags(flags: FeatureFlagState): void {
   accessState.setSession(buildPrincipal(), flags);
 }
 
-describe('useFeatureFlag', () => {
+describe('useAccessFlag', () => {
   beforeEach(() => {
     accessState.clear();
   });
@@ -68,7 +68,7 @@ describe('useFeatureFlag', () => {
   // the fallback to the catalog default is the subscription firing, not a later render.
   it('falls back to the catalog default once the session is cleared under the mounted hook', () => {
     seedFlags({ [FEATURE_FLAGS.contactsModule]: true });
-    const { result } = renderHook(() => useFeatureFlag(FEATURE_FLAGS.contactsModule));
+    const { result } = renderHook(() => useAccessFlag(FEATURE_FLAGS.contactsModule));
     expect(result.current).toBe(true);
 
     act(() => {

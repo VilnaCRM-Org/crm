@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { container } from 'tsyringe';
 
+import runtimeConfigRegistrar from '@/config/runtime/di';
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
 import userModuleRegistrar from '@/modules/user/config/di';
 import accessRegistrar from '@/services/access/di';
@@ -13,6 +14,7 @@ import observabilityRegistrar from '@/services/observability/di';
 import errorUtilsRegistrar from '@/utils/error/di';
 
 const registrars: ModuleRegistrar[] = [
+  runtimeConfigRegistrar,
   errorUtilsRegistrar,
   errorRegistrar,
   errorReportingRegistrar,

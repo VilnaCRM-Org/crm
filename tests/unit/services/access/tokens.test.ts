@@ -6,7 +6,7 @@ const TOKEN_NAMES: readonly TokenName[] = [
   'PermissionService',
   'PolicyEvaluator',
   'TenantContextService',
-  'FeatureFlagService',
+  'AccessFeatureFlagService',
   'AuditLogger',
   'SessionRepository',
   'AccessSessionService',

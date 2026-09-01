@@ -24,7 +24,7 @@ import { buildAccessToken, buildClaims, buildEmail, buildTenantRef } from '@test
 const sessions = container.resolve<AccessSessionService>(ACCESS_TOKENS.AccessSessionService);
 const permissions = container.resolve<PermissionService>(ACCESS_TOKENS.PermissionService);
 const tenantContext = container.resolve<TenantContextService>(ACCESS_TOKENS.TenantContextService);
-const featureFlags = container.resolve<FeatureFlagService>(ACCESS_TOKENS.FeatureFlagService);
+const featureFlags = container.resolve<FeatureFlagService>(ACCESS_TOKENS.AccessFeatureFlagService);
 const policies = container.resolve<PolicyEvaluator>(ACCESS_TOKENS.PolicyEvaluator);
 const auditLogger = container.resolve<AuditLogger>(ACCESS_TOKENS.AuditLogger);
 const sessionRepository = container.resolve<SessionRepository>(ACCESS_TOKENS.SessionRepository);
@@ -85,7 +85,7 @@ describe('access services DI integration (#114)', () => {
     expect(container.resolve(ACCESS_TOKENS.AccessSessionService)).toBe(sessions);
     expect(container.resolve(ACCESS_TOKENS.PermissionService)).toBe(permissions);
     expect(container.resolve(ACCESS_TOKENS.TenantContextService)).toBe(tenantContext);
-    expect(container.resolve(ACCESS_TOKENS.FeatureFlagService)).toBe(featureFlags);
+    expect(container.resolve(ACCESS_TOKENS.AccessFeatureFlagService)).toBe(featureFlags);
     expect(container.resolve(ACCESS_TOKENS.PolicyEvaluator)).toBe(policies);
     expect(container.resolve(ACCESS_TOKENS.AuditLogger)).toBe(auditLogger);
     expect(container.resolve(ACCESS_TOKENS.SessionRepository)).toBe(sessionRepository);
