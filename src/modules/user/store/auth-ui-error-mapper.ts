@@ -1,7 +1,7 @@
 import { inject, injectable } from 'tsyringe';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import { type UiError } from '@/services/error';
+import type { UiError } from '@/services/error';
 import type { AuthErrorHandler } from '@auth';
 
 @injectable()

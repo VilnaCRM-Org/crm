@@ -1,7 +1,17 @@
 import '../setup';
 import { ErrorHandler } from '@/services/error';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 
-const errorHandler = new ErrorHandler();
+const createObservability = (): jest.Mocked<ObservabilityService> => ({
+  init: jest.fn(),
+  captureError: jest.fn(),
+  setUser: jest.fn(),
+  clearUser: jest.fn(),
+  reportVital: jest.fn(),
+});
+
+const observability = createObservability();
+const errorHandler = new ErrorHandler(observability);
 
 describe('ErrorHandler Coverage Tests', () => {
   it('should return fallback error for unknown error codes', () => {
@@ -81,24 +91,38 @@ describe('ErrorHandler Coverage Tests', () => {
     expect(logger.error).toHaveBeenCalledTimes(3);
   });
 
-  it('should safely no-op when no logger is configured', () => {
-    expect(() => errorHandler.handle(new Error('No console available'))).not.toThrow();
+  it('should log to console and still capture through observability without a logger', () => {
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const error = new Error('No console available');
+
+    try {
+      expect(() => errorHandler.handle(error)).not.toThrow();
+
+      expect(consoleError).toHaveBeenCalledWith('[ErrorHandler]', error);
+      expect(observability.captureError).toHaveBeenCalledWith(error);
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it('exposes instance methods for auth-error mapping and error handling', () => {
+    const injected = createObservability();
     const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
     try {
-      const handler = new ErrorHandler();
+      const handler = new ErrorHandler(injected);
       const parsedError = {
         code: 'NETWORK_ERROR',
         message: 'Network failed',
       };
+      const handledError = new Error('instance handle');
 
       const result = handler.handleAuthError(parsedError);
-      handler.handle(new Error('instance handle'));
+      handler.handle(handledError);
 
       expect(result.displayMessage).toBeTruthy();
-      expect(consoleSpy).toHaveBeenCalledWith('[ErrorHandler]', expect.any(Error));
+      expect(consoleSpy).toHaveBeenCalledWith('[ErrorHandler]', handledError);
+      expect(injected.captureError).toHaveBeenCalledWith(handledError);
+      expect(observability.captureError).not.toHaveBeenCalled();
     } finally {
       consoleSpy.mockRestore();
     }

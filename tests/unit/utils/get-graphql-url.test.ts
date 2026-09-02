@@ -1,3 +1,6 @@
+import type { AppConfigReader } from '@/config/runtime/types/app-config';
+import { buildAppConfigReader, buildHttpUrl } from '@tests/builders';
+
 describe('getGraphQLUrl', () => {
   const ORIGINAL_ENV = { ...process.env };
 
@@ -10,9 +13,11 @@ describe('getGraphQLUrl', () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-  const resolveUrl = async (): Promise<string> => {
+  const resolveUrl = async (
+    appConfig: AppConfigReader = buildAppConfigReader()
+  ): Promise<string> => {
     const { default: GraphQLUrl } = await import('@/utils/get-graphql-url');
-    return new GraphQLUrl().resolve();
+    return new GraphQLUrl(appConfig).resolve();
   };
 
   it('returns the configured url trimmed when provided', async () => {
@@ -40,7 +45,7 @@ describe('getGraphQLUrl', () => {
     process.env.NODE_ENV = 'production';
 
     await expect(resolveUrl()).rejects.toThrow(
-      /REACT_APP_GRAPHQL_URL must be defined in production/
+      /A GraphQL URL must be defined in production environment/
     );
   });
 
@@ -49,7 +54,37 @@ describe('getGraphQLUrl', () => {
     process.env.NODE_ENV = 'production';
 
     await expect(resolveUrl()).rejects.toThrow(
-      /REACT_APP_GRAPHQL_URL must be defined in production/
+      /A GraphQL URL must be defined in production environment/
     );
+  });
+
+  describe('runtime configuration (issue #145)', () => {
+    it('prefers the injected runtime url over the build-time one', async () => {
+      const runtimeUrl = buildHttpUrl('/graphql');
+      process.env.REACT_APP_GRAPHQL_URL = 'http://build-time.example.com/graphql';
+
+      await expect(resolveUrl(buildAppConfigReader({ graphqlUrl: runtimeUrl }))).resolves.toBe(
+        runtimeUrl
+      );
+    });
+
+    it('satisfies the production requirement from the runtime url alone', async () => {
+      const runtimeUrl = buildHttpUrl('/graphql');
+      delete process.env.REACT_APP_GRAPHQL_URL;
+      process.env.NODE_ENV = 'production';
+
+      await expect(resolveUrl(buildAppConfigReader({ graphqlUrl: runtimeUrl }))).resolves.toBe(
+        runtimeUrl
+      );
+    });
+
+    it('uses the injected reader rather than the module singleton', async () => {
+      const runtimeUrl = buildHttpUrl('/graphql');
+      const appConfig = buildAppConfigReader({ graphqlUrl: runtimeUrl });
+      const graphqlUrl = jest.spyOn(appConfig, 'graphqlUrl');
+
+      await expect(resolveUrl(appConfig)).resolves.toBe(runtimeUrl);
+      expect(graphqlUrl).toHaveBeenCalledTimes(1);
+    });
   });
 });

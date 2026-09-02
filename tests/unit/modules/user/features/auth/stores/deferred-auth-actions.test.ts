@@ -21,6 +21,7 @@ const makeActions = (): { login: jest.Mock; register: jest.Mock } => ({
 
 const credentials = { email: 'a@b.c', password: 'p' };
 const registration = { fullName: 'A', email: 'a@b.c', password: 'p' };
+const loadFailureLog = 'Auth module failed to load; surfacing retryable error to the user.';
 
 describe('deferred auth actions composition root', () => {
   // clearMocks resets call history per test; mockReset additionally drops any staged
@@ -66,12 +67,16 @@ describe('deferred auth actions composition root', () => {
 
   it('stores a retryable login error when the deferred graph fails to load', async () => {
     const { authActions, AuthStateVar } = await loadBarrel();
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const loadError = new Error('chunk load failed');
     resolveMock.mockImplementation(() => {
-      throw new Error('chunk load failed');
+      throw loadError;
     });
 
     await authActions.loginUser(credentials);
 
+    expect(consoleError).toHaveBeenCalledWith(loadFailureLog, loadError);
+    expect(consoleError).toHaveBeenCalledTimes(1);
     expect(AuthStateVar.get()).toMatchObject({
       loginLoading: false,
       loginError: { kind: 'network', retryable: true },
@@ -80,12 +85,16 @@ describe('deferred auth actions composition root', () => {
 
   it('stores a retryable register error when the deferred graph fails to load', async () => {
     const { authActions, AuthStateVar } = await loadBarrel();
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const loadError = new Error('chunk load failed');
     resolveMock.mockImplementation(() => {
-      throw new Error('chunk load failed');
+      throw loadError;
     });
 
     await authActions.registerUser(registration);
 
+    expect(consoleError).toHaveBeenCalledWith(loadFailureLog, loadError);
+    expect(consoleError).toHaveBeenCalledTimes(1);
     expect(AuthStateVar.get()).toMatchObject({
       registerLoading: false,
       registerError: { kind: 'network', retryable: true },
@@ -95,17 +104,21 @@ describe('deferred auth actions composition root', () => {
   it('retries the load after a failure instead of caching the rejection', async () => {
     const { authActions, AuthStateVar } = await loadBarrel();
     const actions = makeActions();
+    const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const loadError = new Error('chunk load failed');
     resolveMock
       .mockImplementationOnce(() => {
-        throw new Error('chunk load failed');
+        throw loadError;
       })
       .mockReturnValue(actions);
 
     await authActions.loginUser(credentials);
     expect(AuthStateVar.get().loginError).not.toBeNull();
+    expect(consoleError).toHaveBeenCalledWith(loadFailureLog, loadError);
 
     await authActions.loginUser(credentials);
     expect(actions.login).toHaveBeenCalledWith(credentials, undefined);
     expect(resolveMock).toHaveBeenCalledTimes(2);
+    expect(consoleError).toHaveBeenCalledTimes(1);
   });
 });

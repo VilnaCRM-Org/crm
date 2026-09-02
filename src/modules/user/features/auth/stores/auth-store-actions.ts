@@ -2,39 +2,32 @@ import { inject, injectable } from 'tsyringe';
 import { v4 as uuidv4 } from 'uuid';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
-import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
-import type { ObservabilityService } from '@/services/types/observability/observability';
 import type { AuthError } from '@auth/types/auth-error';
-import type { AuthRepository, LoginResult, RegisterResult } from '@auth/types/auth-repository';
+import type { LoginResult, RegisterResult } from '@auth/types/auth-repository';
+import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 import type { LoginUserDto, RegisterUserDto } from '@auth/types/credentials';
-import AuthRequestErrors from '@auth/utils/auth-request-errors';
-
-import AuthStateVar from './auth-var';
 
 @injectable()
 export default class AuthStoreActions {
   constructor(
-    @inject(AUTH_TOKENS.AuthRepository) private readonly repository: AuthRepository,
-    @inject(AUTH_TOKENS.AuthRequestErrors) private readonly authRequestErrors: AuthRequestErrors,
-    @inject(OBSERVABILITY_TOKENS.ObservabilityService)
-    private readonly observability: ObservabilityService
+    @inject(AUTH_TOKENS.AuthStoreActionsDeps) private readonly deps: AuthStoreActionsDeps
   ) {}
 
   public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
-    AuthStateVar.set({ loginLoading: true, loginError: null });
+    this.deps.authState.set({ loginLoading: true, loginError: null });
     try {
-      const result = await this.repository.login(credentials, signal);
+      const result = await this.deps.repository.login(credentials, signal);
       this.applyLogin(result);
-      if (result.ok) this.observability.setUser({ id: uuidv4() });
+      if (result.ok) this.deps.observability.setUser({ id: uuidv4() });
     } catch (error) {
       this.applyLoginRejection(error);
     }
   }
 
   public async register(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
-    AuthStateVar.set({ registerLoading: true, registerError: null, user: null });
+    this.deps.authState.set({ registerLoading: true, registerError: null, user: null });
     try {
-      this.applyRegister(await this.repository.register(credentials, signal));
+      this.applyRegister(await this.deps.repository.register(credentials, signal));
     } catch (error) {
       this.applyRegisterRejection(error);
     }
@@ -72,7 +65,7 @@ export default class AuthStoreActions {
 
   private toAuthError(error: unknown): AuthError {
     if (this.isAuthError(error)) return error;
-    const normalized = this.authRequestErrors.toUiError(error);
+    const normalized = this.deps.authRequestErrors.toUiError(error);
     return {
       kind: 'unknown',
       displayMessage: normalized.displayMessage,
@@ -82,7 +75,7 @@ export default class AuthStoreActions {
 
   private applyLogin(result: LoginResult): void {
     if (result.ok) {
-      AuthStateVar.set({
+      this.deps.authState.set({
         loginLoading: false,
         email: result.value.email,
         token: result.value.token,
@@ -91,38 +84,38 @@ export default class AuthStoreActions {
       return;
     }
     if (result.error.aborted) {
-      AuthStateVar.set({ loginLoading: false });
+      this.deps.authState.set({ loginLoading: false });
       return;
     }
-    AuthStateVar.set({ loginLoading: false, loginError: result.error });
+    this.deps.authState.set({ loginLoading: false, loginError: result.error });
   }
 
   private applyLoginRejection(error: unknown): void {
     if (this.isAborted(error)) {
-      AuthStateVar.set({ loginLoading: false });
+      this.deps.authState.set({ loginLoading: false });
       return;
     }
-    AuthStateVar.set({ loginLoading: false, loginError: this.toAuthError(error) });
+    this.deps.authState.set({ loginLoading: false, loginError: this.toAuthError(error) });
   }
 
   private applyRegister(result: RegisterResult): void {
     if (result.ok) {
-      AuthStateVar.set({ registerLoading: false, user: result.value, registerError: null });
+      this.deps.authState.set({ registerLoading: false, user: result.value, registerError: null });
       return;
     }
     if (result.error.aborted) {
-      AuthStateVar.set({ registerLoading: false });
+      this.deps.authState.set({ registerLoading: false });
       return;
     }
-    AuthStateVar.set({ registerLoading: false, registerError: result.error });
+    this.deps.authState.set({ registerLoading: false, registerError: result.error });
   }
 
   private applyRegisterRejection(error: unknown): void {
     if (this.isAborted(error)) {
-      AuthStateVar.set({ registerLoading: false });
+      this.deps.authState.set({ registerLoading: false });
       return;
     }
-    AuthStateVar.set({
+    this.deps.authState.set({
       registerLoading: false,
       registerError: this.toAuthError(error),
     });

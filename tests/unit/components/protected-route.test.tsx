@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import ProtectedRoute from '@auth/components/protected-route';
 import { AuthStateVar } from '@auth/stores';
+import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 function seedToken(token: string | null): void {
   act(() => {
@@ -14,7 +15,7 @@ function seedToken(token: string | null): void {
 const renderWithRouter = (token: string | null): ReturnType<typeof render> => {
   seedToken(token);
   return render(
-    <MemoryRouter initialEntries={['/']}>
+    <MemoryRouter initialEntries={['/']} future={ROUTER_FUTURE_FLAGS}>
       <Routes>
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<div>dashboard</div>} />

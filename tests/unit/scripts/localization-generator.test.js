@@ -221,6 +221,15 @@ describe('LocalizationGenerator', () => {
     });
 
     it('should handle invalid JSON gracefully', () => {
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+      const invalidJson = 'invalid json content';
+      let parseMessage = '';
+      try {
+        JSON.parse(invalidJson);
+      } catch (error) {
+        parseMessage = error.message;
+      }
+
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readdirSync.mockReturnValue([
         { name: 'en.json', isFile: () => true },
@@ -231,11 +240,15 @@ describe('LocalizationGenerator', () => {
         if (filePath.endsWith('en.json')) {
           return JSON.stringify({ valid: 'json' });
         }
-        return 'invalid json content';
+        return invalidJson;
       });
 
       const result = generator.getLocalizationFromFolder('test/i18n');
 
+      expect(warnSpy).toHaveBeenCalledWith(
+        `Skipping invalid JSON: ${path.join('test/i18n', 'de.json')} - ${parseMessage}`
+      );
+      expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(result).toEqual({
         en: { translation: { valid: 'json' } },
       });

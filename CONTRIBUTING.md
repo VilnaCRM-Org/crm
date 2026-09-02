@@ -70,12 +70,63 @@ If you find an issue to work on, you are welcome to open a PR with a fix.
 
 3. Create a working branch and start with your changes!
 
+#### Adding a module or feature
+
+Do not create the folders by hand — generate them:
+
+```bash
+make new-module name=orders feature=order-list
+make new-feature module=orders feature=order-detail
+```
+
+The generated skeleton passes every static gate with zero edits, and the generator prints
+the two order-sensitive lines you must add yourself (the DI registrar entry and the route
+contract entry). Allowed folder names come from `config/module-shape.json`, the single
+source `.dependency-cruiser.js` also reads. `make verify-scaffold` (CI check `scaffold`)
+generates a throwaway module, gates it, and removes it, so the templates can never silently
+drift from the policy. See [`docs/scaffolding.md`](docs/scaffolding.md).
+
 ### Commit your update
 
 Commit the changes once you are happy with them.
 Don't forget to self-review to speed up the review process:zap:.
 
 Our commits are based on [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
+
+#### The commit contract is enforced in CI, not only by the local hook
+
+`.husky/commit-msg` still lints your commits locally, but it is opt-in (`make husky`), skipped
+by `git commit --no-verify`, and never sees commits made through the GitHub web UI. Because the
+repository is squash-merge-only with `squash_merge_commit_title=COMMIT_OR_PR_TITLE`, the string
+that actually lands on `main` — and that drives the semver bump and changelog in
+`autorelease.yml` — is the **pull request title**, which no hook can reach.
+
+The `commitlint` workflow closes both holes on every pull request. It lints:
+
+- `"<your PR title> (#<PR number>)"` — the header GitHub writes on squash merge — against
+  `commitlint.config.js`. The repository uses `squash_merge_commit_title=COMMIT_OR_PR_TITLE`, so a
+  single-commit pull request lands that **commit's** header instead; that path is covered by the
+  commit check below, which lints it against the same strict config;
+- every commit between the merge base with `main` and the PR head. Human commits get the same
+  strict config; a commit falls back to `commitlint.bot.config.js` only when GitHub reports it
+  signature-verified, its author identity a bot, and its committer an identity only GitHub
+  writes (`web-flow`, or the app account). The bot config drops `check-task-number-rule` and adds
+  one narrow ignore for the `Compressed Images` header that `calibreapp/image-actions` writes.
+  That ignore matches on message text, but it is only ever reached for a commit GitHub itself
+  wrote, so a human cannot reach it by copying the header — nor by signing a commit they authored
+  under a bot's noreply address, since the signature attests the committer, not the author.
+
+Fix a red check by editing the pull request title in the web UI (title failure) or by rewording
+and force-pushing (`git rebase -i` + `git push --force-with-lease`, commit failure). Reproduce
+either locally:
+
+```bash
+printf 'feat(#123): add a thing (#456)\n' | make lint-commit-message
+make lint-commit-range COMMIT_RANGE_FROM="$(git merge-base origin/main HEAD)" COMMIT_RANGE_TO=HEAD
+```
+
+Do not relax `commitlint.config.js` to make a header pass — it is the contract the release
+pipeline parses.
 
 ### Make targets as contracts
 
@@ -95,6 +146,74 @@ When you change or add a public target:
 - preserve the canonical entrypoints contributors and CI already rely on, or document the migration
   explicitly in the same change
 
+### Workflow, YAML, and repository-posture gates
+
+The CI configuration is itself gated, because a regression there silently weakens every other
+check. Four gates cover it. Each one turns its own check red on a regression; that only becomes
+merge-blocking once the check is in the branch-protection required list (see the end of this
+section for which ones belong there).
+
+- **`workflow security / zizmor`** (pull-request gate) runs
+  [zizmor](https://github.com/zizmorcore/zizmor) over `.github/workflows/`. Reproduce it locally
+  with `make lint-zizmor` (Docker, digest-pinned; deliberately not part of `make lint`, so it stays
+  independent of the dev container). It fails on medium-or-higher findings: an action pinned to a
+  mutable tag or branch instead of a reviewed release commit, an over-broad `permissions` block, a
+  `pull_request_target` job that checks out the PR head, restored credential persistence, a
+  `${{ github.event.* }}` value interpolated straight into a `run:` script, or an action from an
+  archived repository.
+  **Fix the workflow, never the gate.** Pin to a release commit, narrow the permission, or pass the
+  value through `env:` and reference it as a shell variable. Do not add a `zizmor.yml` ignore, raise
+  `--min-severity`, drop `--persona pedantic`, or shrink the audit scope.
+- **`format yaml files / yamlfmt`** (pull-request gate) runs `prettier --check` over every
+  `*.yml` / `*.yaml` file. It replaced a `norwd/fmtya` step that could not push its own fix and so
+  verified nothing. It catches format drift and YAML that does not parse. It does **not** catch
+  duplicate mapping keys — prettier's bundled YAML plugin passes `uniqueKeys: false`, so both keys
+  survive `--write` and `--check` exits 0. Fix a red check with `make format`;
+  `make lint-prettier` verifies the same files inside the dev container.
+- **`make lint-compose`** (part of `make lint`, so it runs in `static testing`) validates every
+  docker compose file combination the repository actually starts. Compose's own loader rejects a
+  duplicate mapping key (`mapping key X already defined at line N`), which is how the
+  last-key-wins defect — a silently discarded `healthcheck:` or `environment:` block — is covered
+  for the compose surface; actionlint's `syntax-check` covers it for the workflows. The gate also
+  catches schema and `${VAR}` interpolation errors before a container ever starts.
+- **`scorecard / analysis`** (weekly cron plus push to `main`, monitoring) runs OpenSSF Scorecard
+  and uploads SARIF to the Security tab. It watches repository _state_ that no pull-request diff
+  can show — branch protection, required checks, dependency-update health, pin coverage on `main`.
+  A scheduled run cannot block a merge; treat a score regression as a bug to file, not a warning to
+  dismiss.
+
+`workflow security / zizmor` and `format yaml files / yamlfmt` should be added to the
+branch-protection required checks for `main`; until they are, they report but do not block. Do not
+add `scorecard / analysis` — it has no `pull_request` trigger, so requiring it would leave every PR
+waiting forever on a check that never reports.
+
+### Scheduled runs and extra scans
+
+Some checks do work outside the pull-request lane, so it is worth knowing they exist before you
+change the code they watch — the first two never run on a pull request at all, the third runs
+there _and_ does more elsewhere:
+
+- **`contract drift`** (weekly, no pull-request trigger) reports when the pinned `user-service`
+  contract versions fall behind upstream by opening or updating one `contract-drift` issue. A bare
+  version gap does not fail it; an upstream lookup failure does.
+- **`nightly flake audit`** (nightly, no pull-request trigger) re-runs the full Playwright E2E and
+  visual suites **with retries enabled** and a zero flake budget, so a test that fails and passes
+  on retry turns the audit red and lands in a tracking issue naming the spec. Pull-request runs
+  keep `retries: 0`, where a flake is already a hard failure.
+- **`security testing`** _does_ run on every pull request. What is extra is its `push` to `main`
+  and weekly re-scan: those maintain the CodeQL baseline that pull-request alert diffing compares
+  against, and re-check old code against new query-pack releases.
+
+Because `schedule` triggers only ever fire from the default branch, schedule-only behaviour cannot
+be proven by the pull request that changes it — it is covered by Bats fixtures instead
+(`tests/bats/contract_drift.bats`, `tests/bats/flake_budget.bats`), and verified after merge with
+`gh workflow run <workflow>`. Note that GitHub disables scheduled workflows after 60 days without
+repository activity.
+
+The one contract check that _does_ run on every pull request is `contract testing`
+(`make contract-diff`). It fast-exits when `OPENAPI_SPEC_VERSION` is unchanged and runs
+`oasdiff breaking` when you bump it; see [`src/api/contracts/README.md`](src/api/contracts/README.md).
+
 ### Dockerfile build performance
 
 If your change touches a configured Dockerfile path (or the gate's own config),
@@ -108,6 +227,25 @@ marker (its own comment line), the repo-wide `docker-perf-exception` PR label,
 or a per-image `docker-perf-exception:<name>` PR label that waives only that
 image. The decision logic is covered by `tests/bats/docker_perf.bats`
 (run with `make test-bats`).
+
+### The preloaded-auth seed gate
+
+The Playwright, visual, and Lighthouse suites reach the protected `/` route by preloading an auth
+token (`window.__PRELOADED_AUTH_TOKEN__` or `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN`). Because
+`isAuthenticated` is `!!token`, that seam is an auth bypass if it ever reaches a deployable build,
+so it is compiled out of every build that did not explicitly opt in — see "Preloaded-auth-token seed
+gate" in [`CLAUDE.md`](CLAUDE.md) and [`src/config/env/README.md`](src/config/env/README.md) for the
+three invariants that keep the guard foldable.
+
+Run it locally with `make check-auth-seed-gate`. It builds `--target production`, scans the image's
+`dist` for the seam, and then re-scans a deliberately opted-in build that **must** still contain it,
+so the check cannot pass against the wrong artifact. In CI it is the `preloaded-auth seed gate` job
+of the `security testing` workflow, and it is the only job that exercises the deployable
+`--target production` image — every other prod-side suite builds the ephemeral `test-harness` target.
+
+Satisfy it by keeping the seam gated. Never relax the scan, narrow its file set, move a seed read
+out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere but the Dockerfile's
+`test-harness` stage.
 
 ### CI speed and the mutation-testing gate
 
@@ -213,13 +351,63 @@ job.
 **Settings → Branches → Branch protection rules** to require these jobs in place of the old single
 checks:
 
+- `conventional commit contract` (the job in `commitlint.yml` — issue #184; without a required
+  status the `edited` trigger is decorative, since a title can be changed after the last green run)
+- `memory-leak-testing` (the job in `memory-leak-testing.yml` — issue #183; the gate only became
+  binding once it could fail)
 - `mutation testing / merge and enforce gate`
 - `performance testing / lighthouse desktop`
 - `performance testing / lighthouse mobile`
+- `security testing / preloaded-auth seed gate`
+- `contract testing / OpenAPI breaking-change gate` (the job in `contract-testing.yml` — issue
+  #177; `contract drift` and `nightly flake audit` must not be added, because neither has a
+  `pull_request` trigger)
+
+The first two are the check-run names GitHub reports, which is what the required-checks search box
+matches: a job's check-run name is its `name:` when it declares one, and its job id otherwise.
 
 The merge job runs `if: ${{ !cancelled() }}` and fails closed if any shard did not succeed (a skipped
 required check would otherwise count as a pass), so requiring the merge job alone is sufficient — a
 crashed shard turns the gate red rather than bypassing it.
+
+### Relaxing a gate threshold
+
+The `gate ratchet` check compares every binding budget named in
+[`config/gate-thresholds.manifest.json`](config/gate-thresholds.manifest.json) at your PR head
+against the merge base. If a value moved in the weakening direction — a Lighthouse `minScore` or a
+coverage/mutation threshold **lowered**, a metrics/jscpd/bundle ceiling **raised**, a coverage
+exclusion list **grown**, or a guarded entry **deleted** — the job prints a
+`FILE / KEY / BASE / HEAD / RULE / REASON` table and fails.
+
+The first response is always to strengthen the value back. When a relaxation is genuinely the
+right call, make it an explicit, reviewed decision: add the **`gate-relaxation`** label to the PR
+and state the rationale in the PR body. The check then passes, and the same table is written to the
+job summary and a sticky PR comment so the relaxation is visible in review rather than buried in a
+diff. Do not satisfy the check by removing an entry from the manifest — the manifest guards itself.
+
+**Verification (run locally before pushing).** The check is a plain Node script, so you can
+reproduce exactly what CI will say without opening a PR:
+
+```bash
+# What the gate will report for your branch against main.
+GATE_RATCHET_BASE_SHA=origin/main GATE_RATCHET_HEAD_SHA=HEAD node scripts/ci/check-gate-ratchet.mjs
+echo "exit=$?"   # 0 = held or waived, 1 = weakened, 2 = a guarded config failed to load
+
+# Preview the sticky PR comment body.
+GATE_RATCHET_BASE_SHA=origin/main GATE_RATCHET_HEAD_SHA=HEAD \
+  GATE_RATCHET_REPORT_FILE=gate-ratchet-report.md node scripts/ci/check-gate-ratchet.mjs
+cat gate-ratchet-report.md
+
+# The extractors, directions, and waiver logic are unit-tested.
+docker compose exec -T dev bun x jest tests/unit/tooling/gate-ratchet.test.ts
+```
+
+Exit code `2` means the ratchet could not evaluate a guarded config (an unparseable or newly broken
+file). That is an evaluation failure, not a weakening, and the waiver label does **not** clear it.
+
+**Required status check (maintainer action).** Add `gate ratchet / no binding threshold weakened` to
+**Settings → Branches → Branch protection rules**. The job triggers on `labeled`/`unlabeled` in
+addition to the default PR events, so applying the waiver label re-runs it without a manual retry.
 
 ### Pull Request
 
@@ -265,6 +453,61 @@ Congratulations :tada::tada: The our team thanks you :sparkles:.
 
 Now that you are part of the php service template community.
 
+### The memory-leak gate is binding
+
+`make test-memory-leak` (workflow: `memory leak testing`) no longer just proves the scenarios
+did not throw. `tests/memory-leak/run-memlab-tests.js` runs memlab's `findLeaks()` after every
+scenario and exits non-zero when:
+
+- an unallowlisted leak is detected,
+- a file in `tests/memory-leak/tests/` exports no valid scenario, or
+- no scenario executed at all — a vacuous pass is now a failure.
+
+Discovery recurses into subfolders and accepts `.js`, `.mjs`, and `.cjs`, and
+`tests/unit/memory-leak/scenario-inventory.test.ts` pins the committed scenario set, so renaming,
+moving, or deleting a scenario fails a check instead of quietly shrinking coverage.
+
+When you add or edit a scenario, dispose every puppeteer `ElementHandle` you obtain
+(`const handle = await page.waitForSelector(...); await handle?.dispose();`). An undisposed
+handle is held by the DevTools console object group, so the harness retains the element it is
+supposed to be measuring and the gate reports a leak that does not exist in the app.
+
+`MEMLAB_SKIP_WARMUP=true` remains set for the memlab stack. Issue #183 proposed removing it so
+first-visit lazy-chunk allocations fall outside the measured window; that was tried and measured
+to hang the second Chromium launch (`Network.enable` never returns, the run dies on memlab's
+5-minute `protocolTimeout`), so it stays a follow-up on #183 rather than a broken gate.
+
+If the gate flags a leak you believe is not yours to fix (for example retention inside a
+third-party component), waive it with a reviewed entry in
+`tests/memory-leak/leak-allowlist.json`, keyed on the reported detached-node summary:
+
+```json
+{
+  "leaks": [{ "trace": "Detached <div id=\"reg-form-0\">", "reason": "<why this is safe>" }]
+}
+```
+
+Both fields are required and the file is reviewed in the pull request diff. Never satisfy this
+gate by deleting a scenario, skipping the `findLeaks()` call, or widening the allowlist to a
+match-everything string — the same root-cause-not-suppression policy used for ESLint, metrics,
+and jscpd applies. `tests/bats/memlab_gate.bats` pins every exit-code path.
+
+### Post-merge verification of `main`
+
+Every push to `main` runs `main verification`, which re-runs `make lint`, `make codegen-check`,
+and `make test-unit-all` against the merged tree. Pull-request checks run against the PR branch,
+so two individually green PRs can still compose into a broken `main`; this run catches that and
+attributes it to the merge that caused it. Runs are serialized
+(`concurrency: main-verification`, `cancel-in-progress: false`) so no merge is skipped.
+
+A failure opens — or comments on — a single tracking issue labelled `main-is-red`, and the next
+green run closes it, so the signal never outlives the breakage. Treat an open one as stop-the-line:
+fix `main` before merging further pull requests, because their checks are running against a base
+that is already broken.
+
+This run **detects**; it does not yet gate the release. `autorelease.yml` fires on the same
+push, so sequencing the release behind a green verification is tracked by issue #138.
+
 ## Dependency updates
 
 Dependencies are kept current by [Dependabot](.github/dependabot.yml), which opens pull
@@ -281,10 +524,15 @@ at 5.
 
 Dependabot commit headers use the conventional `chore(deps):` prefix (`chore(github-actions):`
 for the actions entry). Our commitlint `check-task-number-rule` expects a `(#N)` scope, which
-Dependabot cannot emit; that rule runs only in the local Husky `commit-msg` hook (there is no
-commitlint CI gate), so Dependabot pull requests are not blocked. Because the repository is
-squash-merge-only, add the task number to the squash commit title at merge time to keep
-`main`'s history conformant.
+Dependabot cannot emit. The `commitlint` workflow therefore lints bot pull requests against
+`commitlint.bot.config.js`, which relaxes that one rule and keeps every other conventional-commit
+rule in force — type, scope shape, subject, and header length are still checked. The bot path is
+selected from provenance GitHub reports (the PR author for the title; per commit for the range, a
+verified signature plus a bot author under a GitHub-written committer), never from the message
+text or from anything the contributor controls, so it cannot be reached by a human. The
+exemption is a step-level condition, never a job-level one, so the check always reports and can
+never leave a required status pending. Because the repository is squash-merge-only, add the task
+number to the squash commit title at merge time to keep `main`'s history conformant.
 
 ### Dependency license policy (issue #191)
 
@@ -305,3 +553,31 @@ Because a dependency (or a transitive one) can **relicense between versions**, r
 root-cause-not-suppression remediation policy: first replace the offending dependency; only if
 that is impossible, add its specific SPDX id to `ALLOWED_LICENSES` as a reviewed one-line diff.
 Never bypass or weaken the gate.
+
+## Unexpected console output fails Jest
+
+Every Jest setup file installs `jest-fail-on-console`, so a `console.error` or `console.warn`
+emitted while a test runs **fails that test** (the apollo-server node suite gates `error` only;
+`log` / `info` / `debug` are never gated). This catches the runtime warnings ESLint cannot see —
+React `act()` warnings, missing list `key`s, invalid DOM nesting, i18next `missingKey` — which
+otherwise scroll past in a green log.
+
+If your test legitimately drives a path the application logs on, spy on it **and assert it**,
+scoped to that single test:
+
+```ts
+const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+expect(consoleError).toHaveBeenCalledWith('Registration response validation failed', {
+  issueCount: 2,
+});
+```
+
+Do not put that spy in a file-wide `beforeEach` — it would swallow genuinely unexpected output in
+the file's other tests. If the message is an `act()` warning, it is a real bug in the test: await
+the update instead of spying it away.
+
+`tests/console-gate/allowlist.ts` is the only escape hatch, and
+`tests/unit/tooling/console-gate.test.ts` rejects any entry that is not `^`-anchored, lacks a
+substantive reason, or has outlived the dependency major it declares it expires with. Adding to it
+is reviewed as a defect suppression, exactly like an `eslint-disable`.

@@ -22,9 +22,9 @@ jest.mock('react-router-dom', () => {
     __esModule: true,
     ...actual,
     createBrowserRouter: (routes: unknown): unknown => routes,
-    RouterProvider: ({ router }: { router: unknown }): ReactElement => {
+    RouterProvider: ({ router, future }: { router: unknown; future?: unknown }): ReactElement => {
       const memoryRouter = actual.createMemoryRouter(router, { initialEntries: [mockCurrentPath] });
-      return <actual.RouterProvider router={memoryRouter} />;
+      return <actual.RouterProvider router={memoryRouter} future={future} />;
     },
   };
 });

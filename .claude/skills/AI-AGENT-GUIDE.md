@@ -78,6 +78,7 @@ What are you trying to do?
 ├─ Refactor existing code
 │   ├─ Move / rename / extract file → code-organization
 │   ├─ Reduce complexity or split file → complexity-management
+│   ├─ Class reaches for a collaborator instead of injecting it → architecture
 │   └─ Improve testability → frontend-testing-workflow / testing-workflow
 │
 ├─ Review / validate work
@@ -263,6 +264,52 @@ lowered:
 Fix the root cause. If a rule genuinely does not apply, refactor the code so
 the rule's intent holds.
 
+## Dependency Injection Rules (issue #130)
+
+When writing or editing a class in a logic directory (`src/services/**`,
+`src/utils/**`, `src/modules/*/store/**`,
+`src/modules/*/features/*/{repositories,stores,utils}/**`):
+
+- **Never** `import` another project class or behavioral module as a value in
+  order to call it. Add a token to the owning area's `tokens.ts`, register it in
+  that area's `di.ts` composition root (issue #109), and `@inject(TOKENS.X)` it.
+- If an import is used **only** as a type, make it `import type` (issue #88).
+- Allowed non-type value imports: the base class you `extend`, `tsyringe` /
+  `reflect-metadata`, token modules, config data (`@/config/api-config`,
+  `@/config/env`, `@/routes/route-paths`), domain and transport error classes,
+  constant maps (`response-messages`, `error-codes`), runtime data contracts
+  (`response-schemas`, `*-mutation`), the module/feature public barrels
+  (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
+- Behavioral third-party libraries (Apollo, Sentry, `web-vitals`, zod) go behind
+  an `@injectable()` adapter plus a token — do not add a new ad-hoc direct call.
+- Component (`.tsx`) consumption is a **different** rule (#128). Do not add
+  component-side enforcement here, and do not duplicate the dependency-cruiser
+  rule across extensions.
+- **Never** push the DI container into the auth paint path: do not eager-import
+  `dependency-injection-config.ts`, and do not convert a container-free
+  render-path singleton into a container-resolved class. The ones inside a gated
+  directory (`auth-var`, `reactive-var`, `reactive-var-state`,
+  `auth-store-selectors`, `response-schemas`, `map-registration-error`, the auth
+  lazy loaders, `registration-handlers-factory`, `auth-error-reporter`,
+  `url-builder`, `locale-formatter-core`, and the observability
+  core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by
+  explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks in a gated directory
+  (`use-auth-token`, `use-auth-state`, `use-focus-on-mount`) are in scope and are
+  carved out by the structural `react-hooks` entry in `EXEMPT_PATTERNS`
+  (`src/**/use-*.ts`) — that entry is load-bearing, so do not delete it. The
+  form-section `validations/*` singletons live under `components/`, which no
+  scope glob matches, so they have no policy entry at all — that absence is
+  expected, not an omission.
+- **Never** satisfy this gate with `eslint-disable`, `depcruise-ignore`,
+  `@ts-ignore`, or by widening the allowlist in
+  `config/di-collaborator-policy.js` — that file is for contract/data modules
+  only, and `tests/unit/tooling/di-collaborator-gate.test.ts` fails when a
+  carve-out starts hiding an `@injectable()` class.
+
+Full convention: `CLAUDE.md` → "Collaborators arrive through DI, never through a
+value import"; decision tree: `SKILL-DECISION-GUIDE.md` → "A class needs to call
+another class"; boundary rules: `architecture/SKILL.md`.
+
 ## Locked Configuration Policy
 
 Configuration files for lint, format, TypeScript, metrics, Mockoon, and the
@@ -385,8 +432,26 @@ test harnesses are treated as locked. If a task requires changing them:
 - Run `make format` before `make lint`.
 - Respect protected quality thresholds and complexity gates.
 - Use Docker-backed Makefile targets so behavior matches CI.
+- Resolve a behavioral collaborator in a `.tsx` component through
+  `useService(TOKENS.X)` from `@/providers/di` — called at the top level of the
+  component or of another hook, never at module scope (issue #128).
+- Complete the registration before resolving: declare the token in the owning
+  area's `tokens.ts`, register the class in that area's `di.ts`, and — for a new
+  area — add its registrar to the array in
+  `src/config/dependency-injection-config.ts`. A registrar that is never
+  aggregated leaves `useService` throwing an unregistered-token error.
+- Swap collaborators in component tests by registering a mock against the token
+  or jest-mocking `@/providers/di/use-service`.
 
 ### Do Not
+
+- `new` a behavioral class in a component, or value-import an injectable
+  service/repository/mapper/factory/handler into one (`import type` is fine).
+- Migrate the container-free carve-outs — the auth render path, the route shell,
+  `src/index.tsx`, the root error boundary — onto `useService`, or eager-import
+  the DI container into the auth paint path.
+- Treat the `.tsx`-only scope of that gate as license to `new` a collaborator
+  inside a hook (`use-*.ts`); review flags it.
 
 - Skip the decision guide.
 - Jump to execution without reading the full skill.

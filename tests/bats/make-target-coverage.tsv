@@ -18,6 +18,7 @@ build	bats	tests/bats/makefile_targets.bats	Validated for both the default Docke
 build-dev-chromium	ci	.github/workflows/performance-testing.yml	Executed directly by the performance workflow.
 ensure-chromium	ci	.github/workflows/performance-testing.yml	Exercised transitively by the Lighthouse PR workflow targets.
 build-analyze	bats	tests/bats/makefile_targets.bats	Validated as the ANALYZE=true production build wrapper.
+check-auth-seed-gate	bats	tests/bats/makefile_targets.bats	Validated as the two-build preloaded-auth seed scan: a deployable bundle and an opted-in bundle.
 build-out	bats	tests/bats/makefile_targets.bats	Validated as the Docker artifact extraction flow.
 format	bats	tests/bats/makefile_targets.bats	Validated as the combined Prettier and Qlty formatting entrypoint.
 fmt-prettier	bats	tests/bats/makefile_targets.bats	Validated as the direct Prettier formatting command.
@@ -28,6 +29,9 @@ lint-md	bats	tests/bats/makefile_targets.bats	Validated as the direct Markdown l
 lint-deps	ci	.github/workflows/dependency-cruiser.yml	Executed directly by the dependency-cruiser PR workflow.
 lint-dup	bats	tests/bats/makefile_targets.bats	Validated as the direct jscpd copy/paste duplication command.
 check-env-sync	bats	tests/bats/makefile_targets.bats	Validated as the direct .env/.env.example key-parity gate and as a member of the CI lint target list.
+lint-commit-message	bats	tests/bats/makefile_targets.bats	Validated as the stdin-driven header lint against the strict commitlint config.
+lint-commit-bot-message	bats	tests/bats/makefile_targets.bats	Validated as the stdin-driven bot-author lint against the relaxed commitlint config.
+lint-commit-range	bats	tests/bats/makefile_targets.bats	Validated as the host-git commit-range lint that dispatches on GitHub-verified bot provenance into the make targets.
 lint-metrics	bats	tests/bats/makefile_targets.bats	Validated as the Docker-backed rust-code-analysis wrapper including summary-path handoff.
 lint-metrics-run	bats	tests/bats/makefile_targets.bats	Validated as the direct shell-script handoff into `scripts/lint-metrics.sh`.
 lint-eslint-suppressions	bats	tests/bats/eslint_suppressions.bats	Validated as the standalone suppression inventory scan covering default scope, exclusions, and scan-path overrides.
@@ -112,4 +116,16 @@ lint-prettier	bats	tests/bats/makefile_targets.bats	Validated as a member of the
 lint-shell	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
 lint-lockfile	bats	tests/bats/lockfile_registries.bats	Validated as the bun.lock registry-allowlist gate with rogue-URL, rogue-specifier, lookalike-host, version-bump, and clean-pass fixtures.
 lint-actionlint	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
+contract-diff	bats	tests/bats/contract_diff.bats	Validated as the semantic OpenAPI breaking-change gate over base/head contract pins.
+check-contract-drift	bats	tests/bats/contract_drift.bats	Validated as the scheduled upstream contract drift monitor and its issue upsert.
+check-e2e-route-coverage	bats	tests/bats/ci_scripts.bats	Validated as the route-coverage inventory gate over the route table and its manifest.
+test-e2e-flake-audit	bats	tests/bats/makefile_targets.bats	Validated as the retry-enabled E2E audit run that injects the flake toggles into the Playwright container.
+test-visual-flake-audit	bats	tests/bats/makefile_targets.bats	Validated as the retry-enabled visual audit run that injects the flake toggles into the Playwright container.
+check-flakes	bats	tests/bats/flake_budget.bats	Validated as the FLAKE_BUDGET enforcement over a Playwright JSON report.
+print-flake-env	bats	tests/bats/makefile_targets.bats	Validated as the in-container echo proving the flake toggles crossed the compose boundary.
+lint-zizmor	bats	tests/bats/makefile_targets.bats	Validated as the Docker-based zizmor workflow-security gate, asserting the digest-pinned image, the medium severity threshold, and the .github/workflows audit scope.
+lint-compose	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh, and directly as the docker compose config validation over every file combination the repo starts.
 lint-licenses	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
+new-module	bats	tests/bats/makefile_targets.bats	Validated as driving `bun x plop module` in the dev container, defaulting the feature name and failing fast without name=.
+new-feature	bats	tests/bats/makefile_targets.bats	Validated as driving `bun x plop feature` in the dev container and failing fast without module= or feature=.
+verify-scaffold	bats	tests/bats/makefile_targets.bats	Validated as invoking scripts/ci/verify-scaffold.sh with the SCAFFOLD_VERIFY_TARGETS gate list.

@@ -10,6 +10,7 @@
 // jest.config.ts runs CJS Jest with no --experimental-vm-modules, and ESLint v9 loads the flat
 // eslint.config.mjs via a native dynamic import() that fails inside Jest's vm context.
 import { ESLint, Linter } from 'eslint';
+import diCollaboratorPolicy from '../../config/di-collaborator-policy.js';
 import flatConfig from '../../eslint.config.mjs';
 
 const eslint = new ESLint({ cwd: process.cwd() });
@@ -40,10 +41,28 @@ const S = {
     "Program > VariableDeclaration > VariableDeclarator[init.type='ArrowFunctionExpression'], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='ArrowFunctionExpression'], ExportDefaultDeclaration > ArrowFunctionExpression",
   funcExprConst:
     "Program > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression'], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator[init.type='FunctionExpression'], ExportDefaultDeclaration > FunctionExpression",
+  newBehavioralClassInComponent:
+    "NewExpression[callee.type='Identifier'][callee.name=/^[A-Z]/]" +
+    ':not([callee.name=/^(Error|TypeError|RangeError|SyntaxError|EvalError|ReferenceError|' +
+    'URIError|AggregateError|URL|URLSearchParams|Date|Map|WeakMap|Set|WeakSet|Promise|' +
+    'RegExp|Array|Object|Function|Proxy|Number|String|Boolean|Symbol|BigInt|Image|Audio|' +
+    'Event|CustomEvent|AbortController|AbortSignal|FormData|Headers|Request|Response|Blob|' +
+    'File|FileReader|TextEncoder|TextDecoder|Intl|Worker|WebSocket|Notification|' +
+    'IntersectionObserver|ResizeObserver|MutationObserver|PerformanceObserver|' +
+    'ArrayBuffer|SharedArrayBuffer|DataView|Int8Array|Uint8Array|Uint8ClampedArray|' +
+    'Int16Array|Uint16Array|Int32Array|Uint32Array|Float32Array|Float64Array|' +
+    'BigInt64Array|BigUint64Array)$/])',
   interfaceInLogic: 'TSInterfaceDeclaration',
   typeAliasInLogic: 'TSTypeAliasDeclaration',
   processEnv:
     "MemberExpression[object.name='process'][property.name='env'],MemberExpression[object.name='process'][property.value='env']",
+  objectLiteralMethod:
+    'Program > VariableDeclaration > VariableDeclarator > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > VariableDeclaration > VariableDeclarator > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > VariableDeclaration > VariableDeclarator > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], Program > ExportNamedDeclaration > VariableDeclaration > VariableDeclarator > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > TSAsExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/], ExportDefaultDeclaration > TSSatisfiesExpression > ObjectExpression > Property[value.type=/^(ArrowFunctionExpression|FunctionExpression)$/]',
+  intlToLocaleName:
+    'CallExpression[callee.property.name=/^toLocale(String|DateString|TimeString)$/]',
+  intlToLocaleComputed:
+    'CallExpression[callee.property.value=/^toLocale(String|DateString|TimeString)$/]',
+  intlMember: "MemberExpression[object.name='Intl']",
   varInType: 'VariableDeclaration:not([declare=true])',
   funcInType: 'FunctionDeclaration:not([declare=true])',
   classInType: 'ClassDeclaration:not([declare=true])',
@@ -51,6 +70,13 @@ const S = {
   stmtInType:
     'ExpressionStatement, IfStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, SwitchStatement, TryStatement, ThrowStatement, WithStatement, LabeledStatement, DebuggerStatement',
   defaultExportInType: 'ExportDefaultDeclaration > *:not(TSInterfaceDeclaration)',
+  // The two issue #130 selectors are BUILT by config/di-collaborator-policy.js (that module is
+  // the single source of truth both eslint.config.mjs and .dependency-cruiser.js read), so they
+  // are derived here rather than transcribed — a transcript of a generated string would only
+  // pin the transcription. Their construction is separately pinned against a real `Linter` in
+  // tests/unit/tooling/di-collaborator-gate.test.ts; the fixtures below prove they fire.
+  collaboratorProject: diCollaboratorPolicy.collaboratorSelectors()[0].selector,
+  collaboratorLibrary: diCollaboratorPolicy.collaboratorSelectors()[1].selector,
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -194,6 +220,19 @@ const FIXTURES = [
     rule: 'no-restricted-syntax',
     tag: 'issue #100',
   },
+  // component DI bridge (#128) — the React-layer counterpart of the #100 bans above. The
+  // built-in-constructor allowlist is proven separately, on real carve-out paths, by
+  // tests/unit/tooling/component-di-gate.test.ts; this fixture pins the selector into the
+  // rot-guard universe so it cannot be deleted from eslint.config.mjs unnoticed.
+  {
+    id: 'new-behavioral-class-in-component',
+    file: PROBES.component,
+    code: 'class Thing { run(): string { return "x"; } }\nconst A = () => <div>{new Thing().run()}</div>;',
+    covers: [S.newBehavioralClassInComponent],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #128',
+  },
   // type declarations in logic files (#88)
   {
     id: 'interface-in-logic',
@@ -292,6 +331,120 @@ const FIXTURES = [
     rule: 'no-restricted-syntax',
     tag: 'issue #88',
   },
+  // top-level object-literal methods (#180) — the "wrap your free functions in an object"
+  // evasion of the #89/#100 no-static/no-free-function gate. Method shorthand parses as a
+  // `FunctionExpression`-valued Property, which is the branch the selector union targets.
+  // The selector unions 3 roots x 3 holders; one fixture per branch, as with S.arrowConst.
+  {
+    id: 'object-literal-method-const',
+    file: PROBES.logic,
+    code: 'const o = { map(r: string): string { return r; } };',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  {
+    id: 'object-literal-method-const-as',
+    file: PROBES.logic,
+    code: 'const o = { map(r: string): string { return r; } } as const;',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  {
+    id: 'object-literal-method-const-satisfies',
+    file: PROBES.logic,
+    code: 'const o = { map(r: string): string { return r; } } satisfies object;',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  {
+    id: 'object-literal-method-export',
+    file: PROBES.logic,
+    code: 'export const o = { map(r: string): string { return r; } };',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  {
+    id: 'object-literal-method-export-as',
+    file: PROBES.logic,
+    code: 'export const o = { map(r: string): string { return r; } } as const;',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  {
+    id: 'object-literal-method-export-satisfies',
+    file: PROBES.logic,
+    code: 'export const o = { map(r: string): string { return r; } } satisfies object;',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  {
+    id: 'object-literal-method',
+    file: PROBES.logic,
+    code: 'export default { map(r: string): string { return r; } };',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  {
+    id: 'object-literal-method-default-as',
+    file: PROBES.logic,
+    code: 'export default { map(r: string): string { return r; } } as const;',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  {
+    id: 'object-literal-method-default-satisfies',
+    file: PROBES.logic,
+    code: 'export default { map(r: string): string { return r; } } satisfies object;',
+    covers: [S.objectLiteralMethod],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issues #89/#100/#180',
+  },
+  // raw Intl / toLocale* ban (#155) — one fixture per selector: plain member call, computed
+  // member call (a Literal `property` carries `value`, never `name`), and `Intl.*` access.
+  {
+    id: 'raw-tolocale-call',
+    file: PROBES.logic,
+    code: 'const s = new Date().toLocaleDateString();',
+    covers: [S.intlToLocaleName],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #155',
+  },
+  {
+    id: 'raw-tolocale-computed-call',
+    file: PROBES.logic,
+    code: "const s = new Date()['toLocaleString']();",
+    covers: [S.intlToLocaleComputed],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #155',
+  },
+  {
+    id: 'raw-intl-member',
+    file: PROBES.logic,
+    code: 'const f = Intl.NumberFormat;',
+    covers: [S.intlMember],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #155',
+  },
   // module/feature public-API boundary (#107) — deep cross-boundary import
   {
     id: 'deep-auth-import',
@@ -301,6 +454,83 @@ const FIXTURES = [
     expect: 'fail',
     rule: 'no-restricted-imports',
     tag: '',
+  },
+  // DI collaborator ban (#130) — a logic class may not value-import a project collaborator or
+  // a behavioral library; `import type` and the policy allowlists stay clean.
+  {
+    id: 'collaborator-project-value-import',
+    file: PROBES.logic,
+    code: "import loginApi from './login-api';\nexport { loginApi };",
+    covers: [S.collaboratorProject],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-library-value-import',
+    file: PROBES.logic,
+    code: "import { gql } from '@apollo/client';\nexport { gql };",
+    covers: [S.collaboratorLibrary],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  // The runtime-import union has four alternatives (default, namespace, non-type named,
+  // no-specifier side effect). One fixture per alternative, on each selector, so a partial
+  // regression in `RUNTIME_IMPORT_SHAPES` cannot leave the gate silently passing.
+  {
+    id: 'collaborator-project-namespace-import',
+    file: PROBES.logic,
+    code: "import * as loginApi from './login-api';\nexport { loginApi };",
+    covers: [S.collaboratorProject],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-project-side-effect-import',
+    file: PROBES.logic,
+    code: "import './login-api';",
+    covers: [S.collaboratorProject],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-project-named-import',
+    file: PROBES.logic,
+    code: "import { loginApi } from './login-api';\nexport { loginApi };",
+    covers: [S.collaboratorProject],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-library-namespace-import',
+    file: PROBES.logic,
+    code: "import * as apollo from '@apollo/client';\nexport { apollo };",
+    covers: [S.collaboratorLibrary],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-library-side-effect-import',
+    file: PROBES.logic,
+    code: "import '@apollo/client';",
+    covers: [S.collaboratorLibrary],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-library-default-import',
+    file: PROBES.logic,
+    code: "import apollo from '@apollo/client';\nexport { apollo };",
+    covers: [S.collaboratorLibrary],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
   },
   // Must-PASS exemptions
   {
@@ -316,6 +546,24 @@ const FIXTURES = [
     id: 'tsx-static-error-boundary-exempt',
     file: PROBES.component,
     code: 'class EB { static getDerivedStateFromError() { return {}; } }',
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
+  {
+    id: 'collaborator-type-import-exempt',
+    file: PROBES.logic,
+    code: "import type LoginApi from './login-api';",
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
+  {
+    id: 'collaborator-di-mechanism-exempt',
+    file: PROBES.logic,
+    code: "import { injectable } from 'tsyringe';\nimport TOKENS from './tokens';",
     covers: [],
     expect: 'pass',
     rule: 'no-restricted-syntax',

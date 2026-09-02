@@ -1,23 +1,22 @@
-import localeFormatterCore from '@/services/locale-formatter/locale-formatter-core';
+import { LocaleFormatterCore } from '@/services/locale-formatter/locale-formatter-core';
 import LocaleFormatterService from '@/services/locale-formatter/locale-formatter-service';
 
-jest.mock('@/services/locale-formatter/locale-formatter-core', () => ({
-  __esModule: true,
-  default: {
-    date: jest.fn().mockReturnValue('date-result'),
-    dateTime: jest.fn().mockReturnValue('date-time-result'),
-    number: jest.fn().mockReturnValue('number-result'),
-    currency: jest.fn().mockReturnValue('currency-result'),
-    percent: jest.fn().mockReturnValue('percent-result'),
-    relativeTime: jest.fn().mockReturnValue('relative-time-result'),
-  },
-}));
+const createCore = (): LocaleFormatterCore => {
+  const core = new LocaleFormatterCore();
+  jest.spyOn(core, 'date').mockReturnValue('date-result');
+  jest.spyOn(core, 'dateTime').mockReturnValue('date-time-result');
+  jest.spyOn(core, 'number').mockReturnValue('number-result');
+  jest.spyOn(core, 'currency').mockReturnValue('currency-result');
+  jest.spyOn(core, 'percent').mockReturnValue('percent-result');
+  jest.spyOn(core, 'relativeTime').mockReturnValue('relative-time-result');
+  return core;
+};
 
-const core = jest.mocked(localeFormatterCore);
 const JANUARY_15_2026_UTC = new Date(Date.UTC(2026, 0, 15));
 
 describe('LocaleFormatterService', () => {
-  const service = new LocaleFormatterService();
+  const core = createCore();
+  const service = new LocaleFormatterService(core);
 
   afterEach(() => {
     jest.clearAllMocks();

@@ -9,6 +9,13 @@ import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
 const isAnalyze = process.env.ANALYZE === 'true';
+
+// Read before loadEnv: it merges EVERY key of the `.env*` files into process.env, not just the
+// `REACT_APP_` prefixed ones. Reading afterwards would let an untracked `.env.local` supply the
+// opt-in and compile the test-only auth seed into a deployable bundle (issue #158). The flag is
+// a build-environment input — the Dockerfile's test-harness stage — and never a dotenv key.
+const preloadedAuthSeedOptIn = process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED ?? '';
+
 const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
 
 const performanceBudget = JSON.parse(
@@ -126,6 +133,10 @@ export default defineConfig({
     decorators: { version: 'legacy' },
     define: {
       ...publicVars,
+      // src/config/env/preloaded-auth-token.ts branches on this; the folded constant is what
+      // strips the test-only auth seed from deployable bundles. Dropping the define leaves a
+      // runtime `process` read that throws in the browser (issue #158).
+      'process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED': JSON.stringify(preloadedAuthSeedOptIn),
     },
   },
 });
