@@ -16,6 +16,10 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import HttpClientFactory from '@/services/https-client/https-client-factory';
 import HTTP_TOKENS from '@/services/https-client/tokens';
+import localeFormatterRegistrar from '@/services/locale-formatter/di';
+import localeFormatterCore from '@/services/locale-formatter/locale-formatter-core';
+import LocaleFormatterService from '@/services/locale-formatter/locale-formatter-service';
+import LOCALE_FORMATTER_TOKENS from '@/services/locale-formatter/tokens';
 import ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import observabilityRegistrar from '@/services/observability/di';
 import ObservabilityService from '@/services/observability/observability-service';
@@ -181,5 +185,31 @@ describe('https client composition root', () => {
     expect(child.resolve(HTTP_TOKENS.HttpResponseProcessor)).toBeInstanceOf(HttpResponseProcessor);
     expect(child.resolve(HTTP_TOKENS.HttpClientFactory)).toBeInstanceOf(HttpClientFactory);
     expect(child.resolve(HTTP_TOKENS.HttpsClient)).toBeInstanceOf(FetchHttpsClient);
+  });
+});
+
+describe('locale formatter composition root', () => {
+  const tokens = [
+    LOCALE_FORMATTER_TOKENS.LocaleFormatterService,
+    LOCALE_FORMATTER_TOKENS.LocaleFormatterCore,
+  ];
+
+  it('binds the formatter service and the render-path core', () => {
+    const child = unboundContainer(tokens);
+
+    localeFormatterRegistrar.register(child);
+
+    tokens.forEach((token) => expect(child.isRegistered(token)).toBe(true));
+  });
+
+  it('binds the service as a singleton and the core as the shared module instance', () => {
+    const child = unboundContainer(tokens);
+
+    localeFormatterRegistrar.register(child);
+
+    const service = child.resolve(LOCALE_FORMATTER_TOKENS.LocaleFormatterService);
+    expect(service).toBeInstanceOf(LocaleFormatterService);
+    expect(child.resolve(LOCALE_FORMATTER_TOKENS.LocaleFormatterService)).toBe(service);
+    expect(child.resolve(LOCALE_FORMATTER_TOKENS.LocaleFormatterCore)).toBe(localeFormatterCore);
   });
 });

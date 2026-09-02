@@ -69,13 +69,18 @@ own is the smaller half of that (~1.7x) — the per-mutant recompile is what dom
 A wall of `Timeout` with empty `killedBy` and no `statusReason` is the signature of this bug, not of
 async logic being detected. Check a shard report before trusting a score.
 
-The mirror failure is `Survived` with `testsCompleted: 0`: a mutant in a top-level object literal,
-const map or `styled()` call is evaluated at import, so Stryker marks it static, credits its
-per-test coverage to whichever unrelated file loaded the module first, and `findRelatedTests` then
-filters that file out — nothing runs, and no assertion can reach it. Load such modules inside the
-test (`jest.resetModules()` plus `import()` in the body, or `jest.isolateModulesAsync`); see
-`tests/unit/utils/isolated-module.ts`. Grep a shard report for `testsCompleted: 0` before concluding
-a survivor is a test-strength gap.
+The mirror failure is `Survived` with `testsCompleted: 0`. A mutant in a top-level object literal,
+const map or `styled()` call is evaluated at import. `ignoreStatic: true` handles the clean case:
+a mutant covered _only_ statically is reported `Ignored` and leaves the denominator entirely. The
+trap is the one that also picked up per-test coverage — credited to whichever unrelated test
+happened to load the module first. It is not static any more, so it counts, but the run that
+should kill it never happens: `findRelatedTests` narrows the run to files importing the mutated
+module, and the coverage-derived test filter narrows it again to that mis-credited test name,
+which those files do not contain. Nothing executes and no assertion can reach it. Load such
+modules inside the test (`jest.resetModules()` plus `import()` in the body, or
+`jest.isolateModulesAsync`) so the literal is evaluated during a test that asserts on it; see
+`tests/unit/utils/isolated-module.ts`. Grep a shard report for `testsCompleted: 0` before
+concluding a survivor is a test-strength gap.
 
 `tests/unit/tooling/mutation-checker-config.test.ts` pins all of the above.
 

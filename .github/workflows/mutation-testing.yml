@@ -52,14 +52,16 @@ jobs:
       # per-mutant statuses decided under different classification settings. The
       # hash spans the whole tsconfig extends chain the checker compiles, because
       # a compiler option can flip a mutant between type-valid and CompileError, and
-      # the dependency and container inputs that decide which tooling produced them.
+      # the dependency and container inputs that decide which tooling produced them. This
+      # workflow is hashed too: the shard count and the incremental flag live only here, so a
+      # change to either would otherwise restore a report scoped to a different shard split.
       - name: Restore mutation incremental cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: reports/stryker-incremental-${{ matrix.index }}.json
-          key: mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile') }}-${{ github.run_id }}
+          key: mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-${{ github.run_id }}
           restore-keys: |
-            mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile') }}-
+            mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-
 
       - name: Start dev container
         run: make start-dev

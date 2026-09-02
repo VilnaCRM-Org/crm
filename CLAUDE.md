@@ -327,10 +327,13 @@ were added (issue #121's work): 60.0% → 65.1% → 80.5% → 91.4% → 91.9%. E
 from tests, not from narrowing scope or relaxing the gate.
 
 **Static values need loading inside the test.** A mutant in a top-level object literal, const map or
-`styled()` call is evaluated at import, so Stryker marks it static, attributes its per-test coverage
-to whichever unrelated file happened to load the module first, and `findRelatedTests` then filters
-that file out — the mutant comes back `Survived` with `testsCompleted: 0` and no assertion can ever
-reach it. Load such modules with `jest.resetModules()` plus an `import()` inside the test body (or
+`styled()` call is evaluated at import. `ignoreStatic: true` reports the purely static ones as
+`Ignored`, out of the denominator; the trap is the one that _also_ picked up per-test coverage,
+credited to whichever unrelated test happened to load the module first. It still counts, but
+`findRelatedTests` restricts the run to files importing the mutated module and the coverage-derived
+test filter then restricts it to that mis-credited test name, which none of them declare — so the
+mutant comes back `Survived` with `testsCompleted: 0` and no assertion can ever reach it. Load such
+modules with `jest.resetModules()` plus an `import()` inside the test body (or
 `jest.isolateModulesAsync`) so the literal is evaluated during the test. This moved 154 mutants from
 `Survived` to `Killed` in a single run. `tests/unit/utils/isolated-module.ts` wraps the pattern.
 

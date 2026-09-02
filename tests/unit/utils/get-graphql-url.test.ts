@@ -49,6 +49,17 @@ describe('getGraphQLUrl', () => {
     );
   });
 
+  it('names both configuration keys and the localhost refusal when it throws', async () => {
+    delete process.env.REACT_APP_GRAPHQL_URL;
+    process.env.NODE_ENV = 'production';
+
+    await expect(resolveUrl()).rejects.toThrow(
+      'A GraphQL URL must be defined in production environment. Set graphqlUrl in the runtime ' +
+        'configuration (APP_CONFIG_GRAPHQL_URL) or REACT_APP_GRAPHQL_URL at build time. ' +
+        'Cannot default to localhost.'
+    );
+  });
+
   it('throws in production when the url is whitespace-only', async () => {
     process.env.REACT_APP_GRAPHQL_URL = '   ';
     process.env.NODE_ENV = 'production';
