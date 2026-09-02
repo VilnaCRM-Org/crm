@@ -305,15 +305,15 @@ Measured baseline (checker on, `findRelatedTests` on; cold 8-way sharded run):
 
 | Area                         | Files | Mutation score |
 | ---------------------------- | ----- | -------------- |
-| `src/components/**`          | 45    | 99.4%          |
-| `…/auth/stores/**`           | 8     | 98.7%          |
-| `…/auth/repositories/**`     | 7     | 98.2%          |
-| `src/services/**`            | 21    | 97.6%          |
+| `…/auth/stores/**`           | 8     | 99.3%          |
+| `src/components/**`          | 46    | 98.7%          |
+| `…/auth/repositories/**`     | 7     | 98.1%          |
+| `src/services/**`            | 25    | 97.6%          |
 | `…/form-section/validations` | 4     | 92.1%          |
-| Overall (`break` = 90)       | 159   | 91.9%          |
+| Overall (`break` = 90)       | 173   | 96.8%          |
 
-Merged tally: `killed=1539 timeout=0 survived=136 noCoverage=0`, `compileError=903
-runtimeError=21 ignored=501`, `valid=1675`. The mutate scope is 186 files; 159 produced mutants in
+Merged tally: `killed=1761 timeout=0 survived=58 noCoverage=0`, `compileError=1008
+runtimeError=27 ignored=503`, `valid=1819`. The mutate scope is 203 files; 173 produced mutants in
 the report (the rest are pure re-export barrels or files whose only mutants are static and skipped
 by `ignoreStatic`).
 
@@ -323,8 +323,11 @@ recorded baseline (92.5%, `break` = 90) was measured before honest classificatio
 cannot hang — so it scored how often a mutant outran the timeout window, not how often an assertion
 caught one. The same suite, unchanged, scored **59.9%** once mutants were classified on their
 merits. `break` was re-derived to 57 at that point, then ratcheted back to 90 as real assertions
-were added (issue #121's work): 60.0% → 65.1% → 80.5% → 91.4% → 91.9%. Every point of that came
-from tests, not from narrowing scope or relaxing the gate.
+were added (issue #121's work): 60.0% → 65.1% → 80.5% → 91.4% → 91.9%. Merging `main` widened the
+scoring set from 159 files to 173 and dropped the merged score to 89.99%, one mutant below the
+floor; killing those survivors — 113 of them static style tokens the isolated-load pattern below
+reaches — took it to 96.8%. Every point of that came from tests, not from narrowing scope or
+relaxing the gate.
 
 **Static values need loading inside the test.** A mutant in a top-level object literal, const map or
 `styled()` call is evaluated at import. `ignoreStatic: true` reports the purely static ones as
