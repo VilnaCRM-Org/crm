@@ -45,13 +45,11 @@ describe('colorTheme', () => {
     expect(registered).toHaveLength(BRAND_PALETTE.length);
   });
 
-  it('keeps every brand token a distinct, fully specified hex value', () => {
+  it('keeps every brand token fully specified and allows only the intended shared value', () => {
     const swatches = BRAND_PALETTE.map(([token]) => readSwatch(token)?.main);
 
     expect(swatches.every((hex) => hex !== undefined && /^#[0-9a-fA-F]{6}$/.test(hex))).toBe(true);
-    expect(new Set(swatches.map((hex) => hex?.toLowerCase())).size).toBeGreaterThan(
-      swatches.length - 3
-    );
+    expect(new Set(swatches.map((hex) => hex?.toLowerCase())).size).toBe(swatches.length - 1);
   });
 
   it('does not invent a token the palette never declared', () => {

@@ -37,15 +37,20 @@ describe('AuthProviderButtons', () => {
     });
   });
 
-  it('wires each button to the authorization popup of its own provider', () => {
+  it.each([
+    ['Google', 'google'],
+    ['GitHub', 'github'],
+    ['Facebook', 'facebook'],
+    ['Twitter', 'twitter'],
+  ])('wires the %s button to the authorization popup of its own provider', (name, provider) => {
     const openSpy = jest.spyOn(window, 'open').mockReturnValue(window);
 
     render(<AuthProviderButtons />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sign in with Google' }));
+    fireEvent.click(screen.getByRole('button', { name: `Sign in with ${name}` }));
 
     expect(openSpy).toHaveBeenCalledWith(
-      expect.stringContaining('/auth/google'),
+      expect.stringContaining(`/auth/${provider}`),
       '_blank',
       'noopener,noreferrer'
     );

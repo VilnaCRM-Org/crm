@@ -10,10 +10,16 @@ jest.mock('@sentry/react', () => ({
 }));
 
 const DSN = 'https://key@sentry.io/1';
+const originalDsn = process.env.REACT_APP_SENTRY_DSN;
 
 describe('SentryClient capture buffering is gated on the DSN', () => {
-  afterEach(() => {
+  beforeEach(() => {
     delete process.env.REACT_APP_SENTRY_DSN;
+  });
+
+  afterEach(() => {
+    if (originalDsn === undefined) delete process.env.REACT_APP_SENTRY_DSN;
+    else process.env.REACT_APP_SENTRY_DSN = originalDsn;
   });
 
   it('never replays a capture taken while the DSN was absent', async () => {
