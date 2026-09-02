@@ -53,15 +53,16 @@ const defer = <T>(): Deferred<T> => {
 };
 
 const makeActions = (over: Partial<AuthRepository>): AuthStoreActions =>
-  new AuthStoreActions(
-    {
+  new AuthStoreActions({
+    repository: {
       login: jest.fn().mockResolvedValue({ ok: true, value: { email, token } }),
       register: jest.fn().mockResolvedValue({ ok: true, value: { email, fullName } }),
       ...over,
     } as unknown as AuthRepository,
     authRequestErrors,
-    observability
-  );
+    observability,
+    authState: AuthStateVar,
+  });
 
 const rejectLogin = (error: unknown): Promise<void> =>
   makeActions({ login: jest.fn().mockRejectedValue(error) }).login(credentials);

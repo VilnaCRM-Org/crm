@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import type LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import type RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import { buildEmail, buildRegistrationResponse, buildToken } from '@tests/builders';
+import { assertError } from '@tests/utils/assert-result';
 
 const INVALID_LOGIN_RESPONSE_MESSAGE = 'Unexpected response from server';
 
@@ -40,11 +41,9 @@ describe('response mapper failure messages', () => {
 
     const result = mapper.map({ invalidField: 'value' }, buildEmail());
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBe(INVALID_LOGIN_RESPONSE_MESSAGE);
-      expect(result.error.retryable).toBe(false);
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBe(INVALID_LOGIN_RESPONSE_MESSAGE);
+    expect(result.error.retryable).toBe(false);
   });
 
   it('pins the login failure message when the response is null', async () => {
@@ -52,10 +51,8 @@ describe('response mapper failure messages', () => {
 
     const result = mapper.map(null, buildEmail());
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBe(INVALID_LOGIN_RESPONSE_MESSAGE);
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBe(INVALID_LOGIN_RESPONSE_MESSAGE);
   });
 
   it('never uses the failure message on a valid login response', async () => {
@@ -73,11 +70,9 @@ describe('response mapper failure messages', () => {
 
     const result = mapper.map({ fullName: 123, email: 456 });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBe(INVALID_REGISTRATION_RESPONSE_MESSAGE);
-      expect(result.error.retryable).toBe(false);
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBe(INVALID_REGISTRATION_RESPONSE_MESSAGE);
+    expect(result.error.retryable).toBe(false);
   });
 
   it('logs the registration failure under a fixed label with the issue count', async () => {

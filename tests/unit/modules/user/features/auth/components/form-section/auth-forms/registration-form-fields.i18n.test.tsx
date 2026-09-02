@@ -131,6 +131,10 @@ describe('RegistrationFormFields translation contract', () => {
     const [nameProps, emailProps] = mockFormField.mock.calls.map(([props]) => props as FieldProps);
     const [passwordProps] = mockPasswordField.mock.calls.map(([props]) => props as FieldProps);
 
+    if (!nameProps || !emailProps || !passwordProps) {
+      throw new Error('Expected name, email, and password fields to have rendered');
+    }
+
     expect(nameProps.label).not.toBe(emailProps.label);
     expect(nameProps.placeholder).not.toBe(emailProps.placeholder);
     expect(passwordProps.label).not.toBe(passwordProps.placeholder);

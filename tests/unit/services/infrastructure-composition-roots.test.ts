@@ -70,6 +70,7 @@ describe('error composition root', () => {
     const child = unboundContainer(tokens);
 
     errorRegistrar.register(child);
+    observabilityRegistrar.register(child);
 
     expect(child.isRegistered(ERROR_TOKENS.ErrorHandler)).toBe(true);
     const handler = child.resolve(ERROR_TOKENS.ErrorHandler);
@@ -168,6 +169,7 @@ describe('https client composition root', () => {
     const child = unboundContainer(tokens);
 
     httpClientRegistrar.register(child);
+    observabilityRegistrar.register(child);
 
     expect(child.resolve(HTTP_TOKENS.HttpErrorGuard)).toBeInstanceOf(HttpErrorGuard);
     expect(child.resolve(HTTP_TOKENS.HttpRequestConfigBuilder)).toBeInstanceOf(

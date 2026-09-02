@@ -32,10 +32,11 @@ function skeletonById(id: string): HTMLElement {
 function wrapperOf(id: string): HTMLElement {
   const all = skeletons();
   const index = all.findIndex((candidate) => candidate.id === id);
-  if (index < 1) {
+  const wrapper = index < 1 ? undefined : all[index - 1];
+  if (!wrapper) {
     throw new Error(`No wrapper rendered around "${id}"`);
   }
-  return all[index - 1];
+  return wrapper;
 }
 
 describe('AuthSkeleton animation and spacing contract', () => {

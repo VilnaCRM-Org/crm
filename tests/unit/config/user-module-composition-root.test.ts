@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { container, type DependencyContainer } from 'tsyringe';
 
+import runtimeConfigRegistrar from '@/config/runtime/di';
 import userModuleRegistrar from '@/modules/user/config/di';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
@@ -54,6 +55,7 @@ describe('user module composition root', () => {
 
   it('binds the graphql url and the apollo client', () => {
     const child = registeredContainer();
+    runtimeConfigRegistrar.register(child);
 
     expectAllRegistered(child, GRAPHQL_CLIENT_TOKENS);
     expect(child.resolve(AUTH_TOKENS.GraphQLUrl)).toBeInstanceOf(GraphQLUrl);

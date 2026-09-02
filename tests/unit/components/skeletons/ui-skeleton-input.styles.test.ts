@@ -119,6 +119,6 @@ describe('ui-skeleton-input styles', () => {
       Record<string, unknown>
     >;
 
-    expect(themed['&::after'].backgroundColor).toBe(colorTheme.palette.background.default);
+    expect(themed['&::after']?.backgroundColor).toBe(colorTheme.palette.background.default);
   });
 });

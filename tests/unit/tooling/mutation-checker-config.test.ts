@@ -62,8 +62,8 @@ describe('stryker mutant-classification config', () => {
       const devDependencies = packageJson.devDependencies as Record<string, string>;
       const major = (range: string): string => /\d+/.exec(range)?.[0] ?? '';
 
-      expect(major(devDependencies['@stryker-mutator/typescript-checker'])).toBe(
-        major(devDependencies['@stryker-mutator/core'])
+      expect(major(devDependencies['@stryker-mutator/typescript-checker'] ?? '')).toBe(
+        major(devDependencies['@stryker-mutator/core'] ?? '')
       );
     });
   });

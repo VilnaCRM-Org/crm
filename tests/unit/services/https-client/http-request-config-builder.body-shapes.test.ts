@@ -1,4 +1,5 @@
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
+import correlationIdProvider from '@/services/observability/correlation-id-provider';
 import type { RequestMethod } from '@/services/types/https-client/https-client';
 import { buildCredentials, buildEmail } from '@tests/builders';
 
@@ -6,7 +7,7 @@ jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
 const BASE_HEADERS = { Accept: 'application/json', 'X-Request-Id': 'test-request-id' };
 
-const builder = new HttpRequestConfigBuilder();
+const builder = new HttpRequestConfigBuilder(correlationIdProvider);
 
 function headersOf(config: RequestInit): Record<string, string> {
   return config.headers as Record<string, string>;

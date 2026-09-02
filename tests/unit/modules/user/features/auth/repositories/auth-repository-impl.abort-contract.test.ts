@@ -1,6 +1,7 @@
 import type AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
 import { buildCredentials, buildToken, buildUser } from '@tests/builders';
+import { assertError } from '@tests/utils/assert-result';
 
 const ABORTED_ERROR_SHAPE = {
   kind: 'network',
@@ -40,13 +41,11 @@ describe('AuthRepositoryImpl abort contract', () => {
     const result = await repository.login(buildCredentials());
 
     expect(result).toEqual({ ok: false, error: ABORTED_ERROR_SHAPE });
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBe('');
-      expect(result.error.retryable).toBe(false);
-      expect(result.error.aborted).toBe(true);
-      expect(result.error.kind).toBe('network');
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBe('');
+    expect(result.error.retryable).toBe(false);
+    expect(result.error.aborted).toBe(true);
+    expect(result.error.kind).toBe('network');
   });
 
   it('returns the same pinned aborted AuthError when registration is aborted', async () => {
@@ -58,11 +57,10 @@ describe('AuthRepositoryImpl abort contract', () => {
     const result = await repository.register(buildUser());
 
     expect(result).toEqual({ ok: false, error: ABORTED_ERROR_SHAPE });
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBe('');
-      expect(result.error.retryable).toBe(false);
-      expect(result.error.aborted).toBe(true);
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBe('');
+    expect(result.error.retryable).toBe(false);
+    expect(result.error.aborted).toBe(true);
   });
 
   it('keeps the aborted error distinct from a mapped transport error', async () => {
@@ -80,9 +78,8 @@ describe('AuthRepositoryImpl abort contract', () => {
       ok: false,
       error: { kind: 'unknown', displayMessage: 'Something went wrong', retryable: true },
     });
-    if (!result.ok) {
-      expect(result.error.aborted).toBeUndefined();
-    }
+    assertError(result);
+    expect(result.error.aborted).toBeUndefined();
   });
 
   it('forwards the caller abort signal to the login API', async () => {
