@@ -20,6 +20,7 @@ export default function ErrorFallback({ error, reset }: ErrorFallbackProps): JSX
 
   useEffect(() => {
     if (headingRef.current) headingRef.current.focus();
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
   }, []);
 
   return (

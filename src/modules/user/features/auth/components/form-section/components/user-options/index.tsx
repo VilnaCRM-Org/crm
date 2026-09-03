@@ -16,6 +16,7 @@ export default function UserOptions(): JSX.Element {
 
   const handleCheckboxChange = useCallback((): void => {
     setIsChecked((prev) => !prev);
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
   }, []);
   return (
     <Box sx={styles.authOptionsWrapper}>

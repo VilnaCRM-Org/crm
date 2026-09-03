@@ -30,6 +30,7 @@ export default function UIAsyncSection({
 
   useEffect(() => {
     setAnnounce(true);
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
   }, []);
 
   return (

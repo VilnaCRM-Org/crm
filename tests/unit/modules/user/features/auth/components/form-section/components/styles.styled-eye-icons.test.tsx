@@ -2,7 +2,6 @@ import { ThemeProvider } from '@mui/material/styles';
 import { render, screen } from '@testing-library/react';
 
 import breakpointsTheme from '@/components/ui-breakpoints';
-import { StyledEyeIcon, StyledEyeIconOff } from '@auth/components/form-section/components/styles';
 import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 jest.mock('@auth/assets/eye.svg', () => ({
@@ -20,7 +19,15 @@ const HIDE_LABEL = 'hide password';
 
 const MD_MEDIA = `min-width:${breakpointsTheme.breakpoints.values.md}px`;
 
-const renderIcons = (): void => {
+/**
+ * `styled()` runs at module evaluation. Importing the module at file scope evaluates both style
+ * callbacks before any test body starts, which leaves them covered by no test at all; the dynamic
+ * import defers that evaluation into the first test that asserts on the generated rules.
+ */
+const renderIcons = async (): Promise<void> => {
+  const { StyledEyeIcon, StyledEyeIconOff } =
+    await import('@auth/components/form-section/components/styles');
+
   render(
     <ThemeProvider theme={breakpointsTheme}>
       <StyledEyeIcon role="img" aria-label={SHOW_LABEL} />
@@ -51,29 +58,29 @@ describe.each([
   ['StyledEyeIcon', SHOW_LABEL],
   ['StyledEyeIconOff', HIDE_LABEL],
 ])('%s', (_name, label) => {
-  it('pins the compact 20x24px glyph box below the md breakpoint', () => {
-    renderIcons();
+  it('pins the compact 20x24px glyph box below the md breakpoint', async () => {
+    await renderIcons();
     const declaration = baseDeclarationOf(label);
 
     expect(declaration.getPropertyValue('width')).toBe('20px');
     expect(declaration.getPropertyValue('height')).toBe('24px');
   });
 
-  it('leaves the glyph unfilled so the svg strokes carry the shape', () => {
-    renderIcons();
+  it('leaves the glyph unfilled so the svg strokes carry the shape', async () => {
+    await renderIcons();
 
     expect(baseDeclarationOf(label).getPropertyValue('fill')).toBe('none');
   });
 
-  it('widens the glyph to 24px from the md breakpoint up', () => {
-    renderIcons();
+  it('widens the glyph to 24px from the md breakpoint up', async () => {
+    await renderIcons();
 
     expect(mdDeclarationOf(label).getPropertyValue('width')).toBe('24px');
     expect(baseDeclarationOf(label).getPropertyValue('width')).not.toBe('24px');
   });
 
-  it('overrides only the width at the md breakpoint', () => {
-    renderIcons();
+  it('overrides only the width at the md breakpoint', async () => {
+    await renderIcons();
     const declaration = mdDeclarationOf(label);
 
     expect(declaration.getPropertyValue('height')).toBe('');
@@ -82,8 +89,8 @@ describe.each([
 });
 
 describe('password visibility toggle glyphs', () => {
-  it('keeps both glyphs on one geometry contract so toggling never shifts layout', () => {
-    renderIcons();
+  it('keeps both glyphs on one geometry contract so toggling never shifts layout', async () => {
+    await renderIcons();
     const shown = baseDeclarationOf(SHOW_LABEL);
     const hidden = baseDeclarationOf(HIDE_LABEL);
 

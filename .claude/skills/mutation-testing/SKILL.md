@@ -99,8 +99,15 @@ Set the enforced `break` from that CI measurement with a two-push flow:
 3. Ratchet `break` to just below the measured score; fill the per-area table in CLAUDE.md.
 
 Ratchet policy: raise `break` over time, never lower it to make CI pass, never narrow the mutated
-scope to dodge a survived mutant, and never add `stryker disable` / `istanbul ignore` suppressions —
-fix survived mutants with real assertions.
+scope to dodge a survived mutant, and never add an `istanbul ignore` — fix survived mutants with
+real assertions.
+
+The single exception is a **provably equivalent** mutant, one no test can kill because the mutated
+program behaves identically. Leaving it `Survived` misreports the suite. Prefer deleting the source
+the mutant proved irrelevant (`?? ''` after a guard that already narrows to a string, a `.catch`
+fallback only read for falsiness, a duplicated `typeof` check). Only when no such refactor exists,
+annotate the line with `// Stryker disable next-line <Mutator>: <reason>`, where the reason states
+why the two programs cannot be told apart — never that the test was hard to write.
 
 ## Keep scope and shards in lockstep
 

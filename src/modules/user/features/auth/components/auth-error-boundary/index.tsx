@@ -100,8 +100,8 @@ export default class AuthErrorBoundary extends Component<
   private reportSafely(error: Error, info: React.ErrorInfo): void {
     try {
       authErrorReporter.report(error, info);
-    } catch (captureFailure) {
-      void captureFailure;
+    } catch {
+      // a reporting failure must never mask the error being reported
     }
   }
 }

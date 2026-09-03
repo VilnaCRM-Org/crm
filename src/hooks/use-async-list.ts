@@ -37,6 +37,7 @@ export default function useAsyncList<T>(load: () => Promise<readonly T[]>): Asyn
     return (): void => {
       subscription.active = false;
     };
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
   }, []);
 
   return state;

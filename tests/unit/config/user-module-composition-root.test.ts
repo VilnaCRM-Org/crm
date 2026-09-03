@@ -7,6 +7,7 @@ import AUTH_TOKENS from '@/modules/user/config/tokens';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import GraphQLUrl from '@/utils/get-graphql-url';
+import authStateVar from '@auth/stores/auth-var';
 
 const GRAPHQL_CLIENT_TOKENS = [AUTH_TOKENS.GraphQLUrl, AUTH_TOKENS.ApolloClient];
 const ERROR_FACTORY_TOKENS = [AUTH_TOKENS.ApiStatusErrorFactory, AUTH_TOKENS.ApiErrorFactory];
@@ -18,6 +19,7 @@ const RESPONSE_MAPPER_TOKENS = [
 ];
 const API_TOKENS = [AUTH_TOKENS.RegistrationAPI, AUTH_TOKENS.LoginAPI];
 const REPOSITORY_TOKENS = [AUTH_TOKENS.AuthRepositoryDeps, AUTH_TOKENS.AuthRepository];
+const AUTH_STATE_TOKENS = [AUTH_TOKENS.AuthStateVar, AUTH_TOKENS.AuthStoreActionsDeps];
 const EVERY_TOKEN = [
   ...GRAPHQL_CLIENT_TOKENS,
   ...ERROR_FACTORY_TOKENS,
@@ -25,6 +27,7 @@ const EVERY_TOKEN = [
   ...RESPONSE_MAPPER_TOKENS,
   ...API_TOKENS,
   ...REPOSITORY_TOKENS,
+  ...AUTH_STATE_TOKENS,
 ];
 
 function registeredContainer(): DependencyContainer {
@@ -85,6 +88,16 @@ describe('user module composition root', () => {
 
   it('binds the auth repository and its dependency bundle', () => {
     expectAllRegistered(registeredContainer(), REPOSITORY_TOKENS);
+  });
+
+  it('binds the reactive auth state and the store action dependency bundle', () => {
+    expectAllRegistered(registeredContainer(), AUTH_STATE_TOKENS);
+  });
+
+  it('binds the container-free auth state singleton by value, not by construction', () => {
+    const child = registeredContainer();
+
+    expect(child.resolve(AUTH_TOKENS.AuthStateVar)).toBe(authStateVar);
   });
 
   it('registers the mappers as singletons rather than per-resolve instances', () => {

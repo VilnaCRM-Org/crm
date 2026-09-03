@@ -295,27 +295,37 @@ only tree that is mutated — because the checker builds a full program per work
 memory for files that hold no mutants. Never widen `disableTypeChecks` or drop the checker to make
 a run faster; that trades the gate's honesty for wall-clock.
 
-`thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`. `break` is the
-enforced floor, set at/just below the measured baseline. **Ratchet policy:** raise `break` toward
-`high` as suites improve; never lower it to make CI pass, never narrow the mutated scope to dodge a
-survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
-assertions.
+`thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`, now flat at
+`{ 100, 100, 100 }`: every mutant Stryker scores is detected, so any survivor is a regression.
+**Ratchet policy:** never lower `break` to make CI pass, never narrow the mutated scope to dodge a
+survived mutant, and never add a coverage suppression — fix survived mutants with real assertions.
 
-Measured baseline (checker on, `findRelatedTests` on; cold 8-way sharded run):
+**The one exception: a provably equivalent mutant.** A mutant that no test can ever kill, because
+the mutated program is behaviourally identical to the original, is not a coverage gap — leaving it
+`Survived` misreports the suite exactly the way the `Timeout` inflation this issue removed did.
+Two remedies, in order:
 
-| Area                         | Files | Mutation score |
-| ---------------------------- | ----- | -------------- |
-| `…/auth/stores/**`           | 8     | 99.3%          |
-| `src/components/**`          | 46    | 98.7%          |
-| `…/auth/repositories/**`     | 7     | 98.1%          |
-| `src/services/**`            | 25    | 97.6%          |
-| `…/form-section/validations` | 4     | 92.1%          |
-| Overall (`break` = 90)       | 173   | 96.8%          |
+1. **Adopt the simpler program.** An equivalent mutant is a proof that a piece of source does not
+   matter. `(err.message ?? '')` after an `instanceof Error` guard, `.catch(() => '')` whose `''` is
+   only ever read for falsiness, `value.length >= 2` after a regex that already forces three
+   characters, a duplicated `typeof` guard behind another one — deleting the dead half removes the
+   mutant and leaves better code. Prefer this every time it is available.
+2. **Annotate it, with the proof.** Where no honest refactor exists, a
+   `// Stryker disable next-line <Mutator>: <reason>` on the line above reports it `Ignored` — the
+   same out-of-denominator status `ignoreStatic` already relies on. The reason must state _why_ the
+   two programs cannot be told apart, not that a test was hard to write.
 
-Merged tally: `killed=1761 timeout=0 survived=58 noCoverage=0`, `compileError=1008
-runtimeError=27 ignored=503`, `valid=1819`. The mutate scope is 203 files; 173 produced mutants in
-the report (the rest are pure re-export barrels or files whose only mutants are static and skipped
-by `ignoreStatic`).
+The only annotated case today is the empty React hook dependency array. Stryker's
+`ArrayDeclaration` mutator rewrites `[]` to `["Stryker was here"]`, and React compares deps
+element-wise with `Object.is`: a constant one-element array is equal on every render, so the
+effect or memo fires exactly as it does with `[]`. Hoisting the literal to a named constant would
+remove the mutant but `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps
+argument that is not an array literal, so there is nothing left to change. Eleven sites carry the
+annotation; adding a twelfth needs the same standard of proof.
+
+The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
+mutate scope is 203 files, of which ~173 produce scored mutants (the rest are pure re-export
+barrels or files whose only mutants are static and skipped by `ignoreStatic`).
 
 **How this number was reached, and why the earlier one was not comparable.** The previously
 recorded baseline (92.5%, `break` = 90) was measured before honest classification: 2405 of its 2410
@@ -326,8 +336,10 @@ merits. `break` was re-derived to 57 at that point, then ratcheted back to 90 as
 were added (issue #121's work): 60.0% → 65.1% → 80.5% → 91.4% → 91.9%. Merging `main` widened the
 scoring set from 159 files to 173 and dropped the merged score to 89.99%, one mutant below the
 floor; killing those survivors — 113 of them static style tokens the isolated-load pattern below
-reaches — took it to 96.8%. Every point of that came from tests, not from narrowing scope or
-relaxing the gate.
+reaches — took it to 96.8%. The last 58 closed the gap to 100%: 29 fell to new assertions, 18 were
+equivalent mutants removed by adopting the simpler program, and 11 are the annotated hook
+dependency arrays above. Every point of that came from tests or from deleting dead source, not from
+narrowing scope or relaxing the gate.
 
 **Static values need loading inside the test.** A mutant in a top-level object literal, const map or
 `styled()` call is evaluated at import. `ignoreStatic: true` reports the purely static ones as

@@ -1,9 +1,10 @@
 import { PiiScrubber } from '@/services/observability/pii-scrubber';
 import type { SentryEvent } from '@/services/types/observability/sentry';
 
+// The pattern table is an instance field, so it is only evaluated when a scrubber is
+// constructed. Building one at describe scope evaluates it outside every test body, which
+// leaves the literals covered by no test at all; each test constructs its own instead.
 describe('PiiScrubber bearer-token whitespace handling', () => {
-  const scrubber = new PiiScrubber();
-
   it.each([
     { separator: 'a single space', credential: 'Bearer abc.def-ghi' },
     { separator: 'repeated spaces', credential: 'Bearer   abc.def-ghi' },
@@ -12,7 +13,7 @@ describe('PiiScrubber bearer-token whitespace handling', () => {
   ])('redacts a bearer credential introduced by $separator', ({ credential }) => {
     const event: SentryEvent = { message: `authorization ${credential} rejected` };
 
-    const result = scrubber.scrub(event);
+    const result = new PiiScrubber().scrub(event);
 
     expect(result.message).toBe('authorization [redacted] rejected');
   });
@@ -20,7 +21,7 @@ describe('PiiScrubber bearer-token whitespace handling', () => {
   it('leaves a bare bearer scheme with no credential untouched', () => {
     const event: SentryEvent = { message: 'bearer  ' };
 
-    const result = scrubber.scrub(event);
+    const result = new PiiScrubber().scrub(event);
 
     expect(result.message).toBe('bearer  ');
   });
