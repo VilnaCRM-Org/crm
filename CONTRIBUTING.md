@@ -320,8 +320,12 @@ results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. 
 `thresholds: { high, low, break }` as a coherent band. `break` is the enforced floor, set at/just
 below the measured baseline; `high`/`low` colour the HTML report. Ratchet policy: raise `break`
 toward `high` as suites improve — **never lower it to make CI pass**, and never narrow the mutated
-scope to dodge a survived mutant. Fix a survived mutant with a real assertion, not an exclusion or a
-`// stryker disable` / `istanbul ignore` suppression. Excluding a file from
+scope to dodge a survived mutant. Fix a survived mutant with a real assertion, not an exclusion or an
+`istanbul ignore` suppression. The one exception is a **provably equivalent** mutant, which no test
+can kill because the mutated program behaves identically: prefer deleting the source the mutant
+proved irrelevant, and only where no such refactor exists annotate it with
+`// Stryker disable next-line <Mutator>: <reason>` carrying the proof. See "Honest mutant
+classification" in [`CLAUDE.md`](CLAUDE.md) for the full rule. Excluding a file from
 `scripts/ci/mutation-scope.mjs` is only legitimate for genuine non-logic (types, styles, stories,
 generated code, i18n). The measured per-area baseline is recorded in
 [`CLAUDE.md`](CLAUDE.md) under "Mutation testing scope and baseline".

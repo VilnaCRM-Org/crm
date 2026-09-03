@@ -316,17 +316,24 @@ Two remedies, in order:
    two programs cannot be told apart, not that a test was hard to write. **Placement is
    load-bearing:** Stryker reads the directive from a node's `leadingComments` and keys
    `next-line` off _that node's_ line, so the comment has to lead a node starting on the mutant's
-   own line. A comment left dangling at the end of a block — the natural-looking spot above
-   `}, []);` — attaches to no node and is silently ignored, so the deps array goes on its own line
-   under the directive and the call is written in expanded form.
+   own line. Any node will do: `password-field.tsx` leads the whole `const toggle = …` statement
+   and its inline deps array is annotated fine. What fails is a comment with no node to lead —
+   dangling at the end of a block, the natural-looking spot above `}, []);`, it attaches to nothing
+   and is silently ignored. For that shape write the call expanded, with the deps array on its own
+   line under the directive.
 
-The only annotated case today is the empty React hook dependency array. Stryker's
-`ArrayDeclaration` mutator rewrites `[]` to `["Stryker was here"]`, and React compares deps
-element-wise with `Object.is`: a constant one-element array is equal on every render, so the
-effect or memo fires exactly as it does with `[]`. Hoisting the literal to a named constant would
-remove the mutant but `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps
-argument that is not an array literal, so there is nothing left to change. Eleven sites carry the
-annotation; adding a twelfth needs the same standard of proof.
+The only annotated case today is the React hook dependency array, at eleven sites, and it comes in
+two shapes. Ten are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
+compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
+render and the effect or memo fires exactly as it does with `[]`. The eleventh,
+`use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
+`ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
+`actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
+box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
+Hoisting either literal to a named constant would remove the mutant, but
+`react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
+array literal, so there is nothing left to change. Adding a twelfth needs the same standard of
+proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
 mutate scope is 203 files, of which ~173 produce scored mutants (the rest are pure re-export
