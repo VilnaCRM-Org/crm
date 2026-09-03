@@ -1,0 +1,60 @@
+name: commitlint
+
+on:
+  pull_request:
+    branches: ['main']
+    types: [opened, edited, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  commitlint:
+    name: conventional commit contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Start dev container
+        run: make start-dev
+
+      - name: Lint the pull request title as the squash-merge commit header
+        if: ${{ !endsWith(github.event.pull_request.user.login, '[bot]') }}
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: printf '%s (#%s)\n' "$PR_TITLE" "$PR_NUMBER" | make lint-commit-message
+
+      - name: Lint a bot pull request title without the task-number rule
+        if: ${{ endsWith(github.event.pull_request.user.login, '[bot]') }}
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: printf '%s (#%s)\n' "$PR_TITLE" "$PR_NUMBER" | make lint-commit-bot-message
+
+      - name: Lint every commit in the pull request
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          # Bot detection asks GitHub whether it signed the commit, so the step needs a token
+          # and the repository to ask about. Read-only: the job declares `contents: read`.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMIT_PROVENANCE_REPO: ${{ github.repository }}
+        run: |
+          git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main
+          range_from="$(git merge-base origin/main "$HEAD_SHA")"
+          make lint-commit-range COMMIT_RANGE_FROM="$range_from" COMMIT_RANGE_TO="$HEAD_SHA"

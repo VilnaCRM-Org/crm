@@ -1,8 +1,20 @@
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
+import { I18nextProvider } from 'react-i18next';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
+import localization from '@/i18n/localization.json';
+import testI18n from '@tests/i18n/test-i18n';
+
+const AUTH_SKELETON_REGION_NAME = localization.en.translation.auth.loadingForm;
+
+const renderAuthSkeleton = (disableAnimation = false): ReturnType<typeof render> =>
+  render(
+    <I18nextProvider i18n={testI18n}>
+      {disableAnimation ? <AuthSkeleton disableAnimation /> : <AuthSkeleton />}
+    </I18nextProvider>
+  );
 
 function getGenericSkeletonElements(): HTMLElement[] {
   return screen.getAllByRole('generic', { hidden: true }) as HTMLElement[];
@@ -65,15 +77,15 @@ describe('AuthSkeleton Integration Tests', () => {
 
   it('renders all skeleton elements without the flag-gated OAuth placeholders', () => {
     expect(React).toBeDefined();
-    render(<AuthSkeleton />);
+    renderAuthSkeleton();
     assertAuthSkeletonElements();
   });
 
   it('renders the full skeleton tree when animation is disabled', () => {
-    render(<AuthSkeleton disableAnimation />);
+    renderAuthSkeleton(true);
 
     assertAuthSkeletonElements();
-    expect(screen.getByRole('region')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: AUTH_SKELETON_REGION_NAME })).toBeInTheDocument();
   });
 
   it('renders the divider and social placeholders when the OAuth flag is on', () => {
@@ -94,8 +106,8 @@ describe('AuthSkeleton Integration Tests', () => {
       });
 
       it(`should render skeleton structure on ${label} viewport`, () => {
-        render(<AuthSkeleton />);
-        const section = screen.getByRole('region');
+        renderAuthSkeleton();
+        const section = screen.getByRole('region', { name: AUTH_SKELETON_REGION_NAME });
         expect(section).toBeInTheDocument();
       });
     });
@@ -113,8 +125,8 @@ describe('AuthSkeleton Integration Tests', () => {
           });
           window.dispatchEvent(new Event('resize'));
 
-          const { unmount } = render(<AuthSkeleton />);
-          const section = screen.getByRole('region');
+          const { unmount } = renderAuthSkeleton();
+          const section = screen.getByRole('region', { name: AUTH_SKELETON_REGION_NAME });
           expect(section).toBeInTheDocument();
           unmount();
         });
@@ -131,7 +143,7 @@ describe('AuthSkeleton Integration Tests', () => {
           });
           window.dispatchEvent(new Event('resize'));
 
-          const { unmount } = render(<AuthSkeleton />);
+          const { unmount } = renderAuthSkeleton();
           const buttons = screen.queryAllByRole('button');
           const links = screen.queryAllByRole('link');
           expect(buttons).toHaveLength(0);

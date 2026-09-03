@@ -513,7 +513,7 @@ describe('throwIfHttpError', () => {
 
     it('uses the raw value when a JSON response body is a primitive string', async () => {
       class StringJsonResponse extends MockResponse {
-        public async json(): Promise<unknown> {
+        public override async json(): Promise<unknown> {
           return 'plain-json-string';
         }
       }

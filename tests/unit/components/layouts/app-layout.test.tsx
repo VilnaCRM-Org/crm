@@ -2,12 +2,13 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 import AppLayout from '@/components/layouts/app-layout';
+import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 type Entry = Parameters<typeof MemoryRouter>[0]['initialEntries'];
 
 function renderLayout(entries: Entry): void {
   render(
-    <MemoryRouter initialEntries={entries}>
+    <MemoryRouter initialEntries={entries} future={ROUTER_FUTURE_FLAGS}>
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<div>home page</div>} />

@@ -2,11 +2,11 @@ import { inject, injectable } from 'tsyringe';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import { ApiError, ApiErrorCodes } from '@/modules/user/lib/api-errors';
-import HttpErrorGuard from '@/services/https-client/http-error-guard';
+import type HttpErrorGuard from '@/services/https-client/http-error-guard';
 import HTTP_TOKENS from '@/services/https-client/tokens';
 import type { HttpErrorLike } from '@auth/types/repositories/api-status-error-factory';
 
-import ApiStatusErrorFactory from './api-status-error-factory';
+import type ApiStatusErrorFactory from './api-status-error-factory';
 
 const NETWORK_KEYWORDS = [
   'failed to fetch',

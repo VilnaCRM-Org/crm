@@ -87,7 +87,7 @@ describe('usePageTitle', () => {
   it('tolerates an i18n instance without on/off subscription methods', () => {
     mockI18n = {
       language: 'en',
-      t: (key: string): string => TITLES.en[key] ?? key,
+      t: (key: string): string => TITLES.en?.[key] ?? key,
     };
 
     const view = render(<TitleProbe titleKey="sign_in.title" />);

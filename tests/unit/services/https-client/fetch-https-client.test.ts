@@ -6,9 +6,11 @@ import { z } from 'zod';
 
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
+import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+import correlationIdProvider from '@/services/observability/correlation-id-provider';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
@@ -39,19 +41,30 @@ const createStatusOnlyResponse = (status: number): Response =>
     headers: new Headers(),
   }) as unknown as Response;
 
-const createErrorResponse = (status: number, statusText: string, url: string): Response =>
-  ({
+const createErrorResponse = (status: number, statusText: string, url: string): Response => {
+  const response = {
     ok: false,
     status,
     statusText,
     url,
     headers: new Headers(),
-    json: async () => ({}),
-  }) as unknown as Response;
+    json: async (): Promise<unknown> => ({}),
+    text: async (): Promise<string> => '',
+    clone: (): unknown => response,
+  };
+
+  return response as unknown as Response;
+};
+
+const createRequestConfigBuilder = (): HttpRequestConfigBuilder =>
+  new HttpRequestConfigBuilder(correlationIdProvider);
+
+const createResponseProcessor = (): HttpResponseProcessor =>
+  new HttpResponseProcessor(new HttpErrorResponseParser());
 
 const createClient = (
-  requestConfigBuilder: HttpRequestConfigBuilder = new HttpRequestConfigBuilder(),
-  responseProcessor: HttpResponseProcessor = new HttpResponseProcessor()
+  requestConfigBuilder: HttpRequestConfigBuilder = createRequestConfigBuilder(),
+  responseProcessor: HttpResponseProcessor = createResponseProcessor()
 ): FetchHttpsClient => new FetchHttpsClient(requestConfigBuilder, responseProcessor);
 
 describe('FetchHttpsClient', () => {
@@ -83,7 +96,7 @@ describe('FetchHttpsClient', () => {
       };
       const builderOnlyClient = createClient(
         requestConfigBuilder as never,
-        new HttpResponseProcessor()
+        createResponseProcessor()
       );
       mockFetch.mockResolvedValue(createMockResponse(200, { ok: true }));
 
@@ -580,53 +593,25 @@ describe('FetchHttpsClient', () => {
 
   describe('error handling', () => {
     it('should throw HttpError on 400 Bad Request', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 400,
-        statusText: 'Bad Request',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(400, 'Bad Request', '/api/test'));
 
       await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 401 Unauthorized', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 401,
-        statusText: 'Unauthorized',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(401, 'Unauthorized', '/api/test'));
 
       await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 403 Forbidden', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 403,
-        statusText: 'Forbidden',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(403, 'Forbidden', '/api/test'));
 
       await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
 
     it('should throw HttpError on 500 Internal Server Error', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-        url: '/api/test',
-        headers: new Headers(),
-        json: async () => ({}),
-      });
+      mockFetch.mockResolvedValue(createErrorResponse(500, 'Internal Server Error', '/api/test'));
 
       await expect(client.get('/api/test', { schema: passthrough })).rejects.toThrow(HttpError);
     });
@@ -785,7 +770,7 @@ describe('FetchHttpsClient', () => {
 
     it('uses an injected response processor with an explicit request builder', async () => {
       const mockProcessor = { process: jest.fn().mockResolvedValue({ ok: true }) };
-      const customClient = createClient(new HttpRequestConfigBuilder(), mockProcessor as never);
+      const customClient = createClient(createRequestConfigBuilder(), mockProcessor as never);
       mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
       await expect(customClient.get('/api/test', { schema: passthrough })).resolves.toEqual({

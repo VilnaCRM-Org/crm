@@ -5,9 +5,12 @@ import { z } from 'zod';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
+import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
@@ -21,7 +24,10 @@ const TEST_URL = 'http://localhost:8080/api/test';
 
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 const createClient = (): FetchHttpsClient =>
-  new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
+  new FetchHttpsClient(
+    new HttpRequestConfigBuilder(correlationIdProvider),
+    new HttpResponseProcessor(new HttpErrorResponseParser())
+  );
 
 describe('FetchHttpsClient Integration', () => {
   let client: FetchHttpsClient;
@@ -387,11 +393,11 @@ describe('FetchHttpsClient Integration', () => {
       mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
 
       const error = await client.get(TEST_URL, { schema: passthrough }).catch((err) => err);
+
       expect(httpErrorGuard.is(error)).toBe(true);
-      if (httpErrorGuard.is(error)) {
-        expect(error.status).toBe(0);
-        expect(error.message).toBe(ResponseMessages.NETWORK_ERROR);
-      }
+      assertInstanceOf(error, HttpError);
+      expect(error.status).toBe(0);
+      expect(error.message).toBe(ResponseMessages.NETWORK_ERROR);
     });
 
     it('should throw HttpError on non-JSON response when JSON expected', async () => {

@@ -2,7 +2,7 @@ import { inject, injectable } from 'tsyringe';
 import type { ZodType } from 'zod';
 
 import { HttpError } from '@/services/https-client/http-error';
-import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
+import type HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import ResponseMessages from '@/services/https-client/response-messages';
 
 import HTTP_TOKENS from './tokens';
@@ -15,7 +15,7 @@ export default class HttpResponseProcessor {
 
   constructor(
     @inject(HTTP_TOKENS.HttpErrorResponseParser)
-    httpErrorResponseParser: HttpErrorResponseParser = new HttpErrorResponseParser()
+    httpErrorResponseParser: HttpErrorResponseParser
   ) {
     this.httpErrorResponseParser = httpErrorResponseParser;
   }

@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 import ProtectedRoute from '@auth/components/protected-route';
 import { AuthStateVar } from '@auth/stores';
+import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 function seedToken(token: string | null): void {
   act(() => {
@@ -22,7 +23,7 @@ function SignInProbe(): JSX.Element {
 const renderWithRouter = (token: string | null, initialEntry = '/'): ReturnType<typeof render> => {
   seedToken(token);
   return render(
-    <MemoryRouter initialEntries={[initialEntry]}>
+    <MemoryRouter initialEntries={[initialEntry]} future={ROUTER_FUTURE_FLAGS}>
       <Routes>
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<div>dashboard</div>} />

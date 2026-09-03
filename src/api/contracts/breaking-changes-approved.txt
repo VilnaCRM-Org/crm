@@ -1,0 +1,24 @@
+# Approved upstream breaking changes (issue #177).
+#
+# scripts/ci/contract-diff.sh strips these '#' comments and passes the remaining lines to
+# `oasdiff breaking --err-ignore` when an OPENAPI_SPEC_VERSION bump is diffed. An entry here
+# means: "upstream broke the contract, and this client is verified unaffected." It is a
+# reviewed acknowledgement, never a bypass -- the gate has no env-var escape hatch, so every
+# acknowledgement is visible in the pull request.
+#
+# WHY THE COMMENTS ARE STRIPPED: oasdiff's ignore file has no comment syntax of its own. It
+# treats every line as a rule and suppresses any finding whose flattened text is contained in
+# that line, so a prose line quoting a real method, path and message would silence a real
+# break. The stripping is what makes documenting the format here safe; do not pass this file
+# to oasdiff directly.
+#
+# Format: one lowercase, single-line rendering of the finding per line, exactly as oasdiff
+# prints it with the "in API <METHOD> <PATH>" prefix flattened into the message:
+#
+#   in api <METHOD> <PATH> <finding text exactly as oasdiff prints it>
+#
+# Every entry MUST be preceded by a comment naming the upstream change and why it is safe for
+# this client, and entries MUST be pruned on the next pin bump so a stale acknowledgement can
+# never silently cover a new break.
+#
+# No approved breaking changes today.
