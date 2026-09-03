@@ -128,7 +128,8 @@ describe('mutation-report merge gate', () => {
       const stale = { index: 0, report: report({ 'b.tsx': ['Survived'] }) };
       const owning = { index: 1, report: report({ 'b.tsx': ['Killed'] }) };
 
-      expect(scoreReports([stale.report, owning.report]).mutationScore).toBe(50);
+      // Merged first-occurrence-wins, the stale copy is the only result for the file at all.
+      expect(scoreReports([stale.report, owning.report]).mutationScore).toBe(0);
       expect(scoreReports(ownedShardReports([stale, owning], ownerOf).reports).mutationScore).toBe(
         100
       );
