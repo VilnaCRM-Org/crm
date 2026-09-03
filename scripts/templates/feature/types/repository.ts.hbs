@@ -1,0 +1,8 @@
+export interface {{pascalCase feature}}Item {
+  readonly id: string;
+  readonly title: string;
+}
+
+export interface {{pascalCase feature}}Repository {
+  list(): Promise<readonly {{pascalCase feature}}Item[]>;
+}

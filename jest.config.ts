@@ -87,6 +87,7 @@ const config: Config = {
     '^@auth$': '<rootDir>/src/modules/user/features/auth',
     '^@auth/(.*)$': '<rootDir>/src/modules/user/features/auth/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
+    '^@scripts/(.*)$': '<rootDir>/scripts/$1',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.+)\\.js$': '$1',
   },

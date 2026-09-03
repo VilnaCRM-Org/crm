@@ -1,0 +1,6 @@
+{
+  "formatting": {
+    "updated_at": "Оновлено {{value, datetime}}",
+    "price": "Ціна: {{value, currency}}"
+  }
+}

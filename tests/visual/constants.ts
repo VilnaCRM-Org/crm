@@ -93,4 +93,13 @@ export const PAGES = {
   HOME: '/',
   SIGN_UP: '/sign-up',
   SIGN_IN: '/sign-in',
+  NOT_FOUND: '/definitely-not-a-route',
 } as const;
+
+// The catch-all route is a static, text-only page, so a desktop/mobile pair is enough to
+// catch a regression; the full screenSizes matrix would add binary baselines without adding
+// signal (issue #169).
+export const notFoundScreens: ReadonlyArray<ScreenSize> = [
+  { width: 1536, height: 864, name: 'desktop' },
+  { width: 393, height: 873, name: 'mobile' },
+];

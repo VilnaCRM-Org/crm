@@ -12,6 +12,10 @@
       "route_fallback": {
         "loading": "Loading page"
       },
+      "formatting": {
+        "updated_at": "Last updated {{value, datetime}}",
+        "price": "Price: {{value, currency}}"
+      },
       "root_element_missing": "Root element not found",
       "buttons": {
         "back_to_main": "Back to homepage"
@@ -161,6 +165,10 @@
       },
       "route_fallback": {
         "loading": "Завантаження сторінки"
+      },
+      "formatting": {
+        "updated_at": "Оновлено {{value, datetime}}",
+        "price": "Ціна: {{value, currency}}"
       },
       "root_element_missing": "Кореневий елемент не знайдено",
       "buttons": {

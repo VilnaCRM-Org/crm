@@ -1,0 +1,6 @@
+{
+  "formatting": {
+    "updated_at": "Last updated {{value, datetime}}",
+    "price": "Price: {{value, currency}}"
+  }
+}

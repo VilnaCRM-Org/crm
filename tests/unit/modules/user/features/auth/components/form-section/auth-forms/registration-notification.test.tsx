@@ -169,7 +169,9 @@ describe('RegistrationNotification', () => {
     fireEvent.click(backButton);
     fireEvent.click(backButton);
 
-    jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    act(() => {
+      jest.advanceTimersByTime(BACK_CLOSE_ANIMATION_MS);
+    });
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 

@@ -147,29 +147,32 @@ same Docker-backed environment and avoid host-specific drift.
 
 ### Common Agent Tasks
 
-#### Adding a New Feature
+#### Adding a New Module or Feature
 
-1. **Identify the module** - Features belong in `src/modules/` or `src/features/`
-2. **Create feature structure**:
+**Run the generator. Do not hand-roll the folder structure.**
 
-   ```bash
-   src/modules/[Module]/features/[Feature]/
-   ├── components/       # Feature UI components
-   ├── api/             # API client and types
-   ├── i18n/            # Translations (en.json, uk.json)
-   ├── helpers/         # Feature utilities
-   └── index.ts         # Public exports
-   ```
+```bash
+make new-module name=orders feature=order-list        # new module + its first feature
+make new-feature module=orders feature=order-detail   # feature inside an existing module
+```
 
-3. **Add translations** - Always provide both `en.json` and `uk.json` with identical key sets,
-   then run `make i18n-generate` and commit the refreshed `src/i18n/localization.json`
-4. **Register services** - If needed, register in the owning area's composition root
-   `di.ts` against its co-located `tokens.ts`, then add that registrar to the aggregator
-   array in `src/config/dependency-injection-config.ts` (issue #109)
-5. **Add tests** - Unit tests in `tests/unit/`, E2E in `tests/e2e/`. Apply the Mandatory
-   Test-Scenario Coverage Policy (positive, negative, and edge cases).
-6. **Format and lint** - Run `make format` before `make lint`
-   (`make format` includes Prettier and `qlty fmt`)
+The generated skeleton already satisfies dependency-cruiser, TypeScript, ESLint, jscpd,
+markdownlint, Prettier and the metrics gate, and it ships both `i18n/en.json` and
+`i18n/uk.json` plus mirrored unit and E2E test skeletons covering positive, negative, and
+edge cases per the Mandatory Test-Scenario Coverage Policy.
+
+The generator prints the two lines you must add by hand — the module registrar entry in
+`src/config/dependency-injection-config.ts` (issue #109) and the route contract entry in
+`src/routes/registry.ts` (issue #105). Then run `make format` before `make lint`
+(`make format` includes Prettier and `qlty fmt`).
+
+The allowed folder names, the emitted files, and the self-verification gate are documented
+in [`docs/scaffolding.md`](docs/scaffolding.md), which reads its folder law from
+`config/module-shape.json` — the same file `.dependency-cruiser.js` reads.
+
+Keep `en.json` and `uk.json` on identical key sets as you fill them in, then run
+`make i18n-generate` and commit the refreshed `src/i18n/localization.json`; `make lint-i18n`
+fails the pull request on a locale gap or a stale merged catalog.
 
 #### Module & Feature Public API Contract (issue #107)
 
@@ -584,8 +587,8 @@ make pr-comments > review-comments.txt
 #   - Update component to use it
 #   - Commit: "refactor: extract email validation to helper function"
 
-git add src/modules/user/features/auth/helpers/validators.ts
-git add src/modules/user/features/auth/components/LoginForm.tsx
+git add src/modules/user/features/auth/utils/validators.ts
+git add src/modules/user/features/auth/components/form-section/auth-forms/login-form.tsx
 git commit -m "refactor: extract email validation to helper function
 
 Per review suggestion in PR #123"
@@ -660,9 +663,9 @@ const handleSubmit = (data: LoginFormData) => { ... }
 **Solution**:
 
 ```typescript
-// Create: src/modules/user/features/auth/hooks/useLoginForm.ts
+// Create: src/modules/user/features/auth/hooks/use-login-form.ts
 // Update component to use hook
-// Add tests: tests/unit/modules/user/features/auth/hooks/useLoginForm.test.ts
+// Add tests: tests/unit/modules/user/features/auth/hooks/use-login-form.test.ts
 ```
 
 #### Pattern 4: Error Handling
@@ -676,7 +679,7 @@ try {
   const result = await loginAPI.login(credentials);
   return result;
 } catch (error) {
-  if (isAPIError(error)) {
+  if (isApiError(error)) {
     // Handle specific API errors
     if (error instanceof ValidationError) {
       setFieldErrors(error.errors);
@@ -710,14 +713,21 @@ Mirror every new key into `uk.json`, then run `make i18n-generate` and commit th
 `src/i18n/localization.json`. `make lint-i18n` fails the pull request on a key present in one
 locale only, on a stale merged catalog, and on a `t()` key that no locale defines.
 
+Dates, numbers, currency, percentages, and relative time inside translations use the
+registered i18next formatters (`{{value, datetime}}`, `{{value, currency}}`,
+`{{value, percent}}`, `{{value, relativetime}}`) instead of pre-formatted strings — see
+"Locale-aware Intl formatting (issue #155)" under Architecture Patterns.
+
 ## Architecture Patterns
 
-### No static methods or free functions (issues #100, #89)
+### No static methods or free functions (issues #100, #89, #180)
 
 Non-React application code (services, repositories, mappers, factories, stores, utilities
-under `src/**/*.ts`) must **not** use `static` class members or standalone (free)
-functions. Convert them to **instance methods on an injectable class** so collaborators can
-be swapped for mocks/spies through the tsyringe DI container instead of via module mocking.
+under `src/**/*.ts`) must **not** use `static` class members, standalone (free)
+functions, or **function-valued properties of a top-level object literal**
+(`export default { map(r) { … } }`). Convert them to **instance methods on an injectable
+class** so collaborators can be swapped for mocks/spies through the tsyringe DI container
+instead of via module mocking.
 
 - **Behavioral collaborators** → `@injectable()` class + token in the owning area's
   `tokens.ts` + registration in that area's `di.ts` composition root (issue #109), resolved
@@ -737,14 +747,153 @@ workflow. Fix violations by refactoring — never with `eslint-disable`. In test
 mock collaborator (or pass a stub to the constructor / resolve from a child container)
 rather than mocking the module.
 
+Call a singleton's methods **on the singleton** and pass the object itself to collaborators
+— never a destructured or otherwise detached method reference. A prototype method loses its
+receiver and throws at runtime, and TypeScript cannot see it because these action
+interfaces type their members as plain function properties. Pin the receiver in tests with
+`expect(spy.mock.contexts).toEqual([theSingleton])`.
+
 This gate is the canonical enforcement of the **only classes outside React components**
 convention (issue #89, closed as covered here): banning free functions in non-React `.ts`
 makes all such logic class-encapsulated, so #89 needs no separate ESLint or
 dependency-cruiser rule. The dependency-cruiser placement rule #89 originally proposed is
 superseded — dep-cruiser reasons about the import graph, not whether a module's exports are
 classes, and the blanket ESLint ban is stricter than the helper-zone carve-out #89 sketched.
-Per #89's "honest limitation", the residual gap is **semantic** (logic hidden in an object
-literal's methods or a misplaced helper) and stays a review-gate concern.
+Issue #180 closed the common statically-detectable half of #89's residual (top-level
+object-literal methods, including `as const` / `satisfies` wrappers). What stays a
+**review-gate** concern — deliberately unmatched, so idiomatic nested MUI `sx` callbacks
+and zustand-style slices are not flagged — is nested (depth > 1) object literals,
+`Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
+
+### Runtime Configuration and Feature Flags (issue #145)
+
+`@/config/env` is build-time (`REACT_APP_*` inlined by RSBuild — changing one needs a rebuild).
+`@/config/runtime` is runtime: an inline JSON block in `public/index.html` that the production
+container entrypoint rewrites from `APP_CONFIG_*` variables at start-up, so the same tested
+artifact is promoted across environments. Runtime values win over build-time defaults.
+
+It is split in two layers for the same reason `@/config/env` is — `zod` must not reach the auth
+paint path (measured: `zod` adds 62 kB raw to the eager entrypoint, `zod/mini` 45 kB, against a
+470 kB budget and a mobile Lighthouse floor of 0.84):
+
+```typescript
+// Paint path / any zod-free code — dependency-free, synchronous, memoized
+import appConfigSource from '@/config/runtime/app-config-source';
+
+// Container-resolved code — zod-validated, frozen, fails fast
+@injectable()
+export default class GraphQLUrl {
+  constructor(@inject(RUNTIME_TOKENS.AppConfig) private readonly appConfig: AppConfigReader) {}
+}
+```
+
+Both `RUNTIME_TOKENS.AppConfig` and `RUNTIME_TOKENS.FeatureFlagService` are registered with
+`useValue` over module singletons rather than decorated `@injectable()` — the observability
+render-path pattern (issue #115).
+
+Read a flag from a component through the container-free bridge:
+
+```typescript
+import useFeatureFlag from '@/hooks/use-feature-flag';
+
+const showForgotPassword = useFeatureFlag('forgotPassword');
+```
+
+Adding a flag means declaring it in four places — the `FeatureFlag` union
+(`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
+(`feature-flag-service.ts`), `app-config-schema.ts`, and the committed block in
+`public/index.html` — plus `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` in `.env`, `.env.example` and the
+`prod` service in `docker-compose.test.yml`.
+`tests/unit/tooling/runtime-config-contract.test.ts` fails the build when those drift.
+Flags default **off**, and the full lifecycle (introduce → roll out → remove) is in
+[`docs/feature-flags.md`](docs/feature-flags.md).
+
+### Locale-aware Intl formatting (issue #155)
+
+The template is bilingual (uk primary, en fallback), so every user-facing date, number,
+currency amount, percentage, and relative time renders through one locale-aware boundary —
+`src/services/locale-formatter/` — never through raw `toLocaleString()` /
+`toLocaleDateString()` / `toLocaleTimeString()` calls or ad-hoc `new Intl.*Format(...)`
+construction at call sites. Scattered call-site construction drifts locales (en-US defaults
+under a uk primary locale), defeats formatter caching, and makes output impossible to pin in
+tests.
+
+How to format, by context:
+
+- **Translation strings** → use the i18next formatters registered in `src/i18n.js`
+  (`date`, `datetime`, `number`, `currency`, `percent`, `relativetime`):
+  `"updated_at": "Last updated {{value, datetime}}"`, `"price": "Price: {{value, currency}}"`
+  (see `src/features/example/i18n/`). Components pass the raw value:
+  `t('formatting.updated_at', { value: new Date(timestamp) })`.
+- **Non-translation logic (services, repositories, stores)** → inject the
+  `@injectable()` `LocaleFormatterService` adapter via
+  `LOCALE_FORMATTER_TOKENS.LocaleFormatterService` (its own `di.ts` composition root,
+  issue #109) and call `date` / `dateTime` / `number` / `currency` / `percent` /
+  `relativeTime`.
+- **Paint-path / container-free code** → import the `localeFormatterCore` module
+  singleton from `@/services/locale-formatter/locale-formatter-core` (the same two-layer
+  split as observability: the core is tsyringe-free, so `src/i18n.js` stays light).
+
+The core caches `Intl.DateTimeFormat`, `Intl.NumberFormat` (decimal, currency, percent),
+and `Intl.RelativeTimeFormat` instances keyed by locale + options, and resolves the locale
+as: explicit argument → active i18next language → `rawEnv.mainLanguage()` (default `uk`).
+Presets: medium date style, short time style, `UAH` with a narrow symbol (`currency` takes
+an optional ISO 4217 code), `numeric: 'auto'` relative time. Extend the service with a new
+preset instead of passing one-off options at call sites.
+
+Enforced by an ESLint `no-restricted-syntax` gate in `eslint.config.mjs`
+(`noRawIntlSelectors`, re-included in every overlapping block that carries the shared
+selector spreads — the type-only-file override forbids all runtime syntax, so it needs no
+Intl selectors — and lifted only inside `src/services/locale-formatter/`), run by
+`make lint-eslint` and the `static testing`
+workflow. Tests are exempt — they construct `Intl` formatters freely and pin **exact**
+uk/en outputs as fixed contracts (hardcoded literals per the Faker convention, e.g.
+`1234.5` → `1 234,50 ₴` (uk, U+00A0 separators) vs `₴1,234.50` (en)). Fix violations by
+routing through the formatter — never with `eslint-disable`.
+
+### Collaborators arrive through DI, never through a value import (issue #130)
+
+Inside a class in a logic directory (`src/services/**`, `src/utils/**`,
+`src/modules/*/store/**`, `src/modules/*/features/*/{repositories,stores,utils}/**`), the only
+behavioral collaborators a method may invoke are those received through DI. Never
+`import SomeService from '…'` and call it — add a token to the owning area's `tokens.ts`,
+register it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If the import is
+only an annotation, make it `import type` (issue #88).
+
+Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
+`reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
+`@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
+`error-codes`), runtime data contracts (`response-schemas`, `*-mutation`), the module/feature
+public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
+
+Third-party policy is **(A) adapter + token**, enforced as an allowlist: only `tsyringe`,
+`reflect-metadata`, and `uuid` may be value-imported inside a logic class. Everything else goes
+behind an adapter — Apollo through `ApolloLinkFactory` / `AUTH_TOKENS.ApolloClient`, Sentry and
+`web-vitals` through the observability boundary, zod schemas declared in a `response-schemas`
+contract module and passed to collaborators as data.
+
+Never push the DI container into the auth paint path: do not eager-import
+`dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
+container-resolved class. Those inside a gated directory (`auth-var`, `reactive-var`,
+`reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`, the
+auth lazy loaders, `registration-handlers-factory`, `auth-error-reporter`, `url-builder`,
+`locale-formatter-core`, and the observability core/correlation-id/sentry/pii-scrubber/web-vitals
+leaves) are exempt by explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
+`use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
+structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
+load-bearing, so do not delete it. The form-section `validations/*` singletons live under
+`components/`, which no scope glob matches, so they alone need no policy entry.
+
+Enforced by two layers reading that one policy file: an ESLint `no-restricted-syntax` selector and
+the dependency-cruiser rule `injectable-classes-no-value-imports`, both under `make lint`, plus
+the rule-rot guard `tests/unit/tooling/di-collaborator-gate.test.ts`. Component-side (`.tsx`)
+consumption is the disjoint companion gate #128 (`components-no-direct-injectable-import`) — do
+not duplicate it here. Never satisfy the gate with `eslint-disable`, `depcruise-ignore`, or
+`@ts-ignore`.
+
+Residual review-gate concerns the gate cannot see: a fat base class smuggling behavior past
+`extends` (prefer composition), collaborators laundered through a barrel re-export or an object
+literal's method, and wiring that registers the wrong implementation behind the right token.
 
 ### Dependency Injection Pattern
 
@@ -789,6 +938,40 @@ const myStoreFactory = new MyStoreFactory();
 export const useMyStore = myStoreFactory.create(container.resolve(MyStoreActions));
 ```
 
+#### Components: `useService(token)` is the only bridge (issue #128)
+
+A `.tsx` component obtains a behavioral collaborator through `useService` from
+`@/providers/di` — never `new MyService()`, never a value-import of an injectable class
+(`import type` is fine for annotations):
+
+```typescript
+import { useService } from '@/providers/di';
+import MY_AREA_TOKENS from '@/services/my-area/tokens';
+
+export default function MyWidget(): JSX.Element {
+  const service = useService<MyService>(MY_AREA_TOKENS.MyService);
+  // …
+}
+```
+
+`useService` is a hook — call it at the top level of a component or of another hook, never at
+module scope. Add the token, register the class in the owning area's `di.ts`, and (for a new
+area) add that registrar to the array in `src/config/dependency-injection-config.ts` **before**
+resolving it — an unregistered token throws. Do not invent an ad-hoc module singleton of a
+behavioral class for a component. In component
+tests, swap the collaborator by registering a mock against the token
+(`container.register(TOKENS.X, { useValue: mock })`) or by jest-mocking
+`@/providers/di/use-service`.
+
+Two `make lint` gates enforce this on `src/**/*.tsx`: an ESLint `no-restricted-syntax`
+selector (built-in constructors allowlisted) and dependency-cruiser
+`components-no-direct-injectable-import`. Carve-outs — the auth render path, the route shell,
+the app entrypoint, and the root error boundary — are container-free by design; leave their
+module singletons alone and never eager-import the container into the auth paint path
+(`no-paint-path-import-di-bridge` enforces that). Hooks (`use-*.ts`) are outside the static
+gate; that is not license to `new` a collaborator there — expect review to flag it. Never
+satisfy either gate with `eslint-disable`, a dependency-cruiser ignore, or `@ts-ignore`.
+
 ### Zustand Store Pattern
 
 Stores use Zustand (`create` + `devtools`) and stay container-free. Resolve the DI
@@ -819,18 +1002,27 @@ class ModuleStoreFactory {
 
 ### API Error Handling Pattern
 
-```typescript
-// Check error type
-import { isAPIError } from '@/modules/user/features/auth/api/api-errors';
-import { ValidationError } from '@/modules/user/features/auth/api/api-errors/validation-error';
+Outside the `user` module, enter through the public barrel and narrow with `instanceof`:
 
-if (isAPIError(error)) {
-  if (error instanceof ValidationError) {
-    // Handle validation errors
-    error.errors.forEach((err) => {
-      console.log(err.field, err.message);
-    });
-  }
+```typescript
+import { ApiError } from '@/modules/user';
+
+if (error instanceof ApiError) {
+  console.error(error.code, error.status, error.message);
+}
+```
+
+Inside the module, the concrete subclasses and the structural guard are reachable directly.
+The guard is a singleton instance, so the call is `apiErrorGuard.is(...)`, not a bare function:
+
+```typescript
+import { ValidationError } from '@/modules/user/lib/api-errors';
+import apiErrorGuard from '@/modules/user/lib/is-api-error';
+
+if (error instanceof ValidationError) {
+  console.error('validation failed', error.status);
+} else if (apiErrorGuard.is(error)) {
+  console.error(error.code, error.message);
 }
 ```
 
@@ -867,6 +1059,16 @@ happy-path test is **not** adequate coverage and does **not** make the work done
 Follow the five steps below in order. Skipping a scenario class or step is allowed **only**
 with a recorded, concrete justification (see Step 3) — never by silent omission.
 
+**Every test you write must be alive and asserting (issue #167).** `make lint-eslint` fails
+on a skipped (`.skip` / `.fixme` / `xit`), focused, or assertion-free test, and on `expect`
+nested inside a conditional. To narrow a discriminated union, use the throwing helpers in
+`tests/utils/assert-result.ts` (`assertOk`, `assertError`, `assertInstanceOf`) instead of
+an `if`; for throwing calls use `expect(...).toThrow(...)` /
+`await expect(...).rejects.toThrow(...)`, or capture the error unconditionally with
+`.catch((caught: unknown) => caught)` and assert on it. A shared assertion helper is
+declared through `assertFunctionNames` / `assertFunctionPatterns` (`expect*` for Jest and
+Playwright, `take*Snapshot` for visual specs) — never through a suppression.
+
 ### Step 1 — Pick the Right Test Layer
 
 Choose the layer(s) that actually exercise the change; a single change often needs more
@@ -880,11 +1082,21 @@ than one. Match the change to the suite and run its verification command:
 | E2E (Playwright)    | User-facing flows end to end (Mockoon)    | `make test-e2e`         |
 | Visual regression   | Any change to rendered UI or styling      | `make test-visual`      |
 
+`make test-e2e` and `make test-visual` each run five Playwright projects: the desktop
+`chromium` / `firefox` / `webkit` matrix plus `mobile-chrome` (Pixel 7) and `mobile-safari`
+(iPhone 14), the latter scoped to `tests/e2e/mobile` and `tests/visual/mobile`. No separate
+command or workflow gates the mobile lane.
+
 Add a specialized suite when the change touches its concern: `make test-mutation` (test
 strength), `make test-memory-leak` (leaks / OOM), `make test-load` (traffic, K6), and
 `make lighthouse-desktop` / `make lighthouse-mobile` (performance, a11y, best practices).
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 4-way
+`make test-memory-leak` is binding: memlab's `findLeaks()` verdict decides the exit code, a
+scenario file that exports nothing fails, and zero executed scenarios fails instead of passing
+vacuously. Waive a third-party false positive only through a reviewed `trace` + `reason` entry in
+`tests/memory-leak/leak-allowlist.json`.
+
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across an 8-way
 matrix (`make test-mutation-shard`) and a final job merges the per-shard reports and re-enforces the
 same `break` threshold (`make merge-mutation-reports`) — same gate, much faster. Lighthouse runs
 as a desktop/mobile matrix, and every workflow cancels superseded runs via `concurrency`. See
@@ -910,6 +1122,8 @@ Walk this checklist and add coverage for every item the change can reach:
 - [ ] Permission / auth / role-sensitive flows
 - [ ] Boundary values and off-by-one behavior
 - [ ] Locale / i18n-sensitive behavior (uk primary, en fallback)
+- [ ] Touch / mobile-device behavior for UI changes — `tap()` interaction, tap-target size,
+      and a keyboard-shrunk viewport (`tests/e2e/mobile/`, issue #154)
 - [ ] Visual regressions for UI changes (`make test-visual`)
 - [ ] Previously fixed bug regression coverage (see Step 4)
 
@@ -953,6 +1167,22 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 > suite below, cover positive, negative, and edge cases (or record a concrete "Not applicable"
 > reason) and run the verification commands before calling test work done.
 
+### Unexpected console output fails Jest (issue #192)
+
+Every Jest setup file installs `jest-fail-on-console` via `installConsoleGate()`, so an
+unexpected `console.error` or `console.warn` emitted while a test runs **fails that test**. The
+apollo-server node suite gates `error` only; `log` / `info` / `debug` are never gated. This
+closes the channel ESLint's `no-console` cannot see: React `act()` warnings, missing list
+`key`s, invalid DOM nesting, and i18next `missingKey` output.
+
+When a test legitimately drives a path the application logs on, spy on it **and assert it**,
+scoped to that single test — never a file-wide `beforeEach`. An `act()` warning is a real bug in
+the test: await the update rather than spying it away. `tests/console-gate/allowlist.ts` is the
+only escape hatch and is reviewed as a defect suppression.
+
+Full rules: "Unexpected console output fails the suite (issue #192)" in [CLAUDE.md](CLAUDE.md)
+and [tests/console-gate/README.md](tests/console-gate/README.md).
+
 ### Unit Testing Best Practices
 
 1. **Test file location**: Mirror `src/` structure in `tests/unit/`
@@ -982,7 +1212,11 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
 
 ### E2E Testing with Playwright
 
-1. **Test structure**: `tests/e2e/[feature].spec.ts`
+1. **Test structure**: `tests/e2e/[feature].spec.ts`; touch-interaction specs go in
+   `tests/e2e/mobile/` (issue #154), which the `mobile-chrome` (Pixel 7) and `mobile-safari`
+   (iPhone 14) projects run exclusively — the desktop projects carry
+   `testIgnore: '**/mobile/**'`, so a spec placed there gets `isMobile`, `hasTouch`, the
+   mobile UA and real DPR, and must be driven with `tap()` rather than `click()`.
 2. **Use Mockoon**: API responses are mocked via `docker-compose.test.yml`
 3. **Page Object pattern**:
 
@@ -1007,11 +1241,28 @@ parity, prefix unit runs with `CI=1` (for example, `CI=1 make test-unit-all`).
      bunx playwright test tests/e2e/login.spec.ts
    ```
 
+5. **Every route needs a spec**: adding a key to `src/routes/route-paths.ts` without a row in
+   `tests/e2e/route-coverage.tsv` fails `make check-e2e-route-coverage`, the first step of the
+   `e2e testing` job (issue #169). Name the covering spec, or allowlist the route with a reason.
+
+6. **Flakes are not free**: pull-request runs use `retries: 0`, so an intermittent test is a hard
+   red. The scheduled `nightly flake audit` re-runs both suites with retries on and a zero flake
+   budget, so a retried pass is caught there too (issue #186). Never satisfy either by raising
+   `FLAKE_BUDGET`, re-running, or re-baselining — fix the nondeterminism.
+
 ### Visual Regression Testing
 
 1. **Update snapshots**: `make test-visual-update`
 2. **Review changes**: Check `tests/visual/.playwright/` for diffs
 3. **Only update when intentional**: Don't blindly accept visual changes
+4. **Scope new baselines**: a full-matrix visual spec generates 13 screen sizes × 3 browsers = 39
+   binaries. For a static page, follow the `notFound` / submit-loader precedent and use a small
+   local screens array instead; regenerate with a spec-scoped `--update-snapshots`, never the
+   repo-wide `make test-visual-update`, then re-run **without** the flag and require green.
+5. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated `/sign-in` and
+   `/sign-up` baselines, recorded per mobile project with `scale: 'device'` so the real
+   2.625×/3× DPR raster is gated. Never reuse `take-visual-snapshot.ts` there — its
+   `setViewportSize` call would discard the device viewport.
 
 ## Troubleshooting Guide
 
@@ -1241,21 +1492,19 @@ Husky runs automatically:
 
 When creating a new module:
 
-- [ ] Create module directory: `src/modules/[ModuleName]/`
-- [ ] Add `package.json` with module metadata
-- [ ] Create feature structure with `features/`, `store/`, `helpers/`
-- [ ] Add i18n files: `i18n/en.json`, `i18n/uk.json` with identical key sets, then run
-      `make i18n-generate` and verify with `make lint-i18n`
-- [ ] Add the module's token module `src/modules/[ModuleName]/config/tokens.ts`
-      and composition root `config/di.ts`, then register it in the aggregator array
-      in `src/config/dependency-injection-config.ts` (issue #109)
-- [ ] Create Zustand store in `features/[Feature]/stores/`
-- [ ] Add a repository / API client if needed
-- [ ] Write unit tests in `tests/unit/modules/[ModuleName]/`
-- [ ] Add E2E and visual tests if user-facing
-- [ ] Update routes in `App.tsx` if needed
-- [ ] Document public APIs in module README
-- [ ] Cover positive, negative, and edge cases per the Mandatory Test-Scenario Coverage Policy
+- [ ] Generate it: `make new-module name=<kebab> feature=<kebab>` — never create the folders
+      by hand. See [`docs/scaffolding.md`](docs/scaffolding.md).
+- [ ] Add the printed registrar line to `src/config/dependency-injection-config.ts` (#109)
+- [ ] Add the printed route-contract line to `src/routes/registry.ts` (#105)
+- [ ] Register that route before running the E2E suite — the generated spec ships live, not
+      skipped, so it fails until the page is reachable
+- [ ] Fill in the generated repository, hook, component, and both i18n locales, keeping
+      `en.json` and `uk.json` on identical key sets, then run `make i18n-generate` and
+      verify with `make lint-i18n`
+- [ ] Extend the generated unit and E2E suites so positive, negative, and edge cases stay
+      covered per the Mandatory Test-Scenario Coverage Policy
+- [ ] Add visual tests if user-facing
+- [ ] Document the module's public API in its generated README
 - [ ] Run full test suite: `make test-unit-all && make test-e2e && make test-visual`
 
 ## Environment-Specific Notes
@@ -1288,6 +1537,27 @@ GitHub Actions runs:
 
 See `.github/workflows/` for configuration
 
+#### Gates an agent must not "fix" by editing a threshold
+
+Three checks exist specifically to catch the shortcuts an agent is most likely to take when a
+build goes red. Know them before you touch a config file:
+
+- **`gate ratchet`** (`.github/workflows/gate-ratchet.yml`) — compares every binding budget named
+  in `config/gate-thresholds.manifest.json` (Lighthouse, Stryker, Jest coverage + its exclusion
+  list, metrics policy, jscpd, bundle budgets, `tsconfig` strictness flags, the k6 load budgets,
+  and the manifest itself) at the PR head against the merge base, and fails on any move in the
+  weakening direction. **Never** lower a threshold, grow a coverage-exclusion list, disable a
+  strictness flag, or delete a manifest entry to go green. Strengthen the value instead; if a
+  relaxation is genuinely right, apply the `gate-relaxation` label so it is reviewed — see
+  "Relaxing a gate threshold" in `CONTRIBUTING.md` for the local reproduction commands.
+- **`tsconfig` strictness (issue #166)** — `noUncheckedIndexedAccess` makes every index read
+  `T | undefined`. Narrow it for real (`??`, a guard, `in`, `Map.get` + guard, optional chaining).
+  `@typescript-eslint/no-non-null-assertion` is an error in `src/**` precisely because `!` silences
+  that result instead of handling it; a cast is the same evasion.
+- **dependency-cruiser rule fixtures (issue #181)** — every rule in `.dependency-cruiser.js` must
+  land with a fixture in `scripts/ci/depcruise-rule-fixtures.mjs`; the completeness assertion is
+  bidirectional and has no exemption list, so a new rule cannot ship untested.
+
 ## Security Considerations
 
 ### Environment Variables
@@ -1302,17 +1572,22 @@ See `.github/workflows/` for configuration
   it is never persisted to `localStorage`, cookies, or disk
 - **Testing/LHCI only**: a token may be preloaded at runtime via
   `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
-  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var. The Make-driven Lighthouse/Playwright
-  workflows build this image (`docker-compose.test.yml`, `target: production`) and inject a
-  **default** token automatically — `Makefile` sets
+  `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var, so the Lighthouse, Playwright and visual
+  suites reach the protected home route without a real login. `Makefile` sets
   `LHCI_PRELOADED_AUTH_TOKEN ?= lighthouse-preloaded-auth-token` and bare-`export`s it, so
-  the prod-target test image always carries a token even if the user set nothing. It
-  **must never be shipped as a real production artifact**
-- This is enforced operationally, not by a `NODE_ENV` gate: `PreloadedAuthToken.read()`
-  uses the token whenever it is present, so `LHCI_PRELOADED_AUTH_TOKEN` and
-  `window.__PRELOADED_AUTH_TOKEN__` must be kept out of production builds and CI secrets.
-  `rsbuild.config.ts` must not add an explicit `define` for the token (guarded by
-  `tests/unit/performance/public-index.test.js`)
+  the harness image always carries a token even if the user set nothing
+- The seam is **gated out of production builds** (issue #158). Both reads live in one method
+  in `src/config/env/preloaded-auth-token.ts`, behind
+  `NODE_ENV === 'production' && ENABLE_PRELOADED_AUTH_TOKEN_SEED !== 'true'`. The bundler
+  folds that guard away, so a deployable bundle carries neither the window key nor the token
+  literal: a stray `.env` value cannot seed a session, and an XSS-set `window` global has
+  nothing left to read
+- Only the ephemeral harness image opts in. The Dockerfile's `test-harness` target — what
+  `docker-compose.test.yml` builds — sets `ENABLE_PRELOADED_AUTH_TOKEN_SEED=true`, while the
+  deployable `production` target is assembled from a `build` stage that takes no seed ARG
+- `make check-auth-seed-gate` (run by the `security testing` workflow) scans the **emitted
+  bundle** rather than config source text: it fails when a deployable build carries the seam,
+  and equally when an opted-in build has lost it, so the gate cannot pass vacuously
 - No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Dependency Audits
@@ -1398,6 +1673,9 @@ make lint-eslint        # ESLint only
 make lint-tsc           # TypeScript only
 make lint-md            # Markdown only
 make lint-dup           # Duplication (jscpd) only
+make lint-commit-message     # Commit message or squash header from stdin
+make lint-commit-bot-message # Same, task-number rule relaxed for bot authors
+make lint-commit-range       # Commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
 make lint-i18n          # Locale parity (en/uk) and t() key resolution only
 make i18n-generate      # Regenerate src/i18n/localization.json
 make fmt-prettier       # Prettier format
@@ -1412,6 +1690,7 @@ make build              # Build in Docker
 make build-out          # Extract build to ./build
 make build-analyze      # Bundle analyzer (writes dist/bundle-report.html + dist/bundle-stats.json)
 make perf-budget        # Build + enforce gzip byte budgets (config/performance-budget.json)
+make check-auth-seed-gate  # Scan the built bundles so the test-only preloaded-auth seed cannot ship
 ```
 
 ### Utilities

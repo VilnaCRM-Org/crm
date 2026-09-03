@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { ApolloServer } from '@apollo/server';
+import { ApolloServer, type GraphQLResponse } from '@apollo/server';
 
 // example
 const typeDefs = `#graphql
@@ -14,6 +14,14 @@ const resolvers = {
   },
 };
 
+function assertSingleResponse(
+  body: GraphQLResponse['body']
+): asserts body is Extract<GraphQLResponse['body'], { kind: 'single' }> {
+  if (body.kind !== 'single') {
+    throw new Error(`Expected a single GraphQL response body, received: ${body.kind}`);
+  }
+}
+
 describe('Apollo Server', () => {
   it('returns hello world', async () => {
     const server = new ApolloServer({ typeDefs, resolvers });
@@ -26,11 +34,9 @@ describe('Apollo Server', () => {
           }
         `,
       });
-      if (result.body.kind === 'single') {
-        expect(result.body.singleResult?.data?.hello).toBe('Hello world!');
-      } else if (result.body.kind === 'incremental') {
-        expect(result.body.initialResult?.data?.hello).toBe('Hello world!');
-      }
+      assertSingleResponse(result.body);
+      expect(result.body.singleResult.errors).toBeUndefined();
+      expect(result.body.singleResult.data?.hello).toBe('Hello world!');
     } finally {
       await server.stop();
     }

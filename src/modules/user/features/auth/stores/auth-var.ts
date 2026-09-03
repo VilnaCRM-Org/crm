@@ -1,11 +1,8 @@
-import rawEnv from '@/config/env/raw-env';
+import preloadedAuthTokenSeed from '@/config/env/preloaded-auth-token';
 import type { AuthState } from '@auth/types/auth-store';
-import type { AuthTokenWindow } from '@auth/types/auth-window';
 import type { ReactiveVar } from '@auth/types/reactive-var';
 
 import ReactiveVarFactory from './reactive-var';
-
-const WINDOW_KEY = '__PRELOADED_AUTH_TOKEN__' as const;
 
 const CLEARED_STATE: AuthState = {
   email: '',
@@ -18,8 +15,6 @@ const CLEARED_STATE: AuthState = {
 };
 
 export class AuthStateVar {
-  public readonly windowKey = WINDOW_KEY;
-
   private readonly cleared: AuthState = CLEARED_STATE;
 
   private readonly state: ReactiveVar<AuthState>;
@@ -27,7 +22,7 @@ export class AuthStateVar {
   constructor() {
     this.state = new ReactiveVarFactory().create<AuthState>({
       ...this.cleared,
-      token: this.readSeedToken(),
+      token: preloadedAuthTokenSeed.read(),
     });
   }
 
@@ -53,25 +48,6 @@ export class AuthStateVar {
 
   public clearLoginError(): void {
     this.set({ loginError: null });
-  }
-
-  // Seeds an authenticated state for Lighthouse/Playwright runs without a real login.
-  // The token may be injected on `window` (Playwright) or via the build-time env var (LHCI).
-  public readSeedToken(
-    currentWindow: AuthTokenWindow | undefined = typeof window !== 'undefined' ? window : undefined,
-    envToken: string | undefined = this.readEnvToken()
-  ): string | null {
-    const windowToken = currentWindow?.[this.windowKey]?.trim() || undefined;
-    const seedToken = envToken?.trim() || undefined;
-    return windowToken || seedToken || null;
-  }
-
-  private readEnvToken(): string | undefined {
-    try {
-      return rawEnv.lhciPreloadedAuthToken();
-    } catch {
-      return undefined;
-    }
   }
 }
 
