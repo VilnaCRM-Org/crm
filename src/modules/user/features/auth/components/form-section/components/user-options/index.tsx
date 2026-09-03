@@ -14,10 +14,13 @@ export default function UserOptions(): JSX.Element {
   const { t } = useTranslation();
   const showForgotPassword = useFeatureFlag('forgotPassword');
 
-  const handleCheckboxChange = useCallback((): void => {
-    setIsChecked((prev) => !prev);
+  const handleCheckboxChange = useCallback(
+    (): void => {
+      setIsChecked((prev) => !prev);
+    },
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-  }, []);
+    []
+  );
   return (
     <Box sx={styles.authOptionsWrapper}>
       <FormControlLabel

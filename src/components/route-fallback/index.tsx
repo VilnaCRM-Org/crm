@@ -20,11 +20,14 @@ export default function RouteFallback(): JSX.Element {
   const { t } = useTranslation();
   const [pending, setPending] = useState(false);
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setPending(true), SHOW_DELAY_MS);
-    return (): void => window.clearTimeout(timer);
+  useEffect(
+    () => {
+      const timer = window.setTimeout(() => setPending(true), SHOW_DELAY_MS);
+      return (): void => window.clearTimeout(timer);
+    },
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-  }, []);
+    []
+  );
 
   return (
     <>

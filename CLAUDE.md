@@ -313,7 +313,12 @@ Two remedies, in order:
 2. **Annotate it, with the proof.** Where no honest refactor exists, a
    `// Stryker disable next-line <Mutator>: <reason>` on the line above reports it `Ignored` — the
    same out-of-denominator status `ignoreStatic` already relies on. The reason must state _why_ the
-   two programs cannot be told apart, not that a test was hard to write.
+   two programs cannot be told apart, not that a test was hard to write. **Placement is
+   load-bearing:** Stryker reads the directive from a node's `leadingComments` and keys
+   `next-line` off _that node's_ line, so the comment has to lead a node starting on the mutant's
+   own line. A comment left dangling at the end of a block — the natural-looking spot above
+   `}, []);` — attaches to no node and is silently ignored, so the deps array goes on its own line
+   under the directive and the call is written in expanded form.
 
 The only annotated case today is the empty React hook dependency array. Stryker's
 `ArrayDeclaration` mutator rewrites `[]` to `["Stryker was here"]`, and React compares deps

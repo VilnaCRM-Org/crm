@@ -54,6 +54,22 @@ const mdDeclarationOf = (label: string): CSSStyleDeclaration => {
   return declaration;
 };
 
+// Declared first on purpose: the module is evaluated by the first test that imports it, so
+// that test is the only one Stryker credits with covering both `styled()` calls. It has to
+// assert on both glyphs, or the second one has no test that can reach it.
+describe('password visibility glyph geometry', () => {
+  it('pins the 20x24px box on both toggle glyphs', async () => {
+    await renderIcons();
+    const shown = baseDeclarationOf(SHOW_LABEL);
+    const hidden = baseDeclarationOf(HIDE_LABEL);
+
+    expect(shown.getPropertyValue('width')).toBe('20px');
+    expect(shown.getPropertyValue('height')).toBe('24px');
+    expect(hidden.getPropertyValue('width')).toBe('20px');
+    expect(hidden.getPropertyValue('height')).toBe('24px');
+  });
+});
+
 describe.each([
   ['StyledEyeIcon', SHOW_LABEL],
   ['StyledEyeIconOff', HIDE_LABEL],

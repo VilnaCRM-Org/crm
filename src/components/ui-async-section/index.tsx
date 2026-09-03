@@ -28,10 +28,13 @@ export default function UIAsyncSection({
   const status = t(`${namespace}.${statusSuffix(isLoading, hasError, count)}`);
   const isReady = !isLoading && !hasError && count > 0;
 
-  useEffect(() => {
-    setAnnounce(true);
+  useEffect(
+    () => {
+      setAnnounce(true);
+    },
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-  }, []);
+    []
+  );
 
   return (
     <section>

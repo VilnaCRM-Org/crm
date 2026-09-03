@@ -33,6 +33,22 @@ const declarationOf = (label: string, suffix = ''): CSSStyleDeclaration => {
   return declaration;
 };
 
+// Declared first on purpose: the module is evaluated by the first test that imports it, so
+// that test is the only one Stryker credits with covering both `styled()` calls. It has to
+// assert on both boxes, or the checked one has no test that can reach it.
+describe('remember-me checkbox geometry', () => {
+  it('pins the 1.25rem square on both boxes', async () => {
+    await renderIcons();
+    const unchecked = declarationOf(UNCHECKED_LABEL);
+    const checked = declarationOf(CHECKED_LABEL);
+
+    expect(unchecked.getPropertyValue('width')).toBe('1.25rem');
+    expect(unchecked.getPropertyValue('height')).toBe('1.25rem');
+    expect(checked.getPropertyValue('width')).toBe('1.25rem');
+    expect(checked.getPropertyValue('height')).toBe('1.25rem');
+  });
+});
+
 describe('CheckBoxIcon (unchecked remember-me box)', () => {
   it('pins the 1.25rem square footprint', async () => {
     await renderIcons();

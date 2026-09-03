@@ -29,16 +29,19 @@ export default function useAsyncList<T>(load: () => Promise<readonly T[]>): Asyn
   const [state, setState] = useState<AsyncListState<T>>(INITIAL_STATE);
   const loadRef = useRef(load);
 
-  useEffect(() => {
-    const subscription: AsyncListSubscription = { active: true };
+  useEffect(
+    () => {
+      const subscription: AsyncListSubscription = { active: true };
 
-    void asyncListLoader.run(loadRef.current, subscription, setState);
+      void asyncListLoader.run(loadRef.current, subscription, setState);
 
-    return (): void => {
-      subscription.active = false;
-    };
+      return (): void => {
+        subscription.active = false;
+      };
+    },
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-  }, []);
+    []
+  );
 
   return state;
 }

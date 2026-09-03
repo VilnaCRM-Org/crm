@@ -20,11 +20,14 @@ export default function useCloseTimer(): CloseTimer {
     []
   );
 
-  const scheduleClose = useCallback((fn: () => void, delayMs: number) => {
-    timerRef.current = clearTimer(timerRef);
-    timerRef.current = setTimeout(fn, delayMs);
+  const scheduleClose = useCallback(
+    (fn: () => void, delayMs: number) => {
+      timerRef.current = clearTimer(timerRef);
+      timerRef.current = setTimeout(fn, delayMs);
+    },
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-  }, []);
+    []
+  );
 
   return { scheduleClose };
 }

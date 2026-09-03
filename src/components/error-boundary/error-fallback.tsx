@@ -18,10 +18,13 @@ export default function ErrorFallback({ error, reset }: ErrorFallbackProps): JSX
   const headingRef = useRef<HTMLHeadingElement>(null);
   const styles = errorFallbackStyles.build();
 
-  useEffect(() => {
-    if (headingRef.current) headingRef.current.focus();
+  useEffect(
+    () => {
+      if (headingRef.current) headingRef.current.focus();
+    },
     // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
-  }, []);
+    []
+  );
 
   return (
     <main lang="en" style={styles.container}>

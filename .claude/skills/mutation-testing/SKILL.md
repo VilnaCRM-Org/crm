@@ -107,7 +107,10 @@ program behaves identically. Leaving it `Survived` misreports the suite. Prefer 
 the mutant proved irrelevant (`?? ''` after a guard that already narrows to a string, a `.catch`
 fallback only read for falsiness, a duplicated `typeof` check). Only when no such refactor exists,
 annotate the line with `// Stryker disable next-line <Mutator>: <reason>`, where the reason states
-why the two programs cannot be told apart — never that the test was hard to write.
+why the two programs cannot be told apart — never that the test was hard to write. The directive is
+read from a node's `leadingComments` and `next-line` keys off that node's line, so it must lead a
+node starting on the mutant's line; a comment dangling at the end of a block (above `}, []);`)
+attaches to nothing and is silently ignored.
 
 ## Keep scope and shards in lockstep
 
