@@ -2,6 +2,7 @@ import {
   type MutationReport,
   mergeReportFiles,
   mutationScore,
+  ownedShardReports,
   scoreReports,
   tallyMutants,
 } from '../../scripts/ci/mutation-report';
@@ -100,6 +101,62 @@ describe('mutation-report merge gate', () => {
       const result = scoreReports([{}, report({ 'a.tsx': ['Killed'] })]);
       expect(result.fileCount).toBe(1);
       expect(result.mutationScore).toBe(100);
+    });
+  });
+
+  // Shard membership is packed by file size, so an edit can move a file to another shard while its
+  // previous owner still carries the old result in its restored incremental report. Merging keeps
+  // the first occurrence, so the stale copy would otherwise decide the gate.
+  describe('results from a shard that no longer owns a file', () => {
+    const OWNER: Record<string, number> = { 'a.tsx': 0, 'b.tsx': 1 };
+    const ownerOf = (path: string): number | undefined => OWNER[path];
+
+    it('keeps a file only from the shard that owns it', () => {
+      const { reports, discarded } = ownedShardReports(
+        [
+          { index: 0, report: report({ 'a.tsx': ['Killed'], 'b.tsx': ['Survived'] }) },
+          { index: 1, report: report({ 'b.tsx': ['Killed'] }) },
+        ],
+        ownerOf
+      );
+
+      expect(discarded).toBe(1);
+      expect(scoreReports(reports).mutationScore).toBe(100);
+    });
+
+    it('lets the owning shard decide even when the stale copy is merged first', () => {
+      const stale = { index: 0, report: report({ 'b.tsx': ['Survived'] }) };
+      const owning = { index: 1, report: report({ 'b.tsx': ['Killed'] }) };
+
+      // Merged first-occurrence-wins, the stale copy is the only result for the file at all.
+      expect(scoreReports([stale.report, owning.report]).mutationScore).toBe(0);
+      expect(scoreReports(ownedShardReports([stale, owning], ownerOf).reports).mutationScore).toBe(
+        100
+      );
+    });
+
+    it('drops a file that no shard owns any more', () => {
+      const { reports, discarded } = ownedShardReports(
+        [{ index: 0, report: report({ 'a.tsx': ['Killed'], 'deleted.tsx': ['Survived'] }) }],
+        ownerOf
+      );
+
+      expect(discarded).toBe(1);
+      expect(scoreReports(reports).fileCount).toBe(1);
+    });
+
+    it('keeps every file when each shard reports only what it owns', () => {
+      const { reports, discarded } = ownedShardReports(
+        [
+          { index: 0, report: report({ 'a.tsx': ['Killed'] }) },
+          { index: 1, report: report({ 'b.tsx': ['Survived'] }) },
+        ],
+        ownerOf
+      );
+
+      expect(discarded).toBe(0);
+      expect(scoreReports(reports).fileCount).toBe(2);
+      expect(scoreReports(reports).mutationScore).toBe(50);
     });
   });
 });

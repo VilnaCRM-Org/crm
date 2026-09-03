@@ -7,11 +7,14 @@ const config = {
   testRunner: 'jest',
   coverageAnalysis: 'perTest',
   ignoreStatic: true,
-  plugins: ['@stryker-mutator/jest-runner'],
-  tsconfigFile: 'tsconfig.json',
+  plugins: ['@stryker-mutator/jest-runner', '@stryker-mutator/typescript-checker'],
+  checkers: ['typescript'],
+  disableTypeChecks: false,
+  tsconfigFile: 'tsconfig.stryker.json',
+  typescriptChecker: { prioritizePerformanceOverAccuracy: true },
   jest: {
     configFile: 'jest.mutation.config.ts',
-    enableFindRelatedTests: false,
+    enableFindRelatedTests: true,
   },
   mutate: collectMutateFiles(),
   incrementalFile: 'reports/stryker-incremental.json',
@@ -24,7 +27,7 @@ const config = {
     '.junie/',
     '.qlty/',
   ],
-  thresholds: { high: 100, low: 90, break: 90 },
+  thresholds: { high: 100, low: 100, break: 100 },
 };
 
 export default config;

@@ -259,29 +259,119 @@ instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `
 These keep the run affordable — CI runners are 2-core, so parallelism comes from the 8-way shard
 count, not Stryker's in-process concurrency.
 
-`thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`. `break` is the
-enforced floor, set at/just below the measured baseline. **Ratchet policy:** raise `break` toward
-`high` as suites improve; never lower it to make CI pass, never narrow the mutated scope to dodge a
-survived mutant, and never add a mutation/coverage suppression — fix survived mutants with real
-assertions.
+### Honest mutant classification (issue #171)
 
-Measured baseline (widened scope, unit + integration; 8-way sharded full run):
+A mutation score is only worth enforcing if every mutant is classified for the reason the status
+claims. Three settings in `stryker.config.mjs` keep that true, and
+`tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of them regresses:
 
-| Area                         | Files | Mutation score |
-| ---------------------------- | ----- | -------------- |
-| `src/services/**`            | 9     | 100%           |
-| `…/auth/repositories/**`     | 7     | 100%           |
-| `…/auth/stores/**`           | 8     | 100%           |
-| `…/form-section/validations` | 4     | 100%           |
-| Overall (`break` = 90)       | 134   | 92.5%          |
+- **`checkers: ['typescript']`** (plugin `@stryker-mutator/typescript-checker`, pinned to the same
+  major as `@stryker-mutator/core`) type-checks every mutant before it runs. Type-invalid mutants
+  are reported `CompileError`, which `scripts/ci/mutation-report.ts` excludes from the denominator,
+  instead of executing and being miscounted — crashing ones as `Killed` (a kill no assertion
+  earned), limping ones as `Survived` noise.
+- **`disableTypeChecks: false`.** Stryker's default injects `// @ts-nocheck` at the top of every
+  sandbox file, which would blind the checker to every error and make it a silent no-op. Leave this
+  off or the checker gates nothing. The test runner is unaffected: `jest.mutation.config.ts` uses
+  ts-jest `isolatedModules`, so it transpiles without type-checking either way.
+- **`jest.enableFindRelatedTests: true`.** With it off, each mutant run reloaded _every_ test file
+  in the suite and was filtered down by `testNamePattern` only after the fact, so a mutant run cost
+  a full-suite reload and reliably exceeded the timeout window. Every mutant then landed as
+  `Timeout` — counted as detected, but earned by hanging rather than by an assertion. Turning it on
+  restricts each run to the test files that actually reach the mutated file; mutants now come back
+  `Killed` or `Survived` on their merits, and the full sharded run dropped from ~110 min to well
+  under the CI budget.
 
-The mutate scope is 154 files; 134 produced mutants in the report (the other ~20 are pure re-export
-barrels or files whose only mutants are static and skipped by `ignoreStatic`). The logic layer is
-fully detected; the overall gap is `noCoverage` mutants in non-logic files (UI/providers/routes
-exercised by e2e/visual rather than unit/integration). Detections in the async logic layer land as
-Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test), which counts as
-detected. `break` is set to 90 — below the 92.5% baseline for margin — and ratchets toward the
-`high` = 100 target as the scheduled full runs confirm stability.
+`typescriptChecker.prioritizePerformanceOverAccuracy: true` lets the checker type-check
+independent mutants in one pass. It is a deliberate accuracy-for-speed trade: the plugin only
+groups mutants whose files do not reference one another, and when an error cannot be tied to a
+mutant in the group it re-checks those mutants individually — but a mutant can still be credited
+with a neighbour's error in a dependency shape the grouper treats as independent. Turn it off when
+a published baseline has to be exact per mutant; the two-file probe that measured 1m03s with it on
+took 12m54s with it off. The checker compiles
+[`tsconfig.stryker.json`](tsconfig.stryker.json) — the root tsconfig narrowed to `src/**/*`, the
+only tree that is mutated — because the checker builds a full program per worker and compiling
+`scripts/`, `docker/`, `lighthouse/`, `tests/`, and `.storybook/` alongside it costs time and
+memory for files that hold no mutants. Never widen `disableTypeChecks` or drop the checker to make
+a run faster; that trades the gate's honesty for wall-clock.
+
+`thresholds` in `stryker.config.mjs` is a coherent band `{ high, low, break }`, now flat at
+`{ 100, 100, 100 }`: every mutant Stryker scores is detected, so any survivor is a regression.
+**Ratchet policy:** never lower `break` to make CI pass, never narrow the mutated scope to dodge a
+survived mutant, and never add a coverage suppression — fix survived mutants with real assertions.
+
+**The one exception: a provably equivalent mutant.** A mutant that no test can ever kill, because
+the mutated program is behaviourally identical to the original, is not a coverage gap — leaving it
+`Survived` misreports the suite exactly the way the `Timeout` inflation this issue removed did.
+Two remedies, in order:
+
+1. **Adopt the simpler program.** An equivalent mutant is a proof that a piece of source does not
+   matter. `(err.message ?? '')` after an `instanceof Error` guard, `.catch(() => '')` whose `''` is
+   only ever read for falsiness, `value.length >= 2` after a regex that already forces three
+   characters, a duplicated `typeof` guard behind another one — deleting the dead half removes the
+   mutant and leaves better code. Prefer this every time it is available.
+2. **Annotate it, with the proof.** Where no honest refactor exists, a
+   `// Stryker disable next-line <Mutator>: <reason>` on the line above reports it `Ignored` — the
+   same out-of-denominator status `ignoreStatic` already relies on. The reason must state _why_ the
+   two programs cannot be told apart, not that a test was hard to write. **Placement is
+   load-bearing:** Stryker reads the directive from a node's `leadingComments` and keys
+   `next-line` off _that node's_ line, so the comment has to lead a node starting on the mutant's
+   own line. Any node will do: `password-field.tsx` leads the whole `const toggle = …` statement
+   and its inline deps array is annotated fine. What fails is a comment with no node to lead —
+   dangling at the end of a block, the natural-looking spot above `}, []);`, it attaches to nothing
+   and is silently ignored. For that shape write the call expanded, with the deps array on its own
+   line under the directive.
+
+The only annotated case today is the React hook dependency array, at eleven sites, and it comes in
+two shapes. Ten are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
+compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
+render and the effect or memo fires exactly as it does with `[]`. The eleventh,
+`use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
+`ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
+`actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
+box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
+Hoisting either literal to a named constant would remove the mutant, but
+`react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
+array literal, so there is nothing left to change. Adding a twelfth needs the same standard of
+proof, and a non-empty array needs the stability argument spelled out, not assumed.
+
+The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
+mutate scope is 203 files, of which ~173 produce scored mutants (the rest are pure re-export
+barrels or files whose only mutants are static and skipped by `ignoreStatic`).
+
+**The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
+file can move it to a different shard — while its previous owner still carries the old result in
+the incremental report it restored by key prefix. Merging on "first occurrence wins" then lets a
+status decided against different source outrank the shard that actually re-ran the file, which is
+how a run once reported three survivors that every owning shard had already scored as `Ignored`.
+`merge-mutation-reports.ts` therefore rebuilds the same packing and keeps each file only from the
+shard that owns it, reporting how many stale results it dropped. Do not "fix" a disagreement
+between shards by re-running until the ordering favours the answer you want.
+
+**How this number was reached, and why the earlier one was not comparable.** The previously
+recorded baseline (92.5%, `break` = 90) was measured before honest classification: 2405 of its 2410
+"detections" were `Timeout` with an empty `killedBy` — including boolean flips in `src/app.tsx` that
+cannot hang — so it scored how often a mutant outran the timeout window, not how often an assertion
+caught one. The same suite, unchanged, scored **59.9%** once mutants were classified on their
+merits. `break` was re-derived to 57 at that point, then ratcheted back to 90 as real assertions
+were added (issue #121's work): 60.0% → 65.1% → 80.5% → 91.4% → 91.9%. Merging `main` widened the
+scoring set from 159 files to 173 and dropped the merged score to 89.99%, one mutant below the
+floor; killing those survivors — 113 of them static style tokens the isolated-load pattern below
+reaches — took it to 96.8%. The last 58 closed the gap to 100%: 29 fell to new assertions, 18 were
+equivalent mutants removed by adopting the simpler program, and 11 are the annotated hook
+dependency arrays above. Every point of that came from tests or from deleting dead source, not from
+narrowing scope or relaxing the gate.
+
+**Static values need loading inside the test.** A mutant in a top-level object literal, const map or
+`styled()` call is evaluated at import. `ignoreStatic: true` reports the purely static ones as
+`Ignored`, out of the denominator; the trap is the one that _also_ picked up per-test coverage,
+credited to whichever unrelated test happened to load the module first. It still counts, but
+`findRelatedTests` restricts the run to files importing the mutated module and the coverage-derived
+test filter then restricts it to that mis-credited test name, which none of them declare — so the
+mutant comes back `Survived` with `testsCompleted: 0` and no assertion can ever reach it. Load such
+modules with `jest.resetModules()` plus an `import()` inside the test body (or
+`jest.isolateModulesAsync`) so the literal is evaluated during the test. This moved 154 mutants from
+`Survived` to `Killed` in a single run. `tests/unit/utils/isolated-module.ts` wraps the pattern.
 
 ### Route coverage inventory (issue #169)
 
@@ -728,7 +818,7 @@ complement.
 ### Architecture gate integrity (issue #181)
 
 `.dependency-cruiser.js` encodes the barrel/public-API contract, DI composition-root isolation,
-layer bans, type-file purity, and folder/naming conventions in 48 rules of hand-written path
+layer bans, type-file purity, and folder/naming conventions in 49 rules of hand-written path
 regexes. Nothing in CI distinguished "no violations because the code is clean" from "no violations
 because a regex went dead" — a typo'd anchor makes a rule match nothing and the gate passes
 **vacuously** for every future PR.

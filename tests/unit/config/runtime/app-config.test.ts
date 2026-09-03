@@ -74,6 +74,28 @@ describe('appConfig', () => {
     }
   );
 
+  it.each(['xhttp://api.example.com', 'httpx://api.example.com', 'shttps://api.example.com'])(
+    'rejects %s, whose scheme merely embeds http rather than being it',
+    async (apiBaseUrl) => {
+      writeConfigBlock(JSON.stringify({ apiBaseUrl }));
+
+      await expect(loadAppConfig()).rejects.toThrow(
+        /Invalid runtime configuration[\s\S]*apiBaseUrl/
+      );
+    }
+  );
+
+  it.each(['http://api.example.com', 'https://api.example.com'])(
+    'accepts the plain %s scheme',
+    async (apiBaseUrl) => {
+      writeConfigBlock(JSON.stringify({ apiBaseUrl }));
+
+      const { default: appConfig } = await loadAppConfig();
+
+      expect(appConfig.apiBaseUrl()).toBe(apiBaseUrl);
+    }
+  );
+
   it('fails fast and names the key when the configuration carries an unknown setting', async () => {
     writeConfigBlock(JSON.stringify({ mainLanguage: 'uk' }));
 
