@@ -53,13 +53,12 @@ export default class AuthStoreActions {
       return true;
     }
     if (!(error instanceof Error)) return false;
-    const message = error.message.toLowerCase();
+    const message = error.message?.toLowerCase();
     const code = (error as { code?: unknown }).code;
     return (
       error.name === 'AbortError' ||
       code === 'ABORT_ERR' ||
-      message.includes('abort') ||
-      message.includes('cancel')
+      (message !== undefined && (message.includes('abort') || message.includes('cancel')))
     );
   }
 

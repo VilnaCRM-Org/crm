@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import UIAsyncSection from '@/components/ui-async-section';
@@ -26,13 +26,13 @@ const section = (count: number): JSX.Element => (
  * only view of the commit that precedes the latch.
  */
 const liveRegionTextOnFirstPaint = (count: number): string => {
-  const host = document.createElement('div');
+  const host = document.body.appendChild(document.createElement('div'));
   host.innerHTML = renderToStaticMarkup(section(count));
-  const liveRegion = host.querySelector('[role="status"]');
-  if (!liveRegion) {
-    throw new Error('UIAsyncSection painted no live region');
-  }
-  return liveRegion.textContent ?? '';
+
+  const text = within(host).getByRole('status').textContent ?? '';
+  host.remove();
+
+  return text;
 };
 
 describe('UIAsyncSection first paint', () => {
