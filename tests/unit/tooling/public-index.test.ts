@@ -7,6 +7,21 @@ const publicDir = path.resolve(__dirname, '..', '..', '..', 'public');
 const readPublicJson = <T>(filename: string): T =>
   JSON.parse(fs.readFileSync(path.join(publicDir, filename), 'utf-8')) as T;
 
+const RUNTIME_CONFIG_BLOCK = /<script[^>]*\bid="app-runtime-config"[^>]*>([\s\S]*?)<\/script>/;
+
+const readRuntimeConfigJson = (indexHtml: string): string => {
+  const json = RUNTIME_CONFIG_BLOCK.exec(indexHtml)?.[1];
+
+  if (json === undefined) {
+    throw new Error(
+      'public/index.html is missing the <script id="app-runtime-config"> block that ' +
+        'src/config/runtime/app-config-source.ts reads synchronously at boot (issue #145).'
+    );
+  }
+
+  return json;
+};
+
 describe('public index shell', () => {
   it('does not load the Inter font stylesheet from a third-party host', () => {
     const indexHtml = readPublicIndex();
@@ -30,6 +45,25 @@ describe('public index shell', () => {
     expect(indexHtml).toContain('href="/favicon-32x32.png"');
     expect(indexHtml).toContain('href="/apple-touch-icon.png"');
     expect(indexHtml).toContain('href="/safari-pinned-tab.svg"');
+  });
+
+  it('ships the inline runtime configuration block the app reads at boot', () => {
+    const indexHtml = readPublicIndex();
+
+    expect(indexHtml).toContain('id="app-runtime-config"');
+    expect(indexHtml).toContain('type="application/json"');
+
+    const parsed = JSON.parse(readRuntimeConfigJson(indexHtml)) as unknown;
+
+    expect(typeof parsed).toBe('object');
+    expect(parsed).not.toBeNull();
+    expect(Array.isArray(parsed)).toBe(false);
+
+    const { flags } = parsed as { flags?: unknown };
+
+    expect(typeof flags).toBe('object');
+    expect(flags).not.toBeNull();
+    expect(Array.isArray(flags)).toBe(false);
   });
 
   it('ships a single manifest file with install metadata', () => {

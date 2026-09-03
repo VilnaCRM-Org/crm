@@ -24,6 +24,11 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
+      # Runs before the Docker build so a route that ships without browser coverage fails in
+      # seconds instead of after the full suite (issue #169).
+      - name: Verify every route has e2e/visual coverage
+        run: make check-e2e-route-coverage
+
       - name: Run Playwright tests
         run: make test-e2e
 

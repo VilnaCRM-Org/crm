@@ -3,13 +3,30 @@
 // allowed to reach into module/feature/repository internals for registration, and the
 // only import targets restricted by no-di-config-import-outside-composition-root (importing
 // one eagerly pulls the whole DI graph, which must stay off the auth paint path).
+// Issue #108: the module/feature/test folder law has exactly one source of truth,
+// config/module-shape.json, which the scaffolding generator (plopfile.ts) also reads.
+// The regexes and comments below are derived from it, so a generated skeleton and the
+// gate that judges it can never disagree. Change the folder sets there, not here.
+const MODULE_SHAPE = require('./config/module-shape.json');
+
+const listFolders = (folders) => folders.join(', ');
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const disallowedFolderSegment = (folders) =>
+  `(?!(?:${folders.map(escapeRegExp).join('|')})/)[^/]+/`;
+
 const DI_COMPOSITION_ROOTS = [
   '^src/config/dependency-injection-config[.]ts$',
+  '^src/config/runtime/di[.]ts$',
   '^src/services/[^/]+/di[.]ts$',
   '^src/utils/[^/]+/di[.]ts$',
   '^src/modules/[^/]+/config/di[.]ts$',
 ];
 const DI_MODULE_COMPOSITION_ROOT = '^src/modules/[^/]+/config/di[.]ts$';
+
+// Issue #130: the scope, carve-outs, and contract/data allowlist shared with the ESLint gate
+// (`noUninjectedCollaboratorSelectors` in eslint.config.mjs). Keeping both layers on one source
+// of truth is what stops the module-graph rule and the import-specifier rule from drifting.
+const DI_COLLABORATOR_POLICY = require('./config/di-collaborator-policy.js');
 
 module.exports = {
   forbidden: [
@@ -49,6 +66,8 @@ module.exports = {
           '^src/index[.]tsx$', // app entrypoint
           '^codegen[.]ts$', // graphql-codegen config (consumed by the CLI, not imported)
           '^tests/load/utils/test-data[.]js$', // ad-hoc load-test data generator
+          // console-gate fixtures: run by a child Jest process, never imported (issue #192)
+          '^tests/fixtures/console-gate/.*[.]fixture[.](?:ts|tsx)$',
           '^storybook-static/', // generated Storybook output
           '^coverage/', // generated coverage reports
           '^test-results/', // generated Playwright/Jest test artifacts
@@ -369,10 +388,93 @@ module.exports = {
           '^src/modules/[^/]+/store/[^/]+-slice[.]ts$',
           '^src/modules/[^/]+/features/[^/]+/stores/index[.]ts$',
           '^src/config/dependency-injection-config[.]ts$',
+          // Issue #128: the sanctioned component DI bridge. `useService` must import the
+          // aggregating composition root (not the bare tsyringe container) or `resolve` would
+          // throw on an unregistered token. It stays off the auth paint path because
+          // no-paint-path-import-di-bridge forbids the auth feature and the route shell from
+          // importing it.
+          '^src/providers/di/use-service[.]ts$',
         ],
       },
       to: {
         path: DI_COMPOSITION_ROOTS,
+      },
+    },
+    {
+      name: 'components-no-direct-injectable-import',
+      comment:
+        'React components must obtain behavioral collaborators (services, repositories, ' +
+        'module store, factories, mappers, error handlers) through the DI bridge ' +
+        'useService(TOKENS.X) from @/providers/di — never by value-importing the class and ' +
+        'calling it directly, which binds the collaborator at the call site and cannot be ' +
+        'swapped for a mock in a component test (issue #128; cf. #100). `import type` stays ' +
+        'allowed: type annotations are erased and bind nothing. Carve-outs are the ' +
+        'container-free-by-design surfaces: the auth render path (Lighthouse budget), the ' +
+        'route shell (issue #105), the app entrypoint, and the ROOT error boundary file alone ' +
+        '(a class component cannot call a hook, and error reporting must survive a DI ' +
+        'failure) — its functional descendants can call useService and stay gated. This ' +
+        'is the consumer side; the producer side (one injectable importing another) is not ' +
+        'owned here, so the two never flag the same edge.',
+      severity: 'error',
+      from: {
+        path: '^src/.+[.]tsx$',
+        pathNot: [
+          '^src/modules/user/features/auth/',
+          '^src/routes/route-(?:composer|mapper)[.]tsx$',
+          '^src/index[.]tsx$',
+          '^src/components/error-boundary/app-error-boundary[.]tsx$',
+          '[.](?:stories|test|spec)[.]tsx$',
+        ],
+      },
+      to: {
+        path: [
+          '^src/services/',
+          '^src/modules/[^/]+/features/[^/]+/repositories/',
+          '^src/modules/[^/]+/store/',
+          '(?:-factory|-mapper)[.]tsx?$',
+          'error-handler',
+        ],
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
+      name: 'no-paint-path-import-di-bridge',
+      comment:
+        'The auth render path must not REACH the component DI bridge (@/providers/di) — not ' +
+        'directly and not through an intermediate shared component, hence `reachable`. The ' +
+        'bridge eagerly imports the aggregating composition root, so any path from the auth ' +
+        'feature would pull the whole DI graph into the chunks needed to paint the ' +
+        'authentication page and blow the mobile Lighthouse budget (issues #128, #109). Auth ' +
+        'keeps its sanctioned module singletons instead; this rule is what makes that ' +
+        'carve-out enforced rather than merely documented. Reachability is safe to demand ' +
+        'here because everything auth reaches — including its own lazily loaded pages — is ' +
+        'auth-owned or shared UI, which is held to the same invariant.',
+      severity: 'error',
+      from: {
+        path: '^src/modules/user/features/auth/',
+      },
+      to: {
+        path: '^src/providers/di/',
+        reachable: true,
+      },
+    },
+    {
+      name: 'no-eager-shell-import-di-bridge',
+      comment:
+        'The eagerly evaluated app shell — entrypoint, root component, and route registry — ' +
+        'must not itself import the component DI bridge (@/providers/di), which would put the ' +
+        'composition root in the initial bundle instead of the lazily loaded route chunk that ' +
+        'actually needs it (issue #128). Unlike the auth rule above this is deliberately a ' +
+        'DIRECT-edge rule: the route registry dynamically imports every page in the app, so ' +
+        'demanding reachability here would forbid the bridge in every lazily routed ' +
+        'component — precisely the use case it exists for. The code-split boundary is where ' +
+        'the cost stops, so only the shell own static imports are gated.',
+      severity: 'error',
+      from: {
+        path: ['^src/index[.]tsx$', '^src/app[.]tsx$', '^src/routes/'],
+      },
+      to: {
+        path: '^src/providers/di/',
       },
     },
     {
@@ -527,38 +629,36 @@ module.exports = {
     },
     {
       name: 'module-allowed-folders',
-      comment:
-        'Module root may only contain allowed folders: config, features, hooks, ' +
-        'lib, store, types, utils.',
+      comment: `Module root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.module.allowedFolders
+      )}. Scaffold one with \`make new-module\` (config/module-shape.json).`,
       severity: 'error',
       from: {
-        path: '^src/modules/[^/]+/(?!(?:config|features|hooks|lib|store|types|utils)/)[^/]+/',
+        path: `^src/modules/[^/]+/${disallowedFolderSegment(MODULE_SHAPE.module.allowedFolders)}`,
       },
       to: {},
     },
     {
       name: 'feature-allowed-folders',
-      comment:
-        'Feature root may only contain allowed folders: assets, components, ' +
-        'hooks, i18n, repositories, routes, stores, types, utils.',
+      comment: `Feature root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.feature.allowedFolders
+      )}. Scaffold one with \`make new-feature\` (config/module-shape.json).`,
       severity: 'error',
       from: {
         path:
           '^src/modules/[^/]+/features/[^/]+/' +
-          '(?!(?:assets|components|hooks|i18n|repositories|routes|stores|types|utils)/)[^/]+/',
+          disallowedFolderSegment(MODULE_SHAPE.feature.allowedFolders),
       },
       to: {},
     },
     {
       name: 'tests-top-level-allowed-folders',
-      comment:
-        'Tests root may only contain allowed folders: apollo-server, builders, ' +
-        'e2e, integration, load, memory-leak, mutation, unit, utils, visual.',
+      comment: `Tests root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.tests.rootAllowedFolders
+      )}.`,
       severity: 'error',
       from: {
-        path:
-          '^tests/(?!(?:apollo-server|builders|e2e|integration|' +
-          'load|memory-leak|mutation|unit|utils|visual)/)[^/]+/',
+        path: `^tests/${disallowedFolderSegment(MODULE_SHAPE.tests.rootAllowedFolders)}`,
       },
       to: {},
     },
@@ -586,14 +686,14 @@ module.exports = {
     },
     {
       name: 'tests-module-allowed-folders',
-      comment:
-        'Test module root may only contain allowed folders: features, helpers, ' +
-        'lib, repositories, store.',
+      comment: `Test module root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.tests.moduleAllowedFolders
+      )}.`,
       severity: 'error',
       from: {
         path:
           '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/' +
-          '(?!(?:features|helpers|lib|repositories|store)/)[^/]+/',
+          disallowedFolderSegment(MODULE_SHAPE.tests.moduleAllowedFolders),
       },
       to: {},
     },
@@ -608,14 +708,14 @@ module.exports = {
     },
     {
       name: 'tests-feature-allowed-folders',
-      comment:
-        'Test feature root may only contain allowed folders: assets, components, ' +
-        'hooks, i18n, repositories, routes, stores, types, utils.',
+      comment: `Test feature root may only contain allowed folders: ${listFolders(
+        MODULE_SHAPE.tests.featureAllowedFolders
+      )}.`,
       severity: 'error',
       from: {
         path:
           '^tests/(?:e2e|integration|unit)/modules/[a-z0-9-]+/features/[a-z0-9-]+/' +
-          '(?!(?:assets|components|hooks|i18n|repositories|routes|stores|types|utils)/)[^/]+/',
+          disallowedFolderSegment(MODULE_SHAPE.tests.featureAllowedFolders),
       },
       to: {},
     },
@@ -669,6 +769,28 @@ module.exports = {
       to: {
         path: '^src/',
         pathNot: ['[.]d[.]ts$'],
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
+      name: 'injectable-classes-no-value-imports',
+      comment:
+        'Logic classes must obtain behavioral collaborators through DI. A direct value import ' +
+        'of another project module hard-wires the collaborator at the call site, so it resists ' +
+        'substitution in tests and the class only looks injectable. Use `import type` for ' +
+        'annotations and @inject(TOKENS.X) for collaborators; the contract/data allowlist ' +
+        '(tokens, config, domain error classes, constant maps, zod response contracts, GraphQL ' +
+        'documents, base classes, public barrels) stays importable. Consumer-side .tsx is ' +
+        'governed by issue #128 (components-no-direct-injectable-import) — the two scopes are ' +
+        'disjoint, so no edge is flagged twice (issue #130).',
+      severity: 'error',
+      from: {
+        path: DI_COLLABORATOR_POLICY.LOGIC_SOURCE_PATHS,
+        pathNot: DI_COLLABORATOR_POLICY.exemptPaths(),
+      },
+      to: {
+        path: '^src/',
+        pathNot: DI_COLLABORATOR_POLICY.allowedTargetPaths(),
         dependencyTypesNot: ['type-only'],
       },
     },

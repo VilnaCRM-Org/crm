@@ -1,4 +1,4 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
 import type { ErrorReporter } from '@/services/types/error-reporting';
 import type {
@@ -8,31 +8,36 @@ import type {
   WebVitalMetric,
 } from '@/services/types/observability/observability';
 
-import observabilityCore from './observability-core';
+import type { ObservabilityCore } from './observability-core';
+import OBSERVABILITY_TOKENS from './tokens';
 
 @injectable()
 export default class ObservabilityService implements ObservabilityServiceContract, ErrorReporter {
+  constructor(
+    @inject(OBSERVABILITY_TOKENS.ObservabilityCore) private readonly core: ObservabilityCore
+  ) {}
+
   public init(): void {
-    observabilityCore.init();
+    this.core.init();
   }
 
   public captureError(error: unknown, context?: CaptureContext): void {
-    observabilityCore.captureError(error, context);
+    this.core.captureError(error, context);
   }
 
   public report(error: Error, context?: Record<string, unknown>): void {
-    observabilityCore.report(error, context);
+    this.core.report(error, context);
   }
 
   public setUser(identity: ObservabilityUser): void {
-    observabilityCore.setUser(identity);
+    this.core.setUser(identity);
   }
 
   public clearUser(): void {
-    observabilityCore.clearUser();
+    this.core.clearUser();
   }
 
   public reportVital(metric: WebVitalMetric): void {
-    observabilityCore.reportVital(metric);
+    this.core.reportVital(metric);
   }
 }

@@ -1,0 +1,7 @@
+import type { {{pascalCase feature}}Item } from '../{{feature}}-repository';
+
+export interface {{pascalCase feature}}PanelProps {
+  readonly items: readonly {{pascalCase feature}}Item[];
+  readonly isLoading: boolean;
+  readonly hasError: boolean;
+}

@@ -128,8 +128,12 @@ Linting & Formatting
 ```bash
   make lint-eslint: lints the codebase using eslint rules
   make lint-tsc: runs static type checking with TypeScript
+  make lint-commit-message: lints one commit message or squash header read from stdin
+  make lint-commit-bot-message: same, with the task-number rule relaxed for bot authors
+  make lint-commit-range: lints the commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
   make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
   make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
+  make check-auth-seed-gate: scans the built bundles so the test-only preloaded-auth seed cannot ship
 ```
 
 ### Dependency rules
@@ -201,6 +205,12 @@ Runs tests inside the Playwright container, targeting the production container:
   make test-visual: runs general visual regression tests
   make test-visual-ui: runs UI-focused visual regression tests
 ```
+
+`make test-e2e` and `make test-visual` run five Playwright projects: the desktop `chromium` /
+`firefox` / `webkit` matrix plus `mobile-chrome` (Pixel 7) and `mobile-safari` (iPhone 14) device
+emulation. The mobile projects are scoped to `tests/e2e/mobile` and `tests/visual/mobile`; the
+desktop projects skip those directories. `ENV=dev` is a reduced matrix — see "Mobile device &
+touch lane" in `CLAUDE.md`.
 
 ### Fast dev-mode Playwright targets
 
@@ -293,7 +303,7 @@ Docker
 ```bash
   make down: stops the Docker containers and removes orphaned containers
   make stop: stops dev container
-  make start-prod: builds image and starts the prod container (production mode)
+  make start-prod: builds and starts the prod-parity container (test-harness image, see issue #158)
   make ps: displays currently running Docker containers with their details
   make sh: starts a terminal inside the dev Docker container for manual commands
   make logs: shows all logs of dev container
@@ -302,6 +312,24 @@ Docker
   make wait-for-dev: waits for the dev service to be ready on port 3000
   make wait-for-prod: waits for the prod service to be ready on port 3001
 ```
+
+### Runtime configuration
+
+The production image is configured at **container start**, not at build time, so one tested
+artifact can be promoted across environments. Set `APP_CONFIG_*` variables and restart — no
+rebuild:
+
+```bash
+  APP_CONFIG_GRAPHQL_URL=https://api.example.com/graphql \
+  APP_CONFIG_FLAG_FORGOT_PASSWORD=false \
+  docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --force-recreate prod
+```
+
+The entrypoint validates every value and exits non-zero on an invalid URL, a flag value that is
+not exactly `true`/`false`, or a variable naming a flag that does not exist, so a misconfigured
+deployment never starts serving. Build-time `REACT_APP_*` values remain as defaults.
+See [runtime configuration](src/config/runtime/README.md) and
+[feature flags](docs/feature-flags.md).
 
 ### Load Testing with K6
 
@@ -371,6 +399,8 @@ In-repository documentation:
 - [Agent and contributor guide](agents.md)
 - [Repository conventions and commands](CLAUDE.md)
 - [Contributing guide](CONTRIBUTING.md)
+- [Feature flags — lifecycle and rollout](docs/feature-flags.md)
+- [Runtime configuration (`@/config/runtime`)](src/config/runtime/README.md)
 
 If the documentation doesn't cover what you need, search the
 [many questions on Stack Overflow](http://stackoverflow.com/questions/tagged/vilnacrm),

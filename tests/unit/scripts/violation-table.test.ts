@@ -1,3 +1,5 @@
+import { elementAt } from '@tests/utils/assert-result';
+
 import { renderViolationTable, reportViolations } from '../../../scripts/ci/violation-table';
 
 const violation = { rule: 'floor-drift', subject: 'chrome', message: 'floor is 110, pins 111' };
@@ -33,7 +35,9 @@ describe('renderViolationTable', () => {
       { rule: 'readme-drift', subject: 'a-much-longer-subject', message: 'short' },
     ]).split('\n');
 
-    expect(rows[2].indexOf('floor-drift')).toBe(rows[3].indexOf('readme-drift'));
+    expect(elementAt(rows, 2).indexOf('floor-drift')).toBe(
+      elementAt(rows, 3).indexOf('readme-drift')
+    );
   });
 });
 

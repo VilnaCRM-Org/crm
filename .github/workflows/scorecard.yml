@@ -1,0 +1,64 @@
+# Issue #175: every other workflow is event-driven, so nothing re-evaluates the *live repo
+# state* between merges. Scorecard is the drift monitor for the supply-chain properties no PR
+# diff can show — branch protection, required checks, dependency-update-tool health,
+# pin coverage on `main`, dangerous-workflow patterns, token permissions, known vulnerabilities.
+#
+# Monitoring tier, deliberately: a scheduled run cannot block a merge. It is the meter, not the
+# fix — the PR-time blocking controls are `workflow security / zizmor` (#174) for the workflow
+# files and the SCA gate tracked in #140, which this workflow does NOT discharge.
+name: scorecard
+
+on:
+  schedule:
+    - cron: '30 2 * * 1'
+  push:
+    branches: ['main']
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Never cancel a posture run: unlike a PR check, a superseded scheduled run has no successor
+  # until the next cron tick. Matches the release/sandbox workflow convention.
+  cancel-in-progress: false
+
+jobs:
+  analysis:
+    name: analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      # A job-level block replaces the workflow-level one outright, so every scope the run needs
+      # is listed here — including the read scopes the upstream template leaves to `read-all`.
+      contents: read
+      # Workflow-run history, for the Maintained and CI-Tests checks.
+      actions: read
+      # Upload the SARIF results to the Security tab, alongside the CodeQL findings.
+      security-events: write
+      # Publish the signed results to the OpenSSF API (publish_results below).
+      id-token: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
+        with:
+          # Branch-Protection reads the protection API, which the job's GITHUB_TOKEN cannot do,
+          # so it reports partial data on the built-in token. Provision a `SCORECARD_TOKEN`
+          # secret to complete it — a fine-grained PAT with read-only Administration and
+          # Metadata, per Scorecard's authentication docs. Until then this falls back to the
+          # job token and every other check is complete.
+          repo_token: ${{ secrets.SCORECARD_TOKEN || github.token }}
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      # Same SHA-pinned codeql-action already used by `security testing`, so findings land in
+      # one place and one pin is maintained for both.
+      - name: Upload results to code scanning
+        uses: github/codeql-action/upload-sarif@7188fc363630916deb702c7fdcf4e481b751f97a # v4.37.1
+        with:
+          sarif_file: results.sarif

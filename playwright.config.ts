@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices, type ReporterDescription } from '@playwright/test';
 import { config as dotenvConfig, type DotenvConfigOutput } from 'dotenv';
 import { expand as dotenvExpand } from 'dotenv-expand';
 
@@ -21,9 +21,31 @@ const chromiumLaunchArgs = [
   '--disable-site-isolation-trials',
 ];
 
+// Flake-audit toggles (#186). All three are inert unless the scheduled audit sets them, so
+// the required PR lanes keep running exactly as before: zero retries (a flake is a hard red
+// on a pull request), html reporter only, and no flake verdict.
+const flakeRetries = Number.parseInt(process.env.PLAYWRIGHT_FLAKE_RETRIES ?? '', 10);
+const retries = Number.isInteger(flakeRetries) && flakeRetries > 0 ? flakeRetries : 0;
+const jsonReportFile = process.env.PLAYWRIGHT_JSON_REPORT?.trim();
+// Playwright clears the html report folder and the output (trace) dir at the start of every
+// run, so the audit gives each suite its own destination; otherwise the visual run would
+// delete the e2e report and retry traces before the workflow can upload them.
+const htmlReportFolder = process.env.PLAYWRIGHT_HTML_REPORT?.trim();
+const testOutputDir = process.env.PLAYWRIGHT_OUTPUT_DIR?.trim();
+const reporter: ReporterDescription[] = [
+  ['html', { open: 'never', ...(htmlReportFolder ? { outputFolder: htmlReportFolder } : {}) }],
+  ...(jsonReportFile ? ([['json', { outputFile: jsonReportFile }]] as ReporterDescription[]) : []),
+];
+
 const devSnapshotPathTemplate =
   'tests/visual/__snapshots__-dev/' +
   '{testFileName}-snapshots/{arg}{-projectName}{-snapshotSuffix}{ext}';
+
+// Mobile lane (#154). Specs under a `mobile/` folder run ONLY on the mobile-device
+// projects, which carry isMobile/hasTouch/DPR from the built-in descriptors; the
+// desktop projects must skip them or `tap()` fails and the touch signal is lost.
+const MOBILE_LANE = '**/mobile/**/*.spec.ts';
+const DESKTOP_LANE_IGNORE = '**/mobile/**';
 
 // Snapshot path: relies on Playwright defaults, which match the repo convention
 // of `{spec-file-name}-snapshots/{snapshot-name}-{projectName}-{platform}.png`.
@@ -41,12 +63,16 @@ export default defineConfig({
   // Pinned explicit so #190 is behavior-neutral apart from forbidOnly binding.
   // Enabling CI retries (2) + on-first-retry trace capture is a deliberate follow-up,
   // reviewed alongside #144; until then retries stay 0 so no flake is retry-masked.
-  retries: 0,
+  // The scheduled flake audit (#186) is the one caller that opts into retries, because
+  // Playwright can only classify a test as flaky when it is allowed to retry it.
+  retries,
+  failOnFlakyTests: process.env.PLAYWRIGHT_FAIL_ON_FLAKY === '1',
   // Keep Playwright's default parallelism for the dedicated test container — this
   // matches the suite's actual pre-#190 CI behavior (CI never reached the container,
   // so workers resolved to undefined). A reviewed choice, not an accident.
   workers: undefined,
-  reporter: [['html', { open: 'never' }]],
+  reporter,
+  ...(testOutputDir ? { outputDir: testOutputDir } : {}),
   ...(isDevMode ? { snapshotPathTemplate: devSnapshotPathTemplate } : {}),
   use: {
     trace: 'on-first-retry',
@@ -64,8 +90,20 @@ export default defineConfig({
     ? [
         {
           name: 'chromium-dev',
+          testIgnore: DESKTOP_LANE_IGNORE,
           use: {
             ...devices['Desktop Chrome'],
+            launchOptions: { args: chromiumLaunchArgs, executablePath: devChromiumPath },
+          },
+        },
+
+        // Dev mode carries the touch E2E lane only: mobile visual baselines are
+        // recorded against the production build, so `tests/visual/mobile` stays out.
+        {
+          name: 'mobile-chrome-dev',
+          testMatch: '**/e2e/mobile/**/*.spec.ts',
+          use: {
+            ...devices['Pixel 7'],
             launchOptions: { args: chromiumLaunchArgs, executablePath: devChromiumPath },
           },
         },
@@ -73,6 +111,7 @@ export default defineConfig({
     : [
         {
           name: 'chromium',
+          testIgnore: DESKTOP_LANE_IGNORE,
           use: {
             ...devices['Desktop Chrome'],
             launchOptions: { args: chromiumLaunchArgs },
@@ -81,12 +120,29 @@ export default defineConfig({
 
         {
           name: 'firefox',
+          testIgnore: DESKTOP_LANE_IGNORE,
           use: { ...devices['Desktop Firefox'] },
         },
 
         {
           name: 'webkit',
+          testIgnore: DESKTOP_LANE_IGNORE,
           use: { ...devices['Desktop Safari'] },
+        },
+
+        {
+          name: 'mobile-chrome',
+          testMatch: MOBILE_LANE,
+          use: {
+            ...devices['Pixel 7'],
+            launchOptions: { args: chromiumLaunchArgs },
+          },
+        },
+
+        {
+          name: 'mobile-safari',
+          testMatch: MOBILE_LANE,
+          use: { ...devices['iPhone 14'] },
         },
       ],
 });

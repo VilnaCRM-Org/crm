@@ -1,0 +1,36 @@
+# Issue #174: the repository's workflow-security posture (full-SHA action pins,
+# `permissions: {}` with least-privilege job grants, `persist-credentials: false`) was pure
+# convention with zero machine enforcement. zizmor makes it a blocking check: a PR that
+# regresses to a mutable tag ref, widens a token, adds a pwn-request, re-enables credential
+# persistence, or interpolates `${{ github.event.* }}` into a `run:` block turns this job red.
+#
+# Deliberately not folded into `make lint` / the `static testing` workflow: this gate needs no
+# dev container, so it reports in seconds and still reports when the compose stack cannot start.
+name: workflow security
+
+on:
+  pull_request:
+    branches: ['main']
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  zizmor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      # Version, severity threshold, and audit scope live in the Makefile so the local
+      # reproduction (`make lint-zizmor`) and this gate can never disagree.
+      - name: Audit the workflows with zizmor
+        run: make lint-zizmor

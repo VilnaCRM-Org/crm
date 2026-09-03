@@ -72,7 +72,7 @@ export default class AuthErrorBoundary extends Component<
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, info: React.ErrorInfo): void {
+  public override componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const { onError } = this.props;
     onError?.(error, info);
     this.reportSafely(error, info);
@@ -88,7 +88,7 @@ export default class AuthErrorBoundary extends Component<
 
   public handleReset = (): void => this.setState({ hasError: false, error: undefined });
 
-  public render(): ReactNode {
+  public override render(): ReactNode {
     const { children, fallback = DEFAULT_FALLBACK_KEY } = this.props;
     const { hasError, error } = this.state;
     if (!hasError) return children;

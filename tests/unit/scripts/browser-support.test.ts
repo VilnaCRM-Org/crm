@@ -3,6 +3,8 @@ import path from 'path';
 
 import Ajv from 'ajv';
 
+import { assertDefined, elementAt } from '@tests/utils/assert-result';
+
 import {
   type BrowserFamilyPolicy,
   type BrowserSupportPolicy,
@@ -63,9 +65,11 @@ const allRows = (policy: BrowserSupportPolicy): string[] =>
   Object.values(policy.families).map((family) => familyRow(family));
 
 const rowsWithStated = (policy: BrowserSupportPolicy, family: string, stated: string): string[] => {
-  const label = policy.families[family].label;
+  const target = policy.families[family];
+  assertDefined(target);
+
   return allRows(policy).map((row) =>
-    row.startsWith(`| ${label} |`) ? familyRow(policy.families[family], stated) : row
+    row.startsWith(`| ${target.label} |`) ? familyRow(target, stated) : row
   );
 };
 
@@ -175,8 +179,8 @@ describe('checkQueries', () => {
     const violations = checkQueries(policy, [...policy.queries, 'ie >= 11']);
 
     expect(rulesOf(violations)).toEqual(['query-drift']);
-    expect(violations[0].subject).toBe('package.json browserslist.production');
-    expect(violations[0].message).toContain('ie >= 11');
+    expect(elementAt(violations, 0).subject).toBe('package.json browserslist.production');
+    expect(elementAt(violations, 0).message).toContain('ie >= 11');
   });
 
   it('reports query drift when an entry is removed', () => {
@@ -187,7 +191,11 @@ describe('checkQueries', () => {
 
   it('reports query drift when the entries are reordered', () => {
     const policy = readPolicy();
-    const reordered = [policy.queries[1], policy.queries[0], ...policy.queries.slice(2)];
+    const reordered = [
+      elementAt(policy.queries, 1),
+      elementAt(policy.queries, 0),
+      ...policy.queries.slice(2),
+    ];
 
     expect(reordered).toHaveLength(policy.queries.length);
     expect(rulesOf(checkQueries(policy, reordered))).toEqual(['query-drift']);
@@ -223,7 +231,7 @@ describe('checkResolution', () => {
     );
 
     expect(rulesOf(violations)).toEqual(['floor-drift']);
-    expect(violations[0].message).toBe('Chrome floor is 111, policy pins 120');
+    expect(elementAt(violations, 0).message).toBe('Chrome floor is 111, policy pins 120');
   });
 
   it('reports a missing family when the policy names a browser the query cannot produce', () => {
@@ -238,7 +246,7 @@ describe('checkResolution', () => {
     );
 
     expect(rulesOf(violations)).toEqual(['missing-family']);
-    expect(violations[0].message).toContain('absent from the resolution');
+    expect(elementAt(violations, 0).message).toContain('absent from the resolution');
   });
 
   it('reports an unexpected family when the query produces a browser the policy dropped', () => {
@@ -248,7 +256,7 @@ describe('checkResolution', () => {
     const violations = checkResolution(narrowed, resolved);
 
     expect(rulesOf(violations)).toEqual(['unexpected-family']);
-    expect(violations[0].subject).toBe('opera');
+    expect(elementAt(violations, 0).subject).toBe('opera');
   });
 
   it('reports latest-only drift when a trackLatest family resolves to many versions', () => {
@@ -260,7 +268,7 @@ describe('checkResolution', () => {
     const violations = checkResolution(latestOnly, resolveFamilies(['chrome >= 111']));
 
     expect(rulesOf(violations)).toEqual(['latest-only-drift']);
-    expect(violations[0].message).toContain('declared latest-only');
+    expect(elementAt(violations, 0).message).toContain('declared latest-only');
   });
 });
 
@@ -280,7 +288,7 @@ describe('checkReadme', () => {
     const violations = checkReadme(policy, renderReadme(policy.readmeSection, rows));
 
     expect(rulesOf(violations)).toEqual(['readme-drift']);
-    expect(violations[0].subject).toBe('Internet Explorer');
+    expect(elementAt(violations, 0).subject).toBe('Internet Explorer');
   });
 
   it('rejects an annotated version cell rather than reading its numeric prefix', () => {
@@ -334,8 +342,8 @@ describe('checkReadme', () => {
     const violations = checkReadme(policy, '# Template\n\n## Documentation\n\nNothing here.\n');
 
     expect(rulesOf(violations)).toEqual(['readme-drift']);
-    expect(violations[0].subject).toBe(policy.readmeSection);
-    expect(violations[0].message).toContain('README has no such section');
+    expect(elementAt(violations, 0).subject).toBe(policy.readmeSection);
+    expect(elementAt(violations, 0).message).toContain('README has no such section');
   });
 
   it('reports one readme drift when the section heading has no body at all', () => {
@@ -344,7 +352,7 @@ describe('checkReadme', () => {
     const violations = checkReadme(policy, readme);
 
     expect(rulesOf(violations)).toEqual(['readme-drift']);
-    expect(violations[0].message).toContain('README has no such section');
+    expect(elementAt(violations, 0).message).toContain('README has no such section');
   });
 
   it('reports one readme drift per family when the table lists none of them', () => {
@@ -361,8 +369,8 @@ describe('checkReadme', () => {
     const violations = checkReadme(policy, renderReadme(policy.readmeSection, rows));
 
     expect(rulesOf(violations)).toEqual(['readme-drift']);
-    expect(violations[0].subject).toBe('samsung');
-    expect(violations[0].message).toBe(
+    expect(elementAt(violations, 0).subject).toBe('samsung');
+    expect(elementAt(violations, 0).message).toBe(
       `README section "${policy.readmeSection}" has no row for Samsung Internet`
     );
   });
@@ -373,8 +381,10 @@ describe('checkReadme', () => {
     const violations = checkReadme(policy, renderReadme(policy.readmeSection, rows));
 
     expect(rulesOf(violations)).toEqual(['readme-drift']);
-    expect(violations[0].subject).toBe('samsung');
-    expect(violations[0].message).toBe('README states Samsung Internet "21", policy pins "22"');
+    expect(elementAt(violations, 0).subject).toBe('samsung');
+    expect(elementAt(violations, 0).message).toBe(
+      'README states Samsung Internet "21", policy pins "22"'
+    );
   });
 
   it('reports a row reading "latest" even when a sibling row carries that family floor', () => {
@@ -384,8 +394,10 @@ describe('checkReadme', () => {
 
     expect(rows.some((row) => row === '| Edge | 111 |')).toBe(true);
     expect(rulesOf(violations)).toEqual(['readme-drift']);
-    expect(violations[0].subject).toBe('chrome');
-    expect(violations[0].message).toBe('README states Chrome "latest", policy pins "111"');
+    expect(elementAt(violations, 0).subject).toBe('chrome');
+    expect(elementAt(violations, 0).message).toBe(
+      'README states Chrome "latest", policy pins "111"'
+    );
   });
 
   it('reports a trackLatest family whose row pins a version instead of "latest"', () => {
@@ -394,7 +406,7 @@ describe('checkReadme', () => {
     const violations = checkReadme(policy, renderReadme(policy.readmeSection, rows));
 
     expect(rulesOf(violations)).toEqual(['readme-drift']);
-    expect(violations[0].message).toBe(
+    expect(elementAt(violations, 0).message).toBe(
       'README states Chrome for Android "151", policy pins "latest"'
     );
   });

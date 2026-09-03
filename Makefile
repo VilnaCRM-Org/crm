@@ -16,6 +16,10 @@ JEST_CMD                    = node $(JEST_BIN)
 PLAYWRIGHT_BIN              = $(BIN_DIR)/playwright
 
 RSBUILD_BUILD               = bun x rsbuild build
+AUTH_SEED_GATE_SCRIPT       = scripts/ci/check-auth-seed-gate.mjs
+AUTH_SEED_PROBE_TOKEN       = auth-seed-gate-probe-token
+AUTH_SEED_PROBE_IMAGE       = crm-auth-seed-probe
+AUTH_SEED_PROBE_DIR         = ./dist-auth-seed-probe
 STORYBOOK_PORT				?= 6006
 STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 
@@ -45,6 +49,24 @@ EXEC_DEV_TTY                = $(DOCKER_COMPOSE) exec dev
 
 PLAYWRIGHT_DOCKER_CMD       = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec playwright
 PLAYWRIGHT_TEST             = $(PLAYWRIGHT_DOCKER_CMD) sh -c
+
+# Scheduled flake audit (#186). PLAYWRIGHT_DOCKER_CMD runs the suites through
+# `docker compose exec`, so the host environment never crosses the container boundary --
+# these have to be injected explicitly, the same reason PLAYWRIGHT_DEV_MODE is passed through
+# `env` on the ENV=dev branch. Only the *-flake-audit targets reference them, so the required
+# PR lanes keep their zero-retry, html-reporter-only behaviour.
+PLAYWRIGHT_JSON_REPORT      ?= reports/playwright/report.json
+PLAYWRIGHT_HTML_REPORT      ?= reports/playwright/html
+PLAYWRIGHT_OUTPUT_DIR       ?= reports/playwright/output
+PLAYWRIGHT_FLAKE_RETRIES    ?= 2
+PLAYWRIGHT_FAIL_ON_FLAKY    ?= 1
+FLAKE_BUDGET                ?= 0
+PLAYWRIGHT_FLAKE_ENV        = -e PLAYWRIGHT_JSON_REPORT=$(PLAYWRIGHT_JSON_REPORT) \
+                              -e PLAYWRIGHT_HTML_REPORT=$(PLAYWRIGHT_HTML_REPORT) \
+                              -e PLAYWRIGHT_OUTPUT_DIR=$(PLAYWRIGHT_OUTPUT_DIR) \
+                              -e PLAYWRIGHT_FLAKE_RETRIES=$(PLAYWRIGHT_FLAKE_RETRIES) \
+                              -e PLAYWRIGHT_FAIL_ON_FLAKY=$(PLAYWRIGHT_FAIL_ON_FLAKY)
+PLAYWRIGHT_AUDIT_CMD        = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec $(PLAYWRIGHT_FLAKE_ENV) playwright sh -c
 
 MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
@@ -97,10 +119,18 @@ ENV                         ?= prod
 DEBUG                       ?=
 
 MD_LINT_ARGS                = -i CHANGELOG.md -i "test-results/**/*.md" -i "playwright-report/data/**/*.md" "**/*.md"
-PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md}"
+PRETTIER_FILE_GLOB          = "**/*.{js,jsx,ts,tsx,mts,mjs,json,css,scss,md,yml,yaml}"
 PRETTIER_CMD                = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --write --ignore-path .prettierignore
 PRETTIER_CHECK_CMD          = $(BUNX) prettier $(PRETTIER_FILE_GLOB) --check --ignore-path .prettierignore
 QLTY_FMT                    = qlty fmt --all --trigger agent --no-progress
+# Conventional-commit gate (issue #184). The strict config is the contract for every human
+# header; the bot config drops only the task-number rule, and applies only where the GitHub
+# author identity is a bot.
+COMMITLINT_CONFIG           = commitlint.config.js
+COMMITLINT_BOT_CONFIG       = commitlint.bot.config.js
+COMMITLINT_CMD              = $(BUNX) commitlint --verbose
+COMMIT_RANGE_FROM           ?=
+COMMIT_RANGE_TO             ?= HEAD
 # ShellCheck gate over the CI gate shell scripts (issue #163). Digest-pinned like the
 # other CI images; lints the standalone scripts, git hooks, and the Bats shared helper.
 SHELLCHECK_IMAGE            = koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb
@@ -110,9 +140,33 @@ SHELL_LINT_PATHS            = scripts/*.sh scripts/ci/*.sh .husky/pre-commit .hu
 # pure-correctness (expressions, contexts, needs graphs, event names). run: scripts are
 # covered by the separate ShellCheck gate over standalone scripts (lint-shell).
 ACTIONLINT_IMAGE            = rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9
+# zizmor workflow-security gate (issue #174). Digest-pinned like the other CI images.
+# actionlint answers "is this workflow correct?"; zizmor answers "is it safe?" — mutable
+# action refs, widened permissions, pwn-requests, template injection, credential
+# persistence. Offline audits only: no token, deterministic, and still severity-medium
+# accurate (the archived-action detections below were found with --no-online-audits).
+# Pinned exactly: a new zizmor minor adds audits and would redden unrelated PRs.
+#
+# --persona pedantic is load-bearing, not decoration: at the default persona
+# excessive-permissions does not fire on a workflow-level `permissions: write-all` in a
+# single-job workflow, so #174's own seeded-defect example would merge green. Measured on
+# an isolated fixture: default persona exits 0, pedantic reports it as high and exits 14.
+# Pedantic keeps this repository green (its extra audits are informational/low, filtered by
+# --min-severity medium). The stricter `auditor` persona is not adopted: it adds four
+# pre-existing medium secrets-outside-env findings whose fix (moving release, Codecov, and
+# Sentry jobs behind GitHub Environments) is a separate decision.
+ZIZMOR_IMAGE                = ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d
+ZIZMOR_ARGS                 = --no-online-audits --min-severity medium --persona pedantic --format plain
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 BATS_FORMATTER              ?= pretty
+
+# Module / feature scaffolding (issue #108). The allowed folder sets the generator emits
+# are single-sourced with .dependency-cruiser.js in config/module-shape.json; verify-scaffold
+# proves a freshly generated module still clears every static gate.
+PLOP                        = $(BUNX) plop
+SCAFFOLD_OWNER_DEFAULT      = $(shell awk '$$1 == "*" { print $$2; exit }' .github/CODEOWNERS 2>/dev/null)
+SCAFFOLD_VERIFY_TARGETS     ?= lint-deps lint-tsc lint-eslint lint-dup lint-md lint-docs lint-prettier lint-metrics
 
 NETWORK_NAME                = crm-network
 
@@ -129,7 +183,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile
+CI_LINT_TARGETS             = check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -165,15 +219,18 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync check-browser-support
-.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-lockfile
+.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-zizmor lint-compose lint-lockfile lint-licenses
 .PHONY: lint-docs lint-adr lint-doc-coverage lint-doc-references lint-doc-links check-adr-drift
 .PHONY: storybook
 .PHONY: all test
+.PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
 all: help
 test: test-unit-all
 
 RUN_VISUAL                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 RUN_E2E                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
+RUN_E2E_AUDIT               = $(PLAYWRIGHT_AUDIT_CMD) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
+RUN_VISUAL_AUDIT            = $(PLAYWRIGHT_AUDIT_CMD) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 PLAYWRIGHT_TEST_CMD         = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
 PLAYWRIGHT_DEV_TEST         = $(EXEC_DEV_TTYLESS) env PLAYWRIGHT_DEV_MODE=1 bun x playwright test
 RUN_E2E_DEV                 = $(PLAYWRIGHT_DEV_TEST) "$(TEST_DIR_E2E)"
@@ -226,6 +283,7 @@ ci-test-prod: ## Run the CI prod-side test phase (e2e, visual, memory-leak, load
 ci: ## Run the full local CI flow: setup, lint, dev tests, mutation, prod setup, prod tests
 	make ci-setup
 	make ci-lint
+	make check-auth-seed-gate
 	make ci-test
 	make ci-mutation
 	make ci-prod-setup
@@ -322,6 +380,19 @@ build-analyze: ## Build production bundle with the analyzer; writes dist/bundle-
 perf-budget: ## Build the production bundle and enforce the gzip byte budgets in config/performance-budget.json
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev sh -c '$(RSBUILD_BUILD) && node scripts/bundle-size-report.mjs --dir dist'
 
+check-auth-seed-gate: create-network ## Scan built bundles so the preloaded-auth seed cannot ship
+	@echo "🔒 [1/3] the artifact that actually ships: docker --target production"
+	docker build -t $(AUTH_SEED_PROBE_IMAGE) -f Dockerfile --target production .
+	@cid=$$(docker create $(AUTH_SEED_PROBE_IMAGE)); \
+		trap 'docker rm "$$cid" >/dev/null 2>&1 || true' EXIT INT TERM; \
+		rm -rf $(AUTH_SEED_PROBE_DIR) && \
+		docker cp "$$cid":/app/dist $(AUTH_SEED_PROBE_DIR)
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev node $(AUTH_SEED_GATE_SCRIPT) --dir $(AUTH_SEED_PROBE_DIR) --expect absent --token $(AUTH_SEED_PROBE_TOKEN)
+	@echo "🔒 [2/3] a source build with the token set but no opt-in must still strip it"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(AUTH_SEED_PROBE_TOKEN) dev sh -c '$(RSBUILD_BUILD) && node $(AUTH_SEED_GATE_SCRIPT) --dir dist --expect absent --token $(AUTH_SEED_PROBE_TOKEN)'
+	@echo "🔒 [3/3] positive control: an opted-in build must still carry the seam"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(AUTH_SEED_PROBE_TOKEN) -e ENABLE_PRELOADED_AUTH_TOKEN_SEED=true dev sh -c '$(RSBUILD_BUILD) && node $(AUTH_SEED_GATE_SCRIPT) --dir dist --expect present --token $(AUTH_SEED_PROBE_TOKEN)'
+
 build-out: ## Build production artifacts to ./out directory (via Docker)
 	@echo "🏗️ Building production Docker image for Rsbuild bundle..."
 	docker build -t rsbuild-bundle -f Dockerfile --target production .
@@ -364,8 +435,38 @@ lint-shell: ## ShellCheck all repo gate shell scripts at --severity=warning (req
 lint-actionlint: ## Lint the GitHub Actions workflows with actionlint (requires Docker, like lint-metrics)
 	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ACTIONLINT_IMAGE) -shellcheck=
 
+# Standalone by design, not part of `make lint`: needing no dev container is what lets the
+# `workflow security` job report in seconds and still report when the compose stack cannot start.
+lint-zizmor: ## Audit the workflows for security regressions with zizmor (Docker; standalone)
+	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ZIZMOR_IMAGE) $(ZIZMOR_ARGS) .github/workflows/
+
+# Compose-file validation (issue #161). Prettier normalizes YAML but its bundled parser sets
+# uniqueKeys: false, so it silently accepts a duplicate mapping key — the last-key-wins defect
+# that can drop a healthcheck or environment block. Compose's own loader rejects it
+# ("mapping key X already defined at line N"), so validating each file combination the repo
+# actually starts closes that class for the compose surface with no new tool. actionlint
+# already covers it for the workflows (syntax-check reports duplicated keys).
+lint-compose: ## Validate every compose file combination the repo starts (issue #161)
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) config -q
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) config -q
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) $(DOCKER_COMPOSE_TEST_FILE) \
+		$(COMMON_HEALTHCHECKS_FILE) config -q
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) config -q
+
 lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry allowlist (issue #176)
 	sh scripts/ci/check-lockfile-registries.sh
+
+# License gate allowlist (issue #191). These are the SPDX operand ids the production tree is
+# permitted to use; `scripts/ci/check-licenses.mjs` evaluates each dependency's license
+# expression against them SEMANTICALLY via spdx-satisfies (so `(MIT OR Apache-2.0)` and
+# `(MIT AND BSD-3-Clause)` are derived, not listed, and `(GPL-3.0 AND MIT)` is correctly
+# rejected — a literal `--onlyAllow` list cannot do this). Remediation policy (mirrors the
+# repo's root-cause-not-suppression rule): 1st replace the offending dependency; 2nd add its
+# specific SPDX id here as a reviewed one-line diff. Never bypass the checker.
+ALLOWED_LICENSES            = MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;CC-BY-4.0
+
+lint-licenses: ## Fail on any production dependency whose license is outside the SPDX allowlist (issue #191)
+	$(EXEC_DEV_TTYLESS) env ALLOWED_LICENSES='$(ALLOWED_LICENSES)' node scripts/ci/check-licenses.mjs
 
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
@@ -391,6 +492,15 @@ lint-doc-links: ## Fail when a relative documentation link or heading anchor doe
 # Deliberately outside `lint`: a local run has no PR body or labels to read the waiver from.
 check-adr-drift: ## Fail a pull request that changes an architecturally significant surface without touching docs/adr (issue #122)
 	$(BUN) scripts/docs/lint-docs.ts drift
+
+lint-commit-message: ## Lint one commit message or squash header read from stdin (issue #184)
+	$(COMMITLINT_CMD) --config $(COMMITLINT_CONFIG)
+
+lint-commit-bot-message: ## Lint one bot-authored commit message read from stdin (issue #184)
+	$(COMMITLINT_CMD) --config $(COMMITLINT_BOT_CONFIG)
+
+lint-commit-range: ## Lint every commit in COMMIT_RANGE_FROM..COMMIT_RANGE_TO (issue #184)
+	sh scripts/ci/lint-commit-range.sh "$(COMMIT_RANGE_FROM)" "$(COMMIT_RANGE_TO)"
 
 lint-metrics: ## Run rust-code-analysis complexity gate (auto-installs binary if absent)
 	@summary_path="$$GITHUB_STEP_SUMMARY"; \
@@ -423,8 +533,26 @@ lint-metrics-run:
 	METRICS_POLICY="$(METRICS_POLICY_PATH)" \
 	sh scripts/lint-metrics.sh
 
+new-module: ensure-dev ## Scaffold a compliant module + its first feature: make new-module name=orders [feature=order-list] [owner=@handle]
+	@[ -n "$(name)" ] || { printf '❌ name= is required, e.g. make new-module name=orders\n' >&2; exit 1; }
+	$(PLOP) module "$(name)" "$(or $(feature),$(name))" "$(or $(owner),$(SCAFFOLD_OWNER_DEFAULT))"
+
+new-feature: ensure-dev ## Scaffold a compliant feature in an existing module: make new-feature module=orders feature=order-detail
+	@[ -n "$(module)" ] || { printf '❌ module= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
+	@[ -n "$(feature)" ] || { printf '❌ feature= is required, e.g. make new-feature module=orders feature=order-detail\n' >&2; exit 1; }
+	$(PLOP) feature "$(module)" "$(feature)"
+
+verify-scaffold: ensure-dev ## Generate a throwaway module, run the static gates against it, then remove it (issue #108)
+	SCAFFOLD_VERIFY_TARGETS="$(SCAFFOLD_VERIFY_TARGETS)" sh scripts/ci/verify-scaffold.sh
+
 codegen: ensure-dev ## Regenerate typed API contract artifacts (src/api/generated) from the pinned upstream specs
 	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
+
+contract-diff: ## Fail an OPENAPI_SPEC_VERSION bump that introduces ERR-level breaking changes (issue #177)
+	sh scripts/ci/contract-diff.sh
+
+check-contract-drift: ## Report when the pinned upstream contract versions fall behind user-service (issue #178)
+	sh scripts/ci/check-contract-drift.sh
 
 codegen-check: ensure-dev ## Reconcile contract versions and fail if generated API types are stale (CI gate)
 	sh scripts/check-contract-versions.sh
@@ -435,7 +563,7 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-lint: check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-lockfile ## Runs all linters: env-sync, browser-support, ESLint, TypeScript, Markdown, documentation drift, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, and the bun.lock provenance gate.
+lint: check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses ## Runs all linters: env-sync, browser-support, ESLint, TypeScript, Markdown, documentation drift, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, compose validation, the bun.lock provenance gate, and the dependency license-policy gate.
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision
@@ -524,6 +652,26 @@ test-visual-ui: start-prod ## Start the production environment and run visual te
 
 test-visual-update: start-prod ## Update Playwright visual snapshots
 	$(PLAYWRIGHT_TEST_CMD) $(TEST_DIR_VISUAL) --update-snapshots
+
+# The report directory is created on the host first: the Playwright container writes as root,
+# so a directory it creates would leave `make check-flakes` unable to add its summary beside
+# the report. Creating it here keeps the directory owned by the invoking user.
+test-e2e-flake-audit: start-prod ## Run the E2E suite with retries + the JSON reporter so flakes are recorded (issue #186)
+	@mkdir -p $(dir $(PLAYWRIGHT_JSON_REPORT)) $(PLAYWRIGHT_HTML_REPORT) $(PLAYWRIGHT_OUTPUT_DIR)
+	$(RUN_E2E_AUDIT)
+
+test-visual-flake-audit: start-prod ## Run the visual suite with retries + the JSON reporter so flakes are recorded (issue #186)
+	@mkdir -p $(dir $(PLAYWRIGHT_JSON_REPORT)) $(PLAYWRIGHT_HTML_REPORT) $(PLAYWRIGHT_OUTPUT_DIR)
+	$(RUN_VISUAL_AUDIT)
+
+check-flakes: ## Enforce FLAKE_BUDGET over the Playwright JSON report (issue #186)
+	node scripts/ci/check-flakes.ts
+
+print-flake-env: ## Print the flake-audit toggles as resolved inside the Playwright container (issue #186)
+	$(PLAYWRIGHT_AUDIT_CMD) 'printf "flake audit env: retries=%s fail_on_flaky=%s report=%s html=%s output=%s\n" "$$PLAYWRIGHT_FLAKE_RETRIES" "$$PLAYWRIGHT_FAIL_ON_FLAKY" "$$PLAYWRIGHT_JSON_REPORT" "$$PLAYWRIGHT_HTML_REPORT" "$$PLAYWRIGHT_OUTPUT_DIR"'
+
+check-e2e-route-coverage: ## Fail if any route in src/routes/route-paths.ts lacks a covering e2e/visual spec (issue #169)
+	node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ci/check-e2e-route-coverage.ts
 
 require-playwright-browsers: ensure-dev
 	@$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) exec -T dev sh -lc '[ -x "$(CHROMIUM_BIN_PATH)" ] || { printf "❌ Chromium is not installed in the dev container.\n   Run: make ensure-playwright-browsers\n" >&2; exit 1; }'

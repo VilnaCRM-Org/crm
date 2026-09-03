@@ -3,6 +3,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from 'os';
 import path from 'path';
 
+import { elementAt } from '@tests/utils/assert-result';
+
 import { type DriftContext, detectAdrDrift, matchesAny } from '../../../scripts/docs/adr-drift';
 import { lintAdrs } from '../../../scripts/docs/adr-linter';
 import { checkDocCoverage } from '../../../scripts/docs/doc-coverage';
@@ -547,22 +549,22 @@ describe('checkDocReferences', () => {
     const violations = check(referenceRoot('# Guide\n\n`make sure` is a command span.\n'));
 
     expect(rulesOf(violations)).toEqual(['unknown-make-target']);
-    expect(violations[0].message).toContain('make sure');
+    expect(elementAt(violations, 0).message).toContain('make sure');
   });
 
   it('reports an unknown make target', () => {
     const violations = check(referenceRoot('# Guide\n\nRun `make nonexistent` now.\n'));
 
     expect(rulesOf(violations)).toEqual(['unknown-make-target']);
-    expect(violations[0].subject).toBe('docs/guide.md');
-    expect(violations[0].message).toContain('which is not a target in Makefile');
+    expect(elementAt(violations, 0).subject).toBe('docs/guide.md');
+    expect(elementAt(violations, 0).message).toContain('which is not a target in Makefile');
   });
 
   it('reports an unknown package script', () => {
     const violations = check(referenceRoot('# Guide\n\nRun `bun run nonexistent` now.\n'));
 
     expect(rulesOf(violations)).toEqual(['unknown-package-script']);
-    expect(violations[0].message).toContain('which package.json does not define');
+    expect(elementAt(violations, 0).message).toContain('which package.json does not define');
   });
 
   it('still reports an unknown target after a block that shows the other fence style', () => {
@@ -572,7 +574,7 @@ describe('checkDocReferences', () => {
     const violations = check(referenceRoot(guide));
 
     expect(rulesOf(violations)).toEqual(['unknown-make-target']);
-    expect(violations[0].message).toContain('make ghost');
+    expect(elementAt(violations, 0).message).toContain('make ghost');
   });
 
   it('refuses to run when the Makefile or the manifest is absent', () => {
@@ -611,7 +613,7 @@ describe('checkDocLinks', () => {
     const violations = checkDocLinks(linkRoot('[t](./%E0%A4%A.md)'), fixtureScan);
 
     expect(rulesOf(violations)).toEqual(['broken-link']);
-    expect(violations[0].message).toMatch(/malformed percent-escape/);
+    expect(elementAt(violations, 0).message).toMatch(/malformed percent-escape/);
   });
 
   it('matches an explicit HTML anchor id exactly, as the DOM does', () => {
@@ -691,15 +693,15 @@ describe('checkDocLinks', () => {
     const violations = check(linkRoot('# Guide\n\n[missing](./nope.md)\n'));
 
     expect(rulesOf(violations)).toEqual(['broken-link']);
-    expect(violations[0].subject).toBe('docs/guide.md:3');
-    expect(violations[0].message).toBe('target path does not exist — ./nope.md');
+    expect(elementAt(violations, 0).subject).toBe('docs/guide.md:3');
+    expect(elementAt(violations, 0).message).toBe('target path does not exist — ./nope.md');
   });
 
   it('reports an anchor no heading produces', () => {
     const violations = check(linkRoot('# Guide\n\n[bad](#no-such-heading)\n\n## A real heading\n'));
 
     expect(rulesOf(violations)).toEqual(['broken-link']);
-    expect(violations[0].message).toContain('no heading anchors to "#no-such-heading"');
+    expect(elementAt(violations, 0).message).toContain('no heading anchors to "#no-such-heading"');
   });
 
   it('passes for a plain link to a directory but reports an anchor on one', () => {
@@ -708,8 +710,8 @@ describe('checkDocLinks', () => {
     const violations = check(root);
 
     expect(rulesOf(violations)).toEqual(['broken-link']);
-    expect(violations[0].subject).toBe('docs/guide.md:5');
-    expect(violations[0].message).toBe(
+    expect(elementAt(violations, 0).subject).toBe('docs/guide.md:5');
+    expect(elementAt(violations, 0).message).toBe(
       'anchor "#nope" points at a non-markdown target, which has no headings — ./sub#nope'
     );
   });
@@ -725,7 +727,9 @@ describe('checkDocLinks', () => {
     const violations = check(linkRoot('# Guide\n\n[escape](../../../etc/passwd)\n'));
 
     expect(rulesOf(violations)).toEqual(['broken-link']);
-    expect(violations[0].message).toBe('link escapes the repository root — ../../../etc/passwd');
+    expect(elementAt(violations, 0).message).toBe(
+      'link escapes the repository root — ../../../etc/passwd'
+    );
   });
 });
 
@@ -745,7 +749,7 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(root, adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['bad-filename']);
-    expect(violations[0].subject).toBe('docs/adr/001-Bad-Slug.md');
+    expect(elementAt(violations, 0).subject).toBe('docs/adr/001-Bad-Slug.md');
   });
 
   it('reports a title whose number disagrees with the filename', () => {
@@ -753,7 +757,9 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(root, adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['bad-title']);
-    expect(violations[0].message).toBe('title declares ADR-003 but the filename declares 002');
+    expect(elementAt(violations, 0).message).toBe(
+      'title declares ADR-003 but the filename declares 002'
+    );
   });
 
   it('reports a first line that is not an ADR title at all', () => {
@@ -761,7 +767,7 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(scaffoldAdrs({ files: { '004-fourth.md': body } }), adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['bad-title']);
-    expect(violations[0].message).toContain('first line must match');
+    expect(elementAt(violations, 0).message).toContain('first line must match');
   });
 
   it('reports a missing metadata field', () => {
@@ -770,7 +776,7 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(scaffoldAdrs({ files: { '001-a-decision.md': body } }), adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['missing-metadata']);
-    expect(violations[0].message).toBe('metadata block has no "- Deciders: …" line');
+    expect(elementAt(violations, 0).message).toBe('metadata block has no "- Deciders: …" line');
   });
 
   it('reports a status outside the allowed vocabulary', () => {
@@ -781,7 +787,7 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(scaffoldAdrs({ files: { '001-a-decision.md': body } }), adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['invalid-status']);
-    expect(violations[0].message).toContain('status "Draft" is outside');
+    expect(elementAt(violations, 0).message).toContain('status "Draft" is outside');
   });
 
   it('reports a date that does not match the policy pattern', () => {
@@ -792,7 +798,7 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(scaffoldAdrs({ files: { '001-a-decision.md': body } }), adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['invalid-date']);
-    expect(violations[0].message).toContain('date "13-08-2026" must match');
+    expect(elementAt(violations, 0).message).toContain('date "13-08-2026" must match');
   });
 
   it('reports a required section that is absent', () => {
@@ -801,7 +807,7 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(scaffoldAdrs({ files: { '001-a-decision.md': body } }), adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['missing-section']);
-    expect(violations[0].message).toBe('required section "Links" is absent');
+    expect(elementAt(violations, 0).message).toBe('required section "Links" is absent');
   });
 
   it('reports every required section for an ADR that carries only the metadata block', () => {
@@ -819,7 +825,7 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(root, adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['missing-from-index']);
-    expect(violations[0].message).toBe('not listed in docs/adr/README.md');
+    expect(elementAt(violations, 0).message).toBe('not listed in docs/adr/README.md');
   });
 
   it('reports an index entry that points at no ADR', () => {
@@ -827,8 +833,8 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(scaffoldAdrs({ index }), adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['orphan-in-index']);
-    expect(violations[0].subject).toBe('docs/adr/README.md → ./009-ghost.md');
-    expect(violations[0].message).toBe('index links an ADR that does not exist');
+    expect(elementAt(violations, 0).subject).toBe('docs/adr/README.md → ./009-ghost.md');
+    expect(elementAt(violations, 0).message).toBe('index links an ADR that does not exist');
   });
 
   it('does not let an entry outside the ADR directory stand in for a same-named ADR', () => {
@@ -900,7 +906,7 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(scaffoldAdrs({ template: null }), adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['missing-template']);
-    expect(violations[0].subject).toBe('docs/adr/template.md');
+    expect(elementAt(violations, 0).subject).toBe('docs/adr/template.md');
   });
 
   it('reports a template that omits a required section', () => {
@@ -909,7 +915,7 @@ describe('lintAdrs', () => {
     const violations = lintAdrs(scaffoldAdrs({ template }), adrPolicy);
 
     expect(rulesOf(violations)).toEqual(['template-drift']);
-    expect(violations[0].message).toContain('template omits required section "Links"');
+    expect(elementAt(violations, 0).message).toContain('template omits required section "Links"');
   });
 
   it('only inspects tracked ADR files when a tracked list is supplied', () => {
@@ -952,7 +958,7 @@ describe('checkDocCoverage', () => {
     const violations = checkDocCoverage(root, moduleDocs);
 
     expect(rulesOf(violations)).toEqual(['missing-module-doc']);
-    expect(violations[0].subject).toBe('src/modules/order');
+    expect(elementAt(violations, 0).subject).toBe('src/modules/order');
   });
 
   it('reports a module whose README is empty', () => {
@@ -961,7 +967,7 @@ describe('checkDocCoverage', () => {
     const violations = checkDocCoverage(root, moduleDocs);
 
     expect(rulesOf(violations)).toEqual(['empty-module-doc']);
-    expect(violations[0].subject).toBe('src/modules/blank/README.md');
+    expect(elementAt(violations, 0).subject).toBe('src/modules/blank/README.md');
   });
 
   it('reports nothing when the module root does not exist', () => {
@@ -1050,7 +1056,7 @@ describe('detectAdrDrift', () => {
     );
 
     expect(rulesOf(result.violations)).toEqual(['undocumented-architecture-change']);
-    expect(result.violations[0].subject).toBe('src/config/env/index.ts');
+    expect(elementAt(result.violations, 0).subject).toBe('src/config/env/index.ts');
     expect(result.waived).toBe(false);
   });
 
@@ -1135,8 +1141,8 @@ describe('detectAdrDrift', () => {
       driftContext({ changedPaths: ['config/browser-support.json'] })
     );
 
-    expect(result.violations[0].message).toContain(policy.adr.templateFile);
-    expect(result.violations[0].message).toContain(`only "${drift.escapeHatchMarker}"`);
+    expect(elementAt(result.violations, 0).message).toContain(policy.adr.templateFile);
+    expect(elementAt(result.violations, 0).message).toContain(`only "${drift.escapeHatchMarker}"`);
   });
 
   it('ignores a manifest edit that leaves the dependency map identical', () => {

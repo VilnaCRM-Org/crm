@@ -180,9 +180,13 @@ describe('AuthSkeleton spacing parity', () => {
       lineHeight: string | number;
     };
 
-    const baseMarginTop = toRem((baseButton.margin as string).split(' ')[0]);
-    const lgMarginTop = toRem(lgButton.margin.split(' ')[0]);
-    const xlMarginTop = toRem(xlButton.margin.split(' ')[0]);
+    const [baseMarginTopValue = ''] = (baseButton.margin as string).split(' ');
+    const [lgMarginTopValue = ''] = lgButton.margin.split(' ');
+    const [xlMarginTopValue = ''] = xlButton.margin.split(' ');
+
+    const baseMarginTop = toRem(baseMarginTopValue);
+    const lgMarginTop = toRem(lgMarginTopValue);
+    const xlMarginTop = toRem(xlMarginTopValue);
 
     const baseLineHeight = lineBoxHeightRem(
       baseButton.fontSize as string,

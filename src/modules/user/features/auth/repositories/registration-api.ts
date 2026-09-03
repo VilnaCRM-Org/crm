@@ -14,7 +14,7 @@ import type { RegistrationResponse } from '@auth/types/api-responses';
 import type { RegisterUserDto } from '@auth/types/credentials';
 import { CreateUserResultSchema } from '@auth/utils/response-schemas';
 
-import ApiErrorFactory from './api-error-factory';
+import type ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
 import CREATE_USER from './create-user-mutation';
 import type { RequestOptions } from './types';
