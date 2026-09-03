@@ -112,6 +112,221 @@ setup() {
   assert_log_contains 'make run-load-tests-dind K6_HELPER_NAME=crm-k6-helper-signup K6_TEST_SCRIPT=/loadTests/signup.js K6_RESULTS_FILE=/loadTests/results/signup.html'
 }
 
+# Route-coverage inventory gate (issue #169): scripts/ci/check-e2e-route-coverage.ts,
+# wired as `make check-e2e-route-coverage`.
+write_route_fixture() {
+  ROUTE_SANDBOX="$BATS_TEST_TMPDIR/routes"
+  mkdir -p "$ROUTE_SANDBOX/src/routes" "$ROUTE_SANDBOX/tests/e2e" "$ROUTE_SANDBOX/tests/visual"
+  printf 'const ROUTE_PATHS = {\n%s} as const;\n\nexport default ROUTE_PATHS;\n' "$1" \
+    > "$ROUTE_SANDBOX/src/routes/route-paths.ts"
+  printf 'import "x";\n' > "$ROUTE_SANDBOX/tests/e2e/home.spec.ts"
+  printf 'import "x";\n' > "$ROUTE_SANDBOX/tests/visual/home.spec.ts"
+  printf '%s\n' "$2" > "$ROUTE_SANDBOX/tests/e2e/route-coverage.tsv"
+}
+
+run_route_gate() {
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    bash -c 'cd "$1" && shift && "$@"' _ "$ROUTE_SANDBOX" \
+    node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \
+    "$PROJECT_ROOT/scripts/ci/check-e2e-route-coverage.ts"
+}
+
+@test "check-e2e-route-coverage.ts passes when every route names an existing spec" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered."
+
+  run_route_gate
+  [ "$status" -eq 0 ]
+  assert_output_contains 'every route covered'
+}
+
+@test "check-e2e-route-coverage.ts fails on a route added without a manifest row" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'route "settings" has no row'
+}
+
+@test "check-e2e-route-coverage.ts fails when a manifest row names a missing spec" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/deleted.spec.ts	Covered."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'does not exist'
+}
+
+@test "check-e2e-route-coverage.ts fails on a stale row for a route that no longer exists" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+retired	e2e	tests/e2e/home.spec.ts	Stale."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not declared in src/routes/route-paths.ts'
+}
+
+@test "check-e2e-route-coverage.ts fails when an allowlisted route is also covered" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+home	allowlisted	-	Out of browser scope."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'both allowlisted and covered'
+}
+
+# An allowlist row is a claim that nothing renders the route. Once a contract binds the key to a
+# `path:`, that claim is stale and only a machine check keeps it honest.
+@test "check-e2e-route-coverage.ts fails when an allowlisted route is registered by a contract" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+settings	allowlisted	-	Nothing renders it yet."
+  printf 'export default [{ path: ROUTE_PATHS.settings }];\n' \
+    > "$ROUTE_SANDBOX/src/routes/settings-routes.ts"
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is allowlisted in tests/e2e/route-coverage.tsv but src registers'
+}
+
+# Prettier's `as-needed` quoteProps rewrites a quoted `'path':` key, so that spelling cannot land -
+# but it leaves `ROUTE_PATHS['key']` untouched, so bracket access is reachable source a `.`-only
+# pattern would wave through.
+@test "check-e2e-route-coverage.ts fails on a bracket-access route registration" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+settings	allowlisted	-	Nothing renders it yet."
+  printf "export default [{ path: ROUTE_PATHS['settings'] }];\n" \
+    > "$ROUTE_SANDBOX/src/routes/settings-routes.ts"
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is allowlisted in tests/e2e/route-coverage.tsv but src registers'
+}
+
+@test "check-e2e-route-coverage.ts fails on a double-quoted bracket-access route registration" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+settings	allowlisted	-	Nothing renders it yet."
+  printf 'export default [{ path: ROUTE_PATHS["settings"] }];\n' \
+    > "$ROUTE_SANDBOX/src/routes/settings-routes.ts"
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is allowlisted in tests/e2e/route-coverage.tsv but src registers'
+}
+
+# The widened alternation must not start counting references that render no route.
+@test "check-e2e-route-coverage.ts leaves an allowlisted route green for a bracket-access link" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+settings	allowlisted	-	No contract renders /settings yet."
+  printf "export default <a href={ROUTE_PATHS['settings']} />;\n" \
+    > "$ROUTE_SANDBOX/src/routes/settings-link.tsx"
+
+  run_route_gate
+  [ "$status" -eq 0 ]
+  assert_output_contains 'every route covered'
+}
+
+# The committed `passwordRecovery` shape: referenced only as a link target, registered by nothing.
+@test "check-e2e-route-coverage.ts leaves an allowlisted route green while only a link names it" {
+  write_route_fixture "  home: '/',
+  settings: '/settings',
+" "route	suite	spec	details
+home	e2e	tests/e2e/home.spec.ts	Covered.
+settings	allowlisted	-	No contract renders /settings yet."
+  printf 'export default <a href={ROUTE_PATHS.settings} />;\n' \
+    > "$ROUTE_SANDBOX/src/routes/settings-link.tsx"
+
+  run_route_gate
+  [ "$status" -eq 0 ]
+  assert_output_contains 'every route covered'
+}
+
+@test "check-e2e-route-coverage.ts fails when a spec sits outside its suite root" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	visual	tests/e2e/home.spec.ts	Wrong root."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not under "tests/visual/"'
+}
+
+# `tests/e2e/../../src/x` starts with the suite root and exists, so containment has to be
+# checked on the resolved path or a route could be "covered" by a non-spec file.
+@test "check-e2e-route-coverage.ts rejects a traversal path that escapes its suite root" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/../../src/routes/route-paths.ts	Traversal."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not under "tests/e2e/"'
+}
+
+@test "check-e2e-route-coverage.ts rejects a real file Playwright would never run" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/helper.ts	Helper, not a spec."
+  printf 'export const x = 1;\n' > "$ROUTE_SANDBOX/tests/e2e/helper.ts"
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not a .spec.ts file'
+}
+
+@test "check-e2e-route-coverage.ts rejects a directory posing as a covering spec" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/nested.spec.ts	Directory, not a file."
+  mkdir -p "$ROUTE_SANDBOX/tests/e2e/nested.spec.ts"
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'does not exist'
+}
+
+@test "check-e2e-route-coverage.ts refuses a manifest whose header was removed" {
+  write_route_fixture "  home: '/',
+" "home	e2e	tests/e2e/home.spec.ts	Covered."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'must start with the tab-separated header'
+}
+
+@test "the committed route manifest covers the real route table" {
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    COMMAND_LOG="$COMMAND_LOG" \
+    bash -c 'cd "$1" && shift && "$@"' _ "$PROJECT_ROOT" \
+    node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \
+    scripts/ci/check-e2e-route-coverage.ts
+  [ "$status" -eq 0 ]
+  assert_output_contains 'every route covered'
+}
+
 @test "batch_lhci_leak.sh dispatches memory-leak and Lighthouse DIND flows through make" {
   local script_path="$PROJECT_ROOT/scripts/ci/batch_lhci_leak.sh"
 
@@ -138,6 +353,31 @@ setup() {
   assert_log_contains 'make install-chromium-lhci'
   assert_log_contains 'make test-chromium'
   assert_log_contains 'make lighthouse-mobile-dind'
+}
+
+# resolve() does not dereference symlinks but statSync() does, so containment has to be
+# re-checked on the real path or a symlink could smuggle an out-of-suite file in as coverage.
+@test "check-e2e-route-coverage.ts rejects a symlink escaping its suite root" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/linked.spec.ts	Symlink out of the suite."
+  printf 'import "x";\n' > "$ROUTE_SANDBOX/outside.spec.ts"
+  ln -s ../../outside.spec.ts "$ROUTE_SANDBOX/tests/e2e/linked.spec.ts"
+  [ -f "$ROUTE_SANDBOX/tests/e2e/linked.spec.ts" ]
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not under "tests/e2e/"'
+}
+
+@test "check-e2e-route-coverage.ts rejects a row naming the suite root's parent" {
+  write_route_fixture "  home: '/',
+" "route	suite	spec	details
+home	e2e	tests/e2e/..	Parent of the suite root."
+
+  run_route_gate
+  [ "$status" -eq 1 ]
+  assert_output_contains 'is not under "tests/e2e/"'
 }
 
 @test "report-main-verification-failure.sh opens one issue and reuses it afterwards" {

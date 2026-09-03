@@ -1,10 +1,16 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
-import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import type { CorrelationIdProvider } from '@/services/observability/correlation-id-provider';
+import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import type { RequestMethod } from '@/services/types/https-client/https-client';
 
 @injectable()
 export default class HttpRequestConfigBuilder {
+  constructor(
+    @inject(OBSERVABILITY_TOKENS.CorrelationIdProvider)
+    private readonly correlationIds: CorrelationIdProvider
+  ) {}
+
   public create(
     method: RequestMethod,
     body: unknown,
@@ -75,8 +81,8 @@ export default class HttpRequestConfigBuilder {
     contentType: string | undefined,
     customHeaders?: Record<string, string>
   ): Record<string, string> {
-    const nextHeaders = this.withoutHeader(customHeaders, correlationIdProvider.header);
-    nextHeaders[correlationIdProvider.header] = correlationIdProvider.next();
+    const nextHeaders = this.withoutHeader(customHeaders, this.correlationIds.header);
+    nextHeaders[this.correlationIds.header] = this.correlationIds.next();
 
     if (!this.hasHeader(nextHeaders, 'accept')) {
       nextHeaders.Accept = 'application/json';

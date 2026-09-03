@@ -1,10 +1,12 @@
+import accessCore from '@/lib/access/access-core';
 import accessState from '@/lib/access/access-state';
 import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
+import permissionResolver from '@/lib/access/permission-resolver';
 import PermissionService from '@/services/access/permission-service';
 import { buildPrincipal } from '@tests/builders';
 
 describe('PermissionService', () => {
-  const service = new PermissionService();
+  const service = new PermissionService(accessCore, permissionResolver);
 
   afterEach(() => {
     accessState.clear();

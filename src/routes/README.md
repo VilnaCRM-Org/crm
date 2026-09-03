@@ -17,19 +17,19 @@ route set discoverable (audit, nav, sitemap).
 
 ## Files
 
-| File                            | Responsibility                                               |
-| ------------------------------- | ------------------------------------------------------------ |
-| `types/app-route.ts`            | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)  |
-| `types/route-module.ts`         | `RouteModule` (`id` + `routes`) — a module's contract shape  |
-| `app-routes.ts`                 | The app shell's own contract (home + 404)                    |
-| `registry.ts`                   | Collects every module contract into one list                 |
-| `route-validator.ts`            | Rejects duplicate module ids / routes with no path or index  |
-| `route-mapper.tsx`              | Maps one contract route → a `react-router` route (lazy)      |
-| `route-composer.tsx`            | Validates, partitions by guard, assembles the tree           |
-| `permission-branch-builder.tsx` | Groups protected routes by `meta.permission` (issue #114)    |
-| `permission-route.tsx`          | Gates a branch: renders the page, or the access-denied panel |
-| `route-paths.ts`                | Canonical URL constants — one key per route                  |
-| `routes.tsx`                    | Wiring only: `createBrowserRouter(composer.compose(...))`    |
+| File                            | Responsibility                                                |
+| ------------------------------- | ------------------------------------------------------------- |
+| `types/app-route.ts`            | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)   |
+| `types/route-module.ts`         | `RouteModule` (`id` + `routes`) — a module's contract shape   |
+| `app-routes.ts`                 | The app shell's own contract (home + 404)                     |
+| `registry.ts`                   | Collects every module contract into one list                  |
+| `route-validator.ts`            | Rejects duplicate module ids / routes with no path or index   |
+| `route-mapper.tsx`              | Maps one contract route → a `react-router` route (lazy)       |
+| `route-composer.tsx`            | Validates, partitions by guard, assembles the tree            |
+| `permission-branch-builder.tsx` | Groups protected routes by `meta.permission` (issue #114)     |
+| `permission-route.tsx`          | Gates a branch: renders the page, or the access-denied panel  |
+| `route-paths.ts`                | Canonical URL constants — one key per route, read by the gate |
+| `routes.tsx`                    | Wiring only: `createBrowserRouter(composer.compose(...))`     |
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
@@ -100,6 +100,11 @@ a permission on a nested child, and a permission on a route that is not
    [`@/lib/access/permission-catalog`](../lib/access/permission-catalog.ts) — see
    [`docs/access-control.md`](../../docs/access-control.md).
 
+5. Add the route's browser-coverage rows to `tests/e2e/route-coverage.tsv`
+   naming the spec(s) that exercise it. `make check-e2e-route-coverage` (first
+   step of the `e2e testing` job) fails on a route key that has neither a
+   covering spec nor an allowlist entry with a stated reason (issue #169).
+
 Never edit `routes.tsx`, `route-composer.tsx`, `route-mapper.tsx`, or
 `permission-branch-builder.tsx` to add a page.
 
@@ -113,5 +118,11 @@ Never edit `routes.tsx`, `route-composer.tsx`, `route-mapper.tsx`, or
   single `RootLayout`, `protected`→`AppLayout`, public not), the validator
   (duplicate id / unlocatable route), and the registry; per-route code splitting
   is asserted in `tests/unit/tooling/performance-serving.test.ts`.
+- **Route coverage inventory** — `scripts/ci/check-e2e-route-coverage.ts` reads
+  the route **keys** from `route-paths.ts` and reconciles them against
+  `tests/e2e/route-coverage.tsv` in both directions (missing row, stale row,
+  missing spec file, spec outside its suite root, allowlisted-and-covered, and
+  an `allowlisted` row for a key some contract already binds to a `path:`).
+  Fixtures in `tests/bats/ci_scripts.bats` pin every failure mode.
 
 Never satisfy a gate with a suppression — route through the contract instead.

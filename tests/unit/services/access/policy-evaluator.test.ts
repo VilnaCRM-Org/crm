@@ -1,3 +1,4 @@
+import accessCore from '@/lib/access/access-core';
 import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
@@ -20,7 +21,7 @@ function buildContact(overrides: Partial<ContactSubject> = {}): ContactSubject {
 }
 
 describe('PolicyEvaluator', () => {
-  const evaluator = new PolicyEvaluator();
+  const evaluator = new PolicyEvaluator(accessCore);
   const editContact = new EditContactPolicy();
   const record = jest.fn();
   const sink: AuditSink = { record };

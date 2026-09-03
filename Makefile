@@ -50,6 +50,24 @@ EXEC_DEV_TTY                = $(DOCKER_COMPOSE) exec dev
 PLAYWRIGHT_DOCKER_CMD       = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec playwright
 PLAYWRIGHT_TEST             = $(PLAYWRIGHT_DOCKER_CMD) sh -c
 
+# Scheduled flake audit (#186). PLAYWRIGHT_DOCKER_CMD runs the suites through
+# `docker compose exec`, so the host environment never crosses the container boundary --
+# these have to be injected explicitly, the same reason PLAYWRIGHT_DEV_MODE is passed through
+# `env` on the ENV=dev branch. Only the *-flake-audit targets reference them, so the required
+# PR lanes keep their zero-retry, html-reporter-only behaviour.
+PLAYWRIGHT_JSON_REPORT      ?= reports/playwright/report.json
+PLAYWRIGHT_HTML_REPORT      ?= reports/playwright/html
+PLAYWRIGHT_OUTPUT_DIR       ?= reports/playwright/output
+PLAYWRIGHT_FLAKE_RETRIES    ?= 2
+PLAYWRIGHT_FAIL_ON_FLAKY    ?= 1
+FLAKE_BUDGET                ?= 0
+PLAYWRIGHT_FLAKE_ENV        = -e PLAYWRIGHT_JSON_REPORT=$(PLAYWRIGHT_JSON_REPORT) \
+                              -e PLAYWRIGHT_HTML_REPORT=$(PLAYWRIGHT_HTML_REPORT) \
+                              -e PLAYWRIGHT_OUTPUT_DIR=$(PLAYWRIGHT_OUTPUT_DIR) \
+                              -e PLAYWRIGHT_FLAKE_RETRIES=$(PLAYWRIGHT_FLAKE_RETRIES) \
+                              -e PLAYWRIGHT_FAIL_ON_FLAKY=$(PLAYWRIGHT_FAIL_ON_FLAKY)
+PLAYWRIGHT_AUDIT_CMD        = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec $(PLAYWRIGHT_FLAKE_ENV) playwright sh -c
+
 MEMLEAK_SERVICE             = memory-leak
 DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
 MEMLEAK_BASE_PATH           = ./tests/memory-leak
@@ -210,6 +228,8 @@ test: test-unit-all
 
 RUN_VISUAL                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 RUN_E2E                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
+RUN_E2E_AUDIT               = $(PLAYWRIGHT_AUDIT_CMD) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
+RUN_VISUAL_AUDIT            = $(PLAYWRIGHT_AUDIT_CMD) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 PLAYWRIGHT_TEST_CMD         = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
 PLAYWRIGHT_DEV_TEST         = $(EXEC_DEV_TTYLESS) env PLAYWRIGHT_DEV_MODE=1 bun x playwright test
 RUN_E2E_DEV                 = $(PLAYWRIGHT_DEV_TEST) "$(TEST_DIR_E2E)"
@@ -505,6 +525,12 @@ verify-scaffold: ensure-dev ## Generate a throwaway module, run the static gates
 codegen: ensure-dev ## Regenerate typed API contract artifacts (src/api/generated) from the pinned upstream specs
 	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
 
+contract-diff: ## Fail an OPENAPI_SPEC_VERSION bump that introduces ERR-level breaking changes (issue #177)
+	sh scripts/ci/contract-diff.sh
+
+check-contract-drift: ## Report when the pinned upstream contract versions fall behind user-service (issue #178)
+	sh scripts/ci/check-contract-drift.sh
+
 codegen-check: ensure-dev ## Reconcile contract versions and fail if generated API types are stale (CI gate)
 	sh scripts/check-contract-versions.sh
 	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
@@ -603,6 +629,26 @@ test-visual-ui: start-prod ## Start the production environment and run visual te
 
 test-visual-update: start-prod ## Update Playwright visual snapshots
 	$(PLAYWRIGHT_TEST_CMD) $(TEST_DIR_VISUAL) --update-snapshots
+
+# The report directory is created on the host first: the Playwright container writes as root,
+# so a directory it creates would leave `make check-flakes` unable to add its summary beside
+# the report. Creating it here keeps the directory owned by the invoking user.
+test-e2e-flake-audit: start-prod ## Run the E2E suite with retries + the JSON reporter so flakes are recorded (issue #186)
+	@mkdir -p $(dir $(PLAYWRIGHT_JSON_REPORT)) $(PLAYWRIGHT_HTML_REPORT) $(PLAYWRIGHT_OUTPUT_DIR)
+	$(RUN_E2E_AUDIT)
+
+test-visual-flake-audit: start-prod ## Run the visual suite with retries + the JSON reporter so flakes are recorded (issue #186)
+	@mkdir -p $(dir $(PLAYWRIGHT_JSON_REPORT)) $(PLAYWRIGHT_HTML_REPORT) $(PLAYWRIGHT_OUTPUT_DIR)
+	$(RUN_VISUAL_AUDIT)
+
+check-flakes: ## Enforce FLAKE_BUDGET over the Playwright JSON report (issue #186)
+	node scripts/ci/check-flakes.ts
+
+print-flake-env: ## Print the flake-audit toggles as resolved inside the Playwright container (issue #186)
+	$(PLAYWRIGHT_AUDIT_CMD) 'printf "flake audit env: retries=%s fail_on_flaky=%s report=%s html=%s output=%s\n" "$$PLAYWRIGHT_FLAKE_RETRIES" "$$PLAYWRIGHT_FAIL_ON_FLAKY" "$$PLAYWRIGHT_JSON_REPORT" "$$PLAYWRIGHT_HTML_REPORT" "$$PLAYWRIGHT_OUTPUT_DIR"'
+
+check-e2e-route-coverage: ## Fail if any route in src/routes/route-paths.ts lacks a covering e2e/visual spec (issue #169)
+	node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/ci/check-e2e-route-coverage.ts
 
 require-playwright-browsers: ensure-dev
 	@$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) exec -T dev sh -lc '[ -x "$(CHROMIUM_BIN_PATH)" ] || { printf "❌ Chromium is not installed in the dev container.\n   Run: make ensure-playwright-browsers\n" >&2; exit 1; }'

@@ -9,7 +9,7 @@ import { buildPrincipal } from '@tests/builders';
 const FROZEN_AT = '2026-02-03T04:05:06.007Z';
 
 describe('AuditLogger', () => {
-  const logger = new AuditLogger();
+  const logger = new AuditLogger(auditCore);
   const record = jest.fn();
   const sink: AuditSink = { record };
 

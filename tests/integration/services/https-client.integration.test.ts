@@ -5,9 +5,11 @@ import { z } from 'zod';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
+import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+import correlationIdProvider from '@/services/observability/correlation-id-provider';
 import { assertInstanceOf } from '@tests/utils/assert-result';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
@@ -22,7 +24,10 @@ const TEST_URL = 'http://localhost:8080/api/test';
 
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 const createClient = (): FetchHttpsClient =>
-  new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
+  new FetchHttpsClient(
+    new HttpRequestConfigBuilder(correlationIdProvider),
+    new HttpResponseProcessor(new HttpErrorResponseParser())
+  );
 
 describe('FetchHttpsClient Integration', () => {
   let client: FetchHttpsClient;

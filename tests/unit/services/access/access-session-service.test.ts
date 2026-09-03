@@ -4,6 +4,7 @@ import auditCore from '@/lib/access/audit-core';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
+import sessionFactory from '@/lib/access/session-factory';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import AccessSessionService from '@/services/access/access-session-service';
 import SessionRepository from '@/services/access/session-repository';
@@ -12,8 +13,8 @@ import { buildAccessToken, buildClaims, buildEmail } from '@tests/builders';
 const FROZEN_AT = '2026-04-05T06:07:08.009Z';
 
 describe('AccessSessionService', () => {
-  const repository = new SessionRepository();
-  const service = new AccessSessionService(repository);
+  const repository = new SessionRepository(sessionFactory);
+  const service = new AccessSessionService(accessSession, repository);
   const record = jest.fn<void, [AuditEvent]>();
   const sink: AuditSink = { record };
   const eventTypes = (): string[] => record.mock.calls.map(([event]) => event.type);

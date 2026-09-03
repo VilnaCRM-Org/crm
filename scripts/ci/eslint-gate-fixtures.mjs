@@ -10,6 +10,7 @@
 // jest.config.ts runs CJS Jest with no --experimental-vm-modules, and ESLint v9 loads the flat
 // eslint.config.mjs via a native dynamic import() that fails inside Jest's vm context.
 import { ESLint, Linter } from 'eslint';
+import diCollaboratorPolicy from '../../config/di-collaborator-policy.js';
 import flatConfig from '../../eslint.config.mjs';
 
 const eslint = new ESLint({ cwd: process.cwd() });
@@ -78,6 +79,13 @@ const S = {
     "JSXAttribute[name.name='permission'] > Literal,JSXAttribute[name.name='permission'] > JSXExpressionContainer > :matches(Literal, TemplateLiteral)",
   routeMetaPermissionRaw:
     "Property[key.name='permission'] > :matches(Literal, TemplateLiteral).value,Property[key.value='permission'] > :matches(Literal, TemplateLiteral).value,Property[key.name='permission'] > ArrayExpression > :matches(Literal, TemplateLiteral),Property[key.value='permission'] > ArrayExpression > :matches(Literal, TemplateLiteral)",
+  // The two issue #130 selectors are BUILT by config/di-collaborator-policy.js (that module is
+  // the single source of truth both eslint.config.mjs and .dependency-cruiser.js read), so they
+  // are derived here rather than transcribed — a transcript of a generated string would only
+  // pin the transcription. Their construction is separately pinned against a real `Linter` in
+  // tests/unit/tooling/di-collaborator-gate.test.ts; the fixtures below prove they fire.
+  collaboratorProject: diCollaboratorPolicy.collaboratorSelectors()[0].selector,
+  collaboratorLibrary: diCollaboratorPolicy.collaboratorSelectors()[1].selector,
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -526,6 +534,83 @@ const FIXTURES = [
     rule: 'no-restricted-imports',
     tag: '',
   },
+  // DI collaborator ban (#130) — a logic class may not value-import a project collaborator or
+  // a behavioral library; `import type` and the policy allowlists stay clean.
+  {
+    id: 'collaborator-project-value-import',
+    file: PROBES.logic,
+    code: "import loginApi from './login-api';\nexport { loginApi };",
+    covers: [S.collaboratorProject],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-library-value-import',
+    file: PROBES.logic,
+    code: "import { gql } from '@apollo/client';\nexport { gql };",
+    covers: [S.collaboratorLibrary],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  // The runtime-import union has four alternatives (default, namespace, non-type named,
+  // no-specifier side effect). One fixture per alternative, on each selector, so a partial
+  // regression in `RUNTIME_IMPORT_SHAPES` cannot leave the gate silently passing.
+  {
+    id: 'collaborator-project-namespace-import',
+    file: PROBES.logic,
+    code: "import * as loginApi from './login-api';\nexport { loginApi };",
+    covers: [S.collaboratorProject],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-project-side-effect-import',
+    file: PROBES.logic,
+    code: "import './login-api';",
+    covers: [S.collaboratorProject],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-project-named-import',
+    file: PROBES.logic,
+    code: "import { loginApi } from './login-api';\nexport { loginApi };",
+    covers: [S.collaboratorProject],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-library-namespace-import',
+    file: PROBES.logic,
+    code: "import * as apollo from '@apollo/client';\nexport { apollo };",
+    covers: [S.collaboratorLibrary],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-library-side-effect-import',
+    file: PROBES.logic,
+    code: "import '@apollo/client';",
+    covers: [S.collaboratorLibrary],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
+  {
+    id: 'collaborator-library-default-import',
+    file: PROBES.logic,
+    code: "import apollo from '@apollo/client';\nexport { apollo };",
+    covers: [S.collaboratorLibrary],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #130',
+  },
   // Must-PASS exemptions
   {
     id: 'hook-arrow-const-exempt',
@@ -540,6 +625,24 @@ const FIXTURES = [
     id: 'tsx-static-error-boundary-exempt',
     file: PROBES.component,
     code: 'class EB { static getDerivedStateFromError() { return {}; } }',
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
+  {
+    id: 'collaborator-type-import-exempt',
+    file: PROBES.logic,
+    code: "import type LoginApi from './login-api';",
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
+  {
+    id: 'collaborator-di-mechanism-exempt',
+    file: PROBES.logic,
+    code: "import { injectable } from 'tsyringe';\nimport TOKENS from './tokens';",
     covers: [],
     expect: 'pass',
     rule: 'no-restricted-syntax',

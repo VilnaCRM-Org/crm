@@ -1,6 +1,7 @@
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import { PERMISSIONS, ROLES, ROLE_PERMISSIONS } from '@/lib/access/permission-catalog';
 import permissionResolver from '@/lib/access/permission-resolver';
+import sessionFactory from '@/lib/access/session-factory';
 import type { SessionLoader } from '@/lib/types/access/session';
 import SessionRepository from '@/services/access/session-repository';
 import { buildAccessToken, buildClaims, buildEmail, buildTenantRef } from '@tests/builders';
@@ -8,7 +9,7 @@ import { buildAccessToken, buildClaims, buildEmail, buildTenantRef } from '@test
 const FALLBACK_TENANT_ID = 'default';
 
 describe('SessionRepository', () => {
-  const repository = new SessionRepository();
+  const repository = new SessionRepository(sessionFactory);
 
   it('returns null for a null token', () => {
     expect(repository.build({ token: null })).toBeNull();

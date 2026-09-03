@@ -181,8 +181,9 @@ be higher but the ratio holds):
 | `make test-e2e`    | 87 tests, 0:39  | 115 tests, 1:10 | +28 tests, ~+31 s |
 | `make test-visual` | 240 tests, 3:59 | 244 tests, 4:16 | +4 tests, ~+17 s  |
 
-Keep the lane bounded: `retries: 0` repo-wide, so every mobile spec has to be deterministic, and
-these two checks are single-job (no sharding).
+Keep the lane bounded: pull-request runs use `retries: 0`, so every mobile spec has to be
+deterministic (the nightly flake audit is the one caller that opts into retries — see "Scheduled
+flake budget (issue #186)"), and these two checks are single-job (no sharding).
 
 **Known sizing gap, deliberately not fixed here:** the auth switcher link (18 px tall), the
 remember-me checkbox (20 px) and the password toggle (32 px) fall under the 44 px floor, so the
@@ -283,6 +284,90 @@ Stryker `Timeout` (a mutant that breaks a promise chain hangs its covering test)
 detected. `break` is set to 90 — below the 92.5% baseline for margin — and ratchets toward the
 `high` = 100 target as the scheduled full runs confirm stability.
 
+### Route coverage inventory (issue #169)
+
+The browser-level suites are hand-written, and nothing verified they tracked the route table —
+which is how `notFound` reached production with zero e2e, visual, or Lighthouse coverage.
+`make check-e2e-route-coverage` (first step of the `e2e testing` job, so a miss fails in seconds)
+reconciles every key in `src/routes/route-paths.ts` against
+[`tests/e2e/route-coverage.tsv`](tests/e2e/route-coverage.tsv), which names the spec that
+actually exercises each route.
+
+Validation runs in both directions: a route with no row, a row for a route that no longer
+exists, a row naming a missing spec, a spec outside its suite root, and a route that is both
+allowlisted and covered all fail. An `allowlisted` row also expires on its own: the gate scans
+`src/` for `path: ROUTE_PATHS.<key>` bindings and fails a row whose route a contract already
+registers, so a justification that is only true for now ("nothing renders it yet") cannot
+outlive the flow that invalidates it. Route path _values_ are deliberately never matched against
+spec text — `/` appears in every spec (so `home` could never fail) and `*` appears in none (so
+`notFound` could never pass); the manifest maps route **keys**.
+
+**Adding a page:** land the route contract (see "Route Registry"), then add its manifest rows.
+A route intentionally out of browser scope takes an `allowlisted` row with a stated reason and
+must not also carry a suite row.
+
+### Scheduled flake budget (issue #186)
+
+`playwright.config.ts` defaults to `retries: 0`, so on a pull request a flake is already a hard
+red.
+What was missing is the other half: Playwright can only classify a test as **flaky** (failed,
+then passed on retry) when it is allowed to retry, so a binding zero-flake bar has to run
+somewhere with retries on. That is `nightly-flake-audit.yml`.
+
+| Toggle                     | PR lanes  | Nightly audit |
+| -------------------------- | --------- | ------------- |
+| `PLAYWRIGHT_FLAKE_RETRIES` | unset (0) | `2`           |
+| `PLAYWRIGHT_JSON_REPORT`   | unset     | set           |
+| `PLAYWRIGHT_FAIL_ON_FLAKY` | unset     | `1`           |
+
+All three are inert unless set, so the required `e2e testing` and `visual tests` checks behave
+exactly as before. `docker compose exec` does not carry host environment across the container
+boundary, so `make test-e2e-flake-audit` / `make test-visual-flake-audit` inject them with `-e`
+(the same reason `PLAYWRIGHT_DEV_MODE` is passed through `env` on the `ENV=dev` branch);
+`make print-flake-env` echoes them from inside the container as proof they arrived.
+
+`make check-flakes` then enforces `FLAKE_BUDGET` (0) over the JSON report, keeping the two
+signals distinct: exit 1 = flake-budget breach, exit 2 = hard failure or an untrustworthy
+report. `scripts/ci/report-flake-audit.sh` files or updates one `flaky-tests` issue naming the
+offending specs, commenting only when the offending set or its flaky/hard-failure split changes.
+A suite that produced no summary is routed as an offence, never as a pass.
+
+**No suppression:** satisfy the budget by fixing the nondeterminism. Raising `FLAKE_BUDGET`,
+re-running until green, and re-baselining a visual snapshot to force a pass are all out of
+policy — the same root-cause rule the ESLint, TypeScript, metrics, jscpd, and performance gates
+follow.
+
+### Contract gates: semantic diff and upstream drift (issues #177, #178)
+
+`make codegen-check` is syntactic — it proves the pins agree and the generated artifacts are
+fresh. Two gates close what it cannot see; both are documented in full in
+[`src/api/contracts/README.md`](src/api/contracts/README.md).
+
+- **`make contract-diff`** (`contract testing`, every PR) runs digest-pinned
+  `oasdiff breaking --fail-on ERR` when `OPENAPI_SPEC_VERSION` moves against the base branch,
+  and fast-exits 0 when it does not. Acknowledged upstream breaks live in
+  `src/api/contracts/breaking-changes-approved.txt` — a reviewed diff, never an env-var bypass.
+- **`make check-contract-drift`** (`contract drift`, weekly) reports when the pins fall behind
+  user-service. It takes the latest upstream version as the maximum of `releases/latest` and the
+  highest semver tag, because `releases/latest` is the most recently _published_ release rather
+  than the highest one. A bare version gap opens a tracking issue but never reds the run; an
+  upstream lookup failure always does.
+
+### CodeQL SAST depth (issue #172)
+
+`security-testing.yml` runs CodeQL with `queries: security-extended`, not the shallow default
+suite — the default omits exactly the lower-precision queries a React SPA needs (DOM XSS,
+client-side unvalidated URL redirection, prototype pollution, client-side request forgery).
+It analyzes `pull_request` **and** `push` to `main`: without a `main` baseline, GitHub has
+nothing to diff a PR against and every pre-existing alert reports as new. A weekly `schedule`
+re-scans old code against new query-pack releases.
+
+Findings do not fail the `Analyze` job; they are enforced by a repository ruleset that lives in
+GitHub settings and is therefore recorded in
+[`docs/governance/branch-protection.md`](docs/governance/branch-protection.md). Fix a finding at
+the source — never by widening `paths-ignore`, dismissing it as "won't fix", or reverting to the
+default suite.
+
 ## Code Quality
 
 ```bash
@@ -302,6 +387,8 @@ make lint-zizmor    # zizmor workflow-security gate (Docker; not part of `make l
 make lint-compose   # docker compose config validation (schema, interpolation, duplicate keys)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
 make lint-licenses  # dependency license SPDX-allowlist gate over the production tree (see below)
+make contract-diff  # semantic OpenAPI breaking-change gate on pin bumps (see above)
+make check-e2e-route-coverage # route-coverage inventory gate (see above)
 make check-auth-seed-gate # preloaded-auth seed bundle scan (Docker; not part of `make lint`)
 make fmt-prettier   # Prettier
 make fmt-qlty       # qlty fmt
@@ -642,7 +729,7 @@ complement.
 ### Architecture gate integrity (issue #181)
 
 `.dependency-cruiser.js` encodes the barrel/public-API contract, DI composition-root isolation,
-layer bans, type-file purity, and folder/naming conventions in 53 rules of hand-written path
+layer bans, type-file purity, and folder/naming conventions in 54 rules of hand-written path
 regexes. Nothing in CI distinguished "no violations because the code is clean" from "no violations
 because a regex went dead" — a typo'd anchor makes a rule match nothing and the gate passes
 **vacuously** for every future PR.
@@ -736,7 +823,7 @@ error unconditionally with `.catch((caught: unknown) => caught)` and then assert
 
 ### CI configuration gates (issues #161, #174, #175)
 
-The CI configuration surface — every file under `.github/workflows/`, the compose files, the
+The CI configuration surface — every file under `.github/workflows/`, the compose files, and the
 shared healthchecks —
 **is** the enforcement boundary, so it is linted like source rather than trusted as convention.
 
@@ -1115,6 +1202,110 @@ acknowledged residual. What remains a **review-gate** concern — deliberately n
 because widening to arbitrary-depth `Property` would flag idiomatic nested MUI `sx`
 callbacks and zustand-style slices — is nested (depth > 1) object literals,
 `Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
+
+### Collaborators arrive through DI, never through a value import (issue #130)
+
+**Convention:** inside a class in a logic directory, the only behavioral collaborators a method
+may invoke are those received through DI — a constructor `@inject(TOKENS.X)` parameter or a
+`useFactory` / `instanceCachingFactory` parameter resolved from the container. A class MUST NOT
+value-import another project module that provides behavior and call it directly. If a class needs
+collaborator `X`, give `X` a token in the owning area's `tokens.ts`, register it in that area's
+`di.ts` composition root (issue #109), and inject it.
+
+This is the next step after #89/#100: those made every behavioral unit an instance method on a
+class; this governs _how those classes obtain each other_. A hard-wired collaborator resists
+substitution in tests, so the class only _looks_ injectable.
+
+`src/modules/user/features/auth/repositories/login-api.ts` is the exemplar — `HttpsClient` and
+`ApiErrorFactory` arrive via `@inject(TOKENS.X)`, and its remaining value imports are exactly the
+allowed carve-outs.
+
+**Allowed value imports inside a logic class:**
+
+| Carve-out            | Examples                                                             |
+| -------------------- | -------------------------------------------------------------------- |
+| `import type`        | any annotation-only import (issue #88)                               |
+| `extends` base class | `BaseAPI` — inheritance cannot be injected                           |
+| DI mechanism         | `tsyringe`, `reflect-metadata`                                       |
+| DI tokens            | `**/tokens.ts`                                                       |
+| Config data          | `@/config/api-config`, `@/config/env`, `@/routes/route-paths`        |
+| Error classes        | `@/modules/*/lib/api-errors/**`, `http-error` (thrown, `instanceof`) |
+| Constant maps        | `response-messages`, `error-codes`                                   |
+| Data contracts       | `**/response-schemas.ts` (zod), `*-mutation.ts` (GraphQL)            |
+| Public barrels       | `@/modules/<m>`, `@auth` — the only cross-boundary path (issue #107) |
+| Pure leaf libraries  | `uuid`                                                               |
+
+**Third-party policy — position (A), adapter + token.** A behavioral library is wrapped behind an
+`@injectable()` adapter and a token rather than called from a feature class: Apollo through
+`ApolloLinkFactory` and `AUTH_TOKENS.ApolloClient`; Sentry and `web-vitals` through the
+observability boundary (issue #115); zod schemas declared in a `response-schemas` contract module
+and passed to collaborators **as data**. This is enforced as an **allowlist**, not a denylist of
+known-behavioral packages: only `tsyringe`, `reflect-metadata`, and `uuid` may be value-imported
+inside a logic class, so a future behavioral dependency cannot slip in unchallenged — adding one
+is a reviewable policy edit. `import type` from any library stays allowed, as do all libraries in
+components and hooks, which this scope excludes.
+
+**Base-class tradeoff.** `extends X` is the one place IoC is bypassed, so a base class must stay a
+thin template (as `base-api.ts` is — it only forwards an injected `apiErrorFactory`). Prefer
+**composition over inheritance** for behavior; a deep behavioral base class defeats the rule's
+intent and is a review-gate concern the gate cannot see.
+
+**Enforcement — two layers, one policy.** The single source of truth for the scope, the
+carve-outs, and the allowlists is
+[`config/di-collaborator-policy.js`](config/di-collaborator-policy.js). Both layers read it, so
+they cannot drift:
+
+| Layer              | Where                                         | Sees                     |
+| ------------------ | --------------------------------------------- | ------------------------ |
+| ESLint             | `no-restricted-syntax` in `eslint.config.mjs` | the exact `import` line  |
+| dependency-cruiser | `injectable-classes-no-value-imports`         | resolved paths + aliases |
+
+Both run under `make lint` (`lint-eslint` and `lint-deps`), which the `static testing` workflow
+executes, and both are in `CI_LINT_TARGETS` for the parallel lint runner; `lint-deps` additionally
+runs in the standalone `dependency-cruiser.yml` workflow. The **project-module** ban is enforced
+by both layers; the **third-party allowlist** is ESLint-only, because the dependency-cruiser rule
+scopes its `to` clause to `^src/`.
+[`tests/unit/tooling/di-collaborator-gate.test.ts`](tests/unit/tooling/di-collaborator-gate.test.ts)
+fails the build when a policy entry goes stale, when the two layers disagree, when a carve-out
+starts hiding an `@injectable()` class, or when an allowlisted barrel starts re-exporting one.
+
+**Scope and carve-outs.** Gated: `src/services/**`, `src/utils/**`, `src/modules/*/store/**`, and
+`src/modules/*/features/*/{repositories,stores,utils}/**`.
+
+Three different things are outside the gate, and the distinction matters when you add a file:
+
+- **Never in scope** (no policy entry needed): anything outside those globs — a feature's
+  `components/` folder, plus `src/components/**`, `src/styles/**`, `src/routes/**`,
+  `src/providers/**` and `src/config/**` — which is why the form-section `validations/*`
+  singletons need no carve-out despite being container-free.
+- **In scope but exempted by file kind** in `EXEMPT_PATTERNS`: React components (`.tsx`),
+  tests/stories/`.d.ts`, type-only files, hooks (`use-*.ts` — `use-auth-token` sits inside the
+  gated `stores/` folder), composition roots (`di.ts` — they must value-import every concrete
+  class to register it), token modules, and index barrels.
+- **In scope but exempted by explicit path** in `EXEMPT_RENDER_PATH_FILES`: the
+  **container-free render-path singletons** — `auth-var`, `reactive-var`,
+  `reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`,
+  `lazy-module-loader`, `load-registration-notification`, `registration-handlers-factory`,
+  `auth-error-reporter`, `url-builder`, `locale-formatter-core`, and the observability core /
+  correlation-id / sentry / pii-scrubber / web-vitals leaves.
+
+Those stay off the container so the auth page paints without tsyringe — **never** eager-import
+`dependency-injection-config.ts` into the paint path, and never convert one of them into a
+container-resolved class. Adding a new container-free render-path singleton in a gated directory
+means adding it to the policy file.
+
+**Companion gate:** component-side (`.tsx`) consumption is issue #128
+(`components-no-direct-injectable-import`). The two scopes are disjoint (`.ts` vs `.tsx`), so no
+edge is flagged twice; keep their names, messages, and carve-outs cross-referenced.
+
+**Honest limitations** (not statically enforceable): a fat base class can still smuggle logic past
+`extends`; a barrel re-export or an object literal's method can launder a collaborator (bounded,
+not closed, by the barrel-purity assertion); the gate proves a collaborator _arrives_ via DI, not
+that the wiring registers the right implementation; and the render-path carve-out is allowlisted
+by path, not inferred — adding a new container-free singleton means updating the policy file.
+
+**No suppression:** satisfy the gate by injecting the collaborator or converting to `import type`.
+Never `eslint-disable`, `depcruise-ignore`, or `@ts-ignore`.
 
 ### Path Aliases
 

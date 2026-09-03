@@ -114,4 +114,14 @@ describe('preloaded-auth-token seed gate (issue #158)', () => {
     expect(makefile).toContain('--expect absent');
     expect(makefile).toContain('--expect present');
   });
+
+  it('runs only on pull requests, not on the CodeQL push and schedule baseline', () => {
+    const workflow = readFile('.github/workflows/security-testing.yml');
+    const job = workflow.slice(workflow.indexOf('  auth-seed-gate:'));
+
+    expect(job).toMatch(/^ {4}if: github\.event_name == 'pull_request'$/m);
+    expect(job.indexOf("if: github.event_name == 'pull_request'")).toBeLessThan(
+      job.indexOf('runs-on:')
+    );
+  });
 });

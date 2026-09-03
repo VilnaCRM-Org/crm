@@ -1,10 +1,11 @@
+import accessCore from '@/lib/access/access-core';
 import accessState from '@/lib/access/access-state';
 import { ROLES } from '@/lib/access/permission-catalog';
 import TenantContextService from '@/services/access/tenant-context-service';
 import { buildPrincipal, buildTenantRef } from '@tests/builders';
 
 describe('TenantContextService', () => {
-  const service = new TenantContextService();
+  const service = new TenantContextService(accessCore);
 
   afterEach(() => {
     accessState.clear();

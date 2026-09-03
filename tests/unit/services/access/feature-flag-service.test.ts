@@ -1,3 +1,4 @@
+import accessCore from '@/lib/access/access-core';
 import accessState from '@/lib/access/access-state';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import { ROLES } from '@/lib/access/permission-catalog';
@@ -5,7 +6,7 @@ import FeatureFlagService from '@/services/access/feature-flag-service';
 import { buildPrincipal } from '@tests/builders';
 
 describe('FeatureFlagService', () => {
-  const service = new FeatureFlagService();
+  const service = new FeatureFlagService(accessCore);
 
   afterEach(() => {
     accessState.clear();

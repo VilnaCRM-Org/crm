@@ -860,6 +860,50 @@ const canEdit = useCan(PERMISSIONS.contactWrite); // never useCan('contact:write
 - Add a permission/role/policy/access flag by following
   [`docs/access-control.md`](docs/access-control.md), which is the authoritative reference.
 
+### Collaborators arrive through DI, never through a value import (issue #130)
+
+Inside a class in a logic directory (`src/services/**`, `src/utils/**`,
+`src/modules/*/store/**`, `src/modules/*/features/*/{repositories,stores,utils}/**`), the only
+behavioral collaborators a method may invoke are those received through DI. Never
+`import SomeService from '…'` and call it — add a token to the owning area's `tokens.ts`,
+register it in that area's `di.ts` (issue #109), and `@inject(TOKENS.X)` it. If the import is
+only an annotation, make it `import type` (issue #88).
+
+Allowed value imports: `import type` (always), the base class you `extend`, `tsyringe` /
+`reflect-metadata`, token modules, config data (`@/config/api-config`, `@/config/env`,
+`@/routes/route-paths`), domain/transport error classes, constant maps (`response-messages`,
+`error-codes`), runtime data contracts (`response-schemas`, `*-mutation`), the module/feature
+public barrels (`@/modules/<m>`, `@auth`), and pure leaf libraries (`uuid`).
+
+Third-party policy is **(A) adapter + token**, enforced as an allowlist: only `tsyringe`,
+`reflect-metadata`, and `uuid` may be value-imported inside a logic class. Everything else goes
+behind an adapter — Apollo through `ApolloLinkFactory` / `AUTH_TOKENS.ApolloClient`, Sentry and
+`web-vitals` through the observability boundary, zod schemas declared in a `response-schemas`
+contract module and passed to collaborators as data.
+
+Never push the DI container into the auth paint path: do not eager-import
+`dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
+container-resolved class. Those inside a gated directory (`auth-var`, `reactive-var`,
+`reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`, the
+auth lazy loaders, `registration-handlers-factory`, `auth-error-reporter`, `url-builder`,
+`locale-formatter-core`, and the observability core/correlation-id/sentry/pii-scrubber/web-vitals
+leaves) are exempt by explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
+`use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
+structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
+load-bearing, so do not delete it. The form-section `validations/*` singletons live under
+`components/`, which no scope glob matches, so they alone need no policy entry.
+
+Enforced by two layers reading that one policy file: an ESLint `no-restricted-syntax` selector and
+the dependency-cruiser rule `injectable-classes-no-value-imports`, both under `make lint`, plus
+the rule-rot guard `tests/unit/tooling/di-collaborator-gate.test.ts`. Component-side (`.tsx`)
+consumption is the disjoint companion gate #128 (`components-no-direct-injectable-import`) — do
+not duplicate it here. Never satisfy the gate with `eslint-disable`, `depcruise-ignore`, or
+`@ts-ignore`.
+
+Residual review-gate concerns the gate cannot see: a fat base class smuggling behavior past
+`extends` (prefer composition), collaborators laundered through a barrel re-export or an object
+literal's method, and wiring that registers the wrong implementation behind the right token.
+
 ### Dependency Injection Pattern
 
 Per-module / per-infra composition roots (issue #109): tokens and registrations are
@@ -1206,12 +1250,25 @@ and [tests/console-gate/README.md](tests/console-gate/README.md).
      bunx playwright test tests/e2e/login.spec.ts
    ```
 
+5. **Every route needs a spec**: adding a key to `src/routes/route-paths.ts` without a row in
+   `tests/e2e/route-coverage.tsv` fails `make check-e2e-route-coverage`, the first step of the
+   `e2e testing` job (issue #169). Name the covering spec, or allowlist the route with a reason.
+
+6. **Flakes are not free**: pull-request runs use `retries: 0`, so an intermittent test is a hard
+   red. The scheduled `nightly flake audit` re-runs both suites with retries on and a zero flake
+   budget, so a retried pass is caught there too (issue #186). Never satisfy either by raising
+   `FLAKE_BUDGET`, re-running, or re-baselining — fix the nondeterminism.
+
 ### Visual Regression Testing
 
 1. **Update snapshots**: `make test-visual-update`
 2. **Review changes**: Check `tests/visual/.playwright/` for diffs
 3. **Only update when intentional**: Don't blindly accept visual changes
-4. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated `/sign-in` and
+4. **Scope new baselines**: a full-matrix visual spec generates 13 screen sizes × 3 browsers = 39
+   binaries. For a static page, follow the `notFound` / submit-loader precedent and use a small
+   local screens array instead; regenerate with a spec-scoped `--update-snapshots`, never the
+   repo-wide `make test-visual-update`, then re-run **without** the flag and require green.
+5. **Mobile baselines**: `tests/visual/mobile/` holds the device-emulated `/sign-in` and
    `/sign-up` baselines, recorded per mobile project with `scale: 'device'` so the real
    2.625×/3× DPR raster is gated. Never reuse `take-visual-snapshot.ts` there — its
    `setViewportSize` call would discard the device viewport.
