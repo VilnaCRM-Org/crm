@@ -332,6 +332,15 @@ The enforced floor is **100%**: `break = 100`, so a single surviving mutant fail
 mutate scope is 203 files, of which ~173 produce scored mutants (the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`).
 
+**The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
+file can move it to a different shard — while its previous owner still carries the old result in
+the incremental report it restored by key prefix. Merging on "first occurrence wins" then lets a
+status decided against different source outrank the shard that actually re-ran the file, which is
+how a run once reported three survivors that every owning shard had already scored as `Ignored`.
+`merge-mutation-reports.ts` therefore rebuilds the same packing and keeps each file only from the
+shard that owns it, reporting how many stale results it dropped. Do not "fix" a disagreement
+between shards by re-running until the ordering favours the answer you want.
+
 **How this number was reached, and why the earlier one was not comparable.** The previously
 recorded baseline (92.5%, `break` = 90) was measured before honest classification: 2405 of its 2410
 "detections" were `Timeout` with an empty `killedBy` — including boolean flips in `src/app.tsx` that
