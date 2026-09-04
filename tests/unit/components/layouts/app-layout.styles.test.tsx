@@ -3,6 +3,8 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+
 jest.mock('react-router-dom', () => ({
   Outlet: (): ReactElement => <span>route-outlet</span>,
   useLocation: (): { state: null } => ({ state: null }),
@@ -11,12 +13,6 @@ jest.mock('react-router-dom', () => ({
 const AppLayout = jest.requireActual<typeof import('@/components/layouts/app-layout')>(
   '@/components/layouts/app-layout'
 ).default;
-
-function emittedCss(): string {
-  return Array.from(document.querySelectorAll('style'))
-    .map((element) => element.textContent ?? '')
-    .join('');
-}
 
 describe('AppLayout stretching', () => {
   it('lets the main landmark grow as a full-height flex column', () => {
@@ -41,6 +37,9 @@ describe('AppLayout focus ring', () => {
   it('suppresses the ring only for the programmatic :focus-not-:focus-visible case', () => {
     render(<AppLayout />);
 
-    expect(emittedCss()).toContain(':focus:not(:focus-visible)');
+    const gated = styleRuleFor(screen.getByRole('main'), ':focus:not(:focus-visible)');
+
+    expect(gated).toBeDefined();
+    expect(gated?.outline).toBe('none');
   });
 });
