@@ -274,7 +274,7 @@ off the test path so the unit fetch-stub and the integration MSW server never co
 excludes the `tests/unit/{tooling,scripts,performance,load}` meta-tests — they read source files as
 text and break once Stryker instruments them — and runs ts-jest with `isolatedModules` (no per-file
 type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep the run affordable:
-CI runners are 2-core, so parallelism comes from the shard count (currently 8), not from Stryker's
+CI runners are 2-core, so parallelism comes from the shard count (currently 12), not from Stryker's
 in-process concurrency.
 
 **Every mutant is classified on its merits.** A score is only worth enforcing when each status was
@@ -292,7 +292,7 @@ mutants into one type-check pass and re-splits any group whose error cannot be p
 mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
 regresses; never relax them to buy wall-clock.
 
-`mutation-testing.yml` fans `make test-mutation-shard` across an 8-way matrix; each shard mutates a
+`mutation-testing.yml` fans `make test-mutation-shard` across a 12-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
 file size (heaviest file to the lightest shard), not sliced round-robin, because the run costs
 whatever its slowest shard costs — round-robin left one shard carrying 1.54x the mean load.
@@ -312,7 +312,7 @@ against a lean dev-only container (`make start-dev`) because mutation tests mock
 need neither Mockoon nor Apollo.
 
 `mutation-testing-full.yml` runs weekly (`schedule:` + `workflow_dispatch`) as the authoritative
-pass: the same 8-way matrix, but **cold and from scratch** so the score can't inherit stale reused
+pass: the same 12-way matrix, but **cold and from scratch** so the score can't inherit stale reused
 results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. nightly
 `0 3 * * *`) against CI cost. It is not a pull-request required check.
 
@@ -336,10 +336,10 @@ Run it locally either way (heavy — prefer letting CI shard it):
 make test-mutation                                   # full, gated, single-process run
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8   # repeat for 1..7
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=12  # repeat for 1..11
 # PR mode (incremental): only mutants the diff touches re-run
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8 MUTATION_INCREMENTAL=1
-make merge-mutation-reports MUTATION_SHARD_TOTAL=8
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=12 MUTATION_INCREMENTAL=1
+make merge-mutation-reports MUTATION_SHARD_TOTAL=12
 ```
 
 To change the shard count, keep the `index` matrix in both `mutation-testing.yml` and

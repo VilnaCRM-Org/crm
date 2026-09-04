@@ -369,6 +369,7 @@ If you're having trouble, head for
 as it's frequently updated.
 
 - [Architecture Decision Records (ADRs)](docs/adr/README.md)
+- [Access control — RBAC, tenancy, access flags, audit](docs/access-control.md)
 - [Feature flags — lifecycle and rollout](docs/feature-flags.md)
 - [Runtime configuration (`@/config/runtime`)](src/config/runtime/README.md)
 

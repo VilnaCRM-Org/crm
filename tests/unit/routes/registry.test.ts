@@ -1,3 +1,4 @@
+import { PERMISSIONS } from '@/lib/access/permission-catalog';
 import registry from '@/routes/registry';
 import ROUTE_PATHS from '@/routes/route-paths';
 
@@ -26,7 +27,7 @@ describe('route registry', () => {
     const notFound = shell?.routes.find((route) => route.path === ROUTE_PATHS.notFound);
 
     expect(home?.guard).toBe('protected');
-    expect(home?.meta?.permission).toBe('app.home');
+    expect(home?.meta?.permission).toBe(PERMISSIONS.appHome);
     expect(notFound).toBeDefined();
     expect(notFound?.guard).toBe('public');
   });

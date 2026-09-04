@@ -1,10 +1,12 @@
 import type { ComponentType } from 'react';
 
+import type { Permission } from '@/lib/types/access/permission';
+
 export type RouteGuard = 'protected' | 'public';
 
 export interface RouteMeta {
   readonly titleKey?: string;
-  readonly permission?: string;
+  readonly permission?: Permission;
 }
 
 interface RouteCommon {

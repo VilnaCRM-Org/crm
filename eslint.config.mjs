@@ -272,6 +272,118 @@ const noRawIntlSelectors = [
   },
 ];
 
+// Source (issue #114): authorization decisions belong to the access layer. Outside
+// `src/lib/access/**` and `src/services/access/**`, code must ask the policy layer
+// (`useCan`, `<RequirePermission>`, `PermissionService`, a `Policy` class) with a typed
+// constant from the permission catalog — never inspect `principal.roles`/`principal.permissions`
+// itself and never pass a raw permission/role string at a call site.
+// The receiver of a membership check spelled three ways: `principal.roles`, a destructured
+// `roles`, and the computed `principal['roles']`. Every decision shape below is checked
+// against all three.
+const ROLE_COLLECTION = '/^(roles|permissions)$/';
+const RECEIVERS = [
+  `[callee.object.property.name=${ROLE_COLLECTION}]`,
+  `[callee.object.name=${ROLE_COLLECTION}]`,
+  `[callee.object.property.value=${ROLE_COLLECTION}]`,
+];
+// Any array read that answers "is X in this set" — not just `includes`. This list, the
+// must-fail fixture in `tests/unit/tooling/access-control-gates.test.ts`, and the table in
+// `docs/access-control.md` are one contract: a spelling missing from any of the three is a
+// hole. Plain reads stay deliberately allowed — rendering a principal's roles is not an
+// authorization decision.
+const MEMBERSHIP_METHODS =
+  '/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/';
+
+// `permissions['includes'](…)` is the same call with the method name spelled as a Literal,
+// so the computed form is matched next to the identifier one.
+const membershipCallSelectors = RECEIVERS.flatMap((receiver) => [
+  `CallExpression[callee.property.name=${MEMBERSHIP_METHODS}]${receiver}`,
+  `CallExpression[callee.property.value=${MEMBERSHIP_METHODS}]${receiver}`,
+]);
+
+// `new Set(principal.permissions).has(…)` and `principal.roles[0] === 'admin'` reach the same
+// decision without ever calling an array method on the collection. The Set form is matched at
+// its `.has(…)` membership use rather than at the constructor: wrapping the collection to
+// render or de-duplicate it decides nothing, and banning that would contradict the plain-read
+// allowance above.
+const SET_MEMBERSHIP =
+  "CallExpression[callee.property.name='has'][callee.object.callee.name='Set']";
+const SET_SOURCE = 'callee.object.arguments.0';
+// `permissions['includes']` is a computed read too, but it is the receiver of a call the
+// selectors above already match; excluding it here keeps one decision to one report.
+const NOT_A_CALL = `:not([property.value=${MEMBERSHIP_METHODS}])`;
+const membershipEscapeSelectors = [
+  `${SET_MEMBERSHIP}[${SET_SOURCE}.property.name=${ROLE_COLLECTION}]`,
+  `${SET_MEMBERSHIP}[${SET_SOURCE}.property.value=${ROLE_COLLECTION}]`,
+  `${SET_MEMBERSHIP}[${SET_SOURCE}.name=${ROLE_COLLECTION}]`,
+  `MemberExpression[computed=true][object.property.name=${ROLE_COLLECTION}]${NOT_A_CALL}`,
+  `MemberExpression[computed=true][object.property.value=${ROLE_COLLECTION}]${NOT_A_CALL}`,
+  `MemberExpression[computed=true][object.name=${ROLE_COLLECTION}]${NOT_A_CALL}`,
+];
+
+// A permission is named at a call site by a plain string or by a template literal; the catalog
+// rule covers both spellings everywhere it covers one.
+const RAW_PERMISSION = ':matches(Literal, TemplateLiteral)';
+const PERMISSION_METHODS = '/^(can|canAll|canAny)$/';
+const RAW_PERMISSION_MESSAGE =
+  'No raw permission strings at call sites — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).';
+
+const noAdHocAuthorizationSelectors = [
+  {
+    // One entry rather than one per shape: a spelling that is both a computed index and a
+    // call (`permissions['includes'](…)`) matches in both groups and would otherwise be
+    // reported twice for a single decision.
+    selector: [...membershipCallSelectors, ...membershipEscapeSelectors].join(','),
+    message:
+      'No ad-hoc role/permission membership checks outside the access layer — calling, indexing or wrapping the collection is the same decision: ask useCan/PermissionService or add a Policy class (issue #114).',
+  },
+  {
+    // A permission named as a template literal is the same raw string with different quotes —
+    // `useCan(`crm.contact.read`)` must not be the way past the catalog — and an interpolated
+    // one is worse still, so both spellings are matched wherever a plain string is.
+    selector: `CallExpression[callee.name='useCan'] > ${RAW_PERMISSION}`,
+    message: RAW_PERMISSION_MESSAGE,
+  },
+  {
+    // `canAll`/`canAny` take an array, so the literal sits one level deeper than for `can`:
+    // matching only the direct argument would leave their most natural call form ungated.
+    // `.property.value` is the computed spelling — `gate['can'](…)` is the same call and must
+    // not be the way past the catalog, exactly as for the membership methods above.
+    selector: [
+      `CallExpression[callee.property.name=${PERMISSION_METHODS}] > ${RAW_PERMISSION}`,
+      `CallExpression[callee.property.name=${PERMISSION_METHODS}] > ArrayExpression > ${RAW_PERMISSION}`,
+      `CallExpression[callee.property.value=${PERMISSION_METHODS}] > ${RAW_PERMISSION}`,
+      `CallExpression[callee.property.value=${PERMISSION_METHODS}] > ArrayExpression > ${RAW_PERMISSION}`,
+      `CallExpression[callee.name=${PERMISSION_METHODS}] > ${RAW_PERMISSION}`,
+      `CallExpression[callee.name=${PERMISSION_METHODS}] > ArrayExpression > ${RAW_PERMISSION}`,
+    ].join(','),
+    message: RAW_PERMISSION_MESSAGE,
+  },
+  {
+    // Both the bare-attribute form (`permission="…"`) and the expression-container form
+    // (`permission={'…'}` / ``permission={`…`}``) name a permission literally at the call site.
+    selector: [
+      "JSXAttribute[name.name='permission'] > Literal",
+      `JSXAttribute[name.name='permission'] > JSXExpressionContainer > ${RAW_PERMISSION}`,
+    ].join(','),
+    message:
+      'No raw permission strings on a permission prop — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
+  },
+  {
+    // `{ permission: … }` and `{ 'permission': … }` are the same route-meta key. The `.value`
+    // field is what makes the quoted form work: without it the quoted KEY is a child Literal
+    // of the same Property and one entry would be reported twice.
+    selector: [
+      `Property[key.name='permission'] > ${RAW_PERMISSION}.value`,
+      `Property[key.value='permission'] > ${RAW_PERMISSION}.value`,
+      `Property[key.name='permission'] > ArrayExpression > ${RAW_PERMISSION}`,
+      `Property[key.value='permission'] > ArrayExpression > ${RAW_PERMISSION}`,
+    ].join(','),
+    message:
+      'No raw permission strings in route meta — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
+  },
+];
+
 const nonReactSourceGlobs = ['src/**/*.ts'];
 const nonReactSourceIgnores = [
   '**/*.stories.*',
@@ -289,11 +401,11 @@ const nonReactSourceIgnores = [
 // identical to the `from.pathNot` list of the companion dependency-cruiser rule
 // `components-no-direct-injectable-import` so the two gates never disagree about which file
 // is exempt: the auth render path (its Lighthouse budget forbids eager DI — issue #109/#115),
-// the two route-shell module singletons that `new` their own locally declared class
-// (`route-composer` / `route-mapper`, issue #105 — NOT the whole `src/routes/` tree), the app
-// entrypoint, and the root error boundary file alone — a class component cannot call
-// `useService`, while its functional descendants can and stay gated. Test, story, and
-// type-only files are excluded like every other source gate here.
+// the route-shell module singletons that `new` their own locally declared class
+// (`route-composer` / `route-mapper` / `permission-branch-builder`, issues #105/#114 — NOT the
+// whole `src/routes/` tree), the app entrypoint, and the root error boundary file alone — a
+// class component cannot call `useService`, while its functional descendants can and stay
+// gated. Test, story, and type-only files are excluded like every other source gate here.
 const componentSourceGlobs = ['src/**/*.tsx'];
 const componentDiGateIgnores = [
   '**/*.stories.*',
@@ -304,6 +416,7 @@ const componentDiGateIgnores = [
   'src/modules/user/features/auth/**/*.tsx',
   'src/routes/route-composer.tsx',
   'src/routes/route-mapper.tsx',
+  'src/routes/permission-branch-builder.tsx',
   'src/index.tsx',
   'src/components/error-boundary/app-error-boundary.tsx',
 ];
@@ -577,6 +690,7 @@ export default [
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
         ...noRawIntlSelectors,
+        ...noAdHocAuthorizationSelectors,
       ],
     },
   },
@@ -620,9 +734,10 @@ export default [
   // Source (issue #128): components must not `new` a behavioral collaborator — resolve it
   // through the `useService` DI bridge instead. Scoped to `src/**/*.tsx` (hooks are out of
   // static scope) and ignoring the container-free auth render path and route shell. The
-  // #90/#88/#155 selectors are re-included because flat config replaces (does not merge)
+  // #90/#88/#155/#114 selectors are re-included because flat config replaces (does not merge)
   // `no-restricted-syntax` for files matched by more than one block — dropping them here would
-  // silently un-gate data-testid, type declarations, and raw Intl for every component.
+  // silently un-gate data-testid, type declarations, raw Intl, and ad-hoc authorization
+  // for every component.
   {
     files: componentSourceGlobs,
     ignores: componentDiGateIgnores,
@@ -633,6 +748,7 @@ export default [
         ...typeDeclarationSelectors,
         ...noRawIntlSelectors,
         ...noNewBehavioralClassInComponentSelectors,
+        ...noAdHocAuthorizationSelectors,
       ],
     },
   },
@@ -705,6 +821,7 @@ export default [
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noAdHocAuthorizationSelectors,
         ...noRawIntlSelectors,
       ],
     },
@@ -727,6 +844,7 @@ export default [
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noAdHocAuthorizationSelectors,
         ...noRawIntlSelectors,
         ...noUninjectedCollaboratorSelectors,
       ],
@@ -745,8 +863,62 @@ export default [
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noAdHocAuthorizationSelectors,
         ...noRawIntlSelectors,
         noUninjectedCollaboratorSelectors[0],
+      ],
+    },
+  },
+
+  // Source (issue #114): the access layer IS the sanctioned place that reads a principal's
+  // roles/permissions and names permissions literally, so the ad-hoc-authorization ban is
+  // lifted here. Every other selector is re-included (flat config replaces, does not merge).
+  // Ordered after the #130 blocks so it wins for access-layer files; access-layer type-only
+  // files stay governed by the type-file override above (which these globs exclude).
+  //
+  // The domain half (`src/lib/access/**`) is outside the #130 logic scope on purpose: it is
+  // dependency-free, container-free code whose singletons compose each other by value import.
+  {
+    files: ['src/lib/access/**/*.ts'],
+    ignores: ['**/*.test.*', '**/*.spec.*', '**/*.d.ts', 'src/**/types.ts', 'src/**/types/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...noObjectLiteralMethodSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
+        ...noRawIntlSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #114): the adapter half of the access layer lives inside the issue #130 logic
+  // scope (`src/services/**`), so the DI collaborator selectors are re-included here — lifting
+  // the ad-hoc-authorization ban must not silently lift the collaborator ban with it. The #130
+  // carve-outs (composition root, token module, index barrel) are folded into `ignores` from the
+  // shared policy so the two blocks cannot drift apart.
+  {
+    files: ['src/services/access/**/*.ts'],
+    ignores: [
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/*.d.ts',
+      'src/**/types.ts',
+      'src/**/types/**/*.ts',
+      ...diCollaboratorPolicy.exemptGlobs(),
+    ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...noStaticOrFreeFunctionSelectors,
+        ...noObjectLiteralMethodSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
+        ...noRawIntlSelectors,
+        ...noUninjectedCollaboratorSelectors,
       ],
     },
   },
@@ -808,6 +980,7 @@ export default [
         ...noStaticOrFreeFunctionSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noAdHocAuthorizationSelectors,
         ...noUninjectedCollaboratorSelectors,
       ],
     },
@@ -833,6 +1006,7 @@ export default [
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
+        ...noAdHocAuthorizationSelectors,
         ...noRawIntlSelectors,
       ],
     },

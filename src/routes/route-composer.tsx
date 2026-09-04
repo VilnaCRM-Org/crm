@@ -5,6 +5,7 @@ import AppLayout from '@/components/layouts/app-layout';
 import RootLayout from '@/components/layouts/root-layout';
 import ProtectedRoute from '@auth/components/protected-route';
 
+import permissionBranchBuilder from './permission-branch-builder';
 import routeMapper from './route-mapper';
 import ROUTE_PATHS from './route-paths';
 import routeValidator from './route-validator';
@@ -35,7 +36,7 @@ class RouteComposer {
     if (routes.length === 0) {
       return [];
     }
-    const pages = routes.map((route) => routeMapper.map(route));
+    const pages = permissionBranchBuilder.build(routes);
     return [
       { element: <ProtectedRoute />, children: [{ element: <AppLayout />, children: pages }] },
     ];

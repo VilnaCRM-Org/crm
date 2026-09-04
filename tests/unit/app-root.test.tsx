@@ -2,6 +2,9 @@ import './utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 
+import accessState from '@/lib/access/access-state';
+import { buildPrincipal } from '@tests/builders';
+
 type MockI18n = {
   language: string;
   dir?: (language: string) => 'ltr' | 'rtl';
@@ -66,9 +69,20 @@ jest.mock('@auth/routes/sign-in', () => ({
 
 const App = jest.requireActual<typeof import('@/app')>('@/app').default;
 
+let view: ReturnType<typeof render> | null = null;
+
 describe('App root route', () => {
+  // ProtectedRoute (which hydrates the access session) is mocked here, so the
+  // permission-gated home route (#114) needs its principal seeded directly.
+  beforeEach(() => accessState.setSession(buildPrincipal(), {}));
+  afterEach(() => {
+    view?.unmount();
+    view = null;
+    accessState.clear();
+  });
+
   it('renders the button example page through the protected outlet', async () => {
-    render(<App />);
+    view = render(<App />);
 
     expect(await screen.findByText('button example page')).toBeInTheDocument();
   });

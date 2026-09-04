@@ -20,7 +20,18 @@ class RouteValidator {
     if (nested && route.guard !== undefined) {
       throw new Error('Nested routes must not declare a guard (guards are top-level only)');
     }
+    if (nested && route.meta?.permission !== undefined) {
+      throw new Error('Nested routes must not declare a permission (gates are top-level only)');
+    }
+    this.assertGatable(route, nested);
     route.children?.forEach((child) => this.assertRoute(child, true));
+  }
+
+  // The composer only gates the protected branch, so a permission on any other route
+  // would be silently dropped — the same silent-ignore hazard the nested check catches.
+  private assertGatable(route: AppRouteObject, nested: boolean): void {
+    if (nested || route.meta?.permission === undefined || route.guard === 'protected') return;
+    throw new Error('Only protected routes may declare a permission');
   }
 
   private assertLocatable(route: AppRouteObject): void {

@@ -5,6 +5,7 @@ import path from 'path';
 
 import AppConfigSchema from '@/config/runtime/app-config-schema';
 import featureFlagService from '@/config/runtime/feature-flag-service';
+import { FEATURE_FLAG_DEFAULTS as ACCESS_FLAG_DEFAULTS } from '@/lib/access/feature-flag-catalog';
 
 import { FLAG_ENV_PREFIX, renderAppConfig, toCamelCase } from '../../../scripts/render-app-config';
 
@@ -18,6 +19,7 @@ const SCHEMA = 'src/config/runtime/app-config-schema.ts';
 const UNION = 'src/config/runtime/types/feature-flag.ts';
 const RENDERER = 'scripts/render-app-config.js';
 const DOCS = 'docs/feature-flags.md';
+const ACCESS_CATALOG = 'src/lib/access/feature-flag-catalog.ts';
 
 // Both the id AND the JSON type are part of the contract: a block that loses `application/json`
 // would become an executable script, so matching the id alone would let that regression pass.
@@ -114,6 +116,19 @@ describe('runtime configuration contract', () => {
 
   it('keeps the FeatureFlag union in step with FEATURE_FLAG_DEFAULTS', () => {
     expect({ [UNION]: unionFlagNames() }).toEqual({ [UNION]: registeredFlagNames() });
+  });
+
+  // CLAUDE.md states the deployment-level (#145) and per-principal access (#114) catalogues
+  // "never share a flag name": one name in both makes useFeatureFlag and useAccessFlag disagree
+  // about the same string, with no compile error anywhere to say so.
+  it('shares no flag name with the per-principal access catalogue (issue #114)', () => {
+    const accessFlags = Object.keys(ACCESS_FLAG_DEFAULTS).sort();
+    const runtimeFlags = registeredFlagNames();
+    const shared = accessFlags.filter((flag) => runtimeFlags.includes(flag));
+
+    expect(accessFlags.length).toBeGreaterThan(0);
+    expect(runtimeFlags.length).toBeGreaterThan(0);
+    expect({ [ACCESS_CATALOG]: shared }).toEqual({ [ACCESS_CATALOG]: [] });
   });
 
   it('maps every APP_CONFIG_FLAG_* variable declared in .env onto a registered flag', () => {

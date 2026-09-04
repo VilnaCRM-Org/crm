@@ -283,6 +283,10 @@ name validators) and accepts an `overrides` object to pin specific fields:
 - `buildRegistrationResponse(overrides?)` → `{ fullName, email }`.
 - `buildCreateUserInput(overrides?)` → `{ email, initials, clientMutationId }`.
 - `buildGraphqlUser(overrides?)` → `{ id, confirmed, email, initials }`.
+- `buildPrincipal(overrides?)` → an access `Principal` whose permissions are expanded
+  from its roles; `buildTenantRef(overrides?)` → `{ id, name }`.
+- `buildClaims(overrides?)` → session claims; `buildAccessToken(claims?)` → a real
+  three-segment base64url JWT carrying them (issue #114).
 
 ```ts
 import { buildUser, buildEmail } from '@tests/builders';
@@ -822,6 +826,40 @@ uk/en outputs as fixed contracts (hardcoded literals per the Faker convention, e
 `1234.5` → `1 234,50 ₴` (uk, U+00A0 separators) vs `₴1,234.50` (en)). Fix violations by
 routing through the formatter — never with `eslint-disable`.
 
+### Access Control Pattern (issue #114)
+
+Authorization, tenancy, access flags, and audit are a **cross-cutting layer**, never a
+feature module: `src/lib/access/**` holds the dependency-free domain (permission/role
+catalog, principal state, policies, audit core) and `src/services/access/**` the
+`@injectable()` adapters plus the `ACCESS_TOKENS` composition root. Agents gating UI must
+go through the seam, not re-derive a decision:
+
+```typescript
+import RequirePermission from '@/components/require-permission';
+import useCan from '@/hooks/use-can';
+import { PERMISSIONS } from '@/lib/access/permission-catalog';
+
+const canEdit = useCan(PERMISSIONS.contactWrite); // never useCan('contact:write')
+
+<RequirePermission permission={PERMISSIONS.contactManageAll}>{controls}</RequirePermission>;
+```
+
+- **Gate a route** by adding `meta: { permission: PERMISSIONS.x }` to the module's own
+  route contract — top-level routes only. The composer nests it under `PermissionRoute`.
+- **Object-level rules** are `Policy<TSubject>` classes under `src/lib/access/policies/`,
+  evaluated through the injected `PolicyEvaluator` — never an inline conditional.
+- **Never** read `principal.roles` / `principal.permissions` yourself, and never write a
+  permission or role as a string literal at a call site. An ESLint
+  `no-restricted-syntax` gate fails the build outside the access layer, and
+  dependency-cruiser (`no-ui-to-access-services`, `no-access-layer-to-modules`) keeps the
+  layer one-directional. Fix violations by using the seam, never with a suppression.
+- **Read an access flag** with `useAccessFlag` (`@/hooks/use-access-flag`), which resolves a
+  per-principal entitlement from the session claims. It is a different catalogue from the
+  deployment-level `useFeatureFlag` documented above — those come from runtime configuration
+  and live in [`docs/feature-flags.md`](docs/feature-flags.md).
+- Add a permission/role/policy/access flag by following
+  [`docs/access-control.md`](docs/access-control.md), which is the authoritative reference.
+
 ### Collaborators arrive through DI, never through a value import (issue #130)
 
 Inside a class in a logic directory (`src/services/**`, `src/utils/**`,
@@ -1067,7 +1105,7 @@ scenario file that exports nothing fails, and zero executed scenarios fails inst
 vacuously. Waive a third-party false positive only through a reviewed `trace` + `reason` entry in
 `tests/memory-leak/leak-allowlist.json`.
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across an 8-way
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is sharded across a 12-way
 matrix (`make test-mutation-shard`) and a final job merges the per-shard reports and re-enforces the
 same `break` threshold (`make merge-mutation-reports`) — same gate, much faster. Lighthouse runs
 as a desktop/mobile matrix, and every workflow cancels superseded runs via `concurrency`. See

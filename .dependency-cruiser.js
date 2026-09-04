@@ -372,6 +372,97 @@ module.exports = {
       },
     },
     {
+      name: 'no-ui-to-access-services',
+      comment:
+        'UI layers must not reach the injectable access services (authorization, tenancy, ' +
+        'feature flags, audit) directly. They consume the access layer through its React ' +
+        'seam — the `useCan` / `usePrincipal` / `useTenant` / `useAccessFlag` hooks and the ' +
+        '`RequirePermission` component — so a component never resolves or holds a policy ' +
+        'service (issue #114). Feature UI is additionally covered by no-feature-ui-to-services.',
+      severity: 'error',
+      from: {
+        path: [
+          '^src/components/',
+          '^src/routes/',
+          '^src/providers/',
+          '^src/features/',
+          '^src/hooks/',
+        ],
+      },
+      to: {
+        path: '^src/services/access/',
+      },
+    },
+    {
+      name: 'no-access-domain-to-container',
+      comment:
+        'The access domain is the paint-safe half of the layer: it is reachable from the ' +
+        'app shell on first render, so it must stay free of tsyringe and of the injectable ' +
+        'services. Importing either here would pull the DI graph into the eager entrypoint ' +
+        'and break the budget the two-layer split exists to protect (issue #114).',
+      severity: 'error',
+      from: {
+        path: '^src/lib/access/',
+      },
+      to: {
+        path: '^src/services/',
+        dependencyTypes: ['npm', 'npm-dev', 'local'],
+      },
+    },
+    {
+      name: 'no-access-domain-to-tsyringe',
+      comment:
+        'Same invariant, stated against the container itself: nothing in the paint-safe ' +
+        'access domain may import tsyringe or reflect-metadata (issue #114).',
+      severity: 'error',
+      from: {
+        path: ['^src/lib/access/', '^src/hooks/use-access', '^src/hooks/use-can[.]ts$'],
+      },
+      to: {
+        path: '^node_modules/(tsyringe|reflect-metadata)/',
+      },
+    },
+    {
+      name: 'no-ui-to-access-state',
+      comment:
+        'The access state store is written by the access layer, not by the UI: ' +
+        '`setSession` / `setActiveTenant` bypass the permission and membership checks in ' +
+        '`AccessCore.switchTenant` and emit no audit event. Shared components and the ' +
+        'routes shell read it through the hooks seam (`use-access.ts` / ' +
+        '`use-access-snapshot.ts`), which are the only sanctioned importers (issue #114).',
+      severity: 'error',
+      from: {
+        path: [
+          '^src/components/',
+          '^src/routes/',
+          '^src/providers/',
+          '^src/features/',
+          '^src/hooks/',
+        ],
+        // `use-access` / `use-access-snapshot` ARE the read seam; every other hook goes
+        // through them rather than reaching the writable primitive itself. Named exactly,
+        // not by prefix: `use-access-<anything>.ts` must not inherit the exemption.
+        pathNot: ['^src/hooks/use-access[.]ts$', '^src/hooks/use-access-snapshot[.]ts$'],
+      },
+      to: {
+        path: '^src/lib/access/access-state[.]ts$',
+      },
+    },
+    {
+      name: 'no-access-layer-to-modules',
+      comment:
+        'The access layer (authorization domain in src/lib/access, injectable services in ' +
+        'src/services/access) is cross-cutting infrastructure: it must never depend on a ' +
+        'feature module. Modules consume access, never the reverse (issue #114).',
+      severity: 'error',
+      from: {
+        path: ['^src/lib/access/', '^src/services/access/'],
+      },
+      to: {
+        path: '^src/modules/',
+      },
+    },
+    {
       name: 'no-di-config-import-outside-composition-root',
       comment:
         'The DI container configuration and every per-module/per-infra registrar (di.ts) ' +
@@ -410,7 +501,8 @@ module.exports = {
         'swapped for a mock in a component test (issue #128; cf. #100). `import type` stays ' +
         'allowed: type annotations are erased and bind nothing. Carve-outs are the ' +
         'container-free-by-design surfaces: the auth render path (Lighthouse budget), the ' +
-        'route shell (issue #105), the app entrypoint, and the ROOT error boundary file alone ' +
+        'route-shell module singletons that `new` their own locally declared class ' +
+        '(issues #105/#114), the app entrypoint, and the ROOT error boundary file alone ' +
         '(a class component cannot call a hook, and error reporting must survive a DI ' +
         'failure) — its functional descendants can call useService and stay gated. This ' +
         'is the consumer side; the producer side (one injectable importing another) is not ' +
@@ -420,7 +512,7 @@ module.exports = {
         path: '^src/.+[.]tsx$',
         pathNot: [
           '^src/modules/user/features/auth/',
-          '^src/routes/route-(?:composer|mapper)[.]tsx$',
+          '^src/routes/(?:route-(?:composer|mapper)|permission-branch-builder)[.]tsx$',
           '^src/index[.]tsx$',
           '^src/components/error-boundary/app-error-boundary[.]tsx$',
           '[.](?:stories|test|spec)[.]tsx$',

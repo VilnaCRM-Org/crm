@@ -1,3 +1,4 @@
+import accessSession from '@/lib/access/access-session';
 import observabilityCore from '@/services/observability/observability-core';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthActions } from '@auth/types/auth-store';
@@ -26,6 +27,7 @@ class DeferredAuthActions implements AuthActions {
       AuthStateVar.set({ loginLoading: false, loginError: error })
     );
     if (actions) await actions.login(credentials, signal);
+    accessSession.sync(AuthStateVar.get());
   }
 
   public async registerUser(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
@@ -38,6 +40,7 @@ class DeferredAuthActions implements AuthActions {
 
   public logout(): void {
     observabilityCore.clearUser();
+    accessSession.end();
     AuthStateVar.reset();
   }
 

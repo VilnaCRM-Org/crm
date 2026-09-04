@@ -180,6 +180,38 @@ export const FIXTURES = {
       'src/providers/di/use-service.ts': leaf('use-service'),
     },
   },
+  'no-ui-to-access-services': {
+    files: {
+      'src/components/ui-button/index.ts': reexport('../../services/access/permission-service'),
+      'src/services/access/permission-service.ts': leaf('permission-service'),
+    },
+  },
+  'no-access-domain-to-container': {
+    files: {
+      'src/lib/access/probe.ts': reexport('../../services/error'),
+      'src/services/error/index.ts': leaf('error'),
+    },
+  },
+  'no-access-domain-to-tsyringe': {
+    files: {
+      'package.json': manifest({ dependencies: { tsyringe: '1.0.0' } }),
+      'node_modules/tsyringe/package.json': npmPackage('tsyringe'),
+      'node_modules/tsyringe/index.js': npmBody,
+      'src/lib/access/probe.ts': useNpm('tsyringe'),
+    },
+  },
+  'no-ui-to-access-state': {
+    files: {
+      'src/components/ui-button/index.ts': reexport('../../lib/access/access-state'),
+      'src/lib/access/access-state.ts': leaf('access-state'),
+    },
+  },
+  'no-access-layer-to-modules': {
+    files: {
+      'src/lib/access/probe.ts': reexport('../../modules/billing'),
+      'src/modules/billing/index.ts': leaf('billing'),
+    },
+  },
   'injectable-classes-no-value-imports': {
     files: {
       'src/services/error/error-handler.ts': reexport('../https-client/fetch-https-client'),

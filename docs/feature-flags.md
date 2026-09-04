@@ -7,6 +7,10 @@ change** — incremental rollout for new work, and an emergency kill switch for 
 A flag is not a permanent configuration option. Every flag is a temporary construct with a
 planned removal date; a flag that outlives its rollout becomes an untested code path.
 
+These are **deployment-level** flags: one value per deployed instance, the same for every
+visitor. Per-principal entitlements carried by the session token are a separate catalogue read
+with `useAccessFlag` — see [`docs/access-control.md`](access-control.md).
+
 ## How a flag is evaluated
 
 Flags live in the `flags` object of the runtime configuration block in the HTML shell. The

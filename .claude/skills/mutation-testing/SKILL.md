@@ -15,9 +15,9 @@ mutation-testing gate" and CLAUDE.md → "Mutation testing scope and baseline".
 
 ```bash
 make test-mutation  # full local run (heavy — prefer CI)
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=8  # one shard
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=12  # one shard
 # add MUTATION_INCREMENTAL=1 for PR/incremental mode
-make merge-mutation-reports MUTATION_SHARD_TOTAL=8  # merge shards + enforce gate
+make merge-mutation-reports MUTATION_SHARD_TOTAL=12  # merge shards + enforce gate
 ```
 
 ## Run unit AND integration in one pass

@@ -4,9 +4,12 @@ import type { RouteObject } from 'react-router-dom';
 import RouteError from '@/components/error-boundary/route-error';
 import AppLayout from '@/components/layouts/app-layout';
 import RootLayout from '@/components/layouts/root-layout';
+import { PERMISSIONS } from '@/lib/access/permission-catalog';
+import PermissionRoute from '@/routes/permission-route';
 import registry from '@/routes/registry';
 import routeComposer from '@/routes/route-composer';
 import ROUTE_PATHS from '@/routes/route-paths';
+import type { PermissionRouteProps } from '@/routes/types/permission-route';
 import type { RouteModule } from '@/routes/types/route-module';
 import ProtectedRoute from '@auth/components/protected-route';
 
@@ -42,7 +45,30 @@ describe('route composer', () => {
 
     expect(typeOf(branch)).toBe(ProtectedRoute);
     expect(typeOf(layout)).toBe(AppLayout);
-    expect(layout.children?.some((route) => route.index)).toBe(true);
+  });
+
+  it('gates a permission-carrying route behind PermissionRoute inside AppLayout (#114)', () => {
+    const tree = routeComposer.compose(registry);
+    const branch = rootOf(tree).children?.find(isLayout) as RouteObject;
+    const layout = branch.children?.[0] as RouteObject;
+    const gate = layout.children?.find((route) => typeOf(route) === PermissionRoute);
+
+    expect(gate).toBeDefined();
+    expect((gate?.element as ReactElement<PermissionRouteProps>).props.permission).toBe(
+      PERMISSIONS.appHome
+    );
+    expect(gate?.children?.some((route) => route.index)).toBe(true);
+  });
+
+  it('keeps an un-gated protected route directly under AppLayout (#114)', () => {
+    const modules: RouteModule[] = [
+      { id: 'plain', routes: [{ path: '/plain', guard: 'protected', load: page }] },
+    ];
+    const tree = routeComposer.compose(modules);
+    const branch = rootOf(tree).children?.find(isLayout) as RouteObject;
+    const layout = branch.children?.[0] as RouteObject;
+
+    expect(layout.children?.map((route) => route.path)).toEqual(['/plain']);
   });
 
   it('keeps public routes directly under RootLayout, never under AppLayout (invariant B)', () => {
