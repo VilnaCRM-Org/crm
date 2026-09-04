@@ -1,7 +1,5 @@
-export type FeatureFlag = 'forgotPassword' | 'oauthProviders' | 'rememberMe';
+export type FeatureFlag = 'forgotPassword';
 
 export interface FeatureFlagValues {
   readonly forgotPassword?: boolean;
-  readonly oauthProviders?: boolean;
-  readonly rememberMe?: boolean;
 }

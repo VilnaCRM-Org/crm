@@ -40,6 +40,12 @@ describe('AppLayout', () => {
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
+  it('keeps the main landmark programmatically focusable but outside the tab order', () => {
+    renderLayout(['/']);
+
+    expect(screen.getByRole('main')).toHaveAttribute('tabindex', '-1');
+  });
+
   it('does not steal focus on ordinary navigation', () => {
     renderLayout(['/']);
 

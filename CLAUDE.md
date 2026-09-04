@@ -322,21 +322,21 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-The only annotated case today is the React hook dependency array, at eleven sites, and it comes in
-two shapes. Ten are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
+The only annotated case today is the React hook dependency array, at twelve sites, and it comes in
+two shapes. Eleven are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
 compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
-render and the effect or memo fires exactly as it does with `[]`. The eleventh,
+render and the effect or memo fires exactly as it does with `[]`. The twelfth,
 `use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
 `ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
 `actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
 box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
 Hoisting either literal to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
-array literal, so there is nothing left to change. Adding a twelfth needs the same standard of
+array literal, so there is nothing left to change. Adding a thirteenth needs the same standard of
 proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 207 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 206 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -1487,9 +1487,7 @@ container-resolved classes inject it instead of value-importing it (issue #130).
 **Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`, consumed by `@/utils/url-builder`, falling
 back to `REACT_APP_MOCKOON_URL`), `graphqlUrl` (`APP_CONFIG_GRAPHQL_URL`, injected into
 `GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
-`flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`) — today `forgotPassword`, plus the two
-dead-end auth controls issue #150 hides by default, `oauthProviders` (the OAuth provider row) and
-`rememberMe` (the remember-me checkbox). Languages stay build-time — `src/i18n.js`
+`flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`). Languages stay build-time — `src/i18n.js`
 initializes i18next at module evaluation and `src/config/i18n-config.js` is `require`d by node
 tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config
 change.

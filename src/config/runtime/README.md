@@ -13,7 +13,7 @@ values remain as defaults; runtime values win.
 The configuration is an inline JSON block in the HTML shell, `public/index.html`:
 
 ```json
-{ "flags": { "forgotPassword": false, "oauthProviders": false, "rememberMe": false } }
+{ "flags": { "forgotPassword": false } }
 ```
 
 It is carried by a `script` element with `id="app-runtime-config"` and
@@ -123,8 +123,7 @@ const showForgotPassword = useFeatureFlag('forgotPassword');
 ```
 
 The flag name is a `FeatureFlag` union member, so a typo is a compile error. Flag lifecycle —
-introduce, roll out, remove — is documented in `docs/feature-flags.md`, which also lists every
-flag the shell currently declares (`forgotPassword`, `oauthProviders`, `rememberMe`).
+introduce, roll out, remove — is documented in `docs/feature-flags.md`.
 
 ## Adding a setting
 

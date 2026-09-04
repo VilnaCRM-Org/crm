@@ -9,9 +9,7 @@ import type { ReactElement, ReactNode } from 'react';
 import SignUp from '@/modules/user/features/auth/routes/sign-up';
 import SignUpFormSection from '@/modules/user/features/auth/routes/sign-up/sign-up-form-section';
 import type { RegistrationView } from '@auth/components/form-section/types';
-import { buildFeatureFlagConfig } from '@tests/builders';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 type FormState = {
   view: RegistrationView;
@@ -109,10 +107,6 @@ describe('SignUp page', () => {
     document.title = '';
   });
 
-  afterEach(() => {
-    clearConfigBlock();
-  });
-
   it('renders chrome, the h1, the swap link, and the page title (AC1-AC3)', async () => {
     renderWithProviders(<SignUp />);
 
@@ -128,15 +122,7 @@ describe('SignUp page', () => {
     expect(document.title).toBe('Registration - VilnaCRM');
   });
 
-  it('hides the OAuth row while the OAuth flag is off (issue #150)', () => {
-    renderWithProviders(<SignUpFormSection />);
-
-    expect(screen.queryByTestId('auth-provider-buttons-container')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('oauth-row')).not.toBeInTheDocument();
-  });
-
   it('marks the OAuth row inert once the registration view leaves the form (AC5)', () => {
-    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
     renderWithProviders(<SignUpFormSection />);
 
     const oauthRow = (): HTMLElement => screen.getByTestId('auth-provider-buttons-container');

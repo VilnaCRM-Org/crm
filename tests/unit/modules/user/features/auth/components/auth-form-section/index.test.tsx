@@ -6,9 +6,7 @@ import { screen } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 
 import AuthFormSection from '@/modules/user/features/auth/components/auth-form-section';
-import { buildFeatureFlagConfig } from '@tests/builders';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 jest.mock('@auth/components/form-section/components/auth-provider-buttons', () => ({
   __esModule: true,
@@ -32,27 +30,7 @@ function renderSection(oauthInert: boolean): void {
   );
 }
 
-afterEach(() => {
-  clearConfigBlock();
-});
-
-describe('AuthFormSection with the OAuth flag off (default)', () => {
-  it('renders the children and switcher but no OAuth row (issue #150)', () => {
-    clearConfigBlock();
-    renderSection(false);
-
-    expect(screen.getByText('form-child')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'switch' })).toBeInTheDocument();
-    expect(screen.queryByText('oauth-row')).not.toBeInTheDocument();
-    expect(screen.queryByRole('group', { name: 'OAuth providers' })).not.toBeInTheDocument();
-  });
-});
-
-describe('AuthFormSection with the OAuth flag on', () => {
-  beforeEach(() => {
-    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
-  });
-
+describe('AuthFormSection', () => {
   it('renders the children, the OAuth row, and the switcher slot (AC1)', () => {
     renderSection(false);
 

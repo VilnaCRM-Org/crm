@@ -32,7 +32,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-describe('AuthProviderButtons', () => {
+describe('AuthProviderButtons against the real i18n catalogue', () => {
   it('renders one icon button per provider, in design order, with localized names', () => {
     renderWithProviders(<AuthProviderButtons />);
 

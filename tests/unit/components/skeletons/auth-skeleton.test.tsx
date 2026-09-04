@@ -1,18 +1,12 @@
 import { render, screen } from '@testing-library/react';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
-import { buildFeatureFlagConfig } from '@tests/builders';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({
     t: (key: string): string => key,
   }),
 }));
-
-afterEach(() => {
-  clearConfigBlock();
-});
 
 function getGenericSkeletonIds(): string[] {
   return (screen.getAllByRole('generic') as HTMLElement[]).map((element) => element.id);
@@ -23,17 +17,15 @@ function getPresentationSkeletonIds(): string[] {
 }
 
 describe('AuthSkeleton Component', () => {
-  describe('Rendering structure (OAuth flag off, default)', () => {
-    it('renders no divider and no social placeholders so the skeleton matches the page', () => {
+  describe('Rendering structure', () => {
+    it('renders the skeleton structure including the presentation divider', () => {
       render(<AuthSkeleton />);
-      expect(screen.queryByRole('presentation')).not.toBeInTheDocument();
+      const divider = screen.getByRole('presentation');
+      expect(divider).toBeInTheDocument();
       expect(screen.getByRole('region')).toHaveAttribute('aria-label', 'auth.loadingForm');
-
-      const genericIds = getGenericSkeletonIds();
-      expect(genericIds).toEqual(
+      expect(getGenericSkeletonIds()).toEqual(
         expect.arrayContaining(['auth-skeleton-title', 'auth-skeleton-submit'])
       );
-      expect(genericIds.filter((id) => id.startsWith('auth-skeleton-social-'))).toHaveLength(0);
     });
 
     it('should render skeleton elements', () => {
@@ -54,19 +46,15 @@ describe('AuthSkeleton Component', () => {
     });
   });
 
-  describe('Rendering structure (OAuth flag on)', () => {
-    beforeEach(() => {
-      writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
-    });
-
-    it('renders the presentation divider and keeps it free of textual content', () => {
+  describe('Divider skeleton', () => {
+    it('keeps the divider free of textual content', () => {
       render(<AuthSkeleton />);
       const divider = screen.getByRole('presentation');
-      expect(divider).toBeInTheDocument();
       expect(divider).toHaveTextContent('');
-      expect(getPresentationSkeletonIds()).toContain('auth-skeleton-divider');
     });
+  });
 
+  describe('Static rendering', () => {
     it('renders the full skeleton tree when animation is disabled', () => {
       render(<AuthSkeleton disableAnimation />);
       const genericIds = getGenericSkeletonIds();
@@ -84,6 +72,7 @@ describe('AuthSkeleton Component', () => {
       render(<AuthSkeleton />);
       const section = screen.getByRole('region');
       expect(section).toHaveAttribute('aria-label', 'auth.loadingForm');
+      expect(getPresentationSkeletonIds()).toContain('auth-skeleton-divider');
     });
 
     it('should not have interactive elements during loading', () => {
@@ -110,10 +99,12 @@ describe('AuthSkeleton Component', () => {
   describe('Component behavior', () => {
     it('should render consistently on multiple renders', () => {
       const { rerender } = render(<AuthSkeleton />);
-      expect(screen.getByRole('region')).toBeInTheDocument();
+      const divider1 = screen.getByRole('presentation');
+      expect(divider1).toBeInTheDocument();
 
       rerender(<AuthSkeleton />);
-      expect(screen.getByRole('region')).toBeInTheDocument();
+      const divider2 = screen.getByRole('presentation');
+      expect(divider2).toBeInTheDocument();
     });
   });
 });

@@ -6,9 +6,7 @@ import { screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import SignIn from '@/modules/user/features/auth/routes/sign-in';
-import { buildFeatureFlagConfig } from '@tests/builders';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 jest.mock('@auth/components/form-section/auth-forms/use-login-submitter', () => ({
   __esModule: true,
@@ -54,10 +52,6 @@ describe('SignIn page', () => {
     document.title = '';
   });
 
-  afterEach(() => {
-    clearConfigBlock();
-  });
-
   it('renders chrome, the h1, the swap link, and the page title (AC1-AC3)', async () => {
     renderWithProviders(<SignIn />);
 
@@ -67,20 +61,10 @@ describe('SignIn page', () => {
     expect(screen.getByText('auth shell header')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
     expect(screen.getByText('auth shell footer')).toBeInTheDocument();
-    expect(screen.queryByText('oauth-row')).not.toBeInTheDocument();
+    expect(screen.getByText('oauth-row')).toBeInTheDocument();
 
     const link = screen.getByRole('link', { name: 'Don’t have an account yet?' });
     expect(link).toHaveAttribute('href', '/sign-up');
     expect(document.title).toBe('Authentication - VilnaCRM');
-  });
-
-  it('renders the OAuth row only when the OAuth flag is on (issue #150)', async () => {
-    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
-    renderWithProviders(<SignIn />);
-
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'Authentication' })
-    ).toBeInTheDocument();
-    expect(screen.getByText('oauth-row')).toBeInTheDocument();
   });
 });

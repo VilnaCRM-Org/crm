@@ -30,13 +30,11 @@ The module is therefore split in two:
 | `types/env.ts`            | none (type) | —              | the hand-authored `Env` interface    |
 | `preloaded-auth-token.ts` | none        | lazy, per call | the auth store's initial seed (only) |
 
-- **`raw-env`** (`@/config/env/raw-env`) — a dependency-free singleton and the default reader of
-  `process.env`: every environment-derived value belongs here unless it qualifies as the one named
-  exception below (`preloaded-auth-token`), which lives in this same folder so the ban's single
-  `src/config/env/**` exemption still covers every reader. Accessors are lazy
-  (read on each call) so the build-inlined literals stay static and tests can mutate `process.env`
-  per case. Import it **directly** (not via the barrel) on the paint path so the barrel's `zod`
-  edge is not pulled in.
+- **`raw-env`** (`@/config/env/raw-env`) — a dependency-free singleton and, with the seed seam
+  below, one of the two sanctioned places that touch `process.env`. Accessors are lazy (read on
+  each call) so the
+  build-inlined literals stay static and tests can mutate `process.env` per case. Import it
+  **directly** (not via the barrel) on the paint path so the barrel's `zod` edge is not pulled in.
 - **`env`** (`@/config/env`) — parses `raw-env`'s snapshot through the zod schema **once** at
   module load, freezes it, and **fails fast** with an aggregated (`z.prettifyError`) message
   naming every offending variable. It is consumed by `get-graphql-url` (which lives behind the
@@ -51,18 +49,6 @@ The hand-authored `Env` interface (not `z.infer`) mirrors the existing
 schema (dependency-cruiser `type-files-no-runtime-imports`). The schema and interface are kept in
 sync by the typed `private readonly values: Env` assignment in `env.ts` (a compile-time check that
 the parse result matches `Env`).
-
-## Feature flags live in `@/config/runtime`, not here
-
-Boolean feature flags are **runtime** configuration (issue #145): they are rendered into the HTML
-shell at container start, so an administrator flips one and restarts the container without a
-rebuild. They are declared in `src/config/runtime/` and read through the container-free
-`useFeatureFlag` hook — see [`src/config/runtime/README.md`](../runtime/README.md) and
-[`docs/feature-flags.md`](../../../docs/feature-flags.md).
-
-Nothing in this folder parses a flag. `REACT_APP_FEATURE_*` no longer exists: the auth controls
-that issue #150 hides (`oauthProviders`, `rememberMe`) are runtime flags alongside
-`forgotPassword`.
 
 ## Validation policy
 
@@ -143,10 +129,7 @@ against the wrong artifact.
    non-paint readers.
 4. Never read `process.env` outside this module.
 
-One kind of variable is a **named exception** to steps 2-3. It still lives in this module, so
-step 4 and the single `src/config/env/**` lint exemption hold unchanged:
-
-- **A variable whose value must not reach a production bundle** — it does not belong in
-  `raw-env`/`env` at all, because both are in every chunk's graph and the build-inlined literal
-  ships regardless of who reads it. Follow `preloaded-auth-token.ts` instead — read it inside a
-  single guarded method the bundler can fold away.
+A variable whose **value must not reach a production bundle** is the exception: it does not belong
+in `raw-env`/`env` at all, because both are in every chunk's graph and the build-inlined literal
+ships regardless of who reads it. Follow `preloaded-auth-token.ts` instead — read it inside a single
+guarded method the bundler can fold away.

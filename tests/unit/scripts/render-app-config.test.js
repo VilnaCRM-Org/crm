@@ -290,14 +290,6 @@ describe('scripts/render-app-config.js', () => {
   });
 
   describe('renderAppConfig — the committed public/index.html shell', () => {
-    // Every flag the shell declares must ship default-off (docs/feature-flags.md, stage 1), and
-    // the renderer only accepts an APP_CONFIG_FLAG_* variable for a flag the block declares.
-    const COMMITTED_FLAG_DEFAULTS = {
-      forgotPassword: false,
-      oauthProviders: false,
-      rememberMe: false,
-    };
-
     const committedShell = () =>
       fs.readFileSync(path.join(projectRoot, 'public', 'index.html'), 'utf8');
 
@@ -311,17 +303,14 @@ describe('scripts/render-app-config.js', () => {
       });
 
       expect(readBlockConfig(rendered)).toEqual({
-        flags: { ...COMMITTED_FLAG_DEFAULTS, forgotPassword: true },
+        flags: { forgotPassword: true },
         graphqlUrl,
       });
       expect(stripBlockBody(rendered)).toBe(stripBlockBody(html));
     });
 
-    it('declares every flag as a committed, default-off default', () => {
-      const { flags } = readBlockConfig(committedShell());
-
-      expect(flags).toEqual(COMMITTED_FLAG_DEFAULTS);
-      expect(Object.values(flags)).not.toContain(true);
+    it('declares forgotPassword as the committed default so the flag variable is accepted', () => {
+      expect(readBlockConfig(committedShell())).toEqual({ flags: { forgotPassword: false } });
     });
   });
 });

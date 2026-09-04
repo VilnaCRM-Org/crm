@@ -80,15 +80,9 @@ describe('runtime configuration Integration', () => {
     expect(appConfig.get()).toEqual(buildAppConfigValues());
     expect(appConfig.apiBaseUrl()).toBeUndefined();
     expect(appConfig.graphqlUrl()).toBeUndefined();
-    expect(flags.names()).toEqual(['forgotPassword', 'oauthProviders', 'rememberMe']);
+    expect(flags.names()).toEqual(['forgotPassword']);
     expect(flags.isEnabled('forgotPassword')).toBe(false);
-    expect(flags.isEnabled('oauthProviders')).toBe(false);
-    expect(flags.isEnabled('rememberMe')).toBe(false);
-    expect(flags.snapshot()).toEqual({
-      forgotPassword: false,
-      oauthProviders: false,
-      rememberMe: false,
-    });
+    expect(flags.snapshot()).toEqual({ forgotPassword: false });
     expect(urlBuilder.build('/users')).toBe(`${ORIGINAL_ENV.REACT_APP_MOCKOON_URL}/users`);
   });
 
@@ -124,11 +118,7 @@ describe('runtime configuration Integration', () => {
     process.env.REACT_APP_GRAPHQL_URL = buildHttpUrl('/build-time-graphql');
     renderRuntimeConfig(
       JSON.stringify(
-        buildAppConfigValues({
-          apiBaseUrl,
-          graphqlUrl,
-          flags: { forgotPassword: true, oauthProviders: true },
-        })
+        buildAppConfigValues({ apiBaseUrl, graphqlUrl, flags: { forgotPassword: true } })
       )
     );
 
@@ -136,17 +126,11 @@ describe('runtime configuration Integration', () => {
     const { default: urlBuilder } = await import('@/utils/url-builder');
     const appConfig = container.resolve<AppConfig>(tokens.appConfig);
 
-    expect(appConfig.get()).toEqual({
-      apiBaseUrl,
-      graphqlUrl,
-      flags: { forgotPassword: true, oauthProviders: true },
-    });
+    expect(appConfig.get()).toEqual({ apiBaseUrl, graphqlUrl, flags: { forgotPassword: true } });
     expect(appConfig.apiBaseUrl()).toBe(apiBaseUrl);
     expect(container.resolve<GraphQLUrl>(tokens.graphQlUrl).resolve()).toBe(graphqlUrl);
     expect(container.resolve<FeatureFlagService>(tokens.featureFlagService).snapshot()).toEqual({
       forgotPassword: true,
-      oauthProviders: true,
-      rememberMe: false,
     });
     expect(urlBuilder.build('/users')).toBe(`${apiBaseUrl}/users`);
   });

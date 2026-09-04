@@ -5,9 +5,7 @@ import { I18nextProvider } from 'react-i18next';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 import localization from '@/i18n/localization.json';
-import { buildFeatureFlagConfig } from '@tests/builders';
 import testI18n from '@tests/i18n/test-i18n';
-import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 const AUTH_SKELETON_REGION_NAME = localization.en.translation.auth.loadingForm;
 
@@ -23,10 +21,10 @@ function getGenericSkeletonElements(): HTMLElement[] {
 }
 
 function getPresentationSkeletonElements(): HTMLElement[] {
-  return screen.queryAllByRole('presentation') as HTMLElement[];
+  return screen.getAllByRole('presentation') as HTMLElement[];
 }
 
-function assertAuthSkeletonElements(oauthEnabled = false): void {
+function assertAuthSkeletonElements(): void {
   const genericIds = getGenericSkeletonElements()
     .map((element) => element.id)
     .filter(Boolean);
@@ -45,14 +43,8 @@ function assertAuthSkeletonElements(oauthEnabled = false): void {
   );
   expect(genericIds.filter((id) => id.startsWith('auth-skeleton-field-label-'))).toHaveLength(3);
   expect(genericIds.filter((id) => id.startsWith('auth-skeleton-input-'))).toHaveLength(3);
-  expect(genericIds.filter((id) => id.startsWith('auth-skeleton-social-'))).toHaveLength(
-    oauthEnabled ? 4 : 0
-  );
-  if (oauthEnabled) {
-    expect(presentationIds).toContain('auth-skeleton-divider');
-  } else {
-    expect(presentationIds).not.toContain('auth-skeleton-divider');
-  }
+  expect(genericIds.filter((id) => id.startsWith('auth-skeleton-social-'))).toHaveLength(4);
+  expect(presentationIds).toContain('auth-skeleton-divider');
 }
 
 describe('AuthSkeleton Integration Tests', () => {
@@ -65,7 +57,6 @@ describe('AuthSkeleton Integration Tests', () => {
   ];
 
   afterEach(() => {
-    clearConfigBlock();
     Object.defineProperty(window, 'innerWidth', {
       writable: true,
       configurable: true,
@@ -74,7 +65,7 @@ describe('AuthSkeleton Integration Tests', () => {
     window.dispatchEvent(new Event('resize'));
   });
 
-  it('renders all skeleton elements without the flag-gated OAuth placeholders', () => {
+  it('renders all skeleton elements', () => {
     expect(React).toBeDefined();
     renderAuthSkeleton();
     assertAuthSkeletonElements();
@@ -85,14 +76,6 @@ describe('AuthSkeleton Integration Tests', () => {
 
     assertAuthSkeletonElements();
     expect(screen.getByRole('region', { name: AUTH_SKELETON_REGION_NAME })).toBeInTheDocument();
-  });
-
-  it('renders the divider and social placeholders when the OAuth flag is on', () => {
-    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
-    renderAuthSkeleton();
-
-    expect(screen.getByRole('region', { name: AUTH_SKELETON_REGION_NAME })).toBeInTheDocument();
-    assertAuthSkeletonElements(true);
   });
 
   viewportCases.forEach(({ label, width }) => {
