@@ -1,17 +1,35 @@
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 import type { DocsViolation, ModuleDocsPolicy } from './docs-policy';
 
-const listModules = (root: string, moduleRoot: string): string[] => {
-  const absolute = join(root, moduleRoot);
-  if (!existsSync(absolute)) {
-    return [];
-  }
+const isErrnoCode = (cause: unknown, ...codes: string[]): boolean =>
+  codes.includes(String((cause as NodeJS.ErrnoException | null)?.code));
 
-  return readdirSync(absolute)
-    .filter((name) => statSync(join(absolute, name)).isDirectory())
-    .sort((a, b) => a.localeCompare(b));
+// One syscall per question, never check-then-use: `withFileTypes` classifies each entry from the
+// same directory read, so nothing can change between the test and the use of its result.
+const listModules = (root: string, moduleRoot: string): string[] => {
+  try {
+    return readdirSync(join(root, moduleRoot), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort((a, b) => a.localeCompare(b));
+  } catch (cause) {
+    if (isErrnoCode(cause, 'ENOENT', 'ENOTDIR')) return [];
+    throw cause;
+  }
+};
+
+// ENOENT: no doc file at all. EISDIR: a *directory* named README.md documents nothing. Both are
+// the same verdict, and reading is the only operation — an existsSync/statSync pair ahead of it
+// would be a TOCTOU window for no gain.
+const readDoc = (absolute: string): string | null => {
+  try {
+    return readFileSync(absolute, 'utf8');
+  } catch (cause) {
+    if (isErrnoCode(cause, 'ENOENT', 'EISDIR')) return null;
+    throw cause;
+  }
 };
 
 /**
@@ -30,10 +48,9 @@ export const checkDocCoverage = (root: string, policy: ModuleDocsPolicy): DocsVi
   return policy.roots.flatMap((moduleRoot) =>
     listModules(root, moduleRoot).flatMap<DocsViolation>((name) => {
       const docPath = `${moduleRoot}/${name}/${policy.requiredFile}`;
-      const absolute = join(root, docPath);
+      const contents = readDoc(join(root, docPath));
 
-      // isFile, not existsSync: a *directory* named README.md documents nothing.
-      if (!existsSync(absolute) || !statSync(absolute).isFile()) {
+      if (contents === null) {
         return [
           {
             rule: 'missing-module-doc',
@@ -43,7 +60,7 @@ export const checkDocCoverage = (root: string, policy: ModuleDocsPolicy): DocsVi
         ];
       }
 
-      if (readFileSync(absolute, 'utf8').trim() === '') {
+      if (contents.trim() === '') {
         return [
           {
             rule: 'empty-module-doc',
