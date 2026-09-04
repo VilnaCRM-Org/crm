@@ -34,6 +34,8 @@ const errorFor = async (displayMessage: string): Promise<string> => {
   return error;
 };
 
+const UNKNOWN = 'login:T(auth.error.unknown)';
+
 describe('useLoginSubmitter i18n key detection', () => {
   beforeEach(() => {
     AuthStateVar.reset();
@@ -46,16 +48,18 @@ describe('useLoginSubmitter i18n key detection', () => {
   // Both probes share one test on purpose: they discriminate different halves of the segment
   // pattern, and the module is only evaluated once per test file.
   it('requires every dotted segment to match the pattern end to end', async () => {
-    expect(await errorFor('a-b.cd')).toBe('login:a-b.cd');
+    expect(await errorFor('a-b.cd')).toBe(UNKNOWN);
     expect(await errorFor('ab.cd')).toBe('login:T(ab.cd)');
   });
 
+  // Backend prose is never surfaced verbatim (issue #151): anything that is not a translation
+  // key resolves to the localized unknown-error reason instead.
   it('treats a single unpunctuated word as prose rather than a key', async () => {
-    expect(await errorFor('unauthorized')).toBe('login:unauthorized');
+    expect(await errorFor('unauthorized')).toBe(UNKNOWN);
   });
 
   it('treats a message containing spaces as prose', async () => {
-    expect(await errorFor('Bad credentials')).toBe('login:Bad credentials');
+    expect(await errorFor('Bad credentials')).toBe(UNKNOWN);
   });
 
   it('translates a deep dotted key', async () => {
@@ -65,10 +69,10 @@ describe('useLoginSubmitter i18n key detection', () => {
   });
 
   it('rejects a key whose last segment carries punctuation', async () => {
-    expect(await errorFor('sign_in.oops!')).toBe('login:sign_in.oops!');
+    expect(await errorFor('sign_in.oops!')).toBe(UNKNOWN);
   });
 
   it('rejects a value that is only a separator run', async () => {
-    expect(await errorFor('...')).toBe('login:...');
+    expect(await errorFor('...')).toBe(UNKNOWN);
   });
 });

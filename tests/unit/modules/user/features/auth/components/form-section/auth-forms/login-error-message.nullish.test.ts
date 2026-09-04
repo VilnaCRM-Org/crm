@@ -1,4 +1,4 @@
-const UNKNOWN_KEY = 'auth.errors.unknown';
+import { UNKNOWN_KEY } from '@auth/components/form-section/auth-forms/login-error-message';
 
 const normalizeLoginError = async (error: unknown): Promise<string> => {
   const { default: Normalizer } =
