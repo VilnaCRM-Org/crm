@@ -8,12 +8,13 @@ class LoginRedirectTarget {
     return `${from.pathname}${this.part(from.search)}${this.part(from.hash)}`;
   }
 
-  // A backslash is rejected before the `//` test: WHATWG URL parsing normalises `\` to `/` for
-  // http(s), so `/\evil.example` resolves as the cross-origin `//evil.example`.
+  // A backslash disqualifies the path alongside the `//` form: WHATWG URL parsing normalises
+  // `\` to `/` for http(s), so `/\evil.example` resolves as the cross-origin `//evil.example`.
   private isInternalPath(pathname: unknown): pathname is string {
     if (typeof pathname !== 'string') return false;
-    if (pathname.includes('\\')) return false;
-    if (!pathname.startsWith('/') || pathname.startsWith('//')) return false;
+    if (!pathname.startsWith('/') || pathname.startsWith('//') || pathname.includes('\\')) {
+      return false;
+    }
     return pathname !== ROUTE_PATHS.signIn;
   }
 
