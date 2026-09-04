@@ -68,7 +68,7 @@ export default class ApiErrorFactory {
   }
 
   private isAbortError(err: Error): boolean {
-    const name = err.name?.toLowerCase?.() ?? '';
+    const name = err.name?.toLowerCase?.();
     return name === 'aborterror' || this.isCancellationMessage(err.message);
   }
 

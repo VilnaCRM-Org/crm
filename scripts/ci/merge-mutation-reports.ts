@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { type MutationReport, scoreReports } from './mutation-report';
+import { shardMutateFiles } from './mutation-scope.mjs';
+import { type MutationReport, ownedShardReports, scoreReports } from './mutation-report';
 
 const SHARD_FILE = /^mutation-shard-\d+\.json$/;
 
@@ -28,6 +29,19 @@ function loadShardReports(dir: string): { name: string; report: MutationReport }
         throw new Error(`Mutation report "${name}" is not valid JSON: ${String(error)}`);
       }
     });
+}
+
+/** Map every mutated file to the one shard that owns it, using the same packing the shards ran. */
+function buildOwnerIndex(total: number): Map<string, number> {
+  const owner = new Map<string, number>();
+
+  for (let index = 0; index < total; index += 1) {
+    for (const file of shardMutateFiles(total, index)) {
+      owner.set(file, index);
+    }
+  }
+
+  return owner;
 }
 
 /** Read the canonical `thresholds.break` from the real Stryker config so it can never drift. */
@@ -72,7 +86,15 @@ async function main(): Promise<void> {
   }
 
   const breakThreshold = await resolveBreakThreshold();
-  const { tally, fileCount, mutationScore } = scoreReports(shards.map((s) => s.report));
+  const owner = buildOwnerIndex(expectedShards);
+  const { reports, discarded } = ownedShardReports(
+    shards.map(({ name, report }) => ({
+      index: Number.parseInt(/\d+/.exec(name)?.[0] ?? '-1', 10),
+      report,
+    })),
+    (path) => owner.get(path)
+  );
+  const { tally, fileCount, mutationScore } = scoreReports(reports);
 
   if (!Number.isFinite(mutationScore) || tally.valid === 0) {
     throw new Error(
@@ -90,6 +112,7 @@ async function main(): Promise<void> {
       `  compileError=${tally.compileError} runtimeError=${tally.runtimeError} ` +
         `ignored=${tally.ignored}`,
       `  detected=${tally.detected} valid=${tally.valid} mutationScore=${score}%`,
+      `  discarded ${discarded} file result(s) reported by a shard that no longer owns them`,
       '',
     ].join('\n')
   );

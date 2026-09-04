@@ -24,12 +24,21 @@ describe('ButtonExample', () => {
     expect(screen.queryByRole('button', { name: 'button_example.label' })).not.toBeInTheDocument();
   });
 
+  it('renders a non-submitting button that carries a visible label', () => {
+    renderWithProviders(<ButtonExample />);
+
+    const button = screen.getByRole('button', { name: 'Example button' });
+
+    expect(button).toHaveAttribute('type', 'button');
+    expect(button).toHaveTextContent('Example button');
+  });
+
   it('stays inert when clicked', () => {
     renderWithProviders(<ButtonExample />, { i18nMock: createLocaleI18n('uk') });
 
     const button = screen.getByRole('button', { name: 'Приклад кнопки' });
-    fireEvent.click(button);
 
+    expect(() => fireEvent.click(button)).not.toThrow();
     expect(button).toBeInTheDocument();
   });
 });

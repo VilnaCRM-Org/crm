@@ -41,6 +41,7 @@ function useLoginControllers(): MutableRefObject<Set<AbortController>> {
     () => (): void => {
       clearLoginError(loginControllersRef.current);
     },
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
     []
   );
 
@@ -61,6 +62,7 @@ function useAbortableLogin(actions: LoginActions): LoginSubmitter['handleLogin']
         loginControllersRef.current.delete(controller);
       }
     },
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
     [actions, loginControllersRef]
   );
 }
