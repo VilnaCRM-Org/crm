@@ -1,10 +1,13 @@
 import 'reflect-metadata';
 
 import container from '@/config/dependency-injection-config';
-import accessSession from '@/lib/access/access-session';
+import accessCore, { AccessCore } from '@/lib/access/access-core';
+import accessSession, { AccessSession } from '@/lib/access/access-session';
 import accessState from '@/lib/access/access-state';
-import auditCore from '@/lib/access/audit-core';
+import auditCore, { AuditCore } from '@/lib/access/audit-core';
 import noopAuditSink, { NoopAuditSink } from '@/lib/access/noop-audit-sink';
+import permissionResolver, { PermissionResolver } from '@/lib/access/permission-resolver';
+import sessionFactory, { SessionFactory } from '@/lib/access/session-factory';
 import type { AuditSink } from '@/lib/types/access/audit';
 import AccessSessionService from '@/services/access/access-session-service';
 import AuditLogger from '@/services/access/audit-logger';
@@ -51,6 +54,42 @@ const ACCESS_BINDINGS: readonly { name: string; token: symbol; type: Bound }[] =
   },
 ];
 
+// The access domain stays container-free module singletons (the render path must not load
+// tsyringe), so these are registered with `useValue` rather than constructed by the container:
+// resolving one must hand back the very instance the paint path imports.
+const ACCESS_VALUE_BINDINGS: readonly {
+  name: string;
+  token: symbol;
+  type: Bound;
+  value: object;
+}[] = [
+  { name: 'AccessCore', token: ACCESS_TOKENS.AccessCore, type: AccessCore, value: accessCore },
+  {
+    name: 'AccessSession',
+    token: ACCESS_TOKENS.AccessSession,
+    type: AccessSession,
+    value: accessSession,
+  },
+  { name: 'AuditCore', token: ACCESS_TOKENS.AuditCore, type: AuditCore, value: auditCore },
+  {
+    name: 'PermissionResolver',
+    token: ACCESS_TOKENS.PermissionResolver,
+    type: PermissionResolver,
+    value: permissionResolver,
+  },
+  {
+    name: 'SessionFactory',
+    token: ACCESS_TOKENS.SessionFactory,
+    type: SessionFactory,
+    value: sessionFactory,
+  },
+];
+
+const ALL_ACCESS_TOKENS: readonly symbol[] = [
+  ...ACCESS_BINDINGS.map((binding) => binding.token),
+  ...ACCESS_VALUE_BINDINGS.map((binding) => binding.token),
+];
+
 const FROZEN_AT = '2026-05-06T07:08:09.010Z';
 
 describe('access DI registrar', () => {
@@ -63,9 +102,18 @@ describe('access DI registrar', () => {
   });
 
   it('binds every declared access token', () => {
-    expect(ACCESS_BINDINGS.map((binding) => binding.token)).toEqual(Object.values(ACCESS_TOKENS));
-    expect(ACCESS_BINDINGS).toHaveLength(Object.keys(ACCESS_TOKENS).length);
+    expect(ALL_ACCESS_TOKENS).toEqual(Object.values(ACCESS_TOKENS));
+    expect(ALL_ACCESS_TOKENS).toHaveLength(Object.keys(ACCESS_TOKENS).length);
   });
+
+  it.each(ACCESS_VALUE_BINDINGS)(
+    'resolves $name to the container-free module singleton itself',
+    ({ token, type, value }) => {
+      expect(container.isRegistered(token)).toBe(true);
+      expect(container.resolve(token)).toBeInstanceOf(type);
+      expect(container.resolve(token)).toBe(value);
+    }
+  );
 
   it.each(ACCESS_BINDINGS)('resolves $name to its implementation', ({ token, type }) => {
     expect(container.isRegistered(token)).toBe(true);
