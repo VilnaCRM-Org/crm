@@ -704,6 +704,17 @@ describe('checkDocLinks', () => {
     expect(elementAt(violations, 0).message).toContain('no heading anchors to "#no-such-heading"');
   });
 
+  it('keeps every character after the first delimiter in the fragment', () => {
+    const violations = check(
+      linkRoot('# Guide\n\n[bad](#a-real-heading#more)\n\n## A real heading\n')
+    );
+
+    expect(rulesOf(violations)).toEqual(['broken-link']);
+    expect(elementAt(violations, 0).message).toContain(
+      'no heading anchors to "#a-real-heading#more"'
+    );
+  });
+
   it('passes for a plain link to a directory but reports an anchor on one', () => {
     const root = linkRoot('# Guide\n\n[dir](./sub)\n\n[anchored](./sub#nope)\n');
     write(root, 'docs/sub/page.md', '# Page\n');

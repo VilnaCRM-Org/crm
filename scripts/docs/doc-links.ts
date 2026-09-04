@@ -102,7 +102,12 @@ const checkFileLink = (
   target: string,
   cache: Map<string, DocumentAnchors>
 ): string | null => {
-  const [beforeAnchor = '', rawAnchor] = target.split('#');
+  // Split at the *first* `#` only. `split('#')` drops everything after a second one, so
+  // `guide.md#intro#more` would be validated against the anchor `intro` and pass while its real
+  // fragment resolves to nothing.
+  const fragmentStart = target.indexOf('#');
+  const beforeAnchor = fragmentStart === -1 ? target : target.slice(0, fragmentStart);
+  const rawAnchor = fragmentStart === -1 ? undefined : target.slice(fragmentStart + 1);
   // A relative documentation path carries no query string; `?` is part of the file name only in
   // pathological cases, and treating it as a query keeps `./x.md?plain=1` resolvable.
   const [rawPath = ''] = beforeAnchor.split('?');
