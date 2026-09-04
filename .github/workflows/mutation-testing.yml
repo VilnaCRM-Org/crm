@@ -18,6 +18,15 @@ jobs:
   shard:
     name: shard ${{ matrix.index }}
     runs-on: ubuntu-latest
+    # Kill switch, not a target. Cold shards range ~6-13 min depending on which files
+    # they draw (shard packing balances file bytes, not mutant density, so some shards
+    # cost more per mutant than others) — measured directly: four cold runs of shard 5
+    # landed at 12m48s-12m51s, and shard 4 at 11m19s, while the fastest shards land
+    # ~6-7 min. 15 min gives every shard headroom above its own observed cold-run cost
+    # while still catching a real regression (e.g. the checker regressing to
+    # non-incremental type-checking, which the two-file probe measured at 12m54s
+    # for what an incremental run does in 1m03s).
+    timeout-minutes: 15
     permissions:
       contents: read
     strategy:
@@ -38,13 +47,21 @@ jobs:
         with:
           node-version: ${{ vars.NODE_VERSION }}
 
+      # The mutation-config hash is part of the key: Stryker's incremental file
+      # only invalidates on source/test changes, so without it a run would reuse
+      # per-mutant statuses decided under different classification settings. The
+      # hash spans the whole tsconfig extends chain the checker compiles, because
+      # a compiler option can flip a mutant between type-valid and CompileError, and
+      # the dependency and container inputs that decide which tooling produced them. This
+      # workflow is hashed too: the shard count and the incremental flag live only here, so a
+      # change to either would otherwise restore a report scoped to a different shard split.
       - name: Restore mutation incremental cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: reports/stryker-incremental-${{ matrix.index }}.json
-          key: mutation-incremental-shard-${{ matrix.index }}-${{ github.run_id }}
+          key: mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-${{ github.run_id }}
           restore-keys: |
-            mutation-incremental-shard-${{ matrix.index }}-
+            mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-
 
       - name: Start dev container
         run: make start-dev
@@ -71,6 +88,10 @@ jobs:
     # check would otherwise count as a pass and bypass the mutation gate.
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
+    # Hang guard only — this job runs no mutants. It measures ~1m30s (container
+    # start plus the merge script), so the cap is headroom, not a budget: timing
+    # out here would fail the gate closed over work the shards already paid for.
+    timeout-minutes: 8
     permissions:
       contents: read
 

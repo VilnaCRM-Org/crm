@@ -1,5 +1,6 @@
 import type AuthStateVarClass from '@auth/stores/auth-var';
 import type { AuthActions } from '@auth/types/auth-store';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const resolveMock = jest.fn();
 
@@ -10,13 +11,8 @@ jest.mock('@/config/dependency-injection-config', () => ({
 
 type Barrel = { authActions: AuthActions; AuthStateVar: typeof AuthStateVarClass };
 
-const loadBarrel = async (): Promise<Barrel> => {
-  let barrel: Barrel | undefined;
-  await jest.isolateModulesAsync(async () => {
-    barrel = (await import('@auth/stores')) as unknown as Barrel;
-  });
-  return barrel as Barrel;
-};
+const loadBarrel = (): Promise<Barrel> =>
+  loadIsolated(async () => (await import('@auth/stores')) as unknown as Barrel);
 
 const makeActions = (): { login: jest.Mock; register: jest.Mock } => ({
   login: jest.fn().mockResolvedValue(undefined),

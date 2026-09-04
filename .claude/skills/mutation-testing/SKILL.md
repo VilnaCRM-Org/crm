@@ -38,6 +38,52 @@ file** on the test path — `expect.getState().testPath` is populated at `setupF
 module-eval time in jest-circus. The integration branch just `require()`s the existing integration
 setup so nothing is duplicated (`tests/mutation/setup.ts`).
 
+## Classification must be earned, not accidental
+
+Three settings in `stryker.config.mjs` decide whether a status means what it says. Never relax them
+to buy wall-clock — that trades the gate's honesty for speed:
+
+- `checkers: ['typescript']` + `plugins: [... '@stryker-mutator/typescript-checker']` (pinned to the
+  same major as `@stryker-mutator/core`). Type-invalid mutants become `CompileError` and leave the
+  denominator instead of executing and being miscounted.
+- `disableTypeChecks: false`. Stryker's default injects `// @ts-nocheck` into every sandbox file,
+  which makes the checker a silent no-op. The test runner is unaffected — `jest.mutation.config.ts`
+  uses ts-jest `isolatedModules` and never type-checks.
+- `jest.enableFindRelatedTests: true`. With it off, every mutant run reloads the entire test suite
+  and only then filters by `testNamePattern`; runs blow past the timeout window and land as
+  `Timeout` — counted as detected, but earned by hanging. Turning it on is also the single biggest
+  runtime lever (the full sharded run went from ~110 min to a few minutes per shard).
+
+Two more settings keep the checker affordable, and they must be measured together rather than
+credited individually: `typescriptChecker.prioritizePerformanceOverAccuracy: true` batches
+independent mutants into one type-check pass — a deliberate accuracy-for-speed trade, since it
+groups only mutants whose files do not reference one another and re-checks individually any mutant
+whose error cannot be tied to it, but a grouped mutant can still be credited with a neighbour's
+error; turn it off when a baseline has to be exact per mutant — and
+`tsconfigFile: 'tsconfig.stryker.json'` narrows
+the checker's program to the mutated `src/**/*` tree instead of also compiling `scripts/`,
+`docker/`, `lighthouse/`, `tests/`, and `.storybook/` in every checker worker. Adding the checker
+with neither took 12m54s on a two-file probe; with both it took 1m03s. The narrower tsconfig on its
+own is the smaller half of that (~1.7x) — the per-mutant recompile is what dominates.
+
+A wall of `Timeout` with empty `killedBy` and no `statusReason` is the signature of this bug, not of
+async logic being detected. Check a shard report before trusting a score.
+
+The mirror failure is `Survived` with `testsCompleted: 0`. A mutant in a top-level object literal,
+const map or `styled()` call is evaluated at import. `ignoreStatic: true` handles the clean case:
+a mutant covered _only_ statically is reported `Ignored` and leaves the denominator entirely. The
+trap is the one that also picked up per-test coverage — credited to whichever unrelated test
+happened to load the module first. It is not static any more, so it counts, but the run that
+should kill it never happens: `findRelatedTests` narrows the run to files importing the mutated
+module, and the coverage-derived test filter narrows it again to that mis-credited test name,
+which those files do not contain. Nothing executes and no assertion can reach it. Load such
+modules inside the test (`jest.resetModules()` plus `import()` in the body, or
+`jest.isolateModulesAsync`) so the literal is evaluated during a test that asserts on it; see
+`tests/unit/utils/isolated-module.ts`. Grep a shard report for `testsCompleted: 0` before
+concluding a survivor is a test-strength gap.
+
+`tests/unit/tooling/mutation-checker-config.test.ts` pins all of the above.
+
 ## Never measure the baseline locally
 
 A widened mutation run over ts-jest is far too heavy for a dev machine: Stryker's default concurrency
@@ -53,18 +99,31 @@ Set the enforced `break` from that CI measurement with a two-push flow:
 3. Ratchet `break` to just below the measured score; fill the per-area table in CLAUDE.md.
 
 Ratchet policy: raise `break` over time, never lower it to make CI pass, never narrow the mutated
-scope to dodge a survived mutant, and never add `stryker disable` / `istanbul ignore` suppressions —
-fix survived mutants with real assertions.
+scope to dodge a survived mutant, and never add an `istanbul ignore` — fix survived mutants with
+real assertions.
+
+The single exception is a **provably equivalent** mutant, one no test can kill because the mutated
+program behaves identically. Leaving it `Survived` misreports the suite. Prefer deleting the source
+the mutant proved irrelevant (`?? ''` after a guard that already narrows to a string, a `.catch`
+fallback only read for falsiness, a duplicated `typeof` check). Only when no such refactor exists,
+annotate the line with `// Stryker disable next-line <Mutator>: <reason>`, where the reason states
+why the two programs cannot be told apart — never that the test was hard to write. The directive is
+read from a node's `leadingComments` and `next-line` keys off that node's line, so it must lead a
+node starting on the mutant's line; a comment dangling at the end of a block (above `}, []);`)
+attaches to nothing and is silently ignored.
 
 ## Keep scope and shards in lockstep
 
 `scripts/ci/mutation-scope.mjs` is the single source of truth for the mutated file list (its
 exclusions mirror `jest.config.ts` `collectCoverageFrom`). The base config sets `mutate` to that
-list; the shard config packs the same list into shards
-longest-processing-time-first by file size (sort by size desc, hand each file to the lightest
-shard) so the union of all shards equals the full set exactly and no shard carries the tail alone.
-Balance file COUNT and one shard ends up several times slower than the rest — wall clock tracks
-mutant count, which tracks file size. Never hand-maintain a second file list.
+list; the shard config takes its slice from `shardMutateFiles(total, index)` in the same module, so
+the union of all shards equals the full set exactly. Never hand-maintain a second file list.
+
+`shardMutateFiles` bin-packs by file size (longest-processing-time: heaviest file to the lightest
+shard) rather than slicing round-robin, because a sharded run costs whatever its **slowest** shard
+costs. Round-robin left the worst shard carrying 1.54x the mean mutant load — measured 7m47s
+against a 3m14s best — while size packing brings the spread to about 1.15x. It stays deterministic
+(weight desc, path as tiebreak), so re-running one shard mutates exactly the same files.
 
 ## Sharded incremental CI
 

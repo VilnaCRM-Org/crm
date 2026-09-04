@@ -26,8 +26,8 @@ export default class HttpResponseProcessor {
       return undefined;
     }
 
-    const contentType = (response.headers.get('content-type') || '').toLowerCase();
-    return contentType.includes('json')
+    const contentType = response.headers.get('content-type')?.toLowerCase();
+    return contentType?.includes('json')
       ? this.parseJsonBody<T>(response, response.status, schema)
       : this.readNonJsonBody<T>(response, response.status);
   }
@@ -40,7 +40,7 @@ export default class HttpResponseProcessor {
     const raw = await response
       .clone()
       .text()
-      .catch(() => '');
+      .catch(() => undefined);
     // An empty/whitespace body is still validated against the schema: a required schema
     // rejects it (no silent bypass), while optional/nullable schemas accept the absent value.
     if (!raw || raw.trim().length === 0) {
@@ -71,7 +71,7 @@ export default class HttpResponseProcessor {
   }
 
   private async readNonJsonBody<T>(response: Response, status: number): Promise<T | undefined> {
-    const text = await response.text().catch(() => '');
+    const text = await response.text().catch(() => undefined);
     if (!text || text.trim().length === 0) {
       return undefined;
     }
