@@ -13,7 +13,8 @@ class PreloadedAuthTokenSeed {
       return null;
     }
 
-    const activeWindow = currentWindow ?? (typeof window === 'undefined' ? undefined : window);
+    const activeWindow =
+      currentWindow ?? (globalThis as { window?: PreloadedAuthTokenWindow }).window;
 
     return (
       activeWindow?.__PRELOADED_AUTH_TOKEN__?.trim() ||

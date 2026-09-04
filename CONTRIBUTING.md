@@ -286,8 +286,8 @@ plus module UI — repositories, `src/services/**`, auth stores/state, validatio
 module `.tsx` surface — not just `src/components/**/*.tsx`. The mutated set is the single source of
 truth in [`scripts/ci/mutation-scope.mjs`](scripts/ci/mutation-scope.mjs), whose exclusions mirror
 `jest.config.ts` `collectCoverageFrom` (types, styles, stories, generated code, DI-free i18n);
-`stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (per-shard slice) both consume it, so
-the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
+`stryker.config.mjs` (`mutate`) and `stryker.shard.config.mjs` (via `shardMutateFiles`) both consume
+it, so the union of every shard equals the full set exactly. Stryker runs a dedicated Jest config
 ([`jest.mutation.config.ts`](jest.mutation.config.ts)) that unions the unit **and** integration
 suites, so a repository/service/store mutant is killed by the integration test that actually asserts
 on it instead of being left uncovered. (Stryker's jest-runner can't use Jest `projects` with
@@ -299,11 +299,32 @@ type-check). `stryker.config.mjs` sets `ignoreStatic: true`. Those three keep th
 CI runners are 2-core, so parallelism comes from the shard count (currently 8), not from Stryker's
 in-process concurrency.
 
+**Every mutant is classified on its merits.** A score is only worth enforcing when each status was
+earned for the reason it names, so `stryker.config.mjs` runs the
+`@stryker-mutator/typescript-checker` (`checkers: ['typescript']`) over
+[`tsconfig.stryker.json`](tsconfig.stryker.json) — the root tsconfig narrowed to the mutated
+`src/**/*` tree. Type-invalid mutants come back `CompileError` and drop out of the denominator
+instead of executing and being miscounted as kills nobody's assertion earned. Two companion
+settings make that real: `disableTypeChecks: false`, because Stryker's default writes
+`// @ts-nocheck` into every sandbox file and would blind the checker completely, and
+`jest.enableFindRelatedTests: true`, because with it off each mutant run reloaded the whole test
+suite, blew past the timeout window, and came back `Timeout` — detected by hanging rather than by
+an assertion. `typescriptChecker.prioritizePerformanceOverAccuracy: true` batches independent
+mutants into one type-check pass and re-splits any group whose error cannot be pinned on a single
+mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
+regresses; never relax them to buy wall-clock.
+
 `mutation-testing.yml` fans `make test-mutation-shard` across an 8-way matrix; each shard mutates a
-deterministic, disjoint slice and uploads a per-shard JSON report. On pull requests the shards run
+deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
+file size (heaviest file to the lightest shard), not sliced round-robin, because the run costs
+whatever its slowest shard costs — round-robin left one shard carrying 1.54x the mean load.
+On pull requests the shards run
 **incrementally** (`MUTATION_INCREMENTAL=1` → Stryker `--incremental`): each shard restores its own
 `reports/stryker-incremental-<index>.json` from an `actions/cache` rolling key and only re-runs
-mutants the diff touches — the report still lists every mutant, so the gate stays exact. The first
+mutants the diff touches — the report still lists every mutant, so the gate stays exact. That key
+carries a hash of the mutation configuration, because Stryker's incremental file invalidates only
+on source and test changes: without it a shard would reuse statuses decided under different
+classification settings and skip the checker for them entirely. The first
 run (cold cache) is a full sharded pass that seeds the cache; a `push:` trigger on `main` refreshes
 it so PRs branch off a warm base. A final `merge and enforce gate` job runs
 `make merge-mutation-reports`, which unions the shard reports and enforces the Stryker `break`
@@ -321,8 +342,12 @@ results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. 
 `thresholds: { high, low, break }` as a coherent band. `break` is the enforced floor, set at/just
 below the measured baseline; `high`/`low` colour the HTML report. Ratchet policy: raise `break`
 toward `high` as suites improve — **never lower it to make CI pass**, and never narrow the mutated
-scope to dodge a survived mutant. Fix a survived mutant with a real assertion, not an exclusion or a
-`// stryker disable` / `istanbul ignore` suppression. Excluding a file from
+scope to dodge a survived mutant. Fix a survived mutant with a real assertion, not an exclusion or an
+`istanbul ignore` suppression. The one exception is a **provably equivalent** mutant, which no test
+can kill because the mutated program behaves identically: prefer deleting the source the mutant
+proved irrelevant, and only where no such refactor exists annotate it with
+`// Stryker disable next-line <Mutator>: <reason>` carrying the proof. See "Honest mutant
+classification" in [`CLAUDE.md`](CLAUDE.md) for the full rule. Excluding a file from
 `scripts/ci/mutation-scope.mjs` is only legitimate for genuine non-logic (types, styles, stories,
 generated code, i18n). The measured per-area baseline is recorded in
 [`CLAUDE.md`](CLAUDE.md) under "Mutation testing scope and baseline".

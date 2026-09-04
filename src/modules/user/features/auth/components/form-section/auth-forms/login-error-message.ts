@@ -27,7 +27,7 @@ export default class LoginErrorMessageNormalizer {
   }
 
   private trimmedString(value: unknown): string | null {
-    return typeof value === 'string' && value.trim() ? value.trim() : null;
+    return typeof value === 'string' ? value.trim() || null : null;
   }
 
   private getNestedMessage(value: unknown): string | null {
