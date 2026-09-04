@@ -322,22 +322,22 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-The only annotated case today is the React hook dependency array, at eleven sites, and it comes in
-two shapes. Ten are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
+The only annotated case today is the React hook dependency array, at twelve sites, and it comes in
+two shapes. Eleven are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
 compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
-render and the effect or memo fires exactly as it does with `[]`. The eleventh,
+render and the effect or memo fires exactly as it does with `[]`. The twelfth,
 `use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
 `ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
 `actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
 box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
 Hoisting either literal to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
-array literal, so there is nothing left to change. Adding a twelfth needs the same standard of
+array literal, so there is nothing left to change. Adding a thirteenth needs the same standard of
 proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 203 files, of which ~173 produce scored mutants (the rest are pure re-export
-barrels or files whose only mutants are static and skipped by `ignoreStatic`).
+mutate scope is 206 files; not all of them produce scored mutants — the rest are pure re-export
+barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
 file can move it to a different shard — while its previous owner still carries the old result in
@@ -1786,7 +1786,12 @@ narrowing its file set, or moving a read out of the guarded method.
 3. **Routing**: Module-owned route contracts collected by a registry and
    assembled by a composer into `createBrowserRouter` (see "Route Registry"
    above). Add a page in the owning module's `routes/` folder — never in the
-   app shell.
+   app shell. `ProtectedRoute` preserves the intended destination in its
+   redirect state (`state.from`), and the sign-in page redirects back to it
+   after a successful login (issue #150). The redirect fires only on a
+   null→token transition — never on mount — so the Lighthouse seeded-token
+   audit of `/sign-in` is unaffected; the target must be an internal path and
+   `AppLayout` moves focus to `<main>` when it lands.
 
 4. **Testing Philosophy**:
    - Unit tests for components and utilities
