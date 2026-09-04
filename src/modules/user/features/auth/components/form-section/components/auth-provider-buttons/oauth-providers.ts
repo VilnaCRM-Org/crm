@@ -18,7 +18,6 @@ class OAuthProviders {
       label: p.label,
       SvgComponent: p.SvgComponent,
       onClick: () => this.signInWithProvider(p.key),
-      ariaLabel: `Sign in with ${p.label}`,
     }));
   }
 

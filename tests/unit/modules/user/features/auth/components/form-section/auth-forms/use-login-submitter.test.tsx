@@ -35,28 +35,45 @@ describe('useLoginSubmitter', () => {
     expect(result.current.isSubmitting).toBe(false);
   });
 
-  it('formats a plain string login error from the store', () => {
+  it('never interpolates raw backend text into the localized login error', () => {
     AuthStateVar.set({
       loginError: { kind: 'authentication', displayMessage: 'Bad credentials', retryable: false },
     });
 
     const { result } = renderHook(() => useLoginSubmitter(t));
 
-    expect(result.current.error).toBe('sign_in.errors.login|Bad credentials');
+    expect(result.current.error).toBe('sign_in.errors.login|auth.error.unknown');
+    expect(result.current.error).not.toContain('Bad credentials');
+  });
+
+  it('falls back to the unknown-error string when a key-shaped message has no translation', () => {
+    const strictT: TFunction = ((key: string, options?: Record<string, unknown>): string => {
+      if (options?.reason !== undefined) return `${key}|${String(options.reason)}`;
+      if (options && 'defaultValue' in options) return String(options.defaultValue);
+      return key;
+    }) as unknown as TFunction;
+
+    AuthStateVar.set({
+      loginError: { kind: 'authentication', displayMessage: 'some.missing.key', retryable: false },
+    });
+
+    const { result } = renderHook(() => useLoginSubmitter(strictT));
+
+    expect(result.current.error).toBe('sign_in.errors.login|auth.error.unknown');
   });
 
   it('translates an i18n-key shaped login error', () => {
     AuthStateVar.set({
       loginError: {
         kind: 'authentication',
-        displayMessage: 'auth.errors.unknown',
+        displayMessage: 'auth.error.unknown',
         retryable: false,
       },
     });
 
     const { result } = renderHook(() => useLoginSubmitter(t));
 
-    expect(result.current.error).toBe('sign_in.errors.login|auth.errors.unknown');
+    expect(result.current.error).toBe('sign_in.errors.login|auth.error.unknown');
   });
 
   it('clears the login error on unmount', () => {

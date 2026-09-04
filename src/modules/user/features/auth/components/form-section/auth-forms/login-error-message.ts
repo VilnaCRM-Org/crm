@@ -1,6 +1,6 @@
 import type { Extractor, SerializedError } from '@auth/types/auth-forms/login-error-message';
 
-const UNKNOWN_KEY = 'auth.errors.unknown';
+export const UNKNOWN_KEY = 'auth.error.unknown';
 
 export default class LoginErrorMessageNormalizer {
   private readonly extractors: Extractor[];

@@ -1,13 +1,11 @@
 import { screen, fireEvent } from '@testing-library/react';
-import i18n from 'i18next';
 import { act } from 'react';
-import { initReactI18next } from 'react-i18next';
 
-import localization from '@/i18n/localization.json';
 import RegistrationNotification, {
   BACK_CLOSE_ANIMATION_MS,
 } from '@/modules/user/features/auth/components/form-section/auth-forms/registration-notification';
 
+import createLocaleI18n from '../../../../../../../utils/create-locale-i18n';
 import renderWithProviders from '../../../../../../../utils/render-with-providers';
 
 jest.mock('@/assets/notification/confetti.svg', () => ({ ReactComponent: 'svg' }));
@@ -17,21 +15,7 @@ jest.mock('@/assets/notification/settings.svg', () => ({ ReactComponent: 'svg' }
 const UK_ERR_LEAD = 'Щось пішло не так із запитом.';
 const UK_ERR_TRAIL = 'Спробуйте ще раз пізніше';
 const GENERIC_UK_ERROR = `${UK_ERR_LEAD} ${UK_ERR_TRAIL}`;
-
-const createUkrainianI18n = (): ReturnType<typeof i18n.createInstance> => {
-  const instance = i18n.createInstance();
-  instance.use(initReactI18next).init({
-    lng: 'uk',
-    fallbackLng: 'uk',
-    resources: {
-      uk: { translation: localization.uk.translation },
-    },
-    interpolation: { escapeValue: false },
-    initImmediate: false,
-  });
-
-  return instance;
-};
+const UK_SIGNUP_ERROR = 'Помилка реєстрації. Спробуйте пізніше';
 
 describe('RegistrationNotification', () => {
   const baseProps = {
@@ -53,14 +37,13 @@ describe('RegistrationNotification', () => {
         view={baseProps.view}
         errorText="Invalid data provided"
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
-    const expected = 'Помилка реєстрації. Спробуйте пізніше';
-    expect(screen.getByText(expected)).toBeInTheDocument();
+    expect(screen.getByText(UK_SIGNUP_ERROR)).toBeInTheDocument();
   });
 
-  it('keeps custom backend error text when it is not the generic validation fallback', () => {
+  it('never renders unrecognized backend error text verbatim', () => {
     renderWithProviders(
       <RegistrationNotification
         isSubmitting={baseProps.isSubmitting}
@@ -68,10 +51,11 @@ describe('RegistrationNotification', () => {
         view={baseProps.view}
         errorText="Custom backend error"
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
-    expect(screen.getByText('Custom backend error')).toBeInTheDocument();
+    expect(screen.queryByText('Custom backend error')).not.toBeInTheDocument();
+    expect(screen.getByText(UK_SIGNUP_ERROR)).toBeInTheDocument();
   });
 
   it('falls back to the default localized error when no error text is provided', () => {
@@ -81,7 +65,7 @@ describe('RegistrationNotification', () => {
         onBack={baseProps.onBack}
         view={baseProps.view}
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getByText(GENERIC_UK_ERROR)).toBeInTheDocument();
@@ -95,7 +79,7 @@ describe('RegistrationNotification', () => {
         view={baseProps.view}
         errorText="   "
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getByText(GENERIC_UK_ERROR)).toBeInTheDocument();
@@ -104,7 +88,7 @@ describe('RegistrationNotification', () => {
   it('renders the success notification', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getByText('Вітаємо!')).toBeInTheDocument();
@@ -113,7 +97,7 @@ describe('RegistrationNotification', () => {
   it('announces the success notification politely as a single status region', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getAllByRole('status')).toHaveLength(1);
@@ -123,7 +107,7 @@ describe('RegistrationNotification', () => {
   it('moves focus off the body to the success notification on mount', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="success" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getByRole('heading', { level: 2 })).toHaveAccessibleName();
@@ -139,7 +123,7 @@ describe('RegistrationNotification', () => {
         view="success"
         onShown={onShown}
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(onShown).toHaveBeenCalledTimes(1);
@@ -149,7 +133,7 @@ describe('RegistrationNotification', () => {
     const onBack = jest.fn();
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={onBack} view="success" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     fireEvent.click(screen.getByText('Назад'));
@@ -161,7 +145,7 @@ describe('RegistrationNotification', () => {
     const onBack = jest.fn();
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     fireEvent.click(screen.getByText('Назад'));
@@ -177,7 +161,7 @@ describe('RegistrationNotification', () => {
     const onBack = jest.fn();
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     const backButton = screen.getByText('Назад');
@@ -196,7 +180,7 @@ describe('RegistrationNotification', () => {
     const onBack = jest.fn();
     const { unmount } = renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={onBack} view="error" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     fireEvent.click(screen.getByText('Назад'));
@@ -210,7 +194,7 @@ describe('RegistrationNotification', () => {
   it('renders a single alert region for the error notification', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="error" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getAllByRole('alert')).toHaveLength(1);
@@ -219,7 +203,7 @@ describe('RegistrationNotification', () => {
   it('renders the error alert without a redundant aria-live', () => {
     renderWithProviders(
       <RegistrationNotification isSubmitting={false} onBack={jest.fn()} view="error" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     expect(screen.getByRole('alert')).not.toHaveAttribute('aria-live');
@@ -233,7 +217,7 @@ describe('RegistrationNotification', () => {
         onRetry={jest.fn()}
         view="error"
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     const heading = screen.getByRole('heading', { level: 2 });
@@ -258,7 +242,7 @@ describe('RegistrationNotification', () => {
 
     renderWithProviders(
       <RegistrationNotification isSubmitting onBack={jest.fn()} onRetry={onRetry} view="error" />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     const retryButton = screen.getByRole('button', { name: 'Спробувати ще раз' });
@@ -278,7 +262,7 @@ describe('RegistrationNotification', () => {
         onRetry={onRetry}
         view="error"
       />,
-      { i18nMock: createUkrainianI18n() }
+      { i18nMock: createLocaleI18n('uk') }
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Спробувати ще раз' }));

@@ -158,7 +158,7 @@ describe('LoginForm', () => {
     });
   });
 
-  it('shows a translated login error prefix when the store has a login error', () => {
+  it('shows a fully translated login error instead of the raw backend text', () => {
     authStoreState.loginError = {
       kind: 'authentication',
       displayMessage: 'Invalid credentials',
@@ -167,9 +167,9 @@ describe('LoginForm', () => {
 
     render(<LoginForm />);
 
-    expect(screen.getByTestId('form-error')).toHaveTextContent(
-      'sign_in.errors.login: Invalid credentials'
-    );
+    const banner = screen.getByTestId('form-error');
+    expect(banner).toHaveTextContent('sign_in.errors.login: auth.error.unknown');
+    expect(banner).not.toHaveTextContent('Invalid credentials');
   });
 
   it('shows nothing when the store has no login error', () => {
@@ -221,7 +221,7 @@ describe('normalizeLoginErrorMessage', () => {
   });
 
   it('returns the unknown translation key when an Error message is blank', () => {
-    expect(normalizeLoginErrorMessage(new Error('   '))).toBe('auth.errors.unknown');
+    expect(normalizeLoginErrorMessage(new Error('   '))).toBe('auth.error.unknown');
   });
 
   it('uses displayMessage when a blank Error message is present', () => {
@@ -241,7 +241,7 @@ describe('normalizeLoginErrorMessage', () => {
   });
 
   it('falls back to the unknown translation key for non-record values', () => {
-    expect(normalizeLoginErrorMessage(404)).toBe('auth.errors.unknown');
+    expect(normalizeLoginErrorMessage(404)).toBe('auth.error.unknown');
   });
 
   it('returns the serialized error message when available', () => {
@@ -290,6 +290,6 @@ describe('normalizeLoginErrorMessage', () => {
   });
 
   it('falls back to the unknown translation key when no message can be found', () => {
-    expect(normalizeLoginErrorMessage({ data: {} })).toBe('auth.errors.unknown');
+    expect(normalizeLoginErrorMessage({ data: {} })).toBe('auth.error.unknown');
   });
 });

@@ -129,3 +129,5 @@ lint-licenses	bats	tests/bats/makefile_targets.bats	Validated as a member of the
 new-module	bats	tests/bats/makefile_targets.bats	Validated as driving `bun x plop module` in the dev container, defaulting the feature name and failing fast without name=.
 new-feature	bats	tests/bats/makefile_targets.bats	Validated as driving `bun x plop feature` in the dev container and failing fast without module= or feature=.
 verify-scaffold	bats	tests/bats/makefile_targets.bats	Validated as invoking scripts/ci/verify-scaffold.sh with the SCAFFOLD_VERIFY_TARGETS gate list.
+lint-i18n	bats	tests/bats/makefile_targets.bats	Validated as the host-side locale-parity gate command and as a member of the CI lint target list passed to run-parallel-lint.sh.
+i18n-generate	bats	tests/bats/makefile_targets.bats	Validated as the --write regeneration command for the merged src/i18n/localization.json catalog.

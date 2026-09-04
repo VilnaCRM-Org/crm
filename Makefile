@@ -157,6 +157,9 @@ ACTIONLINT_IMAGE            = rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36
 # Sentry jobs behind GitHub Environments) is a separate decision.
 ZIZMOR_IMAGE                = ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d
 ZIZMOR_ARGS                 = --no-online-audits --min-severity medium --persona pedantic --format plain
+# Locale-parity gate (issue #151). Pure Node over the working tree, so it runs on the host
+# like lint-lockfile and check-env-sync instead of inside the dev container.
+I18N_PARITY_SCRIPT          = scripts/ci/check-i18n-parity.mjs
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 BATS_FORMATTER              ?= pretty
@@ -183,7 +186,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses
+CI_LINT_TARGETS             = check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -220,6 +223,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync
 .PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-zizmor lint-compose lint-lockfile lint-licenses
+.PHONY: lint-i18n i18n-generate
 .PHONY: storybook
 .PHONY: all test
 .PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
@@ -467,6 +471,12 @@ ALLOWED_LICENSES            = MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;
 lint-licenses: ## Fail on any production dependency whose license is outside the SPDX allowlist (issue #191)
 	$(EXEC_DEV_TTYLESS) env ALLOWED_LICENSES='$(ALLOWED_LICENSES)' node scripts/ci/check-licenses.mjs
 
+lint-i18n: ## Fail if locales lose key parity or src/i18n/localization.json is stale (issue #151)
+	node $(I18N_PARITY_SCRIPT)
+
+i18n-generate: ## Regenerate src/i18n/localization.json from the module i18n catalogs (issue #151)
+	node $(I18N_PARITY_SCRIPT) --write
+
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
 
@@ -540,7 +550,7 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, compose validation, the bun.lock provenance gate, and the dependency license-policy gate.
+lint: check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n ## Runs all linters: env-sync, ESLint, TypeScript, Markdown, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, compose validation, the bun.lock provenance gate, the dependency license-policy gate, and the i18n locale-parity gate.
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision

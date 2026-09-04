@@ -74,7 +74,9 @@ describe('oauthProviders', () => {
     removeWindow();
   });
 
-  it('exposes every supported provider with an icon and an accessible sign-in label', async () => {
+  // The accessible name is no longer carried on the provider record: it is localized in the
+  // component (`auth.oauth.continue_with`) and asserted in auth-provider-buttons.test.tsx.
+  it('exposes every supported provider with an icon and a click handler', async () => {
     const providers = await loadProviders();
 
     expect(providers.map((provider) => provider.label)).toEqual([
@@ -82,12 +84,6 @@ describe('oauthProviders', () => {
       'GitHub',
       'Facebook',
       'Twitter',
-    ]);
-    expect(providers.map((provider) => provider.ariaLabel)).toEqual([
-      'Sign in with Google',
-      'Sign in with GitHub',
-      'Sign in with Facebook',
-      'Sign in with Twitter',
     ]);
     providers.forEach((provider) => {
       expect(provider.SvgComponent).toBeDefined();

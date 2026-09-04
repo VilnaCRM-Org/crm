@@ -1,6 +1,9 @@
 {
   "en": {
     "translation": {
+      "button_example": {
+        "label": "Example button"
+      },
       "not_found": {
         "title": "Page not found",
         "description": "The page you're looking for doesn't exist.",
@@ -8,10 +11,6 @@
       },
       "route_fallback": {
         "loading": "Loading page"
-      },
-      "login": {
-        "title": "Authentication",
-        "info_desc": "Sign in to your account in two clicks"
       },
       "formatting": {
         "updated_at": "Last updated {{value, datetime}}",
@@ -25,11 +24,15 @@
         "error": {
           "default": "Something went wrong. Please try again later.",
           "details": "Error Details",
-          "tryAgain": "Try again"
+          "tryAgain": "Try again",
+          "unknown": "Unknown error"
         },
         "password": {
           "hide": "Hide password",
           "show": "Show password"
+        },
+        "oauth": {
+          "continue_with": "Continue with {{provider}}"
         },
         "loadingForm": "Loading authentication form"
       },
@@ -152,6 +155,9 @@
   },
   "uk": {
     "translation": {
+      "button_example": {
+        "label": "Приклад кнопки"
+      },
       "not_found": {
         "title": "Сторінку не знайдено",
         "description": "Сторінку, яку ви шукаєте, не існує.",
@@ -159,10 +165,6 @@
       },
       "route_fallback": {
         "loading": "Завантаження сторінки"
-      },
-      "login": {
-        "title": "Автентифікація",
-        "info_desc": "Увійдіть до свого аккаунту за два кліки"
       },
       "formatting": {
         "updated_at": "Оновлено {{value, datetime}}",
@@ -176,11 +178,15 @@
         "error": {
           "default": "Щось пішло не так. Спробуйте пізніше.",
           "details": "Деталі помилки",
-          "tryAgain": "Спробувати ще раз"
+          "tryAgain": "Спробувати ще раз",
+          "unknown": "Невідома помилка"
         },
         "password": {
           "hide": "Приховати пароль",
           "show": "Показати пароль"
+        },
+        "oauth": {
+          "continue_with": "Продовжити через {{provider}}"
         },
         "loadingForm": "Завантаження форми автентифікації"
       },

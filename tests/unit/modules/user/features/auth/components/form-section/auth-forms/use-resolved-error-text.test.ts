@@ -11,6 +11,7 @@ const resolve = (errorText: string | undefined): string =>
   renderHook(() => useResolvedErrorText(errorText)).result.current;
 
 const GENERIC_KEY = 'sign_up.errors.signup_error';
+const EMAIL_USED_KEY = 'sign_up.errors.email_used';
 const FALLBACK_KEY = 'failure_responses.client_errors.something_went_wrong';
 
 describe('useResolvedErrorText whitespace normalization', () => {
@@ -24,10 +25,17 @@ describe('useResolvedErrorText whitespace normalization', () => {
     expect(resolve(raw)).toBe(GENERIC_KEY);
   });
 
-  it('returns the raw text unchanged for a message that is not generic', () => {
+  // Backend prose is never rendered verbatim (issue #151): an unrecognised message resolves to
+  // the generic localized copy, and a recognised one to its own key.
+  it('never returns the raw backend text for an unrecognised message', () => {
     const raw = 'Email  already   registered';
 
-    expect(resolve(raw)).toBe(raw);
+    expect(resolve(raw)).not.toBe(raw);
+    expect(resolve(raw)).toBe(GENERIC_KEY);
+  });
+
+  it('maps the email-conflict message to its own key rather than the generic one', () => {
+    expect(resolve('Email already exists')).toBe(EMAIL_USED_KEY);
   });
 
   it.each([

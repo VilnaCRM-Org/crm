@@ -1,8 +1,4 @@
 {
-  "login": {
-    "title": "Автентифікація",
-    "info_desc": "Увійдіть до свого аккаунту за два кліки"
-  },
   "formatting": {
     "updated_at": "Оновлено {{value, datetime}}",
     "price": "Ціна: {{value, currency}}"

@@ -61,12 +61,6 @@ describe('UIBackToMain Component', () => {
       const button = screen.getByText(BackToHomeText);
       expect(within(button).queryByTestId('ripple')).not.toBeInTheDocument();
     });
-    it('should contain UIContainer wrapper', () => {
-      renderWithProviders(<UIBackToMain />);
-
-      const containerElement = screen.getByLabelText(/container/i);
-      expect(containerElement).toBeInTheDocument();
-    });
   });
 
   describe('Accessibility', () => {

@@ -5,7 +5,7 @@ import { AuthStoreSelectors, authActions, useAuthState } from '@auth/stores';
 import type { LoginActions, LoginSubmitter } from '@auth/types/auth-forms/use-login-submitter';
 import type { LoginUserDto } from '@auth/types/credentials';
 
-import LoginErrorMessageNormalizer from './login-error-message';
+import LoginErrorMessageNormalizer, { UNKNOWN_KEY } from './login-error-message';
 
 const I18N_KEY_SEGMENT_RE = /^[a-z0-9_]+$/i;
 const loginErrorMessageNormalizer = new LoginErrorMessageNormalizer();
@@ -15,11 +15,15 @@ function isI18nKey(value: string): boolean {
   return segments.length > 1 && segments.every((segment) => I18N_KEY_SEGMENT_RE.test(segment));
 }
 
+function resolveLoginReason(normalized: string, t: TFunction): string {
+  if (!isI18nKey(normalized)) return t(UNKNOWN_KEY);
+  return t(normalized, { defaultValue: '' }) || t(UNKNOWN_KEY);
+}
+
 function formatLoginError(raw: string | null, t: TFunction): string {
   if (!raw) return '';
   const normalized = loginErrorMessageNormalizer.normalize(raw);
-  const reason = isI18nKey(normalized) ? t(normalized) : normalized;
-  return t('sign_in.errors.login', { reason });
+  return t('sign_in.errors.login', { reason: resolveLoginReason(normalized, t) });
 }
 
 function clearLoginError(controllers: Set<AbortController>): void {
