@@ -3,7 +3,6 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UILink from '@/components/ui-link';
-import featureFlags from '@/config/env/feature-flags';
 import useFeatureFlag from '@/hooks/use-feature-flag';
 import ROUTE_PATHS from '@/routes/route-paths';
 
@@ -14,7 +13,7 @@ export default function UserOptions(): JSX.Element | null {
   const [isChecked, setIsChecked] = useState(false);
   const { t } = useTranslation();
   const showForgotPassword = useFeatureFlag('forgotPassword');
-  const showRememberMe = featureFlags.rememberMe();
+  const showRememberMe = useFeatureFlag('rememberMe');
 
   const handleCheckboxChange = useCallback(
     (): void => {

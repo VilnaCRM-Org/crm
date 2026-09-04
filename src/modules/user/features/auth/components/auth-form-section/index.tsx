@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
 
-import featureFlags from '@/config/env/feature-flags';
+import useFeatureFlag from '@/hooks/use-feature-flag';
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
 import InertBox from '@auth/components/form-section/inert-box';
 import styles from '@auth/components/form-section/styles';
@@ -11,11 +11,13 @@ export default function AuthFormSection({
   oauthInert,
   switcher,
 }: AuthFormSectionProps): JSX.Element {
+  const showOauthProviders = useFeatureFlag('oauthProviders');
+
   return (
     <Box component="section" sx={styles.formSection}>
       <Box sx={styles.formWrapper}>
         {children}
-        {featureFlags.oauthProviders() && (
+        {showOauthProviders && (
           <InertBox id="auth-provider-buttons-container" inert={oauthInert}>
             <AuthProviderButtons />
           </InertBox>

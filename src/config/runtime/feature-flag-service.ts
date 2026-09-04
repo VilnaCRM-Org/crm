@@ -3,6 +3,8 @@ import type { FeatureFlag } from './types/feature-flag';
 
 const FEATURE_FLAG_DEFAULTS: Readonly<Record<FeatureFlag, boolean>> = Object.freeze({
   forgotPassword: false,
+  oauthProviders: false,
+  rememberMe: false,
 });
 
 export class FeatureFlagService {

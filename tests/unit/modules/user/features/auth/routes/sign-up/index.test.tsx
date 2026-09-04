@@ -9,7 +9,9 @@ import type { ReactElement, ReactNode } from 'react';
 import SignUp from '@/modules/user/features/auth/routes/sign-up';
 import SignUpFormSection from '@/modules/user/features/auth/routes/sign-up/sign-up-form-section';
 import type { RegistrationView } from '@auth/components/form-section/types';
+import { buildFeatureFlagConfig } from '@tests/builders';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
+import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 type FormState = {
   view: RegistrationView;
@@ -100,9 +102,6 @@ jest.mock('@/components/skeletons/auth-skeleton', () => ({
   default: (): ReactElement => <div data-testid="auth-shell-skeleton" />,
 }));
 
-const OAUTH_FLAG = 'REACT_APP_FEATURE_OAUTH_PROVIDERS';
-const ORIGINAL_ENV = { ...process.env };
-
 describe('SignUp page', () => {
   beforeEach(() => {
     capturedOnViewChange = undefined;
@@ -111,7 +110,7 @@ describe('SignUp page', () => {
   });
 
   afterEach(() => {
-    process.env = { ...ORIGINAL_ENV };
+    clearConfigBlock();
   });
 
   it('renders chrome, the h1, the swap link, and the page title (AC1-AC3)', async () => {
@@ -137,7 +136,7 @@ describe('SignUp page', () => {
   });
 
   it('marks the OAuth row inert once the registration view leaves the form (AC5)', () => {
-    process.env[OAUTH_FLAG] = 'true';
+    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
     renderWithProviders(<SignUpFormSection />);
 
     const oauthRow = (): HTMLElement => screen.getByTestId('auth-provider-buttons-container');

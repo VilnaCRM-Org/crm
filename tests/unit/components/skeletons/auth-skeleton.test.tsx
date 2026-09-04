@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
+import { buildFeatureFlagConfig } from '@tests/builders';
+import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 jest.mock('react-i18next', () => ({
   useTranslation: (): { t: (key: string) => string } => ({
@@ -8,11 +10,8 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-const OAUTH_FLAG = 'REACT_APP_FEATURE_OAUTH_PROVIDERS';
-const ORIGINAL_ENV = { ...process.env };
-
 afterEach(() => {
-  process.env = { ...ORIGINAL_ENV };
+  clearConfigBlock();
 });
 
 function getGenericSkeletonIds(): string[] {
@@ -57,7 +56,7 @@ describe('AuthSkeleton Component', () => {
 
   describe('Rendering structure (OAuth flag on)', () => {
     beforeEach(() => {
-      process.env[OAUTH_FLAG] = 'true';
+      writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
     });
 
     it('renders the presentation divider and keeps it free of textual content', () => {

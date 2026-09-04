@@ -6,7 +6,9 @@ import { screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 import SignIn from '@/modules/user/features/auth/routes/sign-in';
+import { buildFeatureFlagConfig } from '@tests/builders';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
+import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 jest.mock('@auth/components/form-section/auth-forms/use-login-submitter', () => ({
   __esModule: true,
@@ -47,16 +49,13 @@ jest.mock('@/components/skeletons/auth-skeleton', () => ({
   default: (): ReactElement => <div data-testid="auth-shell-skeleton" />,
 }));
 
-const OAUTH_FLAG = 'REACT_APP_FEATURE_OAUTH_PROVIDERS';
-const ORIGINAL_ENV = { ...process.env };
-
 describe('SignIn page', () => {
   beforeEach(() => {
     document.title = '';
   });
 
   afterEach(() => {
-    process.env = { ...ORIGINAL_ENV };
+    clearConfigBlock();
   });
 
   it('renders chrome, the h1, the swap link, and the page title (AC1-AC3)', async () => {
@@ -76,7 +75,7 @@ describe('SignIn page', () => {
   });
 
   it('renders the OAuth row only when the OAuth flag is on (issue #150)', async () => {
-    process.env[OAUTH_FLAG] = 'true';
+    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
     renderWithProviders(<SignIn />);
 
     expect(

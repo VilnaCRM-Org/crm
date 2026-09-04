@@ -28,13 +28,12 @@ The module is therefore split in two:
 | `env.ts`                  | `zod`       | once, frozen   | non-paint code wanting typed config  |
 | `env-schema.ts`           | `zod`       | —              | the zod contract (constraints)       |
 | `types/env.ts`            | none (type) | —              | the hand-authored `Env` interface    |
-| `feature-flags.ts`        | none        | lazy, per call | paint path — boolean feature flags   |
 | `preloaded-auth-token.ts` | none        | lazy, per call | the auth store's initial seed (only) |
 
 - **`raw-env`** (`@/config/env/raw-env`) — a dependency-free singleton and the default reader of
-  `process.env`: every environment-derived value belongs here unless it qualifies as one of the two
-  named exceptions below (`feature-flags`, `preloaded-auth-token`), which live in this same folder
-  so the ban's single `src/config/env/**` exemption still covers every reader. Accessors are lazy
+  `process.env`: every environment-derived value belongs here unless it qualifies as the one named
+  exception below (`preloaded-auth-token`), which lives in this same folder so the ban's single
+  `src/config/env/**` exemption still covers every reader. Accessors are lazy
   (read on each call) so the build-inlined literals stay static and tests can mutate `process.env`
   per case. Import it **directly** (not via the barrel) on the paint path so the barrel's `zod`
   edge is not pulled in.
@@ -43,9 +42,6 @@ The module is therefore split in two:
   naming every offending variable. It is consumed by `get-graphql-url` (which lives behind the
   dynamic-import Apollo/DI composition root, where `zod` already resides), so validation runs when
   that functional-core chunk loads — never on the auth paint path.
-- **`feature-flags`** — the boolean default-off flag seam, see below. It reads `process.env`
-  directly and is deliberately **not** part of `raw-env`/`env`: a string-to-boolean parse cannot
-  fail zod validation, and its readers sit on the zod-free auth paint path.
 - **`preloaded-auth-token`** — the test-only seed seam, see below. It reads `process.env` directly
   and is deliberately **not** part of `raw-env`/`env`: routing it through either would inline the
   token into every production bundle, because both are reachable from every chunk.
@@ -56,20 +52,17 @@ schema (dependency-cruiser `type-files-no-runtime-imports`). The schema and inte
 sync by the typed `private readonly values: Env` assignment in `env.ts` (a compile-time check that
 the parse result matches `Env`).
 
-## Feature flags (`@/config/env/feature-flags`)
+## Feature flags live in `@/config/runtime`, not here
 
-Boolean, default-off feature flags (issue #150) live in their own dependency-free singleton,
-`feature-flags.ts`, next to `raw-env`. Each flag is a lazy accessor over a static
-`process.env.REACT_APP_FEATURE_*` literal; only the strings `true` and `1` (after trimming)
-enable a flag, so an absent or empty variable is always **off**. Flags stay **out of the zod
-schema and the `Env` interface** on purpose: a string-to-boolean parse cannot fail validation,
-the readers sit on the Lighthouse-budgeted auth paint path (which must stay zod-free), and the
-default-off contract is the whole behavior. Current flags:
+Boolean feature flags are **runtime** configuration (issue #145): they are rendered into the HTML
+shell at container start, so an administrator flips one and restarts the container without a
+rebuild. They are declared in `src/config/runtime/` and read through the container-free
+`useFeatureFlag` hook — see [`src/config/runtime/README.md`](../runtime/README.md) and
+[`docs/feature-flags.md`](../../../docs/feature-flags.md).
 
-- `REACT_APP_FEATURE_OAUTH_PROVIDERS` — renders the auth OAuth provider row (hidden until the
-  real OAuth flow exists).
-- `REACT_APP_FEATURE_REMEMBER_ME` — renders the remember-me checkbox (hidden until session
-  persistence exists).
+Nothing in this folder parses a flag. `REACT_APP_FEATURE_*` no longer exists: the auth controls
+that issue #150 hides (`oauthProviders`, `rememberMe`) are runtime flags alongside
+`forgotPassword`.
 
 ## Validation policy
 
@@ -150,12 +143,9 @@ against the wrong artifact.
    non-paint readers.
 4. Never read `process.env` outside this module.
 
-Two kinds of variable are **named exceptions** to steps 2-3. Both still live in this module, so
+One kind of variable is a **named exception** to steps 2-3. It still lives in this module, so
 step 4 and the single `src/config/env/**` lint exemption hold unchanged:
 
-- **A boolean feature flag** — add the key to both env files (step 1), then add a lazy accessor to
-  `feature-flags.ts`. Flags are deliberately not part of the schema or `Env` (see "Feature flags"
-  above).
 - **A variable whose value must not reach a production bundle** — it does not belong in
   `raw-env`/`env` at all, because both are in every chunk's graph and the build-inlined literal
   ships regardless of who reads it. Follow `preloaded-auth-token.ts` instead — read it inside a

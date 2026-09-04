@@ -18,6 +18,8 @@ const AppConfigSchema = z.strictObject({
   flags: z
     .strictObject({
       forgotPassword: z.boolean().optional(),
+      oauthProviders: z.boolean().optional(),
+      rememberMe: z.boolean().optional(),
     })
     .optional(),
 });

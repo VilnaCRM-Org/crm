@@ -8,7 +8,7 @@ import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
 import type { AuthSkeletonProps, Wrap } from '@/components/types/auth-skeleton';
-import featureFlags from '@/config/env/feature-flags';
+import useFeatureFlag from '@/hooks/use-feature-flag';
 
 const SOCIAL_BUTTONS = [
   { id: 'google' },
@@ -92,12 +92,14 @@ function FormBody({
   wrap: Wrap;
   disableAnimation: boolean;
 }): JSX.Element {
+  const showOauthProviders = useFeatureFlag('oauthProviders');
+
   return (
     <Box sx={wrap({ ...styles.formWrapper, ...styles.formWrapperPulse })}>
       <TitleBlock wrap={wrap} />
       <FieldRows wrap={wrap} disableAnimation={disableAnimation} />
       <UISkeletonButton id="auth-skeleton-submit" sx={wrap(styles.buttonSkeleton)} />
-      {featureFlags.oauthProviders() && (
+      {showOauthProviders && (
         <>
           <DividerBlock wrap={wrap} />
           <SocialBlocks wrap={wrap} />

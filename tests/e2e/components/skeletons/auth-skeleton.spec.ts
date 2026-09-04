@@ -46,7 +46,7 @@ test.describe('AuthSkeleton Component E2E Tests', () => {
       // subtitle-line2 is rendered but hidden via display:none above 336px viewports
       await expect(page.locator('#auth-skeleton-subtitle-line2')).toBeAttached();
 
-      // REACT_APP_FEATURE_OAUTH_PROVIDERS defaults off, so no divider/social placeholders
+      // The oauthProviders runtime flag defaults off, so no divider/social placeholders
       const flaggedOffIds = [
         'auth-skeleton-divider',
         'auth-skeleton-social-google',

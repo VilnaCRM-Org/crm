@@ -3,6 +3,8 @@ import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 type FeatureFlagModule = typeof import('@/config/runtime/feature-flag-service');
 
+const ALL_OFF = { forgotPassword: false, oauthProviders: false, rememberMe: false };
+
 function loadFeatureFlagService(): Promise<FeatureFlagModule> {
   jest.resetModules();
 
@@ -23,25 +25,41 @@ describe('featureFlagService', () => {
 
     expect(featureFlagService).toBeInstanceOf(FeatureFlagService);
     expect(featureFlagService.isEnabled('forgotPassword')).toBe(false);
-    expect(featureFlagService.snapshot()).toEqual({ forgotPassword: false });
+    expect(featureFlagService.snapshot()).toEqual(ALL_OFF);
   });
 
-  it('enables a flag the runtime configuration turns on', async () => {
-    writeConfigBlock(buildFeatureFlagConfig({ forgotPassword: true }));
+  it.each(['forgotPassword', 'oauthProviders', 'rememberMe'] as const)(
+    'enables %s when the runtime configuration turns it on',
+    async (flag) => {
+      writeConfigBlock(buildFeatureFlagConfig({ [flag]: true }));
+
+      const { default: featureFlagService } = await loadFeatureFlagService();
+
+      expect(featureFlagService.isEnabled(flag)).toBe(true);
+      expect(featureFlagService.snapshot()).toEqual({ ...ALL_OFF, [flag]: true });
+    }
+  );
+
+  it.each(['forgotPassword', 'oauthProviders', 'rememberMe'] as const)(
+    'disables %s when the runtime configuration turns it off',
+    async (flag) => {
+      writeConfigBlock(buildFeatureFlagConfig({ [flag]: false }));
+
+      const { default: featureFlagService } = await loadFeatureFlagService();
+
+      expect(featureFlagService.isEnabled(flag)).toBe(false);
+      expect(featureFlagService.snapshot()).toEqual(ALL_OFF);
+    }
+  );
+
+  it('keeps the auth control flags independent of one another', async () => {
+    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
 
     const { default: featureFlagService } = await loadFeatureFlagService();
 
-    expect(featureFlagService.isEnabled('forgotPassword')).toBe(true);
-    expect(featureFlagService.snapshot()).toEqual({ forgotPassword: true });
-  });
-
-  it('disables a flag the runtime configuration turns off', async () => {
-    writeConfigBlock(buildFeatureFlagConfig({ forgotPassword: false }));
-
-    const { default: featureFlagService } = await loadFeatureFlagService();
-
+    expect(featureFlagService.isEnabled('oauthProviders')).toBe(true);
+    expect(featureFlagService.isEnabled('rememberMe')).toBe(false);
     expect(featureFlagService.isEnabled('forgotPassword')).toBe(false);
-    expect(featureFlagService.snapshot()).toEqual({ forgotPassword: false });
   });
 
   it.each([
@@ -59,6 +77,6 @@ describe('featureFlagService', () => {
   it('names every flag it knows about', async () => {
     const { default: featureFlagService } = await loadFeatureFlagService();
 
-    expect(featureFlagService.names()).toEqual(['forgotPassword']);
+    expect(featureFlagService.names()).toEqual(['forgotPassword', 'oauthProviders', 'rememberMe']);
   });
 });

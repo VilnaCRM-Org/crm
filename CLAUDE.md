@@ -1487,7 +1487,9 @@ container-resolved classes inject it instead of value-importing it (issue #130).
 **Settings:** `apiBaseUrl` (`APP_CONFIG_API_BASE_URL`, consumed by `@/utils/url-builder`, falling
 back to `REACT_APP_MOCKOON_URL`), `graphqlUrl` (`APP_CONFIG_GRAPHQL_URL`, injected into
 `GraphQLUrl`, falling back to `REACT_APP_GRAPHQL_URL`), and
-`flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`). Languages stay build-time — `src/i18n.js`
+`flags.<name>` (`APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>`) — today `forgotPassword`, plus the two
+dead-end auth controls issue #150 hides by default, `oauthProviders` (the OAuth provider row) and
+`rememberMe` (the remember-me checkbox). Languages stay build-time — `src/i18n.js`
 initializes i18next at module evaluation and `src/config/i18n-config.js` is `require`d by node
 tooling without a TypeScript loader, so that is an i18n boot-path restructuring, not a config
 change.
@@ -1635,10 +1637,6 @@ Key variables in `.env`:
 - `REACT_APP_SENTRY_ENVIRONMENT` - Sentry environment tag (falls back to `NODE_ENV`)
 - `REACT_APP_RELEASE` - Release version tag for Sentry release health and source-map
   symbolication (set per deploy, e.g. the commit SHA)
-- `REACT_APP_FEATURE_OAUTH_PROVIDERS` - **Default off** (empty). Renders the auth OAuth
-  provider row; hidden until the real OAuth flow exists (issue #150). Only `true`/`1` enable.
-- `REACT_APP_FEATURE_REMEMBER_ME` - **Default off** (empty). Renders the remember-me
-  checkbox; hidden until session persistence exists (issue #150). Only `true`/`1` enable.
 - `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` - Test-only auth seed for the Lighthouse/Playwright
   runs. **Inert on its own**: only a build that also set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` reads
   it, which is exclusively the ephemeral `test-harness` image. See "Preloaded-auth-token seed

@@ -5,7 +5,9 @@ import { I18nextProvider } from 'react-i18next';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 import localization from '@/i18n/localization.json';
+import { buildFeatureFlagConfig } from '@tests/builders';
 import testI18n from '@tests/i18n/test-i18n';
+import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 const AUTH_SKELETON_REGION_NAME = localization.en.translation.auth.loadingForm;
 
@@ -53,9 +55,6 @@ function assertAuthSkeletonElements(oauthEnabled = false): void {
   }
 }
 
-const OAUTH_FLAG = 'REACT_APP_FEATURE_OAUTH_PROVIDERS';
-const ORIGINAL_ENV = { ...process.env };
-
 describe('AuthSkeleton Integration Tests', () => {
   const originalInnerWidth = window.innerWidth;
   const viewportCases = [
@@ -66,7 +65,7 @@ describe('AuthSkeleton Integration Tests', () => {
   ];
 
   afterEach(() => {
-    process.env = { ...ORIGINAL_ENV };
+    clearConfigBlock();
     Object.defineProperty(window, 'innerWidth', {
       writable: true,
       configurable: true,
@@ -89,8 +88,10 @@ describe('AuthSkeleton Integration Tests', () => {
   });
 
   it('renders the divider and social placeholders when the OAuth flag is on', () => {
-    process.env[OAUTH_FLAG] = 'true';
-    render(<AuthSkeleton />);
+    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
+    renderAuthSkeleton();
+
+    expect(screen.getByRole('region', { name: AUTH_SKELETON_REGION_NAME })).toBeInTheDocument();
     assertAuthSkeletonElements(true);
   });
 

@@ -101,11 +101,18 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 | Flag             | Default | Meaning                                                       |
 | ---------------- | ------- | ------------------------------------------------------------- |
 | `forgotPassword` | `false` | Shows the "Forgot password?" link on the sign-in options row. |
+| `oauthProviders` | `false` | Shows the OAuth provider row on the sign-in / sign-up form.   |
+| `rememberMe`     | `false` | Shows the remember-me checkbox on the sign-in options row.    |
 
 `forgotPassword` is the worked example of stage 1. The link points at
 `ROUTE_PATHS.passwordRecovery`, and the recovery route does not exist yet — which is exactly why
 the flag defaults to `false`. Enable it only once the recovery flow is implemented, then follow
 stage 3 and delete the flag.
+
+`oauthProviders` and `rememberMe` (issue #150) are stage-1 flags for the same reason: each gates a
+control whose backing flow does not exist yet — the provider buttons open an endpoint no server
+implements, and the checkbox persists nothing. Default-off keeps the UI free of dead-end
+affordances; enable one only when its flow ships, then follow stage 3 and delete the flag.
 
 That precondition is enforced, not merely documented:
 `tests/unit/tooling/runtime-config-contract.test.ts` fails the build if the committed default for
