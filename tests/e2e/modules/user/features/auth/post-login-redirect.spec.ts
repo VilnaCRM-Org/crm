@@ -61,7 +61,16 @@ test.describe('Post-login redirect stays transition-only (issue #150)', () => {
     await mockLoginSuccess(page);
 
     await page.goto(SIGN_IN_URL);
+
+    // Without observing the request, this test would also pass if the login never fired at all —
+    // the URL holding on /sign-in is exactly what a dead submit button produces.
+    const loginRequest = page.waitForRequest(
+      (request) => request.url().includes('/api/users') && request.method() === 'POST'
+    );
+
     await submitValidLogin(page);
+
+    expect((await loginRequest).postDataJSON()).toMatchObject({ email: validCredentials.email });
 
     await expect(page.locator('form')).toHaveAttribute('aria-busy', 'false');
     await expect(page).toHaveURL(/\/sign-in$/);

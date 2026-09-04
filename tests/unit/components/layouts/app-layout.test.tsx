@@ -1,10 +1,18 @@
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { act, render, screen } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
 
 import AppLayout from '@/components/layouts/app-layout';
 import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 type Entry = Parameters<typeof MemoryRouter>[0]['initialEntries'];
+
+let navigate: ReturnType<typeof useNavigate> | undefined;
+
+function NavigationProbe(): JSX.Element {
+  navigate = useNavigate();
+
+  return <span>probe</span>;
+}
 
 function renderLayout(entries: Entry): void {
   render(
@@ -42,5 +50,36 @@ describe('AppLayout', () => {
     renderLayout([{ pathname: '/', state: { from: { pathname: '/deals' } } }] as Entry);
 
     expect(screen.getByRole('main')).not.toHaveFocus();
+  });
+
+  // `focusMain` stays on the history entry, so returning to it must not re-run the hand-off.
+  it('does not steal focus back when the landing entry is revisited', () => {
+    render(
+      <MemoryRouter
+        initialEntries={[{ pathname: '/', state: { focusMain: true } }] as Entry}
+        future={ROUTER_FUTURE_FLAGS}
+      >
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<NavigationProbe />} />
+            <Route path="/deals" element={<div>deals page</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>
+    );
+
+    const main = screen.getByRole('main');
+
+    expect(main).toHaveFocus();
+
+    act(() => navigate?.('/deals'));
+    act(() => main.blur());
+
+    expect(main).not.toHaveFocus();
+
+    act(() => navigate?.(-1));
+
+    expect(screen.getByText('probe')).toBeInTheDocument();
+    expect(main).not.toHaveFocus();
   });
 });

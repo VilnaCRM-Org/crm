@@ -25,6 +25,15 @@ describe('loginRedirectTarget.resolve', () => {
     expect(loginRedirectTarget.resolve({ from: { pathname: '//evil.example' } })).toBe('/');
   });
 
+  // Browsers normalise `\` to `/` in http(s) URLs, so a backslash form reaches the same
+  // cross-origin target the `//` guard rejects.
+  it.each([['/\\evil.example'], ['/\\/evil.example'], ['\\\\evil.example'], ['/ok\\path']])(
+    'rejects the backslash target %j',
+    (pathname) => {
+      expect(loginRedirectTarget.resolve({ from: { pathname } })).toBe('/');
+    }
+  );
+
   it('never redirects back to the sign-in page itself', () => {
     expect(loginRedirectTarget.resolve({ from: { pathname: '/sign-in', search: '?x=1' } })).toBe(
       '/'
