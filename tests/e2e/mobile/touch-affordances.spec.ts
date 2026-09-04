@@ -1,5 +1,7 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
 
+import { overrideRuntimeConfig } from '@tests/utils/override-runtime-config';
+
 import {
   hidePasswordLabel,
   OAUTH_BUTTON_SELECTOR,
@@ -104,7 +106,11 @@ test.describe('Touch target sizing', () => {
     }
   });
 
+  // The provider row ships hidden (issue #150 — the OAuth flow does not exist yet), so the
+  // sizing contract is asserted against the flag-on state the runtime config can serve from the
+  // same production build.
   test('keeps every social provider button tappable', async ({ page }) => {
+    await overrideRuntimeConfig(page, { flags: { oauthProviders: true } });
     await gotoAuthPage(page, SIGN_IN_URL, signIn.submitLabel);
 
     const providers = page.locator(OAUTH_BUTTON_SELECTOR);
