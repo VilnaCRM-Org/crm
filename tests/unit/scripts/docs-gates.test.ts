@@ -991,9 +991,10 @@ describe('checkDocCoverage', () => {
     expect(rulesOf(checkDocCoverage(root, moduleDocs))).toEqual(['missing-module-doc']);
   });
 
-  // /dev/null rather than /dev/zero: both are character devices, but this one also separates the
-  // two verdicts. Reading it returns '' — which the unfixed gate classified as `empty-module-doc`,
-  // a *documented but blank* module. Only the regular-file test reports it as undocumented.
+  // /dev/null rather than /dev/zero: both are character devices, but this one also separates
+  // the two verdicts. Reading it returns '', which the unfixed gate classified as
+  // `empty-module-doc` - a *documented but blank* module. Only the regular-file test reports
+  // it as undocumented.
   it('does not accept a character device as module documentation', () => {
     const root = makeRoot();
     write(root, 'src/modules/device/index.ts', 'export {};\n');
