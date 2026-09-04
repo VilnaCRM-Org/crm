@@ -336,8 +336,8 @@ array literal, so there is nothing left to change. Adding a twelfth needs the sa
 proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 203 files, of which ~173 produce scored mutants (the rest are pure re-export
-barrels or files whose only mutants are static and skipped by `ignoreStatic`).
+mutate scope is 206 files; not all of them produce scored mutants — the rest are pure re-export
+barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
 file can move it to a different shard — while its previous owner still carries the old result in
