@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { closeSync, constants, fstatSync, openSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
 
 import type { DocsViolation, ModuleDocsPolicy } from './docs-policy';
@@ -15,20 +15,38 @@ const listModules = (root: string, moduleRoot: string): string[] => {
       .map((entry) => entry.name)
       .sort((a, b) => a.localeCompare(b));
   } catch (cause) {
-    if (isErrnoCode(cause, 'ENOENT', 'ENOTDIR')) return [];
+    // ENOENT is the one benign answer: a root that ships no modules yet. A root that is a *file*
+    // is a misconfiguration, and swallowing it would pass the gate without checking one module.
+    if (isErrnoCode(cause, 'ENOENT')) return [];
+    if (isErrnoCode(cause, 'ENOTDIR')) {
+      throw new Error(
+        `docs-policy moduleDocs: "${moduleRoot}" is not a directory. ` +
+          'Refusing to run with an unchecked module root.',
+        { cause }
+      );
+    }
     throw cause;
   }
 };
 
-// ENOENT: no doc file at all. EISDIR: a *directory* named README.md documents nothing. Both are
-// the same verdict, and reading is the only operation — an existsSync/statSync pair ahead of it
-// would be a TOCTOU window for no gain.
+// One open, then fstat and read that same descriptor: the file classified is the file read, so
+// there is still no check-then-use window (CodeQL js/file-system-race). O_NONBLOCK keeps a FIFO at
+// the doc path from blocking the gate forever, and anything that is not a regular file — FIFO,
+// device, or a *directory* named README.md — documents nothing, which is the ENOENT verdict too.
 const readDoc = (absolute: string): string | null => {
+  let fd: number;
+
   try {
-    return readFileSync(absolute, 'utf8');
+    fd = openSync(absolute, constants.O_RDONLY | constants.O_NONBLOCK);
   } catch (cause) {
     if (isErrnoCode(cause, 'ENOENT', 'EISDIR')) return null;
     throw cause;
+  }
+
+  try {
+    return fstatSync(fd).isFile() ? readFileSync(fd, 'utf8') : null;
+  } finally {
+    closeSync(fd);
   }
 };
 

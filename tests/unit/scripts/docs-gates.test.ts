@@ -973,6 +973,34 @@ describe('checkDocCoverage', () => {
   it('reports nothing when the module root does not exist', () => {
     expect(checkDocCoverage(makeRoot(), moduleDocs)).toEqual([]);
   });
+
+  it('refuses a module root that is a file rather than a directory', () => {
+    const root = makeRoot();
+    write(root, 'src/modules', 'not a directory\n');
+
+    expect(() => checkDocCoverage(root, moduleDocs)).toThrow(
+      /Refusing to run with an unchecked module root/
+    );
+  });
+
+  it('treats a FIFO at the doc path as missing documentation instead of blocking', () => {
+    const root = makeRoot();
+    write(root, 'src/modules/piped/index.ts', 'export {};\n');
+    execFileSync('mkfifo', [path.join(root, 'src/modules/piped/README.md')]);
+
+    expect(rulesOf(checkDocCoverage(root, moduleDocs))).toEqual(['missing-module-doc']);
+  });
+
+  // /dev/null rather than /dev/zero: both are character devices, but this one also separates the
+  // two verdicts. Reading it returns '' — which the unfixed gate classified as `empty-module-doc`,
+  // a *documented but blank* module. Only the regular-file test reports it as undocumented.
+  it('does not accept a character device as module documentation', () => {
+    const root = makeRoot();
+    write(root, 'src/modules/device/index.ts', 'export {};\n');
+    symlinkSync('/dev/null', path.join(root, 'src/modules/device/README.md'));
+
+    expect(rulesOf(checkDocCoverage(root, moduleDocs))).toEqual(['missing-module-doc']);
+  });
 });
 
 describe('matchesAny', () => {
