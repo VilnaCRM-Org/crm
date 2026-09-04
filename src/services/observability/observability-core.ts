@@ -71,8 +71,8 @@ export class ObservabilityCore implements ObservabilityService, ErrorReporter {
   private safe(action: () => void): void {
     try {
       action();
-    } catch (caught) {
-      void caught;
+    } catch {
+      // an observability failure must never break the caller
     }
   }
 }

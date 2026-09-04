@@ -17,6 +17,10 @@ jobs:
   shard:
     name: full shard ${{ matrix.index }}
     runs-on: ubuntu-latest
+    # Kill switch, not a target. This pass is cold by definition, which is the
+    # ~6-7 min case the pull-request shards also measure; failing at twice that
+    # surfaces a runtime regression instead of burning a scheduled runner.
+    timeout-minutes: 12
     permissions:
       contents: read
     strategy:
@@ -43,11 +47,14 @@ jobs:
       - name: Run full mutation shard
         run: make test-mutation-shard MUTATION_SHARD_INDEX=${{ matrix.index }} MUTATION_SHARD_TOTAL=8 MUTATION_INCREMENTAL=1
 
+      # Key must match mutation-testing.yml so pull requests can restore it, and
+      # must carry the mutation-config, tsconfig-chain, dependency and container
+      # hash so any change to how mutants are classified starts cold.
       - name: Save refreshed mutation incremental cache
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: reports/stryker-incremental-${{ matrix.index }}.json
-          key: mutation-incremental-shard-${{ matrix.index }}-${{ github.run_id }}
+          key: mutation-incremental-shard-${{ matrix.index }}-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile') }}-${{ github.run_id }}
 
       - name: Upload shard report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -66,6 +73,10 @@ jobs:
     needs: shard
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
+    # Hang guard only — this job runs no mutants. It measures ~1m30s (container
+    # start plus the merge script), so the cap is headroom, not a budget: timing
+    # out here would fail the gate closed over work the shards already paid for.
+    timeout-minutes: 8
     permissions:
       contents: read
 

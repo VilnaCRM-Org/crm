@@ -16,9 +16,13 @@ export default function UserOptions(): JSX.Element | null {
   const showForgotPassword = useFeatureFlag('forgotPassword');
   const showRememberMe = featureFlags.rememberMe();
 
-  const handleCheckboxChange = useCallback((): void => {
-    setIsChecked((prev) => !prev);
-  }, []);
+  const handleCheckboxChange = useCallback(
+    (): void => {
+      setIsChecked((prev) => !prev);
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
+    []
+  );
 
   if (!showRememberMe && !showForgotPassword) return null;
 
