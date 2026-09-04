@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { useEffect, useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
@@ -7,22 +7,25 @@ import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 export default function AppLayout(): JSX.Element {
   const { state } = useLocation();
   const focusMain = Boolean((state as RedirectNavigationState | null)?.focusMain);
-  const mainRef = useRef<HTMLElement | null>(null);
   const hasFocused = useRef(false);
 
   // One-shot: `focusMain` lives on the history entry, so navigating Back to the landing entry
-  // would otherwise re-raise it and yank focus out of whatever the user is on mid-session.
-  useEffect(() => {
-    if (!focusMain || hasFocused.current) return;
+  // re-attaches this ref, and without the guard focus would be yanked back to <main> mid-session.
+  const focusOnce = useCallback(
+    (node: HTMLElement | null): void => {
+      if (!node || hasFocused.current) return;
 
-    hasFocused.current = true;
-    mainRef.current?.focus();
-  }, [focusMain]);
+      hasFocused.current = true;
+      node.focus();
+    },
+    // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
+    []
+  );
 
   return (
     <Box
       component="main"
-      ref={mainRef}
+      ref={focusMain ? focusOnce : undefined}
       tabIndex={-1}
       sx={{
         flexGrow: 1,
