@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import compat from 'eslint-plugin-compat';
 import eslintComments from 'eslint-plugin-eslint-comments';
 import importPlugin from 'eslint-plugin-import';
 import jest from 'eslint-plugin-jest';
@@ -1028,6 +1029,23 @@ export default [
           ],
         },
       ],
+    },
+  },
+
+  // Source (issue #153): the production build ships no polyfills (`output.polyfill: "off"` in
+  // config/browser-support.json), so every Web API reachable from `src/` must already exist in
+  // the declared browser matrix. compat/compat reads the same package.json `browserslist.production`
+  // query that RSBuild transpiles against, which keeps the support promise machine-checked rather
+  // than aspirational. A finding means the API is unavailable on a browser we claim to support:
+  // use a supported API, or re-decide and raise the floor in config/browser-support.json — never
+  // suppress. Note this covers Web/DOM APIs only: SWC down-levels *syntax* from the same query
+  // but adds no runtime shims, so a missing ES built-in method is out of scope for both.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
+    plugins: { compat },
+    rules: {
+      'compat/compat': 'error',
     },
   },
 ];

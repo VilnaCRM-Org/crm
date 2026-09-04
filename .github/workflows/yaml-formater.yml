@@ -27,7 +27,9 @@ concurrency:
 jobs:
   yamlfmt:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # Prettier's own work is a steady ~0.35s; the budget exists for the registry install below,
+    # the only unbounded step in the job. 10 minutes matches the other lightweight jobs.
+    timeout-minutes: 10
     permissions:
       contents: read
     steps:
@@ -44,7 +46,16 @@ jobs:
       # can never disagree on formatting; tests/unit/tooling/ci-config-gates.test.ts fails the
       # build if the two drift. Installing only prettier keeps the job independent of the full
       # dev-dependency tree, which is the point of the container-free path.
+      #
+      # `npx` fetches that pin from the registry on every run. npm's default fetch-timeout is
+      # 300000ms, which used to be longer than this job's whole budget: three runs on 2026-09-04
+      # (33850432909, 33851472773, 33850547510) stalled for exactly 300.7s and were cancelled
+      # *after* prettier had already printed "All matched files use Prettier code style!" — a
+      # clean gate reported as a failure. Bounding the fetch turns a stalled registry into a
+      # fast, retried, honest error instead of a silent budget burn.
       - name: Check YAML formatting
         env:
           PRETTIER_VERSION: 3.9.6
+          npm_config_fetch_timeout: '60000'
+          npm_config_fetch_retries: '3'
         run: npx --yes "prettier@$PRETTIER_VERSION" "**/*.{yml,yaml}" --check --ignore-path .prettierignore

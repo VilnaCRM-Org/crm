@@ -129,3 +129,10 @@ lint-licenses	bats	tests/bats/makefile_targets.bats	Validated as a member of the
 new-module	bats	tests/bats/makefile_targets.bats	Validated as driving `bun x plop module` in the dev container, defaulting the feature name and failing fast without name=.
 new-feature	bats	tests/bats/makefile_targets.bats	Validated as driving `bun x plop feature` in the dev container and failing fast without module= or feature=.
 verify-scaffold	bats	tests/bats/makefile_targets.bats	Validated as invoking scripts/ci/verify-scaffold.sh with the SCAFFOLD_VERIFY_TARGETS gate list.
+check-browser-support	bats	tests/bats/makefile_targets.bats	Validated as the direct browser-support gate invocation in the lint target table.
+lint-docs	bats	tests/bats/makefile_targets.bats	Validated as the documentation drift aggregate, asserting it runs the ADR and link checks.
+lint-adr	bats	tests/bats/makefile_targets.bats	Validated as the direct ADR policy gate invocation in the lint target table.
+lint-doc-coverage	bats	tests/bats/makefile_targets.bats	Validated as the direct module documentation coverage gate invocation.
+lint-doc-references	bats	tests/bats/makefile_targets.bats	Validated as the direct documented-command reference gate invocation.
+lint-doc-links	bats	tests/bats/makefile_targets.bats	Validated as the direct relative-link and anchor gate invocation.
+check-adr-drift	bats	tests/bats/makefile_targets.bats	Validated as the direct architecture drift gate invocation in the lint target table.

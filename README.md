@@ -346,7 +346,7 @@ that profile.
 Using the `make` command (recommended):
 
 ```bash
-  make load-tests
+  make test-load
 ```
 
 The load testing service waits for the production service to become healthy before starting.
@@ -361,6 +361,31 @@ Available Load Test Scenarios:
 
 Adjust scenarios and thresholds in ./test/load/config.json.dist as needed.
 
+## Supported browsers
+
+The production build targets the **Baseline 2023 Widely available** interoperability line and
+ships **no polyfills** (`output.polyfill: "off"`). Every browser below runs the built artifact
+without shims; anything older is out of support.
+
+| Browser               | Minimum version |
+| --------------------- | --------------- |
+| Chrome                | 111             |
+| Edge                  | 111             |
+| Firefox               | 111             |
+| Safari (macOS)        | 16.4            |
+| Safari (iOS / iPadOS) | 16.4            |
+| Samsung Internet      | 22              |
+| Opera                 | 97              |
+| Chrome for Android    | latest          |
+| Firefox for Android   | latest          |
+
+This matrix is not a comment — it is enforced. [`config/browser-support.json`](config/browser-support.json)
+is the single source of truth for the floors, the `browserslist.production` query, and the
+polyfill mode; `make check-browser-support` fails when the query, the resolved floors, or this
+table drift apart, and the `compat/compat` ESLint rule fails the build when `src/` reaches for a
+Web API that any listed browser lacks. Rationale and the polyfill trade-off are recorded in
+[ADR-003](docs/adr/003-browser-support-matrix.md).
+
 ## Documentation
 
 Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
@@ -368,22 +393,22 @@ If you're having trouble, head for
 [the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 as it's frequently updated.
 
+In-repository documentation:
+
 - [Architecture Decision Records (ADRs)](docs/adr/README.md)
+- [Agent and contributor guide](agents.md)
+- [Repository conventions and commands](CLAUDE.md)
+- [Contributing guide](CONTRIBUTING.md)
 - [Feature flags — lifecycle and rollout](docs/feature-flags.md)
 - [Runtime configuration (`@/config/runtime`)](src/config/runtime/README.md)
-
-You can generate complete API-level documentation by running `doc` in the top-level
-folder, and documentation will appear in the `docs` folder, though you'll need to have
-[API-Extractor](https://api-extractor.com/) installed.
 
 If the documentation doesn't cover what you need, search the
 [many questions on Stack Overflow](http://stackoverflow.com/questions/tagged/vilnacrm),
 and before you ask a question,
-[read the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/roubleshooting).
+[read the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting).
 
 ## Tests
 
-[Tests](https://github.com/VilnaCRM-Org/crm/actions)
 [Tests](https://github.com/VilnaCRM-Org/crm/actions)
 
 If this isn't passing, is there something you can do to help?
@@ -395,7 +420,6 @@ Please disclose any vulnerabilities found responsibly – report security issues
 See
 [SECURITY](https://github.com/VilnaCRM-Org/crm/blob/main/SECURITY.md)
 and
-[Security advisories on GitHub](https://github.com/VilnaCRM-Org/crm/security).
 [Security advisories on GitHub](https://github.com/VilnaCRM-Org/crm/security).
 
 ## Contributing

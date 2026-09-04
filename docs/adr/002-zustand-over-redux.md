@@ -72,8 +72,17 @@ concerns.
 
 ## Follow-up Actions
 
-- Migrate existing Redux state to Zustand — tracked in
-  [#45 Migrate authentication state management from Redux to Zustand](https://github.com/VilnaCRM-Org/crm/issues/45)
+- **Done** — Migrate existing Redux state to Zustand, tracked in
+  [#45 Migrate authentication state management from Redux to Zustand](https://github.com/VilnaCRM-Org/crm/issues/45).
+  Issue #45 is closed and the migration is complete: `package.json` declares no `redux` or
+  `@reduxjs` dependency, and no Redux primitive (`createSlice`, `configureStore`) remains in
+  `src/`. Auth state now lives in `src/modules/user/features/auth/stores/`.
+
+## Update history
+
+- **2026-08-13** — Marked the follow-up Done. It had continued to present completed work as
+  pending. Recorded while adding the documentation drift gates in
+  [#122](https://github.com/VilnaCRM-Org/crm/issues/122).
 
 ## Links
 

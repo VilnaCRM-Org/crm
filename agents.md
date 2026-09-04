@@ -161,6 +161,10 @@ markdownlint, Prettier and the metrics gate, and it ships both `i18n/en.json` an
 `i18n/uk.json` plus mirrored unit and E2E test skeletons covering positive, negative, and
 edge cases per the Mandatory Test-Scenario Coverage Policy.
 
+That skeleton includes the module `README.md`: every module under `src/modules/` must ship
+one describing its purpose and public surface, or `make lint-doc-coverage` fails
+(issue #122).
+
 The generator prints the two lines you must add by hand — the module registrar entry in
 `src/config/dependency-injection-config.ts` (issue #109) and the route contract entry in
 `src/routes/registry.ts` (issue #105). Then run `make format` before `make lint`

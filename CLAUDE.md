@@ -476,6 +476,9 @@ make lint-zizmor    # zizmor workflow-security gate (Docker; not part of `make l
 make lint-compose   # docker compose config validation (schema, interpolation, duplicate keys)
 make lint-lockfile  # bun.lock resolution-provenance gate (npm registry allowlist)
 make lint-licenses  # dependency license SPDX-allowlist gate over the production tree (see below)
+make lint-docs      # documentation + ADR drift gates (see below)
+make check-browser-support # browser matrix / polyfill drift gate (see below)
+make check-adr-drift # ADR-required gate for architecture changes (CI/PR-only, see below)
 make contract-diff  # semantic OpenAPI breaking-change gate on pin bumps (see above)
 make check-e2e-route-coverage # route-coverage inventory gate (see above)
 make check-auth-seed-gate # preloaded-auth seed bundle scan (Docker; not part of `make lint`)
@@ -974,6 +977,74 @@ as written, and the scheduled run is the monitor instead.
 narrow the permission, pass values through `env` instead of `${{ }}` interpolation, reformat the
 YAML. Never add a `zizmor.yml` ignore, raise `--min-severity`, weaken the persona, or narrow the
 audit scope.
+
+### Documentation and ADR drift detection (issue #122)
+
+Docs and ADRs were the one architectural surface with no machine gate, and both shipped ADRs had
+already drifted — ADR-001 justified Module Federation with a Webpack premise the repository
+abandoned in the RSBuild migration, and ADR-002 still listed a completed migration as an open
+follow-up. `config/docs-policy.json` is the authoritative policy for all of it; code reads it,
+reviewers diff it.
+
+```bash
+make lint-docs             # all four blocking gates below (part of `make lint`)
+make lint-adr              # ADR filenames, metadata, statuses, sections, index sync, template
+make lint-doc-coverage     # every src/modules/* ships a README
+make lint-doc-references   # every documented `make`/`bun run` command exists
+make lint-doc-links        # every relative link and heading anchor resolves
+make check-adr-drift       # architecture changed without an ADR (CI/PR-only)
+```
+
+Only **git-tracked** markdown under the policy roots is gated, so an untracked scratch file can
+never fail a local `make lint` that CI would pass. Commands are matched only inside code spans
+and fenced blocks, so prose like "make sure the build passes" is never mistaken for a target.
+
+**Adding an ADR:** copy [`docs/adr/template.md`](docs/adr/template.md) to
+`docs/adr/NNN-kebab-case-slug.md`, fill every required section, and add the row to
+`docs/adr/README.md`. Statuses are `Proposed`, `Approved`, `Rejected`, `Deprecated`,
+`Superseded`. The linter also checks the template against the policy, so the skeleton and the
+required-section list can never disagree.
+
+**ADR drift gate.** A pull request that changes an architecturally significant surface —
+`.dependency-cruiser.js`, `rsbuild.config.ts`, `config/browser-support.json`, `src/config/**`,
+the route registry/composer, or the `dependencies` map in `package.json` — must also touch
+`docs/adr/**`. A `package.json` edit that leaves the dependency map identical does not trigger
+it. There is exactly **one** documented escape hatch for a genuinely doc-irrelevant change: the
+`adr:not-required` label, or a `[no-adr]` line in the pull-request body. The gate is diff-driven
+against the merge base, so it runs in CI (which has the base branch and the pull-request
+context), not in local `make lint`.
+
+**Remote links** are audited by the weekly `docs link audit` workflow (lychee, `.lychee.toml`),
+not on pull requests: resolving third-party URLs depends on the public internet, and the
+zero-flake policy keeps that out of a required check. The deterministic half — relative links
+and anchors — is blocking on every pull request.
+
+**No suppression:** fix the doc, the link, the ADR, or the command. Never add an ignore entry,
+allowlist a failing URL, or widen `config/docs-policy.json` to clear a finding. The same
+root-cause-not-suppression policy used for ESLint, TypeScript, jscpd, and metrics applies.
+
+### Browser support matrix and polyfills (issue #153)
+
+The production browserslist range used to be `>0.2%, not dead, not op_mini all`, which admitted
+**iOS Safari 11** while `output.polyfill` sat at its `off` default — a support claim the build
+never kept. [`config/browser-support.json`](config/browser-support.json) is now the single
+source of truth for the polyfill mode, the exact `browserslist.production` query, and the
+per-family floors; `rsbuild.config.ts` reads `polyfill` from it and refuses to build on an
+unknown value. The matrix is **Baseline 2023 Widely available** (Chrome/Edge/Firefox 111,
+Safari and iOS Safari 16.4, Samsung Internet 22, Opera 97, latest Chrome/Firefox for Android)
+and is documented in [ADR-003](docs/adr/003-browser-support-matrix.md).
+
+Three checks keep the promise honest, all reading that one query:
+
+- `make check-browser-support` — fails when the package.json query, the resolved per-family
+  floors, or the README matrix drift apart from the policy. Floors are pinned, so a
+  `caniuse-lite` refresh cannot widen the supported set silently.
+- `compat/compat` (ESLint) — fails when `src/` uses a Web API missing from any supported
+  browser. This is what makes `polyfill: "off"` safe.
+- SWC down-levels syntax against the same query during the production build.
+
+**Raising or lowering the floor** is a reviewed change to `config/browser-support.json`, the
+README table, and ADR-003 together — never a lone query edit, and never a suppression.
 
 ### Performance Budgets, Bundle Reports, and Route Splitting (issue #117)
 

@@ -1,0 +1,38 @@
+name: docs link audit
+
+# Remote-link half of the documentation gate (issue #122). Scheduled rather than required on
+# pull requests: resolving third-party URLs depends on the public internet, which the repository's
+# zero-flake policy keeps out of blocking checks. The deterministic half — relative links and
+# heading anchors — runs on every pull request through `make lint-doc-links` inside `make lint`.
+on:
+  schedule:
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  links:
+    name: remote links
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      # Deliberately uncached. The point of a weekly audit is to re-resolve every link against
+      # the live web; a cache that outlived the interval would just replay last week's answers,
+      # and one that expired within it would never be read.
+      - name: Audit remote documentation links
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: --config .lychee.toml --no-progress './**/*.md'
+          fail: true
+          jobSummary: true

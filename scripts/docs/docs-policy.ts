@@ -1,0 +1,169 @@
+import { readFileSync } from 'node:fs';
+
+export interface AdrPolicy {
+  directory: string;
+  indexFile: string;
+  templateFile: string;
+  filePattern: string;
+  titlePattern: string;
+  requiredMetadata: string[];
+  datePattern: string;
+  allowedStatuses: string[];
+  requiredSections: string[];
+}
+
+export interface ModuleDocsPolicy {
+  roots: string[];
+  requiredFile: string;
+}
+
+export interface DocsScanPolicy {
+  roots: string[];
+  ignoredPaths: string[];
+  ignoredFiles: string[];
+}
+
+export interface CommandReferencePolicy {
+  makefile: string;
+  packageJson: string;
+}
+
+export interface ArchitectureDriftPolicy {
+  significantPaths: string[];
+  significantManifest: string;
+  manifestKeys: string[];
+  adrPathPrefix: string;
+  escapeHatchMarker: string;
+  escapeHatchLabel: string;
+}
+
+export interface DocsPolicy {
+  adr: AdrPolicy;
+  moduleDocs: ModuleDocsPolicy;
+  docs: DocsScanPolicy;
+  commandReferences: CommandReferencePolicy;
+  architectureDrift: ArchitectureDriftPolicy;
+}
+
+export interface DocsViolation {
+  rule: string;
+  subject: string;
+  message: string;
+}
+
+type FieldKind = 'string' | 'string[]' | 'string[]?';
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((entry) => typeof entry === 'string' && entry.length > 0);
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 0;
+
+const EXPECTATION: Record<FieldKind, string> = {
+  string: 'a non-empty string',
+  'string[]': 'a non-empty array of non-empty strings',
+  'string[]?': 'an array of non-empty strings',
+};
+
+const isValid = (kind: FieldKind, value: unknown): boolean => {
+  if (kind === 'string') {
+    return isNonEmptyString(value);
+  }
+  if (kind === 'string[]?') {
+    return isStringArray(value);
+  }
+  return isStringArray(value) && value.length > 0;
+};
+
+// `string[]` fields drive enforcement, so an empty one would silently disable a check and must
+// be rejected. `string[]?` marks the ignore lists, where empty legitimately means "ignore
+// nothing" (issue #122).
+const SHAPE: Record<keyof DocsPolicy, Record<string, FieldKind>> = {
+  adr: {
+    directory: 'string',
+    indexFile: 'string',
+    templateFile: 'string',
+    filePattern: 'string',
+    titlePattern: 'string',
+    requiredMetadata: 'string[]',
+    datePattern: 'string',
+    allowedStatuses: 'string[]',
+    requiredSections: 'string[]',
+  },
+  moduleDocs: { roots: 'string[]', requiredFile: 'string' },
+  docs: { roots: 'string[]', ignoredPaths: 'string[]?', ignoredFiles: 'string[]?' },
+  commandReferences: { makefile: 'string', packageJson: 'string' },
+  architectureDrift: {
+    significantPaths: 'string[]',
+    significantManifest: 'string',
+    manifestKeys: 'string[]',
+    adrPathPrefix: 'string',
+    escapeHatchMarker: 'string',
+    escapeHatchLabel: 'string',
+  },
+};
+
+/**
+ * Fail fast rather than let a malformed policy silently disable the documentation gates —
+ * an unreadable policy would make every check vacuously pass (issue #122).
+ */
+export const parseDocsPolicy = (raw: unknown, source: string): DocsPolicy => {
+  const reject = (reason: string): never => {
+    throw new Error(`${source}: ${reason}. Refusing to run with unenforced documentation gates.`);
+  };
+
+  if (typeof raw !== 'object' || raw === null) {
+    return reject('policy must be a JSON object');
+  }
+  const candidate = raw as Record<string, unknown>;
+
+  for (const [section, fields] of Object.entries(SHAPE)) {
+    const block = candidate[section];
+    if (typeof block !== 'object' || block === null) {
+      reject(`"${section}" must be an object`);
+    }
+
+    const values = block as Record<string, unknown>;
+    for (const [field, kind] of Object.entries(fields)) {
+      if (!isValid(kind, values[field])) {
+        reject(`"${section}.${field}" must be ${EXPECTATION[kind]}`);
+      }
+    }
+  }
+
+  const policy = candidate as unknown as DocsPolicy;
+
+  // Compile the patterns here so a malformed one fails with the policy's own refusal message
+  // rather than as a raw SyntaxError from inside whichever gate happens to run first.
+  for (const field of ['filePattern', 'titlePattern', 'datePattern'] as const) {
+    try {
+      RegExp(policy.adr[field]);
+    } catch (error) {
+      reject(`"adr.${field}" is not a valid regular expression: ${String(error)}`);
+    }
+  }
+
+  // The ADR linter reads `adr.directory` while the drift gate reads `architectureDrift
+  // .adrPathPrefix`. Relocating ADRs by editing only one would leave the drift gate watching a
+  // directory nothing can be written to, making every significant change unsatisfiable.
+  const expectedPrefix = `${policy.adr.directory}/`;
+  if (policy.architectureDrift.adrPathPrefix !== expectedPrefix) {
+    reject(
+      `"architectureDrift.adrPathPrefix" must be "${expectedPrefix}" to match "adr.directory", ` +
+        `got "${policy.architectureDrift.adrPathPrefix}"`
+    );
+  }
+
+  return policy;
+};
+
+export const loadDocsPolicy = (path: string): DocsPolicy => {
+  const raw = readFileSync(path, 'utf8');
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new Error(`${path} is not valid JSON: ${String(error)}`);
+  }
+  return parseDocsPolicy(parsed, path);
+};
