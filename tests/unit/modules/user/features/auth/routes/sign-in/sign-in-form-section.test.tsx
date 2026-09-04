@@ -2,7 +2,9 @@ import { screen } from '@testing-library/react';
 import type { ReactElement, ReactNode } from 'react';
 
 import SignInFormSection from '@auth/routes/sign-in/sign-in-form-section';
+import { buildFeatureFlagConfig } from '@tests/builders';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
+import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 jest.mock('@auth/components/form-section/auth-forms/login-form', () => ({
   __esModule: true,
@@ -35,7 +37,15 @@ jest.mock('@auth/components/form-section/inert-box', () => ({
 }));
 
 describe('SignInFormSection', () => {
-  it('keeps the OAuth provider row interactive', () => {
+  afterEach(() => {
+    clearConfigBlock();
+  });
+
+  // The provider row ships hidden (issue #150), so the interactivity contract is asserted
+  // against the flag-on state; the default-off case is the test below it.
+  it('keeps the OAuth provider row interactive when the flag is on', () => {
+    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
+
     renderWithProviders(<SignInFormSection />);
 
     expect(
@@ -46,7 +56,18 @@ describe('SignInFormSection', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('renders no provider row at all while the flag is off', () => {
+    renderWithProviders(<SignInFormSection />);
+
+    expect(
+      screen.queryByRole('group', { name: /auth-provider-buttons-container/ })
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Continue with Google' })).not.toBeInTheDocument();
+  });
+
   it('composes the login form with the sign-up switcher', () => {
+    writeConfigBlock(buildFeatureFlagConfig({ oauthProviders: true }));
+
     renderWithProviders(<SignInFormSection />);
 
     expect(screen.getByRole('form', { name: 'Login' })).toBeInTheDocument();
