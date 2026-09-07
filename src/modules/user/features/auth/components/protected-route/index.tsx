@@ -14,6 +14,10 @@ accessSession.sync(AuthStateVar.get());
 
 export default function ProtectedRoute(): JSX.Element {
   const token = useAuthToken();
+  // It must stay a boolean: depending on the principal itself would re-enter the sync on any
+  // identity change, and composing the DI container clears the memoized token (useLoader), so
+  // the re-entry would rebuild the session and revert a tenant switch.
+  // Stryker disable next-line EqualityOperator: equivalent, only ever read as a dep identity
   const hydrated = usePrincipal() !== null;
   const location = useLocation();
 

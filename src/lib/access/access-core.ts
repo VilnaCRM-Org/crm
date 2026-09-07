@@ -31,14 +31,12 @@ export class AccessCore {
   }
 
   public switchTenant(tenantId: string): boolean {
-    const from = this.activeTenant() ?? '';
-    const reason = this.refusalReason(tenantId);
-    if (reason !== null) {
-      this.recordDenial(PERMISSIONS.tenantSwitch, { tenantId, reason });
-      return false;
-    }
+    const principal = this.principal();
+    if (principal === null) return this.refuse(tenantId, 'permission');
+    const reason = this.refusalReason(principal, tenantId);
+    if (reason !== null) return this.refuse(tenantId, reason);
     accessState.setActiveTenant(tenantId);
-    auditCore.log({ type: 'tenant_switch', metadata: { from, to: tenantId } });
+    auditCore.log({ type: 'tenant_switch', metadata: { from: principal.tenantId, to: tenantId } });
     return true;
   }
 
@@ -46,9 +44,14 @@ export class AccessCore {
     auditCore.log({ type: 'permission_denied', metadata: { ...context, permission } });
   }
 
-  private refusalReason(tenantId: string): DenialReason | null {
-    if (!this.can(PERMISSIONS.tenantSwitch)) return 'permission';
-    return this.tenants().some((tenant) => tenant.id === tenantId) ? null : 'membership';
+  private refuse(tenantId: string, reason: DenialReason): boolean {
+    this.recordDenial(PERMISSIONS.tenantSwitch, { tenantId, reason });
+    return false;
+  }
+
+  private refusalReason(principal: Principal, tenantId: string): DenialReason | null {
+    if (!permissionResolver.can(principal, PERMISSIONS.tenantSwitch)) return 'permission';
+    return principal.tenants.some((tenant) => tenant.id === tenantId) ? null : 'membership';
   }
 }
 

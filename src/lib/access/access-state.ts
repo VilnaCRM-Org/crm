@@ -34,7 +34,7 @@ export class AccessStateStore {
 
   public setActiveTenant(tenantId: string): void {
     const { principal, flags } = this.snapshot;
-    if (principal === null || !principal.tenants.some((tenant) => tenant.id === tenantId)) return;
+    if (principal === null) return;
     this.setSession({ ...principal, tenantId }, flags);
   }
 

@@ -3,16 +3,16 @@ import type { SessionClaims } from '@/lib/types/access/session';
 import claimsMapper from './claims-mapper';
 
 const JWT_SEGMENTS = 3;
-const BASE64_BLOCK = 4;
 
 export class SessionClaimsReader {
   public read(token: string | null): SessionClaims | null {
     const segment = this.payloadSegment(token);
-    return segment === null ? null : claimsMapper.map(this.decode(segment));
+    return segment === null ? null : this.decode(segment);
   }
 
   private payloadSegment(token: string | null): string | null {
-    const parts: readonly string[] = token === null ? [] : token.split('.');
+    if (token === null) return null;
+    const parts: readonly string[] = token.split('.');
     return this.isJwtParts(parts) ? parts[1] : null;
   }
 
@@ -20,9 +20,9 @@ export class SessionClaimsReader {
     return parts.length === JWT_SEGMENTS;
   }
 
-  private decode(segment: string): unknown {
+  private decode(segment: string): SessionClaims | null {
     try {
-      return JSON.parse(this.fromBase64Url(segment));
+      return claimsMapper.map(JSON.parse(this.fromBase64Url(segment)));
     } catch {
       return null;
     }
@@ -30,8 +30,7 @@ export class SessionClaimsReader {
 
   private fromBase64Url(segment: string): string {
     const normalized = segment.replace(/-/g, '+').replace(/_/g, '/');
-    const padding = (BASE64_BLOCK - (normalized.length % BASE64_BLOCK)) % BASE64_BLOCK;
-    const binary = atob(normalized.padEnd(normalized.length + padding, '='));
+    const binary = atob(normalized);
     const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
     return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   }

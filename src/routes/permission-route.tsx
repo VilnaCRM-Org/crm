@@ -22,7 +22,7 @@ export default function PermissionRoute({ permission }: PermissionRouteProps): J
   // of the refusal's identity. The remount key below stays the pathname alone: re-anchoring
   // focus on a change the user did not initiate would be the worse bug.
   const refusal =
-    principal !== null && !allowed ? [principal.id, permission, pathname].join(' ') : null;
+    principal !== null && !allowed ? JSON.stringify([principal.id, permission, pathname]) : null;
 
   useDenialAudit(refusal, permission, pathname);
 

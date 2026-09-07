@@ -63,7 +63,8 @@ export class SessionFactory {
   }
 
   private toRoles(claimed: readonly string[] | undefined): readonly Role[] {
-    const known = (claimed ?? []).filter((role): role is Role => permissionResolver.isRole(role));
+    const known: readonly Role[] =
+      claimed?.filter((role): role is Role => permissionResolver.isRole(role)) ?? [];
     return known.length === 0 ? [DEFAULT_ROLE] : known;
   }
 
