@@ -24,9 +24,10 @@ First, the epic proposed `src/modules/access/`. That is **not viable in this rep
 importing a module (`no-components-import-modules`). A concern every module and every shared
 component must consume therefore cannot live in a module at all.
 
-Second, the authenticated shell is the route the mobile Lighthouse budget is measured on, and that
-budget has no headroom — `config/performance-budget.json` caps the initial entrypoint and
-[ADR-003](./003-browser-support-matrix.md) already rules out spending it on polyfills. The auth
+Second, the authenticated shell is one of the three routes the mobile Lighthouse budget is measured
+on (`/`, `/sign-up`, `/sign-in`), and that budget has no headroom — `config/performance-budget.json`
+caps the initial entrypoint and [ADR-003](./003-browser-support-matrix.md) already rules out
+spending it on polyfills. The auth
 store is deliberately container-free for exactly this reason: the DI graph loads behind a dynamic
 `import()` on the first auth action. Any authorization check reachable from first paint therefore
 must not pull tsyringe, zod, or Apollo into the eager chunk.
@@ -77,7 +78,9 @@ from tsyringe and nothing from a feature module, so it is safe to reach from fir
 The principal is derived from the access token's claims: unrecognised roles are dropped rather
 than coerced, a token with no recognised role falls back to `DEFAULT_ROLE` (`viewer`, the least
 privileged), a blank `sub` becomes a random opaque id rather than a shared empty identity, and an
-active tenant outside the claimed membership list is refused by the store rather than published.
+active tenant outside the claimed membership list is reconciled to a real membership rather than
+honoured as claimed. The store keeps that invariant separately: a principal handed to `setSession`
+whose active tenant is not one of its own memberships is refused rather than published.
 
 Route gating is **route data**, not shell wiring: a route contract declares
 `meta: { permission }` and the composer groups protected routes under one `PermissionRoute` per
@@ -100,8 +103,9 @@ inventory, including the known limits of a syntactic guardrail, is in
 - Substitution is real, not nominal — `accessSession.useLoader` and
   `ACCESS_TOKENS.SessionRepository` redirect both the render path and the DI path with one change,
   so a future roles endpoint is a loader swap rather than a rewrite
-- Denials are observable: every refusal emits a `permission_denied` audit event, and every session
-  that ends closes with a `logout` while its principal is still known
+- Denials are observable: every refused navigation, tenant switch and policy evaluation emits a
+  `permission_denied` audit event — a hidden affordance does not, because nothing was attempted —
+  and every session that ends closes with a `logout` while its principal is still known
 - The boundary is enforced by gates that fail closed, so an innocent import cannot undo the split
 
 ## Negative Consequences

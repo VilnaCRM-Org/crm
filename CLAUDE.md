@@ -351,7 +351,7 @@ argument spelled out rather than assumed, and anything outside the two families 
 equivalence argument written in full.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 241 files on this branch (206 before the access layer); not all of them
+mutate scope is 242 files on this branch (206 before the access layer); not all of them
 produce scored mutants — the rest are pure re-export barrels or files whose only mutants are
 static and skipped by `ignoreStatic`.
 
