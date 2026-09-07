@@ -289,8 +289,9 @@ name validators) and accepts an `overrides` object to pin specific fields:
 - `buildGraphqlUser(overrides?)` → `{ id, confirmed, email, initials }`.
 - `buildPrincipal(overrides?)` → an access `Principal` whose permissions are expanded
   from its roles; `buildTenantRef(overrides?)` → `{ id, name }`.
-- `buildClaims(overrides?)` → session claims; `buildAccessToken(claims?)` → a real
-  three-segment base64url JWT carrying them (issue #114).
+- `buildClaims(overrides?)` → session claims; `buildAccessToken(claims?)` → an unsigned
+  three-segment test token (`alg: 'none'`, a literal `signature` segment) whose base64url
+  payload carries them (issue #114).
 
 ```ts
 import { buildUser, buildEmail } from '@tests/builders';

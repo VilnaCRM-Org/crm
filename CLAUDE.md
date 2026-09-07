@@ -323,18 +323,32 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-The only annotated case today is the React hook dependency array, at twelve sites, and it comes in
-two shapes. Eleven are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
+Fourteen sites are annotated today, in two families. Thirteen are React hook dependency arrays.
+Twelve of those are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
 compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
-render and the effect or memo fires exactly as it does with `[]`. The twelfth,
+render and the effect or memo fires exactly as it does with `[]`. The thirteenth,
 `use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
 `ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
 `actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
 box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
 Hoisting either literal to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
-array literal, so there is nothing left to change. Adding a thirteenth needs the same standard of
-proof, and a non-empty array needs the stability argument spelled out, not assumed.
+array literal, so there is nothing left to change.
+
+The fourteenth is the only non-deps-array case: `EqualityOperator` on
+`const hydrated = usePrincipal() !== null` in `@auth/components/protected-route`. That boolean is
+read only as a member of a dependency array, so inverting the comparison flips it on exactly the
+same renders and the layout effect re-runs identically. Adopting the simpler program is **not**
+available here, and why is worth recording because it is a trap: replacing the boolean with the
+principal itself is not equivalent. Composing the DI container constructs `AccessSessionService`,
+whose constructor calls `accessSession.useLoader(...)`, and that clears the memoized token — so an
+identity-keyed dependency re-enters `start()` on the next snapshot, rebuilds the session from the
+token, silently reverts a tenant switch and adds a spurious `logout`/`login` pair to the audit
+trail. `tests/unit/components/protected-route.test.tsx` pins that behaviour.
+
+Adding a fifteenth needs the same standard of proof, a non-empty array needs the stability
+argument spelled out rather than assumed, and anything outside the two families above needs the
+equivalence argument written in full.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
 mutate scope is 241 files on this branch (206 before the access layer); not all of them

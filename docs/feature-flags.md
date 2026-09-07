@@ -97,8 +97,9 @@ housekeeping: while a flag exists, one of its two branches is running untested i
    `app-config-schema.ts`, and the `flags` object in `public/index.html`.
 3. Delete `APP_CONFIG_FLAG_<NAME>` from `.env`, `.env.example` and `docker-compose.test.yml`.
 4. Delete the flag-specific tests and collapse the remaining ones onto the surviving behaviour.
-5. Unset the variable in every environment. Leaving it set is harmless — the renderer will reject
-   it on the next restart, which is the intended signal that the environment is stale.
+5. Unset the variable in every environment before the next restart. A leftover
+   `APP_CONFIG_FLAG_<NAME>` names a flag that no longer exists, so `render-app-config.js` throws
+   and the entrypoint exits non-zero — the container does not start.
 
 ## Current flags
 

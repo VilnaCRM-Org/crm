@@ -79,12 +79,12 @@ make new-module name=orders feature=order-list
 make new-feature module=orders feature=order-detail
 ```
 
-The generated skeleton passes every static gate with zero edits, and the generator prints
-the two order-sensitive lines you must add yourself (the DI registrar entry and the route
-contract entry). Allowed folder names come from `config/module-shape.json`, the single
-source `.dependency-cruiser.js` also reads. `make verify-scaffold` (CI check `scaffold`)
-generates a throwaway module, gates it, and removes it, so the templates can never silently
-drift from the policy. See [`docs/scaffolding.md`](docs/scaffolding.md).
+The generated files pass every static gate exactly as emitted; wiring the new module into the
+application is the one manual step, and the generator prints the two order-sensitive lines you
+add yourself (the DI registrar entry and the route contract entry). Allowed folder names come
+from `config/module-shape.json`, the single source `.dependency-cruiser.js` also reads.
+`make verify-scaffold` (CI check `scaffold`) generates a throwaway module, gates it, and removes
+it, so the templates can never silently drift from the policy. See [`docs/scaffolding.md`](docs/scaffolding.md).
 
 ### Commit your update
 
