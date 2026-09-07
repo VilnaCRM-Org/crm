@@ -6,16 +6,9 @@ import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';
 import usePageTitle from '@/hooks/use-page-title';
 import ROUTE_PATHS from '@/routes/route-paths';
-import { paletteColors } from '@/styles/colors';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
-const headingFocusStyles = {
-  outline: 'none',
-  '&:focus-visible': {
-    outline: `2px solid ${paletteColors.primary.main}`,
-    outlineOffset: '2px',
-  },
-};
+import headingFocusStyles from './styles';
 
 export default function AccessDenied(): JSX.Element {
   usePageTitle('access_denied.title');
