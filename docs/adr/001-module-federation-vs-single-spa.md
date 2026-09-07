@@ -21,16 +21,16 @@ goals.
 - Seamless integration of multiple front-end applications with minimal overhead
 - Performance, including initial load time and runtime efficiency
 - Developer experience and ease of onboarding
-- Compatibility with the existing stack (React, Webpack, and related tooling)
+- Compatibility with the existing stack (React, the repository bundler, and related tooling)
 - Maintainability and long-term scalability
 - Flexibility in sharing components or state between modules
 - Integration with existing CI/CD and deployment infrastructure
 
 ## Considered Options
 
-1. **Module Federation (Webpack 5)**  
-   A built-in Webpack feature that allows separately built and deployed bundles
-   to be combined at runtime. It is well-suited for sharing modules across
+1. **Module Federation**  
+   A bundler feature that allows separately built and deployed bundles to be
+   combined at runtime. It is well-suited for sharing modules across
    independently deployed applications.
 2. **Single-SPA**  
    A microfrontend framework that composes multiple front-end applications into
@@ -40,21 +40,26 @@ goals.
 
 Chosen option: **"Module Federation"**, because it enables dynamic code sharing
 between independently deployed front-end modules with low runtime overhead. It
-fits the current Webpack-based setup and requires less orchestration boilerplate
-than Single-SPA.
+fits the repository's bundler-integrated build and requires less orchestration
+boilerplate than Single-SPA.
+
+The decision stands. Its implementation vehicle is
+[`@module-federation/rsbuild-plugin`](https://www.npmjs.com/package/@module-federation/rsbuild-plugin),
+the Rspack binding — see "Update history" below. The plugin is a declared dependency; no remote
+or exposed module is wired into `rsbuild.config.ts` yet, so nothing federates at runtime today.
 
 ## Positive Consequences
 
 - Independent development and deployment of microfrontends by different teams
 - Reduced duplication of shared components and libraries
-- Minimal changes required for integration with the current Webpack build system
+- Minimal changes required for integration with the current build system
 - Good runtime performance when shared modules are configured correctly
 - Clear separation of concerns across domains
 
 ## Negative Consequences
 
 - Requires careful dependency version management to avoid runtime conflicts
-- Not fully framework-agnostic because it is Webpack-centric
+- Not fully framework-agnostic because it is bundler-centric
 - Added learning curve around dynamic module loading and remote configuration
 - Requires coordination for remote entry points and shared module contracts
 
@@ -62,11 +67,11 @@ than Single-SPA.
 
 ### Module Federation
 
-Webpack 5 feature allowing runtime loading and sharing of modules between builds.
+Bundler feature allowing runtime loading and sharing of modules between builds.
 
 #### Good (Module Federation)
 
-- Integrates well with the current Webpack setup
+- Integrates well with the repository's bundler-integrated build
 - Enables code sharing and dynamic loading without a central router
 - Supports independent deployment and versioning of modules
 - Does not require a separate runtime orchestrator
@@ -94,10 +99,19 @@ Microfrontend framework that orchestrates multiple front-end apps at runtime.
 - Can be harder to optimize when many bundles initialize in parallel
 - Adds lifecycle and integration boilerplate for each microfrontend
 
+## Update history
+
+- **2026-08-13** — Corrected the rationale, which still described a Webpack build. The project
+  migrated to RSBuild (Rspack) in `chore(#37): rsbuild migration (#40)`, so every "Webpack"
+  premise in the original text was stale. Module Federation is bundler-integrated in Rspack too,
+  so the _decision_ was unaffected and is not superseded; only the reasoning that referenced the
+  bundler was wrong. Recorded while adding the documentation drift gates in
+  [#122](https://github.com/VilnaCRM-Org/crm/issues/122), which is what would have caught this.
+
 ## Links
 
 - [Module Federation (official site)](https://module-federation.io/)
-- [Webpack Module Federation documentation](https://webpack.js.org/concepts/module-federation/)
+- [Module Federation with Rspack](https://rspack.dev/guide/features/module-federation)
 - [Single-SPA documentation](https://single-spa.js.org/docs/getting-started-overview/)
 
 ### Articles and Videos

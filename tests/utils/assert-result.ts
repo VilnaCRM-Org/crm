@@ -36,3 +36,21 @@ export function assertInstanceOf<T>(
     );
   }
 }
+
+export function assertDefined<T>(value: T | undefined): asserts value is T {
+  if (value === undefined) {
+    throw new Error('Expected a defined value, received undefined');
+  }
+}
+
+export function elementAt<T>(items: readonly T[], index: number): T {
+  const value = items[index];
+
+  if (value === undefined) {
+    throw new Error(
+      `Expected an element at index ${index}, received a collection of ${items.length}`
+    );
+  }
+
+  return value;
+}

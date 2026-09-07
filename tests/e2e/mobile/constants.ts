@@ -11,8 +11,6 @@ export const REGISTRATION_API_URL = '**/graphql';
 
 export const MIN_TOUCH_TARGET_PX = 44;
 
-export const OAUTH_PROVIDER_COUNT = 4;
-
 export const credentials = buildCredentials();
 export const newUser = buildUser();
 
@@ -37,4 +35,17 @@ export const switcherToSignInLabel: string = t('sign_up.form.switcher_text_have_
 export const showPasswordLabel: string = t('auth.password.show');
 export const hidePasswordLabel: string = t('auth.password.hide');
 
-export const OAUTH_BUTTON_SELECTOR = 'button[aria-label^="Sign in with "]';
+// The accessible name is one interpolated key, so the provider is not necessarily a suffix in
+// every locale — match each rendered label exactly instead of prefixing.
+export const OAUTH_PROVIDER_LABELS: readonly string[] = [
+  'Google',
+  'GitHub',
+  'Facebook',
+  'Twitter',
+].map((provider) => t('sign_up.socials_aria_label', { provider }));
+
+export const OAUTH_BUTTON_SELECTOR = OAUTH_PROVIDER_LABELS.map(
+  (label) => `button[aria-label="${label}"]`
+).join(', ');
+
+export const OAUTH_PROVIDER_COUNT = OAUTH_PROVIDER_LABELS.length;

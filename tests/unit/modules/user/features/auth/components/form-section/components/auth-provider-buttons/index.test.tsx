@@ -7,17 +7,21 @@ jest.mock('@auth/assets/social-links/github-color.svg', () => ({ ReactComponent:
 jest.mock('@auth/assets/social-links/google-color.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@auth/assets/social-links/twitter-color.svg', () => ({ ReactComponent: 'svg' }));
 
+// The accessible name is a single interpolated key, so a stub that echoed the key alone would
+// give all four buttons the same name and no query could tell them apart. Echo the interpolation.
 jest.mock('react-i18next', () => ({
-  useTranslation: (): { t: (key: string) => string } => ({
-    t: (key: string): string => key,
+  useTranslation: (): { t: (key: string, options?: Record<string, unknown>) => string } => ({
+    t: (key: string, options?: Record<string, unknown>): string =>
+      options?.provider === undefined ? key : `${key}:${String(options.provider)}`,
   }),
 }));
 
+const ARIA_LABEL_KEY = 'sign_up.socials_aria_label';
 const PROVIDER_LABELS = [
-  'Sign in with Google',
-  'Sign in with GitHub',
-  'Sign in with Facebook',
-  'Sign in with Twitter',
+  `${ARIA_LABEL_KEY}:Google`,
+  `${ARIA_LABEL_KEY}:GitHub`,
+  `${ARIA_LABEL_KEY}:Facebook`,
+  `${ARIA_LABEL_KEY}:Twitter`,
 ];
 
 describe('AuthProviderButtons', () => {
@@ -47,7 +51,7 @@ describe('AuthProviderButtons', () => {
 
     render(<AuthProviderButtons />);
 
-    fireEvent.click(screen.getByRole('button', { name: `Sign in with ${name}` }));
+    fireEvent.click(screen.getByRole('button', { name: `${ARIA_LABEL_KEY}:${name}` }));
 
     expect(openSpy).toHaveBeenCalledWith(
       expect.stringContaining(`/auth/${provider}`),

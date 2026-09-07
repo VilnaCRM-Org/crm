@@ -34,12 +34,12 @@ setup() {
     [ -z "$expected_two" ] || assert_log_contains "$expected_two"
   done <<'EOF'
 ci-setup|docker compose -f docker-compose.yml up -d --no-recreate dev mockoon|curl -fsS http://localhost:8080/api/users
-ci-lint|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses|
+ci-lint|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses|
 ci-test|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration|
 ci-mutation|bun x stryker run|
 ci-prod-setup|docker compose -f docker-compose.yml up -d dev|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --no-recreate prod mockoon playwright
 ci-test-prod|docker compose -f docker-compose.test.yml exec playwright ./node_modules/.bin/playwright test ./tests/e2e|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)
-ci|run-parallel-lint.sh check-env-sync lint-eslint lint-tsc lint-md lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
+ci|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
 install|docker compose exec -T dev bun install --frozen-lockfile|bun x husky install
 clean|docker compose -f docker-compose.yml down --volumes --remove-orphans --rmi local|docker compose -f docker-compose.test.yml down --volumes --remove-orphans --rmi local
 start-prod-clean|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --force-recreate --build prod mockoon playwright|curl -fsS http://localhost:8080/api/users
@@ -97,6 +97,13 @@ lint-dup|bun x jscpd|
 lint-zizmor|ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d --no-online-audits --min-severity medium --persona pedantic --format plain .github/workflows/|
 lint-compose|docker compose -f docker-compose.yml config -q|docker compose -f docker-compose.test.yml config -q|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q|docker compose -f docker-compose.memory-leak.yml config -q
 check-env-sync|check-env-sync.sh|
+check-browser-support|docker compose exec -T dev bun scripts/ci/check-browser-support.ts|
+lint-adr|docker compose exec -T dev bun scripts/docs/lint-docs.ts adr|
+lint-doc-coverage|docker compose exec -T dev bun scripts/docs/lint-docs.ts coverage|
+lint-doc-references|docker compose exec -T dev bun scripts/docs/lint-docs.ts references|
+lint-doc-links|docker compose exec -T dev bun scripts/docs/lint-docs.ts links|
+lint-docs|docker compose exec -T dev bun scripts/docs/lint-docs.ts adr|docker compose exec -T dev bun scripts/docs/lint-docs.ts links
+check-adr-drift|docker compose exec -T dev bun scripts/docs/lint-docs.ts drift|
 lint-metrics-run|lint-metrics.sh RCA_BIN=./bin/rust-code-analysis-cli RCA_VERSION=0.0.25 RCA_SCOPE=src/ RCA_EXCLUDES=**/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/** **/api/generated/** METRICS_POLICY=config/metrics-policy.json|
 husky|bun x husky install|
 storybook-start|bun x storybook dev -p 6006 --host 0.0.0.0 --no-open|
@@ -427,12 +434,12 @@ EOF
 @test "SCAFFOLD_VERIFY_TARGETS runs every lint gate that reads generated source (issue #108)" {
   # Derived from the `lint:` prerequisites, NOT from the SCAFFOLD_VERIFY_TARGETS line itself:
   # re-deriving from the line under test cannot detect a gate being dropped from it, because
-  # the expectation would shrink with it. The exclusions are the six gates that never read
-  # src/ or tests/ — env parity, shell scripts, workflow YAML, compose files, the lockfile,
-  # and the licenses of the production dependency tree — so adding a new lint gate fails this
-  # test until it is classified one way or the other.
+  # the expectation would shrink with it. The exclusions are the seven gates that never read
+  # src/ or tests/ — env parity, the browser support matrix, shell scripts, workflow YAML,
+  # compose files, the lockfile, and the licenses of the production dependency tree — so
+  # adding a new lint gate fails this test until it is classified one way or the other.
   local makefile="$MAKEFILE_SANDBOX/Makefile"
-  local excluded=" check-env-sync lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses "
+  local excluded=" check-env-sync check-browser-support lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses "
 
   local lint_prereqs scaffold_targets expected actual target
   lint_prereqs=$(grep -E '^lint:[[:space:]]' "$makefile" | sed 's/^lint:[[:space:]]*//; s/[[:space:]]*##.*//')
@@ -507,5 +514,18 @@ EOF
       echo "CI_LINT_TARGETS entry '$t' is not a lint: prerequisite" >&2
       return 1
     fi
+  done
+}
+
+@test "lint-docs runs every documentation sub-gate (issue #122)" {
+  # The two-expectation fixture table can only assert two commands, so the aggregate is
+  # verified here instead: dropping any prerequisite must fail a test, not slip through.
+  reset_command_log
+  run_make_target lint-docs
+  [ "$status" -eq 0 ]
+
+  local check
+  for check in adr coverage references links; do
+    assert_log_contains "docker compose exec -T dev bun scripts/docs/lint-docs.ts $check"
   done
 }

@@ -1,5 +1,5 @@
 import { useLayoutEffect } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 import usePrincipal from '@/hooks/use-principal';
 import accessSession from '@/lib/access/access-session';
@@ -15,6 +15,7 @@ accessSession.sync(AuthStateVar.get());
 export default function ProtectedRoute(): JSX.Element {
   const token = useAuthToken();
   const hydrated = usePrincipal() !== null;
+  const location = useLocation();
 
   // Re-syncs on a token change, and re-hydrates if the session was ended out from under a
   // still-valid token (which would otherwise leave every gated route blank).
@@ -22,5 +23,5 @@ export default function ProtectedRoute(): JSX.Element {
     accessSession.sync({ token });
   }, [token, hydrated]);
 
-  return token ? <Outlet /> : <Navigate to="/sign-in" replace />;
+  return token ? <Outlet /> : <Navigate to="/sign-in" replace state={{ from: location }} />;
 }

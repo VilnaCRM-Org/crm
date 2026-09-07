@@ -19,6 +19,7 @@
     "title": "Registration",
     "subtitle": "Create an account in VilnaCRM",
     "socials_main_heading": "Or",
+    "socials_aria_label": "Continue with {{provider}}",
     "form": {
       "name_input": {
         "label": "Your first and last name",
