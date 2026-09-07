@@ -13,6 +13,7 @@ const HEADER_SEGMENT = encodeSegment({ alg: 'none', typ: 'JWT' });
 const SIGNATURE_SEGMENT = 'signature';
 const BASE64_BLOCK = 4;
 const CYRILLIC_TENANT_NAME = 'Вільна ЦРМ — Київ';
+const TRUNCATED_UTF8_SEQUENCE = [0xc3, 0x28];
 
 const NO_CLAIMS = {
   sub: undefined,
@@ -95,6 +96,16 @@ describe('SessionClaimsReader', () => {
     { label: 'JSON null', payload: null },
   ])('returns null when the payload decodes to $label', ({ payload }) => {
     expect(reader.read(tokenWithPayload(encodeSegment(payload)))).toBeNull();
+  });
+
+  it('returns null when the payload bytes are not valid utf-8', () => {
+    const segment = Buffer.concat([
+      Buffer.from('{"sub":"', 'utf8'),
+      Buffer.from(TRUNCATED_UTF8_SEQUENCE),
+      Buffer.from('"}', 'utf8'),
+    ]).toString('base64url');
+
+    expect(reader.read(tokenWithPayload(segment))).toBeNull();
   });
 
   it('preserves non-ASCII claim values across the utf-8 decode', () => {

@@ -127,6 +127,47 @@ describe('access DI registrar', () => {
     expect(container.resolve(token)).toBe(container.resolve(token));
   });
 
+  // The app-wide container is composed once, at import — before any test body runs — so an
+  // emptied register method is invisible to every assertion made against it. Composing a
+  // fresh child inside the test is what puts those registrations under a live assertion.
+  describe('composing a container it is handed', () => {
+    let installed: SessionRepository;
+
+    // Composing a container installs its own session repository as the loader on the
+    // container-free session singleton, so the app-wide one is put back after each probe.
+    beforeEach(() => {
+      installed = container.resolve<SessionRepository>(ACCESS_TOKENS.SessionRepository);
+    });
+
+    afterEach(() => {
+      accessSession.useLoader(installed);
+    });
+
+    it.each(ACCESS_BINDINGS)('binds $name to $name in that container', ({ token, type }) => {
+      const child = container.createChildContainer();
+      expect(child.isRegistered(token)).toBe(false);
+
+      accessRegistrar.register(child);
+
+      expect(child.isRegistered(token)).toBe(true);
+      expect(child.resolve(token)).toBeInstanceOf(type);
+    });
+
+    it.each(ACCESS_VALUE_BINDINGS)(
+      'binds $name to the module singleton in that container',
+      ({ token, type, value }) => {
+        const child = container.createChildContainer();
+        expect(child.isRegistered(token)).toBe(false);
+
+        accessRegistrar.register(child);
+
+        expect(child.isRegistered(token)).toBe(true);
+        expect(child.resolve(token)).toBeInstanceOf(type);
+        expect(child.resolve(token)).toBe(value);
+      }
+    );
+  });
+
   // Registration alone changes nothing: the service's constructor is what installs the bound
   // repository as the loader, and nothing in the application resolves that service. Composing
   // the container therefore has to do it, or the binding is dead code in production and only

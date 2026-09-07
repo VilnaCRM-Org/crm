@@ -11,20 +11,31 @@ import {
   buildUserId,
   encodeSegment,
 } from '@tests/builders';
+import loadIsolated from '@tests/unit/utils/isolated-module';
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const FALLBACK_TENANT_ID = 'default';
 const UNKNOWN_ROLE = 'sorcerer';
 const UNKNOWN_FLAG = 'billing-module';
 
+/**
+ * The fallback tenant id is a module-level literal, so it is evaluated at import: loading the
+ * module inside the test body is what attributes it to this test rather than to whichever
+ * unrelated suite imported the factory first.
+ */
+const loadSessionFactory = (): Promise<typeof import('@/lib/access/session-factory')> =>
+  loadIsolated(() => import('@/lib/access/session-factory'));
+
 describe('SessionFactory', () => {
   const factory = new SessionFactory();
 
-  const requireSnapshot = (input: SessionInput): SessionSnapshot => {
-    const snapshot = factory.build(input);
+  const requireBuilt = (snapshot: SessionSnapshot | null): SessionSnapshot => {
     if (snapshot === null) throw new Error('expected the factory to build a session snapshot');
     return snapshot;
   };
+
+  const requireSnapshot = (input: SessionInput): SessionSnapshot =>
+    requireBuilt(factory.build(input));
 
   it('exports a shared singleton instance', () => {
     expect(sessionFactory).toBeInstanceOf(SessionFactory);
@@ -147,6 +158,16 @@ describe('SessionFactory', () => {
     const token = buildAccessToken({ sub: buildUserId(), roles: [ROLES.member] });
 
     const { principal } = requireSnapshot({ token });
+
+    expect(principal.tenantId).toBe(FALLBACK_TENANT_ID);
+    expect(principal.tenants).toStrictEqual([{ id: FALLBACK_TENANT_ID, name: FALLBACK_TENANT_ID }]);
+  });
+
+  it('names the synthesised fallback tenant after the fallback id itself', async () => {
+    const { SessionFactory: IsolatedSessionFactory } = await loadSessionFactory();
+    const token = buildAccessToken({ sub: buildUserId(), roles: [ROLES.member] });
+
+    const { principal } = requireBuilt(new IsolatedSessionFactory().build({ token }));
 
     expect(principal.tenantId).toBe(FALLBACK_TENANT_ID);
     expect(principal.tenants).toStrictEqual([{ id: FALLBACK_TENANT_ID, name: FALLBACK_TENANT_ID }]);

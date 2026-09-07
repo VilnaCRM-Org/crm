@@ -1,16 +1,18 @@
 import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 
+import accessCore from '@/lib/access/access-core';
 import accessSession from '@/lib/access/access-session';
 import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { ROLES } from '@/lib/access/permission-catalog';
+import sessionFactory from '@/lib/access/session-factory';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 import ProtectedRoute from '@auth/components/protected-route';
 import { AuthStateVar } from '@auth/stores';
-import { buildAccessToken, buildClaims } from '@tests/builders';
+import { buildAccessToken, buildClaims, buildTenantRef } from '@tests/builders';
 import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 const record = jest.fn<void, [AuditEvent]>();
@@ -145,6 +147,32 @@ describe('ProtectedRoute', () => {
     expect(eventTypes()).toEqual(['login', 'logout', 'login']);
     expect(eventAt(1).principalId).toBe(first.sub);
     expect(eventAt(2).principalId).toBe(second.sub);
+  });
+
+  // Regression: the layout effect depends on whether a principal is hydrated, never on the
+  // principal itself. Composing the DI container installs the bound repository as the loader,
+  // which clears the memoized token, so an identity-keyed dependency would re-enter the sync on
+  // the next snapshot and rebuild the session — silently undoing a tenant switch.
+  it('keeps a tenant switch made after the session loader was reinstalled (#114)', () => {
+    const home = buildTenantRef();
+    const other = buildTenantRef();
+    const claims = buildClaims({
+      roles: [ROLES.manager],
+      tenantId: home.id,
+      tenants: [home, other],
+    });
+
+    renderWithRouter(buildAccessToken(claims));
+    expect(accessState.get().principal?.tenantId).toBe(home.id);
+
+    act(() => {
+      accessSession.useLoader(sessionFactory);
+      expect(accessCore.switchTenant(other.id)).toBe(true);
+    });
+
+    expect(accessState.get().principal?.tenantId).toBe(other.id);
+    expect(eventTypes()).toEqual(['login', 'tenant_switch']);
+    expect(screen.getByText('dashboard')).toBeInTheDocument();
   });
 
   // Regression: the layout effect depends on the hydrated principal as well as the token,
