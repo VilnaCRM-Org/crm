@@ -24,6 +24,28 @@ BMAD phase 3 (`create-epics-stories`). Upstream:
 [architecture](architecture-114-access-rbac-tenant-audit-2026-09-08.md). Downstream:
 [readiness](readiness-114-access-rbac-tenant-audit-2026-09-08.md).
 
+## Re-aimed on 2026-09-08
+
+Epics 2 to 5 were written against an invented contract — a role-to-permission catalogue of
+`resource:action` strings. The team's architecture has since been located on the Miro board
+"Frontend C4 Architecture VilnaCRM" (`https://miro.com/app/board/uXjVMG64hTs=/`) and keys access
+on **GraphQL mutations**, makes **roles runtime data with an in-product admin UI**, and expresses
+**denial as absent data**.
+
+What moved, and what deliberately did not:
+
+- **Retargeted:** stories **2.4, 2.5, 2.6, 3.2, 3.3** and **5.2**.
+- **New:** story **2.7** (retire the closed `Role` union as an authorization input) and story
+  **4.4** (scope the IAM administration surface, which this issue does not build).
+- **Not renumbered:** the seven delivered stories **2.1, 2.2, 2.3, 3.1, 3.4, 5.1** and **4.2**.
+  Each now carries a line saying whether the re-aim leaves it alone or gives it follow-up work.
+  **2.2** and **2.3** are the two that need follow-up; the other five are unaffected.
+- **Not changed:** Epic 1. It is shipped and the board does not contradict it.
+
+The board reading is unverified since a 2026-06-22 capture and the backend implements none of it
+today; both caveats are recorded in full in
+[the contract proposal](../../../src/api/contracts/access-rbac-proposal.md).
+
 ## How to read this document
 
 - Epic 1 is **shipped** (PR #230). Its stories are recorded for traceability and are not work.
@@ -122,6 +144,8 @@ field so nothing downstream changes — and add `sid` to `SessionClaims`. Archit
 **Dependency.** Independent. This story is correct and useful even if the backend design never
 arrives.
 
+**Re-aim status (2026-09-08).** Delivered; unaffected. It reads claims, not grants.
+
 **Gates.** Unit coverage 100%; every new branch killed under `break = 100`; ESLint, tsc,
 dependency-cruiser, jscpd, metrics clean.
 
@@ -131,10 +155,11 @@ dependency-cruiser, jscpd, metrics clean.
 I can accept, amend or reject the client's assumptions instead of discovering them in code.
 
 **Description.** Add `src/api/contracts/access-rbac-proposal.md`: the proposed
-`Query.accessSession` and `Query.accessCatalogue` shapes from PRD FR-14, the field semantics,
-nullability, error behaviour, and versioning through `catalogueVersion`. Attach OQ-1 … OQ-12
-inline to the fields each affects. The document must state plainly that no such design was found
-published in any VilnaCRM-Org repository, and that this is a proposal awaiting review.
+`Query.mutationAccess` and `Query.mutationAccessFor` shapes from PRD FR-14, the IAM
+administration surface, the field semantics, nullability, error behaviour, and versioning. Attach
+the open questions inline to the fields each affects. The document must mark every element as
+specified by the board or inferred by this plan, and must state the provenance of the board
+reading and its limits.
 
 **Acceptance criteria.**
 
@@ -146,6 +171,9 @@ published in any VilnaCRM-Org repository, and that this is a proposal awaiting r
   reachable from `src/api/contracts/README.md`.
 - Given a reviewer who is not on this project, when they read only this document, then they can
   answer whether the backend can implement it without reading any client source.
+- Given the document, when its provenance section is read, then it states the capture date, that
+  the reading is unverified since then, which board material is stale, and that the backend
+  implements none of the design today.
 
 **Files.** `src/api/contracts/access-rbac-proposal.md` (new),
 `src/api/contracts/README.md` (one link).
@@ -156,6 +184,11 @@ tests. This story deliberately ships documentation only.
 **Dependency.** Independent.
 
 **Gates.** markdownlint 0, prettier clean, `make lint-docs` green, no absolute local paths.
+
+**Re-aim status (2026-09-08).** Delivered, then **rewritten** — the proposal it shipped described
+the invented catalogue. The rewrite is the follow-up and is complete; the remaining follow-up is
+external: the board reading needs re-verifying against the live board, and the proposal needs
+sending to the team lead as the reply to review `5135385113`.
 
 ### Story 2.3: Map server role names to product roles through reviewed data
 
@@ -195,24 +228,37 @@ and the claim path agree on role vocabulary.
 assertions on the fallback; ESLint free-string gate still satisfied (the map lives inside the
 exempted `src/lib/access/**`).
 
-### Story 2.4: Generate and zod-validate the access-catalogue query
+**Re-aim status (2026-09-08).** Delivered, and **needs follow-up**. Architecture D2 — the decision
+this story implements — is withdrawn: the board makes roles runtime entities, so a client-side
+role map is a second authorization model. Nothing is reverted here. The map keeps serving the
+claim path, which is the flag-off default, and story **2.7** governs its retirement. Its tests
+stand unchanged in the meantime.
 
-**User story.** As a developer, I want the catalogue's types generated from the pinned schema
+### Story 2.4: Generate and zod-validate the mutation-access query
+
+**Retargeted 2026-09-08.** Was: generate `Query.accessCatalogue` and parse a role-to-permission
+catalogue. Now: generate the allowed-mutation set.
+
+**User story.** As a developer, I want the access read's types generated from the pinned schema
 and its payload parsed by zod, so that a backend change cannot reach the UI as an unchecked cast.
 
 **Description.** Add the colocated operation document
-`src/services/access/access-catalogue.graphql`, wire it into `make codegen`, and add
-`catalogue-response-schemas.ts` mirroring the generated shape with a parity test — the rule
+`src/services/access/mutation-access.graphql`, wire it into `make codegen`, and add
+`mutation-access-response-schemas.ts` mirroring the generated shape with a parity test — the rule
 `src/api/contracts/README.md` already imposes on hand-written schemas. Add
-`AccessCatalogueRepository` (`@injectable()`) that issues the query and parses the result, with
-its token and registration in `src/services/access/{tokens,di}.ts`. Architecture D1, D4.
+`MutationAccessRepository` (`@injectable()`) that issues `mutationAccess`, parses the result, and
+exposes the narrowed `mutationAccessFor` batch, with its token and registration in
+`src/services/access/{tokens,di}.ts`. Architecture D1, D4, D11.
 
 **Acceptance criteria.**
 
-- Given `make codegen`, when it runs, then the catalogue operation types appear in
+- Given `make codegen`, when it runs, then the access operation types appear in
   `src/api/generated/graphql.ts` and `make codegen-check` reports the artifacts fresh.
-- Given a schema-valid catalogue payload, when the repository resolves, then it returns a parsed
-  catalogue and performs no `as` cast anywhere on the path.
+- Given a schema-valid payload, when the repository resolves, then it returns a parsed
+  allowed-mutation set and performs no `as` cast anywhere on the path.
+- Given a payload whose `allowedMutations` is an empty list, when the repository resolves, then
+  it returns a **successful** parse of an empty set — not an error — because an empty set is a
+  valid answer (PRD FR-21, FR-27).
 - Given a schema-invalid payload, when the repository resolves, then it returns a typed error
   and does not throw into the caller.
 - Given a network rejection, when the repository resolves, then it returns a typed error
@@ -220,103 +266,153 @@ its token and registration in `src/services/access/{tokens,di}.ts`. Architecture
 - Given the parity test, when the generated shape changes incompatibly, then the test fails
   rather than the schema silently accepting less.
 
-**Files.** `src/services/access/access-catalogue.graphql` (new),
-`src/services/access/access-catalogue-repository.ts` (new),
-`src/services/access/catalogue-response-schemas.ts` (new),
+**Files.** `src/services/access/mutation-access.graphql` (new),
+`src/services/access/mutation-access-repository.ts` (new),
+`src/services/access/mutation-access-response-schemas.ts` (new),
 `src/services/access/{tokens,di}.ts`, `codegen.ts`.
 
-**Tests.** `tests/unit/services/access/access-catalogue-repository.test.ts` (valid, invalid,
-rejection, timeout); a schema/generated-shape parity test; `tests/unit/services/access/di.test.ts`
-extended for the new registration.
+**Tests.** `tests/unit/services/access/mutation-access-repository.test.ts` (valid, empty-but-valid,
+invalid, rejection, timeout); a schema/generated-shape parity test;
+`tests/unit/services/access/di.test.ts` extended for the new registration.
 
 **Dependency.** Dependent on 2.2 (the proposal defines the query it generates). Blocked on
-OQ-1 and OQ-2 for the final shape; buildable against the proposed shape in the meantime.
+OQ-13, OQ-14 and OQ-17 for the final shape; buildable against the proposed shape in the meantime.
 
-**Gates.** 100% coverage of all four repository outcomes; `make codegen-check`;
+**Gates.** 100% coverage of all five repository outcomes; `make codegen-check`;
 `injectable-classes-no-value-imports` (collaborators injected, schemas passed as data);
 `make contract-diff` on any pin bump.
 
-### Story 2.5: Reconcile server grants against the `Permission` union
+### Story 2.5: Build a principal from the allowed-mutation set
 
-**User story.** As a security reviewer, I want the client's effective permissions to be exactly
-the intersection of what the server granted and what the UI can gate, so that the client never
-invents a grant and never acts on one it cannot render.
+**Retargeted 2026-09-08.** Was: intersect server-granted `resource:action` ids with the
+`Permission` union. Now: the set is the grant; there is no client-side union to intersect with.
 
-**Description.** Add `src/lib/access/catalogue-principal-factory.ts` turning a parsed catalogue
-into a sealed `Principal` plus flags, applying the D5 intersection. Kept separate from
-`session-factory.ts` so neither file passes the rust-code-analysis caps.
+**User story.** As a security reviewer, I want the client's effective access to be exactly what
+the server said the principal may run, so that the client never invents a grant and never acts on
+one it cannot render.
 
-**Acceptance criteria.**
-
-- Given a catalogue granting an id the `Permission` union declares, when the principal is built,
-  then that permission is present and `useCan` returns true for it.
-- Given a catalogue granting an id the union does not declare, when the principal is built, then
-  the id is absent from the principal and an `access_catalogue_unknown_permission` event is
-  emitted once for that session, not once per read.
-- Given a catalogue granting nothing, when the principal is built, then the principal holds
-  `DEFAULT_ROLE`'s permissions and can still reach the shell (`app:home`).
-- Given any catalogue, when the principal is built, then the snapshot is sealed — mutating the
-  returned `permissions` array throws or has no effect on a later decision.
-- Given a catalogue whose tenant list is absent, when the principal is built, then the synthetic
-  `default` tenant is used, matching today's claim-shape behaviour.
-
-**Files.** `src/lib/access/catalogue-principal-factory.ts` (new),
-`src/lib/types/access/catalogue.ts` (new), `src/lib/types/access/audit.ts`.
-
-**Tests.** `tests/unit/lib/access/catalogue-principal-factory.test.ts` — all five criteria, plus
-a once-per-session assertion on the unknown-permission event.
-
-**Dependency.** Dependent on 2.3 (role vocabulary) and 2.4 (the parsed catalogue type).
-
-**Gates.** 100% coverage; every intersection branch mutation-killed; no tsyringe, zod or Apollo
-import in the new domain file (`no-access-domain-to-container`, `no-access-domain-to-tsyringe`).
-
-### Story 2.6: Fail the build on a UI permission the server does not declare
-
-**User story.** As a developer, I want a permission the UI gates on but the server never
-enforces to fail my build, so that I learn about a dead or unenforceable gate at the cheapest
-possible moment.
-
-**Description.** Pin a catalogue snapshot in the repo and add a parity test asserting the
-`Permission` union ⊆ the snapshot's declared ids. When no snapshot is pinned, the runtime path
-denies such a permission instead. PRD FR-17, architecture D5. A warning is explicitly not an
-option: `quality.eslint_warnings` is `0` and the repo has no warning-tolerant channel.
+**Description.** Add `src/lib/access/mutation-access-principal-factory.ts` turning a parsed
+allowed set into a sealed `Principal`, keyed by mutation name (D11). Keys the UI does not gate on
+are dropped and audited once per session; keys the UI gates on that are absent from the set
+simply deny (D5, D13). Kept separate from `session-factory.ts` so neither file passes the
+rust-code-analysis caps.
 
 **Acceptance criteria.**
 
-- Given a `Permission` union member absent from the pinned snapshot, when the test suite runs,
-  then the parity test fails and names the offending id.
-- Given a snapshot id absent from the union, when the test suite runs, then the test passes —
+- Given a set containing a mutation key the UI gates on, when the principal is built, then that
+  gate resolves true.
+- Given a set containing a key the UI does not gate on, when the principal is built, then the key
+  is dropped and an `access_unknown_mutation` event is emitted once for that session, not once per
+  read.
+- Given an empty set, when the principal is built, then every mutation gate resolves false, the
+  principal can still reach the shell, and this is **not** audited as a failure.
+- Given any set, when the principal is built, then the snapshot is sealed — mutating the returned
+  collection throws or has no effect on a later decision.
+- Given a set whose `tenant` is null, when the principal is built, then the synthetic `default`
+  tenant is used, matching today's claim-shape behaviour.
+
+**Files.** `src/lib/access/mutation-access-principal-factory.ts` (new),
+`src/lib/types/access/mutation-access.ts` (new), `src/lib/types/access/audit.ts`.
+
+**Tests.** `tests/unit/lib/access/mutation-access-principal-factory.test.ts` — all five criteria,
+plus a once-per-session assertion on the unknown-mutation event.
+
+**Dependency.** Dependent on 2.4 (the parsed set type) and 2.7 (what a gate key is). No longer
+depends on 2.3 — role vocabulary is not consulted on this path.
+
+**Gates.** 100% coverage; every branch mutation-killed; no tsyringe, zod or Apollo import in the
+new domain file (`no-access-domain-to-container`, `no-access-domain-to-tsyringe`).
+
+### Story 2.6: Fail the build on a gate key the pinned schema does not declare
+
+**Retargeted 2026-09-08.** Was: pin an access-catalogue snapshot JSON in this repository and
+check the `Permission` union against it. Now: check the mutation-key set against the GraphQL
+schema this repository already pins — a real artifact instead of a hand-maintained copy.
+
+**User story.** As a developer, I want a gate on a mutation that does not exist to fail my build,
+so that I learn about a dead or unenforceable gate at the cheapest possible moment.
+
+**Description.** Add a parity test asserting every UI mutation key is a mutation field in the
+pinned schema (`GRAPHQL_SCHEMA_VERSION`, already consumed by `make codegen`). The reverse
+direction is deliberately not checked: a schema mutation the UI does not gate on is normal. PRD
+FR-17, architecture D5. A warning is explicitly not an option: `quality.eslint_warnings` is `0`
+and the repo has no warning-tolerant channel.
+
+**Acceptance criteria.**
+
+- Given a UI mutation key absent from the pinned schema, when the test suite runs, then the
+  parity test fails and names the offending key.
+- Given a schema mutation field no gate names, when the test suite runs, then the test passes —
   the asymmetry is deliberate and asserted, not accidental.
-- Given no pinned snapshot and a catalogue-sourced session, when `useCan` is asked for a
-  union-only permission, then it returns false and a denial is recorded.
-- Given the pinned snapshot, when the backend contract is later amended, then updating the
-  snapshot is a reviewed one-file diff and the failure message says so.
+- Given a set-sourced session and a gate key absent from the allowed set, when the gate is
+  evaluated, then it denies and the denial is recorded.
+- Given a schema pin bump that removes a gated mutation, when CI runs, then this test fails
+  alongside `make contract-diff`, and the failure message names the gate to remove.
 
-**Files.** `src/api/contracts/access-catalogue-snapshot.json` (new),
-`tests/unit/services/access/catalogue-parity.test.ts` (new).
+**Files.** `tests/unit/services/access/mutation-key-schema-parity.test.ts` (new).
 
 **Tests.** The parity test itself, plus a must-fail fixture proving it really fails on a missing
-id (the repository's standing rule that a gate must be proven to fire).
+key (the repository's standing rule that a gate must be proven to fire). No snapshot JSON is
+committed; the pinned schema is the authority.
 
-**Dependency.** Dependent on 2.5.
+**Dependency.** Dependent on 2.5 and 2.7.
 
-**Gates.** The parity test rides `make test-unit-all`; markdownlint and prettier on the snapshot
-documentation; no suppression may be used to satisfy it.
+**Gates.** The parity test rides `make test-unit-all`; no suppression may be used to satisfy it.
+
+### Story 2.7: Retire the closed `Role` union as an authorization input
+
+**New 2026-09-08.** This story exists because the board and the shipped client directly
+contradict each other, and the contradiction cannot be left implicit.
+
+**User story.** As an administrator, I want to create a role in the product and have it work, so
+that adding a role is not a frontend release.
+
+**Description.** The shipped client hardcodes four roles in a closed union and forbids a role as a
+free string at a call site; the board specifies a `Role [Entity]`, a `RoleForm` and add / edit /
+delete / list screens, so role names are administrator-authored and unknowable at compile time.
+Resolve it per architecture D12: authorization stops consulting roles, `Role` becomes opaque
+runtime data carried for display, and the ESLint free-string gate is **re-pointed** onto the
+mutation-key set rather than deleted or widened to `string`. `ROLE_PERMISSIONS` and `DEFAULT_ROLE`
+survive inside the claim path and are deleted with it.
+
+**Acceptance criteria.**
+
+- Given a principal built from the allowed set, when any gate is evaluated, then no role name is
+  read on the decision path — asserted, not assumed.
+- Given a server role whose name matches nothing the client knows, when the principal is built
+  from the set, then access is unaffected, because the decision does not consult the name.
+- Given a call site naming a raw mutation key as a string, when ESLint runs, then it errors;
+  given the same key used through the closed set, then it does not.
+- Given the re-pointed gate, when its must-fail fixture runs, then the rule is proven to fire —
+  a re-pointed rule that matches nothing would pass vacuously.
+- Given the claim path with the flag off, when a session hydrates, then behaviour is bit-for-bit
+  what story 2.3 delivered — this story removes nothing that is still in service.
+
+**Files.** `src/lib/types/access/role.ts` (new), `src/lib/access/permission-catalog.ts`,
+`eslint.config.mjs`, `tests/unit/tooling/access-control-gates.test.ts`.
+
+**Tests.** The re-pointed gate's must-fail fixtures; a decision-path test proving no role read;
+the existing role-mapping and claim-path tests, unmodified and still green.
+
+**Dependency.** Dependent on 2.4 (the set type). Blocked on OQ-13 and OQ-18 — the key shape and
+whether crm owns the role screens both change how far this goes.
+
+**Gates.** ESLint errors 0 with the gate proven to fire; 100% coverage; the shipped claim-path
+tests pass without edits, which is the evidence that nothing was reverted.
 
 ## Epic 3: Source the principal at runtime without blocking first paint
 
 **Why.** "Dynamic" means the grants arrive at runtime. The paint-safe two-layer split and the
 Lighthouse floors mean they cannot arrive _before_ paint. This epic reconciles the two.
-Delivers FR-18, FR-19, FR-20, FR-21.
+Delivers FR-18, FR-19, FR-20, FR-21, FR-27.
 
-### Story 3.1: A `sid`-keyed catalogue cache in the paint-safe domain
+### Story 3.1: A `sid`-keyed access cache in the paint-safe domain
 
 **User story.** As a user, I want my session's catalogue held in memory for the life of that
 session, so that navigating between gated pages does not re-fetch my permissions.
 
 **Description.** Add `src/lib/access/catalogue-cache.ts`, a dependency-free module singleton
-keyed by the token's `sid` and holding the parsed catalogue plus its `catalogueVersion`.
+keyed by the token's `sid` and holding the parsed access payload plus its version token.
 Architecture D6.
 
 **Acceptance criteria.**
@@ -340,15 +436,23 @@ clear, and an import-surface assertion.
 **Gates.** 100% coverage; `no-access-domain-to-container` / `no-access-domain-to-tsyringe`;
 instance methods on a class exported as a module singleton (issues #89/#100).
 
+**Re-aim status (2026-09-08).** Delivered; unaffected in substance. It stores an opaque value
+keyed by `sid`, so the change of what is stored does not reach it. Two renames follow the rest of
+the plan when the retargeted stories land: the file becomes `access-cache.ts` and the version
+field it compares becomes `version`.
+
 ### Story 3.2: The dual-shape session loader
 
+**Retargeted 2026-09-08.** Was: claims versus the fetched catalogue. Now: claims versus the
+fetched allowed-mutation set. The structure of the story is unchanged.
+
 **User story.** As a release engineer, I want one loader that can build a principal from either
-the token claims or the fetched catalogue, so that the sync lands additively and rolls back
+the token claims or the fetched allowed set, so that the sync lands additively and rolls back
 without a redeploy.
 
-**Description.** Add `src/lib/access/catalogue-session-loader.ts` implementing `SessionLoader`
-with the D3 resolution order: source flag `claims` → `sessionFactory`; otherwise a cache hit →
-catalogue principal; otherwise `sessionFactory`, degraded and audited. `build` stays
+**Description.** Add `src/lib/access/access-source-loader.ts` implementing `SessionLoader` with
+the D3 resolution order: source flag `claims` → `sessionFactory`; otherwise a cache hit → the
+set-backed principal; otherwise `sessionFactory`, degraded and audited. `build` stays
 **synchronous**. Install it with `accessSession.useLoader` and behind
 `ACCESS_TOKENS.SessionRepository` so both hydration paths agree.
 
@@ -356,59 +460,79 @@ catalogue principal; otherwise `sessionFactory`, degraded and audited. `build` s
 
 - Given the source flag set to `claims`, when a session hydrates, then the principal is
   bit-for-bit the one `SessionFactory` produces today.
-- Given the flag set to `catalogue` and a cache hit, when a session hydrates, then the principal
-  carries the catalogue's grants.
-- Given the flag set to `catalogue` and a cache miss, when a session hydrates, then the
-  claim-shape principal is published immediately and an `access_catalogue_unavailable` event is
-  emitted with a `cause` of `cache-miss`.
+- Given the flag on and a cache hit, when a session hydrates, then the principal carries the
+  allowed set's mutation keys.
+- Given the flag on and a cache hit whose set is **empty**, when a session hydrates, then the
+  principal allows no mutation and **no** `access_source_unavailable` event is emitted — an empty
+  set is an answer, not an outage.
+- Given the flag on and a cache miss, when a session hydrates, then the claim-shape principal is
+  published immediately and an `access_source_unavailable` event is emitted with a `cause` of
+  `cache-miss`.
 - Given a `null` token, when the loader runs, then it returns `null` and no event is emitted.
 - Given the loader's signature, when it is type-checked, then `build` returns
   `SessionSnapshot | null` synchronously — no `Promise` appears in the type.
 
-**Files.** `src/lib/access/catalogue-session-loader.ts` (new),
+**Files.** `src/lib/access/access-source-loader.ts` (new),
 `src/services/access/session-repository.ts`, `src/services/access/di.ts`.
 
-**Tests.** `tests/unit/lib/access/catalogue-session-loader.test.ts` (all five criteria);
-an integration test proving the DI-installed loader and the render-path loader are the same
-instance.
+**Tests.** `tests/unit/lib/access/access-source-loader.test.ts` (all six criteria); an integration
+test proving the DI-installed loader and the render-path loader are the same instance.
 
 **Dependency.** Dependent on 2.5, 3.1 and 5.1 (the runtime flag it reads).
 
-**Gates.** 100% coverage of all four resolution branches; mutation-killed on each; the React
-seam signatures unchanged (NFR-11) asserted by the untouched existing hook tests.
+**Gates.** 100% coverage of all resolution branches; mutation-killed on each; the React seam
+signatures unchanged (NFR-11) asserted by the untouched existing hook tests.
 
-### Story 3.3: Fetch the catalogue after first commit and re-publish
+### Story 3.3: Fetch the allowed set after first commit, re-publish, and render absence
+
+**Retargeted 2026-09-08.** Was: fetch the catalogue and re-publish. Now: the same, plus the
+board's two rendering rules (FR-27), which belong here because they are what an arriving —
+or empty — set actually does to the screen.
 
 **User story.** As a user, I want my full permissions to arrive without delaying the page, so
-that the app paints as fast as it does today and then becomes more capable, never less.
+that the app paints as fast as it does today and then becomes more capable, never less — and I
+want a page I may not use to say so rather than render blank.
 
-**Description.** `AccessProvider` triggers the catalogue fetch after the first commit (never
-during render, never before paint), fills the cache, and calls `accessSession.resync()` to
-rebuild and republish the snapshot through the existing `useSyncExternalStore` path.
-Architecture D4.
+**Description.** `AccessProvider` triggers the access fetch after the first commit (never during
+render, never before paint), fills the cache, and calls `accessSession.resync()` to rebuild and
+republish the snapshot through the existing `useSyncExternalStore` path. This is the board's
+`checkPermissionRequest` / `checkPermissionResponse` pair, implemented over the store seam the
+repository already has: **no RxJS and no Redux are introduced** — the board frames naming them
+are dated 2022 and describe a different stack. Denial rendering follows D13: a gated child
+control whose key is absent is not rendered at all, and a root page with empty data renders 403.
+Architecture D4, D13.
 
 **Acceptance criteria.**
 
-- Given a cold session, when the gated page first renders, then no catalogue request has been
-  issued and the page paints with the claim-shape principal.
+- Given a cold session, when the gated page first renders, then no access request has been issued
+  and the page paints with the claim-shape principal.
 - Given the fetch resolving successfully, when it completes, then the cache is filled, the
   snapshot is republished once, and a component reading `useCan` re-renders with the new answer.
 - Given the fetch resolving twice for the same `sid`, when it completes, then only one republish
   occurs — no render loop.
+- Given a gated child control whose mutation key is absent from the set, when the page renders,
+  then the control is absent from the accessibility tree — not disabled and not `aria-hidden`.
+- Given a root page component whose data is empty, when it renders, then it renders the 403
+  panel, not a blank page.
 - Given a Lighthouse run of `/` with the seeded token, when it completes, then desktop ≥ 95 and
   mobile ≥ 85, unchanged from the pre-change baseline.
 - Given the provider, when its imports are inspected, then it reaches the layer only through the
-  hooks seam (`no-ui-to-access-services`, `no-ui-to-access-state` both still pass).
+  hooks seam (`no-ui-to-access-services`, `no-ui-to-access-state` both still pass), and no RxJS
+  or Redux dependency has been added to `package.json`.
 
-**Files.** `src/providers/access-provider.tsx`, `src/lib/access/access-session.ts` (`resync`).
+**Files.** `src/providers/access-provider.tsx`, `src/lib/access/access-session.ts` (`resync`),
+`src/components/access/require-permission.tsx`, `src/routes/permission-branch-builder.tsx`.
 
-**Tests.** Unit tests for `resync` idempotence; an integration test for the fetch→cache→republish
-sequence; `make lighthouse-desktop` and `make lighthouse-mobile` as the budget evidence.
+**Tests.** Unit tests for `resync` idempotence; a rendering test per FR-27 case asserting absence
+through the accessibility tree rather than through a CSS state; an integration test for the
+fetch → cache → republish sequence; `make lighthouse-desktop` and `make lighthouse-mobile` as the
+budget evidence.
 
 **Dependency.** Dependent on 3.2 and 2.4.
 
 **Gates.** Lighthouse desktop 95 / mobile 85; bundle-size workflow shows no eager-entrypoint
-growth; `react-hooks/exhaustive-deps` satisfied by restructuring, never by a suppression.
+growth; `react-hooks/exhaustive-deps` satisfied by restructuring, never by a suppression;
+accessibility checks on the two new rendering rules.
 
 ### Story 3.4: Invalidate the cache on every session boundary
 
@@ -440,20 +564,27 @@ different principal, asserting no grant survives.
 **Gates.** 100% coverage of each invalidation branch; each mutation-killed; no change to the
 existing `switchTenant` audit payload (its tests must still pass unmodified).
 
+**Re-aim status (2026-09-08).** Delivered; unaffected. It clears a cache on session boundaries,
+which is independent of what the cache holds. Only the version-field name follows the rest of the
+plan.
+
 ### Story 3.5: Fail closed on every degraded catalogue path, and say why
 
 **User story.** As a security reviewer, I want every catalogue failure to reduce access rather
 than expand it, and to leave a record naming the cause.
 
-**Description.** Network failure, zod violation, timeout, empty catalogue and unknown
-`catalogueVersion` all resolve to `DEFAULT_ROLE` and emit `access_catalogue_unavailable` with a
-`cause`. Never reuse another session's cached grants. Add the two new `AuditEventType` members.
-Architecture D8.
+**Description.** _Amended 2026-09-08: an empty set is removed from this list — it is a valid
+answer, not a failure (FR-21, D8)._ Network failure, zod violation, timeout and an unknown
+`version` all allow no mutation and emit `access_source_unavailable` with a `cause`. Never reuse
+another session's cached grants. Add the two new `AuditEventType` members. Architecture D8, D13.
 
 **Acceptance criteria.**
 
-- Given each of the five failure causes, when a session hydrates, then the principal holds only
-  `viewer` permissions and one event carrying that exact cause is emitted.
+- Given each of the four failure causes, when a session hydrates, then the principal allows no
+  mutation and one event carrying that exact cause is emitted.
+- Given a healthy read returning an empty set, when a session hydrates, then the rendering is the
+  same as a failure but **no** event is emitted — the audit trail is the only place the two are
+  distinguishable, and that is asserted in both directions.
 - Given a failure, when the page renders, then the user sees the application shell, not a blank
   page and not an error screen.
 - Given a failure after a successful catalogue load in the same session, when it occurs, then
@@ -471,14 +602,16 @@ payload; a throwing-sink test; a no-PII assertion over the emitted metadata.
 
 **Dependency.** Dependent on 3.2.
 
-**Gates.** 100% coverage of all five causes; mutation-killed on each; NFR-09 fail-closed
-assertions are the acceptance evidence, not a code comment.
+**Gates.** 100% coverage of all four causes plus the empty-set case; mutation-killed on each;
+NFR-09 fail-closed assertions are the acceptance evidence, not a code comment.
 
 ## Epic 4: Align tenancy and the audit trail with the backend
 
 **Why.** The backend has no tenant concept and no client-visible audit correlation. This epic
 does the alignable half now and defers the rest explicitly rather than inventing it.
-Delivers FR-23, FR-24, and the documentation half of FR-14.
+Delivers FR-23, FR-24, and the documentation half of FR-14. _Amended 2026-09-08: the board adds a
+whole IAM administration surface this repository does not have; story 4.4 scopes it rather than
+pretending it is covered._
 
 ### Story 4.1: Keep tenancy behind the `tenant-switcher` access flag
 
@@ -486,22 +619,23 @@ Delivers FR-23, FR-24, and the documentation half of FR-14.
 has tenants, so that we do not ship a control that cannot work.
 
 **Description.** No behaviour change to `useTenant` or `switchTenant`. Any tenant-switcher UI
-introduced later is gated on the existing `tenant-switcher` access flag, and the catalogue's
-`tenants` / `activeTenant` fields are specified as optional in the proposal. Architecture D9.
+introduced later is gated on the existing `tenant-switcher` access flag, and the contract's single
+`tenant` field is specified as optional in the proposal. Neither board diagram carries a tenant
+element either, so the deferral now rests on two independent observations. Architecture D9.
 
 **Acceptance criteria.**
 
-- Given no tenant claim and no catalogue tenants, when a session hydrates, then the principal
-  holds exactly one synthetic `default` membership, as today.
+- Given no tenant claim and a null `tenant` in the allowed set, when a session hydrates, then the
+  principal holds exactly one synthetic `default` membership, as today.
 - Given the `tenant-switcher` access flag off, when the app renders, then no tenant control is
   present in the accessibility tree — it is absent, not disabled and not `aria-hidden`.
-- Given a catalogue that does declare tenants, when a session hydrates, then those memberships
-  replace the synthetic one and `switchTenant` still refuses a non-member id with a
+- Given an allowed set that does declare a tenant, when a session hydrates, then that membership
+  replaces the synthetic one and `switchTenant` still refuses a non-member id with a
   `permission_denied` event carrying `reason: 'membership'`.
 - Given the existing tenant tests, when they run unmodified, then they pass — this story adds no
   regression surface.
 
-**Files.** `src/lib/access/catalogue-principal-factory.ts` (tenant branch),
+**Files.** `src/lib/access/mutation-access-principal-factory.ts` (tenant branch),
 `src/api/contracts/access-rbac-proposal.md` (the optionality note).
 
 **Tests.** Extend `tests/unit/lib/access/access-core.test.ts` and the catalogue factory tests;
@@ -542,33 +676,80 @@ plus a dependency-cruiser fixture assertion that the domain stayed clean.
 **Gates.** 100% coverage; `no-access-domain-to-container` / `no-access-domain-to-tsyringe` still
 pass; the sink contract (`AuditSink.record`) is unchanged, so existing sink tests still apply.
 
+**Re-aim status (2026-09-08).** Delivered; unaffected. It attaches a correlation id to every
+event regardless of which events exist, so the two renamed event types ride it for free.
+
 ### Story 4.3: Record the source-of-truth change in the docs and a new ADR
 
 **User story.** As a contributor, I want the documentation to state where roles come from, so
 that the next agent does not re-derive the answer from source.
 
-**Description.** Add a "Where the catalogue comes from" section to `docs/access-control.md` and
-`docs/adr/005-server-sourced-access-catalogue.md`, which supersedes the "roles derived from
-token claims" half of ADR-004 without contradicting the rest of it. `make check-adr-drift`
+**Description.** Add a "Where access comes from" section to `docs/access-control.md` and
+`docs/adr/005-mutation-scoped-access-source.md`, which supersedes the "roles derived from token
+claims" half of ADR-004 without contradicting the rest of it. _Amended 2026-09-08: the ADR must
+also record D12 — retiring the `Role` union as an authorization input reverses something ADR-004
+states positively, so it cannot be left to the diff._ `make check-adr-drift`
 requires an ADR for this change because it touches `src/config/**` and the dependency map.
 
 **Acceptance criteria.**
 
-- Given ADR-005, when it is read, then it names the decision, the four alternatives from the
-  architecture artifact, and both positive and negative consequences.
+- Given ADR-005, when it is read, then it names the decision, the alternatives from the
+  architecture artifact, both positive and negative consequences, and the D12 reversal.
 - Given ADR-004, when it is read after this story, then it is not silently contradicted — the
   superseded portion is named explicitly.
 - Given `docs/adr/README.md`, when it is read, then ADR-005 has an index row.
 - Given `make lint-docs` and `make check-adr-drift`, when they run, then both pass.
 
-**Files.** `docs/access-control.md`, `docs/adr/005-server-sourced-access-catalogue.md` (new),
+**Files.** `docs/access-control.md`, `docs/adr/005-mutation-scoped-access-source.md` (new),
 `docs/adr/README.md`, `docs/adr/004-client-side-access-control-layer.md` (a superseded-by note).
 
 **Tests.** `make lint-docs`, `make lint-adr`, `make check-adr-drift`.
 
-**Dependency.** Dependent on Epic 3 completing, so the documented behaviour is the shipped one.
+**Dependency.** Dependent on Epic 3 and story 2.7 completing, so the documented behaviour is the
+shipped one.
 
 **Gates.** markdownlint 0, prettier clean, ADR linter green, no absolute local paths.
+
+### Story 4.4: Scope the IAM administration surface, and say what it would take
+
+**New 2026-09-08.** The board's IAM Module diagram specifies a product area this repository does
+not have, and the honest response is to size it, not to absorb it silently into issue #114.
+
+**User story.** As a product owner, I want the gap between the board's IAM module and this
+repository written down, so that "sync with the backend architecture" is not quietly reported as
+done when half the architecture is unbuilt.
+
+**Description.** The board specifies `Authorization [component]<route>`, `Users`, `Users list`,
+`User invite` with a `UserInviteDTO`, `Roles`, `Role list`, `Add new role`, `Edit Role`,
+`Delete Role`, `RoleForm`, and `Role` and `User` entities read through `Get list of Roles` and
+`Get list of Users`. crm ships none of them. This story produces a scoping note — not screens:
+which routes the module would add, which module it belongs in under the repository's layer law,
+what the route registry and route-coverage inventory would need, and which parts of the contract
+proposal's IAM half each screen consumes. It explicitly recommends a **separate issue**, because
+building an admin area is larger than the access read and would hold the read hostage.
+
+**Acceptance criteria.**
+
+- Given the scoping note, when it is read, then every element named on the board's IAM diagram is
+  either mapped to a proposed route and component or listed as deliberately out of scope with a
+  reason.
+- Given the note, when it is read against the contract proposal, then every screen names the
+  query or mutation it would consume, and any element the proposal does not yet cover is raised
+  as an open question rather than assumed.
+- Given the note, when it is read against `src/routes/README.md`, then the routes it proposes are
+  expressed as module-owned route contracts, not as edits to the app shell.
+- Given `make lint-docs`, when it runs, then it passes.
+
+**Files.** `specs/114-access-rbac-tenant-audit/planning-artifacts/` (the scoping note),
+`src/api/contracts/access-rbac-proposal.md` (any open question it raises).
+
+**Tests.** `make lint-docs`. Documentation only, by design — this story deliberately writes no
+code.
+
+**Dependency.** Dependent on 2.2. Blocked on OQ-18, which is the question of whether crm owns
+these screens at all.
+
+**Gates.** markdownlint 0, prettier clean, `make lint-docs` green, no absolute local paths.
 
 ## Epic 5: Roll out safely and keep every gate honest
 
@@ -607,22 +788,35 @@ test, and a name-collision assertion across the two flag catalogues.
 
 **Gates.** 100% coverage; the runtime-config contract test is the gate; no schema loosening.
 
-### Story 5.2: Serve the catalogue from the local mocks
+**Re-aim status (2026-09-08).** Delivered; unaffected in substance. The flag's meaning is
+unchanged — it selects the session source. Architecture D10 renames it from
+`accessCatalogueSource` to `accessSource`; that rename touches the same four declaration sites
+and the contract test enforces that all four move together.
+
+### Story 5.2: Serve the allowed set from the local mocks
+
+**Retargeted 2026-09-08.** Was: resolve the catalogue query. Now: resolve the access query — and
+add the empty-set case, which the board's rendering rules make a behaviour worth seeing in a
+browser rather than an error path.
 
 **User story.** As a QA engineer, I want the E2E, visual and Lighthouse suites to exercise the
-catalogue path, so that a green browser suite is not green because it silently fell back.
+set-backed path, so that a green browser suite is not green because it silently fell back.
 
-**Description.** Add a catalogue resolver to `docker/apollo-server/lib/resolvers.ts` and the
-matching Mockoon fixture, so both the dev stack and the test stack answer the query.
+**Description.** Add a `mutationAccess` resolver to `docker/apollo-server/lib/resolvers.ts` and
+the matching Mockoon fixture, so both the dev stack and the test stack answer the query, with
+selectable fixtures for a populated set, an empty set and an invalid payload.
 
 **Acceptance criteria.**
 
-- Given the dev stack, when the catalogue query is issued, then the mock returns a schema-valid
+- Given the dev stack, when the access query is issued, then the mock returns a schema-valid
   payload.
 - Given the test stack with the flag on, when an E2E run hydrates, then the principal carries the
-  mock's grants — asserted through observable UI, not through source inspection.
+  mock's mutation keys — asserted through observable UI, not through source inspection.
+- Given the mock returning an **empty** set, when a gated page renders, then the child controls
+  are absent from the accessibility tree and a root page with no data shows 403 (FR-27), observed
+  in the browser.
 - Given the mock deliberately returning an invalid payload, when a session hydrates, then the
-  fail-closed path of story 3.5 is observed in the browser.
+  fail-closed path of story 3.5 is observed in the browser and renders the same as the empty case.
 - Given `make test-e2e` and `make test-visual`, when they run, then all suites pass and zero
   visual baselines change.
 
@@ -643,7 +837,9 @@ matching Mockoon fixture, so both the dev stack and the test stack answer the qu
 the catalogue change, so that a blank gated home page cannot quietly collapse the budget.
 
 **Description.** Extend `tests/unit/routes/seeded-session-route.test.tsx` to cover both source
-modes, and add any new route to `tests/e2e/route-coverage.tsv` in both directions.
+modes, and add any new route to `tests/e2e/route-coverage.tsv` in both directions. _Amended
+2026-09-08: if story 4.4's IAM routes are ever adopted, they enter the inventory the same way —
+this story is the gate that would catch them missing._
 
 **Acceptance criteria.**
 
@@ -675,14 +871,16 @@ layer, so that a rule cannot start passing vacuously over the code added by this
 **Description.** Add the new files to the must-fail fixture set in
 `tests/unit/tooling/access-control-gates.test.ts`, add a dependency-cruiser rule fixture for any
 new rule (the bidirectional completeness assertion has no exemption list), and run the full
-quality sweep.
+quality sweep. _Amended 2026-09-08: this now includes proving the **re-pointed** ESLint gate of
+story 2.7 still fires — a rule whose closed set changed can start matching nothing and pass
+vacuously, which is the exact failure this story exists to prevent._
 
 **Acceptance criteria.**
 
 - Given each new `src/lib/access/**` file, when a fixture imports the container or tsyringe from
   it, then the corresponding dependency-cruiser rule fires.
-- Given a fixture using a raw permission string outside the layer, when ESLint runs, then it
-  errors; given the same inside the layer, then it does not.
+- Given a fixture using a raw mutation key outside the layer, when ESLint runs, then it errors;
+  given the same inside the layer, then it does not.
 - Given `make lint`, `make test-unit-all`, `make test-integration` and `make test-mutation`,
   when they run, then coverage is 100/100/100/100 and the mutation score is 100.00%.
 - Given the `gate ratchet` check, when it runs on the pull request, then no guarded threshold is
@@ -695,25 +893,30 @@ quality sweep.
 **Tests.** The full local suite: `make format`, `make lint`, `make test-unit-all`,
 `make test-integration`, `make test-e2e`, `make test-visual`, `make test-mutation`.
 
-**Dependency.** Dependent on every preceding story.
+**Dependency.** Dependent on every preceding story, including 2.7.
 
 **Gates.** All of them. This story is the epic set's exit criterion.
 
 ## Dependency map for parallel dispatch
 
-Independent and dispatchable immediately: **2.1, 2.2, 2.3, 3.1, 4.2, 5.1**.
+Delivered: **2.1, 2.2, 2.3, 3.1, 3.4, 4.2, 5.1** (2.2 rewritten and 2.3 superseded by 2.7 — see
+each story's re-aim status).
 
-Then, in order: 2.4 (after 2.2) → 2.5 (after 2.3, 2.4) → 2.6 (after 2.5); 3.2 (after 2.5, 3.1,
-5.1) → 3.3 (after 3.2, 2.4) → 3.5 (after 3.2); 3.4 (after 3.1); 4.1 (after 2.5); 5.2 (after 2.4,
-5.1) → 5.3 (after 3.3, 5.2); 4.3 (after Epic 3); 5.4 last.
+Independent and dispatchable immediately: **4.4** (documentation only).
+
+Then, in order: 2.4 (after 2.2) → 2.7 (after 2.4) → 2.5 (after 2.4, 2.7) → 2.6 (after 2.5, 2.7);
+3.2 (after 2.5, 3.1, 5.1) → 3.3 (after 3.2, 2.4) → 3.5 (after 3.2); 4.1 (after 2.5); 5.2 (after
+2.4, 5.1) → 5.3 (after 3.3, 5.2); 4.3 (after Epic 3 and 2.7); 5.4 last.
+
+2.5 no longer waits on 2.3: role vocabulary is not consulted on the set-backed path.
 
 ## Traceability
 
 | Requirement             | Stories                   |
 | ----------------------- | ------------------------- |
 | FR-01 … FR-13 (shipped) | 1.1 – 1.5                 |
-| FR-14                   | 2.2, 4.3                  |
-| FR-15                   | 2.1, 2.3                  |
+| FR-14                   | 2.2, 4.3, 4.4             |
+| FR-15                   | 2.1, 2.3, 2.7             |
 | FR-16                   | 2.5                       |
 | FR-17                   | 2.5, 2.6                  |
 | FR-18                   | 3.2                       |
@@ -725,4 +928,5 @@ Then, in order: 2.4 (after 2.2) → 2.5 (after 2.3, 2.4) → 2.6 (after 2.5); 3.
 | FR-24                   | 4.2                       |
 | FR-25                   | 5.2, 5.3                  |
 | FR-26                   | 5.1                       |
+| FR-27                   | 3.3, 3.5, 5.2             |
 | NFR-01 … NFR-14         | every story; swept by 5.4 |
