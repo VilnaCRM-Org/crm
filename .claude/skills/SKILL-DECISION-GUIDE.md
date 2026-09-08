@@ -34,7 +34,7 @@ available in every project via the Skill tool. They are **part of the mandatory
 pass above**: when a task matches a trigger below, invoke the named skill(s) **by
 name** with the Skill tool, alongside the project workflow skills. Project skills
 own process and gates; reach here for deeper technique. The full catalogue with
-longer descriptions lives in `agents.md` ("Global Skills"); this table is the
+longer descriptions lives in `AGENTS.md` ("Global Skills"); this table is the
 enforced, on-path quick reference.
 
 **Stack note:** several UI skills assume Tailwind CSS or shadcn/ui. This project

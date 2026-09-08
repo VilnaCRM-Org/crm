@@ -1,5 +1,5 @@
 {
-  "description": "Authoritative performance byte budgets for the frontend bundle. This is the SINGLE source of truth for the numbers; rsbuild.config.ts, the Lighthouse configs, scripts/bundle-size-report.mjs and the make perf-budget target all read from here. The CLAUDE.md/agents.md tables are documentation MIRRORS of this file and must be updated with it. Satisfy a budget by reducing/splitting the bundle, never by raising a limit without rationale (see issue #117).",
+  "description": "Authoritative performance byte budgets for the frontend bundle. This is the SINGLE source of truth for the numbers; rsbuild.config.ts, the Lighthouse configs, scripts/bundle-size-report.mjs and the make perf-budget target all read from here. The CLAUDE.md/AGENTS.md tables are documentation MIRRORS of this file and must be updated with it. Satisfy a budget by reducing/splitting the bundle, never by raising a limit without rationale (see issue #117).",
   "raw": {
     "maxInitialEntrypointBytes": 470000,
     "maxAssetBytes": 400000

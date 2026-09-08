@@ -461,7 +461,7 @@ Each skill consists of:
 - Reuse Makefile commands. Avoid host-only invocations.
 - Never instruct disable / ignore / suppress annotations.
 
-## Skill vs CLAUDE.md vs agents.md
+## Skill vs CLAUDE.md vs AGENTS.md
 
 ### CLAUDE.md (concise reference)
 
@@ -471,7 +471,7 @@ Each skill consists of:
 - **Location**: repository root.
 - **Usage**: automatic context for every conversation.
 
-### agents.md (comprehensive guidelines)
+### AGENTS.md (comprehensive guidelines)
 
 - **Purpose**: comprehensive repository guidelines and best practices.
 - **Content**: full development workflow, quality standards, debugging,
@@ -525,5 +525,5 @@ All skills enforce these project standards:
 
 1. Review the skill's `SKILL.md` for detailed instructions.
 2. Check `reference/` for troubleshooting and deeper context.
-3. Consult `agents.md` for comprehensive workflow guidance.
+3. Consult `AGENTS.md` for comprehensive workflow guidance.
 4. Consult `CLAUDE.md` for the quick command and metrics reference.

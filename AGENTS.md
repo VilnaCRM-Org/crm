@@ -1,4 +1,4 @@
-# agents.md
+# AGENTS.md
 
 AI Agent Guide for VilnaCRM React Template
 
@@ -1729,3 +1729,47 @@ This document is maintained alongside the codebase. When patterns emerge or comm
 issues are resolved, update this guide to help future agents work more effectively.
 
 **Last updated**: 2026-06-10
+
+<!-- react-frontend-sdlc:begin -->
+
+## react-frontend-sdlc governance (managed block — do not edit between markers)
+
+This repository's SDLC is driven by the react-frontend-sdlc plugin through the
+`/fe-sdlc` orchestrator and its stage commands (`/fe-sdlc-setup`,
+`/fe-sdlc-issue`, `/fe-sdlc-plan`, `/fe-sdlc-implement`, `/fe-sdlc-review`,
+`/fe-sdlc-qa`, `/fe-sdlc-finish-pr`). Every command, agent, and skill reads the
+project profile at `.claude/react-sdlc.yml` rather than hardcoding repo shape.
+
+### Skill-triage gate
+
+Before review or implementation work, every skill shipped by the
+react-frontend-sdlc plugin receives a recorded verdict: EXECUTE (with
+evidence) or NOT-APPLICABLE (with a reason). Verdicts are formed from
+skill frontmatter and the decision guide only; full skill bodies are
+loaded solely on EXECUTE.
+
+### Protected quality thresholds
+
+Quality gates live in `.claude/react-sdlc.yml` under `quality.*` and are
+raise-only: score floors (coverage, mutation MSI, Lighthouse desktop/mobile)
+may be raised above the shipped defaults, and the eslint, tsc, jscpd,
+markdownlint, dependency-cruiser, and visual-diff violation ceilings stay
+at 0. Never lower them — `validate-profile.sh` rejects lowered values.
+
+### Mandatory accessibility gate
+
+Accessibility is non-negotiable. The `/fe-sdlc-review` and `/fe-sdlc-qa`
+stages run the accessibility lane — the target mapped by `make.a11y`, or the
+plugin's bundled static axe-core / semantic / ARIA checks when that mapping is
+`null` — and must report a clean a11y verdict before a change can finish.
+Never weaken or skip it.
+
+### Make-map execution
+
+Run all build, test, lint, and quality commands through the logical targets
+mapped in `.claude/react-sdlc.yml` (`make.*` — `make.ci`, `make.lint`,
+`make.test_unit_client`, and the rest). Never invoke the package manager,
+bundler, or test runners directly on the host. A `null` mapping means the
+capability is absent: skip or degrade with a note, never improvise a raw
+host command.
+<!-- react-frontend-sdlc:end -->

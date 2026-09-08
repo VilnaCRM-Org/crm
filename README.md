@@ -396,7 +396,7 @@ as it's frequently updated.
 In-repository documentation:
 
 - [Architecture Decision Records (ADRs)](docs/adr/README.md)
-- [Agent and contributor guide](agents.md)
+- [Agent and contributor guide](AGENTS.md)
 - [Repository conventions and commands](CLAUDE.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [Access control — RBAC, tenancy, access flags, audit](docs/access-control.md)

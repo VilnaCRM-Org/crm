@@ -15,14 +15,15 @@ specs/
 
 ## Current Specs
 
-| Spec                          | Status      |
-| ----------------------------- | ----------- |
-| `rust-code-analysis`          | Implemented |
-| `start-ci-chromium`           | Implemented |
-| `eslint-suppressions`         | In progress |
-| `makefile-playwright-targets` | Planned     |
-| `sign-up-sign-in-pages`       | In progress |
-| `enterprise-app-shell`        | Implemented |
+| Spec                           | Status      |
+| ------------------------------ | ----------- |
+| `rust-code-analysis`           | Implemented |
+| `start-ci-chromium`            | Implemented |
+| `eslint-suppressions`          | In progress |
+| `makefile-playwright-targets`  | Planned     |
+| `sign-up-sign-in-pages`        | In progress |
+| `enterprise-app-shell`         | Implemented |
+| `114-access-rbac-tenant-audit` | In progress |
 
 ## Conventions
 
