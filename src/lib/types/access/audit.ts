@@ -4,7 +4,8 @@ export type AuditEventType =
   | 'tenant_switch'
   | 'permission_denied'
   | 'sensitive_action'
-  | 'access_role_unmapped';
+  | 'access_role_unmapped'
+  | 'access_unknown_mutation';
 
 export type AuditMetadata = Readonly<Record<string, string>>;
 

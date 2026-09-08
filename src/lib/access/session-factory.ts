@@ -34,6 +34,7 @@ export class SessionFactory {
       email: claims?.email ?? input.email ?? '',
       roles,
       permissions: permissionResolver.expand(roles),
+      allowedMutations: [],
       tenantId: subject.tenantId,
       tenants,
     };

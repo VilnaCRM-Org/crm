@@ -218,7 +218,7 @@ None of these blocks the verdict; each names the artifact it implicates.
   states positively, so ADR-005 must record a reversal and not only a supersession._ `make check-adr-drift`
   fires on `src/config/**` changes, so story 4.3 is not optional bookkeeping; it is a required
   gate for the Epic 5 pull request.
-- **F7 (epics) — two flag catalogues, one naming rule.** `accessSource` is a runtime
+- **F7 (epics) — two flag catalogues, one naming rule.** `accessCatalogueSource` is a runtime
   flag (issue #145) and must never appear in the access-flag catalogue. Story 5.1 asserts the
   absence of a name collision explicitly, because the two catalogues are the repository's
   easiest confusion.

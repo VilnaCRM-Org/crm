@@ -1,5 +1,6 @@
 import claimsMapper, { ClaimsMapper } from '@/lib/access/claims-mapper';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
+import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
 import { ROLES } from '@/lib/access/permission-catalog';
 import { buildClaims, buildEmail, buildTenantRef, buildUserId } from '@tests/builders';
 
@@ -11,6 +12,7 @@ const EMPTY_CLAIMS = {
   tenantId: undefined,
   tenants: undefined,
   flags: undefined,
+  allowedMutations: undefined,
 };
 
 describe('ClaimsMapper', () => {
@@ -41,7 +43,7 @@ describe('ClaimsMapper', () => {
       flags: { [FEATURE_FLAGS.contactsModule]: true },
     });
 
-    expect(mapper.map({ ...claims })).toStrictEqual({ ...claims });
+    expect(mapper.map({ ...claims })).toStrictEqual({ ...claims, allowedMutations: undefined });
   });
 
   it('returns an all-undefined shape for an empty record', () => {
@@ -164,5 +166,34 @@ describe('ClaimsMapper', () => {
 
   it('maps an empty flags record to an empty flag state', () => {
     expect(mapper.map({ flags: {} })).toStrictEqual({ ...EMPTY_CLAIMS, flags: {} });
+  });
+
+  it('keeps an allowedMutations claim naming a key the UI gates on', () => {
+    const raw = { allowedMutations: [MUTATION_KEYS.createUser] };
+
+    expect(mapper.map(raw)).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      allowedMutations: [MUTATION_KEYS.createUser],
+    });
+  });
+
+  it('drops an allowedMutations entry the catalogue does not declare', () => {
+    const raw = { allowedMutations: ['deleteUser', MUTATION_KEYS.createUser, 7] };
+
+    expect(mapper.map(raw)).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      allowedMutations: [MUTATION_KEYS.createUser],
+    });
+  });
+
+  it('drops an allowedMutations claim that is not an array', () => {
+    expect(mapper.map({ allowedMutations: MUTATION_KEYS.createUser })).toStrictEqual(EMPTY_CLAIMS);
+  });
+
+  it('maps an empty allowedMutations array to an empty list rather than undefined', () => {
+    expect(mapper.map({ allowedMutations: [] })).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      allowedMutations: [],
+    });
   });
 });

@@ -1,4 +1,7 @@
+import type { MutationKey } from '@/lib/types/access/mutation-access';
 import type { SessionClaims } from '@/lib/types/access/session';
+
+import mutationKeyFilter from './mutation-key-filter';
 
 export class ClaimsMapper {
   public map(raw: unknown): SessionClaims | null {
@@ -11,6 +14,7 @@ export class ClaimsMapper {
       tenantId: this.asString(raw.tenantId),
       tenants: this.asTenants(raw.tenants),
       flags: this.asFlags(raw.flags),
+      allowedMutations: this.asMutationKeys(raw.allowedMutations),
     };
   }
 
@@ -21,6 +25,11 @@ export class ClaimsMapper {
   private asStringList(value: unknown): readonly string[] | undefined {
     if (!Array.isArray(value)) return undefined;
     return value.filter((entry): entry is string => typeof entry === 'string');
+  }
+
+  private asMutationKeys(value: unknown): readonly MutationKey[] | undefined {
+    const names = this.asStringList(value);
+    return names === undefined ? undefined : mutationKeyFilter.filter(names);
   }
 
   private asTenants(value: unknown): SessionClaims['tenants'] {

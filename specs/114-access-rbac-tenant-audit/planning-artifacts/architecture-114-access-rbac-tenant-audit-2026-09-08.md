@@ -304,11 +304,14 @@ audit event exercised.
 
 ### D10 — The rollout flag is a runtime flag, not an access flag
 
-**Status.** Survives, amended on 2026-09-08 — the reasoning is untouched; the flag is renamed
-from `accessCatalogueSource` to `accessSource` and its "on" value now means "use the
-allowed-mutation set" rather than "use the catalogue".
+**Status.** Survives, amended on 2026-09-08 — the reasoning is untouched; the flag keeps its
+shipped name, `accessCatalogueSource`, and its "on" value now means "use the allowed-mutation
+set" rather than "use the catalogue". An earlier revision of this document proposed renaming it
+to `accessSource`; that rename was **declined** on 2026-09-08 (ADR-005), because the flag's job —
+choosing where the access model comes from — is unchanged by the move to mutation keys, so the
+churn across its four declaration sites buys nothing.
 
-**Decision.** `accessSource` is a deployment-level runtime flag (issue #145): declared
+**Decision.** `accessCatalogueSource` is a deployment-level runtime flag (issue #145): declared
 in the `FeatureFlag` union of `@/config/runtime`, in `FEATURE_FLAG_DEFAULTS`, in
 `app-config-schema.ts`, and in the committed block in `public/index.html` — the four places
 `tests/unit/tooling/runtime-config-contract.test.ts` pins. It ships default-off (`claims`).
@@ -514,7 +517,8 @@ Every branch below needs an assertion that kills its mutant (`break = 100`):
 1. D7 (`subject`/`sid`) — landed. Correct and independent of the contract shape.
 2. Role mapping (the withdrawn D2) — landed. It stays in service on the claim path; D12 governs
    its removal, which happens with the claim path and not before.
-3. Land D1/D4/D5/D6/D8/D11/D13 with `accessSource` default-off. Nothing changes in production.
+3. Land D1/D4/D5/D6/D8/D11/D13 with `accessCatalogueSource` default-off. Nothing changes in
+   production.
 4. Enable per environment. Rollback is setting the flag back and restarting the container.
 5. Apply D12's step 3 (re-point the ESLint gate) once the set-backed path is the default in every
    environment, and remove the flag, the claim branch, `ROLE_PERMISSIONS` and `DEFAULT_ROLE`

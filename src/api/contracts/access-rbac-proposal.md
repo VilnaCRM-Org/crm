@@ -352,7 +352,7 @@ object-level rules become server data — now largely subsumed by OQ-15), and **
 - No IAM administration screens in crm as a precondition — the access read stands alone, and the
   IAM half can be accepted, deferred or rejected separately.
 - No coordinated cutover — the client adopts this behind a default-off runtime flag
-  (`accessSource`, issue #145) and can be enabled per environment or rolled back with a container
+  (`accessCatalogueSource`, issue #145) and can be enabled per environment or rolled back with a container
   restart, never a redeploy.
 
 ## Reviewing this proposal

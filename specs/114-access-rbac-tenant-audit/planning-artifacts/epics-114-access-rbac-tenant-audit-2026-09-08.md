@@ -792,9 +792,9 @@ test, and a name-collision assertion across the two flag catalogues.
 **Gates.** 100% coverage; the runtime-config contract test is the gate; no schema loosening.
 
 **Re-aim status (2026-09-08).** Delivered; unaffected in substance. The flag's meaning is
-unchanged — it selects the session source. Architecture D10 renames it from
-`accessCatalogueSource` to `accessSource`; that rename touches the same four declaration sites
-and the contract test enforces that all four move together.
+unchanged — it selects the session source. Architecture D10 once proposed renaming it from
+`accessCatalogueSource` to `accessSource`; that rename was declined (ADR-005) and the flag keeps
+its shipped name, so no declaration site moves.
 
 ### Story 5.2: Serve the allowed set from the local mocks
 

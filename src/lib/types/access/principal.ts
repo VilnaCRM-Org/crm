@@ -1,4 +1,5 @@
 import type { FeatureFlagState } from './feature-flag';
+import type { MutationKey } from './mutation-access';
 import type { Permission, Role } from './permission';
 
 export interface TenantRef {
@@ -11,6 +12,7 @@ export interface Principal {
   readonly email: string;
   readonly roles: readonly Role[];
   readonly permissions: readonly Permission[];
+  readonly allowedMutations: readonly MutationKey[];
   readonly tenantId: string;
   readonly tenants: readonly TenantRef[];
 }

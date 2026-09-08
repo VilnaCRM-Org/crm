@@ -23,6 +23,11 @@ src/lib/access/                    # dependency-free domain + state (paint-safe,
 ├── session-claims-reader.ts       # JWT payload → claims (no dependencies)
 ├── claims-mapper.ts               # untyped claims → typed SessionClaims
 ├── session-factory.ts             # claims → Principal + flags
+├── mutation-catalogue.ts          # MUTATION_KEYS + isKey (the closed mutation-key set)
+├── mutation-key-filter.ts         # server keys → known keys, auditing what it drops
+├── mutation-access-core.ts        # can(principal, mutationKey)
+├── claims-mutation-resolver.ts    # interim access source: the token's own claims
+├── mutation-access-dispatcher.ts  # request → resolve → republish the access snapshot
 ├── audit-core.ts                  # stamps and forwards audit events to the sink
 ├── noop-audit-sink.ts             # default sink (drops events)
 └── policies/edit-contact-policy.ts
@@ -44,12 +49,14 @@ React seam:
 src/hooks/use-access.ts            # snapshot reader used by every access hook
 src/hooks/use-access-snapshot.ts   # useSyncExternalStore subscription over access-state
 src/hooks/use-can.ts               # useCan(permission) -> boolean
+src/hooks/use-can-mutate.ts        # useCanMutate(mutationKey) -> boolean
 src/hooks/use-principal.ts
 src/hooks/use-tenant.ts
 src/hooks/use-access-flag.ts
 src/providers/access-context.ts    # context published by AccessProvider
 src/providers/access-provider.tsx  # mounted by AppProviders
 src/components/require-permission/ # <RequirePermission permission={…}>
+src/components/require-mutation/   # <RequireMutation mutation={…}>
 src/components/access-denied/      # the 403 panel rendered in place by the route gate
 src/routes/permission-route.tsx    # route element that gates a branch by permission
 src/routes/permission-branch-builder.tsx
@@ -177,6 +184,65 @@ bookkeeping keeps its owned children.
 to its heading because the URL does not change when a navigation is refused. Do not use
 it as a `RequirePermission` fallback.
 
+## Mutation-keyed access
+
+A second, **additive** gate keys authorization to the name of a GraphQL mutation rather
+than to a `resource:action` string, matching the team's architecture (ADR-005). Nothing in
+the application consumes it yet, and it changes no existing render: the two paths coexist
+until the backend ships the access resolvers.
+
+```typescript
+import RequireMutation from '@/components/require-mutation';
+import useCanMutate from '@/hooks/use-can-mutate';
+import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
+
+<RequireMutation mutation={MUTATION_KEYS.createUser}>
+  <UIButton onClick={create}>{t('user.create')}</UIButton>
+</RequireMutation>;
+
+const canCreate = useCanMutate(MUTATION_KEYS.createUser);
+```
+
+**Which gate to use.** Reach for `RequirePermission` / `useCan` for everything today: the
+`resource:action` catalogue is the shipped, server-mirroring model and stays until the
+backend declares an allowed-mutation set. Reach for `RequireMutation` / `useCanMutate`
+only for a control whose whole purpose is to run one named mutation, and only where a
+principal's set is actually supplied — otherwise the control is permanently hidden, which
+is the intended failure direction but not a useful one.
+
+**Fail-closed by absence.** `Principal.allowedMutations` is empty unless an access source
+published it, and `SessionFactory` never populates it from claims, so a deployment that
+supplies nothing denies every mutation gate. `RequireMutation` takes **no** fallback: a
+key that is absent renders nothing at all, which is the board's "do not show the component
+when the data is empty" rule. A denied control is absent from the accessibility tree, not
+disabled.
+
+**Where the set comes from.** `MutationAccessDispatcher` is the request half of the
+board's `checkPermissionRequest` / `checkPermissionResponse` pair, expressed in this
+repository's own idiom rather than with RxJS: `request(input)` awaits a
+`MutationAccessResolver` and republishes the resolved set onto the live principal through
+`accessState.setSession`, which notifies the existing `useSyncExternalStore` subscription —
+the watcher half. Because the read stays synchronous and only the request is asynchronous,
+first paint never awaits a round trip. The resolver is swapped exactly like the session
+loader and the audit sink:
+
+```typescript
+mutationAccessDispatcher.useResolver(myResolver);
+```
+
+The shipped default, `claimsMutationResolver`, derives the set from the token's own
+`allowedMutations` claim so the path is exercisable end to end today. The real GraphQL
+resolver arrives with the backend contract in
+[`src/api/contracts/access-rbac-proposal.md`](../src/api/contracts/access-rbac-proposal.md).
+The `accessCatalogueSource` runtime flag ([`docs/feature-flags.md`](feature-flags.md))
+governs **which** resolver a deployment installs — never whether the gate itself works.
+
+**The key set is closed, and checked against the schema.** `MUTATION_KEYS` is the only
+place a gate key is named, and `tests/unit/lib/access/mutation-catalogue-parity.test.ts`
+fails the build unless every key is a mutation field the pinned GraphQL contract declares.
+A server key the catalogue does not declare is dropped by `MutationKeyFilter` and audited
+as `access_unknown_mutation`; a catalogue key absent from the server's set simply denies.
+
 ## Object-level rules: policies
 
 Row- and field-level rules are named classes, never inline conditionals:
@@ -215,9 +281,11 @@ Recorded events: `login`, `logout`, `tenant_switch` (with `from`/`to`),
 whether the refusal was a missing permission or a missing membership), and
 `access_role_unmapped` (with `role`, the verbatim server role name a token claimed that
 neither `SERVER_ROLE_MAP` nor the `Role` union resolves; that name is discarded and the
-session falls back to `viewer`). Every session that ends, including one replaced by
-another login, closes with a `logout` event while its principal is still known, so the
-trail reconciles into whole sessions.
+session falls back to `viewer`), and `access_unknown_mutation` (with `mutations`, the
+comma-separated mutation keys an access source granted that `MUTATION_KEYS` does not
+declare; they are discarded, one event per read rather than one per key). Every session that
+ends, including one replaced by another login, closes with a `logout` event while its
+principal is still known, so the trail reconciles into whole sessions.
 
 `access_role_unmapped` is emitted while the session that claimed the role is still being
 built, before it is published, so `SessionFactory` supplies the attribution explicitly and
@@ -232,6 +300,11 @@ Every other event is stamped from the published principal.
 - **A role** — add it to the `Role` union and give it an entry in `ROLE_PERMISSIONS`.
   Roles are additive sets, not a hierarchy in code: build a broader role by spreading
   the narrower one.
+- **A mutation key** — add it to the `MutationKey` union
+  (`src/lib/types/access/mutation-access.ts`) and to `MUTATION_KEYS`
+  (`src/lib/access/mutation-catalogue.ts`). The parity test rejects a key the pinned
+  GraphQL contract does not declare as a mutation field, so a key is added when the
+  schema pin carries it — never before.
 - **A policy** — add a class under `src/lib/access/policies/` implementing
   `Policy<TSubject>` and unit-test the positive, negative, cross-tenant, and
   missing-permission cases.

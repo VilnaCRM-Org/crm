@@ -328,6 +328,7 @@ describe('access session hydration from token claims (#114)', () => {
       email: buildEmail(),
       roles: [ROLES.manager],
       permissions: ROLE_PERMISSIONS[ROLES.manager],
+      allowedMutations: [],
       tenantId: stranger.id,
       tenants: [homeTenant],
     };

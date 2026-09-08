@@ -22,6 +22,7 @@ export class AccessSnapshotFactory {
   private sealPrincipal(principal: Principal): Principal {
     Object.freeze(principal.roles);
     Object.freeze(principal.permissions);
+    Object.freeze(principal.allowedMutations);
     principal.tenants.forEach((tenant) => Object.freeze(tenant));
     Object.freeze(principal.tenants);
     return Object.freeze(principal);

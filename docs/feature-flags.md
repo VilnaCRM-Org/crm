@@ -103,21 +103,24 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 
 ## Current flags
 
-| Flag                    | Default | Meaning                                                  |
-| ----------------------- | ------- | -------------------------------------------------------- |
-| `forgotPassword`        | `false` | Shows the "Forgot password?" link on sign-in.            |
-| `accessCatalogueSource` | `false` | Reserved for the catalogue-backed loader; no reader yet. |
+| Flag                    | Default | Meaning                                                      |
+| ----------------------- | ------- | ------------------------------------------------------------ |
+| `forgotPassword`        | `false` | Shows the "Forgot password?" link on sign-in.                |
+| `accessCatalogueSource` | `false` | Reserved for the server-sourced access model; no reader yet. |
 
 `accessCatalogueSource` is declared but **not yet read by any code in `src/`**: the
-catalogue-backed loader it will select is story 3.2, which is still blocked, so setting it to
-`true` today changes nothing. It is documented now so the flag lands with its contract (the
+server-sourced access resolver it will select is blocked on the backend contract
+([ADR-005](adr/005-mutation-keyed-access-model.md)), so setting it to `true` today changes
+nothing. It is documented now so the flag lands with its contract (the
 `FeatureFlag` union, the defaults map, the schema, and the committed block in
 `public/index.html`) rather than being retro-fitted at rollout.
 
 It is a **deployment** property, not a per-principal grant: once the loader exists, `true` will
-select the dynamic, server-sourced RBAC catalogue over the client's static claim-derived one, and
-the rollback for a bad catalogue rollout will be setting it back to `false` and restarting the
-container — no redeploy. It shares no name with the access-flag catalogue read by `useAccessFlag`
+select the dynamic, server-sourced allowed-mutation set over the client's static claim-derived
+model, and the rollback for a bad rollout will be setting it back to `false` and restarting the
+container — no redeploy. The name is kept as shipped: the flag's job — choosing where the access
+model comes from — is unchanged by the move to mutation keys, so renaming it would churn its four
+declaration sites for nothing. It shares no name with the access-flag catalogue read by `useAccessFlag`
 (`src/lib/access/feature-flag-catalog.ts`); the two are deliberately disjoint namespaces.
 
 `forgotPassword` is the worked example of stage 1. The link points at

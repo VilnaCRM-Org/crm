@@ -23,6 +23,7 @@ const NO_CLAIMS = {
   tenantId: undefined,
   tenants: undefined,
   flags: undefined,
+  allowedMutations: undefined,
 };
 
 const tokenWithPayload = (payload: string): string =>
@@ -57,7 +58,10 @@ describe('SessionClaimsReader', () => {
       flags: { [FEATURE_FLAGS.tenantSwitcher]: false },
     });
 
-    expect(reader.read(buildAccessToken(claims))).toStrictEqual({ ...claims });
+    expect(reader.read(buildAccessToken(claims))).toStrictEqual({
+      ...claims,
+      allowedMutations: undefined,
+    });
   });
 
   it.each([
@@ -115,7 +119,7 @@ describe('SessionClaimsReader', () => {
 
     const read = reader.read(buildAccessToken(claims));
 
-    expect(read).toStrictEqual({ ...claims });
+    expect(read).toStrictEqual({ ...claims, allowedMutations: undefined });
     expect(read?.tenants).toStrictEqual([{ id: tenant.id, name: CYRILLIC_TENANT_NAME }]);
   });
 });

@@ -1,4 +1,5 @@
 import type { FeatureFlagState } from './feature-flag';
+import type { MutationKey } from './mutation-access';
 import type { Principal, TenantRef } from './principal';
 
 export interface SessionClaims {
@@ -9,6 +10,7 @@ export interface SessionClaims {
   readonly tenantId?: string;
   readonly tenants?: readonly TenantRef[];
   readonly flags?: Readonly<Record<string, boolean>>;
+  readonly allowedMutations?: readonly MutationKey[];
 }
 
 export interface SessionInput {
@@ -23,4 +25,8 @@ export interface SessionSnapshot {
 
 export interface SessionLoader {
   build(input: SessionInput): SessionSnapshot | null;
+}
+
+export interface MutationAccessResolver {
+  resolve(input: SessionInput): Promise<readonly MutationKey[]>;
 }

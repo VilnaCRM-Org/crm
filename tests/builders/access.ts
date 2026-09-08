@@ -31,6 +31,7 @@ export function buildPrincipal(overrides: Partial<Principal> = {}): Principal {
     email: buildEmail(),
     roles,
     permissions: permissionResolver.expand(roles),
+    allowedMutations: [],
     ...overrides,
     tenantId: member ? (requested as string) : active.id,
     tenants,
