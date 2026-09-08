@@ -1,0 +1,27 @@
+{
+  "polyfill": "off",
+  "baseline": "Baseline 2023 Widely available",
+  "queries": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 111",
+    "safari >= 16.4",
+    "ios_saf >= 16.4",
+    "last 1 and_chr version",
+    "last 1 and_ff version",
+    "samsung >= 22",
+    "opera >= 97"
+  ],
+  "families": {
+    "chrome": { "label": "Chrome", "floor": "111" },
+    "edge": { "label": "Edge", "floor": "111" },
+    "firefox": { "label": "Firefox", "floor": "111" },
+    "safari": { "label": "Safari (macOS)", "floor": "16.4" },
+    "ios_saf": { "label": "Safari (iOS / iPadOS)", "floor": "16.4" },
+    "samsung": { "label": "Samsung Internet", "floor": "22" },
+    "opera": { "label": "Opera", "floor": "97" },
+    "and_chr": { "label": "Chrome for Android", "trackLatest": true },
+    "and_ff": { "label": "Firefox for Android", "trackLatest": true }
+  },
+  "readmeSection": "Supported browsers"
+}
