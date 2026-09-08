@@ -5,6 +5,7 @@ import { buildClaims, buildEmail, buildTenantRef, buildUserId } from '@tests/bui
 
 const EMPTY_CLAIMS = {
   sub: undefined,
+  sid: undefined,
   email: undefined,
   roles: undefined,
   tenantId: undefined,
@@ -62,6 +63,35 @@ describe('ClaimsMapper', () => {
       sub,
       tenantId: tenant.id,
     });
+  });
+
+  it('reads sub from the subject claim when present', () => {
+    const subject = buildUserId();
+
+    expect(mapper.map({ subject })).toStrictEqual({ ...EMPTY_CLAIMS, sub: subject });
+  });
+
+  it('falls back to the sub claim when subject is absent', () => {
+    const sub = buildUserId();
+
+    expect(mapper.map({ sub })).toStrictEqual({ ...EMPTY_CLAIMS, sub });
+  });
+
+  it('prefers subject over sub when both are present', () => {
+    const subject = buildUserId();
+    const sub = buildUserId();
+
+    expect(mapper.map({ subject, sub })).toStrictEqual({ ...EMPTY_CLAIMS, sub: subject });
+  });
+
+  it('maps a string sid claim', () => {
+    const sid = buildUserId();
+
+    expect(mapper.map({ sid })).toStrictEqual({ ...EMPTY_CLAIMS, sid });
+  });
+
+  it('drops a sid claim that is not a string', () => {
+    expect(mapper.map({ sid: 7 })).toStrictEqual(EMPTY_CLAIMS);
   });
 
   it('drops a roles claim that is not an array', () => {

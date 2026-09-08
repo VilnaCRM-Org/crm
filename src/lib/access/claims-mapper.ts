@@ -4,7 +4,8 @@ export class ClaimsMapper {
   public map(raw: unknown): SessionClaims | null {
     if (!this.isRecord(raw)) return null;
     return {
-      sub: this.asString(raw.sub),
+      sub: this.asString(raw.subject) ?? this.asString(raw.sub),
+      sid: this.asString(raw.sid),
       email: this.asString(raw.email),
       roles: this.asStringList(raw.roles),
       tenantId: this.asString(raw.tenantId),

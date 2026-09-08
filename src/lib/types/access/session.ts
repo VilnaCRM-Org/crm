@@ -3,6 +3,7 @@ import type { Principal, TenantRef } from './principal';
 
 export interface SessionClaims {
   readonly sub?: string;
+  readonly sid?: string;
   readonly email?: string;
   readonly roles?: readonly string[];
   readonly tenantId?: string;

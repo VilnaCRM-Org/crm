@@ -59,6 +59,7 @@ export function buildClaims(overrides: Partial<SessionClaims> = {}): SessionClai
       : [{ id: requested, name: faker.company.name() }, ...pinned];
   return {
     sub: faker.string.uuid(),
+    sid: faker.string.uuid(),
     email: buildEmail(),
     roles: [ROLES.member],
     ...overrides,

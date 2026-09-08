@@ -17,6 +17,7 @@ const TRUNCATED_UTF8_SEQUENCE = [0xc3, 0x28];
 
 const NO_CLAIMS = {
   sub: undefined,
+  sid: undefined,
   email: undefined,
   roles: undefined,
   tenantId: undefined,
