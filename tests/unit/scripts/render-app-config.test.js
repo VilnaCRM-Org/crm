@@ -303,14 +303,16 @@ describe('scripts/render-app-config.js', () => {
       });
 
       expect(readBlockConfig(rendered)).toEqual({
-        flags: { forgotPassword: true },
+        flags: { forgotPassword: true, accessCatalogueSource: false },
         graphqlUrl,
       });
       expect(stripBlockBody(rendered)).toBe(stripBlockBody(html));
     });
 
-    it('declares forgotPassword as the committed default so the flag variable is accepted', () => {
-      expect(readBlockConfig(committedShell())).toEqual({ flags: { forgotPassword: false } });
+    it('declares every flag with its committed default so its variable is accepted', () => {
+      expect(readBlockConfig(committedShell())).toEqual({
+        flags: { forgotPassword: false, accessCatalogueSource: false },
+      });
     });
   });
 });

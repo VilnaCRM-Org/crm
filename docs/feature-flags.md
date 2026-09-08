@@ -103,9 +103,16 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 
 ## Current flags
 
-| Flag             | Default | Meaning                                                       |
-| ---------------- | ------- | ------------------------------------------------------------- |
-| `forgotPassword` | `false` | Shows the "Forgot password?" link on the sign-in options row. |
+| Flag                    | Default | Meaning                                                   |
+| ----------------------- | ------- | --------------------------------------------------------- |
+| `forgotPassword`        | `false` | Shows the "Forgot password?" link on sign-in.             |
+| `accessCatalogueSource` | `false` | Selects the catalogue-backed session loader (issue #114). |
+
+`accessCatalogueSource` is a **deployment** property, not a per-principal grant: `true` selects
+the dynamic, server-sourced RBAC catalogue over the client's static claim-derived one, and the
+rollback for a bad catalogue rollout is setting it back to `false` and restarting the container —
+no redeploy. It shares no name with the access-flag catalogue read by `useAccessFlag`
+(`src/lib/access/feature-flag-catalog.ts`); the two are deliberately disjoint namespaces.
 
 `forgotPassword` is the worked example of stage 1. The link points at
 `ROUTE_PATHS.passwordRecovery`, and the recovery route does not exist yet — which is exactly why

@@ -23,7 +23,11 @@ describe('featureFlagService', () => {
 
     expect(featureFlagService).toBeInstanceOf(FeatureFlagService);
     expect(featureFlagService.isEnabled('forgotPassword')).toBe(false);
-    expect(featureFlagService.snapshot()).toEqual({ forgotPassword: false });
+    expect(featureFlagService.isEnabled('accessCatalogueSource')).toBe(false);
+    expect(featureFlagService.snapshot()).toEqual({
+      forgotPassword: false,
+      accessCatalogueSource: false,
+    });
   });
 
   it('enables a flag the runtime configuration turns on', async () => {
@@ -32,7 +36,10 @@ describe('featureFlagService', () => {
     const { default: featureFlagService } = await loadFeatureFlagService();
 
     expect(featureFlagService.isEnabled('forgotPassword')).toBe(true);
-    expect(featureFlagService.snapshot()).toEqual({ forgotPassword: true });
+    expect(featureFlagService.snapshot()).toEqual({
+      forgotPassword: true,
+      accessCatalogueSource: false,
+    });
   });
 
   it('disables a flag the runtime configuration turns off', async () => {
@@ -41,7 +48,26 @@ describe('featureFlagService', () => {
     const { default: featureFlagService } = await loadFeatureFlagService();
 
     expect(featureFlagService.isEnabled('forgotPassword')).toBe(false);
-    expect(featureFlagService.snapshot()).toEqual({ forgotPassword: false });
+    expect(featureFlagService.snapshot()).toEqual({
+      forgotPassword: false,
+      accessCatalogueSource: false,
+    });
+  });
+
+  // Architecture D10: this flag is a runtime property, not an access flag — it selects the
+  // catalogue-backed session loader when the app boots, and rolls back to the claim-shape one
+  // (unchanged behaviour) with a container restart, never a redeploy.
+  it('enables accessCatalogueSource independently of forgotPassword', async () => {
+    writeConfigBlock(buildFeatureFlagConfig({ accessCatalogueSource: true }));
+
+    const { default: featureFlagService } = await loadFeatureFlagService();
+
+    expect(featureFlagService.isEnabled('accessCatalogueSource')).toBe(true);
+    expect(featureFlagService.isEnabled('forgotPassword')).toBe(false);
+    expect(featureFlagService.snapshot()).toEqual({
+      forgotPassword: false,
+      accessCatalogueSource: true,
+    });
   });
 
   it.each([
@@ -59,6 +85,6 @@ describe('featureFlagService', () => {
   it('names every flag it knows about', async () => {
     const { default: featureFlagService } = await loadFeatureFlagService();
 
-    expect(featureFlagService.names()).toEqual(['forgotPassword']);
+    expect(featureFlagService.names()).toEqual(['forgotPassword', 'accessCatalogueSource']);
   });
 });
