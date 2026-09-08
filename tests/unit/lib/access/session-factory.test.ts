@@ -219,6 +219,17 @@ describe('SessionFactory', () => {
     expect(principal.permissions).not.toContain(PERMISSIONS.contactManageAll);
   });
 
+  it('treats an absent roles claim as no claimed role at all, auditing nothing', () => {
+    const { roles: _omitted, ...withoutRoles } = buildClaims();
+
+    const { principal } = requireSnapshot({
+      token: buildAccessToken(withoutRoles as Parameters<typeof buildAccessToken>[0]),
+    });
+
+    expect(principal.roles).toStrictEqual([DEFAULT_ROLE]);
+    expect(sink.record).not.toHaveBeenCalled();
+  });
+
   // A blank subject is a missing one: honouring it would give every malformed token the same
   // empty identity, so audit entries and owner checks would conflate unrelated sessions.
   it.each(['', '   '])(
