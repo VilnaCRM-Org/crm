@@ -37,8 +37,14 @@ over GraphQL. Until the two are reconciled, three things are true and all three 
 waiting:
 
 1. The client's roles (`admin`, `manager`, `member`, `viewer`) do not exist on the server, which
-   issues `ROLE_USER` and `ROLE_SERVICE`. Every real production token therefore resolves to
-   `DEFAULT_ROLE` (`viewer`) — safe, but it means no user can be granted write access at all.
+   issues `ROLE_USER` and `ROLE_SERVICE`. As of the branch point for this delta (`b50830bf`),
+   every real production token therefore resolved to `DEFAULT_ROLE` (`viewer`) — safe, but it
+   meant no user could be granted write access at all. Story 2.3 of this delta has since shipped
+   `SERVER_ROLE_MAP`, an interim adapter translating `ROLE_USER` to `member`, which does carry
+   write permissions; `ROLE_SERVICE` and every unrecognised name still fall back to `viewer` and
+   raise an `access_role_unmapped` audit event. That adapter is part of this delta, not of the
+   baseline described here, and story 2.7 governs its retirement once the server owns the
+   catalogue.
 2. The client reads claims the server does not issue (`sub` vs the server's `subject`; plus
    `email`, `tenantId`, `tenants`, `flags`), so a real token produces a principal with a random
    opaque id, an empty email and one synthetic `default` tenant.
@@ -96,8 +102,9 @@ document, issue, PR or discussion describing a dynamic GraphQL RBAC. The pinned 
 
 ## Users and what changes for them
 
-- **CRM end user** — today every real token resolves to `viewer`; after the sync, to the role
-  the server actually granted.
+- **CRM end user** — at the branch point every real token resolved to `viewer`; the interim
+  `SERVER_ROLE_MAP` shipped by story 2.3 now resolves `ROLE_USER` to `member`; after the sync, to
+  the role the server actually granted.
 - **Backend team lead** — today there is no client contract to review; after the sync, a named,
   versioned GraphQL proposal with the open questions attached to the fields they affect.
 - **Feature developer or agent** — `useCan(PERMISSIONS.x)` today and after: the seam is

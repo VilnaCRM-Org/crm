@@ -104,6 +104,50 @@ describe('AuditCore', () => {
       expect(recordedAt(sink, 2).tenantId).toBeNull();
     });
 
+    it('attributes an event to the caller-supplied subject over the published principal', () => {
+      const published = buildPrincipal();
+      accessState.setSession(published, {});
+      const hydrating = buildPrincipal();
+
+      auditCore.log({
+        type: 'access_role_unmapped',
+        metadata: { role: 'ROLE_GHOST' },
+        subject: { principalId: hydrating.id, tenantId: hydrating.tenantId },
+      });
+
+      const event = recordedAt(sink);
+      expect(event.principalId).toBe(hydrating.id);
+      expect(event.tenantId).toBe(hydrating.tenantId);
+      expect(event.principalId).not.toBe(published.id);
+    });
+
+    it('honours an explicit anonymous subject while a principal is published', () => {
+      accessState.setSession(buildPrincipal(), {});
+
+      auditCore.log({ type: 'logout', subject: { principalId: null, tenantId: null } });
+
+      const event = recordedAt(sink);
+      expect(event.principalId).toBeNull();
+      expect(event.tenantId).toBeNull();
+    });
+
+    it('keeps the caller-supplied subject out of the recorded envelope', () => {
+      const hydrating = buildPrincipal();
+
+      auditCore.log({
+        type: 'login',
+        subject: { principalId: hydrating.id, tenantId: hydrating.tenantId },
+      });
+
+      expect(Object.keys(recordedAt(sink)).sort()).toEqual([
+        'at',
+        'metadata',
+        'principalId',
+        'tenantId',
+        'type',
+      ]);
+    });
+
     it('passes the type and metadata through unchanged', () => {
       const principal = buildPrincipal();
       const metadata: AuditMetadata = {
@@ -127,8 +171,6 @@ describe('AuditCore', () => {
       });
     });
 
-    // `AuditEventInput` structurally admits only `type` and `metadata`, so the stamped
-    // fields cannot be overridden by a caller — what is worth pinning is the envelope the
     it('emits exactly the stamped envelope keys, metadata included', () => {
       const principal = buildPrincipal();
       accessState.setSession(principal, {});

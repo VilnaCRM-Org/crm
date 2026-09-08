@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
+import type { AuditSubject } from '@/lib/types/access/audit';
 import type { FeatureFlag, FeatureFlagState } from '@/lib/types/access/feature-flag';
 import type { Role } from '@/lib/types/access/permission';
 import type { Principal, TenantRef } from '@/lib/types/access/principal';
@@ -22,14 +23,18 @@ export class SessionFactory {
   }
 
   private toPrincipal(claims: SessionClaims | null, input: SessionInput): Principal {
-    const roles = this.toRoles(claims?.roles);
     const tenants = this.toTenants(claims);
+    const subject = {
+      principalId: this.toIdentity(claims),
+      tenantId: this.toActiveTenant(claims, tenants),
+    };
+    const roles = this.toRoles(claims?.roles, subject);
     return {
-      id: this.toIdentity(claims),
+      id: subject.principalId,
       email: claims?.email ?? input.email ?? '',
       roles,
       permissions: permissionResolver.expand(roles),
-      tenantId: this.toActiveTenant(claims, tenants),
+      tenantId: subject.tenantId,
       tenants,
     };
   }
@@ -64,20 +69,20 @@ export class SessionFactory {
     return tenants.some((tenant) => tenant.id === claimed) ? (claimed as string) : tenants[0].id;
   }
 
-  private toRoles(claimed: readonly string[] | undefined): readonly Role[] {
+  private toRoles(claimed: readonly string[] | undefined, subject: AuditSubject): readonly Role[] {
     const resolved = (claimed ?? []).reduce<Role[]>((roles, name) => {
-      const role = this.resolveRole(name);
+      const role = this.resolveRole(name, subject);
       if (role !== null) roles.push(role);
       return roles;
     }, []);
     return resolved.length === 0 ? [DEFAULT_ROLE] : resolved;
   }
 
-  private resolveRole(name: string): Role | null {
+  private resolveRole(name: string, subject: AuditSubject): Role | null {
     const mapped = SERVER_ROLE_MAP[name];
     if (mapped !== undefined) return mapped;
     if (permissionResolver.isRole(name)) return name;
-    auditCore.log({ type: 'access_role_unmapped', metadata: { role: name } });
+    auditCore.log({ type: 'access_role_unmapped', metadata: { role: name }, subject });
     return null;
   }
 

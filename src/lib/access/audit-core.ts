@@ -1,5 +1,10 @@
 import correlationIdSource from '@/lib/observability/correlation-id-source';
-import type { AuditEventInput, AuditMetadata, AuditSink } from '@/lib/types/access/audit';
+import type {
+  AuditEventInput,
+  AuditMetadata,
+  AuditSink,
+  AuditSubject,
+} from '@/lib/types/access/audit';
 
 import accessState from './access-state';
 import noopAuditSink from './noop-audit-sink';
@@ -12,18 +17,23 @@ export class AuditCore {
   }
 
   public log(input: AuditEventInput): void {
-    const { principal } = accessState.get();
+    const subject = input.subject ?? this.currentSubject();
     try {
       this.sink.record({
         type: input.type,
         metadata: this.withCorrelationId(input.metadata),
         at: new Date().toISOString(),
-        principalId: principal?.id ?? null,
-        tenantId: principal?.tenantId ?? null,
+        principalId: subject.principalId,
+        tenantId: subject.tenantId,
       });
     } catch (error) {
       console.error('Audit sink threw while recording an event', error);
     }
+  }
+
+  private currentSubject(): AuditSubject {
+    const { principal } = accessState.get();
+    return { principalId: principal?.id ?? null, tenantId: principal?.tenantId ?? null };
   }
 
   private withCorrelationId(metadata: AuditMetadata | undefined): AuditMetadata {

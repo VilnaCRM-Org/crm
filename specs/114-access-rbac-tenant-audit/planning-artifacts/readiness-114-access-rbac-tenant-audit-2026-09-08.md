@@ -195,10 +195,11 @@ None of these blocks the verdict; each names the artifact it implicates.
   set-backed path is the default everywhere. The risk is a half-migration in which both models
   are live; story 2.7's last acceptance criterion — the shipped claim-path tests pass unmodified
   — is what makes that visible.
-- **F2 (research, prd) — the shipped RBAC is inert against a real production token.** Every
-  server role falls back to `viewer`, so no user can be granted write access today. This is
-  recorded as the _reason for the work_, not as a hotfix on PR #230; story 2.3 closes it and is
-  independent, so it can be dispatched first.
+- **F2 (research, prd) — the shipped RBAC was inert against a real production token.**
+  _Amended 2026-09-08._ At the branch point every server role fell back to `viewer`, so no user
+  could be granted write access. This is recorded as the _reason for the work_, not as a hotfix
+  ahead of the delta; story 2.3 has since closed it on this branch, mapping `ROLE_USER` to
+  `member`, and story 2.7 governs retiring that interim map once the server owns the catalogue.
 - **F3 (architecture) — the call-site gate stays closed while grants become dynamic.**
   _Amended 2026-09-08._ The closed set is now mutation keys rather than `resource:action`
   permissions, and it is checked against the pinned GraphQL schema rather than a snapshot

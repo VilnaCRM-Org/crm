@@ -210,11 +210,19 @@ action, so anything wired only during registration would miss every event on a
 reload-with-token session. A sink that throws can never break a user flow.
 
 Recorded events: `login`, `logout`, `tenant_switch` (with `from`/`to`),
-`sensitive_action` (for a feature's own security-relevant mutations), and
+`sensitive_action` (for a feature's own security-relevant mutations),
 `permission_denied` (with the permission, the refused path, and — for a tenant switch —
-whether the refusal was a missing permission or a missing membership). Every session
-that ends, including one replaced by another login, closes with a `logout` event while
-its principal is still known, so the trail reconciles into whole sessions.
+whether the refusal was a missing permission or a missing membership), and
+`access_role_unmapped` (with `role`, the verbatim server role name a token claimed that
+neither `SERVER_ROLE_MAP` nor the `Role` union resolves; that name is discarded and the
+session falls back to `viewer`). Every session that ends, including one replaced by
+another login, closes with a `logout` event while its principal is still known, so the
+trail reconciles into whole sessions.
+
+`access_role_unmapped` is emitted while the session that claimed the role is still being
+built, before it is published, so `SessionFactory` supplies the attribution explicitly and
+the event carries the incoming principal and tenant rather than the outgoing session's.
+Every other event is stamped from the published principal.
 
 ## Extending the model
 

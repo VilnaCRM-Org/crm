@@ -10,15 +10,21 @@ export type AuditMetadata = Readonly<Record<string, string>>;
 
 export type DenialReason = 'permission' | 'membership';
 
+export interface AuditSubject {
+  readonly principalId: string | null;
+  readonly tenantId: string | null;
+}
+
 export interface AuditEventInput {
   readonly type: AuditEventType;
   readonly metadata?: AuditMetadata;
+  readonly subject?: AuditSubject;
 }
 
-export interface AuditEvent extends AuditEventInput {
+export interface AuditEvent extends AuditSubject {
+  readonly type: AuditEventType;
+  readonly metadata?: AuditMetadata;
   readonly at: string;
-  readonly principalId: string | null;
-  readonly tenantId: string | null;
 }
 
 export interface AuditSink {

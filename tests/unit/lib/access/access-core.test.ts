@@ -265,6 +265,25 @@ describe('AccessCore', () => {
       expect(catalogueCache.get('some-sid')).toBeUndefined();
     });
 
+    it('has already emptied the catalogue cache by the time subscribers are notified', () => {
+      const home = buildTenantRef();
+      const target = buildTenantRef();
+      accessState.setSession(
+        buildPrincipal({ roles: [ROLES.manager], tenants: [home, target] }),
+        {}
+      );
+      catalogueCache.set('some-sid', { roles: [] }, 'v1');
+      const seen: unknown[] = [];
+      const unsubscribe = accessState.subscribe(() => {
+        seen.push(catalogueCache.get('some-sid'));
+      });
+
+      expect(accessCore.switchTenant(target.id)).toBe(true);
+
+      unsubscribe();
+      expect(seen).toStrictEqual([undefined]);
+    });
+
     it('leaves the catalogue cache untouched when the switch is refused', () => {
       const home = buildTenantRef();
       accessState.setSession(buildPrincipal({ roles: [ROLES.viewer], tenants: [home] }), {});

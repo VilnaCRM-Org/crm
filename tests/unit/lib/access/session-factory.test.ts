@@ -1,3 +1,4 @@
+import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
@@ -11,6 +12,7 @@ import {
   buildAccessToken,
   buildClaims,
   buildEmail,
+  buildPrincipal,
   buildTenantRef,
   buildUserId,
   encodeSegment,
@@ -21,6 +23,13 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0
 const FALLBACK_TENANT_ID = 'default';
 const UNKNOWN_ROLE = 'sorcerer';
 const UNKNOWN_FLAG = 'billing-module';
+const INHERITED_MEMBER_NAMES = [
+  'toString',
+  'constructor',
+  'valueOf',
+  'hasOwnProperty',
+  '__proto__',
+];
 
 /**
  * The fallback tenant id is a module-level literal, so it is evaluated at import: loading the
@@ -51,6 +60,7 @@ describe('SessionFactory', () => {
 
   afterEach(() => {
     auditCore.useSink(noopAuditSink);
+    accessState.clear();
   });
 
   it('exports a shared singleton instance', () => {
@@ -154,6 +164,44 @@ describe('SessionFactory', () => {
       expect.objectContaining({
         type: 'access_role_unmapped',
         metadata: { role: UNKNOWN_ROLE, correlationId: correlationIdSource.current() },
+      })
+    );
+  });
+
+  it.each(INHERITED_MEMBER_NAMES)(
+    'refuses the inherited %s member of the role map and audits it as unmapped',
+    (name) => {
+      const claims = buildClaims({ roles: [name] });
+
+      const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
+
+      expect(principal.roles).toStrictEqual([DEFAULT_ROLE]);
+      expect(principal.permissions).toStrictEqual(permissionResolver.expand([DEFAULT_ROLE]));
+      expect(sink.record).toHaveBeenCalledTimes(1);
+      expect(sink.record).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'access_role_unmapped',
+          metadata: { role: name, correlationId: correlationIdSource.current() },
+        })
+      );
+    }
+  );
+
+  it('attributes an unmapped role to the session being hydrated, not the published one', () => {
+    const outgoing = buildPrincipal();
+    accessState.setSession(outgoing, {});
+
+    const { principal } = requireSnapshot({
+      token: buildAccessToken(buildClaims({ roles: [UNKNOWN_ROLE] })),
+    });
+
+    expect(principal.id).not.toBe(outgoing.id);
+    expect(sink.record).toHaveBeenCalledTimes(1);
+    expect(sink.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'access_role_unmapped',
+        principalId: principal.id,
+        tenantId: principal.tenantId,
       })
     );
   });

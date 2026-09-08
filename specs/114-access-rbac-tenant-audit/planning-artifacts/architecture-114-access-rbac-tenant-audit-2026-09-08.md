@@ -275,7 +275,8 @@ becomes the only place the two are distinguishable.
 metadata. It never reuses a previously cached grant set from a different session, and never falls
 back to "allow".
 
-`AuditEventType` gains two members: `access_source_unavailable` and `access_unknown_mutation`.
+`AuditEventType` gains two members: `access_source_unavailable`, added by story 3.5, and
+`access_unknown_mutation`, added by story 2.5 — each owned by the earliest story that emits it.
 They are audit events, not errors: the sink stays pluggable and container-free, and a throwing
 sink still cannot break a user flow.
 
@@ -419,7 +420,8 @@ Type-only (`src/lib/types/access/`):
 
 - `mutation-access.ts` — `MutationAccessSet`, `MutationKey`, `AccessSource`.
 - `role.ts` — the opaque runtime `Role` shape of D12 (id, name, description, granted keys).
-- extensions to `audit.ts` (`AuditEventType` gains two members, D8) and `session.ts`
+- extensions to `audit.ts` (`AuditEventType` gains two members, D8 — `access_unknown_mutation`
+  in story 2.5, `access_source_unavailable` in story 3.5) and `session.ts`
   (`SessionClaims` gains `sid`).
 
 DI layer (`src/services/access/`):

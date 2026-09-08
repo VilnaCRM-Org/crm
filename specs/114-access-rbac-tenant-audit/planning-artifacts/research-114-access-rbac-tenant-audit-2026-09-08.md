@@ -203,25 +203,32 @@ authorization", so server-side RBAC enforcement for CRM data does not exist yet 
    (`viewer`). That is the safe direction — an unrecognised role is never upgraded to write
    access, and `viewer` still carries `app:home` so the shell paints — but it means the shipped
    RBAC is inert against a real token: nobody can write anything.
-2. **Claim vocabulary.** `claims-mapper.ts` reads `sub`, not the server's `subject`, and reads
-   `email`, `tenantId`, `tenants` and `flags`, none of which the server issues. Against a real
-   token the principal is a random opaque uuid with an empty email and no memberships.
+2. **Claim vocabulary.** At the branch point (`b50830bf`) `claims-mapper.ts` read `sub`, not the
+   server's `subject`, and read `email`, `tenantId`, `tenants` and `flags`, none of which the
+   server issues; against a real token the principal was a random opaque uuid with an empty email
+   and no memberships. Story 2.1 of this delta has since closed the identity half — the mapper
+   reads `subject` first with `sub` as the fallback, and reads `sid`. The rest of the mismatch is
+   unchanged: the server still issues no `email`, `tenantId`, `tenants` or `flags` claim, so those
+   still resolve to an empty email and the synthetic `default` tenant.
 3. **Source of truth.** A permission set derived from a compile-time role map drifts from the
    server's model silently — ADR-004 lists exactly this as a negative consequence: "only a real
    request failing will reveal it". A dynamic server-owned catalogue is the fix the review asks
    for.
 
-> Assumption: mismatch 1 and 2 are **not** treated as production bugs to hotfix on PR #230.
-> They are the precise reason the sync work exists, and the interim adapter (see architecture
-> D3) is what makes the current shape and the future shape coexist. Recording them as findings
-> rather than as a blocker keeps PR #230 mergeable.
+> Assumption: mismatch 1 and 2 are **not** treated as production bugs to hotfix ahead of this
+> delta. They are the precise reason the sync work exists, and the interim adapter (see
+> architecture D3) is what makes the current shape and the future shape coexist. Recording them
+> as findings rather than as a blocker keeps the branch mergeable. Both have since been addressed
+> on this branch by the delta's own stories 2.1 and 2.3 — as scoped, reviewed work items, not as
+> a hotfix.
 
 ### `sid` is the missing cache key, and it is already issued
 
 The passport reads `sid`. That is the natural cache key for a fetched catalogue: it changes on
-re-login, and `refreshTokenUser` is the mutation that would rotate it. The client does not read
-`sid` today. This is the cheapest concrete step toward the sync and is independent of the
-unpublished design.
+re-login, and `refreshTokenUser` is the mutation that would rotate it. The client did not read
+`sid` at the branch point. It was the cheapest concrete step toward the sync and independent of
+the unpublished design, so this delta took it: story 2.1 reads `sid` in `claims-mapper.ts` and
+story 3.1 keys `CatalogueCache` by it.
 
 ## Constraints the delta must respect
 

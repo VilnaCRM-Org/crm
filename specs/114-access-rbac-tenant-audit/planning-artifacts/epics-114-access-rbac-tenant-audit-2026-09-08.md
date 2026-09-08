@@ -293,8 +293,9 @@ one it cannot render.
 
 **Description.** Add `src/lib/access/mutation-access-principal-factory.ts` turning a parsed
 allowed set into a sealed `Principal`, keyed by mutation name (D11). Keys the UI does not gate on
-are dropped and audited once per session; keys the UI gates on that are absent from the set
-simply deny (D5, D13). Kept separate from `session-factory.ts` so neither file passes the
+are dropped and audited once per session as `access_unknown_mutation`, which **this** story adds
+to `AuditEventType` as the earliest story that emits it; keys the UI gates on that are absent from
+the set simply deny (D5, D13). Kept separate from `session-factory.ts` so neither file passes the
 rust-code-analysis caps.
 
 **Acceptance criteria.**
@@ -576,7 +577,9 @@ than expand it, and to leave a record naming the cause.
 **Description.** _Amended 2026-09-08: an empty set is removed from this list — it is a valid
 answer, not a failure (FR-21, D8)._ Network failure, zod violation, timeout and an unknown
 `version` all allow no mutation and emit `access_source_unavailable` with a `cause`. Never reuse
-another session's cached grants. Add the two new `AuditEventType` members. Architecture D8, D13.
+another session's cached grants. Add `access_source_unavailable` to `AuditEventType`; the other
+member D8 names, `access_unknown_mutation`, is added by story 2.5, which emits it and runs first.
+Architecture D8, D13.
 
 **Acceptance criteria.**
 

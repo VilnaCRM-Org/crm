@@ -36,8 +36,8 @@ export class AccessCore {
     if (principal === null) return this.refuse(tenantId, 'permission');
     const reason = this.refusalReason(principal, tenantId);
     if (reason !== null) return this.refuse(tenantId, reason);
-    accessState.setActiveTenant(tenantId);
     catalogueCache.clear();
+    accessState.setActiveTenant(tenantId);
     auditCore.log({ type: 'tenant_switch', metadata: { from: principal.tenantId, to: tenantId } });
     return true;
   }

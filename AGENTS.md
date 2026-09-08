@@ -1753,8 +1753,11 @@ loaded solely on EXECUTE.
 Quality gates live in `.claude/react-sdlc.yml` under `quality.*` and are
 raise-only: score floors (coverage, mutation MSI, Lighthouse desktop/mobile)
 may be raised above the shipped defaults, and the eslint, tsc, jscpd,
-markdownlint, dependency-cruiser, and visual-diff violation ceilings stay
-at 0. Never lower them — `validate-profile.sh` rejects lowered values.
+markdownlint, dependency-cruiser, and visual-diff violation ceilings stay at
+zero. Never lower a floor or raise a ceiling. The rule binds on its own: a
+diff that weakens a gate is out of policy whether or not any tool catches it,
+and a run that cannot meet a gate is fixed at its root cause rather than by
+editing the profile.
 
 ### Mandatory accessibility gate
 
