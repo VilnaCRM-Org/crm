@@ -120,3 +120,11 @@ single `contract-drift`-labelled issue when the pins fall behind.
 The policy is asymmetric on purpose: a bare version gap never fails the run (red-run spam while
 intentionally behind trains everyone to ignore the signal), while an upstream lookup failure
 always does — a dead monitor is worse than none.
+
+## Proposed contracts (not yet accepted)
+
+[`access-rbac-proposal.md`](access-rbac-proposal.md) proposes a `Query.accessSession` /
+`Query.accessCatalogue` pair so the client's RBAC layer can source roles and permissions from
+the backend's dynamic GraphQL RBAC model instead of static claims (issue #114). It is a written
+proposal for user-service to accept, amend or reject — nothing in crm depends on it until it
+lands in the pinned schema.
