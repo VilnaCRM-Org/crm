@@ -133,6 +133,8 @@ Linting & Formatting
   make lint-commit-range: lints the commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
   make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
   make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
+  make lint-i18n: checks en/uk locale parity, merged-catalog freshness, and t() key resolution
+  make i18n-generate: regenerates src/i18n/localization.json from the src/**/i18n catalogs
   make check-auth-seed-gate: scans the built bundles so the test-only preloaded-auth seed cannot ship
 ```
 
@@ -146,6 +148,21 @@ dependencies.
 - Key rules:
   modules cannot import from other modules directly; shared UI components must not
   depend on feature modules
+
+### Localization
+
+Translations live in per-feature catalogs that are merged into one committed file.
+
+- Run locally: `make lint-i18n` to verify, `make i18n-generate` to regenerate
+- Source of truth: `src/**/i18n/en.json` and `src/**/i18n/uk.json` — both locales are
+  mandatory and their key sets must match
+- Merged catalog: `src/i18n/localization.json` is committed, not built; regenerate it with
+  `make i18n-generate` whenever a catalog key is added, renamed, or removed
+- Gate: `make lint-i18n` runs inside `make lint` and the CI lint phase, and fails on a missing
+  locale file, a stray extra locale, an en/uk key mismatch, a stale merged catalog, or a `t()`
+  key that is undefined in either locale
+- Fix a failure by adding the translation or correcting the key — never by dropping a locale
+  from the required set, narrowing the scan, or adding an ignore entry
 
 Testing
 

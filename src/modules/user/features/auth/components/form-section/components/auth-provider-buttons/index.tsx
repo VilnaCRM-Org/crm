@@ -25,7 +25,7 @@ export default function AuthProviderButtons(): JSX.Element {
                 variant="outlined"
                 sx={styles.serviceItemButton}
                 onClick={onClick}
-                aria-label={t('sign_up.socials_aria_label', { provider: label })}
+                aria-label={t('auth.oauth.continue_with', { provider: label })}
                 type="button"
               >
                 <SvgIcon
