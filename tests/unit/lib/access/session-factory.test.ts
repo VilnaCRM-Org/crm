@@ -1,7 +1,10 @@
+import auditCore from '@/lib/access/audit-core';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
+import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { DEFAULT_ROLE, PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
 import permissionResolver from '@/lib/access/permission-resolver';
 import sessionFactory, { SessionFactory } from '@/lib/access/session-factory';
+import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { SessionInput, SessionSnapshot } from '@/lib/types/access/session';
 import {
   buildAccessToken,
@@ -28,6 +31,9 @@ const loadSessionFactory = (): Promise<typeof import('@/lib/access/session-facto
 
 describe('SessionFactory', () => {
   const factory = new SessionFactory();
+  const sink: { record: jest.Mock<void, [AuditEvent]> } & AuditSink = {
+    record: jest.fn<void, [AuditEvent]>(),
+  };
 
   const requireBuilt = (snapshot: SessionSnapshot | null): SessionSnapshot => {
     if (snapshot === null) throw new Error('expected the factory to build a session snapshot');
@@ -36,6 +42,15 @@ describe('SessionFactory', () => {
 
   const requireSnapshot = (input: SessionInput): SessionSnapshot =>
     requireBuilt(factory.build(input));
+
+  beforeEach(() => {
+    sink.record.mockClear();
+    auditCore.useSink(sink);
+  });
+
+  afterEach(() => {
+    auditCore.useSink(noopAuditSink);
+  });
 
   it('exports a shared singleton instance', () => {
     expect(sessionFactory).toBeInstanceOf(SessionFactory);
@@ -84,6 +99,61 @@ describe('SessionFactory', () => {
     expect(principal.roles).toStrictEqual([ROLES.admin, ROLES.viewer]);
     expect(principal.permissions).toStrictEqual(
       permissionResolver.expand([ROLES.admin, ROLES.viewer])
+    );
+  });
+
+  it('maps the ROLE_USER server role to member and grants contact:write', () => {
+    const claims = buildClaims({ roles: ['ROLE_USER'] });
+
+    const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
+
+    expect(principal.roles).toStrictEqual([ROLES.member]);
+    expect(principal.permissions).toContain(PERMISSIONS.contactWrite);
+    expect(sink.record).not.toHaveBeenCalled();
+  });
+
+  it('falls back to viewer and audits ROLE_SERVICE, which maps to nothing', () => {
+    const claims = buildClaims({ roles: ['ROLE_SERVICE'] });
+
+    const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
+
+    expect(principal.roles).toStrictEqual([DEFAULT_ROLE]);
+    expect(sink.record).toHaveBeenCalledTimes(1);
+    expect(sink.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'access_role_unmapped',
+        metadata: { role: 'ROLE_SERVICE' },
+      })
+    );
+  });
+
+  it('falls back to viewer and names a role in neither the map nor the Role union verbatim', () => {
+    const claims = buildClaims({ roles: [UNKNOWN_ROLE] });
+
+    const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
+
+    expect(principal.roles).toStrictEqual([DEFAULT_ROLE]);
+    expect(sink.record).toHaveBeenCalledTimes(1);
+    expect(sink.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'access_role_unmapped',
+        metadata: { role: UNKNOWN_ROLE },
+      })
+    );
+  });
+
+  it('honours a mapped role and audits an unmapped one — neither swallows the other', () => {
+    const claims = buildClaims({ roles: ['ROLE_USER', UNKNOWN_ROLE] });
+
+    const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
+
+    expect(principal.roles).toStrictEqual([ROLES.member]);
+    expect(sink.record).toHaveBeenCalledTimes(1);
+    expect(sink.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'access_role_unmapped',
+        metadata: { role: UNKNOWN_ROLE },
+      })
     );
   });
 
