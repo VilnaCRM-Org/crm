@@ -26,6 +26,7 @@ describe('AuditCore', () => {
   afterEach(() => {
     jest.useRealTimers();
     auditCore.useSink(noopAuditSink);
+    auditCore.useCorrelationIdProvider(() => undefined);
     accessState.clear();
   });
 
@@ -134,6 +135,64 @@ describe('AuditCore', () => {
       expect(event.principalId).toBe(principal.id);
       expect(event.tenantId).toBe(principal.tenantId);
       expect('metadata' in event).toBe(false);
+    });
+  });
+
+  describe('useCorrelationIdProvider', () => {
+    it('leaves the event without a correlation id when no provider is installed', () => {
+      auditCore.log({ type: 'login' });
+
+      const event = recordedAt(sink);
+      expect(event.metadata).toBeUndefined();
+    });
+
+    it('attaches the id from the installed provider to a metadata-less event', () => {
+      auditCore.useCorrelationIdProvider(() => 'req-1');
+
+      auditCore.log({ type: 'login' });
+
+      expect(recordedAt(sink).metadata).toStrictEqual({ correlationId: 'req-1' });
+    });
+
+    it('merges the id into existing metadata rather than replacing it', () => {
+      auditCore.useCorrelationIdProvider(() => 'req-1');
+
+      auditCore.log({ type: 'permission_denied', metadata: { permission: 'contact:write' } });
+
+      expect(recordedAt(sink).metadata).toStrictEqual({
+        permission: 'contact:write',
+        correlationId: 'req-1',
+      });
+    });
+
+    it('carries the same id across two events emitted in the same request scope', () => {
+      auditCore.useCorrelationIdProvider(() => 'req-shared');
+
+      auditCore.log({ type: 'login' });
+      auditCore.log({ type: 'tenant_switch' });
+
+      expect(recordedAt(sink, 0).metadata).toStrictEqual({ correlationId: 'req-shared' });
+      expect(recordedAt(sink, 1).metadata).toStrictEqual({ correlationId: 'req-shared' });
+    });
+
+    it('records without an id, and does not throw, when the provider returns undefined', () => {
+      auditCore.useCorrelationIdProvider(() => undefined);
+
+      expect(() => auditCore.log({ type: 'login' })).not.toThrow();
+
+      expect(recordedAt(sink).metadata).toBeUndefined();
+    });
+
+    it('records without an id, and does not throw, when the provider itself throws', () => {
+      auditCore.useCorrelationIdProvider(() => {
+        throw new Error('correlation id unavailable');
+      });
+
+      expect(() => auditCore.log({ type: 'login' })).not.toThrow();
+
+      const event = recordedAt(sink);
+      expect(event.metadata).toBeUndefined();
+      expect(sink.record).toHaveBeenCalledTimes(1);
     });
   });
 

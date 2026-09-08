@@ -18,6 +18,7 @@ import PolicyEvaluator from '@/services/access/policy-evaluator';
 import SessionRepository from '@/services/access/session-repository';
 import TenantContextService from '@/services/access/tenant-context-service';
 import ACCESS_TOKENS from '@/services/access/tokens';
+import correlationIdProvider from '@/services/observability/correlation-id-provider';
 import { buildAccessToken, buildClaims } from '@tests/builders';
 
 type Bound = new (...args: never[]) => object;
@@ -233,6 +234,10 @@ describe('access DI registrar', () => {
 
     afterEach(() => {
       spy.mockRestore();
+      // Reset the state the wired provider reads, not the wiring itself — the wiring is
+      // installed once by container composition (this describe's own tests rely on it still
+      // being live), and an empty id already reproduces "no observable correlationId".
+      correlationIdProvider.currentId = '';
     });
 
     it('defaults the audit core to a no-op sink that records nothing observable', () => {
@@ -267,6 +272,23 @@ describe('access DI registrar', () => {
         at: FROZEN_AT,
         principalId: null,
         tenantId: null,
+      });
+    });
+
+    // FR-24: composing the container wires the observability boundary's request-scoped
+    // correlation id into the access domain's audit trail, so a client `permission_denied`
+    // can be joined to the server request that would have refused it.
+    it('attaches the current request correlation id to a logged audit event', () => {
+      const requestId = correlationIdProvider.next();
+
+      auditCore.log({ type: 'login' });
+
+      expect(spy).toHaveBeenCalledWith({
+        type: 'login',
+        at: FROZEN_AT,
+        principalId: null,
+        tenantId: null,
+        metadata: { correlationId: requestId },
       });
     });
   });
