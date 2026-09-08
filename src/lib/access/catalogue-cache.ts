@@ -1,7 +1,3 @@
-// Dependency-free by design (architecture D6): the catalogue's own type lands with the
-// repository that parses it (story 2.4), so this store stays opaque to it and imports nothing
-// at all — not even a type. It exists purely to answer "do I already have this session's
-// catalogue" without forcing a synchronous fetch onto the paint path.
 export class CatalogueCache {
   private sid: string | null = null;
 
@@ -17,8 +13,6 @@ export class CatalogueCache {
     return this.isCurrent(sid) ? (this.catalogueVersion as string) : undefined;
   }
 
-  // A full overwrite, never a merge: a payload for the same sid but a different
-  // catalogueVersion replaces the entry wholesale, exactly like a payload for a new sid.
   public set(sid: string, catalogue: unknown, catalogueVersion: string): void {
     this.sid = sid;
     this.catalogue = catalogue;

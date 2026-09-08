@@ -5,6 +5,7 @@ import catalogueCache from '@/lib/access/catalogue-cache';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import { buildPrincipal, buildTenantRef } from '@tests/builders';
 
@@ -162,6 +163,7 @@ describe('AccessCore', () => {
         tenantId: target.id,
         reason: 'permission',
         permission: 'tenant:switch',
+        correlationId: correlationIdSource.current(),
       });
       expect(recorded().principalId).toBe(principal.id);
     });
@@ -183,6 +185,7 @@ describe('AccessCore', () => {
         tenantId: stranger.id,
         reason: 'membership',
         permission: 'tenant:switch',
+        correlationId: correlationIdSource.current(),
       });
     });
 
@@ -200,6 +203,7 @@ describe('AccessCore', () => {
         tenantId: stranger.id,
         reason: 'permission',
         permission: 'tenant:switch',
+        correlationId: correlationIdSource.current(),
       });
     });
 
@@ -218,7 +222,11 @@ describe('AccessCore', () => {
       expect(sink.record).toHaveBeenCalledTimes(1);
       expect(recorded().type).toBe('tenant_switch');
       // The audit trail names both ends of the move, so a reviewer can reconstruct it.
-      expect(recorded().metadata).toEqual({ from: home.id, to: target.id });
+      expect(recorded().metadata).toEqual({
+        from: home.id,
+        to: target.id,
+        correlationId: correlationIdSource.current(),
+      });
       expect(recorded().principalId).toBe(principal.id);
       expect(recorded().tenantId).toBe(target.id);
     });
@@ -245,8 +253,6 @@ describe('AccessCore', () => {
       expect(accessCore.activeTenant()).toBe(target.id);
     });
 
-    // Architecture D6: a tenant-scoped grant from the outgoing tenant must never survive a
-    // successful switch, so the catalogue cache is cleared exactly when the switch succeeds.
     it('clears the catalogue cache on a successful switch', () => {
       const home = buildTenantRef();
       const target = buildTenantRef();
@@ -277,7 +283,10 @@ describe('AccessCore', () => {
 
       expect(sink.record).toHaveBeenCalledTimes(1);
       expect(recorded().type).toBe('permission_denied');
-      expect(recorded().metadata).toEqual({ permission: 'contact:write' });
+      expect(recorded().metadata).toEqual({
+        permission: 'contact:write',
+        correlationId: correlationIdSource.current(),
+      });
     });
 
     it('merges the supplied context with the permission', () => {
@@ -289,6 +298,7 @@ describe('AccessCore', () => {
         tenantId: tenant.id,
         route: '/deals',
         permission: 'deal:write',
+        correlationId: correlationIdSource.current(),
       });
     });
 
@@ -297,7 +307,10 @@ describe('AccessCore', () => {
         permission: PERMISSIONS.contactRead,
       });
 
-      expect(recorded().metadata).toEqual({ permission: 'admin:manage-users' });
+      expect(recorded().metadata).toEqual({
+        permission: 'admin:manage-users',
+        correlationId: correlationIdSource.current(),
+      });
     });
 
     it('stamps the current principal onto the denial', () => {

@@ -56,10 +56,6 @@ export class AccessSession {
   }
 
   // Every session that ends — replaced, cleared or logged out — closes with an audit event
-  // while the principal is still known, so the trail reconciles into whole sessions. The
-  // catalogue cache is architecture-D6 scoped to one session at a time, so it is wiped here
-  // too: a token refresh (new `sid`) and a logout both route through this one closing point,
-  // and a stale entry must never survive into whichever session starts next.
   private close(): void {
     catalogueCache.clear();
     if (accessState.get().principal !== null) auditCore.log({ type: 'logout' });

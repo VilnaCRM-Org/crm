@@ -4,6 +4,7 @@ import auditCore from '@/lib/access/audit-core';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
 import { EditContactPolicy } from '@/lib/access/policies/edit-contact-policy';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditSink } from '@/lib/types/access/audit';
 import type { ContactSubject, Policy } from '@/lib/types/access/policy';
 import PolicyEvaluator from '@/services/access/policy-evaluator';
@@ -54,7 +55,10 @@ describe('PolicyEvaluator', () => {
       expect(record).toHaveBeenCalledTimes(1);
       expect(record).toHaveBeenCalledWith({
         type: 'permission_denied',
-        metadata: { permission: PERMISSIONS.dealWrite },
+        metadata: {
+          permission: PERMISSIONS.dealWrite,
+          correlationId: correlationIdSource.current(),
+        },
         at: FROZEN_AT,
         principalId: null,
         tenantId: null,
@@ -64,7 +68,12 @@ describe('PolicyEvaluator', () => {
     it('records the permission of the real edit-contact policy', () => {
       expect(evaluator.evaluate(editContact, buildContact())).toBe(false);
       expect(record).toHaveBeenCalledWith(
-        expect.objectContaining({ metadata: { permission: PERMISSIONS.contactWrite } })
+        expect.objectContaining({
+          metadata: {
+            permission: PERMISSIONS.contactWrite,
+            correlationId: correlationIdSource.current(),
+          },
+        })
       );
     });
   });
@@ -79,7 +88,10 @@ describe('PolicyEvaluator', () => {
       expect(record).toHaveBeenCalledTimes(1);
       expect(record).toHaveBeenCalledWith({
         type: 'permission_denied',
-        metadata: { permission: PERMISSIONS.contactWrite },
+        metadata: {
+          permission: PERMISSIONS.contactWrite,
+          correlationId: correlationIdSource.current(),
+        },
         at: FROZEN_AT,
         principalId: principal.id,
         tenantId: principal.tenantId,
@@ -117,7 +129,12 @@ describe('PolicyEvaluator', () => {
       expect(evaluator.evaluate(policy, subject)).toBe(false);
       expect(isSatisfiedBy).toHaveBeenCalledTimes(1);
       expect(record).toHaveBeenCalledWith(
-        expect.objectContaining({ metadata: { permission: PERMISSIONS.adminManageUsers } })
+        expect.objectContaining({
+          metadata: {
+            permission: PERMISSIONS.adminManageUsers,
+            correlationId: correlationIdSource.current(),
+          },
+        })
       );
     });
   });

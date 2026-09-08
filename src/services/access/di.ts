@@ -6,7 +6,6 @@ import accessSession from '@/lib/access/access-session';
 import auditCore from '@/lib/access/audit-core';
 import permissionResolver from '@/lib/access/permission-resolver';
 import sessionFactory from '@/lib/access/session-factory';
-import correlationIdProvider from '@/services/observability/correlation-id-provider';
 
 import AccessSessionService from './access-session-service';
 import AuditLogger from './audit-logger';
@@ -23,7 +22,6 @@ class AccessRegistrar implements ModuleRegistrar {
     this.registerAudit(container);
     this.registerPolicy(container);
     this.registerSession(container);
-    this.wireCorrelationId();
   }
 
   // The access domain stays container-free module singletons so the render path can read a
@@ -40,14 +38,6 @@ class AccessRegistrar implements ModuleRegistrar {
 
   private registerAudit(container: DependencyContainer): void {
     container.registerSingleton(ACCESS_TOKENS.AuditLogger, AuditLogger);
-  }
-
-  // The access domain must not import services/observability itself
-  // (no-access-domain-to-container), so this composition root — reachable from both sides —
-  // is the sanctioned bridge that lets a client `permission_denied` join the server request
-  // that would have refused it (FR-24). Read-only: nothing here calls `.next()`.
-  private wireCorrelationId(): void {
-    auditCore.useCorrelationIdProvider(() => correlationIdProvider.currentId || undefined);
   }
 
   private registerPolicy(container: DependencyContainer): void {

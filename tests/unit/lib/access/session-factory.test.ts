@@ -4,6 +4,7 @@ import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { DEFAULT_ROLE, PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
 import permissionResolver from '@/lib/access/permission-resolver';
 import sessionFactory, { SessionFactory } from '@/lib/access/session-factory';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { SessionInput, SessionSnapshot } from '@/lib/types/access/session';
 import {
@@ -122,7 +123,7 @@ describe('SessionFactory', () => {
     expect(sink.record).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'access_role_unmapped',
-        metadata: { role: 'ROLE_SERVICE' },
+        metadata: { role: 'ROLE_SERVICE', correlationId: correlationIdSource.current() },
       })
     );
   });
@@ -137,7 +138,7 @@ describe('SessionFactory', () => {
     expect(sink.record).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'access_role_unmapped',
-        metadata: { role: UNKNOWN_ROLE },
+        metadata: { role: UNKNOWN_ROLE, correlationId: correlationIdSource.current() },
       })
     );
   });
@@ -152,7 +153,7 @@ describe('SessionFactory', () => {
     expect(sink.record).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'access_role_unmapped',
-        metadata: { role: UNKNOWN_ROLE },
+        metadata: { role: UNKNOWN_ROLE, correlationId: correlationIdSource.current() },
       })
     );
   });

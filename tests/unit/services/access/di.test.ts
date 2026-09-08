@@ -8,6 +8,7 @@ import auditCore, { AuditCore } from '@/lib/access/audit-core';
 import noopAuditSink, { NoopAuditSink } from '@/lib/access/noop-audit-sink';
 import permissionResolver, { PermissionResolver } from '@/lib/access/permission-resolver';
 import sessionFactory, { SessionFactory } from '@/lib/access/session-factory';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditSink } from '@/lib/types/access/audit';
 import AccessSessionService from '@/services/access/access-session-service';
 import AuditLogger from '@/services/access/audit-logger';
@@ -234,10 +235,6 @@ describe('access DI registrar', () => {
 
     afterEach(() => {
       spy.mockRestore();
-      // Reset the state the wired provider reads, not the wiring itself — the wiring is
-      // installed once by container composition (this describe's own tests rely on it still
-      // being live), and an empty id already reproduces "no observable correlationId".
-      correlationIdProvider.currentId = '';
     });
 
     it('defaults the audit core to a no-op sink that records nothing observable', () => {
@@ -258,6 +255,7 @@ describe('access DI registrar', () => {
         at: FROZEN_AT,
         principalId: null,
         tenantId: null,
+        metadata: { correlationId: correlationIdSource.current() },
       });
     });
 
@@ -272,12 +270,10 @@ describe('access DI registrar', () => {
         at: FROZEN_AT,
         principalId: null,
         tenantId: null,
+        metadata: { correlationId: correlationIdSource.current() },
       });
     });
 
-    // FR-24: composing the container wires the observability boundary's request-scoped
-    // correlation id into the access domain's audit trail, so a client `permission_denied`
-    // can be joined to the server request that would have refused it.
     it('attaches the current request correlation id to a logged audit event', () => {
       const requestId = correlationIdProvider.next();
 

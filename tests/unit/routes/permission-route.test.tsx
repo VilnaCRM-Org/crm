@@ -12,6 +12,7 @@ import auditCore from '@/lib/access/audit-core';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
 import permissionResolver from '@/lib/access/permission-resolver';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { Permission, Role } from '@/lib/types/access/permission';
 import type { Principal } from '@/lib/types/access/principal';
@@ -140,6 +141,7 @@ describe('PermissionRoute (#114)', () => {
     expect(eventAt(0).metadata).toEqual({
       path: FIRST_PATH,
       permission: PERMISSIONS.contactWrite,
+      correlationId: correlationIdSource.current(),
     });
     expect(eventAt(0).principalId).toBe(principal.id);
     expect(eventAt(0).tenantId).toBe(principal.tenantId);
@@ -184,6 +186,7 @@ describe('PermissionRoute (#114)', () => {
     expect(eventAt(1).metadata).toEqual({
       path: FIRST_PATH,
       permission: PERMISSIONS.contactWrite,
+      correlationId: correlationIdSource.current(),
     });
   });
 
@@ -217,6 +220,7 @@ describe('PermissionRoute (#114)', () => {
     expect(eventAt(1).metadata).toEqual({
       path: FIRST_PATH,
       permission: PERMISSIONS.contactWrite,
+      correlationId: correlationIdSource.current(),
     });
   });
 
@@ -229,6 +233,7 @@ describe('PermissionRoute (#114)', () => {
     expect(eventAt(0).metadata).toEqual({
       path: FIRST_PATH,
       permission: PERMISSIONS.contactWrite,
+      correlationId: correlationIdSource.current(),
     });
 
     fireEvent.click(screen.getByRole('button', { name: NAVIGATE_LABEL }));
@@ -237,6 +242,7 @@ describe('PermissionRoute (#114)', () => {
     expect(eventAt(1).metadata).toEqual({
       path: SECOND_PATH,
       permission: PERMISSIONS.contactWrite,
+      correlationId: correlationIdSource.current(),
     });
     expect(
       await screen.findByRole('heading', { level: 1, name: DENIED.title })

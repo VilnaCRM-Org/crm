@@ -3,9 +3,6 @@ import type { FeatureFlag } from './types/feature-flag';
 
 const FEATURE_FLAG_DEFAULTS: Readonly<Record<FeatureFlag, boolean>> = Object.freeze({
   forgotPassword: false,
-  // Issue #114 delta, architecture D10: `true` selects the catalogue-backed session loader
-  // (story 3.2) over the shipped claim-shape one. Ships off — the loader itself does not exist
-  // yet — and is a deployment property, never a per-principal access flag.
   accessCatalogueSource: false,
 });
 

@@ -31,9 +31,6 @@ export class AccessCore {
     return this.principal()?.tenants ?? [];
   }
 
-  // A successful switch clears the catalogue cache so a tenant-scoped grant from the
-  // previous tenant can never leak into the new one; a refused switch leaves it untouched —
-  // nothing about the session actually changed.
   public switchTenant(tenantId: string): boolean {
     const principal = this.principal();
     if (principal === null) return this.refuse(tenantId, 'permission');

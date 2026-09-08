@@ -9,6 +9,7 @@ import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { PERMISSIONS, ROLES, ROLE_PERMISSIONS } from '@/lib/access/permission-catalog';
 import editContactPolicy from '@/lib/access/policies/edit-contact-policy';
 import sessionClaimsReader from '@/lib/access/session-claims-reader';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { ContactSubject } from '@/lib/types/access/policy';
 import type AccessSessionService from '@/services/access/access-session-service';
@@ -140,7 +141,11 @@ describe('access services DI integration (#114)', () => {
     expect(tenantContext.switchTo(otherTenant.id)).toBe(true);
     expect(tenantContext.active()).toBe(otherTenant.id);
     expect(typesOf()).toEqual(['login', 'tenant_switch']);
-    expect(lastEvent().metadata).toEqual({ from: homeTenant.id, to: otherTenant.id });
+    expect(lastEvent().metadata).toEqual({
+      from: homeTenant.id,
+      to: otherTenant.id,
+      correlationId: correlationIdSource.current(),
+    });
     expect(lastEvent().tenantId).toBe(otherTenant.id);
   });
 
@@ -155,6 +160,7 @@ describe('access services DI integration (#114)', () => {
       tenantId: foreignTenantId,
       reason: 'membership',
       permission: PERMISSIONS.tenantSwitch,
+      correlationId: correlationIdSource.current(),
     });
   });
 
@@ -176,6 +182,7 @@ describe('access services DI integration (#114)', () => {
       tenantId: otherTenant.id,
       reason: 'permission',
       permission: PERMISSIONS.tenantSwitch,
+      correlationId: correlationIdSource.current(),
     });
     expect(lastEvent().principalId).toBeNull();
   });
@@ -202,7 +209,10 @@ describe('access services DI integration (#114)', () => {
 
     expect(policies.evaluate(editContactPolicy, contact({ tenantId: otherTenant.id }))).toBe(false);
     expect(typesOf()).toEqual(['login', 'permission_denied']);
-    expect(lastEvent().metadata).toEqual({ permission: PERMISSIONS.contactWrite });
+    expect(lastEvent().metadata).toEqual({
+      permission: PERMISSIONS.contactWrite,
+      correlationId: correlationIdSource.current(),
+    });
   });
 
   it('denies a member editing a contact owned by somebody else', () => {
@@ -221,7 +231,10 @@ describe('access services DI integration (#114)', () => {
     expect(policies.evaluate(editContactPolicy, contact({ ownerId: viewerClaims.sub }))).toBe(
       false
     );
-    expect(lastEvent().metadata).toEqual({ permission: PERMISSIONS.contactWrite });
+    expect(lastEvent().metadata).toEqual({
+      permission: PERMISSIONS.contactWrite,
+      correlationId: correlationIdSource.current(),
+    });
   });
 
   it('denies every policy for an anonymous visitor', () => {
@@ -476,7 +489,10 @@ describe('access state and audit plumbing (#114)', () => {
     auditLogger.log({ type: 'logout', metadata: { reason: 'session-expired' } });
 
     expect(lastEvent().type).toBe('logout');
-    expect(lastEvent().metadata).toEqual({ reason: 'session-expired' });
+    expect(lastEvent().metadata).toEqual({
+      reason: 'session-expired',
+      correlationId: correlationIdSource.current(),
+    });
     expect(lastEvent().principalId).toBe(managerClaims.sub);
     expect(lastEvent().tenantId).toBe(homeTenant.id);
   });

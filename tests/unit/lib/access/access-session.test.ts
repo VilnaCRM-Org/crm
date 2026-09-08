@@ -6,6 +6,7 @@ import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { ROLES } from '@/lib/access/permission-catalog';
 import sessionFactory from '@/lib/access/session-factory';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { Principal } from '@/lib/types/access/principal';
 import type { SessionClaims } from '@/lib/types/access/session';
@@ -72,6 +73,7 @@ describe('AccessSession', () => {
       at: expect.any(String),
       principalId: claims.sub,
       tenantId,
+      metadata: { correlationId: correlationIdSource.current() },
     });
   });
 
@@ -88,6 +90,7 @@ describe('AccessSession', () => {
       at: expect.any(String),
       principalId: claims.sub,
       tenantId,
+      metadata: { correlationId: correlationIdSource.current() },
     });
   });
 
@@ -179,6 +182,7 @@ describe('AccessSession', () => {
       at: expect.any(String),
       principalId: claims.sub,
       tenantId,
+      metadata: { correlationId: correlationIdSource.current() },
     });
   });
 
@@ -195,6 +199,7 @@ describe('AccessSession', () => {
       at: expect.any(String),
       principalId: claims.sub,
       tenantId,
+      metadata: { correlationId: correlationIdSource.current() },
     });
     expect(accessState.get().principal).toBeNull();
   });
@@ -206,8 +211,6 @@ describe('AccessSession', () => {
     expect(accessState.get().principal).toBeNull();
   });
 
-  // Architecture D6: the catalogue cache is scoped to one session, so a logout must wipe it —
-  // a subsequent login (even a re-login as the same principal) must never read a stale entry.
   it('clears the catalogue cache on logout', () => {
     const { token } = buildHydration();
     session.start({ token });
@@ -218,9 +221,6 @@ describe('AccessSession', () => {
     expect(catalogueCache.get('some-sid')).toBeUndefined();
   });
 
-  // A token refresh rotates `sid`, so the outgoing session's cached entry must not survive
-  // into the new one — closing the outgoing session on replacement already routes through the
-  // same clearing point as an explicit end().
   it('clears the catalogue cache when a live session is replaced by a new one', () => {
     const first = buildHydration();
     const second = buildHydration();

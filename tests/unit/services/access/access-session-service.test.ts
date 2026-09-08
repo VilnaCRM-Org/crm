@@ -5,6 +5,7 @@ import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
 import sessionFactory from '@/lib/access/session-factory';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import AccessSessionService from '@/services/access/access-session-service';
 import SessionRepository from '@/services/access/session-repository';
@@ -56,6 +57,7 @@ describe('AccessSessionService', () => {
         at: FROZEN_AT,
         principalId: claims.sub,
         tenantId: claims.tenantId,
+        metadata: { correlationId: correlationIdSource.current() },
       });
     });
 
@@ -107,6 +109,7 @@ describe('AccessSessionService', () => {
         at: FROZEN_AT,
         principalId: claims.sub,
         tenantId: claims.tenantId,
+        metadata: { correlationId: correlationIdSource.current() },
       });
     });
 
@@ -125,12 +128,14 @@ describe('AccessSessionService', () => {
         at: FROZEN_AT,
         principalId: first.sub,
         tenantId: first.tenantId,
+        metadata: { correlationId: correlationIdSource.current() },
       });
       expect(record).toHaveBeenNthCalledWith(3, {
         type: 'login',
         at: FROZEN_AT,
         principalId: second.sub,
         tenantId: second.tenantId,
+        metadata: { correlationId: correlationIdSource.current() },
       });
       expect(record).toHaveBeenCalledTimes(3);
     });
@@ -150,6 +155,7 @@ describe('AccessSessionService', () => {
         at: FROZEN_AT,
         principalId: claims.sub,
         tenantId: claims.tenantId,
+        metadata: { correlationId: correlationIdSource.current() },
       });
       expect(accessState.get().principal).toBeNull();
       expect(accessState.get().flags).toEqual({});

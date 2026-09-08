@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 
 export class CorrelationIdProvider {
   public readonly header: string = 'X-Request-Id';
@@ -6,7 +6,7 @@ export class CorrelationIdProvider {
   public currentId: string = '';
 
   public next(): string {
-    this.currentId = uuidv4();
+    this.currentId = correlationIdSource.next();
     return this.currentId;
   }
 }

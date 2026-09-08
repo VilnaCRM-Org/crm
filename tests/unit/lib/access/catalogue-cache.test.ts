@@ -60,9 +60,6 @@ describe('CatalogueCache', () => {
     expect(cache.getCatalogueVersion(sid)).toBeUndefined();
   });
 
-  // Architecture D6 / story dependency note: this cache stores an opaque value because the
-  // catalogue's own type belongs to the repository that parses it, not to this store. A source
-  // scan is the only way to pin "imports nothing at all" as a real, checked contract.
   it('imports nothing at all', () => {
     const source = readFileSync(
       path.resolve(__dirname, '../../../../src/lib/access/catalogue-cache.ts'),

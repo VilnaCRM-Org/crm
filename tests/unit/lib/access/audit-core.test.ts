@@ -1,6 +1,7 @@
 import accessState from '@/lib/access/access-state';
 import auditCore, { AuditCore } from '@/lib/access/audit-core';
 import noopAuditSink, { NoopAuditSink } from '@/lib/access/noop-audit-sink';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditMetadata, AuditSink } from '@/lib/types/access/audit';
 import { buildPrincipal } from '@tests/builders';
 
@@ -26,7 +27,6 @@ describe('AuditCore', () => {
   afterEach(() => {
     jest.useRealTimers();
     auditCore.useSink(noopAuditSink);
-    auditCore.useCorrelationIdProvider(() => undefined);
     accessState.clear();
   });
 
@@ -52,7 +52,7 @@ describe('AuditCore', () => {
       expect(sink.record).toHaveBeenCalledTimes(1);
       const event = recordedAt(sink);
       expect(event.type).toBe('logout');
-      expect(event.metadata).toBeUndefined();
+      expect(event.metadata).toStrictEqual({ correlationId: expect.any(String) });
       expect(event.principalId).toBeNull();
       expect(event.tenantId).toBeNull();
       expect(event.at).toMatch(ISO_8601);
@@ -67,6 +67,7 @@ describe('AuditCore', () => {
 
       expect(sink.record).toHaveBeenCalledWith({
         type: 'login',
+        metadata: { correlationId: expect.any(String) },
         at: '2026-03-04T05:06:07.008Z',
         principalId: null,
         tenantId: null,
@@ -114,85 +115,85 @@ describe('AuditCore', () => {
 
       const event = recordedAt(sink);
       expect(event.type).toBe('permission_denied');
-      expect(event.metadata).toEqual({
+      expect(event.metadata).toStrictEqual({
+        tenantId: principal.tenantId,
+        permission: 'contact:write',
+        correlationId: expect.any(String),
+      });
+      expect(event.metadata).not.toBe(metadata);
+      expect(metadata).toStrictEqual({
         tenantId: principal.tenantId,
         permission: 'contact:write',
       });
-      expect(event.metadata).toBe(metadata);
     });
 
     // `AuditEventInput` structurally admits only `type` and `metadata`, so the stamped
     // fields cannot be overridden by a caller — what is worth pinning is the envelope the
-    // core emits: exactly the stamped keys, and `metadata` omitted when none was given.
-    it('emits exactly the stamped envelope keys and omits an absent metadata', () => {
+    it('emits exactly the stamped envelope keys, metadata included', () => {
       const principal = buildPrincipal();
       accessState.setSession(principal, {});
 
       auditCore.log({ type: 'login' });
 
       const event = recordedAt(sink);
-      expect(Object.keys(event).sort()).toEqual(['at', 'principalId', 'tenantId', 'type']);
+      expect(Object.keys(event).sort()).toEqual([
+        'at',
+        'metadata',
+        'principalId',
+        'tenantId',
+        'type',
+      ]);
       expect(event.principalId).toBe(principal.id);
       expect(event.tenantId).toBe(principal.tenantId);
-      expect('metadata' in event).toBe(false);
     });
   });
 
-  describe('useCorrelationIdProvider', () => {
-    it('leaves the event without a correlation id when no provider is installed', () => {
+  describe('correlation id', () => {
+    it('stamps a correlation id on an event that carries no metadata of its own', () => {
       auditCore.log({ type: 'login' });
 
-      const event = recordedAt(sink);
-      expect(event.metadata).toBeUndefined();
-    });
-
-    it('attaches the id from the installed provider to a metadata-less event', () => {
-      auditCore.useCorrelationIdProvider(() => 'req-1');
-
-      auditCore.log({ type: 'login' });
-
-      expect(recordedAt(sink).metadata).toStrictEqual({ correlationId: 'req-1' });
+      expect(recordedAt(sink).metadata).toStrictEqual({
+        correlationId: correlationIdSource.current(),
+      });
     });
 
     it('merges the id into existing metadata rather than replacing it', () => {
-      auditCore.useCorrelationIdProvider(() => 'req-1');
-
       auditCore.log({ type: 'permission_denied', metadata: { permission: 'contact:write' } });
 
       expect(recordedAt(sink).metadata).toStrictEqual({
         permission: 'contact:write',
-        correlationId: 'req-1',
+        correlationId: correlationIdSource.current(),
       });
     });
 
     it('carries the same id across two events emitted in the same request scope', () => {
-      auditCore.useCorrelationIdProvider(() => 'req-shared');
-
       auditCore.log({ type: 'login' });
       auditCore.log({ type: 'tenant_switch' });
 
-      expect(recordedAt(sink, 0).metadata).toStrictEqual({ correlationId: 'req-shared' });
-      expect(recordedAt(sink, 1).metadata).toStrictEqual({ correlationId: 'req-shared' });
+      const first = recordedAt(sink, 0).metadata?.correlationId;
+      expect(first).toEqual(expect.any(String));
+      expect(recordedAt(sink, 1).metadata?.correlationId).toBe(first);
     });
 
-    it('records without an id, and does not throw, when the provider returns undefined', () => {
-      auditCore.useCorrelationIdProvider(() => undefined);
+    it('follows the source onto the next request scope', () => {
+      auditCore.log({ type: 'login' });
+      const rotated = correlationIdSource.next();
+      auditCore.log({ type: 'logout' });
 
-      expect(() => auditCore.log({ type: 'login' })).not.toThrow();
-
-      expect(recordedAt(sink).metadata).toBeUndefined();
+      expect(recordedAt(sink, 0).metadata?.correlationId).not.toBe(rotated);
+      expect(recordedAt(sink, 1).metadata?.correlationId).toBe(rotated);
     });
 
-    it('records without an id, and does not throw, when the provider itself throws', () => {
-      auditCore.useCorrelationIdProvider(() => {
-        throw new Error('correlation id unavailable');
+    it('needs no installation step — a never-touched source still yields an id', () => {
+      const isolated = new AuditCore();
+      isolated.useSink(sink);
+
+      isolated.log({ type: 'access_role_unmapped', metadata: { role: 'ROLE_GHOST' } });
+
+      expect(recordedAt(sink).metadata).toStrictEqual({
+        role: 'ROLE_GHOST',
+        correlationId: correlationIdSource.current(),
       });
-
-      expect(() => auditCore.log({ type: 'login' })).not.toThrow();
-
-      const event = recordedAt(sink);
-      expect(event.metadata).toBeUndefined();
-      expect(sink.record).toHaveBeenCalledTimes(1);
     });
   });
 

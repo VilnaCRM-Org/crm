@@ -9,7 +9,7 @@ import auditCore from './audit-core';
 import { FEATURE_FLAG_DEFAULTS } from './feature-flag-catalog';
 import { DEFAULT_ROLE } from './permission-catalog';
 import permissionResolver from './permission-resolver';
-import { SERVER_ROLE_MAP } from './role-mapping';
+import SERVER_ROLE_MAP from './role-mapping';
 import sessionClaimsReader from './session-claims-reader';
 
 const FALLBACK_TENANT_ID = 'default';
@@ -73,9 +73,6 @@ export class SessionFactory {
     return resolved.length === 0 ? [DEFAULT_ROLE] : resolved;
   }
 
-  // A claimed name is either a known server role mapped to a product role, or already a valid
-  // product role (the claim shape's own vocabulary). Anything else is unmapped: least privilege
-  // drops it and the audit trail names it verbatim so the drift is visible, never silent.
   private resolveRole(name: string): Role | null {
     const mapped = SERVER_ROLE_MAP[name];
     if (mapped !== undefined) return mapped;

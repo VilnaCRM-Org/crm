@@ -2,6 +2,7 @@ import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
+import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditSink } from '@/lib/types/access/audit';
 import AuditLogger from '@/services/access/audit-logger';
 import { buildPrincipal } from '@tests/builders';
@@ -42,6 +43,7 @@ describe('AuditLogger', () => {
       at: FROZEN_AT,
       principalId: principal.id,
       tenantId: principal.tenantId,
+      metadata: { correlationId: correlationIdSource.current() },
     });
   });
 
@@ -54,6 +56,7 @@ describe('AuditLogger', () => {
       at: FROZEN_AT,
       principalId: null,
       tenantId: null,
+      metadata: { correlationId: correlationIdSource.current() },
     });
   });
 
@@ -65,7 +68,10 @@ describe('AuditLogger', () => {
 
     expect(record).toHaveBeenCalledWith({
       type: 'permission_denied',
-      metadata: { permission: PERMISSIONS.contactWrite },
+      metadata: {
+        permission: PERMISSIONS.contactWrite,
+        correlationId: correlationIdSource.current(),
+      },
       at: FROZEN_AT,
       principalId: principal.id,
       tenantId: principal.tenantId,

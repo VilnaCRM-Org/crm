@@ -54,9 +54,6 @@ describe('featureFlagService', () => {
     });
   });
 
-  // Architecture D10: this flag is a runtime property, not an access flag — it selects the
-  // catalogue-backed session loader when the app boots, and rolls back to the claim-shape one
-  // (unchanged behaviour) with a container restart, never a redeploy.
   it('enables accessCatalogueSource independently of forgotPassword', async () => {
     writeConfigBlock(buildFeatureFlagConfig({ accessCatalogueSource: true }));
 
