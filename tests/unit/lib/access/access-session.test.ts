@@ -1,6 +1,7 @@
 import accessSession, { AccessSession } from '@/lib/access/access-session';
 import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
+import catalogueCache from '@/lib/access/catalogue-cache';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { ROLES } from '@/lib/access/permission-catalog';
@@ -43,6 +44,7 @@ describe('AccessSession', () => {
   beforeEach(() => {
     session = new AccessSession();
     accessState.clear();
+    catalogueCache.clear();
     auditCore.useSink(sink);
   });
 
@@ -50,6 +52,7 @@ describe('AccessSession', () => {
     jest.restoreAllMocks();
     auditCore.useSink(noopAuditSink);
     accessState.clear();
+    catalogueCache.clear();
   });
 
   it('exports a shared singleton instance', () => {
@@ -201,6 +204,32 @@ describe('AccessSession', () => {
 
     expect(sink.record).not.toHaveBeenCalled();
     expect(accessState.get().principal).toBeNull();
+  });
+
+  // Architecture D6: the catalogue cache is scoped to one session, so a logout must wipe it —
+  // a subsequent login (even a re-login as the same principal) must never read a stale entry.
+  it('clears the catalogue cache on logout', () => {
+    const { token } = buildHydration();
+    session.start({ token });
+    catalogueCache.set('some-sid', { roles: [] }, 'v1');
+
+    session.end();
+
+    expect(catalogueCache.get('some-sid')).toBeUndefined();
+  });
+
+  // A token refresh rotates `sid`, so the outgoing session's cached entry must not survive
+  // into the new one — closing the outgoing session on replacement already routes through the
+  // same clearing point as an explicit end().
+  it('clears the catalogue cache when a live session is replaced by a new one', () => {
+    const first = buildHydration();
+    const second = buildHydration();
+    session.start({ token: first.token });
+    catalogueCache.set('some-sid', { roles: [] }, 'v1');
+
+    session.start({ token: second.token });
+
+    expect(catalogueCache.get('some-sid')).toBeUndefined();
   });
 
   it('forgets the ended token so a later sync with it re-hydrates', () => {

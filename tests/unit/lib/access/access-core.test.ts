@@ -1,6 +1,7 @@
 import accessCore, { AccessCore } from '@/lib/access/access-core';
 import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
+import catalogueCache from '@/lib/access/catalogue-cache';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
 import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
@@ -22,6 +23,7 @@ describe('AccessCore', () => {
 
   beforeEach(() => {
     accessState.clear();
+    catalogueCache.clear();
     sink = createSink();
     auditCore.useSink(sink);
   });
@@ -29,6 +31,7 @@ describe('AccessCore', () => {
   afterEach(() => {
     auditCore.useSink(noopAuditSink);
     accessState.clear();
+    catalogueCache.clear();
   });
 
   it('is exported as a singleton instance of the class', () => {
@@ -240,6 +243,31 @@ describe('AccessCore', () => {
       expect(accessCore.switchTenant(target.id)).toBe(true);
 
       expect(accessCore.activeTenant()).toBe(target.id);
+    });
+
+    // Architecture D6: a tenant-scoped grant from the outgoing tenant must never survive a
+    // successful switch, so the catalogue cache is cleared exactly when the switch succeeds.
+    it('clears the catalogue cache on a successful switch', () => {
+      const home = buildTenantRef();
+      const target = buildTenantRef();
+      const tenants = [home, target];
+      accessState.setSession(buildPrincipal({ roles: [ROLES.manager], tenants }), {});
+      catalogueCache.set('some-sid', { roles: [] }, 'v1');
+
+      expect(accessCore.switchTenant(target.id)).toBe(true);
+
+      expect(catalogueCache.get('some-sid')).toBeUndefined();
+    });
+
+    it('leaves the catalogue cache untouched when the switch is refused', () => {
+      const home = buildTenantRef();
+      accessState.setSession(buildPrincipal({ roles: [ROLES.viewer], tenants: [home] }), {});
+      const catalogue = { roles: [] };
+      catalogueCache.set('some-sid', catalogue, 'v1');
+
+      expect(accessCore.switchTenant(buildTenantRef().id)).toBe(false);
+
+      expect(catalogueCache.get('some-sid')).toBe(catalogue);
     });
   });
 

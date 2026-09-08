@@ -2,6 +2,7 @@ import type { SessionInput, SessionLoader, SessionSnapshot } from '@/lib/types/a
 
 import accessState from './access-state';
 import auditCore from './audit-core';
+import catalogueCache from './catalogue-cache';
 import sessionFactory from './session-factory';
 
 // "Nothing has been hydrated yet" has to be distinguishable from "hydrated from the
@@ -55,8 +56,12 @@ export class AccessSession {
   }
 
   // Every session that ends — replaced, cleared or logged out — closes with an audit event
-  // while the principal is still known, so the trail reconciles into whole sessions.
+  // while the principal is still known, so the trail reconciles into whole sessions. The
+  // catalogue cache is architecture-D6 scoped to one session at a time, so it is wiped here
+  // too: a token refresh (new `sid`) and a logout both route through this one closing point,
+  // and a stale entry must never survive into whichever session starts next.
   private close(): void {
+    catalogueCache.clear();
     if (accessState.get().principal !== null) auditCore.log({ type: 'logout' });
   }
 }
