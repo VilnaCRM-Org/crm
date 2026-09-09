@@ -14,7 +14,7 @@
     "@mui/system": "^7.3.1",
     "@sentry/react": "^10.70.0",
     "dotenv": "^17.4.2",
-    "dotenv-expand": "^12.0.2",
+    "dotenv-expand": "^1000.0.0",
     "graphql": "^16.11.0",
     "i18next": "^26.3.6",
     "react": "19.2.8",
