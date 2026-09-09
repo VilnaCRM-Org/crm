@@ -6,11 +6,12 @@
  *
  * @jest-environment @stryker-mutator/jest-runner/jest-env/node
  */
-import AuthStateVar from '@auth/stores/auth-var';
+import preloadedAuthTokenSeed from '@/config/env/preloaded-auth-token';
+import { buildToken } from '@tests/builders';
 
 const ENV_KEY = 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN';
 
-describe('auth-var seed token without a window global', () => {
+describe('preloaded auth token seed without a window global', () => {
   const originalEnv = process.env[ENV_KEY];
 
   afterEach(() => {
@@ -18,11 +19,16 @@ describe('auth-var seed token without a window global', () => {
     else process.env[ENV_KEY] = originalEnv;
   });
 
+  it('runs in an environment where no window global is declared', () => {
+    expect(typeof globalThis.window).toBe('undefined');
+  });
+
   it('uses the env token by default when window is absent, else null', () => {
-    process.env[ENV_KEY] = 'env-token';
-    expect(AuthStateVar.readSeedToken()).toBe('env-token');
+    const envToken = buildToken();
+    process.env[ENV_KEY] = envToken;
+    expect(preloadedAuthTokenSeed.read()).toBe(envToken);
 
     delete process.env[ENV_KEY];
-    expect(AuthStateVar.readSeedToken()).toBeNull();
+    expect(preloadedAuthTokenSeed.read()).toBeNull();
   });
 });

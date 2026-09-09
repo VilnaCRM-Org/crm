@@ -73,3 +73,4 @@ _bmad-output/
 /dist-base/
 /base/
 /bundle-size-report.md
+tests/unit/__discovery_probe__.*

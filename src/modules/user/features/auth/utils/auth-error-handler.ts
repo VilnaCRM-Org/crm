@@ -1,8 +1,8 @@
 import { inject, injectable } from 'tsyringe';
 
-import { ErrorHandler, type UiError } from '@/services/error';
+import type { ErrorHandler, UiError } from '@/services/error';
 import ERROR_TOKENS from '@/services/error/tokens';
-import ErrorParser from '@/utils/error/error-parser';
+import type ErrorParser from '@/utils/error/error-parser';
 import ERROR_UTILS_TOKENS from '@/utils/error/tokens';
 
 export type { UiError };

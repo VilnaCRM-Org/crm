@@ -14,7 +14,7 @@ import type { RegistrationResponse } from '@auth/types/api-responses';
 import type { RegisterUserDto } from '@auth/types/credentials';
 import { CreateUserResultSchema } from '@auth/utils/response-schemas';
 
-import ApiErrorFactory from './api-error-factory';
+import type ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
 import CREATE_USER from './create-user-mutation';
 import type { RequestOptions } from './types';
@@ -84,14 +84,9 @@ export default class RegistrationAPI extends BaseAPI {
     };
   }
 
-  private httpStatusOf(error: unknown): number | undefined {
+  private normalizeError(error: unknown): unknown {
     const networkError = (error as { networkError?: { statusCode?: number } }).networkError;
     const status = networkError?.statusCode;
-    return typeof status === 'number' ? status : undefined;
-  }
-
-  private normalizeError(error: unknown): unknown {
-    const status = this.httpStatusOf(error);
     return typeof status === 'number'
       ? new HttpError({ status, message: 'Registration request failed', cause: error })
       : error;

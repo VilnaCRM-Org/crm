@@ -1,4 +1,4 @@
-import { createEvent, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { JSX } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 
@@ -88,7 +88,7 @@ describe('PasswordField', () => {
     );
   });
 
-  it('keeps focus on the input by cancelling the toggle mousedown default', () => {
+  it('keeps focus on the input by cancelling the toggle mousedown default', async () => {
     mountPasswordForm();
 
     const toggle = screen.getByRole('button', { name: SHOW_LABEL });
@@ -97,6 +97,13 @@ describe('PasswordField', () => {
     fireEvent(toggle, mouseDown);
 
     expect(mouseDown.defaultPrevented).toBe(true);
+
+    // MUI's lazy ripple resolves a mount promise and starts the ripple on a microtask queued by
+    // the mousedown handler above; awaiting it here (still inside act) is what lets that deferred
+    // update settle instead of leaking into the next test unwrapped.
+    await act(async () => {
+      await Promise.resolve();
+    });
   });
 
   it('blocks submission of an empty password with the required rule', async () => {

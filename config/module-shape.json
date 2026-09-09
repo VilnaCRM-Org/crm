@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "namePattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+  "locales": ["en", "uk"],
+  "module": {
+    "allowedFolders": ["config", "features", "hooks", "lib", "store", "types", "utils"]
+  },
+  "feature": {
+    "allowedFolders": [
+      "assets",
+      "components",
+      "hooks",
+      "i18n",
+      "repositories",
+      "routes",
+      "stores",
+      "types",
+      "utils"
+    ]
+  },
+  "tests": {
+    "rootAllowedFolders": [
+      "apollo-server",
+      "builders",
+      "console-gate",
+      "e2e",
+      "fixtures",
+      "i18n",
+      "integration",
+      "load",
+      "memory-leak",
+      "mutation",
+      "unit",
+      "utils",
+      "visual"
+    ],
+    "moduleAllowedFolders": ["features", "helpers", "lib", "repositories", "store"],
+    "featureAllowedFolders": [
+      "assets",
+      "components",
+      "hooks",
+      "i18n",
+      "repositories",
+      "routes",
+      "stores",
+      "types",
+      "utils"
+    ]
+  }
+}

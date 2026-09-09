@@ -16,6 +16,7 @@ import {
   buildToken,
   buildUser,
 } from '@tests/builders';
+import { PRELOADED_AUTH_TOKEN_WINDOW_KEY } from '@tests/utils/seed-preloaded-auth-token';
 
 import server, { GRAPHQL_URL } from '../../../../../mocks/server';
 
@@ -137,9 +138,15 @@ describe('Auth Store Integration', () => {
     });
 
     it('should set error state on network failure', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.error()));
 
       await authActions.loginUser(buildCredentials());
+
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining(`POST ${API_ENDPOINTS.LOGIN}`)
+      );
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -314,6 +321,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle validation error from API response', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(
         http.post(GRAPHQL_URL, () =>
           HttpResponse.json({
@@ -326,17 +334,32 @@ describe('Auth Store Integration', () => {
 
       await authActions.registerUser(registrationCredentials);
 
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining('https://go.apollo.dev/c/err')
+      );
+
       const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
       expect(state.registerError).toBeTruthy();
     });
 
     it('surfaces a register error when the payload contains no user', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(
         http.post(GRAPHQL_URL, () => HttpResponse.json({ data: { createUser: { user: null } } }))
       );
 
       await authActions.registerUser(registrationCredentials);
+
+      expect(consoleError).toHaveBeenCalledTimes(2);
+      expect(consoleError).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('https://go.apollo.dev/c/err')
+      );
+      expect(consoleError).toHaveBeenNthCalledWith(2, 'Registration response validation failed', {
+        issueCount: 1,
+      });
 
       const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
@@ -372,9 +395,13 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle network failure', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(http.post(GRAPHQL_URL, () => HttpResponse.error()));
 
       await authActions.registerUser(registrationCredentials);
+
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining(`POST ${GRAPHQL_URL}`));
 
       const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
@@ -591,13 +618,14 @@ describe('Auth Store Integration', () => {
     });
 
     it('seeds token from preloaded auth when the store module is re-evaluated', async () => {
+      const token = buildToken();
       const originalEnv = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
-      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = 'preloaded';
+      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = token;
 
       try {
         await jest.isolateModulesAsync(async () => {
           const mod = await import('@auth/stores');
-          expect(mod.AuthStateVar.get().token).toBe('preloaded');
+          expect(mod.AuthStateVar.get().token).toBe(token);
         });
       } finally {
         if (originalEnv === undefined) {
@@ -609,29 +637,57 @@ describe('Auth Store Integration', () => {
     });
 
     it('seeds token from window when window token is present', async () => {
+      const token = buildToken();
+
       await jest.isolateModulesAsync(async () => {
-        (window as Window & { __PRELOADED_AUTH_TOKEN__?: string }).__PRELOADED_AUTH_TOKEN__ =
-          'window-token';
+        window[PRELOADED_AUTH_TOKEN_WINDOW_KEY] = token;
         try {
           const mod = await import('@auth/stores');
-          expect(mod.AuthStateVar.get().token).toBe('window-token');
+          expect(mod.AuthStateVar.get().token).toBe(token);
         } finally {
-          delete (window as Window & { __PRELOADED_AUTH_TOKEN__?: string })
-            .__PRELOADED_AUTH_TOKEN__;
+          delete window[PRELOADED_AUTH_TOKEN_WINDOW_KEY];
         }
       });
     });
 
     it('trims whitespace from env token', async () => {
+      const token = buildToken();
       const originalEnv = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
-      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = '  trimmed  ';
+      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = `  ${token}  `;
 
       try {
         await jest.isolateModulesAsync(async () => {
           const mod = await import('@auth/stores');
-          expect(mod.AuthStateVar.get().token).toBe('trimmed');
+          expect(mod.AuthStateVar.get().token).toBe(token);
         });
       } finally {
+        if (originalEnv === undefined) {
+          delete process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+        } else {
+          process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = originalEnv;
+        }
+      }
+    });
+
+    // The singleton behind the @auth/stores barrel — not a hand-built instance — is what
+    // ProtectedRoute actually reads, so the production gate has to hold on this path too.
+    it('leaves the re-evaluated store unauthenticated in a production build', async () => {
+      const originalNodeEnv = process.env.NODE_ENV;
+      const originalEnv = process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
+      process.env.NODE_ENV = 'production';
+      process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = buildToken();
+      window[PRELOADED_AUTH_TOKEN_WINDOW_KEY] = buildToken();
+
+      try {
+        await jest.isolateModulesAsync(async () => {
+          const mod = await import('@auth/stores');
+
+          expect(mod.AuthStateVar.get().token).toBeNull();
+          expect(AuthStoreSelectors.isAuthenticated(mod.AuthStateVar.get())).toBe(false);
+        });
+      } finally {
+        process.env.NODE_ENV = originalNodeEnv;
+        delete window[PRELOADED_AUTH_TOKEN_WINDOW_KEY];
         if (originalEnv === undefined) {
           delete process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN;
         } else {

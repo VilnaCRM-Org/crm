@@ -34,10 +34,8 @@ describe('env config Integration', () => {
 
   it('reads build-inlined variables through rawEnv', () => {
     process.env.REACT_APP_MOCKOON_URL = 'http://localhost:8080';
-    process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN = 'seed';
 
     expect(rawEnv.mockoonUrl()).toBe('http://localhost:8080');
-    expect(rawEnv.lhciPreloadedAuthToken()).toBe('seed');
     expect(rawEnv.snapshot().mockoonUrl).toBe('http://localhost:8080');
   });
 });

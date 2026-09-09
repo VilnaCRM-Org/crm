@@ -240,7 +240,7 @@ metrics.
 
 **What it does**:
 
-- Enforces `src/modules/<Module>/features/<Feature>/...` and
+- Enforces `src/modules/<module>/features/<feature>/...` and
   `tests/<kind>/...` mirroring.
 - Validates `@/` path alias usage.
 - Documents UI prefix and module package metadata.

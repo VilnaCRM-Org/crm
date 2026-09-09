@@ -1,7 +1,6 @@
 import { inject, injectable } from 'tsyringe';
 
 import { ERROR_CODES } from '@/services/error/error-codes';
-import observabilityCore from '@/services/observability/observability-core';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
 import type { ErrorCode } from '@/services/types/error/error-codes';
 import type { ErrorLogger, UiError } from '@/services/types/error/error-handler';
@@ -73,14 +72,10 @@ const errorMap: Record<ErrorCode, UiError> = {
 export class ErrorHandler {
   private logger: ErrorLogger = console;
 
-  private readonly observability: ObservabilityService;
-
   constructor(
-    @inject(OBSERVABILITY_TOKENS.ObservabilityService, { isOptional: true })
-    observability?: ObservabilityService
-  ) {
-    this.observability = observability ?? observabilityCore;
-  }
+    @inject(OBSERVABILITY_TOKENS.ObservabilityService)
+    private readonly observability: ObservabilityService
+  ) {}
 
   public setLogger(logger?: ErrorLogger): void {
     this.logger = logger ?? console;

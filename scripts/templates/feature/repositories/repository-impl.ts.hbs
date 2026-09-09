@@ -1,0 +1,13 @@
+import { injectable } from 'tsyringe';
+
+import type {
+  {{pascalCase feature}}Item,
+  {{pascalCase feature}}Repository,
+} from '../types/{{feature}}-repository';
+
+@injectable()
+export default class {{pascalCase feature}}RepositoryImpl implements {{pascalCase feature}}Repository {
+  public list(): Promise<readonly {{pascalCase feature}}Item[]> {
+    return Promise.resolve([]);
+  }
+}

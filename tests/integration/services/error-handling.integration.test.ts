@@ -7,9 +7,19 @@ import {
   ApiErrorCodes,
 } from '@/modules/user/lib/api-errors';
 import { ErrorHandler } from '@/services/error/error-handler';
+import type { ObservabilityService } from '@/services/types/observability/observability';
 import ErrorParser from '@/utils/error/error-parser';
 
-const errorHandler = new ErrorHandler();
+const createObservability = (): jest.Mocked<ObservabilityService> => ({
+  init: jest.fn(),
+  captureError: jest.fn(),
+  setUser: jest.fn(),
+  clearUser: jest.fn(),
+  reportVital: jest.fn(),
+});
+
+const observability = createObservability();
+const errorHandler = new ErrorHandler(observability);
 const errorParser = new ErrorParser();
 
 describe('ApiError classes', () => {
@@ -173,6 +183,7 @@ describe('ErrorHandler', () => {
     errorHandler.handle(error);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(observability.captureError).toHaveBeenCalledWith(error);
   });
 
   it('should handle string error', () => {
@@ -206,6 +217,7 @@ describe('ErrorHandler', () => {
     errorHandler.handle(error);
 
     expect(logger.error).toHaveBeenCalledWith('[ErrorHandler]', error);
+    expect(observability.captureError).toHaveBeenCalledWith(error);
   });
 });
 

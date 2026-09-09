@@ -47,6 +47,7 @@ export default function PasswordField<T extends FieldValues & { password: string
 }: PasswordFieldProps): JSX.Element {
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
+  // Stryker disable next-line ArrayDeclaration: equivalent, deps stay Object.is-equal
   const toggle = useCallback((): void => setShowPassword((prev) => !prev), []);
   const validators = formValidators.create(t);
 

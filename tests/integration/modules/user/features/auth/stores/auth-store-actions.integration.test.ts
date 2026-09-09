@@ -26,13 +26,23 @@ const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   }) as AuthRepository;
 
 const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).login({
+  new AuthStoreActions({
+    repository: makeRepo(over),
+    authRequestErrors,
+    observability,
+    authState: AuthStateVar,
+  }).login({
     email: 'a@b.c',
     password: 'p',
   });
 
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors, observability).register({
+  new AuthStoreActions({
+    repository: makeRepo(over),
+    authRequestErrors,
+    observability,
+    authState: AuthStateVar,
+  }).register({
     fullName: 'A',
     email: 'a@b.c',
     password: 'p',

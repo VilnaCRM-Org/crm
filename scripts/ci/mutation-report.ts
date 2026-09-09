@@ -35,6 +35,50 @@ export interface ScoreResult {
   mutationScore: number;
 }
 
+/** A shard report paired with the index of the shard that produced it. */
+export interface IndexedShardReport {
+  index: number;
+  report: MutationReport;
+}
+
+/** The owned-file projection of a set of shard reports, plus how many stale entries fell away. */
+export interface OwnedShardReports {
+  reports: MutationReport[];
+  discarded: number;
+}
+
+/**
+ * Drop every file a shard does not own.
+ *
+ * A shard restores its incremental cache by key prefix, and Stryker's incremental report keeps
+ * entries for files that shard mutated in an earlier run. Shard membership is packed by file size,
+ * so editing a file can move it to a different shard while its previous owner still carries a copy
+ * of the old result. `mergeReportFiles` keeps the first occurrence, so without this filter a status
+ * decided against different source can outrank the shard that actually re-ran the file.
+ */
+export function ownedShardReports(
+  shards: readonly IndexedShardReport[],
+  ownerOf: (path: string) => number | undefined
+): OwnedShardReports {
+  let discarded = 0;
+
+  const reports = shards.map(({ index, report }) => {
+    const files: Record<string, ReportFile> = {};
+
+    for (const [path, file] of Object.entries(report.files ?? {})) {
+      if (ownerOf(path) === index) {
+        files[path] = file;
+      } else {
+        discarded += 1;
+      }
+    }
+
+    return { files };
+  });
+
+  return { reports, discarded };
+}
+
 /** Union the `files` maps of every shard report, keyed by source path (first occurrence wins). */
 export function mergeReportFiles(reports: readonly MutationReport[]): Map<string, ReportMutant[]> {
   const byFile = new Map<string, ReportMutant[]>();

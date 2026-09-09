@@ -20,6 +20,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           persist-credentials: false
+          # The ADR drift gate diffs against the merge base, which a shallow clone lacks.
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -31,6 +33,30 @@ jobs:
 
       - name: Run all linters
         run: make lint
+
+      # The gate resolves a merge base against origin/main. fetch-depth: 0 normally provides it;
+      # fetching explicitly makes the gate independent of that behaviour rather than failing
+      # closed on a missing ref.
+      - name: Fetch the base branch for the ADR drift diff
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git fetch --no-tags origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+
+      # Written to files rather than exported: `docker compose exec` does not carry host
+      # environment into the dev container, and interpolating a pull-request body into a shell
+      # command would be an injection vector. `reports/` is gitignored.
+      - name: Record pull-request context for the ADR drift gate
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          # JSON, not a joined string: a label may legitimately contain the separator.
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          mkdir -p reports/adr-drift
+          printf '%s' "$PR_BODY" > reports/adr-drift/pr-body.txt
+          printf '%s' "$PR_LABELS" > reports/adr-drift/pr-labels.txt
+
+      - name: Fail undocumented architecture changes
+        run: make check-adr-drift
 
       - name: Verify API contract versions and generated types are in sync
         run: make codegen-check

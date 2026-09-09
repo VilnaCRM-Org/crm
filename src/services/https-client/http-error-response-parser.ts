@@ -30,10 +30,10 @@ export default class HttpErrorResponseParser {
   }
 
   public async parse(response: Response): Promise<ExtractedBody> {
-    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    const contentType = response.headers.get('content-type')?.toLowerCase();
 
     try {
-      if (contentType.includes('json')) {
+      if (contentType?.includes('json')) {
         return await this.extractJsonBody(response.clone());
       }
 
@@ -61,10 +61,13 @@ export default class HttpErrorResponseParser {
     return { message, body };
   }
 
-  private async extractTextBody(clone: Response, contentType: string): Promise<ExtractedBody> {
-    const text = await clone.text().catch(() => '');
+  private async extractTextBody(
+    clone: Response,
+    contentType: string | undefined
+  ): Promise<ExtractedBody> {
+    const text = await clone.text().catch(() => undefined);
     const body = text ? this.truncate(text) : undefined;
-    const message = contentType.includes('text/plain') && body ? body : null;
+    const message = contentType?.includes('text/plain') && body ? body : null;
     return { message, body };
   }
 }

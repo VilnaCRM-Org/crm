@@ -1,6 +1,7 @@
 import '../setup';
 import { HttpError } from '@/services/https-client/http-error';
 import httpErrorThrower from '@/services/https-client/throw-if-http-error';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 describe('throwIfHttpError Coverage Tests', () => {
   it('should handle errors during body extraction (catch block coverage)', async () => {
@@ -40,15 +41,38 @@ describe('throwIfHttpError Coverage Tests', () => {
       }),
     } as unknown as Response;
 
-    try {
-      await httpErrorThrower.throwIfError(mockResponse);
-      fail('Should have thrown HttpError');
-    } catch (error) {
-      expect(error).toBeInstanceOf(HttpError);
-      if (error instanceof HttpError) {
-        expect(error.message).toBe(errorText);
-      }
-    }
+    const error = await httpErrorThrower
+      .throwIfError(mockResponse)
+      .catch((caught: unknown) => caught);
+
+    assertInstanceOf(error, HttpError);
+    expect(error.message).toBe(errorText);
+  });
+
+  it('falls back to the status line when the JSON error body is a bare null', async () => {
+    const mockResponse = {
+      ok: false,
+      status: 500,
+      statusText: 'Server Error',
+      url: 'http://localhost/api/test',
+      headers: {
+        get: (key: string) => {
+          if (key === 'content-type') return 'application/json';
+          return null;
+        },
+      },
+      clone: () => ({
+        json: (): Promise<unknown> => Promise.resolve(null),
+      }),
+    } as unknown as Response;
+
+    const error = await httpErrorThrower
+      .throwIfError(mockResponse)
+      .catch((caught: unknown) => caught);
+
+    assertInstanceOf(error, HttpError);
+    expect(error.message).toBe('500 Server Error');
+    expect(error.cause).toMatchObject({ bodyPreview: 'null', bodyLength: 4 });
   });
 
   it('should handle non-JSON content type', async () => {

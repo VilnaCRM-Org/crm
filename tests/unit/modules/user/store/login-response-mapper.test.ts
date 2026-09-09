@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import { buildEmail, buildToken } from '@tests/builders';
+import { assertError, assertOk } from '@tests/utils/assert-result';
 
 describe('LoginResponseMapper', () => {
   const mapper = new LoginResponseMapper();
@@ -10,21 +11,17 @@ describe('LoginResponseMapper', () => {
     const token = buildToken();
     const result = mapper.map({ token }, 'USER@EXAMPLE.COM');
 
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.token).toBe(token);
-      expect(result.value.email).toBe('user@example.com');
-    }
+    assertOk(result);
+    expect(result.value.token).toBe(token);
+    expect(result.value.email).toBe('user@example.com');
   });
 
   it('returns error when the response is missing the token field', () => {
     const result = mapper.map({ invalidField: 'value' }, buildEmail());
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBeTruthy();
-      expect(result.error.retryable).toBe(false);
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBeTruthy();
+    expect(result.error.retryable).toBe(false);
   });
 
   it('returns error when the response is null', () => {

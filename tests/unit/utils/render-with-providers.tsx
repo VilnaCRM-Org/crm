@@ -1,23 +1,13 @@
 import { ThemeProvider, createTheme, Theme } from '@mui/material/styles';
 import { render, RenderResult } from '@testing-library/react';
-import i18n, { i18n as I18nType } from 'i18next';
+import type { i18n as I18nType } from 'i18next';
 import React from 'react';
-import { I18nextProvider, initReactI18next } from 'react-i18next';
+import { I18nextProvider } from 'react-i18next';
 import { MemoryRouter } from 'react-router';
 
-import enTranslations from '@/i18n/localization.json';
+import testI18n from '@tests/i18n/test-i18n';
 
-export const testI18n = i18n.createInstance();
-
-testI18n.use(initReactI18next).init({
-  lng: 'en',
-  fallbackLng: 'en',
-  resources: {
-    en: { translation: enTranslations.en.translation },
-  },
-  interpolation: { escapeValue: false },
-  initAsync: false, // synchronous init
-});
+export { testI18n };
 
 export const testTheme = createTheme({
   spacing: 8,

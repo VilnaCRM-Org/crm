@@ -1,6 +1,6 @@
 import '../../../../../setup';
 
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 
 import { AuthStateVar, authActions, useAuthState, useAuthToken } from '@auth/stores';
 import { buildCredentials, buildUser } from '@tests/builders';
@@ -10,7 +10,9 @@ import server, { defaultLoginResponse } from '../../../../../mocks/server';
 describe('auth stores composition root integration', () => {
   afterEach(() => {
     server.resetHandlers();
-    AuthStateVar.reset();
+    act(() => {
+      AuthStateVar.reset();
+    });
   });
 
   it('drives login and registration through the real repository and clears state', async () => {

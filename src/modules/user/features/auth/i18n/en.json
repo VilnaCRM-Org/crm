@@ -7,11 +7,15 @@
     "error": {
       "default": "Something went wrong. Please try again later.",
       "details": "Error Details",
-      "tryAgain": "Try again"
+      "tryAgain": "Try again",
+      "unknown": "Unknown error"
     },
     "password": {
       "hide": "Hide password",
       "show": "Show password"
+    },
+    "oauth": {
+      "continue_with": "Continue with {{provider}}"
     },
     "loadingForm": "Loading authentication form"
   },

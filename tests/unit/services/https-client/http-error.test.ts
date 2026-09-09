@@ -1,7 +1,23 @@
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 const httpErrorGuard = new HttpErrorGuard();
+
+const captureThrown = (run: () => void): unknown => {
+  try {
+    run();
+  } catch (error) {
+    return error;
+  }
+  return undefined;
+};
+
+function assertNarrowedByGuard(value: unknown): asserts value is HttpError {
+  if (!httpErrorGuard.is(value)) {
+    throw new Error(`Expected the guard to narrow ${String(value)} to HttpError`);
+  }
+}
 
 describe('HttpError', () => {
   describe('constructor', () => {
@@ -261,16 +277,14 @@ describe('HttpError', () => {
     });
 
     it('should preserve error details when caught', () => {
-      try {
+      const caught = captureThrown(() => {
         throw new HttpError({ status: 500, message: 'Server Error', cause: 'timeout' });
-      } catch (error) {
-        expect(error).toBeInstanceOf(HttpError);
-        if (error instanceof HttpError) {
-          expect(error.status).toBe(500);
-          expect(error.message).toBe('Server Error');
-          expect(error.cause).toBe('timeout');
-        }
-      }
+      });
+
+      assertInstanceOf(caught, HttpError);
+      expect(caught.status).toBe(500);
+      expect(caught.message).toBe('Server Error');
+      expect(caught.cause).toBe('timeout');
     });
 
     it('should work with Promise.reject', async () => {
@@ -515,10 +529,9 @@ describe('isHttpError', () => {
     it('should narrow type correctly in TypeScript', () => {
       const error: unknown = new HttpError({ status: 404, message: 'Not Found' });
 
-      if (httpErrorGuard.is(error)) {
-        expect(error.status).toBe(404);
-        expect(error.name).toBe('HttpError');
-      }
+      assertNarrowedByGuard(error);
+      expect(error.status).toBe(404);
+      expect(error.name).toBe('HttpError');
     });
 
     it('should work with union types', () => {

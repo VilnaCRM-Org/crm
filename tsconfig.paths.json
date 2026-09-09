@@ -6,7 +6,8 @@
       "@": ["src"],
       "@auth": ["src/modules/user/features/auth"],
       "@auth/*": ["src/modules/user/features/auth/*"],
-      "@tests/*": ["tests/*"]
+      "@tests/*": ["tests/*"],
+      "@scripts/*": ["scripts/*"]
     }
   }
 }

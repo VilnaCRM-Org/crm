@@ -36,7 +36,6 @@ describe('auth-var seed token without a window global', () => {
     const fresh = await loadFresh();
 
     expect(fresh.get().token).toBe(SEED_TOKEN);
-    expect(fresh.readSeedToken()).toBe(SEED_TOKEN);
   });
 
   it('reads no token when window is not declared and no env token is set', async () => {
@@ -45,6 +44,5 @@ describe('auth-var seed token without a window global', () => {
     const fresh = await loadFresh();
 
     expect(fresh.get().token).toBeNull();
-    expect(fresh.readSeedToken()).toBeNull();
   });
 });

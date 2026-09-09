@@ -4,7 +4,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
     bash=5.1-6ubuntu1.1 \
-    curl=7.81.0-1ubuntu1.25 \
+    curl=7.81.0-1ubuntu1.27 \
     g++=4:11.2.0-1ubuntu1 \
     make=4.3-4.1build1 \
     python3=3.10.6-1~22.04.1 \

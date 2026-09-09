@@ -11,7 +11,6 @@ const SCHEMA_KEY_TO_ENV_VAR: Record<string, string | null> = {
   nodeEnv: null,
   graphqlUrl: 'REACT_APP_GRAPHQL_URL',
   mockoonUrl: 'REACT_APP_MOCKOON_URL',
-  lhciPreloadedAuthToken: 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN',
   mainLanguage: 'REACT_APP_MAIN_LANGUAGE',
   fallbackLanguage: 'REACT_APP_FALLBACK_LANGUAGE',
   release: 'REACT_APP_RELEASE',

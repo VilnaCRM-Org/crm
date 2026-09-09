@@ -7,9 +7,14 @@ import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
+import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 const createClient = (): FetchHttpsClient =>
-  new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
+  new FetchHttpsClient(
+    new HttpRequestConfigBuilder(correlationIdProvider),
+    new HttpResponseProcessor(new HttpErrorResponseParser())
+  );
 
 // Transport/parse-coverage tests: schema validation is covered elsewhere, so pass a
 // passthrough schema and keep these focused on status/content-type/error handling.
@@ -87,10 +92,12 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
         'Response is not JSON'
       );
       await expect(client.get('/test', { schema: passthrough })).rejects.toBeInstanceOf(HttpError);
-      await client.get('/test', { schema: passthrough }).catch((e) => {
-        expect(e).toBeInstanceOf(HttpError);
-        expect((e as HttpError).status).toBe(200);
-      });
+      const failure = await client
+        .get('/test', { schema: passthrough })
+        .catch((caught: unknown) => caught);
+
+      assertInstanceOf(failure, HttpError);
+      expect(failure.status).toBe(200);
     });
 
     it('should handle empty text response for non-JSON content type', async () => {
@@ -187,27 +194,31 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       expect(result).toBeUndefined();
     });
 
-    it('supports explicit client deps and the response processor parser fallback', async () => {
-      const processorOnlyClient = new FetchHttpsClient(new HttpRequestConfigBuilder(), {
-        process: jest.fn().mockResolvedValue({ ok: true }),
-      } as never);
+    it('routes work through the explicitly injected processor and parser', async () => {
+      const injectedProcessor = { process: jest.fn().mockResolvedValue({ ok: true }) };
+      const processorOnlyClient = new FetchHttpsClient(
+        new HttpRequestConfigBuilder(correlationIdProvider),
+        injectedProcessor as never
+      );
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
       await expect(processorOnlyClient.get('/test', { schema: passthrough })).resolves.toEqual({
         ok: true,
       });
+      expect(injectedProcessor.process).toHaveBeenCalledTimes(1);
 
-      const processor = new HttpResponseProcessor(undefined);
+      const injectedParser = new HttpErrorResponseParser();
+      const assertOk = jest.spyOn(injectedParser, 'assertOk');
+      const noContentResponse = {
+        ok: true,
+        status: 204,
+        headers: new Headers(),
+      } as Response;
+
       await expect(
-        processor.process(
-          {
-            ok: true,
-            status: 204,
-            headers: new Headers(),
-          } as Response,
-          passthrough
-        )
+        new HttpResponseProcessor(injectedParser).process(noContentResponse, passthrough)
       ).resolves.toBeUndefined();
+      expect(assertOk).toHaveBeenCalledWith(noContentResponse);
     });
 
     it('returns a readable parsed error payload when cloning the response fails', async () => {
@@ -422,8 +433,10 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       });
     });
 
-    it('uses the default HttpErrorResponseParser when none is injected', async () => {
-      const processor = new HttpResponseProcessor();
+    it('screens successful responses through the injected HttpErrorResponseParser', async () => {
+      const parser = new HttpErrorResponseParser();
+      const assertOk = jest.spyOn(parser, 'assertOk');
+      const processor = new HttpResponseProcessor(parser);
       const okResponse = {
         ok: true,
         status: 200,
@@ -435,9 +448,12 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       await expect(processor.process(okResponse, passthrough)).resolves.toEqual({
         value: 42,
       });
+      expect(assertOk).toHaveBeenCalledWith(okResponse);
     });
 
-    it('throwIfHttpError uses a default response parser when none is supplied', async () => {
+    it('throws through the injected response parser for error responses', async () => {
+      const parser = new HttpErrorResponseParser();
+      const assertOk = jest.spyOn(parser, 'assertOk');
       const errorResponse = {
         ok: false,
         status: 500,
@@ -448,11 +464,12 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       } as unknown as Response;
 
       await expect(
-        new HttpResponseProcessor().process(errorResponse, passthrough)
+        new HttpResponseProcessor(parser).process(errorResponse, passthrough)
       ).rejects.toMatchObject({
         status: 500,
         message: 'kaboom',
       });
+      expect(assertOk).toHaveBeenCalledWith(errorResponse);
     });
 
     it('allows injecting a custom HttpErrorResponseParser', async () => {

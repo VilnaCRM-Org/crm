@@ -32,7 +32,7 @@ describe('App router wiring', () => {
     render(<App />);
 
     expect(mockRouterProviderProps).toHaveLength(1);
-    expect(mockRouterProviderProps[0].router).toBe(mockRouter);
+    expect(mockRouterProviderProps[0]?.router).toBe(mockRouter);
   });
 
   it('passes no legacy future opt-in alongside the router', () => {

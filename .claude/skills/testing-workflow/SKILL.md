@@ -19,6 +19,11 @@ description: Use when selecting, running, or triaging frontend test suites.
 | Memory leaks            | `make test-memory-leak`   |
 | Mutation                | `make test-mutation`      |
 
+`make test-e2e` and `make test-visual` also run the mobile-device lane (`mobile-chrome` /
+`mobile-safari` projects over `tests/e2e/mobile` and `tests/visual/mobile`); there is no
+separate command for it. This holds for the default `ENV=prod` only — with `ENV=dev` the
+touch E2E lane runs on `mobile-chrome-dev` alone and the mobile visual lane does not run.
+
 ## Triage
 
 1. Re-run the smallest failing suite.
@@ -26,6 +31,12 @@ description: Use when selecting, running, or triaging frontend test suites.
 3. Confirm whether the failure is app logic, test data, mock state, or snapshot drift.
 4. Fix the cause, not the symptom.
 5. Re-run the focused suite, then run `make format` and `make lint`.
+
+A test that fails only because it emitted `console.error` / `console.warn` is the console gate
+(issue #192), installed in every Jest setup file — the apollo-server node suite gates `error`
+only. Fix the emitting path, or spy on the call **and assert it** in that one test; never widen
+`tests/console-gate/allowlist.ts`. See
+[tests/console-gate/README.md](../../../tests/console-gate/README.md).
 
 ## Frontend Rules
 

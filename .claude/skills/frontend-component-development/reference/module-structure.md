@@ -14,15 +14,20 @@ src/modules/<module>/features/<feature>/
   i18n/
   repositories/
   routes/
+  stores/
   types/
   utils/
-  index.ts
+  index.tsx
 ```
 
 Only the folders listed above are allowed at feature root
-(`feature-allowed-folders`). Data access lives in `repositories/`; do not add
-`api/`, `helpers/`, or `store/` at the feature level. The module store stays
-at `src/modules/<module>/store/`.
+(`feature-allowed-folders`, generated from `config/module-shape.json`). Data
+access lives in `repositories/`; do not add `api/` or `helpers/`.
+Feature-scoped state is `stores/` (plural); the module-wide store stays at
+`src/modules/<module>/store/` (singular).
+
+Scaffold this shape with `make new-module name=<kebab> feature=<kebab>` rather
+than creating it by hand — see `docs/scaffolding.md`.
 
 Create only the folders the feature actually needs.
 

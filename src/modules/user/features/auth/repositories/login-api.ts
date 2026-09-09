@@ -8,7 +8,7 @@ import type { LoginResponse } from '@auth/types/api-responses';
 import type { LoginUserDto } from '@auth/types/credentials';
 import { LoginResponseSchema } from '@auth/utils/response-schemas';
 
-import ApiErrorFactory from './api-error-factory';
+import type ApiErrorFactory from './api-error-factory';
 import BaseAPI from './base-api';
 import type { RequestOptions } from './types';
 

@@ -1,0 +1,22 @@
+import { {{pascalCase feature}}RepositoryImpl } from '@/modules/{{module}}/features/{{feature}}/repositories';
+
+describe('{{pascalCase feature}}RepositoryImpl', () => {
+  it('resolves the list the scaffolded stub returns', async () => {
+    const repository = new {{pascalCase feature}}RepositoryImpl();
+
+    await expect(repository.list()).resolves.toEqual([]);
+  });
+
+  it('never rejects, so callers do not need a catch to render', async () => {
+    const repository = new {{pascalCase feature}}RepositoryImpl();
+
+    await expect(repository.list()).resolves.toBeDefined();
+  });
+
+  it('stays consistent when two callers read concurrently', async () => {
+    const repository = new {{pascalCase feature}}RepositoryImpl();
+    const [first, second] = await Promise.all([repository.list(), repository.list()]);
+
+    expect(first).toEqual(second);
+  });
+});

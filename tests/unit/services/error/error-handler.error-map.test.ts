@@ -1,5 +1,14 @@
 import { ERROR_CODES } from '@/services/error/error-codes';
 import type { ErrorCode } from '@/services/types/error/error-codes';
+import type { ObservabilityService } from '@/services/types/observability/observability';
+
+const createObservability = (): jest.Mocked<ObservabilityService> => ({
+  init: jest.fn(),
+  captureError: jest.fn(),
+  setUser: jest.fn(),
+  clearUser: jest.fn(),
+  reportVital: jest.fn(),
+});
 
 /**
  * The user-facing copy and retryability of each error code are a product contract, so these are
@@ -26,7 +35,7 @@ const ERROR_MAP: ReadonlyArray<readonly [ErrorCode, string, boolean]> = [
 
 const loadHandler = async (): Promise<{ handleAuthError: (code: string) => unknown }> => {
   const { ErrorHandler } = await import('@/services/error/error-handler');
-  const handler = new ErrorHandler();
+  const handler = new ErrorHandler(createObservability());
   return { handleAuthError: (code: string) => handler.handleAuthError({ code, message: code }) };
 };
 

@@ -34,7 +34,19 @@ async function disableAnimations(page: Page): Promise<void> {
 }
 
 function formHeight(button: import('@playwright/test').Locator): Promise<number> {
-  return button.evaluate((el) => (el as HTMLButtonElement).form!.getBoundingClientRect().height);
+  return button.evaluate((el) => {
+    const { form } = el as HTMLButtonElement;
+    if (!form) throw new Error('submit button is not associated with a form');
+    return form.getBoundingClientRect().height;
+  });
+}
+
+function requireBox(
+  box: { width: number; height: number } | null,
+  label: string
+): { width: number; height: number } {
+  if (!box) throw new Error(`${label} has no bounding box`);
+  return box;
 }
 
 test.describe.parallel('Submit loader visual baseline (forced reduced motion)', () => {
@@ -72,8 +84,11 @@ test.describe.parallel('Submit loader visual baseline (forced reduced motion)', 
       const loadingFormHeight = await formHeight(signupButton);
       expect(loadingButtonBox).not.toBeNull();
 
-      expect(loadingButtonBox!.width).toBeCloseTo(idleButtonBox!.width, 1);
-      expect(loadingButtonBox!.height).toBeCloseTo(idleButtonBox!.height, 1);
+      const idleBox = requireBox(idleButtonBox, 'idle submit button');
+      const loadingBox = requireBox(loadingButtonBox, 'loading submit button');
+
+      expect(loadingBox.width).toBeCloseTo(idleBox.width, 1);
+      expect(loadingBox.height).toBeCloseTo(idleBox.height, 1);
       expect(loadingFormHeight).toBeCloseTo(idleFormHeight, 1);
 
       await expect(signupButton).toHaveScreenshot(

@@ -18,7 +18,7 @@ const themeWithoutPrimary: Theme = {
 const focusRing = (theme: Theme): unknown =>
   (backToMainStyles.build(theme).backButton as Record<string, Record<string, unknown>>)[
     '&:focus-visible'
-  ].outline;
+  ]?.outline;
 
 describe('ui-back-to-main focus ring', () => {
   it('uses the themed primary colour when the palette provides one', () => {

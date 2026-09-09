@@ -1,0 +1,72 @@
+{
+  "adr": {
+    "directory": "docs/adr",
+    "indexFile": "docs/adr/README.md",
+    "templateFile": "docs/adr/template.md",
+    "filePattern": "^[0-9]{3}-[a-z0-9]+(-[a-z0-9]+)*\\.md$",
+    "titlePattern": "^# ADR-([0-9]{3}): \\S.*$",
+    "requiredMetadata": ["Status", "Deciders", "Date"],
+    "datePattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$",
+    "allowedStatuses": ["Proposed", "Approved", "Rejected", "Deprecated", "Superseded"],
+    "requiredSections": [
+      "Context and Problem Statement",
+      "Decision Drivers",
+      "Considered Options",
+      "Decision Outcome",
+      "Positive Consequences",
+      "Negative Consequences",
+      "Links"
+    ]
+  },
+  "moduleDocs": {
+    "roots": ["src/modules"],
+    "requiredFile": "README.md"
+  },
+  "docs": {
+    "roots": [".", "docs", "src", "tests", ".github", ".claude"],
+    "ignoredPaths": [
+      ".git",
+      ".junie",
+      ".qlty",
+      ".ralph",
+      ".playwright-mcp",
+      ".stryker-tmp",
+      "_bmad",
+      "_bmad-output",
+      "build",
+      "coverage",
+      "dist",
+      "lhci-reports-desktop",
+      "lhci-reports-mobile",
+      "node_modules",
+      "out",
+      "planning-artifacts",
+      "playwright-report",
+      "reports",
+      "specs",
+      "storybook-static",
+      "test-results",
+      "tmp-lhci"
+    ],
+    "ignoredFiles": ["CHANGELOG.md"]
+  },
+  "commandReferences": {
+    "makefile": "Makefile",
+    "packageJson": "package.json"
+  },
+  "architectureDrift": {
+    "significantPaths": [
+      ".dependency-cruiser.js",
+      "rsbuild.config.ts",
+      "config/browser-support.json",
+      "src/config/**",
+      "src/routes/registry.ts",
+      "src/routes/route-composer.tsx"
+    ],
+    "significantManifest": "package.json",
+    "manifestKeys": ["dependencies"],
+    "adrPathPrefix": "docs/adr/",
+    "escapeHatchMarker": "[no-adr]",
+    "escapeHatchLabel": "adr:not-required"
+  }
+}

@@ -1,10 +1,44 @@
 import urlBuilder from '@/utils/url-builder';
+import { clearConfigBlock, writeConfigBlock } from '@tests/utils/config-block';
 
 describe('urlBuilder', () => {
   const originalEnv = process.env.REACT_APP_MOCKOON_URL;
 
   afterEach(() => {
     process.env.REACT_APP_MOCKOON_URL = originalEnv;
+    clearConfigBlock();
+  });
+
+  describe('runtime configuration (issue #145)', () => {
+    it('prefers the runtime apiBaseUrl over the build-time one', () => {
+      process.env.REACT_APP_MOCKOON_URL = 'https://build-time.example.com';
+      writeConfigBlock(JSON.stringify({ apiBaseUrl: 'https://runtime.example.com' }));
+
+      expect(urlBuilder.build('users')).toBe('https://runtime.example.com/users');
+    });
+
+    it('falls back to the build-time origin when the runtime value is blank', () => {
+      process.env.REACT_APP_MOCKOON_URL = 'https://build-time.example.com';
+      writeConfigBlock(JSON.stringify({ apiBaseUrl: '   ' }));
+
+      expect(urlBuilder.build('users')).toBe('https://build-time.example.com/users');
+    });
+
+    it.each(['not-a-url', '/api', 'mailto:someone@example.com', 'javascript:alert(1)'])(
+      'falls back to the build-time origin rather than passing %s to fetch',
+      (apiBaseUrl) => {
+        process.env.REACT_APP_MOCKOON_URL = 'https://build-time.example.com';
+        writeConfigBlock(JSON.stringify({ apiBaseUrl }));
+
+        expect(urlBuilder.build('users')).toBe('https://build-time.example.com/users');
+      }
+    );
+
+    it('falls back to the build-time origin when no runtime block is rendered', () => {
+      process.env.REACT_APP_MOCKOON_URL = 'https://build-time.example.com';
+
+      expect(urlBuilder.build('users')).toBe('https://build-time.example.com/users');
+    });
   });
 
   describe('with base URL configured', () => {

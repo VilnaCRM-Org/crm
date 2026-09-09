@@ -31,11 +31,11 @@ describe('useLoginSubmitter request tracking', () => {
     });
 
     expect(signals).toHaveLength(1);
-    expect(signals[0].aborted).toBe(false);
+    expect(signals[0]?.aborted).toBe(false);
 
     unmount();
 
-    expect(signals[0].aborted).toBe(false);
+    expect(signals[0]?.aborted).toBe(false);
   });
 
   it('aborts a request that is still in flight when the form unmounts', () => {
@@ -54,25 +54,27 @@ describe('useLoginSubmitter request tracking', () => {
     });
 
     expect(signals).toHaveLength(1);
-    expect(signals[0].aborted).toBe(false);
+    expect(signals[0]?.aborted).toBe(false);
 
     unmount();
 
-    expect(signals[0].aborted).toBe(true);
+    expect(signals[0]?.aborted).toBe(true);
   });
 
-  it('rebinds the submit handler when the login action itself changes', async () => {
+  it('keeps a stable handler that still calls through to the live login action', async () => {
     const { result, rerender } = renderHook(() => useLoginSubmitter(t));
-    const handlerBeforeRebind = result.current.handleLogin;
+    const handlerBeforeRerender = result.current.handleLogin;
 
     rerender();
 
-    expect(result.current.handleLogin).toBe(handlerBeforeRebind);
+    expect(result.current.handleLogin).toBe(handlerBeforeRerender);
 
     const loginUser = jest.spyOn(authActions, 'loginUser').mockResolvedValue(undefined);
     rerender();
 
-    expect(result.current.handleLogin).not.toBe(handlerBeforeRebind);
+    // The handler is memoized on the authActions singleton, not on a detached method reference,
+    // so it stays the same function across renders even after loginUser is replaced.
+    expect(result.current.handleLogin).toBe(handlerBeforeRerender);
 
     const credentials = buildCredentials();
     await act(async () => {

@@ -6,6 +6,8 @@ import { render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 
+import router from '@/routes/routes';
+
 let mockCurrentPath = '/sign-up';
 
 jest.mock('react-i18next', () => ({
@@ -21,9 +23,9 @@ jest.mock('react-router', () => {
     __esModule: true,
     ...actual,
     createBrowserRouter: (routes: unknown): unknown => routes,
-    RouterProvider: ({ router }: { router: unknown }): ReactElement => {
+    RouterProvider: ({ router, future }: { router: unknown; future?: unknown }): ReactElement => {
       const mem = actual.createMemoryRouter(router, { initialEntries: [mockCurrentPath] });
-      return <actual.RouterProvider router={mem} />;
+      return <actual.RouterProvider router={mem} future={future} />;
     },
   };
 });
@@ -74,8 +76,6 @@ jest.mock('@auth/routes/sign-in', () => ({
   __esModule: true,
   default: (): ReactElement => <div>sign in page</div>,
 }));
-
-import router from '@/routes/routes';
 
 describe('routes', () => {
   const RouterProvider =

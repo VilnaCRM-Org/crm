@@ -17,4 +17,9 @@ storybook-static
 dist
 node_modules
 
+# Machine-local dotenv overrides are gitignored, so CI can never see them. Keeping them out of
+# the build context stops one from reaching rsbuild's loadEnv, which merges every key it finds
+# into process.env and could re-enable the preloaded-auth seed in a shipped image (issue #158).
+.env*.local
+
 /base

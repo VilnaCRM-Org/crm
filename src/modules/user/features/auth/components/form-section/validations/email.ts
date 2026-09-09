@@ -2,8 +2,8 @@ import type { Validate, FieldValues } from 'react-hook-form';
 
 import type { Rule } from '@auth/types/validations/email';
 
-const EMAIL_LOCAL_PART = /[a-zA-Z0-9]([a-zA-Z0-9._%+-]*[a-zA-Z0-9])?/;
-const EMAIL_DOMAIN_PART = /[a-zA-Z0-9]([a-zA-Z0-9.-]*[a-zA-Z0-9])?\.[a-zA-Z]{2,}/;
+const EMAIL_LOCAL_PART = /(?:[a-zA-Z0-9][a-zA-Z0-9._%+-]*[a-zA-Z0-9]|[a-zA-Z0-9])/;
+const EMAIL_DOMAIN_PART = /(?:[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]|[a-zA-Z0-9])\.[a-zA-Z]{2,}/;
 const VALID_EMAIL_RE = new RegExp(`^${EMAIL_LOCAL_PART.source}@${EMAIL_DOMAIN_PART.source}$`);
 
 class EmailValidator {

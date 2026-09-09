@@ -1,0 +1,15 @@
+import {{constantCase module}}_TOKENS from '@/modules/{{module}}/config/tokens';
+
+import type { {{pascalCase feature}}Repository } from '../types/{{feature}}-repository';
+
+class {{pascalCase feature}}RepositoryLoader {
+  public async load(): Promise<{{pascalCase feature}}Repository> {
+    const { default: container } = await import('@/config/dependency-injection-config');
+
+    return container.resolve<{{pascalCase feature}}Repository>(
+      {{constantCase module}}_TOKENS.{{pascalCase feature}}Repository
+    );
+  }
+}
+
+export default new {{pascalCase feature}}RepositoryLoader();
