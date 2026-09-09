@@ -20,12 +20,20 @@ jobs:
       contents: write
 
     steps:
+      # Issue #174: tibdex/github-app-token is archived. actions/create-github-app-token is
+      # GitHub's maintained equivalent and a drop-in for this usage.
       - name: Generate token
         id: generate_token
-        uses: tibdex/github-app-token@3beb63f4bd073e61482598c45c71c1019b59b73a # v2
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          app_id: ${{ secrets.VILNACRM_APP_ID }}
-          private_key: ${{ secrets.VILNACRM_APP_PRIVATE_KEY }}
+          # `app-id`, not the newer `client-id`: the org secret holds the App ID. Switching
+          # inputs would need a new secret carrying the App's Client ID.
+          app-id: ${{ secrets.VILNACRM_APP_ID }}
+          private-key: ${{ secrets.VILNACRM_APP_PRIVATE_KEY }}
+          # Without this the minted token inherits every permission the App installation
+          # holds. The release flow only commits the changelog/version bump, pushes the tag,
+          # and creates the release — all `contents`.
+          permission-contents: write
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
@@ -40,12 +48,18 @@ jobs:
           github-token: ${{ steps.generate_token.outputs.token }}
           output-file: 'CHANGELOG.md'
           version-file: 'package.json'
+      # Issue #174: actions/create-release is archived and unmaintained. `gh release create` is
+      # equivalent for this usage and removes a third-party action instead of swapping one in.
+      # The tag already exists at this point — the changelog action creates and pushes it.
+      # Every dynamic value goes through env, never `${{ }}` interpolation inside the script, and
+      # the body arrives on stdin so generated changelog text can never be read as a gh flag.
       - name: Create Release
-        uses: actions/create-release@0cb9c9b65d5d1901c1f53e5e66eaf4afd303e70e # v1
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         env:
-          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
-        with:
-          tag_name: ${{ steps.changelog.outputs.tag }}
-          release_name: ${{ steps.changelog.outputs.tag }}
-          body: ${{ steps.changelog.outputs.clean_changelog }}
+          GH_TOKEN: ${{ steps.generate_token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ steps.changelog.outputs.tag }}
+          RELEASE_BODY: ${{ steps.changelog.outputs.clean_changelog }}
+        run: |
+          printf '%s\n' "$RELEASE_BODY" |
+            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file -

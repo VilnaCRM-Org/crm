@@ -1,6 +1,6 @@
 import { ApiError } from '@/modules/user/lib/api-errors';
 
-import ApiErrorFactory from './api-error-factory';
+import type ApiErrorFactory from './api-error-factory';
 
 export default class BaseAPI {
   private readonly apiErrorFactory: ApiErrorFactory;

@@ -3,7 +3,10 @@ import 'reflect-metadata';
 import { container } from 'tsyringe';
 
 describe('DI container — ErrorReporter token', () => {
-  afterEach(() => {
+  // `clearInstances()` also drops `useValue` registrations, and the reporter now injects the
+  // container-free observability core rather than value-importing it (issue #130), so clearing
+  // between the two cases would unregister the very token the second one resolves through.
+  afterAll(() => {
     container.clearInstances();
   });
 

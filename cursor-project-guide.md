@@ -307,7 +307,14 @@ make test-e2e-ui
 # Single E2E test
 docker compose -f docker-compose.test.yml exec playwright \
   pnpm exec playwright test tests/e2e/login.spec.ts
+
+# Touch-interaction lane only (both device projects: Pixel 7 and iPhone 14)
+docker compose -f docker-compose.test.yml exec playwright \
+  pnpm exec playwright test tests/e2e/mobile
 ```
+
+Specs under `tests/e2e/mobile/` run only on the `mobile-chrome` / `mobile-safari` projects, which
+carry `isMobile`, `hasTouch`, the mobile UA and real DPR; drive them with `tap()`, not `click()`.
 
 ### Visual Regression Tests
 
@@ -321,6 +328,9 @@ make test-visual-update
 # Visual tests with UI
 make test-visual-ui
 ```
+
+Mobile baselines for `/sign-in` and `/sign-up` live under `tests/visual/mobile/` and are captured
+with `scale: 'device'`, so they carry the emulated 2.625×/3× device pixel ratio.
 
 ### Performance Tests
 
@@ -343,32 +353,27 @@ make test-mutation
 
 ### Adding a New Feature Module
 
+Run the generator — never `mkdir` the structure by hand. The emitted skeleton passes every
+static gate with zero edits, ships both locales, and mirrors unit and E2E tests.
+
 ```bash
-# 1. Create module structure
-mkdir -p src/modules/MyModule/features/MyFeature/{components,api,i18n,helpers}
+# New module plus its first feature
+make new-module name=orders feature=order-list
 
-# 2. Add translations
-touch src/modules/MyModule/features/MyFeature/i18n/en.json
-touch src/modules/MyModule/features/MyFeature/i18n/uk.json
+# Another feature inside an existing module
+make new-feature module=orders feature=order-detail
 
-# 3. Create API client (if needed)
-touch src/modules/MyModule/features/MyFeature/api/MyFeatureAPI.ts
+# Then add the two lines the generator printed:
+#   src/config/dependency-injection-config.ts  -> the module registrar
+#   src/routes/registry.ts                     -> the route contract
 
-# 4. Register in DI container
-# Edit src/config/dependency-injection-config.ts
-# Add token to src/config/tokens.ts
-
-# 5. Create Redux slice
-touch src/modules/MyModule/store/myModuleSlice.ts
-
-# 6. Add tests
-mkdir -p tests/unit/modules/MyModule
-touch tests/unit/modules/MyModule/MyFeature.test.tsx
-
-# 7. Verify everything works
+make format
 make lint
 make test-unit-all
 ```
+
+The allowed folder names, the full emitted file list, and the `make verify-scaffold`
+self-check are documented in [`docs/scaffolding.md`](docs/scaffolding.md).
 
 ### Fixing Linting Issues
 

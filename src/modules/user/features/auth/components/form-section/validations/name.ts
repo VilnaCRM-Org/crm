@@ -31,7 +31,7 @@ class FullNameValidator {
   }
 
   public isFormatted(value: string): boolean {
-    return FULL_NAME_RE.test(value) && value.length >= 2 && value.length <= MAX_FULL_NAME_LENGTH;
+    return FULL_NAME_RE.test(value) && value.length <= MAX_FULL_NAME_LENGTH;
   }
 
   public isEmpty(value: string): boolean {

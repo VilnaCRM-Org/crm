@@ -18,7 +18,10 @@ import {
   RegistrationAPI,
 } from '@auth/repositories';
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
+import authStateVar, { type AuthStateVar } from '@auth/stores/auth-var';
+import type { AuthRepository } from '@auth/types/auth-repository';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
+import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 import AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
 import AuthSecuritySignals from '@auth/utils/auth-security-signals';
@@ -33,6 +36,22 @@ class UserModuleRegistrar implements ModuleRegistrar {
     this.registerResponseMappers(container);
     this.registerApis(container);
     this.registerRepository(container);
+    this.registerAuthState(container);
+  }
+
+  // The reactive auth state stays a container-free module singleton so the auth page paints
+  // without tsyringe (issue #115). Registering that instance as a value is what lets the
+  // container-resolved store actions inject it instead of value-importing it (issue #130).
+  private registerAuthState(container: DependencyContainer): void {
+    container.register(AUTH_TOKENS.AuthStateVar, { useValue: authStateVar });
+    container.register<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps, {
+      useFactory: (c) => ({
+        repository: c.resolve<AuthRepository>(AUTH_TOKENS.AuthRepository),
+        authRequestErrors: c.resolve<AuthRequestErrors>(AUTH_TOKENS.AuthRequestErrors),
+        authState: c.resolve<AuthStateVar>(AUTH_TOKENS.AuthStateVar),
+        securitySignals: c.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals),
+      }),
+    });
   }
 
   private registerGraphqlClient(container: DependencyContainer): void {

@@ -1,4 +1,12 @@
 import apiErrorGuard from '@/modules/user/lib/is-api-error';
+import type { APIError } from '@/modules/user/types/lib/is-api-error';
+
+const narrowToApiError = (value: unknown): APIError => {
+  if (!apiErrorGuard.is(value)) {
+    throw new Error(`Expected an API error, received: ${String(value)}`);
+  }
+  return value;
+};
 
 describe('isAPIError', () => {
   describe('valid API errors', () => {
@@ -336,11 +344,12 @@ describe('isAPIError', () => {
         message: 'Error message',
       };
 
-      if (apiErrorGuard.is(error)) {
-        // TypeScript should recognize error as having code and message
-        expect(error.code).toBe('ERROR_CODE');
-        expect(error.message).toBe('Error message');
-      }
+      expect(apiErrorGuard.is(error)).toBe(true);
+
+      const narrowed = narrowToApiError(error);
+
+      expect(narrowed.code).toBe('ERROR_CODE');
+      expect(narrowed.message).toBe('Error message');
     });
 
     it('should work with union types', () => {

@@ -17,6 +17,8 @@ type ApolloClientLike = import('@apollo/client').ApolloClient<
   import('@apollo/client').NormalizedCacheObject
 >;
 
+type EmptyResponseCase = [label: string, body: Record<string, unknown>, missingFields: string[]];
+
 const credentials = buildUser();
 const { email, fullName, password } = credentials;
 
@@ -81,15 +83,32 @@ describe('RegistrationAPI Integration', () => {
   });
 
   describe('empty responses', () => {
-    it.each([
-      ['data is null', { data: null }],
-      ['createUser is null', { data: { createUser: null } }],
-      ['user is null', { data: { createUser: { user: null } } }],
-    ])('resolves to undefined when %s', async (_label, body) => {
-      server.use(rest.post(GRAPHQL_URL, (_req, res, ctx) => res(ctx.status(200), ctx.json(body))));
+    const emptyResponseCases: EmptyResponseCase[] = [
+      ['data is null', { data: null }, ['createUser']],
+      ['createUser is null', { data: { createUser: null } }, []],
+      ['user is null', { data: { createUser: { user: null } } }, ['clientMutationId']],
+    ];
 
-      await expect(registrationAPI.register(credentials)).resolves.toBeUndefined();
-    });
+    it.each(emptyResponseCases)(
+      'resolves to undefined when %s',
+      async (_label, body, missingCacheFields) => {
+        const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        server.use(
+          rest.post(GRAPHQL_URL, (_req, res, ctx) => res(ctx.status(200), ctx.json(body)))
+        );
+
+        await expect(registrationAPI.register(credentials)).resolves.toBeUndefined();
+
+        expect(consoleError).toHaveBeenCalledTimes(missingCacheFields.length);
+        missingCacheFields.forEach((field, index) => {
+          const [message] = consoleError.mock.calls[index] as [string];
+
+          expect(message).toContain('https://go.apollo.dev/c/err#');
+          expect(decodeURIComponent(message)).toContain(`"${field}"`);
+        });
+      }
+    );
   });
 
   describe('error handling', () => {
@@ -136,9 +155,14 @@ describe('RegistrationAPI Integration', () => {
     });
 
     it('throws an ApiError on a network failure', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
       server.use(rest.post(GRAPHQL_URL, (_req, res) => res.networkError('Failed to fetch')));
 
       await expect(registrationAPI.register(credentials)).rejects.toBeInstanceOf(ApiError);
+
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining(`POST ${GRAPHQL_URL}`));
     });
   });
 

@@ -3,6 +3,7 @@
 import ApiError from '@/modules/user/lib/api-errors/api-error';
 import { ApiErrorCodes } from '@/modules/user/lib/api-errors/api-error-codes';
 import ValidationError from '@/modules/user/lib/api-errors/validation-error';
+import { assertInstanceOf } from '@tests/utils/assert-result';
 
 describe('ValidationError', () => {
   describe('constructor', () => {
@@ -210,16 +211,18 @@ describe('ValidationError', () => {
     });
 
     it('should preserve error details when caught', () => {
+      let thrown: unknown;
+
       try {
         throw new ValidationError({ message: 'Field is required', status: 422 });
       } catch (error) {
-        expect(error).toBeInstanceOf(ValidationError);
-        if (error instanceof ValidationError) {
-          expect(error.message).toBe('Field is required');
-          expect(error.status).toBe(422);
-          expect(error.code).toBe(ApiErrorCodes.VALIDATION);
-        }
+        thrown = error;
       }
+
+      assertInstanceOf(thrown, ValidationError);
+      expect(thrown.message).toBe('Field is required');
+      expect(thrown.status).toBe(422);
+      expect(thrown.code).toBe(ApiErrorCodes.VALIDATION);
     });
 
     it('should work with Promise.reject', async () => {

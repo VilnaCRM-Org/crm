@@ -121,8 +121,11 @@ describe('usePageTitle', () => {
   it('unmounts cleanly when the i18n instance exposes no unsubscribe method', () => {
     mockI18n = buildI18n({ off: undefined });
     const view = render(<TitleProbe titleKey={SIGN_UP_KEY} />);
+    expect(document.title).toBe('Registration - VilnaCRM');
 
     expect(() => view.unmount()).not.toThrow();
-    expect(document.title).toBe('Registration - VilnaCRM');
+    // The cleanup restores the base title, so a page the user has left cannot keep naming the
+    // document after itself.
+    expect(document.title).toBe('VilnaCRM');
   });
 });

@@ -44,10 +44,10 @@ describe('client security instrumentation (#159)', () => {
 
   it('attaches the session correlation header to both transports', () => {
     expect(readFile('src/services/https-client/http-request-config-builder.ts')).toContain(
-      'nextHeaders[sessionCorrelation.header] = sessionCorrelation.id();'
+      'nextHeaders[this.sessionCorrelation.header] = this.sessionCorrelation.id();'
     );
     expect(readFile('src/services/observability/apollo-link-factory.ts')).toContain(
-      '[sessionCorrelation.header]: sessionCorrelation.id(),'
+      '[this.sessionCorrelation.header]: this.sessionCorrelation.id(),'
     );
   });
 });

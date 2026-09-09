@@ -1,0 +1,52 @@
+import { renderHook, waitFor } from '@testing-library/react';
+
+import { use{{pascalCase feature}} } from '@/modules/{{module}}/features/{{feature}}/hooks';
+import {{camelCase feature}}Loader from '@/modules/{{module}}/features/{{feature}}/stores';
+import type {
+  {{pascalCase feature}}Item,
+  {{pascalCase feature}}Repository,
+} from '@/modules/{{module}}/features/{{feature}}/types/{{feature}}-repository';
+
+jest.mock('@/modules/{{module}}/features/{{feature}}/stores', () => ({
+  __esModule: true,
+  default: { load: jest.fn() },
+}));
+
+const loader = {{camelCase feature}}Loader as jest.Mocked<typeof {{camelCase feature}}Loader>;
+
+const repositoryOf = (items: readonly {{pascalCase feature}}Item[]): {{pascalCase feature}}Repository => ({
+  list: () => Promise.resolve(items),
+});
+
+describe('use{{pascalCase feature}}', () => {
+  it('exposes the items the repository resolves', async () => {
+    const items = [{ id: 'seeded-id', title: 'seeded title' }];
+    loader.load.mockResolvedValue(repositoryOf(items));
+
+    const { result } = renderHook(() => use{{pascalCase feature}}());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.items).toEqual(items);
+    expect(result.current.hasError).toBe(false);
+  });
+
+  it('flags an error and keeps the list empty when loading rejects', async () => {
+    loader.load.mockRejectedValue(new Error('repository unavailable'));
+
+    const { result } = renderHook(() => use{{pascalCase feature}}());
+
+    await waitFor(() => expect(result.current.hasError).toBe(true));
+    expect(result.current.items).toEqual([]);
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('settles into a loaded empty state when there is nothing to show', async () => {
+    loader.load.mockResolvedValue(repositoryOf([]));
+
+    const { result } = renderHook(() => use{{pascalCase feature}}());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.items).toEqual([]);
+    expect(result.current.hasError).toBe(false);
+  });
+});

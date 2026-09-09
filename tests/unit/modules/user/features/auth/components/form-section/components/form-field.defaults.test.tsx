@@ -40,11 +40,10 @@ describe('FormField parameter defaults', () => {
   it('renders a labelled field when a caller supplies no validation rules', () => {
     renderField(BASE as unknown as FormFieldProps);
 
-    // Queried by placeholder and role: the label carries htmlFor={name} while MUI generates its
-    // own input id, so the two are not associated and getByLabelText cannot find the field.
-    expect(screen.getByPlaceholderText('you@example.com')).toBeInTheDocument();
-    expect(screen.getByRole('textbox')).toHaveValue('');
-    expect(screen.getByText('Email')).toBeInTheDocument();
+    // The label's htmlFor={name} and the input's id={name} now match, so the field is reachable
+    // by its accessible name.
+    expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email')).toHaveValue('');
   });
 
   it('renders the same field when rules, defaultValue and inputProps are supplied', () => {

@@ -32,12 +32,12 @@ describe('App router wiring', () => {
     render(<App />);
 
     expect(mockRouterProviderProps).toHaveLength(1);
-    expect(mockRouterProviderProps[0].router).toBe(mockRouter);
+    expect(mockRouterProviderProps[0]?.router).toBe(mockRouter);
   });
 
   it('opts the router into the v7 startTransition future flag', () => {
     render(<App />);
 
-    expect(mockRouterProviderProps[0].future).toEqual({ v7_startTransition: true });
+    expect(mockRouterProviderProps[0]?.future).toEqual({ v7_startTransition: true });
   });
 });

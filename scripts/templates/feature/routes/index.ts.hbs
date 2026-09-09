@@ -1,0 +1,15 @@
+import type { RouteModule } from '@/routes/types/route-module';
+
+const {{camelCase feature}}Routes: RouteModule = {
+  id: '{{module}}.{{feature}}',
+  routes: [
+    {
+      path: '{{routePath module feature}}',
+      guard: 'protected',
+      load: () => import(/* webpackChunkName: "{{feature}}" */ '..'),
+      meta: { titleKey: '{{snakeCase feature}}.title' },
+    },
+  ],
+};
+
+export default {{camelCase feature}}Routes;

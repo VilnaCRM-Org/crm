@@ -4,6 +4,10 @@ export const paletteColors = {
     hover: '#00A3FF',
     active: '#0399ED',
     linkHover: '#297FFF',
+    // Link text on the #FFFFFF form background: 5.04:1 and 7.60:1. WCAG 1.4.3 AA needs 4.5:1,
+    // which `main` (2.46:1), `linkHover` (3.77:1) and `active` (3.10:1) do not reach.
+    linkText: '#0074B5',
+    linkTextHover: '#00588A',
   },
   secondary: {
     main: '#FFC01E',

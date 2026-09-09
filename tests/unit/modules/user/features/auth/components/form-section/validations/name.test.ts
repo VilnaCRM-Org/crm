@@ -145,7 +145,8 @@ describe('name validation', () => {
         });
 
         it('should return true for name with 2 characters total including space', () => {
-          // Note: 'A B' is 3 characters total (A, space, B) which is >= 2
+          // The separator pattern already forces at least three characters, so no explicit
+          // minimum-length check is needed alongside it.
           expect(fullNameValidator.isFormatted('A B')).toBe(true);
         });
       });

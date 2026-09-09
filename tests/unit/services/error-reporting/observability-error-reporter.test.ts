@@ -32,13 +32,22 @@ describe('ObservabilityErrorReporter', () => {
     expect(observability.captureError).toHaveBeenCalledWith(error, undefined);
   });
 
-  it('falls back to the container-free core when no service is injected', () => {
+  it('falls back to the injected container-free core when no service is available', () => {
     const captureError = jest.spyOn(observabilityCore, 'captureError').mockImplementation();
     const error = new Error('render crash');
 
-    new ObservabilityErrorReporter().report(error, { surface: 'app' });
+    new ObservabilityErrorReporter(undefined, observabilityCore).report(error, { surface: 'app' });
 
     expect(captureError).toHaveBeenCalledWith(error, { surface: 'app' });
+    captureError.mockRestore();
+  });
+
+  it('reports nothing when neither the service nor the core is available', () => {
+    const captureError = jest.spyOn(observabilityCore, 'captureError').mockImplementation();
+
+    new ObservabilityErrorReporter().report(new Error('render crash'));
+
+    expect(captureError).not.toHaveBeenCalled();
     captureError.mockRestore();
   });
 });

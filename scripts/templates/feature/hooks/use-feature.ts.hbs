@@ -1,0 +1,12 @@
+import useAsyncList from '@/hooks/use-async-list';
+
+import {{camelCase feature}}Loader from '../stores';
+import type { Use{{pascalCase feature}}Result } from '../types/hooks/use-{{feature}}';
+
+export default function use{{pascalCase feature}}(): Use{{pascalCase feature}}Result {
+  return useAsyncList(async () => {
+    const repository = await {{camelCase feature}}Loader.load();
+
+    return repository.list();
+  });
+}

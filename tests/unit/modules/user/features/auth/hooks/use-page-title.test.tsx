@@ -75,10 +75,19 @@ describe('usePageTitle', () => {
     expect(mockI18n.off).toHaveBeenCalledWith('languageChanged', languageChangedHandler);
   });
 
+  it('restores the base document.title on unmount (issue #150)', () => {
+    const view = render(<TitleProbe titleKey="sign_in.title" />);
+    expect(document.title).toBe('Authentication - VilnaCRM');
+
+    view.unmount();
+
+    expect(document.title).toBe('VilnaCRM');
+  });
+
   it('tolerates an i18n instance without on/off subscription methods', () => {
     mockI18n = {
       language: 'en',
-      t: (key: string): string => TITLES.en[key] ?? key,
+      t: (key: string): string => TITLES.en?.[key] ?? key,
     };
 
     const view = render(<TitleProbe titleKey="sign_in.title" />);

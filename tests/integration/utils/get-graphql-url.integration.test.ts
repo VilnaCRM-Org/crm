@@ -1,3 +1,5 @@
+import { buildAppConfigReader, buildHttpUrl } from '@tests/builders';
+
 import '../setup';
 
 describe('getGraphQLUrl Integration', () => {
@@ -12,9 +14,9 @@ describe('getGraphQLUrl Integration', () => {
     process.env = { ...ORIGINAL_ENV };
   });
 
-  const resolveUrl = async (): Promise<string> => {
+  const resolveUrl = async (graphqlUrl?: string): Promise<string> => {
     const { default: GraphQLUrl } = await import('@/utils/get-graphql-url');
-    return new GraphQLUrl().resolve();
+    return new GraphQLUrl(buildAppConfigReader({ graphqlUrl })).resolve();
   };
 
   it('returns the default localhost url when the env var is not set', async () => {
@@ -36,7 +38,7 @@ describe('getGraphQLUrl Integration', () => {
     process.env.NODE_ENV = 'production';
 
     await expect(resolveUrl()).rejects.toThrow(
-      /REACT_APP_GRAPHQL_URL must be defined in production/
+      /A GraphQL URL must be defined in production environment/
     );
   });
 
@@ -45,7 +47,15 @@ describe('getGraphQLUrl Integration', () => {
     process.env.NODE_ENV = 'production';
 
     await expect(resolveUrl()).rejects.toThrow(
-      /REACT_APP_GRAPHQL_URL must be defined in production/
+      /A GraphQL URL must be defined in production environment/
     );
+  });
+
+  it('prefers the runtime configuration url over the build-time one', async () => {
+    const runtimeUrl = buildHttpUrl('/graphql');
+    process.env.REACT_APP_GRAPHQL_URL = 'http://build-time.example.com/graphql';
+    process.env.NODE_ENV = 'production';
+
+    await expect(resolveUrl(runtimeUrl)).resolves.toBe(runtimeUrl);
   });
 });

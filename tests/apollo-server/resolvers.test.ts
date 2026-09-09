@@ -328,13 +328,16 @@ describe('resolvers Mutation createUser', () => {
       const inputs = Array.from({ length: 5 }, () => buildCreateUserInput());
 
       const results = await Promise.all(
-        inputs.map((input) => resolvers.Mutation.createUser(undefined, { input }))
+        inputs.map(async (input) => ({
+          input,
+          result: await resolvers.Mutation.createUser(undefined, { input }),
+        }))
       );
 
       expect(results).toHaveLength(5);
-      results.forEach((result, i) => {
-        expect(result.user.email).toBe(inputs[i].email);
-        expect(result.user.initials).toBe(inputs[i].initials);
+      results.forEach(({ input, result }) => {
+        expect(result.user.email).toBe(input.email);
+        expect(result.user.initials).toBe(input.initials);
       });
     });
   });

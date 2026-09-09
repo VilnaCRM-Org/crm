@@ -11,7 +11,7 @@ describe('SecurityEventReporter', () => {
   it('delegates auth failures to the container-free core', () => {
     const authFailure = jest.spyOn(securityEventCore, 'authFailure').mockImplementation();
 
-    new SecurityEventReporter().authFailure('login', 'network');
+    new SecurityEventReporter(securityEventCore).authFailure('login', 'network');
 
     expect(authFailure).toHaveBeenCalledWith('login', 'network');
   });
@@ -19,7 +19,7 @@ describe('SecurityEventReporter', () => {
   it('delegates unauthorized responses to the container-free core', () => {
     const unauthorized = jest.spyOn(securityEventCore, 'unauthorizedResponse').mockImplementation();
 
-    new SecurityEventReporter().unauthorizedResponse(401);
+    new SecurityEventReporter(securityEventCore).unauthorizedResponse(401);
 
     expect(unauthorized).toHaveBeenCalledWith(401);
   });
@@ -27,7 +27,7 @@ describe('SecurityEventReporter', () => {
   it('delegates boundary catches to the container-free core', () => {
     const boundaryCatch = jest.spyOn(securityEventCore, 'boundaryCatch').mockImplementation();
 
-    new SecurityEventReporter().boundaryCatch('app');
+    new SecurityEventReporter(securityEventCore).boundaryCatch('app');
 
     expect(boundaryCatch).toHaveBeenCalledWith('app');
   });

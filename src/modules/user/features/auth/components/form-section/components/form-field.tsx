@@ -29,6 +29,7 @@ export default function FormField<T extends FieldValues>({
         rules={rules}
         defaultValue={defaultValue}
         name={name}
+        id={name}
         placeholder={placeholder}
         type={type}
         autoComplete={autoComplete}

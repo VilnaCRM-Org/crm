@@ -1,8 +1,8 @@
 import { inject, injectable } from 'tsyringe';
 
 import { HttpError } from '@/services/https-client/http-error';
-import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
-import HttpResponseProcessor from '@/services/https-client/http-response-processor';
+import type HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
+import type HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 import type { RequestArgs } from '@/services/types/https-client/fetch-https-client';
 import type {

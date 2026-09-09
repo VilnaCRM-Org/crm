@@ -13,6 +13,8 @@ const AUTH_TOKENS = Object.freeze({
   AuthErrorHandler: Symbol('AuthErrorHandler'),
   AuthRequestErrors: Symbol('AuthRequestErrors'),
   AuthSecuritySignals: Symbol('AuthSecuritySignals'),
+  AuthStateVar: Symbol('AuthStateVar'),
+  AuthStoreActionsDeps: Symbol('AuthStoreActionsDeps'),
 } as const);
 
 export default AUTH_TOKENS;

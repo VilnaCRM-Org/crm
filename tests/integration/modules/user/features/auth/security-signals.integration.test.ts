@@ -46,7 +46,7 @@ describe('auth security signals (integration)', () => {
       value: { email: 'user@example.com', token: 'session-token' },
     });
 
-    const identity = setUser.mock.calls[0][0] as { id: string };
+    const identity = setUser.mock.calls[0]?.[0] as { id: string };
     expect(identity.id).toMatch(/^[0-9a-f-]{36}$/);
     expect(Object.keys(identity)).toEqual(['id']);
   });

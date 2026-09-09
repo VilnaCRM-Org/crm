@@ -6,6 +6,9 @@ import { render, screen } from '@testing-library/react';
 import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 
+import router from '@/routes/routes';
+import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
+
 let mockCurrentPath = '/sign-up';
 
 jest.mock('react-i18next', () => ({
@@ -21,9 +24,9 @@ jest.mock('react-router-dom', () => {
     __esModule: true,
     ...actual,
     createBrowserRouter: (routes: unknown): unknown => routes,
-    RouterProvider: ({ router }: { router: unknown }): ReactElement => {
+    RouterProvider: ({ router, future }: { router: unknown; future?: unknown }): ReactElement => {
       const mem = actual.createMemoryRouter(router, { initialEntries: [mockCurrentPath] });
-      return <actual.RouterProvider router={mem} />;
+      return <actual.RouterProvider router={mem} future={future} />;
     },
   };
 });
@@ -75,8 +78,6 @@ jest.mock('@auth/routes/sign-in', () => ({
   default: (): ReactElement => <div>sign in page</div>,
 }));
 
-import router from '@/routes/routes';
-
 describe('routes', () => {
   const RouterProvider =
     jest.requireActual<typeof import('react-router-dom')>('react-router-dom').RouterProvider;
@@ -86,7 +87,7 @@ describe('routes', () => {
     const { RouterProvider: MockedRP } = jest.requireMock('react-router-dom');
     render(
       <Suspense fallback={null}>
-        <MockedRP router={router} />
+        <MockedRP router={router} future={ROUTER_FUTURE_FLAGS} />
       </Suspense>
     );
   };

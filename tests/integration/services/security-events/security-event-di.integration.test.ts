@@ -44,14 +44,26 @@ describe('security-event DI surface (integration)', () => {
     expect(captureError).toHaveBeenCalledWith(error, { surface: 'app' });
   });
 
-  it('falls back to the container-free core when resolved without the DI graph', async () => {
+  // The reporter takes the container-free core through DI rather than value-importing it
+  // (issue #130), so the fallback is what the observability root registers by value — the same
+  // instance the render path already holds, not a second copy.
+  it('falls back to the container-free core the observability root registers', async () => {
     const observabilityCore = (await import('@/services/observability/observability-core')).default;
     const captureError = jest.spyOn(observabilityCore, 'captureError').mockImplementation();
     const error = new Error('standalone crash');
 
-    new ObservabilityErrorReporter().report(error);
+    new ObservabilityErrorReporter(undefined, observabilityCore).report(error);
 
     expect(captureError).toHaveBeenCalledWith(error, undefined);
+  });
+
+  it('reports nothing when constructed outside the container with no core', async () => {
+    const observabilityCore = (await import('@/services/observability/observability-core')).default;
+    const captureError = jest.spyOn(observabilityCore, 'captureError').mockImplementation();
+
+    new ObservabilityErrorReporter().report(new Error('standalone crash'));
+
+    expect(captureError).not.toHaveBeenCalled();
   });
 
   it('caps the tracked auth failures so a sustained burst cannot grow unbounded', () => {

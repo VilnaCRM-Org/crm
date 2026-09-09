@@ -17,17 +17,17 @@ route set discoverable (audit, nav, sitemap).
 
 ## Files
 
-| File                    | Responsibility                                              |
-| ----------------------- | ----------------------------------------------------------- |
-| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`) |
-| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape |
-| `app-routes.ts`         | The app shell's own contract (home + 404)                   |
-| `registry.ts`           | Collects every module contract into one list                |
-| `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index |
-| `route-mapper.tsx`      | Maps one contract route → a `react-router` route (lazy)     |
-| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree          |
-| `route-paths.ts`        | Canonical URL constants (`home`, `signUp`, `signIn`, 404)   |
-| `routes.tsx`            | Wiring only: `createBrowserRouter(composer.compose(...))`   |
+| File                    | Responsibility                                                |
+| ----------------------- | ------------------------------------------------------------- |
+| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)   |
+| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape   |
+| `app-routes.ts`         | The app shell's own contract (home + 404)                     |
+| `registry.ts`           | Collects every module contract into one list                  |
+| `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index   |
+| `route-mapper.tsx`      | Maps one contract route → a `react-router` route (lazy)       |
+| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree            |
+| `route-paths.ts`        | Canonical URL constants — one key per route, read by the gate |
+| `routes.tsx`            | Wiring only: `createBrowserRouter(composer.compose(...))`     |
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
@@ -84,6 +84,11 @@ parent's protection context, so declaring a guard on a child is rejected by the
 
 3. Add any new URL constant to `route-paths.ts`.
 
+4. Add the route's browser-coverage rows to `tests/e2e/route-coverage.tsv`
+   naming the spec(s) that exercise it. `make check-e2e-route-coverage` (first
+   step of the `e2e testing` job) fails on a route key that has neither a
+   covering spec nor an allowlist entry with a stated reason (issue #169).
+
 Never edit `routes.tsx`, `route-composer.tsx`, or `route-mapper.tsx` to add a
 page.
 
@@ -97,5 +102,11 @@ page.
   single `RootLayout`, `protected`→`AppLayout`, public not), the validator
   (duplicate id / unlocatable route), and the registry; per-route code splitting
   is asserted in `tests/unit/tooling/performance-serving.test.ts`.
+- **Route coverage inventory** — `scripts/ci/check-e2e-route-coverage.ts` reads
+  the route **keys** from `route-paths.ts` and reconciles them against
+  `tests/e2e/route-coverage.tsv` in both directions (missing row, stale row,
+  missing spec file, spec outside its suite root, allowlisted-and-covered, and
+  an `allowlisted` row for a key some contract already binds to a `path:`).
+  Fixtures in `tests/bats/ci_scripts.bats` pin every failure mode.
 
 Never satisfy a gate with a suppression — route through the contract instead.

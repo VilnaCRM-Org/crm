@@ -1,5 +1,6 @@
 import {
   PRELOADED_AUTH_TOKEN,
+  PRELOADED_AUTH_TOKEN_WINDOW_KEY,
   seedPreloadedAuthToken,
 } from '../../utils/seed-preloaded-auth-token';
 
@@ -32,7 +33,7 @@ describe('seedPreloadedAuthToken', () => {
     expect(fulfill).toHaveBeenCalledTimes(1);
     const [options] = fulfill.mock.calls[0] as [{ body: string }];
 
-    expect(options.body).toContain('__PRELOADED_AUTH_TOKEN__');
+    expect(options.body).toContain(PRELOADED_AUTH_TOKEN_WINDOW_KEY);
     expect(options.body).toContain(PRELOADED_AUTH_TOKEN);
   });
 

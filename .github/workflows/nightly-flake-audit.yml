@@ -1,0 +1,100 @@
+name: nightly flake audit
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch: {}
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  flake-audit:
+    name: Flake budget
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+      issues: write
+    env:
+      FLAKE_BUDGET: '0'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      # Both suites run to completion even when one breaches, so one audit reports the whole
+      # picture. failOnFlakyTests exits the make target non-zero before the report can be
+      # classified, hence continue-on-error plus the explicit budget steps below.
+      # Each suite gets its own report/output destinations: Playwright clears both at the
+      # start of a run, so sharing them would delete the e2e evidence before it is uploaded.
+      - name: E2E suite with retries and the JSON reporter
+        id: e2e
+        continue-on-error: true
+        run: |
+          make test-e2e-flake-audit \
+            PLAYWRIGHT_JSON_REPORT=reports/playwright/e2e.json \
+            PLAYWRIGHT_HTML_REPORT=reports/playwright/e2e-html \
+            PLAYWRIGHT_OUTPUT_DIR=reports/playwright/e2e-output
+
+      - name: Show the flake toggles as resolved inside the Playwright container
+        if: always()
+        continue-on-error: true
+        run: make print-flake-env
+
+      - name: Enforce the E2E flake budget
+        id: e2e-budget
+        if: always()
+        continue-on-error: true
+        run: |
+          make check-flakes \
+            PLAYWRIGHT_JSON_REPORT=reports/playwright/e2e.json \
+            FLAKE_SUMMARY_FILE=reports/playwright/e2e-flakes.md
+
+      - name: Visual suite with retries and the JSON reporter
+        id: visual
+        if: always()
+        continue-on-error: true
+        run: |
+          make test-visual-flake-audit \
+            PLAYWRIGHT_JSON_REPORT=reports/playwright/visual.json \
+            PLAYWRIGHT_HTML_REPORT=reports/playwright/visual-html \
+            PLAYWRIGHT_OUTPUT_DIR=reports/playwright/visual-output
+
+      - name: Enforce the visual flake budget
+        id: visual-budget
+        if: always()
+        continue-on-error: true
+        run: |
+          make check-flakes \
+            PLAYWRIGHT_JSON_REPORT=reports/playwright/visual.json \
+            FLAKE_SUMMARY_FILE=reports/playwright/visual-flakes.md
+
+      - name: Route the audit result to its tracking issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FLAKE_AUDIT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: sh scripts/ci/report-flake-audit.sh
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: flake-audit-report
+          path: reports/playwright/
+          retention-days: 30
+
+      - name: Fail the audit when either suite breached its budget
+        if: always() && (steps.e2e.outcome == 'failure' || steps.visual.outcome == 'failure' ||
+          steps.e2e-budget.outcome == 'failure' || steps.visual-budget.outcome == 'failure')
+        run: exit 1

@@ -9,6 +9,13 @@ import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
 const isAnalyze = process.env.ANALYZE === 'true';
+
+// Read before loadEnv: it merges EVERY key of the `.env*` files into process.env, not just the
+// `REACT_APP_` prefixed ones. Reading afterwards would let an untracked `.env.local` supply the
+// opt-in and compile the test-only auth seed into a deployable bundle (issue #158). The flag is
+// a build-environment input — the Dockerfile's test-harness stage — and never a dotenv key.
+const preloadedAuthSeedOptIn = process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED ?? '';
+
 const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
 
 const performanceBudget = JSON.parse(
@@ -26,6 +33,40 @@ const requireBudget = (value: unknown, key: string): number => {
   }
   return value;
 };
+
+const browserSupport = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'config/browser-support.json'), 'utf8')
+) as { polyfill?: unknown };
+
+// The allowed modes are read from the policy's own schema rather than repeated here. The gate in
+// `scripts/ci/browser-support.ts` keeps its own list for purity, and a unit test pins that list
+// to this same enum, so the three cannot drift apart silently.
+const browserSupportSchema = JSON.parse(
+  fs.readFileSync(path.resolve(__dirname, 'config/browser-support.schema.json'), 'utf8')
+) as { properties?: { polyfill?: { enum?: unknown } } };
+
+const polyfillModes = browserSupportSchema.properties?.polyfill?.enum;
+
+// The declared browser matrix and the polyfill decision are one choice (issue #153): an absent
+// or unknown mode would silently fall back to RSBuild's default and break the promise the
+// README publishes. `make check-browser-support` reconciles both against the same policy file.
+const requirePolyfillMode = (value: unknown): 'off' | 'usage' | 'entry' => {
+  if (!Array.isArray(polyfillModes) || polyfillModes.length === 0) {
+    throw new Error(
+      'config/browser-support.schema.json: "properties.polyfill.enum" must list the allowed ' +
+        'modes. Refusing to build without a validated polyfill decision.'
+    );
+  }
+  if (!polyfillModes.includes(value)) {
+    throw new Error(
+      `config/browser-support.json: "polyfill" must be one of ${polyfillModes.join(', ')}, got ` +
+        `${String(value)}. Refusing to build against an undeclared browser matrix.`
+    );
+  }
+  return value as 'off' | 'usage' | 'entry';
+};
+
+const browserSupportPolyfill = requirePolyfillMode(browserSupport.polyfill);
 
 const maxEntrypointSize = requireBudget(
   performanceBudget.raw?.maxInitialEntrypointBytes,
@@ -80,6 +121,7 @@ export default defineConfig({
   },
   output: {
     inlineStyles: !isDev,
+    polyfill: browserSupportPolyfill,
     filename: {
       font: '[name].[contenthash][ext]',
     },
@@ -126,6 +168,10 @@ export default defineConfig({
     decorators: { version: 'legacy' },
     define: {
       ...publicVars,
+      // src/config/env/preloaded-auth-token.ts branches on this; the folded constant is what
+      // strips the test-only auth seed from deployable bundles. Dropping the define leaves a
+      // runtime `process` read that throws in the browser (issue #158).
+      'process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED': JSON.stringify(preloadedAuthSeedOptIn),
     },
   },
 });

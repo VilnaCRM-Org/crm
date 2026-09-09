@@ -4,9 +4,13 @@ import { z } from 'zod';
 
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
+import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import sessionCorrelation from '@/services/observability/session-correlation';
+import securityEventCore from '@/services/security-events/security-event-core';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
@@ -33,7 +37,10 @@ describe('FetchHttpsClient transport edges', () => {
   beforeEach(() => {
     mockFetch = jest.fn();
     global.fetch = mockFetch as unknown as typeof fetch;
-    client = new FetchHttpsClient(new HttpRequestConfigBuilder(), new HttpResponseProcessor());
+    client = new FetchHttpsClient(
+      new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
+      new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore))
+    );
   });
 
   afterAll(() => {

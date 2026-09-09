@@ -13,13 +13,13 @@ export default class AppErrorBoundary extends React.Component<
   AppErrorBoundaryProps,
   AppErrorBoundaryState
 > {
-  public state: AppErrorBoundaryState = { hasError: false };
+  public override state: AppErrorBoundaryState = { hasError: false };
 
   public static getDerivedStateFromError(error: Error): AppErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, info: React.ErrorInfo): void {
+  public override componentDidCatch(error: Error, info: React.ErrorInfo): void {
     const reporter = this.props.reporter ?? noopErrorReporter;
     try {
       securityEventCore.boundaryCatch('app');
@@ -34,7 +34,7 @@ export default class AppErrorBoundary extends React.Component<
     this.setState({ hasError: false, error: undefined });
   };
 
-  public render(): React.ReactNode {
+  public override render(): React.ReactNode {
     if (this.state.hasError) {
       return <ErrorFallback error={this.state.error} reset={this.handleReset} />;
     }

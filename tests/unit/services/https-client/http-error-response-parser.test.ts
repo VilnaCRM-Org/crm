@@ -6,7 +6,18 @@ import securityEventCore from '@/services/security-events/security-event-core';
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 function makeResponse(ok: boolean, status: number, statusText = ''): Response {
-  return { ok, status, statusText, url: '/test', headers: new Headers() } as Response;
+  const response = {
+    ok,
+    status,
+    statusText,
+    url: '/test',
+    headers: new Headers(),
+    json: async (): Promise<unknown> => ({}),
+    text: async (): Promise<string> => '',
+    clone: (): unknown => response,
+  };
+
+  return response as unknown as Response;
 }
 
 describe('HttpErrorResponseParser', () => {
@@ -17,7 +28,7 @@ describe('HttpErrorResponseParser', () => {
 
     it.each([[401], [403]])('emits an unauthorized_response event for %i', async (status) => {
       const emit = jest.spyOn(securityEventCore, 'unauthorizedResponse').mockImplementation();
-      const parser = new HttpErrorResponseParser();
+      const parser = new HttpErrorResponseParser(securityEventCore);
 
       await expect(parser.assertOk(makeResponse(false, status, 'Denied'))).rejects.toThrow(
         HttpError
@@ -34,7 +45,7 @@ describe('HttpErrorResponseParser', () => {
         core: (await import('@/services/security-events/security-event-core')).default,
       }));
       const emit = jest.spyOn(isolated.core, 'unauthorizedResponse').mockImplementation();
-      const parser = new isolated.Parser();
+      const parser = new isolated.Parser(isolated.core);
 
       await expect(parser.assertOk(makeResponse(false, 401, 'Denied'))).rejects.toThrow();
       await expect(parser.assertOk(makeResponse(false, 403, 'Denied'))).rejects.toThrow();
@@ -45,7 +56,7 @@ describe('HttpErrorResponseParser', () => {
 
     it.each([[400], [404], [500]])('stays silent for the non-auth status %i', async (status) => {
       const emit = jest.spyOn(securityEventCore, 'unauthorizedResponse').mockImplementation();
-      const parser = new HttpErrorResponseParser();
+      const parser = new HttpErrorResponseParser(securityEventCore);
 
       await expect(parser.assertOk(makeResponse(false, status, 'Nope'))).rejects.toThrow(HttpError);
 
@@ -58,36 +69,31 @@ describe('HttpErrorResponseParser', () => {
     ])('stays silent for the successful status %i', async (status, ok) => {
       const emit = jest.spyOn(securityEventCore, 'unauthorizedResponse').mockImplementation();
 
-      await new HttpErrorResponseParser().assertOk(makeResponse(ok, status));
+      await new HttpErrorResponseParser(securityEventCore).assertOk(makeResponse(ok, status));
 
       expect(emit).not.toHaveBeenCalled();
     });
   });
 
   it('resolves without throwing for a 200 response', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     await expect(parser.assertOk(makeResponse(true, 200))).resolves.toBeUndefined();
   });
 
   it('resolves without throwing for a 304 Not Modified response', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     await expect(parser.assertOk(makeResponse(false, 304))).resolves.toBeUndefined();
   });
 
   it('throws HttpError for a non-ok response', async () => {
-    const parser = new HttpErrorResponseParser();
-    const response = {
-      ok: false,
-      status: 400,
-      statusText: 'Bad Request',
-      url: '/test',
-      headers: new Headers(),
-    } as Response;
+    const parser = new HttpErrorResponseParser(securityEventCore);
+    const response = makeResponse(false, 400, 'Bad Request');
+
     await expect(parser.assertOk(response)).rejects.toThrow(HttpError);
   });
 
   it('uses its parse method when building the HttpError payload', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const parseSpy = jest
       .spyOn(parser, 'parse')
       .mockResolvedValue({ message: 'parsed error', body: undefined });
@@ -98,7 +104,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('passes through the content-type value in the HttpError cause when set', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     jest.spyOn(parser, 'parse').mockResolvedValue({ message: 'oops', body: undefined });
     const response = {
       ok: false,
@@ -114,7 +120,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('uses undefined contentType in HttpError cause when header is missing', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     jest.spyOn(parser, 'parse').mockResolvedValue({ message: 'oops', body: undefined });
     const response = {
       ok: false,
@@ -130,7 +136,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('uses response fallback data when parsed error text is empty', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     jest.spyOn(parser, 'parse').mockResolvedValue({ message: null, body: 'problem' });
     const response = makeResponse(false, 500, 'Server Error');
 
@@ -138,7 +144,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('returns a readable parsed payload when cloning the response fails', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     await expect(
@@ -160,7 +166,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('handles a non-Error value thrown while cloning the response', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const thrown: unknown = 'string failure';
 
@@ -181,7 +187,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('extracts the JSON message and stringified body when content-type is JSON', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const payload = { message: 'invalid input', field: 'email' };
     const response = {
       headers: { get: (): string => 'application/json' },
@@ -195,7 +201,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('returns null message but undefined body when JSON parsing yields undefined', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const response = {
       headers: { get: (): string => 'application/json' },
       clone: () => ({ json: async (): Promise<unknown> => Promise.reject(new Error('bad json')) }),
@@ -205,7 +211,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('truncates JSON message bodies that exceed 500 characters', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const longMessage = 'x'.repeat(600);
     const response = {
       headers: { get: (): string => 'application/json' },
@@ -218,7 +224,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('returns the text body as the message when content-type is text/plain', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const response = {
       headers: { get: (): string => 'text/plain' },
       clone: () => ({ text: async (): Promise<string> => 'plain error text' }),
@@ -231,7 +237,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('returns null message but exposes the body for non-text/non-json responses', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const response = {
       headers: { get: (): string => 'application/octet-stream' },
       clone: () => ({ text: async (): Promise<string> => 'binary blob' }),
@@ -244,7 +250,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('returns empty body when text extraction rejects', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const response = {
       headers: { get: (): string => 'text/plain' },
       clone: () => ({ text: async (): Promise<string> => Promise.reject(new Error('boom')) }),
@@ -257,7 +263,7 @@ describe('HttpErrorResponseParser', () => {
   });
 
   it('returns empty body when text extraction yields an empty string', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     const response = {
       headers: { get: (): string => 'text/plain' },
       clone: () => ({ text: async (): Promise<string> => '' }),

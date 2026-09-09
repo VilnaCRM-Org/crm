@@ -3,12 +3,22 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: production
+      # The ephemeral harness image, never the deployable `production` target: only this
+      # stage compiles in the preloaded-auth seed the Playwright, visual and Lighthouse
+      # suites rely on to reach the protected home route (issue #158).
+      target: test-harness
       args:
         REACT_APP_LHCI_PRELOADED_AUTH_TOKEN: ${LHCI_PRELOADED_AUTH_TOKEN-}
     restart: unless-stopped
     ports:
       - '3001:3001'
+    environment:
+      # Runtime configuration (issue #145). Rendered into the built HTML shell by the container
+      # entrypoint, so the same image serves any environment. Empty means "keep the committed
+      # default", which is what local, e2e and Lighthouse runs use.
+      - APP_CONFIG_API_BASE_URL=${APP_CONFIG_API_BASE_URL-}
+      - APP_CONFIG_GRAPHQL_URL=${APP_CONFIG_GRAPHQL_URL-}
+      - APP_CONFIG_FLAG_FORGOT_PASSWORD=${APP_CONFIG_FLAG_FORGOT_PASSWORD-}
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:3001']
       interval: 10s

@@ -15,8 +15,11 @@ async function action(page) {
       window.dispatchEvent(new PopStateEvent('popstate'));
     });
 
-    // Wait for FormSection to finish loading (skeleton has come and gone).
-    await page.waitForSelector(authFormSelector, { timeout: 15000 });
+    // Wait for FormSection to finish loading (skeleton has come and gone). The returned
+    // ElementHandle must be disposed: puppeteer keeps it alive in the DevTools console
+    // object group, which would retain the very form this scenario measures.
+    const formHandle = await page.waitForSelector(authFormSelector, { timeout: 15000 });
+    await formHandle?.dispose();
   } catch (error) {
     throw new Error(`Auth skeleton memory leak test failed: ${error.message}`);
   }

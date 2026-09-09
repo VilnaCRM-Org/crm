@@ -1,6 +1,6 @@
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
-import AuthStateVar from '@auth/stores/auth-var';
+import AuthStateVar, { AuthStateVar as AuthStateVarClass } from '@auth/stores/auth-var';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthRepository } from '@auth/types/auth-repository';
 import type AuthErrorHandler from '@auth/utils/auth-error-handler';
@@ -41,13 +41,23 @@ const makeRepo = (over: Partial<AuthRepository> = {}): AuthRepository =>
   }) as AuthRepository;
 
 const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors, securitySignals).login({
+  new AuthStoreActions({
+    repository: makeRepo(over),
+    authRequestErrors,
+    authState: AuthStateVar,
+    securitySignals,
+  }).login({
     email,
     password,
   });
 
 const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
-  new AuthStoreActions(makeRepo(over), authRequestErrors, securitySignals).register({
+  new AuthStoreActions({
+    repository: makeRepo(over),
+    authRequestErrors,
+    authState: AuthStateVar,
+    securitySignals,
+  }).register({
     fullName,
     email,
     password,
@@ -72,6 +82,21 @@ describe('AuthStoreActions', () => {
       loginError: null,
     });
     expect(observability.setUser).toHaveBeenCalledWith({ id: expect.any(String) });
+  });
+
+  it('writes state through the injected auth state var, not the module singleton', async () => {
+    const injectedState = new AuthStateVarClass();
+    injectedState.reset();
+
+    await new AuthStoreActions({
+      repository: makeRepo(),
+      authRequestErrors,
+      authState: injectedState,
+      securitySignals,
+    }).login({ email, password });
+
+    expect(injectedState.get()).toMatchObject({ loginLoading: false, email, token });
+    expect(AuthStateVar.get()).toMatchObject({ email: '', token: null });
   });
 
   it('stores a structured error and tags no identity when login fails', async () => {

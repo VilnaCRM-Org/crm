@@ -5,8 +5,8 @@
 Feature translations live near the feature:
 
 ```text
-src/modules/<Module>/features/<Feature>/i18n/en.json
-src/modules/<Module>/features/<Feature>/i18n/uk.json
+src/modules/<module>/features/<feature>/i18n/en.json
+src/modules/<module>/features/<feature>/i18n/uk.json
 ```
 
 ## Rules

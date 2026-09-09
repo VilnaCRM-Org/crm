@@ -3,7 +3,7 @@ import type { HttpErrorParams } from '@/services/types/https-client/http-error';
 export class HttpError extends Error {
   public readonly status: number;
 
-  public readonly cause?: unknown;
+  public override readonly cause?: unknown;
 
   constructor({ status, message, cause }: HttpErrorParams) {
     super(message);

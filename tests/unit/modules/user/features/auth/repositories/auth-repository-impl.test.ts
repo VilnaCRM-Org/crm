@@ -1,6 +1,7 @@
 import AuthRepositoryImpl from '@auth/repositories/auth-repository-impl';
 import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
 import { buildEmail, buildFullName, buildPassword, buildToken, buildUserId } from '@tests/builders';
+import { assertError } from '@tests/utils/assert-result';
 
 const ok = <T>(value: T): { ok: true; value: T } => ({ ok: true as const, value });
 
@@ -47,10 +48,8 @@ describe('AuthRepositoryImpl', () => {
 
     const result = await repo.login({ email: buildEmail(), password: buildPassword() });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBe('Boom');
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBe('Boom');
   });
 
   it('flags aborts without UI mapping', async () => {
@@ -79,10 +78,8 @@ describe('AuthRepositoryImpl', () => {
 
     const result = await repo.login({ email: buildEmail(), password: buildPassword() });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBe('Bad credentials');
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBe('Bad credentials');
   });
 
   it('returns a SafeUserInfo on successful register', async () => {
@@ -122,10 +119,8 @@ describe('AuthRepositoryImpl', () => {
       fullName: buildFullName(),
     });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBe('Conflict');
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBe('Conflict');
   });
 
   it('returns mapped error when register response is not ok', async () => {
@@ -143,9 +138,7 @@ describe('AuthRepositoryImpl', () => {
       fullName: buildFullName(),
     });
 
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.displayMessage).toBe('Validation failed');
-    }
+    assertError(result);
+    expect(result.error.displayMessage).toBe('Validation failed');
   });
 });

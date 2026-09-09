@@ -7,7 +7,7 @@ export default function ButtonExample(): JSX.Element {
 
   return (
     <button type="button" onClick={noop}>
-      {t('hello')}
+      {t('button_example.label')}
     </button>
   );
 }

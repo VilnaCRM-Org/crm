@@ -128,8 +128,14 @@ Linting & Formatting
 ```bash
   make lint-eslint: lints the codebase using eslint rules
   make lint-tsc: runs static type checking with TypeScript
+  make lint-commit-message: lints one commit message or squash header read from stdin
+  make lint-commit-bot-message: same, with the task-number rule relaxed for bot authors
+  make lint-commit-range: lints the commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO
   make lint-md: lints all markdown files (excluding CHANGELOG.md) using markdownlint
   make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
+  make lint-i18n: checks en/uk locale parity, merged-catalog freshness, and t() key resolution
+  make i18n-generate: regenerates src/i18n/localization.json from the src/**/i18n catalogs
+  make check-auth-seed-gate: scans the built bundles so the test-only preloaded-auth seed cannot ship
 ```
 
 ### Dependency rules
@@ -142,6 +148,21 @@ dependencies.
 - Key rules:
   modules cannot import from other modules directly; shared UI components must not
   depend on feature modules
+
+### Localization
+
+Translations live in per-feature catalogs that are merged into one committed file.
+
+- Run locally: `make lint-i18n` to verify, `make i18n-generate` to regenerate
+- Source of truth: `src/**/i18n/en.json` and `src/**/i18n/uk.json` — both locales are
+  mandatory and their key sets must match
+- Merged catalog: `src/i18n/localization.json` is committed, not built; regenerate it with
+  `make i18n-generate` whenever a catalog key is added, renamed, or removed
+- Gate: `make lint-i18n` runs inside `make lint` and the CI lint phase, and fails on a missing
+  locale file, a stray extra locale, an en/uk key mismatch, a stale merged catalog, or a `t()`
+  key that is undefined in either locale
+- Fix a failure by adding the translation or correcting the key — never by dropping a locale
+  from the required set, narrowing the scan, or adding an ignore entry
 
 Testing
 
@@ -201,6 +222,12 @@ Runs tests inside the Playwright container, targeting the production container:
   make test-visual: runs general visual regression tests
   make test-visual-ui: runs UI-focused visual regression tests
 ```
+
+`make test-e2e` and `make test-visual` run five Playwright projects: the desktop `chromium` /
+`firefox` / `webkit` matrix plus `mobile-chrome` (Pixel 7) and `mobile-safari` (iPhone 14) device
+emulation. The mobile projects are scoped to `tests/e2e/mobile` and `tests/visual/mobile`; the
+desktop projects skip those directories. `ENV=dev` is a reduced matrix — see "Mobile device &
+touch lane" in `CLAUDE.md`.
 
 ### Fast dev-mode Playwright targets
 
@@ -293,7 +320,7 @@ Docker
 ```bash
   make down: stops the Docker containers and removes orphaned containers
   make stop: stops dev container
-  make start-prod: builds image and starts the prod container (production mode)
+  make start-prod: builds and starts the prod-parity container (test-harness image, see issue #158)
   make ps: displays currently running Docker containers with their details
   make sh: starts a terminal inside the dev Docker container for manual commands
   make logs: shows all logs of dev container
@@ -302,6 +329,24 @@ Docker
   make wait-for-dev: waits for the dev service to be ready on port 3000
   make wait-for-prod: waits for the prod service to be ready on port 3001
 ```
+
+### Runtime configuration
+
+The production image is configured at **container start**, not at build time, so one tested
+artifact can be promoted across environments. Set `APP_CONFIG_*` variables and restart — no
+rebuild:
+
+```bash
+  APP_CONFIG_GRAPHQL_URL=https://api.example.com/graphql \
+  APP_CONFIG_FLAG_FORGOT_PASSWORD=false \
+  docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --force-recreate prod
+```
+
+The entrypoint validates every value and exits non-zero on an invalid URL, a flag value that is
+not exactly `true`/`false`, or a variable naming a flag that does not exist, so a misconfigured
+deployment never starts serving. Build-time `REACT_APP_*` values remain as defaults.
+See [runtime configuration](src/config/runtime/README.md) and
+[feature flags](docs/feature-flags.md).
 
 ### Load Testing with K6
 
@@ -318,7 +363,7 @@ that profile.
 Using the `make` command (recommended):
 
 ```bash
-  make load-tests
+  make test-load
 ```
 
 The load testing service waits for the production service to become healthy before starting.
@@ -333,6 +378,31 @@ Available Load Test Scenarios:
 
 Adjust scenarios and thresholds in ./test/load/config.json.dist as needed.
 
+## Supported browsers
+
+The production build targets the **Baseline 2023 Widely available** interoperability line and
+ships **no polyfills** (`output.polyfill: "off"`). Every browser below runs the built artifact
+without shims; anything older is out of support.
+
+| Browser               | Minimum version |
+| --------------------- | --------------- |
+| Chrome                | 111             |
+| Edge                  | 111             |
+| Firefox               | 111             |
+| Safari (macOS)        | 16.4            |
+| Safari (iOS / iPadOS) | 16.4            |
+| Samsung Internet      | 22              |
+| Opera                 | 97              |
+| Chrome for Android    | latest          |
+| Firefox for Android   | latest          |
+
+This matrix is not a comment — it is enforced. [`config/browser-support.json`](config/browser-support.json)
+is the single source of truth for the floors, the `browserslist.production` query, and the
+polyfill mode; `make check-browser-support` fails when the query, the resolved floors, or this
+table drift apart, and the `compat/compat` ESLint rule fails the build when `src/` reaches for a
+Web API that any listed browser lacks. Rationale and the polyfill trade-off are recorded in
+[ADR-003](docs/adr/003-browser-support-matrix.md).
+
 ## Documentation
 
 Start reading at the [GitHub wiki](https://github.com/VilnaCRM-Org/crm/wiki).
@@ -340,20 +410,22 @@ If you're having trouble, head for
 [the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting)
 as it's frequently updated.
 
-- [Architecture Decision Records (ADRs)](docs/adr/README.md)
+In-repository documentation:
 
-You can generate complete API-level documentation by running `doc` in the top-level
-folder, and documentation will appear in the `docs` folder, though you'll need to have
-[API-Extractor](https://api-extractor.com/) installed.
+- [Architecture Decision Records (ADRs)](docs/adr/README.md)
+- [Agent and contributor guide](agents.md)
+- [Repository conventions and commands](CLAUDE.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Feature flags — lifecycle and rollout](docs/feature-flags.md)
+- [Runtime configuration (`@/config/runtime`)](src/config/runtime/README.md)
 
 If the documentation doesn't cover what you need, search the
 [many questions on Stack Overflow](http://stackoverflow.com/questions/tagged/vilnacrm),
 and before you ask a question,
-[read the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/roubleshooting).
+[read the troubleshooting guide](https://github.com/VilnaCRM-Org/crm/wiki/Troubleshooting).
 
 ## Tests
 
-[Tests](https://github.com/VilnaCRM-Org/crm/actions)
 [Tests](https://github.com/VilnaCRM-Org/crm/actions)
 
 If this isn't passing, is there something you can do to help?
@@ -365,7 +437,6 @@ Please disclose any vulnerabilities found responsibly – report security issues
 See
 [SECURITY](https://github.com/VilnaCRM-Org/crm/blob/main/SECURITY.md)
 and
-[Security advisories on GitHub](https://github.com/VilnaCRM-Org/crm/security).
 [Security advisories on GitHub](https://github.com/VilnaCRM-Org/crm/security).
 
 ## Contributing

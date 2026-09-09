@@ -168,10 +168,17 @@ describe('LoginAPI Integration', () => {
     });
 
     it('should handle network errors', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
       server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Failed to fetch')));
 
       await expect(loginAPI.login(buildCredentials())).rejects.toThrow(
         'Network error. Please check your connection.'
+      );
+
+      expect(consoleError).toHaveBeenCalledTimes(1);
+      expect(consoleError).toHaveBeenCalledWith(
+        expect.stringContaining(`POST ${API_ENDPOINTS.LOGIN}`)
       );
     });
   });

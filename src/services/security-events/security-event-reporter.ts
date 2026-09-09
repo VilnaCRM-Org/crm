@@ -1,4 +1,4 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
 import type {
   AuthFailureCategory,
@@ -6,19 +6,24 @@ import type {
   SecurityEventRecorder,
 } from '@/services/types/security-events/security-event';
 
-import securityEventCore from './security-event-core';
+import type { SecurityEventCore } from './security-event-core';
+import SECURITY_EVENT_TOKENS from './tokens';
 
 @injectable()
 export default class SecurityEventReporter implements SecurityEventRecorder {
+  constructor(
+    @inject(SECURITY_EVENT_TOKENS.SecurityEventCore) private readonly core: SecurityEventCore
+  ) {}
+
   public authFailure(category: AuthFailureCategory, reason: AuthFailureReason): void {
-    securityEventCore.authFailure(category, reason);
+    this.core.authFailure(category, reason);
   }
 
   public unauthorizedResponse(status: number): void {
-    securityEventCore.unauthorizedResponse(status);
+    this.core.unauthorizedResponse(status);
   }
 
   public boundaryCatch(surface: string): void {
-    securityEventCore.boundaryCatch(surface);
+    this.core.boundaryCatch(surface);
   }
 }

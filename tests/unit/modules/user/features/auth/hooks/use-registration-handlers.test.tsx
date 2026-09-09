@@ -8,13 +8,17 @@ import { buildUser } from '@tests/builders';
 const registerUser = jest.fn<Promise<void>, [RegisterUserDto]>(() => Promise.resolve());
 const resetRegistration = jest.fn();
 
+// The mock mirrors the real store: methods ON the singleton, not detached wrappers. That
+// keeps `mock.contexts` meaningful, so a call site that destructures or otherwise strips the
+// receiver is caught here instead of failing at runtime against the real class instance.
+const mockAuthActions = { registerUser, resetRegistration };
+
+// The getter defers the reference: `jest.mock` is hoisted above `mockAuthActions`, and the
+// factory runs while `@auth/stores` is first required — before the const initializes.
 jest.mock('@auth/stores', () => ({
   __esModule: true,
-  authActions: {
-    registerUser: (data: RegisterUserDto): Promise<void> => registerUser(data),
-    resetRegistration: (): void => {
-      resetRegistration();
-    },
+  get authActions(): typeof mockAuthActions {
+    return mockAuthActions;
   },
 }));
 
@@ -51,6 +55,7 @@ describe('useRegistrationHandlers', () => {
 
     expect(lastSubmittedDataRef.current).toEqual({ ...data, fullName: 'Alice Bob' });
     expect(registerUser).toHaveBeenCalledWith({ ...data, fullName: 'Alice Bob' });
+    expect(registerUser.mock.contexts[0]).toBe(mockAuthActions);
   });
 
   it('handleBackToForm resets registration and clears the ref', () => {

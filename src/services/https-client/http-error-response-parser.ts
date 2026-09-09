@@ -1,7 +1,8 @@
-import { injectable } from 'tsyringe';
+import { inject, injectable } from 'tsyringe';
 
 import { HttpError } from '@/services/https-client/http-error';
-import securityEventCore from '@/services/security-events/security-event-core';
+import type { SecurityEventCore } from '@/services/security-events/security-event-core';
+import SECURITY_EVENT_TOKENS from '@/services/security-events/tokens';
 import type {
   ExtractedBody,
   JsonWithMessage,
@@ -13,13 +14,18 @@ const SECURITY_RELEVANT_STATUSES: ReadonlySet<number> = new Set([401, 403]);
 
 @injectable()
 export default class HttpErrorResponseParser {
+  constructor(
+    @inject(SECURITY_EVENT_TOKENS.SecurityEventCore)
+    private readonly securityEvents: SecurityEventCore
+  ) {}
+
   public async assertOk(response: Response): Promise<void> {
     if (response.ok || response.status === 304) {
       return;
     }
 
     if (SECURITY_RELEVANT_STATUSES.has(response.status)) {
-      securityEventCore.unauthorizedResponse(response.status);
+      this.securityEvents.unauthorizedResponse(response.status);
     }
 
     const fallback = `${response.status} ${response.statusText}`;
@@ -37,10 +43,10 @@ export default class HttpErrorResponseParser {
   }
 
   public async parse(response: Response): Promise<ExtractedBody> {
-    const contentType = (response.headers.get('content-type') || '').toLowerCase();
+    const contentType = response.headers.get('content-type')?.toLowerCase();
 
     try {
-      if (contentType.includes('json')) {
+      if (contentType?.includes('json')) {
         return await this.extractJsonBody(response.clone());
       }
 
@@ -68,10 +74,13 @@ export default class HttpErrorResponseParser {
     return { message, body };
   }
 
-  private async extractTextBody(clone: Response, contentType: string): Promise<ExtractedBody> {
-    const text = await clone.text().catch(() => '');
+  private async extractTextBody(
+    clone: Response,
+    contentType: string | undefined
+  ): Promise<ExtractedBody> {
+    const text = await clone.text().catch(() => undefined);
     const body = text ? this.truncate(text) : undefined;
-    const message = contentType.includes('text/plain') && body ? body : null;
+    const message = contentType?.includes('text/plain') && body ? body : null;
     return { message, body };
   }
 }

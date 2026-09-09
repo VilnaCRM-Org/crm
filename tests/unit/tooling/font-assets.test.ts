@@ -25,7 +25,7 @@ describe('local font assets', () => {
 
       expect(matches.length).toBeGreaterThan(0);
 
-      for (const [, fontPath, format] of matches) {
+      for (const [, fontPath = '', format = ''] of matches) {
         const resolvedFontPath = path.resolve(path.dirname(absoluteCssPath), fontPath);
 
         expect(fontPath.endsWith('.woff2')).toBe(true);

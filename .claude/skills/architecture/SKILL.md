@@ -52,7 +52,10 @@ Read the layers top to bottom:
 
 1. **Components** (`features/<feature>/components/`) — presentation only.
    They consume hooks and render children; they never import repositories,
-   the module store, or `src/services/` directly.
+   the module store, or `src/services/` directly. When a component genuinely
+   needs a behavioral collaborator, it resolves it through the DI bridge
+   `useService(TOKENS.X)` from `@/providers/di` — never `new`-ing the class
+   (issue #128; see "Component DI consumption" below).
 2. **Hooks** (`features/<feature>/hooks/use-*.ts`) — UI logic, Redux state
    access, and the only place that calls repository APIs and dispatches
    mutations.
@@ -130,14 +133,61 @@ These come from `.dependency-cruiser.js`. They run on every PR via
 - The module composition root (`config/di.ts`) is exempt from
   `no-feature-internal-imports` / `no-repository-internal-imports` so it can
   register the feature's concrete internals.
+- `injectable-classes-no-value-imports` (issue #130) — a class in a logic
+  directory (`src/services/**`, `src/utils/**`, `src/modules/*/store/**`,
+  `src/modules/*/features/*/{repositories,stores,utils}/**`) must not
+  value-import another project module to call it. Add a token to the owning
+  area's `tokens.ts`, register it in that area's `di.ts`, and
+  `@inject(TOKENS.X)` it; use `import type` when the import is only an
+  annotation. Allowed value imports: the base class you `extend`, `tsyringe` /
+  `reflect-metadata`, token modules, config data, domain/transport error
+  classes, constant maps, runtime data contracts (`response-schemas`,
+  `*-mutation`), the module/feature public barrels, and pure leaf libraries
+  (`uuid`). Behavioral third-party libraries (Apollo, Sentry, `web-vitals`, zod)
+  go behind an injectable adapter and a token. Scope, carve-outs, and allowlist
+  live in `config/di-collaborator-policy.js`, shared with the ESLint half of the
+  gate. Component-side (`.tsx`) consumption is the disjoint companion rule #128.
+
+**Component DI consumption (issue #128):**
+
+- A `.tsx` component obtains a behavioral collaborator only through the
+  sanctioned bridge `useService(TOKENS.X)` from `@/providers/di` — never
+  `new MyService()`, never a value-import of an injectable class. `import type`
+  stays allowed (annotations bind nothing). Add the token and register the class
+  in the owning area's `di.ts` first.
+- `components-no-direct-injectable-import` (dependency-cruiser) — a `.tsx`
+  value-importing `src/services/**`, `…/repositories/**`, `src/modules/*/store/**`,
+  `*-factory`, `*-mapper`, or `*error-handler*`. An ESLint `no-restricted-syntax`
+  selector on `src/**/*.tsx` covers the `new` side (built-in constructors are
+  allowlisted out).
+- `no-paint-path-import-di-bridge` — the auth render path **reaching**
+  `@/providers/di`. The bridge eagerly imports the composition root, so any path to
+  it would pull the DI graph into the auth paint chunk; the rule is `reachable`, so
+  an intermediate shared component does not launder the import.
+- `no-eager-shell-import-di-bridge` — `src/index.tsx`, `src/app.tsx`, or
+  `src/routes/**` importing the bridge, which would move the container into the
+  initial bundle. Direct-edge on purpose: the registry dynamically imports every
+  page, so a `reachable` variant would ban the bridge in every lazily routed
+  component — its intended use.
+- Carve-outs, all container-free by design and identical in both `.tsx` gates: the
+  auth render path, the `route-composer` / `route-mapper` singletons (issue #105 —
+  not all of `src/routes/`), `src/index.tsx`, and the root error boundary file
+  `app-error-boundary.tsx` alone (a class component cannot call a hook — its
+  functional descendants stay gated). Leave their module singletons as they are.
+- Hooks (`use-*.ts`) are outside the static gate and stay a review-gate concern —
+  prefer DI there too.
+- In component tests, swap the collaborator by registering a mock against the
+  token or by jest-mocking `@/providers/di/use-service`.
 
 **Folder shape:**
 
 - `module-allowed-folders` — module root may only contain `config`,
   `features`, `hooks`, `lib`, `store`, `types`, `utils`.
 - `feature-allowed-folders` — feature root may only contain `assets`,
-  `components`, `hooks`, `i18n`, `repositories`, `routes`, `types`,
-  `utils`.
+  `components`, `hooks`, `i18n`, `repositories`, `routes`, `stores`,
+  `types`, `utils`.
+- Both lists come from `config/module-shape.json`, the single source
+  `.dependency-cruiser.js` and the `make new-module` generator share.
 - `feature-hooks-file-convention` — files inside `features/*/hooks/`
   must be `index.*` or `use-<kebab>.*`.
 
@@ -398,6 +448,14 @@ make lint
 - `no-components-to-store` fires on a `.tsx` — a component is importing
   the slice directly. Expose state through a `use-*.ts` selector hook and
   import that.
+- `injectable-classes-no-value-imports` fires — a logic class reached for a
+  collaborator instead of receiving it. If the symbol is only an annotation,
+  switch to `import type`; otherwise give it a token, register it in the
+  owning `di.ts`, and inject it. Do not add the module to the allowlist in
+  `config/di-collaborator-policy.js` to make the error go away — that list is
+  for contract/data modules only, and
+  `tests/unit/tooling/di-collaborator-gate.test.ts` fails when a carve-out
+  starts hiding an `@injectable()` class.
 - `no-cross-feature-imports` fires — one feature reaches into a sibling
   feature's `components/` or `hooks/`. Promote the shared code to
   `src/modules/<m>/lib/` or `hooks/`.
