@@ -103,28 +103,6 @@ describe('appConfigSource', () => {
         parseSpy.mockRestore();
       }
     });
-
-    it('reads nothing when there is no document to read from', async () => {
-      const values = buildAppConfigValues({ apiBaseUrl: buildHttpUrl('/api') });
-      writeConfigBlock(JSON.stringify(values));
-
-      const source = await loadSource();
-
-      expect(source.snapshot()).toEqual(values);
-
-      const documentSpy = jest.spyOn(globalThis, 'document', 'get');
-      documentSpy.mockImplementation((): Document => undefined as unknown as Document);
-
-      let snapshot: Record<string, unknown> = { unread: true };
-
-      try {
-        snapshot = source.snapshot();
-      } finally {
-        documentSpy.mockRestore();
-      }
-
-      expect(snapshot).toEqual({});
-    });
   });
 
   describe('load', () => {

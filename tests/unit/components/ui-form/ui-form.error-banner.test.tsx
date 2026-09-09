@@ -51,7 +51,10 @@ describe('UIForm error banner', () => {
 
     const alert = screen.getByRole('alert');
     expect(alert).toHaveTextContent(ERROR_TEXT);
-    expect(alert).toHaveStyle({ color: 'red', marginBottom: '1rem' });
+    // cssstyle 4 (jsdom 26) no longer normalises a named colour on assignment, so the computed
+    // value is what the assertion has to name.
+    expect(alert).toHaveStyle({ color: 'rgb(255, 0, 0)' });
+    expect(getComputedStyle(alert).marginBottom).toBe('1rem');
   });
 
   it('moves focus to the banner without inserting it into the tab order', () => {

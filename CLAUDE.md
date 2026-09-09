@@ -105,15 +105,18 @@ escape hatch and is deliberately hostile to growth —
 unless every entry is `^`-anchored, carries a substantive `reason`, and declares an `expiresWith`
 dependency major that the pinned version has **not** yet reached. An entry therefore cannot outlive
 its cause: the dependency bump that fixes the message turns the allowlist red until the entry is
-deleted. The single current entry covers the `ReactDOMTestUtils.act` deprecation that the pinned
-`@testing-library/react` 13.4 emits on every render; it expires at major 16.
+deleted. That has already happened once: the only entry the allowlist ever carried covered the
+`ReactDOMTestUtils.act` deprecation that `@testing-library/react` 13.4 emitted on every render and
+declared `expiresWith` major 16, so the upgrade to 16 turned it red and it was deleted. **The
+allowlist is empty**, and a new entry has to arrive with its own must-fail fixture rather than
+inherit an existing exemption.
 
 **No suppression:** satisfy the gate by fixing the emitting path or by spying **and asserting** the
 expected output — never by broadening an allowlist pattern, never by dropping the gate from a setup
 file. [`tests/unit/tooling/console-gate-fixtures.test.ts`](tests/unit/tooling/console-gate-fixtures.test.ts)
 runs a child Jest against seeded fixtures in `tests/fixtures/console-gate/` and pins that the gate
-really fails on unexpected `error`/`warn`, really passes a spied-and-asserted call, and really
-ignores `log`/`info`/`debug`.
+really fails on unexpected `error`/`warn` — including the message the expired entry used to
+exempt — really passes a spied-and-asserted call, and really ignores `log`/`info`/`debug`.
 
 ### E2E & Visual Tests
 

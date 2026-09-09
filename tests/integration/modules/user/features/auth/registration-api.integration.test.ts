@@ -151,14 +151,9 @@ describe('RegistrationAPI Integration', () => {
     });
 
     it('throws an ApiError on a network failure', async () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-
       server.use(http.post(GRAPHQL_URL, () => HttpResponse.error()));
 
       await expect(registrationAPI.register(credentials)).rejects.toBeInstanceOf(ApiError);
-
-      expect(consoleError).toHaveBeenCalledTimes(1);
-      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining(`POST ${GRAPHQL_URL}`));
     });
   });
 

@@ -138,15 +138,9 @@ describe('Auth Store Integration', () => {
     });
 
     it('should set error state on network failure', async () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.error()));
 
       await authActions.loginUser(buildCredentials());
-
-      expect(consoleError).toHaveBeenCalledTimes(1);
-      expect(consoleError).toHaveBeenCalledWith(
-        expect.stringContaining(`POST ${API_ENDPOINTS.LOGIN}`)
-      );
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -322,6 +316,7 @@ describe('Auth Store Integration', () => {
 
     it('should handle validation error from API response', async () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
       server.use(
         http.post(GRAPHQL_URL, () =>
           HttpResponse.json({
@@ -346,6 +341,7 @@ describe('Auth Store Integration', () => {
 
     it('surfaces a register error when the payload contains no user', async () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
       server.use(
         http.post(GRAPHQL_URL, () => HttpResponse.json({ data: { createUser: { user: null } } }))
       );
@@ -395,13 +391,9 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle network failure', async () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
       server.use(http.post(GRAPHQL_URL, () => HttpResponse.error()));
 
       await authActions.registerUser(registrationCredentials);
-
-      expect(consoleError).toHaveBeenCalledTimes(1);
-      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining(`POST ${GRAPHQL_URL}`));
 
       const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
