@@ -103,7 +103,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "jest-fail-on-console": "^3.3.4",
-    "jscpd": "^4.2.5",
+    "jscpd": "^5.1.2",
     "jsdoc": "^4.0.4",
     "jsdom": "^26.1.0",
     "license-checker-rseidelsohn": "^5.0.1",
