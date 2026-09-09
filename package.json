@@ -121,7 +121,7 @@
     "serve": "^14.2.6",
     "spdx-satisfies": "^6.0.0",
     "storybook": "^9.1.5",
-    "style-loader": "^3.3.4",
+    "style-loader": "^4.0.0",
     "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
