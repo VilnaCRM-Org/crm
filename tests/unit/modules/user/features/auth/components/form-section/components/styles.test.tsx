@@ -1,5 +1,6 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { render, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 
 import breakpointsTheme from '@/components/ui-breakpoints';
 import formSectionComponentStyles, {

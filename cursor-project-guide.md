@@ -5,11 +5,11 @@ AI-powered development environments.
 
 ## Project Overview
 
-This is a modern SPA template based on React 18.3, TypeScript, Material-UI v7,
+This is a modern SPA template based on React 19, TypeScript, Material-UI v7,
 featuring extensive CI checks, configured testing tools (Playwright, Jest),
 and a modular architecture inspired by bulletproof-react.
 
-For detailed tech stack and architecture information, see `CLAUDE.md` and `agents.md`.
+For detailed tech stack and architecture information, see `CLAUDE.md` and `AGENTS.md`.
 
 ## Quick Navigation
 
@@ -662,7 +662,7 @@ refactor(auth): extract validation to custom hook
 ## Resources
 
 - **CLAUDE.md**: Project overview and tech stack
-- **agents.md**: AI agent-specific workflows and patterns
+- **AGENTS.md**: AI agent-specific workflows and patterns
 - **README.md**: User-facing documentation
 - **GitHub Workflows** (`.github/workflows/`): CI/CD pipeline configurations
 - **Makefile**: All available commands

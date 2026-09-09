@@ -3,8 +3,7 @@
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import type { ReactElement, ReactNode } from 'react';
-
+import type { JSX, ReactElement, ReactNode } from 'react';
 jest.mock('@/components/ui-back-to-main', () => ({
   __esModule: true,
   default: (): ReactElement => <nav aria-label="back-to-main" />,

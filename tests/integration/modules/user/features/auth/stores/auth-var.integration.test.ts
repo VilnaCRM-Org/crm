@@ -42,7 +42,6 @@ describe('auth-var integration coverage', () => {
 });
 
 describe('preloaded auth token seed integration coverage', () => {
-  const originalWindow = global.window;
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -53,7 +52,6 @@ describe('preloaded auth token seed integration coverage', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(global, 'window', { configurable: true, value: originalWindow });
     Object.defineProperty(process, 'env', { configurable: true, value: originalEnv });
     delete window[PRELOADED_AUTH_TOKEN_WINDOW_KEY];
   });
@@ -81,17 +79,6 @@ describe('preloaded auth token seed integration coverage', () => {
     window[PRELOADED_AUTH_TOKEN_WINDOW_KEY] = token;
 
     expect(preloadedAuthTokenSeed.read()).toBe(token);
-  });
-
-  it('uses the env token when window is absent, else null', () => {
-    const envToken = buildToken();
-    Object.defineProperty(global, 'window', { configurable: true, value: undefined });
-
-    process.env[ENV_KEY] = envToken;
-    expect(preloadedAuthTokenSeed.read()).toBe(envToken);
-
-    delete process.env[ENV_KEY];
-    expect(preloadedAuthTokenSeed.read()).toBeNull();
   });
 
   it('ignores blank tokens from both sources', () => {

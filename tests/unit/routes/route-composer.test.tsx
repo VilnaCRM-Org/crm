@@ -1,5 +1,5 @@
 import type { ComponentType, ReactElement } from 'react';
-import type { RouteObject } from 'react-router-dom';
+import type { RouteObject } from 'react-router';
 
 import RouteError from '@/components/error-boundary/route-error';
 import AppLayout from '@/components/layouts/app-layout';

@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import type { JSX } from 'react';
 
 import styles from '@/components/skeletons/ui-skeleton-button/styles';
 import type { UISkeletonButtonProps } from '@/components/skeletons/ui-skeleton-button/types';

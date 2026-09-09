@@ -170,7 +170,7 @@ technique-level depth for UI/design, motion, accessibility, testing, performance
 and code quality. Match a task to a skill using the
 [Global Skills task → skill table](SKILL-DECISION-GUIDE.md#global-skills-claudeskills--task--skill-map)
 in `SKILL-DECISION-GUIDE.md`, and invoke matches by name. Full descriptions are in
-`agents.md` ("Global Skills"). For any UI change, pair the a11y skills with the
+`AGENTS.md` ("Global Skills"). For any UI change, pair the a11y skills with the
 mandatory `accessibility-lead` agent review.
 
 ### BMAD Planning Skills (Separate Directory)
@@ -466,7 +466,7 @@ If you hit a blocker:
 
 1. Read the skill's `reference/troubleshooting.md` if it exists.
 2. Check examples under `examples/`.
-3. Review `agents.md` (this repo's comprehensive agent guide).
+3. Review `AGENTS.md` (this repo's comprehensive agent guide).
 4. Review `CLAUDE.md` (commands, architecture, metrics policy).
 
 ## Integration With Existing Documentation
@@ -474,7 +474,7 @@ If you hit a blocker:
 This skills system integrates with:
 
 - **CLAUDE.md** – project overview, tech stack, commands, metrics policy.
-- **agents.md** – comprehensive agent guidelines and troubleshooting.
+- **AGENTS.md** – comprehensive agent guidelines and troubleshooting.
 - **docs/** – user and developer documentation.
 - **Makefile** – authoritative command surface for all checks.
 

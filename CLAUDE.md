@@ -10,16 +10,17 @@ This template is used for all VilnaCRM microservices.
 
 ## Tech Stack
 
-- **Frontend**: React 18.3, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
+- **Frontend**: React 19, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
 - **State Management**: Zustand (lightweight store with `create` and `devtools`)
-- **Routing**: React Router v6
+- **Routing**: React Router v7 (the `react-router` package; `react-router-dom` was folded into it)
 - **DI Container**: tsyringe with reflect-metadata decorators
-- **i18n**: react-i18next (main language: uk, fallback: en)
+- **i18n**: i18next v26 + react-i18next v17 (main language: uk, fallback: en)
 - **Build**: RSBuild (Rspack-based bundler, configured via `rsbuild.config.ts`)
 - **Backend Mock**: Apollo Server (GraphQL) for local development
 - **Package Manager**: Bun (required, version >=1.3.5). Node.js remains the runtime;
   Bun is used only to manage dependencies using `bun.lock`.
-- **Node**: >=24.8.0 (enforced via engineStrict)
+- **Node**: >=24.8.0 (enforced via engineStrict); `@types/node` tracks the same major
+- **Testing**: Jest 30 (jsdom 26), Testing Library 16, msw 2, Playwright
 
 ## Development Environment
 
@@ -104,15 +105,18 @@ escape hatch and is deliberately hostile to growth —
 unless every entry is `^`-anchored, carries a substantive `reason`, and declares an `expiresWith`
 dependency major that the pinned version has **not** yet reached. An entry therefore cannot outlive
 its cause: the dependency bump that fixes the message turns the allowlist red until the entry is
-deleted. The single current entry covers the `ReactDOMTestUtils.act` deprecation that the pinned
-`@testing-library/react` 13.4 emits on every render; it expires at major 16.
+deleted. That has already happened once: the only entry the allowlist ever carried covered the
+`ReactDOMTestUtils.act` deprecation that `@testing-library/react` 13.4 emitted on every render and
+declared `expiresWith` major 16, so the upgrade to 16 turned it red and it was deleted. **The
+allowlist is empty**, and a new entry has to arrive with its own must-fail fixture rather than
+inherit an existing exemption.
 
 **No suppression:** satisfy the gate by fixing the emitting path or by spying **and asserting** the
 expected output — never by broadening an allowlist pattern, never by dropping the gate from a setup
 file. [`tests/unit/tooling/console-gate-fixtures.test.ts`](tests/unit/tooling/console-gate-fixtures.test.ts)
 runs a child Jest against seeded fixtures in `tests/fixtures/console-gate/` and pins that the gate
-really fails on unexpected `error`/`warn`, really passes a spied-and-asserted call, and really
-ignores `log`/`info`/`debug`.
+really fails on unexpected `error`/`warn` — including the message the expired entry used to
+exempt — really passes a spied-and-asserted call, and really ignores `log`/`info`/`debug`.
 
 ### E2E & Visual Tests
 
@@ -490,7 +494,10 @@ make format         # Prettier + qlty fmt
 make verify-scaffold # generate a throwaway module and gate it (see Scaffolding below)
 ```
 
-Git hooks are managed by Husky. Run `make husky` once after cloning.
+Git hooks are managed by Husky v9. Run `make husky` after cloning **and after any Husky
+upgrade** — v9 moved `core.hooksPath` from `.husky` to `.husky/_`, and a clone that skips it
+runs no hooks at all. The hook scripts keep their `#!/usr/bin/env sh` shebang (`make lint-shell`
+fails `SC2148` without it) but no longer source `_/husky.sh`, which v9 removed.
 Agents should run `make format` before `make lint`. Formatting is intentionally
 separate from the `lint` verification suite.
 
@@ -607,6 +614,25 @@ instead of surfacing on an unrelated PR.
 This is detection and attribution only — sequencing `autorelease.yml` behind it belongs to
 issue #138.
 
+### Dependency updates and major upgrades (issue #143)
+
+Dependabot groups **minor and patch** updates into one weekly pull request per ecosystem and
+leaves majors ungrouped, so each major arrives as its own reviewable, revertable pull request.
+The step-by-step procedure for taking one — including the ordering constraints, the budget
+re-measurement, and the "never satisfy a gate with a suppression" rule — is the
+**Major-version upgrade playbook** in [`CONTRIBUTING.md`](CONTRIBUTING.md). Read it before
+raising any major.
+
+Two constraints in this repository are easy to trip over:
+
+- **`@types/node` tracks the Node engine, not npm `latest`.** `engines.node` is `>=24.8.0`, so
+  the types stay on the 24 line; a newer major would make type-checking describe a runtime the
+  project does not run.
+- **The test runner moves as a set.** `jest`, `jest-environment-jsdom`, `@types/jest`,
+  `ts-jest`, `jsdom`, and `@types/jsdom` are coupled: `jest-environment-jsdom` pins the jsdom
+  the tests actually execute against, so bumping the standalone `jsdom` alone installs a second,
+  nested copy and changes nothing.
+
 ## Agent Skill Layout
 
 - `.agents/skills`: BMAD agents, planning workflows, and interactive methods.
@@ -614,7 +640,7 @@ issue #138.
   testing, review, documentation, observability, and performance guidance.
 - `~/.claude/skills` (global, personal): UI/design/motion/a11y skills (from
   [ui-skills.com](https://www.ui-skills.com/skills/)) plus testing, performance, React/TS,
-  and browser/audit skills. Catalog and triggers: see "Global Skills" in `agents.md`.
+  and browser/audit skills. Catalog and triggers: see "Global Skills" in `AGENTS.md`.
 
 Do not mirror BMAD skills into `.claude/skills`.
 
@@ -627,7 +653,7 @@ Codex, GitHub Copilot, Cursor, OpenAI agents, and any other assistant) MUST:
 2. Read
    [`.claude/skills/SKILL-DECISION-GUIDE.md`](.claude/skills/SKILL-DECISION-GUIDE.md).
 3. Identify every `.claude/skills/*` skill **and** every relevant global
-   `~/.claude/skills` skill (see "Global Skills" in `agents.md`) for the task,
+   `~/.claude/skills` skill (see "Global Skills" in `AGENTS.md`) for the task,
    then invoke each match before executing.
 4. Apply all relevant skills. Only skip one after recording
    "Not applicable" with a concrete reason.
@@ -1947,7 +1973,7 @@ narrowing its file set, or moving a read out of the guarded method.
    reuse it across input and assertion. Keep hardcoded literals only when the value IS the test
    case or a fixed contract (invalid/edge-case inputs, golden text, config, URLs, error
    codes/messages, i18n strings, mock sentinels). See the "Test Data — Faker builders" section
-   in `agents.md` for the full convention and review guideline.
+   in `AGENTS.md` for the full convention and review guideline.
 
 9. **Observability (issue #115)**: A single DI-managed boundary in
    `src/services/observability/` is the **only** sanctioned path for error capture,
@@ -1989,7 +2015,7 @@ narrowing its file set, or moving a read out of the guarded method.
     workflow. Unit and integration tests pin exact uk/en outputs (e.g. `1234.5` →
     `1 234,50 ₴` vs `₴1,234.50`), so locale regressions fail CI. Satisfy the gate by
     routing through the formatter service — never with `eslint-disable`. See the
-    "Locale-aware Intl formatting" section in `agents.md` for the full convention.
+    "Locale-aware Intl formatting" section in `AGENTS.md` for the full convention.
 
 ## Node Version Management
 
@@ -2041,3 +2067,50 @@ command reference.
 | `/dev`         | Developer       | Implementation, coding                |
 | `/ux-designer` | UX Designer     | User experience, wireframes           |
 | `/qa`          | QA Engineer     | Test automation, quality assurance    |
+
+<!-- react-frontend-sdlc:begin -->
+
+## react-frontend-sdlc governance (managed block — do not edit between markers)
+
+This repository's SDLC is driven by the react-frontend-sdlc plugin through the
+`/fe-sdlc` orchestrator and its stage commands (`/fe-sdlc-setup`,
+`/fe-sdlc-issue`, `/fe-sdlc-plan`, `/fe-sdlc-implement`, `/fe-sdlc-review`,
+`/fe-sdlc-qa`, `/fe-sdlc-finish-pr`). Every command, agent, and skill reads the
+project profile at `.claude/react-sdlc.yml` rather than hardcoding repo shape.
+
+### Skill-triage gate
+
+Before review or implementation work, every skill shipped by the
+react-frontend-sdlc plugin receives a recorded verdict: EXECUTE (with
+evidence) or NOT-APPLICABLE (with a reason). Verdicts are formed from
+skill frontmatter and the decision guide only; full skill bodies are
+loaded solely on EXECUTE.
+
+### Protected quality thresholds
+
+Quality gates live in `.claude/react-sdlc.yml` under `quality.*` and are
+raise-only: score floors (coverage, mutation MSI, Lighthouse desktop/mobile)
+may be raised above the shipped defaults, and the eslint, tsc, jscpd,
+markdownlint, dependency-cruiser, and visual-diff violation ceilings stay at
+zero. Never lower a floor or raise a ceiling. The rule binds on its own: a
+diff that weakens a gate is out of policy whether or not any tool catches it,
+and a run that cannot meet a gate is fixed at its root cause rather than by
+editing the profile.
+
+### Mandatory accessibility gate
+
+Accessibility is non-negotiable. The `/fe-sdlc-review` and `/fe-sdlc-qa`
+stages run the accessibility lane — the target mapped by `make.a11y`, or the
+plugin's bundled static axe-core / semantic / ARIA checks when that mapping is
+`null` — and must report a clean a11y verdict before a change can finish.
+Never weaken or skip it.
+
+### Make-map execution
+
+Run all build, test, lint, and quality commands through the logical targets
+mapped in `.claude/react-sdlc.yml` (`make.*` — `make.ci`, `make.lint`,
+`make.test_unit_client`, and the rest). Never invoke the package manager,
+bundler, or test runners directly on the host. A `null` mapping means the
+capability is absent: skip or degrade with a note, never improvise a raw
+host command.
+<!-- react-frontend-sdlc:end -->

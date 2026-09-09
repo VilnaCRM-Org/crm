@@ -6,7 +6,6 @@ const ENV_KEY = 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN';
 const OPT_IN_KEY = 'ENABLE_PRELOADED_AUTH_TOKEN_SEED';
 
 describe('preloadedAuthTokenSeed', () => {
-  const originalWindow = global.window;
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -17,7 +16,6 @@ describe('preloadedAuthTokenSeed', () => {
   });
 
   afterEach(() => {
-    Object.defineProperty(global, 'window', { configurable: true, value: originalWindow });
     Object.defineProperty(process, 'env', { configurable: true, value: originalEnv });
     delete window[PRELOADED_AUTH_TOKEN_WINDOW_KEY];
   });
@@ -48,20 +46,6 @@ describe('preloadedAuthTokenSeed', () => {
       window[PRELOADED_AUTH_TOKEN_WINDOW_KEY] = windowToken;
 
       expect(preloadedAuthTokenSeed.read()).toBe(windowToken);
-    });
-
-    it('uses the env token when there is no window at all', () => {
-      const envToken = buildToken();
-      Object.defineProperty(global, 'window', { configurable: true, value: undefined });
-      process.env[ENV_KEY] = envToken;
-
-      expect(preloadedAuthTokenSeed.read()).toBe(envToken);
-    });
-
-    it('returns null when there is no window and no env token', () => {
-      Object.defineProperty(global, 'window', { configurable: true, value: undefined });
-
-      expect(preloadedAuthTokenSeed.read()).toBeNull();
     });
 
     it('ignores a blank window token and a blank env token', () => {

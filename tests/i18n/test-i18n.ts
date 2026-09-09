@@ -12,7 +12,7 @@ testI18n.use(initReactI18next).init({
     en: { translation: enTranslations.en.translation },
   },
   interpolation: { escapeValue: false },
-  initImmediate: false,
+  initAsync: false,
 });
 
 export default testI18n;

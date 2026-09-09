@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bmalph:*)",
+      "Bash(make:*)",
+      "Bash(bun:*)",
+      "Bash(docker compose exec dev:*)",
+      "Bash(git:*)",
+      "Bash(gh:*)"
+    ],
+    "deny": [
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(nc:*)",
+      "Bash(scp:*)",
+      "Bash(docker compose exec dev curl:*)",
+      "Bash(docker compose exec dev wget:*)",
+      "Bash(docker compose exec dev nc:*)",
+      "Bash(docker compose exec dev scp:*)"
+    ],
+    "ask": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push*--force*)",
+      "Bash(git push* -f*)",
+      "Bash(git push*--delete*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git reset*--hard*)",
+      "Bash(git clean:*)",
+      "Bash(git checkout*--force*)",
+      "Bash(git checkout* -f*)",
+      "Bash(git branch*-D*)",
+      "Bash(make clean:*)",
+      "Bash(docker compose exec dev rm:*)",
+      "Bash(docker compose exec dev sh:*)",
+      "Bash(docker compose exec dev bash:*)",
+      "Bash(docker compose exec dev git:*)"
+    ]
+  }
+}

@@ -1,8 +1,8 @@
 import { act, render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom';
+import type { JSX } from 'react';
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router';
 
 import AppLayout from '@/components/layouts/app-layout';
-import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 type Entry = Parameters<typeof MemoryRouter>[0]['initialEntries'];
 
@@ -16,7 +16,7 @@ function NavigationProbe(): JSX.Element {
 
 function renderLayout(entries: Entry): void {
   render(
-    <MemoryRouter initialEntries={entries} future={ROUTER_FUTURE_FLAGS}>
+    <MemoryRouter initialEntries={entries}>
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<div>home page</div>} />
@@ -61,10 +61,7 @@ describe('AppLayout', () => {
   // `focusMain` stays on the history entry, so returning to it must not re-run the hand-off.
   it('does not steal focus back when the landing entry is revisited', () => {
     render(
-      <MemoryRouter
-        initialEntries={[{ pathname: '/', state: { focusMain: true } }] as Entry}
-        future={ROUTER_FUTURE_FLAGS}
-      >
+      <MemoryRouter initialEntries={[{ pathname: '/', state: { focusMain: true } }] as Entry}>
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<NavigationProbe />} />

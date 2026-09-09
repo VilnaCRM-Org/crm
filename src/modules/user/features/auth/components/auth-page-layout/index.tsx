@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { Suspense } from 'react';
+import { type JSX, Suspense } from 'react';
 
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 import UIBackToMain from '@/components/ui-back-to-main';

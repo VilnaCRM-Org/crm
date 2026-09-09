@@ -1,5 +1,6 @@
 import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
+import type { JSX } from 'react';
 
 import styles from '@/components/skeletons/ui-skeleton-input/styles';
 import type { UISkeletonInputProps } from '@/components/skeletons/ui-skeleton-input/types';
