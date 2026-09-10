@@ -60,6 +60,16 @@ describe('AuthFailureMonitor', () => {
     expect(monitor.observe(2000).failureCount).toBe(2);
   });
 
+  // Covers the initial breach state: with a threshold of 1 the very first observation crosses, so
+  // a monitor that started out already-breached would report no escalation at all.
+  it('escalates on the first failure when the threshold is one', async () => {
+    process.env[THRESHOLD_VAR] = '1';
+    const monitor = await loadMonitor();
+
+    expect(monitor.observe(1000)).toMatchObject({ failureCount: 1, thresholdCrossed: true });
+    expect(monitor.observe(1100).thresholdCrossed).toBe(false);
+  });
+
   it('escalates once per breach instead of on every later failure in the window', async () => {
     const monitor = await loadMonitor();
     monitor.observe(1000);

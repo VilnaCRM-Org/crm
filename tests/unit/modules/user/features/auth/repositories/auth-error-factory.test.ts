@@ -73,6 +73,14 @@ describe('AuthErrorFactory', () => {
     });
   });
 
+  it('ignores a non-numeric status on the originating error', async () => {
+    const factory = await loadFactory();
+
+    const built = factory.fromUiError(UI_ERROR, { status: '429' });
+
+    expect(Object.hasOwn(built, 'status')).toBe(false);
+  });
+
   it('omits the status when the originating error carries none', async () => {
     const factory = await loadFactory();
     const cause = new ApiError({ code: 'SERVER_ERROR', message: 'x' });

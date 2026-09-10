@@ -25,10 +25,10 @@ export default class AuthErrorFactory {
   constructor(@inject(ERROR_UTILS_TOKENS.ErrorParser) private readonly errorParser: ErrorParser) {}
 
   public fromUiError(error: UiError, cause?: unknown): AuthError {
-    const parsed = cause === undefined ? undefined : this.errorParser.parseHttpError(cause);
-    const status = this.statusOf(parsed?.original);
+    const parsed = this.errorParser.parseHttpError(cause);
+    const status = this.statusOf(parsed.original);
     return {
-      kind: KIND_BY_CODE[parsed?.code ?? ''] ?? 'unknown',
+      kind: KIND_BY_CODE[parsed.code] ?? 'unknown',
       displayMessage: error.displayMessage,
       retryable: error.retryable,
       ...(status === undefined ? {} : { status }),
