@@ -49,7 +49,8 @@ const ESLINT_FIXTURES = {
     code: NEW_BEHAVIORAL_CLASS,
     filePath: 'src/modules/user/features/auth/components/fixture.tsx',
   },
-  routeShellCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/route-composer.tsx' },
+  routeComposerCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/route-composer.tsx' },
+  routeMapperCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/route-mapper.tsx' },
   routeShellOtherFile: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/fixture.tsx' },
   appEntrypointCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/index.tsx' },
   rootErrorBoundaryCarveOut: {
@@ -156,6 +157,18 @@ const DEPCRUISE_FIXTURES = {
         "const load = () => import('../pages/dashboard');\n\n" +
         'export default function Routes(): JSX.Element {\n  void load;\n  ' +
         'return <span>routes</span>;\n}\n',
+    },
+  },
+  routeShellCarveOut: {
+    files: {
+      ...SERVICE_FILES,
+      'src/routes/route-composer.tsx': componentImporting("import Thing from '../services/thing';"),
+    },
+  },
+  routeShellOtherFile: {
+    files: {
+      ...SERVICE_FILES,
+      'src/routes/fixture.tsx': componentImporting("import Thing from '../services/thing';"),
     },
   },
   rootErrorBoundaryCarveOut: {

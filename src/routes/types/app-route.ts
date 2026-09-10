@@ -4,7 +4,6 @@ export type RouteGuard = 'protected' | 'public';
 
 export interface RouteMeta {
   readonly titleKey?: string;
-  readonly permission?: string;
 }
 
 interface RouteCommon {

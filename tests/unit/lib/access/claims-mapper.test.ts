@@ -1,0 +1,209 @@
+import claimsMapper, { ClaimsMapper } from '@/lib/access/claims-mapper';
+import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
+import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
+import {
+  SAMPLE_ROLES,
+  buildClaims,
+  buildEmail,
+  buildTenantRef,
+  buildUserId,
+} from '@tests/builders';
+
+const EMPTY_CLAIMS = {
+  sub: undefined,
+  sid: undefined,
+  email: undefined,
+  roles: undefined,
+  tenantId: undefined,
+  tenants: undefined,
+  flags: undefined,
+  allowedMutations: undefined,
+};
+
+describe('ClaimsMapper', () => {
+  const mapper = new ClaimsMapper();
+
+  it('exports a shared singleton instance', () => {
+    expect(claimsMapper).toBeInstanceOf(ClaimsMapper);
+  });
+
+  it.each([
+    { label: 'null', raw: null },
+    { label: 'undefined', raw: undefined },
+    { label: 'an array of claim records', raw: [buildClaims()] },
+    { label: 'an empty array', raw: [] },
+    { label: 'a string', raw: buildUserId() },
+    { label: 'a number', raw: 42 },
+    { label: 'a boolean', raw: true },
+  ])('returns null when the payload is $label', ({ raw }) => {
+    expect(mapper.map(raw)).toBeNull();
+  });
+
+  it('maps every claim of a well-formed payload', () => {
+    const tenant = buildTenantRef();
+    const claims = buildClaims({
+      roles: [SAMPLE_ROLES.manager, SAMPLE_ROLES.viewer],
+      tenantId: tenant.id,
+      tenants: [tenant],
+      flags: { [FEATURE_FLAGS.contactsModule]: true },
+    });
+
+    expect(mapper.map({ ...claims })).toStrictEqual({ ...claims, allowedMutations: undefined });
+  });
+
+  it('returns an all-undefined shape for an empty record', () => {
+    expect(mapper.map({})).toStrictEqual(EMPTY_CLAIMS);
+  });
+
+  it('drops sub, email and tenantId claims that are not strings', () => {
+    const tenant = buildTenantRef();
+
+    expect(mapper.map({ sub: 7, email: null, tenantId: [tenant.id] })).toStrictEqual(EMPTY_CLAIMS);
+  });
+
+  it('keeps the string claims that sit beside dropped non-string ones', () => {
+    const sub = buildUserId();
+    const tenant = buildTenantRef();
+
+    expect(mapper.map({ sub, email: 42, tenantId: tenant.id })).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      sub,
+      tenantId: tenant.id,
+    });
+  });
+
+  it('reads sub from the subject claim when present', () => {
+    const subject = buildUserId();
+
+    expect(mapper.map({ subject })).toStrictEqual({ ...EMPTY_CLAIMS, sub: subject });
+  });
+
+  it('falls back to the sub claim when subject is absent', () => {
+    const sub = buildUserId();
+
+    expect(mapper.map({ sub })).toStrictEqual({ ...EMPTY_CLAIMS, sub });
+  });
+
+  it('prefers subject over sub when both are present', () => {
+    const subject = buildUserId();
+    const sub = buildUserId();
+
+    expect(mapper.map({ subject, sub })).toStrictEqual({ ...EMPTY_CLAIMS, sub: subject });
+  });
+
+  it('maps a string sid claim', () => {
+    const sid = buildUserId();
+
+    expect(mapper.map({ sid })).toStrictEqual({ ...EMPTY_CLAIMS, sid });
+  });
+
+  it('drops a sid claim that is not a string', () => {
+    expect(mapper.map({ sid: 7 })).toStrictEqual(EMPTY_CLAIMS);
+  });
+
+  it('drops a roles claim that is not an array', () => {
+    expect(mapper.map({ roles: SAMPLE_ROLES.admin })).toStrictEqual(EMPTY_CLAIMS);
+  });
+
+  it('keeps only the string entries of a mixed roles claim', () => {
+    const raw = {
+      roles: [SAMPLE_ROLES.admin, 7, null, SAMPLE_ROLES.viewer, { role: SAMPLE_ROLES.manager }],
+    };
+
+    expect(mapper.map(raw)).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      roles: [SAMPLE_ROLES.admin, SAMPLE_ROLES.viewer],
+    });
+  });
+
+  it('maps an empty roles array to an empty list rather than undefined', () => {
+    expect(mapper.map({ roles: [] })).toStrictEqual({ ...EMPTY_CLAIMS, roles: [] });
+  });
+
+  it('drops a tenants claim that is not an array', () => {
+    const tenant = buildTenantRef();
+
+    expect(mapper.map({ tenants: { [tenant.id]: tenant.name } })).toStrictEqual(EMPTY_CLAIMS);
+  });
+
+  it('keeps only tenant entries carrying a string id and a string name', () => {
+    const tenant = buildTenantRef();
+    const annotated = buildTenantRef();
+    const raw = {
+      tenants: [
+        tenant,
+        { ...annotated, region: 'eu' },
+        [annotated.id, annotated.name],
+        null,
+        buildEmail(),
+        { id: 7, name: annotated.name },
+        { id: annotated.id },
+        {},
+      ],
+    };
+
+    expect(mapper.map(raw)).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      tenants: [tenant, { id: annotated.id, name: annotated.name }],
+    });
+  });
+
+  it.each([
+    { label: 'a string', flags: FEATURE_FLAGS.contactsModule },
+    { label: 'an array', flags: [FEATURE_FLAGS.contactsModule] },
+    { label: 'null', flags: null },
+    { label: 'a number', flags: 1 },
+  ])('drops a flags claim that is $label', ({ flags }) => {
+    expect(mapper.map({ flags })).toStrictEqual(EMPTY_CLAIMS);
+  });
+
+  it('keeps only the boolean-valued entries of a flags claim', () => {
+    const raw = {
+      flags: {
+        [FEATURE_FLAGS.contactsModule]: true,
+        [FEATURE_FLAGS.dealsModule]: false,
+        [FEATURE_FLAGS.tenantSwitcher]: 'true',
+        unknownNumericFlag: 1,
+        unknownNullFlag: null,
+      },
+    };
+
+    expect(mapper.map(raw)).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      flags: { [FEATURE_FLAGS.contactsModule]: true, [FEATURE_FLAGS.dealsModule]: false },
+    });
+  });
+
+  it('maps an empty flags record to an empty flag state', () => {
+    expect(mapper.map({ flags: {} })).toStrictEqual({ ...EMPTY_CLAIMS, flags: {} });
+  });
+
+  it('keeps an allowedMutations claim naming a key the UI gates on', () => {
+    const raw = { allowedMutations: [MUTATION_KEYS.createUser] };
+
+    expect(mapper.map(raw)).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      allowedMutations: [MUTATION_KEYS.createUser],
+    });
+  });
+
+  it('drops an allowedMutations entry the catalogue does not declare', () => {
+    const raw = { allowedMutations: ['deleteUser', MUTATION_KEYS.createUser, 7] };
+
+    expect(mapper.map(raw)).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      allowedMutations: [MUTATION_KEYS.createUser],
+    });
+  });
+
+  it('drops an allowedMutations claim that is not an array', () => {
+    expect(mapper.map({ allowedMutations: MUTATION_KEYS.createUser })).toStrictEqual(EMPTY_CLAIMS);
+  });
+
+  it('maps an empty allowedMutations array to an empty list rather than undefined', () => {
+    expect(mapper.map({ allowedMutations: [] })).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      allowedMutations: [],
+    });
+  });
+});

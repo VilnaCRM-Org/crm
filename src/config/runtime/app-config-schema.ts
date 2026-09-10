@@ -18,6 +18,7 @@ const AppConfigSchema = z.strictObject({
   flags: z
     .strictObject({
       forgotPassword: z.boolean().optional(),
+      accessCatalogueSource: z.boolean().optional(),
     })
     .optional(),
 });

@@ -416,6 +416,7 @@ In-repository documentation:
 - [Agent and contributor guide](AGENTS.md)
 - [Repository conventions and commands](CLAUDE.md)
 - [Contributing guide](CONTRIBUTING.md)
+- [Access control — RBAC, tenancy, access flags, audit](docs/access-control.md)
 - [Feature flags — lifecycle and rollout](docs/feature-flags.md)
 - [Runtime configuration (`@/config/runtime`)](src/config/runtime/README.md)
 

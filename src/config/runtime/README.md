@@ -110,6 +110,11 @@ restructuring of the i18n boot path rather than a config change. Tracked separat
 
 ## Feature flags
 
+These are **deployment-level** flags: one value per deployed instance, the same for every
+visitor. Per-principal entitlements carried by the session token are a separate catalogue
+read with `useAccessFlag` (`src/lib/access/feature-flag-catalog.ts`) — see
+[`docs/access-control.md`](../../../docs/access-control.md).
+
 `featureFlagService` (`@/config/runtime/feature-flag-service`) is a container-free class exported
 as a module singleton and registered as `RUNTIME_TOKENS.FeatureFlagService`, mirroring the
 observability render-path leaves (issue #115). Registering the instance as a value is what lets
@@ -128,7 +133,8 @@ introduce, roll out, remove — is documented in `docs/feature-flags.md`.
 ## Adding a setting
 
 1. Add the key to the JSON block in `public/index.html` (this block is the source of truth for
-   which flags exist — `render-app-config.js` rejects any flag it does not find there).
+   which **runtime** flags exist — `render-app-config.js` rejects any flag it does not find
+   there).
 2. Add the field to `app-config-schema.ts` and to the matching interface in `types/`.
 3. For a flag: add the name to the `FeatureFlag` union in `types/feature-flag.ts` and to
    `FEATURE_FLAG_DEFAULTS` in `feature-flag-service.ts`.

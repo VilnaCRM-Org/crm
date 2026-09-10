@@ -42,7 +42,28 @@ describe('route composer', () => {
 
     expect(typeOf(branch)).toBe(ProtectedRoute);
     expect(typeOf(layout)).toBe(AppLayout);
+  });
+
+  // Authorization is not a routing concern any more (issue #114): every protected route sits
+  // directly under AppLayout, and what the principal may do is read from the mutation gate.
+  it('places every protected route directly under AppLayout (#114)', () => {
+    const tree = routeComposer.compose(registry);
+    const branch = rootOf(tree).children?.find(isLayout) as RouteObject;
+    const layout = branch.children?.[0] as RouteObject;
+
     expect(layout.children?.some((route) => route.index)).toBe(true);
+    expect(layout.children?.every((route) => route.children === undefined)).toBe(true);
+  });
+
+  it('keeps a plain protected route directly under AppLayout (#114)', () => {
+    const modules: RouteModule[] = [
+      { id: 'plain', routes: [{ path: '/plain', guard: 'protected', load: page }] },
+    ];
+    const tree = routeComposer.compose(modules);
+    const branch = rootOf(tree).children?.find(isLayout) as RouteObject;
+    const layout = branch.children?.[0] as RouteObject;
+
+    expect(layout.children?.map((route) => route.path)).toEqual(['/plain']);
   });
 
   it('keeps public routes directly under RootLayout, never under AppLayout (invariant B)', () => {
@@ -53,6 +74,7 @@ describe('route composer', () => {
     // A protected route (the home index route) must never leak into the flat list.
     expect(flat.every((child) => child.index !== true)).toBe(true);
     expect(flat.map((child) => child.path)).toEqual([
+      ROUTE_PATHS.accessDenied,
       ROUTE_PATHS.notFound,
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,

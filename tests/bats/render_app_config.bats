@@ -15,10 +15,10 @@ STAGING_GRAPHQL_URL='https://staging.vilnacrm.example/graphql'
 PRODUCTION_API_BASE_URL='https://api.vilnacrm.example'
 PRODUCTION_GRAPHQL_URL='https://api.vilnacrm.example/graphql'
 
-STAGING_CONFIG='{"flags":{"forgotPassword":true}'
+STAGING_CONFIG='{"flags":{"forgotPassword":true,"accessCatalogueSource":false}'
 STAGING_CONFIG="$STAGING_CONFIG,\"graphqlUrl\":\"$STAGING_GRAPHQL_URL\"}"
 
-PRODUCTION_CONFIG='{"flags":{"forgotPassword":false}'
+PRODUCTION_CONFIG='{"flags":{"forgotPassword":false,"accessCatalogueSource":false}'
 PRODUCTION_CONFIG="$PRODUCTION_CONFIG,\"apiBaseUrl\":\"$PRODUCTION_API_BASE_URL\""
 PRODUCTION_CONFIG="$PRODUCTION_CONFIG,\"graphqlUrl\":\"$PRODUCTION_GRAPHQL_URL\"}"
 
@@ -169,7 +169,7 @@ strip_config_block() {
 
   [ "$status" -ne 0 ]
   [[ "$stderr" == *'names unknown feature flag "darkMode"'* ]]
-  [[ "$stderr" == *'Known flags: forgotPassword.'* ]]
+  [[ "$stderr" == *'Known flags: accessCatalogueSource, forgotPassword.'* ]]
 }
 
 @test "the renderer refuses to run without a target argument" {
@@ -209,7 +209,8 @@ strip_config_block() {
 
   [ "$status" -eq 0 ]
   assert_output_contains 'started'
-  [ "$(config_block "$root/dist/index.html")" = '{"flags":{"forgotPassword":true}}' ]
+  local expected='{"flags":{"forgotPassword":true,"accessCatalogueSource":false}}'
+  [ "$(config_block "$root/dist/index.html")" = "$expected" ]
 }
 
 @test "docker-entrypoint.sh fails before exec when the configuration is rejected" {

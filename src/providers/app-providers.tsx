@@ -9,6 +9,8 @@ import theme from '@/styles/theme';
 
 import i18nMod from '../i18n';
 
+import AccessProvider from './access-provider';
+
 const i18nInstance = i18nMod as unknown as I18nType;
 
 export default function AppProviders({ children }: AppProvidersProps): JSX.Element {
@@ -17,7 +19,9 @@ export default function AppProviders({ children }: AppProvidersProps): JSX.Eleme
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <I18nextProvider i18n={i18nInstance}>
-          <React.Suspense fallback={null}>{children}</React.Suspense>
+          <AccessProvider>
+            <React.Suspense fallback={null}>{children}</React.Suspense>
+          </AccessProvider>
         </I18nextProvider>
       </ThemeProvider>
     </StyledEngineProvider>

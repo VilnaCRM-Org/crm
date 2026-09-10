@@ -7,6 +7,10 @@ change** — incremental rollout for new work, and an emergency kill switch for 
 A flag is not a permanent configuration option. Every flag is a temporary construct with a
 planned removal date; a flag that outlives its rollout becomes an untested code path.
 
+These are **deployment-level** flags: one value per deployed instance, the same for every
+visitor. Per-principal entitlements carried by the session token are a separate catalogue read
+with `useAccessFlag` — see [`docs/access-control.md`](access-control.md).
+
 ## How a flag is evaluated
 
 Flags live in the `flags` object of the runtime configuration block in the HTML shell. The
@@ -93,14 +97,32 @@ housekeeping: while a flag exists, one of its two branches is running untested i
    `app-config-schema.ts`, and the `flags` object in `public/index.html`.
 3. Delete `APP_CONFIG_FLAG_<NAME>` from `.env`, `.env.example` and `docker-compose.test.yml`.
 4. Delete the flag-specific tests and collapse the remaining ones onto the surviving behaviour.
-5. Unset the variable in every environment. Leaving it set is harmless — the renderer will reject
-   it on the next restart, which is the intended signal that the environment is stale.
+5. Unset the variable in every environment before the next restart. A leftover
+   `APP_CONFIG_FLAG_<NAME>` names a flag that no longer exists, so `render-app-config.js` throws
+   and the entrypoint exits non-zero — the container does not start.
 
 ## Current flags
 
-| Flag             | Default | Meaning                                                       |
-| ---------------- | ------- | ------------------------------------------------------------- |
-| `forgotPassword` | `false` | Shows the "Forgot password?" link on the sign-in options row. |
+| Flag                    | Default | Meaning                                                      |
+| ----------------------- | ------- | ------------------------------------------------------------ |
+| `forgotPassword`        | `false` | Shows the "Forgot password?" link on sign-in.                |
+| `accessCatalogueSource` | `false` | Reserved for the server-sourced access model; no reader yet. |
+
+`accessCatalogueSource` is declared but **not yet read by any code in `src/`**: the
+server-sourced access resolver it will select is blocked on the backend contract
+([`src/api/contracts/access-rbac-proposal.md`](../src/api/contracts/access-rbac-proposal.md)),
+so setting it to `true` today changes
+nothing. It is documented now so the flag lands with its contract (the
+`FeatureFlag` union, the defaults map, the schema, and the committed block in
+`public/index.html`) rather than being retro-fitted at rollout.
+
+It is a **deployment** property, not a per-principal grant: once the loader exists, `true` will
+select the dynamic, server-sourced allowed-mutation set over the client's static claim-derived
+model, and the rollback for a bad rollout will be setting it back to `false` and restarting the
+container — no redeploy. The name is kept as shipped: the flag's job — choosing where the access
+model comes from — is unchanged by the move to mutation keys, so renaming it would churn its four
+declaration sites for nothing. It shares no name with the access-flag catalogue read by `useAccessFlag`
+(`src/lib/access/feature-flag-catalog.ts`); the two are deliberately disjoint namespaces.
 
 `forgotPassword` is the worked example of stage 1. The link points at
 `ROUTE_PATHS.passwordRecovery`, and the recovery route does not exist yet — which is exactly why

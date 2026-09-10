@@ -26,7 +26,7 @@ describe('route registry', () => {
     const notFound = shell?.routes.find((route) => route.path === ROUTE_PATHS.notFound);
 
     expect(home?.guard).toBe('protected');
-    expect(home?.meta?.permission).toBe('app.home');
+    expect(home?.meta).toBeUndefined();
     expect(notFound).toBeDefined();
     expect(notFound?.guard).toBe('public');
   });

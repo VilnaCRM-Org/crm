@@ -56,4 +56,23 @@ describe('route validator', () => {
       'Nested routes must not declare a guard'
     );
   });
+
+  it('accepts a guardless top-level route carrying title metadata (positive)', () => {
+    const modules: RouteModule[] = [
+      { id: 'a', routes: [{ path: '/a', load: page, meta: { titleKey: 'a.title' } }] },
+    ];
+
+    expect(() => routeValidator.validate(modules)).not.toThrow();
+  });
+
+  it('accepts a protected top-level route carrying title metadata (positive)', () => {
+    const modules: RouteModule[] = [
+      {
+        id: 'a',
+        routes: [{ path: '/a', guard: 'protected', load: page, meta: { titleKey: 'a.title' } }],
+      },
+    ];
+
+    expect(() => routeValidator.validate(modules)).not.toThrow();
+  });
 });

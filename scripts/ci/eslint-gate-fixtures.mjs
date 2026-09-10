@@ -70,6 +70,14 @@ const S = {
   stmtInType:
     'ExpressionStatement, IfStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, SwitchStatement, TryStatement, ThrowStatement, WithStatement, LabeledStatement, DebuggerStatement',
   defaultExportInType: 'ExportDefaultDeclaration > *:not(TSInterfaceDeclaration)',
+  adHocMembership:
+    "CallExpression[callee.property.name=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.name=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.name=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.value=/^(roles|allowedMutations)$/],CallExpression[callee.property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.value=/^(roles|allowedMutations)$/],CallExpression[callee.property.name='has'][callee.object.callee.name='Set'][callee.object.arguments.0.property.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.name='has'][callee.object.callee.name='Set'][callee.object.arguments.0.property.value=/^(roles|allowedMutations)$/],CallExpression[callee.property.name='has'][callee.object.callee.name='Set'][callee.object.arguments.0.name=/^(roles|allowedMutations)$/],MemberExpression[computed=true][object.property.name=/^(roles|allowedMutations)$/]:not([property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/]),MemberExpression[computed=true][object.property.value=/^(roles|allowedMutations)$/]:not([property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/]),MemberExpression[computed=true][object.name=/^(roles|allowedMutations)$/]:not([property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/])",
+  useCanMutateRawKey:
+    "CallExpression[callee.name='useCanMutate'] > :matches(Literal, TemplateLiteral)",
+  canRawMutationKey:
+    'CallExpression[callee.property.name=/^(can)$/] > :matches(Literal, TemplateLiteral),CallExpression[callee.property.name=/^(can)$/] > ArrayExpression > :matches(Literal, TemplateLiteral),CallExpression[callee.property.value=/^(can)$/] > :matches(Literal, TemplateLiteral),CallExpression[callee.property.value=/^(can)$/] > ArrayExpression > :matches(Literal, TemplateLiteral),CallExpression[callee.name=/^(can)$/] > :matches(Literal, TemplateLiteral),CallExpression[callee.name=/^(can)$/] > ArrayExpression > :matches(Literal, TemplateLiteral)',
+  mutationPropRaw:
+    "JSXAttribute[name.name='mutation'] > Literal,JSXAttribute[name.name='mutation'] > JSXExpressionContainer > :matches(Literal, TemplateLiteral)",
   // The two issue #130 selectors are BUILT by config/di-collaborator-policy.js (that module is
   // the single source of truth both eslint.config.mjs and .dependency-cruiser.js read), so they
   // are derived here rather than transcribed — a transcript of a generated string would only
@@ -444,6 +452,67 @@ const FIXTURES = [
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #155',
+  },
+  // ad-hoc authorization ban (#114) — one must-fail fixture per selector in the family, plus
+  // one per structural branch of the membership union (method call on the collection, Set
+  // wrapping, computed index), which is where a broken alternative would silently un-gate an
+  // authorization decision. The exhaustive per-spelling sweep over all fourteen membership
+  // forms lives in tests/unit/tooling/access-control-gates.test.ts, which lints real fixture
+  // files through the ESLint binary; this table's job is the rot-guard's one-fixture-per-selector
+  // contract.
+  {
+    id: 'adhoc-membership-call',
+    file: PROBES.logic,
+    code: "const ok = principal.roles.includes('admin');",
+    covers: [S.adHocMembership],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #114',
+  },
+  {
+    id: 'adhoc-membership-set-wrap',
+    file: PROBES.logic,
+    code: "const ok = new Set(principal.roles).has('admin');",
+    covers: [S.adHocMembership],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #114',
+  },
+  {
+    id: 'adhoc-membership-computed-index',
+    file: PROBES.logic,
+    code: 'const first = principal.roles[0];',
+    covers: [S.adHocMembership],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #114',
+  },
+  {
+    id: 'raw-mutation-key-usecanmutate',
+    file: PROBES.logic,
+    code: "const allowed = useCanMutate('createUser');",
+    covers: [S.useCanMutateRawKey],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #114',
+  },
+  {
+    id: 'raw-mutation-key-can-array',
+    file: PROBES.logic,
+    code: "const allowed = gate.can(['createUser']);",
+    covers: [S.canRawMutationKey],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #114',
+  },
+  {
+    id: 'raw-mutation-key-jsx-prop',
+    file: PROBES.component,
+    code: 'const A = () => <Guard mutation="createUser" />;',
+    covers: [S.mutationPropRaw],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #114',
   },
   // module/feature public-API boundary (#107) — deep cross-boundary import
   {

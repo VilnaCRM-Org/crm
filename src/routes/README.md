@@ -21,7 +21,7 @@ route set discoverable (audit, nav, sitemap).
 | ----------------------- | ------------------------------------------------------------- |
 | `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)   |
 | `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape   |
-| `app-routes.ts`         | The app shell's own contract (home + 404)                     |
+| `app-routes.ts`         | The app shell's own contract (home + 403 + 404)               |
 | `registry.ts`           | Collects every module contract into one list                  |
 | `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index   |
 | `route-mapper.tsx`      | Maps one contract route → a `react-router` route (lazy)       |
@@ -40,7 +40,7 @@ path (mobile Lighthouse budget).
 interface RouteCommon {
   readonly load: () => Promise<{ default: ComponentType }>; // per-route code split
   readonly guard?: 'protected' | 'public'; // top-level only; resolved by the composer
-  readonly meta?: { titleKey?: string; permission?: string };
+  readonly meta?: { titleKey?: string };
 }
 interface IndexRoute extends RouteCommon {
   readonly index: true; // a leaf — no path, no children
@@ -58,6 +58,12 @@ declarative data in the contract — it is never hand-wired in the shell. `guard
 applies to a module's **top-level** routes only; nested children inherit their
 parent's protection context, so declaring a guard on a child is rejected by the
 `RouteValidator` (it would otherwise render outside `ProtectedRoute`).
+
+`guard` is the **only** gate a route declares. Authorization is not a routing
+concern (issue #114): what a principal may do is decided by the server, read back
+through the mutation gate, and applied by the control that would invoke the
+mutation — never from route metadata. A route therefore carries no permission,
+and `/access-denied` is a plain public route rendering the refusal panel.
 
 ## Adding a page
 
@@ -84,7 +90,12 @@ parent's protection context, so declaring a guard on a child is rejected by the
 
 3. Add any new URL constant to `route-paths.ts`.
 
-4. Add the route's browser-coverage rows to `tests/e2e/route-coverage.tsv`
+4. To gate what the page can _do_, wrap the acting control in `<RequireMutation>`
+   with a `MUTATION_KEYS` constant — see
+   [`docs/access-control.md`](../../docs/access-control.md). There is nothing to
+   declare on the route itself.
+
+5. Add the route's browser-coverage rows to `tests/e2e/route-coverage.tsv`
    naming the spec(s) that exercise it. `make check-e2e-route-coverage` (first
    step of the `e2e testing` job) fails on a route key that has neither a
    covering spec nor an allowlist entry with a stated reason (issue #169).

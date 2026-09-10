@@ -236,8 +236,9 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 
 ### CI parallelization
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across an
-8-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
+12-way matrix (`make test-mutation-shard`, lean `make start-dev` container) whose slices are packed
+longest-processing-time-first by file size so no single shard carries the heavy tail. A final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -260,7 +261,7 @@ jest-runner cannot use Jest `projects` with `perTest` coverage — so repository
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — CI runners are 2-core, so parallelism comes from the 8-way shard
+These keep the run affordable — CI runners are 2-core, so parallelism comes from the 12-way shard
 count, not Stryker's in-process concurrency.
 
 ### Honest mutant classification (issue #171)
@@ -326,22 +327,37 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-The only annotated case today is the React hook dependency array, at twelve sites, and it comes in
-two shapes. Eleven are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
+Fourteen sites are annotated today, in two families. Thirteen are React hook dependency arrays.
+Twelve of those are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
 compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
-render and the effect or memo fires exactly as it does with `[]`. The twelfth,
+render and the effect or memo fires exactly as it does with `[]`. The thirteenth,
 `use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
 `ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
 `actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
 box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
 Hoisting either literal to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
-array literal, so there is nothing left to change. Adding a thirteenth needs the same standard of
-proof, and a non-empty array needs the stability argument spelled out, not assumed.
+array literal, so there is nothing left to change.
+
+The fourteenth is the only non-deps-array case: `EqualityOperator` on
+`const hydrated = usePrincipal() !== null` in `@auth/components/protected-route`. That boolean is
+read only as a member of a dependency array, so inverting the comparison flips it on exactly the
+same renders and the layout effect re-runs identically. Adopting the simpler program is **not**
+available here, and why is worth recording because it is a trap: replacing the boolean with the
+principal itself is not equivalent. Composing the DI container constructs `AccessSessionService`,
+whose constructor calls `accessSession.useLoader(...)`, and that clears the memoized token — so an
+identity-keyed dependency re-enters `start()` on the next snapshot, rebuilds the session from the
+token, silently reverts a tenant switch and adds a spurious `logout`/`login` pair to the audit
+trail. `tests/unit/components/protected-route.test.tsx` pins that behaviour.
+
+Adding a fifteenth needs the same standard of proof, a non-empty array needs the stability
+argument spelled out rather than assumed, and anything outside the two families above needs the
+equivalence argument written in full.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 206 files; not all of them produce scored mutants — the rest are pure re-export
-barrels or files whose only mutants are static and skipped by `ignoreStatic`.
+mutate scope is 243 files on this branch (206 before the access layer); not all of them
+produce scored mutants — the rest are pure re-export barrels or files whose only mutants are
+static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
 file can move it to a different shard — while its previous owner still carries the old result in
@@ -849,7 +865,7 @@ complement.
 ### Architecture gate integrity (issue #181)
 
 `.dependency-cruiser.js` encodes the barrel/public-API contract, DI composition-root isolation,
-layer bans, type-file purity, and folder/naming conventions in 49 rules of hand-written path
+layer bans, type-file purity, and folder/naming conventions in 54 rules of hand-written path
 regexes. Nothing in CI distinguished "no violations because the code is clean" from "no violations
 because a regex went dead" — a typo'd anchor makes a rule match nothing and the gate passes
 **vacuously** for every future PR.
@@ -1231,8 +1247,10 @@ src/
 │       └── package.json     # Module metadata
 ├── components/      # Reusable UI components (prefixed with UI*)
 ├── features/        # Shared features
-├── services/        # Singleton services (HttpsClient, error handling)
+├── lib/             # Dependency-free cross-cutting domain (access: RBAC/tenancy/audit)
+├── services/        # Singleton services (HttpsClient, error handling, access)
 ├── config/          # DI configuration, tokens, API config
+├── hooks/           # Shared hooks (useCanMutate, usePrincipal, useTenant, useAccessFlag)
 ├── routes/          # Route registry + composer (module-owned route contracts)
 ├── providers/       # React context providers
 └── utils/           # Shared utilities
@@ -1280,6 +1298,7 @@ The project uses tsyringe for DI with **per-module / per-infra composition roots
      `src/services/observability/{di,tokens}.ts` (`OBSERVABILITY_TOKENS`),
      `src/services/error/{di,tokens}.ts` (`ERROR_TOKENS`),
      `src/services/error-reporting/{di,tokens}.ts` (`ERROR_REPORTING_TOKENS`),
+     `src/services/access/{di,tokens}.ts` (`ACCESS_TOKENS`),
      `src/utils/error/{di,tokens}.ts` (`ERROR_UTILS_TOKENS`),
      `src/config/runtime/{di,tokens}.ts` (`RUNTIME_TOKENS`).
    - Module: `src/modules/user/config/{di,tokens}.ts` (`AUTH_TOKENS`).
@@ -1375,8 +1394,9 @@ service/repository/mapper/factory/handler. Two gates enforce it, both inside `ma
 
 **Carve-outs** (container-free by design, not modernization debt): the auth render path
 (`src/modules/user/features/auth/**`, whose mobile Lighthouse budget forbids eager DI), the
-route composer/mapper singletons (`src/routes/route-{composer,mapper}.tsx`, issue #105 — not the
-whole `src/routes/` tree), the app entrypoint, and **only** the root error
+route-shell module singletons (`src/routes/route-{composer,mapper}.tsx` and
+issues #105/#114 — not the whole `src/routes/`
+tree), the app entrypoint, and **only** the root error
 boundary file `src/components/error-boundary/app-error-boundary.tsx` (a class component cannot
 call a hook, and error reporting must survive a DI failure) — its functional descendants such as
 `ErrorFallback` and `RouteError` can call `useService` and stay gated. Both gates read the same
@@ -2016,6 +2036,31 @@ narrowing its file set, or moving a read out of the guarded method.
     `1 234,50 ₴` vs `₴1,234.50`), so locale regressions fail CI. Satisfy the gate by
     routing through the formatter service — never with `eslint-disable`. See the
     "Locale-aware Intl formatting" section in `AGENTS.md` for the full convention.
+
+11. **Access control — RBAC, tenancy, access flags, audit (issue #114)**: authorization is
+    a cross-cutting layer, not a module. The dependency-free domain lives in
+    `src/lib/access/` (mutation catalogue, principal state, session, audit core) and
+    the `@injectable()` adapters plus the composition root in `src/services/access/`
+    (`ACCESS_TOKENS`) — the same paint-safe two-layer split as observability, so the
+    authenticated paint path never loads tsyringe or zod. React consumes it **only**
+    through `useCanMutate` / `usePrincipal` / `useTenant` / `useAccessFlag` and
+    `<RequireMutation>`. **The mutation gate is the only gate (issue #114):** authorization keys
+    on a GraphQL mutation name from the closed `MUTATION_KEYS` catalogue, and
+    `Principal.allowedMutations` is _supplied_ by `MutationAccessDispatcher`, never derived
+    client-side — so a deployment that supplies nothing denies every gate. There is no
+    permission catalogue, no role → capability map and no route-level gate: routes declare
+    `guard` only, and `roles` is opaque server data carried for display and audit that grants
+    nothing. The `Principal` (id, email, roles, allowedMutations, tenantId, tenants) is derived
+    from the signed token's claims by `SessionRepository`/`SessionFactory` and hydrated by
+    `ProtectedRoute`; the server remains the source of truth. Object-level rules belong on the
+    server — a page whose data comes back empty renders its own refused state. Enforced by
+    dependency-cruiser
+    (`no-ui-to-access-services`, `no-ui-to-access-state`, `no-access-layer-to-modules`,
+    `no-access-domain-to-container`, `no-access-domain-to-tsyringe`) and an ESLint
+    `no-restricted-syntax` gate scoped outside the access layer. `useAccessFlag` reads a
+    **per-principal** entitlement from the session claims and is a different catalogue from the
+    **deployment-level** `useFeatureFlag` of issue #145 above — the two never share a flag name.
+    Full reference: [`docs/access-control.md`](docs/access-control.md).
 
 ## Node Version Management
 
