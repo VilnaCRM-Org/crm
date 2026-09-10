@@ -2,27 +2,22 @@ import type { AuthFailureWindow } from '@/services/types/security-events/securit
 
 import securityEventConfig from './security-event-config';
 
-const MAX_TRACKED_FAILURES = 1000;
-
 export class AuthFailureMonitor {
-  private readonly failures: number[] = [];
+  private failures: number[] = [];
+
+  private breached = false;
 
   public observe(now: number = Date.now()): AuthFailureWindow {
     const windowMs = securityEventConfig.windowMs();
     const threshold = securityEventConfig.threshold();
-    this.failures.push(now);
-    this.prune(now - windowMs);
+    this.failures = [...this.failures, now]
+      .filter((at) => at >= now - windowMs)
+      .slice(-securityEventConfig.maxTrackedFailures());
     const failureCount = this.failures.length;
-    return { failureCount, windowMs, threshold, thresholdBreached: failureCount >= threshold };
-  }
-
-  private prune(oldest: number): void {
-    while (this.isStale(oldest)) this.failures.shift();
-  }
-
-  private isStale(oldest: number): boolean {
-    if (this.failures.length > MAX_TRACKED_FAILURES) return true;
-    return this.failures.length > 0 && (this.failures[0] as number) < oldest;
+    const breached = failureCount >= threshold;
+    const thresholdCrossed = breached && !this.breached;
+    this.breached = breached;
+    return { failureCount, windowMs, threshold, thresholdCrossed };
   }
 }
 

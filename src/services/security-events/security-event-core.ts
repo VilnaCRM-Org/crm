@@ -13,10 +13,10 @@ export class SecurityEventCore implements SecurityEventRecorder {
   public authFailure(category: AuthFailureCategory, reason: AuthFailureReason): void {
     const observed = authFailureMonitor.observe();
     this.emit({
-      event: observed.thresholdBreached ? 'auth_failure_burst' : 'auth_failure',
+      event: observed.thresholdCrossed ? 'auth_failure_burst' : 'auth_failure',
       category,
       reason,
-      severity: observed.thresholdBreached ? 'critical' : 'warning',
+      severity: observed.thresholdCrossed ? 'critical' : 'warning',
       ...observed,
     });
   }

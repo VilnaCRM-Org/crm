@@ -6,6 +6,10 @@ describe('DI container — ErrorReporter token', () => {
   // `clearInstances()` also drops `useValue` registrations, and the reporter now injects the
   // container-free observability core rather than value-importing it (issue #130), so clearing
   // between the two cases would unregister the very token the second one resolves through.
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   afterAll(() => {
     container.clearInstances();
   });
@@ -44,6 +48,5 @@ describe('DI container — ErrorReporter token', () => {
       .report(error, { surface: 'app' });
 
     expect(captureError).toHaveBeenCalledWith(error, { surface: 'app' });
-    captureError.mockRestore();
   });
 });

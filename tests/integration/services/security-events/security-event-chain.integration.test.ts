@@ -1,7 +1,5 @@
 import 'reflect-metadata';
 
-import { buildEmail, buildPassword, buildToken } from '@tests/builders';
-
 jest.mock('@sentry/react', () => ({
   init: jest.fn(),
   captureException: jest.fn(),
@@ -14,12 +12,21 @@ jest.mock('web-vitals', () => {
   return { onLCP: register, onINP: register, onCLS: register, onFCP: register, onTTFB: register };
 });
 
-const flush = async (): Promise<void> => {
-  await Promise.resolve();
-  await Promise.resolve();
+const tick = async (): Promise<void> => {
   await new Promise((resolve) => {
     setTimeout(resolve, 0);
   });
+};
+
+// `observabilityCore.init()` is fire-and-forget over a dynamic `import()`, so the tests have to
+// wait for the SDK to actually arrive. Waiting on the SDK's own arrival rather than on a fixed
+// number of microtasks keeps the suite correct if another `await` is ever added to that path, and
+// makes a never-loading SDK a loud failure instead of an `undefined` mock call.
+const untilSdkLoaded = async (Sentry: Chain['Sentry'], attempts: number = 50): Promise<void> => {
+  if ((Sentry.init as jest.Mock).mock.calls.length > 0) return;
+  if (attempts === 0) throw new Error('Sentry SDK was never initialised');
+  await tick();
+  await untilSdkLoaded(Sentry, attempts - 1);
 };
 
 type Chain = {
@@ -54,7 +61,7 @@ describe('security-event chain (integration)', () => {
   it('delivers an auth_failure to Sentry with the session correlation id attached', async () => {
     const { Sentry, securityEventCore, observabilityCore, sessionCorrelation } = await loadChain();
     observabilityCore.init();
-    await flush();
+    await untilSdkLoaded(Sentry);
 
     securityEventCore.authFailure('login', 'authentication');
 
@@ -77,7 +84,7 @@ describe('security-event chain (integration)', () => {
     process.env.REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD = '3';
     const { Sentry, securityEventCore, observabilityCore } = await loadChain();
     observabilityCore.init();
-    await flush();
+    await untilSdkLoaded(Sentry);
 
     securityEventCore.authFailure('login', 'authentication');
     securityEventCore.authFailure('login', 'authentication');
@@ -95,24 +102,38 @@ describe('security-event chain (integration)', () => {
       severity: 'critical',
       threshold: 3,
       failureCount: 3,
-      thresholdBreached: true,
+      thresholdCrossed: true,
     });
   });
 
-  it('scrubs credential-shaped values before the event leaves the process', async () => {
+  // The payload is credential-free by construction, not by filtering: `authFailure` takes two
+  // closed unions, so no caller can route a credential into it. Asserting the exact key set is
+  // what pins that — a later field that could carry user input fails here. The `beforeSend`
+  // scrubber is the second line of defence and is covered at its own boundary, which is also the
+  // only place it runs: this mock observes `captureException` arguments before `beforeSend`.
+  it('emits a closed payload shape that has no field a credential could ride in', async () => {
     const { Sentry, securityEventCore, observabilityCore } = await loadChain();
-    const password = buildPassword();
-    const token = buildToken();
-    const email = buildEmail();
     observabilityCore.init();
-    await flush();
+    await untilSdkLoaded(Sentry);
 
     securityEventCore.authFailure('login', 'authentication');
 
-    const serialized = JSON.stringify((Sentry.captureException as jest.Mock).mock.calls.at(-1));
-    expect(serialized).not.toContain(password);
-    expect(serialized).not.toContain(token);
-    expect(serialized).not.toContain(email);
+    const [, hint] = (Sentry.captureException as jest.Mock).mock.calls.at(-1) as [
+      Error,
+      { extra: Record<string, unknown> },
+    ];
+    expect(Object.keys(hint.extra).sort()).toEqual([
+      'X-Correlation-Id',
+      'X-Request-Id',
+      'category',
+      'event',
+      'failureCount',
+      'reason',
+      'severity',
+      'threshold',
+      'thresholdCrossed',
+      'windowMs',
+    ]);
   });
 
   it('buffers a security event raised before the SDK finished loading', async () => {
@@ -122,7 +143,7 @@ describe('security-event chain (integration)', () => {
     expect(Sentry.captureException as jest.Mock).not.toHaveBeenCalled();
 
     observabilityCore.init();
-    await flush();
+    await untilSdkLoaded(Sentry);
 
     const [, hint] = (Sentry.captureException as jest.Mock).mock.calls.at(-1) as [
       Error,
@@ -135,10 +156,10 @@ describe('security-event chain (integration)', () => {
     process.env.REACT_APP_SENTRY_DSN = '';
     const { Sentry, securityEventCore, observabilityCore } = await loadChain();
     observabilityCore.init();
-    await flush();
+    await tick();
 
     securityEventCore.unauthorizedResponse(401);
-    await flush();
+    await tick();
 
     expect(Sentry.init as jest.Mock).not.toHaveBeenCalled();
     expect(Sentry.captureException as jest.Mock).not.toHaveBeenCalled();

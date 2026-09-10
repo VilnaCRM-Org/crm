@@ -26,6 +26,10 @@ const PROVIDER_LABELS = [
 ];
 
 describe('AuthProviderButtons', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('labels the social divider with the localized heading', () => {
     render(<AuthProviderButtons />);
 
@@ -59,7 +63,5 @@ describe('AuthProviderButtons', () => {
       '_blank',
       'noopener,noreferrer'
     );
-
-    openSpy.mockRestore();
   });
 });

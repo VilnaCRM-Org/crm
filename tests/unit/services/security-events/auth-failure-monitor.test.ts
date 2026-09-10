@@ -33,16 +33,16 @@ describe('AuthFailureMonitor', () => {
       failureCount: 1,
       windowMs: 1000,
       threshold: 3,
-      thresholdBreached: false,
+      thresholdCrossed: false,
     });
   });
 
   it('breaches only once the threshold is reached inside the window', async () => {
     const monitor = await loadMonitor();
 
-    expect(monitor.observe(1000).thresholdBreached).toBe(false);
-    expect(monitor.observe(1100).thresholdBreached).toBe(false);
-    expect(monitor.observe(1200)).toMatchObject({ failureCount: 3, thresholdBreached: true });
+    expect(monitor.observe(1000).thresholdCrossed).toBe(false);
+    expect(monitor.observe(1100).thresholdCrossed).toBe(false);
+    expect(monitor.observe(1200)).toMatchObject({ failureCount: 3, thresholdCrossed: true });
   });
 
   it('drops failures that fell out of the rolling window', async () => {
@@ -50,7 +50,7 @@ describe('AuthFailureMonitor', () => {
     monitor.observe(1000);
     monitor.observe(1100);
 
-    expect(monitor.observe(5000)).toMatchObject({ failureCount: 1, thresholdBreached: false });
+    expect(monitor.observe(5000)).toMatchObject({ failureCount: 1, thresholdCrossed: false });
   });
 
   it('keeps a failure that is exactly on the window boundary', async () => {
@@ -58,6 +58,28 @@ describe('AuthFailureMonitor', () => {
     monitor.observe(1000);
 
     expect(monitor.observe(2000).failureCount).toBe(2);
+  });
+
+  it('escalates once per breach instead of on every later failure in the window', async () => {
+    const monitor = await loadMonitor();
+    monitor.observe(1000);
+    monitor.observe(1100);
+
+    expect(monitor.observe(1200).thresholdCrossed).toBe(true);
+    expect(monitor.observe(1300).thresholdCrossed).toBe(false);
+    expect(monitor.observe(1400).thresholdCrossed).toBe(false);
+  });
+
+  it('escalates again once the window drains below the threshold and refills', async () => {
+    const monitor = await loadMonitor();
+    monitor.observe(1000);
+    monitor.observe(1100);
+    expect(monitor.observe(1200).thresholdCrossed).toBe(true);
+
+    expect(monitor.observe(9000)).toMatchObject({ failureCount: 1, thresholdCrossed: false });
+    monitor.observe(9100);
+
+    expect(monitor.observe(9200).thresholdCrossed).toBe(true);
   });
 
   it('caps the tracked failures so a sustained burst cannot grow unbounded', async () => {
@@ -68,6 +90,18 @@ describe('AuthFailureMonitor', () => {
     for (let index = 0; index < 1200; index += 1) observed = monitor.observe(index);
 
     expect(observed.failureCount).toBe(1000);
+  });
+
+  it('clamps a threshold above the tracked-failure cap so the burst stays reachable', async () => {
+    process.env[THRESHOLD_VAR] = '1500';
+    process.env[WINDOW_VAR] = '10000000';
+    const monitor = await loadMonitor();
+    let observed = { threshold: 0, thresholdCrossed: false };
+
+    for (let index = 0; index < 1000; index += 1) observed = monitor.observe(index);
+
+    expect(observed.threshold).toBe(1000);
+    expect(observed.thresholdCrossed).toBe(true);
   });
 
   it('stamps the observation with the current time when none is supplied', async () => {

@@ -22,7 +22,7 @@ describe('AppErrorBoundary', () => {
   });
 
   afterEach(() => {
-    consoleSpy.mockRestore();
+    jest.restoreAllMocks();
   });
 
   it('emits an app boundary-catch security event when a child throws (#159)', () => {
@@ -35,7 +35,6 @@ describe('AppErrorBoundary', () => {
     );
 
     expect(boundaryCatch).toHaveBeenCalledWith('app');
-    boundaryCatch.mockRestore();
   });
 
   it('renders children when no error occurs (AC1)', () => {

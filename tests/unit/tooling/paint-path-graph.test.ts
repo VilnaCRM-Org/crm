@@ -29,10 +29,12 @@ const ALIASES: ReadonlyArray<readonly [string, string]> = [
 
 const CANDIDATE_SUFFIXES = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'];
 
-// Matches `import … from '…'`, `export … from '…'`, and bare `import '…'`, but not `import type`
-// (erased at compile time) and not dynamic `import('…')` (the deferral mechanism itself).
+// Matches `import … from '…'`, `export … from '…'`, and bare `import '…'`, but not
+// `import type` (erased at compile time) and not dynamic `import('…')` (the deferral
+// mechanism itself). The clause before `from` admits newlines so a multiline brace list
+// is matched too; excluding `;` and quotes keeps it from spanning two statements.
 const FROM_SPECIFIER =
-  /(?:^|\n)\s*(?:import|export)(?![\s(]*type\b)[^;'"\n]*?from\s*['"]([^'"]+)['"]/g;
+  /(?:^|\n)\s*(?:import|export)(?![\s(]*type\b)[^;'"]*?from\s*['"]([^'"]+)['"]/g;
 
 const BARE_IMPORT = /(?:^|\n)\s*import\s+['"]([^'"]+)['"]/g;
 

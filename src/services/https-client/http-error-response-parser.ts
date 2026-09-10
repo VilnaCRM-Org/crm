@@ -1,12 +1,12 @@
 import { inject, injectable } from 'tsyringe';
 
 import { HttpError } from '@/services/https-client/http-error';
-import type { SecurityEventCore } from '@/services/security-events/security-event-core';
 import SECURITY_EVENT_TOKENS from '@/services/security-events/tokens';
 import type {
   ExtractedBody,
   JsonWithMessage,
 } from '@/services/types/https-client/http-error-response-parser';
+import type { SecurityEventRecorder } from '@/services/types/security-events/security-event';
 
 const MAX_ERROR_BODY_CHARS = 500;
 
@@ -15,8 +15,8 @@ const SECURITY_RELEVANT_STATUSES: ReadonlySet<number> = new Set([401, 403]);
 @injectable()
 export default class HttpErrorResponseParser {
   constructor(
-    @inject(SECURITY_EVENT_TOKENS.SecurityEventCore)
-    private readonly securityEvents: SecurityEventCore
+    @inject(SECURITY_EVENT_TOKENS.SecurityEventReporter)
+    private readonly securityEvents: SecurityEventRecorder
   ) {}
 
   public async assertOk(response: Response): Promise<void> {

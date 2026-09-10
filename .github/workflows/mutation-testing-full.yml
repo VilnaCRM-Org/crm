@@ -54,7 +54,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: reports/stryker-incremental-${{ matrix.index }}.json
-          key: mutation-incremental-shard-${{ matrix.index }}-of16-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile') }}-${{ github.run_id }}
+          key: mutation-incremental-shard-${{ matrix.index }}-of16-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-${{ github.run_id }}
 
       - name: Upload shard report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -46,12 +46,34 @@ describe('SecurityEventConfig', () => {
     expect(config.windowMs()).toBe(60000);
   });
 
+  it('clamps a threshold above the tracked-failure cap', async () => {
+    process.env[THRESHOLD_VAR] = '1500';
+    const config = await loadConfig();
+
+    expect(config.threshold()).toBe(1000);
+    expect(config.threshold()).toBe(config.maxTrackedFailures());
+  });
+
+  it('leaves a threshold below the cap untouched', async () => {
+    process.env[THRESHOLD_VAR] = '999';
+    const config = await loadConfig();
+
+    expect(config.threshold()).toBe(999);
+  });
+
+  it('reports the tracked-failure cap the monitor bounds its history by', async () => {
+    const config = await loadConfig();
+
+    expect(config.maxTrackedFailures()).toBe(1000);
+  });
+
   it.each([
     ['not-a-number', 5, 60000],
     ['0', 5, 60000],
     ['-3', 5, 60000],
-    ['2.5', 2, 2],
-  ])('normalizes %s to a positive integer', async (raw, threshold, windowMs) => {
+    ['2.5', 5, 60000],
+    ['9000abc', 5, 60000],
+  ])('rejects %s and falls back to the default', async (raw, threshold, windowMs) => {
     process.env[THRESHOLD_VAR] = raw;
     process.env[WINDOW_VAR] = raw;
     const config = await loadConfig();

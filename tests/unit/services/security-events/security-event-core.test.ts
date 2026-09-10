@@ -8,10 +8,10 @@ const quiet: AuthFailureWindow = {
   failureCount: 2,
   windowMs: 60000,
   threshold: 5,
-  thresholdBreached: false,
+  thresholdCrossed: false,
 };
 
-const burst: AuthFailureWindow = { ...quiet, failureCount: 5, thresholdBreached: true };
+const burst: AuthFailureWindow = { ...quiet, failureCount: 5, thresholdCrossed: true };
 
 describe('SecurityEventCore', () => {
   let report: jest.SpyInstance;
@@ -43,7 +43,7 @@ describe('SecurityEventCore', () => {
       failureCount: 2,
       windowMs: 60000,
       threshold: 5,
-      thresholdBreached: false,
+      thresholdCrossed: false,
     });
   });
 
@@ -60,7 +60,7 @@ describe('SecurityEventCore', () => {
       reason: 'validation',
       severity: 'critical',
       failureCount: 5,
-      thresholdBreached: true,
+      thresholdCrossed: true,
     });
   });
 

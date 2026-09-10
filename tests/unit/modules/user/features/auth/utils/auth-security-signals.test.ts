@@ -1,5 +1,7 @@
 import 'reflect-metadata';
 
+import observabilityCore from '@/services/observability/observability-core';
+import securityEventCore from '@/services/security-events/security-event-core';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import type { SecurityEventRecorder } from '@/services/types/security-events/security-event';
 import type { AuthError } from '@auth/types/auth-error';
@@ -29,6 +31,10 @@ const authError = (kind: AuthError['kind']): AuthError => ({
 });
 
 describe('AuthSecuritySignals', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('tags an opaque session identity on a successful login', () => {
     const observability = buildObservability();
     const recorder = buildRecorder();
@@ -133,19 +139,25 @@ describe('AuthSecuritySignals', () => {
     expect(recorder.authFailure).toHaveBeenCalledWith('login', 'network');
   });
 
+  // Asserted against the payload the real recorder emits, not against the two-argument call this
+  // class makes: `authFailure(category, reason)` takes only closed unions, so an assertion on its
+  // recorded arguments could never fail and would give false confidence about scrubbing.
   it('emits nothing that could carry the submitted credentials', () => {
-    const recorder = buildRecorder();
+    const report = jest.spyOn(observabilityCore, 'report').mockImplementation();
     const password = buildPassword();
     const email = buildEmail();
 
-    new AuthSecuritySignals(recorder, buildObservability()).loginFailed({
+    new AuthSecuritySignals(securityEventCore, buildObservability()).loginFailed({
       kind: 'authentication',
       displayMessage: `Invalid credentials for ${email}`,
       password,
     });
 
-    expect(JSON.stringify((recorder.authFailure as jest.Mock).mock.calls)).not.toContain(password);
-    expect(JSON.stringify((recorder.authFailure as jest.Mock).mock.calls)).not.toContain(email);
+    const emitted = JSON.stringify(report.mock.calls);
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(emitted).toContain('auth_failure');
+    expect(emitted).not.toContain(password);
+    expect(emitted).not.toContain(email);
   });
 
   it('reports a registration failure under the registration category', () => {

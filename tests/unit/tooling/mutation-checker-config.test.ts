@@ -164,4 +164,10 @@ describe('mutation shard slicing', () => {
       `MUTATION_SHARD_INDEX must be an integer in [0, ${TOTAL}), received ${TOTAL}.`
     );
   });
+
+  it('names the offending total so a misconfigured matrix size is diagnosable', () => {
+    expect(() => shardMutateFiles(0, 0)).toThrow(
+      'MUTATION_SHARD_TOTAL must be a positive integer, received 0.'
+    );
+  });
 });

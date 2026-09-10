@@ -14,6 +14,10 @@ const buildObservability = (): ObservabilityService =>
   }) as unknown as ObservabilityService;
 
 describe('ObservabilityErrorReporter', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('forwards a reported error and its context to the observability boundary', () => {
     const observability = buildObservability();
     const error = new Error('render crash');
@@ -39,7 +43,6 @@ describe('ObservabilityErrorReporter', () => {
     new ObservabilityErrorReporter(undefined, observabilityCore).report(error, { surface: 'app' });
 
     expect(captureError).toHaveBeenCalledWith(error, { surface: 'app' });
-    captureError.mockRestore();
   });
 
   it('reports nothing when neither the service nor the core is available', () => {
@@ -48,6 +51,5 @@ describe('ObservabilityErrorReporter', () => {
     new ObservabilityErrorReporter().report(new Error('render crash'));
 
     expect(captureError).not.toHaveBeenCalled();
-    captureError.mockRestore();
   });
 });

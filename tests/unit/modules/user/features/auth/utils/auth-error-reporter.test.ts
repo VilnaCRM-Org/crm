@@ -7,6 +7,10 @@ import observabilityCore from '@/services/observability/observability-core';
 import securityEventCore from '@/services/security-events/security-event-core';
 
 describe('AuthErrorReporter', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('forwards auth errors to observability with component context', () => {
     const captureSpy = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
     const error = new Error('auth boom');
@@ -18,7 +22,6 @@ describe('AuthErrorReporter', () => {
       componentStack: info.componentStack,
       surface: 'auth',
     });
-    captureSpy.mockRestore();
   });
 
   it('emits an auth boundary-catch security event alongside the capture', () => {
@@ -30,7 +33,6 @@ describe('AuthErrorReporter', () => {
     } as ErrorInfo);
 
     expect(boundaryCatch).toHaveBeenCalledWith('auth');
-    jest.restoreAllMocks();
   });
 
   it('exports a shared singleton instance', () => {

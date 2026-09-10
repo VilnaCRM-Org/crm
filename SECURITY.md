@@ -38,7 +38,7 @@ the structured payload in `extra`:
   "failureCount": 5,
   "windowMs": 60000,
   "threshold": 5,
-  "thresholdBreached": true,
+  "thresholdCrossed": true,
   "X-Correlation-Id": "5e0e…",
   "X-Request-Id": "9c11…"
 }
@@ -46,10 +46,13 @@ the structured payload in `extra`:
 
 ### Credential discipline
 
-The payload is credential-free by construction, not by filtering. `reason` is a bounded code
-(`authentication`, `validation`, `conflict`, `server`, `network`, `rate_limited`, `unknown`)
-derived from the auth error kind or the HTTP status; the submitted password, the session token,
-the email address, and the user id are never passed to the reporter. `piiScrubber` remains the
+The payload is credential-free by construction, not by filtering. `reason` is a bounded code in
+every case, but the set it is drawn from depends on the event: `auth_failure` and
+`auth_failure_burst` use `authentication`, `validation`, `conflict`, `server`, `network`,
+`rate_limited` or `unknown`, derived from the auth error kind or the HTTP status;
+`unauthorized_response` uses `http_401` or `http_403`; and `error_boundary_catch` uses the
+boundary surface (`app` or `auth`). The submitted password, the session token, the email
+address, and the user id are never passed to the reporter. `piiScrubber` remains the
 second line of defence in Sentry's `beforeSend`. Aborted attempts (navigation away, cancelled
 requests) emit nothing, so user-initiated cancellation is not mistaken for abuse.
 
@@ -69,7 +72,12 @@ through the session id, and a single request through the request id. Both are op
 | `REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD` | `5`     | failures inside the window that escalate |
 | `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` | `60000` | length of the rolling window (ms)        |
 
-Reaching the threshold escalates the event to `auth_failure_burst` with `severity: "critical"`.
+Crossing the threshold escalates that one observation to `auth_failure_burst` with
+`severity: "critical"`. Only the crossing escalates: later failures inside the same breach stay
+`auth_failure`, so a sustained attack raises one critical event per breach rather than one per
+request. The window has to drain below the threshold before another crossing can escalate again.
+A configured threshold above the 1000-failure tracking cap is clamped to the cap, so a large
+value cannot silently make the burst unreachable.
 Configure the monitoring backend to alert on it — in Sentry, an issue alert on
 `message:"security.auth_failure_burst"` (or on the `severity:critical` tag) notifying the
 security channel on the first occurrence in a 5-minute window. The client-side counter is a

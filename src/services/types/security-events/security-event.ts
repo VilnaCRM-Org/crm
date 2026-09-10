@@ -14,7 +14,7 @@ export interface AuthFailureWindow {
   readonly failureCount: number;
   readonly windowMs: number;
   readonly threshold: number;
-  readonly thresholdBreached: boolean;
+  readonly thresholdCrossed: boolean;
 }
 
 export interface SecurityEvent {
