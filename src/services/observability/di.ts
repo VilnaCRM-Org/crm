@@ -6,6 +6,7 @@ import ApolloLinkFactory from './apollo-link-factory';
 import correlationIdProvider from './correlation-id-provider';
 import observabilityCore from './observability-core';
 import ObservabilityService from './observability-service';
+import sessionCorrelation from './session-correlation';
 import OBSERVABILITY_TOKENS from './tokens';
 
 class ObservabilityRegistrar implements ModuleRegistrar {
@@ -15,15 +16,16 @@ class ObservabilityRegistrar implements ModuleRegistrar {
     this.registerRenderPathSingletons(container);
   }
 
-  // The observability core and the correlation-id provider stay container-free module singletons
-  // so the auth paint path can use them without loading tsyringe (issue #115). Registering the
-  // existing instances as values is what lets container-resolved classes inject them instead of
-  // value-importing them at the call site (issue #130).
+  // The observability core, the correlation-id provider and the session correlation stay
+  // container-free module singletons so the auth paint path can use them without loading tsyringe
+  // (issue #115). Registering the existing instances as values is what lets container-resolved
+  // classes inject them instead of value-importing them at the call site (issue #130).
   private registerRenderPathSingletons(container: DependencyContainer): void {
     container.register(OBSERVABILITY_TOKENS.ObservabilityCore, { useValue: observabilityCore });
     container.register(OBSERVABILITY_TOKENS.CorrelationIdProvider, {
       useValue: correlationIdProvider,
     });
+    container.register(OBSERVABILITY_TOKENS.SessionCorrelation, { useValue: sessionCorrelation });
   }
 }
 

@@ -140,6 +140,16 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free web-vitals leaf; dynamic import of web-vitals.',
   },
   {
+    path: 'src/services/security-events/security-event-core.ts',
+    reason:
+      'Container-free security-event core; composes the auth-failure monitor and the signal leaf ' +
+      'and reports through observabilityCore, so the auth paint path can record without tsyringe.',
+  },
+  {
+    path: 'src/services/security-events/auth-failure-monitor.ts',
+    reason: 'Container-free rolling-window leaf consumed by the security-event core.',
+  },
+  {
     path: 'src/services/locale-formatter/locale-formatter-core.ts',
     reason:
       'Container-free Intl formatting core; `src/i18n.js` binds its language source at module ' +

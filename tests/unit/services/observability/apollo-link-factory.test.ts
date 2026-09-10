@@ -4,6 +4,7 @@ import ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import correlationIdProvider, {
   CorrelationIdProvider,
 } from '@/services/observability/correlation-id-provider';
+import sessionCorrelation from '@/services/observability/session-correlation';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 
 const query = gql`
@@ -33,14 +34,22 @@ const privateLink = (
 
 describe('ApolloLinkFactory', () => {
   it('builds a link chain terminating in an HTTP link', () => {
-    const factory = new ApolloLinkFactory(createObservability(), correlationIdProvider);
+    const factory = new ApolloLinkFactory(
+      createObservability(),
+      correlationIdProvider,
+      sessionCorrelation
+    );
     const link = factory.build('http://localhost/graphql');
 
     expect(link).toBeInstanceOf(ApolloLink);
   });
 
   it('adds a generated correlation id header to each operation', (done) => {
-    const factory = new ApolloLinkFactory(createObservability(), correlationIdProvider);
+    const factory = new ApolloLinkFactory(
+      createObservability(),
+      correlationIdProvider,
+      sessionCorrelation
+    );
     let headers: Record<string, string> = {};
     const terminating = new ApolloLink((operation) => {
       headers = operation.getContext().headers ?? {};
@@ -62,7 +71,7 @@ describe('ApolloLinkFactory', () => {
 
   it('captures network errors through observability', (done) => {
     const observability = createObservability();
-    const factory = new ApolloLinkFactory(observability, correlationIdProvider);
+    const factory = new ApolloLinkFactory(observability, correlationIdProvider, sessionCorrelation);
     const networkError = new Error('offline');
     const terminating = new ApolloLink(
       () => new Observable((observer) => observer.error(networkError))
@@ -82,7 +91,7 @@ describe('ApolloLinkFactory', () => {
 
   it('attaches the operation correlation id to captured errors', (done) => {
     const observability = createObservability();
-    const factory = new ApolloLinkFactory(observability, correlationIdProvider);
+    const factory = new ApolloLinkFactory(observability, correlationIdProvider, sessionCorrelation);
     const networkError = new Error('offline');
     const terminating = new ApolloLink(
       () => new Observable((observer) => observer.error(networkError))
@@ -109,7 +118,7 @@ describe('ApolloLinkFactory', () => {
   it('reads the header name and id from the injected correlation id provider', (done) => {
     const observability = createObservability();
     const correlationIds = stubCorrelationIds('X-Trace-Id', 'trace-1');
-    const factory = new ApolloLinkFactory(observability, correlationIds);
+    const factory = new ApolloLinkFactory(observability, correlationIds, sessionCorrelation);
     const networkError = new Error('offline');
     let headers: Record<string, string> = {};
     const terminating = new ApolloLink((operation) => {
@@ -126,7 +135,10 @@ describe('ApolloLinkFactory', () => {
       { query }
     ).subscribe({
       error: () => {
-        expect(headers).toEqual({ 'X-Trace-Id': 'trace-1' });
+        expect(headers).toEqual({
+          'X-Trace-Id': 'trace-1',
+          [sessionCorrelation.header]: sessionCorrelation.id(),
+        });
         expect(observability.captureError).toHaveBeenCalledWith(networkError, {
           source: 'apollo:network',
           'X-Trace-Id': 'trace-1',
@@ -138,7 +150,7 @@ describe('ApolloLinkFactory', () => {
 
   it('captures graphql errors through observability', (done) => {
     const observability = createObservability();
-    const factory = new ApolloLinkFactory(observability, correlationIdProvider);
+    const factory = new ApolloLinkFactory(observability, correlationIdProvider, sessionCorrelation);
     const graphQLError = { message: 'bad field' };
     const terminating = new ApolloLink(() => Observable.of({ errors: [graphQLError] }));
 

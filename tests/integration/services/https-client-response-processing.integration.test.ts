@@ -8,12 +8,14 @@ import HttpErrorResponseParser from '@/services/https-client/http-error-response
 import HttpRequestConfigBuilder from '@/services/https-client/http-request-config-builder';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import sessionCorrelation from '@/services/observability/session-correlation';
+import securityEventCore from '@/services/security-events/security-event-core';
 import { assertInstanceOf } from '@tests/utils/assert-result';
 
 const createClient = (): FetchHttpsClient =>
   new FetchHttpsClient(
-    new HttpRequestConfigBuilder(correlationIdProvider),
-    new HttpResponseProcessor(new HttpErrorResponseParser())
+    new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
+    new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore))
   );
 
 // Transport/parse-coverage tests: schema validation is covered elsewhere, so pass a
@@ -197,7 +199,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
     it('routes work through the explicitly injected processor and parser', async () => {
       const injectedProcessor = { process: jest.fn().mockResolvedValue({ ok: true }) };
       const processorOnlyClient = new FetchHttpsClient(
-        new HttpRequestConfigBuilder(correlationIdProvider),
+        new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
         injectedProcessor as never
       );
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
@@ -207,7 +209,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
       });
       expect(injectedProcessor.process).toHaveBeenCalledTimes(1);
 
-      const injectedParser = new HttpErrorResponseParser();
+      const injectedParser = new HttpErrorResponseParser(securityEventCore);
       const assertOk = jest.spyOn(injectedParser, 'assertOk');
       const noContentResponse = {
         ok: true,
@@ -222,7 +224,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
     });
 
     it('returns a readable parsed error payload when cloning the response fails', async () => {
-      const parser = new HttpErrorResponseParser();
+      const parser = new HttpErrorResponseParser(securityEventCore);
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
       try {
@@ -247,7 +249,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
     });
 
     it('handles a non-Error value thrown while cloning the response', async () => {
-      const parser = new HttpErrorResponseParser();
+      const parser = new HttpErrorResponseParser(securityEventCore);
       const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       const thrown: unknown = 'string failure';
 
@@ -434,7 +436,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
     });
 
     it('screens successful responses through the injected HttpErrorResponseParser', async () => {
-      const parser = new HttpErrorResponseParser();
+      const parser = new HttpErrorResponseParser(securityEventCore);
       const assertOk = jest.spyOn(parser, 'assertOk');
       const processor = new HttpResponseProcessor(parser);
       const okResponse = {
@@ -452,7 +454,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
     });
 
     it('throws through the injected response parser for error responses', async () => {
-      const parser = new HttpErrorResponseParser();
+      const parser = new HttpErrorResponseParser(securityEventCore);
       const assertOk = jest.spyOn(parser, 'assertOk');
       const errorResponse = {
         ok: false,
@@ -473,7 +475,7 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
     });
 
     it('allows injecting a custom HttpErrorResponseParser', async () => {
-      const parser = new HttpErrorResponseParser();
+      const parser = new HttpErrorResponseParser(securityEventCore);
       const processor = new HttpResponseProcessor(parser);
 
       global.fetch = jest.fn().mockResolvedValue({

@@ -26,6 +26,10 @@ jest.mock('@/services/observability/correlation-id-provider', () => ({
   __esModule: true,
   default: { header: 'X-Request-Id', currentId: '' },
 }));
+jest.mock('@/services/observability/session-correlation', () => ({
+  __esModule: true,
+  default: { header: 'X-Correlation-Id', id: (): string => 'session-1' },
+}));
 
 const isEnabled = sentryConfig.isEnabled as jest.Mock;
 
@@ -86,6 +90,7 @@ describe('ObservabilityCore', () => {
 
     expect(sentryClient.captureException).toHaveBeenCalledWith(error, {
       source: 'test',
+      'X-Correlation-Id': 'session-1',
       'X-Request-Id': 'req-9',
     });
   });
@@ -98,6 +103,7 @@ describe('ObservabilityCore', () => {
 
     expect(sentryClient.captureException).toHaveBeenCalledWith(error, {
       'X-Request-Id': 'op-id',
+      'X-Correlation-Id': 'session-1',
       source: 'apollo',
     });
   });
@@ -131,12 +137,14 @@ describe('ObservabilityCore', () => {
     expect(webVitalsReporter.subscribe).toHaveBeenCalledTimes(2);
   });
 
-  it('captures errors without a correlation id when none is active', () => {
+  it('attaches only the session correlation id when no request id is active', () => {
     const error = new Error('failed');
 
     new ObservabilityCore().captureError(error);
 
-    expect(sentryClient.captureException).toHaveBeenCalledWith(error, undefined);
+    expect(sentryClient.captureException).toHaveBeenCalledWith(error, {
+      'X-Correlation-Id': 'session-1',
+    });
   });
 
   it('forwards ErrorReporter reports to captureError', () => {
@@ -144,7 +152,10 @@ describe('ObservabilityCore', () => {
 
     new ObservabilityCore().report(error, { surface: 'app' });
 
-    expect(sentryClient.captureException).toHaveBeenCalledWith(error, { surface: 'app' });
+    expect(sentryClient.captureException).toHaveBeenCalledWith(error, {
+      surface: 'app',
+      'X-Correlation-Id': 'session-1',
+    });
   });
 
   it('sets and clears identity', () => {

@@ -11,6 +11,8 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import sessionCorrelation from '@/services/observability/session-correlation';
+import securityEventCore from '@/services/security-events/security-event-core';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
@@ -57,10 +59,10 @@ const createErrorResponse = (status: number, statusText: string, url: string): R
 };
 
 const createRequestConfigBuilder = (): HttpRequestConfigBuilder =>
-  new HttpRequestConfigBuilder(correlationIdProvider);
+  new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation);
 
 const createResponseProcessor = (): HttpResponseProcessor =>
-  new HttpResponseProcessor(new HttpErrorResponseParser());
+  new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore));
 
 const createClient = (
   requestConfigBuilder: HttpRequestConfigBuilder = createRequestConfigBuilder(),
@@ -73,6 +75,10 @@ describe('FetchHttpsClient', () => {
   let mockFetch: jest.Mock;
 
   beforeEach(() => {
+    // uuid is mocked to a constant, so without a distinct session id the two correlation headers
+    // would assert the same literal and a regression that sourced X-Correlation-Id from the
+    // per-request provider could not fail these tests.
+    jest.spyOn(sessionCorrelation, 'id').mockReturnValue('test-session-id');
     client = createClient();
     mockFetch = jest.fn();
     global.fetch = mockFetch as unknown as typeof fetch;
@@ -117,6 +123,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
       });
     });
@@ -133,6 +140,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         signal: controller.signal,
       });
@@ -207,6 +215,7 @@ describe('FetchHttpsClient', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -227,6 +236,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: formData,
       });
@@ -244,6 +254,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: 'plain text',
       });
@@ -304,6 +315,7 @@ describe('FetchHttpsClient', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -364,6 +376,7 @@ describe('FetchHttpsClient', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -422,6 +435,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
       });
     });
@@ -441,6 +455,7 @@ describe('FetchHttpsClient', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -656,6 +671,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: blob,
       });
@@ -674,6 +690,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: buffer,
       });
@@ -705,6 +722,7 @@ describe('FetchHttpsClient', () => {
           headers: {
             Accept: 'application/json',
             'X-Request-Id': 'test-request-id',
+            'X-Correlation-Id': 'test-session-id',
           },
           body: stream,
         });
@@ -782,6 +800,7 @@ describe('FetchHttpsClient', () => {
         headers: {
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
       });
       expect(mockProcessor.process).toHaveBeenCalled();

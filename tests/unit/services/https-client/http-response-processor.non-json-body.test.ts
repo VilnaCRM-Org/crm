@@ -4,6 +4,7 @@ import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+import securityEventCore from '@/services/security-events/security-event-core';
 
 const passthrough = z.unknown();
 
@@ -18,7 +19,7 @@ function createTextResponse(text: string, contentType = 'text/plain'): Response 
 }
 
 describe('HttpResponseProcessor non-JSON bodies', () => {
-  const processor = new HttpResponseProcessor(new HttpErrorResponseParser());
+  const processor = new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore));
 
   it('treats a whitespace-only non-JSON body as no body at all', async () => {
     await expect(

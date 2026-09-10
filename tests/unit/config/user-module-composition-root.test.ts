@@ -11,7 +11,11 @@ import authStateVar from '@auth/stores/auth-var';
 
 const GRAPHQL_CLIENT_TOKENS = [AUTH_TOKENS.GraphQLUrl, AUTH_TOKENS.ApolloClient];
 const ERROR_FACTORY_TOKENS = [AUTH_TOKENS.ApiStatusErrorFactory, AUTH_TOKENS.ApiErrorFactory];
-const ERROR_HANDLING_TOKENS = [AUTH_TOKENS.AuthErrorHandler, AUTH_TOKENS.AuthRequestErrors];
+const ERROR_HANDLING_TOKENS = [
+  AUTH_TOKENS.AuthErrorHandler,
+  AUTH_TOKENS.AuthRequestErrors,
+  AUTH_TOKENS.AuthSecuritySignals,
+];
 const RESPONSE_MAPPER_TOKENS = [
   AUTH_TOKENS.LoginResponseMapper,
   AUTH_TOKENS.RegistrationResponseMapper,

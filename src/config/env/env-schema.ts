@@ -9,6 +9,8 @@ const EnvSchema = z.object({
   release: z.string().optional(),
   sentryDsn: z.string().optional(),
   sentryEnvironment: z.string().optional(),
+  authFailureAlertThreshold: z.coerce.number().int().positive().optional(),
+  authFailureAlertWindowMs: z.coerce.number().int().positive().optional(),
 });
 
 export default EnvSchema;

@@ -3,6 +3,7 @@ const OBSERVABILITY_TOKENS = Object.freeze({
   ApolloLinkFactory: Symbol('ApolloLinkFactory'),
   ObservabilityCore: Symbol('ObservabilityCore'),
   CorrelationIdProvider: Symbol('CorrelationIdProvider'),
+  SessionCorrelation: Symbol('SessionCorrelation'),
 } as const);
 
 export default OBSERVABILITY_TOKENS;

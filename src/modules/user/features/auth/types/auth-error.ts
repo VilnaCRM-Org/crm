@@ -10,6 +10,7 @@ export interface AuthError {
   readonly kind: AuthErrorKind;
   readonly displayMessage: string;
   readonly retryable: boolean;
+  readonly status?: number;
   readonly issues?: readonly FieldIssue[];
   readonly aborted?: boolean;
 }

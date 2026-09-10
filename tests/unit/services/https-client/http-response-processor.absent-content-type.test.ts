@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
+import securityEventCore from '@/services/security-events/security-event-core';
 
 const passthrough = z.unknown();
 
@@ -18,7 +19,7 @@ const headerlessResponse = (body: string): Response =>
   }) as unknown as Response;
 
 describe('HttpResponseProcessor with no content-type header', () => {
-  const processor = new HttpResponseProcessor(new HttpErrorResponseParser());
+  const processor = new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore));
 
   it('treats an empty body with no declared content type as no body at all', async () => {
     await expect(processor.process(headerlessResponse(''), passthrough)).resolves.toBeUndefined();

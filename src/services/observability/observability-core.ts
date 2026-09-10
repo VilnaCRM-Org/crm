@@ -9,6 +9,7 @@ import type {
 import correlationIdProvider from './correlation-id-provider';
 import sentryClient from './sentry-client';
 import sentryConfig from './sentry-config';
+import sessionCorrelation from './session-correlation';
 import webVitalsReporter from './web-vitals-reporter';
 
 export class ObservabilityCore implements ObservabilityService, ErrorReporter {
@@ -61,11 +62,15 @@ export class ObservabilityCore implements ObservabilityService, ErrorReporter {
       .catch(reset.bind(null, true));
   }
 
-  private withCorrelation(context?: CaptureContext): CaptureContext | undefined {
+  private withCorrelation(context?: CaptureContext): CaptureContext {
     const header = correlationIdProvider.header;
-    const id = context?.[header] ?? correlationIdProvider.currentId;
-    if (!id) return context;
-    return { ...context, [header]: id };
+    const requestId = context?.[header] ?? correlationIdProvider.currentId;
+    const enriched: CaptureContext = {
+      ...context,
+      [sessionCorrelation.header]: sessionCorrelation.id(),
+    };
+    if (requestId) enriched[header] = requestId;
+    return enriched;
   }
 
   private safe(action: () => void): void {

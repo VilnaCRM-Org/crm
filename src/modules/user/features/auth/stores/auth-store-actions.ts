@@ -1,5 +1,4 @@
 import { inject, injectable } from 'tsyringe';
-import { v4 as uuidv4 } from 'uuid';
 
 import AUTH_TOKENS from '@/modules/user/config/tokens';
 import type { AuthError } from '@auth/types/auth-error';
@@ -18,7 +17,7 @@ export default class AuthStoreActions {
     try {
       const result = await this.deps.repository.login(credentials, signal);
       this.applyLogin(result);
-      if (result.ok) this.deps.observability.setUser({ id: uuidv4() });
+      this.deps.securitySignals.loginSettled(result);
     } catch (error) {
       this.applyLoginRejection(error);
     }
@@ -27,7 +26,9 @@ export default class AuthStoreActions {
   public async register(credentials: RegisterUserDto, signal?: AbortSignal): Promise<void> {
     this.deps.authState.set({ registerLoading: true, registerError: null, user: null });
     try {
-      this.applyRegister(await this.deps.repository.register(credentials, signal));
+      const result = await this.deps.repository.register(credentials, signal);
+      this.applyRegister(result);
+      this.deps.securitySignals.registerSettled(result);
     } catch (error) {
       this.applyRegisterRejection(error);
     }
@@ -94,6 +95,7 @@ export default class AuthStoreActions {
       this.deps.authState.set({ loginLoading: false });
       return;
     }
+    this.deps.securitySignals.loginFailed(error);
     this.deps.authState.set({ loginLoading: false, loginError: this.toAuthError(error) });
   }
 
@@ -114,6 +116,7 @@ export default class AuthStoreActions {
       this.deps.authState.set({ registerLoading: false });
       return;
     }
+    this.deps.securitySignals.registerFailed(error);
     this.deps.authState.set({
       registerLoading: false,
       registerError: this.toAuthError(error),

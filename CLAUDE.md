@@ -237,7 +237,7 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 ### CI parallelization
 
 `make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across an
-8-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+16-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -260,8 +260,12 @@ jest-runner cannot use Jest `projects` with `perTest` coverage — so repository
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — CI runners are 2-core, so parallelism comes from the 8-way shard
-count, not Stryker's in-process concurrency.
+These keep the run affordable — parallelism comes from the 16-way shard count rather than
+Stryker's in-process concurrency. The shard count is a wall-clock lever, not a gate: the split is
+weight-balanced over the whole mutate scope, but an incremental run only re-runs the mutants a diff
+invalidates, and those cluster by area. A diff touching one area can therefore land most of its
+re-run cost in a single shard; 16 shards keep that hot shard inside the `timeout-minutes` kill
+switch. Raise the count if a shard starts approaching it — never the kill switch.
 
 ### Honest mutant classification (issue #171)
 
@@ -1829,6 +1833,10 @@ Key variables in `.env`:
   runs. **Inert on its own**: only a build that also set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` reads
   it, which is exclusively the ephemeral `test-harness` image. See "Preloaded-auth-token seed
   gate" below.
+- `REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD` - Auth failures inside the rolling window that
+  escalate a client security event to `auth_failure_burst` / `critical`. Default 5.
+- `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` - Length of that rolling window in milliseconds.
+  Default 60000.
 
 `ENABLE_PRELOADED_AUTH_TOKEN_SEED` is deliberately **not** in the list above: it is a build-
 environment flag set only by the Dockerfile's `test-harness` stage, and it must never appear in
@@ -2016,6 +2024,45 @@ narrowing its file set, or moving a read out of the guarded method.
     `1 234,50 ₴` vs `₴1,234.50`), so locale regressions fail CI. Satisfy the gate by
     routing through the formatter service — never with `eslint-disable`. See the
     "Locale-aware Intl formatting" section in `AGENTS.md` for the full convention.
+
+11. **Client security events (issue #159)**: `src/services/security-events/` is the **only**
+    sanctioned path for emitting a security signal from the client. It mirrors the two-layer
+    observability shape: the container-free `securityEventCore` singleton serves the render
+    path, and the `@injectable()` `SecurityEventReporter` adapter
+    (token `SECURITY_EVENT_TOKENS.SecurityEventReporter`) serves the DI graph. Every signal
+    leaves as a `SecurityEventSignal` error through `observabilityCore.report`, so it inherits
+    the correlation IDs and the `piiScrubber` `beforeSend` pass, and is a verified no-op when
+    `REACT_APP_SENTRY_DSN` is empty.
+
+    Emitters and their events:
+
+    | Call site                                | Event                                 |
+    | ---------------------------------------- | ------------------------------------- |
+    | `AuthSecuritySignals` (login)            | `auth_failure` / `auth_failure_burst` |
+    | `AuthSecuritySignals` (registration)     | `auth_failure` / `auth_failure_burst` |
+    | `HttpErrorResponseParser` (401 / 403)    | `unauthorized_response`               |
+    | `AppErrorBoundary` / `AuthErrorReporter` | `error_boundary_catch`                |
+
+    The payload is **credential-free by construction**: a bounded `reason` code derived from the
+    `AuthError` kind (or `rate_limited` for HTTP 429), a category, a severity, and the rolling
+    failure counters — never a password, token, email, or user id. Aborted attempts emit nothing.
+    `AuthStoreActions` never touches the reporter directly; it calls `loginSettled` /
+    `registerSettled` / `loginFailed` / `registerFailed` on the injected `AuthSecuritySignals`.
+
+12. **Correlation IDs (issues #115, #159)**: two identifiers travel with every signal. The
+    per-request `X-Request-Id` (`correlationIdProvider`) is regenerated per REST request and per
+    Apollo operation. The per-session `X-Correlation-Id` (`sessionCorrelation`) is generated once
+    at module load and is attached to **every** outbound REST request, every Apollo operation, and
+    every captured event, so a client session can be joined to backend log lines during incident
+    response. Both are opaque v4 UUIDs carrying no user data.
+
+13. **Auth-failure alert threshold (issue #159)**: `AuthFailureMonitor` keeps a rolling window of
+    auth failures. Reaching `REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD` failures inside
+    `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` escalates the emitted event from `auth_failure` to
+    `auth_failure_burst` with `severity: 'critical'` and stamps `thresholdBreached: true`.
+    Defaults are 5 failures / 60 000 ms; both are optional and validated by `EnvSchema`. Configure
+    the matching backend alert rule as described in the "Client security events" section of
+    [`SECURITY.md`](SECURITY.md).
 
 ## Node Version Management
 

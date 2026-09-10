@@ -6,6 +6,7 @@ import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
+import securityEventCore from '@/services/security-events/security-event-core';
 
 const passthrough = z.unknown();
 
@@ -29,7 +30,7 @@ function createResponse(
 }
 
 function createProcessor(): HttpResponseProcessor {
-  return new HttpResponseProcessor(new HttpErrorResponseParser());
+  return new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore));
 }
 
 describe('HttpResponseProcessor', () => {
@@ -51,7 +52,7 @@ describe('HttpResponseProcessor', () => {
 
   it('propagates the injected parser rejection without reading the body', async () => {
     const failure = new HttpError({ status: 503, message: 'unavailable' });
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
     jest.spyOn(parser, 'assertOk').mockRejectedValue(failure);
     const processor = new HttpResponseProcessor(parser);
     const response = createResponse(200, { token: 'abc' });

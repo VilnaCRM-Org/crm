@@ -7,7 +7,6 @@ import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
 import RegistrationResponseMapper from '@/modules/user/store/registration-response-mapper';
 import type ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
-import type { ObservabilityService } from '@/services/types/observability/observability';
 import type AbortErrorDetector from '@/utils/error/abort-error-detector';
 import ERROR_UTILS_TOKENS from '@/utils/error/tokens';
 import GraphQLUrl from '@/utils/get-graphql-url';
@@ -25,6 +24,7 @@ import type { AuthRepositoryDeps } from '@auth/types/auth-repository-deps';
 import type { AuthStoreActionsDeps } from '@auth/types/auth-store-actions-deps';
 import AuthErrorHandler from '@auth/utils/auth-error-handler';
 import AuthRequestErrors from '@auth/utils/auth-request-errors';
+import AuthSecuritySignals from '@auth/utils/auth-security-signals';
 
 import AUTH_TOKENS from './tokens';
 
@@ -48,8 +48,8 @@ class UserModuleRegistrar implements ModuleRegistrar {
       useFactory: (c) => ({
         repository: c.resolve<AuthRepository>(AUTH_TOKENS.AuthRepository),
         authRequestErrors: c.resolve<AuthRequestErrors>(AUTH_TOKENS.AuthRequestErrors),
-        observability: c.resolve<ObservabilityService>(OBSERVABILITY_TOKENS.ObservabilityService),
         authState: c.resolve<AuthStateVar>(AUTH_TOKENS.AuthStateVar),
+        securitySignals: c.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals),
       }),
     });
   }
@@ -75,6 +75,7 @@ class UserModuleRegistrar implements ModuleRegistrar {
   private registerErrorHandling(container: DependencyContainer): void {
     container.registerSingleton(AUTH_TOKENS.AuthErrorHandler, AuthErrorHandler);
     container.registerSingleton(AUTH_TOKENS.AuthRequestErrors, AuthRequestErrors);
+    container.registerSingleton(AUTH_TOKENS.AuthSecuritySignals, AuthSecuritySignals);
   }
 
   private registerResponseMappers(container: DependencyContainer): void {

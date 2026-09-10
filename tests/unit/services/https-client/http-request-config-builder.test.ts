@@ -2,11 +2,12 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import correlationIdProvider, {
   CorrelationIdProvider,
 } from '@/services/observability/correlation-id-provider';
+import sessionCorrelation from '@/services/observability/session-correlation';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
 describe('HttpRequestConfigBuilder', () => {
-  const builder = new HttpRequestConfigBuilder(correlationIdProvider);
+  const builder = new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation);
 
   it('does not serialize null bodies into the request payload', () => {
     const config = builder.create('POST', null, undefined);
@@ -16,6 +17,7 @@ describe('HttpRequestConfigBuilder', () => {
       headers: {
         Accept: 'application/json',
         'X-Request-Id': 'test-request-id',
+        'X-Correlation-Id': 'test-request-id',
       },
     });
   });
@@ -49,9 +51,13 @@ describe('HttpRequestConfigBuilder', () => {
       next: (): string => 'injected-id',
     };
 
-    const config = new HttpRequestConfigBuilder(injected).create('GET', undefined, {
-      'x-trace-id': 'caller-id',
-    });
+    const config = new HttpRequestConfigBuilder(injected, sessionCorrelation).create(
+      'GET',
+      undefined,
+      {
+        'x-trace-id': 'caller-id',
+      }
+    );
     const headers = config.headers as Record<string, string>;
 
     expect(headers['X-Trace-Id']).toBe('injected-id');
@@ -66,7 +72,7 @@ describe('HttpRequestConfigBuilder', () => {
       currentId: '',
       next: (): string => ids.shift() ?? 'exhausted',
     };
-    const perRequestBuilder = new HttpRequestConfigBuilder(injected);
+    const perRequestBuilder = new HttpRequestConfigBuilder(injected, sessionCorrelation);
 
     const firstConfig = perRequestBuilder.create('GET', undefined, undefined);
     const secondConfig = perRequestBuilder.create('GET', undefined, undefined);

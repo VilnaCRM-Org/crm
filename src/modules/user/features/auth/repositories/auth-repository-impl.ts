@@ -48,6 +48,6 @@ export default class AuthRepositoryImpl implements AuthRepository {
   private toError(err: unknown): AuthError {
     return this.deps.abortDetector.isAbortError(err)
       ? ABORTED_ERROR
-      : this.deps.authErrorFactory.fromUiError(this.deps.authUiErrorMapper.map(err));
+      : this.deps.authErrorFactory.fromUiError(this.deps.authUiErrorMapper.map(err), err);
   }
 }

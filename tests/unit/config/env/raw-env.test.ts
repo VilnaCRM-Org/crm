@@ -34,6 +34,25 @@ describe('rawEnv', () => {
     });
   });
 
+  describe('authFailureAlert', () => {
+    it('trims both configured alert variables', () => {
+      process.env.REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD = '  9  ';
+      process.env.REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS = '  15000  ';
+
+      expect(rawEnv.authFailureAlert()).toEqual({ threshold: '9', windowMs: '15000' });
+    });
+
+    it('reports each alert variable as undefined when blank or missing', () => {
+      process.env.REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD = '   ';
+      delete process.env.REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS;
+
+      const alert = rawEnv.authFailureAlert();
+
+      expect(alert).toStrictEqual({ threshold: undefined, windowMs: undefined });
+      expect(Object.keys(alert).sort()).toEqual(['threshold', 'windowMs']);
+    });
+  });
+
   describe('snapshot', () => {
     it('shapes every configuration variable into a single object', () => {
       process.env.NODE_ENV = 'test';
@@ -44,6 +63,8 @@ describe('rawEnv', () => {
       process.env.REACT_APP_RELEASE = 'v1.2.3';
       process.env.REACT_APP_SENTRY_DSN = 'https://key@sentry.io/1';
       process.env.REACT_APP_SENTRY_ENVIRONMENT = 'staging';
+      process.env.REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD = '9';
+      process.env.REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS = '15000';
 
       expect(rawEnv.snapshot()).toEqual({
         nodeEnv: 'test',
@@ -54,6 +75,8 @@ describe('rawEnv', () => {
         release: 'v1.2.3',
         sentryDsn: 'https://key@sentry.io/1',
         sentryEnvironment: 'staging',
+        authFailureAlertThreshold: '9',
+        authFailureAlertWindowMs: '15000',
       });
     });
   });

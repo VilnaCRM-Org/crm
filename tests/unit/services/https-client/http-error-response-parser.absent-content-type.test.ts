@@ -1,5 +1,6 @@
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
+import securityEventCore from '@/services/security-events/security-event-core';
 
 interface ErrorCause {
   [key: string]: unknown;
@@ -26,7 +27,7 @@ const rejectionOf = (promise: Promise<unknown>): Promise<unknown> =>
 
 describe('HttpErrorResponseParser with no content-type header', () => {
   it('falls back to the status line rather than probing an undeclared media type', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
 
     const rejection = await rejectionOf(parser.assertOk(headerlessErrorResponse('boom')));
 
@@ -35,7 +36,7 @@ describe('HttpErrorResponseParser with no content-type header', () => {
   });
 
   it('still captures the body and reports the absent content type as undefined', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
 
     const rejection = await rejectionOf(parser.assertOk(headerlessErrorResponse('boom')));
     const cause = (rejection as HttpError).cause as ErrorCause;
@@ -45,7 +46,7 @@ describe('HttpErrorResponseParser with no content-type header', () => {
   });
 
   it('reports no message and no body for a headerless response with an empty body', async () => {
-    const parser = new HttpErrorResponseParser();
+    const parser = new HttpErrorResponseParser(securityEventCore);
 
     const extracted = await parser.parse(headerlessErrorResponse(''));
 

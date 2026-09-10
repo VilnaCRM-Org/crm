@@ -9,6 +9,8 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import sessionCorrelation from '@/services/observability/session-correlation';
+import securityEventCore from '@/services/security-events/security-event-core';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
@@ -36,8 +38,8 @@ describe('FetchHttpsClient transport edges', () => {
     mockFetch = jest.fn();
     global.fetch = mockFetch as unknown as typeof fetch;
     client = new FetchHttpsClient(
-      new HttpRequestConfigBuilder(correlationIdProvider),
-      new HttpResponseProcessor(new HttpErrorResponseParser())
+      new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
+      new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore))
     );
   });
 

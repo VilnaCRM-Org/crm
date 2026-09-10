@@ -10,6 +10,8 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import ResponseMessages from '@/services/https-client/response-messages';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
+import sessionCorrelation from '@/services/observability/session-correlation';
+import securityEventCore from '@/services/security-events/security-event-core';
 import { assertInstanceOf } from '@tests/utils/assert-result';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
@@ -25,12 +27,12 @@ const TEST_URL = 'http://localhost:8080/api/test';
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 const createClient = (): FetchHttpsClient =>
   new FetchHttpsClient(
-    new HttpRequestConfigBuilder(correlationIdProvider),
-    new HttpResponseProcessor(new HttpErrorResponseParser())
+    new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
+    new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore))
   );
 
 describe('HttpRequestConfigBuilder header and body-init resolution', () => {
-  const builder = new HttpRequestConfigBuilder(correlationIdProvider);
+  const builder = new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation);
 
   it('keeps a caller-supplied Accept header instead of defaulting to JSON', () => {
     const config = builder.create('GET', undefined, { Accept: 'text/csv' });
@@ -68,8 +70,16 @@ describe('FetchHttpsClient Integration', () => {
   });
 
   beforeEach(() => {
+    // uuid is mocked to a constant, so without a distinct session id the two correlation headers
+    // would assert the same literal and a regression that sourced X-Correlation-Id from the
+    // per-request provider could not fail these tests.
+    jest.spyOn(sessionCorrelation, 'id').mockReturnValue('test-session-id');
     client = createClient();
     mockFetch.mockClear();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('GET requests', () => {
@@ -88,7 +98,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(mockData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
+        headers: {
+          Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
+        },
       });
     });
 
@@ -108,7 +122,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(mockData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
+        headers: {
+          Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
+        },
         signal: controller.signal,
       });
     });
@@ -159,6 +177,7 @@ describe('FetchHttpsClient Integration', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -186,6 +205,7 @@ describe('FetchHttpsClient Integration', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -213,6 +233,7 @@ describe('FetchHttpsClient Integration', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -240,6 +261,7 @@ describe('FetchHttpsClient Integration', () => {
           Accept: 'application/json',
           'Content-Type': 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
       });
@@ -260,7 +282,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual(responseData);
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'DELETE',
-        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
+        headers: {
+          Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
+        },
       });
     });
   });
@@ -274,7 +300,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
+        headers: {
+          Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
+        },
       });
     });
 
@@ -286,7 +316,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
+        headers: {
+          Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
+        },
       });
     });
 
@@ -298,7 +332,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toBeUndefined();
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'GET',
-        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
+        headers: {
+          Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
+        },
       });
     });
   });
@@ -354,6 +392,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Custom': 'keep',
           Accept: 'application/json',
           'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
         },
       });
     });
@@ -527,7 +566,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual({ success: true });
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'POST',
-        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
+        headers: {
+          Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
+        },
         body: formData,
       });
     });
@@ -547,7 +590,11 @@ describe('FetchHttpsClient Integration', () => {
       expect(result).toEqual({ success: true });
       expect(mockFetch).toHaveBeenCalledWith(TEST_URL, {
         method: 'POST',
-        headers: { Accept: 'application/json', 'X-Request-Id': 'test-request-id' },
+        headers: {
+          Accept: 'application/json',
+          'X-Request-Id': 'test-request-id',
+          'X-Correlation-Id': 'test-session-id',
+        },
         body: stringData,
       });
     });

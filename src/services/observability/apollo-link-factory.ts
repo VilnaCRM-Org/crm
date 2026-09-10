@@ -7,6 +7,7 @@ import { inject, injectable } from 'tsyringe';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 
 import type { CorrelationIdProvider } from './correlation-id-provider';
+import type { SessionCorrelation } from './session-correlation';
 import OBSERVABILITY_TOKENS from './tokens';
 
 @injectable()
@@ -15,7 +16,9 @@ export default class ApolloLinkFactory {
     @inject(OBSERVABILITY_TOKENS.ObservabilityService)
     private readonly observability: ObservabilityService,
     @inject(OBSERVABILITY_TOKENS.CorrelationIdProvider)
-    private readonly correlationIds: CorrelationIdProvider
+    private readonly correlationIds: CorrelationIdProvider,
+    @inject(OBSERVABILITY_TOKENS.SessionCorrelation)
+    private readonly sessionCorrelation: SessionCorrelation
   ) {}
 
   public build(uri: string): ApolloLink {
@@ -27,6 +30,7 @@ export default class ApolloLinkFactory {
       headers: {
         ...previousContext.headers,
         [this.correlationIds.header]: this.correlationIds.next(),
+        [this.sessionCorrelation.header]: this.sessionCorrelation.id(),
       },
     }));
   }
