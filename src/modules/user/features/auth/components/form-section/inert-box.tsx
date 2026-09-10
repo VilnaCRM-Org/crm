@@ -1,5 +1,5 @@
 import { Box } from '@mui/material';
-import { useCallback } from 'react';
+import { type JSX, useCallback } from 'react';
 
 import type { InertBoxProps } from '@auth/types/form-section/inert-box';
 

@@ -3,14 +3,13 @@
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 import RequireMutation from '@/components/require-mutation';
 import accessCore from '@/lib/access/access-core';
 import accessState from '@/lib/access/access-state';
 import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
 import { buildPrincipal } from '@tests/builders';
-import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 const GATED = 'create-user-control';
 const SIBLING = 'sibling-content';
@@ -19,7 +18,7 @@ const AT_PATH = '/contacts';
 
 const renderGate = (): void => {
   render(
-    <MemoryRouter future={ROUTER_FUTURE_FLAGS} initialEntries={[AT_PATH]}>
+    <MemoryRouter initialEntries={[AT_PATH]}>
       <div>
         <span>{SIBLING}</span>
         <RequireMutation mutation={MUTATION_KEYS.createUser}>

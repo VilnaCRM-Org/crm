@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 import RequireMutation from '@/components/require-mutation';
 import accessSession from '@/lib/access/access-session';
@@ -13,13 +13,12 @@ import noopAuditSink from '@/lib/access/noop-audit-sink';
 import type { AuditEvent } from '@/lib/types/access/audit';
 import AccessContext from '@/providers/access-context';
 import { buildAccessToken, buildClaims, buildPrincipal } from '@tests/builders';
-import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 const GATED = 'create-user-control';
 
 const renderGate = (): void => {
   render(
-    <MemoryRouter future={ROUTER_FUTURE_FLAGS}>
+    <MemoryRouter>
       <RequireMutation mutation={MUTATION_KEYS.createUser}>
         <button type="button">{GATED}</button>
       </RequireMutation>
@@ -96,7 +95,7 @@ describe('mutation-keyed access, end to end', () => {
   });
   it('reads a provided snapshot ahead of the live store', () => {
     render(
-      <MemoryRouter future={ROUTER_FUTURE_FLAGS}>
+      <MemoryRouter>
         <AccessContext.Provider
           value={{
             principal: buildPrincipal({ allowedMutations: [MUTATION_KEYS.createUser] }),

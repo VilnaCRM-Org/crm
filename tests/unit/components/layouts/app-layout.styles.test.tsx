@@ -5,7 +5,7 @@ import type { ReactElement } from 'react';
 
 import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
-jest.mock('react-router-dom', () => ({
+jest.mock('react-router', () => ({
   Outlet: (): ReactElement => <span>route-outlet</span>,
   useLocation: (): { state: null } => ({ state: null }),
 }));

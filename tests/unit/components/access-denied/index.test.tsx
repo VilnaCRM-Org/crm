@@ -8,6 +8,7 @@ import AccessDenied from '@/components/access-denied';
 import localization from '@/i18n/localization.json';
 import ROUTE_PATHS from '@/routes/route-paths';
 import { paletteColors } from '@/styles/colors';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
 
 const COPY = localization.en.translation.access_denied;
@@ -61,15 +62,16 @@ describe('AccessDenied', () => {
     const focused = focusedElement();
     expect(focused).toContainElement(screen.getByRole('heading', { level: 1, name: COPY.title }));
 
-    const styles = window.getComputedStyle(focused);
-    expect(styles.outline).toBe(`2px solid ${paletteColors.primary.main}`);
-    expect(styles.outlineOffset).toBe('2px');
+    // Read back from the parsed stylesheet rather than through getComputedStyle: jsdom does
+    // not resolve `:focus-visible` against focus state, so a computed read reports the ring
+    // whether the element is focused or not and could never tell the two branches apart.
+    const ring = styleRuleFor(focused, ':focus-visible');
+    expect(ring?.outline).toBe(`2px solid ${paletteColors.primary.main}`);
+    expect(ring?.getPropertyValue('outline-offset')).toBe('2px');
 
-    // The ring must come from the `:focus-visible` rule, not from a base outline that would
-    // paint on every mouse user too. Blurring is what proves the pseudo-class was matched:
-    // were it ignored here, both branches would report the same value and this would fail.
-    focused.blur();
-    expect(window.getComputedStyle(focused).outline).toBe('none');
+    // The ring must come from that rule alone, not from a base outline that would paint for
+    // every mouse user too.
+    expect(styleRuleFor(focused)?.outline).toBe('none');
   });
 
   it('sets the document title from the localized page title', () => {

@@ -1,6 +1,7 @@
 import Box from '@mui/material/Box';
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useLinkClickHandler } from 'react-router-dom';
+import { useLinkClickHandler } from 'react-router';
 
 import UIButton from '@/components/ui-button';
 import UITypography from '@/components/ui-typography';

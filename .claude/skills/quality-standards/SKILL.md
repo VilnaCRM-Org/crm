@@ -26,6 +26,7 @@ suite and should not be used as a mutating formatter.
 | Duplication  | `make lint-dup`      |
 | Metrics      | `make lint-metrics`  |
 | Licenses     | `make lint-licenses` |
+| Localization | `make lint-i18n`     |
 | Full quality | `make lint`          |
 
 ## Protected Policy
@@ -61,6 +62,19 @@ suite and should not be used as a mutating formatter.
   `no-restricted-imports` entries are NOT tracked by the rot-guard today and must be verified
   manually. Config-level gates in `eslint.config.mjs` are pinned by
   `tests/unit/config/eslint-policy.test.ts` (issue #165) — a rule rename updates both.
+- Do not narrow a gate's scan scope, drop `en` or `uk` from the i18n required
+  set, or add an ignore entry to make `make lint-i18n` pass.
+
+## Localization / i18n
+
+`make lint-i18n` gates locale parity: both required locales present in every
+`src/**/i18n/` catalog with no stray extras, identical `en`/`uk` key sets, a
+`src/i18n/localization.json` that matches the generated merge of those catalogs,
+and no `t()` key undefined in either locale.
+
+Fix a parity or undefined-key failure by adding the translation or correcting
+the key. Fix a stale merged catalog with `make i18n-generate`, then commit the
+regenerated file; the build never produces it.
 
 ## Focused Test Gates
 
@@ -71,6 +85,7 @@ suite and should not be used as a mutating formatter.
 | User journey                  | `make test-e2e`                                       |
 | Visual layout                 | `make test-visual`                                    |
 | Bundle or runtime performance | `make lighthouse-desktop` or `make lighthouse-mobile` |
+| Localized strings (i18n)      | `make lint-i18n`                                      |
 
 ## Related Guides
 

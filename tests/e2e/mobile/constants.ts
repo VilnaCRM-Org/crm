@@ -35,14 +35,14 @@ export const switcherToSignInLabel: string = t('sign_up.form.switcher_text_have_
 export const showPasswordLabel: string = t('auth.password.show');
 export const hidePasswordLabel: string = t('auth.password.hide');
 
-// The accessible name is one interpolated key, so the provider is not necessarily a suffix in
-// every locale — match each rendered label exactly instead of prefixing.
+// The accessible name is one interpolated key (issue #151), so the provider is not necessarily
+// a suffix in every locale — match each rendered label exactly instead of prefixing.
 export const OAUTH_PROVIDER_LABELS: readonly string[] = [
   'Google',
   'GitHub',
   'Facebook',
   'Twitter',
-].map((provider) => t('sign_up.socials_aria_label', { provider }));
+].map((provider) => t('auth.oauth.continue_with', { provider }));
 
 export const OAUTH_BUTTON_SELECTOR = OAUTH_PROVIDER_LABELS.map(
   (label) => `button[aria-label="${label}"]`

@@ -1,3 +1,5 @@
+import type { JSX } from 'react';
+
 import type { AccessProviderProps } from '@/components/types/providers';
 import useAccessSnapshot from '@/hooks/use-access-snapshot';
 

@@ -1,5 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import type { JSX } from 'react';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 
 import accessCore from '@/lib/access/access-core';
 import accessSession from '@/lib/access/access-session';
@@ -12,7 +13,6 @@ import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 import ProtectedRoute from '@auth/components/protected-route';
 import { AuthStateVar } from '@auth/stores';
 import { SAMPLE_ROLES, buildAccessToken, buildClaims, buildTenantRef } from '@tests/builders';
-import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 const record = jest.fn<void, [AuditEvent]>();
 const spySink: AuditSink = { record };
@@ -47,7 +47,7 @@ function SignInProbe(): JSX.Element {
 }
 
 const routerTree = (initialEntry = '/'): JSX.Element => (
-  <MemoryRouter initialEntries={[initialEntry]} future={ROUTER_FUTURE_FLAGS}>
+  <MemoryRouter initialEntries={[initialEntry]}>
     <Routes>
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<div>dashboard</div>} />

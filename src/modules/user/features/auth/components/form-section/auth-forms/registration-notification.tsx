@@ -1,5 +1,5 @@
 import { Box, Fade } from '@mui/material';
-import { useCallback, useEffect, useState } from 'react';
+import { type JSX, useCallback, useEffect, useState } from 'react';
 
 import type { Props } from '@auth/types/auth-forms/registration-notification';
 

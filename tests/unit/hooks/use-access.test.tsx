@@ -3,7 +3,7 @@
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { act, renderHook } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import type { JSX, ReactNode } from 'react';
 
 import useAccess from '@/hooks/use-access';
 import accessState from '@/lib/access/access-state';

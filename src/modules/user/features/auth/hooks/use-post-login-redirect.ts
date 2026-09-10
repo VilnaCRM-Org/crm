@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router';
 
 import useAuthToken from '@auth/stores/use-auth-token';
 import loginRedirectTarget from '@auth/utils/login-redirect-target';

@@ -8,14 +8,12 @@ import { buildCredentials, buildUser } from '@tests/builders';
 import server, { defaultLoginResponse } from '../../../../../mocks/server';
 
 describe('auth stores composition root integration', () => {
-  beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
   afterEach(() => {
     server.resetHandlers();
     act(() => {
       AuthStateVar.reset();
     });
   });
-  afterAll(() => server.close());
 
   it('drives login and registration through the real repository and clears state', async () => {
     await authActions.loginUser(buildCredentials());

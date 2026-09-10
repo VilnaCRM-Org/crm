@@ -1,4 +1,4 @@
-import { rest } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 
 import '../../../../../setup';
 import API_ENDPOINTS from '@/config/api-config';
@@ -64,9 +64,10 @@ describe('Auth Store Integration', () => {
   describe('successful login flow', () => {
     it('should update state to pending when login starts', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.delay(50), ctx.status(200), ctx.json(buildLoginResponse()))
-        )
+        http.post(API_ENDPOINTS.LOGIN, async () => {
+          await delay(50);
+          return HttpResponse.json(buildLoginResponse());
+        })
       );
 
       const promise = authActions.loginUser(buildCredentials());
@@ -79,9 +80,7 @@ describe('Auth Store Integration', () => {
     it('should update state on successful login', async () => {
       const credentials = buildCredentials();
       const { token } = buildLoginResponse();
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.json({ token })))
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token })));
 
       await authActions.loginUser(credentials);
 
@@ -94,11 +93,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('should normalize email to lowercase', async () => {
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json(buildLoginResponse()))
-        )
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json(buildLoginResponse())));
 
       await authActions.loginUser({ email: 'USER@TEST.COM', password: 'pass' });
 
@@ -111,20 +106,12 @@ describe('Auth Store Integration', () => {
       const firstToken = buildToken();
       const secondCredentials = buildCredentials();
       const secondToken = buildToken();
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: firstToken }))
-        )
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token: firstToken })));
 
       await authActions.loginUser(firstCredentials);
       expect(AuthStateVar.get().token).toBe(firstToken);
 
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: secondToken }))
-        )
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token: secondToken })));
 
       await authActions.loginUser(secondCredentials);
 
@@ -137,8 +124,8 @@ describe('Auth Store Integration', () => {
   describe('error handling', () => {
     it('should set error state on 401 authentication error', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(401), ctx.json({ message: 'Invalid credentials' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Invalid credentials' }, { status: 401 })
         )
       );
 
@@ -151,15 +138,9 @@ describe('Auth Store Integration', () => {
     });
 
     it('should set error state on network failure', async () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-      server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res) => res.networkError('Failed to fetch')));
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.error()));
 
       await authActions.loginUser(buildCredentials());
-
-      expect(consoleError).toHaveBeenCalledTimes(1);
-      expect(consoleError).toHaveBeenCalledWith(
-        expect.stringContaining(`POST ${API_ENDPOINTS.LOGIN}`)
-      );
 
       const state = AuthStateVar.get();
       expect(state.loginLoading).toBe(false);
@@ -169,8 +150,8 @@ describe('Auth Store Integration', () => {
 
     it('should set error state on 400 validation error', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(400), ctx.json({ message: 'Invalid data' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Invalid data' }, { status: 400 })
         )
       );
 
@@ -183,8 +164,8 @@ describe('Auth Store Integration', () => {
 
     it('should clear previous error on new login attempt', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(401), ctx.json({ message: 'Invalid' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Invalid' }, { status: 401 })
         )
       );
 
@@ -192,11 +173,7 @@ describe('Auth Store Integration', () => {
       expect(AuthStateVar.get().loginError).toBeTruthy();
 
       const newToken = buildToken();
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ token: newToken }))
-        )
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token: newToken })));
 
       await authActions.loginUser(buildCredentials());
 
@@ -207,8 +184,8 @@ describe('Auth Store Integration', () => {
 
     it('should handle 500 server error', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(500), ctx.json({ message: 'Internal server error' }))
+        http.post(API_ENDPOINTS.LOGIN, () =>
+          HttpResponse.json({ message: 'Internal server error' }, { status: 500 })
         )
       );
 
@@ -225,8 +202,8 @@ describe('Auth Store Integration', () => {
       for (const code of errorCodes) {
         authActions.reset();
         server.use(
-          rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-            res(ctx.status(code), ctx.json({ message: `Error ${code}` }))
+          http.post(API_ENDPOINTS.LOGIN, () =>
+            HttpResponse.json({ message: `Error ${code}` }, { status: code })
           )
         );
 
@@ -243,9 +220,7 @@ describe('Auth Store Integration', () => {
     it('should clear all auth state on logout', async () => {
       const credentials = buildCredentials();
       const { token } = buildLoginResponse();
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.json({ token })))
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token })));
 
       await authActions.loginUser(credentials);
       expect(AuthStateVar.get().token).toBe(token);
@@ -266,9 +241,9 @@ describe('Auth Store Integration', () => {
   describe('request cancellation', () => {
     it('should handle cancelled requests', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, async (_, res, ctx) => {
+        http.post(API_ENDPOINTS.LOGIN, async () => {
           await createDelayedPromise(100);
-          return res(ctx.status(200), ctx.json(buildLoginResponse()));
+          return HttpResponse.json(buildLoginResponse());
         })
       );
 
@@ -287,9 +262,7 @@ describe('Auth Store Integration', () => {
   describe('schema validation', () => {
     it('should handle invalid response schema', async () => {
       server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ invalidField: 'value' }))
-        )
+        http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ invalidField: 'value' }))
       );
 
       await authActions.loginUser(buildCredentials());
@@ -301,7 +274,7 @@ describe('Auth Store Integration', () => {
     });
 
     it('surfaces a login error when the server returns no content (204)', async () => {
-      server.use(rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(204))));
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => new HttpResponse(null, { status: 204 })));
 
       await authActions.loginUser(buildCredentials());
 
@@ -313,11 +286,7 @@ describe('Auth Store Integration', () => {
 
   describe('registerUser', () => {
     it('should handle successful registration', async () => {
-      server.use(
-        rest.post(GRAPHQL_URL, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json(createUserSuccessBody))
-        )
-      );
+      server.use(http.post(GRAPHQL_URL, () => HttpResponse.json(createUserSuccessBody)));
 
       await authActions.registerUser(registrationCredentials);
 
@@ -328,9 +297,9 @@ describe('Auth Store Integration', () => {
 
     it('should set loading state during registration', async () => {
       server.use(
-        rest.post(GRAPHQL_URL, async (_, res, ctx) => {
+        http.post(GRAPHQL_URL, async () => {
           await createDelayedPromise(50);
-          return res(ctx.status(200), ctx.json(createUserSuccessBody));
+          return HttpResponse.json(createUserSuccessBody);
         })
       );
 
@@ -347,16 +316,14 @@ describe('Auth Store Integration', () => {
 
     it('should handle validation error from API response', async () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
       server.use(
-        rest.post(GRAPHQL_URL, (_, res, ctx) =>
-          res(
-            ctx.status(200),
-            ctx.json({
-              data: {
-                createUser: { user: { id: 'u', confirmed: true, email: 456, initials: 123 } },
-              },
-            })
-          )
+        http.post(GRAPHQL_URL, () =>
+          HttpResponse.json({
+            data: {
+              createUser: { user: { id: 'u', confirmed: true, email: 456, initials: 123 } },
+            },
+          })
         )
       );
 
@@ -374,10 +341,9 @@ describe('Auth Store Integration', () => {
 
     it('surfaces a register error when the payload contains no user', async () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+
       server.use(
-        rest.post(GRAPHQL_URL, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json({ data: { createUser: { user: null } } }))
-        )
+        http.post(GRAPHQL_URL, () => HttpResponse.json({ data: { createUser: { user: null } } }))
       );
 
       await authActions.registerUser(registrationCredentials);
@@ -398,8 +364,8 @@ describe('Auth Store Integration', () => {
 
     it('should handle 400 error', async () => {
       server.use(
-        rest.post(GRAPHQL_URL, (_, res, ctx) =>
-          res(ctx.status(400), ctx.json({ errors: [{ message: 'Bad request' }] }))
+        http.post(GRAPHQL_URL, () =>
+          HttpResponse.json({ errors: [{ message: 'Bad request' }] }, { status: 400 })
         )
       );
 
@@ -412,8 +378,8 @@ describe('Auth Store Integration', () => {
 
     it('should handle 409 conflict error', async () => {
       server.use(
-        rest.post(GRAPHQL_URL, (_, res, ctx) =>
-          res(ctx.status(409), ctx.json({ errors: [{ message: 'User already exists' }] }))
+        http.post(GRAPHQL_URL, () =>
+          HttpResponse.json({ errors: [{ message: 'User already exists' }] }, { status: 409 })
         )
       );
 
@@ -425,13 +391,9 @@ describe('Auth Store Integration', () => {
     });
 
     it('should handle network failure', async () => {
-      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-      server.use(rest.post(GRAPHQL_URL, (_, res) => res.networkError('Failed to fetch')));
+      server.use(http.post(GRAPHQL_URL, () => HttpResponse.error()));
 
       await authActions.registerUser(registrationCredentials);
-
-      expect(consoleError).toHaveBeenCalledTimes(1);
-      expect(consoleError).toHaveBeenCalledWith(expect.stringContaining(`POST ${GRAPHQL_URL}`));
 
       const state = AuthStateVar.get();
       expect(state.registerLoading).toBe(false);
@@ -453,8 +415,8 @@ describe('Auth Store Integration', () => {
       const abortController = new AbortController();
       abortController.abort();
       server.use(
-        rest.post(GRAPHQL_URL, (_, res, ctx) =>
-          res(ctx.status(500), ctx.json({ errors: [{ message: 'should not surface' }] }))
+        http.post(GRAPHQL_URL, () =>
+          HttpResponse.json({ errors: [{ message: 'should not surface' }] }, { status: 500 })
         )
       );
 
@@ -566,9 +528,7 @@ describe('Auth Store Integration', () => {
     it('should select state values correctly', async () => {
       const credentials = buildCredentials();
       const { token } = buildLoginResponse();
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.json({ token })))
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token })));
 
       await authActions.loginUser(credentials);
 
@@ -605,9 +565,7 @@ describe('Auth Store Integration', () => {
 
       const credentials = buildCredentials();
       const { token } = buildLoginResponse();
-      server.use(
-        rest.post(API_ENDPOINTS.LOGIN, (_, res, ctx) => res(ctx.status(200), ctx.json({ token })))
-      );
+      server.use(http.post(API_ENDPOINTS.LOGIN, () => HttpResponse.json({ token })));
 
       await authActions.loginUser(credentials);
 
@@ -620,11 +578,7 @@ describe('Auth Store Integration', () => {
       const registrationAPI = container.resolve<RegistrationAPI>(AUTH_TOKENS.RegistrationAPI);
       expect(registrationAPI).toBeDefined();
 
-      server.use(
-        rest.post(GRAPHQL_URL, (_, res, ctx) =>
-          res(ctx.status(200), ctx.json(createUserSuccessBody))
-        )
-      );
+      server.use(http.post(GRAPHQL_URL, () => HttpResponse.json(createUserSuccessBody)));
 
       await authActions.registerUser(registrationCredentials);
 

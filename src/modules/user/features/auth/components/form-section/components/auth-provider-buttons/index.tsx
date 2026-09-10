@@ -1,5 +1,6 @@
 import { Box, Divider, ListItem, List, SvgIcon } from '@mui/material';
 import { ThemeProvider } from '@mui/material/styles';
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import UIButton from '@/components/ui-button';
@@ -25,7 +26,7 @@ export default function AuthProviderButtons(): JSX.Element {
                 variant="outlined"
                 sx={styles.serviceItemButton}
                 onClick={onClick}
-                aria-label={t('sign_up.socials_aria_label', { provider: label })}
+                aria-label={t('auth.oauth.continue_with', { provider: label })}
                 type="button"
               >
                 <SvgIcon

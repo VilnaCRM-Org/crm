@@ -1,4 +1,5 @@
-import { useLocation } from 'react-router-dom';
+import type { JSX } from 'react';
+import { useLocation } from 'react-router';
 
 import type { RequireMutationProps } from '@/components/types/require-mutation';
 import useCanMutate from '@/hooks/use-can-mutate';

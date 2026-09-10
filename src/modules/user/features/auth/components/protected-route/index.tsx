@@ -1,5 +1,5 @@
-import { useLayoutEffect } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router-dom';
+import { type JSX, useLayoutEffect } from 'react';
+import { Navigate, Outlet, useLocation } from 'react-router';
 
 import usePrincipal from '@/hooks/use-principal';
 import accessSession from '@/lib/access/access-session';

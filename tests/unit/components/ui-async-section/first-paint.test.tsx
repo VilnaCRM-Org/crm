@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import type { JSX } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import UIAsyncSection from '@/components/ui-async-section';

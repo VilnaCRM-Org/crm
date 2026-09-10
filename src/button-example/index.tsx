@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const noop = (): void => undefined;
@@ -7,7 +8,7 @@ export default function ButtonExample(): JSX.Element {
 
   return (
     <button type="button" onClick={noop}>
-      {t('hello')}
+      {t('button_example.label')}
     </button>
   );
 }

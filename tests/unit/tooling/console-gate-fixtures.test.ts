@@ -84,10 +84,11 @@ describe('console gate seeded defects', () => {
 
   it('discovers every fixture', () => {
     expect([...fixtures.keys()].sort()).toEqual([
-      'allowlisted-message.fixture.ts',
       'emits-console-error.fixture.ts',
       'emits-console-warn.fixture.ts',
       'spied-console-error.fixture.ts',
+      'unallowlisted-message.fixture.ts',
+      'ungated-levels.fixture.ts',
       'unrestored-spy.fixture.ts',
       'warns-during-cleanup.fixture.tsx',
     ]);
@@ -130,7 +131,18 @@ describe('console gate seeded defects', () => {
     expect(result.message).not.toContain('installs a console.error spy and never restores it');
   });
 
-  it('passes allowlisted messages and ungated levels', () => {
-    expect(fixtureResult('allowlisted-message.fixture.ts').status).toBe('passed');
+  it('passes output on the levels the gate does not cover', () => {
+    expect(fixtureResult('ungated-levels.fixture.ts').status).toBe('passed');
+  });
+
+  // The allowlist is empty, so there is no message left to prove an exemption with. What the
+  // child run has to prove instead is that the exemption is gone: the message the deleted entry
+  // used to allow now fails like any other unexpected error.
+  it('fails the message the expired allowlist entry used to exempt', () => {
+    const result = fixtureResult('unallowlisted-message.fixture.ts');
+
+    expect(result.status).toBe('failed');
+    expect(result.message).toContain('Expected test not to call console.error()');
+    expect(result.message).toContain('ReactDOMTestUtils.act');
   });
 });

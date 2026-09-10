@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { useEffect } from 'react';
+import { type JSX, useEffect } from 'react';
 
 function WarnOnUnmount(): JSX.Element {
   useEffect((): (() => void) => {

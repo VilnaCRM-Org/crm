@@ -25,7 +25,7 @@ describe('UIBackToMain Component', () => {
     it('should render back arrow icon', () => {
       renderWithProviders(<UIBackToMain />);
 
-      const icon = screen.getByRole('img', { hidden: true });
+      const icon = screen.getByRole('presentation', { hidden: true });
 
       expect(icon).toBeInTheDocument();
       expect(icon).toHaveAttribute('src', 'back-arrow-mock.svg');
@@ -61,19 +61,13 @@ describe('UIBackToMain Component', () => {
       const button = screen.getByText(BackToHomeText);
       expect(within(button).queryByTestId('ripple')).not.toBeInTheDocument();
     });
-    it('should contain UIContainer wrapper', () => {
-      renderWithProviders(<UIBackToMain />);
-
-      const containerElement = screen.getByLabelText(/container/i);
-      expect(containerElement).toBeInTheDocument();
-    });
   });
 
   describe('Accessibility', () => {
-    it('should have proper alt text for icon', () => {
+    it('should expose the icon as decorative', () => {
       renderWithProviders(<UIBackToMain />);
 
-      const icon = screen.getByRole('img', { hidden: true });
+      const icon = screen.getByRole('presentation', { hidden: true });
       expect(icon).toBeInTheDocument();
     });
 

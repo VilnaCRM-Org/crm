@@ -136,3 +136,5 @@ lint-doc-coverage	bats	tests/bats/makefile_targets.bats	Validated as the direct 
 lint-doc-references	bats	tests/bats/makefile_targets.bats	Validated as the direct documented-command reference gate invocation.
 lint-doc-links	bats	tests/bats/makefile_targets.bats	Validated as the direct relative-link and anchor gate invocation.
 check-adr-drift	bats	tests/bats/makefile_targets.bats	Validated as the direct architecture drift gate invocation in the lint target table.
+lint-i18n	bats	tests/bats/makefile_targets.bats	Validated as the host-side locale-parity gate command and as a member of the CI lint target list passed to run-parallel-lint.sh.
+i18n-generate	bats	tests/bats/makefile_targets.bats	Validated as the --write regeneration command for the merged src/i18n/localization.json catalog.

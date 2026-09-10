@@ -1,9 +1,9 @@
-const i18n = require('i18next');
-const { initReactI18next } = require('react-i18next');
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
 
-const localization = require('./i18n/localization.json');
-const { default: rawEnv } = require('./config/env/raw-env');
-const { default: localeFormatter } = require('./services/locale-formatter/locale-formatter-core');
+import rawEnv from './config/env/raw-env';
+import localization from './i18n/localization.json';
+import localeFormatter from './services/locale-formatter/locale-formatter-core';
 
 const MAIN_LANGUAGE = rawEnv.mainLanguage();
 const FALLBACK_LANGUAGE = (process.env.REACT_APP_FALLBACK_LANGUAGE || '').trim() || 'en';

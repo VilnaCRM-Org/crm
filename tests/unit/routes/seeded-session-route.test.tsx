@@ -9,7 +9,6 @@ import type { ReactElement } from 'react';
 import accessState from '@/lib/access/access-state';
 import AuthStateVar from '@auth/stores/auth-var';
 import { buildToken } from '@tests/builders';
-import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 // Lighthouse and Playwright authenticate by seeding a token rather than logging in, so
 // nothing calls the login path that starts an access session. The real ProtectedRoute
@@ -25,8 +24,8 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('react-router-dom', () => {
-  const actual = jest.requireActual('react-router-dom');
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return {
     __esModule: true,
     ...actual,
@@ -35,7 +34,7 @@ jest.mock('react-router-dom', () => {
 });
 
 jest.mock('@/components/layouts/root-layout', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): ReactElement => <Outlet /> };
 });
 
@@ -67,7 +66,7 @@ describe('seeded-session routing (#114 regression guard)', () => {
   });
 
   it('hydrates the session from the seeded token and renders the gated home page', async () => {
-    const actual = jest.requireActual<typeof import('react-router-dom')>('react-router-dom');
+    const actual = jest.requireActual<typeof import('react-router')>('react-router');
     // The seed is the real one Lighthouse and Playwright use: the token in the auth state,
     // read by the token hook AND by the module-load hydration in ProtectedRoute. Stubbing the
     // hook instead would leave that hydration reading a null token, so the pre-render path the
@@ -84,7 +83,7 @@ describe('seeded-session routing (#114 regression guard)', () => {
 
     view = render(
       <Suspense fallback={null}>
-        <actual.RouterProvider router={memory} future={ROUTER_FUTURE_FLAGS} />
+        <actual.RouterProvider router={memory} />
       </Suspense>
     );
 

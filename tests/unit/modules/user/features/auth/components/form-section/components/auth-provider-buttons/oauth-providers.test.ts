@@ -46,6 +46,8 @@ afterEach(() => {
 });
 
 describe('oauthProviders', () => {
+  // The accessible name is not carried on the provider record: it is localized in the component
+  // (`auth.oauth.continue_with`) and asserted in the auth-provider-buttons component test.
   it('exposes every supported provider, in design order, with an icon and a handler', async () => {
     const { providers } = await loadProviders();
 
