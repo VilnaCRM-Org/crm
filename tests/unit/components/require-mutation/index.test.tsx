@@ -83,6 +83,24 @@ describe('RequireMutation', () => {
     recordDenial.mockRestore();
   });
 
+  // The refusal string is the refusal's IDENTITY, not just a not-null flag: a different
+  // principal refused the same mutation on the same screen is its own episode. Emptying the
+  // array would collapse every refusal to one key, so this second denial would be swallowed.
+  it('records a second denial when a different principal is refused under the same mount', () => {
+    const recordDenial = jest.spyOn(accessCore, 'recordDenial').mockImplementation(() => undefined);
+    accessState.setSession(buildPrincipal({ allowedMutations: [] }), {});
+
+    renderGate();
+    expect(recordDenial).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      accessState.setSession(buildPrincipal({ allowedMutations: [] }), {});
+    });
+
+    expect(recordDenial).toHaveBeenCalledTimes(2);
+    recordDenial.mockRestore();
+  });
+
   it('records no denial while anonymous, when there is nobody to refuse', () => {
     const recordDenial = jest.spyOn(accessCore, 'recordDenial').mockImplementation(() => undefined);
 
