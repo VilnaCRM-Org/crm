@@ -1,4 +1,4 @@
-# agents.md
+# AGENTS.md
 
 AI Agent Guide for VilnaCRM React Template
 

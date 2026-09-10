@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import type { JSX } from 'react';
 
 import textSkeletonStyles from '@/components/skeletons/ui-skeleton-text/styles';
 import type { UISkeletonTextProps } from '@/components/skeletons/ui-skeleton-text/types';

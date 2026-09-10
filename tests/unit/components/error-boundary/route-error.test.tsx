@@ -9,7 +9,7 @@ import type { ReactElement } from 'react';
 let mockRouteError: unknown = undefined;
 const mockNavigate = jest.fn();
 
-jest.mock('react-router-dom', () => ({
+jest.mock('react-router', () => ({
   useRouteError: (): unknown => mockRouteError,
   useNavigate: (): jest.Mock => mockNavigate,
   isRouteErrorResponse: (error: unknown): boolean =>

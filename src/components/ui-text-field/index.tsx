@@ -1,5 +1,6 @@
 import { TextField } from '@mui/material';
 import type { TextFieldProps } from '@mui/material/TextField';
+import type { JSX } from 'react';
 
 import renderWithTheme from '@/components/render-with-theme';
 import Theme from '@/components/ui-text-field/theme';

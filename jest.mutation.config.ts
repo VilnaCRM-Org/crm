@@ -1,6 +1,10 @@
+import { createRequire } from 'node:module';
+
 import type { Config } from 'jest';
 
-import base from './jest.config';
+import base from './jest.config.ts';
+
+const requireFromConfig = createRequire(import.meta.url);
 
 const config: Config = {
   ...base,
@@ -20,7 +24,7 @@ const config: Config = {
     // above, kept out of the mutation suite to avoid subprocess churn under Stryker.
     '/tests/unit/config/eslint-policy\\.test\\.ts$',
   ],
-  testEnvironment: require.resolve('./tests/jsdom-fetch-environment.cjs'),
+  testEnvironment: requireFromConfig.resolve('./tests/jsdom-fetch-environment.cjs'),
   setupFilesAfterEnv: ['<rootDir>/tests/mutation/setup.ts'],
   transform: {
     ...base.transform,

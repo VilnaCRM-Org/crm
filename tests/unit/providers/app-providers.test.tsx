@@ -4,6 +4,7 @@ import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { useTheme } from '@mui/material/styles';
 import { render, screen } from '@testing-library/react';
+import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import AppProviders from '@/providers/app-providers';

@@ -6,7 +6,7 @@ Update:
 
 - `Makefile` help text.
 - `CLAUDE.md` Code Quality or Testing sections.
-- `agents.md` agent workflow guidance.
+- `AGENTS.md` agent workflow guidance.
 - Relevant `.claude/skills/*/SKILL.md` and support files.
 
 ## When Skill Layout Changes

@@ -1,14 +1,13 @@
 import { render } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 
 import usePostLoginRedirect from '@auth/hooks/use-post-login-redirect';
 import useAuthToken from '@auth/stores/use-auth-token';
-import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 const mockNavigate = jest.fn();
 
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
+jest.mock('react-router', () => ({
+  ...jest.requireActual('react-router'),
   useNavigate: (): jest.Mock => mockNavigate,
 }));
 
@@ -28,7 +27,7 @@ type Entry = Parameters<typeof MemoryRouter>[0]['initialEntries'];
 
 function renderProbe(entries: Entry = ['/sign-in']): ReturnType<typeof render> {
   return render(
-    <MemoryRouter initialEntries={entries} future={ROUTER_FUTURE_FLAGS}>
+    <MemoryRouter initialEntries={entries}>
       <Probe />
     </MemoryRouter>
   );
@@ -42,7 +41,7 @@ describe('usePostLoginRedirect', () => {
 
     mockUseAuthToken.mockReturnValue('fresh-token');
     view.rerender(
-      <MemoryRouter initialEntries={['/sign-in']} future={ROUTER_FUTURE_FLAGS}>
+      <MemoryRouter initialEntries={['/sign-in']}>
         <Probe />
       </MemoryRouter>
     );
@@ -63,7 +62,7 @@ describe('usePostLoginRedirect', () => {
 
     mockUseAuthToken.mockReturnValue('fresh-token');
     view.rerender(
-      <MemoryRouter initialEntries={entries} future={ROUTER_FUTURE_FLAGS}>
+      <MemoryRouter initialEntries={entries}>
         <Probe />
       </MemoryRouter>
     );
@@ -79,7 +78,7 @@ describe('usePostLoginRedirect', () => {
     const view = renderProbe();
 
     view.rerender(
-      <MemoryRouter initialEntries={['/sign-in']} future={ROUTER_FUTURE_FLAGS}>
+      <MemoryRouter initialEntries={['/sign-in']}>
         <Probe />
       </MemoryRouter>
     );
@@ -92,7 +91,7 @@ describe('usePostLoginRedirect', () => {
     const view = renderProbe();
 
     view.rerender(
-      <MemoryRouter initialEntries={['/sign-in']} future={ROUTER_FUTURE_FLAGS}>
+      <MemoryRouter initialEntries={['/sign-in']}>
         <Probe />
       </MemoryRouter>
     );
@@ -106,7 +105,7 @@ describe('usePostLoginRedirect', () => {
     const rerenderWith = (token: string | null): void => {
       mockUseAuthToken.mockReturnValue(token);
       view.rerender(
-        <MemoryRouter initialEntries={['/sign-in']} future={ROUTER_FUTURE_FLAGS}>
+        <MemoryRouter initialEntries={['/sign-in']}>
           <Probe />
         </MemoryRouter>
       );

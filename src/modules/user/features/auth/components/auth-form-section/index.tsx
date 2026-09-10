@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import type { JSX } from 'react';
 
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
 import InertBox from '@auth/components/form-section/inert-box';

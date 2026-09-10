@@ -16,8 +16,8 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('react-router-dom', () => {
-  const actual = jest.requireActual('react-router-dom');
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return {
     __esModule: true,
     ...actual,
@@ -30,17 +30,17 @@ jest.mock('react-router-dom', () => {
 });
 
 jest.mock('@auth/components/protected-route', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): ReactElement => <Outlet /> };
 });
 
 jest.mock('@/components/layouts/root-layout', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): ReactElement => <Outlet /> };
 });
 
 jest.mock('@/components/layouts/app-layout', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): ReactElement => <Outlet /> };
 });
 

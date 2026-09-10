@@ -7,7 +7,6 @@ import { Suspense } from 'react';
 import type { ReactElement } from 'react';
 
 import router from '@/routes/routes';
-import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 let mockCurrentPath = '/sign-up';
 
@@ -18,8 +17,8 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('react-router-dom', () => {
-  const actual = jest.requireActual('react-router-dom');
+jest.mock('react-router', () => {
+  const actual = jest.requireActual('react-router');
   return {
     __esModule: true,
     ...actual,
@@ -32,17 +31,17 @@ jest.mock('react-router-dom', () => {
 });
 
 jest.mock('@auth/components/protected-route', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): ReactElement => <Outlet /> };
 });
 
 jest.mock('@/components/layouts/root-layout', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return { __esModule: true, default: (): ReactElement => <Outlet /> };
 });
 
 jest.mock('@/components/layouts/app-layout', () => {
-  const { Outlet } = jest.requireActual('react-router-dom');
+  const { Outlet } = jest.requireActual('react-router');
   return {
     __esModule: true,
     default: (): ReactElement => (
@@ -80,14 +79,14 @@ jest.mock('@auth/routes/sign-in', () => ({
 
 describe('routes', () => {
   const RouterProvider =
-    jest.requireActual<typeof import('react-router-dom')>('react-router-dom').RouterProvider;
+    jest.requireActual<typeof import('react-router')>('react-router').RouterProvider;
 
   const renderAt = (path: string): void => {
     mockCurrentPath = path;
-    const { RouterProvider: MockedRP } = jest.requireMock('react-router-dom');
+    const { RouterProvider: MockedRP } = jest.requireMock('react-router');
     render(
       <Suspense fallback={null}>
-        <MockedRP router={router} future={ROUTER_FUTURE_FLAGS} />
+        <MockedRP router={router} />
       </Suspense>
     );
   };

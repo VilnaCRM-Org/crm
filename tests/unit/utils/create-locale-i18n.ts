@@ -16,7 +16,7 @@ const createLocaleI18n = (locale: Locale): I18nType => {
     fallbackLng: locale,
     resources: { [locale]: { translation: localization[locale].translation } },
     interpolation: { escapeValue: false },
-    initImmediate: false,
+    initAsync: false,
   });
 
   return instance;

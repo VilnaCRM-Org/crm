@@ -305,7 +305,7 @@ Lighthouse
 Git
 
 ```bash
-  make husky: sets up Husky (Git hooks manager) — run once after cloning the repo
+  make husky: sets up Husky (Git hooks manager) — run after cloning the repo and after any Husky upgrade
 ```
 
 Storybook
@@ -413,7 +413,7 @@ as it's frequently updated.
 In-repository documentation:
 
 - [Architecture Decision Records (ADRs)](docs/adr/README.md)
-- [Agent and contributor guide](agents.md)
+- [Agent and contributor guide](AGENTS.md)
 - [Repository conventions and commands](CLAUDE.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [Feature flags — lifecycle and rollout](docs/feature-flags.md)

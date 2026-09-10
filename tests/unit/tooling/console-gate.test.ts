@@ -73,7 +73,7 @@ describe('console gate allowlist discipline', () => {
       {
         pattern: /^an allowed warning|swallowed$/,
         reason: 'A deliberately broken entry: alternation binds looser than the anchors.',
-        expiresWith: { packageName: '@testing-library/react', removedInMajor: 16 },
+        expiresWith: { packageName: '@testing-library/react', removedInMajor: 17 },
       },
     ];
 
@@ -91,15 +91,20 @@ describe('console gate allowlist discipline', () => {
     }
   });
 
+  // Driven off a fixture entry rather than the live allowlist, which is empty: the anchoring
+  // contract has to keep being exercised whether or not an entry currently exists.
   it('rejects an allowlisted message that carries unrelated trailing output', () => {
-    const rtlActDeprecation = [
-      'Warning: `ReactDOMTestUtils.act` is deprecated in favor of `React.act`.',
-      'Import `act` from `react` instead of `react-dom/test-utils`.',
-      'See https://react.dev/warnings/react-dom-test-utils for more info.',
-    ].join(' ');
+    const allowlist: ConsoleAllowlistEntry[] = [
+      {
+        pattern: /^an allowed warning$/,
+        reason: 'A fixture entry: it exists only to pin whole-message matching for this suite.',
+        expiresWith: { packageName: '@testing-library/react', removedInMajor: 17 },
+      },
+    ];
 
+    expect(isConsoleAllowedBy('an allowed warning', allowlist)).toBe(true);
     expect(
-      isConsoleAllowed(`${rtlActDeprecation} Warning: Each child in a list needs a key.`)
+      isConsoleAllowedBy('an allowed warning Warning: Each child in a list needs a key.', allowlist)
     ).toBe(false);
   });
 
@@ -133,13 +138,17 @@ describe('console gate allowlist discipline', () => {
     }
   });
 
-  it('allows exactly the deprecation the pinned @testing-library/react emits', () => {
-    const rtlActDeprecation = [
+  // @testing-library/react 16 renders through React.act, so the one entry this allowlist ever
+  // carried expired with the upgrade and was deleted. Nothing is allowed now, and this pins it:
+  // a new entry has to arrive with its own test rather than inherit an existing exemption.
+  it('allows nothing, because the allowlist is empty', () => {
+    const previouslyAllowed = [
       'Warning: `ReactDOMTestUtils.act` is deprecated in favor of `React.act`.',
       'Import `act` from `react` instead of `react-dom/test-utils`.',
       'See https://react.dev/warnings/react-dom-test-utils for more info.',
     ].join(' ');
 
-    expect(isConsoleAllowed(rtlActDeprecation)).toBe(true);
+    expect(CONSOLE_ALLOWLIST).toHaveLength(0);
+    expect(isConsoleAllowed(previouslyAllowed)).toBe(false);
   });
 });

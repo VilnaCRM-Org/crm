@@ -2,7 +2,7 @@
 #
 # Unit coverage for the pure subcommands of scripts/ci/docker_perf.sh.
 #
-# Per agents.md, every behavior is exercised across all three scenario classes:
+# Per AGENTS.md, every behavior is exercised across all three scenario classes:
 #   (1) positive / happy path, (2) negative / failure path, (3) boundary / edge.
 #
 # Scope note — the `run` orchestration subcommand is intentionally NOT tested

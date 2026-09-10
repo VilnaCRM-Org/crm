@@ -18,7 +18,7 @@ Update docs in the same change when you modify:
 ## Places To Check
 
 - `CLAUDE.md`
-- `agents.md`
+- `AGENTS.md`
 - `.claude/skills/`
 - README files near changed features
 - Test or workflow docs under `tests/`, `scripts/`, or `docs/`

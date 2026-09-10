@@ -1,6 +1,6 @@
 import { Box } from '@mui/material';
-import { useCallback, useRef } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { type JSX, useCallback, useRef } from 'react';
+import { Outlet, useLocation } from 'react-router';
 
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 
