@@ -17,7 +17,7 @@ export class AuditCore {
   }
 
   public log(input: AuditEventInput): void {
-    const subject = input.subject ?? this.currentSubject();
+    const subject = this.currentSubject();
     try {
       this.sink.record({
         type: input.type,

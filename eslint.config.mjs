@@ -273,15 +273,16 @@ const noRawIntlSelectors = [
   },
 ];
 
-// Source (issue #114): authorization decisions belong to the access layer. Outside
-// `src/lib/access/**` and `src/services/access/**`, code must ask the policy layer
-// (`useCan`, `<RequirePermission>`, `PermissionService`, a `Policy` class) with a typed
-// constant from the permission catalog — never inspect `principal.roles`/`principal.permissions`
-// itself and never pass a raw permission/role string at a call site.
+// Source (issue #114, ADR-005): authorization decisions belong to the access layer. Outside
+// `src/lib/access/**` and `src/services/access/**`, code must ask the mutation gate
+// (`useCanMutate`, `<RequireMutation>`, `MutationAccessService`) with a typed constant from the
+// mutation catalogue — never inspect `principal.roles`/`principal.allowedMutations` itself and
+// never pass a raw mutation key at a call site. `roles` is opaque server data that grants
+// nothing, so branching on it is the locally-computed verdict this model exists to remove.
 // The receiver of a membership check spelled three ways: `principal.roles`, a destructured
 // `roles`, and the computed `principal['roles']`. Every decision shape below is checked
 // against all three.
-const ROLE_COLLECTION = '/^(roles|permissions)$/';
+const ROLE_COLLECTION = '/^(roles|allowedMutations)$/';
 const RECEIVERS = [
   `[callee.object.property.name=${ROLE_COLLECTION}]`,
   `[callee.object.name=${ROLE_COLLECTION}]`,
@@ -295,14 +296,14 @@ const RECEIVERS = [
 const MEMBERSHIP_METHODS =
   '/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/';
 
-// `permissions['includes'](…)` is the same call with the method name spelled as a Literal,
+// `allowedMutations['includes'](…)` is the same call with the method name spelled as a Literal,
 // so the computed form is matched next to the identifier one.
 const membershipCallSelectors = RECEIVERS.flatMap((receiver) => [
   `CallExpression[callee.property.name=${MEMBERSHIP_METHODS}]${receiver}`,
   `CallExpression[callee.property.value=${MEMBERSHIP_METHODS}]${receiver}`,
 ]);
 
-// `new Set(principal.permissions).has(…)` and `principal.roles[0] === 'admin'` reach the same
+// `new Set(principal.allowedMutations).has(…)` and `principal.roles[0] === 'admin'` reach the same
 // decision without ever calling an array method on the collection. The Set form is matched at
 // its `.has(…)` membership use rather than at the constructor: wrapping the collection to
 // render or de-duplicate it decides nothing, and banning that would contradict the plain-read
@@ -310,7 +311,7 @@ const membershipCallSelectors = RECEIVERS.flatMap((receiver) => [
 const SET_MEMBERSHIP =
   "CallExpression[callee.property.name='has'][callee.object.callee.name='Set']";
 const SET_SOURCE = 'callee.object.arguments.0';
-// `permissions['includes']` is a computed read too, but it is the receiver of a call the
+// `allowedMutations['includes']` is a computed read too, but it is the receiver of a call the
 // selectors above already match; excluding it here keeps one decision to one report.
 const NOT_A_CALL = `:not([property.value=${MEMBERSHIP_METHODS}])`;
 const membershipEscapeSelectors = [
@@ -322,34 +323,34 @@ const membershipEscapeSelectors = [
   `MemberExpression[computed=true][object.name=${ROLE_COLLECTION}]${NOT_A_CALL}`,
 ];
 
-// A permission is named at a call site by a plain string or by a template literal; the catalog
+// A mutation is named at a call site by a plain string or by a template literal; the catalogue
 // rule covers both spellings everywhere it covers one.
 const RAW_PERMISSION = ':matches(Literal, TemplateLiteral)';
-const PERMISSION_METHODS = '/^(can|canAll|canAny)$/';
+const PERMISSION_METHODS = '/^(can)$/';
 const RAW_PERMISSION_MESSAGE =
-  'No raw permission strings at call sites — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).';
+  'No raw mutation keys at call sites — use a MUTATION_KEYS constant from @/lib/access/mutation-catalogue (issue #114).';
 
 const noAdHocAuthorizationSelectors = [
   {
     // One entry rather than one per shape: a spelling that is both a computed index and a
-    // call (`permissions['includes'](…)`) matches in both groups and would otherwise be
+    // call (`allowedMutations['includes'](…)`) matches in both groups and would otherwise be
     // reported twice for a single decision.
     selector: [...membershipCallSelectors, ...membershipEscapeSelectors].join(','),
     message:
-      'No ad-hoc role/permission membership checks outside the access layer — calling, indexing or wrapping the collection is the same decision: ask useCan/PermissionService or add a Policy class (issue #114).',
+      'No ad-hoc role/mutation membership checks outside the access layer — calling, indexing or wrapping the collection is the same decision: ask useCanMutate/MutationAccessService (issue #114).',
   },
   {
-    // A permission named as a template literal is the same raw string with different quotes —
-    // `useCan(`crm.contact.read`)` must not be the way past the catalog — and an interpolated
-    // one is worse still, so both spellings are matched wherever a plain string is.
-    selector: `CallExpression[callee.name='useCan'] > ${RAW_PERMISSION}`,
+    // A mutation named as a template literal is the same raw string with different quotes —
+    // ``useCanMutate(`createUser`)`` must not be the way past the catalogue — and an
+    // interpolated one is worse still, so both spellings are matched wherever a plain string is.
+    selector: `CallExpression[callee.name='useCanMutate'] > ${RAW_PERMISSION}`,
     message: RAW_PERMISSION_MESSAGE,
   },
   {
-    // `canAll`/`canAny` take an array, so the literal sits one level deeper than for `can`:
-    // matching only the direct argument would leave their most natural call form ungated.
-    // `.property.value` is the computed spelling — `gate['can'](…)` is the same call and must
-    // not be the way past the catalog, exactly as for the membership methods above.
+    // The array form is matched one level deeper as well, so a future array-taking overload
+    // cannot be the ungated way in. `.property.value` is the computed spelling — `gate['can'](…)`
+    // is the same call and must not be the way past the catalogue, exactly as for the
+    // membership methods above.
     selector: [
       `CallExpression[callee.property.name=${PERMISSION_METHODS}] > ${RAW_PERMISSION}`,
       `CallExpression[callee.property.name=${PERMISSION_METHODS}] > ArrayExpression > ${RAW_PERMISSION}`,
@@ -361,27 +362,14 @@ const noAdHocAuthorizationSelectors = [
     message: RAW_PERMISSION_MESSAGE,
   },
   {
-    // Both the bare-attribute form (`permission="…"`) and the expression-container form
-    // (`permission={'…'}` / ``permission={`…`}``) name a permission literally at the call site.
+    // Both the bare-attribute form (`mutation="…"`) and the expression-container form
+    // (`mutation={'…'}` / ``mutation={`…`}``) name a mutation literally at the call site.
     selector: [
-      "JSXAttribute[name.name='permission'] > Literal",
-      `JSXAttribute[name.name='permission'] > JSXExpressionContainer > ${RAW_PERMISSION}`,
+      "JSXAttribute[name.name='mutation'] > Literal",
+      `JSXAttribute[name.name='mutation'] > JSXExpressionContainer > ${RAW_PERMISSION}`,
     ].join(','),
     message:
-      'No raw permission strings on a permission prop — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
-  },
-  {
-    // `{ permission: … }` and `{ 'permission': … }` are the same route-meta key. The `.value`
-    // field is what makes the quoted form work: without it the quoted KEY is a child Literal
-    // of the same Property and one entry would be reported twice.
-    selector: [
-      `Property[key.name='permission'] > ${RAW_PERMISSION}.value`,
-      `Property[key.value='permission'] > ${RAW_PERMISSION}.value`,
-      `Property[key.name='permission'] > ArrayExpression > ${RAW_PERMISSION}`,
-      `Property[key.value='permission'] > ArrayExpression > ${RAW_PERMISSION}`,
-    ].join(','),
-    message:
-      'No raw permission strings in route meta — use a PERMISSIONS constant from @/lib/access/permission-catalog (issue #114).',
+      'No raw mutation keys on a mutation prop — use a MUTATION_KEYS constant from @/lib/access/mutation-catalogue (issue #114).',
   },
 ];
 
@@ -403,7 +391,7 @@ const nonReactSourceIgnores = [
 // `components-no-direct-injectable-import` so the two gates never disagree about which file
 // is exempt: the auth render path (its Lighthouse budget forbids eager DI — issue #109/#115),
 // the route-shell module singletons that `new` their own locally declared class
-// (`route-composer` / `route-mapper` / `permission-branch-builder`, issues #105/#114 — NOT the
+// (`route-composer` / `route-mapper`, issues #105/#114 — NOT the
 // whole `src/routes/` tree), the app entrypoint, and the root error boundary file alone — a
 // class component cannot call `useService`, while its functional descendants can and stay
 // gated. Test, story, and type-only files are excluded like every other source gate here.
@@ -417,7 +405,6 @@ const componentDiGateIgnores = [
   'src/modules/user/features/auth/**/*.tsx',
   'src/routes/route-composer.tsx',
   'src/routes/route-mapper.tsx',
-  'src/routes/permission-branch-builder.tsx',
   'src/index.tsx',
   'src/components/error-boundary/app-error-boundary.tsx',
 ];
@@ -872,7 +859,7 @@ export default [
   },
 
   // Source (issue #114): the access layer IS the sanctioned place that reads a principal's
-  // roles/permissions and names permissions literally, so the ad-hoc-authorization ban is
+  // roles/mutations and names mutation keys literally, so the ad-hoc-authorization ban is
   // lifted here. Every other selector is re-included (flat config replaces, does not merge).
   // Ordered after the #130 blocks so it wins for access-layer files; access-layer type-only
   // files stay governed by the type-file override above (which these globs exclude).

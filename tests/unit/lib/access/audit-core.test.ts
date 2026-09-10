@@ -104,40 +104,24 @@ describe('AuditCore', () => {
       expect(recordedAt(sink, 2).tenantId).toBeNull();
     });
 
-    it('attributes an event to the caller-supplied subject over the published principal', () => {
+    // The envelope is stamped from the published principal alone: an event is attributed to
+    // whoever is signed in when it is recorded, and a caller cannot claim otherwise.
+    it('attributes an event to the published principal, and carries no subject key', () => {
       const published = buildPrincipal();
       accessState.setSession(published, {});
-      const hydrating = buildPrincipal();
 
       auditCore.log({
-        type: 'access_role_unmapped',
-        metadata: { role: 'ROLE_GHOST' },
-        subject: { principalId: hydrating.id, tenantId: hydrating.tenantId },
+        type: 'access_unknown_mutation',
+        metadata: { mutations: 'archiveUser' },
       });
 
       const event = recordedAt(sink);
-      expect(event.principalId).toBe(hydrating.id);
-      expect(event.tenantId).toBe(hydrating.tenantId);
-      expect(event.principalId).not.toBe(published.id);
+      expect(event.principalId).toBe(published.id);
+      expect(event.tenantId).toBe(published.tenantId);
     });
 
-    it('honours an explicit anonymous subject while a principal is published', () => {
-      accessState.setSession(buildPrincipal(), {});
-
-      auditCore.log({ type: 'logout', subject: { principalId: null, tenantId: null } });
-
-      const event = recordedAt(sink);
-      expect(event.principalId).toBeNull();
-      expect(event.tenantId).toBeNull();
-    });
-
-    it('keeps the caller-supplied subject out of the recorded envelope', () => {
-      const hydrating = buildPrincipal();
-
-      auditCore.log({
-        type: 'login',
-        subject: { principalId: hydrating.id, tenantId: hydrating.tenantId },
-      });
+    it('keeps the recorded envelope to the five stamped fields', () => {
+      auditCore.log({ type: 'login' });
 
       expect(Object.keys(recordedAt(sink)).sort()).toEqual([
         'at',
@@ -230,10 +214,10 @@ describe('AuditCore', () => {
       const isolated = new AuditCore();
       isolated.useSink(sink);
 
-      isolated.log({ type: 'access_role_unmapped', metadata: { role: 'ROLE_GHOST' } });
+      isolated.log({ type: 'access_unknown_mutation', metadata: { mutations: 'archiveUser' } });
 
       expect(recordedAt(sink).metadata).toStrictEqual({
-        role: 'ROLE_GHOST',
+        mutations: 'archiveUser',
         correlationId: correlationIdSource.current(),
       });
     });

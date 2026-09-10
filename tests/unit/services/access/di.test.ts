@@ -5,8 +5,10 @@ import accessCore, { AccessCore } from '@/lib/access/access-core';
 import accessSession, { AccessSession } from '@/lib/access/access-session';
 import accessState from '@/lib/access/access-state';
 import auditCore, { AuditCore } from '@/lib/access/audit-core';
+import mutationAccessDispatcher, {
+  MutationAccessDispatcher,
+} from '@/lib/access/mutation-access-dispatcher';
 import noopAuditSink, { NoopAuditSink } from '@/lib/access/noop-audit-sink';
-import permissionResolver, { PermissionResolver } from '@/lib/access/permission-resolver';
 import sessionFactory, { SessionFactory } from '@/lib/access/session-factory';
 import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditSink } from '@/lib/types/access/audit';
@@ -14,8 +16,7 @@ import AccessSessionService from '@/services/access/access-session-service';
 import AuditLogger from '@/services/access/audit-logger';
 import accessRegistrar from '@/services/access/di';
 import FeatureFlagService from '@/services/access/feature-flag-service';
-import PermissionService from '@/services/access/permission-service';
-import PolicyEvaluator from '@/services/access/policy-evaluator';
+import MutationAccessService from '@/services/access/mutation-access-service';
 import SessionRepository from '@/services/access/session-repository';
 import TenantContextService from '@/services/access/tenant-context-service';
 import ACCESS_TOKENS from '@/services/access/tokens';
@@ -35,8 +36,11 @@ const at = <T>(list: readonly T[], index: number): T => {
 };
 
 const ACCESS_BINDINGS: readonly { name: string; token: symbol; type: Bound }[] = [
-  { name: 'PermissionService', token: ACCESS_TOKENS.PermissionService, type: PermissionService },
-  { name: 'PolicyEvaluator', token: ACCESS_TOKENS.PolicyEvaluator, type: PolicyEvaluator },
+  {
+    name: 'MutationAccessService',
+    token: ACCESS_TOKENS.MutationAccessService,
+    type: MutationAccessService,
+  },
   {
     name: 'TenantContextService',
     token: ACCESS_TOKENS.TenantContextService,
@@ -74,10 +78,10 @@ const ACCESS_VALUE_BINDINGS: readonly {
   },
   { name: 'AuditCore', token: ACCESS_TOKENS.AuditCore, type: AuditCore, value: auditCore },
   {
-    name: 'PermissionResolver',
-    token: ACCESS_TOKENS.PermissionResolver,
-    type: PermissionResolver,
-    value: permissionResolver,
+    name: 'MutationAccessDispatcher',
+    token: ACCESS_TOKENS.MutationAccessDispatcher,
+    type: MutationAccessDispatcher,
+    value: mutationAccessDispatcher,
   },
   {
     name: 'SessionFactory',

@@ -4,14 +4,13 @@ import type { ModuleRegistrar } from '@/config/types/module-registrar';
 import accessCore from '@/lib/access/access-core';
 import accessSession from '@/lib/access/access-session';
 import auditCore from '@/lib/access/audit-core';
-import permissionResolver from '@/lib/access/permission-resolver';
+import mutationAccessDispatcher from '@/lib/access/mutation-access-dispatcher';
 import sessionFactory from '@/lib/access/session-factory';
 
 import AccessSessionService from './access-session-service';
 import AuditLogger from './audit-logger';
 import FeatureFlagService from './feature-flag-service';
-import PermissionService from './permission-service';
-import PolicyEvaluator from './policy-evaluator';
+import MutationAccessService from './mutation-access-service';
 import SessionRepository from './session-repository';
 import TenantContextService from './tenant-context-service';
 import ACCESS_TOKENS from './tokens';
@@ -20,7 +19,7 @@ class AccessRegistrar implements ModuleRegistrar {
   public register(container: DependencyContainer): void {
     this.registerDomainSingletons(container);
     this.registerAudit(container);
-    this.registerPolicy(container);
+    this.registerAuthorization(container);
     this.registerSession(container);
   }
 
@@ -32,7 +31,9 @@ class AccessRegistrar implements ModuleRegistrar {
     container.register(ACCESS_TOKENS.AccessCore, { useValue: accessCore });
     container.register(ACCESS_TOKENS.AccessSession, { useValue: accessSession });
     container.register(ACCESS_TOKENS.AuditCore, { useValue: auditCore });
-    container.register(ACCESS_TOKENS.PermissionResolver, { useValue: permissionResolver });
+    container.register(ACCESS_TOKENS.MutationAccessDispatcher, {
+      useValue: mutationAccessDispatcher,
+    });
     container.register(ACCESS_TOKENS.SessionFactory, { useValue: sessionFactory });
   }
 
@@ -40,9 +41,8 @@ class AccessRegistrar implements ModuleRegistrar {
     container.registerSingleton(ACCESS_TOKENS.AuditLogger, AuditLogger);
   }
 
-  private registerPolicy(container: DependencyContainer): void {
-    container.registerSingleton(ACCESS_TOKENS.PermissionService, PermissionService);
-    container.registerSingleton(ACCESS_TOKENS.PolicyEvaluator, PolicyEvaluator);
+  private registerAuthorization(container: DependencyContainer): void {
+    container.registerSingleton(ACCESS_TOKENS.MutationAccessService, MutationAccessService);
     container.registerSingleton(ACCESS_TOKENS.TenantContextService, TenantContextService);
     container.registerSingleton(ACCESS_TOKENS.AccessFeatureFlagService, FeatureFlagService);
   }

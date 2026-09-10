@@ -64,9 +64,13 @@ choice is a legitimate target for amendment.
 ## What this document is for
 
 crm's client-side access layer
-(`src/lib/access/`, [ADR-004](../../../docs/adr/004-client-side-access-control-layer.md))
-currently derives a principal's roles and permissions entirely from JWT claims — a static,
-compile-time model. This document proposes the GraphQL shape user-service (or whichever service
+(`src/lib/access/`, documented in
+[`docs/access-control.md`](../../../docs/access-control.md)) now keys every
+decision on a mutation name and holds **no** catalogue of its own: `Principal.allowedMutations`
+is supplied by an access source or the gate denies. That makes the query below the thing that
+turns the gate on, rather than an alternative to a model the client already computes.
+
+This document proposes the GraphQL shape user-service (or whichever service
 owns IAM) would need to expose for the client to source that model dynamically in the board's
 terms, per [`src/api/contracts/README.md`](README.md)'s existing rule that user/account-graph
 data is read through GraphQL, generated, and zod-validated at the boundary — never hand-cast.

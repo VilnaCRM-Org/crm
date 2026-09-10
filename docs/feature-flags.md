@@ -110,7 +110,8 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 
 `accessCatalogueSource` is declared but **not yet read by any code in `src/`**: the
 server-sourced access resolver it will select is blocked on the backend contract
-([ADR-005](adr/005-mutation-keyed-access-model.md)), so setting it to `true` today changes
+([`src/api/contracts/access-rbac-proposal.md`](../src/api/contracts/access-rbac-proposal.md)),
+so setting it to `true` today changes
 nothing. It is documented now so the flag lands with its contract (the
 `FeatureFlag` union, the defaults map, the schema, and the committed block in
 `public/index.html`) rather than being retro-fitted at rollout.

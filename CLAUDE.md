@@ -351,7 +351,7 @@ argument spelled out rather than assumed, and anything outside the two families 
 equivalence argument written in full.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 242 files on this branch (206 before the access layer); not all of them
+mutate scope is 243 files on this branch (206 before the access layer); not all of them
 produce scored mutants — the rest are pure re-export barrels or files whose only mutants are
 static and skipped by `ignoreStatic`.
 
@@ -1146,7 +1146,7 @@ src/
 ├── lib/             # Dependency-free cross-cutting domain (access: RBAC/tenancy/audit)
 ├── services/        # Singleton services (HttpsClient, error handling, access)
 ├── config/          # DI configuration, tokens, API config
-├── hooks/           # Shared hooks (useCan, usePrincipal, useTenant, useAccessFlag)
+├── hooks/           # Shared hooks (useCanMutate, usePrincipal, useTenant, useAccessFlag)
 ├── routes/          # Route registry + composer (module-owned route contracts)
 ├── providers/       # React context providers
 └── utils/           # Shared utilities
@@ -1291,7 +1291,7 @@ service/repository/mapper/factory/handler. Two gates enforce it, both inside `ma
 **Carve-outs** (container-free by design, not modernization debt): the auth render path
 (`src/modules/user/features/auth/**`, whose mobile Lighthouse budget forbids eager DI), the
 route-shell module singletons (`src/routes/route-{composer,mapper}.tsx` and
-`src/routes/permission-branch-builder.tsx`, issues #105/#114 — not the whole `src/routes/`
+issues #105/#114 — not the whole `src/routes/`
 tree), the app entrypoint, and **only** the root error
 boundary file `src/components/error-boundary/app-error-boundary.tsx` (a class component cannot
 call a hook, and error reporting must survive a DI failure) — its functional descendants such as
@@ -1920,18 +1920,22 @@ narrowing its file set, or moving a read out of the guarded method.
 
 11. **Access control — RBAC, tenancy, access flags, audit (issue #114)**: authorization is
     a cross-cutting layer, not a module. The dependency-free domain lives in
-    `src/lib/access/` (permission/role catalog, principal state, policies, audit core) and
+    `src/lib/access/` (mutation catalogue, principal state, session, audit core) and
     the `@injectable()` adapters plus the composition root in `src/services/access/`
     (`ACCESS_TOKENS`) — the same paint-safe two-layer split as observability, so the
     authenticated paint path never loads tsyringe or zod. React consumes it **only**
-    through `useCan` / `usePrincipal` / `useTenant` / `useAccessFlag` and
-    `<RequirePermission>`; routes declare `meta.permission` in their module route
-    contract and the composer nests them under `PermissionRoute` inside `AppLayout`.
-    The `Principal` (id, email, roles, permissions, tenantId, tenants) is derived from the
-    signed token's claims by `SessionRepository`/`SessionFactory` and hydrated by
-    `ProtectedRoute`; the server remains the source of truth. Permissions and roles are
-    closed typed sets — never a free string at a call site — and object-level rules are
-    `Policy` classes, never inline conditionals. Enforced by dependency-cruiser
+    through `useCanMutate` / `usePrincipal` / `useTenant` / `useAccessFlag` and
+    `<RequireMutation>`. **The mutation gate is the only gate (issue #114):** authorization keys
+    on a GraphQL mutation name from the closed `MUTATION_KEYS` catalogue, and
+    `Principal.allowedMutations` is _supplied_ by `MutationAccessDispatcher`, never derived
+    client-side — so a deployment that supplies nothing denies every gate. There is no
+    permission catalogue, no role → capability map and no route-level gate: routes declare
+    `guard` only, and `roles` is opaque server data carried for display and audit that grants
+    nothing. The `Principal` (id, email, roles, allowedMutations, tenantId, tenants) is derived
+    from the signed token's claims by `SessionRepository`/`SessionFactory` and hydrated by
+    `ProtectedRoute`; the server remains the source of truth. Object-level rules belong on the
+    server — a page whose data comes back empty renders its own refused state. Enforced by
+    dependency-cruiser
     (`no-ui-to-access-services`, `no-ui-to-access-state`, `no-access-layer-to-modules`,
     `no-access-domain-to-container`, `no-access-domain-to-tsyringe`) and an ESLint
     `no-restricted-syntax` gate scoped outside the access layer. `useAccessFlag` reads a

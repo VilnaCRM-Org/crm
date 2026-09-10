@@ -22,7 +22,7 @@ export class AccessStateStore {
   }
 
   // The store keeps its own invariant rather than trusting the caller to: an active tenant
-  // outside the membership list would make every tenant-scoped policy check — and every audit
+  // outside the membership list would make every tenant-scoped decision — and every audit
   // event — compare against a tenant the principal cannot read. Such a principal is refused
   // rather than published, and the caller is told so.
   public setSession(principal: Principal, flags: FeatureFlagState): boolean {

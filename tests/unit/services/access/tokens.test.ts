@@ -3,8 +3,7 @@ import ACCESS_TOKENS from '@/services/access/tokens';
 type TokenName = keyof typeof ACCESS_TOKENS;
 
 const TOKEN_NAMES: readonly TokenName[] = [
-  'PermissionService',
-  'PolicyEvaluator',
+  'MutationAccessService',
   'TenantContextService',
   'AccessFeatureFlagService',
   'AuditLogger',
@@ -13,16 +12,16 @@ const TOKEN_NAMES: readonly TokenName[] = [
   'AccessCore',
   'AccessSession',
   'AuditCore',
-  'PermissionResolver',
+  'MutationAccessDispatcher',
   'SessionFactory',
 ];
 
 describe('ACCESS_TOKENS', () => {
   // The audit sink is installed container-free through auditCore.useSink, so it owns no
   // token: adding one back here would re-introduce a second, container-bound install path.
-  it('declares exactly the twelve access tokens, in declaration order, and no audit sink', () => {
+  it('declares exactly the eleven access tokens, in declaration order, and no audit sink', () => {
     expect(Object.keys(ACCESS_TOKENS)).toEqual([...TOKEN_NAMES]);
-    expect(Object.keys(ACCESS_TOKENS)).toHaveLength(12);
+    expect(Object.keys(ACCESS_TOKENS)).toHaveLength(11);
     expect(Object.keys(ACCESS_TOKENS)).not.toContain('AuditSink');
   });
 
@@ -46,7 +45,7 @@ describe('ACCESS_TOKENS', () => {
   });
 
   it('keeps the same symbol across repeated reads', () => {
-    expect(ACCESS_TOKENS.PermissionService).toBe(ACCESS_TOKENS.PermissionService);
+    expect(ACCESS_TOKENS.MutationAccessService).toBe(ACCESS_TOKENS.MutationAccessService);
     expect(ACCESS_TOKENS.SessionRepository).not.toBe(ACCESS_TOKENS.AuditLogger);
   });
 });

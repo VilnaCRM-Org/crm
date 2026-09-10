@@ -16,8 +16,10 @@ export default function AccessDenied(): JSX.Element {
   const focusOnMount = useFocusOnMount<HTMLDivElement>();
   const goHome = useLinkClickHandler<HTMLButtonElement>(ROUTE_PATHS.home);
 
+  // Its own landmark: the panel is a standalone route now (issue #114), so nothing above it
+  // supplies one — a public route renders under RootLayout, which owns no <main>.
   return (
-    <Box>
+    <Box component="main">
       <Box ref={focusOnMount} tabIndex={-1} sx={headingFocusStyles}>
         <UITypography component="h1" variant="h4">
           {t('access_denied.title')}

@@ -1,13 +1,10 @@
 import type { FeatureFlag } from './feature-flag';
-import type { Permission } from './permission';
-import type { Policy } from './policy';
+import type { MutationKey } from './mutation-access';
 import type { Principal, TenantRef } from './principal';
 import type { SessionInput } from './session';
 
-export interface PermissionChecker {
-  can(permission: Permission): boolean;
-  canAll(permissions: readonly Permission[]): boolean;
-  canAny(permissions: readonly Permission[]): boolean;
+export interface MutationChecker {
+  can(mutation: MutationKey): boolean;
 }
 
 export interface TenantContext {
@@ -18,10 +15,6 @@ export interface TenantContext {
 
 export interface FeatureFlags {
   isEnabled(flag: FeatureFlag): boolean;
-}
-
-export interface PolicyDecision<TSubject> {
-  evaluate(policy: Policy<TSubject>, subject: TSubject): boolean;
 }
 
 export interface SessionSource {

@@ -2,17 +2,14 @@ import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
-import { DEFAULT_ROLE, PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
-import permissionResolver from '@/lib/access/permission-resolver';
 import sessionFactory, { SessionFactory } from '@/lib/access/session-factory';
-import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { SessionInput, SessionSnapshot } from '@/lib/types/access/session';
 import {
+  SAMPLE_ROLES,
   buildAccessToken,
   buildClaims,
   buildEmail,
-  buildPrincipal,
   buildTenantRef,
   buildUserId,
   encodeSegment,
@@ -23,13 +20,6 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0
 const FALLBACK_TENANT_ID = 'default';
 const UNKNOWN_ROLE = 'sorcerer';
 const UNKNOWN_FLAG = 'billing-module';
-const INHERITED_MEMBER_NAMES = [
-  'toString',
-  'constructor',
-  'valueOf',
-  'hasOwnProperty',
-  '__proto__',
-];
 
 /**
  * The fallback tenant id is a module-level literal, so it is evaluated at import: loading the
@@ -75,11 +65,11 @@ describe('SessionFactory', () => {
     expect(factory.build({ token: '', email: buildEmail() })).toBeNull();
   });
 
-  it('mirrors the claimed identity and expands the claimed roles', () => {
+  it('mirrors the claimed identity and carries the claimed roles verbatim', () => {
     const tenant = buildTenantRef();
     const other = buildTenantRef();
     const claims = buildClaims({
-      roles: [ROLES.manager],
+      roles: [SAMPLE_ROLES.manager],
       tenantId: tenant.id,
       tenants: [tenant, other],
       flags: {},
@@ -91,133 +81,33 @@ describe('SessionFactory', () => {
       principal: {
         id: claims.sub,
         email: claims.email,
-        roles: [ROLES.manager],
-        permissions: permissionResolver.expand([ROLES.manager]),
+        roles: [SAMPLE_ROLES.manager],
         allowedMutations: [],
         tenantId: tenant.id,
         tenants: [tenant, other],
       },
       flags: {},
     });
-    expect(snapshot.principal.permissions).toContain(PERMISSIONS.tenantSwitch);
-    expect(snapshot.principal.permissions).not.toContain(PERMISSIONS.adminManageUsers);
   });
 
-  it('discards unknown role strings and keeps the known ones', () => {
-    const claims = buildClaims({ roles: [ROLES.admin, UNKNOWN_ROLE, ROLES.viewer] });
+  // Roles are opaque server data after issue #114: the client keeps no catalog to validate them
+  // against, grants nothing from them, and therefore has nothing to audit as "unmapped".
+  it('carries roles the client has never heard of through untouched, auditing nothing', () => {
+    const claims = buildClaims({ roles: ['ROLE_SERVICE', UNKNOWN_ROLE] });
 
     const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
 
-    expect(principal.roles).toStrictEqual([ROLES.admin, ROLES.viewer]);
-    expect(principal.permissions).toStrictEqual(
-      permissionResolver.expand([ROLES.admin, ROLES.viewer])
-    );
-  });
-
-  it('maps the ROLE_USER server role to member and grants contact:write', () => {
-    const claims = buildClaims({ roles: ['ROLE_USER'] });
-
-    const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
-
-    expect(principal.roles).toStrictEqual([ROLES.member]);
-    expect(principal.permissions).toContain(PERMISSIONS.contactWrite);
+    expect(principal.roles).toStrictEqual(['ROLE_SERVICE', UNKNOWN_ROLE]);
     expect(sink.record).not.toHaveBeenCalled();
   });
 
-  it('falls back to viewer and audits ROLE_SERVICE, which maps to nothing', () => {
-    const claims = buildClaims({ roles: ['ROLE_SERVICE'] });
+  it('claims no role at all rather than substituting a default', () => {
+    const claims = buildClaims({ roles: [] });
 
     const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
 
-    expect(principal.roles).toStrictEqual([DEFAULT_ROLE]);
-    expect(sink.record).toHaveBeenCalledTimes(1);
-    expect(sink.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'access_role_unmapped',
-        metadata: { role: 'ROLE_SERVICE', correlationId: correlationIdSource.current() },
-      })
-    );
-  });
-
-  it('falls back to viewer and names a role in neither the map nor the Role union verbatim', () => {
-    const claims = buildClaims({ roles: [UNKNOWN_ROLE] });
-
-    const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
-
-    expect(principal.roles).toStrictEqual([DEFAULT_ROLE]);
-    expect(sink.record).toHaveBeenCalledTimes(1);
-    expect(sink.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'access_role_unmapped',
-        metadata: { role: UNKNOWN_ROLE, correlationId: correlationIdSource.current() },
-      })
-    );
-  });
-
-  it('honours a mapped role and audits an unmapped one — neither swallows the other', () => {
-    const claims = buildClaims({ roles: ['ROLE_USER', UNKNOWN_ROLE] });
-
-    const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
-
-    expect(principal.roles).toStrictEqual([ROLES.member]);
-    expect(sink.record).toHaveBeenCalledTimes(1);
-    expect(sink.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'access_role_unmapped',
-        metadata: { role: UNKNOWN_ROLE, correlationId: correlationIdSource.current() },
-      })
-    );
-  });
-
-  it.each(INHERITED_MEMBER_NAMES)(
-    'refuses the inherited %s member of the role map and audits it as unmapped',
-    (name) => {
-      const claims = buildClaims({ roles: [name] });
-
-      const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
-
-      expect(principal.roles).toStrictEqual([DEFAULT_ROLE]);
-      expect(principal.permissions).toStrictEqual(permissionResolver.expand([DEFAULT_ROLE]));
-      expect(sink.record).toHaveBeenCalledTimes(1);
-      expect(sink.record).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: 'access_role_unmapped',
-          metadata: { role: name, correlationId: correlationIdSource.current() },
-        })
-      );
-    }
-  );
-
-  it('attributes an unmapped role to the session being hydrated, not the published one', () => {
-    const outgoing = buildPrincipal();
-    accessState.setSession(outgoing, {});
-
-    const { principal } = requireSnapshot({
-      token: buildAccessToken(buildClaims({ roles: [UNKNOWN_ROLE] })),
-    });
-
-    expect(principal.id).not.toBe(outgoing.id);
-    expect(sink.record).toHaveBeenCalledTimes(1);
-    expect(sink.record).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'access_role_unmapped',
-        principalId: principal.id,
-        tenantId: principal.tenantId,
-      })
-    );
-  });
-
-  it.each([
-    { label: 'only unknown roles', roles: [UNKNOWN_ROLE] },
-    { label: 'an empty role list', roles: [] },
-  ])('falls back to the default role when the token claims $label', ({ roles }) => {
-    const claims = buildClaims({ roles });
-
-    const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
-
-    expect(principal.roles).toStrictEqual([DEFAULT_ROLE]);
-    expect(principal.permissions).toStrictEqual(permissionResolver.expand([DEFAULT_ROLE]));
-    expect(principal.permissions).not.toContain(PERMISSIONS.contactManageAll);
+    expect(principal.roles).toStrictEqual([]);
+    expect(sink.record).not.toHaveBeenCalled();
   });
 
   it('treats an absent roles claim as no claimed role at all, auditing nothing', () => {
@@ -227,8 +117,18 @@ describe('SessionFactory', () => {
       token: buildAccessToken(withoutRoles as Parameters<typeof buildAccessToken>[0]),
     });
 
-    expect(principal.roles).toStrictEqual([DEFAULT_ROLE]);
+    expect(principal.roles).toStrictEqual([]);
     expect(sink.record).not.toHaveBeenCalled();
+  });
+
+  // The gate reads only what a resolver supplied, so the factory must never seed it: a session
+  // built from a token alone can do nothing until MutationAccessDispatcher answers.
+  it('builds every principal with an empty allowed-mutation set', () => {
+    const claims = buildClaims({ roles: [SAMPLE_ROLES.admin] });
+
+    const { principal } = requireSnapshot({ token: buildAccessToken(claims) });
+
+    expect(principal.allowedMutations).toStrictEqual([]);
   });
 
   // A blank subject is a missing one: honouring it would give every malformed token the same
@@ -236,7 +136,7 @@ describe('SessionFactory', () => {
   it.each(['', '   '])(
     'generates a fresh uuid identity when the sub claim is blank (%p)',
     (sub) => {
-      const token = buildAccessToken({ sub, email: buildEmail(), roles: [ROLES.member] });
+      const token = buildAccessToken({ sub, email: buildEmail(), roles: [SAMPLE_ROLES.member] });
 
       const first = requireSnapshot({ token }).principal.id;
       const second = requireSnapshot({ token }).principal.id;
@@ -249,13 +149,13 @@ describe('SessionFactory', () => {
 
   it('keeps a sub claim that is padded but real, trimmed to its identity', () => {
     const id = buildUserId();
-    const token = buildAccessToken({ sub: `  ${id}  `, roles: [ROLES.member] });
+    const token = buildAccessToken({ sub: `  ${id}  `, roles: [SAMPLE_ROLES.member] });
 
     expect(requireSnapshot({ token }).principal.id).toBe(id);
   });
 
   it('generates a fresh uuid identity when the sub claim is missing', () => {
-    const token = buildAccessToken({ email: buildEmail(), roles: [ROLES.member] });
+    const token = buildAccessToken({ email: buildEmail(), roles: [SAMPLE_ROLES.member] });
 
     const first = requireSnapshot({ token }).principal.id;
     const second = requireSnapshot({ token }).principal.id;
@@ -267,13 +167,13 @@ describe('SessionFactory', () => {
 
   it('falls back to the input email when the email claim is missing', () => {
     const email = buildEmail();
-    const token = buildAccessToken({ sub: buildUserId(), roles: [ROLES.member] });
+    const token = buildAccessToken({ sub: buildUserId(), roles: [SAMPLE_ROLES.member] });
 
     expect(requireSnapshot({ token, email }).principal.email).toBe(email);
   });
 
   it('falls back to an empty email when neither the claim nor the input carries one', () => {
-    const token = buildAccessToken({ sub: buildUserId(), roles: [ROLES.member] });
+    const token = buildAccessToken({ sub: buildUserId(), roles: [SAMPLE_ROLES.member] });
 
     expect(requireSnapshot({ token }).principal.email).toBe('');
   });
@@ -286,7 +186,7 @@ describe('SessionFactory', () => {
   });
 
   it('falls back to the default tenant when the tenantId claim is missing', () => {
-    const token = buildAccessToken({ sub: buildUserId(), roles: [ROLES.member] });
+    const token = buildAccessToken({ sub: buildUserId(), roles: [SAMPLE_ROLES.member] });
 
     const { principal } = requireSnapshot({ token });
 
@@ -296,7 +196,7 @@ describe('SessionFactory', () => {
 
   it('names the synthesised fallback tenant after the fallback id itself', async () => {
     const { SessionFactory: IsolatedSessionFactory } = await loadSessionFactory();
-    const token = buildAccessToken({ sub: buildUserId(), roles: [ROLES.member] });
+    const token = buildAccessToken({ sub: buildUserId(), roles: [SAMPLE_ROLES.member] });
 
     const { principal } = requireBuilt(new IsolatedSessionFactory().build({ token }));
 
@@ -371,8 +271,7 @@ describe('SessionFactory', () => {
       principal: {
         id: expect.stringMatching(UUID_PATTERN),
         email,
-        roles: [DEFAULT_ROLE],
-        permissions: permissionResolver.expand([DEFAULT_ROLE]),
+        roles: [],
         allowedMutations: [],
         tenantId: FALLBACK_TENANT_ID,
         tenants: [{ id: FALLBACK_TENANT_ID, name: FALLBACK_TENANT_ID }],

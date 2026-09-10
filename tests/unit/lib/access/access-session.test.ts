@@ -4,13 +4,13 @@ import auditCore from '@/lib/access/audit-core';
 import catalogueCache from '@/lib/access/catalogue-cache';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
-import { ROLES } from '@/lib/access/permission-catalog';
 import sessionFactory from '@/lib/access/session-factory';
 import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { Principal } from '@/lib/types/access/principal';
 import type { SessionClaims } from '@/lib/types/access/session';
 import {
+  SAMPLE_ROLES,
   buildAccessToken,
   buildClaims,
   buildPrincipal,
@@ -26,7 +26,11 @@ interface Hydration {
 
 const buildHydration = (): Hydration => {
   const tenant = buildTenantRef();
-  const claims = buildClaims({ roles: [ROLES.manager], tenantId: tenant.id, tenants: [tenant] });
+  const claims = buildClaims({
+    roles: [SAMPLE_ROLES.manager],
+    tenantId: tenant.id,
+    tenants: [tenant],
+  });
   return { claims, tenantId: tenant.id, token: buildAccessToken(claims) };
 };
 

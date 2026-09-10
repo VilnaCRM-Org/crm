@@ -3,11 +3,11 @@ import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import catalogueCache from '@/lib/access/catalogue-cache';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
+import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
-import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
 import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
-import { buildPrincipal, buildTenantRef } from '@tests/builders';
+import { SAMPLE_ROLES, buildPrincipal, buildTenantRef } from '@tests/builders';
 
 const createSink = (): jest.Mocked<AuditSink> => ({ record: jest.fn() });
 
@@ -53,23 +53,28 @@ describe('AccessCore', () => {
   });
 
   describe('can', () => {
-    it('denies every permission while anonymous', () => {
-      expect(accessCore.can(PERMISSIONS.appHome)).toBe(false);
-      expect(accessCore.can(PERMISSIONS.contactRead)).toBe(false);
+    it('denies every mutation while anonymous', () => {
+      expect(accessCore.can(MUTATION_KEYS.createUser)).toBe(false);
     });
 
-    it('grants a permission the hydrated principal holds', () => {
-      accessState.setSession(buildPrincipal({ roles: [ROLES.viewer] }), {});
+    // The allowed set is supplied, never derived from a role: a principal with no supplied
+    // set is denied regardless of which roles the token names.
+    it('denies every mutation for a hydrated principal that was supplied none', () => {
+      accessState.setSession(buildPrincipal({ roles: [SAMPLE_ROLES.admin] }), {});
 
-      expect(accessCore.can(PERMISSIONS.appHome)).toBe(true);
-      expect(accessCore.can(PERMISSIONS.contactRead)).toBe(true);
+      expect(accessCore.can(MUTATION_KEYS.createUser)).toBe(false);
     });
 
-    it('denies a permission the hydrated principal lacks', () => {
-      accessState.setSession(buildPrincipal({ roles: [ROLES.viewer] }), {});
+    it('grants a mutation the hydrated principal was supplied', () => {
+      accessState.setSession(
+        buildPrincipal({
+          roles: [SAMPLE_ROLES.viewer],
+          allowedMutations: [MUTATION_KEYS.createUser],
+        }),
+        {}
+      );
 
-      expect(accessCore.can(PERMISSIONS.contactWrite)).toBe(false);
-      expect(accessCore.can(PERMISSIONS.adminManageUsers)).toBe(false);
+      expect(accessCore.can(MUTATION_KEYS.createUser)).toBe(true);
     });
   });
 
@@ -147,35 +152,13 @@ describe('AccessCore', () => {
   });
 
   describe('switchTenant', () => {
-    it('refuses and records a denial for a principal without tenant:switch', () => {
-      const home = buildTenantRef();
-      const target = buildTenantRef();
-      const tenants = [home, target];
-      const principal = buildPrincipal({ roles: [ROLES.viewer], tenants });
-      accessState.setSession(principal, {});
-
-      expect(accessCore.switchTenant(target.id)).toBe(false);
-
-      expect(accessCore.activeTenant()).toBe(home.id);
-      expect(sink.record).toHaveBeenCalledTimes(1);
-      expect(recorded().type).toBe('permission_denied');
-      expect(recorded().metadata).toEqual({
-        tenantId: target.id,
-        reason: 'permission',
-        permission: 'tenant:switch',
-        correlationId: correlationIdSource.current(),
-      });
-      expect(recorded().principalId).toBe(principal.id);
-    });
-
     it('refuses and records a denial when the tenant is not one of the principal tenants', () => {
       const home = buildTenantRef();
       const tenants = [home, buildTenantRef()];
-      const principal = buildPrincipal({ roles: [ROLES.manager], tenants });
+      const principal = buildPrincipal({ roles: [SAMPLE_ROLES.manager], tenants });
       accessState.setSession(principal, {});
       const stranger = buildTenantRef();
 
-      expect(accessCore.can(PERMISSIONS.tenantSwitch)).toBe(true);
       expect(accessCore.switchTenant(stranger.id)).toBe(false);
 
       expect(accessCore.activeTenant()).toBe(home.id);
@@ -184,7 +167,6 @@ describe('AccessCore', () => {
       expect(recorded().metadata).toEqual({
         tenantId: stranger.id,
         reason: 'membership',
-        permission: 'tenant:switch',
         correlationId: correlationIdSource.current(),
       });
     });
@@ -201,8 +183,7 @@ describe('AccessCore', () => {
       expect(recorded().tenantId).toBeNull();
       expect(recorded().metadata).toEqual({
         tenantId: stranger.id,
-        reason: 'permission',
-        permission: 'tenant:switch',
+        reason: 'anonymous',
         correlationId: correlationIdSource.current(),
       });
     });
@@ -211,7 +192,7 @@ describe('AccessCore', () => {
       const home = buildTenantRef();
       const target = buildTenantRef();
       const tenants = [home, target];
-      const principal = buildPrincipal({ roles: [ROLES.manager], tenants });
+      const principal = buildPrincipal({ roles: [SAMPLE_ROLES.manager], tenants });
       accessState.setSession(principal, {});
 
       expect(accessCore.switchTenant(target.id)).toBe(true);
@@ -234,7 +215,7 @@ describe('AccessCore', () => {
     it('accepts a switch to the already active tenant', () => {
       const home = buildTenantRef();
       const tenants = [home, buildTenantRef()];
-      accessState.setSession(buildPrincipal({ roles: [ROLES.manager], tenants }), {});
+      accessState.setSession(buildPrincipal({ roles: [SAMPLE_ROLES.manager], tenants }), {});
 
       expect(accessCore.switchTenant(home.id)).toBe(true);
 
@@ -246,7 +227,7 @@ describe('AccessCore', () => {
       const home = buildTenantRef();
       const target = buildTenantRef();
       const tenants = [home, target];
-      accessState.setSession(buildPrincipal({ roles: [ROLES.admin], tenants }), {});
+      accessState.setSession(buildPrincipal({ roles: [SAMPLE_ROLES.admin], tenants }), {});
 
       expect(accessCore.switchTenant(target.id)).toBe(true);
 
@@ -257,7 +238,7 @@ describe('AccessCore', () => {
       const home = buildTenantRef();
       const target = buildTenantRef();
       const tenants = [home, target];
-      accessState.setSession(buildPrincipal({ roles: [ROLES.manager], tenants }), {});
+      accessState.setSession(buildPrincipal({ roles: [SAMPLE_ROLES.manager], tenants }), {});
       catalogueCache.set('some-sid', { roles: [] }, 'v1');
 
       expect(accessCore.switchTenant(target.id)).toBe(true);
@@ -269,7 +250,7 @@ describe('AccessCore', () => {
       const home = buildTenantRef();
       const target = buildTenantRef();
       accessState.setSession(
-        buildPrincipal({ roles: [ROLES.manager], tenants: [home, target] }),
+        buildPrincipal({ roles: [SAMPLE_ROLES.manager], tenants: [home, target] }),
         {}
       );
       catalogueCache.set('some-sid', { roles: [] }, 'v1');
@@ -286,7 +267,7 @@ describe('AccessCore', () => {
 
     it('leaves the catalogue cache untouched when the switch is refused', () => {
       const home = buildTenantRef();
-      accessState.setSession(buildPrincipal({ roles: [ROLES.viewer], tenants: [home] }), {});
+      accessState.setSession(buildPrincipal({ roles: [SAMPLE_ROLES.viewer], tenants: [home] }), {});
       const catalogue = { roles: [] };
       catalogueCache.set('some-sid', catalogue, 'v1');
 
@@ -297,37 +278,35 @@ describe('AccessCore', () => {
   });
 
   describe('recordDenial', () => {
-    it('records the permission alone when no context is supplied', () => {
-      accessCore.recordDenial(PERMISSIONS.contactWrite);
+    it('records the mutation alone when the context is empty', () => {
+      accessCore.recordDenial(MUTATION_KEYS.createUser, {});
 
       expect(sink.record).toHaveBeenCalledTimes(1);
       expect(recorded().type).toBe('permission_denied');
       expect(recorded().metadata).toEqual({
-        permission: 'contact:write',
+        mutation: 'createUser',
         correlationId: correlationIdSource.current(),
       });
     });
 
-    it('merges the supplied context with the permission', () => {
+    it('merges the supplied context with the mutation', () => {
       const tenant = buildTenantRef();
 
-      accessCore.recordDenial(PERMISSIONS.dealWrite, { tenantId: tenant.id, route: '/deals' });
+      accessCore.recordDenial(MUTATION_KEYS.createUser, { tenantId: tenant.id, route: '/deals' });
 
       expect(recorded().metadata).toEqual({
         tenantId: tenant.id,
         route: '/deals',
-        permission: 'deal:write',
+        mutation: 'createUser',
         correlationId: correlationIdSource.current(),
       });
     });
 
-    it('always wins over a permission key supplied in the context', () => {
-      accessCore.recordDenial(PERMISSIONS.adminManageUsers, {
-        permission: PERMISSIONS.contactRead,
-      });
+    it('always wins over a mutation key supplied in the context', () => {
+      accessCore.recordDenial(MUTATION_KEYS.createUser, { mutation: 'forged' });
 
       expect(recorded().metadata).toEqual({
-        permission: 'admin:manage-users',
+        mutation: 'createUser',
         correlationId: correlationIdSource.current(),
       });
     });
@@ -336,7 +315,7 @@ describe('AccessCore', () => {
       const principal = buildPrincipal();
       accessState.setSession(principal, {});
 
-      accessCore.recordDenial(PERMISSIONS.adminManageUsers);
+      accessCore.recordDenial(MUTATION_KEYS.createUser, {});
 
       expect(recorded().principalId).toBe(principal.id);
       expect(recorded().tenantId).toBe(principal.tenantId);

@@ -1,10 +1,10 @@
 import type { FeatureFlagState } from '@/lib/types/access/feature-flag';
 import type { AccessSnapshot, Principal } from '@/lib/types/access/principal';
 
-// A snapshot is handed to every subscriber and read by every policy check, so it is sealed
+// A snapshot is handed to every subscriber and read by every access decision, so it is sealed
 // before it is published: freezing the wrapper alone would let whoever still holds the
-// principal mutate roles, permissions or memberships underneath decisions already made from
-// them. Sealing is in place rather than on a copy so the published principal keeps its
+// principal mutate roles, allowed mutations or memberships underneath decisions already made
+// from them. Sealing is in place rather than on a copy so the published principal keeps its
 // identity — `useSyncExternalStore` compares snapshots by reference — and so the caller's own
 // handle is sealed too, which a defensive copy would leave writable. `null` means the
 // principal breaks the store's tenancy invariant — an active tenant outside its own
@@ -21,7 +21,6 @@ export class AccessSnapshotFactory {
 
   private sealPrincipal(principal: Principal): Principal {
     Object.freeze(principal.roles);
-    Object.freeze(principal.permissions);
     Object.freeze(principal.allowedMutations);
     principal.tenants.forEach((tenant) => Object.freeze(tenant));
     Object.freeze(principal.tenants);

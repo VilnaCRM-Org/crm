@@ -287,8 +287,9 @@ name validators) and accepts an `overrides` object to pin specific fields:
 - `buildRegistrationResponse(overrides?)` → `{ fullName, email }`.
 - `buildCreateUserInput(overrides?)` → `{ email, initials, clientMutationId }`.
 - `buildGraphqlUser(overrides?)` → `{ id, confirmed, email, initials }`.
-- `buildPrincipal(overrides?)` → an access `Principal` whose permissions are expanded
-  from its roles; `buildTenantRef(overrides?)` → `{ id, name }`.
+- `buildPrincipal(overrides?)` → an access `Principal` (roles are opaque strings and
+  `allowedMutations` defaults to empty, so override it to grant one);
+  `buildTenantRef(overrides?)` → `{ id, name }`.
 - `buildClaims(overrides?)` → session claims; `buildAccessToken(claims?)` → an unsigned
   three-segment test token (`alg: 'none'`, a literal `signature` segment) whose base64url
   payload carries them (issue #114).
@@ -834,27 +835,29 @@ routing through the formatter — never with `eslint-disable`.
 ### Access Control Pattern (issue #114)
 
 Authorization, tenancy, access flags, and audit are a **cross-cutting layer**, never a
-feature module: `src/lib/access/**` holds the dependency-free domain (permission/role
-catalog, principal state, policies, audit core) and `src/services/access/**` the
+feature module: `src/lib/access/**` holds the dependency-free domain (mutation catalogue,
+principal state, session, audit core) and `src/services/access/**` the
 `@injectable()` adapters plus the `ACCESS_TOKENS` composition root. Agents gating UI must
 go through the seam, not re-derive a decision:
 
 ```typescript
-import RequirePermission from '@/components/require-permission';
-import useCan from '@/hooks/use-can';
-import { PERMISSIONS } from '@/lib/access/permission-catalog';
+import RequireMutation from '@/components/require-mutation';
+import useCanMutate from '@/hooks/use-can-mutate';
+import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
 
-const canEdit = useCan(PERMISSIONS.contactWrite); // never useCan('contact:write')
+const canCreate = useCanMutate(MUTATION_KEYS.createUser); // never useCanMutate('createUser')
 
-<RequirePermission permission={PERMISSIONS.contactManageAll}>{controls}</RequirePermission>;
+<RequireMutation mutation={MUTATION_KEYS.createUser}>{controls}</RequireMutation>;
 ```
 
-- **Gate a route** by adding `meta: { permission: PERMISSIONS.x }` to the module's own
-  route contract — top-level routes only. The composer nests it under `PermissionRoute`.
-- **Object-level rules** are `Policy<TSubject>` classes under `src/lib/access/policies/`,
-  evaluated through the injected `PolicyEvaluator` — never an inline conditional.
-- **Never** read `principal.roles` / `principal.permissions` yourself, and never write a
-  permission or role as a string literal at a call site. An ESLint
+- **The mutation gate is the only gate** (issue #114). There is no permission catalogue and no
+  route-level gate: a route declares `guard` only, and `allowedMutations` is supplied by
+  `MutationAccessDispatcher`, never derived from roles.
+- **Object-level rules** belong on the server. A page whose data comes back empty renders its
+  own refused state; `/access-denied` is the routed 403 panel.
+- **Never** read `principal.roles` / `principal.allowedMutations` yourself, and never write a
+  mutation key as a string literal at a call site. Branching on `roles` is banned precisely
+  because a role grants nothing. An ESLint
   `no-restricted-syntax` gate fails the build outside the access layer, and
   dependency-cruiser (`no-ui-to-access-services`, `no-access-layer-to-modules`) keeps the
   layer one-directional. Fix violations by using the seam, never with a suppression.
@@ -862,7 +865,7 @@ const canEdit = useCan(PERMISSIONS.contactWrite); // never useCan('contact:write
   per-principal entitlement from the session claims. It is a different catalogue from the
   deployment-level `useFeatureFlag` documented above — those come from runtime configuration
   and live in [`docs/feature-flags.md`](docs/feature-flags.md).
-- Add a permission/role/policy/access flag by following
+- Add a mutation key or an access flag by following
   [`docs/access-control.md`](docs/access-control.md), which is the authoritative reference.
 
 ### Collaborators arrive through DI, never through a value import (issue #130)

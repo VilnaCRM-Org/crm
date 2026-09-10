@@ -51,10 +51,6 @@ const ESLINT_FIXTURES = {
   },
   routeComposerCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/route-composer.tsx' },
   routeMapperCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/route-mapper.tsx' },
-  permissionBranchBuilderCarveOut: {
-    code: NEW_BEHAVIORAL_CLASS,
-    filePath: 'src/routes/permission-branch-builder.tsx',
-  },
   routeShellOtherFile: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/fixture.tsx' },
   appEntrypointCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/index.tsx' },
   rootErrorBoundaryCarveOut: {
@@ -166,9 +162,7 @@ const DEPCRUISE_FIXTURES = {
   routeShellCarveOut: {
     files: {
       ...SERVICE_FILES,
-      'src/routes/permission-branch-builder.tsx': componentImporting(
-        "import Thing from '../services/thing';"
-      ),
+      'src/routes/route-composer.tsx': componentImporting("import Thing from '../services/thing';"),
     },
   },
   routeShellOtherFile: {

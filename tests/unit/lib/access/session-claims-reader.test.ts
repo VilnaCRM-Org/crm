@@ -1,7 +1,7 @@
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
-import { ROLES } from '@/lib/access/permission-catalog';
 import sessionClaimsReader, { SessionClaimsReader } from '@/lib/access/session-claims-reader';
 import {
+  SAMPLE_ROLES,
   buildAccessToken,
   buildClaims,
   buildTenantRef,
@@ -52,7 +52,7 @@ describe('SessionClaimsReader', () => {
   it('round-trips the claims of a well-formed token', () => {
     const tenant = buildTenantRef();
     const claims = buildClaims({
-      roles: [ROLES.manager],
+      roles: [SAMPLE_ROLES.manager],
       tenantId: tenant.id,
       tenants: [tenant],
       flags: { [FEATURE_FLAGS.tenantSwitcher]: false },

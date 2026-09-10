@@ -182,8 +182,10 @@ export const FIXTURES = {
   },
   'no-ui-to-access-services': {
     files: {
-      'src/components/ui-button/index.ts': reexport('../../services/access/permission-service'),
-      'src/services/access/permission-service.ts': leaf('permission-service'),
+      'src/components/ui-button/index.ts': reexport(
+        '../../services/access/mutation-access-service'
+      ),
+      'src/services/access/mutation-access-service.ts': leaf('mutation-access-service'),
     },
   },
   'no-access-domain-to-container': {

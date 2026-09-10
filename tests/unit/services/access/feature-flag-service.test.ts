@@ -1,9 +1,8 @@
 import accessCore from '@/lib/access/access-core';
 import accessState from '@/lib/access/access-state';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
-import { ROLES } from '@/lib/access/permission-catalog';
 import FeatureFlagService from '@/services/access/feature-flag-service';
-import { buildPrincipal } from '@tests/builders';
+import { SAMPLE_ROLES, buildPrincipal } from '@tests/builders';
 
 describe('FeatureFlagService', () => {
   const service = new FeatureFlagService(accessCore);
@@ -23,7 +22,7 @@ describe('FeatureFlagService', () => {
     });
 
     it('still falls back to the defaults for a signed-in principal with no flags', () => {
-      accessState.setSession(buildPrincipal({ roles: [ROLES.admin] }), {});
+      accessState.setSession(buildPrincipal({ roles: [SAMPLE_ROLES.admin] }), {});
 
       expect(service.isEnabled(FEATURE_FLAGS.contactsModule)).toBe(false);
       expect(service.isEnabled(FEATURE_FLAGS.tenantSwitcher)).toBe(true);

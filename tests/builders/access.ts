@@ -1,19 +1,25 @@
 import { faker } from '@faker-js/faker';
 
-import { ROLES } from '@/lib/access/permission-catalog';
-import permissionResolver from '@/lib/access/permission-resolver';
-import type { Role } from '@/lib/types/access/permission';
 import type { Principal, TenantRef } from '@/lib/types/access/principal';
 import type { SessionClaims } from '@/lib/types/access/session';
 
 import { buildEmail } from './user';
+
+// Roles are opaque, server-supplied strings (issue #114): the client keeps no catalog of them.
+// These are sample names for tests that need a stable, readable role, not a contract.
+export const SAMPLE_ROLES = Object.freeze({
+  admin: 'admin',
+  manager: 'manager',
+  member: 'member',
+  viewer: 'viewer',
+} as const);
 
 export function buildTenantRef(overrides: Partial<TenantRef> = {}): TenantRef {
   return { id: faker.string.uuid(), name: faker.company.name(), ...overrides };
 }
 
 export function buildPrincipal(overrides: Partial<Principal> = {}): Principal {
-  const roles: readonly Role[] = overrides.roles ?? [ROLES.member];
+  const roles: readonly string[] = overrides.roles ?? [SAMPLE_ROLES.member];
   // The store enforces `tenantId ∈ tenants`, so a principal must never be built with an
   // active tenant it does not belong to: a pinned-empty membership gains the tenant that
   // ends up active, and a pinned tenantId is honoured only when it is a real membership.
@@ -30,7 +36,6 @@ export function buildPrincipal(overrides: Partial<Principal> = {}): Principal {
     id: faker.string.uuid(),
     email: buildEmail(),
     roles,
-    permissions: permissionResolver.expand(roles),
     allowedMutations: [],
     ...overrides,
     tenantId: member ? (requested as string) : active.id,
@@ -62,7 +67,7 @@ export function buildClaims(overrides: Partial<SessionClaims> = {}): SessionClai
     sub: faker.string.uuid(),
     sid: faker.string.uuid(),
     email: buildEmail(),
-    roles: [ROLES.member],
+    roles: [SAMPLE_ROLES.member],
     ...overrides,
     tenantId: requested ?? tenants.at(0)?.id,
     tenants,

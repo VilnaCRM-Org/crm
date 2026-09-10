@@ -376,9 +376,10 @@ module.exports = {
       comment:
         'UI layers must not reach the injectable access services (authorization, tenancy, ' +
         'feature flags, audit) directly. They consume the access layer through its React ' +
-        'seam — the `useCan` / `usePrincipal` / `useTenant` / `useAccessFlag` hooks and the ' +
-        '`RequirePermission` component — so a component never resolves or holds a policy ' +
-        'service (issue #114). Feature UI is additionally covered by no-feature-ui-to-services.',
+        'seam — the `useCanMutate` / `usePrincipal` / `useTenant` / `useAccessFlag` hooks ' +
+        'and the `RequireMutation` component — so a component never resolves or holds an ' +
+        'access service (issue #114). Feature UI is additionally covered by ' +
+        'no-feature-ui-to-services.',
       severity: 'error',
       from: {
         path: [
@@ -416,7 +417,7 @@ module.exports = {
         'access domain may import tsyringe or reflect-metadata (issue #114).',
       severity: 'error',
       from: {
-        path: ['^src/lib/access/', '^src/hooks/use-access', '^src/hooks/use-can[.]ts$'],
+        path: ['^src/lib/access/', '^src/hooks/use-access', '^src/hooks/use-can-mutate[.]ts$'],
       },
       to: {
         path: '^node_modules/(tsyringe|reflect-metadata)/',
@@ -426,7 +427,7 @@ module.exports = {
       name: 'no-ui-to-access-state',
       comment:
         'The access state store is written by the access layer, not by the UI: ' +
-        '`setSession` / `setActiveTenant` bypass the permission and membership checks in ' +
+        '`setSession` / `setActiveTenant` bypass the membership check in ' +
         '`AccessCore.switchTenant` and emit no audit event. Shared components and the ' +
         'routes shell read it through the hooks seam (`use-access.ts` / ' +
         '`use-access-snapshot.ts`), which are the only sanctioned importers (issue #114).',
@@ -512,7 +513,7 @@ module.exports = {
         path: '^src/.+[.]tsx$',
         pathNot: [
           '^src/modules/user/features/auth/',
-          '^src/routes/(?:route-(?:composer|mapper)|permission-branch-builder)[.]tsx$',
+          '^src/routes/route-(?:composer|mapper)[.]tsx$',
           '^src/index[.]tsx$',
           '^src/components/error-boundary/app-error-boundary[.]tsx$',
           '[.](?:stories|test|spec)[.]tsx$',

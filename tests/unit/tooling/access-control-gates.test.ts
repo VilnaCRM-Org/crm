@@ -101,12 +101,12 @@ const cruise = (fixtures: Record<string, string>): string[] => {
   }
 };
 
-const GATED_COMPONENT = `import useCan from '@/hooks/use-can';
+const GATED_COMPONENT = `import useCanMutate from '@/hooks/use-can-mutate';
 import type { Principal } from '@/lib/types/access/principal';
 
 export default function Probe({ principal }: { principal: Principal }): JSX.Element {
-  const allowed = useCan('contact:read');
-  const elevated = principal.permissions.includes('contact:manage-all');
+  const allowed = useCanMutate('createUser');
+  const elevated = principal.allowedMutations.includes('archiveUser');
   const admin = principal.roles.includes('admin');
   return <p>{\`\${allowed}\${elevated}\${admin}\`}</p>;
 }
@@ -120,36 +120,36 @@ export default function Probe({ principal }: { principal: Principal }): JSX.Elem
 // method: a `.has()`-ed Set wrapper and bare indexing. A gate that stops only the obvious
 // one is a gate in name only, so any method added to the selector must be added here and to
 // `docs/access-control.md` too, or it can silently fall out of the regex unnoticed.
-const BYPASS_ATTEMPTS = `import RequirePermission from '@/components/require-permission';
+const BYPASS_ATTEMPTS = `import RequireMutation from '@/components/require-mutation';
 import type { Principal } from '@/lib/types/access/principal';
 
 export default function Probe({ principal }: { principal: Principal }): JSX.Element {
-  const { permissions, roles } = principal;
-  const a = permissions.includes('contact:manage-all');
+  const { allowedMutations, roles } = principal;
+  const a = allowedMutations.includes('archiveUser');
   const b = roles.includes('admin');
-  const c = principal['permissions'].includes('deal:write');
-  const d = principal?.permissions.includes('contact:read');
-  const e = principal.permissions.some((p) => p === 'contact:read');
+  const c = principal['allowedMutations'].includes('archiveUser');
+  const d = principal?.allowedMutations.includes('createUser');
+  const e = principal.allowedMutations.some((p) => p === 'createUser');
   const f = principal.roles.find((r) => r === 'admin') !== undefined;
   const g = principal.roles.indexOf('admin') !== -1;
-  const h = principal.permissions.filter((p) => p === 'deal:read').length > 0;
-  const i = new Set(principal.permissions).has('deal:write');
+  const h = principal.allowedMutations.filter((p) => p === 'createUser').length > 0;
+  const i = new Set(principal.allowedMutations).has('archiveUser');
   const j = principal.roles[0] === 'admin';
   const k = roles[0] === 'admin';
   const l = principal.roles.every((r) => r === 'admin');
-  const m = principal.permissions.findIndex((p) => p === 'deal:read') !== -1;
+  const m = principal.allowedMutations.findIndex((p) => p === 'createUser') !== -1;
   const n = principal.roles.at(0) === 'admin';
   const o = principal.roles.findLast((r) => r === 'admin') !== undefined;
-  const q = principal.permissions.findLastIndex((p) => p === 'deal:read') !== -1;
+  const q = principal.allowedMutations.findLastIndex((p) => p === 'createUser') !== -1;
   const s = principal.roles.lastIndexOf('admin') !== -1;
-  const t = principal.permissions['includes']('deal:write');
+  const t = principal.allowedMutations['includes']('archiveUser');
   const u = new Set(roles).has('admin');
   const v = new Set(principal['roles']).has('admin');
   return (
-    <RequirePermission permission={'contact:read'}>
+    <RequireMutation mutation={'createUser'}>
       <p>{\`\${a}\${b}\${c}\${d}\${e}\${f}\${g}\${h}\${i}\${j}\${k}\${l}\${m}\${n}\`}</p>
       <p>{\`\${o}\${q}\${s}\${t}\${u}\${v}\`}</p>
-    </RequirePermission>
+    </RequireMutation>
   );
 }
 `;
@@ -162,59 +162,42 @@ const ALLOWED_READS = `import type { Principal } from '@/lib/types/access/princi
 export default function Probe({ principal }: { principal: Principal }): JSX.Element {
   const distinct = new Set(principal.roles).size;
   const listed = principal.roles.map((role) => role).join(', ');
-  const count = principal.permissions.length;
+  const count = principal.allowedMutations.length;
   return <p>{\`\${distinct}\${listed}\${count}\`}</p>;
 }
 `;
 
-// Backticks are quotes too, `canAll`/`canAny` hide their permissions one level deeper inside
-// an array — the most natural way to call them — and a computed method name (`gate['can']`)
-// is the same call spelled to dodge an identifier match. Every position that rejects a plain
-// string must reject these, or the catalog rule is advisory.
+// Backticks are quotes too, an array argument hides its keys one level deeper, and a computed
+// method name (`gate['can']`) is the same call spelled to dodge an identifier match. Every
+// position that rejects a plain string must reject these, or the catalogue rule is advisory.
 const TEMPLATE_AND_ARRAY_SPELLINGS = [
-  "import RequirePermission from '@/components/require-permission';",
-  "import useCan from '@/hooks/use-can';",
+  "import RequireMutation from '@/components/require-mutation';",
+  "import useCanMutate from '@/hooks/use-can-mutate';",
   '',
   'type Gate = {',
-  '  can: (permission: string) => boolean;',
-  '  canAll: (permissions: string[]) => boolean;',
-  '  canAny: (permissions: string[]) => boolean;',
+  '  can: (mutation: string | string[]) => boolean;',
   '};',
   '',
   'export default function Probe({ gate }: { gate: Gate }): JSX.Element {',
-  '  const a = useCan(`contact:read`);',
-  '  const b = gate.can(`contact:read`);',
-  "  const c = gate.canAll(['contact:read', `deal:write`]);",
-  '  const d = gate.canAny([`contact:read`]);',
-  "  const e = gate['can']('contact:read');",
-  "  const f = gate['canAll']([`deal:write`]);",
+  '  const a = useCanMutate(`createUser`);',
+  '  const b = gate.can(`createUser`);',
+  "  const c = gate.can(['createUser', `archiveUser`]);",
+  "  const d = gate['can']('createUser');",
   '  return (',
-  '    <RequirePermission permission={`contact:read`}>',
-  '      <p>{[a, b, c, d, e, f].join()}</p>',
-  '    </RequirePermission>',
+  '    <RequireMutation mutation={`createUser`}>',
+  '      <p>{[a, b, c, d].join()}</p>',
+  '    </RequireMutation>',
   '  );',
   '}',
   '',
 ].join('\n');
 
-// Route meta names its permission as an object key, spelled bare or quoted.
-const ROUTE_META_SPELLINGS = [
-  'export const routes = [',
-  "  { path: '/contacts', meta: { permission: 'contact:read' } },",
-  "  { path: '/deals', meta: { permission: `deal:read` } },",
-  "  { path: '/reports', meta: { 'permission': 'report:read' } },",
-  '];',
-  '',
-  'export default routes;',
-  '',
-].join('\n');
-
-const ACCESS_LAYER_MODULE = `import type { Permission } from '@/lib/types/access/permission';
+const ACCESS_LAYER_MODULE = `import type { MutationKey } from '@/lib/types/access/mutation-access';
 import type { Principal } from '@/lib/types/access/principal';
 
 export class Probe {
-  public check(principal: Principal, permission: Permission): boolean {
-    return principal.permissions.includes(permission) || principal.roles.includes('admin');
+  public check(principal: Principal, mutation: MutationKey): boolean {
+    return principal.allowedMutations.includes(mutation) || principal.roles.includes('admin');
   }
 }
 
@@ -230,7 +213,6 @@ const CRUISE_FIXTURE = `src/components/${probe}-cruise/index.tsx`;
 const HOOK_FIXTURE = `src/hooks/use-${probe}.ts`;
 const LAYER_FIXTURE = `src/lib/access/${probe}.ts`;
 const SEAM_LOOKALIKE_FIXTURE = `src/hooks/use-access-${probe}.ts`;
-const META_FIXTURE = `src/routes/${probe}-meta.ts`;
 const FIXTURE_PATHS = [
   ESLINT_FIXTURE,
   BYPASS_FIXTURE,
@@ -238,7 +220,6 @@ const FIXTURE_PATHS = [
   HOOK_FIXTURE,
   LAYER_FIXTURE,
   SEAM_LOOKALIKE_FIXTURE,
-  META_FIXTURE,
 ];
 
 const sweepFixtures = (): void => {
@@ -254,14 +235,14 @@ beforeAll(sweepFixtures);
 afterAll(sweepFixtures);
 
 describe('access-control ESLint gate (issue #114)', () => {
-  it('rejects raw permission strings and ad-hoc role checks outside the access layer', () => {
+  it('rejects raw mutation keys and ad-hoc role checks outside the access layer', () => {
     const messages = authorizationMessages(lint(ESLINT_FIXTURE, GATED_COMPONENT));
 
     expect(messages).toHaveLength(3);
     expect(messages.every((message) => message.ruleId === 'no-restricted-syntax')).toBe(true);
-    expect(messages.filter((m) => m.message.includes('No raw permission strings'))).toHaveLength(1);
+    expect(messages.filter((m) => m.message.includes('No raw mutation keys'))).toHaveLength(1);
     expect(
-      messages.filter((m) => m.message.includes('No ad-hoc role/permission membership checks'))
+      messages.filter((m) => m.message.includes('No ad-hoc role/mutation membership checks'))
     ).toHaveLength(2);
   });
 
@@ -274,7 +255,7 @@ describe('access-control ESLint gate (issue #114)', () => {
     // Counting one per line — not "at least" — also pins that a single decision is reported
     // once, so a developer is never sent chasing two findings for one fix.
     const membership = messages.filter((m) =>
-      m.message.includes('No ad-hoc role/permission membership')
+      m.message.includes('No ad-hoc role/mutation membership')
     );
     expect(membership).toHaveLength(20);
     expect(new Set(membership.map((m) => m.line)).size).toBe(20);
@@ -282,31 +263,22 @@ describe('access-control ESLint gate (issue #114)', () => {
     // failing the build, so pin it: 2 is ESLint's `error`.
     expect(membership.every((m) => m.severity === 2)).toBe(true);
     expect(
-      messages.filter((m) => m.message.includes('No raw permission strings on a permission prop'))
+      messages.filter((m) => m.message.includes('No raw mutation keys on a mutation prop'))
     ).toHaveLength(1);
   });
 
-  it('rejects template-literal permissions and the array arguments of canAll/canAny', () => {
+  it('rejects template-literal mutation keys and the array argument of can()', () => {
     const messages = authorizationMessages(lint(BYPASS_FIXTURE, TEMPLATE_AND_ARRAY_SPELLINGS));
 
-    // useCan(`…`), gate.can(`…`), both elements of canAll([…]), the one in canAny([…]) and
-    // the two computed spellings, gate['can'](…) and gate['canAll']([…]).
-    const callSites = messages.filter((m) => m.message.includes('No raw permission strings at'));
-    expect(callSites).toHaveLength(7);
-    expect(new Set(callSites.map((m) => m.line)).size).toBe(6);
+    // useCanMutate(`…`), gate.can(`…`), both elements of gate.can([…]) and the computed
+    // spelling gate['can'](…).
+    const callSites = messages.filter((m) => m.message.includes('No raw mutation keys at'));
+    expect(callSites).toHaveLength(5);
+    expect(new Set(callSites.map((m) => m.line)).size).toBe(4);
     expect(callSites.every((m) => m.severity === 2)).toBe(true);
     expect(
-      messages.filter((m) => m.message.includes('No raw permission strings on a permission prop'))
+      messages.filter((m) => m.message.includes('No raw mutation keys on a mutation prop'))
     ).toHaveLength(1);
-  });
-
-  it('rejects a route-meta permission spelled bare, quoted or as a template literal', () => {
-    const messages = authorizationMessages(lint(META_FIXTURE, ROUTE_META_SPELLINGS));
-
-    const meta = messages.filter((m) => m.message.includes('No raw permission strings in route'));
-    expect(meta).toHaveLength(3);
-    expect(new Set(meta.map((m) => m.line)).size).toBe(3);
-    expect(meta.every((m) => m.severity === 2)).toBe(true);
   });
 
   it('leaves plain reads alone: rendering a principal is not an authorization decision', () => {
@@ -326,11 +298,11 @@ describe('access-control dependency-cruiser boundaries (issue #114)', () => {
   it('rejects a shared component that resolves an access service or writes the state', () => {
     const violations = cruise({
       [CRUISE_FIXTURE]: `import accessState from '@/lib/access/access-state';
-import permissionService from '@/services/access/permission-service';
+import mutationAccessService from '@/services/access/mutation-access-service';
 
 export default function GateProbe(): JSX.Element {
   accessState.setActiveTenant('forged-tenant');
-  return <p>{String(permissionService.can)}</p>;
+  return <p>{String(mutationAccessService.can)}</p>;
 }
 `,
     });
@@ -342,11 +314,11 @@ export default function GateProbe(): JSX.Element {
   it('rejects a hook that reaches past the seam into an access service', () => {
     const violations = cruise({
       [HOOK_FIXTURE]: [
-        "import permissionService from '@/services/access/permission-service';",
+        "import mutationAccessService from '@/services/access/mutation-access-service';",
         '',
 
         'export default function useGateProbe(): boolean {',
-        "  return typeof permissionService.can === 'function';",
+        "  return typeof mutationAccessService.can === 'function';",
         '}',
       ].join('\n'),
     });
@@ -375,12 +347,12 @@ export default function GateProbe(): JSX.Element {
       [LAYER_FIXTURE]: `import { injectable } from 'tsyringe';
 
 import ApiError from '@/modules/user';
-import permissionService from '@/services/access/permission-service';
+import mutationAccessService from '@/services/access/mutation-access-service';
 
 @injectable()
 export class GateProbe {
   public probe(): boolean {
-    return typeof permissionService.can === 'function' && typeof ApiError === 'function';
+    return typeof mutationAccessService.can === 'function' && typeof ApiError === 'function';
   }
 }
 `,
@@ -393,11 +365,11 @@ export class GateProbe {
 
   it('accepts the sanctioned seam: a component consuming the access hooks', () => {
     const violations = cruise({
-      [CRUISE_FIXTURE]: `import useCan from '@/hooks/use-can';
-import { PERMISSIONS } from '@/lib/access/permission-catalog';
+      [CRUISE_FIXTURE]: `import useCanMutate from '@/hooks/use-can-mutate';
+import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
 
 export default function GateProbe(): JSX.Element {
-  return <p>{String(useCan(PERMISSIONS.contactRead))}</p>;
+  return <p>{String(useCanMutate(MUTATION_KEYS.createUser))}</p>;
 }
 `,
     });

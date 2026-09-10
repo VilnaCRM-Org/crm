@@ -29,7 +29,6 @@ describe('component DI gate (issue #128)', () => {
     ['the auth render path', 'authCarveOut'],
     ['the route composer', 'routeComposerCarveOut'],
     ['the route mapper', 'routeMapperCarveOut'],
-    ['the permission branch builder', 'permissionBranchBuilderCarveOut'],
     ['the app entrypoint', 'appEntrypointCarveOut'],
     ['the root error boundary', 'rootErrorBoundaryCarveOut'],
     ['story files', 'story'],

@@ -1,8 +1,13 @@
 import claimsMapper, { ClaimsMapper } from '@/lib/access/claims-mapper';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
-import { ROLES } from '@/lib/access/permission-catalog';
-import { buildClaims, buildEmail, buildTenantRef, buildUserId } from '@tests/builders';
+import {
+  SAMPLE_ROLES,
+  buildClaims,
+  buildEmail,
+  buildTenantRef,
+  buildUserId,
+} from '@tests/builders';
 
 const EMPTY_CLAIMS = {
   sub: undefined,
@@ -37,7 +42,7 @@ describe('ClaimsMapper', () => {
   it('maps every claim of a well-formed payload', () => {
     const tenant = buildTenantRef();
     const claims = buildClaims({
-      roles: [ROLES.manager, ROLES.viewer],
+      roles: [SAMPLE_ROLES.manager, SAMPLE_ROLES.viewer],
       tenantId: tenant.id,
       tenants: [tenant],
       flags: { [FEATURE_FLAGS.contactsModule]: true },
@@ -97,13 +102,18 @@ describe('ClaimsMapper', () => {
   });
 
   it('drops a roles claim that is not an array', () => {
-    expect(mapper.map({ roles: ROLES.admin })).toStrictEqual(EMPTY_CLAIMS);
+    expect(mapper.map({ roles: SAMPLE_ROLES.admin })).toStrictEqual(EMPTY_CLAIMS);
   });
 
   it('keeps only the string entries of a mixed roles claim', () => {
-    const raw = { roles: [ROLES.admin, 7, null, ROLES.viewer, { role: ROLES.manager }] };
+    const raw = {
+      roles: [SAMPLE_ROLES.admin, 7, null, SAMPLE_ROLES.viewer, { role: SAMPLE_ROLES.manager }],
+    };
 
-    expect(mapper.map(raw)).toStrictEqual({ ...EMPTY_CLAIMS, roles: [ROLES.admin, ROLES.viewer] });
+    expect(mapper.map(raw)).toStrictEqual({
+      ...EMPTY_CLAIMS,
+      roles: [SAMPLE_ROLES.admin, SAMPLE_ROLES.viewer],
+    });
   });
 
   it('maps an empty roles array to an empty list rather than undefined', () => {

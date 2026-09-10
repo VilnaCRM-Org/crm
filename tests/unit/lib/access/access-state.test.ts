@@ -1,9 +1,7 @@
 import accessState, { AccessStateStore } from '@/lib/access/access-state';
-import { ROLES } from '@/lib/access/permission-catalog';
 import type { FeatureFlagState } from '@/lib/types/access/feature-flag';
-import type { Role } from '@/lib/types/access/permission';
 import type { AccessSnapshot, Principal, TenantRef } from '@/lib/types/access/principal';
-import { buildPrincipal, buildTenantRef } from '@tests/builders';
+import { SAMPLE_ROLES, buildPrincipal, buildTenantRef } from '@tests/builders';
 
 const ANONYMOUS_SNAPSHOT: AccessSnapshot = { principal: null, flags: {} };
 
@@ -186,12 +184,12 @@ describe('AccessStateStore', () => {
       const published = store.get().principal as Principal;
       expect(Object.isFrozen(published)).toBe(true);
       expect(Object.isFrozen(published.roles)).toBe(true);
-      expect(Object.isFrozen(published.permissions)).toBe(true);
+      expect(Object.isFrozen(published.allowedMutations)).toBe(true);
       expect(Object.isFrozen(published.tenants)).toBe(true);
       expect(published.tenants.every((tenant) => Object.isFrozen(tenant))).toBe(true);
       expect(Object.isFrozen(store.get().flags)).toBe(true);
       expect(() => Object.assign(published, { tenantId: 'forged' })).toThrow(TypeError);
-      expect(() => (published.roles as Role[]).push(ROLES.admin)).toThrow(TypeError);
+      expect(() => (published.roles as string[]).push(SAMPLE_ROLES.admin)).toThrow(TypeError);
       expect(() => Object.assign(tenantAt(published.tenants, 0), { id: 'forged' })).toThrow(
         TypeError
       );
@@ -264,7 +262,7 @@ describe('AccessStateStore', () => {
       expect(after.principal?.id).toBe(principal.id);
       expect(after.principal?.email).toBe(principal.email);
       expect(after.principal?.roles).toEqual(principal.roles);
-      expect(after.principal?.permissions).toEqual(principal.permissions);
+      expect(after.principal?.allowedMutations).toEqual(principal.allowedMutations);
       expect(after.principal?.tenants).toEqual(tenants);
       expect(after.flags).toEqual({ 'tenant-switcher': true });
     });

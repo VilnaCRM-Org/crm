@@ -6,13 +6,12 @@ import accessSession from '@/lib/access/access-session';
 import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
-import { ROLES } from '@/lib/access/permission-catalog';
 import sessionFactory from '@/lib/access/session-factory';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import type { RedirectNavigationState } from '@/routes/types/navigation-state';
 import ProtectedRoute from '@auth/components/protected-route';
 import { AuthStateVar } from '@auth/stores';
-import { buildAccessToken, buildClaims, buildTenantRef } from '@tests/builders';
+import { SAMPLE_ROLES, buildAccessToken, buildClaims, buildTenantRef } from '@tests/builders';
 import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 const record = jest.fn<void, [AuditEvent]>();
@@ -107,14 +106,14 @@ describe('ProtectedRoute', () => {
   });
 
   it('hydrates the access session from the token claims on mount (#114)', () => {
-    const claims = buildClaims({ roles: [ROLES.manager] });
+    const claims = buildClaims({ roles: [SAMPLE_ROLES.manager] });
 
     renderWithRouter(buildAccessToken(claims));
 
     const { principal } = accessState.get();
     expect(principal?.id).toBe(claims.sub);
     expect(principal?.email).toBe(claims.email);
-    expect(principal?.roles).toEqual([ROLES.manager]);
+    expect(principal?.roles).toEqual([SAMPLE_ROLES.manager]);
     expect(principal?.tenantId).toBe(claims.tenantId);
     expect(principal?.tenants).toEqual(claims.tenants);
     expect(eventTypes()).toEqual(['login']);
@@ -157,7 +156,7 @@ describe('ProtectedRoute', () => {
     const home = buildTenantRef();
     const other = buildTenantRef();
     const claims = buildClaims({
-      roles: [ROLES.manager],
+      roles: [SAMPLE_ROLES.manager],
       tenantId: home.id,
       tenants: [home, other],
     });

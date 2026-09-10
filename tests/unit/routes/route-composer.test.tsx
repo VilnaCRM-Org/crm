@@ -4,12 +4,9 @@ import type { RouteObject } from 'react-router-dom';
 import RouteError from '@/components/error-boundary/route-error';
 import AppLayout from '@/components/layouts/app-layout';
 import RootLayout from '@/components/layouts/root-layout';
-import { PERMISSIONS } from '@/lib/access/permission-catalog';
-import PermissionRoute from '@/routes/permission-route';
 import registry from '@/routes/registry';
 import routeComposer from '@/routes/route-composer';
 import ROUTE_PATHS from '@/routes/route-paths';
-import type { PermissionRouteProps } from '@/routes/types/permission-route';
 import type { RouteModule } from '@/routes/types/route-module';
 import ProtectedRoute from '@auth/components/protected-route';
 
@@ -47,20 +44,18 @@ describe('route composer', () => {
     expect(typeOf(layout)).toBe(AppLayout);
   });
 
-  it('gates a permission-carrying route behind PermissionRoute inside AppLayout (#114)', () => {
+  // Authorization is not a routing concern any more (issue #114): every protected route sits
+  // directly under AppLayout, and what the principal may do is read from the mutation gate.
+  it('places every protected route directly under AppLayout (#114)', () => {
     const tree = routeComposer.compose(registry);
     const branch = rootOf(tree).children?.find(isLayout) as RouteObject;
     const layout = branch.children?.[0] as RouteObject;
-    const gate = layout.children?.find((route) => typeOf(route) === PermissionRoute);
 
-    expect(gate).toBeDefined();
-    expect((gate?.element as ReactElement<PermissionRouteProps>).props.permission).toBe(
-      PERMISSIONS.appHome
-    );
-    expect(gate?.children?.some((route) => route.index)).toBe(true);
+    expect(layout.children?.some((route) => route.index)).toBe(true);
+    expect(layout.children?.every((route) => route.children === undefined)).toBe(true);
   });
 
-  it('keeps an un-gated protected route directly under AppLayout (#114)', () => {
+  it('keeps a plain protected route directly under AppLayout (#114)', () => {
     const modules: RouteModule[] = [
       { id: 'plain', routes: [{ path: '/plain', guard: 'protected', load: page }] },
     ];
@@ -79,6 +74,7 @@ describe('route composer', () => {
     // A protected route (the home index route) must never leak into the flat list.
     expect(flat.every((child) => child.index !== true)).toBe(true);
     expect(flat.map((child) => child.path)).toEqual([
+      ROUTE_PATHS.accessDenied,
       ROUTE_PATHS.notFound,
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,

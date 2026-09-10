@@ -13,10 +13,9 @@ import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 // Lighthouse and Playwright authenticate by seeding a token rather than logging in, so
 // nothing calls the login path that starts an access session. The real ProtectedRoute
-// must hydrate the session itself, otherwise the permission-gated home route paints
-// blank and the performance budget collapses. This suite keeps the REAL ProtectedRoute,
-// PermissionRoute, composer and access layer in the graph — only the token source and
-// the leaf pages are stubbed.
+// must hydrate the session itself, otherwise the protected home route paints blank and the
+// performance budget collapses. This suite keeps the REAL ProtectedRoute, composer and access
+// layer in the graph — only the token source and the leaf pages are stubbed.
 const seededToken = buildToken();
 
 jest.mock('react-i18next', () => ({

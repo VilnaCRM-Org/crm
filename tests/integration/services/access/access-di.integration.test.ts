@@ -5,28 +5,32 @@ import accessSession from '@/lib/access/access-session';
 import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import { FEATURE_FLAGS, FEATURE_FLAG_DEFAULTS } from '@/lib/access/feature-flag-catalog';
+import mutationAccessDispatcher from '@/lib/access/mutation-access-dispatcher';
+import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
-import { PERMISSIONS, ROLES, ROLE_PERMISSIONS } from '@/lib/access/permission-catalog';
-import editContactPolicy from '@/lib/access/policies/edit-contact-policy';
 import sessionClaimsReader from '@/lib/access/session-claims-reader';
 import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
-import type { ContactSubject } from '@/lib/types/access/policy';
+import type { SessionClaims } from '@/lib/types/access/session';
 import type AccessSessionService from '@/services/access/access-session-service';
 import type AuditLogger from '@/services/access/audit-logger';
 import type FeatureFlagService from '@/services/access/feature-flag-service';
-import type PermissionService from '@/services/access/permission-service';
-import type PolicyEvaluator from '@/services/access/policy-evaluator';
+import type MutationAccessService from '@/services/access/mutation-access-service';
 import type SessionRepository from '@/services/access/session-repository';
 import type TenantContextService from '@/services/access/tenant-context-service';
 import ACCESS_TOKENS from '@/services/access/tokens';
-import { buildAccessToken, buildClaims, buildEmail, buildTenantRef } from '@tests/builders';
+import {
+  SAMPLE_ROLES,
+  buildAccessToken,
+  buildClaims,
+  buildEmail,
+  buildTenantRef,
+} from '@tests/builders';
 
 const sessions = container.resolve<AccessSessionService>(ACCESS_TOKENS.AccessSessionService);
-const permissions = container.resolve<PermissionService>(ACCESS_TOKENS.PermissionService);
+const mutations = container.resolve<MutationAccessService>(ACCESS_TOKENS.MutationAccessService);
 const tenantContext = container.resolve<TenantContextService>(ACCESS_TOKENS.TenantContextService);
 const featureFlags = container.resolve<FeatureFlagService>(ACCESS_TOKENS.AccessFeatureFlagService);
-const policies = container.resolve<PolicyEvaluator>(ACCESS_TOKENS.PolicyEvaluator);
 const auditLogger = container.resolve<AuditLogger>(ACCESS_TOKENS.AuditLogger);
 const sessionRepository = container.resolve<SessionRepository>(ACCESS_TOKENS.SessionRepository);
 
@@ -35,16 +39,19 @@ const otherTenant = buildTenantRef();
 const tenants = [homeTenant, otherTenant];
 
 const managerClaims = buildClaims({
-  roles: [ROLES.manager],
+  roles: [SAMPLE_ROLES.manager],
   tenantId: homeTenant.id,
   tenants,
   flags: { [FEATURE_FLAGS.contactsModule]: true },
+  allowedMutations: [MUTATION_KEYS.createUser],
 });
-const memberClaims = buildClaims({ roles: [ROLES.member], tenantId: homeTenant.id, tenants });
-const viewerClaims = buildClaims({ roles: [ROLES.viewer], tenantId: homeTenant.id, tenants });
+const viewerClaims = buildClaims({
+  roles: [SAMPLE_ROLES.viewer],
+  tenantId: homeTenant.id,
+  tenants,
+});
 
 const managerToken = buildAccessToken(managerClaims);
-const memberToken = buildAccessToken(memberClaims);
 const viewerToken = buildAccessToken(viewerClaims);
 
 const events: AuditEvent[] = [];
@@ -64,13 +71,6 @@ const eventAt = (index: number): AuditEvent => {
 };
 const lastEvent = (): AuditEvent => eventAt(events.length - 1);
 
-const contact = (overrides: Partial<ContactSubject> = {}): ContactSubject => ({
-  id: buildTenantRef().id,
-  tenantId: homeTenant.id,
-  ownerId: managerClaims.sub as string,
-  ...overrides,
-});
-
 describe('access services DI integration (#114)', () => {
   beforeEach(() => {
     events.length = 0;
@@ -84,38 +84,61 @@ describe('access services DI integration (#114)', () => {
 
   it('resolves every access service from the aggregated container as a singleton', () => {
     expect(container.resolve(ACCESS_TOKENS.AccessSessionService)).toBe(sessions);
-    expect(container.resolve(ACCESS_TOKENS.PermissionService)).toBe(permissions);
+    expect(container.resolve(ACCESS_TOKENS.MutationAccessService)).toBe(mutations);
     expect(container.resolve(ACCESS_TOKENS.TenantContextService)).toBe(tenantContext);
     expect(container.resolve(ACCESS_TOKENS.AccessFeatureFlagService)).toBe(featureFlags);
-    expect(container.resolve(ACCESS_TOKENS.PolicyEvaluator)).toBe(policies);
     expect(container.resolve(ACCESS_TOKENS.AuditLogger)).toBe(auditLogger);
     expect(container.resolve(ACCESS_TOKENS.SessionRepository)).toBe(sessionRepository);
   });
 
-  it('hydrates a manager session whose permissions match the role catalog', () => {
+  // A hydrated session grants nothing on its own: the role name is carried for display and
+  // audit, and every mutation stays denied until a resolver supplies the allowed set.
+  it('hydrates a session that carries its roles but no capability', () => {
     expect(sessions.start({ token: managerToken })).toBe(true);
 
     const { principal } = accessState.get();
     expect(principal?.id).toBe(managerClaims.sub);
     expect(principal?.email).toBe(managerClaims.email);
-    expect(principal?.roles).toEqual([ROLES.manager]);
-    Object.values(PERMISSIONS).forEach((permission) => {
-      expect(permissions.can(permission)).toBe(
-        ROLE_PERMISSIONS[ROLES.manager].includes(permission)
-      );
-    });
+    expect(principal?.roles).toEqual([SAMPLE_ROLES.manager]);
+    expect(principal?.allowedMutations).toEqual([]);
+    expect(mutations.can(MUTATION_KEYS.createUser)).toBe(false);
     expect(typesOf()).toEqual(['login']);
     expect(lastEvent().principalId).toBe(managerClaims.sub);
     expect(lastEvent().tenantId).toBe(homeTenant.id);
   });
 
-  it('answers canAll/canAny against the hydrated permission set', () => {
-    sessions.start({ token: memberToken });
+  it('grants a mutation once the dispatcher supplies it onto the live principal', async () => {
+    sessions.start({ token: managerToken });
 
-    expect(permissions.canAll([PERMISSIONS.contactRead, PERMISSIONS.contactWrite])).toBe(true);
-    expect(permissions.canAll([PERMISSIONS.contactWrite, PERMISSIONS.dealWrite])).toBe(false);
-    expect(permissions.canAny([PERMISSIONS.dealWrite, PERMISSIONS.contactWrite])).toBe(true);
-    expect(permissions.canAny([PERMISSIONS.dealWrite, PERMISSIONS.adminManageUsers])).toBe(false);
+    await mutationAccessDispatcher.request({ token: managerToken });
+
+    expect(accessState.get().principal?.allowedMutations).toEqual([MUTATION_KEYS.createUser]);
+    expect(mutations.can(MUTATION_KEYS.createUser)).toBe(true);
+  });
+
+  // The catalogue is closed: a key the pinned schema does not declare is dropped rather than
+  // trusted, and the drop is audited so a contract drift is visible.
+  it('drops an unknown mutation key the access source granted and audits it', async () => {
+    const forgedToken = buildAccessToken(
+      buildClaims({
+        roles: [SAMPLE_ROLES.manager],
+        tenantId: homeTenant.id,
+        tenants,
+        allowedMutations: ['archiveUser'] as unknown as SessionClaims['allowedMutations'],
+      })
+    );
+    sessions.start({ token: forgedToken });
+
+    await mutationAccessDispatcher.request({ token: forgedToken });
+
+    expect(accessState.get().principal?.allowedMutations).toEqual([]);
+    expect(typesOf()).toContain('access_unknown_mutation');
+  });
+
+  it('denies every mutation while nobody is signed in', () => {
+    expect(accessState.get().principal).toBeNull();
+
+    expect(mutations.can(MUTATION_KEYS.createUser)).toBe(false);
   });
 
   it('loads the same session snapshot through the repository as through the service', () => {
@@ -159,18 +182,8 @@ describe('access services DI integration (#114)', () => {
     expect(lastEvent().metadata).toEqual({
       tenantId: foreignTenantId,
       reason: 'membership',
-      permission: PERMISSIONS.tenantSwitch,
       correlationId: correlationIdSource.current(),
     });
-  });
-
-  it('denies a switch when the role has no tenant:switch permission', () => {
-    sessions.start({ token: viewerToken });
-
-    expect(permissions.can(PERMISSIONS.tenantSwitch)).toBe(false);
-    expect(tenantContext.switchTo(otherTenant.id)).toBe(false);
-    expect(tenantContext.active()).toBe(homeTenant.id);
-    expect(typesOf()).toEqual(['login', 'permission_denied']);
   });
 
   it('denies a switch while nobody is signed in and audits it without an origin tenant', () => {
@@ -180,8 +193,7 @@ describe('access services DI integration (#114)', () => {
     expect(typesOf()).toEqual(['permission_denied']);
     expect(lastEvent().metadata).toEqual({
       tenantId: otherTenant.id,
-      reason: 'permission',
-      permission: PERMISSIONS.tenantSwitch,
+      reason: 'anonymous',
       correlationId: correlationIdSource.current(),
     });
     expect(lastEvent().principalId).toBeNull();
@@ -196,65 +208,13 @@ describe('access services DI integration (#114)', () => {
     expect(featureFlags.isEnabled(FEATURE_FLAGS.tenantSwitcher)).toBe(true);
   });
 
-  it('evaluates the edit-contact policy for a manager who may manage every contact', () => {
-    sessions.start({ token: managerToken });
-
-    expect(policies.evaluate(editContactPolicy, contact())).toBe(true);
-    expect(policies.evaluate(editContactPolicy, contact({ ownerId: memberClaims.sub }))).toBe(true);
-    expect(events.filter((event) => event.type === 'permission_denied')).toHaveLength(0);
-  });
-
-  it('denies the edit-contact policy across tenants and audits the denial', () => {
-    sessions.start({ token: managerToken });
-
-    expect(policies.evaluate(editContactPolicy, contact({ tenantId: otherTenant.id }))).toBe(false);
-    expect(typesOf()).toEqual(['login', 'permission_denied']);
-    expect(lastEvent().metadata).toEqual({
-      permission: PERMISSIONS.contactWrite,
-      correlationId: correlationIdSource.current(),
-    });
-  });
-
-  it('denies a member editing a contact owned by somebody else', () => {
-    sessions.start({ token: memberToken });
-
-    expect(policies.evaluate(editContactPolicy, contact({ ownerId: managerClaims.sub }))).toBe(
-      false
-    );
-    expect(policies.evaluate(editContactPolicy, contact({ ownerId: memberClaims.sub }))).toBe(true);
-    expect(typesOf()).toEqual(['login', 'permission_denied']);
-  });
-
-  it('denies a viewer without the contact:write permission', () => {
-    sessions.start({ token: viewerToken });
-
-    expect(policies.evaluate(editContactPolicy, contact({ ownerId: viewerClaims.sub }))).toBe(
-      false
-    );
-    expect(lastEvent().metadata).toEqual({
-      permission: PERMISSIONS.contactWrite,
-      correlationId: correlationIdSource.current(),
-    });
-  });
-
-  it('denies every policy for an anonymous visitor', () => {
-    expect(accessState.get().principal).toBeNull();
-
-    expect(policies.evaluate(editContactPolicy, contact())).toBe(false);
-    expect(typesOf()).toEqual(['permission_denied']);
-    expect(lastEvent().principalId).toBeNull();
-    expect(lastEvent().tenantId).toBeNull();
-  });
-
   it('returns to an anonymous snapshot when the session ends', () => {
     sessions.start({ token: managerToken });
     sessions.end();
 
     expect(accessState.get().principal).toBeNull();
     expect(accessState.get().flags).toEqual({});
-    expect(permissions.can(PERMISSIONS.appHome)).toBe(false);
-    expect(permissions.canAll([PERMISSIONS.appHome])).toBe(false);
-    expect(permissions.canAny([PERMISSIONS.appHome])).toBe(false);
+    expect(mutations.can(MUTATION_KEYS.createUser)).toBe(false);
     expect(tenantContext.active()).toBeNull();
     expect(tenantContext.available()).toEqual([]);
     expect(featureFlags.isEnabled(FEATURE_FLAGS.contactsModule)).toBe(false);
@@ -326,8 +286,7 @@ describe('access session hydration from token claims (#114)', () => {
     const forged = {
       id: buildTenantRef().id,
       email: buildEmail(),
-      roles: [ROLES.manager],
-      permissions: ROLE_PERMISSIONS[ROLES.manager],
+      roles: [SAMPLE_ROLES.manager],
       allowedMutations: [],
       tenantId: stranger.id,
       tenants: [homeTenant],
@@ -349,19 +308,17 @@ describe('access session hydration from token claims (#114)', () => {
     expect(events).toHaveLength(0);
   });
 
-  // Least privilege on ambiguity: an unparseable token must not be upgraded to a
-  // write-capable role, only to the read-only viewer that still reaches the home route.
-  it('falls back to the read-only viewer defaults when the token is not a JWT', () => {
+  // An unparseable token still hydrates a session so the shell can render, but it claims no
+  // role and can invoke nothing.
+  it('falls back to a role-free, capability-free session when the token is not a JWT', () => {
     const email = buildEmail();
 
     expect(sessions.start({ token: 'not-a-jwt', email })).toBe(true);
 
     const { principal } = accessState.get();
     expect(principal?.email).toBe(email);
-    expect(principal?.roles).toEqual([ROLES.viewer]);
-    expect(permissions.can(PERMISSIONS.appHome)).toBe(true);
-    expect(permissions.can(PERMISSIONS.contactWrite)).toBe(false);
-    expect(permissions.can(PERMISSIONS.adminManageUsers)).toBe(false);
+    expect(principal?.roles).toEqual([]);
+    expect(mutations.can(MUTATION_KEYS.createUser)).toBe(false);
     expect(principal?.tenantId).toBe('default');
     expect(principal?.tenants).toEqual([{ id: 'default', name: 'default' }]);
     expect(principal?.id).toEqual(expect.any(String));
@@ -381,9 +338,9 @@ describe('access session hydration from token claims (#114)', () => {
 
     payloads.forEach((payload) => {
       sessions.start({ token: buildAccessToken(payload as unknown as Record<string, unknown>) });
-      expect(accessState.get().principal?.roles).toEqual([ROLES.viewer]);
+      expect(accessState.get().principal?.roles).toEqual([]);
       expect(accessState.get().principal?.tenantId).toBe('default');
-      expect(permissions.can(PERMISSIONS.contactWrite)).toBe(false);
+      expect(mutations.can(MUTATION_KEYS.createUser)).toBe(false);
     });
   });
 
@@ -391,7 +348,7 @@ describe('access session hydration from token claims (#114)', () => {
     const token = buildAccessToken({
       sub: 42,
       email: 7,
-      roles: ROLES.admin,
+      roles: SAMPLE_ROLES.admin,
       tenantId: 9,
       tenants: 'not-a-list',
       flags: 'not-an-object',
@@ -401,15 +358,15 @@ describe('access session hydration from token claims (#114)', () => {
 
     const { principal, flags } = accessState.get();
     expect(principal?.email).toBe('');
-    expect(principal?.roles).toEqual([ROLES.viewer]);
+    expect(principal?.roles).toEqual([]);
     expect(principal?.tenantId).toBe('default');
-    expect(permissions.can(PERMISSIONS.contactWrite)).toBe(false);
+    expect(mutations.can(MUTATION_KEYS.createUser)).toBe(false);
     expect(flags).toEqual({});
   });
 
   it('keeps only well-formed roles, tenants and feature flags', () => {
     const token = buildAccessToken({
-      roles: [ROLES.admin, 7, 'ghost-role'],
+      roles: [SAMPLE_ROLES.admin, 7],
       tenantId: homeTenant.id,
       tenants: [homeTenant, 'not-a-tenant', { id: otherTenant.id }],
       flags: {
@@ -422,10 +379,10 @@ describe('access session hydration from token claims (#114)', () => {
     sessions.start({ token });
 
     const { principal, flags } = accessState.get();
-    expect(principal?.roles).toEqual([ROLES.admin]);
+    expect(principal?.roles).toEqual([SAMPLE_ROLES.admin]);
     expect(principal?.tenants).toEqual([homeTenant]);
     expect(flags).toEqual({ [FEATURE_FLAGS.dealsModule]: true });
-    expect(permissions.can(PERMISSIONS.adminManageUsers)).toBe(true);
+    expect(mutations.can(MUTATION_KEYS.createUser)).toBe(false);
   });
 });
 

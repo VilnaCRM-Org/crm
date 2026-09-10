@@ -3,13 +3,12 @@ import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
 import { FEATURE_FLAGS } from '@/lib/access/feature-flag-catalog';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
-import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
 import sessionFactory from '@/lib/access/session-factory';
 import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditEvent, AuditSink } from '@/lib/types/access/audit';
 import AccessSessionService from '@/services/access/access-session-service';
 import SessionRepository from '@/services/access/session-repository';
-import { buildAccessToken, buildClaims, buildEmail } from '@tests/builders';
+import { SAMPLE_ROLES, buildAccessToken, buildClaims, buildEmail } from '@tests/builders';
 
 const FROZEN_AT = '2026-04-05T06:07:08.009Z';
 
@@ -40,7 +39,7 @@ describe('AccessSessionService', () => {
   describe('start()', () => {
     it('applies the repository snapshot and logs a login', () => {
       const claims = buildClaims({
-        roles: [ROLES.admin],
+        roles: [SAMPLE_ROLES.admin],
         flags: { [FEATURE_FLAGS.contactsModule]: true },
       });
 
@@ -48,7 +47,7 @@ describe('AccessSessionService', () => {
 
       expect(accessState.get().principal?.id).toBe(claims.sub);
       expect(accessState.get().principal?.email).toBe(claims.email);
-      expect(accessState.get().principal?.roles).toEqual([ROLES.admin]);
+      expect(accessState.get().principal?.roles).toEqual([SAMPLE_ROLES.admin]);
       expect(accessState.get().principal?.tenantId).toBe(claims.tenantId);
       expect(accessState.get().flags).toEqual({ [FEATURE_FLAGS.contactsModule]: true });
       expect(record).toHaveBeenCalledTimes(1);
@@ -63,7 +62,7 @@ describe('AccessSessionService', () => {
 
     it('hydrates through the injected repository rather than reaching for a loader', () => {
       const build = jest.spyOn(repository, 'build');
-      const claims = buildClaims({ roles: [ROLES.manager] });
+      const claims = buildClaims({ roles: [SAMPLE_ROLES.manager] });
       const input = { token: buildAccessToken(claims) };
 
       expect(service.start(input)).toBe(true);
@@ -71,19 +70,18 @@ describe('AccessSessionService', () => {
       expect(build).toHaveBeenCalledTimes(1);
       expect(build).toHaveBeenCalledWith(input);
       expect(accessState.get().principal?.id).toBe(claims.sub);
-      expect(accessState.get().principal?.roles).toEqual([ROLES.manager]);
+      expect(accessState.get().principal?.roles).toEqual([SAMPLE_ROLES.manager]);
     });
 
-    // Least privilege on ambiguity: claims the client cannot resolve fall back to the
-    // read-only viewer, never to a write-capable role.
-    it('passes the supplied email through and defaults to the read-only viewer role', () => {
+    // Least privilege on ambiguity: a token that claims nothing hydrates a session that can
+    // do nothing, because the allowed set is only ever supplied by a resolver.
+    it('passes the supplied email through and hydrates a capability-free session', () => {
       const email = buildEmail();
 
       expect(service.start({ token: buildAccessToken({}), email })).toBe(true);
       expect(accessState.get().principal?.email).toBe(email);
-      expect(accessState.get().principal?.roles).toEqual([ROLES.viewer]);
-      expect(accessState.get().principal?.permissions).toContain(PERMISSIONS.appHome);
-      expect(accessState.get().principal?.permissions).not.toContain(PERMISSIONS.contactWrite);
+      expect(accessState.get().principal?.roles).toEqual([]);
+      expect(accessState.get().principal?.allowedMutations).toEqual([]);
     });
 
     it('returns false, leaves the state anonymous and logs nothing for a null token', () => {
@@ -114,14 +112,14 @@ describe('AccessSessionService', () => {
     });
 
     it('logs out the outgoing principal before logging in the replacement', () => {
-      const first = buildClaims({ roles: [ROLES.viewer] });
-      const second = buildClaims({ roles: [ROLES.admin] });
+      const first = buildClaims({ roles: [SAMPLE_ROLES.viewer] });
+      const second = buildClaims({ roles: [SAMPLE_ROLES.admin] });
 
       service.start({ token: buildAccessToken(first) });
       service.start({ token: buildAccessToken(second) });
 
       expect(accessState.get().principal?.id).toBe(second.sub);
-      expect(accessState.get().principal?.roles).toEqual([ROLES.admin]);
+      expect(accessState.get().principal?.roles).toEqual([SAMPLE_ROLES.admin]);
       expect(eventTypes()).toEqual(['login', 'logout', 'login']);
       expect(record).toHaveBeenNthCalledWith(2, {
         type: 'logout',
@@ -143,7 +141,7 @@ describe('AccessSessionService', () => {
 
   describe('end()', () => {
     it('logs a logout for the signed-in principal and clears the state', () => {
-      const claims = buildClaims({ roles: [ROLES.member] });
+      const claims = buildClaims({ roles: [SAMPLE_ROLES.member] });
       service.start({ token: buildAccessToken(claims) });
       record.mockClear();
 

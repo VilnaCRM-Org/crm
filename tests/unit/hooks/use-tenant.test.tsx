@@ -7,10 +7,9 @@ import { act, renderHook } from '@testing-library/react';
 import type { TenantContextValue } from '@/hooks/types/access';
 import useTenant from '@/hooks/use-tenant';
 import accessState from '@/lib/access/access-state';
-import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
 import type { Principal, TenantRef } from '@/lib/types/access/principal';
 import AccessProvider from '@/providers/access-provider';
-import { buildPrincipal, buildTenantRef } from '@tests/builders';
+import { SAMPLE_ROLES, buildPrincipal, buildTenantRef } from '@tests/builders';
 
 interface Membership {
   readonly principal: Principal;
@@ -48,7 +47,7 @@ describe('useTenant', () => {
   });
 
   it('exposes the active tenant and the memberships of a hydrated principal', () => {
-    const { principal, current, other } = seedMembership(ROLES.manager);
+    const { principal, current, other } = seedMembership(SAMPLE_ROLES.manager);
 
     const { result } = renderHook(() => useTenant());
 
@@ -66,8 +65,8 @@ describe('useTenant', () => {
     expect(result.current.tenants).toHaveLength(0);
   });
 
-  it('switches the active tenant when the principal may switch and belongs to the target', () => {
-    const { current, other } = seedMembership(ROLES.manager);
+  it('switches the active tenant when the principal belongs to the target', () => {
+    const { current, other } = seedMembership(SAMPLE_ROLES.manager);
     const { result } = renderHook(() => useTenant(), { wrapper: AccessProvider });
     expect(result.current.activeTenantId).toBe(current.id);
 
@@ -78,19 +77,8 @@ describe('useTenant', () => {
     expect(result.current.tenants).toEqual([current, other]);
   });
 
-  it('refuses the switch when the principal lacks the tenant:switch permission', () => {
-    const { principal, current, other } = seedMembership(ROLES.member);
-    expect(principal.permissions).not.toContain(PERMISSIONS.tenantSwitch);
-    const { result } = renderHook(() => useTenant(), { wrapper: AccessProvider });
-
-    expect(switchTo(result.current, other.id)).toBe(false);
-
-    expect(result.current.activeTenantId).toBe(current.id);
-    expect(accessState.get().principal?.tenantId).toBe(current.id);
-  });
-
   it('refuses the switch when the target tenant is not one of the memberships', () => {
-    const { current } = seedMembership(ROLES.manager);
+    const { current } = seedMembership(SAMPLE_ROLES.manager);
     const foreign = buildTenantRef();
     const { result } = renderHook(() => useTenant(), { wrapper: AccessProvider });
 
@@ -110,7 +98,7 @@ describe('useTenant', () => {
   });
 
   it('keeps one stable switchTenant identity across re-renders and state changes', () => {
-    const { other } = seedMembership(ROLES.manager);
+    const { other } = seedMembership(SAMPLE_ROLES.manager);
     const { result, rerender } = renderHook(() => useTenant(), { wrapper: AccessProvider });
     const initial: TenantContextValue['switchTenant'] = result.current.switchTenant;
 

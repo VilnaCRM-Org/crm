@@ -6,9 +6,8 @@ import { act, renderHook } from '@testing-library/react';
 
 import usePrincipal from '@/hooks/use-principal';
 import accessState from '@/lib/access/access-state';
-import { ROLES } from '@/lib/access/permission-catalog';
 import AccessProvider from '@/providers/access-provider';
-import { buildPrincipal } from '@tests/builders';
+import { SAMPLE_ROLES, buildPrincipal } from '@tests/builders';
 
 describe('usePrincipal', () => {
   beforeEach(() => {
@@ -22,7 +21,7 @@ describe('usePrincipal', () => {
   });
 
   it('returns the seeded principal', () => {
-    const principal = buildPrincipal({ roles: [ROLES.manager] });
+    const principal = buildPrincipal({ roles: [SAMPLE_ROLES.manager] });
     accessState.setSession(principal, {});
 
     const { result } = renderHook(() => usePrincipal());
@@ -30,7 +29,7 @@ describe('usePrincipal', () => {
     expect(result.current).toBe(principal);
     expect(result.current?.email).toBe(principal.email);
     expect(result.current?.id).toBe(principal.id);
-    expect(result.current?.roles).toEqual([ROLES.manager]);
+    expect(result.current?.roles).toEqual([SAMPLE_ROLES.manager]);
   });
 
   it('returns null while anonymous', () => {

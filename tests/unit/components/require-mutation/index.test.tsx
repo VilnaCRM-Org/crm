@@ -3,23 +3,30 @@
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { act, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 
 import RequireMutation from '@/components/require-mutation';
+import accessCore from '@/lib/access/access-core';
 import accessState from '@/lib/access/access-state';
 import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
 import { buildPrincipal } from '@tests/builders';
+import ROUTER_FUTURE_FLAGS from '@tests/unit/utils/router-future-flags';
 
 const GATED = 'create-user-control';
 const SIBLING = 'sibling-content';
 
+const AT_PATH = '/contacts';
+
 const renderGate = (): void => {
   render(
-    <div>
-      <span>{SIBLING}</span>
-      <RequireMutation mutation={MUTATION_KEYS.createUser}>
-        <button type="button">{GATED}</button>
-      </RequireMutation>
-    </div>
+    <MemoryRouter future={ROUTER_FUTURE_FLAGS} initialEntries={[AT_PATH]}>
+      <div>
+        <span>{SIBLING}</span>
+        <RequireMutation mutation={MUTATION_KEYS.createUser}>
+          <button type="button">{GATED}</button>
+        </RequireMutation>
+      </div>
+    </MemoryRouter>
   );
 };
 
@@ -63,5 +70,26 @@ describe('RequireMutation', () => {
     renderGate();
 
     expect(screen.queryAllByRole('button', { hidden: true })).toStrictEqual([]);
+  });
+
+  // The refusal carries where it happened, so an audit trail says which screen hid the control.
+  it('records one denial naming the mutation and the path it was refused on', () => {
+    const recordDenial = jest.spyOn(accessCore, 'recordDenial').mockImplementation(() => undefined);
+    accessState.setSession(buildPrincipal({ allowedMutations: [] }), {});
+
+    renderGate();
+
+    expect(recordDenial).toHaveBeenCalledTimes(1);
+    expect(recordDenial).toHaveBeenCalledWith(MUTATION_KEYS.createUser, { path: AT_PATH });
+    recordDenial.mockRestore();
+  });
+
+  it('records no denial while anonymous, when there is nobody to refuse', () => {
+    const recordDenial = jest.spyOn(accessCore, 'recordDenial').mockImplementation(() => undefined);
+
+    renderGate();
+
+    expect(recordDenial).not.toHaveBeenCalled();
+    recordDenial.mockRestore();
   });
 });

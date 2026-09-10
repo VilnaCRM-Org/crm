@@ -71,14 +71,13 @@ const S = {
     'ExpressionStatement, IfStatement, ForStatement, ForInStatement, ForOfStatement, WhileStatement, DoWhileStatement, SwitchStatement, TryStatement, ThrowStatement, WithStatement, LabeledStatement, DebuggerStatement',
   defaultExportInType: 'ExportDefaultDeclaration > *:not(TSInterfaceDeclaration)',
   adHocMembership:
-    "CallExpression[callee.property.name=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.name=/^(roles|permissions)$/],CallExpression[callee.property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.name=/^(roles|permissions)$/],CallExpression[callee.property.name=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.name=/^(roles|permissions)$/],CallExpression[callee.property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.name=/^(roles|permissions)$/],CallExpression[callee.property.name=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.value=/^(roles|permissions)$/],CallExpression[callee.property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.value=/^(roles|permissions)$/],CallExpression[callee.property.name='has'][callee.object.callee.name='Set'][callee.object.arguments.0.property.name=/^(roles|permissions)$/],CallExpression[callee.property.name='has'][callee.object.callee.name='Set'][callee.object.arguments.0.property.value=/^(roles|permissions)$/],CallExpression[callee.property.name='has'][callee.object.callee.name='Set'][callee.object.arguments.0.name=/^(roles|permissions)$/],MemberExpression[computed=true][object.property.name=/^(roles|permissions)$/]:not([property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/]),MemberExpression[computed=true][object.property.value=/^(roles|permissions)$/]:not([property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/]),MemberExpression[computed=true][object.name=/^(roles|permissions)$/]:not([property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/])",
-  useCanRawPermission: "CallExpression[callee.name='useCan'] > :matches(Literal, TemplateLiteral)",
-  canRawPermission:
-    'CallExpression[callee.property.name=/^(can|canAll|canAny)$/] > :matches(Literal, TemplateLiteral),CallExpression[callee.property.name=/^(can|canAll|canAny)$/] > ArrayExpression > :matches(Literal, TemplateLiteral),CallExpression[callee.property.value=/^(can|canAll|canAny)$/] > :matches(Literal, TemplateLiteral),CallExpression[callee.property.value=/^(can|canAll|canAny)$/] > ArrayExpression > :matches(Literal, TemplateLiteral),CallExpression[callee.name=/^(can|canAll|canAny)$/] > :matches(Literal, TemplateLiteral),CallExpression[callee.name=/^(can|canAll|canAny)$/] > ArrayExpression > :matches(Literal, TemplateLiteral)',
-  permissionPropRaw:
-    "JSXAttribute[name.name='permission'] > Literal,JSXAttribute[name.name='permission'] > JSXExpressionContainer > :matches(Literal, TemplateLiteral)",
-  routeMetaPermissionRaw:
-    "Property[key.name='permission'] > :matches(Literal, TemplateLiteral).value,Property[key.value='permission'] > :matches(Literal, TemplateLiteral).value,Property[key.name='permission'] > ArrayExpression > :matches(Literal, TemplateLiteral),Property[key.value='permission'] > ArrayExpression > :matches(Literal, TemplateLiteral)",
+    "CallExpression[callee.property.name=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.name=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.name=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.value=/^(roles|allowedMutations)$/],CallExpression[callee.property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/][callee.object.property.value=/^(roles|allowedMutations)$/],CallExpression[callee.property.name='has'][callee.object.callee.name='Set'][callee.object.arguments.0.property.name=/^(roles|allowedMutations)$/],CallExpression[callee.property.name='has'][callee.object.callee.name='Set'][callee.object.arguments.0.property.value=/^(roles|allowedMutations)$/],CallExpression[callee.property.name='has'][callee.object.callee.name='Set'][callee.object.arguments.0.name=/^(roles|allowedMutations)$/],MemberExpression[computed=true][object.property.name=/^(roles|allowedMutations)$/]:not([property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/]),MemberExpression[computed=true][object.property.value=/^(roles|allowedMutations)$/]:not([property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/]),MemberExpression[computed=true][object.name=/^(roles|allowedMutations)$/]:not([property.value=/^(includes|some|every|find|findIndex|findLast|findLastIndex|indexOf|lastIndexOf|filter|at)$/])",
+  useCanMutateRawKey:
+    "CallExpression[callee.name='useCanMutate'] > :matches(Literal, TemplateLiteral)",
+  canRawMutationKey:
+    'CallExpression[callee.property.name=/^(can)$/] > :matches(Literal, TemplateLiteral),CallExpression[callee.property.name=/^(can)$/] > ArrayExpression > :matches(Literal, TemplateLiteral),CallExpression[callee.property.value=/^(can)$/] > :matches(Literal, TemplateLiteral),CallExpression[callee.property.value=/^(can)$/] > ArrayExpression > :matches(Literal, TemplateLiteral),CallExpression[callee.name=/^(can)$/] > :matches(Literal, TemplateLiteral),CallExpression[callee.name=/^(can)$/] > ArrayExpression > :matches(Literal, TemplateLiteral)',
+  mutationPropRaw:
+    "JSXAttribute[name.name='mutation'] > Literal,JSXAttribute[name.name='mutation'] > JSXExpressionContainer > :matches(Literal, TemplateLiteral)",
   // The two issue #130 selectors are BUILT by config/di-collaborator-policy.js (that module is
   // the single source of truth both eslint.config.mjs and .dependency-cruiser.js read), so they
   // are derived here rather than transcribed — a transcript of a generated string would only
@@ -489,37 +488,28 @@ const FIXTURES = [
     tag: 'issue #114',
   },
   {
-    id: 'raw-permission-usecan',
+    id: 'raw-mutation-key-usecanmutate',
     file: PROBES.logic,
-    code: "const allowed = useCan('crm.contact.read');",
-    covers: [S.useCanRawPermission],
+    code: "const allowed = useCanMutate('createUser');",
+    covers: [S.useCanMutateRawKey],
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #114',
   },
   {
-    id: 'raw-permission-can-array',
+    id: 'raw-mutation-key-can-array',
     file: PROBES.logic,
-    code: "const allowed = gate.canAll(['crm.contact.read']);",
-    covers: [S.canRawPermission],
+    code: "const allowed = gate.can(['createUser']);",
+    covers: [S.canRawMutationKey],
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #114',
   },
   {
-    id: 'raw-permission-jsx-prop',
+    id: 'raw-mutation-key-jsx-prop',
     file: PROBES.component,
-    code: 'const A = () => <Guard permission="crm.contact.read" />;',
-    covers: [S.permissionPropRaw],
-    expect: 'fail',
-    rule: 'no-restricted-syntax',
-    tag: 'issue #114',
-  },
-  {
-    id: 'raw-permission-route-meta',
-    file: PROBES.logic,
-    code: "const route = { meta: { permission: 'crm.contact.read' } };",
-    covers: [S.routeMetaPermissionRaw],
+    code: 'const A = () => <Guard mutation="createUser" />;',
+    covers: [S.mutationPropRaw],
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #114',

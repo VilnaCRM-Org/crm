@@ -7,7 +7,7 @@ import sessionFactory from './session-factory';
 
 // "Nothing has been hydrated yet" has to be distinguishable from "hydrated from the
 // anonymous (null) token": reusing `null` for both would make the sync that clears a
-// signed-out token a no-op, leaving the previous principal and permissions live.
+// signed-out token a no-op, leaving the previous principal and its allowed mutations live.
 const NO_SOURCE = Symbol('access-session/no-source');
 
 export class AccessSession {

@@ -17,19 +17,17 @@ route set discoverable (audit, nav, sitemap).
 
 ## Files
 
-| File                            | Responsibility                                                |
-| ------------------------------- | ------------------------------------------------------------- |
-| `types/app-route.ts`            | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)   |
-| `types/route-module.ts`         | `RouteModule` (`id` + `routes`) — a module's contract shape   |
-| `app-routes.ts`                 | The app shell's own contract (home + 404)                     |
-| `registry.ts`                   | Collects every module contract into one list                  |
-| `route-validator.ts`            | Rejects duplicate module ids / routes with no path or index   |
-| `route-mapper.tsx`              | Maps one contract route → a `react-router` route (lazy)       |
-| `route-composer.tsx`            | Validates, partitions by guard, assembles the tree            |
-| `permission-branch-builder.tsx` | Groups protected routes by `meta.permission` (issue #114)     |
-| `permission-route.tsx`          | Gates a branch: renders the page, or the access-denied panel  |
-| `route-paths.ts`                | Canonical URL constants — one key per route, read by the gate |
-| `routes.tsx`                    | Wiring only: `createBrowserRouter(composer.compose(...))`     |
+| File                    | Responsibility                                                |
+| ----------------------- | ------------------------------------------------------------- |
+| `types/app-route.ts`    | `AppRouteObject` (path/index, lazy `load`, `guard`, `meta`)   |
+| `types/route-module.ts` | `RouteModule` (`id` + `routes`) — a module's contract shape   |
+| `app-routes.ts`         | The app shell's own contract (home + 403 + 404)               |
+| `registry.ts`           | Collects every module contract into one list                  |
+| `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index   |
+| `route-mapper.tsx`      | Maps one contract route → a `react-router` route (lazy)       |
+| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree            |
+| `route-paths.ts`        | Canonical URL constants — one key per route, read by the gate |
+| `routes.tsx`            | Wiring only: `createBrowserRouter(composer.compose(...))`     |
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
@@ -42,7 +40,7 @@ path (mobile Lighthouse budget).
 interface RouteCommon {
   readonly load: () => Promise<{ default: ComponentType }>; // per-route code split
   readonly guard?: 'protected' | 'public'; // top-level only; resolved by the composer
-  readonly meta?: { titleKey?: string; permission?: Permission };
+  readonly meta?: { titleKey?: string };
 }
 interface IndexRoute extends RouteCommon {
   readonly index: true; // a leaf — no path, no children
@@ -61,13 +59,11 @@ applies to a module's **top-level** routes only; nested children inherit their
 parent's protection context, so declaring a guard on a child is rejected by the
 `RouteValidator` (it would otherwise render outside `ProtectedRoute`).
 
-A protected route may also declare `meta.permission` (issue #114). The composer
-groups those routes by permission and nests each group under a `PermissionRoute`
-**inside** `AppLayout`, so a refusal renders the access-denied panel in the page's
-own `main` landmark. Two contract errors the `RouteValidator` rejects, because the
-composer would otherwise drop the declaration silently and ship an ungated route:
-a permission on a nested child, and a permission on a route that is not
-`guard: 'protected'`.
+`guard` is the **only** gate a route declares. Authorization is not a routing
+concern (issue #114): what a principal may do is decided by the server, read back
+through the mutation gate, and applied by the control that would invoke the
+mutation — never from route metadata. A route therefore carries no permission,
+and `/access-denied` is a plain public route rendering the refusal panel.
 
 ## Adding a page
 
@@ -83,9 +79,7 @@ a permission on a nested child, and a permission on a route that is not
          path: ROUTE_PATHS.customers,
          guard: 'protected',
          load: () => import('./customers'), // own dynamic chunk
-         // Permissions are typed constants from the catalog, never raw strings —
-         // an ESLint gate rejects a literal here (issue #114).
-         meta: { titleKey: 'customers.title', permission: PERMISSIONS.contactRead },
+         meta: { titleKey: 'customers.title' },
        },
      ],
    };
@@ -96,17 +90,18 @@ a permission on a nested child, and a permission on a route that is not
 
 3. Add any new URL constant to `route-paths.ts`.
 
-4. To gate the page, add `meta.permission` from
-   [`@/lib/access/permission-catalog`](../lib/access/permission-catalog.ts) — see
-   [`docs/access-control.md`](../../docs/access-control.md).
+4. To gate what the page can _do_, wrap the acting control in `<RequireMutation>`
+   with a `MUTATION_KEYS` constant — see
+   [`docs/access-control.md`](../../docs/access-control.md). There is nothing to
+   declare on the route itself.
 
 5. Add the route's browser-coverage rows to `tests/e2e/route-coverage.tsv`
    naming the spec(s) that exercise it. `make check-e2e-route-coverage` (first
    step of the `e2e testing` job) fails on a route key that has neither a
    covering spec nor an allowlist entry with a stated reason (issue #169).
 
-Never edit `routes.tsx`, `route-composer.tsx`, `route-mapper.tsx`, or
-`permission-branch-builder.tsx` to add a page.
+Never edit `routes.tsx`, `route-composer.tsx`, or `route-mapper.tsx` to add a
+page.
 
 ## Enforcement
 

@@ -1,11 +1,11 @@
 import accessState from '@/lib/access/access-state';
 import auditCore from '@/lib/access/audit-core';
+import { MUTATION_KEYS } from '@/lib/access/mutation-catalogue';
 import noopAuditSink from '@/lib/access/noop-audit-sink';
-import { PERMISSIONS, ROLES } from '@/lib/access/permission-catalog';
 import correlationIdSource from '@/lib/observability/correlation-id-source';
 import type { AuditSink } from '@/lib/types/access/audit';
 import AuditLogger from '@/services/access/audit-logger';
-import { buildPrincipal } from '@tests/builders';
+import { SAMPLE_ROLES, buildPrincipal } from '@tests/builders';
 
 const FROZEN_AT = '2026-02-03T04:05:06.007Z';
 
@@ -32,7 +32,7 @@ describe('AuditLogger', () => {
   });
 
   it('reaches the sink with the event stamped for the signed-in principal', () => {
-    const principal = buildPrincipal({ roles: [ROLES.member] });
+    const principal = buildPrincipal({ roles: [SAMPLE_ROLES.member] });
     accessState.setSession(principal, {});
 
     logger.log({ type: 'login' });
@@ -61,15 +61,15 @@ describe('AuditLogger', () => {
   });
 
   it('forwards the metadata of the event untouched', () => {
-    const principal = buildPrincipal({ roles: [ROLES.viewer] });
+    const principal = buildPrincipal({ roles: [SAMPLE_ROLES.viewer] });
     accessState.setSession(principal, {});
 
-    logger.log({ type: 'permission_denied', metadata: { permission: PERMISSIONS.contactWrite } });
+    logger.log({ type: 'permission_denied', metadata: { mutation: MUTATION_KEYS.createUser } });
 
     expect(record).toHaveBeenCalledWith({
       type: 'permission_denied',
       metadata: {
-        permission: PERMISSIONS.contactWrite,
+        mutation: MUTATION_KEYS.createUser,
         correlationId: correlationIdSource.current(),
       },
       at: FROZEN_AT,
@@ -88,11 +88,11 @@ describe('AuditLogger', () => {
   });
 
   it('stamps the principal that is current at call time, not at construction time', () => {
-    const first = buildPrincipal({ roles: [ROLES.member] });
+    const first = buildPrincipal({ roles: [SAMPLE_ROLES.member] });
     accessState.setSession(first, {});
     logger.log({ type: 'login' });
 
-    const second = buildPrincipal({ roles: [ROLES.admin] });
+    const second = buildPrincipal({ roles: [SAMPLE_ROLES.admin] });
     accessState.setSession(second, {});
     logger.log({ type: 'tenant_switch', metadata: { tenantId: second.tenantId } });
 

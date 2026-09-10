@@ -1,16 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import type { AuditSubject } from '@/lib/types/access/audit';
 import type { FeatureFlag, FeatureFlagState } from '@/lib/types/access/feature-flag';
-import type { Role } from '@/lib/types/access/permission';
 import type { Principal, TenantRef } from '@/lib/types/access/principal';
 import type { SessionClaims, SessionInput, SessionSnapshot } from '@/lib/types/access/session';
 
-import auditCore from './audit-core';
 import { FEATURE_FLAG_DEFAULTS } from './feature-flag-catalog';
-import { DEFAULT_ROLE } from './permission-catalog';
-import permissionResolver from './permission-resolver';
-import SERVER_ROLE_MAP from './role-mapping';
 import sessionClaimsReader from './session-claims-reader';
 
 const FALLBACK_TENANT_ID = 'default';
@@ -24,18 +18,15 @@ export class SessionFactory {
 
   private toPrincipal(claims: SessionClaims | null, input: SessionInput): Principal {
     const tenants = this.toTenants(claims);
-    const subject = {
-      principalId: this.toIdentity(claims),
-      tenantId: this.toActiveTenant(claims, tenants),
-    };
-    const roles = this.toRoles(claims?.roles, subject);
     return {
-      id: subject.principalId,
+      id: this.toIdentity(claims),
       email: claims?.email ?? input.email ?? '',
-      roles,
-      permissions: permissionResolver.expand(roles),
+      roles: claims?.roles ?? [],
+      // Deliberately empty: the allowed set is *supplied* by MutationAccessDispatcher, never
+      // derived here. Seeding it from the claims would put a second, locally-computed source
+      // of truth back in front of the resolver — the shape issue #114 exists to remove.
       allowedMutations: [],
-      tenantId: subject.tenantId,
+      tenantId: this.toActiveTenant(claims, tenants),
       tenants,
     };
   }
@@ -68,23 +59,6 @@ export class SessionFactory {
   ): string {
     const claimed = claims?.tenantId;
     return tenants.some((tenant) => tenant.id === claimed) ? (claimed as string) : tenants[0].id;
-  }
-
-  private toRoles(claimed: readonly string[] | undefined, subject: AuditSubject): readonly Role[] {
-    const resolved = (claimed ?? []).reduce<Role[]>((roles, name) => {
-      const role = this.resolveRole(name, subject);
-      if (role !== null) roles.push(role);
-      return roles;
-    }, []);
-    return resolved.length === 0 ? [DEFAULT_ROLE] : resolved;
-  }
-
-  private resolveRole(name: string, subject: AuditSubject): Role | null {
-    const mapped = SERVER_ROLE_MAP[name];
-    if (mapped !== undefined) return mapped;
-    if (permissionResolver.isRole(name)) return name;
-    auditCore.log({ type: 'access_role_unmapped', metadata: { role: name }, subject });
-    return null;
   }
 
   private toFlags(claims: SessionClaims | null): FeatureFlagState {

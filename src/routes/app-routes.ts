@@ -1,5 +1,3 @@
-import { PERMISSIONS } from '@/lib/access/permission-catalog';
-
 import ROUTE_PATHS from './route-paths';
 import type { RouteModule } from './types/route-module';
 
@@ -10,7 +8,11 @@ const appRoutes: RouteModule = {
       index: true,
       guard: 'protected',
       load: () => import(/* webpackChunkName: "button-example" */ '@/button-example'),
-      meta: { permission: PERMISSIONS.appHome },
+    },
+    {
+      path: ROUTE_PATHS.accessDenied,
+      guard: 'public',
+      load: () => import(/* webpackChunkName: "access-denied" */ '@/components/access-denied'),
     },
     {
       path: ROUTE_PATHS.notFound,
