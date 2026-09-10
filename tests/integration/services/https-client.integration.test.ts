@@ -32,7 +32,7 @@ const createClient = (): FetchHttpsClient =>
   );
 
 describe('HttpRequestConfigBuilder header and body-init resolution', () => {
-  const builder = new HttpRequestConfigBuilder(correlationIdProvider);
+  const builder = new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation);
 
   it('keeps a caller-supplied Accept header instead of defaulting to JSON', () => {
     const config = builder.create('GET', undefined, { Accept: 'text/csv' });
