@@ -122,9 +122,10 @@ describe('security-event chain (integration)', () => {
       Error,
       { extra: Record<string, unknown> },
     ];
+    // `X-Request-Id` is absent by design: `observabilityCore.withCorrelation` attaches it only
+    // when a request id is in flight, and an auth failure raised from the store is not inside one.
     expect(Object.keys(hint.extra).sort()).toEqual([
       'X-Correlation-Id',
-      'X-Request-Id',
       'category',
       'event',
       'failureCount',
