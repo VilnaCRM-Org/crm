@@ -187,6 +187,23 @@ branch-protection required checks for `main`; until they are, they report but do
 add `scorecard / analysis` — it has no `pull_request` trigger, so requiring it would leave every PR
 waiting forever on a check that never reports.
 
+The same standalone-Docker shape gates the supply chain (issue #140). `supply-chain security`
+runs `make scan-secrets` (gitleaks over the full git history, then a seeded-credential positive
+control that fails if the scanner detects nothing), `make scan-dependencies` (Trivy over the
+production closure of `bun.lock`) and `make scan-image` (Trivy over the built `production`
+image), each blocking on a fixable HIGH/CRITICAL finding; `sbom` runs `make sbom` and uploads
+the CycloneDX documents, attaching them to every published release. Reproduce any of them with
+the same target — the Makefile owns the digest pins, severity floor and flags, so the local run
+and CI cannot disagree. `make scan-secrets` needs a full-depth clone: the job checks out with
+`fetch-depth: 0`, and a shallow clone (`--depth 1`, or a default GitHub checkout) scans only the
+tip and passes on a secret that was committed and later removed. The weekly
+`make report-dependency-audit` scans the full lockfile, dev tooling included, into one
+`dependency-audit` tracking issue; it is reporting, not blocking, and never runs on a pull
+request. Fix a finding by updating the dependency, rebuilding on a patched base image, or
+removing and rotating the secret — never with a `.trivyignore`, a widened `.gitleaks.toml`
+allowlist, or a lowered severity. Which of these jobs belong in the required list is in
+"Required status checks (maintainer action)" below.
+
 ### Scheduled runs and extra scans
 
 Some checks do work outside the pull-request lane, so it is worth knowing they exist before you
@@ -388,6 +405,13 @@ checks:
 - `contract testing / OpenAPI breaking-change gate` (the job in `contract-testing.yml` — issue
   #177; `contract drift` and `nightly flake audit` must not be added, because neither has a
   `pull_request` trigger)
+- `supply-chain security / secret scan`
+- `supply-chain security / dependency scan`
+- `supply-chain security / image scan`
+- `sbom / generate` (with the three above, the issue-#140 jobs that run on every pull request;
+  the same workflows' `full-tree dependency audit` and `attach to release` jobs are skipped on a
+  pull request by their `if:`, and a skipped job satisfies a required check, so requiring them
+  would gate nothing)
 
 The first two are the check-run names GitHub reports, which is what the required-checks search box
 matches: a job's check-run name is its `name:` when it declares one, and its job id otherwise.

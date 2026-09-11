@@ -109,22 +109,36 @@ ENV RCA_BIN=/usr/local/bin/rust-code-analysis-cli
 WORKDIR /app
 
 
+FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS serve-tools
+
+RUN npm install -g serve@14.2.6
+
+
 # -------- Static Server Stage --------
-FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21  AS serve-base
+FROM public.ecr.aws/docker/library/alpine:3.21 AS serve-base
 
 ARG CURL_VERSION=8.14.1-r2
+ARG LIBSTDCPP_VERSION=14.2.0-r4
 
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV NO_UPDATE_CHECK=1
+RUN apk add --no-cache \
+    curl=${CURL_VERSION} \
+    libgcc=${LIBSTDCPP_VERSION} \
+    libstdc++=${LIBSTDCPP_VERSION} && \
+    addgroup -g 1000 node && \
+    adduser -u 1000 -G node -s /bin/sh -D node && \
+    mkdir -p /app && chown -R node:node /app
+COPY --from=serve-tools /usr/local/bin/node /usr/local/bin/node
+COPY --from=serve-tools /usr/local/lib/node_modules/serve /usr/local/lib/node_modules/serve
+RUN ln -s ../lib/node_modules/serve/build/main.js /usr/local/bin/serve
 # Runtime configuration renderer (issue #145): rewrites the inline app-config block in the built
 # HTML shell from APP_CONFIG_* variables at container start, so one image serves any environment.
 # Copied before the bundle so a code change does not invalidate this layer, and vice versa.
 COPY --chown=node:node scripts/docker-entrypoint.sh scripts/render-app-config.js ./scripts/
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
-RUN apk add --no-cache curl=${CURL_VERSION} && \
-    npm install -g serve@14.2.0 && \
-    mkdir -p /app && chown -R node:node /app
 COPY --chown=node:node serve.json ./serve.json
 
 EXPOSE 3001

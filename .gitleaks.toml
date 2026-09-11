@@ -1,0 +1,13 @@
+title = "VilnaCRM CRM secret-scanning policy"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Upstream OpenAPI documentation examples inside the generated contract artifact"
+paths = ['''^src/api/generated/openapi\.ts$''']
+
+[[allowlists]]
+description = "The sha256 content checksum that pins the Mockoon OpenAPI spec download"
+regexTarget = "line"
+regexes = ['''ARG OPENAPI_SPEC_SHA256=[0-9a-f]{64}''']

@@ -9,7 +9,8 @@
 ## Possibilities
 
 - Modern JavaScript stack for services: [React](https://react.dev/)
-- Extensive CI checks (security, style, static analysis, Snyk, DeepScan) to maintain code quality
+- Extensive CI checks (static analysis, tests, performance budgets, supply-chain scanning) — the
+  full list is in [CI checks](#ci-checks)
 - Configured testing tools: [Playwright](https://playwright.dev/), [Jest](https://jestjs.io/)
 - This template is based on [bulletproof-react](https://github.com/alan2207/bulletproof-react/tree/master)
 - Much more!
@@ -429,6 +430,65 @@ and before you ask a question,
 [Tests](https://github.com/VilnaCRM-Org/crm/actions)
 
 If this isn't passing, is there something you can do to help?
+
+## CI checks
+
+Every workflow under `.github/workflows/` is listed here by its `name:`, so this table and the
+pipeline cannot disagree — `tests/unit/tooling/supply-chain-gates.test.ts` fails the build when
+a row names a workflow that does not exist.
+
+### Pull-request checks
+
+| Workflow                   | What it enforces                                       |
+| -------------------------- | ------------------------------------------------------ |
+| `static testing`           | `make lint`, ADR drift, and fresh generated contracts  |
+| `unit testing`             | Jest unit suites at 100% coverage thresholds           |
+| `integration testing`      | Jest integration suite over the DI graph               |
+| `e2e testing`              | Playwright E2E, mobile touch lane, route coverage      |
+| `visual tests`             | Playwright visual regression against baselines         |
+| `mutation testing`         | Sharded Stryker run gated at 100% (also on push)       |
+| `performance testing`      | Lighthouse desktop and mobile budgets                  |
+| `bundle size`              | Gzip budgets per entrypoint and chunk                  |
+| `memory leak testing`      | memlab scenarios, fail-closed on a leak                |
+| `load testing`             | k6 latency, error-rate and check-pass thresholds       |
+| `contract testing`         | Semantic OpenAPI breaking-change gate on a pin bump    |
+| `dependency cruiser`       | Architecture boundary rules                            |
+| `rust-code-analysis`       | Complexity, size, Halstead and maintainability metrics |
+| `eslint-suppressions`      | No inline lint suppressions in the tree                |
+| `gate ratchet`             | No silent relaxation of a guarded threshold            |
+| `security testing`         | CodeQL `security-extended` and the auth-seed gate      |
+| `supply-chain security`    | gitleaks history scan, Trivy on dependencies and image |
+| `sbom`                     | CycloneDX SBOMs for the image and dependencies         |
+| `workflow security`        | zizmor audit of the workflows themselves               |
+| `commitlint`               | Conventional-commit contract incl. the squash header   |
+| `format yaml files`        | Container-free Prettier check over YAML                |
+| `bats testing`             | Bats contracts for the Makefile and CI scripts         |
+| `scaffold testing`         | A generated module clears every static gate            |
+| `storybook testing`        | Storybook builds                                       |
+| `dockerfile performance`   | Image size budget, hadolint and dive efficiency        |
+| `codecov`                  | Coverage upload                                        |
+| `image optimization`       | Lossless compression of committed images               |
+| `sandbox`                  | Sandbox environment creation via AWS CodePipeline      |
+| `Trigger Sandbox Deletion` | Sandbox environment teardown                           |
+
+### Scheduled, push and release monitors
+
+| Workflow                                | What it enforces                                 |
+| --------------------------------------- | ------------------------------------------------ |
+| `mutation testing (scheduled full)`     | Weekly cold, unsharded Stryker baseline          |
+| `security testing`                      | Weekly CodeQL re-scan and the `main` baseline    |
+| `supply-chain security`                 | Weekly full-tree dependency audit to an issue    |
+| `sbom`                                  | SBOMs attached to every published release        |
+| `scorecard`                             | Weekly OpenSSF Scorecard posture                 |
+| `contract drift`                        | Weekly pin-vs-upstream check to a tracking issue |
+| `docs link audit`                       | Weekly remote-link audit of the documentation    |
+| `nightly flake audit`                   | Nightly Playwright retries under a zero budget   |
+| `main verification`                     | Lint, codegen check and unit tests after a merge |
+| `generate changelog and create release` | Changelog, version bump, tag and GitHub release  |
+| `sentry release and source maps`        | Sentry release with uploaded source maps         |
+
+Required branch-protection checks and the repository settings that back them are recorded in
+[`docs/governance/branch-protection.md`](docs/governance/branch-protection.md).
 
 ## Security
 
