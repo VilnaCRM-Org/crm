@@ -1,0 +1,91 @@
+name: sbom
+
+on:
+  pull_request:
+    branches: ['main']
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Published release tag to (re)attach the SBOMs to; empty generates only'
+        required: false
+        default: ''
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag || '' }}
+
+jobs:
+  generate:
+    name: generate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          ref: ${{ env.RELEASE_TAG || github.ref }}
+          persist-credentials: false
+
+      - name: Generate the CycloneDX SBOMs
+        run: make sbom
+
+      - name: Upload the SBOMs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sbom
+          path: sbom/*.cdx.json
+          if-no-files-found: error
+          retention-days: 90
+
+  attach:
+    name: attach to release
+    if: (github.event.release.tag_name || inputs.release_tag || '') != ''
+    needs: generate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Download the SBOMs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: sbom
+          path: sbom
+
+      - name: Attach the SBOMs to the release
+        run: gh release upload "$RELEASE_TAG" sbom/*.cdx.json --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+
+  report:
+    name: report a release without SBOM
+    if: failure() && (github.event.release.tag_name || inputs.release_tag || '') != ''
+    needs: [generate, attach]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      - name: File or update the tracking issue
+        run: sh scripts/ci/report-sbom-failure.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SBOM_RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          SBOM_FAILURE_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

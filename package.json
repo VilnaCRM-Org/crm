@@ -5,10 +5,8 @@
   "private": true,
   "dependencies": {
     "@apollo/client": "^3.13.8",
-    "@apollo/server": "^4.12.2",
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.0",
-    "@module-federation/enhanced": "^0.22.0",
     "@mui/icons-material": "^7.3.1",
     "@mui/material": "^7.3.1",
     "@mui/system": "^7.3.1",
@@ -23,16 +21,15 @@
     "react-i18next": "^17.0.11",
     "react-router": "^7.18.2",
     "reflect-metadata": "^0.2.2",
-    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "tslib": "^2.8.1",
     "tsyringe": "^4.10.0",
     "uuid": "^11.1.0",
     "web-vitals": "^3.5.2",
-    "winston": "^3.17.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@apollo/server": "^4.12.2",
     "@babel/core": "^7.27.1",
     "@babel/plugin-proposal-decorators": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
@@ -51,6 +48,7 @@
     "@memlab/api": "^2.0.4",
     "@memlab/heap-analysis": "^2.0.4",
     "@microsoft/api-extractor": "^7.58.11",
+    "@module-federation/enhanced": "^0.22.0",
     "@module-federation/rsbuild-plugin": "^0.22.0",
     "@playwright/test": "^1.61.1",
     "@rsbuild/core": "2.1.7",
@@ -124,9 +122,11 @@
     "style-loader": "^3.3.4",
     "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
+    "tsconfig-paths-webpack-plugin": "^4.2.0",
     "typescript": "^5.8.2",
     "wait-on": "^9.0.10",
     "webpack-bundle-analyzer": "^5.3.1",
+    "winston": "^3.17.0",
     "yaml": "^2.9.0"
   },
   "engines": {
