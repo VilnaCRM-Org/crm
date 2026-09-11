@@ -36,27 +36,5 @@
       "Bash(docker compose exec dev bash:*)",
       "Bash(docker compose exec dev git:*)"
     ]
-  },
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh scripts/agent-session-start.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "resume",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "sh scripts/agent-session-start.sh"
-          }
-        ]
-      }
-    ]
   }
 }

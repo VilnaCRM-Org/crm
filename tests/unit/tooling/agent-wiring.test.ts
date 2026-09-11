@@ -29,21 +29,18 @@ describe('agent process wiring (issue #146)', () => {
     });
   });
 
-  it('registers the session-start hook for new and resumed sessions', () => {
+  it('keeps repository-controlled hooks out of the committed Claude Code settings', () => {
     const settings = JSON.parse(readRepoFile('.claude/settings.json')) as {
       permissions: { allow: string[] };
-      hooks: { SessionStart: { matcher: string; hooks: { type: string; command: string }[] }[] };
+      hooks?: unknown;
     };
-    const matchers = settings.hooks.SessionStart.map((entry) => entry.matcher);
 
-    expect(matchers).toEqual(expect.arrayContaining(['startup', 'resume']));
-    settings.hooks.SessionStart.forEach((entry) =>
-      expect(entry.hooks).toEqual([{ type: 'command', command: `sh ${HOOK_SCRIPT}` }])
-    );
+    expect(settings.hooks).toBeUndefined();
     expect(settings.permissions.allow).toContain('Bash(make:*)');
+    expect(readRepoFile('CLAUDE.md')).toContain(`sh ${HOOK_SCRIPT}`);
   });
 
-  it('ships a hook that reports and never blocks', () => {
+  it('ships a diagnostic that reports and never blocks', () => {
     const script = readRepoFile(HOOK_SCRIPT);
 
     expect(script.startsWith('#!/usr/bin/env sh\n')).toBe(true);
