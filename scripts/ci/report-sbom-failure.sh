@@ -6,18 +6,26 @@ SBOM_FAILURE_LABEL="${SBOM_FAILURE_LABEL:-sbom-missing}"
 REPORT_DIR="${SBOM_FAILURE_REPORT_DIR:-reports/sbom}"
 BODY_FILE="$REPORT_DIR/issue-body.md"
 MARKER="release:$SBOM_RELEASE_TAG"
+RUN_LINE=''
+if [ -n "${SBOM_FAILURE_RUN_URL:-}" ]; then
+  RUN_LINE="Failed run: $SBOM_FAILURE_RUN_URL"
+fi
 
 mkdir -p "$REPORT_DIR"
-{
-  printf 'Release `%s` was published without its CycloneDX SBOMs: the `sbom` workflow failed\n' "$SBOM_RELEASE_TAG"
-  printf 'before the documents could be attached.\n\n'
-  printf 'Retry by re-running the workflow against the tag:\n\n'
-  printf '```bash\ngh workflow run sbom.yml -f release_tag=%s\n```\n\n' "$SBOM_RELEASE_TAG"
-  if [ -n "${SBOM_FAILURE_RUN_URL:-}" ]; then
-    printf 'Failed run: %s\n\n' "$SBOM_FAILURE_RUN_URL"
-  fi
-  printf '<!-- %s -->\n' "$MARKER"
-} > "$BODY_FILE"
+cat > "$BODY_FILE" <<EOF
+Release \`$SBOM_RELEASE_TAG\` was published without its CycloneDX SBOMs: the \`sbom\` workflow
+failed before the documents could be attached.
+
+Retry by re-running the workflow against the tag:
+
+\`\`\`bash
+gh workflow run sbom.yml -f release_tag=$SBOM_RELEASE_TAG
+\`\`\`
+
+$RUN_LINE
+
+<!-- $MARKER -->
+EOF
 
 AUDIT_ISSUE_LABEL="$SBOM_FAILURE_LABEL" \
 AUDIT_ISSUE_TITLE="Release $SBOM_RELEASE_TAG is missing its SBOM" \
