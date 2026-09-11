@@ -478,7 +478,7 @@ a row names a workflow that does not exist.
 | `mutation testing (scheduled full)`     | Weekly cold, unsharded Stryker baseline          |
 | `security testing`                      | Weekly CodeQL re-scan and the `main` baseline    |
 | `supply-chain security`                 | Weekly full-tree dependency audit to an issue    |
-| `sbom`                                  | SBOMs attached to every published release        |
+| `sbom`                                  | SBOMs attached after release, tracked on failure |
 | `scorecard`                             | Weekly OpenSSF Scorecard posture                 |
 | `contract drift`                        | Weekly pin-vs-upstream check to a tracking issue |
 | `docs link audit`                       | Weekly remote-link audit of the documentation    |

@@ -540,17 +540,26 @@ loads.
 **SBOMs.** The `sbom` workflow runs `make sbom` on every pull request, on `workflow_dispatch` and
 on `release: published`: it builds the `production` image and writes CycloneDX JSON for the image
 (`sbom/crm-image.cdx.json`) and the production lockfile closure (`sbom/crm-dependencies.cdx.json`),
-uploaded as a 90-day workflow artifact. Its `attach to release` job runs only on the release event
-and `gh release upload`s both documents, so every published release carries its inventory. The
+uploaded as a 90-day workflow artifact. Its `attach to release` job runs on the release event and
+on a `workflow_dispatch` that names a `release_tag`, and `gh release upload`s both documents. The
 release event reaches the workflow because `autorelease.yml` publishes with a GitHub App token; a
 release created with `GITHUB_TOKEN` triggers no workflow at all. The workflow restores no cache
 on purpose — a restored cache on a job that writes release assets is the cache-poisoning shape
 zizmor flags.
 
+Attachment is **best effort after publication**, not a gate in front of it: the release exists
+before this workflow starts, so a failed `generate` or `attach` leaves a published release with no
+inventory. That state is loud rather than silent — the `report a release without SBOM` job files
+or updates one `sbom-missing` tracking issue (`scripts/ci/report-sbom-failure.sh`, through the
+shared upsert helper) naming the tag and the retry command,
+`gh workflow run sbom.yml -f release_tag=<tag>`, which regenerates the documents from that tag
+and attaches them. Moving generation in front of `gh release create` belongs to the release
+pipeline repair tracked in issue #138.
+
 Add `supply-chain security / secret scan`, `supply-chain security / dependency scan`,
 `supply-chain security / image scan` and `sbom / generate` to the branch-protection required
-checks; until then they report but do not block. Do not add `full-tree dependency audit` or
-`attach to release` — neither runs on a pull request.
+checks; until then they report but do not block. Do not add `full-tree dependency audit`,
+`attach to release` or `report a release without SBOM` — none of them runs on a pull request.
 
 **Honest scope.** Artifact signing and build provenance (cosign, SLSA) are **not** implemented;
 the issue allows them as a follow-up phase and nothing here claims them. The dependency scan
@@ -755,9 +764,12 @@ Two constraints in this repository are easy to trip over:
   gets its commands under `.claude/commands/`, other agent platforms under `.agents/skills` —
   `bmalph upgrade` refreshes them, `bmalph doctor` checks them, and all three are gitignored.
   A fresh clone has none of them until `bmalph init` runs.
-- `.claude/settings.json` registers a SessionStart hook, `scripts/agent-session-start.sh`, that
-  reports Docker, dev-container and Node status when a Claude Code session starts or resumes.
-  It only reports and always exits 0, so it never blocks a session.
+- `scripts/agent-session-start.sh` reports Docker, dev-container, Node and BMAD-install status
+  for an agent session; it only reports and always exits 0. Run it on demand
+  (`sh scripts/agent-session-start.sh`) or register it as a `SessionStart` hook in your personal
+  `~/.claude/settings.json`. It is deliberately **not** wired into the committed
+  `.claude/settings.json`: a project-level hook runs repository-controlled shell automatically in
+  every trusted checkout, so a malicious branch could execute host commands on session start.
 - `.claude/skills`: frontend project skills for implementation, quality,
   testing, review, documentation, observability, and performance guidance.
 - `~/.claude/skills` (global, personal): UI/design/motion/a11y skills (from

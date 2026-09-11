@@ -191,8 +191,12 @@ The same standalone-Docker shape gates the supply chain (issue #140). `supply-ch
 runs `make scan-secrets` (gitleaks over the full git history, then a seeded-credential positive
 control that fails if the scanner detects nothing), `make scan-dependencies` (Trivy over the
 production closure of `bun.lock`) and `make scan-image` (Trivy over the built `production`
-image), each blocking on a fixable HIGH/CRITICAL finding; `sbom` runs `make sbom` and uploads
-the CycloneDX documents, attaching them to every published release. Reproduce any of them with
+image); the dependency and image scans block on a fixable HIGH/CRITICAL finding, while the
+secret scan fails on any detected secret or a failed positive control. `sbom` runs `make sbom`
+and uploads
+the CycloneDX documents, attaching them to a release after it is published (a failed attachment
+files an `sbom-missing` tracking issue; retry with `gh workflow run sbom.yml -f release_tag=<tag>`).
+Reproduce any of them with
 the same target — the Makefile owns the digest pins, severity floor and flags, so the local run
 and CI cannot disagree. `make scan-secrets` needs a full-depth clone: the job checks out with
 `fetch-depth: 0`, and a shallow clone (`--depth 1`, or a default GitHub checkout) scans only the

@@ -35,9 +35,10 @@ Five jobs must **not** be required, because a check that never reports on a pull
 leaves every pull request pending forever or gates nothing. `contract drift`,
 `nightly flake audit`, and `scorecard / analysis` have no `pull_request` trigger, so a pull
 request would wait on a status that never arrives.
-`supply-chain security / full-tree dependency audit` and `sbom / attach to release` do trigger
-on the workflow's pull-request run but skip themselves by their own `if:` — a skipped check
-counts as satisfied, so requiring either would imply a gate that does not exist. The audit job
+`supply-chain security / full-tree dependency audit`, `sbom / attach to release` and
+`sbom / report a release without SBOM` do trigger on the workflow's pull-request run but skip
+themselves by their own `if:` — a skipped check counts as satisfied, so requiring any of them
+would imply a gate that does not exist. The audit job
 is skipped on purpose: the dev-tooling advisories it reports go to a `dependency-audit` tracking
 issue rather than a red check.
 

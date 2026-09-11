@@ -171,13 +171,27 @@ describe('sbom workflow (issue #140)', () => {
     expect(workflow).toContain('if-no-files-found: error');
   });
 
-  it('writes release assets only from the release event and never restores a cache', () => {
-    const attach = workflow.slice(workflow.indexOf('  attach:'));
+  it('writes release assets only for a named release and never restores a cache', () => {
+    const attach = workflow.slice(workflow.indexOf('  attach:'), workflow.indexOf('  report:'));
+    const releaseOnly = "(github.event.release.tag_name || inputs.release_tag || '') != ''";
 
-    expect(attach).toMatch(/^ {4}if: github\.event_name == 'release'$/m);
+    expect(attach).toContain(`    if: ${releaseOnly}\n`);
     expect(attach).toMatch(/permissions:\n {6}contents: write/);
     expect(attach).toContain('gh release upload "$RELEASE_TAG" sbom/*.cdx.json');
     expect(workflow).not.toContain('actions/cache');
+  });
+
+  it('files a tracking issue when a release ends up without its SBOM, with a retry path', () => {
+    const report = workflow.slice(workflow.indexOf('  report:'));
+
+    expect(report).toMatch(/^ {4}if: failure\(\) && \(github\.event\.release\.tag_name/m);
+    expect(report).toMatch(/needs: \[generate, attach\]/);
+    expect(report).toMatch(/permissions:\n {6}contents: read\n {6}issues: write/);
+    expect(report).toContain('run: sh scripts/ci/report-sbom-failure.sh');
+    expect(workflow).toMatch(/workflow_dispatch:\n {4}inputs:\n {6}release_tag:/);
+    expect(readRepoFile('scripts/ci/report-sbom-failure.sh')).toContain(
+      'gh workflow run sbom.yml -f release_tag='
+    );
   });
 });
 

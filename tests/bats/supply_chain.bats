@@ -180,3 +180,30 @@ write_trivy_json() {
   [ "$status" -eq 1 ]
   assert_output_contains 'exited 127 on a seeded credential instead of reporting it'
 }
+
+@test "report-sbom-failure files one tracking issue per release tag with the retry command" {
+  cp "$PROJECT_ROOT/scripts/ci/report-sbom-failure.sh" "$SANDBOX/scripts/ci/"
+  export SBOM_RELEASE_TAG=v9.9.9
+  export SBOM_FAILURE_REPORT_DIR="$BATS_TEST_TMPDIR/sbom-report"
+  export SBOM_FAILURE_RUN_URL='https://example.invalid/runs/1'
+
+  run env PATH="$STUB_BIN_DIR:$PATH" sh "$SANDBOX/scripts/ci/report-sbom-failure.sh"
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gh issue create --label sbom-missing --title Release v9.9.9 is missing its SBOM'
+  run grep -F 'gh workflow run sbom.yml -f release_tag=v9.9.9' "$SBOM_FAILURE_REPORT_DIR/issue-body.md"
+  [ "$status" -eq 0 ]
+  run grep -F '<!-- release:v9.9.9 -->' "$SBOM_FAILURE_REPORT_DIR/issue-body.md"
+  [ "$status" -eq 0 ]
+
+  reset_command_log
+  export FAKE_GH_ISSUE_NUMBER=7
+  export FAKE_GH_ISSUE_BODY='<!-- release:v9.9.9 -->'
+  run env PATH="$STUB_BIN_DIR:$PATH" sh "$SANDBOX/scripts/ci/report-sbom-failure.sh"
+  [ "$status" -eq 0 ]
+  assert_output_contains 'issue #7 already records this state; staying quiet'
+
+  unset SBOM_RELEASE_TAG
+  run env PATH="$STUB_BIN_DIR:$PATH" sh "$SANDBOX/scripts/ci/report-sbom-failure.sh"
+  [ "$status" -ne 0 ]
+  assert_output_contains 'SBOM_RELEASE_TAG is required'
+}

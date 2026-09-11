@@ -5,13 +5,21 @@ on:
     branches: ['main']
   release:
     types: [published]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Published release tag to (re)attach the SBOMs to; empty generates only'
+        required: false
+        default: ''
 
 permissions: {}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  RELEASE_TAG: ${{ github.event.release.tag_name || inputs.release_tag || '' }}
 
 jobs:
   generate:
@@ -24,6 +32,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
+          ref: ${{ env.RELEASE_TAG || github.ref }}
           persist-credentials: false
 
       - name: Generate the CycloneDX SBOMs
@@ -39,7 +48,7 @@ jobs:
 
   attach:
     name: attach to release
-    if: github.event_name == 'release'
+    if: (github.event.release.tag_name || inputs.release_tag || '') != ''
     needs: generate
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -57,4 +66,26 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
+
+  report:
+    name: report a release without SBOM
+    if: failure() && (github.event.release.tag_name || inputs.release_tag || '') != ''
+    needs: [generate, attach]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      - name: File or update the tracking issue
+        run: sh scripts/ci/report-sbom-failure.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SBOM_RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          SBOM_FAILURE_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

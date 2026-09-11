@@ -30,7 +30,7 @@ function collectFindings(report) {
         installed: vuln.InstalledVersion ?? '',
         fixed: vuln.FixedVersion ?? '',
         severity: vuln.Severity ?? '',
-        title: (vuln.Title ?? '').replace(/\|/g, '\\|').trim(),
+        title: (vuln.Title ?? '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|').trim(),
       };
       rows.set(`${row.id}|${row.pkg}|${row.installed}`, row);
     }

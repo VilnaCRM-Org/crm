@@ -1550,7 +1550,8 @@ GitHub Actions runs:
    image — fixable HIGH/CRITICAL blocks the PR; the full-tree audit runs weekly to a tracking
    issue (issue #140)
 8. SBOM generation (`sbom`): CycloneDX documents for the image and the lockfile, uploaded on
-   every PR and attached to every published release
+   every PR and attached to a release after it is published; a failed attachment files an
+   `sbom-missing` tracking issue with the retry command
 
 See `.github/workflows/` for configuration
 

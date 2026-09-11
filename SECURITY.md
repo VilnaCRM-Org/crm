@@ -112,7 +112,9 @@ request. The complete workflow inventory is in [README.md](README.md#ci-checks).
   runner is a maintenance item rather than a shipped exposure.
 - **SBOM** — [`sbom.yml`](.github/workflows/sbom.yml); `make sbom`. CycloneDX 1.7 JSON for the
   production image and for the production dependency closure, uploaded as a workflow artifact on
-  every pull request and attached to every published release.
+  every pull request and attached to a release after it is published. The attachment is best
+  effort: a failure files an `sbom-missing` tracking issue naming the retry command, so a release
+  without its inventory is visible rather than silent.
 - **Workflow security** — [`workflow-security.yml`](.github/workflows/workflow-security.yml);
   `make lint-zizmor`. zizmor over the workflows themselves: mutable action refs, over-broad
   permissions, restored credential persistence, script injection.
