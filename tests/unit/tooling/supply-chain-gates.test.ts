@@ -108,13 +108,18 @@ describe('secret-scanning policy (issue #140)', () => {
     expect(policy).not.toContain('disabledRules');
   });
 
-  it('allowlists only the generated contract artifact and the checksum shape', () => {
+  it('scopes the generated-file exception to @example lines of one rule, plus the checksum', () => {
     expect(allowlists).toHaveLength(2);
-    const paths = policy.match(/^paths = \[(.*)\]$/gm) ?? [];
-    const regexes = policy.match(/^regexes = \[(.*)\]$/gm) ?? [];
+    const [generated, checksum] = allowlists;
 
-    expect(paths).toEqual(["paths = ['''^src/api/generated/openapi\\.ts$''']"]);
-    expect(regexes).toEqual(["regexes = ['''ARG OPENAPI_SPEC_SHA256=[0-9a-f]{64}''']"]);
+    expect(generated).toMatch(/^condition = "AND"$/m);
+    expect(generated).toMatch(/^targetRules = \["generic-api-key"\]$/m);
+    expect(generated).toContain(`paths = ['''^src/api/generated/openapi\\.ts$''']`);
+    expect(generated).toMatch(/^regexTarget = "line"$/m);
+    expect(generated).toContain(`regexes = ['''^\\s*\\*\\s+"[a-z_]+": "[^"]*",?\\s*$''']`);
+    expect(checksum).not.toContain('paths =');
+    expect(checksum).toMatch(/^regexTarget = "line"$/m);
+    expect(checksum).toContain(`regexes = ['''ARG OPENAPI_SPEC_SHA256=[0-9a-f]{64}''']`);
     expect(policy).not.toMatch(/^commits = /m);
     expect(policy).not.toMatch(/^stopwords = /m);
   });
@@ -214,9 +219,17 @@ describe('production runtime image (issue #140)', () => {
 
   it('pins every apk package it adds and runs as the unprivileged node user', () => {
     const runtime = stageOf(dockerfile, 'serve-base');
-    const apkLines = runtime.match(/^ {4}[a-z+]+=\$\{[A-Z_]+\}/gm) ?? [];
+    const apkAdd = runtime.match(/^RUN apk add --no-cache \\\n((?: {4}\S+ (?:\\|&&).*\n)+)/m);
+    const packages = (apkAdd?.[1] ?? '')
+      .split('\n')
+      .map((line) => line.trim().replace(/ (?:\\|&&.*)$/, ''))
+      .filter(Boolean);
 
-    expect(apkLines.length).toBeGreaterThanOrEqual(3);
+    expect(packages).toEqual([
+      'curl=${CURL_VERSION}',
+      'libgcc=${LIBSTDCPP_VERSION}',
+      'libstdc++=${LIBSTDCPP_VERSION}',
+    ]);
     expect(runtime).not.toMatch(/apk upgrade/);
     expect(runtime).toContain('adduser -u 1000 -G node -s /bin/sh -D node');
     expect(stageOf(dockerfile, 'production')).toMatch(/^USER node$/m);

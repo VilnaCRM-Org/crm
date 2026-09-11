@@ -42,7 +42,13 @@ function collectFindings(report) {
 
 function markerOf(findings) {
   const digest = createHash('sha256')
-    .update(findings.map((row) => `${row.id}|${row.pkg}|${row.installed}`).join('\n'))
+    .update(
+      findings
+        .map((row) =>
+          JSON.stringify([row.id, row.pkg, row.installed, row.fixed, row.severity, row.title])
+        )
+        .join('\n')
+    )
     .digest('hex')
     .slice(0, 16);
   return `audit-state:${digest}`;

@@ -44,7 +44,14 @@ EOF
 #!/usr/bin/env bash
 printf 'gh %s\n' "$*" >> "${COMMAND_LOG:?}"
 if [ "$1" = "issue" ] && [ "$2" = "list" ]; then
-  [ -z "${FAKE_GH_ISSUE_NUMBER:-}" ] || printf '%s\n' "$FAKE_GH_ISSUE_NUMBER"
+  case " $* " in
+    *" --json number,title "*)
+      printf '%s\n' "${FAKE_GH_ISSUE_LIST_JSON:-[]}" | jq -r "$(printf '%s' "$*" | sed 's/.*--jq //')"
+      ;;
+    *)
+      [ -z "${FAKE_GH_ISSUE_NUMBER:-}" ] || printf '%s\n' "$FAKE_GH_ISSUE_NUMBER"
+      ;;
+  esac
   exit 0
 fi
 if [ "$1" = "issue" ] && [ "$2" = "view" ]; then
@@ -127,8 +134,22 @@ write_trivy_json() {
   run env PATH="$STUB_BIN_DIR:$PATH" sh "$SANDBOX/scripts/ci/report-dependency-audit.sh"
   [ "$status" -eq 0 ]
   assert_output_contains 'dependency audit clean; no tracking issue needed'
-  run grep -F 'gh ' "$COMMAND_LOG"
+  assert_log_contains 'gh issue list --label dependency-audit --state open'
+  run grep -F 'gh issue create' "$COMMAND_LOG"
   [ "$status" -ne 0 ]
+  run grep -F 'gh issue close' "$COMMAND_LOG"
+  [ "$status" -ne 0 ]
+}
+
+@test "report-dependency-audit closes the open tracking issue once the scan is clean" {
+  write_trivy_json "$BATS_TEST_TMPDIR/trivy.json"
+  export FAKE_TRIVY_JSON="$BATS_TEST_TMPDIR/trivy.json"
+  export FAKE_GH_ISSUE_NUMBER=42
+
+  run env PATH="$STUB_BIN_DIR:$PATH" sh "$SANDBOX/scripts/ci/report-dependency-audit.sh"
+  [ "$status" -eq 0 ]
+  assert_output_contains 'closed tracking issue #42'
+  assert_log_contains 'gh issue close 42 --comment The weekly audit found no fixable HIGH/CRITICAL advisory in the full lockfile; closing.'
 }
 
 @test "report-dependency-audit fails closed when the scanner itself fails" {
@@ -181,26 +202,35 @@ write_trivy_json() {
   assert_output_contains 'exited 127 on a seeded credential instead of reporting it'
 }
 
-@test "report-sbom-failure files one tracking issue per release tag with the retry command" {
+@test "report-sbom-failure tracks each release on its own issue with the retry command" {
   cp "$PROJECT_ROOT/scripts/ci/report-sbom-failure.sh" "$SANDBOX/scripts/ci/"
   export SBOM_RELEASE_TAG=v9.9.9
   export SBOM_FAILURE_REPORT_DIR="$BATS_TEST_TMPDIR/sbom-report"
   export SBOM_FAILURE_RUN_URL='https://example.invalid/runs/1'
+  export FAKE_GH_ISSUE_LIST_JSON='[{"number":5,"title":"Release v9.9.8 is missing its SBOM"}]'
 
   run env PATH="$STUB_BIN_DIR:$PATH" sh "$SANDBOX/scripts/ci/report-sbom-failure.sh"
   [ "$status" -eq 0 ]
+  assert_output_contains 'opened a sbom-missing tracking issue for v9.9.9'
+  assert_log_contains 'gh label create sbom-missing'
   assert_log_contains 'gh issue create --label sbom-missing --title Release v9.9.9 is missing its SBOM'
+  run grep -F 'gh issue comment' "$COMMAND_LOG"
+  [ "$status" -ne 0 ]
   run grep -F 'gh workflow run sbom.yml -f release_tag=v9.9.9' "$SBOM_FAILURE_REPORT_DIR/issue-body.md"
   [ "$status" -eq 0 ]
   run grep -F '<!-- release:v9.9.9 -->' "$SBOM_FAILURE_REPORT_DIR/issue-body.md"
   [ "$status" -eq 0 ]
 
   reset_command_log
-  export FAKE_GH_ISSUE_NUMBER=7
-  export FAKE_GH_ISSUE_BODY='<!-- release:v9.9.9 -->'
+  export FAKE_GH_ISSUE_LIST_JSON='[{"number":5,"title":"Release v9.9.8 is missing its SBOM"},{"number":7,"title":"Release v9.9.9 is missing its SBOM"}]'
   run env PATH="$STUB_BIN_DIR:$PATH" sh "$SANDBOX/scripts/ci/report-sbom-failure.sh"
   [ "$status" -eq 0 ]
-  assert_output_contains 'issue #7 already records this state; staying quiet'
+  assert_output_contains 'updated tracking issue #7 for v9.9.9'
+  assert_log_contains 'gh issue comment 7 --body The sbom workflow failed again for v9.9.9'
+  run grep -F 'gh issue create' "$COMMAND_LOG"
+  [ "$status" -ne 0 ]
+  run grep -F 'gh issue edit' "$COMMAND_LOG"
+  [ "$status" -ne 0 ]
 
   unset SBOM_RELEASE_TAG
   run env PATH="$STUB_BIN_DIR:$PATH" sh "$SANDBOX/scripts/ci/report-sbom-failure.sh"

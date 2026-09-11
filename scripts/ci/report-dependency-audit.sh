@@ -24,6 +24,16 @@ MARKER="$(node "$REPORT_SCRIPT" --input "$JSON_FILE" --body "$BODY_FILE" \
 
 if [ "$MARKER" = 'clean' ]; then
   printf 'dependency audit clean; no tracking issue needed\n'
+  if ! OPEN_ISSUES="$(gh issue list --label "$DEPENDENCY_AUDIT_LABEL" --state open --json number --jq '.[].number')"; then
+    printf 'ERROR: could not list open %s issues\n' "$DEPENDENCY_AUDIT_LABEL" >&2
+    exit 1
+  fi
+  for NUMBER in $OPEN_ISSUES; do
+    gh issue close "$NUMBER" \
+      --comment 'The weekly audit found no fixable HIGH/CRITICAL advisory in the full lockfile; closing.' \
+      || { printf 'ERROR: could not close issue #%s\n' "$NUMBER" >&2; exit 1; }
+    printf 'closed tracking issue #%s\n' "$NUMBER"
+  done
   exit 0
 fi
 

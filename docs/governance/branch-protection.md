@@ -31,7 +31,7 @@ the list CONTRIBUTING.md enumerates. GitHub matches a required check by
 | `supply-chain security / image scan`      | The same policy over the deployable image          |
 | `sbom / generate`                         | A release that could ship with no SBOM             |
 
-Five jobs must **not** be required, because a check that never reports on a pull request either
+Six jobs must **not** be required, because a check that never reports on a pull request either
 leaves every pull request pending forever or gates nothing. `contract drift`,
 `nightly flake audit`, and `scorecard / analysis` have no `pull_request` trigger, so a pull
 request would wait on a status that never arrives.
