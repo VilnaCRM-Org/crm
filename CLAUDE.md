@@ -465,6 +465,120 @@ GitHub settings and is therefore recorded in
 the source — never by widening `paths-ignore`, dismissing it as "won't fix", or reverting to the
 default suite.
 
+### Supply-chain security (issue #140)
+
+CodeQL scans the code; nothing scanned what ships — the git history, the dependency closure,
+or the runtime image. Two workflows close that, and every job in them runs a `make` target: the
+Makefile owns the digest-pinned scanner images (`TRIVY_IMAGE`, `GITLEAKS_IMAGE`), the severity
+floor (`TRIVY_SEVERITY`) and the argument sets (`TRIVY_ARGS`, `GITLEAKS_ARGS`), so CI and a local
+run cannot diverge. None of the targets is part of `make lint` — like `lint-zizmor`, they need
+Docker but not the dev container. Trivy runs as the invoking user against a read-only mount of
+the checkout and, for the image lane, against a `docker save` archive, so no job ever hands the
+scanner the Docker socket.
+
+`supply-chain security` runs three PR-blocking jobs on every pull request to `main`, and again
+weekly and on `workflow_dispatch`:
+
+- **`secret scan`** — `make scan-secrets` runs gitleaks over the **full git history**, redacting
+  matches from the log (the job checks out with `fetch-depth: 0`; a shallow clone scans only the
+  tip). It then runs `scripts/ci/assert-secret-scan-detects.sh`, which seeds a synthetic AWS
+  access key id in a throwaway directory and fails unless the scanner rejects it — a positive
+  control, so a ruleset that has gone dead cannot pass vacuously. `.gitleaks.toml` extends the
+  default rules and carries exactly two allowlists: `src/api/generated/openapi.ts` (upstream
+  OpenAPI documentation examples that `make codegen` emits verbatim) and the
+  `ARG OPENAPI_SPEC_SHA256=<64 hex>` line in `Mockoon.Dockerfile` (a content checksum, not a
+  credential). An entry names a generated path or an exact line shape and carries a
+  `description`; it never disables a rule.
+- **`dependency scan`** — `make scan-dependencies` runs Trivy over `bun.lock` and fails on a
+  fixable HIGH/CRITICAL advisory in the **production dependency closure** — Trivy suppresses
+  `devDependencies` unless `--include-dev-deps` is passed, and this lane does not pass it.
+- **`image scan`** — `make scan-image` builds the `production` target — never `test-harness` —
+  and runs the same policy over the image's OS packages and bundled libraries.
+
+**Why the blocking scope is the production closure plus the deployable image.** At the time of
+writing the full lockfile carries 37 fixable HIGH/CRITICAL advisories, every one in dev tooling.
+A ReDoS in a test runner is a real finding but never reaches a browser, and blocking every pull
+request on it would train contributors to route around the gate. The blocking lane therefore
+scans what ships, and the **`full-tree dependency audit`** job (`make report-dependency-audit`,
+weekly and on `workflow_dispatch`, never on a pull request) keeps the rest visible: it scans the
+whole lockfile with `--include-dev-deps` and `--exit-code 0`, renders the findings as a Markdown
+table (`scripts/ci/dependency-audit-report.mjs`) and upserts **one** `dependency-audit` tracking
+issue through `scripts/ci/upsert-audit-issue.sh` — the same helper `contract drift` and the flake
+audit use — commenting only when the advisory set changes. A scanner failure exits 1 rather than
+reporting a clean audit; a clean tree prints "dependency audit clean; no tracking issue needed".
+Dev-tooling debt accumulates in one issue instead of silently, and is paid down there.
+
+`--ignore-unfixed` is deliberate in both lanes. An advisory with no released fix offers a
+contributor no remediation, so failing on it would either stall every pull request or push the
+repository toward an ignore file. The audit runs with the same flag, so an advisory enters the
+tracking issue the week its fix ships.
+
+**The deployable image ships no package manager.** The runtime base was `node:alpine`, whose
+bundled npm and its `node_modules` were the bulk of the image findings, and the `dockerfile
+performance` dive gate (`.dive-ci`, `highestWastedBytes: 20MB`) forbids the obvious fix of deleting
+base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in a throwaway
+`serve-tools` stage (`node:24.8.0-alpine3.21`) and builds `serve-base`
+`FROM public.ecr.aws/docker/library/alpine:3.21` — pinned `curl`, `libgcc` and `libstdc++`, a
+`node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
+`/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
+`serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
+57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
+resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
+`NO_UPDATE_CHECK=1` stops `serve` from contacting the npm registry at container start, and the
+`serve` bump (`14.2.0` → `14.2.6`) negotiates Brotli where the client accepts it, so measured
+transfer sizes can only shrink against the Lighthouse resource budgets.
+
+**The `dependencies` map is what the blocking scan scores.** `@apollo/server`,
+`@module-federation/enhanced`, `tsconfig-paths-webpack-plugin` and `winston` moved to
+`devDependencies` — none is imported from `src/`; they are the local GraphQL mock, an unwired
+build plugin and node tooling — and the transitive `js-yaml`, which Trivy places in the
+production closure, was re-pinned `4.3.0` → `4.3.2` in `bun.lock` (CVE-2026-84375). A package
+that only a script, a mock or a build step
+imports belongs in `devDependencies`, or the blocking scan scores a closure the browser never
+loads.
+
+**SBOMs.** The `sbom` workflow runs `make sbom` on every pull request, on `workflow_dispatch` and
+on `release: published`: it builds the `production` image and writes CycloneDX JSON for the image
+(`sbom/crm-image.cdx.json`) and the production lockfile closure (`sbom/crm-dependencies.cdx.json`),
+uploaded as a 90-day workflow artifact. Its `attach to release` job runs on the release event and
+on a `workflow_dispatch` that names a `release_tag`, and `gh release upload`s both documents. The
+release event reaches the workflow because `autorelease.yml` publishes with a GitHub App token; a
+release created with `GITHUB_TOKEN` triggers no workflow at all. The workflow restores no cache
+on purpose — a restored cache on a job that writes release assets is the cache-poisoning shape
+zizmor flags.
+
+Attachment is **best effort after publication**, not a gate in front of it: the release exists
+before this workflow starts, so a failed `generate` or `attach` leaves a published release with no
+inventory. That state is loud rather than silent — the `report a release without SBOM` job files
+or updates one `sbom-missing` tracking issue (`scripts/ci/report-sbom-failure.sh`, through the
+shared upsert helper) naming the tag and the retry command,
+`gh workflow run sbom.yml -f release_tag=<tag>`, which regenerates the documents from that tag
+and attaches them. Moving generation in front of `gh release create` belongs to the release
+pipeline repair tracked in issue #138.
+
+Add `supply-chain security / secret scan`, `supply-chain security / dependency scan`,
+`supply-chain security / image scan` and `sbom / generate` to the branch-protection required
+checks; until then they report but do not block. Do not add `full-tree dependency audit`,
+`attach to release` or `report a release without SBOM` — none of them runs on a pull request.
+
+**Honest scope.** Artifact signing and build provenance (cosign, SLSA) are **not** implemented;
+the issue allows them as a follow-up phase and nothing here claims them. The dependency scan
+scores the manifest's production closure, an over-approximation of the browser bundle —
+tree-shaking drops code the lockfile still lists — so a finding can sit in a code path the bundle
+never loads and still block until the dependency is updated. Scheduled CodeQL was already in
+place from issue #172 and is not new here.
+[`tests/unit/tooling/supply-chain-gates.test.ts`](tests/unit/tooling/supply-chain-gates.test.ts)
+pins the digest pins, the severity and `--ignore-unfixed` policy, the `production` target, the
+positive control, the two-entry allowlist, the workflow triggers and the runtime-stage shape;
+[`tests/bats/supply_chain.bats`](tests/bats/supply_chain.bats) pins the audit script's issue
+routing, its fail-closed scanner path and the positive control's exit codes.
+
+**No suppression:** satisfy a finding by updating or replacing the dependency, rebuilding on a
+patched base image, or removing the secret from history and rotating it — never with a
+`.trivyignore`, a widened gitleaks allowlist, a lowered `TRIVY_SEVERITY`, a dropped
+`--exit-code 1`, or a narrower scan target. The same root-cause-not-suppression policy used for
+ESLint, TypeScript, metrics, jscpd, and the performance budgets applies.
+
 ## Code Quality
 
 ```bash
@@ -490,6 +604,11 @@ make check-adr-drift # ADR-required gate for architecture changes (CI/PR-only, s
 make contract-diff  # semantic OpenAPI breaking-change gate on pin bumps (see above)
 make check-e2e-route-coverage # route-coverage inventory gate (see above)
 make check-auth-seed-gate # preloaded-auth seed bundle scan (Docker; not part of `make lint`)
+make scan-secrets   # gitleaks full-history scan + seeded-key positive control (Docker; standalone)
+make scan-dependencies # Trivy: fixable HIGH/CRITICAL in the production closure of bun.lock (Docker)
+make scan-image     # Trivy: build the production image and scan it, same policy (Docker)
+make sbom           # CycloneDX SBOMs for the image and the lockfile into ./sbom (Docker)
+make report-dependency-audit # Full-tree Trivy audit to one tracking issue (scheduled; see above)
 make lint-i18n      # en/uk locale-parity + undefined-key gate (see below)
 make i18n-generate  # Regenerate src/i18n/localization.json from the i18n catalogs
 make fmt-prettier   # Prettier
@@ -639,12 +758,25 @@ Two constraints in this repository are easy to trip over:
 
 ## Agent Skill Layout
 
-- `.agents/skills`: BMAD agents, planning workflows, and interactive methods.
+- `_bmad/`, `.claude/commands/` and `.agents/skills`: BMAD assets, planning workflows, and
+  the slash commands that drive them. They are **local installs, not repository directories**:
+  `bmalph init` (the `bmalph` npm CLI) generates them for the configured platform — Claude Code
+  gets its commands under `.claude/commands/`, other agent platforms under `.agents/skills` —
+  `bmalph upgrade` refreshes them, `bmalph doctor` checks them, and all three are gitignored.
+  A fresh clone has none of them until `bmalph init` runs.
+- `scripts/agent-session-start.sh` reports Docker, dev-container, Node and BMAD-install status
+  for an agent session; it only reports and always exits 0. Run it on demand
+  (`sh scripts/agent-session-start.sh`) or register it as a `SessionStart` hook in your personal
+  `~/.claude/settings.json`. It is deliberately **not** wired into the committed
+  `.claude/settings.json`: a project-level hook runs repository-controlled shell automatically in
+  every trusted checkout, so a malicious branch could execute host commands on session start.
 - `.claude/skills`: frontend project skills for implementation, quality,
   testing, review, documentation, observability, and performance guidance.
 - `~/.claude/skills` (global, personal): UI/design/motion/a11y skills (from
   [ui-skills.com](https://www.ui-skills.com/skills/)) plus testing, performance, React/TS,
   and browser/audit skills. Catalog and triggers: see "Global Skills" in `AGENTS.md`.
+- `.github/copilot-instructions.md`: mirrors these conventions for GitHub Copilot, which reads
+  that file rather than `CLAUDE.md`.
 
 Do not mirror BMAD skills into `.claude/skills`.
 
@@ -2078,7 +2210,9 @@ Uses `.nvmrc` for version pinning (Node 24).
 
 Use `/bmalph` to navigate phases. Use `/bmad-help` to discover all commands.
 Use `/bmalph-status` for a quick overview. See `_bmad/COMMANDS.md` for a full
-command reference.
+command reference. `_bmad/` and `.claude/commands/` are local, gitignored installs written by
+`bmalph init` (see "Agent Skill Layout"), so a fresh clone runs `bmalph init` first; the
+slash commands below exist only once it has.
 
 ### Phases
 

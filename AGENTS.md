@@ -8,11 +8,18 @@ see `CLAUDE.md`.
 
 ## Agent Skill Locations
 
-- `.agents/skills`: BMAD agents, planning workflows, and interactive methods.
+- `_bmad/`, `.claude/commands/` and `.agents/skills`: BMAD assets, planning workflows, and
+  the slash commands that drive them. They are **local installs, not repository directories**:
+  `bmalph init` (the `bmalph` npm CLI) generates them for the configured platform — Claude Code
+  gets its commands under `.claude/commands/`, other agent platforms under `.agents/skills` —
+  `bmalph upgrade` refreshes them, `bmalph doctor` checks them, and all three are gitignored.
+  A fresh clone has none of them until `bmalph init` runs.
 - `.claude/skills`: non-BMAD frontend project skills.
 - `~/.claude/skills` (global, personal): UI/design/motion/a11y skills (from
   [ui-skills.com](https://www.ui-skills.com/skills/)) plus testing, performance, React/TS,
   and browser/audit skills, invoked by name via the Skill tool. See "Global Skills" below.
+- `.github/copilot-instructions.md`: mirrors these conventions for GitHub Copilot, which reads
+  that file rather than `CLAUDE.md`.
 
 Do not mirror BMAD skills into `.claude/skills`.
 
@@ -1538,6 +1545,13 @@ GitHub Actions runs:
 4. E2E tests (Playwright)
 5. Visual regression tests
 6. Lighthouse audits
+7. Supply-chain scanning (`supply-chain security`): gitleaks over the full git history, Trivy
+   over the production dependency closure of `bun.lock`, and Trivy over the built `production`
+   image — fixable HIGH/CRITICAL blocks the PR; the full-tree audit runs weekly to a tracking
+   issue (issue #140)
+8. SBOM generation (`sbom`): CycloneDX documents for the image and the lockfile, uploaded on
+   every PR and attached to a release after it is published; a failed attachment files an
+   `sbom-missing` tracking issue with the retry command
 
 See `.github/workflows/` for configuration
 
@@ -1596,12 +1610,37 @@ build goes red. Know them before you touch a config file:
 
 ### Dependency Audits
 
+Auditing is a CI gate, not a calendar reminder (issue #140). The Makefile owns the scanner
+pins and flags — digest-pinned Trivy and gitleaks images, `HIGH,CRITICAL`, `--ignore-unfixed` —
+and the `supply-chain security` and `sbom` workflows only call these targets, so a local run
+reproduces CI exactly. All five need Docker and none is part of `make lint`:
+
 ```bash
-docker compose exec -T dev bun audit
-docker compose exec -T dev bun update  # Bump dependencies to pull in fixes
+make scan-secrets            # PR-blocking: gitleaks over the full history + positive control
+make scan-dependencies       # PR-blocking: production closure of bun.lock
+make scan-image              # PR-blocking: the built production image
+make sbom                    # CycloneDX SBOMs into ./sbom (uploaded per PR, attached to releases)
+make report-dependency-audit # weekly: full tree incl. dev tooling, upserts one tracking issue
 ```
 
-Run monthly or when dependabot alerts
+- `make scan-dependencies` fails on a fixable HIGH/CRITICAL advisory in the **production**
+  dependency closure — Trivy suppresses `devDependencies` unless `--include-dev-deps`, and the
+  blocking lane does not pass it. That is what ships to a browser; a ReDoS in a test runner must
+  not red every pull request.
+- `make report-dependency-audit` scans the **full** lockfile with `--include-dev-deps` and routes
+  the findings to one issue labelled `dependency-audit`, commenting only when the advisory set
+  changes. It runs weekly and on `workflow_dispatch`, never on a pull request, and a scanner
+  failure exits 1 rather than reporting a clean audit. Dev-tooling advisories are paid down from
+  that issue.
+- `make scan-image` builds the `production` target and applies the same policy to the runtime
+  image; `make sbom` builds it again and writes `sbom/crm-image.cdx.json` and
+  `sbom/crm-dependencies.cdx.json`.
+
+**Remediation:** update the dependency (a direct bump, or a transitive re-pin in `bun.lock` as
+`js-yaml` `4.3.0` → `4.3.2` was), replace it, or move a package that only a script, mock or
+build step imports out of `dependencies` so the blocking scan scores what the bundle loads.
+Never add a `.trivyignore`, lower the severity floor, drop `--exit-code 1`, or scan a narrower
+target — the same root-cause-not-suppression rule every other gate follows.
 
 ## Agent Best Practices
 

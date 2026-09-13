@@ -1,1 +1,17 @@
 *       @Kravalg
+/.github/workflows/      @Kravalg
+/.github/CODEOWNERS      @Kravalg
+/.github/dependabot.yml  @Kravalg
+/Dockerfile              @Kravalg
+/Mockoon.Dockerfile      @Kravalg
+/docker-compose*.yml     @Kravalg
+/common-healthchecks.yml @Kravalg
+/docker/                 @Kravalg
+/scripts/                @Kravalg
+/config/                 @Kravalg
+/Makefile                @Kravalg
+/SECURITY.md             @Kravalg
+/CODE_OF_CONDUCT.md      @Kravalg
+/docs/governance/        @Kravalg
+/.gitleaks.toml          @Kravalg
+/src/modules/            @Kravalg

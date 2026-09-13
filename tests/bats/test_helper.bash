@@ -271,6 +271,18 @@ printf 'lint-commit-range.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
 exit 0
 EOF
 
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/assert-secret-scan-detects.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'assert-secret-scan-detects.sh GITLEAKS_IMAGE=%s\n' "${GITLEAKS_IMAGE:-}" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/report-dependency-audit.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'report-dependency-audit.sh TRIVY_IMAGE=%s TRIVY_ARGS=%s\n' "${TRIVY_IMAGE:-}" "${TRIVY_ARGS:-}" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
   chmod +x \
     "$MAKEFILE_SANDBOX/scripts/lint-metrics.sh" \
     "$MAKEFILE_SANDBOX/scripts/get-pr-comments.sh" \
@@ -280,6 +292,8 @@ EOF
     "$MAKEFILE_SANDBOX/scripts/ci/contract-diff.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/check-contract-drift.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/lint-commit-range.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/assert-secret-scan-detects.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/report-dependency-audit.sh" \
     "$MAKEFILE_SANDBOX/scripts/check-env-sync.sh"
 }
 

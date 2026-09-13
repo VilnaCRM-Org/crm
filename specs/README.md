@@ -30,6 +30,10 @@ specs/
   (`type` is `prd`, `architecture`, or `epics`).
 - Implementation artifacts are story files named `<epic>-<story>-<slug>.md`.
 - The active spec is selected in `_bmad/config.yaml` via the
-  `planning_artifacts` and `implementation_artifacts` paths.
+  `planning_artifacts` and `implementation_artifacts` paths. `_bmad/` is not a
+  repository directory: it is a local install that `bmalph init` generates and
+  `.gitignore` excludes, so a fresh clone has to run `bmalph init` before any
+  BMAD workflow can find a spec. `bmalph upgrade` refreshes the install and
+  `bmalph doctor` checks it.
 - Do not scan this folder in lint or suppression checks; documents quote
   directive examples that are not real code.

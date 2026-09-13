@@ -124,6 +124,11 @@ test-visual-flake-audit	bats	tests/bats/makefile_targets.bats	Validated as the r
 check-flakes	bats	tests/bats/flake_budget.bats	Validated as the FLAKE_BUDGET enforcement over a Playwright JSON report.
 print-flake-env	bats	tests/bats/makefile_targets.bats	Validated as the in-container echo proving the flake toggles crossed the compose boundary.
 lint-zizmor	bats	tests/bats/makefile_targets.bats	Validated as the Docker-based zizmor workflow-security gate, asserting the digest-pinned image, the medium severity threshold, and the .github/workflows audit scope.
+scan-secrets	bats	tests/bats/supply_chain_targets.bats	Validated as the Docker-based gitleaks history scan followed by its seeded-credential positive control (issue #140).
+scan-dependencies	bats	tests/bats/supply_chain_targets.bats	Validated as the Docker-based Trivy scan of the production dependency closure in bun.lock (issue #140).
+scan-image	bats	tests/bats/supply_chain_targets.bats	Validated as the production image build followed by the Docker-based Trivy image scan (issue #140).
+sbom	bats	tests/bats/supply_chain_targets.bats	Validated as the production image build followed by the two CycloneDX generations (issue #140).
+report-dependency-audit	bats	tests/bats/supply_chain_targets.bats	Validated as the wrapper that hands the Makefile-owned Trivy invocation to the weekly audit script (issue #140).
 lint-compose	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh, and directly as the docker compose config validation over every file combination the repo starts.
 lint-licenses	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
 new-module	bats	tests/bats/makefile_targets.bats	Validated as driving `bun x plop module` in the dev container, defaulting the feature name and failing fast without name=.

@@ -157,6 +157,18 @@ ACTIONLINT_IMAGE            = rhysd/actionlint:1.7.7@sha256:887a259a5a534f3c4f36
 # Sentry jobs behind GitHub Environments) is a separate decision.
 ZIZMOR_IMAGE                = ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d
 ZIZMOR_ARGS                 = --no-online-audits --min-severity medium --persona pedantic --format plain
+TRIVY_IMAGE                 = aquasec/trivy:0.74.0@sha256:62b1e65e8869bc4b4c6aa4fa2b21595256c7c2f6018a9d9ad61caf87187c1969
+TRIVY_CACHE_DIR             ?= $(CURDIR)/.trivy-cache
+TRIVY_SEVERITY              = HIGH,CRITICAL
+TRIVY_ARGS                  = --scanners vuln --severity $(TRIVY_SEVERITY) --ignore-unfixed --no-progress
+TRIVY_RUN                   = docker run --rm --user "$$(id -u):$$(id -g)" -e TRIVY_CACHE_DIR=/cache -v "$(TRIVY_CACHE_DIR):/cache" -v "$(CURDIR):/repo:ro" -w /repo
+SCAN_IMAGE_TAG              = crm-scan-probe
+SCAN_IMAGE_TAR              = .scan-image.tar
+SBOM_DIR                    = ./sbom
+GITLEAKS_IMAGE              = ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f
+GITLEAKS_ARGS               = git --redact --no-banner --exit-code 1 --config .gitleaks.toml
+DEPENDENCY_AUDIT_SCRIPT     = scripts/ci/report-dependency-audit.sh
+SECRET_SCAN_CONTROL_SCRIPT  = scripts/ci/assert-secret-scan-detects.sh
 # Locale-parity gate (issue #151). Pure Node over the working tree, so it runs on the host
 # like lint-lockfile and check-env-sync instead of inside the dev container.
 I18N_PARITY_SCRIPT          = scripts/ci/check-i18n-parity.mjs
@@ -228,6 +240,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: storybook
 .PHONY: all test
 .PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
+.PHONY: scan-secrets scan-dependencies scan-image sbom report-dependency-audit
 all: help
 test: test-unit-all
 
@@ -443,6 +456,31 @@ lint-actionlint: ## Lint the GitHub Actions workflows with actionlint (requires 
 # `workflow security` job report in seconds and still report when the compose stack cannot start.
 lint-zizmor: ## Audit the workflows for security regressions with zizmor (Docker; standalone)
 	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ZIZMOR_IMAGE) $(ZIZMOR_ARGS) .github/workflows/
+
+scan-secrets: ## Scan the git history for committed secrets with gitleaks, then prove the scanner still detects one (Docker; standalone)
+	docker run --rm -v "$(CURDIR):/repo:ro" -w /repo $(GITLEAKS_IMAGE) $(GITLEAKS_ARGS) .
+	GITLEAKS_IMAGE=$(GITLEAKS_IMAGE) sh $(SECRET_SCAN_CONTROL_SCRIPT)
+
+scan-dependencies: ## Fail on a fixable HIGH/CRITICAL CVE in the production dependency closure of bun.lock (Docker; standalone)
+	mkdir -p "$(TRIVY_CACHE_DIR)"
+	$(TRIVY_RUN) $(TRIVY_IMAGE) fs $(TRIVY_ARGS) --exit-code 1 bun.lock
+
+scan-image: ## Build the deployable production image and fail on a fixable HIGH/CRITICAL CVE in it (Docker; standalone)
+	mkdir -p "$(TRIVY_CACHE_DIR)"
+	docker build -t $(SCAN_IMAGE_TAG) -f Dockerfile --target production .
+	docker save -o $(SCAN_IMAGE_TAR) $(SCAN_IMAGE_TAG)
+	$(TRIVY_RUN) $(TRIVY_IMAGE) image $(TRIVY_ARGS) --exit-code 1 --input $(SCAN_IMAGE_TAR)
+
+sbom: ## Generate CycloneDX SBOMs for the production image and the lockfile into ./sbom (Docker; standalone)
+	mkdir -p "$(TRIVY_CACHE_DIR)" "$(SBOM_DIR)"
+	docker build -t $(SCAN_IMAGE_TAG) -f Dockerfile --target production .
+	docker save -o $(SCAN_IMAGE_TAR) $(SCAN_IMAGE_TAG)
+	$(TRIVY_RUN) $(TRIVY_IMAGE) image --scanners vuln --no-progress --format cyclonedx --input $(SCAN_IMAGE_TAR) > $(SBOM_DIR)/crm-image.cdx.json
+	$(TRIVY_RUN) $(TRIVY_IMAGE) fs --scanners vuln --no-progress --format cyclonedx bun.lock > $(SBOM_DIR)/crm-dependencies.cdx.json
+
+report-dependency-audit: ## Report every fixable HIGH/CRITICAL CVE in the full lockfile, dev tooling included, to one tracking issue (scheduled)
+	mkdir -p "$(TRIVY_CACHE_DIR)"
+	TRIVY_RUN='$(TRIVY_RUN)' TRIVY_IMAGE='$(TRIVY_IMAGE)' TRIVY_ARGS='$(TRIVY_ARGS)' sh $(DEPENDENCY_AUDIT_SCRIPT)
 
 # Compose-file validation (issue #161). Prettier normalizes YAML but its bundled parser sets
 # uniqueKeys: false, so it silently accepts a duplicate mapping key — the last-key-wins defect
@@ -862,7 +900,7 @@ build-k6: ## Build K6 load testing image for dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build k6
 
 install-chromium-lhci: ## Install Chromium and LHCI tooling for Lighthouse CI in dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c "apk add --no-cache chromium && npm install -g @lhci/cli@0.10.0 dotenv@16.4.5"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c "apk add --no-cache chromium npm && npm install -g @lhci/cli@0.10.0 dotenv@16.4.5"
 
 test-chromium: ## Test Chromium installation in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "chromium-browser --version"

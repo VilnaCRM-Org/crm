@@ -9,7 +9,8 @@
 # Fails fast: an invalid APP_CONFIG_* value aborts the entrypoint with a non-zero status, so a
 # misconfigured deployment never starts serving rather than degrading silently in the browser.
 #
-# POSIX sh on purpose - the production image is node:alpine with no bash, no jq and no envsubst.
+# POSIX sh on purpose - the production image is plain alpine with the node binary: no bash,
+# no jq and no envsubst.
 
 set -eu
 
