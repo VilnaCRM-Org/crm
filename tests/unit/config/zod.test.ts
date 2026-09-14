@@ -5,7 +5,7 @@ type ZodModule = typeof import('@/config/zod');
 const loadZod = (): Promise<ZodModule> => loadIsolated(() => import('@/config/zod'));
 
 describe('@/config/zod (issue #113)', () => {
-  it('runs zod in jitless mode so no schema compiles through the Function constructor', async () => {
+  it('runs zod in jitless mode so no schema compiles through Function', async () => {
     const { z } = await loadZod();
 
     expect(z.config()).toMatchObject({ jitless: true });
