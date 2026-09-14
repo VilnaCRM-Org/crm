@@ -143,3 +143,6 @@ lint-doc-links	bats	tests/bats/makefile_targets.bats	Validated as the direct rel
 check-adr-drift	bats	tests/bats/makefile_targets.bats	Validated as the direct architecture drift gate invocation in the lint target table.
 lint-i18n	bats	tests/bats/makefile_targets.bats	Validated as the host-side locale-parity gate command and as a member of the CI lint target list passed to run-parallel-lint.sh.
 i18n-generate	bats	tests/bats/makefile_targets.bats	Validated as the --write regeneration command for the merged src/i18n/localization.json catalog.
+lint-security-headers	bats	tests/bats/security_headers.bats	Validated as the in-container serve.json drift check against config/security-headers.json (issue #113).
+security-headers-generate	bats	tests/bats/security_headers.bats	Validated as the in-container serve.json regeneration from config/security-headers.json (issue #113).
+check-security-headers	bats	tests/bats/security_headers.bats	Validated as the production-image build plus the header-baseline runner over its responses (issue #113).

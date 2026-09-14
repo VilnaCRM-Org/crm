@@ -84,3 +84,31 @@ jobs:
 
       - name: Scan the deployable image and the opted-in bundle
         run: make check-auth-seed-gate
+
+  # Issue #113: the browser security-header baseline is enforced against the emitted artifact,
+  # not config text. The gate builds the deployable `production` image, boots it twice — the
+  # committed serve.json, then with APP_CONFIG_* API overrides that the entrypoint must surface
+  # in the CSP connect-src — and asserts every header of config/security-headers.json on the
+  # HTML shell, a deep route, the manifest and a hashed static asset. Pull requests only, for
+  # the same reason as the seed gate above: the push and schedule triggers exist for CodeQL.
+  security-headers:
+    name: security headers
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Build the production image and assert the header baseline
+        run: make check-security-headers

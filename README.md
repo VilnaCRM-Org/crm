@@ -137,6 +137,9 @@ Linting & Formatting
   make lint-i18n: checks en/uk locale parity, merged-catalog freshness, and t() key resolution
   make i18n-generate: regenerates src/i18n/localization.json from the src/**/i18n catalogs
   make check-auth-seed-gate: scans the built bundles so the test-only preloaded-auth seed cannot ship
+  make lint-security-headers: fails when serve.json drifts from config/security-headers.json
+  make security-headers-generate: regenerates the serve.json headers block from the policy
+  make check-security-headers: boots the production image and asserts the security-header baseline
 ```
 
 ### Dependency rules

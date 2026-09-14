@@ -290,6 +290,24 @@ Satisfy it by keeping the seam gated. Never relax the scan, narrow its file set,
 out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere but the Dockerfile's
 `test-harness` stage.
 
+### The browser security-header gate
+
+Every production response carries the header baseline — `Content-Security-Policy`,
+`Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`,
+`Permissions-Policy` and the two `Cross-Origin-*` policies — declared once in
+`config/security-headers.json`. The `headers` block of `serve.json` is generated from it and the
+RSBuild dev server reads the same file, so the two cannot drift; the full directive table and the
+`style-src` decision are in [`SECURITY.md`](SECURITY.md#browser-security-headers-issue-113).
+
+Change a header by editing the policy, running `make security-headers-generate`, and committing the
+regenerated `serve.json`. `make lint-security-headers` (part of `make lint`) fails when the two
+disagree, and `make check-security-headers` — the `security headers` job of the `security testing`
+workflow — builds `--target production`, boots it, asserts every header on the HTML shell, a deep
+route, the manifest and a hashed asset, then boots it again with `APP_CONFIG_*` API overrides that
+must reach `connect-src`. The policy loader refuses a weakened baseline outright (no `nosniff`, a
+short HSTS, a widened `frame-ancestors`, `'unsafe-eval'` on scripts), so satisfy the gate by fixing
+the policy, never by editing `serve.json` by hand or by relaxing a floor to make a run pass.
+
 ### CI speed and the mutation-testing gate
 
 GitHub runs the pull-request workflows in parallel, so PR feedback is gated by the slowest single
@@ -406,6 +424,8 @@ checks:
 - `performance testing / lighthouse desktop`
 - `performance testing / lighthouse mobile`
 - `security testing / preloaded-auth seed gate`
+- `security testing / security headers` (issue #113; the header baseline is proven against the
+  deployable image, so the check only protects a merge once it is required)
 - `contract testing / OpenAPI breaking-change gate` (the job in `contract-testing.yml` — issue
   #177; `contract drift` and `nightly flake audit` must not be added, because neither has a
   `pull_request` trigger)

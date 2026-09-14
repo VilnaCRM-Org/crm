@@ -40,7 +40,8 @@ describe('performance serving config', () => {
 
     // The ENTRYPOINT renders APP_CONFIG_* into the built HTML shell, then execs CMD (issue #145).
     expect(dockerfile).toContain(
-      'COPY --chown=node:node scripts/docker-entrypoint.sh scripts/render-app-config.js ./scripts/'
+      'COPY --chown=node:node scripts/docker-entrypoint.sh scripts/render-app-config.js ' +
+        'scripts/render-security-headers.js scripts/security-headers.js ./scripts/'
     );
     expect(dockerfile).toContain('ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]');
 

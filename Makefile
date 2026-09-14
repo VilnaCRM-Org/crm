@@ -172,6 +172,16 @@ SECRET_SCAN_CONTROL_SCRIPT  = scripts/ci/assert-secret-scan-detects.sh
 # Locale-parity gate (issue #151). Pure Node over the working tree, so it runs on the host
 # like lint-lockfile and check-env-sync instead of inside the dev container.
 I18N_PARITY_SCRIPT          = scripts/ci/check-i18n-parity.mjs
+# Browser security-header baseline (issue #113). config/security-headers.json is the single
+# source of truth: the generator renders serve.json from it (in the dev container, where the
+# dotenv parser that expands the build-time API origins lives), lint-security-headers fails
+# when serve.json drifts, and check-security-headers boots the deployable image twice — the
+# committed baseline, then with APP_CONFIG_* overrides that must surface in connect-src.
+SERVE_CONFIG_GENERATOR      = scripts/generate-serve-config.js
+SECURITY_HEADERS_GATE_SCRIPT = scripts/ci/check-security-headers.mjs
+SECURITY_HEADERS_GATE_RUNNER = scripts/ci/check-security-headers.sh
+SECURITY_HEADERS_PROBE_IMAGE = crm-security-headers-probe
+SECURITY_HEADERS_PROBE_PORT ?= 3011
 
 JEST_FLAGS                  = --maxWorkers=2 --logHeapUsage
 BATS_FORMATTER              ?= pretty
@@ -198,7 +208,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n
+CI_LINT_TARGETS             = check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -237,6 +247,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-zizmor lint-compose lint-lockfile lint-licenses
 .PHONY: lint-docs lint-adr lint-doc-coverage lint-doc-references lint-doc-links check-adr-drift
 .PHONY: lint-i18n i18n-generate
+.PHONY: lint-security-headers security-headers-generate check-security-headers
 .PHONY: storybook
 .PHONY: all test
 .PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
@@ -516,6 +527,16 @@ lint-i18n: ## Fail if locales lose key parity or src/i18n/localization.json is s
 i18n-generate: ## Regenerate src/i18n/localization.json from the module i18n catalogs (issue #151)
 	node $(I18N_PARITY_SCRIPT) --write
 
+lint-security-headers: ## Fail if serve.json drifts from config/security-headers.json (issue #113)
+	$(EXEC_DEV_TTYLESS) node $(SERVE_CONFIG_GENERATOR) --check
+
+security-headers-generate: ## Regenerate the serve.json headers block from config/security-headers.json (issue #113)
+	$(EXEC_DEV_TTYLESS) node $(SERVE_CONFIG_GENERATOR)
+
+check-security-headers: ## Build the production image and assert the security-header baseline on its responses (issue #113)
+	docker build -t $(SECURITY_HEADERS_PROBE_IMAGE) -f Dockerfile --target production .
+	sh $(SECURITY_HEADERS_GATE_RUNNER)
+
 check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
 	sh scripts/check-env-sync.sh
 
@@ -611,7 +632,7 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-lint: check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n ## Runs all linters: env-sync, browser-support, ESLint, TypeScript, Markdown, documentation drift, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, compose validation, the bun.lock provenance gate, the dependency license-policy gate, and the i18n locale-parity gate.
+lint: check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers ## Runs all linters: env-sync, browser-support, ESLint, TypeScript, Markdown, documentation drift, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, compose validation, the bun.lock provenance gate, the dependency license-policy gate, the i18n locale-parity gate, and the serve.json security-header drift gate.
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision

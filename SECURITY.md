@@ -92,6 +92,11 @@ request. The complete workflow inventory is in [README.md](README.md#ci-checks).
 - **Preloaded-auth seed gate** — the same workflow, pull requests only;
   `make check-auth-seed-gate`. Proves against the emitted bundle that the test-only auth seam is
   compiled out of the deployable image.
+- **Browser security headers** — the same workflow, pull requests only;
+  `make check-security-headers`. Boots the deployable `production` image and asserts every
+  header of the baseline below on its responses; `make lint-security-headers`, part of
+  `make lint`, fails when `serve.json` drifts from the policy that generates it. See
+  [Browser security headers (issue #113)](#browser-security-headers-issue-113).
 - **Secret scan** — [`supply-chain-security.yml`](.github/workflows/supply-chain-security.yml),
   pull requests and weekly; `make scan-secrets`. gitleaks over the full git history, followed by
   a positive control that seeds a synthetic AWS key id and fails unless the scanner detects it, so
@@ -165,6 +170,88 @@ The rules for those changes are the repository-wide ones, restated for the secur
   visible in review.
 - Scanner images and actions are pinned by digest or release commit; a bump is its own reviewed
   change, never folded into unrelated work.
+
+## Browser security headers (issue #113)
+
+Every response of the production server carries the baseline below. The single source of truth is
+[`config/security-headers.json`](config/security-headers.json), validated by
+[`config/security-headers.schema.json`](config/security-headers.schema.json); the `headers` block
+of [`serve.json`](serve.json) is generated from it and never edited by hand, and the RSBuild dev
+server emits the same headers from the same file, so local and production cannot drift apart.
+
+| Header                         | Value                                                          |
+| ------------------------------ | -------------------------------------------------------------- |
+| `Content-Security-Policy`      | the directive set below                                        |
+| `Strict-Transport-Security`    | `max-age=31536000; includeSubDomains`                          |
+| `X-Frame-Options`              | `DENY`                                                         |
+| `X-Content-Type-Options`       | `nosniff`                                                      |
+| `Referrer-Policy`              | `strict-origin-when-cross-origin`                              |
+| `Permissions-Policy`           | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` |
+| `Cross-Origin-Opener-Policy`   | `same-origin`                                                  |
+| `Cross-Origin-Resource-Policy` | `same-origin`                                                  |
+
+The Content-Security-Policy:
+
+| Directive         | Sources                  | Why                                              |
+| ----------------- | ------------------------ | ------------------------------------------------ |
+| `default-src`     | `'self'`                 | nothing foreign loads unless a directive says so |
+| `script-src`      | `'self'`                 | no `'unsafe-inline'`, `'unsafe-eval'`, or host   |
+| `style-src`       | `'self' 'unsafe-inline'` | the Emotion/MUI accommodation, see below         |
+| `img-src`         | `'self' data:`           | RSBuild inlines icons under 4 KiB as `data:`     |
+| `font-src`        | `'self'`                 | Golos and Inter are self-hosted woff2            |
+| `connect-src`     | `'self'` + API origins   | derived from the environment, see below          |
+| `manifest-src`    | `'self'`                 | `/site.webmanifest`                              |
+| `frame-ancestors` | `'none'`                 | never embedded; pairs with `X-Frame-Options`     |
+| `form-action`     | `'self'`                 | forms submit through JavaScript, never by URL    |
+| `base-uri`        | `'self'`                 | no `<base>` hijack                               |
+| `object-src`      | `'none'`                 | no plugins                                       |
+
+**The `style-src` decision.** The app injects styles at runtime: Emotion and MUI write `<style>`
+elements into the document (`StyledEngineProvider injectFirst`, no custom cache), MUI sets inline
+`style` attributes on components such as `CircularProgress`, and the production build inlines the
+global stylesheet into the HTML shell (`output.inlineStyles`). A nonce would need a per-response
+value threaded through an Emotion cache, and `serve` is a static file server with no per-response
+rendering, so a nonce would be a constant and protect nothing. `'unsafe-inline'` is therefore
+granted to `style-src` only. `script-src` stays strict: the shell carries no inline script — the
+runtime configuration block is `type="application/json"`, data rather than code — so an injected
+script cannot execute, which is the property the CSP exists to protect.
+
+**How `connect-src` is derived.** The browser talks to the origins RSBuild inlined at build time
+(`REACT_APP_MOCKOON_URL`, `REACT_APP_GRAPHQL_URL`, and the Sentry ingest host from
+`REACT_APP_SENTRY_DSN` when it is set), and to the runtime overrides an operator sets at container
+start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145). The generator reads the
+build-time values from the tracked `.env`, so the committed `serve.json` is identical on every
+machine; the container entrypoint appends the origins of the runtime overrides to the served copy,
+after it renders the same values into the HTML shell, so a repointed API is reachable under the
+enforced policy. Runtime overrides extend the list rather than replace it, and the entrypoint
+refuses to start on a value that is not an absolute `http(s)` URL. Sentry is a build-time value:
+a DSN set at build time allows its ingest origin, an empty DSN allows nothing extra.
+
+**Enforcement.** Three checks, none of which relies on the Lighthouse `best-practices` score:
+
+- `make lint-security-headers` (in `make lint`, so in `static testing` on every pull request)
+  regenerates the `headers` block from the policy and fails when `serve.json` differs.
+- `make check-security-headers` (the `security headers` job of
+  [`security-testing.yml`](.github/workflows/security-testing.yml), every pull request) builds
+  the deployable `production` image, boots it, and asserts every header on the HTML shell, a deep
+  route, the manifest and a hashed static asset — then boots it again with `APP_CONFIG_*` API
+  overrides and asserts they reached `connect-src`, so the entrypoint's rendering step cannot go
+  dead unnoticed. `/index.html` itself is a `301` to `/` under `serve`'s clean URLs and is not
+  probed.
+- `tests/unit/tooling/security-headers-contract.test.ts` and
+  `tests/unit/scripts/security-headers.test.ts` pin the policy: the loader refuses a policy that
+  drops `nosniff`, shortens HSTS below 180 days or without `includeSubDomains`, widens
+  `frame-ancestors`, `object-src`, `base-uri` or `default-src`, or puts `'unsafe-inline'`,
+  `'unsafe-eval'` or a wildcard on `script-src` — so a weakened baseline cannot be generated,
+  shipped, or pass the gate. The CI gate has its own must-fail fixtures in
+  `tests/unit/scripts/check-security-headers.test.ts`.
+
+**Changing a header.** Edit `config/security-headers.json`, run `make security-headers-generate`,
+commit the regenerated `serve.json`, and let the three checks above prove the change. A new
+foreign origin the app must reach is a new entry in `connectSrcFromEnv` (an environment variable
+the app reads) rather than a hard-coded host. The floors are deliberate: relaxing one is a policy
+decision that changes the loader and its tests in the same reviewed change, never a lone edit to
+`serve.json`, which the drift gate rejects.
 
 ## Client security events (issue #159)
 
