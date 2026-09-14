@@ -79,6 +79,7 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     expect(jsonOf(logicNrs)).toContain(
       'ClassDeclaration[id.name=/^(?:Service|AppService|MyService)$/]'
     );
+    expect(jsonOf(logicNrs)).toContain('ClassDeclaration:not([id.name])');
     expect(jsonOf(logicNrs)).toContain(
       '(?:Manager|Helper|Util|Utils|Data|Info|Common|Misc|Stuff|Wrapper|Object)$/'
     );

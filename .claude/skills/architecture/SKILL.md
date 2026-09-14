@@ -418,11 +418,14 @@ are also the class-name suffixes: every class in non-React `src/**/*.ts` is
 `<DomainNoun…><RecognizedPatternSuffix>`, and the pair must be true. The
 canonical table — suffix, role, pattern lineage — lives in
 `config/class-naming-policy.js` (the ESLint gate reads it) and is mirrored in
-`CLAUDE.md` under "Class naming convention". `Manager`, `Helper`, `Util(s)`,
-`Data`, `Info`, `Wrapper`, `Object` and a domain-less bare `Service` are banned.
-A novel role adds its suffix to the policy file and the table in the same
-change; the kebab-case file name follows the class
-(see the code-organization skill).
+`CLAUDE.md` under "Class naming convention". Banned outright: `Manager`,
+`Helper`, `Util` / `Utils`, `Data`, `Info`, `Common`, `Misc`, `Stuff`,
+`Wrapper`, `Object`, a domain-less bare `Service` (`Service`, `AppService`,
+`MyService`), and an unnamed class. A suffix alone is not a name
+(`class Repository {}` fails); the one allowlist carve-out is an abstract
+`Base*` superclass such as `BaseAPI`, which exists to be extended. A novel
+role adds its suffix to the policy file and the table in the same change; the
+kebab-case file name follows the class (see the code-organization skill).
 
 ## Verification
 

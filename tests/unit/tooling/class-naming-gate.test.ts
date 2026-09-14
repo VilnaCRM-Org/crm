@@ -38,6 +38,7 @@ const lint = (code: string): string[] =>
 const messagesFor = (code: string, marker: string): number =>
   lint(code).filter((message) => message.includes(marker)).length;
 
+const UNNAMED = 'Unnamed class';
 const VAGUE = 'Vague class name';
 const BARE = 'Domain-less Service';
 const UNSUFFIXED = 'lacks an approved pattern suffix';
@@ -72,8 +73,8 @@ describe('class-naming policy (issue #129) — data', () => {
 });
 
 describe('class-naming policy (issue #129) — the real ESLint selectors compile and match', () => {
-  it('installs three selectors, each covering declarations and class expressions', () => {
-    expect(selectors).toHaveLength(3);
+  it('installs four selectors, each covering declarations and class expressions', () => {
+    expect(selectors).toHaveLength(4);
     selectors.forEach((entry) => {
       expect(entry.selector).toContain('ClassDeclaration');
       expect(entry.selector).toContain('ClassExpression');
@@ -111,7 +112,12 @@ describe('class-naming policy (issue #129) — the real ESLint selectors compile
   it('requires an approved suffix on named classes', () => {
     expect(messagesFor('class LoginThing {}', UNSUFFIXED)).toBe(1);
     expect(messagesFor('const t = class LoginThing {};', UNSUFFIXED)).toBe(1);
-    expect(messagesFor('export default class {}', UNSUFFIXED)).toBe(0);
+  });
+
+  it('rejects an unnamed class, whether default-exported or a class expression', () => {
+    expect(messagesFor('export default class {}', UNNAMED)).toBe(1);
+    expect(messagesFor('const anonymous = class {};', UNNAMED)).toBe(1);
+    expect(messagesFor('class LoginMapper {}', UNNAMED)).toBe(0);
   });
 
   it('exempts only an abstract Base* superclass', () => {

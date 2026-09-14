@@ -81,9 +81,10 @@ const S = {
   // The three issue #129 selectors are likewise BUILT by config/class-naming-policy.js (the
   // single source of truth the CLAUDE.md table is pinned against), so they are derived here
   // too; tests/unit/tooling/class-naming-gate.test.ts pins their construction.
-  bannedClassSuffix: classNamingPolicy.classNamingSelectors()[0].selector,
-  bareServiceClass: classNamingPolicy.classNamingSelectors()[1].selector,
-  unsuffixedClass: classNamingPolicy.classNamingSelectors()[2].selector,
+  unnamedClass: classNamingPolicy.classNamingSelectors()[0].selector,
+  bannedClassSuffix: classNamingPolicy.classNamingSelectors()[1].selector,
+  bareServiceClass: classNamingPolicy.classNamingSelectors()[2].selector,
+  unsuffixedClass: classNamingPolicy.classNamingSelectors()[3].selector,
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -275,6 +276,24 @@ const FIXTURES = [
     file: PROBES.logic,
     code: 'class LoginThing { run(): void {} }',
     covers: [S.unsuffixedClass],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #129',
+  },
+  {
+    id: 'class-unnamed-default-export',
+    file: PROBES.logic,
+    code: 'export default class { run(): void {} }',
+    covers: [S.unnamedClass],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #129',
+  },
+  {
+    id: 'class-unnamed-expression',
+    file: PROBES.logic,
+    code: 'const anonymous = class { run(): void {} };',
+    covers: [S.unnamedClass],
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #129',

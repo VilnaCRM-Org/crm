@@ -181,13 +181,20 @@ const approvedSuffixPattern = () =>
 const onClasses = (predicate) => `ClassDeclaration${predicate}, ClassExpression${predicate}`;
 
 /**
- * The three `no-restricted-syntax` entries, in the order they are spread into the non-React
- * override blocks of eslint.config.mjs. The allowlist demands at least one character before the
+ * The four `no-restricted-syntax` entries, in the order they are spread into the non-React
+ * override blocks of eslint.config.mjs: unnamed classes, the banned suffixes, the bare `Service`,
+ * and the approved-suffix allowlist. The allowlist demands at least one character before the
  * suffix, so a bare `Repository` or `Factory` is as unnamed as `Thing`. Abstract `Base*`
  * superclasses are the one allowlist carve-out: `BaseAPI` exists to be extended, so its leaf
  * name is the subclass's.
  */
 const classNamingSelectors = () => [
+  {
+    selector: onClasses(':not([id.name])'),
+    message:
+      'Unnamed class — a class in non-React source needs a <DomainNoun…><Suffix> name so its ' +
+      'role is visible to readers, reviewers and the DI token that mirrors it (issue #129).',
+  },
   {
     selector: onClasses(`[id.name=${bannedSuffixPattern()}]`),
     message:

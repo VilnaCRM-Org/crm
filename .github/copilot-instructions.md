@@ -40,9 +40,11 @@ make test-mutation    # Stryker; the enforced floor is 100%
   the file must stay container-free. Hooks (`use-*.ts`) and `.tsx` components are exempt.
 - **Classes are named `<DomainNoun…><PatternSuffix>`** (`ApiErrorFactory`, `LoginResponseMapper`,
   `EmailValidator`): the suffix names the role from the approved table in
-  `config/class-naming-policy.js` (mirrored in `CLAUDE.md`). `Manager`, `Helper`, `Util(s)`,
-  `Data`, `Info`, `Wrapper`, `Object` and a bare `Service` are banned; a novel role adds its
-  suffix to the policy and the table in the same change.
+  `config/class-naming-policy.js` (mirrored in `CLAUDE.md`). Banned: `Manager`, `Helper`,
+  `Util` / `Utils`, `Data`, `Info`, `Common`, `Misc`, `Stuff`, `Wrapper`, `Object`, a bare
+  `Service` and an unnamed class; a suffix alone (`class Repository {}`) is not a name; an
+  abstract `Base*` superclass is the one carve-out. A novel role adds its suffix to the policy
+  and the table in the same change.
 - **Types live in type-only files** (`types.ts` or a `types/` folder) that hold only
   `interface`, `type`, `import type`, and `declare`. Logic files declare no types, and a type
   file is imported only with `import type`.
