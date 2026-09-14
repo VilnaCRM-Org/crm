@@ -70,7 +70,8 @@ renders it and refuses a weakened baseline; `scripts/generate-serve-config.js` w
 `headers` block of `serve.json` from the policy and the tracked `.env`
 (`make security-headers-generate`, drift-checked by `make lint-security-headers` inside
 `make lint`); `scripts/render-security-headers.js` runs from `scripts/docker-entrypoint.sh` and
-appends the runtime API origins to `connect-src`; `rsbuild.config.ts` sets `server.headers` from
+renders the served `serve.json` from the immutable baseline in `config/` plus the runtime API
+origins; `rsbuild.config.ts` sets `server.headers` from
 the same policy; and `scripts/ci/check-security-headers.mjs` behind `make check-security-headers`
 (the `security headers` job of `security-testing.yml`) boots the `production` image twice and
 asserts every header on the HTML shell, a deep route, the manifest, and a hashed asset. The full
@@ -78,8 +79,12 @@ directive table is in [`SECURITY.md`](../../SECURITY.md#browser-security-headers
 
 ## Positive Consequences
 
-- Every production response carries the complete baseline, verified in headless Chromium against
-  the built image: fully styled, fonts loaded, zero console violations, foreign origins blocked.
+- Every production response carries the complete baseline: the gate asserts the headers of the
+  built image's responses on every pull request. That the app renders under the enforced policy
+  was verified by hand in headless Chromium against the same image (fully styled, fonts loaded,
+  zero console violations, foreign origins blocked) and is exercised continuously by the Firefox
+  and WebKit e2e and visual lanes, whose zero-tolerance console gate rejects any CSP violation —
+  the lane that caught the inline seed script and the zod eval probe below.
 - A regression is caught at three points — the policy loader refuses a weakened baseline, the
   drift gate refuses a hand-edited `serve.json`, and the image gate refuses an artifact whose
   responses differ from the policy — none of which relies on a Lighthouse score.
@@ -102,6 +107,15 @@ directive table is in [`SECURITY.md`](../../SECURITY.md#browser-security-headers
   emits, not what the edge delivers.
 - The `security headers` job builds the deployable image on every pull request, the second job
   after the seed gate to do so.
+- `Cross-Origin-Opener-Policy` is not part of the baseline: browsers ignore it on a plain-http,
+  non-localhost origin and log a console error on every document, which the Playwright suites
+  hit at `http://prod:3001` and their zero-tolerance console gate rejects. The app opens no popup
+  that needs opener isolation (`window.open` is always `noopener`), so nothing is lost today;
+  it returns with any future cross-origin-isolation requirement.
+- Two test-side seams had to become CSP-safe: the Playwright auth-token seed now runs through
+  `page.addInitScript` instead of an inline `<script>` the policy blocks, and zod runs in
+  `jitless` mode (`src/config/zod.ts`) because its object-schema compiler probes the `Function`
+  constructor, which browsers report as a CSP violation even when the throw is caught.
 
 ## Pros and Cons of the Options
 

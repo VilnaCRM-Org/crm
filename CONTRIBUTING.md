@@ -294,7 +294,7 @@ out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere bu
 
 Every production response carries the header baseline — `Content-Security-Policy`,
 `Strict-Transport-Security`, `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`,
-`Permissions-Policy` and the two `Cross-Origin-*` policies — declared once in
+`Permissions-Policy` and `Cross-Origin-Resource-Policy` — declared once in
 `config/security-headers.json`. The `headers` block of `serve.json` is generated from it and the
 RSBuild dev server reads the same file, so the two cannot drift; the full directive table and the
 `style-src` decision are in [`SECURITY.md`](SECURITY.md#browser-security-headers-issue-113).

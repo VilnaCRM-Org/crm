@@ -135,7 +135,23 @@ describe('scripts/ci/check-security-headers.mjs (issue #113)', () => {
       'connect-src gains a wildcard',
       (headers): HeaderList =>
         withHeader(headers, CSP_HEADER, cspOf(headers).replace('connect-src', 'connect-src *')),
-      'connect-src carries wildcard *',
+      'connect-src carries unauthorized source *',
+    ],
+    [
+      'connect-src gains an origin the baseline never authorized',
+      (headers): HeaderList =>
+        withHeader(
+          headers,
+          CSP_HEADER,
+          cspOf(headers).replace('connect-src', 'connect-src https://exfil.example')
+        ),
+      'connect-src carries unauthorized source https://exfil.example',
+    ],
+    [
+      'a directive is repeated so the browser would enforce the first, weaker one',
+      (headers): HeaderList =>
+        withHeader(headers, CSP_HEADER, `script-src 'unsafe-inline'; ${cspOf(headers)}`),
+      'repeats the script-src directive',
     ],
     [
       'a directive disappears',

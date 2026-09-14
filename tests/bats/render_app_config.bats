@@ -31,17 +31,20 @@ setup() {
   mkdir -p "$BATS_TEST_TMPDIR/scripts"
   cp "$RENDERER_SOURCE" "$RENDERER"
   stage_security_headers "$BATS_TEST_TMPDIR"
+  SERVE_CONFIG_BASELINE="$BATS_TEST_TMPDIR/config/serve.json"
   SERVE_CONFIG="$BATS_TEST_TMPDIR/serve.json"
   HEADERS_RENDERER="$BATS_TEST_TMPDIR/scripts/render-security-headers.js"
 }
 
-# The entrypoint's second render step (issue #113) needs the committed serve.json, the
-# security-headers renderer with its shared module beside it, and the policy one level up —
-# the same layout the runtime image ships under /app.
+# The entrypoint's second render step (issue #113) needs the committed serve.json as the
+# immutable baseline under config/, the served copy beside the shell, the security-headers
+# renderer with its shared module, and the policy — the same layout the runtime image ships
+# under /app.
 stage_security_headers() {
   local root="$1"
 
   mkdir -p "$root/scripts" "$root/config"
+  cp "$PROJECT_ROOT/serve.json" "$root/config/serve.json"
   cp "$PROJECT_ROOT/serve.json" "$root/serve.json"
   cp "$PROJECT_ROOT/scripts/render-security-headers.js" "$root/scripts/render-security-headers.js"
   cp "$PROJECT_ROOT/scripts/security-headers.js" "$root/scripts/security-headers.js"
@@ -207,6 +210,7 @@ strip_config_block() {
   run --separate-stderr env \
     APP_CONFIG_HTML="$artifact" \
     APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
     SERVE_CONFIG="$SERVE_CONFIG" \
     SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
     APP_CONFIG_GRAPHQL_URL="$STAGING_GRAPHQL_URL" \
@@ -226,6 +230,7 @@ strip_config_block() {
   run --separate-stderr env \
     APP_CONFIG_HTML="$artifact" \
     APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
     SERVE_CONFIG="$SERVE_CONFIG" \
     SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
     APP_CONFIG_API_BASE_URL="$PRODUCTION_API_BASE_URL" \
@@ -240,6 +245,7 @@ strip_config_block() {
   run --separate-stderr env \
     APP_CONFIG_HTML="$artifact" \
     APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
     SERVE_CONFIG="$SERVE_CONFIG" \
     SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
     APP_CONFIG_API_BASE_URL="$PRODUCTION_API_BASE_URL" \
@@ -248,6 +254,44 @@ strip_config_block() {
 
   [ "$status" -eq 0 ]
   [ "$(connect_src "$SERVE_CONFIG")" = "$(connect_src "$PROJECT_ROOT/serve.json") https://api.vilnacrm.example" ]
+  diff "$PROJECT_ROOT/serve.json" "$SERVE_CONFIG_BASELINE"
+}
+
+@test "docker-entrypoint.sh drops an origin whose override was cleared before a restart (issue #113)" {
+  local artifact
+  artifact="$(copy_artifact entrypoint-csp-restart)"
+
+  run --separate-stderr env \
+    APP_CONFIG_HTML="$artifact" \
+    APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
+    SERVE_CONFIG="$SERVE_CONFIG" \
+    SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
+    APP_CONFIG_API_BASE_URL="$PRODUCTION_API_BASE_URL" \
+    sh "$ENTRYPOINT" echo started
+  [ "$status" -eq 0 ]
+  [ "$(connect_src "$SERVE_CONFIG")" = "$(connect_src "$PROJECT_ROOT/serve.json") https://api.vilnacrm.example" ]
+
+  run --separate-stderr env \
+    APP_CONFIG_HTML="$artifact" \
+    APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
+    SERVE_CONFIG="$SERVE_CONFIG" \
+    SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
+    APP_CONFIG_GRAPHQL_URL="$STAGING_GRAPHQL_URL" \
+    sh "$ENTRYPOINT" echo restarted
+  [ "$status" -eq 0 ]
+  [ "$(connect_src "$SERVE_CONFIG")" = "$(connect_src "$PROJECT_ROOT/serve.json") https://staging.vilnacrm.example" ]
+
+  run --separate-stderr env \
+    APP_CONFIG_HTML="$artifact" \
+    APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
+    SERVE_CONFIG="$SERVE_CONFIG" \
+    SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
+    sh "$ENTRYPOINT" echo restarted
+  [ "$status" -eq 0 ]
+  diff "$PROJECT_ROOT/serve.json" "$SERVE_CONFIG"
 }
 
 @test "docker-entrypoint.sh leaves serve.json byte-identical without runtime API overrides" {
@@ -257,6 +301,7 @@ strip_config_block() {
   run --separate-stderr env \
     APP_CONFIG_HTML="$artifact" \
     APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
     SERVE_CONFIG="$SERVE_CONFIG" \
     SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
     APP_CONFIG_FLAG_FORGOT_PASSWORD=true \
@@ -284,6 +329,7 @@ strip_config_block() {
   assert_output_contains 'started'
   [ "$(config_block "$root/dist/index.html")" = "{\"flags\":{\"forgotPassword\":true},\"apiBaseUrl\":\"$PRODUCTION_API_BASE_URL\"}" ]
   [ "$(connect_src "$root/serve.json")" = "$(connect_src "$PROJECT_ROOT/serve.json") https://api.vilnacrm.example" ]
+  diff "$PROJECT_ROOT/serve.json" "$root/config/serve.json"
 }
 
 @test "docker-entrypoint.sh fails before exec when the configuration is rejected" {
@@ -293,6 +339,7 @@ strip_config_block() {
   run --separate-stderr env \
     APP_CONFIG_HTML="$artifact" \
     APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
     SERVE_CONFIG="$SERVE_CONFIG" \
     SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
     APP_CONFIG_FLAG_FORGOT_PASSWORD=maybe \
@@ -311,26 +358,27 @@ strip_config_block() {
   # render-app-config.js validates the URL first; the header renderer must reject it on its own
   # too, so the check holds if the app-config step is ever bypassed.
   run --separate-stderr env APP_CONFIG_API_BASE_URL='ftp://files.example/api' \
-    node "$HEADERS_RENDERER" "$SERVE_CONFIG"
+    node "$HEADERS_RENDERER" "$SERVE_CONFIG_BASELINE" "$SERVE_CONFIG"
 
   [ "$status" -ne 0 ]
   [[ "$stderr" == *"APP_CONFIG_API_BASE_URL must be an absolute http or https URL"* ]]
   diff "$PROJECT_ROOT/serve.json" "$SERVE_CONFIG"
 }
 
-@test "docker-entrypoint.sh fails when the serve config is missing" {
+@test "docker-entrypoint.sh fails when the serve config baseline is missing" {
   local artifact
   artifact="$(copy_artifact entrypoint-no-serve)"
 
   run --separate-stderr env \
     APP_CONFIG_HTML="$artifact" \
     APP_CONFIG_RENDERER="$RENDERER" \
-    SERVE_CONFIG="$BATS_TEST_TMPDIR/absent-serve.json" \
+    SERVE_CONFIG_BASELINE="$BATS_TEST_TMPDIR/absent-serve.json" \
+    SERVE_CONFIG="$SERVE_CONFIG" \
     SECURITY_HEADERS_RENDERER="$HEADERS_RENDERER" \
     sh "$ENTRYPOINT" echo started
 
   [ "$status" -ne 0 ]
-  [[ "$stderr" == *"docker-entrypoint: serve config not found at $BATS_TEST_TMPDIR/absent-serve.json"* ]]
+  [[ "$stderr" == *"docker-entrypoint: serve config baseline not found at $BATS_TEST_TMPDIR/absent-serve.json"* ]]
   [[ "$output" != *"started"* ]]
   [ "$(config_block "$artifact")" = "" ]
 }
@@ -342,6 +390,7 @@ strip_config_block() {
   run --separate-stderr env \
     APP_CONFIG_HTML="$artifact" \
     APP_CONFIG_RENDERER="$RENDERER" \
+    SERVE_CONFIG_BASELINE="$SERVE_CONFIG_BASELINE" \
     SERVE_CONFIG="$SERVE_CONFIG" \
     SECURITY_HEADERS_RENDERER="$BATS_TEST_TMPDIR/absent-headers-renderer.js" \
     sh "$ENTRYPOINT" echo started

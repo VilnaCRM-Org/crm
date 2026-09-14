@@ -1655,8 +1655,9 @@ build goes red. Know them before you touch a config file:
   `config/security-headers.json`: a strict `Content-Security-Policy` (`script-src 'self'`, no
   `'unsafe-inline'` or `'unsafe-eval'` on scripts; `'unsafe-inline'` on `style-src` only, the
   Emotion/MUI accommodation), `Strict-Transport-Security`, `X-Frame-Options: DENY`,
-  `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, and the two
-  `Cross-Origin-*` policies. The directive table and rationale live in `SECURITY.md`
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, and
+  `Cross-Origin-Resource-Policy` (no COOP: browsers ignore it on plain-http, non-localhost
+  origins with a console error). The directive table and rationale live in `SECURITY.md`
 - `serve.json` is generated — never edit its `headers` block by hand. Change the policy, run
   `make security-headers-generate`, commit the result; `make lint-security-headers` (in
   `make lint`) fails on drift, and the RSBuild dev server reads the same policy

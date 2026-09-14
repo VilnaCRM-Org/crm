@@ -9,8 +9,10 @@
 #
 # Fails fast: an invalid APP_CONFIG_* value aborts the entrypoint with a non-zero status, so a
 # misconfigured deployment never starts serving rather than degrading silently in the browser.
-# The same start-up extends the Content-Security-Policy connect-src in serve.json with the
-# APP_CONFIG_* API origins (issue #113), so a repointed API is reachable under the enforced CSP.
+# The same start-up renders the served serve.json from the immutable baseline the image ships,
+# extending the Content-Security-Policy connect-src with the APP_CONFIG_* API origins (issue
+# #113), so a repointed API is reachable under the enforced CSP and a cleared override leaves
+# no stale origin behind on restart.
 #
 # POSIX sh on purpose - the production image is plain alpine with the node binary: no bash,
 # no jq and no envsubst.
@@ -20,6 +22,7 @@ set -eu
 APP_ROOT="${APP_ROOT:-/app}"
 APP_CONFIG_HTML="${APP_CONFIG_HTML:-${APP_ROOT}/dist/index.html}"
 APP_CONFIG_RENDERER="${APP_CONFIG_RENDERER:-${APP_ROOT}/scripts/render-app-config.js}"
+SERVE_CONFIG_BASELINE="${SERVE_CONFIG_BASELINE:-${APP_ROOT}/config/serve.json}"
 SERVE_CONFIG="${SERVE_CONFIG:-${APP_ROOT}/serve.json}"
 SECURITY_HEADERS_RENDERER="${SECURITY_HEADERS_RENDERER:-${APP_ROOT}/scripts/render-security-headers.js}"
 
@@ -33,8 +36,8 @@ if [ ! -f "$APP_CONFIG_RENDERER" ]; then
   exit 1
 fi
 
-if [ ! -f "$SERVE_CONFIG" ]; then
-  printf 'docker-entrypoint: serve config not found at %s\n' "$SERVE_CONFIG" >&2
+if [ ! -f "$SERVE_CONFIG_BASELINE" ]; then
+  printf 'docker-entrypoint: serve config baseline not found at %s\n' "$SERVE_CONFIG_BASELINE" >&2
   exit 1
 fi
 
@@ -44,6 +47,6 @@ if [ ! -f "$SECURITY_HEADERS_RENDERER" ]; then
 fi
 
 node "$APP_CONFIG_RENDERER" "$APP_CONFIG_HTML"
-node "$SECURITY_HEADERS_RENDERER" "$SERVE_CONFIG"
+node "$SECURITY_HEADERS_RENDERER" "$SERVE_CONFIG_BASELINE" "$SERVE_CONFIG"
 
 exec "$@"

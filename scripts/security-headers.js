@@ -21,20 +21,22 @@ const CONNECT_SRC = 'connect-src';
 const CACHE_CONTROL = 'Cache-Control';
 const POLICY_PATH = path.resolve(__dirname, '../config/security-headers.json');
 
+const isObject = (value) => Boolean(value) && typeof value === 'object';
+
+const SHAPE_CHECKS = [
+  (policy) => typeof policy.source === 'string',
+  (policy) => Array.isArray(policy.headers),
+  (policy) => Array.isArray(policy.cacheControl),
+  (policy) => isObject(policy.contentSecurityPolicy),
+  (policy) => isObject(policy.contentSecurityPolicy.directives),
+  (policy) => Array.isArray(policy.contentSecurityPolicy.directives[CONNECT_SRC]),
+  (policy) => isObject(policy.contentSecurityPolicy.connectSrcFromEnv),
+  (policy) => Array.isArray(policy.contentSecurityPolicy.connectSrcFromEnv.build),
+  (policy) => Array.isArray(policy.contentSecurityPolicy.connectSrcFromEnv.runtime),
+];
+
 function assertPolicyShape(policy) {
-  const csp = policy && policy.contentSecurityPolicy;
-  const valid =
-    policy &&
-    typeof policy.source === 'string' &&
-    Array.isArray(policy.headers) &&
-    csp &&
-    csp.directives &&
-    typeof csp.directives === 'object' &&
-    Array.isArray(csp.directives[CONNECT_SRC]) &&
-    csp.connectSrcFromEnv &&
-    Array.isArray(csp.connectSrcFromEnv.build) &&
-    Array.isArray(csp.connectSrcFromEnv.runtime) &&
-    Array.isArray(policy.cacheControl);
+  const valid = isObject(policy) && SHAPE_CHECKS.every((check) => check(policy));
 
   if (!valid) {
     throw new Error(
@@ -115,8 +117,10 @@ function assertBaselineFloors(policy) {
   assertCspFloors(policy.contentSecurityPolicy.directives, failures);
 
   if (failures.length > 0) {
+    const details = failures.join('\n  ');
+
     throw new Error(
-      `config/security-headers.json weakens the browser security baseline:\n  ${failures.join('\n  ')}`
+      `config/security-headers.json weakens the browser security baseline:\n  ${details}`
     );
   }
 
@@ -184,11 +188,20 @@ function parseCsp(value) {
   const directives = {};
 
   for (const clause of value.split(';')) {
-    const [directive, ...sources] = clause.trim().split(/\s+/);
+    const [rawDirective, ...sources] = clause.trim().split(/\s+/);
+    const directive = rawDirective.toLowerCase();
 
-    if (directive) {
-      directives[directive] = sources;
+    if (!directive) {
+      continue;
     }
+
+    if (Object.prototype.hasOwnProperty.call(directives, directive)) {
+      throw new Error(
+        `${CSP_HEADER} repeats the ${directive} directive; browsers enforce only the first one.`
+      );
+    }
+
+    directives[directive] = sources;
   }
 
   return directives;
@@ -239,6 +252,10 @@ function findCspHeader(serveConfig, source) {
   return header;
 }
 
+function committedConnectSrc(serveConfig, policy) {
+  return parseCsp(findCspHeader(serveConfig, policy.source).value)[CONNECT_SRC] || [];
+}
+
 function extendRuntimeConnectSrc(serveConfig, policy, env) {
   const runtimeOrigins = originsFromEnv(
     policy.contentSecurityPolicy.connectSrcFromEnv.runtime,
@@ -261,6 +278,7 @@ module.exports = {
   assertBaselineFloors,
   buildCsp,
   cacheControlRules,
+  committedConnectSrc,
   extendRuntimeConnectSrc,
   loadPolicy,
   originOf,

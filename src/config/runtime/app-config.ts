@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/config/zod';
 
 import AppConfigSchema from './app-config-schema';
 import appConfigSource from './app-config-source';

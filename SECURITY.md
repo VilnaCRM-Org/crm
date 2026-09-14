@@ -187,7 +187,6 @@ server emits the same headers from the same file, so local and production cannot
 | `X-Content-Type-Options`       | `nosniff`                                                      |
 | `Referrer-Policy`              | `strict-origin-when-cross-origin`                              |
 | `Permissions-Policy`           | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` |
-| `Cross-Origin-Opener-Policy`   | `same-origin`                                                  |
 | `Cross-Origin-Resource-Policy` | `same-origin`                                                  |
 
 The Content-Security-Policy:
@@ -206,6 +205,13 @@ The Content-Security-Policy:
 | `base-uri`        | `'self'`                 | no `<base>` hijack                               |
 | `object-src`      | `'none'`                 | no plugins                                       |
 
+**Why there is no `Cross-Origin-Opener-Policy`.** Browsers honour COOP only on a potentially
+trustworthy origin (HTTPS or `localhost`) and otherwise ignore it with a console error on every
+document. The Playwright and Lighthouse suites reach the harness at `http://prod:3001`, where that
+error trips the zero-tolerance console gate, and the app opens no popup that needs opener
+isolation — `window.open` is always `noopener`. Revisit it with any cross-origin-isolation work
+(`SharedArrayBuffer`, `Cross-Origin-Embedder-Policy`).
+
 **The `style-src` decision.** The app injects styles at runtime: Emotion and MUI write `<style>`
 elements into the document (`StyledEngineProvider injectFirst`, no custom cache), MUI sets inline
 `style` attributes on components such as `CircularProgress`, and the production build inlines the
@@ -221,10 +227,12 @@ script cannot execute, which is the property the CSP exists to protect.
 `REACT_APP_SENTRY_DSN` when it is set), and to the runtime overrides an operator sets at container
 start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145). The generator reads the
 build-time values from the tracked `.env`, so the committed `serve.json` is identical on every
-machine; the container entrypoint appends the origins of the runtime overrides to the served copy,
-after it renders the same values into the HTML shell, so a repointed API is reachable under the
-enforced policy. Runtime overrides extend the list rather than replace it, and the entrypoint
-refuses to start on a value that is not an absolute `http(s)` URL. Sentry is a build-time value:
+machine; the container entrypoint renders the served `/app/serve.json` from the immutable baseline
+the image ships (`/app/config/serve.json`) plus the origins of the runtime overrides, after it
+renders the same values into the HTML shell, so a repointed API is reachable under the enforced
+policy and an override that is changed or cleared between restarts leaves no stale origin
+behind. Runtime overrides extend the list rather than replace it, and the entrypoint refuses to
+start on a value that is not an absolute `http(s)` URL. Sentry is a build-time value:
 a DSN set at build time allows its ingest origin, an empty DSN allows nothing extra.
 
 **Enforcement.** Three checks, none of which relies on the Lighthouse `best-practices` score:
@@ -236,8 +244,10 @@ a DSN set at build time allows its ingest origin, an empty DSN allows nothing ex
   the deployable `production` image, boots it, and asserts every header on the HTML shell, a deep
   route, the manifest and a hashed static asset — then boots it again with `APP_CONFIG_*` API
   overrides and asserts they reached `connect-src`, so the entrypoint's rendering step cannot go
-  dead unnoticed. `/index.html` itself is a `301` to `/` under `serve`'s clean URLs and is not
-  probed.
+  dead unnoticed. `connect-src` is an exact-set comparison against the committed `serve.json`
+  plus the expected overrides, every other directive must equal the policy, and a repeated
+  directive fails the check because browsers enforce only the first occurrence. `/index.html`
+  itself is a `301` to `/` under `serve`'s clean URLs and is not probed.
 - `tests/unit/tooling/security-headers-contract.test.ts` and
   `tests/unit/scripts/security-headers.test.ts` pin the policy: the loader refuses a policy that
   drops `nosniff`, shortens HSTS below 180 days or without `includeSubDomains`, widens

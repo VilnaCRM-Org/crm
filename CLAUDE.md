@@ -1676,6 +1676,9 @@ type files, stories, tests) must end in one of these:
 | `*Styles`      | Emotion style object holder                 | repo idiom                        |
 | `*Impl`        | concrete implementation of an interface     | repo idiom (AuthRepositoryImpl)   |
 
+A suffix alone is not a name: `class Repository {}` or `class Factory {}` fails the allowlist
+exactly as `class Thing {}` does — the domain noun in front of it is mandatory.
+
 **Banned names** (vague / role-hiding; they license grab-bag responsibilities): `Manager`,
 `Helper`, `Util` / `Utils`, `Data`, `Info`, `Common`, `Misc`, `Stuff`, `Wrapper`, `Object`, and a
 domain-less bare `Service` (`Service`, `AppService`, `MyService`). An abstract `Base*` superclass
@@ -2181,9 +2184,11 @@ the runtime image ships beside the entrypoint:
   file differs. The build-time `connect-src` origins come from the tracked `.env` only, so the
   output is identical on every machine.
 - **The container entrypoint extends `connect-src`.** `scripts/docker-entrypoint.sh` runs
-  `scripts/render-security-headers.js` after `render-app-config.js`, appending the origins of
-  `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` to the served copy, so a repointed API is
-  reachable under the enforced policy without a rebuild. Invalid values abort the start.
+  `scripts/render-security-headers.js` after `render-app-config.js`, rendering the served
+  `/app/serve.json` from the immutable baseline the image ships at `/app/config/serve.json`
+  plus the origins of `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL`, so a repointed API
+  is reachable under the enforced policy without a rebuild and an override that is changed or
+  cleared between restarts leaves no stale origin behind. Invalid values abort the start.
 - **The RSBuild dev server** sets `server.headers` from the same policy, so a CSP break surfaces
   on `make start`. HMR is a same-origin WebSocket, which `'self'` admits.
 
@@ -2194,7 +2199,10 @@ The baseline: `default-src 'self'`; `script-src 'self'` (no `'unsafe-inline'`, n
 HSTS (`max-age=31536000; includeSubDomains`), `X-Frame-Options: DENY`,
 `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
 `Permissions-Policy` (camera, microphone, geolocation, payment, usb disabled),
-`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`.
+`Cross-Origin-Resource-Policy: same-origin`. `Cross-Origin-Opener-Policy` is deliberately absent:
+browsers ignore it on a plain-http, non-localhost origin and log a console error per document,
+which the e2e console gate rejects at `http://prod:3001`, and the app opens no popup that needs
+opener isolation.
 
 **`style-src` is the one deliberate relaxation.** Emotion/MUI inject `<style>` elements and
 inline `style` attributes at runtime, and `output.inlineStyles` inlines the global stylesheet
@@ -2209,9 +2217,13 @@ at `/`.
 `security testing` workflow, pull requests only) builds `--target production`, boots it, and
 asserts every header on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**` asset;
 then boots it again with `APP_CONFIG_*` overrides and asserts they reached `connect-src`, so the
-entrypoint step cannot go dead unnoticed. `loadPolicy()` refuses a weakened policy — no `nosniff`,
-HSTS under 180 days or without `includeSubDomains`, `X-Frame-Options` outside `DENY`/`SAMEORIGIN`,
-a widened `default-src`/`frame-ancestors`/`base-uri`/`object-src`, `'unsafe-inline'` /
+entrypoint step cannot go dead unnoticed. `connect-src` is compared as an exact set — the
+committed `serve.json` sources plus the expected overrides, nothing more — and every other
+directive must equal the policy; a repeated directive is rejected outright, because browsers
+enforce the first occurrence and a checker that kept the last one could be talked past.
+`loadPolicy()` refuses a weakened policy — no `nosniff`, HSTS under 180 days or without
+`includeSubDomains`, `X-Frame-Options` outside `DENY`/`SAMEORIGIN`, a widened
+`default-src`/`frame-ancestors`/`base-uri`/`object-src`, `'unsafe-inline'` /
 `'unsafe-eval'` / a wildcard on `script-src`, `*` anywhere — so a weakened baseline cannot be
 generated, shipped, or pass the gate.
 [`tests/unit/scripts/security-headers.test.ts`](tests/unit/scripts/security-headers.test.ts) pins

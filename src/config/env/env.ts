@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/config/zod';
 
 import EnvSchema from './env-schema';
 import rawEnv from './raw-env';

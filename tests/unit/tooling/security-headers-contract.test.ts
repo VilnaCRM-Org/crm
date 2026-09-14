@@ -61,9 +61,12 @@ describe('browser security-header baseline (issue #113)', () => {
       'X-Content-Type-Options',
       'Referrer-Policy',
       'Permissions-Policy',
-      'Cross-Origin-Opener-Policy',
       'Cross-Origin-Resource-Policy',
     ]);
+  });
+
+  it('leaves Cross-Origin-Opener-Policy out of the baseline', () => {
+    expect(policy.headers.map((header) => header.key)).not.toContain('Cross-Origin-Opener-Policy');
   });
 
   it('keeps script-src strict and scopes the Emotion accommodation to style-src alone', () => {
@@ -136,20 +139,28 @@ describe('browser security-header baseline (issue #113)', () => {
       'COPY --chown=node:node scripts/docker-entrypoint.sh scripts/render-app-config.js ' +
         'scripts/render-security-headers.js scripts/security-headers.js ./scripts/'
     );
-    expect(dockerfile).toContain('COPY --chown=node:node config/security-headers.json ./config/');
+    expect(dockerfile).toContain(
+      'COPY --chown=node:node config/security-headers.json serve.json ./config/'
+    );
+    expect(dockerfile).toContain('COPY --chown=node:node serve.json ./serve.json');
   });
 
-  it('extends connect-src at container start, after the app-config render and before exec', () => {
+  it('renders the served config from the immutable baseline at every container start', () => {
     const entrypoint = directivesOf(readRepoFile('scripts/docker-entrypoint.sh'));
     const appConfig = entrypoint.indexOf('node "$APP_CONFIG_RENDERER" "$APP_CONFIG_HTML"');
-    const headers = entrypoint.indexOf('node "$SECURITY_HEADERS_RENDERER" "$SERVE_CONFIG"');
+    const headers = entrypoint.indexOf(
+      'node "$SECURITY_HEADERS_RENDERER" "$SERVE_CONFIG_BASELINE" "$SERVE_CONFIG"'
+    );
     const handoff = entrypoint.indexOf('exec "$@"');
 
     expect(appConfig).toBeGreaterThan(-1);
     expect(headers).toBeGreaterThan(appConfig);
     expect(handoff).toBeGreaterThan(headers);
+    expect(entrypoint).toContain(
+      'SERVE_CONFIG_BASELINE="${SERVE_CONFIG_BASELINE:-${APP_ROOT}/config/serve.json}"'
+    );
     expect(entrypoint).toContain('SERVE_CONFIG="${SERVE_CONFIG:-${APP_ROOT}/serve.json}"');
-    expect(entrypoint).toContain('serve config not found at');
+    expect(entrypoint).toContain('serve config baseline not found at');
     expect(entrypoint).toContain('security-headers renderer not found at');
   });
 

@@ -78,6 +78,19 @@ describe('scripts/security-headers.js (issue #113)', () => {
       expect(parseCsp(serializeCsp(directives))).toEqual(directives);
     });
 
+    it('rejects a repeated directive instead of letting the last one win', () => {
+      expect(() => parseCsp("script-src 'unsafe-inline'; script-src 'self'")).toThrow(
+        'repeats the script-src directive; browsers enforce only the first one.'
+      );
+    });
+
+    it('normalizes directive names to lowercase so a case variant cannot hide a duplicate', () => {
+      expect(parseCsp("Script-Src 'self'")).toEqual({ 'script-src': ["'self'"] });
+      expect(() => parseCsp("script-src 'self'; SCRIPT-SRC 'unsafe-eval'")).toThrow(
+        'repeats the script-src directive'
+      );
+    });
+
     it('appends extra connect-src origins once and leaves every other directive untouched', () => {
       const policy = clonePolicy();
       const csp = parseCsp(buildCsp(policy, ['https://api.example', 'https://api.example']));

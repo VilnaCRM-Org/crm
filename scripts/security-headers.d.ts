@@ -45,6 +45,10 @@ export const POLICY_PATH: string;
 export function assertBaselineFloors(policy: SecurityHeaderPolicy): SecurityHeaderPolicy;
 export function buildCsp(policy: SecurityHeaderPolicy, extraConnectSrc?: string[]): string;
 export function cacheControlRules(policy: SecurityHeaderPolicy): ServeHeaderRule[];
+export function committedConnectSrc(
+  serveConfig: { headers: ServeHeaderRule[] },
+  policy: SecurityHeaderPolicy
+): string[];
 export function extendRuntimeConnectSrc(
   serveConfig: { headers: ServeHeaderRule[] },
   policy: SecurityHeaderPolicy,

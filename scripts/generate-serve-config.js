@@ -26,18 +26,29 @@ const projectRoot = path.resolve(__dirname, '..');
 const SERVE_CONFIG_PATH = path.join(projectRoot, 'serve.json');
 const DOTENV_PATH = path.join(projectRoot, '.env');
 
+function readIfPresent(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (error && error.code === 'ENOENT') {
+      return null;
+    }
+    throw error;
+  }
+}
+
 function loadBuildEnv(dotenvPath = DOTENV_PATH) {
-  if (!fs.existsSync(dotenvPath)) {
+  const contents = readIfPresent(dotenvPath);
+
+  if (contents === null) {
     return {};
   }
 
-  const parsed = dotenv.parse(fs.readFileSync(dotenvPath, 'utf8'));
-
-  return expand({ parsed, processEnv: {} }).parsed || {};
+  return expand({ parsed: dotenv.parse(contents), processEnv: {} }).parsed || {};
 }
 
-function readExistingServeConfig(servePath) {
-  return fs.existsSync(servePath) ? JSON.parse(fs.readFileSync(servePath, 'utf8')) : {};
+function readExistingServeConfig(current) {
+  return current === null ? {} : JSON.parse(current);
 }
 
 function renderServeJson(policy, env, existing) {
@@ -48,11 +59,8 @@ function main(argv) {
   const check = argv.includes('--check');
   const policy = loadPolicy();
   const env = loadBuildEnv();
-  const existing = readExistingServeConfig(SERVE_CONFIG_PATH);
-  const rendered = renderServeJson(policy, env, existing);
-  const current = fs.existsSync(SERVE_CONFIG_PATH)
-    ? fs.readFileSync(SERVE_CONFIG_PATH, 'utf8')
-    : null;
+  const current = readIfPresent(SERVE_CONFIG_PATH);
+  const rendered = renderServeJson(policy, env, readExistingServeConfig(current));
 
   if (rendered === current) {
     process.stdout.write(

@@ -6,10 +6,13 @@
  * The committed serve.json allows the build-time REACT_APP_* API origins. When a deployment
  * repoints the app through APP_CONFIG_API_BASE_URL / APP_CONFIG_GRAPHQL_URL (issue #145), the
  * browser connects to those origins instead, so the same container start that renders them into
- * the HTML shell also allows them here. Everything else in the baseline stays byte-identical.
+ * the HTML shell also allows them here. The served file is always rendered from the immutable
+ * baseline the image ships, never from the previous start's output, so an override that is
+ * changed or cleared between restarts leaves no stale origin behind. Everything else in the
+ * baseline stays byte-identical.
  *
  * Run by scripts/docker-entrypoint.sh after render-app-config.js; also runnable directly:
- *   node scripts/render-security-headers.js serve.json
+ *   node scripts/render-security-headers.js <baseline serve.json> [<served serve.json>]
  */
 
 'use strict';
@@ -26,14 +29,21 @@ function renderSecurityHeaders(serveJson, env, policy) {
 }
 
 function main(argv, env) {
-  const target = argv[2];
+  const baseline = argv[2];
+  const target = argv[3] || baseline;
 
-  if (!target) {
-    throw new Error('usage: node scripts/render-security-headers.js <serve.json>');
+  if (!baseline) {
+    throw new Error(
+      'usage: node scripts/render-security-headers.js <baseline serve.json> [<served serve.json>]'
+    );
   }
 
   const policy = loadPolicy(env.SECURITY_HEADERS_POLICY);
-  const { origins, rendered } = renderSecurityHeaders(fs.readFileSync(target, 'utf8'), env, policy);
+  const { origins, rendered } = renderSecurityHeaders(
+    fs.readFileSync(baseline, 'utf8'),
+    env,
+    policy
+  );
 
   fs.writeFileSync(target, rendered);
 
