@@ -199,9 +199,11 @@ LOAD_TARGET_URL_SIGNUP=https://api-staging.vilnacrm.example make test-load-signu
 
 Values must be an absolute `http(s)` origin with an optional path prefix — no credentials, query
 string, fragment, or whitespace (a trailing slash is stripped); anything else aborts the run
-before the first request. The Makefile targets stay the entry points and still boot
-the local `prod` and Mockoon containers (the k6 service depends on a healthy `prod`), so a
-remote run costs one local build. Budgets were measured against the local stack: a deployed
+before the first request. Plain `http://` is accepted only for `localhost`, `127.x` and
+single-label container hosts (`prod`, `mockoon`): the signup flow posts generated credentials, so
+a remote target must be `https://` or the run aborts. The Makefile targets stay the entry points
+and still boot the local `prod` and Mockoon containers (the k6 service depends on a healthy
+`prod`), so a remote run costs one local build. Budgets were measured against the local stack: a deployed
 origin adds real network latency, so treat a first remote run as a baseline to record here
 before tightening anything for that environment. Wiring the remote mode into the sandbox
 delivery flow belongs to the CD pipeline work in issue #139.

@@ -57,10 +57,26 @@ describe('k6 target override (issue #148)', () => {
   });
 
   it('accepts an origin with a path prefix and a port', async () => {
-    expect(await baseUrlOf('homepage', { LOAD_TARGET_URL: 'http://10.0.0.5:8080/crm/' })).toBe(
-      'http://10.0.0.5:8080/crm'
+    expect(await baseUrlOf('homepage', { LOAD_TARGET_URL: 'https://10.0.0.5:8080/crm/' })).toBe(
+      'https://10.0.0.5:8080/crm'
     );
   });
+
+  it.each(['http://localhost:3001', 'http://127.0.0.1:3001', 'http://prod:3001/app'])(
+    'keeps plain http for the local or container target %s',
+    async (value) => {
+      expect(await baseUrlOf('homepage', { LOAD_TARGET_URL: value })).toBe(value);
+    }
+  );
+
+  it.each(['http://staging.vilnacrm.example', 'http://10.0.0.5:8080'])(
+    'refuses plain http for the remote target %s, which would carry credentials in cleartext',
+    async (value) => {
+      await expect(baseUrlOf('signup', { LOAD_TARGET_URL_SIGNUP: value })).rejects.toThrow(
+        'LOAD_TARGET_URL_SIGNUP must use https for a remote target'
+      );
+    }
+  );
 
   it.each([
     'staging.vilnacrm.example',

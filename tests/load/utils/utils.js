@@ -34,14 +34,26 @@ export default class Utils {
     const raw = (specific || generic || '').trim();
 
     if (!raw) return null;
-    if (
-      !/^https?:\/\/[A-Za-z0-9.-]+(?::\d{1,5})?(?:\/[A-Za-z0-9._~%!$&'()*+,;=:@/-]*)?$/.test(raw)
-    ) {
+    const match =
+      /^(https?):\/\/([A-Za-z0-9.-]+)(?::\d{1,5})?(?:\/[A-Za-z0-9._~%!$&'()*+,;=:@/-]*)?$/.exec(
+        raw
+      );
+    if (!match) {
       throw new Error(
         `${variable} must be an absolute http(s) origin with an optional path, got "${raw}"`
       );
     }
+    if (match[1] === 'http' && !this.isLocalHost(match[2])) {
+      throw new Error(
+        `${variable} must use https for a remote target ` +
+          `(plain http only for localhost, 127.x or a single-label container host), got "${raw}"`
+      );
+    }
     return raw.replace(/\/+$/, '');
+  }
+
+  isLocalHost(host) {
+    return host === 'localhost' || /^127\./.test(host) || !host.includes('.');
   }
 
   getConfig() {

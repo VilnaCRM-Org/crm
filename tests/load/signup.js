@@ -1,5 +1,4 @@
 import { group, sleep } from 'k6';
-import http from 'k6/http';
 
 import runPositiveTests from './signup/positive.js';
 import runNegativeTests from './signup/negative.js';
@@ -13,8 +12,6 @@ const utils = new Utils(scenarioName);
 const scenarioUtils = new ScenarioUtils(utils, scenarioName);
 
 export const options = scenarioUtils.getOptions();
-
-http.setResponseCallback(http.expectedStatuses({ min: 200, max: 299 }, 400, 422, 429));
 
 export default function signup() {
   const baseUrl = utils.getBaseUrl();

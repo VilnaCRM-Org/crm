@@ -1,6 +1,7 @@
 import http from 'k6/http';
 import { sleep } from 'k6';
 
+import { expectingRejection } from '../utils/expected-statuses.js';
 import TEST_DATA_GENERATORS from '../utils/test-data.js';
 
 const USE_REAL_BACKEND = __ENV.USE_REAL_BACKEND === 'true';
@@ -204,6 +205,7 @@ function testDuplicateSignupFlow(utils, baseUrl, headers, params) {
 
   const duplicateSignup = http.post(`${baseUrl}/api/users`, signupPayload, {
     ...params,
+    ...expectingRejection,
     headers,
   });
 
@@ -232,6 +234,7 @@ function testInvalidSignupLoginAttempt(utils, baseUrl, headers, params) {
 
   const signupResponse = http.post(`${baseUrl}/api/users`, invalidSignupPayload, {
     ...params,
+    ...expectingRejection,
     headers,
   });
 
@@ -248,6 +251,7 @@ function testInvalidSignupLoginAttempt(utils, baseUrl, headers, params) {
 
   const loginResponse = http.post(`${baseUrl}/api/auth/login`, loginPayload, {
     ...params,
+    ...expectingRejection,
     headers,
   });
 
