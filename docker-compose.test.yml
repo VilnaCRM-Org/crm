@@ -81,6 +81,11 @@ services:
     depends_on:
       prod:
         condition: service_healthy
+    environment:
+      # Optional external targets (issue #148): point the same suite at a deployed origin
+      # instead of the local prod/mockoon containers. Empty keeps the config.json.dist hosts.
+      - LOAD_TARGET_URL=${LOAD_TARGET_URL-}
+      - LOAD_TARGET_URL_SIGNUP=${LOAD_TARGET_URL_SIGNUP-}
     volumes:
       - ./tests/load:/loadTests
     networks:

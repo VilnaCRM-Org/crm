@@ -7,17 +7,37 @@ export default class Utils {
 
     let finalHost = host;
     let finalPort = port;
+    let ownsHost = false;
 
     if (endpointName && config.endpoints && config.endpoints[endpointName]) {
       const endpointConfig = config.endpoints[endpointName];
       if (endpointConfig.host) finalHost = endpointConfig.host;
       if (endpointConfig.port) finalPort = endpointConfig.port;
+      ownsHost = Boolean(endpointConfig.host);
     } else if (endpointName) {
       throw new Error(`Endpoint '${endpointName}' not found in configuration`);
     }
 
-    this.baseUrl = `${protocol}://${finalHost}${finalPort ? `:${finalPort}` : ''}`;
+    this.baseUrl =
+      this.resolveTargetOverride(endpointName, ownsHost) ??
+      `${protocol}://${finalHost}${finalPort ? `:${finalPort}` : ''}`;
     this.params = params;
+  }
+
+  resolveTargetOverride(endpointName, ownsHost) {
+    const specificVariable = endpointName
+      ? `LOAD_TARGET_URL_${endpointName.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`
+      : null;
+    const specific = specificVariable ? __ENV[specificVariable] : undefined;
+    const generic = ownsHost ? undefined : __ENV.LOAD_TARGET_URL;
+    const variable = specific ? specificVariable : 'LOAD_TARGET_URL';
+    const raw = (specific || generic || '').trim();
+
+    if (!raw) return null;
+    if (!/^https?:\/\/[^/\s]+/.test(raw)) {
+      throw new Error(`${variable} must be an absolute http(s) URL, got "${raw}"`);
+    }
+    return raw.replace(/\/+$/, '');
   }
 
   getConfig() {

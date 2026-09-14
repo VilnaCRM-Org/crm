@@ -12,13 +12,13 @@
     "homepage": {
       "setupTimeoutInMinutes": 10,
       "smoke": {
-        "threshold": 15000,
+        "threshold": 1000,
         "rps": 5,
         "vus": 5,
         "duration": 10
       },
       "average": {
-        "threshold": 5000,
+        "threshold": 1500,
         "rps": 15,
         "vus": 15,
         "duration": {
@@ -28,7 +28,7 @@
         }
       },
       "stress": {
-        "threshold": 17000,
+        "threshold": 3000,
         "rps": 75,
         "vus": 75,
         "duration": {
@@ -38,7 +38,7 @@
         }
       },
       "spike": {
-        "threshold": 44000,
+        "threshold": 5000,
         "rps": 150,
         "vus": 150,
         "duration": {
@@ -53,27 +53,27 @@
       "setupTimeoutInMinutes": 10,
       "thresholds": {
         "errorRate": {
-          "smoke": 0.15,
-          "average": 0.20,
-          "stress": 0.25,
-          "spike": 0.30
+          "smoke": 0,
+          "average": 0,
+          "stress": 0.02,
+          "spike": 0.05
         },
         "checkPassRate": {
-          "smoke": 0.95,
-          "average": 0.95,
-          "stress": 0.80,
-          "spike": 0.75
+          "smoke": 0.99,
+          "average": 0.99,
+          "stress": 0.95,
+          "spike": 0.9
         }
       },
       "smoke": {
-        "threshold": 8000,
+        "threshold": 1500,
         "rps": 3,
         "vus": 3,
         "maxVUs": 10,
         "duration": 10
       },
       "average": {
-        "threshold": 5000,
+        "threshold": 2000,
         "rps": 10,
         "vus": 10,
         "maxVUs": 30,
@@ -84,7 +84,7 @@
         }
       },
       "stress": {
-        "threshold": 12000,
+        "threshold": 4000,
         "rps": 50,
         "vus": 50,
         "maxVUs": 150,
@@ -95,7 +95,7 @@
         }
       },
       "spike": {
-        "threshold": 25000,
+        "threshold": 6000,
         "rps": 100,
         "vus": 100,
         "maxVUs": 300,
