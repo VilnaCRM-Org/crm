@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/config/zod';
 
 const EnvSchema = z.object({
   nodeEnv: z.enum(['development', 'production', 'test']).optional().catch(undefined),

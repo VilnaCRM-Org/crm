@@ -1,5 +1,6 @@
 import http from 'k6/http';
 
+import { expectingRejection } from '../utils/expected-statuses.js';
 import TEST_DATA_GENERATORS from '../utils/test-data.js';
 
 const USE_REAL_BACKEND = __ENV.USE_REAL_BACKEND === 'true';
@@ -34,7 +35,11 @@ function testSQLInjection(utils, baseUrl, headers, params) {
     });
 
     const { headers: paramsHeaders, ...restParams } = params;
-    const options = { ...restParams, headers: { ...(paramsHeaders || {}), ...headers } };
+    const options = {
+      ...restParams,
+      ...expectingRejection,
+      headers: { ...(paramsHeaders || {}), ...headers },
+    };
     const response = http.post(`${baseUrl}/api/users`, payload, options);
 
     utils.checkResponse(
@@ -97,7 +102,11 @@ function testXSSAttempts(utils, baseUrl, headers, params) {
     });
 
     const { headers: paramsHeaders, ...restParams } = params;
-    const options = { ...restParams, headers: { ...(paramsHeaders || {}), ...headers } };
+    const options = {
+      ...restParams,
+      ...expectingRejection,
+      headers: { ...(paramsHeaders || {}), ...headers },
+    };
     const response = http.post(`${baseUrl}/api/users`, payload, options);
 
     utils.checkResponse(

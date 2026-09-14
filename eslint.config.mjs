@@ -19,6 +19,7 @@ import globals from 'globals';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import classNamingPolicy from './config/class-naming-policy.js';
 import diCollaboratorPolicy from './config/di-collaborator-policy.js';
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
@@ -182,6 +183,14 @@ const noObjectLiteralMethodSelectors = [
       'method on an injectable class or module-singleton class (issues #89/#100/#180).',
   },
 ];
+
+// Source (issue #129): with statics and free functions banned, the class NAME is the primary
+// signal of a unit's role, so it must be `<DomainNoun…><RecognizedPatternSuffix>`. The
+// denylist bans the grab-bag names (`Manager`, `Helper`, `Utils`, …) and a domain-less bare
+// `Service`; the allowlist requires an approved suffix from config/class-naming-policy.js —
+// the single source of truth the CLAUDE.md table is pinned against. Purely syntactic: it
+// cannot tell whether a `*Mapper` maps; role↔name truthfulness stays a review-gate concern.
+const classNamingSelectors = classNamingPolicy.classNamingSelectors();
 
 // Source (issue #128): the React-layer counterpart of the #100/#180 bans above. A component must
 // obtain a behavioral collaborator through the sanctioned DI bridge `useService(TOKENS.X)` from
@@ -704,6 +713,7 @@ export default [
         ...dataTestidSelectors,
         ...noStaticOrFreeFunctionSelectors,
         ...noObjectLiteralMethodSelectors,
+        ...classNamingSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
@@ -726,6 +736,7 @@ export default [
         ...dataTestidSelectors,
         ...noStaticOrFreeFunctionSelectors,
         ...noObjectLiteralMethodSelectors,
+        ...classNamingSelectors,
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,

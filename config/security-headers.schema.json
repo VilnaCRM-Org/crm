@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://vilnacrm.org/schemas/security-headers.schema.json",
+  "title": "Browser security header baseline",
+  "description": "Single source of truth for every HTTP security header the production server emits (issue #113). `make security-headers-generate` renders serve.json from it, the container entrypoint extends the CSP connect-src from it at start-up, `make lint-security-headers` fails when serve.json drifts from it, and `make check-security-headers` asserts the running production image emits it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["document", "response", "contentSecurityPolicy", "cacheControl"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "document": {
+      "description": "Headers that govern a document — the Content-Security-Policy is emitted with them. `source` is the serve-handler glob for the HTML shell; every SPA route resolves to it.",
+      "$ref": "#/definitions/headerRule"
+    },
+    "response": {
+      "description": "Headers emitted on every response, hashed assets included. `**` is every response.",
+      "$ref": "#/definitions/headerRule"
+    },
+    "contentSecurityPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["directives", "connectSrcFromEnv"],
+      "properties": {
+        "directives": {
+          "description": "CSP directive name to its ordered source list. Serialized in this order.",
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "^[a-z]+(-[a-z]+)*$" },
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        },
+        "connectSrcFromEnv": {
+          "description": "Environment variables whose URL origins are appended to connect-src: `build` at generation time from the dotenv files, `runtime` at container start from the process environment.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["build", "runtime"],
+          "properties": {
+            "build": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+            },
+            "runtime": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" }
+            }
+          }
+        }
+      }
+    },
+    "cacheControl": {
+      "description": "Cache-Control rules, one per serve-handler source glob, preserved verbatim in serve.json.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source", "value"],
+        "properties": {
+          "source": { "type": "string", "minLength": 1 },
+          "value": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "headerRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "headers"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "headers": {
+          "description": "Static headers emitted verbatim, in this order.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "value"],
+            "properties": {
+              "key": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9-]*$" },
+              "value": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  }
+}

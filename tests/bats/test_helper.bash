@@ -283,6 +283,13 @@ printf 'report-dependency-audit.sh TRIVY_IMAGE=%s TRIVY_ARGS=%s\n' "${TRIVY_IMAG
 exit 0
 EOF
 
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/check-security-headers.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'check-security-headers.sh SECURITY_HEADERS_PROBE_IMAGE=%s SECURITY_HEADERS_PROBE_PORT=%s SECURITY_HEADERS_GATE_SCRIPT=%s\n' \
+  "${SECURITY_HEADERS_PROBE_IMAGE:-}" "${SECURITY_HEADERS_PROBE_PORT:-}" "${SECURITY_HEADERS_GATE_SCRIPT:-}" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
   chmod +x \
     "$MAKEFILE_SANDBOX/scripts/lint-metrics.sh" \
     "$MAKEFILE_SANDBOX/scripts/get-pr-comments.sh" \
@@ -294,6 +301,7 @@ EOF
     "$MAKEFILE_SANDBOX/scripts/ci/lint-commit-range.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/assert-secret-scan-detects.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/report-dependency-audit.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/check-security-headers.sh" \
     "$MAKEFILE_SANDBOX/scripts/check-env-sync.sh"
 }
 

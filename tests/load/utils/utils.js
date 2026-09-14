@@ -7,17 +7,53 @@ export default class Utils {
 
     let finalHost = host;
     let finalPort = port;
+    let ownsHost = false;
 
     if (endpointName && config.endpoints && config.endpoints[endpointName]) {
       const endpointConfig = config.endpoints[endpointName];
       if (endpointConfig.host) finalHost = endpointConfig.host;
       if (endpointConfig.port) finalPort = endpointConfig.port;
+      ownsHost = Boolean(endpointConfig.host);
     } else if (endpointName) {
       throw new Error(`Endpoint '${endpointName}' not found in configuration`);
     }
 
-    this.baseUrl = `${protocol}://${finalHost}${finalPort ? `:${finalPort}` : ''}`;
+    this.baseUrl =
+      this.resolveTargetOverride(endpointName, ownsHost) ??
+      `${protocol}://${finalHost}${finalPort ? `:${finalPort}` : ''}`;
     this.params = params;
+  }
+
+  resolveTargetOverride(endpointName, ownsHost) {
+    const specificVariable = endpointName
+      ? `LOAD_TARGET_URL_${endpointName.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`
+      : null;
+    const specific = specificVariable ? __ENV[specificVariable] : undefined;
+    const generic = ownsHost ? undefined : __ENV.LOAD_TARGET_URL;
+    const variable = specific ? specificVariable : 'LOAD_TARGET_URL';
+    const raw = (specific || generic || '').trim();
+
+    if (!raw) return null;
+    const match =
+      /^(https?):\/\/([A-Za-z0-9.-]+)(?::\d{1,5})?(?:\/[A-Za-z0-9._~%!$&'()*+,;=:@/-]*)?$/.exec(
+        raw
+      );
+    if (!match) {
+      throw new Error(
+        `${variable} must be an absolute http(s) origin with an optional path, got "${raw}"`
+      );
+    }
+    if (match[1] === 'http' && !this.isLocalHost(match[2])) {
+      throw new Error(
+        `${variable} must use https for a remote target ` +
+          `(plain http only for localhost, 127.x or a single-label container host), got "${raw}"`
+      );
+    }
+    return raw.replace(/\/+$/, '');
+  }
+
+  isLocalHost(host) {
+    return host === 'localhost' || /^127\./.test(host) || !host.includes('.');
   }
 
   getConfig() {

@@ -137,7 +137,8 @@ RUN ln -s ../lib/node_modules/serve/build/main.js /usr/local/bin/serve
 # Runtime configuration renderer (issue #145): rewrites the inline app-config block in the built
 # HTML shell from APP_CONFIG_* variables at container start, so one image serves any environment.
 # Copied before the bundle so a code change does not invalidate this layer, and vice versa.
-COPY --chown=node:node scripts/docker-entrypoint.sh scripts/render-app-config.js ./scripts/
+COPY --chown=node:node scripts/docker-entrypoint.sh scripts/render-app-config.js scripts/render-security-headers.js scripts/security-headers.js ./scripts/
+COPY --chown=node:node config/security-headers.json serve.json ./config/
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 COPY --chown=node:node serve.json ./serve.json
 

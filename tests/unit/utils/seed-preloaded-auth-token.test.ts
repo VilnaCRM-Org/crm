@@ -2,59 +2,45 @@ import {
   PRELOADED_AUTH_TOKEN,
   PRELOADED_AUTH_TOKEN_WINDOW_KEY,
   seedPreloadedAuthToken,
+  seedWindowToken,
 } from '../../utils/seed-preloaded-auth-token';
 
-type PageRouteTarget = Parameters<typeof seedPreloadedAuthToken>[0];
+type PageInitTarget = Parameters<typeof seedPreloadedAuthToken>[0];
+
+type SeedCall = [(args: { key: string; value: string }) => void, { key: string; value: string }];
 
 describe('seedPreloadedAuthToken', () => {
-  it('registers a route handler that injects the auth token into document HTML', async () => {
-    const route = jest.fn().mockResolvedValue(undefined);
-    const page = { route: route as PageRouteTarget['route'] };
+  it('registers an init script that seeds the auth token on window', async () => {
+    const addInitScript = jest.fn().mockResolvedValue(undefined);
+    const page = { addInitScript: addInitScript as PageInitTarget['addInitScript'] };
 
     await seedPreloadedAuthToken(page);
 
-    expect(route).toHaveBeenCalledTimes(1);
-    const [, handler] = route.mock.calls[0] as [unknown, (r: unknown) => Promise<void>];
+    expect(addInitScript).toHaveBeenCalledTimes(1);
+    const [script, args] = addInitScript.mock.calls[0] as SeedCall;
 
-    expect(typeof handler).toBe('function');
-
-    const fulfill = jest.fn().mockResolvedValue(undefined);
-    const mockRoute = {
-      request: (): { resourceType: () => string } => ({ resourceType: (): string => 'document' }),
-      fetch: async (): Promise<{ text: () => Promise<string> }> => ({
-        text: async (): Promise<string> => '<html><head></head></html>',
-      }),
-      fulfill,
-      continue: jest.fn(),
-    };
-
-    await handler(mockRoute);
-
-    expect(fulfill).toHaveBeenCalledTimes(1);
-    const [options] = fulfill.mock.calls[0] as [{ body: string }];
-
-    expect(options.body).toContain(PRELOADED_AUTH_TOKEN_WINDOW_KEY);
-    expect(options.body).toContain(PRELOADED_AUTH_TOKEN);
+    expect(script).toBe(seedWindowToken);
+    expect(args).toEqual({ key: PRELOADED_AUTH_TOKEN_WINDOW_KEY, value: PRELOADED_AUTH_TOKEN });
   });
 
-  it('passes non-document requests through without modification', async () => {
-    const route = jest.fn().mockResolvedValue(undefined);
-    const page = { route: route as PageRouteTarget['route'] };
+  it('seeds an explicit token', async () => {
+    const addInitScript = jest.fn().mockResolvedValue(undefined);
+    const page = { addInitScript: addInitScript as PageInitTarget['addInitScript'] };
 
-    await seedPreloadedAuthToken(page);
+    await seedPreloadedAuthToken(page, 'explicit-token');
 
-    const [, handler] = route.mock.calls[0] as [unknown, (r: unknown) => Promise<void>];
-    const continueRoute = jest.fn().mockResolvedValue(undefined);
-    const mockRoute = {
-      request: (): { resourceType: () => string } => ({ resourceType: (): string => 'script' }),
-      fetch: jest.fn(),
-      fulfill: jest.fn(),
-      continue: continueRoute,
-    };
+    const [, args] = addInitScript.mock.calls[0] as SeedCall;
 
-    await handler(mockRoute);
+    expect(args).toEqual({ key: PRELOADED_AUTH_TOKEN_WINDOW_KEY, value: 'explicit-token' });
+  });
 
-    expect(continueRoute).toHaveBeenCalledTimes(1);
-    expect(mockRoute.fulfill).not.toHaveBeenCalled();
+  it('never injects markup: the driver evaluates the seed, not an inline script tag', () => {
+    const scope = globalThis as unknown as Record<string, string | undefined>;
+
+    seedWindowToken({ key: PRELOADED_AUTH_TOKEN_WINDOW_KEY, value: 'seeded' });
+
+    expect(scope[PRELOADED_AUTH_TOKEN_WINDOW_KEY]).toBe('seeded');
+    expect(seedWindowToken.toString()).not.toContain('<script');
+    delete scope[PRELOADED_AUTH_TOKEN_WINDOW_KEY];
   });
 });

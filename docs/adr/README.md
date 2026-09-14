@@ -7,6 +7,7 @@ This index lists the Architecture Decision Records for this repository.
 - [ADR-003: Browser support matrix and polyfill strategy](./003-browser-support-matrix.md)
 - [ADR-004: Major dependency upgrades arrive per lane, and coupled lanes move together](./004-major-dependency-upgrade-cadence.md)
 - [ADR-005: Client security events leave through the observability boundary](./005-client-security-event-boundary.md)
+- [ADR-006: One generated security-header baseline serves production and the dev server](./006-browser-security-header-baseline.md)
 
 ## Writing a new ADR
 

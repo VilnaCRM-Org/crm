@@ -1,6 +1,7 @@
 import http from 'k6/http';
 import { sleep } from 'k6';
 
+import { expectingRejection } from '../utils/expected-statuses.js';
 import TEST_DATA_GENERATORS from '../utils/test-data.js';
 
 function getShortBody(body) {
@@ -43,6 +44,7 @@ function testRapidRequestsSameData(utils, baseUrl, params) {
   for (let i = 0; i < maxRequests; i += 1) {
     const response = http.post(`${baseUrl}/api/users`, payload, {
       ...restParams,
+      ...expectingRejection,
       headers,
     });
 
@@ -134,6 +136,7 @@ function testRapidRequestsDifferentData(utils, baseUrl, params) {
 
     const response = http.post(`${baseUrl}/api/users`, payload, {
       ...restParams,
+      ...expectingRejection,
       headers,
     });
 

@@ -18,6 +18,46 @@ error). It runs **before** `frontend-component-development` and before any UI ed
 
 It does NOT apply to pure logic, data-layer, test-only, or non-visual config changes.
 
+## Prerequisite: the Figma MCP server (issue #152)
+
+The gate runs through Figma's remote MCP server, registered for this project in
+[`.mcp.json`](../../../.mcp.json) as `figma` → `https://mcp.figma.com/mcp`. Access is
+granted by an OAuth sign-in in the agent client (in Claude Code: `/mcp` → `figma` →
+authenticate), so **no Figma token is ever committed or read from a dotenv file** — the
+server entry carries a URL and nothing else. A teammate on another agent platform
+registers the same URL in that platform's MCP configuration.
+
+Before step 1 of the workflow, confirm the server answers: load
+`mcp__figma__get_metadata` with ToolSearch and call it with the design file key and no
+`nodeId` — it returns the top-level pages when connected. If the tool is not listed, the
+call errors, or the client reports the server as failed to connect, the gate is
+**BLOCKED, not skipped**: report `figma-design-check: BLOCKED — Figma MCP unreachable`
+with the client's error text, tell the user to authenticate or repair the server
+(`claude mcp list` shows its health), and do not write UI code until it answers or the
+user explicitly accepts the offline fallback below. Silently continuing without the
+design is the failure mode this gate exists to prevent.
+
+### Design references for this repository
+
+| Surface                                        | File key                 | Node        |
+| ---------------------------------------------- | ------------------------ | ----------- |
+| CRM design (pages `Design CRM`, `Components`)  | `xZ7ccrH6d4QyqLQsayFSEX` | page `0:1`  |
+| Auth submit button (idle / loading / disabled) | `xZ7ccrH6d4QyqLQsayFSEX` | `439:19256` |
+
+Verified: `get_metadata` on `439:19256` returns the button instance (`Frame 69`, label
+`Спробувати`, 171 × 62) whose grey `#E1E7EA` loading state the auth submit loader
+implements (CLAUDE.md, Important Patterns 5). Add a row when a new surface gets a design;
+a node id from a `figma.com/design/<fileKey>/...?node-id=439-19256` URL is written
+`439:19256`.
+
+### Offline fallback (only with the user's explicit acceptance)
+
+When the server is unreachable and the user accepts proceeding anyway, the design
+evidence is the committed visual baselines under `tests/visual/**-snapshots/` (the
+authoritative production rasters) plus the documented specs (CLAUDE.md pattern 5, the
+theme in `src/styles/`). Record in the response that the gate ran in fallback mode and
+which baseline or spec stood in for the design, so the review can re-run the live check.
+
 ## Prerequisite: a design reference
 
 You need a Figma reference for the affected UI: a `figma.com` file/node URL, a node id,

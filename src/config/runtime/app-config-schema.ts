@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from '@/config/zod';
 
 // Protocol-constrained rather than bare `z.url()`: both settings are HTTP endpoints, and the
 // container entrypoint already rejects every other scheme, so a block that reaches the document

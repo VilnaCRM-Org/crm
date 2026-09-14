@@ -6,6 +6,13 @@ import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
 import { BundleAnalyzerPlugin } from 'webpack-bundle-analyzer';
 
+import {
+  documentHeaders,
+  loadPolicy,
+  originsFromEnv,
+  responseHeaders,
+} from './scripts/security-headers';
+
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
 const isAnalyze = process.env.ANALYZE === 'true';
@@ -17,6 +24,25 @@ const isAnalyze = process.env.ANALYZE === 'true';
 const preloadedAuthSeedOptIn = process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED ?? '';
 
 const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
+
+// The dev server emits the same header baseline the production serve.json is generated from
+// (issue #113), so a CSP regression surfaces on `make start` rather than on the deployed image.
+// loadEnv has merged the dotenv files into process.env by now, so reading the origins from
+// process.env picks up a shell override exactly as the bundle's inlined value does. HMR is a
+// same-origin WebSocket, which `'self'` already admits under CSP Level 3.
+const securityHeaderPolicy = loadPolicy();
+const devSecurityHeaders = Object.fromEntries(
+  [
+    ...responseHeaders(securityHeaderPolicy),
+    ...documentHeaders(
+      securityHeaderPolicy,
+      originsFromEnv(
+        securityHeaderPolicy.contentSecurityPolicy.connectSrcFromEnv.build,
+        process.env
+      )
+    ),
+  ].map(({ key, value }) => [key, value])
+);
 
 const performanceBudget = JSON.parse(
   fs.readFileSync(path.resolve(__dirname, 'config/performance-budget.json'), 'utf8')
@@ -107,6 +133,7 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
+    headers: devSecurityHeaders,
   },
   dev: {
     lazyCompilation: true,

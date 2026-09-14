@@ -38,6 +38,13 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **No static methods or free functions** in non-React `src/**/*.ts`: behaviour is an instance
   method on an `@injectable()` class, or on a module singleton (`export default new X()`) when
   the file must stay container-free. Hooks (`use-*.ts`) and `.tsx` components are exempt.
+- **Classes are named `<DomainNoun…><PatternSuffix>`** (`ApiErrorFactory`, `LoginResponseMapper`,
+  `EmailValidator`): the suffix names the role from the approved table in
+  `config/class-naming-policy.js` (mirrored in `CLAUDE.md`). Banned: `Manager`, `Helper`,
+  `Util` / `Utils`, `Data`, `Info`, `Common`, `Misc`, `Stuff`, `Wrapper`, `Object`, a bare
+  `Service` and an unnamed class; a suffix alone (`class Repository {}`) is not a name; an
+  abstract `Base*` superclass is the one carve-out. A novel role adds its suffix to the policy
+  and the table in the same change.
 - **Types live in type-only files** (`types.ts` or a `types/` folder) that hold only
   `interface`, `type`, `import type`, and `declare`. Logic files declare no types, and a type
   file is imported only with `import type`.
@@ -61,14 +68,18 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **Telemetry goes through `src/services/observability/`**; never call `@sentry/react` directly.
 - **Modules and features are generated**, never hand-rolled:
   `make new-module name=<m> feature=<f>` or `make new-feature module=<m> feature=<f>`.
+- **Security headers come from `config/security-headers.json`**: `serve.json` is generated
+  (`make security-headers-generate`), never edited by hand, and a new foreign origin is a new
+  environment variable in `connectSrcFromEnv`, never a hard-coded host. `script-src` stays
+  `'self'`; only `style-src` carries `'unsafe-inline'` (the Emotion/MUI accommodation).
 
 ## Quality gates
 
 `make lint` runs ESLint, `tsc`, dependency-cruiser, Prettier, markdownlint, jscpd (zero clones
 at 75 tokens), the rust-code-analysis metrics policy (cyclomatic above 10, cognitive above 15,
 more than 3 arguments, or more than 10 function LLOC fail the build), i18n parity, the docs
-gates, the license allowlist, and the lockfile provenance gate; the ADR drift gate runs in CI
-only. Jest enforces 100%
+gates, the license allowlist, the lockfile provenance gate, and the serve.json security-header
+drift gate; the ADR drift gate and the production-image header probe run in CI only. Jest enforces 100%
 coverage, Stryker enforces a 100% mutation score, and an unexpected `console.error` or
 `console.warn` fails the emitting test. Every pull-request check must be green.
 

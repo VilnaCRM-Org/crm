@@ -16,7 +16,7 @@ describe('auth client runtime dependencies', () => {
     const registrationMapper = readFile('src/modules/user/store/registration-response-mapper.ts');
 
     expect(apiResponses).not.toContain('z.object');
-    expect(responseSchemas).toContain("from 'zod'");
+    expect(responseSchemas).toContain("from '@/config/zod'");
     expect(responseSchemas).toContain('z.object');
     expect(loginMapper).toContain('LoginResponseSchema.safeParse(apiResponse)');
     expect(registrationMapper).toContain('RegistrationResponseSchema.safeParse(apiResponse)');

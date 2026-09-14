@@ -38,6 +38,15 @@ instructions. Start with `SKILL-DECISION-GUIDE.md`.
    matching global skill by name with the Skill tool.
 5. If a skill is plausibly relevant, **read/invoke it before deciding it does
    not apply**, and record "Not applicable" with a concrete reason if you skip it.
+6. Naming a class is a code change and triggers this check: before creating or
+   renaming any class in non-React source, apply the role → pattern-suffix table
+   in `CLAUDE.md` ("Class naming convention", issue #129), whose single source of
+   truth is `config/class-naming-policy.js`. Banned: `Manager`, `Helper`,
+   `Util` / `Utils`, `Data`, `Info`, `Common`, `Misc`, `Stuff`, `Wrapper`,
+   `Object`, a domain-less bare `Service`, and an unnamed class; a suffix alone
+   (`class Repository {}`) is not a name; an abstract `Base*` superclass is the
+   one allowlist carve-out. A novel role adds its suffix to the policy and the
+   table in the same change.
 
 This check is non-negotiable. Do not respond to the user with implementation
 steps or commit code until the relevant skills have been consulted.

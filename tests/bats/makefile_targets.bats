@@ -34,12 +34,12 @@ setup() {
     [ -z "$expected_two" ] || assert_log_contains "$expected_two"
   done <<'EOF'
 ci-setup|docker compose -f docker-compose.yml up -d --no-recreate dev mockoon|curl -fsS http://localhost:8080/api/users
-ci-lint|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n|
+ci-lint|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers|
 ci-test|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration|
 ci-mutation|bun x stryker run|
 ci-prod-setup|docker compose -f docker-compose.yml up -d dev|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --no-recreate prod mockoon playwright
 ci-test-prod|docker compose -f docker-compose.test.yml exec playwright ./node_modules/.bin/playwright test ./tests/e2e|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)
-ci|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
+ci|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
 install|docker compose exec -T dev bun install --frozen-lockfile|bun x husky
 clean|docker compose -f docker-compose.yml down --volumes --remove-orphans --rmi local|docker compose -f docker-compose.test.yml down --volumes --remove-orphans --rmi local
 start-prod-clean|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --force-recreate --build prod mockoon playwright|curl -fsS http://localhost:8080/api/users
@@ -442,9 +442,11 @@ EOF
   # read src/ but cannot pass against a throwaway module: its merged-catalog freshness check
   # compares the committed src/i18n/localization.json against a fresh merge of every catalog,
   # so a generated feature's uncommitted locale keys always report the catalog as stale.
+  # The ninth, lint-security-headers, reads only config/security-headers.json, .env and
+  # serve.json — no generated source can change its verdict.
   # Adding a new lint gate fails this test until it is classified one way or the other.
   local makefile="$MAKEFILE_SANDBOX/Makefile"
-  local excluded=" check-env-sync check-browser-support lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n "
+  local excluded=" check-env-sync check-browser-support lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers "
 
   local lint_prereqs scaffold_targets expected actual target
   lint_prereqs=$(grep -E '^lint:[[:space:]]' "$makefile" | sed 's/^lint:[[:space:]]*//; s/[[:space:]]*##.*//')
