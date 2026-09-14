@@ -34,8 +34,12 @@ export default class Utils {
     const raw = (specific || generic || '').trim();
 
     if (!raw) return null;
-    if (!/^https?:\/\/[^/\s]+/.test(raw)) {
-      throw new Error(`${variable} must be an absolute http(s) URL, got "${raw}"`);
+    if (
+      !/^https?:\/\/[A-Za-z0-9.-]+(?::\d{1,5})?(?:\/[A-Za-z0-9._~%!$&'()*+,;=:@/-]*)?$/.test(raw)
+    ) {
+      throw new Error(
+        `${variable} must be an absolute http(s) origin with an optional path, got "${raw}"`
+      );
     }
     return raw.replace(/\/+$/, '');
   }

@@ -197,8 +197,9 @@ LOAD_TARGET_URL=https://staging.vilnacrm.example make test-load
 LOAD_TARGET_URL_SIGNUP=https://api-staging.vilnacrm.example make test-load-signup
 ```
 
-Values must be absolute `http(s)` URLs (a trailing slash is stripped); anything else aborts
-the run before the first request. The Makefile targets stay the entry points and still boot
+Values must be an absolute `http(s)` origin with an optional path prefix — no credentials, query
+string, fragment, or whitespace (a trailing slash is stripped); anything else aborts the run
+before the first request. The Makefile targets stay the entry points and still boot
 the local `prod` and Mockoon containers (the k6 service depends on a healthy `prod`), so a
 remote run costs one local build. Budgets were measured against the local stack: a deployed
 origin adds real network latency, so treat a first remote run as a baseline to record here

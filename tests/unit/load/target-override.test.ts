@@ -56,18 +56,33 @@ describe('k6 target override (issue #148)', () => {
     expect(await baseUrlOf('homepage', { LOAD_TARGET_URL: '   ' })).toBe('http://prod:3001');
   });
 
-  it.each(['staging.vilnacrm.example', 'ftp://files.example', 'not a url'])(
-    'aborts on the non-http(s) target %p',
-    async (value) => {
-      await expect(baseUrlOf('homepage', { LOAD_TARGET_URL: value })).rejects.toThrow(
-        `LOAD_TARGET_URL must be an absolute http(s) URL, got "${value}"`
-      );
-    }
-  );
+  it('accepts an origin with a path prefix and a port', async () => {
+    expect(await baseUrlOf('homepage', { LOAD_TARGET_URL: 'http://10.0.0.5:8080/crm/' })).toBe(
+      'http://10.0.0.5:8080/crm'
+    );
+  });
+
+  it.each([
+    'staging.vilnacrm.example',
+    'ftp://files.example',
+    'not a url',
+    'https://staging.vilnacrm.example/path with space',
+    'https://staging.vilnacrm.example/?q=1',
+    'https://staging.vilnacrm.example/#fragment',
+    'https://user:pass@staging.vilnacrm.example',
+    'https://staging.vilnacrm.example/a b',
+  ])('aborts on the malformed target %p', async (value) => {
+    const reason = 'must be an absolute http(s) origin with an optional path';
+    const message = `${reason}, got "${value}"`;
+
+    await expect(baseUrlOf('homepage', { LOAD_TARGET_URL: value })).rejects.toThrow(
+      `LOAD_TARGET_URL ${message}`
+    );
+  });
 
   it('names the endpoint-specific variable in its own error', async () => {
     await expect(baseUrlOf('signup', { LOAD_TARGET_URL_SIGNUP: 'nope' })).rejects.toThrow(
-      'LOAD_TARGET_URL_SIGNUP must be an absolute http(s) URL'
+      'LOAD_TARGET_URL_SIGNUP must be an absolute http(s) origin with an optional path'
     );
   });
 });
