@@ -73,6 +73,18 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     );
   });
 
+  it('pins the class-naming gate (issue #129) at error on logic files and off hooks', () => {
+    const logicNrs = rulesFor(LOGIC_TS)['no-restricted-syntax'];
+    expect(severityOf(logicNrs)).toBe(2);
+    expect(jsonOf(logicNrs)).toContain(
+      'ClassDeclaration[id.name=/^(?:Service|AppService|MyService)$/]'
+    );
+    expect(jsonOf(logicNrs)).toContain(
+      '(?:Manager|Helper|Util|Utils|Data|Info|Common|Misc|Stuff|Wrapper|Object)$/'
+    );
+    expect(jsonOf(rulesFor(HOOK_TS)['no-restricted-syntax'])).not.toContain('AppService');
+  });
+
   it('keeps the type-only-file purity gate (issue #88) at error on files under types/', () => {
     const nrs = rulesFor(TYPE_ONLY_TS)['no-restricted-syntax'];
     expect(severityOf(nrs)).toBe(2);

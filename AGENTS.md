@@ -41,7 +41,11 @@ Codex, GitHub Copilot, Cursor, OpenAI agents, and any other assistant) MUST:
    [`figma-design-check`](.claude/skills/figma-design-check/SKILL.md) to verify the
    planned change against the Figma design (via the Figma MCP) **before** writing or
    editing the UI code, and run the `accessibility-lead` agent. Ask for the Figma
-   reference if none is known; do not guess the design intent.
+   reference if none is known; do not guess the design intent. The server is
+   registered in [`.mcp.json`](.mcp.json) (`figma` → `https://mcp.figma.com/mcp`) and
+   authenticated by OAuth in the agent client — never by a committed token. An
+   unreachable server **blocks** the gate rather than skipping it; the skill documents
+   the known design file and nodes and the only sanctioned offline fallback.
 
 This check is non-negotiable. Do not implement, format, lint, test, commit,
 or push until the relevant skills have been consulted.
@@ -775,6 +779,43 @@ object-literal methods, including `as const` / `satisfies` wrappers). What stays
 **review-gate** concern — deliberately unmatched, so idiomatic nested MUI `sx` callbacks
 and zustand-style slices are not flagged — is nested (depth > 1) object literals,
 `Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
+
+### Class naming convention: role → pattern suffix (issue #129)
+
+Every class in non-React `src/**/*.ts` is named `<DomainNoun…><RecognizedPatternSuffix>` —
+PascalCase, singular, the suffix naming the **role** and the nouns the **domain**, and the pair
+must be true (a `*Mapper` maps, a `*Factory` constructs). The approved suffixes and their
+pattern lineage are the single source of truth in `config/class-naming-policy.js`, mirrored by
+the table in `CLAUDE.md` ("Class naming convention"); an ESLint `no-restricted-syntax` gate at
+`error` bans the vague names and requires an approved suffix, and
+`tests/unit/tooling/class-naming-gate.test.ts` fails the build if the table and the policy
+disagree.
+
+```ts
+// BAD — role hidden, invites a grab-bag of unrelated methods
+class AuthManager {}
+class ErrorHelper {}
+class HttpUtils {}
+class ResponseData {}
+class Service {}
+
+// GOOD — domain noun + recognized pattern suffix; the role is self-evident
+class ApiErrorFactory {}
+class EmailValidator {}
+class ApiErrorGuard {}
+class LoginResponseMapper {}
+class FetchHttpsClient {}
+```
+
+Before creating or renaming a class: state its single role in one sentence, pick the matching
+suffix from the table — or add the closest GoF / DDD / enterprise suffix to the policy file and
+the table **in the same change**, with its rationale — keep the DI token and the kebab-case file
+name in sync with the class name, and fix a lint finding by renaming, never with a suppression.
+`Manager`, `Helper`, `Util(s)`, `Data`, `Info`, `Common`, `Misc`, `Stuff`, `Wrapper`, `Object`
+and a domain-less bare `Service` are banned outright; an abstract `Base*` superclass is the one
+allowlist carve-out. The gate is syntactic — it cannot tell whether a `*Mapper` really maps — so
+role ↔ name truthfulness stays a review concern, as does the naming of classes inside `use-*.ts`
+hook files, which the `src/**/*.ts` gate ignores.
 
 ### Runtime Configuration and Feature Flags (issue #145)
 
@@ -1608,6 +1649,28 @@ build goes red. Know them before you touch a config file:
   and equally when an opted-in build has lost it, so the gate cannot pass vacuously
 - No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
+### Browser Security Headers (issue #113)
+
+- Every production response carries the baseline declared once in
+  `config/security-headers.json`: a strict `Content-Security-Policy` (`script-src 'self'`, no
+  `'unsafe-inline'` or `'unsafe-eval'` on scripts; `'unsafe-inline'` on `style-src` only, the
+  Emotion/MUI accommodation), `Strict-Transport-Security`, `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, and the two
+  `Cross-Origin-*` policies. The directive table and rationale live in `SECURITY.md`
+- `serve.json` is generated — never edit its `headers` block by hand. Change the policy, run
+  `make security-headers-generate`, commit the result; `make lint-security-headers` (in
+  `make lint`) fails on drift, and the RSBuild dev server reads the same policy
+- `connect-src` is derived from the API variables the app reads: the build-time
+  `REACT_APP_MOCKOON_URL` / `REACT_APP_GRAPHQL_URL` / `REACT_APP_SENTRY_DSN` origins at
+  generation time, and the runtime `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` origins
+  appended by the container entrypoint. A new foreign origin is a new environment variable in
+  `connectSrcFromEnv`, never a hard-coded host
+- `make check-security-headers` (the `security headers` job of the `security testing` workflow)
+  builds `--target production`, boots it, and asserts every header on the emitted responses,
+  then boots it again with `APP_CONFIG_*` overrides that must reach `connect-src`. The policy
+  loader refuses a weakened baseline, so a relaxation is a reviewed change to the floors and
+  their tests, never a lone edit that makes a run pass
+
 ### Dependency Audits
 
 Auditing is a CI gate, not a calendar reminder (issue #140). The Makefile owns the scanner
@@ -1734,6 +1797,8 @@ make build-out          # Extract build to ./build
 make build-analyze      # Bundle analyzer (writes dist/bundle-report.html + dist/bundle-stats.json)
 make perf-budget        # Build + enforce gzip byte budgets (config/performance-budget.json)
 make check-auth-seed-gate  # Scan the built bundles so the test-only preloaded-auth seed cannot ship
+make check-security-headers  # Build the production image and assert the security-header baseline
+make security-headers-generate  # Regenerate the serve.json headers block from config/security-headers.json
 ```
 
 ### Utilities

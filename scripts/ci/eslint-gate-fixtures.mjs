@@ -10,6 +10,7 @@
 // jest.config.ts runs CJS Jest with no --experimental-vm-modules, and ESLint v9 loads the flat
 // eslint.config.mjs via a native dynamic import() that fails inside Jest's vm context.
 import { ESLint, Linter } from 'eslint';
+import classNamingPolicy from '../../config/class-naming-policy.js';
 import diCollaboratorPolicy from '../../config/di-collaborator-policy.js';
 import flatConfig from '../../eslint.config.mjs';
 
@@ -77,6 +78,12 @@ const S = {
   // tests/unit/tooling/di-collaborator-gate.test.ts; the fixtures below prove they fire.
   collaboratorProject: diCollaboratorPolicy.collaboratorSelectors()[0].selector,
   collaboratorLibrary: diCollaboratorPolicy.collaboratorSelectors()[1].selector,
+  // The three issue #129 selectors are likewise BUILT by config/class-naming-policy.js (the
+  // single source of truth the CLAUDE.md table is pinned against), so they are derived here
+  // too; tests/unit/tooling/class-naming-gate.test.ts pins their construction.
+  bannedClassSuffix: classNamingPolicy.classNamingSelectors()[0].selector,
+  bareServiceClass: classNamingPolicy.classNamingSelectors()[1].selector,
+  unsuffixedClass: classNamingPolicy.classNamingSelectors()[2].selector,
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -224,6 +231,72 @@ const FIXTURES = [
   // built-in-constructor allowlist is proven separately, on real carve-out paths, by
   // tests/unit/tooling/component-di-gate.test.ts; this fixture pins the selector into the
   // rot-guard universe so it cannot be deleted from eslint.config.mjs unnoticed.
+  // class-naming convention (#129): a banned grab-bag suffix, a domain-less Service, a class
+  // with no approved suffix, and the class-expression spelling of each ban; the abstract
+  // `Base*` superclass carve-out and an approved suffix stay clean.
+  {
+    id: 'class-banned-suffix',
+    file: PROBES.logic,
+    code: 'class AuthManager { run(): void {} }',
+    covers: [S.bannedClassSuffix, S.unsuffixedClass],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #129',
+  },
+  {
+    id: 'class-expression-banned-suffix',
+    file: PROBES.logic,
+    code: 'const helper = class ErrorHelper { run(): void {} };',
+    covers: [S.bannedClassSuffix, S.unsuffixedClass],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #129',
+  },
+  {
+    id: 'class-bare-service',
+    file: PROBES.logic,
+    code: 'class Service { run(): void {} }',
+    covers: [S.bareServiceClass],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #129',
+  },
+  {
+    id: 'class-app-service',
+    file: PROBES.logic,
+    code: 'export default class AppService { run(): void {} }',
+    covers: [S.bareServiceClass],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #129',
+  },
+  {
+    id: 'class-without-approved-suffix',
+    file: PROBES.logic,
+    code: 'class LoginThing { run(): void {} }',
+    covers: [S.unsuffixedClass],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #129',
+  },
+  {
+    id: 'abstract-base-superclass-exempt',
+    file: PROBES.logic,
+    code: 'abstract class BaseThing { abstract run(): void; }',
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
+  {
+    id: 'class-with-approved-suffix',
+    file: PROBES.logic,
+    code: 'class LoginResponseMapper { map(r: string): string { return r; } }',
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
   {
     id: 'new-behavioral-class-in-component',
     file: PROBES.component,

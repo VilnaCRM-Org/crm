@@ -604,6 +604,9 @@ make check-adr-drift # ADR-required gate for architecture changes (CI/PR-only, s
 make contract-diff  # semantic OpenAPI breaking-change gate on pin bumps (see above)
 make check-e2e-route-coverage # route-coverage inventory gate (see above)
 make check-auth-seed-gate # preloaded-auth seed bundle scan (Docker; not part of `make lint`)
+make lint-security-headers # serve.json drift against config/security-headers.json (in `make lint`)
+make security-headers-generate # regenerate the serve.json headers block from the policy
+make check-security-headers # boot the production image and assert the header baseline (Docker)
 make scan-secrets   # gitleaks full-history scan + seeded-key positive control (Docker; standalone)
 make scan-dependencies # Trivy: fixable HIGH/CRITICAL in the production closure of bun.lock (Docker)
 make scan-image     # Trivy: build the production image and scan it, same policy (Docker)
@@ -772,6 +775,13 @@ Two constraints in this repository are easy to trip over:
   every trusted checkout, so a malicious branch could execute host commands on session start.
 - `.claude/skills`: frontend project skills for implementation, quality,
   testing, review, documentation, observability, and performance guidance.
+- `.mcp.json`: the project-scoped MCP servers — `storybook` (the local Storybook MCP on
+  port 6006) and `figma` (Figma's remote server, `https://mcp.figma.com/mcp`, issue #152).
+  The Figma server is what the mandatory `figma-design-check` gate runs through; it is
+  authenticated by OAuth in the agent client (Claude Code: `/mcp` → `figma`), so no token
+  is committed or read from a dotenv file. When it is unreachable the gate reports
+  `BLOCKED` instead of skipping; the skill lists the design file key, the verified nodes,
+  and the only sanctioned offline fallback.
 - `~/.claude/skills` (global, personal): UI/design/motion/a11y skills (from
   [ui-skills.com](https://www.ui-skills.com/skills/)) plus testing, performance, React/TS,
   and browser/audit skills. Catalog and triggers: see "Global Skills" in `AGENTS.md`.
@@ -793,6 +803,9 @@ Codex, GitHub Copilot, Cursor, OpenAI agents, and any other assistant) MUST:
    then invoke each match before executing.
 4. Apply all relevant skills. Only skip one after recording
    "Not applicable" with a concrete reason.
+5. Naming a class is a code change and triggers this check: before creating or
+   renaming any class in non-React source, apply the role → pattern-suffix table
+   in "Class naming convention" below (`config/class-naming-policy.js`).
 
 This check is non-negotiable. Do not implement, format, lint, test, commit,
 or push until the relevant skills have been consulted.
@@ -1599,6 +1612,129 @@ because widening to arbitrary-depth `Property` would flag idiomatic nested MUI `
 callbacks and zustand-style slices — is nested (depth > 1) object literals,
 `Object.freeze()`-wrapped literals, and dynamically assigned methods (`obj.method = fn`).
 
+### Class naming convention (role → pattern suffix, issue #129)
+
+With statics and free functions banned, every unit of non-React logic is a class, and the class
+**name** is the first thing a reader, a reviewer, an AI agent, and a DI token see. A name is
+`<DomainNoun…><RecognizedPatternSuffix>`: PascalCase, singular, with the suffix naming the **role**
+and the nouns naming the **domain** — and the pair must be true: a `*Mapper` maps, a `*Factory`
+constructs, a `*Repository` is the data-access boundary. The single source of truth is
+[`config/class-naming-policy.js`](config/class-naming-policy.js); `eslint.config.mjs` builds its
+selectors from it and
+[`tests/unit/tooling/class-naming-gate.test.ts`](tests/unit/tooling/class-naming-gate.test.ts)
+fails the build when this table and that file disagree.
+
+**Approved role → suffix table.** Every class in `src/**/*.ts` (minus the #100 ignores — hooks,
+type files, stories, tests) must end in one of these:
+
+| Suffix         | Role                                        | Pattern lineage                   |
+| -------------- | ------------------------------------------- | --------------------------------- |
+| `*Repository`  | persistence / API boundary of an aggregate  | DDD / PoEAA                       |
+| `*Service`     | domain-qualified operation                  | DDD domain service                |
+| `*Factory`     | encapsulated construction                   | GoF Factory                       |
+| `*Builder`     | step-wise construction of an object         | GoF Builder                       |
+| `*Mapper`      | translation between representations         | PoEAA Data Mapper                 |
+| `*Adapter`     | conforms one interface to another           | GoF Adapter                       |
+| `*Strategy`    | interchangeable algorithm                   | GoF Strategy                      |
+| `*Handler`     | processes a request or event                | Chain of Responsibility           |
+| `*Guard`       | precondition: boolean, type, or throwing    | type-guard idiom                  |
+| `*Validator`   | validates input against rules               | DDD Specification                 |
+| `*Validators`  | catalog of validators, one singleton        | repo idiom (form validations)     |
+| `*Normalizer`  | canonicalizes a value into one shape        | enterprise Normalizer             |
+| `*Parser`      | parses a serialized form                    | parser idiom                      |
+| `*Processor`   | transforms a payload in a pipeline          | enterprise integration            |
+| `*Detector`    | classifies or recognizes a condition        | recognizer idiom                  |
+| `*Monitor`     | observes a rolling window of events         | observer idiom (#159)             |
+| `*Reporter`    | emits telemetry or signals to a sink        | observer idiom (#115, #159)       |
+| `*Signals`     | publishes one flow’s security signals       | repo idiom (#159)                 |
+| `*Scrubber`    | redacts sensitive fields                    | repo idiom (#115)                 |
+| `*Selectors`   | read-only projections over state            | Redux / Zustand selectors         |
+| `*Store`       | state container                             | Flux / Zustand                    |
+| `*Actions`     | state transitions of a store                | Flux                              |
+| `*Var`         | container-free reactive state cell          | Apollo makeVar idiom              |
+| `*State`       | listener bookkeeping of a reactive cell     | repo idiom (auth render path)     |
+| `*Cache`       | memoized instances keyed by arguments       | PoEAA Identity Map                |
+| `*Loader`      | loads a resource or module on demand        | lazy-loading idiom                |
+| `*Client`      | outbound transport client                   | enterprise Gateway                |
+| `*API`         | typed façade over one remote API            | enterprise Gateway                |
+| `*Provider`    | supplies a value or capability              | provider idiom                    |
+| `*Providers`   | catalog of providers, one singleton         | provider idiom (OAuth)            |
+| `*Source`      | reads a value from where it is stored       | data-source idiom (#145)          |
+| `*Seed`        | test-only preloaded value, compile-guarded  | repo idiom (#158)                 |
+| `*Registrar`   | DI composition root of one area             | registry idiom (#109)             |
+| `*Core`        | container-free half of a two-layer boundary | repo idiom (#115, #155, #159)     |
+| `*Config`      | typed configuration value object            | repo idiom (env / runtime config) |
+| `*Env`         | raw environment reader                      | repo idiom (#112)                 |
+| `*Url`         | URL value object                            | DDD Value Object                  |
+| `*Target`      | resolved destination value object           | DDD Value Object (#150)           |
+| `*Correlation` | session-scoped correlation identifier       | DDD Value Object (#159)           |
+| `*Navigator`   | adapter over browser navigation             | GoF Adapter (window)              |
+| `*Controller`  | coordinates a UI interaction flow           | MVC Controller                    |
+| `*Error`       | thrown error class                          | JavaScript Error subclass         |
+| `*Errors`      | catalog of error constructors or codes      | repo idiom                        |
+| `*Signal`      | error subclass carrying one typed event     | repo idiom (#159)                 |
+| `*Styles`      | Emotion style object holder                 | repo idiom                        |
+| `*Impl`        | concrete implementation of an interface     | repo idiom (AuthRepositoryImpl)   |
+
+**Banned names** (vague / role-hiding; they license grab-bag responsibilities): `Manager`,
+`Helper`, `Util` / `Utils`, `Data`, `Info`, `Common`, `Misc`, `Stuff`, `Wrapper`, `Object`, and a
+domain-less bare `Service` (`Service`, `AppService`, `MyService`). An abstract `Base*` superclass
+(`BaseAPI`) is the one allowlist carve-out: it exists to be extended, and the leaf name is the
+subclass's.
+
+```ts
+// BAD — role hidden, invites a grab-bag of unrelated methods
+class AuthManager {}
+class ErrorHelper {}
+class HttpUtils {}
+class ResponseData {}
+class Service {}
+
+// GOOD — domain noun + recognized pattern suffix; the role is self-evident
+class ApiErrorFactory {} // repositories/api-error-factory.ts
+class EmailValidator {} // form-section/validations/email.ts
+class ApiErrorGuard {} // lib/api-errors/is-api-error.ts
+class LoginResponseMapper {} // store/login-response-mapper.ts
+class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
+```
+
+**Before creating or renaming a class, an agent MUST:**
+
+1. State the class's single role in one sentence ("this maps X to Y", "this builds Z").
+2. Pick the matching suffix from the table. If none fits, choose the closest GoF / DDD /
+   enterprise-pattern suffix and **add it to `config/class-naming-policy.js` and to this table in
+   the same change**, with its rationale — never coin an undocumented suffix, never reach for
+   `Manager` / `Helper` / `Util`.
+3. Form `<DomainNoun…><Suffix>`, PascalCase, singular, no abbreviations in the role part
+   (established domain acronyms — `Api`, `Http`, `Url`, `OAuth`, `GraphQL` — are nouns, not
+   roles).
+4. Keep the DI token in the owning area's `tokens.ts` and the kebab-case file name in sync with
+   the class name (`ApiErrorGuard` → `api-error-guard.ts`).
+5. Run `make format && make lint`; fix a finding by renaming, never with a suppression.
+6. Rename nothing on the container-free auth render path in a way that pulls tsyringe or a token
+   module into the paint chunk — `ReactiveVarFactory` / `AuthStateVar` keep their names.
+
+**Enforcement.** Three `no-restricted-syntax` selectors, all at `error`, spread into the same
+`src/**/*.ts` override blocks as the #100 / #180 gates (flat config replaces rather than merges
+the rule per file): the banned-suffix denylist, the bare-`Service` ban, and the approved-suffix
+allowlist. They match `ClassDeclaration` and named `ClassExpression` alike. The allowlist ships at
+`error` rather than the issue's proposed `warn` because a warning never fails `eslint .` (the
+issue-#164 lesson) — the calibration the warn tier was meant to buy was done here instead, by
+inventorying every class in scope; the only name that did not fit, `HttpErrorThrower`, was dead
+production code (nothing under `src/` imported it) and was deleted with its tests rather than
+given a suffix. Each selector has a must-fail fixture in `scripts/ci/eslint-gate-fixtures.mjs`
+(the issue-#189 rot guard demands one), and the gate test runs the exact selectors through a real
+`Linter` against banned, bare, unsuffixed, abstract-`Base*`, and approved names.
+
+**Honest limitation.** This is a **naming** gate, not a **role-correctness** gate. It catches
+`AuthManager` and a bare `Service`; it cannot tell whether a class named `LoginResponseMapper`
+also quietly does HTTP, or whether `ThingProcessor` hides a meaningless noun. Role ↔ name
+truthfulness is semantic and stays an agent rule plus a review-gate concern. Classes inside
+`use-*.ts` hook files (`AuthTokenStore`, `AsyncListLoader`) sit outside the `src/**/*.ts` scope
+by the #100 ignore list and follow the table by review; React components and class error
+boundaries in `.tsx` keep the `UI*` prefix / `*Boundary` idiom and are exempt from the suffix
+table, though the banned-name list still applies to them in review.
+
 ### Collaborators arrive through DI, never through a value import (issue #130)
 
 **Convention:** inside a class in a logic directory, the only behavioral collaborators a method
@@ -2030,6 +2166,74 @@ as they are for the issue-#188 ratchet.
 
 **No suppression:** satisfy the gate by keeping the seam gated, never by relaxing the scan,
 narrowing its file set, or moving a read out of the guarded method.
+
+### Browser security-header baseline (issue #113)
+
+The production server emitted only `Cache-Control`; nothing asserted a single response header. Now
+[`config/security-headers.json`](config/security-headers.json) is the single source of truth
+(schema: `config/security-headers.schema.json`), and three consumers read it through
+[`scripts/security-headers.js`](scripts/security-headers.js), a dependency-free CommonJS module
+the runtime image ships beside the entrypoint:
+
+- **`serve.json` is generated.** `make security-headers-generate` renders its `headers` block —
+  the security rule on `**` plus the unchanged `Cache-Control` rules — and
+  `make lint-security-headers` (in `make lint`, so in `static testing`) fails when the committed
+  file differs. The build-time `connect-src` origins come from the tracked `.env` only, so the
+  output is identical on every machine.
+- **The container entrypoint extends `connect-src`.** `scripts/docker-entrypoint.sh` runs
+  `scripts/render-security-headers.js` after `render-app-config.js`, appending the origins of
+  `APP_CONFIG_API_BASE_URL` / `APP_CONFIG_GRAPHQL_URL` to the served copy, so a repointed API is
+  reachable under the enforced policy without a rebuild. Invalid values abort the start.
+- **The RSBuild dev server** sets `server.headers` from the same policy, so a CSP break surfaces
+  on `make start`. HMR is a same-origin WebSocket, which `'self'` admits.
+
+The baseline: `default-src 'self'`; `script-src 'self'` (no `'unsafe-inline'`, no
+`'unsafe-eval'`); `style-src 'self' 'unsafe-inline'`; `img-src 'self' data:`;
+`font-src 'self'`; `connect-src 'self'` + API origins; `manifest-src 'self'`;
+`frame-ancestors 'none'`; `form-action 'self'`; `base-uri 'self'`; `object-src 'none'`; plus
+HSTS (`max-age=31536000; includeSubDomains`), `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
+`Permissions-Policy` (camera, microphone, geolocation, payment, usb disabled),
+`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`.
+
+**`style-src` is the one deliberate relaxation.** Emotion/MUI inject `<style>` elements and
+inline `style` attributes at runtime, and `output.inlineStyles` inlines the global stylesheet
+into the HTML shell; `serve` is a static file server with no per-response rendering, so a nonce
+would be a constant and protect nothing. `script-src` stays strict — the runtime-config block is
+`type="application/json"`, data rather than code — which is the property the CSP exists for.
+Verified in headless Chromium against the production image: fully styled, fonts loaded, zero
+console violations; `serve`'s clean URLs redirect `/index.html` to `/`, so the shell is probed
+at `/`.
+
+**Enforcement.** `make check-security-headers` (the `security headers` job of the
+`security testing` workflow, pull requests only) builds `--target production`, boots it, and
+asserts every header on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**` asset;
+then boots it again with `APP_CONFIG_*` overrides and asserts they reached `connect-src`, so the
+entrypoint step cannot go dead unnoticed. `loadPolicy()` refuses a weakened policy — no `nosniff`,
+HSTS under 180 days or without `includeSubDomains`, `X-Frame-Options` outside `DENY`/`SAMEORIGIN`,
+a widened `default-src`/`frame-ancestors`/`base-uri`/`object-src`, `'unsafe-inline'` /
+`'unsafe-eval'` / a wildcard on `script-src`, `*` anywhere — so a weakened baseline cannot be
+generated, shipped, or pass the gate.
+[`tests/unit/scripts/security-headers.test.ts`](tests/unit/scripts/security-headers.test.ts) pins
+those floors with must-fail cases,
+[`tests/unit/scripts/check-security-headers.test.ts`](tests/unit/scripts/check-security-headers.test.ts)
+drives the gate against fixture servers that drop or weaken a header, and
+[`tests/unit/tooling/security-headers-contract.test.ts`](tests/unit/tooling/security-headers-contract.test.ts)
+pins the schema, the generated `serve.json`, the Dockerfile and entrypoint wiring, the dev-server
+hook, the Makefile aggregate, the workflow job, and the `SECURITY.md` documentation.
+`tests/bats/security_headers.bats` covers the runner script and the make targets.
+
+Add `security testing / security headers` to the branch-protection required checks; until then
+the gate is advisory and a PR that trips it stays mergeable.
+
+**Honest scope:** the CSP is enforced by the browser on responses `serve` emits; a reverse proxy
+or CDN in front of the container must forward, not strip, these headers, and HSTS only takes
+effect once the app is served over TLS. Runtime overrides _extend_ `connect-src` — the build-time
+origins stay allowed — because the entrypoint cannot know which inlined fallback the override
+replaces.
+
+**No suppression:** change a header by editing the policy and regenerating, never by editing
+`serve.json` by hand, narrowing the probed paths, or relaxing a floor to make a run pass.
 
 ## Important Patterns
 

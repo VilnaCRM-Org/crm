@@ -411,6 +411,19 @@ digraph placement {
 When the placement is non-obvious, stop and re-read the boundary table —
 the violation is usually telling you the layer you skipped.
 
+## Class Naming (role → pattern suffix, issue #129)
+
+The role tags in the diagrams above (`[Repository]`, `[Provider]`, `[Mapper]`)
+are also the class-name suffixes: every class in non-React `src/**/*.ts` is
+`<DomainNoun…><RecognizedPatternSuffix>`, and the pair must be true. The
+canonical table — suffix, role, pattern lineage — lives in
+`config/class-naming-policy.js` (the ESLint gate reads it) and is mirrored in
+`CLAUDE.md` under "Class naming convention". `Manager`, `Helper`, `Util(s)`,
+`Data`, `Info`, `Wrapper`, `Object` and a domain-less bare `Service` are banned.
+A novel role adds its suffix to the policy file and the table in the same
+change; the kebab-case file name follows the class
+(see the code-organization skill).
+
 ## Verification
 
 ```bash

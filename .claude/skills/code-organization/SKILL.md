@@ -78,6 +78,9 @@ All rules below are enforced by `dependency-cruiser` (see
 - Files and folders inside a feature are kebab-case
   (`components/form-section/inert-box.tsx`,
   `repositories/login-repository.ts`).
+- A logic file is named after the class it exports, kebab-cased
+  (`ApiErrorGuard` → `api-error-guard.ts`); the class itself follows the
+  role → pattern-suffix table in `config/class-naming-policy.js` (issue #129).
 - Feature hook files must be `index.*` or `use-<kebab>.*`
   (`use-login-switcher.ts`) — enforced by `feature-hooks-file-convention`.
 - Module root may only contain: `config`, `features`, `hooks`, `lib`,

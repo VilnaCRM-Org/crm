@@ -138,6 +138,7 @@ What are you trying to do?
 │   ├─ React component, hook, form, feature UI → frontend-component-development
 │   ├─ Module / file placement and naming → code-organization
 │   ├─ New feature, repository, or service boundary → architecture
+│   ├─ Naming a new class / repository / service / mapper → apply the role→suffix table (architecture)
 │   ├─ Jest, Testing Library, Playwright, visual test → frontend-testing-workflow
 │   ├─ K6 load scenario → load-testing
 │   ├─ Sentry, web-vitals, structured log → observability-instrumentation
@@ -148,6 +149,7 @@ What are you trying to do?
 │   ├─ Reduce cyclomatic, cognitive, ABC, or file size → complexity-management
 │   ├─ Improve testability → frontend-testing-workflow / testing-workflow
 │   ├─ A class reaches for a collaborator instead of injecting it → architecture
+│   ├─ Renaming a class → apply the role→suffix table (architecture, code-organization)
 │   └─ Tighten observability boundary → observability-instrumentation
 │
 ├─ Review / validate work
