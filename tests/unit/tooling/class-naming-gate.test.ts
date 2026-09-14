@@ -66,7 +66,7 @@ describe('class-naming policy (issue #129) — data', () => {
 
   it('anchors every pattern to the end (or whole) of the class name', () => {
     expect(policy.bannedSuffixPattern()).toMatch(/^\/\(\?:.*\)\$\/$/);
-    expect(policy.approvedSuffixPattern()).toMatch(/^\/\(\?:.*\)\$\/$/);
+    expect(policy.approvedSuffixPattern()).toMatch(/^\/\.\(\?:.*\)\$\/$/);
     expect(policy.bareServicePattern()).toMatch(/^\/\^\(\?:.*\)\$\/$/);
   });
 });
@@ -124,6 +124,13 @@ describe('class-naming policy (issue #129) — the real ESLint selectors compile
     'accepts a domain noun followed by %s',
     (suffix) => {
       expect(lint(`class Login${suffix} {}`)).toEqual([]);
+    }
+  );
+
+  it.each(policy.APPROVED_SUFFIXES.map((entry) => entry.suffix))(
+    'rejects the bare suffix %s with no domain noun in front of it',
+    (suffix) => {
+      expect(lint(`class ${suffix} {}`).length).toBeGreaterThan(0);
     }
   );
 

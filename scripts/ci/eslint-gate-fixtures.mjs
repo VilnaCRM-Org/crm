@@ -280,6 +280,15 @@ const FIXTURES = [
     tag: 'issue #129',
   },
   {
+    id: 'class-bare-approved-suffix',
+    file: PROBES.logic,
+    code: 'class Repository { run(): void {} }',
+    covers: [S.unsuffixedClass],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #129',
+  },
+  {
     id: 'abstract-base-superclass-exempt',
     file: PROBES.logic,
     code: 'abstract class BaseThing { abstract run(): void; }',
