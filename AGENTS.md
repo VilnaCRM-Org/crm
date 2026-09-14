@@ -1658,6 +1658,10 @@ build goes red. Know them before you touch a config file:
   `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, and
   `Cross-Origin-Resource-Policy` (no COOP: browsers ignore it on plain-http, non-localhost
   origins with a console error). The directive table and rationale live in `SECURITY.md`
+- The CSP, `X-Frame-Options`, `Referrer-Policy` and `Permissions-Policy` are document headers
+  and ride the HTML shell only (every SPA route resolves to it); HSTS, `nosniff` and
+  `Cross-Origin-Resource-Policy` ride every response. A document header on a hashed asset only
+  adds bytes to the mobile critical path
 - `serve.json` is generated — never edit its `headers` block by hand. Change the policy, run
   `make security-headers-generate`, commit the result; `make lint-security-headers` (in
   `make lint`) fails on drift, and the RSBuild dev server reads the same policy

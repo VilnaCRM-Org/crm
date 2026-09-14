@@ -31,7 +31,8 @@ const clonePolicy = (): Policy => JSON.parse(JSON.stringify(loadPolicy())) as Po
 type HeaderRules = { headers: Array<{ headers: Array<{ key: string; value: string }> }> };
 
 const cspOf = (serveConfig: HeaderRules): string =>
-  serveConfig.headers[0]?.headers.find((header) => header.key === CSP_HEADER)?.value ?? '';
+  serveConfig.headers.flatMap((rule) => rule.headers).find((header) => header.key === CSP_HEADER)
+    ?.value ?? '';
 
 describe('scripts/security-headers.js (issue #113)', () => {
   describe('originOf', () => {
@@ -121,6 +122,7 @@ describe('scripts/security-headers.js (issue #113)', () => {
       ]);
       expect(rendered.headers.map((rule) => rule.source)).toEqual([
         '**',
+        '/index.html',
         '/',
         '/index.html',
         '/site.webmanifest',
@@ -128,13 +130,18 @@ describe('scripts/security-headers.js (issue #113)', () => {
       ]);
     });
 
-    it('emits every static header of the policy after the CSP', () => {
+    it('emits response headers everywhere and document headers after the CSP', () => {
       const policy = clonePolicy();
-      const [security] = composeServeConfig(policy, {}).headers;
+      const [response, document] = composeServeConfig(policy, {}).headers;
 
-      expect(security?.headers.map((header) => header.key)).toEqual([
+      expect(response?.source).toBe('**');
+      expect(response?.headers.map((header) => header.key)).toEqual(
+        policy.response.headers.map((header) => header.key)
+      );
+      expect(document?.source).toBe('/index.html');
+      expect(document?.headers.map((header) => header.key)).toEqual([
         CSP_HEADER,
-        ...policy.headers.map((header) => header.key),
+        ...policy.document.headers.map((header) => header.key),
       ]);
     });
   });
@@ -175,7 +182,7 @@ describe('scripts/security-headers.js (issue #113)', () => {
 
     it('refuses a serve.json that carries no CSP for the policy source', () => {
       expect(() => extendRuntimeConnectSrc({ headers: [] }, clonePolicy(), {})).toThrow(
-        'serve.json carries no Content-Security-Policy header for source "**".'
+        'serve.json carries no Content-Security-Policy header for source "/index.html".'
       );
     });
   });
@@ -185,14 +192,18 @@ describe('scripts/security-headers.js (issue #113)', () => {
       expect(() => assertBaselineFloors(clonePolicy())).not.toThrow();
     });
 
-    const withHeader = (policy: Policy, key: string, value: string): Policy => ({
+    const mapRule = (
+      policy: Policy,
+      map: (headers: Policy['response']['headers']) => Policy['response']['headers']
+    ): Policy => ({
       ...policy,
-      headers: policy.headers.map((h) => (h.key === key ? { key, value } : h)),
+      response: { ...policy.response, headers: map(policy.response.headers) },
+      document: { ...policy.document, headers: map(policy.document.headers) },
     });
-    const withoutHeader = (policy: Policy, key: string): Policy => ({
-      ...policy,
-      headers: policy.headers.filter((h) => h.key !== key),
-    });
+    const withHeader = (policy: Policy, key: string, value: string): Policy =>
+      mapRule(policy, (headers) => headers.map((h) => (h.key === key ? { key, value } : h)));
+    const withoutHeader = (policy: Policy, key: string): Policy =>
+      mapRule(policy, (headers) => headers.filter((h) => h.key !== key));
     const withDirective = (policy: Policy, directive: string, sources: string[]): Policy => ({
       ...policy,
       contentSecurityPolicy: {
@@ -221,9 +232,28 @@ describe('scripts/security-headers.js (issue #113)', () => {
         'Strict-Transport-Security "max-age=31536000" is weaker',
       ],
       [
+        'HSTS whose max-age is only a substring of another directive',
+        (policy): Policy =>
+          withHeader(policy, 'Strict-Transport-Security', 'notmax-age=31536000; includeSubDomains'),
+        'Strict-Transport-Security "notmax-age=31536000; includeSubDomains" is weaker',
+      ],
+      [
         'X-Frame-Options ALLOWALL',
         (policy): Policy => withHeader(policy, 'X-Frame-Options', 'ALLOWALL'),
         'X-Frame-Options "ALLOWALL" is weaker',
+      ],
+      [
+        'form-action removed',
+        (policy): Policy => {
+          const { 'form-action': _dropped, ...directives } =
+            policy.contentSecurityPolicy.directives;
+
+          return {
+            ...policy,
+            contentSecurityPolicy: { ...policy.contentSecurityPolicy, directives },
+          };
+        },
+        "form-action must be exactly 'self'",
       ],
       [
         'unsafe-eval on script-src',
@@ -267,7 +297,7 @@ describe('scripts/security-headers.js (issue #113)', () => {
       const dir = mkdtempSync(join(tmpdir(), 'security-headers-'));
       const file = join(dir, 'policy.json');
 
-      writeFileSync(file, JSON.stringify({ headers: [] }));
+      writeFileSync(file, JSON.stringify({ response: { source: '**', headers: [] } }));
 
       expect(() => loadPolicy(file)).toThrow('config/security-headers.json is malformed');
     });
@@ -300,8 +330,10 @@ describe('scripts/generate-serve-config.js (issue #113)', () => {
       ].join('\n')
     );
 
+    const before = process.env.WEBSITE_DOMAIN;
+
     expect(loadBuildEnv(dotenv)).toMatchObject({ REACT_APP_MOCKOON_URL: 'http://localhost:8080' });
-    expect(process.env.WEBSITE_DOMAIN).toBeUndefined();
+    expect(process.env.WEBSITE_DOMAIN).toBe(before);
   });
 
   it('returns an empty environment when the dotenv file is absent', () => {

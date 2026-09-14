@@ -2,7 +2,12 @@ import { execFile } from 'node:child_process';
 import { createServer, type Server } from 'node:http';
 import { resolve } from 'node:path';
 
-import { CSP_HEADER, loadPolicy, securityHeaders } from '../../../scripts/security-headers';
+import {
+  CSP_HEADER,
+  documentHeaders,
+  loadPolicy,
+  responseHeaders,
+} from '../../../scripts/security-headers';
 
 type HeaderList = Array<{ key: string; value: string }>;
 
@@ -15,8 +20,14 @@ const SHELL = [
 ].join('');
 const RUNTIME_ORIGIN = 'https://api.vilnacrm.example';
 
-const baseline = (): HeaderList =>
-  securityHeaders(loadPolicy(), ['http://localhost:8080', 'http://localhost:4000']);
+const baseline = (): HeaderList => {
+  const policy = loadPolicy();
+
+  return [
+    ...responseHeaders(policy),
+    ...documentHeaders(policy, ['http://localhost:8080', 'http://localhost:4000']),
+  ];
+};
 
 const cacheControlFor = (path: string): string => {
   if (path.startsWith('/static/')) return 'public, max-age=31536000, immutable';
@@ -28,9 +39,13 @@ async function serve(
   headers: HeaderList,
   cacheControl: (path: string) => string = cacheControlFor
 ): Promise<{ url: string; close: () => Promise<void> }> {
+  const documentKeys = new Set([CSP_HEADER, ...loadPolicy().document.headers.map((h) => h.key)]);
   const server: Server = createServer((request, response) => {
     const path = request.url ?? '/';
-    for (const { key, value } of headers) response.setHeader(key, value);
+    const isDocument = path === '/' || path === '/sign-in';
+    for (const { key, value } of headers) {
+      if (isDocument || !documentKeys.has(key)) response.setHeader(key, value);
+    }
     response.setHeader('Cache-Control', cacheControl(path));
     response.writeHead(200, { 'Content-Type': path === '/' ? 'text/html' : 'text/plain' });
     response.end(path === '/' ? SHELL : 'ok');
@@ -152,6 +167,12 @@ describe('scripts/ci/check-security-headers.mjs (issue #113)', () => {
       (headers): HeaderList =>
         withHeader(headers, CSP_HEADER, `script-src 'unsafe-inline'; ${cspOf(headers)}`),
       'repeats the script-src directive',
+    ],
+    [
+      'an undeclared directive relaxes what script-src locked',
+      (headers): HeaderList =>
+        withHeader(headers, CSP_HEADER, `${cspOf(headers)}; script-src-elem 'unsafe-inline'`),
+      'carries undeclared directive script-src-elem',
     ],
     [
       'a directive disappears',

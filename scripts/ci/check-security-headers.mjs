@@ -4,13 +4,13 @@
  *
  * Fetches representative responses from a running production build and asserts every header of
  * the baseline in config/security-headers.json is present with the exact value the policy
- * declares - the HTML shell at /, a deep route, the manifest and a hashed static asset, so a header
- * that only reaches some responses is caught. The Content-Security-Policy is compared directive
- * by directive: every directive must carry exactly the policy's sources, except connect-src,
- * which must contain the policy's sources plus every origin passed as --expect-connect (the
- * runtime APP_CONFIG_* override the container entrypoint appends) and nothing wildcard. The
- * policy itself is refused by loadPolicy() when it weakens the floors, so a weakened baseline
- * cannot be generated, shipped, or passed here.
+ * declares: the every-response headers on the HTML shell at /, a deep route, the manifest and a
+ * hashed static asset, and the document headers plus the Content-Security-Policy on the two
+ * documents. The CSP is compared directive by directive: every policy directive must carry
+ * exactly the policy's sources, a directive the policy does not declare is a finding (browsers
+ * honour script-src-elem and friends even when script-src is strict), and connect-src is an
+ * exact set. The policy itself is refused by loadPolicy() when it weakens the floors, so a
+ * weakened baseline cannot be generated, shipped, or passed here.
  *
  * connect-src is compared as an exact set: the sources the committed serve.json carries (the
  * policy's own plus the build-time API origins the image was generated with) plus every origin
@@ -66,8 +66,8 @@ function sameSet(actual, expected) {
   return a.size === b.size && [...a].every((entry) => b.has(entry));
 }
 
-function checkStaticHeaders(policy, response, findings) {
-  for (const { key, value } of policy.headers) {
+function checkStaticHeaders(headers, response, findings) {
+  for (const { key, value } of headers) {
     const actual = response.headers[key.toLowerCase()];
     if (actual === undefined) findings.push(`${response.path}: missing ${key}`);
     else if (actual !== value)
@@ -122,6 +122,11 @@ function checkCsp(policy, response, expectedConnectSrc, findings) {
   for (const directive of Object.keys(policy.contentSecurityPolicy.directives)) {
     checkCspDirective(policy, response, directives, directive, findings);
   }
+  for (const directive of Object.keys(directives)) {
+    if (!(directive in policy.contentSecurityPolicy.directives)) {
+      findings.push(`${response.path}: ${CSP_HEADER} carries undeclared directive ${directive}`);
+    }
+  }
   checkConnectSrc(response, directives, expectedConnectSrc, findings);
 }
 
@@ -136,8 +141,9 @@ function checkCacheControl(policy, response, findings) {
 
 /**
  * Evaluates already-fetched responses against the policy and returns every finding.
- * A response is `{ path, status, headers, cacheRule? }` with lowercase header names;
- * `baselineConnectSrc` is the connect-src the committed serve.json carries.
+ * A response is `{ path, status, headers, document, cacheRule? }` with lowercase header names
+ * and `document: true` for the HTML shell; `baselineConnectSrc` is the connect-src the
+ * committed serve.json carries.
  */
 export function evaluate(policy, responses, baselineConnectSrc, expectConnect = []) {
   const findings = [];
@@ -148,31 +154,41 @@ export function evaluate(policy, responses, baselineConnectSrc, expectConnect = 
       findings.push(`${response.path}: HTTP ${response.status}`);
       continue;
     }
-    checkStaticHeaders(policy, response, findings);
-    checkCsp(policy, response, expectedConnectSrc, findings);
+    checkStaticHeaders(policy.response.headers, response, findings);
+    if (response.document) {
+      checkStaticHeaders(policy.document.headers, response, findings);
+      checkCsp(policy, response, expectedConnectSrc, findings);
+    }
     checkCacheControl(policy, response, findings);
   }
   return findings;
 }
 
-async function probe(baseUrl, path, cacheRule) {
+async function probe(baseUrl, path, cacheRule, document) {
   const response = await fetch(new URL(path, baseUrl), { redirect: 'manual' });
   const headers = Object.fromEntries(response.headers.entries());
   const body = await response.text();
-  return { path, status: response.status, headers, body: path === '/' ? body : '', cacheRule };
+  return {
+    path,
+    status: response.status,
+    headers,
+    body: path === '/' ? body : '',
+    cacheRule,
+    document,
+  };
 }
 
 /** Fetches the HTML shell, a deep route, the manifest and one hashed asset. */
 export async function probeAll(baseUrl) {
   const responses = [];
   for (const path of HTML_PATHS) {
-    responses.push(await probe(baseUrl, path, '/index.html'));
+    responses.push(await probe(baseUrl, path, '/index.html', true));
   }
-  responses.push(await probe(baseUrl, '/site.webmanifest', '/site.webmanifest'));
+  responses.push(await probe(baseUrl, '/site.webmanifest', '/site.webmanifest', false));
   const shell = responses.find((response) => response.path === '/');
   const asset = STATIC_ASSET_PATTERN.exec(shell.body);
   if (!asset) throw new Error('the HTML shell at / references no /static/ script');
-  responses.push(await probe(baseUrl, asset[1], '/static/**'));
+  responses.push(await probe(baseUrl, asset[1], '/static/**', false));
   return responses;
 }
 

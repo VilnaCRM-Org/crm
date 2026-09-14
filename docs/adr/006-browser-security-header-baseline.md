@@ -112,6 +112,11 @@ directive table is in [`SECURITY.md`](../../SECURITY.md#browser-security-headers
   hit at `http://prod:3001` and their zero-tolerance console gate rejects. The app opens no popup
   that needs opener isolation (`window.open` is always `noopener`), so nothing is lost today;
   it returns with any future cross-origin-isolation requirement.
+- The document headers (the CSP, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`)
+  ride the HTML shell only; the every-response set is HSTS, `nosniff` and
+  `Cross-Origin-Resource-Policy`. A document policy on a hashed asset changes nothing in the
+  browser, and the extra header bytes on every request measurably moved the `/sign-up` mobile
+  Lighthouse score against a floor with no headroom (0.82–0.83 against 0.84).
 - Two test-side seams had to become CSP-safe: the Playwright auth-token seed now runs through
   `page.addInitScript` instead of an inline `<script>` the policy blocks, and zod runs in
   `jitless` mode (`src/config/zod.ts`) because its object-schema compiler probes the `Function`

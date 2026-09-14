@@ -1717,10 +1717,11 @@ class FetchHttpsClient {} // services/https-client/fetch-https-client.ts
 6. Rename nothing on the container-free auth render path in a way that pulls tsyringe or a token
    module into the paint chunk — `ReactiveVarFactory` / `AuthStateVar` keep their names.
 
-**Enforcement.** Three `no-restricted-syntax` selectors, all at `error`, spread into the same
+**Enforcement.** Four `no-restricted-syntax` selectors, all at `error`, spread into the same
 `src/**/*.ts` override blocks as the #100 / #180 gates (flat config replaces rather than merges
-the rule per file): the banned-suffix denylist, the bare-`Service` ban, and the approved-suffix
-allowlist. They match `ClassDeclaration` and named `ClassExpression` alike. The allowlist ships at
+the rule per file): an unnamed-class ban (`export default class {}`, `const x = class {}`),
+the banned-suffix denylist, the bare-`Service` ban, and the approved-suffix allowlist. They match
+`ClassDeclaration` and `ClassExpression` alike. The allowlist ships at
 `error` rather than the issue's proposed `warn` because a warning never fails `eslint .` (the
 issue-#164 lesson) — the calibration the warn tier was meant to buy was done here instead, by
 inventorying every class in scope; the only name that did not fit, `HttpErrorThrower`, was dead
@@ -2179,7 +2180,10 @@ The production server emitted only `Cache-Control`; nothing asserted a single re
 the runtime image ships beside the entrypoint:
 
 - **`serve.json` is generated.** `make security-headers-generate` renders its `headers` block —
-  the security rule on `**` plus the unchanged `Cache-Control` rules — and
+  the every-response rule on `**` (HSTS, `nosniff`, CORP), the document rule on `/index.html`
+  (the CSP, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`; every SPA route resolves
+  to the shell, and a document policy on a hashed asset only adds bytes to the mobile critical
+  path) plus the unchanged `Cache-Control` rules — and
   `make lint-security-headers` (in `make lint`, so in `static testing`) fails when the committed
   file differs. The build-time `connect-src` origins come from the tracked `.env` only, so the
   output is identical on every machine.
@@ -2215,12 +2219,15 @@ at `/`.
 
 **Enforcement.** `make check-security-headers` (the `security headers` job of the
 `security testing` workflow, pull requests only) builds `--target production`, boots it, and
-asserts every header on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**` asset;
+asserts the response headers on `/`, `/sign-in`, `/site.webmanifest` and a hashed `/static/**`
+asset and the document headers plus the CSP on the two documents;
 then boots it again with `APP_CONFIG_*` overrides and asserts they reached `connect-src`, so the
 entrypoint step cannot go dead unnoticed. `connect-src` is compared as an exact set — the
-committed `serve.json` sources plus the expected overrides, nothing more — and every other
-directive must equal the policy; a repeated directive is rejected outright, because browsers
-enforce the first occurrence and a checker that kept the last one could be talked past.
+committed `serve.json` sources plus the expected overrides, nothing more — every other
+directive must equal the policy, a directive the policy does not declare is a finding
+(`script-src-elem 'unsafe-inline'` would otherwise slip past a strict `script-src`), and a
+repeated directive is rejected outright, because browsers enforce the first occurrence and a
+checker that kept the last one could be talked past.
 `loadPolicy()` refuses a weakened policy — no `nosniff`, HSTS under 180 days or without
 `includeSubDomains`, `X-Frame-Options` outside `DENY`/`SAMEORIGIN`, a widened
 `default-src`/`frame-ancestors`/`base-uri`/`object-src`, `'unsafe-inline'` /

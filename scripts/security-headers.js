@@ -23,9 +23,12 @@ const POLICY_PATH = path.resolve(__dirname, '../config/security-headers.json');
 
 const isObject = (value) => Boolean(value) && typeof value === 'object';
 
+const isHeaderRule = (rule) =>
+  isObject(rule) && typeof rule.source === 'string' && Array.isArray(rule.headers);
+
 const SHAPE_CHECKS = [
-  (policy) => typeof policy.source === 'string',
-  (policy) => Array.isArray(policy.headers),
+  (policy) => isHeaderRule(policy.document),
+  (policy) => isHeaderRule(policy.response),
   (policy) => Array.isArray(policy.cacheControl),
   (policy) => isObject(policy.contentSecurityPolicy),
   (policy) => isObject(policy.contentSecurityPolicy.directives),
@@ -40,9 +43,9 @@ function assertPolicyShape(policy) {
 
   if (!valid) {
     throw new Error(
-      'config/security-headers.json is malformed: expected source, headers[], ' +
-        'contentSecurityPolicy.directives (with connect-src), connectSrcFromEnv.{build,runtime} ' +
-        'and cacheControl[].'
+      'config/security-headers.json is malformed: expected document.{source,headers[]}, ' +
+        'response.{source,headers[]}, contentSecurityPolicy.directives (with connect-src), ' +
+        'connectSrcFromEnv.{build,runtime} and cacheControl[].'
     );
   }
 
@@ -53,25 +56,44 @@ const HSTS_MIN_MAX_AGE = 15552000;
 const LOCKED_DIRECTIVES = {
   'default-src': ["'self'"],
   'frame-ancestors': ["'none'"],
+  'form-action': ["'self'"],
   'base-uri': ["'self'"],
   'object-src': ["'none'"],
 };
 const SCRIPT_SRC_FORBIDDEN = ["'unsafe-inline'", "'unsafe-eval'", '*', 'http:', 'https:', 'data:'];
+
+function hstsDirectives(value) {
+  return value
+    .split(';')
+    .map((directive) => directive.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function acceptsHsts(value) {
+  const directives = hstsDirectives(value);
+  const maxAge = directives.find((directive) => /^max-age=\d+$/.test(directive));
+
+  return (
+    maxAge !== undefined &&
+    Number(maxAge.slice('max-age='.length)) >= HSTS_MIN_MAX_AGE &&
+    directives.includes('includesubdomains')
+  );
+}
+
 const REQUIRED_HEADERS = {
-  'Strict-Transport-Security': (value) => {
-    const maxAge = /max-age=(\d+)/.exec(value);
-    return (
-      Boolean(maxAge) && Number(maxAge[1]) >= HSTS_MIN_MAX_AGE && /includeSubDomains/.test(value)
-    );
-  },
+  'Strict-Transport-Security': acceptsHsts,
   'X-Frame-Options': (value) => value === 'DENY' || value === 'SAMEORIGIN',
   'X-Content-Type-Options': (value) => value === 'nosniff',
   'Referrer-Policy': (value) => value.length > 0 && value !== 'unsafe-url',
   'Permissions-Policy': (value) => value.length > 0,
 };
 
+function allHeaders(policy) {
+  return [...policy.response.headers, ...policy.document.headers];
+}
+
 function headerValue(policy, key) {
-  const header = policy.headers.find((entry) => entry.key === key);
+  const header = allHeaders(policy).find((entry) => entry.key === key);
 
   return header ? header.value : undefined;
 }
@@ -214,11 +236,15 @@ function buildCsp(policy, extraConnectSrc = []) {
   return serializeCsp({ ...directives, [CONNECT_SRC]: connectSrc });
 }
 
-function securityHeaders(policy, extraConnectSrc = []) {
+function documentHeaders(policy, extraConnectSrc = []) {
   return [
     { key: CSP_HEADER, value: buildCsp(policy, extraConnectSrc) },
-    ...policy.headers.map(({ key, value }) => ({ key, value })),
+    ...policy.document.headers.map(({ key, value }) => ({ key, value })),
   ];
+}
+
+function responseHeaders(policy) {
+  return policy.response.headers.map(({ key, value }) => ({ key, value }));
 }
 
 function cacheControlRules(policy) {
@@ -230,7 +256,8 @@ function cacheControlRules(policy) {
 
 function renderHeadersBlock(policy, extraConnectSrc = []) {
   return [
-    { source: policy.source, headers: securityHeaders(policy, extraConnectSrc) },
+    { source: policy.response.source, headers: responseHeaders(policy) },
+    { source: policy.document.source, headers: documentHeaders(policy, extraConnectSrc) },
     ...cacheControlRules(policy),
   ];
 }
@@ -253,7 +280,7 @@ function findCspHeader(serveConfig, source) {
 }
 
 function committedConnectSrc(serveConfig, policy) {
-  return parseCsp(findCspHeader(serveConfig, policy.source).value)[CONNECT_SRC] || [];
+  return parseCsp(findCspHeader(serveConfig, policy.document.source).value)[CONNECT_SRC] || [];
 }
 
 function extendRuntimeConnectSrc(serveConfig, policy, env) {
@@ -261,7 +288,7 @@ function extendRuntimeConnectSrc(serveConfig, policy, env) {
     policy.contentSecurityPolicy.connectSrcFromEnv.runtime,
     env
   );
-  const header = findCspHeader(serveConfig, policy.source);
+  const header = findCspHeader(serveConfig, policy.document.source);
   const directives = parseCsp(header.value);
 
   directives[CONNECT_SRC] = mergeSources(directives[CONNECT_SRC] || [], runtimeOrigins);
@@ -279,6 +306,7 @@ module.exports = {
   buildCsp,
   cacheControlRules,
   committedConnectSrc,
+  documentHeaders,
   extendRuntimeConnectSrc,
   loadPolicy,
   originOf,
@@ -286,6 +314,6 @@ module.exports = {
   parseCsp,
   renderHeadersBlock,
   renderServeConfig,
-  securityHeaders,
+  responseHeaders,
   serializeCsp,
 };

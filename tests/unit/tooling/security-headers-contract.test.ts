@@ -32,9 +32,12 @@ type ServeConfig = {
 
 const policy = loadPolicy();
 const serveConfig = readJson<ServeConfig>('serve.json');
-const securityRule = serveConfig.headers.find((rule) => rule.source === policy.source);
+const documentRule = serveConfig.headers.find(
+  (rule) => rule.source === policy.document.source && rule.headers.some((h) => h.key === CSP_HEADER)
+);
+const responseRule = serveConfig.headers.find((rule) => rule.source === policy.response.source);
 const servedCsp = parseCsp(
-  securityRule?.headers.find((header) => header.key === CSP_HEADER)?.value ?? ''
+  documentRule?.headers.find((header) => header.key === CSP_HEADER)?.value ?? ''
 );
 
 describe('browser security-header baseline (issue #113)', () => {
@@ -54,19 +57,25 @@ describe('browser security-header baseline (issue #113)', () => {
     );
   });
 
-  it('declares the complete header set the issue requires', () => {
-    expect(policy.headers.map((header) => header.key)).toEqual([
+  it('declares the complete header set the issue requires, split by scope', () => {
+    expect(policy.response.headers.map((header) => header.key)).toEqual([
       'Strict-Transport-Security',
-      'X-Frame-Options',
       'X-Content-Type-Options',
-      'Referrer-Policy',
-      'Permissions-Policy',
       'Cross-Origin-Resource-Policy',
     ]);
+    expect(policy.document.headers.map((header) => header.key)).toEqual([
+      'X-Frame-Options',
+      'Referrer-Policy',
+      'Permissions-Policy',
+    ]);
+    expect(policy.response.source).toBe('**');
+    expect(policy.document.source).toBe('/index.html');
   });
 
   it('leaves Cross-Origin-Opener-Policy out of the baseline', () => {
-    expect(policy.headers.map((header) => header.key)).not.toContain('Cross-Origin-Opener-Policy');
+    const keys = [...policy.response.headers, ...policy.document.headers].map((h) => h.key);
+
+    expect(keys).not.toContain('Cross-Origin-Opener-Policy');
   });
 
   it('keeps script-src strict and scopes the Emotion accommodation to style-src alone', () => {
@@ -100,17 +109,21 @@ describe('browser security-header baseline (issue #113)', () => {
     }
   });
 
-  it('applies the security rule to every response and carries the build-time API origins', () => {
-    expect(serveConfig.headers[0]?.source).toBe(policy.source);
-    expect(policy.source).toBe('**');
+  it('applies the response rule everywhere and the document rule to the shell', () => {
+    expect(serveConfig.headers[0]?.source).toBe('**');
+    expect(serveConfig.headers[1]?.source).toBe('/index.html');
     expect(servedCsp['connect-src']).toEqual([
       "'self'",
       'http://localhost:8080',
       'http://localhost:4000',
     ]);
-    for (const { key, value } of policy.headers) {
-      expect(securityRule?.headers).toContainEqual({ key, value });
+    for (const { key, value } of policy.response.headers) {
+      expect(responseRule?.headers).toContainEqual({ key, value });
     }
+    for (const { key, value } of policy.document.headers) {
+      expect(documentRule?.headers).toContainEqual({ key, value });
+    }
+    expect(responseRule?.headers.map((h) => h.key)).not.toContain(CSP_HEADER);
   });
 
   it('preserves the pre-existing Cache-Control rules verbatim', () => {
@@ -167,9 +180,9 @@ describe('browser security-header baseline (issue #113)', () => {
   it('serves the same baseline from the RSBuild dev server', () => {
     const rsbuildConfig = readRepoFile('rsbuild.config.ts');
 
-    expect(rsbuildConfig).toContain(
-      "import { loadPolicy, originsFromEnv, securityHeaders } from './scripts/security-headers';"
-    );
+    expect(rsbuildConfig).toContain("from './scripts/security-headers';");
+    expect(rsbuildConfig).toContain('responseHeaders(securityHeaderPolicy)');
+    expect(rsbuildConfig).toMatch(/connectSrcFromEnv\.build,\s*process\.env\s*\)/);
     expect(rsbuildConfig).toMatch(/server:\s*\{[^}]*headers: devSecurityHeaders/s);
   });
 
@@ -210,7 +223,7 @@ describe('browser security-header baseline (issue #113)', () => {
   it('documents the baseline, the style-src decision and the change procedure', () => {
     const security = readRepoFile('SECURITY.md');
 
-    for (const { key } of policy.headers) {
+    for (const { key } of [...policy.response.headers, ...policy.document.headers]) {
       expect(security).toContain(`\`${key}\``);
     }
     expect(security).toContain("'unsafe-inline'");

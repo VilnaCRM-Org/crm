@@ -18,9 +18,14 @@ export interface ContentSecurityPolicy {
   readonly connectSrcFromEnv: ConnectSrcFromEnv;
 }
 
-export interface SecurityHeaderPolicy {
+export interface HeaderRule {
   readonly source: string;
   readonly headers: SecurityHeader[];
+}
+
+export interface SecurityHeaderPolicy {
+  readonly document: HeaderRule;
+  readonly response: HeaderRule;
   readonly contentSecurityPolicy: ContentSecurityPolicy;
   readonly cacheControl: CacheControlRule[];
 }
@@ -67,8 +72,9 @@ export function renderServeConfig(
   env: Env,
   existing?: Record<string, unknown>
 ): ServeConfig;
-export function securityHeaders(
+export function documentHeaders(
   policy: SecurityHeaderPolicy,
   extraConnectSrc?: string[]
 ): SecurityHeader[];
+export function responseHeaders(policy: SecurityHeaderPolicy): SecurityHeader[];
 export function serializeCsp(directives: Record<string, string[]>): string;

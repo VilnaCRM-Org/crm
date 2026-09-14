@@ -179,15 +179,22 @@ Every response of the production server carries the baseline below. The single s
 of [`serve.json`](serve.json) is generated from it and never edited by hand, and the RSBuild dev
 server emits the same headers from the same file, so local and production cannot drift apart.
 
-| Header                         | Value                                                          |
-| ------------------------------ | -------------------------------------------------------------- |
-| `Content-Security-Policy`      | the directive set below                                        |
-| `Strict-Transport-Security`    | `max-age=31536000; includeSubDomains`                          |
-| `X-Frame-Options`              | `DENY`                                                         |
-| `X-Content-Type-Options`       | `nosniff`                                                      |
-| `Referrer-Policy`              | `strict-origin-when-cross-origin`                              |
-| `Permissions-Policy`           | `camera=(), microphone=(), geolocation=(), payment=(), usb=()` |
-| `Cross-Origin-Resource-Policy` | `same-origin`                                                  |
+| Header                         | Scope    | Value                                     |
+| ------------------------------ | -------- | ----------------------------------------- |
+| `Strict-Transport-Security`    | response | `max-age=31536000; includeSubDomains`     |
+| `X-Content-Type-Options`       | response | `nosniff`                                 |
+| `Cross-Origin-Resource-Policy` | response | `same-origin`                             |
+| `Content-Security-Policy`      | document | the directive set below                   |
+| `X-Frame-Options`              | document | `DENY`                                    |
+| `Referrer-Policy`              | document | `strict-origin-when-cross-origin`         |
+| `Permissions-Policy`           | document | camera, microphone, geolocation, payment, |
+|                                |          | usb — all `()`                            |
+
+`response` headers ride every response, hashed assets included. `document` headers govern a
+document and ride the HTML shell only — every SPA route resolves to `/index.html` under `serve`,
+so every page gets them — because a CSP, a frame policy, a referrer policy or a permissions
+policy on a `.woff2` or a hashed chunk changes nothing in the browser and only adds bytes to
+each request on the mobile critical path, where the Lighthouse budget has no headroom.
 
 The Content-Security-Policy:
 
@@ -234,6 +241,15 @@ policy and an override that is changed or cleared between restarts leaves no sta
 behind. Runtime overrides extend the list rather than replace it, and the entrypoint refuses to
 start on a value that is not an absolute `http(s)` URL. Sentry is a build-time value:
 a DSN set at build time allows its ingest origin, an empty DSN allows nothing extra.
+
+**The build-time origins are the template's.** The committed `serve.json` allows
+`http://localhost:8080` and `http://localhost:4000` because the tracked `.env` — the same file
+RSBuild inlines into the bundle — points the app there; the CSP has to match the bundle or the
+app cannot reach its own API. A deployment that changes the `REACT_APP_*` URLs at build time
+regenerates `serve.json` in the same change (the drift gate refuses anything else), and a
+deployment that repoints the API at container start gets its origins appended by the entrypoint.
+Removing the localhost fallbacks from the consumers themselves is the `.env` untracking work in
+issue #142, not a header-policy change.
 
 **Enforcement.** Three checks, none of which relies on the Lighthouse `best-practices` score:
 
