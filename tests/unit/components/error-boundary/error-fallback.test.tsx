@@ -9,6 +9,7 @@ import { I18nextProvider, initReactI18next } from 'react-i18next';
 
 import ErrorFallback from '@/components/error-boundary/error-fallback';
 import type { ErrorFallbackProps } from '@/components/types/error-boundary';
+import localization from '@/i18n/localization.json';
 import type { RecoverableError, RecoveryStrategy } from '@/lib/reliability/types/recoverable-error';
 
 import createLocaleI18n from '../../utils/create-locale-i18n';
@@ -175,12 +176,15 @@ describe('ErrorFallback', () => {
       renderFallback({ error: new Error('boom') }, createLocaleI18n('uk'));
 
       expect(screen.getByRole('main')).toHaveAttribute('lang', 'uk');
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Щось пішло не так');
+      const heading = screen.getByRole('heading', { level: 1 });
+      expect(heading).toHaveTextContent('Щось пішло не так');
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'Сталася неочікувана помилка. Спробуйте ще раз або перейдіть на головну сторінку.'
+        localization.uk.translation.error_boundary.unexpected
       );
-      expect(screen.getByRole('button', { name: 'Спробувати ще раз' })).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: 'На головну сторінку' })).toBeInTheDocument();
+      const retry = screen.getByRole('button', { name: 'Спробувати ще раз' });
+      expect(retry).toBeInTheDocument();
+      const home = screen.getByRole('link', { name: 'На головну сторінку' });
+      expect(home).toBeInTheDocument();
       expect(screen.getByText('Деталі помилки')).toBeInTheDocument();
     });
 

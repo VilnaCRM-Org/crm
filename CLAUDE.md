@@ -1358,7 +1358,7 @@ below); never eagerly import a page. Three checks fail CI on a regression:
   imports, and asserts the RootLayout boundary keeps the non-null `RouteFallback` (never
   `fallback={null}`). It pins that one file only.
 - the **Suspense-fallback ESLint gate** (`suspenseFallbackSelectors` in `eslint.config.mjs`,
-  `make lint-eslint`, issue #116) fails a `fallback={null | undefined | false | ""}` on any
+  `make lint-eslint`, issue #116) fails a `fallback={null | undefined | false | true | ""}` on any
   element and a `<Suspense>` / `<React.Suspense>` with no `fallback` attribute anywhere in
   `src/**`; must-fail fixtures live in `scripts/ci/eslint-gate-fixtures.mjs`. It is syntactic:
   `fallback={<span />}` passes it, so a visually empty fallback stays a review concern.

@@ -296,10 +296,10 @@ const suspenseFallbackSelectors = [
     selector:
       'JSXAttribute[name.name="fallback"] > JSXExpressionContainer > ' +
       ':matches(Literal[raw="null"], Identifier[name="undefined"], Literal[value=false], ' +
-      'Literal[value=""])',
+      'Literal[value=true], Literal[value=""])',
     message:
       'A Suspense fallback must render something — pass a real loading element such as ' +
-      '<RouteFallback /> (@/components/route-fallback), never null/undefined/false/"" ' +
+      '<RouteFallback /> (@/components/route-fallback), never null/undefined/false/true/"" ' +
       '(issue #116).',
   },
   {

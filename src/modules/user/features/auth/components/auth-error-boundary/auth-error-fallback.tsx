@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 
 import errorFallbackStyles from '@/components/error-boundary/styles';
 import UITypography from '@/components/ui-typography';
+import type { RecoveryStrategy } from '@/lib/reliability/types/recoverable-error';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 import type { AuthErrorFallbackProps } from '@auth/types/auth-error-boundary';
 
@@ -62,21 +63,25 @@ function resolveCustomContent(
   return fallback === DEFAULT_FALLBACK_KEY ? t(DEFAULT_FALLBACK_KEY) : fallback;
 }
 
+const EXIT_ONLY_STRATEGIES: readonly RecoveryStrategy[] = ['none', 'navigate-home'];
+
 function resolveAlertContent(props: AuthErrorFallbackProps, t: TFunction): ReactNode {
-  if (props.recovery.strategy === 'none') return t('auth.error.unrecoverable');
+  if (EXIT_ONLY_STRATEGIES.includes(props.recovery.strategy)) {
+    return t('auth.error.unrecoverable');
+  }
   if (props.recovery.strategy === 'reload') return t('auth.error.reloadRequired');
   return resolveCustomContent(props, t);
 }
 
 function RecoveryAction({ recovery, reset, reload }: AuthErrorFallbackProps): JSX.Element | null {
   const { t } = useTranslation();
-  if (recovery.strategy === 'none') return null;
+  if (EXIT_ONLY_STRATEGIES.includes(recovery.strategy)) return null;
   if (recovery.strategy === 'reload') {
-    return (
+    return reload ? (
       <RetryButton type="button" onClick={reload}>
         {t('auth.error.reload')}
       </RetryButton>
-    );
+    ) : null;
   }
   return (
     <RetryButton type="button" onClick={reset}>

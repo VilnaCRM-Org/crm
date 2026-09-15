@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { fireEvent, screen } from '@testing-library/react';
 import type { JSX } from 'react';
 
+import localization from '@/i18n/localization.json';
 import type { RecoverableError, RecoveryStrategy } from '@/lib/reliability/types/recoverable-error';
 import AuthErrorFallback from '@auth/components/auth-error-boundary/auth-error-fallback';
 import type { AuthErrorFallbackProps } from '@auth/types/auth-error-boundary';
@@ -25,12 +26,13 @@ const UK = {
   title: 'Щось пішло не так',
   fallback: 'Щось пішло не так. Спробуйте пізніше.',
   unrecoverable:
-    'Щось пішло не так, і цю форму не вдасться повторити. ' +
-    'Скористайтеся посиланням «На головну сторінку», щоб вийти з цієї сторінки.',
+    'Щось пішло не так, і цю форму ' +
+    'не вдасться повторити. ' +
+    'Скористайтеся посиланням «На головну сторінку», ' +
+    'щоб вийти з цієї сторінки.',
   tryAgain: 'Спробувати ще раз',
   reload: 'Перезавантажити сторінку',
-  reloadRequired:
-    'Частина сторінки не завантажилася. Перезавантажте сторінку, щоб отримати актуальну версію.',
+  reloadRequired: localization.uk.translation.auth.error.reloadRequired,
   details: 'Деталі помилки',
 };
 
@@ -153,7 +155,7 @@ describe('AuthErrorFallback', () => {
       );
     });
 
-    it.each<RecoveryStrategy>(['retry', 'reset', 'navigate-home'])(
+    it.each<RecoveryStrategy>(['retry', 'reset'])(
       'offers a retry for the %s strategy',
       (strategy) => {
         renderFallback({ recovery: recoveryFor(strategy) });
@@ -172,6 +174,20 @@ describe('AuthErrorFallback', () => {
 
       expect(reload).toHaveBeenCalledTimes(1);
       expect(reset).not.toHaveBeenCalled();
+    });
+
+    it('renders no reload button when no reload action was supplied', () => {
+      renderFallback({ recovery: recoveryFor('reload'), reload: undefined });
+
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(EN.reloadRequired);
+    });
+
+    it('offers only the surviving homepage link for the navigate-home strategy', () => {
+      renderFallback({ recovery: recoveryFor('navigate-home') });
+
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(EN.unrecoverable);
     });
 
     it('explains the reload in Ukrainian', () => {

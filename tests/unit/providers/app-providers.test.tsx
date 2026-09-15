@@ -45,16 +45,18 @@ describe('AppProviders', () => {
     expect(screen.getByText('has-theme')).toBeInTheDocument();
   });
 
-  it('suspends a pending lazy child behind the deferred, announced route fallback', () => {
+  it('suspends a pending lazy child behind the deferred, announced route fallback', async () => {
+    const previousLanguage = i18n.language;
+    await i18n.changeLanguage('uk');
     jest.useFakeTimers();
 
-    try {
-      render(
-        <AppProviders>
-          <NeverResolves />
-        </AppProviders>
-      );
+    const view = render(
+      <AppProviders>
+        <NeverResolves />
+      </AppProviders>
+    );
 
+    try {
       const status = screen.getByRole('status');
       expect(status).toBeEmptyDOMElement();
 
@@ -62,13 +64,14 @@ describe('AppProviders', () => {
         jest.advanceTimersByTime(ROUTE_FALLBACK_DELAY_MS);
       });
 
-      expect(status).toHaveTextContent(i18n.t('route_fallback.loading'));
       expect(status).toHaveTextContent('Завантаження сторінки');
     } finally {
       act(() => {
         jest.runOnlyPendingTimers();
       });
+      view.unmount();
       jest.useRealTimers();
+      await i18n.changeLanguage(previousLanguage);
     }
   });
 

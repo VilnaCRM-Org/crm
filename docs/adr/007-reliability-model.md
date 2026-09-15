@@ -126,12 +126,12 @@ old `NoopErrorReporter` had no remaining caller and was deleted rather than kept
 "a class component cannot call a hook" exemption the old root boundary needed is gone with it.
 
 **The gate.** Five `no-restricted-syntax` selectors (four families) in `eslint.config.mjs`, all at
-`error`:
-`fallback={null | undefined | false | ""}` on any element; `<Suspense>` / `<React.Suspense>` with
-no `fallback` attribute; a named import of `createBrowserRouter` / `createHashRouter` /
-`createMemoryRouter` from `react-router`, and a namespace import of `react-router` (which reaches
-the same factories) — both spread into every `src/`-scoped block, the `.ts` blocks included,
-because flat config replaces rather than merges `no-restricted-syntax` per file; and, inside
+`error`: `fallback={null | undefined | false | true | ""}` on any element; `<Suspense>` /
+`<React.Suspense>` with no `fallback` attribute; a named import of `createBrowserRouter` /
+`createHashRouter` / `createMemoryRouter` from `react-router`, and a namespace import of
+`react-router` (which reaches the same factories) — both spread into every `src/`-scoped block,
+the `.ts` blocks included, because flat config replaces rather than merges `no-restricted-syntax`
+per file; and, inside
 `src/routes/**/*.tsx` only, an object literal with an `element` property and no sibling
 `errorElement` (`:has(> …)`, so a child's `errorElement` never satisfies its parent).
 `src/routes/routes.tsx`, the single sanctioned construction site, gets a block that omits exactly

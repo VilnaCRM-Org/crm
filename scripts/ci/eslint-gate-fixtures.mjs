@@ -91,7 +91,7 @@ const S = {
   suspenseNullishFallback:
     'JSXAttribute[name.name="fallback"] > JSXExpressionContainer > ' +
     ':matches(Literal[raw="null"], Identifier[name="undefined"], Literal[value=false], ' +
-    'Literal[value=""])',
+    'Literal[value=true], Literal[value=""])',
   suspenseWithoutFallback:
     'JSXOpeningElement:matches([name.name="Suspense"], [name.property.name="Suspense"])' +
     ':not(:has(JSXAttribute[name.name="fallback"]))',
@@ -684,6 +684,15 @@ const FIXTURES = [
     id: 'suspense-fallback-empty-string',
     file: PROBES.component,
     code: 'const A = () => <Suspense fallback={""}><b /></Suspense>;',
+    covers: [S.suspenseNullishFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'suspense-fallback-true',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback={true}><b /></Suspense>;',
     covers: [S.suspenseNullishFallback],
     expect: 'fail',
     rule: 'no-restricted-syntax',

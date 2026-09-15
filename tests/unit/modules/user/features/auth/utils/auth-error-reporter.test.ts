@@ -22,7 +22,7 @@ describe('AuthErrorReporter', () => {
     expect(report).toHaveBeenCalledWith(error, { componentStack, surface: 'auth' });
   });
 
-  it('overrides any surface the caller supplied — the auth boundary always reports as auth', () => {
+  it('overrides any caller-supplied surface: the auth boundary always reports as auth', () => {
     const report = jest.spyOn(boundaryErrorReporter, 'report').mockImplementation();
     const error = new Error(buildToken());
 
