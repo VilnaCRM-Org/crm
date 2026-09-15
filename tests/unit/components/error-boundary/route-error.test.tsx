@@ -31,6 +31,7 @@ const RELOAD = 'Reload the page';
 const GO_HOME = 'Go to homepage';
 const UNEXPECTED = 'An unexpected error occurred. You can try again or go to the homepage.';
 const ROUTE = 'This page is not available. Go to the homepage.';
+const RETRYABLE = 'The last action did not complete. Try again.';
 const CHUNK_LOAD = 'Part of the page failed to load. Reload the page to get the latest version.';
 
 const englishI18n = createLocaleI18n('en');
@@ -98,6 +99,24 @@ describe('RouteError', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: GO_HOME })).toHaveAttribute('href', '/');
     expect(screen.getByText('404 Not Found')).toBeInTheDocument();
+  });
+
+  it('offers an in-place retry for a server-side route error response', () => {
+    fakeAnimationFrame();
+    mockRouteError = {
+      status: 503,
+      statusText: 'Service Unavailable',
+      internal: false,
+      data: null,
+    };
+
+    renderRouteError();
+
+    expect(screen.getByRole('alert')).toHaveTextContent(RETRYABLE);
+    fireEvent.click(screen.getByRole('button', { name: TRY_AGAIN }));
+
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('503 Service Unavailable')).toBeInTheDocument();
   });
 
   it('re-renders the current location in place, keeping its search and hash', () => {

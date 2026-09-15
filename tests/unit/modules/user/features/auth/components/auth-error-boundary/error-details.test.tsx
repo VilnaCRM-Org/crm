@@ -72,12 +72,13 @@ describe('AuthErrorBoundary error details', () => {
     });
   });
 
-  it('renders no details section when the thrown value carries no error object', () => {
+  it('wraps a thrown non-Error value so the details still show what was thrown', () => {
     const onCaughtError = mountThrowing(undefined);
 
     expect(onCaughtError).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('alert')).toHaveTextContent(FALLBACK_TEXT);
     expect(screen.getByRole('button', { name: RETRY_LABEL })).toBeInTheDocument();
-    expect(screen.queryByText(DETAILS_LABEL)).not.toBeInTheDocument();
+    expect(screen.getByText(DETAILS_LABEL)).toBeInTheDocument();
+    expect(screen.getByText('undefined')).toBeInTheDocument();
   });
 });

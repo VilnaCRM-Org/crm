@@ -2455,9 +2455,10 @@ replaces.
     `recoveryStrategyDetector.classify(error)` tries, in order: a value `recoverableErrorGuard`
     accepts → itself; a `{ retryable: boolean }` duck type (`UiError` / `AuthError` — the only
     mapping of those two flags; no third flag) → `retry` or `none`; `chunkLoadErrorDetector` →
-    `reload`; a route error response (`status` + `statusText` + `data`, matched structurally) →
-    `navigate-home`; anything else → `reset`. `UIErrorBoundary` is the one class boundary: the
-    shell mounts it with `surface="app"`, `AuthErrorBoundary` composes it with `surface="auth"`,
+    `reload`; a react-router error response (`isRouteErrorResponse`) → `retry` for 5xx,
+    `navigate-home` for 4xx; anything else → `reset`. `UIErrorBoundary` is the one class
+    boundary: the shell mounts it with `surface="app"`, `AuthErrorBoundary` composes it with
+    `surface="auth"`,
     and every route the composer emits carries `errorElement: <RouteError landmark=… />`
     (`"region"` under `AppLayout`, `"main"` elsewhere). `ErrorFallback` renders a focused `<h1>`,
     a `role="alert"` message, a strategy-gated button (`retry`/`reset` → Try again, `reload` →
@@ -2469,7 +2470,7 @@ replaces.
     `ERROR_REPORTING_TOKENS.BoundaryErrorReporter`; the router seam is
     `routeComposer.routeErrorHandler()` → `onRouteError` → `<RouterProvider onError>`. The gate
     is five `no-restricted-syntax` selectors in `eslint.config.mjs` (`make lint-eslint`): no
-    `fallback={null|undefined|false|""}`, no `<Suspense>` without a `fallback`, no
+    `fallback={null|undefined|false|true|""}`, no `<Suspense>` without a `fallback`, no
     `create*Router` / `import * as` from `react-router` outside `src/routes/routes.tsx`
     (re-listed in every `src/` block — flat config replaces the rule per file), and no route
     literal in `src/routes/**` with an `element` and no own `errorElement`. Boundaries never

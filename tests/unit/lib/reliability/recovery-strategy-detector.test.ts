@@ -55,6 +55,7 @@ const buildRecoverable = (overrides: Record<string, unknown> = {}): Record<strin
 const buildRouteResponse = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
   status: 404,
   statusText: 'Not Found',
+  internal: false,
   data: null,
   ...overrides,
 });
@@ -158,17 +159,30 @@ describe('RecoveryStrategyDetector', () => {
   });
 
   describe('rule 4 — a router error response', () => {
-    it('maps a route error response to the navigate-home recovery', async () => {
-      const { default: detector } = await loadDetector();
+    it.each([400, 403, 404, 422, 499])(
+      'maps a %i route error response to the navigate-home recovery',
+      async (status) => {
+        const { default: detector } = await loadDetector();
 
-      expect(detector.classify(buildRouteResponse())).toEqual(ROUTE);
-    });
+        expect(detector.classify(buildRouteResponse({ status }))).toEqual(ROUTE);
+      }
+    );
+
+    it.each([500, 502, 503])(
+      'maps a %i route error response to an in-place retry',
+      async (status) => {
+        const { default: detector } = await loadDetector();
+        const response = buildRouteResponse({ status, data: { message: buildToken() } });
+
+        expect(detector.classify(response)).toEqual(RETRYABLE);
+      }
+    );
 
     it('accepts the full react-router ErrorResponse shape', async () => {
       const { default: detector } = await loadDetector();
-      const response = buildRouteResponse({ status: 500, data: { message: buildToken() } });
+      const response = buildRouteResponse({ internal: true, error: new Error() });
 
-      expect(detector.classify({ ...response, internal: true, error: new Error() })).toEqual(ROUTE);
+      expect(detector.classify(response)).toEqual(ROUTE);
     });
 
     it('accepts data that is present but undefined', async () => {
@@ -182,7 +196,9 @@ describe('RecoveryStrategyDetector', () => {
       ['a status that is not a number', { status: '404' }],
       ['a missing statusText', { statusText: undefined }],
       ['a statusText that is not a string', { statusText: 404 }],
-    ])('falls through on %s', async (_, overrides) => {
+      ['a missing internal flag', { internal: undefined }],
+      ['an internal flag that is not a boolean', { internal: 'yes' }],
+    ])('falls through on %s (not a react-router ErrorResponse)', async (_, overrides) => {
       const { default: detector } = await loadDetector();
       const error = buildRouteResponse(overrides);
 
@@ -191,7 +207,7 @@ describe('RecoveryStrategyDetector', () => {
 
     it('falls through when the data field is absent altogether', async () => {
       const { default: detector } = await loadDetector();
-      const error = { status: 404, statusText: 'Not Found' };
+      const error = { status: 404, statusText: 'Not Found', internal: false };
 
       expect(detector.classify(error)).toEqual({ ...UNEXPECTED, cause: error });
     });

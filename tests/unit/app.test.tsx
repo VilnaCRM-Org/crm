@@ -4,6 +4,7 @@ import './utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import type { ClientOnErrorFunction } from 'react-router';
 
 let mockCurrentPath = '/sign-up';
 
@@ -29,7 +30,7 @@ jest.mock('react-router', () => {
     }: {
       router: unknown;
       future?: unknown;
-      onError?: unknown;
+      onError?: ClientOnErrorFunction;
     }): ReactElement => {
       const memoryRouter = actual.createMemoryRouter(router, { initialEntries: [mockCurrentPath] });
       return <actual.RouterProvider router={memoryRouter} future={future} onError={onError} />;

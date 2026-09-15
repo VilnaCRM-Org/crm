@@ -6,24 +6,24 @@ import recoveryStrategyDetector from '@/lib/reliability/recovery-strategy-detect
 
 import ErrorFallback from './error-fallback';
 
+function toError(thrown: unknown): Error {
+  return thrown instanceof Error ? thrown : new Error(String(thrown));
+}
+
 export default class UIErrorBoundary extends React.Component<
   UIErrorBoundaryProps,
   UIErrorBoundaryState
 > {
   public override state: UIErrorBoundaryState = { attempt: 0 };
 
-  public static getDerivedStateFromError(error: Error): Partial<UIErrorBoundaryState> {
-    return { error, recovery: recoveryStrategyDetector.classify(error) };
+  public static getDerivedStateFromError(thrown: unknown): Partial<UIErrorBoundaryState> {
+    return { error: toError(thrown), recovery: recoveryStrategyDetector.classify(thrown) };
   }
 
-  public override componentDidCatch(error: Error, info: React.ErrorInfo): void {
-    const { onError, reporter, surface } = this.props;
-    if (onError) onError(error, info);
-    try {
-      reporter.report(error, { componentStack: info.componentStack, surface });
-    } catch {
-      // Telemetry must never mask the error the fallback is already showing.
-    }
+  public override componentDidCatch(thrown: unknown, info: React.ErrorInfo): void {
+    const error = toError(thrown);
+    this.notify(error, info);
+    this.report(error, { componentStack: info.componentStack });
   }
 
   public override componentDidUpdate(
@@ -74,4 +74,22 @@ export default class UIErrorBoundary extends React.Component<
   private readonly reloadPage = (): void => {
     pageReloadNavigator.reload();
   };
+
+  private notify(error: Error, info: React.ErrorInfo): void {
+    const { onError } = this.props;
+    if (!onError) return;
+    try {
+      onError(error, info);
+    } catch (failure) {
+      this.report(toError(failure), { stage: 'onError' });
+    }
+  }
+
+  private report(error: Error, context: Record<string, unknown>): void {
+    try {
+      this.props.reporter.report(error, { ...context, surface: this.props.surface });
+    } catch {
+      // Telemetry must never mask the error the fallback is already showing.
+    }
+  }
 }

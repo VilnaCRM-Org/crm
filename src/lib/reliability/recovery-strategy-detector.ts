@@ -1,6 +1,10 @@
+import { isRouteErrorResponse } from 'react-router';
+
 import chunkLoadErrorDetector from './chunk-load-error-detector';
 import recoverableErrorGuard from './recoverable-error-guard';
 import type { RecoverableError } from './types/recoverable-error';
+
+const SERVER_ERROR_STATUS = 500;
 
 export const RECOVERIES = {
   retryable: {
@@ -62,18 +66,9 @@ export class RecoveryStrategyDetector {
   }
 
   private fromRouteResponse(error: unknown): RecoverableError | undefined {
-    return this.isRouteErrorLike(error) ? RECOVERIES.route : undefined;
-  }
+    if (!isRouteErrorResponse(error)) return undefined;
 
-  private isRouteErrorLike(error: unknown): boolean {
-    if (typeof error !== 'object' || error === null) return false;
-    const response = error as Record<string, unknown>;
-
-    return (
-      typeof response.status === 'number' &&
-      typeof response.statusText === 'string' &&
-      'data' in response
-    );
+    return error.status >= SERVER_ERROR_STATUS ? RECOVERIES.retryable : RECOVERIES.route;
   }
 }
 

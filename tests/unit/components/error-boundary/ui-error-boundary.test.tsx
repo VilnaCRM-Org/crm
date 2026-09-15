@@ -179,28 +179,51 @@ describe('UIErrorBoundary', () => {
     expect(calls).toEqual(['onError', 'report']);
   });
 
-  it('lets a throwing onError propagate to the enclosing boundary', () => {
+  it('keeps its fallback and still reports the original error when onError throws', () => {
     const onErrorFailure = new Error('onError exploded');
-    const outerReporter: ErrorReporter = { report: jest.fn() };
+    const error = new Error('boom');
     const onError = jest.fn(() => {
       throw onErrorFailure;
     });
 
     renderWithProviders(
-      <UIErrorBoundary surface="outer" reporter={outerReporter}>
-        <UIErrorBoundary surface="inner" reporter={reporter} onError={onError}>
-          <Bomb error={new Error('boom')} />
-        </UIErrorBoundary>
+      <UIErrorBoundary surface="inner" reporter={reporter} onError={onError}>
+        <Bomb error={error} />
       </UIErrorBoundary>,
       { onCaughtError }
     );
 
     expect(onError).toHaveBeenCalledTimes(1);
-    expect(outerReporter.report).toHaveBeenCalledWith(onErrorFailure, {
-      componentStack: expect.any(String),
-      surface: 'outer',
+    expect(screen.getByRole('heading', { level: 1, name: HEADING })).toBeInTheDocument();
+    expect(reporter.report).toHaveBeenCalledTimes(2);
+    expect(reporter.report).toHaveBeenNthCalledWith(1, onErrorFailure, {
+      stage: 'onError',
+      surface: 'inner',
     });
-    expect(onCaughtError).toHaveBeenCalledWith(onErrorFailure, expect.anything());
+    expect(reporter.report).toHaveBeenNthCalledWith(2, error, {
+      componentStack: expect.any(String),
+      surface: 'inner',
+    });
+    expect(onCaughtError).toHaveBeenCalledTimes(1);
+  });
+
+  it('wraps a non-Error thrown value for the reporter while classifying the raw value', () => {
+    const thrown = { recoverable: false, strategy: 'none', messageKey: 'x', severity: 'error' };
+    const onError = jest.fn();
+
+    renderWithProviders(
+      <UIErrorBoundary surface="app" reporter={reporter} onError={onError}>
+        <Bomb error={thrown} />
+      </UIErrorBoundary>,
+      { onCaughtError }
+    );
+
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    const [reported, context] = (reporter.report as jest.Mock).mock.calls[0] as [Error, unknown];
+    expect(reported).toBeInstanceOf(Error);
+    expect(reported.message).toBe('[object Object]');
+    expect(context).toEqual({ componentStack: expect.any(String), surface: 'app' });
+    expect(onError).toHaveBeenCalledWith(reported, expect.anything());
   });
 
   it('resets, re-renders the children and moves focus to the recovered main landmark', () => {

@@ -79,8 +79,9 @@ five rules in order: a value that already satisfies `RecoverableErrorGuard` is r
 `{ retryable: boolean }` duck type — the shape of both `UiError` and `AuthError` — becomes
 `retry` or `none`, which is the whole mapping of the two existing flags; a chunk-load failure
 (`ChunkLoadErrorDetector`: `name === 'ChunkLoadError'` or a message mentioning a chunk) becomes
-`reload`; a route error response (`status` + `statusText` + `data`, matched structurally so
-`src/lib` never imports react-router) becomes `navigate-home`; everything else becomes `reset`.
+`reload`; a react-router error response (recognised with the router's own `isRouteErrorResponse`)
+becomes `retry` when its status is 5xx — a loader or action that failed transiently — and
+`navigate-home` for 4xx; everything else becomes `reset`.
 The literal results live in one `RECOVERIES` table, and a unit test asserts that every
 `messageKey` it can emit resolves in both locales.
 
