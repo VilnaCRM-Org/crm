@@ -347,8 +347,8 @@ const routerConstructionSelectors = [
 const routeObjectShapeSelectors = [
   {
     selector:
-      'ObjectExpression:has(> Property[key.name="element"])' +
-      ':not(:has(> Property[key.name="errorElement"]))',
+      'ObjectExpression:has(> Property:matches([key.name="element"], [key.value="element"]))' +
+      ':not(:has(> Property:matches([key.name="errorElement"], [key.value="errorElement"])))',
     message:
       'Every route object that renders an element must also carry its own errorElement — ' +
       'attach <RouteError landmark=… /> beside the element (issue #116).',

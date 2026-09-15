@@ -1484,7 +1484,7 @@ issue #116), and the route-level `Suspense` boundary in `root-layout.tsx` ships 
 deferred `RouteFallback`. The `performance serving` golden test
 (`tests/unit/tooling/performance-serving.test.ts`) fails CI if a page loader loses its named
 dynamic `import()` or that boundary reverts to `fallback={null}`; the issue-#116 ESLint
-selectors (`make lint-eslint`) fail a `fallback={null|undefined|false|""}` or a `<Suspense>`
+selectors (`make lint-eslint`) fail a `fallback={null|undefined|false|true|""}` or a `<Suspense>`
 without a `fallback` anywhere in `src/**`, and a router built outside `src/routes/routes.tsx`.
 Satisfy a budget by reducing/splitting the bundle, never by raising a limit without rationale
 or disabling the gate.

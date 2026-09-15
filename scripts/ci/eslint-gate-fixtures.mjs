@@ -101,8 +101,8 @@ const S = {
   routerNamespaceImport:
     'ImportDeclaration[source.value="react-router"] > ImportNamespaceSpecifier',
   routeObjectWithoutErrorElement:
-    'ObjectExpression:has(> Property[key.name="element"])' +
-    ':not(:has(> Property[key.name="errorElement"]))',
+    'ObjectExpression:has(> Property:matches([key.name="element"], [key.value="element"]))' +
+    ':not(:has(> Property:matches([key.name="errorElement"], [key.value="errorElement"])))',
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -768,6 +768,24 @@ const FIXTURES = [
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #116',
+  },
+  {
+    id: 'route-object-without-error-element-quoted-key',
+    file: PROBES.routes,
+    code: 'const r = { "path": "/", "element": <A /> };',
+    covers: [S.routeObjectWithoutErrorElement],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'route-object-with-quoted-error-element-exempt',
+    file: PROBES.routes,
+    code: 'const r = { path: "/", element: <A />, "errorElement": <E /> };',
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
   },
   // Must-PASS exemptions
   {

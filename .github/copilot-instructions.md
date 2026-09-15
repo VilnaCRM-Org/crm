@@ -54,7 +54,7 @@ make test-mutation    # Stryker; the enforced floor is 100%
   container-free carve-outs; the root `UIErrorBoundary` needs none because it takes its
   reporter by prop and imports only `src/lib/**`.
 - **Every Suspense boundary ships a real fallback and every route carries an `errorElement`**:
-  ESLint fails `fallback={null|undefined|false|""}`, a `<Suspense>` with no `fallback`, a
+  ESLint fails `fallback={null|undefined|false|true|""}`, a `<Suspense>` with no `fallback`, a
   `create*Router` or `import * as` from `react-router` outside `src/routes/routes.tsx`, and a
   route object in `src/routes/**` with an `element` but no `errorElement`. Use
   `<RouteFallback />` for loading and let the composer attach `<RouteError />`; a boundary
