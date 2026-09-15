@@ -410,11 +410,12 @@ module.exports = {
         'swapped for a mock in a component test (issue #128; cf. #100). `import type` stays ' +
         'allowed: type annotations are erased and bind nothing. Carve-outs are the ' +
         'container-free-by-design surfaces: the auth render path (Lighthouse budget), the ' +
-        'route shell (issue #105), the app entrypoint, and the ROOT error boundary file alone ' +
-        '(a class component cannot call a hook, and error reporting must survive a DI ' +
-        'failure) — its functional descendants can call useService and stay gated. This ' +
-        'is the consumer side; the producer side (one injectable importing another) is not ' +
-        'owned here, so the two never flag the same edge.',
+        'route composer and mapper (issue #105 — not the whole route shell), and the app ' +
+        'entrypoint. The root error boundary needs none (issue #116): UIErrorBoundary ' +
+        'receives its reporter by prop from the entrypoint and value-imports only src/lib, so ' +
+        'it and its functional descendants stay gated. This is the consumer side; the ' +
+        'producer side (one injectable importing another) is not owned here, so the two ' +
+        'never flag the same edge.',
       severity: 'error',
       from: {
         path: '^src/.+[.]tsx$',
@@ -422,7 +423,6 @@ module.exports = {
           '^src/modules/user/features/auth/',
           '^src/routes/route-(?:composer|mapper)[.]tsx$',
           '^src/index[.]tsx$',
-          '^src/components/error-boundary/app-error-boundary[.]tsx$',
           '[.](?:stories|test|spec)[.]tsx$',
         ],
       },

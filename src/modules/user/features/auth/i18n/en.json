@@ -7,8 +7,12 @@
     "error": {
       "default": "Something went wrong. Please try again later.",
       "details": "Error Details",
+      "title": "Something went wrong",
       "tryAgain": "Try again",
-      "unknown": "Unknown error"
+      "unknown": "Unknown error",
+      "unrecoverable": "Something went wrong and this form can't be retried. Use \"Back to homepage\" to leave this page.",
+      "reload": "Reload the page",
+      "reloadRequired": "Part of the page failed to load. Reload the page to get the latest version."
     },
     "password": {
       "hide": "Hide password",
@@ -57,6 +61,7 @@
           "option_3": "numbers"
         }
       },
+      "loading_result": "Loading the result…",
       "submitting": "Signing up…",
       "submit_button": "Sign Up",
       "error_text": "There was an error. Please check again",

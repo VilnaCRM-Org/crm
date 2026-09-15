@@ -1,107 +1,38 @@
-import styled from '@emotion/styled';
-import React, { Component, type JSX, ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
+import { type JSX, useCallback } from 'react';
 
-import type {
-  AuthErrorBoundaryProps,
-  AuthErrorBoundaryState,
-} from '@auth/types/auth-error-boundary';
+import UIErrorBoundary from '@/components/error-boundary/ui-error-boundary';
+import type { ErrorFallbackProps } from '@/components/types/error-boundary';
+import type { AuthErrorBoundaryProps } from '@auth/types/auth-error-boundary';
 import authErrorReporter from '@auth/utils/auth-error-reporter';
 
-const DEFAULT_FALLBACK_KEY = 'auth.error.default';
+import AuthErrorFallback from './auth-error-fallback';
 
-const shouldShowErrorDetails = (error: Error | undefined): error is Error =>
-  Boolean(error) && (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test');
-
-const DetailsContainer = styled('details')({
-  marginTop: '1rem',
-});
-
-const SummaryStyled = styled('summary')({
-  cursor: 'pointer',
-});
-
-const RetryButton = styled('button')({
-  marginTop: '1rem',
-});
-
-function ErrorDetails({ error }: { error: Error }): JSX.Element {
-  const { t } = useTranslation();
-
-  return (
-    <DetailsContainer>
-      <SummaryStyled>{t('auth.error.details')}</SummaryStyled>
-      <pre style={{ whiteSpace: 'pre-wrap' }}>{error.message}</pre>
-    </DetailsContainer>
-  );
-}
-
-function FallbackContainer({
+export default function AuthErrorBoundary({
+  children,
   fallback,
-  error,
-  onReset,
-}: {
-  fallback: ReactNode;
-  error?: Error;
-  onReset: () => void;
-}): JSX.Element {
-  const { t } = useTranslation();
-  const resolvedFallback = fallback === DEFAULT_FALLBACK_KEY ? t(DEFAULT_FALLBACK_KEY) : fallback;
+  onError,
+}: AuthErrorBoundaryProps): JSX.Element {
+  const renderFallback = useCallback(
+    ({ error, recovery, reset, reload }: ErrorFallbackProps): JSX.Element => (
+      <AuthErrorFallback
+        error={error}
+        recovery={recovery}
+        reset={reset}
+        reload={reload}
+        fallback={fallback}
+      />
+    ),
+    [fallback]
+  );
 
   return (
-    <div role="alert" aria-live="assertive" aria-atomic="true">
-      {resolvedFallback}
-      <RetryButton type="button" onClick={onReset}>
-        {t('auth.error.tryAgain')}
-      </RetryButton>
-      {shouldShowErrorDetails(error) && <ErrorDetails error={error} />}
-    </div>
+    <UIErrorBoundary
+      surface="auth"
+      reporter={authErrorReporter}
+      onError={onError}
+      fallback={renderFallback}
+    >
+      {children}
+    </UIErrorBoundary>
   );
-}
-
-export default class AuthErrorBoundary extends Component<
-  AuthErrorBoundaryProps,
-  AuthErrorBoundaryState
-> {
-  constructor(props: AuthErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  public static getDerivedStateFromError(error: Error): Partial<AuthErrorBoundaryState> {
-    return { hasError: true, error };
-  }
-
-  public override componentDidCatch(error: Error, info: React.ErrorInfo): void {
-    const { onError } = this.props;
-    onError?.(error, info);
-    this.reportSafely(error, info);
-
-    if (process.env.NODE_ENV !== 'production') {
-      const resolvedConsole = Reflect.get(globalThis, 'console') as
-        { error: (...args: unknown[]) => void } | undefined;
-      if (resolvedConsole) {
-        resolvedConsole.error('AuthErrorBoundary caught an error:', error, info);
-      }
-    }
-  }
-
-  public handleReset = (): void => this.setState({ hasError: false, error: undefined });
-
-  public override render(): ReactNode {
-    const { children, fallback = DEFAULT_FALLBACK_KEY } = this.props;
-    const { hasError, error } = this.state;
-    if (!hasError) return children;
-    const rendered =
-      typeof fallback === 'function' ? fallback({ error, reset: this.handleReset }) : fallback;
-    return <FallbackContainer fallback={rendered} error={error} onReset={this.handleReset} />;
-  }
-
-  private reportSafely(error: Error, info: React.ErrorInfo): void {
-    try {
-      authErrorReporter.report(error, info);
-    } catch {
-      // a reporting failure must never mask the error being reported
-    }
-  }
 }

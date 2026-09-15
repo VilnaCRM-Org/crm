@@ -14,19 +14,16 @@ describe('DI container — ErrorReporter token', () => {
     container.clearInstances();
   });
 
-  it('resolves a non-noop, observability-backed reporter in the production graph', async () => {
-    const [ERROR_REPORTING_TOKENS, { NoopErrorReporter }, { default: ObservabilityErrorReporter }] =
-      await Promise.all([
-        import('@/services/error-reporting/tokens').then((m) => m.default),
-        import('@/services/error-reporting'),
-        import('@/services/error-reporting/observability-error-reporter'),
-      ]);
+  it('resolves an observability-backed reporter in the production graph', async () => {
+    const [ERROR_REPORTING_TOKENS, { default: ObservabilityErrorReporter }] = await Promise.all([
+      import('@/services/error-reporting/tokens').then((m) => m.default),
+      import('@/services/error-reporting/observability-error-reporter'),
+    ]);
 
     await import('@/config/dependency-injection-config');
 
     const reporter = container.resolve(ERROR_REPORTING_TOKENS.ErrorReporter);
 
-    expect(reporter).not.toBeInstanceOf(NoopErrorReporter);
     expect(reporter).toBeInstanceOf(ObservabilityErrorReporter);
   });
 

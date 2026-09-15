@@ -10,7 +10,6 @@ const spin = keyframes`
 
 export default {
   wrapper: {
-    minHeight: '50vh',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

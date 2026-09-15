@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import { type JSX, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import type { RouteFallbackProps } from '@/components/types/route-fallback';
 import UILiveStatus from '@/components/ui-live-status';
 
 import styles from './styles';
@@ -16,9 +17,13 @@ import styles from './styles';
 // a create-and-fill in one commit (which screen readers frequently drop).
 const SHOW_DELAY_MS = 150;
 
-export default function RouteFallback(): JSX.Element {
+export default function RouteFallback({
+  minHeight = '50vh',
+  message,
+}: RouteFallbackProps): JSX.Element {
   const { t } = useTranslation();
   const [pending, setPending] = useState(false);
+  const announcement = message ?? t('route_fallback.loading');
 
   useEffect(
     () => {
@@ -32,13 +37,13 @@ export default function RouteFallback(): JSX.Element {
   return (
     <>
       {pending && (
-        <Box sx={styles.wrapper}>
+        <Box sx={{ ...styles.wrapper, minHeight }}>
           <Box sx={styles.pill}>
             <Box aria-hidden="true" sx={styles.spinner} />
           </Box>
         </Box>
       )}
-      <UILiveStatus message={pending ? t('route_fallback.loading') : ''} />
+      <UILiveStatus message={pending ? announcement : ''} />
     </>
   );
 }

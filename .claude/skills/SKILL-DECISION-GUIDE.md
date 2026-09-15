@@ -231,9 +231,10 @@ through `useService(TOKENS.X)` from `@/providers/di` — never `new MyService()`
 value-import of an injectable service/repository/mapper/factory/handler (`import type` is
 fine). Register the class in the owning area's `di.ts` first. In tests, swap it by
 registering a mock against the token or jest-mocking `@/providers/di/use-service`. The auth
-render path, the route shell, `src/index.tsx`, and the root error boundary are the
-container-free carve-outs — leave their module singletons alone. Hooks (`use-*.ts`) are
-outside the static gate but held to the same intent in review. See
+render path, the route shell, and `src/index.tsx` are the container-free carve-outs — leave
+their module singletons alone; the root `UIErrorBoundary` needs none, because it takes its
+reporter by prop and imports only `src/lib/**` (issue #116). Hooks (`use-*.ts`) are outside
+the static gate but held to the same intent in review. See
 [architecture](architecture/SKILL.md) for the enforcing rules.
 
 ---

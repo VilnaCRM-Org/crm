@@ -3,10 +3,13 @@ import { createRoot } from 'react-dom/client';
 
 import '@/styles/fonts.css';
 
-import AppErrorBoundary from '@/components/error-boundary/app-error-boundary';
 import ErrorFallback from '@/components/error-boundary/error-fallback';
+import UIErrorBoundary from '@/components/error-boundary/ui-error-boundary';
 import appConfigSource from '@/config/runtime/app-config-source';
+import pageReloadNavigator from '@/lib/reliability/page-reload-navigator';
+import type { RecoverableError } from '@/lib/reliability/types/recoverable-error';
 import AppProviders from '@/providers/app-providers';
+import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
 import observabilityCore from '@/services/observability/observability-core';
 
 import App from './app';
@@ -22,8 +25,15 @@ const root = createRoot(rootElement);
 
 observabilityCore.init();
 
+const BOOTSTRAP_RECOVERY: RecoverableError = {
+  recoverable: true,
+  strategy: 'reload',
+  messageKey: 'error_boundary.bootstrap',
+  severity: 'fatal',
+};
+
 const reloadPage = (): void => {
-  window.location.reload();
+  pageReloadNavigator.reload();
 };
 
 // Parse the runtime configuration before rendering so a malformed deployment fails loudly here
@@ -41,15 +51,22 @@ try {
 }
 
 if (configError) {
-  root.render(<ErrorFallback error={configError} reset={reloadPage} />);
+  root.render(
+    <ErrorFallback
+      error={configError}
+      recovery={BOOTSTRAP_RECOVERY}
+      reset={reloadPage}
+      reload={reloadPage}
+    />
+  );
 } else {
   root.render(
     <React.StrictMode>
-      <AppErrorBoundary reporter={observabilityCore}>
+      <UIErrorBoundary surface="app" reporter={boundaryErrorReporter}>
         <AppProviders>
           <App />
         </AppProviders>
-      </AppErrorBoundary>
+      </UIErrorBoundary>
     </React.StrictMode>
   );
 }

@@ -171,9 +171,10 @@ These come from `.dependency-cruiser.js`. They run on every PR via
   component — its intended use.
 - Carve-outs, all container-free by design and identical in both `.tsx` gates: the
   auth render path, the `route-composer` / `route-mapper` singletons (issue #105 —
-  not all of `src/routes/`), `src/index.tsx`, and the root error boundary file
-  `app-error-boundary.tsx` alone (a class component cannot call a hook — its
-  functional descendants stay gated). Leave their module singletons as they are.
+  not all of `src/routes/`), and `src/index.tsx`. The root error boundary is not
+  one (issue #116): `UIErrorBoundary` takes its reporter by prop from the
+  entrypoint and value-imports only `src/lib/**`, so it and its functional
+  descendants stay gated. Leave the carve-outs' module singletons as they are.
 - Hooks (`use-*.ts`) are outside the static gate and stay a review-gate concern —
   prefer DI there too.
 - In component tests, swap the collaborator by registering a mock against the

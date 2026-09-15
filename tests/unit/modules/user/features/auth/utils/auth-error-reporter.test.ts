@@ -1,38 +1,55 @@
-import type { ErrorInfo } from 'react';
-
 import authErrorReporter, {
   AuthErrorReporter,
 } from '@/modules/user/features/auth/utils/auth-error-reporter';
+import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
 import observabilityCore from '@/services/observability/observability-core';
 import securityEventCore from '@/services/security-events/security-event-core';
+import { buildToken } from '@tests/builders';
 
 describe('AuthErrorReporter', () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('forwards auth errors to observability with component context', () => {
-    const captureSpy = jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
-    const error = new Error('auth boom');
-    const info = { componentStack: '\n    at Auth' } as ErrorInfo;
+  it('delegates to the boundary reporter with the auth surface merged into the context', () => {
+    const report = jest.spyOn(boundaryErrorReporter, 'report').mockImplementation();
+    const error = new Error(buildToken());
+    const componentStack = `\n    at ${buildToken()}`;
 
-    new AuthErrorReporter().report(error, info);
+    new AuthErrorReporter().report(error, { componentStack });
 
-    expect(captureSpy).toHaveBeenCalledWith(error, {
-      componentStack: info.componentStack,
-      surface: 'auth',
-    });
+    expect(report).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledWith(error, { componentStack, surface: 'auth' });
   });
 
-  it('emits an auth boundary-catch security event alongside the capture', () => {
-    jest.spyOn(observabilityCore, 'captureError').mockImplementation(() => {});
-    const boundaryCatch = jest.spyOn(securityEventCore, 'boundaryCatch').mockImplementation();
+  it('overrides any caller-supplied surface: the auth boundary always reports as auth', () => {
+    const report = jest.spyOn(boundaryErrorReporter, 'report').mockImplementation();
+    const error = new Error(buildToken());
 
-    new AuthErrorReporter().report(new Error('auth boom'), {
-      componentStack: '\n    at Auth',
-    } as ErrorInfo);
+    new AuthErrorReporter().report(error, { surface: 'app' });
+
+    expect(report).toHaveBeenCalledWith(error, { surface: 'auth' });
+  });
+
+  it('leaves the context the caller passed untouched', () => {
+    jest.spyOn(boundaryErrorReporter, 'report').mockImplementation();
+    const context: Record<string, unknown> = { componentStack: buildToken() };
+
+    new AuthErrorReporter().report(new Error(buildToken()), context);
+
+    expect(context).toEqual({ componentStack: context.componentStack });
+  });
+
+  it('reaches both cores through the delegation: the auth signal and the capture', () => {
+    const boundaryCatch = jest.spyOn(securityEventCore, 'boundaryCatch').mockImplementation();
+    const captureError = jest.spyOn(observabilityCore, 'captureError').mockImplementation();
+    const error = new Error(buildToken());
+    const componentStack = `\n    at ${buildToken()}`;
+
+    authErrorReporter.report(error, { componentStack });
 
     expect(boundaryCatch).toHaveBeenCalledWith('auth');
+    expect(captureError).toHaveBeenCalledWith(error, { componentStack, surface: 'auth' });
   });
 
   it('exports a shared singleton instance', () => {

@@ -216,7 +216,7 @@ const noNewBehavioralClassInComponentSelectors = [
       'Do not `new` a behavioral class in a component — resolve it via the DI bridge ' +
       'useService(TOKENS.X) from @/providers/di so it stays swappable/mockable in tests ' +
       '(issue #128; cf. #100). The container-free carve-outs — auth render path, route ' +
-      'composer/mapper, app entrypoint, root error boundary — are the only exemptions.',
+      'composer/mapper, app entrypoint — are the only exemptions.',
   },
 ];
 
@@ -282,6 +282,91 @@ const noRawIntlSelectors = [
   },
 ];
 
+// Source (issue #116): a Suspense boundary must ship a real fallback. `fallback={null}` (or
+// `undefined` / `false` / `""`) paints nothing while a lazy chunk loads and announces nothing to
+// assistive technology; a bare `<Suspense>` with no `fallback` attribute is the same hole spelled
+// differently. The first selector matches every nullish/empty literal handed to a `fallback`
+// attribute on ANY element, so a wrapper that forwards `fallback` is gated like `<Suspense>`
+// itself; the second matches `<Suspense>` / `<React.Suspense>` with no `fallback` attribute,
+// and `:has` scopes the lookup to the opening element's own attributes so a child's fallback
+// never satisfies its parent. Re-included in both `.tsx`-matching blocks (flat config replaces,
+// never merges, `no-restricted-syntax`).
+const suspenseFallbackSelectors = [
+  {
+    selector:
+      'JSXAttribute[name.name="fallback"][value=null], ' +
+      'JSXAttribute[name.name="fallback"] > Literal[value=""], ' +
+      'JSXAttribute[name.name="fallback"] > JSXExpressionContainer > ' +
+      ':matches(Literal[raw="null"], Identifier[name="undefined"], Literal[value=false], ' +
+      'Literal[value=true], Literal[value=""])',
+    message:
+      'A Suspense fallback must render something — pass a real loading element such as ' +
+      '<RouteFallback /> (@/components/route-fallback), never null/undefined/false/true/"" ' +
+      '(issue #116).',
+  },
+  {
+    selector:
+      'JSXOpeningElement:matches([name.name="Suspense"], [name.property.name="Suspense"])' +
+      ':not(:has(JSXAttribute[name.name="fallback"]))',
+    message:
+      'A Suspense boundary must declare a fallback — pass a real loading element such as ' +
+      '<RouteFallback /> (@/components/route-fallback) (issue #116).',
+  },
+];
+
+// Source (issue #116): every route the router mounts must carry an `errorElement`, and the one
+// place that guarantees it is the route composer (`src/routes/route-composer.tsx`), which
+// attaches one to the root, both layout routes, and every mapped page. A router built anywhere
+// else — `createBrowserRouter` / `createHashRouter` / `createMemoryRouter` imported from
+// `react-router`, or the same factories reached through `import * as RR` — would mount routes
+// the composer never saw. Re-included in EVERY src-scoped block, the `.ts` blocks included (a
+// router built in a plain module would otherwise pass), because flat config replaces, never
+// merges, `no-restricted-syntax`; `src/routes/routes.tsx`, the single sanctioned construction
+// site, gets its own block below that omits exactly these two selectors.
+const routerConstructionSelectors = [
+  {
+    selector:
+      'ImportDeclaration[source.value="react-router"] > ' +
+      'ImportSpecifier[imported.name=/^create(Browser|Hash|Memory)Router$/]',
+    message:
+      'Routers are built only by the route composer, which attaches an errorElement to every ' +
+      'route — import the router from @/routes/routes instead of constructing one (issue #116).',
+  },
+  {
+    selector: 'ImportDeclaration[source.value="react-router"] > ImportNamespaceSpecifier',
+    message:
+      'No namespace import of react-router — it reaches the router factories that only the ' +
+      'route composer may drive, which attaches an errorElement to every route (issue #116).',
+  },
+];
+
+// Source (issue #116): inside the route shell, a route object literal that renders an `element`
+// must also declare its OWN `errorElement`, so a render error in any page or layout is caught by
+// the nearest RouteError instead of bubbling to the root boundary. The leading `>` inside `:has`
+// (an esquery relative selector, accepted by the pinned 1.7) scopes both lookups to the literal's
+// own properties: a nested child's errorElement never satisfies its parent, and a parent's never
+// satisfies a child — the descendant form `:has(Property…)` would miss the first case.
+const routeObjectShapeSelectors = [
+  {
+    selector:
+      'ObjectExpression:has(> Property:matches([key.name="element"], [key.value="element"]))' +
+      ':not(:has(> Property:matches([key.name="errorElement"], [key.value="errorElement"])))',
+    message:
+      'Every route object that renders an element must also carry its own errorElement — ' +
+      'attach <RouteError landmark=… /> beside the element (issue #116).',
+  },
+];
+
+// The selector families every `src/routes/**/*.tsx` file carries (issue #116); the three route
+// blocks below add or omit the #128 `new` ban and the router-construction ban per file.
+const routeShellSelectors = [
+  ...dataTestidSelectors,
+  ...typeDeclarationSelectors,
+  ...noRawIntlSelectors,
+  ...suspenseFallbackSelectors,
+  ...routeObjectShapeSelectors,
+];
+
 const nonReactSourceGlobs = ['src/**/*.ts'];
 const nonReactSourceIgnores = [
   '**/*.stories.*',
@@ -300,10 +385,11 @@ const nonReactSourceIgnores = [
 // `components-no-direct-injectable-import` so the two gates never disagree about which file
 // is exempt: the auth render path (its Lighthouse budget forbids eager DI — issue #109/#115),
 // the two route-shell module singletons that `new` their own locally declared class
-// (`route-composer` / `route-mapper`, issue #105 — NOT the whole `src/routes/` tree), the app
-// entrypoint, and the root error boundary file alone — a class component cannot call
-// `useService`, while its functional descendants can and stay gated. Test, story, and
-// type-only files are excluded like every other source gate here.
+// (`route-composer` / `route-mapper`, issue #105 — NOT the whole `src/routes/` tree), and the
+// app entrypoint. The root error boundary needs no carve-out (issue #116): `UIErrorBoundary`
+// receives its reporter by prop from the entrypoint and value-imports no service, so the
+// class-component-cannot-call-a-hook exemption the old `AppErrorBoundary` needed is gone with
+// it. Test, story, and type-only files are excluded like every other source gate here.
 const componentSourceGlobs = ['src/**/*.tsx'];
 const componentDiGateIgnores = [
   '**/*.stories.*',
@@ -315,7 +401,6 @@ const componentDiGateIgnores = [
   'src/routes/route-composer.tsx',
   'src/routes/route-mapper.tsx',
   'src/index.tsx',
-  'src/components/error-boundary/app-error-boundary.tsx',
 ];
 const storyGlobs = ['**/*.stories.js', '**/*.stories.jsx', '**/*.stories.ts', '**/*.stories.tsx'];
 
@@ -566,10 +651,11 @@ export default [
 
   // Source: production source must not ship `data-testid` (issue #90), logic
   // files must not declare types — types live in dedicated type-only files:
-  // `types.ts` or the per-feature/area `types/**` folders (issue #88) — and locale-sensitive
+  // `types.ts` or the per-feature/area `types/**` folders (issue #88) — locale-sensitive
   // rendering must go through the LocaleFormatter service, never raw `Intl`/`toLocale*`
-  // (issue #155). Stories/tests/`.d.ts` and the type-only files (governed by the separate
-  // override below) are excluded.
+  // (issue #155), every Suspense boundary ships a real fallback and routers are built only by
+  // the route composer (issue #116). Stories/tests/`.d.ts` and the type-only files (governed by
+  // the separate override below) are excluded.
   {
     files: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx'],
     ignores: [
@@ -587,6 +673,8 @@ export default [
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
         ...noRawIntlSelectors,
+        ...suspenseFallbackSelectors,
+        ...routerConstructionSelectors,
       ],
     },
   },
@@ -630,9 +718,10 @@ export default [
   // Source (issue #128): components must not `new` a behavioral collaborator — resolve it
   // through the `useService` DI bridge instead. Scoped to `src/**/*.tsx` (hooks are out of
   // static scope) and ignoring the container-free auth render path and route shell. The
-  // #90/#88/#155 selectors are re-included because flat config replaces (does not merge)
+  // #90/#88/#155/#116 selectors are re-included because flat config replaces (does not merge)
   // `no-restricted-syntax` for files matched by more than one block — dropping them here would
-  // silently un-gate data-testid, type declarations, and raw Intl for every component.
+  // silently un-gate data-testid, type declarations, raw Intl, null Suspense fallbacks, and
+  // out-of-composer router construction for every component.
   {
     files: componentSourceGlobs,
     ignores: componentDiGateIgnores,
@@ -642,6 +731,51 @@ export default [
         ...dataTestidSelectors,
         ...typeDeclarationSelectors,
         ...noRawIntlSelectors,
+        ...noNewBehavioralClassInComponentSelectors,
+        ...suspenseFallbackSelectors,
+        ...routerConstructionSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #116): the route shell. Every `src/routes/**/*.tsx` file carries the
+  // component families (#90/#88/#155/#128) plus the Suspense-fallback and router-construction
+  // bans, and adds the route-object shape gate — a literal with an `element` must declare its
+  // own `errorElement`. Ordered after the component block so it wins for the shell; the two
+  // blocks after it narrow the carve-outs file by file.
+  {
+    files: ['src/routes/**/*.tsx'],
+    ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*', '**/*.d.ts', 'src/**/types/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...routeShellSelectors,
+        ...noNewBehavioralClassInComponentSelectors,
+        ...routerConstructionSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #116): the composer and mapper are the #128 carve-outs (they `new` their own
+  // locally declared class — see `componentDiGateIgnores`), so they keep every route-shell
+  // family except the `new` ban. These two files are what the shape gate is written for: every
+  // route object literal they build must carry its own errorElement.
+  {
+    files: ['src/routes/route-composer.tsx', 'src/routes/route-mapper.tsx'],
+    rules: {
+      'no-restricted-syntax': ['error', ...routeShellSelectors, ...routerConstructionSelectors],
+    },
+  },
+
+  // Source (issue #116): `src/routes/routes.tsx` is the ONLY sanctioned `createBrowserRouter`
+  // site — it hands the composer's tree to react-router — so the router-construction selectors,
+  // and only those, are omitted here.
+  {
+    files: ['src/routes/routes.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...routeShellSelectors,
         ...noNewBehavioralClassInComponentSelectors,
       ],
     },
@@ -717,6 +851,7 @@ export default [
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
+        ...routerConstructionSelectors,
       ],
     },
   },
@@ -741,6 +876,7 @@ export default [
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         ...noUninjectedCollaboratorSelectors,
+        ...routerConstructionSelectors,
       ],
     },
   },
@@ -759,6 +895,7 @@ export default [
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         noUninjectedCollaboratorSelectors[0],
+        ...routerConstructionSelectors,
       ],
     },
   },
@@ -786,6 +923,7 @@ export default [
         ...noObjectLiteralMethodSelectors,
         ...typeDeclarationSelectors,
         ...noRawIntlSelectors,
+        ...routerConstructionSelectors,
       ],
     },
   },
@@ -821,6 +959,7 @@ export default [
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
         ...noUninjectedCollaboratorSelectors,
+        ...routerConstructionSelectors,
       ],
     },
   },
@@ -846,6 +985,7 @@ export default [
         ...typeDeclarationSelectors,
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
+        ...routerConstructionSelectors,
       ],
     },
   },

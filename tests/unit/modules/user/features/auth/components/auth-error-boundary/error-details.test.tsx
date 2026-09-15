@@ -1,30 +1,29 @@
-import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import { faker } from '@faker-js/faker';
+import { screen } from '@testing-library/react';
+import type { JSX } from 'react';
 
 import AuthErrorBoundary from '@auth/components/auth-error-boundary';
+import renderWithProviders from '@tests/unit/utils/render-with-providers';
 
-const DETAILS_LABEL = 'auth.error.details';
-const FALLBACK_LABEL = 'auth.error.default';
-const RETRY_LABEL = 'auth.error.tryAgain';
-const FAILURE_MESSAGE = 'stack trace line one\nstack trace line two';
+const DETAILS_LABEL = 'Error Details';
+const FALLBACK_TEXT = 'Something went wrong. Please try again later.';
+const RETRY_LABEL = 'Try again';
 
-jest.mock('react-i18next', () => ({
-  useTranslation: (): { t: (key: string) => string } => ({
-    t: (key: string): string => key,
-  }),
-}));
-
-function ThrowingChild({ thrown }: { thrown: unknown }): ReactElement {
+function Bomb({ thrown }: { thrown: unknown }): JSX.Element {
   throw thrown;
 }
 
-function renderBoundary(thrown: unknown): void {
-  render(
+function mountThrowing(thrown: unknown): jest.Mock {
+  const onCaughtError = jest.fn();
+
+  renderWithProviders(
     <AuthErrorBoundary>
-      <ThrowingChild thrown={thrown} />
-    </AuthErrorBoundary>
+      <Bomb thrown={thrown} />
+    </AuthErrorBoundary>,
+    { onCaughtError }
   );
+
+  return onCaughtError;
 }
 
 function rawText(value: string): string {
@@ -42,38 +41,44 @@ function withNodeEnv(value: string, run: () => void): void {
 }
 
 describe('AuthErrorBoundary error details', () => {
-  beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
+  it.each(['test', 'development'])(
+    'shows the failure message with its line breaks preserved under NODE_ENV=%s',
+    (nodeEnv) => {
+      const failureMessage = `${faker.lorem.sentence()}\n${faker.lorem.sentence()}`;
 
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
+      withNodeEnv(nodeEnv, () => {
+        const onCaughtError = mountThrowing(new Error(failureMessage));
 
-  it('shows the failure message with its line breaks preserved outside production', () => {
-    renderBoundary(new Error(FAILURE_MESSAGE));
-
-    expect(screen.getByText(DETAILS_LABEL)).toBeInTheDocument();
-    const message = screen.getByText(FAILURE_MESSAGE, { normalizer: rawText });
-    expect(message.tagName).toBe('PRE');
-    expect(message).toHaveStyle({ whiteSpace: 'pre-wrap' });
-  });
+        expect(onCaughtError).toHaveBeenCalledTimes(1);
+        expect(screen.getByText(DETAILS_LABEL)).toBeInTheDocument();
+        const message = screen.getByText(failureMessage, { normalizer: rawText });
+        expect(message.tagName).toBe('PRE');
+        expect(message).toHaveStyle({ whiteSpace: 'pre-wrap' });
+      });
+    }
+  );
 
   it('hides the failure message in production while still offering a retry', () => {
-    withNodeEnv('production', () => {
-      renderBoundary(new Error(FAILURE_MESSAGE));
+    const failureMessage = faker.lorem.sentence();
 
+    withNodeEnv('production', () => {
+      const onCaughtError = mountThrowing(new Error(failureMessage));
+
+      expect(onCaughtError).toHaveBeenCalledTimes(1);
       expect(screen.queryByText(DETAILS_LABEL)).not.toBeInTheDocument();
-      expect(screen.queryByText(FAILURE_MESSAGE, { normalizer: rawText })).not.toBeInTheDocument();
-      expect(screen.getByRole('alert')).toHaveTextContent(FALLBACK_LABEL);
+      expect(screen.queryByText(failureMessage, { normalizer: rawText })).not.toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(FALLBACK_TEXT);
       expect(screen.getByRole('button', { name: RETRY_LABEL })).toBeInTheDocument();
     });
   });
 
-  it('renders no details section when the thrown value carries no error object', () => {
-    renderBoundary(undefined);
+  it('wraps a thrown non-Error value so the details still show what was thrown', () => {
+    const onCaughtError = mountThrowing(undefined);
 
-    expect(screen.getByRole('alert')).toHaveTextContent(FALLBACK_LABEL);
-    expect(screen.queryByText(DETAILS_LABEL)).not.toBeInTheDocument();
+    expect(onCaughtError).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('alert')).toHaveTextContent(FALLBACK_TEXT);
+    expect(screen.getByRole('button', { name: RETRY_LABEL })).toBeInTheDocument();
+    expect(screen.getByText(DETAILS_LABEL)).toBeInTheDocument();
+    expect(screen.getByText('undefined')).toBeInTheDocument();
   });
 });
