@@ -4,6 +4,7 @@ import { render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 
 const mockRouter = { id: 'router-under-test' };
+const mockOnRouteError = (): void => undefined;
 const mockRouterProviderProps: Record<string, unknown>[] = [];
 
 jest.mock('../../src/index.css', () => ({}));
@@ -11,6 +12,7 @@ jest.mock('../../src/index.css', () => ({}));
 jest.mock('@/routes/routes', () => ({
   __esModule: true,
   default: mockRouter,
+  onRouteError: mockOnRouteError,
 }));
 
 jest.mock('react-router', () => ({
@@ -35,9 +37,15 @@ describe('App router wiring', () => {
     expect(mockRouterProviderProps[0]?.router).toBe(mockRouter);
   });
 
-  it('passes no legacy future opt-in alongside the router', () => {
+  it('hands the route error handler to RouterProvider as onError (issue #116)', () => {
     render(<App />);
 
-    expect(mockRouterProviderProps[0]).toEqual({ router: mockRouter });
+    expect(mockRouterProviderProps[0]?.onError).toBe(mockOnRouteError);
+  });
+
+  it('passes no legacy future opt-in alongside the router and the error handler', () => {
+    render(<App />);
+
+    expect(mockRouterProviderProps[0]).toEqual({ router: mockRouter, onError: mockOnRouteError });
   });
 });

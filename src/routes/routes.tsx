@@ -5,4 +5,6 @@ import routeComposer from './route-composer';
 
 const router = createBrowserRouter(routeComposer.compose(registry));
 
+export const onRouteError = routeComposer.routeErrorHandler();
+
 export default router;

@@ -300,9 +300,10 @@ When writing or editing a class in a logic directory (`src/services/**`,
   directory (`auth-var`, `reactive-var`, `reactive-var-state`,
   `auth-store-selectors`, `response-schemas`, `map-registration-error`, the auth
   lazy loaders, `registration-handlers-factory`, `auth-error-reporter`,
-  `url-builder`, `locale-formatter-core`, and the observability
-  core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by
-  explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks in a gated directory
+  `boundary-error-reporter` (the reporter the paint-path error boundaries
+  receive by prop, issue #116), `url-builder`, `locale-formatter-core`, and the
+  observability core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are
+  exempt by explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks in a gated directory
   (`use-auth-token`, `use-auth-state`, `use-focus-on-mount`) are in scope and are
   carved out by the structural `react-hooks` entry in `EXEMPT_PATTERNS`
   (`src/**/use-*.ts`) — that entry is load-bearing, so do not delete it. The
@@ -457,8 +458,10 @@ test harnesses are treated as locked. If a task requires changing them:
 - `new` a behavioral class in a component, or value-import an injectable
   service/repository/mapper/factory/handler into one (`import type` is fine).
 - Migrate the container-free carve-outs — the auth render path, the route shell,
-  `src/index.tsx`, the root error boundary — onto `useService`, or eager-import
-  the DI container into the auth paint path.
+  `src/index.tsx` — onto `useService`, or eager-import the DI container into the
+  auth paint path. The root `UIErrorBoundary` is not a carve-out: it takes its
+  reporter by prop (`boundaryErrorReporter`) and imports only `src/lib/**`
+  (issue #116), so do not hand it a container-resolved reporter either.
 - Treat the `.tsx`-only scope of that gate as license to `new` a collaborator
   inside a hook (`use-*.ts`); review flags it.
 

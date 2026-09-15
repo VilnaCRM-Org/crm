@@ -5,8 +5,8 @@ import { container, type DependencyContainer } from 'tsyringe';
 import errorRegistrar from '@/services/error/di';
 import { ErrorHandler } from '@/services/error/error-handler';
 import ERROR_TOKENS from '@/services/error/tokens';
+import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
 import errorReportingRegistrar from '@/services/error-reporting/di';
-import NoopErrorReporter from '@/services/error-reporting/noop-error-reporter';
 import ObservabilityErrorReporter from '@/services/error-reporting/observability-error-reporter';
 import ERROR_REPORTING_TOKENS from '@/services/error-reporting/tokens';
 import httpClientRegistrar from '@/services/https-client/di';
@@ -86,7 +86,10 @@ describe('error composition root', () => {
 });
 
 describe('error reporting composition root', () => {
-  const tokens = [ERROR_REPORTING_TOKENS.ErrorReporter];
+  const tokens = [
+    ERROR_REPORTING_TOKENS.ErrorReporter,
+    ERROR_REPORTING_TOKENS.BoundaryErrorReporter,
+  ];
 
   it('binds the error reporter token to the observability-backed singleton', () => {
     const child = unboundContainer(tokens);
@@ -96,8 +99,16 @@ describe('error reporting composition root', () => {
     expect(child.isRegistered(ERROR_REPORTING_TOKENS.ErrorReporter)).toBe(true);
     const reporter = child.resolve(ERROR_REPORTING_TOKENS.ErrorReporter);
     expect(reporter).toBeInstanceOf(ObservabilityErrorReporter);
-    expect(reporter).not.toBeInstanceOf(NoopErrorReporter);
     expect(child.resolve(ERROR_REPORTING_TOKENS.ErrorReporter)).toBe(reporter);
+  });
+
+  it('binds the boundary reporter token to the container-free instance the shell holds', () => {
+    const child = unboundContainer(tokens);
+
+    errorReportingRegistrar.register(child);
+
+    expect(child.isRegistered(ERROR_REPORTING_TOKENS.BoundaryErrorReporter)).toBe(true);
+    expect(child.resolve(ERROR_REPORTING_TOKENS.BoundaryErrorReporter)).toBe(boundaryErrorReporter);
   });
 });
 

@@ -34,6 +34,19 @@ describe('RouteFallback', () => {
     expect(status).toHaveTextContent('route_fallback.loading');
   });
 
+  it('announces a caller-supplied message instead of the default copy', () => {
+    render(<RouteFallback message="Loading the result" />);
+    const status = screen.getByRole('status');
+    expect(status).toBeEmptyDOMElement();
+
+    act(() => {
+      jest.advanceTimersByTime(ANNOUNCE_DELAY_MS);
+    });
+
+    expect(status).toHaveTextContent('Loading the result');
+    expect(status).not.toHaveTextContent('route_fallback.loading');
+  });
+
   it('keeps the spinner decorative and out of the eager MUI graph', () => {
     render(<RouteFallback />);
 

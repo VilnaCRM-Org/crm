@@ -1,5 +1,5 @@
 import { ThemeProvider, createTheme, Theme } from '@mui/material/styles';
-import { render, RenderResult } from '@testing-library/react';
+import { render, RenderOptions as RtlRenderOptions, RenderResult } from '@testing-library/react';
 import type { i18n as I18nType } from 'i18next';
 import React from 'react';
 import { I18nextProvider } from 'react-i18next';
@@ -27,18 +27,20 @@ export const testTheme = createTheme({
 interface RenderOptions {
   theme?: Theme;
   i18nMock?: I18nType;
+  onCaughtError?: RtlRenderOptions['onCaughtError'];
 }
 
 const renderWithProviders = (
   component: React.ReactElement,
-  { theme = testTheme, i18nMock = testI18n }: RenderOptions = {}
+  { theme = testTheme, i18nMock = testI18n, onCaughtError }: RenderOptions = {}
 ): RenderResult =>
   render(
     <MemoryRouter>
       <ThemeProvider theme={theme}>
         <I18nextProvider i18n={i18nMock}>{component}</I18nextProvider>
       </ThemeProvider>
-    </MemoryRouter>
+    </MemoryRouter>,
+    { onCaughtError }
   );
 
 export default renderWithProviders;

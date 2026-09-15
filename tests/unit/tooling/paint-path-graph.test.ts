@@ -96,7 +96,8 @@ describe('render-path import graph', () => {
 
   it('reaches the app shell it is supposed to reach', () => {
     expect(graph.files.has(ENTRY)).toBe(true);
-    expect(graph.files.has('src/components/error-boundary/app-error-boundary.tsx')).toBe(true);
+    expect(graph.files.has('src/components/error-boundary/ui-error-boundary.tsx')).toBe(true);
+    expect(graph.files.has('src/services/error-reporting/boundary-error-reporter.ts')).toBe(true);
     expect(graph.files.has('src/services/observability/observability-core.ts')).toBe(true);
     expect(graph.files.size).toBeGreaterThan(10);
   });

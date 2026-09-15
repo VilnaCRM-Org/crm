@@ -11,7 +11,16 @@ export default function AuthPageLayout({ children }: AuthPageLayoutProps): JSX.E
   return (
     <>
       <UIBackToMain />
-      <Box component="main" sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box
+        component="main"
+        tabIndex={-1}
+        sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          '&:focus:not(:focus-visible)': { outline: 'none' },
+        }}
+      >
         <AuthErrorBoundary>
           <Suspense fallback={<AuthSkeleton />}>{children}</Suspense>
         </AuthErrorBoundary>

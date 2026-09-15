@@ -11,8 +11,11 @@
 // Assertions pin severities + one distinctive selector/message substring per gate — NEVER
 // full-config snapshots (config-evolution friction). Cross-reference: the CLAUDE.md
 // "Enforcement" paragraphs for issues #88 (type-only files), #90 (data-testid), #100/#89
-// (no-static / no-free-function), and #107 (module/feature public-API imports) — a rule rename
-// must update both the config and this test together.
+// (no-static / no-free-function), #107 (module/feature public-API imports), and #116 (Suspense
+// fallbacks, router construction, route-object shape) — a rule rename must update both the
+// config and this test together. The #116 router-construction carve-out for the single
+// sanctioned `createBrowserRouter` site (`src/routes/routes.tsx`) is pinned by the must-pass
+// fixture in scripts/ci/eslint-gate-fixtures.mjs, which resolves that real path.
 //
 // Config resolution runs in a child `node` process (scripts/ci/print-eslint-policy-config.mjs),
 // NOT in-process: jest.config.ts runs CJS Jest with no --experimental-vm-modules, and ESLint v9
@@ -35,6 +38,10 @@ const configs: Record<string, ResolvedConfig> = JSON.parse(
 
 const severityOf = (rule: unknown): unknown => (Array.isArray(rule) ? rule[0] : rule);
 const jsonOf = (rule: unknown): string => JSON.stringify(rule ?? []);
+const selectorsOf = (rule: unknown): string[] =>
+  Array.isArray(rule) ? rule.slice(1).map((entry: { selector: string }) => entry.selector) : [];
+const hasSelectorContaining = (rule: unknown, fragment: string): boolean =>
+  selectorsOf(rule).some((selector) => selector.includes(fragment));
 
 // `noUncheckedIndexedAccess` (issue #166) types this lookup as possibly undefined. Guard for
 // real rather than asserting: a missing entry means the probe file dropped out of the resolved
@@ -96,6 +103,36 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     const rules = rulesFor(LOGIC_TS);
     expect(severityOf(rules['eslint-comments/no-use'])).toBe(2);
     expect(rules['max-len']).toEqual([2, { code: 100 }]);
+  });
+
+  it('pins the Suspense-fallback gate (issue #116) at error on components', () => {
+    const nrs = rulesFor(COMPONENT_TSX)['no-restricted-syntax'];
+    expect(severityOf(nrs)).toBe(2);
+    expect(hasSelectorContaining(nrs, 'JSXAttribute[name.name="fallback"]')).toBe(true);
+    expect(hasSelectorContaining(nrs, 'Identifier[name="undefined"]')).toBe(true);
+    expect(hasSelectorContaining(nrs, '[name.property.name="Suspense"]')).toBe(true);
+    expect(hasSelectorContaining(nrs, ':not(:has(JSXAttribute[name.name="fallback"]))')).toBe(true);
+  });
+
+  it('pins the router-construction gate (issue #116) at error on components, logic, hooks', () => {
+    const factory = 'ImportSpecifier[imported.name=/^create(Browser|Hash|Memory)Router$/]';
+    const namespace = 'ImportDeclaration[source.value="react-router"] > ImportNamespaceSpecifier';
+    [COMPONENT_TSX, LOGIC_TS, HOOK_TS].forEach((file) => {
+      const nrs = rulesFor(file)['no-restricted-syntax'];
+      expect(severityOf(nrs)).toBe(2);
+      expect(hasSelectorContaining(nrs, factory)).toBe(true);
+      expect(hasSelectorContaining(nrs, namespace)).toBe(true);
+    });
+  });
+
+  it('keeps the route-object shape gate (issue #116) scoped to the route shell', () => {
+    // The shape gate lives only in the `src/routes/**/*.tsx` blocks (its must-fail and must-pass
+    // fixtures resolve those paths); a component or logic file never builds a route object.
+    const shape = ':has(> Property[key.name="element"])';
+    expect(hasSelectorContaining(rulesFor(COMPONENT_TSX)['no-restricted-syntax'], shape)).toBe(
+      false
+    );
+    expect(hasSelectorContaining(rulesFor(LOGIC_TS)['no-restricted-syntax'], shape)).toBe(false);
   });
 
   it('keeps the module/feature public-API import boundary (issue #107) pinned', () => {

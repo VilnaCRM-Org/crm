@@ -344,7 +344,7 @@ array literal, so there is nothing left to change. Adding a thirteenth needs the
 proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 206 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 221 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
@@ -1340,19 +1340,28 @@ just this workflow).
 **Route-level splitting:** page-level routes are code-split by the module-owned route registry
 (see "Route Registry (issue #105)" below). Each route contract declares a dynamic `import()`
 loader — named via `webpackChunkName` so the bundle-size report can track its chunk per route —
-and the composer wraps every loader in `React.lazy`. The **single** route-level `Suspense`
-boundary lives in [`src/components/layouts/root-layout.tsx`](src/components/layouts/root-layout.tsx)
+and the composer wraps every loader in `React.lazy` and attaches a per-route `errorElement`
+(`<RouteError landmark=… />`, issue #116) so a page that throws is caught by its own route, not
+by the root boundary. The route-level `Suspense` boundary lives in
+[`src/components/layouts/root-layout.tsx`](src/components/layouts/root-layout.tsx)
 and ships a **non-null**, deferred fallback ([`<RouteFallback />`](src/components/route-fallback/index.tsx)):
 it paints nothing for the first 150 ms so fast chunk loads never flash a loader (and avoid the
 layout shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
-announces loading via a polite live region. To add a page, follow the registry ("Adding a page"
-below); never eagerly import a page. Two checks fail CI on a regression:
+announces loading via a polite live region. `RouteFallback` takes optional `minHeight` and
+`message` props, so an in-page Suspense boundary (the registration form's result chunk) reuses
+it instead of shipping `fallback={null}`. To add a page, follow the registry ("Adding a page"
+below); never eagerly import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
   ([`tests/unit/tooling/performance-serving.test.ts`](tests/unit/tooling/performance-serving.test.ts))
   pins each page loader to a `webpackChunkName`-named dynamic `import()`, forbids static page
   imports, and asserts the RootLayout boundary keeps the non-null `RouteFallback` (never
-  `fallback={null}`). This is the **only** fallback check.
+  `fallback={null}`). It pins that one file only.
+- the **Suspense-fallback ESLint gate** (`suspenseFallbackSelectors` in `eslint.config.mjs`,
+  `make lint-eslint`, issue #116) fails a `fallback={null | undefined | false | ""}` on any
+  element and a `<Suspense>` / `<React.Suspense>` with no `fallback` attribute anywhere in
+  `src/**`; must-fail fixtures live in `scripts/ci/eslint-gate-fixtures.mjs`. It is syntactic:
+  `fallback={<span />}` passes it, so a visually empty fallback stays a review concern.
 - `RouteFallback`
   ([`tests/unit/components/route-fallback/route-fallback.test.tsx`](tests/unit/components/route-fallback/route-fallback.test.tsx))
   pins the deferred-paint and live-region behavior.
@@ -1379,6 +1388,7 @@ src/
 │       ├── store/           # Shared response/error mappers
 │       └── package.json     # Module metadata
 ├── components/      # Reusable UI components (prefixed with UI*)
+├── lib/             # Framework-agnostic contracts (e.g. reliability), container-free
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
 ├── config/          # DI configuration, tokens, API config
@@ -1525,14 +1535,17 @@ service/repository/mapper/factory/handler. Two gates enforce it, both inside `ma
 **Carve-outs** (container-free by design, not modernization debt): the auth render path
 (`src/modules/user/features/auth/**`, whose mobile Lighthouse budget forbids eager DI), the
 route composer/mapper singletons (`src/routes/route-{composer,mapper}.tsx`, issue #105 — not the
-whole `src/routes/` tree), the app entrypoint, and **only** the root error
-boundary file `src/components/error-boundary/app-error-boundary.tsx` (a class component cannot
-call a hook, and error reporting must survive a DI failure) — its functional descendants such as
-`ErrorFallback` and `RouteError` can call `useService` and stay gated. Both gates read the same
-carve-out list, so they never disagree about which file is exempt. The carve-outs keep their
-module singletons (`formValidators`, `useAuthToken`, `auth-var`, `auth-store-selectors`,
-`routeComposer`, `noopErrorReporter`) — do not migrate them onto `useService`. The carve-out is
-itself enforced by two rules:
+whole `src/routes/` tree), and the app entrypoint. The root error boundary is **not** on the
+list and needs no entry (issue #116): `UIErrorBoundary`
+(`src/components/error-boundary/ui-error-boundary.tsx`) receives its reporter by **prop** from
+`src/index.tsx` — the carve-out that imports `boundaryErrorReporter` — and value-imports only
+`src/lib/reliability/**`, so the class-component-cannot-call-a-hook exemption the old
+`AppErrorBoundary` needed is gone with it; its functional descendants `ErrorFallback` and
+`RouteError` can call `useService` and stay gated too. Both gates read the same carve-out list,
+so they never disagree about which file is exempt. The carve-outs keep their module singletons
+(`formValidators`, `useAuthToken`, `auth-var`, `auth-store-selectors`, `routeComposer`,
+`boundaryErrorReporter`) — do not migrate them onto `useService`. The carve-out is itself
+enforced by two rules:
 
 - `no-paint-path-import-di-bridge` — the auth feature must never **reach** `@/providers/di`.
   It is a `reachable` rule, so routing the bridge through an intermediate shared component
@@ -1822,8 +1835,9 @@ Three different things are outside the gate, and the distinction matters when yo
   **container-free render-path singletons** — `auth-var`, `reactive-var`,
   `reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`,
   `lazy-module-loader`, `load-registration-notification`, `registration-handlers-factory`,
-  `auth-error-reporter`, `url-builder`, `locale-formatter-core`, and the observability core /
-  correlation-id / sentry / pii-scrubber / web-vitals leaves.
+  `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
+  boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, and the
+  observability core / correlation-id / sentry / pii-scrubber / web-vitals leaves.
 
 Those stay off the container so the auth page paints without tsyringe — **never** eager-import
 `dependency-injection-config.ts` into the paint path, and never convert one of them into a
@@ -1980,14 +1994,23 @@ wiring — it contains no route-array literal and no feature/module page imports
 - **Composer** — `src/routes/route-composer.tsx` (+ `route-mapper.tsx`,
   `route-validator.ts`, all container-free module singletons) validates the
   contracts, resolves `guard: 'protected'` to the `ProtectedRoute` guard nested
-  under `AppLayout`, keeps public routes directly under `RootLayout`, and wraps
-  each `load` in `React.lazy`.
+  under `AppLayout`, keeps public routes directly under `RootLayout`, wraps
+  each `load` in `React.lazy`, and attaches an `errorElement`
+  (`<RouteError landmark=… />`) to the root route, both layout routes, and
+  every mapped page — `landmark="region"` under `AppLayout` (its `<main>` would
+  otherwise nest a second one), `"main"` elsewhere (issue #116). Its
+  `routeErrorHandler()` builds the `onError` callback that `routes.tsx` exports
+  as `onRouteError` and `app.tsx` hands to `<RouterProvider onError>`, so a
+  route error is reported through `boundaryErrorReporter` with
+  `surface: 'route'` while `RouteError` stays presentational.
 
 **Adding a page** — add a route entry to the owning module's
 `routes/index.ts` contract, then (for a new module) append it to
 `src/routes/registry.ts`. Never edit `src/routes/routes.tsx` or the composer.
 Deep-importing a feature page from the shell fails
-`no-routes-import-feature-internals`.
+`no-routes-import-feature-internals`; building a router anywhere but
+`routes.tsx`, or a route object with an `element` and no `errorElement` inside
+`src/routes/**`, fails the issue-#116 ESLint selectors (see pattern 14).
 
 ### GraphQL Setup
 
@@ -2343,8 +2366,9 @@ replaces.
    web-vitals reporting, and identity tagging. It has two layers so the auth paint path stays
    tsyringe- and SDK-free: (a) container-free module singletons (`observabilityCore`,
    `correlationIdProvider`, `sentryClient`, `webVitalsReporter`, `sentryConfig`, `piiScrubber`)
-   used by the render path (`index.tsx` `init()` + `AppErrorBoundary` reporter, `AuthErrorBoundary`
-   capture, the HTTP config builder's `X-Request-Id` header, and logout `clearUser`), and (b) an
+   used by the render path (`index.tsx` `init()`, the `boundaryErrorReporter` that
+   `UIErrorBoundary`, `AuthErrorBoundary` and the router `onError` seam report through, the HTTP
+   config builder's `X-Request-Id` header, and logout `clearUser`), and (b) an
    `@injectable()` `ObservabilityService` adapter (token `TOKENS.ObservabilityService`) injected
    into `ErrorHandler`, `ApolloLinkFactory`, and `AuthStoreActions`. `@sentry/react` and
    `web-vitals` are loaded only via **dynamic `import()` gated on DSN presence**, so an empty
@@ -2391,12 +2415,17 @@ replaces.
 
     Emitters and their events:
 
-    | Call site                                | Event                                 |
-    | ---------------------------------------- | ------------------------------------- |
-    | `AuthSecuritySignals` (login)            | `auth_failure` / `auth_failure_burst` |
-    | `AuthSecuritySignals` (registration)     | `auth_failure` / `auth_failure_burst` |
-    | `HttpErrorResponseParser` (401 / 403)    | `unauthorized_response`               |
-    | `AppErrorBoundary` / `AuthErrorReporter` | `error_boundary_catch`                |
+    | Call site                                   | Event                                 |
+    | ------------------------------------------- | ------------------------------------- |
+    | `AuthSecuritySignals` (login)               | `auth_failure` / `auth_failure_burst` |
+    | `AuthSecuritySignals` (registration)        | `auth_failure` / `auth_failure_burst` |
+    | `HttpErrorResponseParser` (401 / 403)       | `unauthorized_response`               |
+    | `UIErrorBoundary` (`app` / `auth`)          | `error_boundary_catch`                |
+    | `RouteError` (via `RouterProvider onError`) | `error_boundary_catch`                |
+
+    The boundary rows all go through the container-free `boundaryErrorReporter`, which calls
+    `securityEventCore.boundaryCatch(surface)` with the boundary surface (`app`, `auth`, or
+    `route`) before capturing the error (pattern 14).
 
     The payload is **credential-free by construction**: a bounded `reason` code derived from the
     `AuthError` kind (or `rate_limited` for HTTP 429), a category, a severity, and the rolling
@@ -2414,10 +2443,40 @@ replaces.
 13. **Auth-failure alert threshold (issue #159)**: `AuthFailureMonitor` keeps a rolling window of
     auth failures. Reaching `REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD` failures inside
     `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` escalates the emitted event from `auth_failure` to
-    `auth_failure_burst` with `severity: 'critical'` and stamps `thresholdBreached: true`.
+    `auth_failure_burst` with `severity: 'critical'` and stamps `thresholdCrossed: true`.
     Defaults are 5 failures / 60 000 ms; both are optional and validated by `EnvSchema`. Configure
     the matching backend alert rule as described in the "Client security events" section of
     [`SECURITY.md`](SECURITY.md).
+
+14. **Reliability model (issue #116, ADR-007)**: `RecoverableError`
+    (`src/lib/reliability/types/recoverable-error.ts`: `recoverable`, `strategy` of `retry` /
+    `reset` / `reload` / `navigate-home` / `none`, an i18n `messageKey` — never a raw
+    `error.message` — `severity`, optional `cause`) is what a boundary renders from.
+    `recoveryStrategyDetector.classify(error)` tries, in order: a value `recoverableErrorGuard`
+    accepts → itself; a `{ retryable: boolean }` duck type (`UiError` / `AuthError` — the only
+    mapping of those two flags; no third flag) → `retry` or `none`; `chunkLoadErrorDetector` →
+    `reload`; a route error response (`status` + `statusText` + `data`, matched structurally) →
+    `navigate-home`; anything else → `reset`. `UIErrorBoundary` is the one class boundary: the
+    shell mounts it with `surface="app"`, `AuthErrorBoundary` composes it with `surface="auth"`,
+    and every route the composer emits carries `errorElement: <RouteError landmark=… />`
+    (`"region"` under `AppLayout`, `"main"` elsewhere). `ErrorFallback` renders a focused `<h1>`,
+    a `role="alert"` message, a strategy-gated button (`retry`/`reset` → Try again, `reload` →
+    Reload the page, otherwise none) and an **unconditional** homepage anchor; it is keyed by
+    `attempt` so a failed retry remounts and re-announces, and focus returns to
+    `main[tabindex="-1"]` on recovery. Reporting is the container-free `boundaryErrorReporter`
+    (security event + observability capture), passed by **prop** because the paint path cannot
+    resolve the container, and also registered by value under
+    `ERROR_REPORTING_TOKENS.BoundaryErrorReporter`; the router seam is
+    `routeComposer.routeErrorHandler()` → `onRouteError` → `<RouterProvider onError>`. The gate
+    is five `no-restricted-syntax` selectors in `eslint.config.mjs` (`make lint-eslint`): no
+    `fallback={null|undefined|false|""}`, no `<Suspense>` without a `fallback`, no
+    `create*Router` / `import * as` from `react-router` outside `src/routes/routes.tsx`
+    (re-listed in every `src/` block — flat config replaces the rule per file), and no route
+    literal in `src/routes/**` with an `element` and no own `errorElement`. Boundaries never
+    write to the console: React 19 logs every caught error through `onCaughtError`, so a test
+    that renders a throwing child passes `onCaughtError` to `render` / `renderWithProviders` and
+    asserts it — never a file-wide spy. Chunk-load recovery with a reload policy is deferred to
+    #147; never auto-reload a protected route, because the auth token is memory-only.
 
 ## Node Version Management
 

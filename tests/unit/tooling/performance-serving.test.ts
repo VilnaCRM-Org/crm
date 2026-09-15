@@ -123,8 +123,11 @@ describe('performance serving config', () => {
     expect(authRoutesSource).not.toContain("import SignUp from './sign-up'");
     expect(authRoutesSource).not.toContain("import SignIn from './sign-in'");
 
-    // The single route-level Suspense boundary ships a non-null deferred fallback
-    // (RouteFallback), never `fallback={null}` (issue #117 — the only fallback check).
+    // The route-level Suspense boundary ships a non-null deferred fallback (RouteFallback),
+    // never `fallback={null}` (issue #117). This pins the RootLayout boundary specifically; the
+    // whole-tree rule that no Suspense anywhere in `src/` may ship a null/undefined/false/""
+    // fallback, or omit one, is the `suspenseFallbackSelectors` ESLint gate in eslint.config.mjs
+    // (issue #116), with must-fail fixtures in scripts/ci/eslint-gate-fixtures.mjs.
     expect(rootLayoutSource).toContain('<RouteFallback />');
     expect(rootLayoutSource).not.toContain('fallback={null}');
   });

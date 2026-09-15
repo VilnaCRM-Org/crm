@@ -50,8 +50,16 @@ make test-mutation    # Stryker; the enforced floor is 100%
   file is imported only with `import type`.
 - **Components take collaborators from `useService(TOKEN)`** (`@/providers/di`), never through
   `new` or a value import of a service, repository, mapper, factory, or error handler. The auth
-  render path, `src/routes/route-{composer,mapper}.tsx`, the entrypoint, and
-  `app-error-boundary.tsx` are the only container-free carve-outs.
+  render path, `src/routes/route-{composer,mapper}.tsx`, and the entrypoint are the only
+  container-free carve-outs; the root `UIErrorBoundary` needs none because it takes its
+  reporter by prop and imports only `src/lib/**`.
+- **Every Suspense boundary ships a real fallback and every route carries an `errorElement`**:
+  ESLint fails `fallback={null|undefined|false|""}`, a `<Suspense>` with no `fallback`, a
+  `create*Router` or `import * as` from `react-router` outside `src/routes/routes.tsx`, and a
+  route object in `src/routes/**` with an `element` but no `errorElement`. Use
+  `<RouteFallback />` for loading and let the composer attach `<RouteError />`; a boundary
+  renders a `RecoverableError` from `src/lib/reliability/` and reports through the
+  `boundaryErrorReporter` prop, never `console.error`.
 - **Classes receive collaborators through DI**: a token in the area's `tokens.ts`, a
   registration in its `di.ts` composition root, and a constructor `@inject`. Allowed value
   imports are `import type`, the base class, tokens, config data, error classes, constant maps,

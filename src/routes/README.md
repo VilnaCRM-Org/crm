@@ -24,10 +24,10 @@ route set discoverable (audit, nav, sitemap).
 | `app-routes.ts`         | The app shell's own contract (home + 404)                     |
 | `registry.ts`           | Collects every module contract into one list                  |
 | `route-validator.ts`    | Rejects duplicate module ids / routes with no path or index   |
-| `route-mapper.tsx`      | Maps one contract route → a `react-router` route (lazy)       |
-| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree            |
+| `route-mapper.tsx`      | Maps one contract route → a lazy route with an `errorElement` |
+| `route-composer.tsx`    | Validates, partitions by guard, assembles the tree, `onError` |
 | `route-paths.ts`        | Canonical URL constants — one key per route, read by the gate |
-| `routes.tsx`            | Wiring only: `createBrowserRouter(composer.compose(...))`     |
+| `routes.tsx`            | Wiring only: `createBrowserRouter(...)` + `onRouteError`      |
 
 The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
@@ -58,6 +58,26 @@ declarative data in the contract — it is never hand-wired in the shell. `guard
 applies to a module's **top-level** routes only; nested children inherit their
 parent's protection context, so declaring a guard on a child is rejected by the
 `RouteValidator` (it would otherwise render outside `ProtectedRoute`).
+
+## Errors and fallbacks (issue #116)
+
+Every route object the composer emits — the root route, the two layout routes of
+the protected branch (`ProtectedRoute`, `AppLayout`), and every mapped page —
+carries `errorElement: <RouteError landmark=… />`, so a page that throws is
+caught by its own route and the surrounding layout survives. The `landmark`
+follows the tree: pages under `AppLayout` render the fallback as an
+`aria-labelledby` `<section>` (`'region'`), because `AppLayout` already owns
+the page's `<main>` and two would nest; open routes and the layouts render
+`<main>`. `RouteError` is presentational — it classifies `useRouteError()`
+with `recoveryStrategyDetector`, its **Try again** re-navigates to the current
+location so the route really re-renders, and the fallback always offers a
+homepage link. Reporting lives at the router seam:
+`routeComposer.routeErrorHandler()` builds the callback that `routes.tsx`
+exports as `onRouteError` and `src/app.tsx` passes to
+`<RouterProvider onError>`; it reports through the container-free
+`boundaryErrorReporter` with `surface: 'route'`, so the shell never touches the
+DI container. Suspense fallbacks are `<RouteFallback />`, never `null` — see
+"Route-level splitting" and pattern 14 in `CLAUDE.md`, and ADR-007.
 
 ## Adding a page
 
@@ -98,10 +118,22 @@ page.
   reach a feature only through its `routes/index` contract barrel and the
   `protected-route` guard. Deep-importing a page (`@auth/routes/sign-up`) fails
   the gate. Verified by `tests/unit/tooling/route-registry-boundary.test.ts`.
+- **ESLint** (`no-restricted-syntax`, `make lint-eslint`, issue #116) — a named
+  `create{Browser,Hash,Memory}Router` import or an `import * as` from
+  `react-router` anywhere in `src/` except `routes.tsx`, the single sanctioned
+  construction site; inside `src/routes/**/*.tsx`, a route object literal with
+  an `element` and no own `errorElement` (`:has(> …)`, so a child's does not
+  satisfy its parent); and, everywhere, a `fallback={null|undefined|false|""}`
+  or a `<Suspense>` with no `fallback`. Must-fail fixtures per selector live in
+  `scripts/ci/eslint-gate-fixtures.mjs`. Honest limit: the shape selector sees
+  object literals only, so the composer and mapper must keep building routes as
+  literals.
 - **Unit tests** — `tests/unit/routes/*` cover the composer (invariants A/B/D:
-  single `RootLayout`, `protected`→`AppLayout`, public not), the validator
-  (duplicate id / unlocatable route), and the registry; per-route code splitting
-  is asserted in `tests/unit/tooling/performance-serving.test.ts`.
+  single `RootLayout`, `protected`→`AppLayout`, public not; every route object
+  in the composed tree carries a `RouteError` `errorElement` with the landmark
+  its branch requires; `routeErrorHandler()` reports with `surface: 'route'`),
+  the validator (duplicate id / unlocatable route), and the registry; per-route
+  code splitting is asserted in `tests/unit/tooling/performance-serving.test.ts`.
 - **Route coverage inventory** — `scripts/ci/check-e2e-route-coverage.ts` reads
   the route **keys** from `route-paths.ts` and reconciles them against
   `tests/e2e/route-coverage.tsv` in both directions (missing row, stale row,

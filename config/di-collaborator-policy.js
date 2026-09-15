@@ -150,6 +150,12 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free rolling-window leaf consumed by the security-event core.',
   },
   {
+    path: 'src/services/error-reporting/boundary-error-reporter.ts',
+    reason:
+      'Container-free boundary reporter the paint-path error boundaries receive by prop; it ' +
+      'composes the security-event and observability cores off the container (issue #116).',
+  },
+  {
     path: 'src/services/locale-formatter/locale-formatter-core.ts',
     reason:
       'Container-free Intl formatting core; `src/i18n.js` binds its language source at module ' +

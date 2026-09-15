@@ -52,9 +52,9 @@ const ESLINT_FIXTURES = {
   routeShellCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/route-composer.tsx' },
   routeShellOtherFile: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/routes/fixture.tsx' },
   appEntrypointCarveOut: { code: NEW_BEHAVIORAL_CLASS, filePath: 'src/index.tsx' },
-  rootErrorBoundaryCarveOut: {
+  rootErrorBoundary: {
     code: NEW_BEHAVIORAL_CLASS,
-    filePath: 'src/components/error-boundary/app-error-boundary.tsx',
+    filePath: 'src/components/error-boundary/ui-error-boundary.tsx',
   },
   errorBoundaryDescendant: {
     code: NEW_BEHAVIORAL_CLASS,
@@ -158,10 +158,19 @@ const DEPCRUISE_FIXTURES = {
         'return <span>routes</span>;\n}\n',
     },
   },
-  rootErrorBoundaryCarveOut: {
+  rootErrorBoundaryImportsLib: {
+    files: {
+      'src/lib/reliability/thing.ts': 'export default class Thing {\n  public run(): void {}\n}\n',
+      'src/components/error-boundary/error-fallback.tsx': componentImporting(''),
+      'src/components/error-boundary/ui-error-boundary.tsx': componentImporting(
+        "import Thing from '../../lib/reliability/thing';\nimport Fallback from './error-fallback';"
+      ),
+    },
+  },
+  rootErrorBoundaryImportsService: {
     files: {
       ...SERVICE_FILES,
-      'src/components/error-boundary/app-error-boundary.tsx': componentImporting(
+      'src/components/error-boundary/ui-error-boundary.tsx': componentImporting(
         "import Thing from '../../services/thing';"
       ),
     },

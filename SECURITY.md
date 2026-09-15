@@ -290,12 +290,12 @@ path is a verified no-op.
 
 ### Emitted events
 
-| Event                   | Category                 | Raised by                          |
-| ----------------------- | ------------------------ | ---------------------------------- |
-| `auth_failure`          | `login` / `registration` | a rejected login or registration   |
-| `auth_failure_burst`    | `login` / `registration` | a failure past the threshold       |
-| `unauthorized_response` | `transport`              | a `401` or `403` REST response     |
-| `error_boundary_catch`  | `render`                 | an error boundary catching a crash |
+| Event                   | Category                 | Raised by                            |
+| ----------------------- | ------------------------ | ------------------------------------ |
+| `auth_failure`          | `login` / `registration` | a rejected login or registration     |
+| `auth_failure_burst`    | `login` / `registration` | a failure past the threshold         |
+| `unauthorized_response` | `transport`              | a `401` or `403` REST response       |
+| `error_boundary_catch`  | `render`                 | a boundary or route catching a crash |
 
 Each event reaches Sentry as a `SecurityEventSignal` exception named `security.<event>`, with
 the structured payload in `extra`:
@@ -322,7 +322,10 @@ every case, but the set it is drawn from depends on the event: `auth_failure` an
 `auth_failure_burst` use `authentication`, `validation`, `conflict`, `server`, `network`,
 `rate_limited` or `unknown`, derived from the auth error kind or the HTTP status;
 `unauthorized_response` uses `http_401` or `http_403`; and `error_boundary_catch` uses the
-boundary surface (`app` or `auth`). The submitted password, the session token, the email
+boundary surface — `app` for the shell's root `UIErrorBoundary`, `auth` for the auth feature's
+boundary, and `route` for a route error reported through the router's `onError` seam behind each
+route's `RouteError` (issue #116); all three go through the container-free
+`boundaryErrorReporter`. The submitted password, the session token, the email
 address, and the user id are never passed to the reporter. `piiScrubber` remains the
 second line of defence in Sentry's `beforeSend`. Aborted attempts (navigation away, cancelled
 requests) emit nothing, so user-initiated cancellation is not mistaken for abuse.
