@@ -1,0 +1,15 @@
+{
+  "error_boundary": {
+    "title": "Something went wrong",
+    "unexpected": "An unexpected error occurred. You can try again or go to the homepage.",
+    "retryable": "The last action did not complete. Try again.",
+    "unrecoverable": "This error can't be retried. Go to the homepage to continue.",
+    "chunk_load": "Part of the page failed to load. Reload the page to get the latest version.",
+    "route": "This page is not available. Go to the homepage.",
+    "bootstrap": "The application could not start. Reload the page.",
+    "try_again": "Try again",
+    "reload": "Reload the page",
+    "go_home": "Go to homepage",
+    "details": "Error details"
+  }
+}

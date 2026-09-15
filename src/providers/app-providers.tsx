@@ -4,6 +4,7 @@ import type { i18n as I18nType } from 'i18next';
 import React, { type JSX } from 'react';
 import { I18nextProvider } from 'react-i18next';
 
+import RouteFallback from '@/components/route-fallback';
 import type { AppProvidersProps } from '@/components/types/providers';
 import theme from '@/styles/theme';
 
@@ -17,7 +18,7 @@ export default function AppProviders({ children }: AppProvidersProps): JSX.Eleme
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <I18nextProvider i18n={i18nInstance}>
-          <React.Suspense fallback={null}>{children}</React.Suspense>
+          <React.Suspense fallback={<RouteFallback />}>{children}</React.Suspense>
         </I18nextProvider>
       </ThemeProvider>
     </StyledEngineProvider>

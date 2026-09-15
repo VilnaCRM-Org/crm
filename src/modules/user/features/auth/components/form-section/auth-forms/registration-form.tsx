@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import { type JSX, lazy, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import RouteFallback from '@/components/route-fallback';
 import UIForm from '@/components/ui-form';
 import InertBox from '@auth/components/form-section/inert-box';
 import formValidators from '@auth/components/form-section/validations';
@@ -52,12 +53,16 @@ function RegistrationFormPanel({
 
 function RegistrationNotificationPanel({
   form,
+  t,
 }: {
   form: RegistrationFormState;
+  t: TFunction;
 }): JSX.Element | null {
   if (form.view === 'form') return null;
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={<RouteFallback minHeight="auto" message={t('sign_up.form.loading_result')} />}
+    >
       <RegistrationNotification
         view={form.view}
         errorText={form.errorText}
@@ -78,7 +83,7 @@ export default function RegistrationForm({ onViewChange }: RegistrationFormProps
   return (
     <>
       <RegistrationFormPanel form={form} t={t} validators={validators} />
-      <RegistrationNotificationPanel form={form} />
+      <RegistrationNotificationPanel form={form} t={t} />
     </>
   );
 }

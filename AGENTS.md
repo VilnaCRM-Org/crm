@@ -928,9 +928,11 @@ Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
 container-resolved class. Those inside a gated directory (`auth-var`, `reactive-var`,
 `reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`, the
-auth lazy loaders, `registration-handlers-factory`, `auth-error-reporter`, `url-builder`,
-`locale-formatter-core`, and the observability core/correlation-id/sentry/pii-scrubber/web-vitals
-leaves) are exempt by explicit path in `EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
+auth lazy loaders, `registration-handlers-factory`, `auth-error-reporter`,
+`boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
+issue #116), `url-builder`, `locale-formatter-core`, and the observability
+core/correlation-id/sentry/pii-scrubber/web-vitals leaves) are exempt by explicit path in
+`EXEMPT_RENDER_PATH_FILES`. Hooks such as `use-auth-token`,
 `use-auth-state`, and `use-focus-on-mount` sit inside gated directories and are carved out by the
 structural `react-hooks` entry in `EXEMPT_PATTERNS` (`src/**/use-*.ts`) — that entry is
 load-bearing, so do not delete it. The form-section `validations/*` singletons live under
@@ -1018,9 +1020,11 @@ tests, swap the collaborator by registering a mock against the token
 Two `make lint` gates enforce this on `src/**/*.tsx`: an ESLint `no-restricted-syntax`
 selector (built-in constructors allowlisted) and dependency-cruiser
 `components-no-direct-injectable-import`. Carve-outs — the auth render path, the route shell,
-the app entrypoint, and the root error boundary — are container-free by design; leave their
-module singletons alone and never eager-import the container into the auth paint path
-(`no-paint-path-import-di-bridge` enforces that). Hooks (`use-*.ts`) are outside the static
+and the app entrypoint — are container-free by design; leave their module singletons alone and
+never eager-import the container into the auth paint path (`no-paint-path-import-di-bridge`
+enforces that). The root error boundary is no longer a carve-out (issue #116): `UIErrorBoundary`
+takes its `reporter` by prop from `src/index.tsx` and value-imports only `src/lib/**`, so it
+passes both gates as written. Hooks (`use-*.ts`) are outside the static
 gate; that is not license to `new` a collaborator there — expect review to flag it. Never
 satisfy either gate with `eslint-disable`, a dependency-cruiser ignore, or `@ts-ignore`.
 
@@ -1475,11 +1479,15 @@ make perf-budget    # Prod build + enforce the gzip byte budgets (fails on breac
 
 Every page-level route is code-split by the module-owned route registry (issue #105): each
 route contract declares a dynamic `import()` loader named via `webpackChunkName`, the composer
-wraps it in `React.lazy`, and the single `Suspense` boundary in `root-layout.tsx` ships a
-non-null deferred `RouteFallback`. The `performance serving` golden test
+wraps it in `React.lazy` and attaches a per-route `errorElement` (`<RouteError />`,
+issue #116), and the route-level `Suspense` boundary in `root-layout.tsx` ships a non-null
+deferred `RouteFallback`. The `performance serving` golden test
 (`tests/unit/tooling/performance-serving.test.ts`) fails CI if a page loader loses its named
-dynamic `import()` or the boundary reverts to `fallback={null}`. Satisfy a budget by
-reducing/splitting the bundle, never by raising a limit without rationale or disabling the gate.
+dynamic `import()` or that boundary reverts to `fallback={null}`; the issue-#116 ESLint
+selectors (`make lint-eslint`) fail a `fallback={null|undefined|false|true|""}` or a `<Suspense>`
+without a `fallback` anywhere in `src/**`, and a router built outside `src/routes/routes.tsx`.
+Satisfy a budget by reducing/splitting the bundle, never by raising a limit without rationale
+or disabling the gate.
 
 ### Load Testing with K6
 

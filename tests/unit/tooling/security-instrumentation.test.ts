@@ -9,10 +9,13 @@ const readFile = (relativePath: string): string =>
   fs.readFileSync(path.join(projectRoot, relativePath), 'utf8');
 
 describe('client security instrumentation (#159)', () => {
-  it('injects the observability-backed reporter into the root error boundary', () => {
+  it('injects the boundary reporter into the root error boundary', () => {
     const entry = readFile('src/index.tsx');
 
-    expect(entry).toMatch(/<AppErrorBoundary reporter={observabilityCore}>/);
+    expect(entry).toMatch(/<UIErrorBoundary surface="app" reporter={boundaryErrorReporter}>/);
+    expect(entry).toContain(
+      "import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter'"
+    );
     expect(entry).toContain(
       "import observabilityCore from '@/services/observability/observability-core'"
     );

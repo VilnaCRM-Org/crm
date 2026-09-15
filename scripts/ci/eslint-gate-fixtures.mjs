@@ -24,6 +24,8 @@ const PROBES = {
   typeOnly: 'src/modules/user/features/auth/types/__probe__.ts', // type-only file (#88 purity)
   hook: 'src/modules/user/features/auth/stores/use-__probe__.ts', // hook — EXEMPT from #100
   env: 'src/config/env/__probe__.ts', // env config (#112 process.env)
+  routes: 'src/routes/__probe__.tsx', // route shell (#116 route-object shape)
+  routerSite: 'src/routes/routes.tsx', // the ONLY sanctioned createBrowserRouter site (#116)
 };
 
 // Exact selector strings, copied verbatim from the resolved config. The rot-guard compares the
@@ -85,6 +87,24 @@ const S = {
   bannedClassSuffix: classNamingPolicy.classNamingSelectors()[1].selector,
   bareServiceClass: classNamingPolicy.classNamingSelectors()[2].selector,
   unsuffixedClass: classNamingPolicy.classNamingSelectors()[3].selector,
+  // issue #116 — Suspense fallbacks, router construction, and route-object shape.
+  suspenseNullishFallback:
+    'JSXAttribute[name.name="fallback"][value=null], ' +
+    'JSXAttribute[name.name="fallback"] > Literal[value=""], ' +
+    'JSXAttribute[name.name="fallback"] > JSXExpressionContainer > ' +
+    ':matches(Literal[raw="null"], Identifier[name="undefined"], Literal[value=false], ' +
+    'Literal[value=true], Literal[value=""])',
+  suspenseWithoutFallback:
+    'JSXOpeningElement:matches([name.name="Suspense"], [name.property.name="Suspense"])' +
+    ':not(:has(JSXAttribute[name.name="fallback"]))',
+  routerFactoryImport:
+    'ImportDeclaration[source.value="react-router"] > ' +
+    'ImportSpecifier[imported.name=/^create(Browser|Hash|Memory)Router$/]',
+  routerNamespaceImport:
+    'ImportDeclaration[source.value="react-router"] > ImportNamespaceSpecifier',
+  routeObjectWithoutErrorElement:
+    'ObjectExpression:has(> Property:matches([key.name="element"], [key.value="element"]))' +
+    ':not(:has(> Property:matches([key.name="errorElement"], [key.value="errorElement"])))',
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -633,7 +653,188 @@ const FIXTURES = [
     rule: 'no-restricted-syntax',
     tag: 'issue #130',
   },
+  // Suspense fallback (#116) — S.suspenseNullishFallback is a 4-alternative `:matches`; one
+  // fixture per literal shape so a dropped alternative cannot pass unnoticed.
+  {
+    id: 'suspense-fallback-null',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback={null}><b /></Suspense>;',
+    covers: [S.suspenseNullishFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'suspense-fallback-undefined',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback={undefined}><b /></Suspense>;',
+    covers: [S.suspenseNullishFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'suspense-fallback-false',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback={false}><b /></Suspense>;',
+    covers: [S.suspenseNullishFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'suspense-fallback-empty-string',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback={""}><b /></Suspense>;',
+    covers: [S.suspenseNullishFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'suspense-fallback-boolean-shorthand',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback><b /></Suspense>;',
+    covers: [S.suspenseNullishFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'suspense-fallback-empty-string-attribute',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback=""><b /></Suspense>;',
+    covers: [S.suspenseNullishFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'suspense-fallback-true',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback={true}><b /></Suspense>;',
+    covers: [S.suspenseNullishFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  // S.suspenseWithoutFallback is a 2-alternative `:matches` on the element name: the bare
+  // `<Suspense>` and the namespaced `<React.Suspense>` spelling each get a fixture.
+  {
+    id: 'suspense-without-fallback',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense><b /></Suspense>;',
+    covers: [S.suspenseWithoutFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'react-suspense-without-fallback',
+    file: PROBES.component,
+    code: 'const A = () => <React.Suspense><b /></React.Suspense>;',
+    covers: [S.suspenseWithoutFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  // Router construction (#116) — the named-factory import and the namespace-import evasion, on
+  // BOTH the component scope and the logic `.ts` scope, since a router built in a plain module
+  // would otherwise pass (flat config replaces `no-restricted-syntax` per block).
+  {
+    id: 'router-factory-import-component',
+    file: PROBES.component,
+    code: "import { createBrowserRouter } from 'react-router';\nexport default createBrowserRouter([]);",
+    covers: [S.routerFactoryImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'router-factory-import-logic',
+    file: PROBES.logic,
+    code: "import { createMemoryRouter } from 'react-router';\nexport default createMemoryRouter([]);",
+    covers: [S.routerFactoryImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'router-namespace-import-component',
+    file: PROBES.component,
+    code: "import * as RR from 'react-router';\nexport default RR.createBrowserRouter([]);",
+    covers: [S.routerNamespaceImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'router-namespace-import-logic',
+    file: PROBES.logic,
+    code: "import * as RR from 'react-router';\nexport default RR.createHashRouter([]);",
+    covers: [S.routerNamespaceImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  // Route-object shape (#116) — a literal in the route shell that renders an `element` without
+  // its own `errorElement`; the nested child carries one to prove the `:has(> …)` child
+  // combinator does not let a descendant's errorElement satisfy the parent.
+  {
+    id: 'route-object-without-error-element',
+    file: PROBES.routes,
+    code: 'const r = { path: "/", element: <A />, children: [{ index: true, element: <B />, errorElement: <E /> }] };',
+    covers: [S.routeObjectWithoutErrorElement],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'route-object-without-error-element-quoted-key',
+    file: PROBES.routes,
+    code: 'const r = { "path": "/", "element": <A /> };',
+    covers: [S.routeObjectWithoutErrorElement],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'route-object-with-quoted-error-element-exempt',
+    file: PROBES.routes,
+    code: 'const r = { path: "/", element: <A />, "errorElement": <E /> };',
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
   // Must-PASS exemptions
+  {
+    id: 'router-factory-import-routes-site-exempt',
+    file: PROBES.routerSite,
+    code: "import { createBrowserRouter } from 'react-router';\nexport default createBrowserRouter([]);",
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
+  {
+    id: 'route-object-with-error-element-exempt',
+    file: PROBES.routes,
+    code: 'const r = { path: "/", element: <A />, errorElement: <E />, children: [{ index: true, element: <B />, errorElement: <E /> }] };',
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
+  {
+    id: 'suspense-with-fallback-exempt',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback={<Spinner />}><b /></Suspense>;',
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
   {
     id: 'hook-arrow-const-exempt',
     file: PROBES.hook,

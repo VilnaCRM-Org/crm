@@ -4,6 +4,19 @@
       "button_example": {
         "label": "Example button"
       },
+      "error_boundary": {
+        "title": "Something went wrong",
+        "unexpected": "An unexpected error occurred. You can try again or go to the homepage.",
+        "retryable": "The last action did not complete. Try again.",
+        "unrecoverable": "This error can't be retried. Go to the homepage to continue.",
+        "chunk_load": "Part of the page failed to load. Reload the page to get the latest version.",
+        "route": "This page is not available. Go to the homepage.",
+        "bootstrap": "The application could not start. Reload the page.",
+        "try_again": "Try again",
+        "reload": "Reload the page",
+        "go_home": "Go to homepage",
+        "details": "Error details"
+      },
       "not_found": {
         "title": "Page not found",
         "description": "The page you're looking for doesn't exist.",
@@ -24,8 +37,12 @@
         "error": {
           "default": "Something went wrong. Please try again later.",
           "details": "Error Details",
+          "title": "Something went wrong",
           "tryAgain": "Try again",
-          "unknown": "Unknown error"
+          "unknown": "Unknown error",
+          "unrecoverable": "Something went wrong and this form can't be retried. Use \"Back to homepage\" to leave this page.",
+          "reload": "Reload the page",
+          "reloadRequired": "Part of the page failed to load. Reload the page to get the latest version."
         },
         "password": {
           "hide": "Hide password",
@@ -74,6 +91,7 @@
               "option_3": "numbers"
             }
           },
+          "loading_result": "Loading the result…",
           "submitting": "Signing up…",
           "submit_button": "Sign Up",
           "error_text": "There was an error. Please check again",
@@ -158,6 +176,19 @@
       "button_example": {
         "label": "Приклад кнопки"
       },
+      "error_boundary": {
+        "title": "Щось пішло не так",
+        "unexpected": "Сталася неочікувана помилка. Спробуйте ще раз або перейдіть на головну сторінку.",
+        "retryable": "Останню дію не вдалося завершити. Спробуйте ще раз.",
+        "unrecoverable": "Цю помилку не можна повторити. Перейдіть на головну сторінку, щоб продовжити.",
+        "chunk_load": "Частина сторінки не завантажилася. Перезавантажте сторінку, щоб отримати актуальну версію.",
+        "route": "Ця сторінка недоступна. Перейдіть на головну сторінку.",
+        "bootstrap": "Не вдалося запустити застосунок. Перезавантажте сторінку.",
+        "try_again": "Спробувати ще раз",
+        "reload": "Перезавантажити сторінку",
+        "go_home": "На головну сторінку",
+        "details": "Деталі помилки"
+      },
       "not_found": {
         "title": "Сторінку не знайдено",
         "description": "Сторінку, яку ви шукаєте, не існує.",
@@ -178,8 +209,12 @@
         "error": {
           "default": "Щось пішло не так. Спробуйте пізніше.",
           "details": "Деталі помилки",
+          "title": "Щось пішло не так",
           "tryAgain": "Спробувати ще раз",
-          "unknown": "Невідома помилка"
+          "unknown": "Невідома помилка",
+          "unrecoverable": "Щось пішло не так, і цю форму не вдасться повторити. Скористайтеся посиланням «На головну сторінку», щоб вийти з цієї сторінки.",
+          "reload": "Перезавантажити сторінку",
+          "reloadRequired": "Частина сторінки не завантажилася. Перезавантажте сторінку, щоб отримати актуальну версію."
         },
         "password": {
           "hide": "Приховати пароль",
@@ -228,6 +263,7 @@
               "option_3": "цифри"
             }
           },
+          "loading_result": "Завантаження результату…",
           "submitting": "Обробка…",
           "submit_button": "Реєстрація",
           "error_text": "Виникла помилка. Перевірте ще раз",

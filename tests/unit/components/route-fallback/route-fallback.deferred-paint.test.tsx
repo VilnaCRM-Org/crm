@@ -65,6 +65,24 @@ describe('RouteFallback deferred paint', () => {
     expect(screen.getByRole('status')).toHaveTextContent('route_fallback.loading');
   });
 
+  it('reserves 50vh by default and lets an inline caller shrink the reserved height', () => {
+    const { unmount } = render(<RouteFallback />);
+    act(() => {
+      jest.advanceTimersByTime(SHOW_DELAY_MS);
+    });
+    expect(loaderWrappers()).toHaveLength(1);
+    expect(paintedBy('minHeight', 'auto')).toHaveLength(0);
+    unmount();
+
+    render(<RouteFallback minHeight="auto" />);
+    act(() => {
+      jest.advanceTimersByTime(SHOW_DELAY_MS);
+    });
+    expect(loaderWrappers()).toHaveLength(0);
+    expect(paintedBy('minHeight', 'auto')).toHaveLength(1);
+    expect(loaderPills()).toHaveLength(1);
+  });
+
   it('clears the pending paint timer when the route resolves before the delay', () => {
     const clearTimeoutSpy = jest.spyOn(window, 'clearTimeout');
 

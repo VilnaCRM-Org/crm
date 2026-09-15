@@ -106,7 +106,7 @@ Treat this as disclosure, not failure, unless a project gate fails.
 ## Supporting Files
 
 - [examples/frontend-error-boundary.md](examples/frontend-error-boundary.md):
-  Sentry boundary example.
+  the `UIErrorBoundary` + `boundaryErrorReporter` prop pattern (issue #116).
 - [reference/sentry-patterns.md](reference/sentry-patterns.md): capture points
   and safe context.
 - [reference/web-vitals.md](reference/web-vitals.md): runtime performance

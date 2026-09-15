@@ -12,12 +12,12 @@ to backend log lines.
 ## Context and Problem Statement
 
 Credential stuffing against the sign-in form completed without emitting a single client-side
-signal. `NoopErrorReporter.report()` was the only `ErrorReporter` bound in the container,
-`applyLoginRejection` and `applyRegisterRejection` wrote to UI state and emitted nothing, and no
-correlation identifier existed anywhere in the client — every request carried a fresh
-`X-Request-Id` and nothing tied those requests to one another. That is OWASP A09:2021, and it also
-means an incident responder holding a backend log line has no way to find the browser session that
-produced it.
+signal. `NoopErrorReporter.report()` (since deleted, issue #116) was the only `ErrorReporter`
+bound in the container, `applyLoginRejection` and `applyRegisterRejection` wrote to UI state and
+emitted nothing, and no correlation identifier existed anywhere in the client — every request
+carried a fresh `X-Request-Id` and nothing tied those requests to one another. That is OWASP
+A09:2021, and it also means an incident responder holding a backend log line has no way to find
+the browser session that produced it.
 
 Adding detection is easy; adding it _without_ creating a second, unreviewed egress path for user
 data is the actual problem. The repository already has exactly one sanctioned telemetry boundary
@@ -81,12 +81,18 @@ inherits the correlation identifiers, the `piiScrubber` pass and the DSN gate. W
 
 Emitters and their events:
 
-| Call site                                | Event                                 |
-| ---------------------------------------- | ------------------------------------- |
-| `AuthSecuritySignals` (login)            | `auth_failure` / `auth_failure_burst` |
-| `AuthSecuritySignals` (registration)     | `auth_failure` / `auth_failure_burst` |
-| `HttpErrorResponseParser` (401 / 403)    | `unauthorized_response`               |
-| `AppErrorBoundary` / `AuthErrorReporter` | `error_boundary_catch`                |
+| Call site                                               | Event                                 |
+| ------------------------------------------------------- | ------------------------------------- |
+| `AuthSecuritySignals` (login)                           | `auth_failure` / `auth_failure_burst` |
+| `AuthSecuritySignals` (registration)                    | `auth_failure` / `auth_failure_burst` |
+| `HttpErrorResponseParser` (401 / 403)                   | `unauthorized_response`               |
+| `UIErrorBoundary` / `RouteError` (`app`/`auth`/`route`) | `error_boundary_catch`                |
+
+The boundary row was `AppErrorBoundary` / `AuthErrorReporter` when this ADR was written; since
+ADR-007 (issue #116) every boundary surface — the shell's `UIErrorBoundary` (`app`), the auth
+feature's composition of it (`auth`), and the router's `onError` seam behind each route's
+`RouteError` (`route`) — reports through the container-free `boundaryErrorReporter`, which calls
+`securityEventCore.boundaryCatch(surface)` before capturing the error.
 
 **The payload is credential-free by construction.** `reason` is a bounded `AuthFailureReason`
 union derived from the `AuthError` kind (or `rate_limited` for HTTP 429), joined by a category, a
@@ -107,7 +113,7 @@ no user data. `sessionCorrelation` is registered by value under
 and `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` (default 60 000) are optional, validated by
 `EnvSchema`, and read through `securityEventConfig`. Reaching the threshold inside the window
 escalates `auth_failure` to `auth_failure_burst` with `severity: 'critical'` and stamps
-`thresholdBreached: true` — that is the event a monitoring backend alerts on.
+`thresholdCrossed: true` — that is the event a monitoring backend alerts on.
 
 ## Positive Consequences
 
