@@ -294,6 +294,7 @@ const noRawIntlSelectors = [
 const suspenseFallbackSelectors = [
   {
     selector:
+      'JSXAttribute[name.name="fallback"][value=null], ' +
       'JSXAttribute[name.name="fallback"] > Literal[value=""], ' +
       'JSXAttribute[name.name="fallback"] > JSXExpressionContainer > ' +
       ':matches(Literal[raw="null"], Identifier[name="undefined"], Literal[value=false], ' +

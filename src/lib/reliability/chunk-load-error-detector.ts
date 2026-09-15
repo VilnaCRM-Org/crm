@@ -1,7 +1,9 @@
-const CHUNK_LOAD_MESSAGES: readonly string[] = [
-  'loading chunk',
-  'loading css chunk',
-  'dynamically imported module',
+const RSPACK_CHUNK_PREFIXES: readonly string[] = ['loading chunk ', 'loading css chunk '];
+
+const DYNAMIC_IMPORT_FAILURES: readonly string[] = [
+  'failed to fetch dynamically imported module',
+  'error loading dynamically imported module',
+  'importing a module script failed',
 ];
 
 export class ChunkLoadErrorDetector {
@@ -10,11 +12,14 @@ export class ChunkLoadErrorDetector {
     const { name, message } = error as { name?: unknown; message?: unknown };
     if (name === 'ChunkLoadError') return true;
 
-    return typeof message === 'string' && this.mentionsChunk(message.toLowerCase());
+    return typeof message === 'string' && this.describesChunkFailure(message.toLowerCase());
   }
 
-  private mentionsChunk(message: string): boolean {
-    return CHUNK_LOAD_MESSAGES.some((fragment) => message.includes(fragment));
+  private describesChunkFailure(message: string): boolean {
+    return (
+      RSPACK_CHUNK_PREFIXES.some((prefix) => message.startsWith(prefix)) ||
+      DYNAMIC_IMPORT_FAILURES.some((failure) => message.includes(failure))
+    );
   }
 }
 

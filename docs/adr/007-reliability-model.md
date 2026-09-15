@@ -104,11 +104,13 @@ state is ever a dead end and a stale-deploy chunk failure is cured by the full n
 `<RouteError landmark=… />` to every mapped route, and the composer attaches one to the root
 route and to both layout routes of the protected branch, passing `'region'` under `AppLayout`
 and `'main'` elsewhere. `RouteError` is presentational: it classifies `useRouteError()`, and its
-reset re-navigates to the current location (`navigate('.', { replace: true })`) so **Try again**
-really re-renders the route; a cached `React.lazy` rejection re-throws, which is the bounded
-outcome. Reporting moved to the router seam: `routeComposer.routeErrorHandler()` builds the
-`onError` callback that `src/routes/routes.tsx` exports as `onRouteError` and `src/app.tsx` hands
-to `<RouterProvider onError>`, reporting with `surface: 'route'`.
+reset re-navigates to the current location — `navigate({ pathname, search, hash }, { replace:
+true, state })`, so the query string, fragment and navigation state survive and the index route
+is not rewritten to `/?index` — so **Try again** really re-renders the route; a cached
+`React.lazy` rejection re-throws, which is the bounded outcome. Reporting moved to the router
+seam: `routeComposer.routeErrorHandler()` builds the `onError` callback that
+`src/routes/routes.tsx` exports as `onRouteError` and `src/app.tsx` hands to
+`<RouterProvider onError>`, reporting with `surface: 'route'`.
 
 **The reporter arrives by prop.** `boundaryErrorReporter`
 (`src/services/error-reporting/boundary-error-reporter.ts`) is a container-free module singleton

@@ -3,7 +3,7 @@ import loadIsolated from '@tests/unit/utils/isolated-module';
 
 type DetectorModule = typeof import('@/lib/reliability/chunk-load-error-detector');
 
-// The message-fragment table is a module-level literal, so the module is loaded inside each test
+// The message-pattern tables are module-level literals, so the module is loaded inside each test
 // to keep a mutant in it reachable by an assertion (issue #171).
 const loadDetector = (): Promise<DetectorModule> =>
   loadIsolated(() => import('@/lib/reliability/chunk-load-error-detector'));
@@ -23,14 +23,30 @@ describe('ChunkLoadErrorDetector', () => {
   });
 
   it.each([
-    'Loading chunk 123 failed.',
-    'Loading CSS chunk 42 failed.',
+    'Loading chunk 123 failed.\n(error: https://crm.example/static/js/async/123.js)',
+    'Loading CSS chunk 42 failed.\n(https://crm.example/static/css/async/42.css)',
     'Failed to fetch dynamically imported module: https://crm.example/static/js/page.js',
-  ])('recognizes the bundler message %s under any error name', async (message) => {
+    'error loading dynamically imported module: https://crm.example/static/js/page.js',
+    'Importing a module script failed.',
+  ])('recognizes the bundler or browser message %s under any error name', async (message) => {
     const { default: detector } = await loadDetector();
 
     expect(detector.is(new TypeError(message))).toBe(true);
   });
+
+  it.each([
+    'Retry loading chunk 3 later',
+    'The dynamically imported module resolved with an unexpected shape',
+    'loading chunk',
+    'loading css chunk',
+  ])(
+    'does not treat an unrelated message that merely mentions %s as a chunk failure',
+    async (message) => {
+      const { default: detector } = await loadDetector();
+
+      expect(detector.is(new Error(message))).toBe(false);
+    }
+  );
 
   it('matches the message fragments case-insensitively', async () => {
     const { default: detector } = await loadDetector();

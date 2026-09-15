@@ -89,6 +89,7 @@ const S = {
   unsuffixedClass: classNamingPolicy.classNamingSelectors()[3].selector,
   // issue #116 — Suspense fallbacks, router construction, and route-object shape.
   suspenseNullishFallback:
+    'JSXAttribute[name.name="fallback"][value=null], ' +
     'JSXAttribute[name.name="fallback"] > Literal[value=""], ' +
     'JSXAttribute[name.name="fallback"] > JSXExpressionContainer > ' +
     ':matches(Literal[raw="null"], Identifier[name="undefined"], Literal[value=false], ' +
@@ -685,6 +686,15 @@ const FIXTURES = [
     id: 'suspense-fallback-empty-string',
     file: PROBES.component,
     code: 'const A = () => <Suspense fallback={""}><b /></Suspense>;',
+    covers: [S.suspenseNullishFallback],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #116',
+  },
+  {
+    id: 'suspense-fallback-boolean-shorthand',
+    file: PROBES.component,
+    code: 'const A = () => <Suspense fallback><b /></Suspense>;',
     covers: [S.suspenseNullishFallback],
     expect: 'fail',
     rule: 'no-restricted-syntax',
