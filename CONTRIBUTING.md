@@ -580,7 +580,57 @@ fix `main` before merging further pull requests, because their checks are runnin
 that is already broken.
 
 This run **detects**; it does not yet gate the release. `autorelease.yml` fires on the same
-push, so sequencing the release behind a green verification is tracked by issue #138.
+push, so sequencing the release behind a green verification remains a follow-up to issue #138.
+
+### Releases and the changelog
+
+Every push to `main` runs `generate changelog and create release` (`autorelease.yml`). It reads
+the conventional commits since the newest `v*` tag, bumps `version` in `package.json`, prepends
+the section to `CHANGELOG.md`, commits both, tags the commit `v<version>`, and creates the GitHub
+Release with the production bundle attached as `crm-dist-<version>.tar.gz`. The same run pushes
+the deployable image to `ghcr.io/vilnacrm-org/crm:<version>` and `:sha-<commit>`, so a deployed
+artifact can always be traced back to its release, its commit, and — through commitlint's
+`(#N)` scope — its issues. The `sbom` workflow then attaches the CycloneDX documents on the
+`release: published` event.
+
+**Versioning rules.** The bump follows the action's `angular` preset over the commits since the
+last tag: `feat` is a minor, `fix`/`perf`/`revert` are a patch, and a `!` in the header or a
+`BREAKING CHANGE` footer is a major. Commits of the hidden types (`chore`, `docs`, `ci`, `build`,
+`refactor`, `style`, `test`) do not appear in the changelog, and a push made only of those is
+skipped without a release (`skip-on-empty`). `package.json` is the version file and the invariant
+the train relies on is simple: **its `version` is at least as high as every existing `v*` tag**,
+so the next bump can never land on a tag that already exists.
+
+**Guards, in order.** `make check-release-version` runs before the changelog action and fails
+loudly when `package.json` sits below the highest tag, with the remedy in the message. The action
+runs with `git-push: false`; the workflow pushes the branch ref first and the tag ref only after,
+so a declined branch push leaves nothing on the remote. The tarball is attached at
+`gh release create` time, so a release never exists without its asset. `make check-release-health`
+(`release health`, daily) files or updates one `release-broken` issue when the newest run is red,
+the newest tag has no release, or the release lacks its tarball or GHCR image, and closes it when
+the train recovers.
+
+**Recovery.**
+
+- `release-version:` failure — `package.json` fell behind a tag. Set `version` to the highest tag's
+  version and merge that; the next push computes a version above it. Never delete a `v*` tag: the
+  `Protect release tags` ruleset forbids it, and a tag that carries a published release is a
+  contract downstream consumers may already pin. That is how the 2025 deadlock was resolved:
+  `v0.3.0` pointed at a rewritten release commit while `package.json` stayed at `0.2.0`, so every
+  push recomputed `v0.3.0` and died on `git tag`; the version was raised to `0.3.0` and the lost
+  `0.3.0` changelog section restored.
+- `GH006` on the branch push — `main`'s branch protection declined the release commit. A classic
+  rule with required status checks rejects every direct push whose commit carries no check runs,
+  and the release App cannot be an administrator, so the fix is a repository setting: move `main`
+  to a **ruleset** whose `bypass_actors` lists the VilnaCRM release App with `bypass_mode: always`
+  (or add it to the classic rule's bypass list where the plan allows), then re-run the failed
+  workflow. Record the change in
+  [`docs/governance/branch-protection.md`](docs/governance/branch-protection.md).
+- Missing tarball or image on an existing release — re-run the `Pack the release tarball` /
+  `Publish the production image` steps by re-running the failed job; both read the version from
+  `package.json` at that commit, so a re-run is idempotent.
+- The `release-broken` issue stays open while any offence persists and is closed by the next green
+  daily run; do not close it by hand.
 
 ## Dependency updates
 

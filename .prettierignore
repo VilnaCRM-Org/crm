@@ -36,3 +36,4 @@ src/api/generated/
 .trivy-cache/
 sbom/
 .secret-scan-control/
+release/

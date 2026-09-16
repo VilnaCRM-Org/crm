@@ -7,6 +7,7 @@
 /coverage
 
 /out/
+/release/
 /dist/
 /docker/apollo-server/out
 

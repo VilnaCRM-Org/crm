@@ -16,10 +16,26 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
+      packages: write
 
     steps:
+      - name: Verify the release App credentials are available
+        env:
+          APP_ID: ${{ secrets.VILNACRM_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.VILNACRM_APP_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$APP_ID" ] || [ -z "$APP_PRIVATE_KEY" ]; then
+            echo "::error::VILNACRM_APP_ID and VILNACRM_APP_PRIVATE_KEY must be" \
+              "visible to this repository. They are organisation secrets. Grant" \
+              "this repository access to both before re-running."
+            exit 1
+          fi
+
       # Issue #174: tibdex/github-app-token is archived. actions/create-github-app-token is
       # GitHub's maintained equivalent and a drop-in for this usage.
       - name: Generate token
@@ -34,6 +50,7 @@ jobs:
           # holds. The release flow only commits the changelog/version bump, pushes the tag,
           # and creates the release — all `contents`.
           permission-contents: write
+
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
@@ -41,6 +58,17 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ vars.NODE_VERSION }}
+
+      - name: Check the release version cannot collide with an existing tag
+        run: make check-release-version
+
+      # `git-push: false`: the action's own push sends the branch ref and the tag ref in one
+      # non-atomic command, so a branch rejected by protection still lands its tag and every
+      # later run dies on it. The step below pushes the branch first and the tag only after.
       - name: Conventional Changelog Action
         id: changelog
         uses: TriPSs/conventional-changelog-action@3c4970b6573374889b897403d2f1278c395ea0df # v5
@@ -48,18 +76,73 @@ jobs:
           github-token: ${{ steps.generate_token.outputs.token }}
           output-file: 'CHANGELOG.md'
           version-file: 'package.json'
-      # Issue #174: actions/create-release is archived and unmaintained. `gh release create` is
-      # equivalent for this usage and removes a third-party action instead of swapping one in.
-      # The tag already exists at this point — the changelog action creates and pushes it.
+          git-push: false
+
+      - name: Push the release commit, then its tag
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        env:
+          RELEASE_TOKEN: ${{ steps.generate_token.outputs.token }}
+          RELEASE_TAG: ${{ steps.changelog.outputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+          APP_SLUG: ${{ steps.generate_token.outputs.app-slug }}
+        run: |
+          set -euo pipefail
+
+          remote="https://x-access-token:${RELEASE_TOKEN}@github.com/${REPOSITORY}.git"
+          push_log="$RUNNER_TEMP/release-push.log"
+
+          if ! git push "$remote" "HEAD:${GITHUB_REF}" 2> "$push_log"; then
+            cat "$push_log" >&2
+            if grep -q 'GH006' "$push_log"; then
+              echo "::error::main's branch protection declined the release commit (GH006)." \
+                "The release App '${APP_SLUG}' cannot bypass the required status checks, so" \
+                "no release can land until an admin grants it a bypass. Nothing was pushed" \
+                "and no tag exists on the remote. Steps: CONTRIBUTING.md, 'Releases and the" \
+                "changelog'."
+            fi
+            exit 1
+          fi
+
+          git push "$remote" "refs/tags/${RELEASE_TAG}"
+
+      - name: Pack the release tarball
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        run: make release-tarball
+
       # Every dynamic value goes through env, never `${{ }}` interpolation inside the script, and
-      # the body arrives on stdin so generated changelog text can never be read as a gh flag.
+      # the body arrives from a file so generated changelog text can never be read as a gh flag.
       - name: Create Release
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
           GH_REPO: ${{ github.repository }}
           RELEASE_TAG: ${{ steps.changelog.outputs.tag }}
-          RELEASE_BODY: ${{ steps.changelog.outputs.clean_changelog }}
+          RELEASE_NOTES: ${{ steps.changelog.outputs.clean_changelog }}
         run: |
-          printf '%s\n' "$RELEASE_BODY" |
-            gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file -
+          set -euo pipefail
+          shopt -s nullglob
+
+          tarballs=(release/*.tar.gz)
+          if [ "${#tarballs[@]}" -ne 1 ]; then
+            echo "::error::expected exactly one tarball in release/, found ${#tarballs[@]};" \
+              "the make release-tarball step did not produce the release asset"
+            exit 1
+          fi
+
+          notes="$RUNNER_TEMP/release-notes.md"
+          printf '%s\n' "$RELEASE_NOTES" > "$notes"
+
+          gh release create "$RELEASE_TAG" "${tarballs[0]}" \
+            --title "$RELEASE_TAG" \
+            --notes-file "$notes"
+
+      - name: Log in to the GitHub Container Registry
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+          REGISTRY_USER: ${{ github.actor }}
+        run: printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
+
+      - name: Publish the production image
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        run: make publish-image

@@ -487,7 +487,8 @@ a row names a workflow that does not exist.
 | `docs link audit`                       | Weekly remote-link audit of the documentation    |
 | `nightly flake audit`                   | Nightly Playwright retries under a zero budget   |
 | `main verification`                     | Lint, codegen check and unit tests after a merge |
-| `generate changelog and create release` | Changelog, version bump, tag and GitHub release  |
+| `generate changelog and create release` | Changelog, version bump, tag, release assets     |
+| `release health`                        | Daily release-train check to a tracking issue    |
 | `sentry release and source maps`        | Sentry release with uploaded source maps         |
 
 Required branch-protection checks and the repository settings that back them are recorded in
