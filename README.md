@@ -449,6 +449,7 @@ a row names a workflow that does not exist.
 | `integration testing`      | Jest integration suite over the DI graph               |
 | `e2e testing`              | Playwright E2E, mobile touch lane, route coverage      |
 | `visual tests`             | Playwright visual regression against baselines         |
+| `accessibility testing`    | WCAG 2.1 AA axe gate on components and routes          |
 | `mutation testing`         | Sharded Stryker run gated at 100% (also on push)       |
 | `performance testing`      | Lighthouse desktop and mobile budgets                  |
 | `bundle size`              | Gzip budgets per entrypoint and chunk                  |

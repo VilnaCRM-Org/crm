@@ -220,6 +220,17 @@ production baselines produced by `make test-visual`. The trace viewer defaults t
 never wired into CI. `prod`/`playwright` stay isolated because the dev path composes only
 `docker-compose.yml` (`dev` + `mockoon`) and never starts the test stack.
 
+### Accessibility Tests
+
+```bash
+make test-a11y        # jest-axe component gate + Playwright route scans and keyboard contract
+make test-a11y-unit   # jest-axe half only (dev container)
+make test-a11y-e2e    # Playwright half only (starts the production stack)
+```
+
+Binding target: WCAG 2.1 AA — see "Accessibility acceptance standard and axe gates (issue #118)"
+under Code Quality and [`docs/accessibility/acceptance-standard.md`](docs/accessibility/acceptance-standard.md).
+
 ### Performance Tests
 
 ```bash
@@ -433,6 +444,91 @@ A suite that produced no summary is routed as an offence, never as a pass.
 re-running until green, and re-baselining a visual snapshot to force a pass are all out of
 policy — the same root-cause rule the ESLint, TypeScript, metrics, jscpd, and performance gates
 follow.
+
+### Accessibility acceptance standard and axe gates (issue #118)
+
+The binding conformance target is **WCAG 2.1 Level AA**, written down in
+[`docs/accessibility/acceptance-standard.md`](docs/accessibility/acceptance-standard.md) together
+with the definition of done and the exception process. Before it, accessibility rested on two
+probabilistic signals — `jsx-a11y` lint heuristics and a Lighthouse category score on two URLs —
+and the one keyboard test that existed wrapped every assertion in `if ((await count()) > 0)`,
+which never fired because the page serves `uk` while the spec hardcoded English text.
+
+Two axe-core layers now run in CI, both importing one rule set (`WCAG_AA_TAGS` in
+[`tests/utils/a11y/axe-config.ts`](tests/utils/a11y/axe-config.ts): `wcag2a`, `wcag2aa`, `wcag21a`,
+`wcag21aa`) and one allowlist (`A11Y_EXCEPTIONS`, same file):
+
+- **Component** — `jest-axe` through `expectNoA11yViolations(container)` over the real `UI*`
+  components and pages in `tests/unit/a11y/`. jsdom cannot evaluate `color-contrast` or
+  `link-in-text-block` (no layout, no canvas; axe 4.13 reports the gap via `console.error`, which
+  the console gate rejects), so those two are disabled there and WCAG 1.4.3 is owned by the
+  browser lane. `toHaveNoViolations` is registered in `jest.setup.ts` and
+  `tests/mutation/setup.ts`.
+- **Route** — `@axe-core/playwright` through `expectNoAxeViolations(page)` on every route in
+  `src/routes/route-paths.ts` (`tests/e2e/a11y/routes.a11y.spec.ts`), plus an explicit
+  no-positive-`tabindex` assertion, in all three desktop engines.
+- **Keyboard** — `expectTabOrder(page, stops)` in [`tests/utils/a11y/keyboard.ts`](tests/utils/a11y/keyboard.ts)
+  asserts each stop is exactly one Tab away, is `:focus-visible`, and (where the focus style is
+  static) that its computed style changed; `tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts` drives
+  the sign-in form with the keyboard only, including Space on the password toggle, Enter
+  submission and the `aria-invalid` / `aria-describedby` error semantics.
+
+`make test-a11y` runs both halves (`test-a11y-unit` in the dev container, `test-a11y-e2e` against
+the production stack); the `accessibility testing` workflow runs them as two jobs on every pull
+request, distinct from `static testing` and `performance testing`.
+
+**Exceptions are scoped, never rule-wide.** An `A11yException` names one rule id, a CSS selector
+the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
+not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
+`applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
+The allowlist today carries four `color-contrast` entries rooted in the Figma palette tokens
+(`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette), tracked in
+issue #276 and deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
+button and an `alt`-less image really fail, that a wildcard is never honoured, and that every
+entry carries all four fields.
+
+**No suppression:** fix the defect at the source, or add a scoped entry with its tracking issue —
+never `eslint-disable`, an `axe.configure` rule removal, `test.skip`/`test.fixme`, or a
+conditional around an assertion (`playwright/no-conditional-in-test` is `error`).
+
+### CI job hygiene: timeouts, runner Node pin, codecov.yml (issue #144)
+
+Every job in every workflow declares `timeout-minutes`, sized at roughly twice the slowest of the
+last eight successful runs, rounded up to the next five minutes, with a 15-minute floor for jobs
+that build a Docker image and 5 for API-only jobs; the ceiling is two hours. Every
+`actions/setup-node` step reads `node-version-file: '.nvmrc'` instead of a repository variable, so
+the runner Node cannot drift from the Dockerfile base image or `engines.node`, which
+[`tests/unit/tooling/ci-job-hygiene.test.ts`](tests/unit/tooling/ci-job-hygiene.test.ts) holds
+to one version. The same test fails the build on an unbounded job, a literal `node-version`, a
+`waitForTimeout(` anywhere under `tests/e2e` or `tests/visual`, or a `codecov.yml` whose statuses
+are informational.
+
+The visual helpers wait on conditions rather than the clock:
+[`tests/visual/wait-for-stable-dom.ts`](tests/visual/wait-for-stable-dom.ts) resolves once
+`document.readyState` is `complete`, `document.fonts.status` is `loaded`, and a DOM fingerprint has
+held for five consecutive frames, replacing the two 3-second sleeps in `stabilize-page.ts` and the
+300 ms sleep in the auth-skeleton spec (≈6 s per snapshot across 244 visual tests).
+
+**What the issue asked for and this repository cannot use as written:** an `actions/cache` step
+for the Bun cache does not apply — no workflow runs `bun install` on the runner; every install
+happens inside the Docker build that `make start` performs (measured at ~2:15 of a ~4:00 unit job).
+The lever there is Docker layer caching for the dev image, a separate, measured change. Browser
+layers are already a digest-pinned image (`docker-compose.test.yml`), and the flaky-test controls
+landed as the nightly flake audit (issue #186).
+
+### Release train (issue #138)
+
+`autorelease.yml` runs `make check-release-version` before the changelog action — `package.json`'s
+version must be at least as high as every `v*` tag, so the computed bump can never collide with an
+existing tag — runs the action with `git-push: false`, pushes the branch ref before the tag ref (a
+declined branch push strands nothing), creates the GitHub Release with the production bundle
+attached (`make release-tarball`) and pushes the deployable image to GHCR under the version and
+commit tags (`make publish-image`). `make check-release-health` (`release health`, daily) files or
+updates one `release-broken` issue when the newest run is red or the newest tag has no release,
+tarball or image, and closes it on recovery. Flow, versioning rules and recovery — including the
+branch-protection bypass the release App needs on `main` — live in `CONTRIBUTING.md`, "Releases
+and the changelog"; `tests/bats/release_train.bats` pins the guard, the monitor, the workflow shape
+and the make targets.
 
 ### Contract gates: semantic diff and upstream drift (issues #177, #178)
 
@@ -1068,9 +1164,11 @@ ESLint blocks close that, again through `make lint` with no new workflow:
 - `tests/{e2e,visual}/**/*.spec.ts` — `playwright/no-skipped-test`
   (**with `disallowFixme: true`** — the rule's default covers only `.skip`, and `.fixme`
   was the bypass actually in use), `playwright/no-focused-test`, and
-  `playwright/expect-expect` at `error`; `playwright/no-conditional-in-test` and
-  `playwright/no-wait-for-timeout` at `warn`, pending the conditional-assertion burndown
-  in `back-to-main.spec.ts`, then promoted.
+  `playwright/expect-expect`, `playwright/no-conditional-in-test` and
+  `playwright/no-wait-for-timeout`, all at `error`. The last two were promoted from `warn`
+  once the count-gated assertions in `back-to-main.spec.ts` (issue #118) and the fixed sleeps
+  in the visual helpers (issue #144) were burned down; `tests/unit/config/eslint-policy.test.ts`
+  pins every severity in this block.
 - `tests/{unit,integration,apollo-server}/**` — `jest/expect-expect`,
   `jest/no-disabled-tests`, `jest/no-focused-tests` (Jest has no `forbidOnly` equivalent,
   so a committed `it.only` would silently shrink the CI suite), and

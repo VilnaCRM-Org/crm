@@ -46,7 +46,7 @@ make:
   pr_comments: pr-comments
   fr_nfr_gate: null
   post_review_findings: null
-  a11y: null
+  a11y: test-a11y
 quality:
   coverage_statements: 100
   coverage_branches: 100

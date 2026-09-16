@@ -18,6 +18,7 @@ const SAMPLES = [
   'src/modules/user/features/auth/components/form-section/components/form-field.tsx', // component
   'src/modules/user/types/api-errors/validation-error.ts', // type-only file — type-purity gate (#88)
   'src/modules/user/features/auth/stores/use-auth-token.ts', // hook — must stay EXEMPT from #100
+  'tests/e2e/modules/back-to-main.spec.ts', // Playwright spec — test-liveness gates (#167, #118, #144)
 ];
 
 const eslint = new ESLint({ cwd: process.cwd() });

@@ -15,3 +15,8 @@ signIn	visual	tests/visual/visual-comparison.sign-in.spec.ts	Full-viewport-matri
 passwordRecovery	allowlisted	-	Declared ahead of the flow it names (issue #145): no route contract renders /password-recovery yet and the sign-in link to it is gated off by the forgotPassword feature flag, so there is nothing to exercise in a browser.
 notFound	e2e	tests/e2e/modules/not-found.spec.ts	Renders the catch-all route on an unknown path and follows its call to action home.
 notFound	visual	tests/visual/visual-comparison.not-found.spec.ts	Desktop and mobile screenshots of the catch-all route.
+home	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans the authenticated home route with axe against the WCAG 2.1 AA tag set.
+signUp	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /sign-up with axe against the WCAG 2.1 AA tag set.
+signIn	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /sign-in with axe against the WCAG 2.1 AA tag set.
+signIn	e2e	tests/e2e/a11y/sign-in-keyboard.a11y.spec.ts	Drives the sign-in form with the keyboard only: tab order, visible focus, Space and Enter activation, error semantics.
+notFound	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans the catch-all route with axe against the WCAG 2.1 AA tag set.

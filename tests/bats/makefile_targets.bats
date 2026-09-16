@@ -184,6 +184,7 @@ ci-test-unit-server|docker compose exec -T dev env TEST_ENV=server node ./node_m
 ci-test-integration|docker compose exec -T dev env TEST_ENV=integration node ./node_modules/jest/bin/jest.js --maxWorkers=2 --logHeapUsage|
 ci-test-mutation|docker compose exec -T dev bun x stryker run|
 ci-test-e2e|playwright test ./tests/e2e|
+test-a11y|docker compose exec -T dev env TEST_ENV=client node ./node_modules/jest/bin/jest.js --maxWorkers=2 --logHeapUsage --coverage=false ./tests/unit/a11y|playwright test ./tests/e2e/a11y
 ci-test-visual|playwright test ./tests/visual|
 ci-test-memory-leak|docker compose -f docker-compose.memory-leak.yml exec -T memory-leak node ./tests/memory-leak/run-memlab-tests.js|
 ci-test-load|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)|/loadTests/homepage.js

@@ -26,6 +26,8 @@ STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 TEST_DIR_BASE               = ./tests
 TEST_DIR_APOLLO             = $(TEST_DIR_BASE)/apollo-server
 TEST_DIR_E2E                = $(TEST_DIR_BASE)/e2e
+TEST_DIR_A11Y_E2E           = $(TEST_DIR_E2E)/a11y
+TEST_DIR_A11Y_UNIT          = $(TEST_DIR_BASE)/unit/a11y
 TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual
 
 LHCI                        = $(BUNX) lhci autorun
@@ -262,11 +264,13 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
 .PHONY: scan-secrets scan-dependencies scan-image sbom report-dependency-audit
 .PHONY: check-release-version check-release-health release-tarball publish-image
+.PHONY: test-a11y test-a11y-unit test-a11y-e2e
 all: help
 test: test-unit-all
 
 RUN_VISUAL                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 RUN_E2E                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
+RUN_A11Y_E2E                = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_A11Y_E2E)"
 RUN_E2E_AUDIT               = $(PLAYWRIGHT_AUDIT_CMD) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
 RUN_VISUAL_AUDIT            = $(PLAYWRIGHT_AUDIT_CMD) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 PLAYWRIGHT_TEST_CMD         = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
@@ -801,6 +805,14 @@ test-unit-client: ## Run all client-side unit tests using Jest (TEST_ENV=client)
 
 test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js env, TEST_ENV=server, target: $(TEST_DIR_APOLLO))
 	$(UNIT_TESTS) TEST_ENV=server $(JEST_CMD) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
+
+test-a11y: test-a11y-unit test-a11y-e2e ## Run the WCAG 2.1 AA accessibility gate: jest-axe over the UI components, then the Playwright route scans and keyboard contract (issue #118)
+
+test-a11y-unit: ## Run the jest-axe component gate and the allowlist contract in the dev container (issue #118)
+	$(UNIT_TESTS) TEST_ENV=client $(JEST_CMD) $(JEST_FLAGS) --coverage=false $(TEST_DIR_A11Y_UNIT)
+
+test-a11y-e2e: start-prod ## Run the Playwright axe route scans and the keyboard contract against the production stack (issue #118)
+	$(RUN_A11Y_E2E)
 
 ci-test-unit-client: ## Run client-side unit tests assuming ci-setup already started the dev environment
 	$(CI_TESTS) TEST_ENV=client $(JEST_CMD) $(JEST_FLAGS)
