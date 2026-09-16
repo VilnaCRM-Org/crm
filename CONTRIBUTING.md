@@ -604,8 +604,8 @@ so the next bump can never land on a tag that already exists.
 **Guards, in order.** `make check-release-version` runs before the changelog action and fails
 loudly when `package.json` sits below the highest tag, with the remedy in the message. The action
 runs with `git-push: false`; the workflow pushes the branch ref first and the tag ref only after,
-so a declined branch push leaves nothing on the remote. The tarball is attached at
-`gh release create` time, so a release never exists without its asset. `make check-release-health`
+so a declined branch push leaves nothing on the remote. The workflow hands the tarball
+to `gh release create`, and the health monitor detects a release that lacks it. `make check-release-health`
 (`release health`, daily) files or updates one `release-broken` issue when the newest run is red,
 the newest tag has no release, or the release lacks its tarball or GHCR image, and closes it when
 the train recovers.

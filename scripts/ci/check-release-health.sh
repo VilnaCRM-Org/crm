@@ -2,7 +2,8 @@
 # Scheduled release-train health monitor (issue #138): the newest autorelease run on main must
 # have succeeded, and the newest v* tag must carry a GitHub release with its dist tarball and a
 # matching GHCR image. An offence files or updates one tracking issue and exits 1; a healthy
-# train closes that issue. A GitHub API failure exits 1 without filing anything.
+# train closes that issue. A run still in flight defers the check; a GitHub API failure exits 1
+# without filing anything.
 #
 # Inputs (env):
 #   GH_REPO                       owner/name                        (required)
@@ -34,21 +35,29 @@ offend() {
 "
 }
 
-RUN_JSON="$(gh run list --workflow "$RELEASE_WORKFLOW" --branch main --status completed --limit 1 \
-  --json conclusion,url,headSha --jq '.[0] | select(. != null) | "\(.conclusion) \(.headSha) \(.url)"')" \
-  || fail "could not list the completed runs of $RELEASE_WORKFLOW"
+RUN_JSON="$(gh run list --workflow "$RELEASE_WORKFLOW" --branch main --limit 1 \
+  --json status,conclusion,url,headSha \
+  --jq '.[0] | select(. != null) | "\(.status) \(.conclusion) \(.headSha) \(.url)"')" \
+  || fail "could not list the runs of $RELEASE_WORKFLOW"
 
 RUN_SHA=''
 if [ -n "$RUN_JSON" ]; then
-  RUN_CONCLUSION="${RUN_JSON%% *}"
+  RUN_STATUS="${RUN_JSON%% *}"
   rest="${RUN_JSON#* }"
+  RUN_CONCLUSION="${rest%% *}"
+  rest="${rest#* }"
   RUN_SHA="${rest%% *}"
   RUN_URL_LATEST="${rest#* }"
+  if [ "$RUN_STATUS" != 'completed' ]; then
+    printf 'release-health: deferred, the newest %s run at %s is still %s: %s\n' \
+      "$RELEASE_WORKFLOW" "$RUN_SHA" "$RUN_STATUS" "$RUN_URL_LATEST"
+    exit 0
+  fi
   if [ "$RUN_CONCLUSION" != 'success' ]; then
-    offend "the newest completed \`$RELEASE_WORKFLOW\` run on \`main\` concluded **$RUN_CONCLUSION** at \`$RUN_SHA\`: $RUN_URL_LATEST"
+    offend "the newest \`$RELEASE_WORKFLOW\` run on \`main\` concluded **$RUN_CONCLUSION** at \`$RUN_SHA\`: $RUN_URL_LATEST"
   fi
 else
-  printf 'release-health: no completed %s run on main yet\n' "$RELEASE_WORKFLOW"
+  printf 'release-health: no %s run on main yet\n' "$RELEASE_WORKFLOW"
 fi
 
 TAGS="$(gh api --paginate "repos/$GH_REPO/tags" --jq '.[].name')" \

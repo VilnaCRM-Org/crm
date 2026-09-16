@@ -20,7 +20,7 @@ workflow_code() {
 }
 
 code_line() {
-  workflow_code | grep -E "$1" | head -n 1 | cut -d: -f1
+  workflow_code | grep -E -- "$1" | head -n 1 | cut -d: -f1
 }
 
 step_code() {
@@ -124,7 +124,7 @@ setup() {
 
   export FAKE_GIT_TAGS=''
   export FAKE_GIT_TAG_LIST_FAILS=0
-  export FAKE_GH_RUN='success 0123456789ab https://github.com/o/r/actions/runs/1'
+  export FAKE_GH_RUN='completed success 0123456789ab https://github.com/o/r/actions/runs/1'
   export FAKE_GH_TAGS='v0.3.0'
   export FAKE_GH_RELEASE_ASSETS='crm-dist-0.3.0.tar.gz'
   export FAKE_GH_IMAGE_TAGS="0.3.0
@@ -265,7 +265,7 @@ run_health() {
 }
 
 @test "health monitor files an issue and exits 1 when the newest autorelease run failed" {
-  export FAKE_GH_RUN='failure feedfacecafe https://github.com/o/r/actions/runs/9'
+  export FAKE_GH_RUN='completed failure feedfacecafe https://github.com/o/r/actions/runs/9'
   run_health
   [ "$status" -eq 1 ]
   assert_log_contains 'gh issue create --label release-broken --title Release train is broken: newest tag v0.3.0, newest run feedfacecafe'
@@ -299,7 +299,7 @@ run_health() {
 }
 
 @test "health monitor stays quiet when the offences are already recorded" {
-  export FAKE_GH_RUN='failure feedfacecafe https://github.com/o/r/actions/runs/9'
+  export FAKE_GH_RUN='completed failure feedfacecafe https://github.com/o/r/actions/runs/9'
   export FAKE_GH_ISSUE_NUMBER=42
   run_health
   [ "$status" -eq 1 ]
@@ -310,6 +310,16 @@ run_health() {
   [ "$status" -eq 1 ]
   assert_output_contains 'already records this state'
   run grep -E 'gh issue (comment|edit|create)' "$COMMAND_LOG"
+  [ "$status" -ne 0 ]
+}
+
+@test "health monitor defers instead of filing while the newest release run is still in flight" {
+  export FAKE_GH_RUN='in_progress null feedfacecafe https://github.com/o/r/actions/runs/9'
+  export FAKE_GH_RELEASE_ERROR='gh: Not Found (HTTP 404)'
+  run_health
+  [ "$status" -eq 0 ]
+  assert_output_contains 'deferred, the newest autorelease.yml run at feedfacecafe is still in_progress'
+  run grep -E 'gh (api|issue)' "$COMMAND_LOG"
   [ "$status" -ne 0 ]
 }
 
@@ -347,7 +357,7 @@ run_health() {
 
 @test "autorelease tells the changelog action not to push and never uses --follow-tags" {
   [ -n "$(code_line '^[0-9]+: +git-push: false$')" ]
-  [ -z "$(code_line -- '--follow-tags')" ]
+  [ -z "$(code_line '--follow-tags')" ]
 }
 
 @test "autorelease pushes the branch ref before the fully qualified tag ref" {
