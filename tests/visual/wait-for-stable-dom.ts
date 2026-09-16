@@ -22,7 +22,7 @@ async function waitForStableDom(page: Page): Promise<void> {
       const fingerprint = [
         document.readyState,
         document.fonts.status,
-        document.documentElement.outerHTML.length,
+        document.documentElement.outerHTML,
       ].join('|');
       const state = probe.pwStableDom ?? { last: '', count: 0 };
       state.count = state.last === fingerprint ? state.count + 1 : 0;
