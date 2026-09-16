@@ -3,6 +3,7 @@ import { Page, expect } from '@playwright/test';
 import { seedPreloadedAuthToken } from '@tests/utils/seed-preloaded-auth-token';
 
 import { PAGES, timeoutDuration } from './constants';
+import waitForStableDom from './wait-for-stable-dom';
 
 const injectedPages = new WeakSet<Page>();
 
@@ -55,12 +56,12 @@ async function stabilizePage(page: Page, url: string): Promise<void> {
       }
     }
   });
-  await page.waitForTimeout(timeoutDuration);
+  await waitForStableDom(page);
 
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
 
   await waitForNetworkIdle(page);
-  await page.waitForTimeout(timeoutDuration);
+  await waitForStableDom(page);
 }
 
 export default stabilizePage;

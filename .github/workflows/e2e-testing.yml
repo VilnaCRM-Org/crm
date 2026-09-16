@@ -14,6 +14,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -22,7 +23,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ vars.NODE_VERSION }}
+          node-version-file: '.nvmrc'
 
       # Runs before the Docker build so a route that ships without browser coverage fails in
       # seconds instead of after the full suite (issue #169).

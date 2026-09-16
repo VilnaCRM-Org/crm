@@ -63,6 +63,7 @@ jobs:
     name: preloaded-auth seed gate
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
 
@@ -75,7 +76,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ vars.NODE_VERSION }}
+          node-version-file: '.nvmrc'
 
       # Only the dev image is needed: the gate builds its own production image and runs the
       # scanner with `docker compose run`, so mockoon/apollo readiness is pure flake surface.
@@ -108,7 +109,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ vars.NODE_VERSION }}
+          node-version-file: '.nvmrc'
 
       - name: Build the production image and assert the header baseline
         run: make check-security-headers

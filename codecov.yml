@@ -1,0 +1,40 @@
+# Codecov status contract (issue #144). The Jest coverageThreshold in jest.config.ts is the
+# load-bearing 100% gate; these statuses pin how the uploaded report is scored so a later
+# token change cannot silently turn them informational.
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: '90...100'
+
+  status:
+    project:
+      default:
+        target: 100%
+        threshold: 0%
+        informational: false
+        if_ci_failed: error
+        only_pulls: true
+    patch:
+      default:
+        target: 100%
+        threshold: 0%
+        informational: false
+        if_ci_failed: error
+        only_pulls: true
+
+ignore:
+  - '**/*.d.ts'
+  - '**/*.stories.ts'
+  - '**/*.stories.tsx'
+  - 'src/api/generated/**'
+  - 'tests/**'
+
+comment:
+  layout: 'condensed_header, condensed_files, condensed_footer'
+  behavior: default
+  require_changes: true

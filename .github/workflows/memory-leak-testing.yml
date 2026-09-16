@@ -14,6 +14,7 @@ concurrency:
 jobs:
   memory-leak-testing:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     steps:
@@ -25,7 +26,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: ${{ vars.NODE_VERSION }}
+          node-version-file: '.nvmrc'
 
       - name: Run memory leak testing
         run: make test-memory-leak
