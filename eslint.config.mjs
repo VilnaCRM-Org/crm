@@ -1021,9 +1021,8 @@ export default [
   // verification while verifying nothing — and the 100/100/100/100 Jest coverage gate
   // measures execution, not assertion, so it stays green either way. `forbidOnly` in
   // `playwright.config.ts` catches only `.only`; `.skip`/`.fixme`/`xit` merged silently.
-  // Structural rules land at `error`; the two behavioral rules start at `warn` pending the
-  // conditional-assertion burndown, then get promoted. Spec files only — helpers under
-  // `tests/visual/` and `tests/utils/` are not test bodies.
+  // Every rule is at `error`. Spec files only — helpers under `tests/visual/` and
+  // `tests/utils/` are not test bodies.
   {
     files: ['tests/e2e/**/*.spec.ts', 'tests/visual/**/*.spec.ts'],
     plugins: { playwright },
@@ -1041,8 +1040,11 @@ export default [
         'error',
         { assertFunctionPatterns: ['^take\\w*Snapshot$', '^expect\\w+$'] },
       ],
-      'playwright/no-conditional-in-test': 'warn',
-      'playwright/no-wait-for-timeout': 'warn',
+      // Promoted from `warn` once the `back-to-main.spec.ts` count-gated assertions and the
+      // last fixed sleeps were burned down (issues #118, #144): a guarded assertion or a timed
+      // wait is a test that can pass without verifying anything.
+      'playwright/no-conditional-in-test': 'error',
+      'playwright/no-wait-for-timeout': 'error',
     },
   },
   {

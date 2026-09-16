@@ -290,6 +290,18 @@ printf 'check-security-headers.sh SECURITY_HEADERS_PROBE_IMAGE=%s SECURITY_HEADE
 exit 0
 EOF
 
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/check-release-version.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'check-release-version.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/check-release-health.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'check-release-health.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
   chmod +x \
     "$MAKEFILE_SANDBOX/scripts/lint-metrics.sh" \
     "$MAKEFILE_SANDBOX/scripts/get-pr-comments.sh" \
@@ -302,6 +314,8 @@ EOF
     "$MAKEFILE_SANDBOX/scripts/ci/assert-secret-scan-detects.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/report-dependency-audit.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/check-security-headers.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/check-release-version.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/check-release-health.sh" \
     "$MAKEFILE_SANDBOX/scripts/check-env-sync.sh"
 }
 

@@ -26,6 +26,8 @@ STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 TEST_DIR_BASE               = ./tests
 TEST_DIR_APOLLO             = $(TEST_DIR_BASE)/apollo-server
 TEST_DIR_E2E                = $(TEST_DIR_BASE)/e2e
+TEST_DIR_A11Y_E2E           = $(TEST_DIR_E2E)/a11y
+TEST_DIR_A11Y_UNIT          = $(TEST_DIR_BASE)/unit/a11y
 TEST_DIR_VISUAL             = $(TEST_DIR_BASE)/visual
 
 LHCI                        = $(BUNX) lhci autorun
@@ -169,6 +171,15 @@ GITLEAKS_IMAGE              = ghcr.io/gitleaks/gitleaks:v8.30.1@sha256:c00b6bd0a
 GITLEAKS_ARGS               = git --redact --no-banner --exit-code 1 --config .gitleaks.toml
 DEPENDENCY_AUDIT_SCRIPT     = scripts/ci/report-dependency-audit.sh
 SECRET_SCAN_CONTROL_SCRIPT  = scripts/ci/assert-secret-scan-detects.sh
+# Release train (issue #138). The tarball and image both read the version the changelog action
+# just wrote to package.json, so the release, the asset and the image tag cannot disagree.
+RELEASE_VERSION_SCRIPT      = scripts/ci/check-release-version.sh
+RELEASE_HEALTH_SCRIPT       = scripts/ci/check-release-health.sh
+RELEASE_VERSION             = $(shell node -pe 'require("./package.json").version')
+RELEASE_IMAGE               = ghcr.io/vilnacrm-org/crm
+RELEASE_DIR                 = ./release
+RELEASE_TARBALL             = $(RELEASE_DIR)/crm-dist-$(RELEASE_VERSION).tar.gz
+RELEASE_GIT_SHA             = $(shell git rev-parse --short=12 HEAD)
 # Locale-parity gate (issue #151). Pure Node over the working tree, so it runs on the host
 # like lint-lockfile and check-env-sync instead of inside the dev container.
 I18N_PARITY_SCRIPT          = scripts/ci/check-i18n-parity.mjs
@@ -252,11 +263,14 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: all test
 .PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
 .PHONY: scan-secrets scan-dependencies scan-image sbom report-dependency-audit
+.PHONY: check-release-version check-release-health release-tarball publish-image
+.PHONY: test-a11y test-a11y-unit test-a11y-e2e
 all: help
 test: test-unit-all
 
 RUN_VISUAL                  = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 RUN_E2E                     = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
+RUN_A11Y_E2E                = $(PLAYWRIGHT_TEST) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_A11Y_E2E)"
 RUN_E2E_AUDIT               = $(PLAYWRIGHT_AUDIT_CMD) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_E2E)"
 RUN_VISUAL_AUDIT            = $(PLAYWRIGHT_AUDIT_CMD) "$(PLAYWRIGHT_BIN) test $(TEST_DIR_VISUAL)"
 PLAYWRIGHT_TEST_CMD         = $(PLAYWRIGHT_DOCKER_CMD) $(PLAYWRIGHT_BIN) test
@@ -492,6 +506,22 @@ sbom: ## Generate CycloneDX SBOMs for the production image and the lockfile into
 report-dependency-audit: ## Report every fixable HIGH/CRITICAL CVE in the full lockfile, dev tooling included, to one tracking issue (scheduled)
 	mkdir -p "$(TRIVY_CACHE_DIR)"
 	TRIVY_RUN='$(TRIVY_RUN)' TRIVY_IMAGE='$(TRIVY_IMAGE)' TRIVY_ARGS='$(TRIVY_ARGS)' sh $(DEPENDENCY_AUDIT_SCRIPT)
+
+check-release-version: ## Fail before a release when package.json's version sits below an existing v* tag (issue #138)
+	bash $(RELEASE_VERSION_SCRIPT) .
+
+release-tarball: build-out ## Pack the production bundle into $(RELEASE_DIR) for the GitHub Release (issue #138)
+	mkdir -p $(RELEASE_DIR)
+	tar -czf $(RELEASE_TARBALL) -C ./out .
+	@echo "✅ Release tarball written to $(RELEASE_TARBALL)"
+
+publish-image: ## Build the production image and push it to GHCR tagged with the package.json version and the commit (issue #138)
+	docker build -t $(RELEASE_IMAGE):$(RELEASE_VERSION) -t $(RELEASE_IMAGE):sha-$(RELEASE_GIT_SHA) -f Dockerfile --target production .
+	docker push $(RELEASE_IMAGE):$(RELEASE_VERSION)
+	docker push $(RELEASE_IMAGE):sha-$(RELEASE_GIT_SHA)
+
+check-release-health: ## Report a stalled release train (red autorelease, tag without release, missing tarball or image) to one tracking issue (scheduled)
+	sh $(RELEASE_HEALTH_SCRIPT)
 
 # Compose-file validation (issue #161). Prettier normalizes YAML but its bundled parser sets
 # uniqueKeys: false, so it silently accepts a duplicate mapping key — the last-key-wins defect
@@ -775,6 +805,14 @@ test-unit-client: ## Run all client-side unit tests using Jest (TEST_ENV=client)
 
 test-unit-server: ## Run server-side unit tests for Apollo using Jest (Node.js env, TEST_ENV=server, target: $(TEST_DIR_APOLLO))
 	$(UNIT_TESTS) TEST_ENV=server $(JEST_CMD) $(JEST_FLAGS) $(TEST_DIR_APOLLO)
+
+test-a11y: test-a11y-unit test-a11y-e2e ## Run the WCAG 2.1 AA accessibility gate: jest-axe over the UI components, then the Playwright route scans and keyboard contract (issue #118)
+
+test-a11y-unit: ## Run the jest-axe component gate and the allowlist contract in the dev container (issue #118)
+	$(UNIT_TESTS) TEST_ENV=client $(JEST_CMD) $(JEST_FLAGS) --coverage=false $(TEST_DIR_A11Y_UNIT)
+
+test-a11y-e2e: start-prod ## Run the Playwright axe route scans and the keyboard contract against the production stack (issue #118)
+	$(RUN_A11Y_E2E)
 
 ci-test-unit-client: ## Run client-side unit tests assuming ci-setup already started the dev environment
 	$(CI_TESTS) TEST_ENV=client $(JEST_CMD) $(JEST_FLAGS)

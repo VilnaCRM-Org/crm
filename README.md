@@ -449,6 +449,7 @@ a row names a workflow that does not exist.
 | `integration testing`      | Jest integration suite over the DI graph               |
 | `e2e testing`              | Playwright E2E, mobile touch lane, route coverage      |
 | `visual tests`             | Playwright visual regression against baselines         |
+| `accessibility testing`    | WCAG 2.1 AA axe gate on components and routes          |
 | `mutation testing`         | Sharded Stryker run gated at 100% (also on push)       |
 | `performance testing`      | Lighthouse desktop and mobile budgets                  |
 | `bundle size`              | Gzip budgets per entrypoint and chunk                  |
@@ -487,7 +488,8 @@ a row names a workflow that does not exist.
 | `docs link audit`                       | Weekly remote-link audit of the documentation    |
 | `nightly flake audit`                   | Nightly Playwright retries under a zero budget   |
 | `main verification`                     | Lint, codegen check and unit tests after a merge |
-| `generate changelog and create release` | Changelog, version bump, tag and GitHub release  |
+| `generate changelog and create release` | Changelog, version bump, tag, release assets     |
+| `release health`                        | Daily release-train check to a tracking issue    |
 | `sentry release and source maps`        | Sentry release with uploaded source maps         |
 
 Required branch-protection checks and the repository settings that back them are recorded in

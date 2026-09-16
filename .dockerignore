@@ -28,3 +28,6 @@ node_modules
 sbom
 .secret-scan-control
 .scan-image.tar
+
+release
+out

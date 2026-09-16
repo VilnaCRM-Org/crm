@@ -27,6 +27,7 @@ const COMPONENT_TSX =
   'src/modules/user/features/auth/components/form-section/components/form-field.tsx';
 const TYPE_ONLY_TS = 'src/modules/user/types/api-errors/validation-error.ts';
 const HOOK_TS = 'src/modules/user/features/auth/stores/use-auth-token.ts';
+const PLAYWRIGHT_SPEC = 'tests/e2e/modules/back-to-main.spec.ts';
 
 interface ResolvedConfig {
   rules: Record<string, unknown>;
@@ -133,6 +134,17 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
       false
     );
     expect(hasSelectorContaining(rulesFor(LOGIC_TS)['no-restricted-syntax'], shape)).toBe(false);
+  });
+
+  it('pins the Playwright liveness gates (issues #167, #118, #144) at error on spec files', () => {
+    const rules = rulesFor(PLAYWRIGHT_SPEC);
+    expect(severityOf(rules['playwright/no-skipped-test'])).toBe(2);
+    expect(jsonOf(rules['playwright/no-skipped-test'])).toContain('"disallowFixme":true');
+    expect(severityOf(rules['playwright/no-focused-test'])).toBe(2);
+    expect(severityOf(rules['playwright/expect-expect'])).toBe(2);
+    // Promoted from warn once the count-gated assertions and fixed sleeps were burned down.
+    expect(severityOf(rules['playwright/no-conditional-in-test'])).toBe(2);
+    expect(severityOf(rules['playwright/no-wait-for-timeout'])).toBe(2);
   });
 
   it('keeps the module/feature public-API import boundary (issue #107) pinned', () => {

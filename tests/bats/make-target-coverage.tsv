@@ -146,3 +146,10 @@ i18n-generate	bats	tests/bats/makefile_targets.bats	Validated as the --write reg
 lint-security-headers	bats	tests/bats/security_headers.bats	Validated as the in-container serve.json drift check against config/security-headers.json (issue #113).
 security-headers-generate	bats	tests/bats/security_headers.bats	Validated as the in-container serve.json regeneration from config/security-headers.json (issue #113).
 check-security-headers	bats	tests/bats/security_headers.bats	Validated as the production-image build plus the header-baseline runner over its responses (issue #113).
+check-release-version	bats	tests/bats/release_train.bats	Validated as the wrapper around the release version preflight that runs before the changelog action (issue #138).
+check-release-health	bats	tests/bats/release_train.bats	Validated as the wrapper around the scheduled release-train health monitor (issue #138).
+release-tarball	bats	tests/bats/release_train.bats	Validated as the production bundle extraction followed by the versioned tarball for the GitHub Release (issue #138).
+publish-image	bats	tests/bats/release_train.bats	Validated as the production image build pushed to GHCR under the version and commit tags (issue #138).
+test-a11y	bats	tests/bats/makefile_targets.bats	Validated as the aggregate that runs the jest-axe component gate before the Playwright a11y lane (issue #118).
+test-a11y-unit	ci	.github/workflows/a11y-testing.yml	Executed directly by the accessibility PR workflow (issue #118).
+test-a11y-e2e	ci	.github/workflows/a11y-testing.yml	Executed directly by the accessibility PR workflow against the production stack (issue #118).

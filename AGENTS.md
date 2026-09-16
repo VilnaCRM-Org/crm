@@ -1779,6 +1779,7 @@ make test-unit-server   # Server unit tests
 make test-e2e           # E2E tests
 make test-e2e-ui        # E2E with UI
 make test-visual        # Visual regression
+make test-a11y          # WCAG 2.1 AA axe gate: components (jest-axe) + routes/keyboard (Playwright)
 make test-memory-leak   # Memory leak detection
 make test-load          # Load testing
 make test-mutation      # Mutation testing

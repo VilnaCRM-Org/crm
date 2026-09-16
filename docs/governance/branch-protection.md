@@ -165,9 +165,13 @@ conversation resolution closes the one where a review comment is left unanswered
 
 One writer needs a bypass. `autorelease.yml` pushes the changelog and version-bump commit and the
 release tag straight to `main` with the GitHub App token, and that push is rejected by a
-pull-request requirement it cannot satisfy. Grant the bypass to that App alone, as a ruleset
-bypass actor, and to no human role — including administrators — so the exemption is exactly as
-wide as the automation that needs it.
+pull-request requirement it cannot satisfy — and equally by the required status checks already
+applied to `main`: a direct push carries no check runs, so the classic rule declines it with
+`GH006` ("N of N required status checks are expected") whatever the actor's token can do. The
+release workflow names this case in its failure annotation and stops before any tag is pushed
+(issue #138). Grant the bypass to that App alone, as a ruleset bypass actor with `bypass_mode:
+always`, and to no human role — including administrators — so the exemption is exactly as wide as
+the automation that needs it.
 
 > **Outstanding prerequisite.** Every "No" row is a maintainer action under **Settings → Rules →
 > Rulesets** (preferred: rulesets carry an explicit bypass list, which classic branch protection
