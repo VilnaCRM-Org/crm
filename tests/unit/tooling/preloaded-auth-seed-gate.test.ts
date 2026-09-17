@@ -55,11 +55,11 @@ describe('preloaded-auth-token seed gate (issue #158)', () => {
 
   it('keeps the token key declared so the bundler always has a value to inline', () => {
     // Deleting the key would leave `process.env.REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` unreplaced,
-    // which is a runtime `process` read in a dev build. check-env-sync only enforces parity
-    // between the two files, so neither gate would notice both losing the line together.
+    // which is a runtime `process` read in a dev build. .env.example is the only tracked copy
+    // (issue #142) and check-env-sync only enforces parity of the local .env against it, so no
+    // other gate would notice the template losing the line.
     const declaration = new RegExp(`^${ENV_TOKEN_VAR}=`, 'm');
 
-    expect(readFile('.env')).toMatch(declaration);
     expect(readFile('.env.example')).toMatch(declaration);
   });
 

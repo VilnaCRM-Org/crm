@@ -233,23 +233,26 @@ script cannot execute, which is the property the CSP exists to protect.
 (`REACT_APP_MOCKOON_URL`, `REACT_APP_GRAPHQL_URL`, and the Sentry ingest host from
 `REACT_APP_SENTRY_DSN` when it is set), and to the runtime overrides an operator sets at container
 start (`APP_CONFIG_API_BASE_URL`, `APP_CONFIG_GRAPHQL_URL`; issue #145). The generator reads the
-build-time values from the tracked `.env`, so the committed `serve.json` is identical on every
-machine; the container entrypoint renders the served `/app/serve.json` from the immutable baseline
-the image ships (`/app/config/serve.json`) plus the origins of the runtime overrides, after it
-renders the same values into the HTML shell, so a repointed API is reachable under the enforced
+build-time values from the tracked `.env.example` — never from the untracked local `.env`
+(issue #142) — so the committed `serve.json` is identical on every machine; the container
+entrypoint renders the served `/app/serve.json` from the immutable baseline the image ships
+(`/app/config/serve.json`) plus the origins of the runtime overrides, after it renders the same
+values into the HTML shell, so a repointed API is reachable under the enforced
 policy and an override that is changed or cleared between restarts leaves no stale origin
 behind. Runtime overrides extend the list rather than replace it, and the entrypoint refuses to
 start on a value that is not an absolute `http(s)` URL. Sentry is a build-time value:
 a DSN set at build time allows its ingest origin, an empty DSN allows nothing extra.
 
 **The build-time origins are the template's.** The committed `serve.json` allows
-`http://localhost:8080` and `http://localhost:4000` because the tracked `.env` — the same file
-RSBuild inlines into the bundle — points the app there; the CSP has to match the bundle or the
-app cannot reach its own API. A deployment that changes the `REACT_APP_*` URLs at build time
-regenerates `serve.json` in the same change (the drift gate refuses anything else), and a
+`http://localhost:8080` and `http://localhost:4000` because the tracked `.env.example` points the
+app there, and every build — CI, the Docker image, a fresh clone — inlines a `.env` that `make`
+copied from that template (issue #142); the CSP has to match the bundle or the app cannot reach
+its own API. A deployment that changes the `REACT_APP_*` URLs at build time changes them in the
+template and regenerates `serve.json` in the same change (the drift gate refuses anything else);
+a local `.env` that points elsewhere changes the dev bundle only, never the committed policy. A
 deployment that repoints the API at container start gets its origins appended by the entrypoint.
-Removing the localhost fallbacks from the consumers themselves is the `.env` untracking work in
-issue #142, not a header-policy change.
+Removing the localhost fallbacks from the consumers themselves is a separate, runtime-behaviour
+change, not a header-policy change.
 
 **Enforcement.** Three checks, none of which relies on the Lighthouse `best-practices` score:
 

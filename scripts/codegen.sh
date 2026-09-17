@@ -2,9 +2,9 @@
 # scripts/codegen.sh - regenerate the typed API contract artifacts.
 #
 # Single source of truth per transport:
-#   - GraphQL: the user-service SDL (pinned by GRAPHQL_SCHEMA_VERSION in .env) ->
+#   - GraphQL: the user-service SDL (pinned by GRAPHQL_SCHEMA_VERSION in .env.example) ->
 #     graphql-codegen -> src/api/generated/graphql.ts
-#   - REST:    the user-service OpenAPI spec (pinned by OPENAPI_SPEC_VERSION in .env) ->
+#   - REST:    the user-service OpenAPI spec (pinned by OPENAPI_SPEC_VERSION in .env.example) ->
 #     openapi-typescript -> src/api/generated/openapi.ts
 #
 # The two upstream versions are reconciled and asserted equal by
@@ -16,16 +16,21 @@ set -eu
 CACHE_DIR=".codegen-cache"
 GENERATED_DIR="src/api/generated"
 
+# The pins are read from the tracked template, never from the untracked local .env (issue
+# #142): codegen, the contract gates and CI must all resolve the version that is committed,
+# and `make check-env-sync` keeps the local copy aligned with it.
+CONTRACT_ENV_FILE="${CONTRACT_ENV_FILE:-.env.example}"
+
 read_env() {
-  # Read a bare KEY=value from .env (no interpolation, no export needed).
-  grep -E "^$1=" .env | head -n1 | cut -d= -f2-
+  # Read a bare KEY=value from the env file (no interpolation, no export needed).
+  grep -E "^$1=" "$CONTRACT_ENV_FILE" | head -n1 | cut -d= -f2-
 }
 
 GRAPHQL_SCHEMA_VERSION="$(read_env GRAPHQL_SCHEMA_VERSION)"
 OPENAPI_SPEC_VERSION="$(read_env OPENAPI_SPEC_VERSION)"
 
 if [ -z "$GRAPHQL_SCHEMA_VERSION" ] || [ -z "$OPENAPI_SPEC_VERSION" ]; then
-  printf 'ERROR: GRAPHQL_SCHEMA_VERSION and OPENAPI_SPEC_VERSION must be set in .env\n' >&2
+  printf 'ERROR: GRAPHQL_SCHEMA_VERSION and OPENAPI_SPEC_VERSION must be set in %s\n' "$CONTRACT_ENV_FILE" >&2
   exit 1
 fi
 

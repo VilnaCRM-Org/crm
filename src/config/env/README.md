@@ -79,8 +79,10 @@ Paint-reachable code must import `@/config/env/raw-env` **directly**, never the 
 convention today (no gate enforces it — a dependency-cruiser guard is deferred to avoid editing
 `.dependency-cruiser.js` while the route-registry PR owns it).
 
-`.env.example` mirrors every key of `.env`; `make check-env-sync` (wired into `make lint` and the CI
-lint matrix) fails if the two drift. A separate unit test
+`.env.example` is the tracked template and the only versioned copy (issue #142): `.env` is
+gitignored and any `make` invocation copies it from the template when it is missing. `make
+check-env-sync` (wired into `make lint` and the CI lint matrix) fails when the local `.env` no
+longer declares the template's keys, or when a contract pin in it differs. A separate unit test
 (`tests/unit/config/env/env-example-schema-sync.test.ts`) fails if a zod schema field and its
 `.env.example` entry diverge, so schema-vs-template drift is caught in CI.
 
@@ -121,8 +123,8 @@ against the wrong artifact.
 
 ## Adding a variable
 
-1. Add the `REACT_APP_*` key to `.env` **and** `.env.example` (same key set — the sync gate
-   enforces it).
+1. Add the `REACT_APP_*` key to `.env.example` (the tracked template) and to your local `.env`
+   (same key set — the sync gate enforces it).
 2. Add the field to `env-schema.ts` (with its constraint) and to `Env` in `types/env.ts`.
 3. Read it in `raw-env.ts` as a **static** `process.env.<LITERAL>` (extend `snapshot()` and add a
    lazy accessor if a paint-path reader needs it), then expose a typed getter on `env.ts` for

@@ -1,3 +1,9 @@
+# .env is untracked (issue #142): the `.env` file rule below copies it from the tracked
+# .env.example when it is missing. GNU make remakes a missing `-include`d file before reading the
+# rest of the Makefile, so a fresh clone bootstraps its local environment on the first `make`
+# call (even under `-n`) and every target below sees the variables. The rule has no
+# prerequisite on purpose: an existing .env is never overwritten, `make check-env-sync` reports
+# the drift instead.
 -include .env
 -include .env.local
 -include .env.production
@@ -254,7 +260,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .DEFAULT_GOAL               = help
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
-.PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync check-browser-support
+.PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync check-browser-support env-bootstrap
 .PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-zizmor lint-compose lint-lockfile lint-licenses
 .PHONY: lint-docs lint-adr lint-doc-coverage lint-doc-references lint-doc-links check-adr-drift
 .PHONY: lint-i18n i18n-generate
@@ -567,7 +573,15 @@ check-security-headers: ## Build the production image and assert the security-he
 	docker build -t $(SECURITY_HEADERS_PROBE_IMAGE) -f Dockerfile --target production .
 	sh $(SECURITY_HEADERS_GATE_RUNNER)
 
-check-env-sync: ## Assert .env and .env.example declare the same variable keys (issue #112)
+.env:
+	@if [ ! -f .env ] && [ -f .env.example ]; then \
+		cp .env.example .env && printf 'bootstrapped .env from .env.example (issue #142); it is untracked, put local values there\n'; \
+	fi
+
+env-bootstrap: .env ## Copy the tracked .env.example to an untracked .env when it is missing; every `make` call does this implicitly (issue #142)
+	@test -f .env && printf '.env present\n'
+
+check-env-sync: ## Assert the local .env declares the same keys as the tracked .env.example and mirrors its contract pins (issues #112, #142)
 	sh scripts/check-env-sync.sh
 
 check-browser-support: ## Reconcile browserslist, the resolved floors, and the README matrix with config/browser-support.json (issue #153)

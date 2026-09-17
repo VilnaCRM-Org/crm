@@ -854,8 +854,8 @@ const showForgotPassword = useFeatureFlag('forgotPassword');
 Adding a flag means declaring it in four places — the `FeatureFlag` union
 (`src/config/runtime/types/feature-flag.ts`), `FEATURE_FLAG_DEFAULTS`
 (`feature-flag-service.ts`), `app-config-schema.ts`, and the committed block in
-`public/index.html` — plus `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` in `.env`, `.env.example` and the
-`prod` service in `docker-compose.test.yml`.
+`public/index.html` — plus `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` in the tracked `.env.example`
+(and your local `.env`) and the `prod` service in `docker-compose.test.yml`.
 `tests/unit/tooling/runtime-config-contract.test.ts` fails the build when those drift.
 Flags default **off**, and the full lifecycle (introduce → roll out → remove) is in
 [`docs/feature-flags.md`](docs/feature-flags.md).
@@ -1629,9 +1629,13 @@ build goes red. Know them before you touch a config file:
 
 ### Environment Variables
 
-- Never commit `.env` files
-- Use `.env.example` for documentation
-- Sensitive values should be injected in CI/CD
+- `.env` is gitignored and never committed (issue #142); any `make` call bootstraps it from the
+  tracked `.env.example` when it is missing and never overwrites an existing one
+- New keys and reproducible build inputs (the `REACT_APP_*` URLs `serve.json` is generated from,
+  the user-service contract pins) go to `.env.example`; local values and credentials go to `.env`
+- `make check-env-sync` (in `make lint`) fails when the local `.env` stops declaring the
+  template's keys or carries a different contract pin
+- Sensitive values should be injected in CI/CD, never written into the template
 
 ### API Authentication
 

@@ -13,14 +13,16 @@
 # pending forever on pull requests that do not touch the contract.
 #
 # Every input is overridable so the Bats suite can drive all three paths against fixtures:
-#   CONTRACT_ENV_FILE            env file holding the pins        (default .env)
+#   CONTRACT_ENV_FILE            tracked env file holding the pins (default .env.example)
 #   CONTRACT_BASE_REF            git ref to compare against       (default origin/main)
 #   CONTRACT_DIFF_DIR            scratch dir for fetched specs    (default reports/contract-diff)
 #   CONTRACT_BREAKING_ALLOWLIST  oasdiff --err-ignore file
 #   OASDIFF_IMAGE                digest-pinned oasdiff image
 set -eu
 
-CONTRACT_ENV_FILE="${CONTRACT_ENV_FILE:-.env}"
+# The tracked template, not the untracked local .env (issue #142): the base side is read with
+# `git show`, so the file has to exist at the base ref.
+CONTRACT_ENV_FILE="${CONTRACT_ENV_FILE:-.env.example}"
 CONTRACT_BASE_REF="${CONTRACT_BASE_REF:-origin/main}"
 CONTRACT_DIFF_DIR="${CONTRACT_DIFF_DIR:-reports/contract-diff}"
 CONTRACT_BREAKING_ALLOWLIST="${CONTRACT_BREAKING_ALLOWLIST:-src/api/contracts/breaking-changes-approved.txt}"

@@ -76,6 +76,11 @@ After installing all prerequisites, you can start the application inside a Docke
 
 The command will:
 
+- Bootstrap your local environment: `.env` is **not** tracked (issue #142). Any `make` call
+  copies it from the tracked template `.env.example` when it is missing and never overwrites an
+  existing one, so a fresh clone needs no manual file creation. Put local values and real
+  credentials in `.env`; add new keys to `.env.example` (`make check-env-sync` keeps the two
+  aligned, see [CONTRIBUTING.md](CONTRIBUTING.md#local-environment-and-the-env-template)).
 - Build and start the shared local development stack inside Docker containers named `dev` and
   `mockoon`.
 - Use the dependencies already baked into the dev image (mounted via a named `node_modules`
@@ -116,6 +121,8 @@ General
 
 ```bash
   make start: starts the application
+  make env-bootstrap: copies .env.example to an untracked .env when it is missing
+  make check-env-sync: asserts the local .env mirrors .env.example (keys and contract pins)
   make create-network: creates the external crm-network (idempotent helper)
   make build: builds the application
   make format: formats the codebase to ensure consistent style across all files

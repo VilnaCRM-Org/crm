@@ -34,6 +34,13 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      # This lane calls `docker build` directly rather than a make target, so nothing has
+      # bootstrapped the untracked .env the build stage inlines (issue #142); do it explicitly so
+      # the source-mapped bundle is built from the same template values as every other lane.
+      - name: Bootstrap .env from the tracked template
+        if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
+        run: make env-bootstrap
+
       - name: Build bundle with hidden source maps
         if: ${{ env.SENTRY_AUTH_TOKEN != '' }}
         run: docker build --target build --build-arg REACT_APP_RELEASE="$REACT_APP_RELEASE" -t crm-sourcemaps -f Dockerfile .

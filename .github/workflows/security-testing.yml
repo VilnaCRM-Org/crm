@@ -55,7 +55,7 @@ jobs:
   # Issue #158: the preloaded-auth-token seed is a test-only seam. This gate scans the emitted
   # bundle, not config source text, so a build that would ship an ungated auth-state seed fails
   # here. It runs on every pull request rather than behind a paths filter — the seam can be
-  # reintroduced from src/, rsbuild.config.ts, .env, or the container wiring alike. The `push`
+  # reintroduced from src/, rsbuild.config.ts, .env.example, or the container wiring alike. The `push`
   # and `schedule` triggers above exist for the CodeQL baseline only, so this job opts out of
   # them: two docker image builds per merge and per week buy nothing the pull-request run
   # already proved.

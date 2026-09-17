@@ -134,7 +134,7 @@ introduce, roll out, remove — is documented in `docs/feature-flags.md`.
    `FEATURE_FLAG_DEFAULTS` in `feature-flag-service.ts`.
 4. For a URL setting: add the `APP_CONFIG_*` variable to `URL_SETTINGS` in
    `scripts/render-app-config.js`.
-5. Declare the environment variable in **both** `.env` and `.env.example`
+5. Declare the environment variable in the tracked `.env.example` and in your local `.env`
    (`make check-env-sync`), and pass it through the `prod` service in `docker-compose.test.yml`.
 6. Read it through `appConfigSource` (paint path) or `appConfig` (container-resolved code) — never
    from the DOM directly.

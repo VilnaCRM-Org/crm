@@ -18,7 +18,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      # fetch-depth: 0 so `git show origin/main:.env` resolves. The gate compares the pin
+      # fetch-depth: 0 so `git show origin/main:.env.example` resolves. The gate compares the pin
       # against the base branch in-job; there is deliberately no `paths:` filter, because a
       # path-filtered required check never reports on pull requests it skips.
       - name: Checkout code

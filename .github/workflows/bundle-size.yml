@@ -10,9 +10,10 @@ on:
       - 'rsbuild.config.ts'
       - 'package.json'
       - 'bun.lock'
-      # REACT_APP_* values are inlined into the bundle via loadEnv, so .env changes
-      # can change emitted bytes and must re-run the gate.
-      - '.env'
+      # REACT_APP_* values are inlined into the bundle via loadEnv from the .env that `make`
+      # bootstraps out of the tracked template (issue #142), so template changes can change
+      # emitted bytes and must re-run the gate.
+      - '.env.example'
       - 'config/performance-budget.json'
       - 'scripts/bundle-size-report.mjs'
       - '.github/workflows/bundle-size.yml'
@@ -59,6 +60,11 @@ jobs:
 
       - name: Start container
         run: make start
+
+      # The base checkout has no .env either (issue #142): give it ITS OWN template's values, so
+      # the base bundle inlines the REACT_APP_* values main would build with, not the PR's.
+      - name: Bootstrap the base checkout's .env from its template
+        run: test -f base/.env || cp base/.env.example base/.env
 
       # Non-login shell (sh -c, not sh -lc): a login shell re-sources /etc/profile, which
       # overwrites PATH and drops /root/.bun/bin, so `bun` would not be found.

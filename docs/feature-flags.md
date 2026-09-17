@@ -55,8 +55,8 @@ what makes a flag safe to merge before the feature is finished.
    `FEATURE_FLAG_DEFAULTS` in `src/config/runtime/feature-flag-service.ts` with the value `false`.
 2. Add the key to the `flags` object in `public/index.html` with the value `false`, and to the
    `flags` shape in `src/config/runtime/app-config-schema.ts`.
-3. Declare `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` (empty) in both `.env` and `.env.example`, and
-   pass it through the `prod` service in `docker-compose.test.yml`.
+3. Declare `APP_CONFIG_FLAG_<UPPER_SNAKE_NAME>` (empty) in the tracked `.env.example` (and in
+   your local `.env`), and pass it through the `prod` service in `docker-compose.test.yml`.
 4. Gate the code with `useFeatureFlag(...)` / `isEnabled(...)`.
 5. Test **both** branches. The off branch is what ships, so it is the one that must keep every
    existing assertion, visual baseline and e2e flow green; the on branch needs its own coverage
@@ -91,7 +91,8 @@ housekeeping: while a flag exists, one of its two branches is running untested i
 1. Delete the call sites, keeping the code of the branch that won.
 2. Delete the name from the `FeatureFlag` union, `FEATURE_FLAG_DEFAULTS`,
    `app-config-schema.ts`, and the `flags` object in `public/index.html`.
-3. Delete `APP_CONFIG_FLAG_<NAME>` from `.env`, `.env.example` and `docker-compose.test.yml`.
+3. Delete `APP_CONFIG_FLAG_<NAME>` from `.env.example` (and your local `.env`) and
+   `docker-compose.test.yml`.
 4. Delete the flag-specific tests and collapse the remaining ones onto the surviving behaviour.
 5. Unset the variable in every environment. Leaving it set is harmless — the renderer will reject
    it on the next restart, which is the intended signal that the environment is stale.

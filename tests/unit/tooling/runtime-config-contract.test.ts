@@ -116,9 +116,11 @@ describe('runtime configuration contract', () => {
     expect({ [UNION]: unionFlagNames() }).toEqual({ [UNION]: registeredFlagNames() });
   });
 
-  it('maps every APP_CONFIG_FLAG_* variable declared in .env onto a registered flag', () => {
+  it('maps every APP_CONFIG_FLAG_* variable in .env.example onto a registered flag', () => {
     const shellHtml = readFile(SHELL);
-    const flagEnvKeys = appConfigEnvKeys('.env').filter((key) => key.startsWith(FLAG_ENV_PREFIX));
+    const flagEnvKeys = appConfigEnvKeys('.env.example').filter((key) =>
+      key.startsWith(FLAG_ENV_PREFIX)
+    );
     const namedFlags = flagEnvKeys
       .map((envVar) => toCamelCase(envVar.slice(FLAG_ENV_PREFIX.length)))
       .sort();
@@ -133,16 +135,9 @@ describe('runtime configuration contract', () => {
     }
   });
 
-  it('declares the same APP_CONFIG_* keys in .env and .env.example', () => {
-    const declared = appConfigEnvKeys('.env');
-
-    expect(declared.length).toBeGreaterThan(0);
-    expect(appConfigEnvKeys('.env.example')).toEqual(declared);
-  });
-
-  it('declares every URL setting the renderer reads in .env, matching the schema keys', () => {
+  it('declares every URL setting the renderer reads in .env.example, matching the schema', () => {
     const settings = urlSettings();
-    const declared = appConfigEnvKeys('.env');
+    const declared = appConfigEnvKeys('.env.example');
     const schemaKeys = Object.keys(AppConfigSchema.shape)
       .filter((key) => key !== 'flags')
       .sort();

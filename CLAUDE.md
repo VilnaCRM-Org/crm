@@ -2114,7 +2114,7 @@ Deep-importing a feature page from the shell fails
 
 Apollo Server runs in development for local GraphQL API:
 
-- Schema: Downloaded from `user-service` repo (version in `.env`)
+- Schema: Downloaded from `user-service` repo (version pinned in `.env.example`)
 - Location: `docker/apollo-server/`
 - Port: 4000 (configured via GRAPHQL_PORT)
 - Health check: `/health`
@@ -2208,7 +2208,17 @@ make test-e2e ENV=dev DEBUG=1 FILE=tests/e2e/modules/back-to-main.spec.ts
 
 ## Environment Variables
 
-Key variables in `.env`:
+`.env` is **untracked** (issue #142). The tracked file is the template `.env.example`; any `make`
+invocation copies it to `.env` when the file is missing (`make env-bootstrap` does only that) and
+never overwrites an existing one. Keys and reproducible build inputs — the `REACT_APP_*` URLs
+`serve.json` is generated from, the user-service contract pins — are edited in `.env.example`;
+local values and credentials live in `.env`. `make check-env-sync` (in `make lint`) fails when the
+local file stops declaring the template's keys or carries a different contract pin. Scripts that
+need a deterministic, versioned value (`generate-serve-config.js`, `codegen.sh`,
+`check-contract-versions.sh`, `contract-diff.sh`, `check-contract-drift.sh`) read
+`.env.example`; Make, docker compose (`env_file`) and RSBuild (`loadEnv`) read `.env`.
+
+Key variables in `.env.example`:
 
 - `DEV_PORT=3000` - Development server port
 - `PROD_PORT=3001` - Production server port
@@ -2306,8 +2316,8 @@ the runtime image ships beside the entrypoint:
   to the shell, and a document policy on a hashed asset only adds bytes to the mobile critical
   path) plus the unchanged `Cache-Control` rules — and
   `make lint-security-headers` (in `make lint`, so in `static testing`) fails when the committed
-  file differs. The build-time `connect-src` origins come from the tracked `.env` only, so the
-  output is identical on every machine.
+  file differs. The build-time `connect-src` origins come from the tracked `.env.example` only
+  (never the untracked local `.env`, issue #142), so the output is identical on every machine.
 - **The container entrypoint extends `connect-src`.** `scripts/docker-entrypoint.sh` runs
   `scripts/render-security-headers.js` after `render-app-config.js`, rendering the served
   `/app/serve.json` from the immutable baseline the image ships at `/app/config/serve.json`
