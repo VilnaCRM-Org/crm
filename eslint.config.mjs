@@ -371,7 +371,9 @@ const routeObjectShapeSelectors = [
 // below that omits exactly these selectors.
 const clientStateSelectors = [
   {
-    selector: 'ImportDeclaration[source.value=/^zustand(\\/|$)/]',
+    selector:
+      'ImportDeclaration[source.value=/^zustand(\\/|$)/], ' +
+      'ImportExpression > Literal[value=/^zustand(\\/|$)/]',
     message:
       'Client/UI state uses the reactive-var primitive in src/lib/state (ADR-008); zustand is ' +
       'not a dependency of this project (issue #110).',

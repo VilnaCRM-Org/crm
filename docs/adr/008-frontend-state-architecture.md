@@ -74,10 +74,11 @@ selectors over `useReactiveVar`, and the re-arming one-shot listener logic is go
 `onNextChange` API nothing else used. `zustand` left `package.json`. The gates:
 
 - ESLint `no-restricted-syntax` (`clientStateSelectors` in `eslint.config.mjs`, every
-  `src/**` block): no `zustand` import, and no `useSyncExternalStore` — named or aliased
-  import, `React.useSyncExternalStore`, the computed `React['useSyncExternalStore']`, or a
-  destructured `{ useSyncExternalStore }` — anywhere but `src/lib/state/use-reactive-var.ts`.
-  Must-fail fixtures live in `scripts/ci/eslint-gate-fixtures.mjs`.
+  `src/**` block): no `zustand` import, static or dynamic, and no `useSyncExternalStore` —
+  named or aliased import, `React.useSyncExternalStore`, the computed
+  `React['useSyncExternalStore']`, or a destructured `{ useSyncExternalStore }` — anywhere but
+  `src/lib/state/use-reactive-var.ts`. Must-fail fixtures live in
+  `scripts/ci/eslint-gate-fixtures.mjs`.
 - dependency-cruiser `no-apollo-client-outside-data-layer`: `@apollo/client` is
   value-imported only by the repositories layer, a module's `config/di.ts` and the
   observability `ApolloLinkFactory`. `no-shared-ui-to-http-client`: `src/components`,

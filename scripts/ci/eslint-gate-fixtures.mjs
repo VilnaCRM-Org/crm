@@ -106,7 +106,9 @@ const S = {
   routeObjectWithoutErrorElement:
     'ObjectExpression:has(> Property:matches([key.name="element"], [key.value="element"]))' +
     ':not(:has(> Property:matches([key.name="errorElement"], [key.value="errorElement"])))',
-  zustandImport: 'ImportDeclaration[source.value=/^zustand(\\/|$)/]',
+  zustandImport:
+    'ImportDeclaration[source.value=/^zustand(\\/|$)/], ' +
+    'ImportExpression > Literal[value=/^zustand(\\/|$)/]',
   useSyncExternalStoreImport:
     'ImportDeclaration[source.value="react"] > ' +
     'ImportSpecifier[imported.name="useSyncExternalStore"]',
@@ -844,6 +846,15 @@ const FIXTURES = [
     id: 'zustand-import-component',
     file: PROBES.component,
     code: "import { create } from 'zustand';\nexport default create(() => ({}));",
+    covers: [S.zustandImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'zustand-dynamic-import-logic',
+    file: PROBES.logic,
+    code: "export default class StoreLoader { public async load(): Promise<unknown> { return import('zustand'); } }",
     covers: [S.zustandImport],
     expect: 'fail',
     rule: 'no-restricted-syntax',
