@@ -48,7 +48,7 @@
     "@memlab/api": "^2.0.4",
     "@memlab/heap-analysis": "^2.0.4",
     "@microsoft/api-extractor": "^7.58.11",
-    "@module-federation/enhanced": "^0.22.0",
+    "@module-federation/enhanced": "^2.9.0",
     "@module-federation/rsbuild-plugin": "^0.22.0",
     "@playwright/test": "^1.61.1",
     "@rsbuild/core": "2.1.7",
