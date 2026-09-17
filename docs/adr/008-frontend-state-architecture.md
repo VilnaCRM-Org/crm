@@ -73,9 +73,10 @@ selectors over `useReactiveVar`, and the re-arming one-shot listener logic is go
 `onNextChange` API nothing else used. `zustand` left `package.json`. The gates:
 
 - ESLint `no-restricted-syntax` (`clientStateSelectors` in `eslint.config.mjs`, every
-  `src/**` block): no `zustand` import, and no `useSyncExternalStore` — named, aliased or
-  `React.useSyncExternalStore` — anywhere but `src/lib/state/use-reactive-var.ts`. Must-fail
-  fixtures live in `scripts/ci/eslint-gate-fixtures.mjs`.
+  `src/**` block): no `zustand` import, and no `useSyncExternalStore` — named or aliased
+  import, `React.useSyncExternalStore`, the computed `React['useSyncExternalStore']`, or a
+  destructured `{ useSyncExternalStore }` — anywhere but `src/lib/state/use-reactive-var.ts`.
+  Must-fail fixtures live in `scripts/ci/eslint-gate-fixtures.mjs`.
 - dependency-cruiser `no-apollo-client-outside-data-layer`: `@apollo/client` is
   value-imported only by the repositories layer, a module's `config/di.ts` and the
   observability `ApolloLinkFactory`. `no-shared-ui-to-http-client`: `src/components`,
@@ -140,7 +141,9 @@ cache, and that is recorded here rather than pretended otherwise:
 ## Negative Consequences
 
 - The primitive is bespoke; a contributor who knows Zustand learns a smaller API instead. The
-  API is `variable()`, `variable(next)`, `variable.subscribe(listener)` and one hook.
+  API is `variable()`, `variable(next)`, `variable.subscribe(listener)` and one hook. A write
+  counts as a change under `Object.is`, the same comparison `useSyncExternalStore` applies to
+  snapshots, so a repeated `NaN` is silent and `-0` over `0` notifies.
 - Selectors passed to `useReactiveVar` must return a stable reference for an unchanged store
   (a field or the whole value), or React will re-render on every notification — the same
   constraint Zustand's `useStore(selector)` carries.

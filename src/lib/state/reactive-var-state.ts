@@ -8,7 +8,7 @@ export default class ReactiveVarState<T> {
   }
 
   public write(value: T): T {
-    if (this.value === value) return value;
+    if (Object.is(this.value, value)) return value;
     this.value = value;
     [...this.listeners].forEach((listener) => this.safeNotify(listener));
     return value;

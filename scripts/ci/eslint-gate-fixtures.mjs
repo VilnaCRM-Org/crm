@@ -110,7 +110,10 @@ const S = {
   useSyncExternalStoreImport:
     'ImportDeclaration[source.value="react"] > ' +
     'ImportSpecifier[imported.name="useSyncExternalStore"]',
-  useSyncExternalStoreMember: 'MemberExpression[property.name="useSyncExternalStore"]',
+  useSyncExternalStoreMember:
+    'MemberExpression:matches([computed=false][property.name="useSyncExternalStore"], ' +
+    '[computed=true][property.value="useSyncExternalStore"])',
+  useSyncExternalStoreDestructured: 'ObjectPattern > Property[key.name="useSyncExternalStore"]',
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -876,6 +879,24 @@ const FIXTURES = [
     file: PROBES.logic,
     code: "import React from 'react';\nexport default class ThingSelectors { public read(): number { return React.useSyncExternalStore(() => () => {}, () => 1); } }",
     covers: [S.useSyncExternalStoreMember],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'use-sync-external-store-computed-member-component',
+    file: PROBES.component,
+    code: "import React from 'react';\nexport default function X() { return React['useSyncExternalStore'](() => () => {}, () => 1); }",
+    covers: [S.useSyncExternalStoreMember],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'use-sync-external-store-destructured-hook',
+    file: PROBES.hook,
+    code: "import React from 'react';\nconst { useSyncExternalStore: subscribe } = React;\nexport default function useX() { return subscribe(() => () => {}, () => 1); }",
+    covers: [S.useSyncExternalStoreDestructured],
     expect: 'fail',
     rule: 'no-restricted-syntax',
     tag: 'issue #110',

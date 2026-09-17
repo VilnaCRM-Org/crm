@@ -86,6 +86,20 @@ describe('ReactiveVarFactory', () => {
     expect(listener).not.toHaveBeenCalled();
   });
 
+  it('treats a repeated NaN as unchanged and a signed zero as a change, like React does', () => {
+    const variable = new ReactiveVarFactory().create(Number.NaN);
+    const listener = jest.fn();
+    variable.subscribe(listener);
+
+    variable(Number.NaN);
+    expect(listener).not.toHaveBeenCalled();
+
+    variable(0);
+    variable(-0);
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(Object.is(variable(), -0)).toBe(true);
+  });
+
   it('unsubscribing twice is a no-op and never removes another subscriber', () => {
     const variable = new ReactiveVarFactory().create(0);
     const first = jest.fn();
