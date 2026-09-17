@@ -53,6 +53,49 @@ describe('useReactiveVar', () => {
     expect(result.current).toBe(next);
   });
 
+  it('returns the same slice object across reads while the store is unchanged', () => {
+    const counter = new ReactiveVarFactory().create<Counter>({ count: 0, label: 'a' });
+    const select = (value: Counter): { doubled: number } => ({ doubled: value.count * 2 });
+    const { result, rerender } = renderHook(() => useReactiveVar(counter, select));
+    const first = result.current;
+
+    rerender();
+
+    expect(result.current).toBe(first);
+    expect(first).toEqual({ doubled: 0 });
+  });
+
+  it('recomputes an object slice only when the store value changes', () => {
+    const counter = new ReactiveVarFactory().create<Counter>({ count: 1, label: 'a' });
+    const select = jest.fn((value: Counter): { doubled: number } => ({
+      doubled: value.count * 2,
+    }));
+    const { result } = renderHook(() => useReactiveVar(counter, select));
+    const first = result.current;
+    select.mockClear();
+
+    act(() => {
+      counter({ count: 2, label: 'a' });
+    });
+
+    expect(result.current).not.toBe(first);
+    expect(result.current).toEqual({ doubled: 4 });
+    expect(select).toHaveBeenCalledWith({ count: 2, label: 'a' });
+  });
+
+  it('recomputes the slice when the selector itself changes', () => {
+    const counter = new ReactiveVarFactory().create<Counter>({ count: 3, label: 'a' });
+    const { result, rerender } = renderHook(
+      ({ select }: { select: (value: Counter) => number }) => useReactiveVar(counter, select),
+      { initialProps: { select: (value: Counter): number => value.count } }
+    );
+    expect(result.current).toBe(3);
+
+    rerender({ select: (value: Counter): number => value.count * 10 });
+
+    expect(result.current).toBe(30);
+  });
+
   it('unsubscribes on unmount so later writes reach no listener', () => {
     const counter = new ReactiveVarFactory().create<Counter>({ count: 0, label: 'a' });
     const subscribe = jest.spyOn(counter, 'subscribe');

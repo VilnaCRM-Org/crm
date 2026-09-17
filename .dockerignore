@@ -17,9 +17,13 @@ storybook-static
 dist
 node_modules
 
-# Machine-local dotenv overrides are gitignored, so CI can never see them. Keeping them out of
+# Machine-local dotenv files are gitignored, so CI can never see them. Keeping them out of
 # the build context stops one from reaching rsbuild's loadEnv, which merges every key it finds
 # into process.env and could re-enable the preloaded-auth seed in a shipped image (issue #158).
+# `.env` joined the list when it was untracked (issue #142): the build stages copy the tracked
+# `.env.example` to `.env` instead, so the values RSBuild inlines are the same ones the committed
+# serve.json CSP was generated from, and a deployment repoints the API through APP_CONFIG_*.
+.env
 .env*.local
 
 /base

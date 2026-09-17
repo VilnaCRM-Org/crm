@@ -145,9 +145,11 @@ cache, and that is recorded here rather than pretended otherwise:
   API is `variable()`, `variable(next)`, `variable.subscribe(listener)` and one hook. A write
   counts as a change under `Object.is`, the same comparison `useSyncExternalStore` applies to
   snapshots, so a repeated `NaN` is silent and `-0` over `0` notifies.
-- Selectors passed to `useReactiveVar` must return a stable reference for an unchanged store
-  (a field or the whole value), or React will re-render on every notification — the same
-  constraint Zustand's `useStore(selector)` carries.
+- `useReactiveVar` memoizes the selected slice on the store value and the selector identity,
+  so a selector that builds a derived object cannot loop React; the price is that such a slice
+  is recomputed, and its consumer re-rendered, on every store write rather than only when the
+  slice changes — the same trade-off `useSyncExternalStoreWithSelector` makes without a custom
+  equality function.
 - The cache rules govern code that does not exist yet; they will be tested by the first real
   query (issue #123) rather than here.
 
@@ -190,6 +192,7 @@ cache, and that is recorded here rather than pretended otherwise:
 - [Issue #110: Define frontend state and server-data architecture standard](https://github.com/VilnaCRM-Org/crm/issues/110)
 - [ADR-002: Zustand vs Redux for Client State Management](./002-zustand-over-redux.md) —
   superseded by this record
-- [ADR-007: Reliability model](./007-reliability-model.md) — the error contract repositories map to
+- [ADR-007: Reliability model](./007-reliability-model.md) — the typed error contract that
+  repositories map transport failures onto before a hook or boundary sees them
 - [Where does my state go?](../state-architecture.md) — the contributor guide
 - [`src/api/contracts/README.md`](../../src/api/contracts/README.md) — the transport decision rule

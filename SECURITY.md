@@ -245,12 +245,14 @@ a DSN set at build time allows its ingest origin, an empty DSN allows nothing ex
 
 **The build-time origins are the template's.** The committed `serve.json` allows
 `http://localhost:8080` and `http://localhost:4000` because the tracked `.env.example` points the
-app there, and every build — CI, the Docker image, a fresh clone — inlines a `.env` that `make`
-copied from that template (issue #142); the CSP has to match the bundle or the app cannot reach
-its own API. A deployment that changes the `REACT_APP_*` URLs at build time changes them in the
-template and regenerates `serve.json` in the same change (the drift gate refuses anything else);
-a local `.env` that points elsewhere changes the dev bundle only, never the committed policy. A
-deployment that repoints the API at container start gets its origins appended by the entrypoint.
+app there, and the image build inlines exactly that file: `.dockerignore` keeps the untracked
+`.env` out of the build context and the `build` stages copy `.env.example` to `.env` before
+`rsbuild build` (issue #142), so the bundle and the CSP are generated from the same values and a
+machine-local `.env` can neither drift the policy nor leak into an image. A deployment that
+changes the `REACT_APP_*` URLs at build time changes them in the template and regenerates
+`serve.json` in the same change (the drift gate refuses anything else); a local `.env` that
+points elsewhere changes the dev server's bundle only. A deployment that repoints the API at
+container start gets its origins appended by the entrypoint.
 Removing the localhost fallbacks from the consumers themselves is a separate, runtime-behaviour
 change, not a header-policy change.
 

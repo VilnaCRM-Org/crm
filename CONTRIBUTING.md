@@ -82,7 +82,10 @@ fork would land straight in git history. The tracked file is `.env.example`, and
   user-service contract pins `GRAPHQL_SCHEMA_VERSION` / `OPENAPI_SPEC_VERSION`) is changed there.
 - **Values go to your local `.env`**: ports, hosts, a real Sentry DSN, anything secret. Any
   `make` invocation copies `.env.example` to `.env` when it is missing (`make env-bootstrap` does
-  only that) and never overwrites an existing one, even when the template is newer.
+  only that) and never overwrites an existing one, even when the template is newer. The local
+  file reaches the dev server and the mock containers only: `.dockerignore` keeps it out of the
+  image build, which copies the template instead, so a deployment repoints the API through the
+  runtime `APP_CONFIG_*` variables rather than a build-time `.env`.
 - **`make check-env-sync`** (part of `make lint`) fails when your `.env` no longer declares the
   template's keys — after a pull that added one — or when a contract pin in it differs from the
   template, because codegen and the contract gates read the pins from `.env.example` and the mock

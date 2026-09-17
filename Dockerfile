@@ -41,7 +41,11 @@ ENV PATH="/root/.bun/bin:${PATH}"
 ARG REACT_APP_RELEASE=""
 ENV REACT_APP_RELEASE=${REACT_APP_RELEASE}
 
+# The build context carries no .env (.dockerignore, issue #142): the bundle inlines the tracked
+# template's REACT_APP_* values, the same ones the committed serve.json connect-src was
+# generated from, so a machine-local .env can neither drift the CSP nor leak into an image.
 COPY . .
+COPY .env.example .env
 RUN bun x rsbuild build && \
     cp -a dist dist-production && \
     find dist-production -name '*.map' -type f -delete
@@ -60,6 +64,7 @@ ARG REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=""
 ENV REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=${REACT_APP_LHCI_PRELOADED_AUTH_TOKEN}
 
 COPY . .
+COPY .env.example .env
 RUN bun x rsbuild build && \
     cp -a dist dist-production && \
     find dist-production -name '*.map' -type f -delete

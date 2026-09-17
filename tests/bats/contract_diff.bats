@@ -27,6 +27,10 @@ if [ "$1" = "show" ]; then
   if [ -n "${FAKE_GIT_SHOW_FAIL:-}" ]; then
     exit 128
   fi
+  # A base ref from before issue #142 tracks the pins in .env only.
+  if [ -n "${FAKE_BASE_PREDATES_TEMPLATE:-}" ] && [ "$2" = "origin/main:.env.example" ]; then
+    exit 128
+  fi
   printf 'OPENAPI_SPEC_VERSION=%s\n' "${FAKE_BASE_PIN:?}"
   printf 'OPENAPI_SPEC_URL=%s\n' "${FAKE_BASE_SPEC_URL:?}"
   exit 0
@@ -91,6 +95,7 @@ run_gate() {
     FAKE_BASE_PIN="${FAKE_BASE_PIN:-}" \
     FAKE_BASE_SPEC_URL="${FAKE_BASE_SPEC_URL:-}" \
     FAKE_GIT_SHOW_FAIL="${FAKE_GIT_SHOW_FAIL:-}" \
+    FAKE_BASE_PREDATES_TEMPLATE="${FAKE_BASE_PREDATES_TEMPLATE:-}" \
     FAKE_CURL_FAIL="${FAKE_CURL_FAIL:-}" \
     CONTRACT_SPEC_MAX_BYTES="${CONTRACT_SPEC_MAX_BYTES:-}" \
     FAKE_OASDIFF_BREAKING_EXIT="${FAKE_OASDIFF_BREAKING_EXIT:-0}" \
@@ -185,13 +190,25 @@ run_gate_without_step_summary() {
   assert_output_contains 'breaking-changes-approved.txt'
 }
 
+@test "a base ref that predates the .env untracking is read from its .env" {
+  write_env "$SANDBOX/.env.example" v2.8.0
+  export FAKE_BASE_PREDATES_TEMPLATE=1
+  export FAKE_BASE_PIN='v2.8.0'
+
+  run_gate
+  [ "$status" -eq 0 ]
+  assert_output_contains 'no OPENAPI_SPEC_VERSION bump'
+  assert_log_contains 'git show origin/main:.env.example'
+  assert_log_contains 'git show origin/main:.env'
+}
+
 @test "an unreadable base ref fails loudly instead of skipping as a pass" {
   write_env "$SANDBOX/.env.example" v2.8.0
   export FAKE_GIT_SHOW_FAIL=1
 
   run_gate
   [ "$status" -eq 1 ]
-  assert_output_contains 'cannot read .env.example at origin/main'
+  assert_output_contains 'cannot read .env.example or .env at origin/main'
 }
 
 @test "a failed spec download fails loudly instead of diffing an empty contract" {

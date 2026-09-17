@@ -2222,7 +2222,11 @@ local values and credentials live in `.env`. `make check-env-sync` (in `make lin
 local file stops declaring the template's keys or carries a different contract pin. Scripts that
 need a deterministic, versioned value (`generate-serve-config.js`, `codegen.sh`,
 `check-contract-versions.sh`, `contract-diff.sh`, `check-contract-drift.sh`) read
-`.env.example`; Make, docker compose (`env_file`) and RSBuild (`loadEnv`) read `.env`.
+`.env.example`; Make, docker compose (`env_file`) and RSBuild (`loadEnv`) read `.env`. The
+Docker image never sees the local file: `.dockerignore` excludes `.env` and the `build` stages
+copy `.env.example` to `.env`, so a deployable bundle always inlines the template's values (the
+ones the committed `serve.json` CSP was generated from) and a deployment repoints the API
+through `APP_CONFIG_*` at container start.
 
 Key variables in `.env.example`:
 
@@ -2269,7 +2273,8 @@ Rspack folds that to `if (true) return null` and drops the rest, so a deployable
 contains neither `__PRELOADED_AUTH_TOKEN__` nor the token literal: a stray
 `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` cannot seed a session, and an XSS-set `window` global has
 nothing left to read. `rsbuild.config.ts` reads the opt-in flag **before** calling `loadEnv`, and
-`.dockerignore` excludes `.env*.local`, so an untracked local dotenv cannot supply it either.
+`.dockerignore` excludes `.env` and `.env*.local`, so an untracked local dotenv cannot supply it
+either.
 
 Three invariants keep the guard real — breaking any of them is a security regression:
 

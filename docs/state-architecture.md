@@ -36,7 +36,10 @@ import { useService } from '@/providers/di';
 import CONTACTS_TOKENS from '@/modules/contacts/config/tokens';
 import useAsyncList from '@/hooks/use-async-list';
 import type { AsyncListState } from '@/hooks/types/use-async-list';
-import type { Contact, ContactRepository } from '../types/contact-repository';
+import type {
+  Contact,
+  ContactRepository,
+} from '@/modules/contacts/features/contact-list/types/contact-repository';
 
 export default function useContactList(): AsyncListState<Contact> {
   const repository = useService<ContactRepository>(CONTACTS_TOKENS.ContactRepository);
@@ -48,13 +51,14 @@ export default function useContactList(): AsyncListState<Contact> {
 
 **Owner:** a `*Var` class over the reactive var from `src/lib/state/`, exported as a module
 singleton, with named actions and no I/O. React subscribes through `useReactiveVar` with a
-selector that returns a field or the whole value (a stable reference for an unchanged store):
+selector; the hook memoizes the selected slice on the store value and the selector identity, so
+a selector may return a field, the whole value, or a derived object without re-render loops:
 
 ```typescript
 // src/modules/contacts/features/contact-list/stores/contact-filter-var.ts
 import ReactiveVarFactory from '@/lib/state/reactive-var-factory';
 import type { ReactiveVar } from '@/lib/state/types/reactive-var';
-import type { ContactFilter } from '../types/contact-filter';
+import type { ContactFilter } from '@/modules/contacts/features/contact-list/types/contact-filter';
 
 const CLEARED_FILTER: ContactFilter = { query: '', owner: null };
 
