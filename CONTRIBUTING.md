@@ -70,6 +70,30 @@ If you find an issue to work on, you are welcome to open a PR with a fix.
 
 3. Create a working branch and start with your changes!
 
+#### Local environment and the `.env` template
+
+`.env` is gitignored and never committed (issue #142): this repository is the template for every
+VilnaCRM microservice, and a tracked `.env` is where the first real credential of a downstream
+fork would land straight in git history. The tracked file is `.env.example`, and the split is:
+
+- **Keys go to `.env.example`**, with placeholder or template-default values. It is the only
+  copy CI, the Docker image build and a fresh clone ever see, so a build-time value that must be
+  reproducible (the `REACT_APP_*` URLs `serve.json`'s `connect-src` is generated from, the
+  user-service contract pins `GRAPHQL_SCHEMA_VERSION` / `OPENAPI_SPEC_VERSION`) is changed there.
+- **Values go to your local `.env`**: ports, hosts, a real Sentry DSN, anything secret. Any
+  `make` invocation copies `.env.example` to `.env` when it is missing (`make env-bootstrap` does
+  only that) and never overwrites an existing one, even when the template is newer. The local
+  file reaches the dev server and the mock containers only: `.dockerignore` keeps it out of the
+  image build, which copies the template instead, so a deployment repoints the API through the
+  runtime `APP_CONFIG_*` variables rather than a build-time `.env`.
+- **`make check-env-sync`** (part of `make lint`) fails when your `.env` no longer declares the
+  template's keys — after a pull that added one — or when a contract pin in it differs from the
+  template, because codegen and the contract gates read the pins from `.env.example` and the mock
+  containers read them from `.env`. Copy the new line over; never bump a pin only locally.
+
+The full-history secret scan (`make scan-secrets`, the `supply-chain security / secret scan`
+check) is the backstop: a credential that does reach a commit fails the pull request.
+
 #### Adding a module or feature
 
 Do not create the folders by hand — generate them:

@@ -4,16 +4,21 @@
 # The GraphQL schema and the OpenAPI spec both come from user-service. They must be pinned
 # to the same version so a single `make codegen` produces a coherent contract surface and
 # nothing drifts silently. This asserts:
-#   1. .env GRAPHQL_SCHEMA_VERSION == .env OPENAPI_SPEC_VERSION
-#   2. the OpenAPI version pinned in Mockoon.Dockerfile matches .env OPENAPI_SPEC_VERSION
+#   1. .env.example GRAPHQL_SCHEMA_VERSION == .env.example OPENAPI_SPEC_VERSION
+#   2. the OpenAPI version pinned in Mockoon.Dockerfile matches .env.example OPENAPI_SPEC_VERSION
+#
+# The pins are read from the tracked template, not the untracked local .env (issue #142), so the
+# gate scores the version that is committed; `make check-env-sync` keeps the local copy aligned.
 #
 # Documented exception: set ALLOW_CONTRACT_VERSION_SKEW=1 to downgrade a mismatch to a
 # warning (record the reason in src/api/contracts/README.md when you do).
 
 set -eu
 
+CONTRACT_ENV_FILE="${CONTRACT_ENV_FILE:-.env.example}"
+
 read_env() {
-  grep -E "^$1=" .env | head -n1 | cut -d= -f2-
+  grep -E "^$1=" "$CONTRACT_ENV_FILE" | head -n1 | cut -d= -f2-
 }
 
 GRAPHQL_VER="$(read_env GRAPHQL_SCHEMA_VERSION)"
@@ -22,7 +27,7 @@ MOCKOON_VER="$(grep -oE 'user-service/v[0-9]+\.[0-9]+\.[0-9]+/\.github/openapi-s
   | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -n1)"
 
 if [ -z "$GRAPHQL_VER" ] || [ -z "$OPENAPI_VER" ]; then
-  printf 'ERROR: GRAPHQL_SCHEMA_VERSION and OPENAPI_SPEC_VERSION must both be set in .env\n' >&2
+  printf 'ERROR: GRAPHQL_SCHEMA_VERSION and OPENAPI_SPEC_VERSION must both be set in %s\n' "$CONTRACT_ENV_FILE" >&2
   exit 1
 fi
 
@@ -35,11 +40,11 @@ fi
 
 skew=0
 if [ "$GRAPHQL_VER" != "$OPENAPI_VER" ]; then
-  printf 'contract version skew: GraphQL=%s vs OpenAPI=%s (.env)\n' "$GRAPHQL_VER" "$OPENAPI_VER" >&2
+  printf 'contract version skew: GraphQL=%s vs OpenAPI=%s (%s)\n' "$GRAPHQL_VER" "$OPENAPI_VER" "$CONTRACT_ENV_FILE" >&2
   skew=1
 fi
 if [ "$MOCKOON_VER" != "$OPENAPI_VER" ]; then
-  printf 'contract version skew: Mockoon.Dockerfile=%s vs OpenAPI=%s (.env)\n' "$MOCKOON_VER" "$OPENAPI_VER" >&2
+  printf 'contract version skew: Mockoon.Dockerfile=%s vs OpenAPI=%s (%s)\n' "$MOCKOON_VER" "$OPENAPI_VER" "$CONTRACT_ENV_FILE" >&2
   skew=1
 fi
 

@@ -26,6 +26,7 @@ const PROBES = {
   env: 'src/config/env/__probe__.ts', // env config (#112 process.env)
   routes: 'src/routes/__probe__.tsx', // route shell (#116 route-object shape)
   routerSite: 'src/routes/routes.tsx', // the ONLY sanctioned createBrowserRouter site (#116)
+  stateBridgeSite: 'src/lib/state/use-reactive-var.ts', // the ONLY sanctioned useSyncExternalStore bridge (#110)
 };
 
 // Exact selector strings, copied verbatim from the resolved config. The rot-guard compares the
@@ -105,6 +106,18 @@ const S = {
   routeObjectWithoutErrorElement:
     'ObjectExpression:has(> Property:matches([key.name="element"], [key.value="element"]))' +
     ':not(:has(> Property:matches([key.name="errorElement"], [key.value="errorElement"])))',
+  zustandImport:
+    'ImportDeclaration[source.value=/^zustand(\\/|$)/], ' +
+    'ImportExpression > Literal[value=/^zustand(\\/|$)/]',
+  useSyncExternalStoreImport:
+    'ImportDeclaration[source.value="react"] > ' +
+    'ImportSpecifier[imported.name="useSyncExternalStore"]',
+  useSyncExternalStoreMember:
+    'MemberExpression:matches([computed=false][property.name="useSyncExternalStore"], ' +
+    '[computed=true][property.value="useSyncExternalStore"])',
+  useSyncExternalStoreDestructured:
+    'ObjectPattern > Property:matches([key.name="useSyncExternalStore"], ' +
+    '[key.value="useSyncExternalStore"])',
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -809,6 +822,15 @@ const FIXTURES = [
   },
   // Must-PASS exemptions
   {
+    id: 'use-sync-external-store-bridge-site-exempt',
+    file: PROBES.stateBridgeSite,
+    code: "import { useSyncExternalStore } from 'react';\nexport default function useReactiveVar() { return useSyncExternalStore(() => () => {}, () => 1); }",
+    covers: [],
+    expect: 'pass',
+    rule: 'no-restricted-syntax',
+    tag: '',
+  },
+  {
     id: 'router-factory-import-routes-site-exempt',
     file: PROBES.routerSite,
     code: "import { createBrowserRouter } from 'react-router';\nexport default createBrowserRouter([]);",
@@ -816,6 +838,90 @@ const FIXTURES = [
     expect: 'pass',
     rule: 'no-restricted-syntax',
     tag: '',
+  },
+  // Client-state primitive (#110, ADR-008) — zustand (root and subpath) and a hand-rolled
+  // useSyncExternalStore subscription (named import, aliased import, React.member) fail in a
+  // component, a logic file and a hook alike; only the one sanctioned bridge passes.
+  {
+    id: 'zustand-import-component',
+    file: PROBES.component,
+    code: "import { create } from 'zustand';\nexport default create(() => ({}));",
+    covers: [S.zustandImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'zustand-dynamic-import-logic',
+    file: PROBES.logic,
+    code: "export default class StoreLoader { public async load(): Promise<unknown> { return import('zustand'); } }",
+    covers: [S.zustandImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'zustand-subpath-import-hook',
+    file: PROBES.hook,
+    code: "import { devtools } from 'zustand/middleware';\nexport default devtools;",
+    covers: [S.zustandImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'use-sync-external-store-import-hook',
+    file: PROBES.hook,
+    code: "import { useSyncExternalStore } from 'react';\nexport default function useX() { return useSyncExternalStore(() => () => {}, () => 1); }",
+    covers: [S.useSyncExternalStoreImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'use-sync-external-store-aliased-import-component',
+    file: PROBES.component,
+    code: "import { useSyncExternalStore as useStore } from 'react';\nexport default function X() { return useStore(() => () => {}, () => 1); }",
+    covers: [S.useSyncExternalStoreImport],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'use-sync-external-store-member-logic',
+    file: PROBES.logic,
+    code: "import React from 'react';\nexport default class ThingSelectors { public read(): number { return React.useSyncExternalStore(() => () => {}, () => 1); } }",
+    covers: [S.useSyncExternalStoreMember],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'use-sync-external-store-computed-member-component',
+    file: PROBES.component,
+    code: "import React from 'react';\nexport default function X() { return React['useSyncExternalStore'](() => () => {}, () => 1); }",
+    covers: [S.useSyncExternalStoreMember],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'use-sync-external-store-destructured-hook',
+    file: PROBES.hook,
+    code: "import React from 'react';\nconst { useSyncExternalStore: subscribe } = React;\nexport default function useX() { return subscribe(() => () => {}, () => 1); }",
+    covers: [S.useSyncExternalStoreDestructured],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'use-sync-external-store-computed-destructured-component',
+    file: PROBES.component,
+    code: "import React from 'react';\nconst { ['useSyncExternalStore']: subscribe } = React;\nexport default function X() { return subscribe(() => () => {}, () => 1); }",
+    covers: [S.useSyncExternalStoreDestructured],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
   },
   {
     id: 'route-object-with-error-element-exempt',

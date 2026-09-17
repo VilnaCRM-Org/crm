@@ -28,7 +28,8 @@ lint-tsc	bats	tests/bats/makefile_targets.bats	Validated as the direct TypeScrip
 lint-md	bats	tests/bats/makefile_targets.bats	Validated as the direct Markdown lint command.
 lint-deps	ci	.github/workflows/dependency-cruiser.yml	Executed directly by the dependency-cruiser PR workflow.
 lint-dup	bats	tests/bats/makefile_targets.bats	Validated as the direct jscpd copy/paste duplication command.
-check-env-sync	bats	tests/bats/makefile_targets.bats	Validated as the direct .env/.env.example key-parity gate and as a member of the CI lint target list.
+check-env-sync	bats	tests/bats/makefile_targets.bats	Validated as the direct .env-mirrors-.env.example gate (key parity plus the contract-pin values, issue #142) and as a member of the CI lint target list.
+env-bootstrap	bats	tests/bats/env_sync.bats	Validated as the copy of the tracked .env.example to a missing, untracked .env, and that an existing .env is never overwritten (issue #142).
 lint-commit-message	bats	tests/bats/makefile_targets.bats	Validated as the stdin-driven header lint against the strict commitlint config.
 lint-commit-bot-message	bats	tests/bats/makefile_targets.bats	Validated as the stdin-driven bot-author lint against the relaxed commitlint config.
 lint-commit-range	bats	tests/bats/makefile_targets.bats	Validated as the host-git commit-range lint that dispatches on GitHub-verified bot provenance into the make targets.

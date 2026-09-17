@@ -372,6 +372,49 @@ module.exports = {
       },
     },
     {
+      name: 'no-apollo-client-outside-data-layer',
+      comment:
+        'Server state is owned by repositories (ADR-008, issue #110): the only value imports of ' +
+        '@apollo/client are the module composition root that builds the client, the ' +
+        'observability link factory that wraps it, and the repositories layer that uses it. ' +
+        'React code reaches ' +
+        'server data through a repository resolved via useService — never useQuery/useMutation ' +
+        'in a component or hook. `import type` stays allowed.',
+      severity: 'error',
+      from: {
+        path: '^src/',
+        pathNot: [
+          '^src/modules/[^/]+/features/[^/]+/repositories/',
+          '^src/modules/[^/]+/config/di\\.ts$',
+          '^src/services/observability/apollo-link-factory\\.ts$',
+          '\\.(test|spec|stories)\\.tsx?$',
+          '\\.d\\.ts$',
+        ],
+      },
+      to: {
+        path: '^node_modules/@apollo/client/',
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
+      name: 'no-shared-ui-to-http-client',
+      comment:
+        'Shared components, hooks, providers, routes and lib must not reach the HTTP transport ' +
+        '(ADR-008, issue #110): server data enters React through a repository resolved via ' +
+        'useService, so a shared hook cannot become an ad-hoc data layer. The feature and store ' +
+        'sides of the same boundary are no-feature-direct-http-client and ' +
+        'no-store-direct-http-client; the thrown HttpError class stays importable for instanceof.',
+      severity: 'error',
+      from: {
+        path: '^src/(components|hooks|providers|routes|lib)/',
+      },
+      to: {
+        path: '^src/services/https-client/',
+        pathNot: '^src/services/https-client/http-error\\.ts$',
+        dependencyTypesNot: ['type-only'],
+      },
+    },
+    {
       name: 'no-di-config-import-outside-composition-root',
       comment:
         'The DI container configuration and every per-module/per-infra registrar (di.ts) ' +

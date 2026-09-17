@@ -297,8 +297,9 @@ When writing or editing a class in a logic directory (`src/services/**`,
 - **Never** push the DI container into the auth paint path: do not eager-import
   `dependency-injection-config.ts`, and do not convert a container-free
   render-path singleton into a container-resolved class. The ones inside a gated
-  directory (`auth-var`, `reactive-var`, `reactive-var-state`,
-  `auth-store-selectors`, `response-schemas`, `map-registration-error`, the auth
+  directory (`auth-var` — its `ReactiveVarFactory` lives in `src/lib/state/`,
+  outside the gated globs — `auth-store-selectors`, `response-schemas`,
+  `map-registration-error`, the auth
   lazy loaders, `registration-handlers-factory`, `auth-error-reporter`,
   `boundary-error-reporter` (the reporter the paint-path error boundaries
   receive by prop, issue #116), `url-builder`, `locale-formatter-core`, and the

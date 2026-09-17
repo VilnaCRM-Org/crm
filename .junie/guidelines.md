@@ -43,7 +43,7 @@ This document provides essential information for developers working on this Reac
 
 The project uses multiple environment files loaded via Makefile:
 
-- `.env` - Base environment variables
+- `.env.example` - Tracked template; `.env` is gitignored and bootstrapped from it by `make`
 - `.env.local` - Local overrides (not committed)
 - `.env.development` / `.env.production` - Environment-specific configs
 - `.env.ci` - CI-specific configurations

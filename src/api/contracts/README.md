@@ -9,11 +9,11 @@ so 50+ pages do not each guess a different transport or hand-write drifting type
 
 Backend shapes are **generated**, never hand-written:
 
-- **GraphQL** — the upstream user-service SDL (`GRAPHQL_SCHEMA_VERSION` in `.env`) plus the
+- **GraphQL** — the upstream user-service SDL (`GRAPHQL_SCHEMA_VERSION` in `.env.example`) plus the
   operation documents colocated with their repositories (`src/modules/**/*.graphql`) generate
   `src/api/generated/graphql.ts` (operation + result types and `TypedDocumentNode`s) via
   `codegen.ts` (`@graphql-codegen/*`).
-- **REST** — the upstream user-service OpenAPI spec (`OPENAPI_SPEC_VERSION` in `.env`)
+- **REST** — the upstream user-service OpenAPI spec (`OPENAPI_SPEC_VERSION` in `.env.example`)
   generates `src/api/generated/openapi.ts` (path/operation/response types) via
   `openapi-typescript`.
 
@@ -67,8 +67,10 @@ pinned versions, regenerates, and fails on any diff under `src/api/generated/**`
 
 ## Reconciling / bumping the contract version
 
-1. Update `GRAPHQL_SCHEMA_VERSION` and `OPENAPI_SPEC_VERSION` in `.env` (keep them equal) and
-   the OpenAPI pin in `Mockoon.Dockerfile`.
+1. Update `GRAPHQL_SCHEMA_VERSION` and `OPENAPI_SPEC_VERSION` in `.env.example` (keep them
+   equal) and the OpenAPI pin in `Mockoon.Dockerfile`. The template is the tracked home of the
+   pins (issue #142): codegen and the contract gates read them there, and `make check-env-sync`
+   fails until your local `.env` carries the same values.
 2. Run `make codegen` and commit the regenerated `src/api/generated/**`.
 3. `make codegen-check` must pass. A deliberate, temporary skew must be documented here and
    opted in with `ALLOW_CONTRACT_VERSION_SKEW=1`.

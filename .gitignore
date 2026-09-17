@@ -23,6 +23,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Local environment: bootstrapped from the tracked .env.example by any `make` invocation and
+# never committed (issue #142). Only .env.example is versioned.
+.env
 .env*.local
 
 *.tsbuildinfo

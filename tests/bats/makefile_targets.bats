@@ -443,7 +443,7 @@ EOF
   # read src/ but cannot pass against a throwaway module: its merged-catalog freshness check
   # compares the committed src/i18n/localization.json against a fresh merge of every catalog,
   # so a generated feature's uncommitted locale keys always report the catalog as stale.
-  # The ninth, lint-security-headers, reads only config/security-headers.json, .env and
+  # The ninth, lint-security-headers, reads only config/security-headers.json, .env.example and
   # serve.json — no generated source can change its verdict.
   # Adding a new lint gate fails this test until it is classified one way or the other.
   local makefile="$MAKEFILE_SANDBOX/Makefile"

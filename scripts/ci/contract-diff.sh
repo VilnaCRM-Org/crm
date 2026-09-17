@@ -13,14 +13,18 @@
 # pending forever on pull requests that do not touch the contract.
 #
 # Every input is overridable so the Bats suite can drive all three paths against fixtures:
-#   CONTRACT_ENV_FILE            env file holding the pins        (default .env)
+#   CONTRACT_ENV_FILE            tracked env file holding the pins (default .env.example)
+#   CONTRACT_BASE_FILE           the same file at the base ref     (default CONTRACT_ENV_FILE,
+#                                falling back to .env at a base ref that predates #142)
 #   CONTRACT_BASE_REF            git ref to compare against       (default origin/main)
 #   CONTRACT_DIFF_DIR            scratch dir for fetched specs    (default reports/contract-diff)
 #   CONTRACT_BREAKING_ALLOWLIST  oasdiff --err-ignore file
 #   OASDIFF_IMAGE                digest-pinned oasdiff image
 set -eu
 
-CONTRACT_ENV_FILE="${CONTRACT_ENV_FILE:-.env}"
+# The tracked template, not the untracked local .env (issue #142): the base side is read with
+# `git show`, so the file has to exist at the base ref.
+CONTRACT_ENV_FILE="${CONTRACT_ENV_FILE:-.env.example}"
 CONTRACT_BASE_REF="${CONTRACT_BASE_REF:-origin/main}"
 CONTRACT_DIFF_DIR="${CONTRACT_DIFF_DIR:-reports/contract-diff}"
 CONTRACT_BREAKING_ALLOWLIST="${CONTRACT_BREAKING_ALLOWLIST:-src/api/contracts/breaking-changes-approved.txt}"
@@ -69,13 +73,20 @@ HEAD_PIN="$(read_pin "$PIN_KEY" < "$CONTRACT_ENV_FILE")"
 [ -n "$HEAD_PIN" ] || fail "$PIN_KEY is not set in $CONTRACT_ENV_FILE"
 
 # A missing base ref means the gate cannot know whether the pin moved. Fail loudly rather
-# than skipping as a pass, matching check-contract-versions.sh's unparseable-pin branch.
-if ! BASE_ENV="$(git show "$CONTRACT_BASE_REF:$CONTRACT_ENV_FILE" 2>/dev/null)"; then
-  fail "cannot read $CONTRACT_ENV_FILE at $CONTRACT_BASE_REF (fetch the base branch first)"
+# than skipping as a pass, matching check-contract-versions.sh's unparseable-pin branch. A base
+# ref that predates the .env untracking (issue #142) still tracks the pins in .env, so that is
+# the one fallback taken before failing.
+CONTRACT_BASE_FILE="${CONTRACT_BASE_FILE:-$CONTRACT_ENV_FILE}"
+if ! BASE_ENV="$(git show "$CONTRACT_BASE_REF:$CONTRACT_BASE_FILE" 2>/dev/null)"; then
+  [ "$CONTRACT_BASE_FILE" = ".env.example" ] ||
+    fail "cannot read $CONTRACT_BASE_FILE at $CONTRACT_BASE_REF (fetch the base branch first)"
+  CONTRACT_BASE_FILE=".env"
+  BASE_ENV="$(git show "$CONTRACT_BASE_REF:$CONTRACT_BASE_FILE" 2>/dev/null)" ||
+    fail "cannot read .env.example or .env at $CONTRACT_BASE_REF (fetch the base branch first)"
 fi
 
 BASE_PIN="$(printf '%s\n' "$BASE_ENV" | read_pin "$PIN_KEY")"
-[ -n "$BASE_PIN" ] || fail "$PIN_KEY is not set in $CONTRACT_ENV_FILE at $CONTRACT_BASE_REF"
+[ -n "$BASE_PIN" ] || fail "$PIN_KEY is not set in $CONTRACT_BASE_FILE at $CONTRACT_BASE_REF"
 
 if [ "$BASE_PIN" = "$HEAD_PIN" ]; then
   printf 'no %s bump (%s); nothing to diff\n' "$PIN_KEY" "$HEAD_PIN"
@@ -88,7 +99,7 @@ fi
 # that also moves the upstream repository or spec path still compares like with like.
 BASE_URL_TEMPLATE="$(printf '%s\n' "$BASE_ENV" | read_pin "$URL_KEY")"
 HEAD_URL_TEMPLATE="$(read_pin "$URL_KEY" < "$CONTRACT_ENV_FILE")"
-[ -n "$BASE_URL_TEMPLATE" ] || fail "$URL_KEY is not set in $CONTRACT_ENV_FILE at $CONTRACT_BASE_REF"
+[ -n "$BASE_URL_TEMPLATE" ] || fail "$URL_KEY is not set in $CONTRACT_BASE_FILE at $CONTRACT_BASE_REF"
 [ -n "$HEAD_URL_TEMPLATE" ] || fail "$URL_KEY is not set in $CONTRACT_ENV_FILE"
 
 # Without the placeholder both sides would resolve to the same document and every bump would

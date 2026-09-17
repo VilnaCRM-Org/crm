@@ -62,7 +62,7 @@ write_pins() {
     printf 'GRAPHQL_SCHEMA_VERSION=%s\n' "$1"
     printf 'OPENAPI_SPEC_VERSION=%s\n' "$2"
     printf 'OPENAPI_SPEC_URL=https://raw.githubusercontent.com/VilnaCRM-Org/user-service/${OPENAPI_SPEC_VERSION}/spec.yaml\n'
-  } > "$SANDBOX/.env"
+  } > "$SANDBOX/.env.example"
 }
 
 run_monitor() {

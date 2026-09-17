@@ -1,8 +1,7 @@
 import preloadedAuthTokenSeed from '@/config/env/preloaded-auth-token';
+import ReactiveVarFactory from '@/lib/state/reactive-var-factory';
+import type { ReactiveVar } from '@/lib/state/types/reactive-var';
 import type { AuthState } from '@auth/types/auth-store';
-import type { ReactiveVar } from '@auth/types/reactive-var';
-
-import ReactiveVarFactory from './reactive-var';
 
 const CLEARED_STATE: AuthState = {
   email: '',

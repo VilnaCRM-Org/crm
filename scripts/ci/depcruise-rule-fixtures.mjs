@@ -153,6 +153,20 @@ export const FIXTURES = {
       'src/services/error/index.ts': leaf('error'),
     },
   },
+  'no-apollo-client-outside-data-layer': {
+    files: {
+      'package.json': manifest({ dependencies: { '@apollo/client': '1.0.0' } }),
+      'node_modules/@apollo/client/package.json': npmPackage('@apollo/client'),
+      'node_modules/@apollo/client/index.js': npmBody,
+      'src/components/user-list/index.tsx': useNpm('@apollo/client'),
+    },
+  },
+  'no-shared-ui-to-http-client': {
+    files: {
+      'src/hooks/use-users.ts': reexport('../services/https-client/fetch-https-client'),
+      'src/services/https-client/fetch-https-client.ts': leaf('fetch-https-client'),
+    },
+  },
   'no-di-config-import-outside-composition-root': {
     files: {
       'src/utils/thing/index.ts': reexport('../../config/dependency-injection-config'),

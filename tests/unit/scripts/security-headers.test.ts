@@ -340,9 +340,9 @@ describe('scripts/generate-serve-config.js (issue #113)', () => {
     expect(loadBuildEnv(join(tmpdir(), 'absent-serve-config', '.env'))).toEqual({});
   });
 
-  it('renders the committed serve.json byte for byte from the committed policy and .env', () => {
+  it('renders the committed serve.json byte for byte from the policy and .env.example', () => {
     const policy = loadPolicy();
-    const env = loadBuildEnv(join(projectRoot, '.env'));
+    const env = loadBuildEnv(join(projectRoot, '.env.example'));
     const committed = readFileSync(join(projectRoot, 'serve.json'), 'utf8');
 
     expect(composeServeJson(policy, env, JSON.parse(committed))).toBe(committed);

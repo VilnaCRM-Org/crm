@@ -9,6 +9,7 @@ This index lists the Architecture Decision Records for this repository.
 - [ADR-005: Client security events leave through the observability boundary](./005-client-security-event-boundary.md)
 - [ADR-006: One generated security-header baseline serves production and the dev server](./006-browser-security-header-baseline.md)
 - [ADR-007: Reliability model: recoverable errors, route boundaries, and visible fallbacks](./007-reliability-model.md)
+- [ADR-008: Frontend state architecture: server, client, and session state](./008-frontend-state-architecture.md)
 
 ## Writing a new ADR
 

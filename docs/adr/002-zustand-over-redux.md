@@ -1,6 +1,6 @@
 # ADR-002: Zustand vs Redux for Client State Management
 
-- Status: Approved
+- Status: Superseded
 
 - Deciders: @kravalg
 
@@ -80,6 +80,19 @@ concerns.
 
 ## Update history
 
+- **2026-09-17** — **Superseded by [ADR-008](./008-frontend-state-architecture.md)**
+  ([#110](https://github.com/VilnaCRM-Org/crm/issues/110)). The Redux → Zustand migration
+  this record decided did happen ([#46](https://github.com/VilnaCRM-Org/crm/pull/46)), but the
+  Zustand store it produced was replaced weeks later by an Apollo `makeVar`-shaped reactive var
+  when registration moved to GraphQL ([#42](https://github.com/VilnaCRM-Org/crm/pull/42)), and
+  that var was then made dependency-free to keep `@apollo/client` off the auth page's paint
+  path. From that point `zustand` shipped in `package.json` without a single import in `src/`,
+  while this ADR, `CLAUDE.md` and `AGENTS.md` still named it the canonical store. The Module
+  Federation premise never held either: the packages are installed but `rsbuild.config.ts`
+  registers no plugin, and a unit test asserts it stays that way. ADR-008 sanctions the
+  reactive var as the one client/UI-state primitive, removes `zustand`, and adds the gates
+  that keep the docs and the code agreeing. The comparison table below is kept as the
+  historical evaluation.
 - **2026-08-13** — Marked the follow-up Done. It had continued to present completed work as
   pending. Recorded while adding the documentation drift gates in
   [#122](https://github.com/VilnaCRM-Org/crm/issues/122).

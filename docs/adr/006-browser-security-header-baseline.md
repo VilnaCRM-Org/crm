@@ -67,7 +67,7 @@ production image, and the gate provably read the same values.
 The artifacts: [`config/security-headers.json`](../../config/security-headers.json) (validated by
 `config/security-headers.schema.json`) is the policy; [`scripts/security-headers.js`](../../scripts/security-headers.js)
 renders it and refuses a weakened baseline; `scripts/generate-serve-config.js` writes the
-`headers` block of `serve.json` from the policy and the tracked `.env`
+`headers` block of `serve.json` from the policy and the tracked `.env.example`
 (`make security-headers-generate`, drift-checked by `make lint-security-headers` inside
 `make lint`); `scripts/render-security-headers.js` runs from `scripts/docker-entrypoint.sh` and
 renders the served `serve.json` from the immutable baseline in `config/` plus the runtime API

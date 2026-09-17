@@ -4,26 +4,6 @@ import AuthStateVar from '@auth/stores/auth-var';
 import useAuthToken from '@auth/stores/use-auth-token';
 import { buildToken } from '@tests/builders';
 
-// Wraps every unsubscriber handed out by `onNextChange` so tests can assert which
-// registrations the hook actually cancels on cleanup.
-class UnsubscribeTracker {
-  public readonly cancelled: boolean[] = [];
-
-  public install(): void {
-    const reactiveVar = AuthStateVar.reactiveVar();
-    const realOnNextChange = reactiveVar.onNextChange.bind(reactiveVar);
-    jest.spyOn(reactiveVar, 'onNextChange').mockImplementation((listener) => {
-      const unsubscribe = realOnNextChange(listener);
-      const index = this.cancelled.length;
-      this.cancelled.push(false);
-      return (): void => {
-        this.cancelled[index] = true;
-        unsubscribe();
-      };
-    });
-  }
-}
-
 describe('useAuthToken', () => {
   beforeEach(() => AuthStateVar.reset());
   afterEach(() => {
@@ -62,61 +42,25 @@ describe('useAuthToken', () => {
     expect(AuthStateVar.get().token).toBe(afterUnmountToken);
   });
 
-  it('unregisters the armed listener on unmount', () => {
-    const tracker = new UnsubscribeTracker();
-    tracker.install();
-
-    const { unmount } = renderHook(() => useAuthToken());
-    expect(tracker.cancelled).toEqual([false]);
-
-    unmount();
-    expect(tracker.cancelled).toEqual([true]);
-  });
-
-  it('cancels the latest registration after re-arming on a token change', () => {
-    const tracker = new UnsubscribeTracker();
-    tracker.install();
-
-    const { unmount } = renderHook(() => useAuthToken());
-    act(() => AuthStateVar.set({ token: buildToken() }));
-    expect(tracker.cancelled).toEqual([false, false]);
-
-    unmount();
-    expect(tracker.cancelled).toEqual([false, true]);
-  });
-
-  // Guards against re-arming with a fresh closure per notification, which would retain an
-  // ever-growing wrapper chain (and recursive unsubscribe depth) for mounted consumers.
-  it('re-arms the same listener function on every auth change', () => {
+  it('subscribes to the auth reactive var once and unsubscribes on unmount', () => {
     const reactiveVar = AuthStateVar.reactiveVar();
-    const realOnNextChange = reactiveVar.onNextChange.bind(reactiveVar);
-    const registered: unknown[] = [];
-    jest.spyOn(reactiveVar, 'onNextChange').mockImplementation((listener) => {
-      registered.push(listener);
-      return realOnNextChange(listener);
-    });
+    const unsubscribe = jest.fn();
+    const subscribe = jest.spyOn(reactiveVar, 'subscribe').mockReturnValue(unsubscribe);
 
     const { unmount } = renderHook(() => useAuthToken());
-    act(() => AuthStateVar.set({ token: buildToken() }));
-    act(() => AuthStateVar.set({ token: buildToken() }));
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(unsubscribe).not.toHaveBeenCalled();
 
-    expect(registered).toHaveLength(3);
-    expect(new Set(registered).size).toBe(1);
     unmount();
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
   });
 
-  // Apollo snapshots listeners before notifying, so a listener can fire after the hook's
-  // cleanup ran in the same broadcast; it must neither notify React nor re-arm itself.
-  it('ignores a notification that races with cleanup in the same broadcast', () => {
-    const reactiveVar = AuthStateVar.reactiveVar();
-    let unmountHook = (): void => {};
-    reactiveVar.onNextChange((): void => unmountHook());
+  it('reads a token that was set before the consumer mounted', () => {
+    const token = buildToken();
+    AuthStateVar.set({ token });
 
-    const { unmount } = renderHook(() => useAuthToken());
-    unmountHook = unmount;
-    const relistenSpy = jest.spyOn(reactiveVar, 'onNextChange');
+    const { result } = renderHook(() => useAuthToken());
 
-    act(() => AuthStateVar.set({ token: buildToken() }));
-    expect(relistenSpy).not.toHaveBeenCalled();
+    expect(result.current).toBe(token);
   });
 });

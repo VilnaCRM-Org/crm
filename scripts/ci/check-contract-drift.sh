@@ -13,12 +13,12 @@
 #   * an upstream lookup failure ALWAYS fails the run -- a dead monitor is worse than none.
 #
 # Inputs (all overridable so the Bats suite can drive every path against fixtures):
-#   CONTRACT_ENV_FILE       env file holding the pins           (default .env)
+#   CONTRACT_ENV_FILE       tracked env file holding the pins   (default .env.example)
 #   CONTRACT_UPSTREAM_REPO  owner/name of the upstream repo     (default: read from the pins)
 #   CONTRACT_DRIFT_LABEL    label keying the tracking issue     (default contract-drift)
 set -eu
 
-CONTRACT_ENV_FILE="${CONTRACT_ENV_FILE:-.env}"
+CONTRACT_ENV_FILE="${CONTRACT_ENV_FILE:-.env.example}"
 CONTRACT_DRIFT_LABEL="${CONTRACT_DRIFT_LABEL:-contract-drift}"
 
 OPENAPI_KEY='OPENAPI_SPEC_VERSION'

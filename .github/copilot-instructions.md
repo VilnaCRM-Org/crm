@@ -8,7 +8,8 @@ before proposing any change, and follow every `.claude/skills/*/SKILL.md` that m
 ## Stack
 
 - React 19, TypeScript (`strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`),
-  Material UI v7 with Emotion, Zustand, React Router v7 (the `react-router` package).
+  Material UI v7 with Emotion, a dependency-free reactive var for client state (ADR-008),
+  React Router v7 (the `react-router` package).
 - tsyringe with `reflect-metadata` for dependency injection.
 - i18next v26 with react-i18next; `uk` is the main language, `en` the fallback.
 - RSBuild (Rspack) for the build; Apollo Server as the local GraphQL mock; Mockoon for E2E.

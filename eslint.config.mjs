@@ -359,6 +359,51 @@ const routeObjectShapeSelectors = [
 
 // The selector families every `src/routes/**/*.tsx` file carries (issue #116); the three route
 // blocks below add or omit the #128 `new` ban and the router-construction ban per file.
+// Source (issue #110, ADR-008): client/UI state has exactly one sanctioned primitive — the
+// dependency-free reactive var in `src/lib/state/` — and exactly one React bridge,
+// `useReactiveVar`, so a store cannot hand-roll its own `useSyncExternalStore` subscription
+// (the re-arming listener logic `use-auth-token.ts` used to carry) — as a named or aliased
+// import, a `React.` member, a computed `React['…']` member, or a destructured property — or
+// pull in zustand, which
+// the docs once promised and the code never used. Re-included in EVERY src-scoped block, like
+// the router-construction selectors, because flat config replaces `no-restricted-syntax` per
+// file; `src/lib/state/use-reactive-var.ts`, the single sanctioned bridge, gets its own block
+// below that omits exactly these selectors.
+const clientStateSelectors = [
+  {
+    selector:
+      'ImportDeclaration[source.value=/^zustand(\\/|$)/], ' +
+      'ImportExpression > Literal[value=/^zustand(\\/|$)/]',
+    message:
+      'Client/UI state uses the reactive-var primitive in src/lib/state (ADR-008); zustand is ' +
+      'not a dependency of this project (issue #110).',
+  },
+  {
+    selector:
+      'ImportDeclaration[source.value="react"] > ' +
+      'ImportSpecifier[imported.name="useSyncExternalStore"]',
+    message:
+      'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
+      'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
+  },
+  {
+    selector:
+      'MemberExpression:matches([computed=false][property.name="useSyncExternalStore"], ' +
+      '[computed=true][property.value="useSyncExternalStore"])',
+    message:
+      'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
+      'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
+  },
+  {
+    selector:
+      'ObjectPattern > Property:matches([key.name="useSyncExternalStore"], ' +
+      '[key.value="useSyncExternalStore"])',
+    message:
+      'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
+      'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
+  },
+];
+
 const routeShellSelectors = [
   ...dataTestidSelectors,
   ...typeDeclarationSelectors,
@@ -675,6 +720,7 @@ export default [
         ...noRawIntlSelectors,
         ...suspenseFallbackSelectors,
         ...routerConstructionSelectors,
+        ...clientStateSelectors,
       ],
     },
   },
@@ -734,6 +780,7 @@ export default [
         ...noNewBehavioralClassInComponentSelectors,
         ...suspenseFallbackSelectors,
         ...routerConstructionSelectors,
+        ...clientStateSelectors,
       ],
     },
   },
@@ -752,6 +799,7 @@ export default [
         ...routeShellSelectors,
         ...noNewBehavioralClassInComponentSelectors,
         ...routerConstructionSelectors,
+        ...clientStateSelectors,
       ],
     },
   },
@@ -763,7 +811,12 @@ export default [
   {
     files: ['src/routes/route-composer.tsx', 'src/routes/route-mapper.tsx'],
     rules: {
-      'no-restricted-syntax': ['error', ...routeShellSelectors, ...routerConstructionSelectors],
+      'no-restricted-syntax': [
+        'error',
+        ...routeShellSelectors,
+        ...routerConstructionSelectors,
+        ...clientStateSelectors,
+      ],
     },
   },
 
@@ -777,6 +830,7 @@ export default [
         'error',
         ...routeShellSelectors,
         ...noNewBehavioralClassInComponentSelectors,
+        ...clientStateSelectors,
       ],
     },
   },
@@ -852,6 +906,7 @@ export default [
         ...noProcessEnvSelectors,
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,
+        ...clientStateSelectors,
       ],
     },
   },
@@ -877,6 +932,7 @@ export default [
         ...noRawIntlSelectors,
         ...noUninjectedCollaboratorSelectors,
         ...routerConstructionSelectors,
+        ...clientStateSelectors,
       ],
     },
   },
@@ -896,6 +952,7 @@ export default [
         ...noRawIntlSelectors,
         noUninjectedCollaboratorSelectors[0],
         ...routerConstructionSelectors,
+        ...clientStateSelectors,
       ],
     },
   },
@@ -924,6 +981,7 @@ export default [
         ...typeDeclarationSelectors,
         ...noRawIntlSelectors,
         ...routerConstructionSelectors,
+        ...clientStateSelectors,
       ],
     },
   },
@@ -960,6 +1018,7 @@ export default [
         ...noProcessEnvSelectors,
         ...noUninjectedCollaboratorSelectors,
         ...routerConstructionSelectors,
+        ...clientStateSelectors,
       ],
     },
   },
@@ -978,6 +1037,25 @@ export default [
       'src/**/types.ts',
       'src/**/types/**/*.ts',
     ],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...dataTestidSelectors,
+        ...typeDeclarationSelectors,
+        ...noProcessEnvSelectors,
+        ...noRawIntlSelectors,
+        ...routerConstructionSelectors,
+        ...clientStateSelectors,
+      ],
+    },
+  },
+
+  // Source (issue #110): `src/lib/state/use-reactive-var.ts` IS the sanctioned
+  // `useSyncExternalStore` bridge, so the client-state selectors are lifted here (and only
+  // here). Every other selector the hooks block carries is re-included (flat config replaces,
+  // does not merge), and the block is ordered after the hooks block so it wins for this file.
+  {
+    files: ['src/lib/state/use-reactive-var.ts'],
     rules: {
       'no-restricted-syntax': [
         'error',

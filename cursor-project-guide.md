@@ -487,8 +487,8 @@ make build
 # Stop containers
 make down
 
-# Check .env for GRAPHQL_SCHEMA_VERSION
-cat .env | grep GRAPHQL_SCHEMA_VERSION
+# Check the tracked template for GRAPHQL_SCHEMA_VERSION
+grep GRAPHQL_SCHEMA_VERSION .env.example
 
 # Restart (will re-download schema)
 make start

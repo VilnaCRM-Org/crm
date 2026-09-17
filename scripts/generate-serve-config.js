@@ -4,8 +4,9 @@
  * config/security-headers.json (issue #113).
  *
  * Build-time API origins (the REACT_APP_* URLs RSBuild inlines into the bundle) are read from the
- * tracked .env only, so the committed serve.json is the same on every machine and in CI. Runtime
- * overrides (APP_CONFIG_*) are appended by scripts/render-security-headers.js at container start.
+ * tracked .env.example only — never from the untracked local .env (issue #142) — so the
+ * committed serve.json is the same on every machine and in CI. Runtime overrides
+ * (APP_CONFIG_*) are appended by scripts/render-security-headers.js at container start.
  *
  * Usage:
  *   node scripts/generate-serve-config.js            # rewrite serve.json
@@ -24,7 +25,7 @@ const { loadPolicy, renderServeConfig } = require('./security-headers');
 
 const projectRoot = path.resolve(__dirname, '..');
 const SERVE_CONFIG_PATH = path.join(projectRoot, 'serve.json');
-const DOTENV_PATH = path.join(projectRoot, '.env');
+const DOTENV_PATH = path.join(projectRoot, '.env.example');
 
 function readIfPresent(filePath) {
   try {
@@ -72,7 +73,7 @@ function main(argv) {
   if (check) {
     process.stderr.write(
       'generate-serve-config: serve.json is stale relative to config/security-headers.json and ' +
-        '.env; run `make security-headers-generate` and commit the result.\n'
+        '.env.example; run `make security-headers-generate` and commit the result.\n'
     );
     return 1;
   }
