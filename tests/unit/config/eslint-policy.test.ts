@@ -126,6 +126,17 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     });
   });
 
+  it('pins the client-state gate (issue #110) at error on components, logic, hooks', () => {
+    const zustand = 'ImportDeclaration[source.value=/^zustand(\\/|$)/]';
+    const bridge = 'ImportSpecifier[imported.name="useSyncExternalStore"]';
+    [COMPONENT_TSX, LOGIC_TS, HOOK_TS].forEach((file) => {
+      const nrs = rulesFor(file)['no-restricted-syntax'];
+      expect(severityOf(nrs)).toBe(2);
+      expect(hasSelectorContaining(nrs, zustand)).toBe(true);
+      expect(hasSelectorContaining(nrs, bridge)).toBe(true);
+    });
+  });
+
   it('keeps the route-object shape gate (issue #116) scoped to the route shell', () => {
     // The shape gate lives only in the `src/routes/**/*.tsx` blocks (its must-fail and must-pass
     // fixtures resolve those paths); a component or logic file never builds a route object.

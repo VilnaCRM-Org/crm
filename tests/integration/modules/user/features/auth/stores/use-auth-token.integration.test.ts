@@ -37,18 +37,18 @@ describe('useAuthToken integration coverage', () => {
     expect(AuthStateVar.get().token).toBe('after-unmount');
   });
 
-  // Apollo snapshots listeners before notifying, so a listener can fire after the hook's
-  // cleanup ran in the same broadcast; it must neither notify React nor re-arm itself.
-  it('ignores a notification that races with cleanup in the same broadcast', () => {
+  it('survives a subscriber that unmounts the consumer in the same broadcast', () => {
     const reactiveVar = AuthStateVar.reactiveVar();
     let unmountHook = (): void => {};
-    reactiveVar.onNextChange((): void => unmountHook());
+    const unsubscribeProbe = reactiveVar.subscribe((): void => unmountHook());
 
-    const { unmount } = renderHook(() => useAuthToken());
+    const { result, unmount } = renderHook(() => useAuthToken());
     unmountHook = unmount;
-    const relistenSpy = jest.spyOn(reactiveVar, 'onNextChange');
 
     act(() => AuthStateVar.set({ token: 'race' }));
-    expect(relistenSpy).not.toHaveBeenCalled();
+
+    expect(result.current).toBeNull();
+    expect(AuthStateVar.get().token).toBe('race');
+    unsubscribeProbe();
   });
 });

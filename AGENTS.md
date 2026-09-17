@@ -748,7 +748,7 @@ instead of via module mocking.
   `tokens.ts` + registration in that area's `di.ts` composition root (issue #109), resolved
   with `@inject`/`container.resolve`.
 - **Render-path state primitives** that must stay container-free for the auth-page
-  Lighthouse budget (`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`)
+  Lighthouse budget (`auth-var`, `src/lib/state/*`, `auth-store-selectors`, `use-auth-token`)
   → instance class exported as a **module singleton** (`export default new X()`); call sites
   remain `X.method(...)` and no tsyringe enters the paint path.
 - **Pure helpers / validators / type guards / style helpers / lazy loaders** → instance
@@ -926,8 +926,9 @@ contract module and passed to collaborators as data.
 
 Never push the DI container into the auth paint path: do not eager-import
 `dependency-injection-config.ts`, and do not convert a container-free render-path singleton into a
-container-resolved class. Those inside a gated directory (`auth-var`, `reactive-var`,
-`reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`, the
+container-resolved class. Those inside a gated directory (`auth-var` — its
+`ReactiveVarFactory` lives in `src/lib/state/`, outside the gated globs —
+`auth-store-selectors`, `response-schemas`, `map-registration-error`, the
 auth lazy loaders, `registration-handlers-factory`, `auth-error-reporter`,
 `boundary-error-reporter` (the reporter the paint-path error boundaries receive by prop,
 issue #116), `url-builder`, `locale-formatter-core`, and the observability
@@ -1028,33 +1029,43 @@ passes both gates as written. Hooks (`use-*.ts`) are outside the static
 gate; that is not license to `new` a collaborator there — expect review to flag it. Never
 satisfy either gate with `eslint-disable`, a dependency-cruiser ignore, or `@ts-ignore`.
 
-### Zustand Store Pattern
+### Client-state store pattern (reactive var, ADR-008)
 
-Stores use Zustand (`create` + `devtools`) and stay container-free. Resolve the DI
-container once in the composition root, then inject an actions class (which holds the
-repositories) into the store factory — never call `container.resolve` inside the store
-or its actions. See `src/modules/user/features/auth/stores/` for the reference store.
+State is one of three categories — server (a repository over Apollo / `HttpsClient`),
+client/UI (a reactive var), session (`AuthStateVar`) — and the category decides the
+primitive; the decision rule and a worked example per category are in
+[`docs/state-architecture.md`](docs/state-architecture.md). A client/UI store is a `*Var`
+class over `ReactiveVarFactory` from `src/lib/state/`, exported as a module singleton, with
+named actions and no I/O; React subscribes through `useReactiveVar`, the one sanctioned
+`useSyncExternalStore` bridge. `zustand` is not a dependency, and an import of it or a
+hand-rolled `useSyncExternalStore` fails `make lint-eslint`. See
+`src/modules/user/features/auth/stores/` for the reference store.
 
 ```typescript
-// Composition root: src/modules/[Module]/features/[Feature]/stores/index.ts
-const moduleStoreFactory = new ModuleStoreFactory();
-export const useModuleStore = moduleStoreFactory.create(container.resolve(ModuleStoreActions));
+// Store: src/modules/[Module]/features/[Feature]/stores/[feature]-var.ts
+export class FeatureFilterVar {
+  private readonly state = new ReactiveVarFactory().create<FeatureFilter>(CLEARED_FILTER);
 
-// Store factory: container-free; receives injected actions. Instance method + module
-// singleton (no `static`) per the no-static convention above.
-class ModuleStoreFactory {
-  public create(actions: ModuleStoreActions): UseModuleStore {
-    return create<ModuleStore>()(
-      devtools(
-        (set) => ({
-          // state + actions delegating to `actions`
-        }),
-        { name: 'module' }
-      )
-    );
+  public reactiveVar(): ReactiveVar<FeatureFilter> {
+    return this.state;
+  }
+
+  public setQuery(query: string): void {
+    this.state({ ...this.state(), query });
   }
 }
+export default new FeatureFilterVar();
+
+// Hook: src/modules/[Module]/features/[Feature]/stores/use-feature-query.ts
+export default function useFeatureQuery(): string {
+  return useReactiveVar(featureFilterVar.reactiveVar(), (filter) => filter.query);
+}
 ```
+
+Server-backed actions stay off the store: the composition root
+(`stores/index.ts` in the auth feature) resolves the DI graph behind a dynamic `import()`
+on the first action and hands the injected actions class the store instance — never call
+`container.resolve` inside a store or its React hooks.
 
 ### API Error Handling Pattern
 
@@ -1416,12 +1427,12 @@ nvm use         # If using nvm
 
 2. Use React DevTools in browser
 
-3. Check Zustand/auth state:
+3. Check the auth state:
 
    ```typescript
-   import { useAuthStore } from '@auth/stores';
+   import { AuthStateVar } from '@auth/stores';
 
-   const authState = useAuthStore.getState();
+   const authState = AuthStateVar.get();
    console.log('Auth state:', authState);
    ```
 
@@ -1639,8 +1650,9 @@ build goes red. Know them before you touch a config file:
 
 ### API Authentication
 
-- Access token is stored only in the in-memory Zustand auth state (`useAuthStore`);
-  it is never persisted to `localStorage`, cookies, or disk
+- Access token is stored only in the in-memory reactive auth state (`AuthStateVar`, read
+  through `useAuthToken`); it is never persisted to `localStorage`, cookies, or disk, has
+  no refresh, and only `authActions.logout()` clears it (ADR-008)
 - **Testing/LHCI only**: a token may be preloaded at runtime via
   `window.__PRELOADED_AUTH_TOKEN__` or inlined at build time from the
   `REACT_APP_LHCI_PRELOADED_AUTH_TOKEN` env var, so the Lighthouse, Playwright and visual

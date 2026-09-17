@@ -428,6 +428,7 @@ In-repository documentation:
 - [Repository conventions and commands](CLAUDE.md)
 - [Contributing guide](CONTRIBUTING.md)
 - [Feature flags — lifecycle and rollout](docs/feature-flags.md)
+- [Where does my state go? — server, client and session state](docs/state-architecture.md)
 - [Runtime configuration (`@/config/runtime`)](src/config/runtime/README.md)
 
 If the documentation doesn't cover what you need, search the

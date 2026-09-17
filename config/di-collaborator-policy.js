@@ -167,15 +167,9 @@ const EXEMPT_RENDER_PATH_FILES = [
   },
   {
     path: 'src/modules/user/features/auth/stores/auth-var.ts',
-    reason: 'Dependency-free reactive auth state; composes ReactiveVarFactory off the container.',
-  },
-  {
-    path: 'src/modules/user/features/auth/stores/reactive-var.ts',
-    reason: 'Container-free reactive-var factory used by auth-var.',
-  },
-  {
-    path: 'src/modules/user/features/auth/stores/reactive-var-state.ts',
-    reason: 'Container-free reactive-var state leaf.',
+    reason:
+      'Dependency-free reactive auth state; composes the src/lib/state ReactiveVarFactory off ' +
+      'the container (ADR-008).',
   },
   {
     path: 'src/modules/user/features/auth/stores/auth-store-selectors.ts',

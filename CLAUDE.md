@@ -11,7 +11,10 @@ This template is used for all VilnaCRM microservices.
 ## Tech Stack
 
 - **Frontend**: React 19, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
-- **State Management**: Zustand (lightweight store with `create` and `devtools`)
+- **State Management**: three categories with one primitive each (ADR-008, issue #110) —
+  server state behind repositories over Apollo Client / `HttpsClient`, client/UI state in the
+  dependency-free reactive var from `src/lib/state/` read through `useReactiveVar`, and the
+  in-memory session token in `AuthStateVar`; see `docs/state-architecture.md`
 - **Routing**: React Router v7 (the `react-router` package; `react-router-dom` was folded into it)
 - **DI Container**: tsyringe with reflect-metadata decorators
 - **i18n**: i18next v26 + react-i18next v17 (main language: uk, fallback: en)
@@ -1094,7 +1097,7 @@ complement.
 ### Architecture gate integrity (issue #181)
 
 `.dependency-cruiser.js` encodes the barrel/public-API contract, DI composition-root isolation,
-layer bans, type-file purity, and folder/naming conventions in 49 rules of hand-written path
+layer bans, type-file purity, and folder/naming conventions in 51 rules of hand-written path
 regexes. Nothing in CI distinguished "no violations because the code is clean" from "no violations
 because a regex went dead" — a typo'd anchor makes a rule match nothing and the gate passes
 **vacuously** for every future PR.
@@ -1480,13 +1483,13 @@ src/
 │   └── user/
 │       ├── features/        # Feature-specific code
 │       │   └── auth/
-│       │       ├── stores/        # Zustand auth store + composition root
+│       │       ├── stores/        # AuthStateVar (reactive var) + composition root
 │       │       ├── repositories/  # AuthRepository, API clients, error factory
 │       │       └── types/         # Auth types (AuthError, AuthStore, ...)
 │       ├── store/           # Shared response/error mappers
 │       └── package.json     # Module metadata
 ├── components/      # Reusable UI components (prefixed with UI*)
-├── lib/             # Framework-agnostic contracts (e.g. reliability), container-free
+├── lib/             # Framework-agnostic contracts (reliability, the state primitive), container-free
 ├── features/        # Shared features
 ├── services/        # Singleton services (HttpsClient, error handling)
 ├── config/          # DI configuration, tokens, API config
@@ -1570,9 +1573,11 @@ private async load(): Promise<AuthStoreActions> {
 Auth state pattern (`src/modules/user/features/auth/stores/`):
 
 ```typescript
-// auth-var.ts — dependency-free reactive state (ReactiveVarFactory, no @apollo/client).
-// Instance methods on a module-singleton instance keep the paint path container-free
-// (no tsyringe in the auth chunk) while satisfying the no-static convention (issue #100).
+// auth-var.ts — dependency-free reactive state over the src/lib/state ReactiveVarFactory
+// (no @apollo/client, no zustand; ADR-008). Instance methods on a module-singleton instance
+// keep the paint path container-free (no tsyringe in the auth chunk) while satisfying the
+// no-static convention (issue #100). React reads it through useReactiveVar
+// (@/lib/state/use-reactive-var), the one sanctioned useSyncExternalStore bridge.
 export class AuthStateVar {
   public get(): AuthState {
     /* read */
@@ -1688,7 +1693,7 @@ container — collaborators are injected, not reached for.
   in `tokens.ts`, and resolved via `container.resolve<Type>(TOKENS.X)` or constructor
   `@inject`.
 - Render-path state primitives that must stay container-free for the auth-page Lighthouse
-  budget (`auth-var`, `reactive-var`, `auth-store-selectors`, `use-auth-token`) are
+  budget (`auth-var`, `src/lib/state/*`, `auth-store-selectors`, `use-auth-token`) are
   instance classes exported as a **module singleton** (`export default new X()`), so call
   sites stay `X.method(...)` and no tsyringe is pulled into the paint path.
 - Pure helpers/validators/type-guards/style-helpers/lazy-loaders also become instance
@@ -1930,8 +1935,9 @@ Three different things are outside the gate, and the distinction matters when yo
   gated `stores/` folder), composition roots (`di.ts` — they must value-import every concrete
   class to register it), token modules, and index barrels.
 - **In scope but exempted by explicit path** in `EXEMPT_RENDER_PATH_FILES`: the
-  **container-free render-path singletons** — `auth-var`, `reactive-var`,
-  `reactive-var-state`, `auth-store-selectors`, `response-schemas`, `map-registration-error`,
+  **container-free render-path singletons** — `auth-var` (its `ReactiveVarFactory` now
+  lives in `src/lib/state/`, outside the gated globs), `auth-store-selectors`,
+  `response-schemas`, `map-registration-error`,
   `lazy-module-loader`, `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
   boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, and the
