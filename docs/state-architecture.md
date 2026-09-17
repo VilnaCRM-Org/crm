@@ -96,11 +96,13 @@ The reference implementation is `src/modules/user/features/auth/stores/` — `au
 
 ## Session state
 
-`AuthStateVar` is client/UI state with a written persistence contract: the token is in memory
-only, lives as long as the page, is never written to storage or a cookie, has no refresh, and is
-cleared by `authActions.logout()` alone. A `401` surfaces as an `AuthError` on the calling flow.
-Read it with `useAuthToken()` (re-renders only when the token changes) or `useAuthState()`.
-Adding persistence is an architecture change that needs a new ADR, not a `localStorage` line.
+Session state is its own category, not a kind of client/UI state: `AuthStateVar` is built on
+the same reactive-var primitive, but the token has a written persistence contract that no other
+store carries — it is in memory only, lives as long as the page, is never written to storage or
+a cookie, has no refresh, and is cleared by `authActions.logout()` alone. A `401` surfaces as
+an `AuthError` on the calling flow. Read it with `useAuthToken()` (re-renders only when the
+token changes) or `useAuthState()`. Adding persistence is an architecture change that needs a
+new ADR, not a `localStorage` line.
 
 ## What fails CI
 

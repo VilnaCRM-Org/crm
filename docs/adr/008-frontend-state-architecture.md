@@ -56,8 +56,9 @@ categories, and the category decides the primitive, the owner and the gate:
 - **Client/UI state** — owned by the browser session. Primitive: a `*Var` class over
   `ReactiveVarFactory` from `src/lib/state/`. Read from React through
   `useReactiveVar(variable, select)`.
-- **Session state** — owned by the auth feature. Primitive: `AuthStateVar`, client/UI state with
-  a documented persistence contract. Read from React through `useAuthState` / `useAuthToken`.
+- **Session state** — owned by the auth feature. Primitive: `AuthStateVar`, built on the same
+  reactive var but its own category, because the token carries a documented persistence
+  contract no other store has. Read from React through `useAuthState` / `useAuthToken`.
 
 **Decision rule.** Does the backend own the value? Server state. Otherwise, is it the token or
 what the token implies about the user? Session state. Otherwise it is client/UI state. A value

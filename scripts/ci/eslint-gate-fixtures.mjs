@@ -113,7 +113,9 @@ const S = {
   useSyncExternalStoreMember:
     'MemberExpression:matches([computed=false][property.name="useSyncExternalStore"], ' +
     '[computed=true][property.value="useSyncExternalStore"])',
-  useSyncExternalStoreDestructured: 'ObjectPattern > Property[key.name="useSyncExternalStore"]',
+  useSyncExternalStoreDestructured:
+    'ObjectPattern > Property:matches([key.name="useSyncExternalStore"], ' +
+    '[key.value="useSyncExternalStore"])',
 };
 
 // Must-FAIL fixtures — one per error-severity selector string in the src scopes, covering the
@@ -896,6 +898,15 @@ const FIXTURES = [
     id: 'use-sync-external-store-destructured-hook',
     file: PROBES.hook,
     code: "import React from 'react';\nconst { useSyncExternalStore: subscribe } = React;\nexport default function useX() { return subscribe(() => () => {}, () => 1); }",
+    covers: [S.useSyncExternalStoreDestructured],
+    expect: 'fail',
+    rule: 'no-restricted-syntax',
+    tag: 'issue #110',
+  },
+  {
+    id: 'use-sync-external-store-computed-destructured-component',
+    file: PROBES.component,
+    code: "import React from 'react';\nconst { ['useSyncExternalStore']: subscribe } = React;\nexport default function X() { return subscribe(() => () => {}, () => 1); }",
     covers: [S.useSyncExternalStoreDestructured],
     expect: 'fail',
     rule: 'no-restricted-syntax',

@@ -393,7 +393,9 @@ const clientStateSelectors = [
       'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
   },
   {
-    selector: 'ObjectPattern > Property[key.name="useSyncExternalStore"]',
+    selector:
+      'ObjectPattern > Property:matches([key.name="useSyncExternalStore"], ' +
+      '[key.value="useSyncExternalStore"])',
     message:
       'Subscribe React to client state through useReactiveVar (@/lib/state/use-reactive-var), ' +
       'the one sanctioned useSyncExternalStore bridge (ADR-008, issue #110).',
