@@ -748,9 +748,11 @@ instead of via module mocking.
   `tokens.ts` + registration in that area's `di.ts` composition root (issue #109), resolved
   with `@inject`/`container.resolve`.
 - **Render-path state primitives** that must stay container-free for the auth-page
-  Lighthouse budget (`auth-var`, `src/lib/state/*`, `auth-store-selectors`, `use-auth-token`)
-  → instance class exported as a **module singleton** (`export default new X()`); call sites
-  remain `X.method(...)` and no tsyringe enters the paint path.
+  Lighthouse budget (`auth-var`, `auth-store-selectors`, `use-auth-token`) → instance class
+  exported as a **module singleton** (`export default new X()`); call sites remain
+  `X.method(...)` and no tsyringe enters the paint path. The shared primitive they compose,
+  `ReactiveVarFactory` / `ReactiveVarState` in `src/lib/state/`, is a constructible class
+  instead — one instance per store — and `use-reactive-var.ts` is a hook.
 - **Pure helpers / validators / type guards / style helpers / lazy loaders** → instance
   methods on a singleton class, never free functions.
 - **Exempt:** React components (`*.tsx`, incl. class error boundaries using

@@ -1693,9 +1693,11 @@ container — collaborators are injected, not reached for.
   in `tokens.ts`, and resolved via `container.resolve<Type>(TOKENS.X)` or constructor
   `@inject`.
 - Render-path state primitives that must stay container-free for the auth-page Lighthouse
-  budget (`auth-var`, `src/lib/state/*`, `auth-store-selectors`, `use-auth-token`) are
-  instance classes exported as a **module singleton** (`export default new X()`), so call
-  sites stay `X.method(...)` and no tsyringe is pulled into the paint path.
+  budget (`auth-var`, `auth-store-selectors`, `use-auth-token`) are instance classes exported
+  as a **module singleton** (`export default new X()`), so call sites stay `X.method(...)` and
+  no tsyringe is pulled into the paint path. The shared primitive they compose,
+  `ReactiveVarFactory` / `ReactiveVarState` in `src/lib/state/`, is a constructible class —
+  one instance per store — and `use-reactive-var.ts` is a hook.
 - Pure helpers/validators/type-guards/style-helpers/lazy-loaders also become instance
   methods on a singleton class rather than free functions.
 
