@@ -1,22 +1,24 @@
 import { Box } from '@mui/material';
-import { type JSX, ReactNode } from 'react';
+import { type JSX } from 'react';
 import { SubmitHandler, FieldValues, useFormContext } from 'react-hook-form';
 
 import type {
   FormBodyProps,
+  FormHeaderProps,
   SubmitControlsProps,
   SubmitHandlerOptions,
-  TitleHeadingComponent,
   UIFormProps,
 } from '@/components/types/ui-form';
 import UIButton from '@/components/ui-button';
 import FormProviderBridge from '@/components/ui-form/form-provider-bridge';
 import styles from '@/components/ui-form/styles';
 import UILiveStatus from '@/components/ui-live-status';
+import UIOfflineNotice from '@/components/ui-offline-notice';
 import UITypography from '@/components/ui-typography';
 import useFocusOnMount from '@/utils/use-focus-on-mount';
 
 import SubmitSpinner from './submit-spinner';
+import useOfflineSubmit from './use-offline-submit';
 import useUIForm from './use-ui-form';
 
 function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
@@ -31,19 +33,8 @@ function ErrorBanner({ error }: { error?: string | null }): JSX.Element | null {
   );
 }
 
-function FormHeader({
-  title,
-  subtitle,
-  showTitle,
-  showSubtitle,
-  titleComponent,
-}: {
-  title: ReactNode;
-  subtitle?: ReactNode;
-  showTitle: boolean;
-  showSubtitle: boolean;
-  titleComponent?: TitleHeadingComponent;
-}): JSX.Element {
+function FormHeader({ header }: { header: FormHeaderProps }): JSX.Element {
+  const { title, subtitle, showTitle, showSubtitle, titleComponent } = header;
   return (
     <>
       {showTitle && title && (
@@ -69,14 +60,18 @@ function SubmitControls({
   submitting,
   isSubmitDisabled,
   submitLabel,
+  describedBy,
+  buttonRef,
 }: SubmitControlsProps): JSX.Element {
   return (
     <UIButton
+      ref={buttonRef}
       type="submit"
       loading={submitting}
       loadingPosition="center"
       loadingIndicator={<SubmitSpinner />}
       disabled={isSubmitDisabled}
+      aria-describedby={describedBy}
       variant="contained"
       sx={styles.submitButton}
     >
@@ -89,33 +84,30 @@ function FormBody<T extends FieldValues>({
   handleSubmit,
   children,
   error,
-  title,
-  subtitle,
-  showTitle,
-  showSubtitle,
-  titleComponent,
   submitting,
   isSubmitDisabled,
   submitLabel,
   submittingLabel,
   announceSubmitting,
+  header,
 }: FormBodyProps<T>): JSX.Element {
   const methods = useFormContext<T>();
+  // Offline, the submit is disabled rather than allowed to fail: the notice sits inside the
+  // form after its heading so the registration overlay never covers it, the button describes
+  // itself by the notice, and focus moves there if the button held it (issue #147).
+  const offline = useOfflineSubmit();
   return (
     <form noValidate aria-busy={submitting} onSubmit={methods.handleSubmit(handleSubmit)}>
       <ErrorBanner error={error} />
-      <FormHeader
-        title={title}
-        subtitle={subtitle}
-        showTitle={showTitle}
-        showSubtitle={showSubtitle}
-        titleComponent={titleComponent}
-      />
+      <FormHeader header={header} />
+      <UIOfflineNotice ref={offline.noticeRef} id={offline.noticeId} online={offline.online} />
       {children}
       <SubmitControls
         submitting={submitting}
-        isSubmitDisabled={isSubmitDisabled}
+        isSubmitDisabled={isSubmitDisabled || !offline.online}
         submitLabel={submitLabel}
+        describedBy={offline.noticeId}
+        buttonRef={offline.submitRef}
       />
       <UILiveStatus message={announceSubmitting ? submittingLabel : ''} />
     </form>
@@ -147,11 +139,7 @@ export default function UIForm<T extends FieldValues>({
       <FormBody
         handleSubmit={buildSubmitHandler({ onSubmit, methods, defaultValues, resetOnSuccess })}
         error={error}
-        title={title}
-        subtitle={subtitle}
-        showTitle={showTitle}
-        showSubtitle={showSubtitle}
-        titleComponent={titleComponent}
+        header={{ title, subtitle, showTitle, showSubtitle, titleComponent }}
         submitting={submitting}
         isSubmitDisabled={isSubmitDisabled}
         submitLabel={submitLabel}

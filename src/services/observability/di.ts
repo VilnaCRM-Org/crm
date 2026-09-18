@@ -1,6 +1,9 @@
 import type { DependencyContainer } from 'tsyringe';
 
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
+import type DeadlineFetchAdapter from '@/services/https-client/deadline-fetch-adapter';
+import HTTP_TOKENS from '@/services/https-client/tokens';
+import type { ApolloLinkDeps } from '@/services/types/observability/apollo-link-deps';
 
 import ApolloLinkFactory from './apollo-link-factory';
 import correlationIdProvider from './correlation-id-provider';
@@ -12,6 +15,14 @@ import OBSERVABILITY_TOKENS from './tokens';
 class ObservabilityRegistrar implements ModuleRegistrar {
   public register(container: DependencyContainer): void {
     container.registerSingleton(OBSERVABILITY_TOKENS.ObservabilityService, ObservabilityService);
+    container.register<ApolloLinkDeps>(OBSERVABILITY_TOKENS.ApolloLinkFactoryDeps, {
+      useFactory: (c) => ({
+        observability: c.resolve<ObservabilityService>(OBSERVABILITY_TOKENS.ObservabilityService),
+        correlationIds: correlationIdProvider,
+        sessionCorrelation,
+        deadlineFetch: c.resolve<DeadlineFetchAdapter>(HTTP_TOKENS.DeadlineFetchAdapter),
+      }),
+    });
     container.registerSingleton(OBSERVABILITY_TOKENS.ApolloLinkFactory, ApolloLinkFactory);
     this.registerRenderPathSingletons(container);
   }

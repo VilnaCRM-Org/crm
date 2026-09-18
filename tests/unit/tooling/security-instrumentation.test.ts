@@ -50,7 +50,7 @@ describe('client security instrumentation (#159)', () => {
       'nextHeaders[this.sessionCorrelation.header] = this.sessionCorrelation.id();'
     );
     expect(readFile('src/services/observability/apollo-link-factory.ts')).toContain(
-      '[this.sessionCorrelation.header]: this.sessionCorrelation.id(),'
+      '[this.deps.sessionCorrelation.header]: this.deps.sessionCorrelation.id(),'
     );
   });
 });

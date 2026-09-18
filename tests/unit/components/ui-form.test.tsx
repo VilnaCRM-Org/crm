@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { JSX } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import UIForm from '@/components/ui-form';
+import render from '@tests/unit/utils/render-with-i18n';
 
 jest.mock('@/components/ui-button', () => ({
   __esModule: true,

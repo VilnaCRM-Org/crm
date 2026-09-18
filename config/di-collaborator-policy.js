@@ -184,12 +184,10 @@ const EXEMPT_RENDER_PATH_FILES = [
     reason: 'Container-free registration-error mapper singleton on the render path.',
   },
   {
-    path: 'src/modules/user/features/auth/utils/lazy-module-loader.ts',
-    reason: 'Container-free lazy-module loader used by the render path.',
-  },
-  {
     path: 'src/modules/user/features/auth/utils/load-registration-notification.ts',
-    reason: 'Container-free lazy loader composing LazyModuleLoader off the container.',
+    reason:
+      'Container-free lazy loader composing the src/lib/reliability ChunkRetryLoader off the ' +
+      'container (issue #147).',
   },
   {
     path: 'src/modules/user/features/auth/utils/registration-handlers-factory.ts',

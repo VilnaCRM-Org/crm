@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { z } from 'zod';
 
+import RequestDeadlineFactory from '@/lib/reliability/request-deadline-factory';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
@@ -10,7 +11,9 @@ import HttpResponseProcessor from '@/services/https-client/http-response-process
 import ResponseMessages from '@/services/https-client/response-messages';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
 import sessionCorrelation from '@/services/observability/session-correlation';
+import type RequestRetryService from '@/services/resilience/request-retry-service';
 import securityEventCore from '@/services/security-events/security-event-core';
+import type { RetryOperation, RetryOptions } from '@/services/types/resilience/request-retry';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
@@ -29,6 +32,13 @@ function createOkResponse(): Response {
   } as unknown as Response;
 }
 
+// Transport edges are exercised one attempt at a time; the retry policy has its own suite
+// (fetch-https-client.resilience.test.ts).
+const singleAttempt: RequestRetryService = {
+  execute: <T>(operation: RetryOperation<T>, options: RetryOptions): Promise<T> =>
+    operation({ attempt: 1, remainingMs: options.budgetMs }),
+} as RequestRetryService;
+
 describe('FetchHttpsClient transport edges', () => {
   const originalFetch = global.fetch;
   let mockFetch: jest.Mock;
@@ -37,10 +47,12 @@ describe('FetchHttpsClient transport edges', () => {
   beforeEach(() => {
     mockFetch = jest.fn();
     global.fetch = mockFetch as unknown as typeof fetch;
-    client = new FetchHttpsClient(
-      new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
-      new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore))
-    );
+    client = new FetchHttpsClient({
+      requestConfigBuilder: new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
+      responseProcessor: new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore)),
+      deadlines: new RequestDeadlineFactory(),
+      retries: singleAttempt,
+    });
   });
 
   afterAll(() => {
@@ -48,25 +60,28 @@ describe('FetchHttpsClient transport edges', () => {
   });
 
   describe('abort signal wiring', () => {
-    it('omits the signal property entirely when no AbortSignal is configured', async () => {
+    it('always sends the request under a deadline signal, even with no caller signal', async () => {
       mockFetch.mockResolvedValue(createOkResponse());
 
       await client.get(TEST_URL, { schema: passthrough });
 
       const requestInit = mockFetch.mock.calls[0][1] as RequestInit;
-      expect(Object.prototype.hasOwnProperty.call(requestInit, 'signal')).toBe(false);
-      expect(Object.keys(requestInit)).toEqual(['method', 'headers']);
+      expect(Object.keys(requestInit)).toEqual(['method', 'headers', 'signal']);
+      expect(requestInit.signal).toBeInstanceOf(AbortSignal);
+      expect(requestInit.signal?.aborted).toBe(false);
     });
 
-    it('forwards the configured AbortSignal on the request', async () => {
+    it('forwards a caller abort through the deadline signal on the request', async () => {
       mockFetch.mockResolvedValue(createOkResponse());
       const controller = new AbortController();
 
       await client.get(TEST_URL, { schema: passthrough, signal: controller.signal });
 
       const requestInit = mockFetch.mock.calls[0][1] as RequestInit;
-      expect(Object.prototype.hasOwnProperty.call(requestInit, 'signal')).toBe(true);
-      expect(requestInit.signal).toBe(controller.signal);
+      expect(requestInit.signal).not.toBe(controller.signal);
+      expect(requestInit.signal?.aborted).toBe(false);
+      controller.abort();
+      expect(requestInit.signal?.aborted).toBe(true);
     });
   });
 

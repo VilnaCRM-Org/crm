@@ -1,0 +1,6 @@
+{
+  "offline_notice": {
+    "offline": "You are offline. Submitting is unavailable until your connection is restored.",
+    "restored": "Connection restored."
+  }
+}

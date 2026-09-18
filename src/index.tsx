@@ -6,6 +6,8 @@ import '@/styles/fonts.css';
 import ErrorFallback from '@/components/error-boundary/error-fallback';
 import UIErrorBoundary from '@/components/error-boundary/ui-error-boundary';
 import appConfigSource from '@/config/runtime/app-config-source';
+import BrowserConnectivityAdapter from '@/lib/connectivity/browser-connectivity-adapter';
+import connectivityStateVar from '@/lib/connectivity/connectivity-state-var';
 import pageReloadNavigator from '@/lib/reliability/page-reload-navigator';
 import type { RecoverableError } from '@/lib/reliability/types/recoverable-error';
 import AppProviders from '@/providers/app-providers';
@@ -24,6 +26,7 @@ if (!rootElement) {
 const root = createRoot(rootElement);
 
 observabilityCore.init();
+new BrowserConnectivityAdapter(connectivityStateVar).attach(window);
 
 const BOOTSTRAP_RECOVERY: RecoverableError = {
   recoverable: true,

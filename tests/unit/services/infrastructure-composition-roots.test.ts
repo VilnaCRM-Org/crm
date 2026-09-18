@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { ApolloLink, Observable, execute, gql } from '@apollo/client';
 import { container, type DependencyContainer } from 'tsyringe';
 
+import RequestDeadlineFactory from '@/lib/reliability/request-deadline-factory';
 import errorRegistrar from '@/services/error/di';
 import { ErrorHandler } from '@/services/error/error-handler';
 import ERROR_TOKENS from '@/services/error/tokens';
@@ -9,6 +10,7 @@ import boundaryErrorReporter from '@/services/error-reporting/boundary-error-rep
 import errorReportingRegistrar from '@/services/error-reporting/di';
 import ObservabilityErrorReporter from '@/services/error-reporting/observability-error-reporter';
 import ERROR_REPORTING_TOKENS from '@/services/error-reporting/tokens';
+import DeadlineFetchAdapter from '@/services/https-client/deadline-fetch-adapter';
 import httpClientRegistrar from '@/services/https-client/di';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
@@ -25,6 +27,7 @@ import ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import observabilityRegistrar from '@/services/observability/di';
 import ObservabilityService from '@/services/observability/observability-service';
 import OBSERVABILITY_TOKENS from '@/services/observability/tokens';
+import resilienceRegistrar from '@/services/resilience/di';
 import securityEventRegistrar from '@/services/security-events/di';
 import AbortErrorDetector from '@/utils/error/abort-error-detector';
 import errorUtilsRegistrar from '@/utils/error/di';
@@ -115,6 +118,7 @@ describe('error reporting composition root', () => {
 describe('observability composition root', () => {
   const tokens = [
     OBSERVABILITY_TOKENS.ObservabilityService,
+    OBSERVABILITY_TOKENS.ApolloLinkFactoryDeps,
     OBSERVABILITY_TOKENS.ApolloLinkFactory,
   ];
 
@@ -131,6 +135,7 @@ describe('observability composition root', () => {
     const child = unboundContainer(tokens);
 
     observabilityRegistrar.register(child);
+    httpClientRegistrar.register(child);
 
     const service = child.resolve<ObservabilityService>(OBSERVABILITY_TOKENS.ObservabilityService);
     const linkFactory = child.resolve<ApolloLinkFactory>(OBSERVABILITY_TOKENS.ApolloLinkFactory);
@@ -172,6 +177,9 @@ describe('https client composition root', () => {
     HTTP_TOKENS.HttpErrorResponseParser,
     HTTP_TOKENS.HttpResponseProcessor,
     HTTP_TOKENS.HttpClientFactory,
+    HTTP_TOKENS.RequestDeadlineFactory,
+    HTTP_TOKENS.DeadlineFetchAdapter,
+    HTTP_TOKENS.HttpsClientDeps,
     HTTP_TOKENS.HttpsClient,
   ];
 
@@ -189,6 +197,7 @@ describe('https client composition root', () => {
     httpClientRegistrar.register(child);
     observabilityRegistrar.register(child);
     securityEventRegistrar.register(child);
+    resilienceRegistrar.register(child);
 
     expect(child.resolve(HTTP_TOKENS.HttpErrorGuard)).toBeInstanceOf(HttpErrorGuard);
     expect(child.resolve(HTTP_TOKENS.HttpRequestConfigBuilder)).toBeInstanceOf(
@@ -199,7 +208,21 @@ describe('https client composition root', () => {
     );
     expect(child.resolve(HTTP_TOKENS.HttpResponseProcessor)).toBeInstanceOf(HttpResponseProcessor);
     expect(child.resolve(HTTP_TOKENS.HttpClientFactory)).toBeInstanceOf(HttpClientFactory);
+    expect(child.resolve(HTTP_TOKENS.RequestDeadlineFactory)).toBeInstanceOf(
+      RequestDeadlineFactory
+    );
+    expect(child.resolve(HTTP_TOKENS.DeadlineFetchAdapter)).toBeInstanceOf(DeadlineFetchAdapter);
     expect(child.resolve(HTTP_TOKENS.HttpsClient)).toBeInstanceOf(FetchHttpsClient);
+  });
+
+  it('registers one deadline factory carrying the configured request timeout', () => {
+    const child = unboundContainer(tokens);
+
+    httpClientRegistrar.register(child);
+
+    const factory = child.resolve<RequestDeadlineFactory>(HTTP_TOKENS.RequestDeadlineFactory);
+    expect(factory.defaultTimeoutMs()).toBe(10_000);
+    expect(child.resolve(HTTP_TOKENS.RequestDeadlineFactory)).toBe(factory);
   });
 });
 

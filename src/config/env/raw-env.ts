@@ -25,6 +25,10 @@ class RawEnv {
     return this.trimmed(process.env.REACT_APP_SENTRY_ENVIRONMENT);
   }
 
+  public requestTimeoutMs(): string | undefined {
+    return this.trimmed(process.env.REACT_APP_REQUEST_TIMEOUT_MS);
+  }
+
   public authFailureAlert(): AuthFailureAlertEnv {
     return {
       threshold: this.trimmed(process.env.REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD),
@@ -45,6 +49,7 @@ class RawEnv {
       sentryEnvironment: this.trimmed(process.env.REACT_APP_SENTRY_ENVIRONMENT),
       authFailureAlertThreshold: authFailureAlert.threshold,
       authFailureAlertWindowMs: authFailureAlert.windowMs,
+      requestTimeoutMs: this.requestTimeoutMs(),
     };
   }
 

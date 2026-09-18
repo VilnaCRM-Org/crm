@@ -101,6 +101,25 @@ describe('deferred auth actions composition root', () => {
     });
   });
 
+  it('absorbs one chunk-load failure of the DI graph without surfacing an error', async () => {
+    const { authActions, AuthStateVar } = await loadBarrel();
+    const actions = makeActions();
+    const chunkFailure = Object.assign(new Error('Loading chunk 7 failed.'), {
+      name: 'ChunkLoadError',
+    });
+    resolveMock
+      .mockImplementationOnce(() => {
+        throw chunkFailure;
+      })
+      .mockReturnValue(actions);
+
+    await authActions.loginUser(credentials);
+
+    expect(actions.login).toHaveBeenCalledWith(credentials, undefined);
+    expect(resolveMock).toHaveBeenCalledTimes(2);
+    expect(AuthStateVar.get().loginError).toBeNull();
+  });
+
   it('retries the load after a failure instead of caching the rejection', async () => {
     const { authActions, AuthStateVar } = await loadBarrel();
     const actions = makeActions();

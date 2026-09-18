@@ -180,10 +180,10 @@ contain no `console.*` call.
   silently weaken the selector to the descendant form.
 - `RouteError`'s **Try again** re-navigates to the same location. For a cached `React.lazy`
   rejection the retry re-throws; the fallback remounts and the homepage link remains, so it is
-  bounded rather than fixed. Chunk-load recovery with a reload policy is deferred to
-  [#147](https://github.com/VilnaCRM-Org/crm/issues/147), with one rule fixed now: never reload
-  automatically on a protected route, because the auth token is memory-only and a reload signs
-  the user out.
+  bounded rather than fixed. Chunk-load recovery with a reload policy was deferred to
+  [#147](https://github.com/VilnaCRM-Org/crm/issues/147) and landed in
+  [ADR-009](./009-runtime-resilience.md), with one rule fixed here: never reload automatically
+  on a protected route, because the auth token is memory-only and a reload signs the user out.
 - The `role="alert"` message and the focused heading can both be announced on mount. That double
   announcement was reviewed and accepted; do not add `aria-live` on top.
 
@@ -287,7 +287,8 @@ module singleton that composes the observability and security-event cores off th
 - [Issue #116: standardize the reliability model](https://github.com/VilnaCRM-Org/crm/issues/116)
 - [Issue #24: Error Boundary](https://github.com/VilnaCRM-Org/crm/issues/24) — superseded by #116
 - [Issue #147: runtime resilience](https://github.com/VilnaCRM-Org/crm/issues/147) — retry with
-  backoff, timeouts, offline detection and chunk-load recovery, deferred from this decision
+  backoff, timeouts, offline detection and chunk-load recovery, deferred from this decision and
+  decided in [ADR-009](./009-runtime-resilience.md)
 - [ADR-005: Client security events leave through the observability boundary](./005-client-security-event-boundary.md)
   — the `error_boundary_catch` event every boundary surface now emits
 - [`src/routes/README.md`](../../src/routes/README.md) — the route registry, the per-route

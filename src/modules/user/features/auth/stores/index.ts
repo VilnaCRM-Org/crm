@@ -1,3 +1,4 @@
+import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import observabilityCore from '@/services/observability/observability-core';
 import type { AuthError } from '@auth/types/auth-error';
 import type { AuthActions } from '@auth/types/auth-store';
@@ -12,7 +13,10 @@ import useAuthToken from './use-auth-token';
 // action, not at module load, so the authentication page never waits on it. Loading
 // flags must be set before the await so submit feedback stays synchronous (WCAG 4.1.3).
 class DeferredAuthActions implements AuthActions {
-  private instance?: Promise<AuthStoreActions>;
+  // The DI graph is a lazy chunk like any page: one chunk-load failure is retried before the
+  // user sees the retryable load error, and a failed load is forgotten so the next action can
+  // try again (issue #147).
+  private readonly loader = new ChunkRetryLoader(() => this.load());
 
   private readonly loadFailure: AuthError = {
     kind: 'network',
@@ -57,11 +61,10 @@ class DeferredAuthActions implements AuthActions {
     onFailure: (error: AuthError) => void
   ): Promise<AuthStoreActions | null> {
     try {
-      return await (this.instance ??= this.load());
+      return await this.loader.load();
     } catch (error) {
       console.error('Auth module failed to load; surfacing retryable error to the user.', error);
       observabilityCore.captureError(error, { source: 'auth:module-load' });
-      this.instance = undefined;
       onFailure(this.loadFailure);
       return null;
     }

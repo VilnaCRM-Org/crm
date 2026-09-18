@@ -4,33 +4,30 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { inject, injectable } from 'tsyringe';
 
-import type { ObservabilityService } from '@/services/types/observability/observability';
+import type { ApolloLinkDeps } from '@/services/types/observability/apollo-link-deps';
 
-import type { CorrelationIdProvider } from './correlation-id-provider';
-import type { SessionCorrelation } from './session-correlation';
 import OBSERVABILITY_TOKENS from './tokens';
 
 @injectable()
 export default class ApolloLinkFactory {
   constructor(
-    @inject(OBSERVABILITY_TOKENS.ObservabilityService)
-    private readonly observability: ObservabilityService,
-    @inject(OBSERVABILITY_TOKENS.CorrelationIdProvider)
-    private readonly correlationIds: CorrelationIdProvider,
-    @inject(OBSERVABILITY_TOKENS.SessionCorrelation)
-    private readonly sessionCorrelation: SessionCorrelation
+    @inject(OBSERVABILITY_TOKENS.ApolloLinkFactoryDeps) private readonly deps: ApolloLinkDeps
   ) {}
 
+  // The deadline-bounded fetch is the only resilience GraphQL gets: a mutation is a create, and
+  // an automatic retry of one could create twice (issue #147).
   public build(uri: string): ApolloLink {
-    return from([this.correlationLink(), this.errorLink(), new HttpLink({ uri })]);
+    const fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
+      this.deps.deadlineFetch.fetch(input, init);
+    return from([this.correlationLink(), this.errorLink(), new HttpLink({ uri, fetch })]);
   }
 
   private correlationLink(): ApolloLink {
     return setContext((_operation, previousContext: { headers?: Record<string, string> }) => ({
       headers: {
         ...previousContext.headers,
-        [this.correlationIds.header]: this.correlationIds.next(),
-        [this.sessionCorrelation.header]: this.sessionCorrelation.id(),
+        [this.deps.correlationIds.header]: this.deps.correlationIds.next(),
+        [this.deps.sessionCorrelation.header]: this.deps.sessionCorrelation.id(),
       },
     }));
   }
@@ -39,17 +36,23 @@ export default class ApolloLinkFactory {
     return onError(({ operation, graphQLErrors, networkError }) => {
       const correlation = this.correlationOf(operation);
       if (networkError) {
-        this.observability.captureError(networkError, { source: 'apollo:network', ...correlation });
+        this.deps.observability.captureError(networkError, {
+          source: 'apollo:network',
+          ...correlation,
+        });
       }
       (graphQLErrors ?? []).forEach((graphQLError) => {
-        this.observability.captureError(graphQLError, { source: 'apollo:graphql', ...correlation });
+        this.deps.observability.captureError(graphQLError, {
+          source: 'apollo:graphql',
+          ...correlation,
+        });
       });
     });
   }
 
   private correlationOf(operation: Operation): Record<string, string> {
     const headers = operation.getContext().headers as Record<string, string> | undefined;
-    const id = headers?.[this.correlationIds.header];
-    return id ? { [this.correlationIds.header]: id } : {};
+    const id = headers?.[this.deps.correlationIds.header];
+    return id ? { [this.deps.correlationIds.header]: id } : {};
   }
 }

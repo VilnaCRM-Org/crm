@@ -5,6 +5,9 @@ const HTTP_TOKENS = Object.freeze({
   HttpErrorResponseParser: Symbol('HttpErrorResponseParser'),
   HttpClientFactory: Symbol('HttpClientFactory'),
   HttpErrorGuard: Symbol('HttpErrorGuard'),
+  RequestDeadlineFactory: Symbol('RequestDeadlineFactory'),
+  DeadlineFetchAdapter: Symbol('DeadlineFetchAdapter'),
+  HttpsClientDeps: Symbol('HttpsClientDeps'),
 } as const);
 
 export default HTTP_TOKENS;

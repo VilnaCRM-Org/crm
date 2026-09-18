@@ -53,6 +53,22 @@ describe('rawEnv', () => {
     });
   });
 
+  describe('requestTimeoutMs', () => {
+    it('trims the configured request timeout', () => {
+      process.env.REACT_APP_REQUEST_TIMEOUT_MS = '  2500  ';
+
+      expect(rawEnv.requestTimeoutMs()).toBe('2500');
+    });
+
+    it('reports the request timeout as undefined when blank or missing', () => {
+      process.env.REACT_APP_REQUEST_TIMEOUT_MS = '   ';
+      expect(rawEnv.requestTimeoutMs()).toBeUndefined();
+
+      delete process.env.REACT_APP_REQUEST_TIMEOUT_MS;
+      expect(rawEnv.requestTimeoutMs()).toBeUndefined();
+    });
+  });
+
   describe('snapshot', () => {
     it('shapes every configuration variable into a single object', () => {
       process.env.NODE_ENV = 'test';
@@ -65,6 +81,7 @@ describe('rawEnv', () => {
       process.env.REACT_APP_SENTRY_ENVIRONMENT = 'staging';
       process.env.REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD = '9';
       process.env.REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS = '15000';
+      process.env.REACT_APP_REQUEST_TIMEOUT_MS = '2500';
 
       expect(rawEnv.snapshot()).toEqual({
         nodeEnv: 'test',
@@ -77,6 +94,7 @@ describe('rawEnv', () => {
         sentryEnvironment: 'staging',
         authFailureAlertThreshold: '9',
         authFailureAlertWindowMs: '15000',
+        requestTimeoutMs: '2500',
       });
     });
   });

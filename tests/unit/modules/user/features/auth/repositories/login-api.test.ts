@@ -22,6 +22,7 @@ describe('LoginAPI', () => {
     expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, {
       schema: LoginResponseSchema,
       signal: undefined,
+      retry: true,
     });
   });
 
@@ -37,6 +38,7 @@ describe('LoginAPI', () => {
     expect(httpsClient.post).toHaveBeenCalledWith(expect.any(String), credentials, {
       schema: LoginResponseSchema,
       signal: options.signal,
+      retry: true,
     });
   });
 

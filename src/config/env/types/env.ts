@@ -9,6 +9,7 @@ export interface Env {
   readonly sentryEnvironment?: string;
   readonly authFailureAlertThreshold?: number;
   readonly authFailureAlertWindowMs?: number;
+  readonly requestTimeoutMs?: number;
 }
 
 export interface AuthFailureAlertEnv {
