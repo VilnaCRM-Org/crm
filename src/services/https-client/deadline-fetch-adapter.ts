@@ -58,17 +58,24 @@ export default class DeadlineFetchAdapter {
     deadline: RequestDeadline
   ): Promise<void> {
     try {
-      const { done, value } = await reader.read();
-      if (done) {
-        deadline.release();
-        controller.close();
-        return;
-      }
-      controller.enqueue(value);
+      this.forward(await reader.read(), controller, deadline);
     } catch (error) {
       deadline.release();
       controller.error(this.transportError(error, deadline));
     }
+  }
+
+  private forward(
+    chunk: ReadableStreamReadResult<Uint8Array>,
+    controller: ReadableStreamDefaultController<Uint8Array>,
+    deadline: RequestDeadline
+  ): void {
+    if (chunk.done) {
+      deadline.release();
+      controller.close();
+      return;
+    }
+    controller.enqueue(chunk.value);
   }
 
   private transportError(error: unknown, deadline: RequestDeadline): unknown {
