@@ -121,6 +121,23 @@ describe('DeadlineFetchAdapter', () => {
     expect(await outcome).toBe(failure);
   });
 
+  it.each([undefined, null, 'socket hang up', 42, { name: 'TypeError' }])(
+    'passes the non-abort rejection %p through untouched after the deadline expired',
+    async (rejection) => {
+      global.fetch = jest.fn(
+        () =>
+          new Promise((_resolve, reject) => {
+            setTimeout(() => reject(rejection), TIMEOUT_MS + 1);
+          })
+      ) as unknown as typeof fetch;
+
+      const outcome = settle(adapter.fetch('https://api.example.test/graphql'));
+      await jest.advanceTimersByTimeAsync(TIMEOUT_MS + 1);
+
+      expect(await outcome).toBe(rejection);
+    }
+  );
+
   it('rethrows a transport failure that is not a timeout untouched', async () => {
     const failure = new TypeError('Failed to fetch');
     global.fetch = jest.fn().mockRejectedValue(failure) as unknown as typeof fetch;
