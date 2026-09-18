@@ -158,6 +158,25 @@ describe('DeadlineFetchAdapter', () => {
       expect(jest.getTimerCount()).toBe(0);
     });
 
+    it('swallows a source that refuses to be cancelled so the cancel still settles', async () => {
+      global.fetch = jest.fn(() =>
+        Promise.resolve(
+          new Response(
+            new ReadableStream<Uint8Array>({
+              pull: (): Promise<void> => new Promise(() => undefined),
+              cancel: (): Promise<void> => Promise.reject(new Error('source refused')),
+            }),
+            { status: 200 }
+          )
+        )
+      ) as unknown as typeof fetch;
+
+      const response = await adapter.fetch('https://api.example.test/graphql');
+
+      await expect(response.body?.cancel('done')).resolves.toBeUndefined();
+      expect(jest.getTimerCount()).toBe(0);
+    });
+
     it('keeps the status of an error response whose body streams normally', async () => {
       global.fetch = streamingResponse(['{"errors":[]}'], {
         status: 422,

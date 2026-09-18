@@ -288,6 +288,28 @@ describe('request retry chain (integration)', () => {
       expect(response.body).toBeNull();
     });
 
+    it('swallows a source that refuses to be cancelled so the cancel still settles', async () => {
+      const refusing = jest.spyOn(globalThis, 'fetch').mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            new ReadableStream<Uint8Array>({
+              pull: (): Promise<void> => new Promise(() => undefined),
+              cancel: (): Promise<void> => Promise.reject(new Error('source refused')),
+            }),
+            { status: 200 }
+          )
+        )
+      );
+      try {
+        const adapter = new DeadlineFetchAdapter(new RequestDeadlineFactory(1_000));
+        const response = await adapter.fetch(RESOURCE_URL, { method: 'POST' });
+
+        await expect(response.body?.cancel('done')).resolves.toBeUndefined();
+      } finally {
+        refusing.mockRestore();
+      }
+    });
+
     it('lets the consumer cancel the bounded body', async () => {
       server.use(http.post(RESOURCE_URL, () => HttpResponse.json({ data: { ok: true } })));
       const adapter = container.resolve<DeadlineFetchAdapter>(HTTP_TOKENS.DeadlineFetchAdapter);
