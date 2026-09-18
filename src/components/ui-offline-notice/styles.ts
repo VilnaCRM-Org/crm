@@ -2,10 +2,12 @@ import { customColors, paletteColors } from '@/styles/colors';
 
 export default {
   empty: {
+    display: 'block',
     outline: 'none',
   },
 
   notice: {
+    display: 'block',
     marginBottom: '1rem',
     padding: '0.75rem 1rem',
     borderRadius: '0.5rem',
@@ -19,6 +21,7 @@ export default {
   },
 
   text: {
+    display: 'block',
     fontFamily: 'Golos',
     fontWeight: 500,
     fontSize: '0.9375rem',

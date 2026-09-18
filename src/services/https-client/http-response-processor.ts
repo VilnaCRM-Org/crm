@@ -40,7 +40,7 @@ export default class HttpResponseProcessor {
     const raw = await response
       .clone()
       .text()
-      .catch(() => undefined);
+      .catch((error: unknown) => this.swallowUnlessAborted(error));
     // An empty/whitespace body is still validated against the schema: a required schema
     // rejects it (no silent bypass), while optional/nullable schemas accept the absent value.
     if (!raw || raw.trim().length === 0) {
@@ -53,9 +53,24 @@ export default class HttpResponseProcessor {
   private async readJson(response: Response, status: number): Promise<unknown> {
     try {
       return await response.json();
-    } catch {
+    } catch (error) {
+      this.swallowUnlessAborted(error);
       throw new HttpError({ status, message: ResponseMessages.JSON_PARSE_FAILED, cause: response });
     }
+  }
+
+  // A body read that the request deadline or the caller cut short is not a malformed body: the
+  // abort is rethrown so the client can classify it (timeout or cancellation, issue #147).
+  private swallowUnlessAborted(error: unknown): undefined {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'name' in error &&
+      error.name === 'AbortError'
+    ) {
+      throw error;
+    }
+    return undefined;
   }
 
   private validate<T>(body: unknown, status: number, schema: ZodType<T>): T {
@@ -71,7 +86,7 @@ export default class HttpResponseProcessor {
   }
 
   private async readNonJsonBody<T>(response: Response, status: number): Promise<T | undefined> {
-    const text = await response.text().catch(() => undefined);
+    const text = await response.text().catch((error: unknown) => this.swallowUnlessAborted(error));
     if (!text || text.trim().length === 0) {
       return undefined;
     }

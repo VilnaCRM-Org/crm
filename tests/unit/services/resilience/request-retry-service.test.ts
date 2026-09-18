@@ -182,6 +182,25 @@ describe('RequestRetryService', () => {
     expect((error as Error).message).toBe('The request was aborted while waiting to retry');
   });
 
+  it('detaches its abort listener from the signal once the backoff wait is over', async () => {
+    const { service } = createService([50]);
+    const controller = new AbortController();
+    const added = jest.spyOn(controller.signal, 'addEventListener');
+    const removed = jest.spyOn(controller.signal, 'removeEventListener');
+    const operation = jest
+      .fn<Promise<string>, [RetryAttempt]>()
+      .mockRejectedValueOnce(transient())
+      .mockResolvedValueOnce('ok');
+
+    const result = service.execute(operation, { budgetMs: 5_000, signal: controller.signal });
+    await jest.advanceTimersByTimeAsync(50);
+
+    await expect(result).resolves.toBe('ok');
+    expect(added).toHaveBeenCalledTimes(1);
+    const [, listener] = added.mock.calls[0] as [string, () => void];
+    expect(removed).toHaveBeenCalledWith('abort', listener);
+  });
+
   it('retries a transport failure reported with status 0', async () => {
     const { service } = createService([10]);
     const operation = jest

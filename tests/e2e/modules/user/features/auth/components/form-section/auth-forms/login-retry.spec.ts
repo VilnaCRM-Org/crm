@@ -41,19 +41,25 @@ const unavailable = (): { status: number; contentType: string; body: string } =>
 // The login POST opts in to the retry policy (issue #147): a transport failure or a 5xx is
 // retried with backoff before the error banner appears, and a permanent failure is not.
 test.describe('Login request retry (issue #147)', () => {
-  test('recovers from a dropped connection on the first attempt', async ({ page }) => {
-    let posts = 0;
-    await page.route(LOGIN_API_URL, async (route: Route) => {
-      if (!isPostLogin(route)) return route.fallback();
-      posts += 1;
-      return posts === 1 ? route.abort('failed') : route.fulfill(loginToken());
+  test.describe('dropped connection', () => {
+    // Firefox reports an aborted cross-origin request as a CORS console error; the retry is the
+    // behaviour under test and the second POST proves the first one never reached the backend.
+    test.use({ allowedConsoleErrors: [/^\[JavaScript Error: "Cross-Origin Request Blocked:/] });
+
+    test('recovers from a dropped connection on the first attempt', async ({ page }) => {
+      let posts = 0;
+      await page.route(LOGIN_API_URL, async (route: Route) => {
+        if (!isPostLogin(route)) return route.fallback();
+        posts += 1;
+        return posts === 1 ? route.abort('failed') : route.fulfill(loginToken());
+      });
+
+      await submitValidLogin(page);
+
+      await expect.poll(() => posts).toBe(2);
+      await expect(page.locator('form')).toHaveAttribute('aria-busy', 'false');
+      await expect(page.locator('[role="alert"]')).toHaveCount(0);
     });
-
-    await submitValidLogin(page);
-
-    await expect.poll(() => posts).toBe(2);
-    await expect(page.locator('form')).toHaveAttribute('aria-busy', 'false');
-    await expect(page.locator('[role="alert"]')).toHaveCount(0);
   });
 
   test('retries a 503 twice and settles on the third answer', async ({ page }) => {

@@ -14,7 +14,7 @@ function useOfflineFocus(
 ): void {
   useLayoutEffect(() => {
     if (online || document.activeElement !== submitRef.current) return;
-    noticeRef.current?.focus({ preventScroll: true });
+    noticeRef.current?.focus();
   }, [online, submitRef, noticeRef]);
 }
 
@@ -22,7 +22,7 @@ function useOfflineFocus(
 export default function useOfflineSubmit(): OfflineSubmit {
   const online = useConnectivity();
   const noticeId = useId();
-  const noticeRef = useRef<HTMLDivElement>(null);
+  const noticeRef = useRef<HTMLSpanElement>(null);
   const submitRef = useRef<HTMLButtonElement | HTMLAnchorElement>(null);
   useOfflineFocus(online, submitRef, noticeRef);
 

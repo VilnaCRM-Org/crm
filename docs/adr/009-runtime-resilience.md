@@ -71,14 +71,22 @@ Chosen: **options 2, 4, 7, and "retry once, then reload public routes only".**
 owns an `AbortController`, arms a timer for `timeoutMs`, and forwards the caller's abort into the
 same signal. `timedOut` is the deadline's own state, never an exception name: a body read that
 the timer cuts short and a caller abort both surface as `AbortError` from `fetch`, and only the
-flag tells them apart. `release()` clears the timer and nothing else, so an abort that arrives
+flag tells them apart. A caller abort stops the timer, so the deadline can never be reported as
+expired afterwards; `release()` clears the timer and nothing else, so an abort that arrives
 while the body is still streaming still cancels it. `RequestDeadlineFactory` carries the default
 (`REACT_APP_REQUEST_TIMEOUT_MS`, 10 000 ms when unset, validated by `EnvSchema`) and is
 registered by value under `HTTP_TOKENS.RequestDeadlineFactory`. `FetchHttpsClient` runs every
-attempt under one, releasing in `finally` after the response is processed; a timeout becomes
-`HttpError({ status: 0, message: 'Request timed out' })`, which the existing factories already
-classify as the retryable network error. `DeadlineFetchAdapter` gives Apollo's `HttpLink` a
-`fetch` bounded the same way for the headers; Apollo reads the body under the caller's signal.
+attempt under one, releasing in `finally` after the response is processed, and classifies the
+failure in a fixed order: an `HttpError` the response processor already produced wins (a 4xx
+whose body read outlived the deadline is still that 4xx, not a retryable timeout), then an
+`AbortError` raised by the expired deadline becomes
+`HttpError({ status: 0, message: 'Request timed out' })` — which the existing factories already
+classify as the retryable network error — a caller abort passes through untouched, and any other
+transport failure is the network error. `HttpResponseProcessor` rethrows an `AbortError` from a
+body read instead of swallowing it, so a 200 whose body was cut short by the deadline surfaces
+as the timeout rather than as a malformed body. `DeadlineFetchAdapter` gives Apollo's `HttpLink`
+a `fetch` bounded the same way for the headers; Apollo reads the body under the caller's
+signal.
 
 **The retry.** `src/services/resilience/` is a new infra area with its own `tokens.ts` and
 `di.ts`. `TransientErrorDetector` names the retryable statuses — `0`, `408`, `500`, `502`, `503`,
@@ -86,12 +94,13 @@ classify as the retryable network error. `DeadlineFetchAdapter` gives Apollo's `
 `ExponentialBackoffStrategy` waits `250 · 2^(n−1)` ms capped at 2 s with equal jitter.
 `RequestRetryService.execute(operation, { budgetMs, signal })` runs up to three attempts
 recursively (no `await` in a loop), hands each attempt the budget that is left, gives up when the
-next wait would leave under 250 ms, and turns a caller abort during the wait into an
-`AbortError` at once. `FetchHttpsClient` retries `GET`, `PUT` and `DELETE` by default and a
-`POST`/`PATCH` only with `RequestConfig.retry: true`; `LoginAPI` opts in, because issuing a token
-creates nothing. `RegistrationAPI` gets the deadline and no retry: API Platform only echoes
-`clientMutationId`, so a second `createUser` after a lost response is a second user or a
-conflict. Its **Retry** button stays the user's decision.
+next wait would leave under 250 ms, turns a caller abort during the wait into an `AbortError` at
+once, and detaches its abort listener when the wait ends so a long-lived signal retains nothing.
+`FetchHttpsClient` retries `GET`, `PUT` and `DELETE` by default and a `POST`/`PATCH` only with
+`RequestConfig.retry: true`; `LoginAPI` opts in, because issuing a token creates nothing.
+`RegistrationAPI` gets the deadline and no retry: API Platform only echoes `clientMutationId`,
+so a second `createUser` after a lost response is a second user or a conflict. Its **Retry**
+button stays the user's decision.
 
 **Offline.** `ConnectivityStateVar` (`src/lib/connectivity/`) is a `*Var` over the ADR-008
 primitive; `BrowserConnectivityAdapter.attach(window)` in `src/index.tsx` seeds it from

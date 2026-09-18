@@ -106,6 +106,21 @@ describe('DeadlineFetchAdapter', () => {
     expect(await outcome).toMatchObject({ status: 0, message: ResponseMessages.REQUEST_TIMEOUT });
   });
 
+  it('does not call a non-abort failure a timeout even after the deadline expired', async () => {
+    const failure = new TypeError('Failed to fetch');
+    global.fetch = jest.fn(
+      () =>
+        new Promise((_resolve, reject) => {
+          setTimeout(() => reject(failure), TIMEOUT_MS + 1);
+        })
+    ) as unknown as typeof fetch;
+
+    const outcome = settle(adapter.fetch('https://api.example.test/graphql'));
+    await jest.advanceTimersByTimeAsync(TIMEOUT_MS + 1);
+
+    expect(await outcome).toBe(failure);
+  });
+
   it('rethrows a transport failure that is not a timeout untouched', async () => {
     const failure = new TypeError('Failed to fetch');
     global.fetch = jest.fn().mockRejectedValue(failure) as unknown as typeof fetch;

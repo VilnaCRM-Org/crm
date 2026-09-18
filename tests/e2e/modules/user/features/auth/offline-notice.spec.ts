@@ -16,6 +16,16 @@ function submitButton(page: Page, label: string): ReturnType<Page['locator']> {
   return page.locator('form button[type="submit"]', { hasText: label });
 }
 
+// Going offline before the page has finished loading would abort the lazy page chunk and the
+// web fonts still in flight — a different failure from the one under test. Wait for the form
+// to be interactive and every font face to be settled first.
+async function settleOnline(page: Page, label: string): Promise<ReturnType<Page['locator']>> {
+  const submit = submitButton(page, label);
+  await expect(submit).toBeEnabled();
+  await page.evaluate(() => document.fonts.ready);
+  return submit;
+}
+
 // The browser's connectivity feeds the auth forms (issue #147): offline, the submit is disabled
 // and a polite status inside the form says why; back online, the same region announces the
 // recovery and the submit returns.
@@ -33,8 +43,7 @@ test.describe('Offline notice on the auth forms (issue #147)', () => {
       context,
     }) => {
       await page.goto(url);
-      const submit = submitButton(page, label);
-      await expect(submit).toBeEnabled();
+      const submit = await settleOnline(page, label);
       await expect(page.getByText(offlineNotice)).toHaveCount(0);
 
       await context.setOffline(true);
@@ -53,6 +62,7 @@ test.describe('Offline notice on the auth forms (issue #147)', () => {
 
   test('keeps the offline notice inside the form, after its heading', async ({ page, context }) => {
     await page.goto(SIGN_IN_URL);
+    await settleOnline(page, signInSubmit);
 
     await context.setOffline(true);
 

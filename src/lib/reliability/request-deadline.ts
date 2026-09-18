@@ -1,7 +1,8 @@
 // One request's abort scope: the caller's signal and a timer race into a single AbortSignal,
-// and `timedOut` records which of them fired. The timer is the only thing `release()` stops —
-// the caller listener stays attached so an abort that arrives while a body is still being read
-// cancels that read too (issue #147).
+// and `timedOut` records which of them fired. A caller abort stops the timer so the deadline can
+// never be reported as expired afterwards; `release()` stops only the timer — the caller
+// listener stays attached so an abort that arrives while a body is still being read cancels
+// that read too (issue #147).
 export default class RequestDeadline {
   private readonly controller = new AbortController();
 
@@ -34,7 +35,12 @@ export default class RequestDeadline {
       this.controller.abort();
       return;
     }
-    callerSignal.addEventListener('abort', () => this.controller.abort());
+    callerSignal.addEventListener('abort', () => this.cancel());
+  }
+
+  private cancel(): void {
+    clearTimeout(this.timer);
+    this.controller.abort();
   }
 
   private expire(): void {

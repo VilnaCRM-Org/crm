@@ -50,19 +50,34 @@ export default class RequestRetryService {
   }
 
   // The caller's abort wins over the backoff: an already-aborted signal rejects at once, and an
-  // abort that lands mid-wait cancels the timer, so an unmounted form never fires a retry.
+  // abort that lands mid-wait cancels the timer, so an unmounted form never fires a retry. The
+  // listener is detached once the wait is over, so a long-lived signal retains nothing.
   private wait(delayMs: number, signal: AbortSignal | undefined): Promise<void> {
     return new Promise((resolve, reject) => {
       if (signal?.aborted) {
         reject(this.abortError());
         return;
       }
-      const timer = setTimeout(resolve, delayMs);
-      signal?.addEventListener('abort', () => this.cancelWait(timer, reject));
+      const pending: { timer?: ReturnType<typeof setTimeout> } = {};
+      const onAbort = (): void => this.cancelWait(pending.timer, reject);
+      pending.timer = setTimeout(() => this.finishWait(signal, onAbort, resolve), delayMs);
+      signal?.addEventListener('abort', onAbort);
     });
   }
 
-  private cancelWait(timer: ReturnType<typeof setTimeout>, reject: (error: Error) => void): void {
+  private finishWait(
+    signal: AbortSignal | undefined,
+    onAbort: () => void,
+    resolve: () => void
+  ): void {
+    signal?.removeEventListener('abort', onAbort);
+    resolve();
+  }
+
+  private cancelWait(
+    timer: ReturnType<typeof setTimeout> | undefined,
+    reject: (error: Error) => void
+  ): void {
     clearTimeout(timer);
     reject(this.abortError());
   }

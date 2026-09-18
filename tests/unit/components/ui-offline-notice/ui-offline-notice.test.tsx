@@ -24,10 +24,19 @@ describe('UIOfflineNotice', () => {
     expect(status).toHaveAttribute('aria-atomic', 'true');
     expect(styleRuleFor(status)?.padding ?? '').toBe('');
     expect(styleRuleFor(status)?.outline).toBe('none');
+    expect(styleRuleFor(status)?.display).toBe('block');
+  });
+
+  it('renders as a span so the sibling field wrappers keep their nth-of-type spacing', () => {
+    renderWithI18n(<UIOfflineNotice online={false} />);
+
+    const status = screen.getByRole('status');
+    expect(status.tagName).toBe('SPAN');
+    expect(styleRuleFor(status)?.display).toBe('block');
   });
 
   it('is focusable by script only and forwards its id and ref', () => {
-    const ref = { current: null as HTMLDivElement | null };
+    const ref = { current: null as HTMLSpanElement | null };
     renderWithI18n(<UIOfflineNotice ref={ref} id="offline-notice" online={false} />);
 
     const status = screen.getByRole('status');
@@ -52,7 +61,8 @@ describe('UIOfflineNotice', () => {
     renderWithI18n(<UIOfflineNotice online={false} />);
 
     const text = screen.getByText(OFFLINE);
-    expect(text.tagName).toBe('P');
+    expect(text.tagName).toBe('SPAN');
+    expect(screen.getByRole('status').tagName).toBe('SPAN');
     expect(styleRuleFor(text)?.color).toBe('#1B2327');
   });
 

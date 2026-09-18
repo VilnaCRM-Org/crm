@@ -54,7 +54,7 @@ export type FormHeaderProps = {
 export interface OfflineSubmit {
   online: boolean;
   noticeId: string;
-  noticeRef: RefObject<HTMLDivElement | null>;
+  noticeRef: RefObject<HTMLSpanElement | null>;
   submitRef: RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
 }
 

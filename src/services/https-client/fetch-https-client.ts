@@ -78,10 +78,11 @@ export default class FetchHttpsClient implements HttpsClient {
     throw abortError;
   }
 
+  // An HttpError already names what the server said and wins over the deadline: a 4xx whose
+  // body read was cut short is still a 4xx. Only an abort raised by the expired deadline becomes
+  // the timeout; a caller abort passes through untouched.
   private rethrowOrWrapTransportError(error: unknown, deadline: RequestDeadline): never {
-    if (deadline.timedOut) {
-      throw new HttpError({ status: 0, message: ResponseMessages.REQUEST_TIMEOUT, cause: error });
-    }
+    if (error instanceof HttpError) throw error;
 
     const isAbortError =
       typeof error === 'object' &&
@@ -89,9 +90,10 @@ export default class FetchHttpsClient implements HttpsClient {
       'name' in error &&
       (error as { name?: unknown }).name === 'AbortError';
 
-    if (isAbortError || error instanceof HttpError) {
-      throw error;
+    if (isAbortError && deadline.timedOut) {
+      throw new HttpError({ status: 0, message: ResponseMessages.REQUEST_TIMEOUT, cause: error });
     }
+    if (isAbortError) throw error;
 
     throw new HttpError({ status: 0, message: ResponseMessages.NETWORK_ERROR, cause: error });
   }

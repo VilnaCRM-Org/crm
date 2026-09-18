@@ -199,6 +199,56 @@ describe('request retry chain (integration)', () => {
     expect(operation).toHaveBeenCalledTimes(1);
   });
 
+  // msw cannot abort a streamed mock body, so the two body-read outcomes are driven through a
+  // fetch stub whose body rejects with the AbortError a browser raises when the signal fires.
+  describe('body reads cut short by the deadline', () => {
+    // Spied, not reassigned: msw patched global fetch in the suite setup, and restoring a copy
+    // captured at definition time would hand the later tests the environment's stub instead.
+    const stalledResponse = (status: number): jest.SpyInstance =>
+      jest.spyOn(globalThis, 'fetch').mockImplementation(
+        (_input: RequestInfo | URL, init?: RequestInit) =>
+          new Promise<Response>((resolve) => {
+            const body = new Promise<string>((_resolveBody, rejectBody) => {
+              init?.signal?.addEventListener('abort', () =>
+                rejectBody(Object.assign(new Error('aborted'), { name: 'AbortError' }))
+              );
+            });
+            const response = {
+              ok: status < 400,
+              status,
+              statusText: 'stalled',
+              url: RESOURCE_URL,
+              headers: new Headers({ 'content-type': 'application/json' }),
+              json: (): Promise<unknown> => body,
+              text: (): Promise<string> => body,
+              clone: (): unknown => response,
+            };
+            resolve(response as unknown as Response);
+          })
+      );
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('keeps a 4xx the server already sent when its body read outlives the deadline', async () => {
+      stalledResponse(422);
+
+      await expect(client.get(RESOURCE_URL, { schema, timeoutMs: 100 })).rejects.toMatchObject({
+        status: 422,
+      });
+    });
+
+    it('reports a 200 whose body read outlives the deadline as a timeout', async () => {
+      stalledResponse(200);
+
+      await expect(client.get(RESOURCE_URL, { schema, timeoutMs: 100 })).rejects.toMatchObject({
+        status: 0,
+        message: ResponseMessages.REQUEST_TIMEOUT,
+      });
+    });
+  });
+
   it('classifies transient and permanent failures through the container-resolved detector', () => {
     expect(transientErrors.is(new HttpError({ status: 502, message: 'gateway' }))).toBe(true);
     expect(transientErrors.is(new HttpError({ status: 429, message: 'slow down' }))).toBe(false);
@@ -225,6 +275,23 @@ describe('request retry chain (integration)', () => {
       const response = await adapter.fetch(RESOURCE_URL, { method: 'POST' });
 
       expect(response.status).toBe(200);
+    });
+
+    it('does not call a non-abort failure a timeout even after the deadline expired', async () => {
+      const failure = new TypeError('socket hang up');
+      const stalled = jest.spyOn(globalThis, 'fetch').mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            setTimeout(() => reject(failure), 200);
+          })
+      );
+      try {
+        const adapter = new DeadlineFetchAdapter(new RequestDeadlineFactory(50));
+
+        await expect(adapter.fetch(RESOURCE_URL, { method: 'POST' })).rejects.toBe(failure);
+      } finally {
+        stalled.mockRestore();
+      }
     });
 
     it('rethrows a caller abort untouched, including one that is already aborted', async () => {

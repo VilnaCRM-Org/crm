@@ -31,7 +31,15 @@ export default class DeadlineFetchAdapter {
   }
 
   private transportError(error: unknown, deadline: RequestDeadline): unknown {
-    if (!deadline.timedOut) return error;
+    if (!deadline.timedOut || !this.isAbortError(error)) return error;
     return new HttpError({ status: 0, message: ResponseMessages.REQUEST_TIMEOUT, cause: error });
+  }
+
+  private isAbortError(error: unknown): boolean {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      (error as { name?: unknown }).name === 'AbortError'
+    );
   }
 }

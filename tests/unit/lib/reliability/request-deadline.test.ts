@@ -37,6 +37,17 @@ describe('RequestDeadline', () => {
     expect(deadline.timedOut).toBe(false);
   });
 
+  it('never reports a timeout after a caller abort, even past the original window', () => {
+    const controller = new AbortController();
+    const deadline = new RequestDeadline(controller.signal, 1_000);
+
+    controller.abort();
+    expect(jest.getTimerCount()).toBe(0);
+    jest.advanceTimersByTime(1_000);
+
+    expect(deadline.timedOut).toBe(false);
+  });
+
   it('is aborted at once, and never times out, when the caller signal is aborted', () => {
     const controller = new AbortController();
     controller.abort();

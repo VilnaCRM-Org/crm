@@ -2608,9 +2608,13 @@ replaces.
     scope of one request"): one `AbortController`, a timer for `REACT_APP_REQUEST_TIMEOUT_MS`
     (default 10 000 ms, via `RequestDeadlineFactory`, registered by value under
     `HTTP_TOKENS.RequestDeadlineFactory`), and the caller's abort forwarded into the same signal.
-    `timedOut` is the deadline's own state — never an exception name — and `release()` clears only
-    the timer, so a caller abort still cancels a body read. `FetchHttpsClient` maps a timeout to
-    `HttpError({ status: 0, message: 'Request timed out' })`, the retryable network error;
+    `timedOut` is the deadline's own state — never an exception name — a caller abort stops the
+    timer, and `release()` clears only the timer, so a caller abort still cancels a body read.
+    `FetchHttpsClient` classifies in a fixed order: an `HttpError` the processor produced wins (a
+    4xx whose body read outlived the deadline stays a 4xx), an abort raised by the expired
+    deadline becomes `HttpError({ status: 0, message: 'Request timed out' })` — the retryable
+    network error — a caller abort passes through, anything else is the network error; the
+    processor rethrows an `AbortError` from a body read instead of swallowing it;
     `DeadlineFetchAdapter` (`HTTP_TOKENS.DeadlineFetchAdapter`) is the `fetch` `ApolloLinkFactory`
     hands `HttpLink`, bounding the wait for headers. `AbortSignal.any` / `AbortSignal.timeout` are
     off the Baseline 2023 floor and are not used.
