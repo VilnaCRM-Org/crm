@@ -85,8 +85,10 @@ classify as the retryable network error — a caller abort passes through untouc
 transport failure is the network error. `HttpResponseProcessor` rethrows an `AbortError` from a
 body read instead of swallowing it, so a 200 whose body was cut short by the deadline surfaces
 as the timeout rather than as a malformed body. `DeadlineFetchAdapter` gives Apollo's `HttpLink`
-a `fetch` bounded the same way for the headers; Apollo reads the body under the caller's
-signal.
+a `fetch` bounded from the first byte to the last: the headers are awaited under the deadline,
+and the body is re-streamed through it — released once the last chunk is read or the consumer
+cancels, and turned into the same timeout when the expired deadline cuts a read short — so a
+peer that answers the headers and then stalls cannot hang the GraphQL consumer either.
 
 **The retry.** `src/services/resilience/` is a new infra area with its own `tokens.ts` and
 `di.ts`. `TransientErrorDetector` names the retryable statuses — `0`, `408`, `500`, `502`, `503`,
@@ -155,7 +157,9 @@ next deploy may reload again.
   so a backend that succeeds on the third attempt every time is invisible in telemetry.
 - The reload-once flag is per browsing session and per route key; a deploy that rotates chunks
   twice inside one session shows the manual fallback the second time.
-- The `DeadlineFetchAdapter` bounds the wait for GraphQL response headers, not the body read.
+- The bounded GraphQL body is a re-streamed `Response`: `status`, `statusText` and `headers`
+  are carried over, but `url`, `redirected` and `type` are not, which Apollo's `HttpLink` does
+  not read.
 - `ReloadOnceGuard` fails closed without `sessionStorage`, so a browser that blocks storage gets
   the manual fallback on the first miss.
 

@@ -268,13 +268,64 @@ describe('request retry chain (integration)', () => {
       expect(error).toMatchObject({ status: 0, message: ResponseMessages.REQUEST_TIMEOUT });
     });
 
-    it('returns the response when the backend answers in time', async () => {
-      server.use(http.post(RESOURCE_URL, () => HttpResponse.json({ data: {} })));
+    it('returns the response and its body when the backend answers in time', async () => {
+      server.use(http.post(RESOURCE_URL, () => HttpResponse.json({ data: { ok: true } })));
       const adapter = container.resolve<DeadlineFetchAdapter>(HTTP_TOKENS.DeadlineFetchAdapter);
 
       const response = await adapter.fetch(RESOURCE_URL, { method: 'POST' });
 
       expect(response.status).toBe(200);
+      await expect(response.json()).resolves.toEqual({ data: { ok: true } });
+    });
+
+    it('hands a body-less response back as it is', async () => {
+      server.use(http.post(RESOURCE_URL, () => new HttpResponse(null, { status: 204 })));
+      const adapter = container.resolve<DeadlineFetchAdapter>(HTTP_TOKENS.DeadlineFetchAdapter);
+
+      const response = await adapter.fetch(RESOURCE_URL, { method: 'POST' });
+
+      expect(response.status).toBe(204);
+      expect(response.body).toBeNull();
+    });
+
+    it('lets the consumer cancel the bounded body', async () => {
+      server.use(http.post(RESOURCE_URL, () => HttpResponse.json({ data: { ok: true } })));
+      const adapter = container.resolve<DeadlineFetchAdapter>(HTTP_TOKENS.DeadlineFetchAdapter);
+
+      const response = await adapter.fetch(RESOURCE_URL, { method: 'POST' });
+
+      await expect(response.body?.cancel('done')).resolves.toBeUndefined();
+    });
+
+    it('reports a body that stalls past the deadline as a status-0 timeout', async () => {
+      const stalled = jest
+        .spyOn(globalThis, 'fetch')
+        .mockImplementation((_input: RequestInfo | URL, init?: RequestInit) =>
+          Promise.resolve(
+            new Response(
+              new ReadableStream<Uint8Array>({
+                pull: (): Promise<void> =>
+                  new Promise((_resolve, reject) => {
+                    init?.signal?.addEventListener('abort', () =>
+                      reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))
+                    );
+                  }),
+              }),
+              { status: 200, headers: { 'content-type': 'application/json' } }
+            )
+          )
+        );
+      try {
+        const adapter = new DeadlineFetchAdapter(new RequestDeadlineFactory(100));
+        const response = await adapter.fetch(RESOURCE_URL, { method: 'POST' });
+
+        const error = await settle(response.text());
+
+        assertInstanceOf(error, HttpError);
+        expect(error).toMatchObject({ status: 0, message: ResponseMessages.REQUEST_TIMEOUT });
+      } finally {
+        stalled.mockRestore();
+      }
     });
 
     it('does not call a non-abort failure a timeout even after the deadline expired', async () => {

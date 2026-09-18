@@ -2616,8 +2616,10 @@ replaces.
     network error — a caller abort passes through, anything else is the network error; the
     processor rethrows an `AbortError` from a body read instead of swallowing it;
     `DeadlineFetchAdapter` (`HTTP_TOKENS.DeadlineFetchAdapter`) is the `fetch` `ApolloLinkFactory`
-    hands `HttpLink`, bounding the wait for headers. `AbortSignal.any` / `AbortSignal.timeout` are
-    off the Baseline 2023 floor and are not used.
+    hands `HttpLink`, bounding the headers and re-streaming the body through the same deadline
+    (released on the last chunk or a consumer cancel; a read the expired deadline cuts short
+    becomes the timeout). `AbortSignal.any` / `AbortSignal.timeout` are off the Baseline 2023
+    floor and are not used.
 
     Retry lives in `src/services/resilience/` (`RESILIENCE_TOKENS`): `TransientErrorDetector`
     (status `0`, `408`, `500`, `502`, `503`, `504`; never an `AbortError`, never `429`),
