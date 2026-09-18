@@ -10,6 +10,7 @@ This index lists the Architecture Decision Records for this repository.
 - [ADR-006: One generated security-header baseline serves production and the dev server](./006-browser-security-header-baseline.md)
 - [ADR-007: Reliability model: recoverable errors, route boundaries, and visible fallbacks](./007-reliability-model.md)
 - [ADR-008: Frontend state architecture: server, client, and session state](./008-frontend-state-architecture.md)
+- [ADR-009: Runtime resilience: request deadlines, bounded retry, offline state, chunk recovery](./009-runtime-resilience.md)
 
 ## Writing a new ADR
 

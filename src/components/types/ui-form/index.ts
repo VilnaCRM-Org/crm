@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import type {
   SubmitHandler,
   FieldValues,
@@ -39,7 +39,24 @@ export type SubmitControlsProps = {
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;
+  describedBy: string;
+  buttonRef: RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
 };
+
+export type FormHeaderProps = {
+  title: ReactNode;
+  subtitle?: ReactNode;
+  showTitle: boolean;
+  showSubtitle: boolean;
+  titleComponent?: TitleHeadingComponent;
+};
+
+export interface OfflineSubmit {
+  online: boolean;
+  noticeId: string;
+  noticeRef: RefObject<HTMLDivElement | null>;
+  submitRef: RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
+}
 
 export interface UseUIFormOptions<T extends FieldValues> {
   defaultValues: DefaultValues<T>;
@@ -53,17 +70,13 @@ export interface UseUIFormResult<T extends FieldValues> {
 }
 
 export type FormBodyProps<T extends FieldValues> = {
+  header: FormHeaderProps;
   submittingLabel: string;
   announceSubmitting: boolean;
   handleSubmit: SubmitHandler<T>;
   children: ReactNode;
   error?: string | null;
-  title: ReactNode;
-  subtitle?: ReactNode;
-  showTitle: boolean;
-  showSubtitle: boolean;
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;
-  titleComponent?: TitleHeadingComponent;
 };

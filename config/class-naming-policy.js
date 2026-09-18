@@ -149,6 +149,11 @@ const APPROVED_SUFFIXES = [
     role: 'session-scoped correlation identifier',
     lineage: 'DDD Value Object (#159)',
   },
+  {
+    suffix: 'Deadline',
+    role: 'time-bounded abort scope of one request',
+    lineage: 'gRPC / Go context deadline idiom (#147)',
+  },
   { suffix: 'Navigator', role: 'adapter over browser navigation', lineage: 'GoF Adapter (window)' },
   { suffix: 'Controller', role: 'coordinates a UI interaction flow', lineage: 'MVC Controller' },
   { suffix: 'Error', role: 'thrown error class', lineage: 'JavaScript Error subclass' },

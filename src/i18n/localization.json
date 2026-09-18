@@ -25,6 +25,10 @@
       "route_fallback": {
         "loading": "Loading page"
       },
+      "offline_notice": {
+        "offline": "You are offline. Submitting is unavailable until your connection is restored.",
+        "restored": "Connection restored."
+      },
       "formatting": {
         "updated_at": "Last updated {{value, datetime}}",
         "price": "Price: {{value, currency}}"
@@ -196,6 +200,10 @@
       },
       "route_fallback": {
         "loading": "Завантаження сторінки"
+      },
+      "offline_notice": {
+        "offline": "Ви офлайн. Надсилання недоступне, доки з'єднання не відновиться.",
+        "restored": "З'єднання відновлено."
       },
       "formatting": {
         "updated_at": "Оновлено {{value, datetime}}",

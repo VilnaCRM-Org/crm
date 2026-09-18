@@ -2,6 +2,7 @@ import '../setup';
 
 import { z } from 'zod';
 
+import RequestDeadlineFactory from '@/lib/reliability/request-deadline-factory';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
@@ -9,14 +10,25 @@ import HttpRequestConfigBuilder from '@/services/https-client/http-request-confi
 import HttpResponseProcessor from '@/services/https-client/http-response-processor';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
 import sessionCorrelation from '@/services/observability/session-correlation';
+import type RequestRetryService from '@/services/resilience/request-retry-service';
 import securityEventCore from '@/services/security-events/security-event-core';
+import type { RetryOperation, RetryOptions } from '@/services/types/resilience/request-retry';
 import { assertInstanceOf } from '@tests/utils/assert-result';
 
+// Transport and parsing run one attempt per request here; the retry chain is exercised in
+// resilience/request-retry-chain.integration.test.ts.
+const singleAttempt: RequestRetryService = {
+  execute: <T>(operation: RetryOperation<T>, options: RetryOptions): Promise<T> =>
+    operation({ attempt: 1, remainingMs: options.budgetMs }),
+} as RequestRetryService;
+
 const createClient = (): FetchHttpsClient =>
-  new FetchHttpsClient(
-    new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
-    new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore))
-  );
+  new FetchHttpsClient({
+    requestConfigBuilder: new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
+    responseProcessor: new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore)),
+    deadlines: new RequestDeadlineFactory(),
+    retries: singleAttempt,
+  });
 
 // Transport/parse-coverage tests: schema validation is covered elsewhere, so pass a
 // passthrough schema and keep these focused on status/content-type/error handling.
@@ -198,10 +210,15 @@ describe('FetchHttpsClient Response Processing Coverage', () => {
 
     it('routes work through the explicitly injected processor and parser', async () => {
       const injectedProcessor = { process: jest.fn().mockResolvedValue({ ok: true }) };
-      const processorOnlyClient = new FetchHttpsClient(
-        new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
-        injectedProcessor as never
-      );
+      const processorOnlyClient = new FetchHttpsClient({
+        requestConfigBuilder: new HttpRequestConfigBuilder(
+          correlationIdProvider,
+          sessionCorrelation
+        ),
+        responseProcessor: injectedProcessor as never,
+        deadlines: new RequestDeadlineFactory(),
+        retries: singleAttempt,
+      });
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
       await expect(processorOnlyClient.get('/test', { schema: passthrough })).resolves.toEqual({

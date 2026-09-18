@@ -2,6 +2,7 @@ import { ReadableStream } from 'node:stream/web';
 
 import { z } from 'zod';
 
+import RequestDeadlineFactory from '@/lib/reliability/request-deadline-factory';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorGuard from '@/services/https-client/http-error-guard';
@@ -11,7 +12,9 @@ import HttpResponseProcessor from '@/services/https-client/http-response-process
 import ResponseMessages from '@/services/https-client/response-messages';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
 import sessionCorrelation from '@/services/observability/session-correlation';
+import type RequestRetryService from '@/services/resilience/request-retry-service';
 import securityEventCore from '@/services/security-events/security-event-core';
+import type { RetryOperation, RetryOptions } from '@/services/types/resilience/request-retry';
 import { assertInstanceOf } from '@tests/utils/assert-result';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
@@ -25,11 +28,20 @@ const passthrough = z.unknown();
 const TEST_URL = 'http://localhost:8080/api/test';
 
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+// Transport and parsing run one attempt per request here; the retry chain is exercised in
+// resilience/request-retry-chain.integration.test.ts.
+const singleAttempt: RequestRetryService = {
+  execute: <T>(operation: RetryOperation<T>, options: RetryOptions): Promise<T> =>
+    operation({ attempt: 1, remainingMs: options.budgetMs }),
+} as RequestRetryService;
+
 const createClient = (): FetchHttpsClient =>
-  new FetchHttpsClient(
-    new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
-    new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore))
-  );
+  new FetchHttpsClient({
+    requestConfigBuilder: new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation),
+    responseProcessor: new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore)),
+    deadlines: new RequestDeadlineFactory(),
+    retries: singleAttempt,
+  });
 
 describe('HttpRequestConfigBuilder header and body-init resolution', () => {
   const builder = new HttpRequestConfigBuilder(correlationIdProvider, sessionCorrelation);
@@ -103,6 +115,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -127,7 +140,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
-        signal: controller.signal,
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -180,6 +193,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
+        signal: expect.any(AbortSignal),
       });
     });
   });
@@ -208,6 +222,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
+        signal: expect.any(AbortSignal),
       });
     });
   });
@@ -236,6 +251,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
+        signal: expect.any(AbortSignal),
       });
     });
   });
@@ -264,6 +280,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -287,6 +304,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
+        signal: expect.any(AbortSignal),
       });
     });
   });
@@ -305,6 +323,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -321,6 +340,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -337,29 +357,26 @@ describe('FetchHttpsClient Integration', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
+        signal: expect.any(AbortSignal),
       });
     });
   });
 
   describe('request configuration', () => {
-    it('should treat ReadableStream body as non-JSON without adding Content-Type', () => {
+    it('should treat ReadableStream body as non-JSON without adding Content-Type', async () => {
       const globalWithStream = globalThis as unknown as { ReadableStream?: typeof ReadableStream };
       const originalReadableStream = globalWithStream.ReadableStream;
       // Provide a ReadableStream constructor for instanceof checks without relying on DOM lib types
       globalWithStream.ReadableStream = ReadableStream;
       try {
         const stream = new ReadableStream();
+        mockFetch.mockResolvedValueOnce(
+          new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } })
+        );
 
-        const config = (
-          client as unknown as {
-            createRequestConfig: (
-              method: string,
-              body?: unknown,
-              headers?: Record<string, string>
-            ) => RequestInit;
-          }
-        ).createRequestConfig('POST', stream);
+        await client.post(TEST_URL, stream, { schema: passthrough });
 
+        const config = mockFetch.mock.calls[0]?.[1] as RequestInit;
         expect(config.body).toBe(stream);
         const headers = (config.headers as Record<string, string>) || {};
         expect(headers['Content-Type']).toBeUndefined();
@@ -394,6 +411,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
+        signal: expect.any(AbortSignal),
       });
     });
   });
@@ -572,6 +590,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: formData,
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -596,6 +615,7 @@ describe('FetchHttpsClient Integration', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: stringData,
+        signal: expect.any(AbortSignal),
       });
     });
   });

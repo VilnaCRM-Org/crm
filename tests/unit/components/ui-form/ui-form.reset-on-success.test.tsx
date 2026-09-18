@@ -1,10 +1,11 @@
 import '@testing-library/jest-dom';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import type { JSX } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import UIForm from '@/components/ui-form';
 import { buildNamePart } from '@tests/builders';
+import render from '@tests/unit/utils/render-with-i18n';
 
 type Values = { name: string };
 

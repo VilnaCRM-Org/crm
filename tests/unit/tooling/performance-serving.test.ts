@@ -98,8 +98,10 @@ describe('performance serving config', () => {
     const rootLayoutSource = readFile('src/components/layouts/root-layout.tsx');
 
     // The composer maps each contract loader through React.lazy, so every page
-    // still resolves via its own dynamic import() chunk.
-    expect(mapperSource).toContain('lazy(route.load)');
+    // still resolves via its own dynamic import() chunk; the loader wraps `route.load` in the
+    // chunk-recovery loaders (issue #147) rather than replacing the contract's import().
+    expect(mapperSource).toContain('lazy(() => loader.load())');
+    expect(mapperSource).toContain('new ChunkRetryLoader<PageModule>(route.load)');
 
     // Each page is a lazy loader inside its owning module's contract, and its chunk is named
     // via webpackChunkName so the bundle-size report tracks it per route (issue #117).

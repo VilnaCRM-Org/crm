@@ -21,6 +21,8 @@ export default class LoginAPI extends BaseAPI {
     super(apiErrorFactory);
   }
 
+  // A login attempt issues a token and creates nothing, so a transport-level repeat is safe:
+  // the POST opts in to the idempotent retry policy (issue #147).
   public async login(
     credentials: LoginUserDto,
     options?: RequestOptions
@@ -32,6 +34,7 @@ export default class LoginAPI extends BaseAPI {
         {
           schema: LoginResponseSchema,
           signal: options?.signal,
+          retry: true,
         }
       );
     } catch (error) {

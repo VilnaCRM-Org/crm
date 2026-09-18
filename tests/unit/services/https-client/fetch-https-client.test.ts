@@ -4,6 +4,7 @@ import 'reflect-metadata';
 
 import { z } from 'zod';
 
+import RequestDeadlineFactory from '@/lib/reliability/request-deadline-factory';
 import FetchHttpsClient from '@/services/https-client/fetch-https-client';
 import { HttpError } from '@/services/https-client/http-error';
 import HttpErrorResponseParser from '@/services/https-client/http-error-response-parser';
@@ -12,7 +13,9 @@ import HttpResponseProcessor from '@/services/https-client/http-response-process
 import ResponseMessages from '@/services/https-client/response-messages';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
 import sessionCorrelation from '@/services/observability/session-correlation';
+import type RequestRetryService from '@/services/resilience/request-retry-service';
 import securityEventCore from '@/services/security-events/security-event-core';
+import type { RetryOperation, RetryOptions } from '@/services/types/resilience/request-retry';
 
 jest.mock('uuid', () => ({ v4: (): string => 'test-request-id' }));
 
@@ -64,10 +67,23 @@ const createRequestConfigBuilder = (): HttpRequestConfigBuilder =>
 const createResponseProcessor = (): HttpResponseProcessor =>
   new HttpResponseProcessor(new HttpErrorResponseParser(securityEventCore));
 
+// Transport tests run every request exactly once: the retry policy has its own suite
+// (fetch-https-client.resilience.test.ts), so this stand-in hands the whole budget to attempt 1.
+const singleAttempt: RequestRetryService = {
+  execute: <T>(operation: RetryOperation<T>, options: RetryOptions): Promise<T> =>
+    operation({ attempt: 1, remainingMs: options.budgetMs }),
+} as RequestRetryService;
+
 const createClient = (
   requestConfigBuilder: HttpRequestConfigBuilder = createRequestConfigBuilder(),
   responseProcessor: HttpResponseProcessor = createResponseProcessor()
-): FetchHttpsClient => new FetchHttpsClient(requestConfigBuilder, responseProcessor);
+): FetchHttpsClient =>
+  new FetchHttpsClient({
+    requestConfigBuilder,
+    responseProcessor,
+    deadlines: new RequestDeadlineFactory(),
+    retries: singleAttempt,
+  });
 
 describe('FetchHttpsClient', () => {
   const originalFetch = global.fetch;
@@ -125,6 +141,7 @@ describe('FetchHttpsClient', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -142,7 +159,7 @@ describe('FetchHttpsClient', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
-        signal: controller.signal,
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -218,6 +235,7 @@ describe('FetchHttpsClient', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -239,6 +257,7 @@ describe('FetchHttpsClient', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: formData,
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -257,6 +276,7 @@ describe('FetchHttpsClient', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: 'plain text',
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -275,7 +295,7 @@ describe('FetchHttpsClient', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
         expect.objectContaining({
-          signal: controller.signal,
+          signal: expect.any(AbortSignal),
         })
       );
     });
@@ -318,6 +338,7 @@ describe('FetchHttpsClient', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -336,7 +357,7 @@ describe('FetchHttpsClient', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
         expect.objectContaining({
-          signal: controller.signal,
+          signal: expect.any(AbortSignal),
         })
       );
     });
@@ -379,6 +400,7 @@ describe('FetchHttpsClient', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -397,7 +419,7 @@ describe('FetchHttpsClient', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
         expect.objectContaining({
-          signal: controller.signal,
+          signal: expect.any(AbortSignal),
         })
       );
     });
@@ -437,6 +459,7 @@ describe('FetchHttpsClient', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -458,6 +481,7 @@ describe('FetchHttpsClient', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: JSON.stringify(requestData),
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -475,7 +499,7 @@ describe('FetchHttpsClient', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         '/api/test',
         expect.objectContaining({
-          signal: controller.signal,
+          signal: expect.any(AbortSignal),
         })
       );
     });
@@ -674,6 +698,7 @@ describe('FetchHttpsClient', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: blob,
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -693,6 +718,7 @@ describe('FetchHttpsClient', () => {
           'X-Correlation-Id': 'test-session-id',
         },
         body: buffer,
+        signal: expect.any(AbortSignal),
       });
     });
 
@@ -725,6 +751,7 @@ describe('FetchHttpsClient', () => {
             'X-Correlation-Id': 'test-session-id',
           },
           body: stream,
+          signal: expect.any(AbortSignal),
         });
       } finally {
         global.ReadableStream = originalReadableStream;
@@ -776,7 +803,12 @@ describe('FetchHttpsClient', () => {
           .fn()
           .mockReturnValue({ method: 'GET', headers: { Accept: 'application/json' } }),
       };
-      const customClient = new FetchHttpsClient(mockBuilder as never, mockProcessor as never);
+      const customClient = new FetchHttpsClient({
+        requestConfigBuilder: mockBuilder as never,
+        responseProcessor: mockProcessor as never,
+        deadlines: new RequestDeadlineFactory(),
+        retries: singleAttempt,
+      });
       mockFetch.mockResolvedValue({ ok: true, status: 200, headers: new Headers() });
 
       const result = await customClient.get('/api/test', { schema: passthrough });
@@ -802,6 +834,7 @@ describe('FetchHttpsClient', () => {
           'X-Request-Id': 'test-request-id',
           'X-Correlation-Id': 'test-session-id',
         },
+        signal: expect.any(AbortSignal),
       });
       expect(mockProcessor.process).toHaveBeenCalled();
     });
@@ -910,18 +943,17 @@ describe('FetchHttpsClient', () => {
       await expect(client.get('/api/test', { schema: passthrough })).rejects.toBe(httpError);
     });
 
-    it('should not override an explicitly provided Content-Type header', () => {
+    it('should not override an explicitly provided Content-Type header', async () => {
       const customHeaders = { 'Content-Type': 'text/plain', Accept: 'application/xml' };
-      const config = (
-        client as unknown as {
-          createRequestConfig: (
-            method: string,
-            body?: unknown,
-            headers?: Record<string, string>
-          ) => RequestInit;
-        }
-      ).createRequestConfig('POST', { sample: true }, customHeaders);
+      mockFetch.mockResolvedValue(createMockResponse(200, { ok: true }));
 
+      await client.post(
+        '/api/test',
+        { sample: true },
+        { schema: passthrough, headers: customHeaders }
+      );
+
+      const config = mockFetch.mock.calls[0][1] as RequestInit;
       const headers = (config.headers as Record<string, string>) || {};
       expect(headers['Content-Type']).toBe('text/plain');
       expect(headers.Accept).toBe('application/xml');

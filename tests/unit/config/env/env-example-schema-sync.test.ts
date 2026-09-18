@@ -18,6 +18,7 @@ const SCHEMA_KEY_TO_ENV_VAR: Record<string, string | null> = {
   sentryEnvironment: 'REACT_APP_SENTRY_ENVIRONMENT',
   authFailureAlertThreshold: 'REACT_APP_AUTH_FAILURE_ALERT_THRESHOLD',
   authFailureAlertWindowMs: 'REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS',
+  requestTimeoutMs: 'REACT_APP_REQUEST_TIMEOUT_MS',
 };
 
 describe('env schema <-> .env.example sync', () => {

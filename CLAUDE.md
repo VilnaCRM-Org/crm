@@ -1786,6 +1786,7 @@ type files, stories, tests) must end in one of these:
 | `*Url`         | URL value object                            | DDD Value Object                  |
 | `*Target`      | resolved destination value object           | DDD Value Object (#150)           |
 | `*Correlation` | session-scoped correlation identifier       | DDD Value Object (#159)           |
+| `*Deadline`    | time-bounded abort scope of one request     | gRPC / Go context deadline (#147) |
 | `*Navigator`   | adapter over browser navigation             | GoF Adapter (window)              |
 | `*Controller`  | coordinates a UI interaction flow           | MVC Controller                    |
 | `*Error`       | thrown error class                          | JavaScript Error subclass         |
@@ -1940,7 +1941,7 @@ Three different things are outside the gate, and the distinction matters when yo
   **container-free render-path singletons** — `auth-var` (its `ReactiveVarFactory` now
   lives in `src/lib/state/`, outside the gated globs), `auth-store-selectors`,
   `response-schemas`, `map-registration-error`,
-  `lazy-module-loader`, `load-registration-notification`, `registration-handlers-factory`,
+  `load-registration-notification`, `registration-handlers-factory`,
   `auth-error-reporter`, `boundary-error-reporter` (the reporter the paint-path error
   boundaries receive by prop, issue #116), `url-builder`, `locale-formatter-core`, and the
   observability core / correlation-id / sentry / pii-scrubber / web-vitals leaves.
@@ -2252,6 +2253,8 @@ Key variables in `.env.example`:
   escalate a client security event to `auth_failure_burst` / `critical`. Default 5.
 - `REACT_APP_AUTH_FAILURE_ALERT_WINDOW_MS` - Length of that rolling window in milliseconds.
   Default 60000.
+- `REACT_APP_REQUEST_TIMEOUT_MS` - Deadline for every REST request and GraphQL operation, and
+  the total budget a retried request may spend across all attempts (issue #147). Default 10000.
 
 `ENABLE_PRELOADED_AUTH_TOKEN_SEED` is deliberately **not** in the list above: it is a build-
 environment flag set only by the Dockerfile's `test-harness` stage, and it must never appear in
@@ -2597,8 +2600,52 @@ replaces.
     literal in `src/routes/**` with an `element` and no own `errorElement`. Boundaries never
     write to the console: React 19 logs every caught error through `onCaughtError`, so a test
     that renders a throwing child passes `onCaughtError` to `render` / `renderWithProviders` and
-    asserts it — never a file-wide spy. Chunk-load recovery with a reload policy is deferred to
-    #147; never auto-reload a protected route, because the auth token is memory-only.
+    asserts it — never a file-wide spy. Chunk-load recovery with a reload policy is pattern 15
+    (issue #147); never auto-reload a protected route, because the auth token is memory-only.
+
+15. **Runtime resilience (issue #147, ADR-009)**: every request runs under a `RequestDeadline`
+    (`src/lib/reliability/request-deadline.ts`; the `*Deadline` suffix is "time-bounded abort
+    scope of one request"): one `AbortController`, a timer for `REACT_APP_REQUEST_TIMEOUT_MS`
+    (default 10 000 ms, via `RequestDeadlineFactory`, registered by value under
+    `HTTP_TOKENS.RequestDeadlineFactory`), and the caller's abort forwarded into the same signal.
+    `timedOut` is the deadline's own state — never an exception name — and `release()` clears only
+    the timer, so a caller abort still cancels a body read. `FetchHttpsClient` maps a timeout to
+    `HttpError({ status: 0, message: 'Request timed out' })`, the retryable network error;
+    `DeadlineFetchAdapter` (`HTTP_TOKENS.DeadlineFetchAdapter`) is the `fetch` `ApolloLinkFactory`
+    hands `HttpLink`, bounding the wait for headers. `AbortSignal.any` / `AbortSignal.timeout` are
+    off the Baseline 2023 floor and are not used.
+
+    Retry lives in `src/services/resilience/` (`RESILIENCE_TOKENS`): `TransientErrorDetector`
+    (status `0`, `408`, `500`, `502`, `503`, `504`; never an `AbortError`, never `429`),
+    `ExponentialBackoffStrategy` (`250 · 2^(n−1)` ms, cap 2 s, equal jitter) and
+    `RequestRetryService.execute(op, { budgetMs, signal })` — three attempts, recursive because
+    `no-await-in-loop` is an error, each attempt handed the budget that is left, giving up when
+    the next wait would leave under 250 ms, and a caller abort mid-wait rejecting at once. The
+    client retries `GET`/`PUT`/`DELETE` by default; a `POST`/`PATCH` needs `RequestConfig.retry:
+true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a create in**:
+    `RegistrationAPI` gets the deadline only, because API Platform merely echoes
+    `clientMutationId`, and its Retry button stays user-initiated. Retries are not reported to
+    telemetry; only the final failure reaches the observability boundary.
+
+    Offline is client state (ADR-008): `ConnectivityStateVar` in `src/lib/connectivity/`, seeded
+    and driven by `BrowserConnectivityAdapter.attach(window)` in `src/index.tsx`, read through
+    `useConnectivity()` (`src/hooks/`). `UIForm` disables its submit while offline and mounts
+    `UIOfflineNotice` — an **always-mounted** `role="status"` region inside the `<form>`, after
+    the heading, whose text toggles (a region created and filled in one commit is dropped by
+    screen readers). It shows `offline_notice.offline` while offline, `offline_notice.restored`
+    for five seconds after a reconnection, and nothing otherwise, so online rendering and the
+    visual baselines are unchanged. There is no Figma surface for it; it uses the palette tokens.
+
+    Chunk recovery: `ChunkRetryLoader` (`src/lib/reliability/`) memoizes one dynamic `import()`,
+    forgets a failure, and re-imports once when `chunkLoadErrorDetector` recognises it; it wraps
+    every page loader in `RouteMapper`, the registration-notification loader, and
+    `DeferredAuthActions.load()`. `ReloadingChunkLoader` — **public routes only** — then asks
+    `ReloadOnceGuard` (a per-key `sessionStorage` flag, refusing when storage throws) and calls
+    `pageReloadNavigator.reload()` once, leaving React suspended on the fallback; a second miss
+    in the session, and every miss on a protected route, is rethrown to the route `errorElement`
+    (strategy `reload`, user-initiated). `tests/unit/routes/route-mapper.test.tsx` pins the
+    guard-dependent choice, `tests/unit/tooling/performance-serving.test.ts` pins that the
+    mapper still wraps `route.load` through `React.lazy`.
 
 ## Node Version Management
 

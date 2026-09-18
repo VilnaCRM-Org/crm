@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom';
-import { render, screen } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 
 import UIForm from '@/components/ui-form';
+import render from '@tests/unit/utils/render-with-i18n';
 
 type Values = { name: string };
 

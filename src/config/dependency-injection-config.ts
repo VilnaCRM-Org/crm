@@ -10,6 +10,7 @@ import errorReportingRegistrar from '@/services/error-reporting/di';
 import httpClientRegistrar from '@/services/https-client/di';
 import localeFormatterRegistrar from '@/services/locale-formatter/di';
 import observabilityRegistrar from '@/services/observability/di';
+import resilienceRegistrar from '@/services/resilience/di';
 import securityEventRegistrar from '@/services/security-events/di';
 import errorUtilsRegistrar from '@/utils/error/di';
 
@@ -18,6 +19,7 @@ const registrars: ModuleRegistrar[] = [
   errorUtilsRegistrar,
   errorRegistrar,
   errorReportingRegistrar,
+  resilienceRegistrar,
   httpClientRegistrar,
   localeFormatterRegistrar,
   observabilityRegistrar,

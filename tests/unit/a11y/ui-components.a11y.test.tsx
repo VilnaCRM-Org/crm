@@ -9,6 +9,7 @@ import UIForm from '@/components/ui-form';
 import UIFormInputField from '@/components/ui-form-input-field';
 import UILink from '@/components/ui-link';
 import UILiveStatus from '@/components/ui-live-status';
+import UIOfflineNotice from '@/components/ui-offline-notice';
 import UITextField from '@/components/ui-text-field';
 import UITypography from '@/components/ui-typography';
 import renderWithProviders from '@tests/unit/utils/render-with-providers';
@@ -75,6 +76,16 @@ const componentCases: ComponentCase[] = [
   { name: 'UILink', element: <UILink href="/docs">Documentation</UILink> },
   { name: 'UITypography heading', element: <UITypography component="h1">Title</UITypography> },
   { name: 'UILiveStatus', element: <UILiveStatus message="Saved" /> },
+  {
+    name: 'UIOfflineNotice while offline',
+    element: <UIOfflineNotice online={false} />,
+    withProviders: true,
+  },
+  {
+    name: 'UIOfflineNotice while online',
+    element: <UIOfflineNotice online />,
+    withProviders: true,
+  },
   { name: 'UIBackToMain', element: <UIBackToMain />, withProviders: true },
   { name: 'UIForm with a labelled field', element: <DemoForm />, withProviders: true },
   { name: 'NotFound page', element: <NotFound />, withProviders: true },

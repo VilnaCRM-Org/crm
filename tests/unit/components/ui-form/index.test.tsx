@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 
 import UIForm from '@/components/ui-form';
+import render from '@tests/unit/utils/render-with-i18n';
 
 type Values = { name: string };
 
@@ -152,9 +153,12 @@ describe('UIForm', () => {
     );
 
     expect(screen.getAllByRole('alert')).toHaveLength(1);
-    const status = screen.getByRole('status');
-    expect(status).toBeEmptyDOMElement();
-    expect(status).not.toHaveAttribute('role', 'alert');
+    const regions = screen.getAllByRole('status');
+    expect(regions).toHaveLength(2);
+    regions.forEach((status) => {
+      expect(status).toBeEmptyDOMElement();
+      expect(status).not.toHaveAttribute('role', 'alert');
+    });
   });
 
   it('hides title and subtitle when show flags are false', () => {
@@ -284,9 +288,13 @@ describe('UIForm', () => {
       </UIForm>
     );
 
+    // Two polite regions live in the form: the submitting announcer and the offline notice
+    // (issue #147). Only the announcer carries the submitting label.
     const regions = screen.getAllByRole('status');
-    expect(regions).toHaveLength(1);
-    expect(regions[0]).toHaveTextContent('Submitting…');
+    expect(regions).toHaveLength(2);
+    const announcing = regions.filter((region) => region.textContent === 'Submitting…');
+    expect(announcing).toHaveLength(1);
+    expect(screen.getByText('Submitting…')).toBe(announcing[0]);
   });
 
   it('keeps the spinner and aria-busy on while silencing the status announcement', () => {
@@ -307,7 +315,7 @@ describe('UIForm', () => {
     const button = screen.getByRole('button', { name: 'Submit' }) as HTMLButtonElement;
     expect(button).toHaveClass('MuiButton-loading');
     expect(button.form).toHaveAttribute('aria-busy', 'true');
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    screen.getAllByRole('status').forEach((region) => expect(region).toBeEmptyDOMElement());
   });
 
   it('keeps the live region empty and the button interactive when idle', () => {
@@ -324,7 +332,7 @@ describe('UIForm', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Submit' })).toBeEnabled();
-    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+    screen.getAllByRole('status').forEach((region) => expect(region).toBeEmptyDOMElement());
     expect(screen.queryByRole('progressbar', { hidden: true })).not.toBeInTheDocument();
   });
 

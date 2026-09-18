@@ -1,6 +1,8 @@
 import { ApolloLink, Observable, execute, gql } from '@apollo/client';
 import type { FetchResult } from '@apollo/client';
 
+import RequestDeadlineFactory from '@/lib/reliability/request-deadline-factory';
+import DeadlineFetchAdapter from '@/services/https-client/deadline-fetch-adapter';
 import ApolloLinkFactory from '@/services/observability/apollo-link-factory';
 import correlationIdProvider from '@/services/observability/correlation-id-provider';
 import sessionCorrelation from '@/services/observability/session-correlation';
@@ -13,6 +15,8 @@ const query = gql`
     field
   }
 `;
+
+const deadlineFetch = new DeadlineFetchAdapter(new RequestDeadlineFactory());
 
 const createObservability = (): jest.Mocked<ObservabilityService> => ({
   init: jest.fn(),
@@ -65,11 +69,12 @@ describe('ApolloLinkFactory — assembled chain', () => {
     });
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
-    const link = new ApolloLinkFactory(
-      createObservability(),
-      correlationIdProvider,
-      sessionCorrelation
-    ).build(GRAPHQL_URI);
+    const link = new ApolloLinkFactory({
+      observability: createObservability(),
+      correlationIds: correlationIdProvider,
+      sessionCorrelation: sessionCorrelation,
+      deadlineFetch: deadlineFetch,
+    }).build(GRAPHQL_URI);
     const result = await runLink(link);
 
     expect(result).toEqual({ data: { field: 1 } });
@@ -88,7 +93,12 @@ describe('ApolloLinkFactory — assembled chain', () => {
 
   it('captures a network failure exactly once when no graphql errors are present', async () => {
     const observability = createObservability();
-    const factory = new ApolloLinkFactory(observability, correlationIdProvider, sessionCorrelation);
+    const factory = new ApolloLinkFactory({
+      observability: observability,
+      correlationIds: correlationIdProvider,
+      sessionCorrelation: sessionCorrelation,
+      deadlineFetch: deadlineFetch,
+    });
     const networkError = new Error('offline');
     const terminating = new ApolloLink(
       () => new Observable((observer) => observer.error(networkError))
@@ -107,7 +117,12 @@ describe('ApolloLinkFactory — assembled chain', () => {
 
   it('captures graphql errors exactly once when the transport succeeded', async () => {
     const observability = createObservability();
-    const factory = new ApolloLinkFactory(observability, correlationIdProvider, sessionCorrelation);
+    const factory = new ApolloLinkFactory({
+      observability: observability,
+      correlationIds: correlationIdProvider,
+      sessionCorrelation: sessionCorrelation,
+      deadlineFetch: deadlineFetch,
+    });
     const graphQLError = { message: 'bad field' };
     const terminating = new ApolloLink(() => Observable.of({ errors: [graphQLError] }));
 
@@ -121,7 +136,12 @@ describe('ApolloLinkFactory — assembled chain', () => {
 
   it('captures nothing when neither transport nor graphql errors occur', async () => {
     const observability = createObservability();
-    const factory = new ApolloLinkFactory(observability, correlationIdProvider, sessionCorrelation);
+    const factory = new ApolloLinkFactory({
+      observability: observability,
+      correlationIds: correlationIdProvider,
+      sessionCorrelation: sessionCorrelation,
+      deadlineFetch: deadlineFetch,
+    });
     const terminating = new ApolloLink(() => Observable.of({ data: { field: 1 } }));
 
     await runLink(ApolloLink.from([privateLink(factory, 'errorLink'), terminating]));

@@ -33,6 +33,14 @@ The composer, mapper, and validator are container-free **module singletons**
 (`export default new X()`), so no tsyringe is pulled into the auth page's paint
 path (mobile Lighthouse budget).
 
+The mapper does not hand `route.load` to `React.lazy` bare (issue #147, ADR-009):
+every page loader is wrapped in a `ChunkRetryLoader`, which re-imports once when the
+chunk fails to load, and a **public** route's loader is further wrapped in a
+`ReloadingChunkLoader`, which reloads the document once per session (a
+`sessionStorage` flag keyed by the route path) when the retry also fails. A
+protected route never auto-reloads — the auth token is memory-only — so its second
+failure reaches the route `errorElement` and its **Reload the page** button.
+
 ## The contract
 
 ```ts
