@@ -30,6 +30,7 @@ import {
   slugify,
   stripFencedBlocks,
 } from '../../../scripts/docs/markdown';
+import { repositoryMarkdown } from '../../../scripts/docs/repository-markdown';
 
 const repoRoot = path.resolve(__dirname, '../../..');
 const docsPolicyPath = path.join(repoRoot, 'config/docs-policy.json');
@@ -37,17 +38,6 @@ const docsPolicy = loadDocsPolicy(docsPolicyPath);
 const adrPolicy = docsPolicy.adr;
 
 const fixtureScan: DocsScanPolicy = { roots: ['.', 'docs'], ignoredPaths: [], ignoredFiles: [] };
-
-// `safe.directory` mirrors scripts/docs/lint-docs.ts: the suite runs as root inside the dev
-// container against a bind-mounted worktree owned by the host user, which git otherwise refuses.
-const trackedMarkdown = (): string[] =>
-  execFileSync('git', ['-c', `safe.directory=${repoRoot}`, 'ls-files', '-z', '*.md'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-    maxBuffer: 32 * 1024 * 1024,
-  })
-    .split('\0')
-    .filter((entry) => entry !== '');
 
 const tempRoots: string[] = [];
 
@@ -268,6 +258,102 @@ describe('listMarkdownFiles', () => {
       'kept.md',
       'README.md',
     ]);
+  });
+});
+
+describe('repositoryMarkdown', () => {
+  it('scans source archives using the documentation policy roots and exclusions', () => {
+    const root = makeRoot();
+    write(root, 'README.md', '# Repository\n');
+    write(root, 'docs/guide.md', '# Guide\n');
+    write(root, 'src/module/README.md', '# Module\n');
+    write(root, 'docs/node_modules/ignored.md', '# Dependency\n');
+    write(root, 'CHANGELOG.md', '# Ignored\n');
+    write(root, 'outside-policy/ignored.md', '# Outside the scan roots\n');
+    write(root, 'docs/notes.txt', 'Not markdown\n');
+
+    expect(repositoryMarkdown(root, docsPolicy.docs)).toEqual([
+      'docs/guide.md',
+      'README.md',
+      'src/module/README.md',
+    ]);
+  });
+
+  it('rejects an empty archive rather than passing vacuously', () => {
+    expect(() => repositoryMarkdown(makeRoot(), docsPolicy.docs)).toThrow(
+      /source archive contains no markdown/
+    );
+  });
+
+  it.each(['directory', 'file'] as const)(
+    'uses only tracked markdown when .git is a %s',
+    (metadataKind) => {
+      const root = makeRoot();
+      const metadataArgs =
+        metadataKind === 'file' ? ['--separate-git-dir', path.join(makeRoot(), 'metadata')] : [];
+      execFileSync('git', ['init', '--quiet', ...metadataArgs], { cwd: root, stdio: 'pipe' });
+      write(root, 'docs/tracked.md', '# Tracked\n');
+      write(root, 'docs/deleted.md', '# Deleted from the worktree\n');
+      write(root, 'docs/untracked.md', '# Scratch\n');
+      write(root, 'README.md', '# Untracked root file\n');
+      execFileSync(
+        'git',
+        ['-c', `safe.directory=${root}`, 'add', 'docs/tracked.md', 'docs/deleted.md'],
+        {
+          cwd: root,
+          stdio: 'pipe',
+        }
+      );
+      rmSync(path.join(root, 'docs/deleted.md'));
+
+      expect(repositoryMarkdown(root, docsPolicy.docs)).toEqual(['docs/tracked.md']);
+    }
+  );
+
+  it('propagates Git failure for an invalid metadata directory', () => {
+    const root = makeRoot();
+    mkdirSync(path.join(root, '.git'));
+    write(root, 'README.md', '# Must not silently scan\n');
+
+    expect(() => repositoryMarkdown(root, docsPolicy.docs)).toThrow(/not a git repository/);
+  });
+
+  it('propagates Git failure for an invalid worktree metadata file', () => {
+    const root = makeRoot();
+    write(root, '.git', 'gitdir: missing-metadata\n');
+    write(root, 'README.md', '# Must not silently scan\n');
+
+    expect(() => repositoryMarkdown(root, docsPolicy.docs)).toThrow(/not a git repository/);
+  });
+
+  it('does not treat a dangling .git symlink as an archive', () => {
+    const root = makeRoot();
+    symlinkSync(path.join(root, 'missing-metadata'), path.join(root, '.git'));
+    write(root, 'README.md', '# Must not silently scan\n');
+
+    expect(() => repositoryMarkdown(root, docsPolicy.docs)).toThrow(/not a git repository/);
+  });
+
+  it('rejects an empty Git index even when untracked markdown exists', () => {
+    const root = makeRoot();
+    execFileSync('git', ['init', '--quiet'], { cwd: root, stdio: 'pipe' });
+    write(root, 'README.md', '# Untracked\n');
+
+    expect(() => repositoryMarkdown(root, docsPolicy.docs)).toThrow(
+      /`git ls-files` returned no markdown/
+    );
+  });
+
+  it('retains a tracked dangling symlink so documentation reads can fail', () => {
+    const root = makeRoot();
+    execFileSync('git', ['init', '--quiet'], { cwd: root, stdio: 'pipe' });
+    symlinkSync(path.join(root, 'missing.md'), path.join(root, 'README.md'));
+    execFileSync('git', ['-c', `safe.directory=${root}`, 'add', 'README.md'], {
+      cwd: root,
+      stdio: 'pipe',
+    });
+
+    expect(repositoryMarkdown(root, docsPolicy.docs)).toEqual(['README.md']);
   });
 });
 
@@ -1267,8 +1353,8 @@ describe('detectAdrDrift', () => {
 });
 
 describe('the repository itself', () => {
-  it('passes every documentation gate against the tracked markdown files', () => {
-    const tracked = trackedMarkdown();
+  it('passes every documentation gate against checkout or archive markdown files', () => {
+    const tracked = repositoryMarkdown(repoRoot, docsPolicy.docs);
 
     expect(tracked.length).toBeGreaterThan(0);
     expect(lintAdrs(repoRoot, docsPolicy.adr, tracked)).toEqual([]);

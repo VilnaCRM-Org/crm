@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { lstatSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { reportViolations } from '../ci/violation-table';
@@ -10,6 +10,7 @@ import { checkDocCoverage } from './doc-coverage';
 import { checkDocLinks } from './doc-links';
 import { checkDocReferences } from './doc-references';
 import { type DocsPolicy, type DocsViolation, loadDocsPolicy } from './docs-policy';
+import { repositoryMarkdown } from './repository-markdown';
 
 /** Fixed repository paths; never taken from argv so the gate stays path-injection safe. */
 const ROOT = process.cwd();
@@ -126,41 +127,12 @@ const driftViolations = (policy: DocsPolicy): DocsViolation[] => {
   return result.violations;
 };
 
-/**
- * Only tracked markdown is gated. An untracked scratch file must never fail a developer's
- * `make lint` when CI, which only ever sees committed files, would pass.
- */
-const trackedMarkdown = (): string[] => {
-  const listed = git(['ls-files', '-z', '*.md']);
-  if (listed === '') {
-    throw new Error(
-      'lint-docs: `git ls-files` returned no markdown. Run the gate inside the repository — ' +
-        'refusing to pass vacuously.'
-    );
-  }
-
-  // A file deleted in the worktree but still in the index would otherwise ENOENT downstream.
-  // lstat, so a broken symlink stays in the scan and fails loudly on read rather than being
-  // silently dropped from every check.
-  return listed
-    .split('\0')
-    .filter((path) => path !== '')
-    .filter((path) => {
-      try {
-        lstatSync(resolve(ROOT, path));
-        return true;
-      } catch {
-        return false;
-      }
-    });
-};
-
 const run = (check: Check, policy: DocsPolicy): DocsViolation[] => {
   if (check === 'drift') {
     return driftViolations(policy);
   }
 
-  const tracked = trackedMarkdown();
+  const tracked = repositoryMarkdown(ROOT, policy.docs);
   switch (check) {
     case 'adr':
       return lintAdrs(ROOT, policy.adr, tracked);
