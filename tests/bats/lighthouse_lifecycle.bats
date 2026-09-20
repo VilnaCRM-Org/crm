@@ -40,8 +40,13 @@ STUB
 }
 
 assert_lighthouse_cleanup_ran() {
-  assert_log_contains 'docker compose -f common-healthchecks.yml -f docker-compose.test.yml down --volumes --remove-orphans'
+  assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml down --volumes --remove-orphans'
   assert_log_contains 'docker network rm crm-network'
+}
+
+assert_lighthouse_compose_files() {
+  local action="$1"
+  assert_log_contains "docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml $action"
 }
 
 @test "Lighthouse wrappers stop on build, install, and audit failures and still clean up" {
@@ -86,7 +91,24 @@ assert_lighthouse_cleanup_ran() {
     [ "$status" -eq 37 ]
     assert_output_contains "forced make failure: $audit_target"
     [ -d "$SCRIPT_SANDBOX/lhci-reports-$mode" ]
-    assert_log_contains "docker compose -f common-healthchecks.yml -f docker-compose.test.yml cp prod:/app/lhci-reports-$mode/. lhci-reports-$mode/"
+    assert_lighthouse_compose_files "cp prod:/app/lhci-reports-$mode/. lhci-reports-$mode/"
     assert_lighthouse_cleanup_ran
   done
+}
+
+@test "Playwright and load batch Compose commands use the complete start-prod file set" {
+  run_ci_script "$PROJECT_ROOT/scripts/ci/batch_pw_load.sh" test-playwright-e2e
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml exec -T playwright mkdir -p /app'
+  assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml cp playwright:/app/playwright-report/. playwright-report/'
+
+  reset_command_log
+  run_ci_script "$PROJECT_ROOT/scripts/ci/batch_pw_load.sh" test-playwright-visual
+  [ "$status" -eq 0 ]
+  assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml exec -T playwright mkdir -p /app'
+
+  reset_command_log
+  run_ci_script "$PROJECT_ROOT/scripts/ci/batch_pw_load.sh" test-load
+  [ "$status" -eq 0 ]
+  assert_log_contains 'make start-prod'
 }

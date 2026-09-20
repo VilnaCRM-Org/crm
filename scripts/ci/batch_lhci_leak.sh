@@ -12,11 +12,13 @@ DOCKER_COMPOSE_TEST_FILE=${DOCKER_COMPOSE_TEST_FILE:-"docker-compose.test.yml"}
 COMMON_HEALTHCHECKS_FILE=${COMMON_HEALTHCHECKS_FILE:-"common-healthchecks.yml"}
 MOCKOON_PORT=${MOCKOON_PORT:-"8080"}
 
-COMPOSE_ARGS=()
+# Application-stack commands need the base service definitions: common-healthchecks.yml
+# only overrides services and is invalid when Compose cannot see their image/build config.
+LIGHTHOUSE_COMPOSE_ARGS=(-f "$DOCKER_COMPOSE_DEV_FILE" -f "$DOCKER_COMPOSE_TEST_FILE")
 if [ -n "$COMMON_HEALTHCHECKS_FILE" ] && [ -s "$COMMON_HEALTHCHECKS_FILE" ]; then
-    COMPOSE_ARGS+=(-f "$COMMON_HEALTHCHECKS_FILE")
+    LIGHTHOUSE_COMPOSE_ARGS+=(-f "$COMMON_HEALTHCHECKS_FILE")
 fi
-COMPOSE_ARGS+=(-f "$DOCKER_COMPOSE_TEST_FILE")
+
 setup_docker_network() {
     docker network create "$NETWORK_NAME" 2>/dev/null || :
 }
@@ -40,7 +42,7 @@ run_memory_leak_tests_dind() {
     fi
 
     # The Makefile memory target collects reports before its own always-run teardown.
-    docker compose "${COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
+    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
 
     if [ "$exit_code" -ne 0 ]; then
@@ -57,8 +59,8 @@ run_lighthouse_desktop_dind() {
             REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod &&
             make patch-prod-mockoon-url &&
             make install-chromium-lhci &&
-            docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse' &&
-            docker compose "${COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/" &&
+            docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse' &&
+            docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/" &&
             make test-chromium &&
             make lighthouse-desktop-dind
     ); then
@@ -68,9 +70,9 @@ run_lighthouse_desktop_dind() {
     fi
 
     mkdir -p lhci-reports-desktop 2>/dev/null || :
-    docker compose "${COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-desktop/." "lhci-reports-desktop/" 2>/dev/null || :
-    docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
-    docker compose "${COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
+    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-desktop/." "lhci-reports-desktop/" 2>/dev/null || :
+    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
+    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
 
     if [ "$exit_code" -ne 0 ]; then
@@ -87,8 +89,8 @@ run_lighthouse_mobile_dind() {
             REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod &&
             make patch-prod-mockoon-url &&
             make install-chromium-lhci &&
-            docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse' &&
-            docker compose "${COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/" &&
+            docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse' &&
+            docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/" &&
             make test-chromium &&
             make lighthouse-mobile-dind
     ); then
@@ -98,9 +100,9 @@ run_lighthouse_mobile_dind() {
     fi
 
     mkdir -p lhci-reports-mobile 2>/dev/null || :
-    docker compose "${COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-mobile/." "lhci-reports-mobile/" 2>/dev/null || :
-    docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
-    docker compose "${COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
+    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-mobile/." "lhci-reports-mobile/" 2>/dev/null || :
+    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
+    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
     if [ "$exit_code" -ne 0 ]; then
         exit "$exit_code"

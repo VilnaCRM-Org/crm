@@ -86,9 +86,9 @@ setup() {
   run_ci_script "$script_path" test-playwright-e2e
   [ "$status" -eq 0 ]
   assert_log_contains 'make start-prod'
-  assert_log_contains 'docker compose -f common-healthchecks.yml -f docker-compose.test.yml exec -T playwright mkdir -p /app'
+  assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml exec -T playwright mkdir -p /app'
   assert_log_contains 'make test-e2e'
-  assert_log_contains 'docker compose -f common-healthchecks.yml -f docker-compose.test.yml cp playwright:/app/playwright-report/. playwright-report/'
+  assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml cp playwright:/app/playwright-report/. playwright-report/'
 
   reset_command_log
   run_ci_script "$script_path" test-playwright-visual
@@ -344,7 +344,7 @@ home	e2e	tests/e2e/nested.spec.ts	Directory, not a file."
   assert_log_contains 'make install-chromium-lhci'
   assert_log_contains 'make test-chromium'
   assert_log_contains 'make lighthouse-desktop-dind'
-  assert_log_contains 'docker compose -f common-healthchecks.yml -f docker-compose.test.yml cp lighthouse/. prod:/app/lighthouse/'
+  assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml cp lighthouse/. prod:/app/lighthouse/'
 
   reset_command_log
   run_ci_script "$script_path" test-lighthouse-mobile

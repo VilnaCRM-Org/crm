@@ -93,7 +93,7 @@ STUB
     FAKE_MAKE_FAIL_TARGET="$target" run_ci_script \
       "$PROJECT_ROOT/scripts/ci/batch_lhci_leak.sh" test-memory-leak
     [ "$status" -eq 1 ]
-    assert_log_contains 'down --volumes --remove-orphans'
+    assert_log_contains 'docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml down --volumes --remove-orphans'
     run grep 'docker compose -p memleak' "$COMMAND_LOG"
     [ "$status" -eq 1 ]
     if [ "$target" != memory-leak-dind ]; then
