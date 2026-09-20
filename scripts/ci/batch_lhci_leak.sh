@@ -53,23 +53,22 @@ run_lighthouse_desktop_dind() {
 
     exit_code=0
     if (
-        set -e
-        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod
-        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod
-        make patch-prod-mockoon-url
-        make install-chromium-lhci
-        docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse'
-        docker compose "${COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/"
-        make test-chromium
-        make lighthouse-desktop-dind
-        mkdir -p lhci-reports-desktop
-        docker compose "${COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-desktop/." "lhci-reports-desktop/" 2>/dev/null || :
+        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod &&
+            REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod &&
+            make patch-prod-mockoon-url &&
+            make install-chromium-lhci &&
+            docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse' &&
+            docker compose "${COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/" &&
+            make test-chromium &&
+            make lighthouse-desktop-dind
     ); then
-        :
+        exit_code=0
     else
         exit_code=$?
     fi
 
+    mkdir -p lhci-reports-desktop 2>/dev/null || :
+    docker compose "${COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-desktop/." "lhci-reports-desktop/" 2>/dev/null || :
     docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
     docker compose "${COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
@@ -84,23 +83,22 @@ run_lighthouse_mobile_dind() {
 
     exit_code=0
     if (
-        set -e
-        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod
-        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod
-        make patch-prod-mockoon-url
-        make install-chromium-lhci
-        docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse'
-        docker compose "${COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/"
-        make test-chromium
-        make lighthouse-mobile-dind
-        mkdir -p lhci-reports-mobile
-        docker compose "${COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-mobile/." "lhci-reports-mobile/" 2>/dev/null || :
+        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod &&
+            REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod &&
+            make patch-prod-mockoon-url &&
+            make install-chromium-lhci &&
+            docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse' &&
+            docker compose "${COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/" &&
+            make test-chromium &&
+            make lighthouse-mobile-dind
     ); then
-        :
+        exit_code=0
     else
         exit_code=$?
     fi
 
+    mkdir -p lhci-reports-mobile 2>/dev/null || :
+    docker compose "${COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-mobile/." "lhci-reports-mobile/" 2>/dev/null || :
     docker compose "${COMPOSE_ARGS[@]}" exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
     docker compose "${COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
