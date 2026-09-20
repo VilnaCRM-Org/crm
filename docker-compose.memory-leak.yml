@@ -11,6 +11,8 @@ services:
       - REACT_APP_PROD_HOST_API_URL=http://localhost:3001
       - MEMLAB_DEBUG=true
       - MEMLAB_SKIP_WARMUP=true
+      - MEMLAB_DIAGNOSTICS=${MEMLAB_DIAGNOSTICS:-0}
+      - MEMLAB_DISABLE_GPU=${MEMLAB_DISABLE_GPU:-0}
       - REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_NAME=no-aws-header-name
       - REACT_APP_CONTINUOUS_DEPLOYMENT_HEADER_VALUE=no-aws-header-value
       - NODE_ENV=production

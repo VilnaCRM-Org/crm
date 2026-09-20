@@ -42,6 +42,10 @@ LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
 # Alpine 3.21 package pins (verified 2026-01-05); update when base image bumps
 CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-r4 freetype=2.13.3-r0 harfbuzz=9.0.0-r1 nss=3.109-r0
+# Evaluate once: recursive shell variables interact with the global export above.
+LHCI_DIND_CLI_VERSION       := $(shell sed -n 's/^[[:space:]]*"@lhci\/cli": \["@lhci\/cli@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
+DOTENV_EXPAND_DIND_VERSION  := $(shell sed -n 's/^[[:space:]]*"dotenv-expand": \["dotenv-expand@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
+DOTENV_DIND_VERSION         := $(shell sed -n 's/^[[:space:]]*"dotenv": \["dotenv@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
 LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new
 LHCI_PRELOADED_AUTH_TOKEN   ?= lighthouse-preloaded-auth-token
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)
@@ -81,22 +85,40 @@ DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
 MEMLEAK_BASE_PATH           = ./tests/memory-leak
 MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
 MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/run-memlab-tests.js
+MEMLEAK_REPORTS_DIR         ?= memory-leak-logs
+MEMLEAK_COMPOSE             = $(DOCKER_COMPOSE) -p memleak $(DOCKER_COMPOSE_MEMLEAK_FILE)
 
 MEMLEAK_REMOVE_RESULTS		= rm -rf $(MEMLEAK_RESULTS_DIR)
 MEMLEAK_SETUP 				= \
 								echo "🧪 Starting memory leak test environment..."; \
-								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d --build
+								$(MEMLEAK_COMPOSE) up -d --build
 MEMLEAK_RUN_TESTS			= \
 								echo "🚀 Running memory leak tests..."; \
-								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) node $(MEMLEAK_TEST_SCRIPT) || exit 1
+								bash -o pipefail -c '$(MEMLEAK_COMPOSE) exec -T $(MEMLEAK_SERVICE) \
+								node $(MEMLEAK_TEST_SCRIPT) 2>&1 | \
+								tee "$(MEMLEAK_REPORTS_DIR)/test-execution.log"; exit $${PIPESTATUS[0]}'
 MEMLEAK_RUN_CLEANUP			= \
 								echo "🧹 Cleaning up memory leak test containers..."; \
-								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) down --remove-orphans
+								$(MEMLEAK_COMPOSE) down --remove-orphans
+# Diagnostics are best-effort; never replace the original test/setup failure.
+# Copy while the container exists, then tear down on both success and failure.
+MEMLEAK_FINALIZE            = \
+	status=$$?; trap - EXIT; set +e; \
+	$(MEMLEAK_COMPOSE) cp "$(MEMLEAK_SERVICE):/app/$(MEMLEAK_RESULTS_DIR)/." \
+		"$(MEMLEAK_REPORTS_DIR)/"; \
+	$(MEMLEAK_COMPOSE) logs --no-color $(MEMLEAK_SERVICE) \
+		> "$(MEMLEAK_REPORTS_DIR)/container.log" 2>&1; \
+	$(MEMLEAK_RUN_CLEANUP); cleanup_status=$$?; \
+	if [ "$$status" -eq 0 ]; then status=$$cleanup_status; fi; \
+	exit "$$status"
 MEMLEAK_RUN_DOCKER			= \
+								set -e; \
+								trap '$(MEMLEAK_FINALIZE)' EXIT; \
+								trap 'exit 130' INT; trap 'exit 143' TERM; \
+								mkdir -p "$(MEMLEAK_REPORTS_DIR)"; \
 								$(MEMLEAK_REMOVE_RESULTS); \
 								$(MEMLEAK_SETUP); \
-								$(MEMLEAK_RUN_TESTS); \
-								$(MEMLEAK_RUN_CLEANUP)
+								$(MEMLEAK_RUN_TESTS)
 
 K6_TEST_SCRIPT              ?= /loadTests/homepage.js
 K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
@@ -973,7 +995,7 @@ build-k6: ## Build K6 load testing image for dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) build k6
 
 install-chromium-lhci: ## Install Chromium and LHCI tooling for Lighthouse CI in dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c "apk add --no-cache chromium npm && npm install -g @lhci/cli@0.10.0 dotenv@16.4.5"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T --user root prod sh -c 'set -e; LHCI_VERSION="$(LHCI_DIND_CLI_VERSION)"; DOTENV_EXPAND_VERSION="$(DOTENV_EXPAND_DIND_VERSION)"; DOTENV_VERSION="$(DOTENV_DIND_VERSION)"; [ -n "$$LHCI_VERSION" ] || { echo "Missing @lhci/cli version in bun.lock" >&2; exit 1; }; [ -n "$$DOTENV_EXPAND_VERSION" ] || { echo "Missing dotenv-expand version in bun.lock" >&2; exit 1; }; [ -n "$$DOTENV_VERSION" ] || { echo "Missing dotenv version in bun.lock" >&2; exit 1; }; apk add --no-cache $(CHROMIUM_APK_PACKAGES) npm; npm install -g --prefix /usr/local "@lhci/cli@$$LHCI_VERSION" "dotenv-expand@$$DOTENV_EXPAND_VERSION" "dotenv@$$DOTENV_VERSION"'
 
 test-chromium: ## Test Chromium installation in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -c "chromium-browser --version"
@@ -982,28 +1004,16 @@ memory-leak-dind: ## Run memory leak tests in dind environment
 	$(RUN_MEMLAB)
 
 lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5'
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && \
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'set -e; cd /app; \
 		CONFIG_PATH=./lighthouse/lighthouserc.desktop.js; \
-		if [ ! -f "$$CONFIG_PATH" ] && [ -f ./lighthouserc.desktop.js ]; then \
-			mkdir -p ./lighthouse; \
-			cp ./lighthouserc.desktop.js ./lighthouse/ 2>/dev/null || :; \
-			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
-		fi; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse desktop config not found"; exit 1; }; \
-		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules LHCI_TARGET_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
+		NODE_PATH=/usr/local/lib/node_modules LHCI_TARGET_URL=http://localhost:3001 lhci autorun --config=$$CONFIG_PATH $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)'
 
 lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5'
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'cd /app && \
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'set -e; cd /app; \
 		CONFIG_PATH=./lighthouse/lighthouserc.mobile.js; \
-		if [ ! -f "$$CONFIG_PATH" ] && [ -f ./lighthouserc.mobile.js ]; then \
-			mkdir -p ./lighthouse; \
-			cp ./lighthouserc.mobile.js ./lighthouse/ 2>/dev/null || :; \
-			[ ! -f ./constants.js ] || cp ./constants.js ./lighthouse/ 2>/dev/null || :; \
-		fi; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse mobile config not found"; exit 1; }; \
-		NODE_PATH=/usr/local/lib/node_modules:/app/lighthouse/node_modules LHCI_TARGET_URL=http://localhost:3001 $(LHCI) --config=$$CONFIG_PATH $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
+		NODE_PATH=/usr/local/lib/node_modules LHCI_TARGET_URL=http://localhost:3001 lhci autorun --config=$$CONFIG_PATH $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)'
 
 patch-prod-mockoon-url: ## Rewrite localhost Mockoon URLs inside the prod bundle to use container host
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc '\
@@ -1016,8 +1026,10 @@ patch-prod-mockoon-url: ## Rewrite localhost Mockoon URLs inside the prod bundle
 	TARGET="http://localhost:$${MOCKOON_PORT:-8080}"; \
 	REPLACEMENT="http://mockoon:$${MOCKOON_PORT:-8080}"; \
 	if [ "$$TARGET" = "$$REPLACEMENT" ]; then exit 0; fi; \
-	find "$$BUILD_DIR" -type f \\( -name \"*.js\" -o -name \"*.html\" -o -name \"*.json\" -o -name \"*.css\" \\) -exec sed -i \"s|$$TARGET|$$REPLACEMENT|g\" {} +; \
-	echo \"Patched Mockoon URLs from $$TARGET to $$REPLACEMENT\"; \
+	find "$$BUILD_DIR" -type f \( -name "*.js" -o -name "*.html" \
+		-o -name "*.json" -o -name "*.css" \) \
+		-exec sed -i "s|$$TARGET|$$REPLACEMENT|g" {} +; \
+	echo "Patched Mockoon URLs from $$TARGET to $$REPLACEMENT"; \
 	'
 
 create-temp-dev-container-dind: ## Create temporary dev container for dind testing
