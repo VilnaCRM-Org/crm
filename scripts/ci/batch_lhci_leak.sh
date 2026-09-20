@@ -28,23 +28,18 @@ run_memory_leak_tests_dind() {
 
     exit_code=0
     if (
-        set -e
         export DIND=1
-        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod
-        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod
-        make patch-prod-mockoon-url
-        DIND=1 make memory-leak-dind
+        REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod &&
+            REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod &&
+            make patch-prod-mockoon-url &&
+            DIND=1 make memory-leak-dind
     ); then
         :
     else
         exit_code=$?
-        docker compose -p memleak -f docker-compose.memory-leak.yml logs --tail=30 memory-leak || true
     fi
 
-    mkdir -p "memory-leak-logs"
-    docker compose -p memleak -f docker-compose.memory-leak.yml cp "memory-leak:/app/tests/memory-leak/results/." "memory-leak-logs/" 2>/dev/null || :
-    docker compose -p memleak -f docker-compose.memory-leak.yml logs memory-leak > "memory-leak-logs/test-execution.log" 2>&1 || true
-
+    # The Makefile memory target collects reports before its own always-run teardown.
     docker compose "${COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
 

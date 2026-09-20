@@ -102,3 +102,37 @@ SCENARIO
   [ "$status" -eq 1 ]
   assert_output_contains 'needs a non-empty "reason" string'
 }
+
+@test "memlab runner uses run leaks once and retains every named scenario and analysis" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)
+module.exports.second = { ...module.exports };"
+
+  FAKE_MEMLAB_LEAKS='[]' run_memlab_runner
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | grep -c '^MEMLAB_RUN$')" -eq 2 ]
+  [ "$(printf '%s\n' "$output" | grep -c '^MEMLAB_ANALYZE$')" -eq 2 ]
+  [ "$(printf '%s\n' "$output" | grep -c '^MEMLAB_CLEANUP$')" -eq 2 ]
+  assert_output_contains '2 scenario(s) executed with no unallowlisted leaks'
+  assert_output_contains '[memlab] before scenario rssMiB='
+  assert_output_contains '[memlab] after scenario rssMiB='
+}
+
+@test "memlab runner cleans results and fails when string analysis throws" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)"
+
+  FAKE_MEMLAB_ANALYZE_ERROR=1 run_memlab_runner
+  [ "$status" -eq 1 ]
+  assert_output_contains 'analysis failed'
+  assert_output_contains 'MEMLAB_CLEANUP'
+  [[ "$output" != *'✅ Completed scenario'* ]]
+}
+
+@test "memlab runner fails without a success verdict when browser setup throws" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)"
+
+  FAKE_MEMLAB_RUN_ERROR=1 run_memlab_runner
+  [ "$status" -eq 1 ]
+  assert_output_contains 'scenario failed'
+  [[ "$output" != *'MEMLAB_ANALYZE'* ]]
+  [[ "$output" != *'✅ Completed scenario'* ]]
+}

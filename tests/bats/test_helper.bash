@@ -405,9 +405,19 @@ STUB
   create_memlab_stub_module '@memlab/api' "$(
     cat <<'STUB'
 module.exports = {
-  run: async () => ({ runResult: { cleanup: () => {} } }),
-  analyze: async () => {},
-  findLeaks: async () => JSON.parse(process.env.FAKE_MEMLAB_LEAKS || '[]'),
+  run: async () => {
+    console.log('MEMLAB_RUN');
+    if (process.env.FAKE_MEMLAB_RUN_ERROR) throw new Error('scenario failed');
+    return {
+      leaks: JSON.parse(process.env.FAKE_MEMLAB_LEAKS || '[]'),
+      runResult: { cleanup: () => console.log('MEMLAB_CLEANUP') },
+    };
+  },
+  analyze: async () => {
+    console.log('MEMLAB_ANALYZE');
+    if (process.env.FAKE_MEMLAB_ANALYZE_ERROR) throw new Error('analysis failed');
+  },
+  findLeaks: async () => { throw new Error('run() already analyzed leaks'); },
 };
 STUB
   )"

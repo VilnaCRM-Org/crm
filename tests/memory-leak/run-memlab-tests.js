@@ -2,7 +2,7 @@ require('dotenv').config();
 
 const path = require('node:path');
 
-const { run, analyze, findLeaks } = require('@memlab/api');
+const { run, analyze } = require('@memlab/api');
 const { StringAnalysis } = require('@memlab/heap-analysis');
 
 const { hasValidScenarioHooks } = require('./utils/scenario-validation');
@@ -81,7 +81,10 @@ const consoleMode = 'VERBOSE';
 
       for (const { name, scenario } of scenarios) {
         logger.info(`\n🧪 Running scenario: ${name} from ${path.basename(testFilePath)}`);
-        const { runResult } = await run({
+        logger.info(
+          `[memlab] before scenario rssMiB=${Math.ceil(process.memoryUsage().rss / 1048576)}`
+        );
+        const { leaks, runResult } = await run({
           scenario,
           consoleMode,
           workDir,
@@ -90,7 +93,6 @@ const consoleMode = 'VERBOSE';
         });
         let scenarioLeaks = 0;
         try {
-          const leaks = await findLeaks(runResult);
           scenarioLeaks = leakReporter.report(leaks, name);
           totalLeaks += scenarioLeaks;
 
@@ -98,6 +100,9 @@ const consoleMode = 'VERBOSE';
           await analyze(runResult, analyzer);
         } finally {
           runResult.cleanup();
+          logger.info(
+            `[memlab] after scenario rssMiB=${Math.ceil(process.memoryUsage().rss / 1048576)}`
+          );
         }
 
         if (scenarioLeaks > 0) {

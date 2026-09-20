@@ -186,7 +186,7 @@ ci-test-mutation|docker compose exec -T dev bun x stryker run|
 ci-test-e2e|playwright test ./tests/e2e|
 test-a11y|docker compose exec -T dev env TEST_ENV=client node ./node_modules/jest/bin/jest.js --maxWorkers=2 --logHeapUsage --coverage=false ./tests/unit/a11y|playwright test ./tests/e2e/a11y
 ci-test-visual|playwright test ./tests/visual|
-ci-test-memory-leak|docker compose -f docker-compose.memory-leak.yml exec -T memory-leak node ./tests/memory-leak/run-memlab-tests.js|
+ci-test-memory-leak|docker compose -p memleak -f docker-compose.memory-leak.yml exec -T memory-leak node ./tests/memory-leak/run-memlab-tests.js|
 ci-test-load|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)|/loadTests/homepage.js
 ci-test-lighthouse-desktop|docker compose exec -T dev bun x lhci autorun --config=./lighthouse/lighthouserc.desktop.js|
 ci-test-lighthouse-mobile|docker compose exec -T dev bun x lhci autorun --config=./lighthouse/lighthouserc.mobile.js|
@@ -298,7 +298,7 @@ build-prod|docker compose -f docker-compose.test.yml build --no-cache prod|
 build-k6|docker compose -f docker-compose.test.yml build k6|
 install-chromium-lhci|docker compose -f docker-compose.test.yml exec -T --user root prod sh -c apk add --no-cache chromium|
 test-chromium|docker compose -f docker-compose.test.yml exec -T prod sh -c chromium-browser --version|
-memory-leak-dind|docker compose -f docker-compose.memory-leak.yml exec -T memory-leak node ./tests/memory-leak/run-memlab-tests.js|
+memory-leak-dind|docker compose -p memleak -f docker-compose.memory-leak.yml exec -T memory-leak node ./tests/memory-leak/run-memlab-tests.js|
 lighthouse-desktop-dind|docker compose -f docker-compose.test.yml exec -T prod sh -lc cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5|CONFIG_PATH=./lighthouse/lighthouserc.desktop.js
 lighthouse-mobile-dind|docker compose -f docker-compose.test.yml exec -T prod sh -lc cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5|CONFIG_PATH=./lighthouse/lighthouserc.mobile.js
 patch-prod-mockoon-url|docker compose -f docker-compose.test.yml exec -T prod sh -lc|

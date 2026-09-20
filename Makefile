@@ -81,22 +81,40 @@ DOCKER_COMPOSE_MEMLEAK_FILE = -f docker-compose.memory-leak.yml
 MEMLEAK_BASE_PATH           = ./tests/memory-leak
 MEMLEAK_RESULTS_DIR         = $(MEMLEAK_BASE_PATH)/results
 MEMLEAK_TEST_SCRIPT         = $(MEMLEAK_BASE_PATH)/run-memlab-tests.js
+MEMLEAK_REPORTS_DIR         ?= memory-leak-logs
+MEMLEAK_COMPOSE             = $(DOCKER_COMPOSE) -p memleak $(DOCKER_COMPOSE_MEMLEAK_FILE)
 
 MEMLEAK_REMOVE_RESULTS		= rm -rf $(MEMLEAK_RESULTS_DIR)
 MEMLEAK_SETUP 				= \
 								echo "🧪 Starting memory leak test environment..."; \
-								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) up -d --build
+								$(MEMLEAK_COMPOSE) up -d --build
 MEMLEAK_RUN_TESTS			= \
 								echo "🚀 Running memory leak tests..."; \
-								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) exec -T $(MEMLEAK_SERVICE) node $(MEMLEAK_TEST_SCRIPT) || exit 1
+								bash -o pipefail -c '$(MEMLEAK_COMPOSE) exec -T $(MEMLEAK_SERVICE) \
+								node $(MEMLEAK_TEST_SCRIPT) 2>&1 | \
+								tee "$(MEMLEAK_REPORTS_DIR)/test-execution.log"; exit $${PIPESTATUS[0]}'
 MEMLEAK_RUN_CLEANUP			= \
 								echo "🧹 Cleaning up memory leak test containers..."; \
-								$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_MEMLEAK_FILE) down --remove-orphans
+								$(MEMLEAK_COMPOSE) down --remove-orphans
+# Diagnostics are best-effort; never replace the original test/setup failure.
+# Copy while the container exists, then tear down on both success and failure.
+MEMLEAK_FINALIZE            = \
+	status=$$?; trap - EXIT; set +e; \
+	$(MEMLEAK_COMPOSE) cp "$(MEMLEAK_SERVICE):/app/$(MEMLEAK_RESULTS_DIR)/." \
+		"$(MEMLEAK_REPORTS_DIR)/"; \
+	$(MEMLEAK_COMPOSE) logs --no-color $(MEMLEAK_SERVICE) \
+		> "$(MEMLEAK_REPORTS_DIR)/container.log" 2>&1; \
+	$(MEMLEAK_RUN_CLEANUP); cleanup_status=$$?; \
+	if [ "$$status" -eq 0 ]; then status=$$cleanup_status; fi; \
+	exit "$$status"
 MEMLEAK_RUN_DOCKER			= \
+								set -e; \
+								trap '$(MEMLEAK_FINALIZE)' EXIT; \
+								trap 'exit 130' INT; trap 'exit 143' TERM; \
+								mkdir -p "$(MEMLEAK_REPORTS_DIR)"; \
 								$(MEMLEAK_REMOVE_RESULTS); \
 								$(MEMLEAK_SETUP); \
-								$(MEMLEAK_RUN_TESTS); \
-								$(MEMLEAK_RUN_CLEANUP)
+								$(MEMLEAK_RUN_TESTS)
 
 K6_TEST_SCRIPT              ?= /loadTests/homepage.js
 K6_RESULTS_FILE             ?= /loadTests/results/homepage.html
@@ -1016,8 +1034,10 @@ patch-prod-mockoon-url: ## Rewrite localhost Mockoon URLs inside the prod bundle
 	TARGET="http://localhost:$${MOCKOON_PORT:-8080}"; \
 	REPLACEMENT="http://mockoon:$${MOCKOON_PORT:-8080}"; \
 	if [ "$$TARGET" = "$$REPLACEMENT" ]; then exit 0; fi; \
-	find "$$BUILD_DIR" -type f \\( -name \"*.js\" -o -name \"*.html\" -o -name \"*.json\" -o -name \"*.css\" \\) -exec sed -i \"s|$$TARGET|$$REPLACEMENT|g\" {} +; \
-	echo \"Patched Mockoon URLs from $$TARGET to $$REPLACEMENT\"; \
+	find "$$BUILD_DIR" -type f \( -name "*.js" -o -name "*.html" \
+		-o -name "*.json" -o -name "*.css" \) \
+		-exec sed -i "s|$$TARGET|$$REPLACEMENT|g" {} +; \
+	echo "Patched Mockoon URLs from $$TARGET to $$REPLACEMENT"; \
 	'
 
 create-temp-dev-container-dind: ## Create temporary dev container for dind testing
