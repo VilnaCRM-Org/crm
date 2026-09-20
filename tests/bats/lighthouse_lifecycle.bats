@@ -27,6 +27,14 @@ STUB
 #!/usr/bin/env bash
 printf 'docker %s\n' "$*" >> "${COMMAND_LOG:?}"
 case " $* " in
+  *" cp prod:/app/.lighthouseci/. "*)
+    if [ "${FAIL_RAW_REPORT_COPY:-0}" = 1 ]; then
+      exit 46
+    fi
+    destination="${@: -1}"
+    mkdir -p "$destination"
+    printf '{"categories":{"performance":{"score":0.74}}}\n' > "$destination/lhr-test.json"
+    ;;
   *" cp prod:/app/lhci-reports-"*)
     if [ "${FAIL_REPORT_COPY:-0}" = 1 ]; then
       printf 'forced report-copy failure\n' >&2
@@ -134,6 +142,7 @@ STUB
       assert_output_contains "forced make failure: $failure_target"
       assert_lighthouse_cleanup_ran
       [ -d "$SCRIPT_SANDBOX/lhci-reports-$mode" ]
+      [ -f "$SCRIPT_SANDBOX/lhci-reports-$mode/raw/lhr-test.json" ]
       if [ "$failure_target" = "$audit_target" ]; then
         assert_lighthouse_compose_files "cp config/performance-budget.json prod:/app/config/performance-budget.json"
       fi
@@ -167,7 +176,26 @@ STUB
     assert_output_contains "forced make failure: $audit_target"
     [ -d "$SCRIPT_SANDBOX/lhci-reports-$mode" ]
     assert_lighthouse_compose_files "cp prod:/app/lhci-reports-$mode/. lhci-reports-$mode/"
+    assert_lighthouse_compose_files "cp prod:/app/.lighthouseci/. lhci-reports-$mode/raw/"
+    [ -f "$SCRIPT_SANDBOX/lhci-reports-$mode/raw/lhr-test.json" ]
     assert_lighthouse_compose_files "cp config/performance-budget.json prod:/app/config/performance-budget.json"
+    assert_lighthouse_cleanup_ran
+  done
+}
+
+@test "raw Lighthouse report copy failure preserves audit result and cleanup" {
+  local mode
+  for mode in desktop mobile; do
+    reset_command_log
+    FAKE_MAKE_FAIL_TARGET="lighthouse-$mode-dind" FAIL_REPORT_COPY=1 FAIL_RAW_REPORT_COPY=1 run_ci_script \
+      "$PROJECT_ROOT/scripts/ci/batch_lhci_leak.sh" "test-lighthouse-$mode"
+    [ "$status" -eq 37 ]
+    assert_lighthouse_cleanup_ran
+
+    reset_command_log
+    FAIL_RAW_REPORT_COPY=1 run_ci_script \
+      "$PROJECT_ROOT/scripts/ci/batch_lhci_leak.sh" "test-lighthouse-$mode"
+    [ "$status" -eq 0 ]
     assert_lighthouse_cleanup_ran
   done
 }

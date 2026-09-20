@@ -22,6 +22,15 @@ fi
 setup_docker_network() {
     docker network create "$NETWORK_NAME" 2>/dev/null || :
 }
+
+collect_lighthouse_reports() {
+    local report_dir="lhci-reports-${1:?Lighthouse mode is required}"
+    mkdir -p "$report_dir/raw" 2>/dev/null || :
+    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "prod:/app/$report_dir/." "$report_dir/" 2>/dev/null || :
+    # autorun can fail at assertions before filesystem upload creates exported reports.
+    # Retain the original LHRs independently, before the application container is removed.
+    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "prod:/app/.lighthouseci/." "$report_dir/raw/" 2>/dev/null || :
+}
 run_memory_leak_tests_dind() {
     setup_docker_network
 
@@ -73,8 +82,7 @@ run_lighthouse_desktop_dind() {
         exit_code=$?
     fi
 
-    mkdir -p lhci-reports-desktop 2>/dev/null || :
-    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-desktop/." "lhci-reports-desktop/" 2>/dev/null || :
+    collect_lighthouse_reports desktop
     docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
     docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
@@ -104,8 +112,7 @@ run_lighthouse_mobile_dind() {
         exit_code=$?
     fi
 
-    mkdir -p lhci-reports-mobile 2>/dev/null || :
-    docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "prod:/app/lhci-reports-mobile/." "lhci-reports-mobile/" 2>/dev/null || :
+    collect_lighthouse_reports mobile
     docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" exec -T prod sh -lc 'rm -rf /app/lhci-reports-mobile /app/lhci-reports-desktop /app/lighthouse' 2>/dev/null || :
     docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" down --volumes --remove-orphans || true
     docker network rm "$NETWORK_NAME" 2>/dev/null || :
