@@ -7,6 +7,7 @@ const { StringAnalysis } = require('@memlab/heap-analysis');
 const { initializeLocalization } = require('./initialize-localization');
 const { LeakAllowlistLoader, LeakReporter } = require('./leak-allowlist');
 const { loadScenarios } = require('./scenario-inventory');
+const { startResourceDiagnostics } = require('./resource-diagnostics');
 const logger = require('./logger');
 
 async function runScenario() {
@@ -18,29 +19,38 @@ async function runScenario() {
 
   logger.info(`[memlab] worker pid=${process.pid} scenario=${name} workDir=${workDir}`);
   logger.info(`[memlab] before scenario rssMiB=${Math.ceil(process.memoryUsage().rss / 1048576)}`);
-  const { leaks, runResult } = await run({
-    scenario: selected.scenario,
-    consoleMode: 'VERBOSE',
-    workDir,
-    skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
-    debug: process.env.MEMLAB_DEBUG === 'true',
-  });
-  let unexpectedLeaks;
+  const stopDiagnostics = startResourceDiagnostics();
+  let cleanupCompleted = false;
   try {
-    unexpectedLeaks = reporter.report(leaks, name);
-    await analyze(runResult, new StringAnalysis());
+    const { leaks, runResult } = await run({
+      scenario: selected.scenario,
+      consoleMode: 'VERBOSE',
+      workDir,
+      skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
+      debug: process.env.MEMLAB_DEBUG === 'true',
+    });
+    let unexpectedLeaks;
+    try {
+      unexpectedLeaks = reporter.report(leaks, name);
+      await analyze(runResult, new StringAnalysis());
+    } finally {
+      await runResult.cleanup();
+      cleanupCompleted = true;
+      logger.info(
+        `[memlab] after scenario rssMiB=${Math.ceil(process.memoryUsage().rss / 1048576)}`
+      );
+    }
+    if (unexpectedLeaks > 0) {
+      logger.error(`✗ Scenario ${name} leaked — see the retainer trace above.`);
+    } else {
+      logger.info(`✅ Completed scenario: ${name}`);
+    }
+    // Completion requires both StringAnalysis and result cleanup, not merely run().
+    fs.writeFileSync(3, JSON.stringify({ name, pid: process.pid, leaks: unexpectedLeaks }));
+    process.exitCode = unexpectedLeaks > 0 ? 1 : 0;
   } finally {
-    await runResult.cleanup();
-    logger.info(`[memlab] after scenario rssMiB=${Math.ceil(process.memoryUsage().rss / 1048576)}`);
+    stopDiagnostics(cleanupCompleted ? 'after-cleanup' : 'after-failure');
   }
-  if (unexpectedLeaks > 0) {
-    logger.error(`✗ Scenario ${name} leaked — see the retainer trace above.`);
-  } else {
-    logger.info(`✅ Completed scenario: ${name}`);
-  }
-  // Completion requires both StringAnalysis and result cleanup, not merely run().
-  fs.writeFileSync(3, JSON.stringify({ name, pid: process.pid, leaks: unexpectedLeaks }));
-  process.exitCode = unexpectedLeaks > 0 ? 1 : 0;
 }
 
 runScenario().catch((error) => {

@@ -238,3 +238,26 @@ module.exports.workerError = true;"
   assert_output_contains 'Completed scenario: default'
   assert_output_contains '1 worker failure(s)'
 }
+
+@test "memlab diagnostics are silent by default and opt-in around completed cleanup" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)"
+  MEMLAB_DIAGNOSTICS=0 run_memlab_runner
+  [ "$status" -eq 0 ]
+  [[ "$output" != *'[memlab-diagnostics]'* ]]
+
+  MEMLAB_DIAGNOSTICS=1 run_memlab_runner
+  [ "$status" -eq 0 ]
+  assert_output_contains '"phase":"before-run"'
+  assert_output_contains '"phase":"after-cleanup"'
+  assert_output_contains '1 scenario(s) executed with no unallowlisted leaks'
+}
+
+@test "memlab diagnostic timer clears on run failure without changing the exit verdict" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)"
+  MEMLAB_DIAGNOSTICS=1 FAKE_MEMLAB_RUN_ERROR=1 run_memlab_runner
+  [ "$status" -eq 1 ]
+  assert_output_contains '"phase":"before-run"'
+  assert_output_contains '"phase":"after-failure"'
+  assert_output_contains 'scenario failed'
+  [[ "$output" != *'"phase":"after-cleanup"'* ]]
+}
