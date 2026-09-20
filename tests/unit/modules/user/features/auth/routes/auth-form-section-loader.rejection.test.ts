@@ -5,20 +5,35 @@ interface FormSectionLoader {
 }
 
 interface FormSectionLoaderCase {
-  readonly formSectionModule: string;
-  readonly loaderModule: string;
+  readonly clearFormSectionMock: () => void;
+  readonly loadFormSectionLoader: () => Promise<{ default: FormSectionLoader }>;
+  readonly mockFormSection: (error: Error) => void;
   readonly name: 'sign-in' | 'sign-up';
 }
 
 const formSectionLoaderCases: readonly FormSectionLoaderCase[] = [
   {
-    formSectionModule: '@auth/routes/sign-up/sign-up-form-section',
-    loaderModule: '@auth/routes/sign-up/form-section-loader',
+    clearFormSectionMock: (): void => {
+      jest.dontMock('@auth/routes/sign-up/sign-up-form-section');
+    },
+    loadFormSectionLoader: async () => import('@auth/routes/sign-up/form-section-loader'),
+    mockFormSection: (error: Error): void => {
+      jest.doMock('@auth/routes/sign-up/sign-up-form-section', () => {
+        throw error;
+      });
+    },
     name: 'sign-up',
   },
   {
-    formSectionModule: '@auth/routes/sign-in/sign-in-form-section',
-    loaderModule: '@auth/routes/sign-in/form-section-loader',
+    clearFormSectionMock: (): void => {
+      jest.dontMock('@auth/routes/sign-in/sign-in-form-section');
+    },
+    loadFormSectionLoader: async () => import('@auth/routes/sign-in/form-section-loader'),
+    mockFormSection: (error: Error): void => {
+      jest.doMock('@auth/routes/sign-in/sign-in-form-section', () => {
+        throw error;
+      });
+    },
     name: 'sign-in',
   },
 ];
@@ -29,19 +44,17 @@ describe('auth form-section loader rejection', () => {
   });
 
   afterEach(() => {
-    for (const { formSectionModule } of formSectionLoaderCases) {
-      jest.dontMock(formSectionModule);
+    for (const { clearFormSectionMock } of formSectionLoaderCases) {
+      clearFormSectionMock();
     }
   });
 
-  for (const { formSectionModule, loaderModule, name } of formSectionLoaderCases) {
+  for (const { loadFormSectionLoader, mockFormSection, name } of formSectionLoaderCases) {
     it(`preserves ${name} form import rejection for the lazy loader`, async () => {
       const error = new Error('form chunk failed');
-      jest.doMock(formSectionModule, () => {
-        throw error;
-      });
+      mockFormSection(error);
 
-      const module: { default: FormSectionLoader } = await import(loaderModule);
+      const module = await loadFormSectionLoader();
 
       await expect(module.default.load()).rejects.toBe(error);
     });
