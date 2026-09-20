@@ -1007,13 +1007,13 @@ lighthouse-desktop-dind: ## Run Lighthouse desktop audit in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'set -e; cd /app; \
 		CONFIG_PATH=./lighthouse/lighthouserc.desktop.js; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse desktop config not found"; exit 1; }; \
-		NODE_PATH=/usr/local/lib/node_modules LHCI_TARGET_URL=http://localhost:3001 lhci autorun --config=$$CONFIG_PATH $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
+		NODE_PATH=/usr/local/lib/node_modules LHCI_TARGET_URL=http://localhost:3001 lhci autorun --config=$$CONFIG_PATH $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)'
 
 lighthouse-mobile-dind: ## Run Lighthouse mobile audit in dind
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc 'set -e; cd /app; \
 		CONFIG_PATH=./lighthouse/lighthouserc.mobile.js; \
 		[ -f "$$CONFIG_PATH" ] || { echo "Lighthouse mobile config not found"; exit 1; }; \
-		NODE_PATH=/usr/local/lib/node_modules LHCI_TARGET_URL=http://localhost:3001 lhci autorun --config=$$CONFIG_PATH $(LHCI_DIND_CHROME_PATH_ARG) $(LHCI_DIND_CHROME_FLAGS_ARG)'
+		NODE_PATH=/usr/local/lib/node_modules LHCI_TARGET_URL=http://localhost:3001 lhci autorun --config=$$CONFIG_PATH $(LHCI_CHROME_PATH_ARG) $(LHCI_CHROME_FLAGS_ARG)'
 
 patch-prod-mockoon-url: ## Rewrite localhost Mockoon URLs inside the prod bundle to use container host
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_TEST_FILE) exec -T prod sh -lc '\

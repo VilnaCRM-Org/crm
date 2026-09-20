@@ -66,9 +66,38 @@ assert_lighthouse_compose_files() {
     assert_output_contains "lhci autorun --config=\$CONFIG_PATH"
     assert_output_contains "lighthouse/lighthouserc.${mode}.js"
     assert_output_contains 'LHCI_TARGET_URL=http://localhost:3001'
+    assert_output_contains '--collect.chromePath=/usr/bin/chromium-browser'
+    assert_output_contains '--collect.settings.chromeFlags="--no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new"'
     ! printf '%s' "$output" | grep -Fq 'docker compose exec -T dev'
     ! printf '%s' "$output" | grep -Fq 'bun x lhci'
   done
+
+  mkdir -p "$SCRIPT_SANDBOX/lighthouse"
+  : > "$SCRIPT_SANDBOX/lighthouse/lighthouserc.desktop.js"
+  cat > "$STUB_BIN_DIR/lhci" <<'STUB'
+#!/usr/bin/env sh
+printf '%s\n' "$@" > "${LHCI_ARGV_LOG:?}"
+STUB
+  cat > "$STUB_BIN_DIR/docker" <<'STUB'
+#!/usr/bin/env bash
+inner_script="${@: -1}"
+inner_script="${inner_script#*cd /app;}"
+inner_script="export PATH=\"$STUB_BIN_DIR:$PATH\"; set -e; cd \"$SCRIPT_SANDBOX\";$inner_script"
+exec /bin/sh -lc "$inner_script"
+STUB
+  chmod +x "$STUB_BIN_DIR/lhci" "$STUB_BIN_DIR/docker"
+
+  local argv_log="$BATS_TEST_TMPDIR/lhci-argv.log"
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    SCRIPT_SANDBOX="$SCRIPT_SANDBOX" \
+    LHCI_ARGV_LOG="$argv_log" \
+    /usr/bin/make -C "$PROJECT_ROOT" lighthouse-desktop-dind
+  [ "$status" -eq 0 ]
+  run grep -Fx -- '--collect.chromePath=/usr/bin/chromium-browser' "$argv_log"
+  [ "$status" -eq 0 ]
+  run grep -Fx -- '--collect.settings.chromeFlags=--no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new' "$argv_log"
+  [ "$status" -eq 0 ]
 }
 
 @test "global export does not repeat lockfile shell lookups for each Make recipe" {
