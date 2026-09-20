@@ -405,8 +405,18 @@ STUB
   create_memlab_stub_module '@memlab/api' "$(
     cat <<'STUB'
 module.exports = {
+  config: { puppeteerConfig: {
+    args: ['--no-sandbox', '--enable-webgl'], protocolTimeout: 300000,
+  } },
   run: async ({ scenario, workDir }) => {
     console.log('MEMLAB_RUN');
+    if (process.env.FAKE_MEMLAB_CHECK_GPU) {
+      const expected = ['--no-sandbox', '--enable-webgl'];
+      if (process.env.FAKE_MEMLAB_CHECK_GPU === 'on') expected.push('--disable-gpu');
+      require('node:assert/strict').deepEqual(module.exports.config.puppeteerConfig,
+        { args: expected, protocolTimeout: 300000 });
+      console.log('MEMLAB_GPU_CONFIG_VERIFIED');
+    }
     const fs = require('node:fs');
     const record = (event) => {
       if (process.env.FAKE_MEMLAB_EVENTS) {

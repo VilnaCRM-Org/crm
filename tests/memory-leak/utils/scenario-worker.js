@@ -1,13 +1,14 @@
 require('dotenv').config();
 
 const fs = require('node:fs');
-const { run, analyze } = require('@memlab/api');
+const { run, analyze, config } = require('@memlab/api');
 const { StringAnalysis } = require('@memlab/heap-analysis');
 
 const { initializeLocalization } = require('./initialize-localization');
 const { LeakAllowlistLoader, LeakReporter } = require('./leak-allowlist');
 const { loadScenarios } = require('./scenario-inventory');
 const { startResourceDiagnostics } = require('./resource-diagnostics');
+const { configureBrowser } = require('./browser-config');
 const logger = require('./logger');
 
 async function runScenario() {
@@ -16,6 +17,8 @@ async function runScenario() {
   await initializeLocalization();
   const selected = loadScenarios(file)[Number(index)];
   if (!selected || selected.name !== name) throw new Error('Scenario inventory changed in worker');
+
+  configureBrowser(config.puppeteerConfig);
 
   logger.info(`[memlab] worker pid=${process.pid} scenario=${name} workDir=${workDir}`);
   logger.info(`[memlab] before scenario rssMiB=${Math.ceil(process.memoryUsage().rss / 1048576)}`);

@@ -261,3 +261,31 @@ module.exports.workerError = true;"
   assert_output_contains 'scenario failed'
   [[ "$output" != *'"phase":"after-cleanup"'* ]]
 }
+
+@test "memlab GPU candidate is off unless explicitly enabled and preserves all scenarios" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)
+module.exports.second = { ...module.exports };"
+
+  MEMLAB_DISABLE_GPU=0 FAKE_MEMLAB_CHECK_GPU=off run_memlab_runner
+  [ "$status" -eq 0 ]
+  assert_output_contains '2 scenario(s) executed with no unallowlisted leaks'
+
+  MEMLAB_DISABLE_GPU=1 FAKE_MEMLAB_CHECK_GPU=on run_memlab_runner
+  [ "$status" -eq 0 ]
+  [ "$(printf '%s\n' "$output" | grep -c '^MEMLAB_GPU_CONFIG_VERIFIED$')" -eq 2 ]
+  assert_output_contains '2 scenario(s) executed with no unallowlisted leaks'
+}
+
+@test "memlab GPU candidate preserves leak and browser-error failure verdicts" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)"
+  MEMLAB_DISABLE_GPU=1 FAKE_MEMLAB_CHECK_GPU=on \
+    FAKE_MEMLAB_LEAKS='[{"node":{"value":"unexpected retention"}}]' run_memlab_runner
+  [ "$status" -eq 1 ]
+  assert_output_contains 'MEMLAB_GPU_CONFIG_VERIFIED'
+  assert_output_contains '1 unallowlisted memory leak(s) detected'
+
+  MEMLAB_DISABLE_GPU=1 FAKE_MEMLAB_CHECK_GPU=on FAKE_MEMLAB_RUN_ERROR=1 run_memlab_runner
+  [ "$status" -eq 1 ]
+  assert_output_contains 'scenario failed'
+  [[ "$output" != *'executed with no unallowlisted leaks'* ]]
+}
