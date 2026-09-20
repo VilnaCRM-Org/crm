@@ -49,6 +49,28 @@ assert_lighthouse_compose_files() {
   assert_log_contains "docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml $action"
 }
 
+@test "Lighthouse DIND commands use locked tooling and run in prod, not nested Compose" {
+  run /usr/bin/make -C "$PROJECT_ROOT" -n install-chromium-lhci
+  [ "$status" -eq 0 ]
+  assert_output_contains 'chromium=136.0.7103.113-r0'
+  assert_output_contains 'LHCI_VERSION="0.15.1"'
+  assert_output_contains 'DOTENV_EXPAND_VERSION="12.0.3"'
+  assert_output_contains 'DOTENV_VERSION="17.4.2"'
+  assert_output_contains '"@lhci/cli@$LHCI_VERSION"'
+  ! printf '%s' "$output" | grep -Fq '@lhci/cli@0.10.0'
+
+  local mode
+  for mode in desktop mobile; do
+    run /usr/bin/make -C "$PROJECT_ROOT" -n "lighthouse-${mode}-dind"
+    [ "$status" -eq 0 ]
+    assert_output_contains "lhci autorun --config=\$CONFIG_PATH"
+    assert_output_contains "lighthouse/lighthouserc.${mode}.js"
+    assert_output_contains 'LHCI_TARGET_URL=http://localhost:3001'
+    ! printf '%s' "$output" | grep -Fq 'docker compose exec -T dev'
+    ! printf '%s' "$output" | grep -Fq 'bun x lhci'
+  done
+}
+
 @test "Lighthouse wrappers stop on build, install, and audit failures and still clean up" {
   local mode audit_target failure_target
   for mode in desktop mobile; do
@@ -62,6 +84,9 @@ assert_lighthouse_compose_files() {
       assert_output_contains "forced make failure: $failure_target"
       assert_lighthouse_cleanup_ran
       [ -d "$SCRIPT_SANDBOX/lhci-reports-$mode" ]
+      if [ "$failure_target" = "$audit_target" ]; then
+        assert_lighthouse_compose_files "cp config/performance-budget.json prod:/app/config/performance-budget.json"
+      fi
       run grep -F "make $audit_target" "$COMMAND_LOG"
       if [ "$failure_target" = "$audit_target" ]; then
         [ "$status" -eq 0 ]
@@ -92,6 +117,7 @@ assert_lighthouse_compose_files() {
     assert_output_contains "forced make failure: $audit_target"
     [ -d "$SCRIPT_SANDBOX/lhci-reports-$mode" ]
     assert_lighthouse_compose_files "cp prod:/app/lhci-reports-$mode/. lhci-reports-$mode/"
+    assert_lighthouse_compose_files "cp config/performance-budget.json prod:/app/config/performance-budget.json"
     assert_lighthouse_cleanup_ran
   done
 }

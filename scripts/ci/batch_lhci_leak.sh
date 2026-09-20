@@ -31,6 +31,9 @@ run_memory_leak_tests_dind() {
     exit_code=0
     if (
         export DIND=1
+        # CodeBuild's headless Chromium can stall during GPU initialization.
+        # Preserve an explicit override for controlled comparisons.
+        export MEMLAB_DISABLE_GPU="${MEMLAB_DISABLE_GPU:-1}"
         REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make build-prod &&
             REACT_APP_MOCKOON_URL="http://mockoon:${MOCKOON_PORT:-8080}" make start-prod &&
             make patch-prod-mockoon-url &&
@@ -61,6 +64,7 @@ run_lighthouse_desktop_dind() {
             make install-chromium-lhci &&
             docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse' &&
             docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/" &&
+            docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "config/performance-budget.json" "prod:/app/config/performance-budget.json" &&
             make test-chromium &&
             make lighthouse-desktop-dind
     ); then
@@ -91,6 +95,7 @@ run_lighthouse_mobile_dind() {
             make install-chromium-lhci &&
             docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" exec -T prod sh -lc 'mkdir -p /app/lighthouse' &&
             docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "lighthouse/." "prod:/app/lighthouse/" &&
+            docker compose "${LIGHTHOUSE_COMPOSE_ARGS[@]}" cp "config/performance-budget.json" "prod:/app/config/performance-budget.json" &&
             make test-chromium &&
             make lighthouse-mobile-dind
     ); then

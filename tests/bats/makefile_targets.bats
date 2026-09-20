@@ -296,11 +296,11 @@ EOF
   done <<'EOF'
 build-prod|docker compose -f docker-compose.test.yml build --no-cache prod|
 build-k6|docker compose -f docker-compose.test.yml build k6|
-install-chromium-lhci|docker compose -f docker-compose.test.yml exec -T --user root prod sh -c apk add --no-cache chromium|
+install-chromium-lhci|docker compose -f docker-compose.test.yml exec -T --user root prod sh -c set -e; LHCI_VERSION="0.15.1"|npm install -g --prefix /usr/local "@lhci/cli@$LHCI_VERSION"
 test-chromium|docker compose -f docker-compose.test.yml exec -T prod sh -c chromium-browser --version|
 memory-leak-dind|docker compose -p memleak -f docker-compose.memory-leak.yml exec -T memory-leak node ./tests/memory-leak/run-memlab-tests.js|
-lighthouse-desktop-dind|docker compose -f docker-compose.test.yml exec -T prod sh -lc cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5|CONFIG_PATH=./lighthouse/lighthouserc.desktop.js
-lighthouse-mobile-dind|docker compose -f docker-compose.test.yml exec -T prod sh -lc cd /app && mkdir -p ./lighthouse && npm install --no-save --prefix ./lighthouse dotenv@16.4.5|CONFIG_PATH=./lighthouse/lighthouserc.mobile.js
+lighthouse-desktop-dind|docker compose -f docker-compose.test.yml exec -T prod sh -lc set -e; cd /app;|lhci autorun --config=$CONFIG_PATH
+lighthouse-mobile-dind|docker compose -f docker-compose.test.yml exec -T prod sh -lc set -e; cd /app;|lhci autorun --config=$CONFIG_PATH
 patch-prod-mockoon-url|docker compose -f docker-compose.test.yml exec -T prod sh -lc|
 create-temp-dev-container-dind TEMP_CONTAINER_NAME=crm-dev-test|docker run -d --name crm-dev-test --network crm-network -w /app crm-dev tail -f /dev/null|
 copy-source-to-container-dind TEMP_CONTAINER_NAME=crm-dev-test|tar -cf -|docker exec -i crm-dev-test tar -xf - -C /app

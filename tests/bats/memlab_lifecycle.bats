@@ -102,3 +102,21 @@ STUB
     fi
   done
 }
+
+@test "AWS memory wrapper defaults to software rendering and preserves an explicit override" {
+  setup_ci_script_test_env
+  cat > "$STUB_BIN_DIR/make" <<'STUB'
+#!/usr/bin/env bash
+printf 'gpu:%s:%s\n' "${MEMLAB_DISABLE_GPU:-unset}" "$*" >> "$COMMAND_LOG"
+STUB
+  chmod +x "$STUB_BIN_DIR/make"
+  unset MEMLAB_DISABLE_GPU
+  run_ci_script "$PROJECT_ROOT/scripts/ci/batch_lhci_leak.sh" test-memory-leak
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gpu:1:memory-leak-dind'
+
+  reset_command_log
+  MEMLAB_DISABLE_GPU=0 run_ci_script "$PROJECT_ROOT/scripts/ci/batch_lhci_leak.sh" test-memory-leak
+  [ "$status" -eq 0 ]
+  assert_log_contains 'gpu:0:memory-leak-dind'
+}
