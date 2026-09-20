@@ -3,7 +3,9 @@ import { type JSX, lazy } from 'react';
 import AuthPageLayout from '@auth/components/auth-page-layout';
 import usePageTitle from '@auth/hooks/use-page-title';
 
-const SignUpFormSection = lazy(() => import('./sign-up-form-section'));
+import signUpFormSectionLoader from './form-section-loader';
+
+const SignUpFormSection = lazy(() => signUpFormSectionLoader.load());
 
 export default function SignUp(): JSX.Element {
   usePageTitle('sign_up.title');
