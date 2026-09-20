@@ -42,9 +42,10 @@ LHCI_CONFIG_MOBILE          = --config=./lighthouse/lighthouserc.mobile.js
 CHROMIUM_BIN_PATH           = /usr/bin/chromium-browser
 # Alpine 3.21 package pins (verified 2026-01-05); update when base image bumps
 CHROMIUM_APK_PACKAGES       = chromium=136.0.7103.113-r0 font-freefont=20120503-r4 freetype=2.13.3-r0 harfbuzz=9.0.0-r1 nss=3.109-r0
-LHCI_DIND_CLI_VERSION       = $(shell sed -n 's/^[[:space:]]*"@lhci\/cli": \["@lhci\/cli@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
-DOTENV_EXPAND_DIND_VERSION  = $(shell sed -n 's/^[[:space:]]*"dotenv-expand": \["dotenv-expand@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
-DOTENV_DIND_VERSION         = $(shell sed -n 's/^[[:space:]]*"dotenv": \["dotenv@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
+# Evaluate once: recursive shell variables interact with the global export above.
+LHCI_DIND_CLI_VERSION       := $(shell sed -n 's/^[[:space:]]*"@lhci\/cli": \["@lhci\/cli@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
+DOTENV_EXPAND_DIND_VERSION  := $(shell sed -n 's/^[[:space:]]*"dotenv-expand": \["dotenv-expand@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
+DOTENV_DIND_VERSION         := $(shell sed -n 's/^[[:space:]]*"dotenv": \["dotenv@\([^"]*\)".*/\1/p' bun.lock | head -n 1)
 LHCI_CHROME_FLAGS           ?= --no-sandbox --disable-dev-shm-usage --disable-gpu --headless=new
 LHCI_PRELOADED_AUTH_TOKEN   ?= lighthouse-preloaded-auth-token
 LHCI_CHROME_PATH_ARG        = --collect.chromePath=$(CHROMIUM_BIN_PATH)

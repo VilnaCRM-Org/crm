@@ -97,9 +97,9 @@ describe('Lighthouse DIND runtime contract', () => {
     expect(lhciVersion).toBe('0.15.1');
     expect(dotenvExpandVersion).toBe('12.0.3');
     expect(dotenvVersion).toBe('17.4.2');
-    expect(makefile).toMatch(/LHCI_DIND_CLI_VERSION\s*=\s*\$\(shell sed .*bun\.lock/);
-    expect(makefile).toMatch(/DOTENV_EXPAND_DIND_VERSION\s*=\s*\$\(shell sed .*bun\.lock/);
-    expect(makefile).toMatch(/DOTENV_DIND_VERSION\s*=\s*\$\(shell sed .*bun\.lock/);
+    expect(makefile).toMatch(/LHCI_DIND_CLI_VERSION\s*:=\s*\$\(shell sed .*bun\.lock/);
+    expect(makefile).toMatch(/DOTENV_EXPAND_DIND_VERSION\s*:=\s*\$\(shell sed .*bun\.lock/);
+    expect(makefile).toMatch(/DOTENV_DIND_VERSION\s*:=\s*\$\(shell sed .*bun\.lock/);
     expect(makefile).toContain('LHCI_VERSION="$(LHCI_DIND_CLI_VERSION)"');
     expect(makefile).toContain('DOTENV_EXPAND_VERSION="$(DOTENV_EXPAND_DIND_VERSION)"');
     expect(makefile).toContain('DOTENV_VERSION="$(DOTENV_DIND_VERSION)"');

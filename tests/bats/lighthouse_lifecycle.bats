@@ -71,6 +71,27 @@ assert_lighthouse_compose_files() {
   done
 }
 
+@test "global export does not repeat lockfile shell lookups for each Make recipe" {
+  local lookup_log="$BATS_TEST_TMPDIR/lockfile-lookups.log"
+  cat > "$STUB_BIN_DIR/sed" <<'STUB'
+#!/usr/bin/env sh
+printf '%s\n' "$*" >> "${LOOKUP_LOG:?}"
+exec /usr/bin/sed "$@"
+STUB
+  chmod +x "$STUB_BIN_DIR/sed"
+  : > "$lookup_log"
+
+  local probe_makefile
+  probe_makefile=$'lhci-export-probe:\n\t@:\n\t@:'
+  run env \
+    PATH="$STUB_BIN_DIR:$PATH" \
+    LOOKUP_LOG="$lookup_log" \
+    /usr/bin/make -C "$PROJECT_ROOT" --eval="$probe_makefile" lhci-export-probe
+
+  [ "$status" -eq 0 ]
+  [ "$(wc -l < "$lookup_log")" -eq 3 ]
+}
+
 @test "Lighthouse wrappers stop on build, install, and audit failures and still clean up" {
   local mode audit_target failure_target
   for mode in desktop mobile; do
