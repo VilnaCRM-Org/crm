@@ -136,3 +136,105 @@ module.exports.second = { ...module.exports };"
   [[ "$output" != *'MEMLAB_ANALYZE'* ]]
   [[ "$output" != *'✅ Completed scenario'* ]]
 }
+
+@test "memlab workers have fresh PIDs and workdirs and exit before the next worker starts" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)
+module.exports.second = { ...module.exports };
+module.exports.third = { ...module.exports };"
+  export FAKE_MEMLAB_EVENTS="$BATS_TEST_TMPDIR/events.jsonl"
+
+  run_memlab_runner
+  [ "$status" -eq 0 ]
+  assert_output_contains '3 scenario(s) executed with no unallowlisted leaks'
+  assert_output_contains '[memlab] worker pid='
+  node - "$FAKE_MEMLAB_EVENTS" <<'NODE'
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const events = fs.readFileSync(process.argv[2], 'utf8').trim().split('\n').map(JSON.parse);
+assert.deepEqual(events.map(({event}) => event), [
+  'start', 'cleanup', 'exit', 'start', 'cleanup', 'exit', 'start', 'cleanup', 'exit',
+]);
+assert.equal(new Set(events.map(({pid}) => pid)).size, 3);
+assert.equal(new Set(events.map(({workDir}) => workDir)).size, 3);
+NODE
+}
+
+@test "memlab aggregates all workers after an early scenario error" {
+  write_memlab_scenario_file 'a-failing.js' "$(healthy_scenario)
+module.exports.workerError = true;"
+  write_memlab_scenario_file 'b-healthy.js' "$(healthy_scenario)
+module.exports.second = { ...module.exports };"
+
+  run_memlab_runner
+  [ "$status" -eq 1 ]
+  [ "$(printf '%s\n' "$output" | grep -c '^MEMLAB_RUN$')" -eq 3 ]
+  [ "$(printf '%s\n' "$output" | grep -c '^MEMLAB_ANALYZE$')" -eq 2 ]
+  assert_output_contains 'Completed scenario: second'
+  assert_output_contains '1 worker failure(s)'
+  [[ "$output" != *'executed with no unallowlisted leaks'* ]]
+}
+
+@test "memlab fails closed when worker exits zero without a completion verdict" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)
+module.exports.workerExit = 0;"
+
+  run_memlab_runner
+  [ "$status" -eq 1 ]
+  assert_output_contains '1 worker failure(s)'
+  [[ "$output" != *'executed with no unallowlisted leaks'* ]]
+}
+
+@test "memlab fails closed when a worker is terminated by a signal" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)
+module.exports.workerSignal = 'SIGKILL';"
+
+  run_memlab_runner
+  [ "$status" -eq 1 ]
+  assert_output_contains 'Worker terminated by SIGKILL'
+  [[ "$output" != *'executed with no unallowlisted leaks'* ]]
+}
+
+@test "memlab fails closed when result cleanup throws" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)"
+
+  FAKE_MEMLAB_CLEANUP_ERROR=1 run_memlab_runner
+  [ "$status" -eq 1 ]
+  assert_output_contains 'cleanup failed'
+  [[ "$output" != *'✅ Completed scenario'* ]]
+}
+
+@test "memlab collects leak verdicts from every worker rather than stopping after first leak" {
+  write_memlab_scenario_file 'healthy.js' "$(healthy_scenario)
+module.exports.second = { ...module.exports };"
+
+  FAKE_MEMLAB_LEAKS='[{"node":{"value":"unexpected retention"}}]' run_memlab_runner
+  [ "$status" -eq 1 ]
+  [ "$(printf '%s\n' "$output" | grep -c '^MEMLAB_ANALYZE$')" -eq 2 ]
+  assert_output_contains '2 unallowlisted memory leak(s) detected across 2 scenario(s)'
+}
+
+@test "memlab discovers an ESM default as well as CJS default and named exports" {
+  write_memlab_scenario_file 'esm.mjs' \
+    'export default { url: "http://localhost:3001/", action: async () => {} };'
+  write_memlab_scenario_file 'cjs.js' "$(healthy_scenario)
+module.exports.named = { ...module.exports };"
+
+  run_memlab_runner
+  [ "$status" -eq 0 ]
+  assert_output_contains '3 scenario(s) executed with no unallowlisted leaks'
+  [ "$(printf '%s\n' "$output" | grep -c '^MEMLAB_ANALYZE$')" -eq 3 ]
+}
+
+@test "memlab failure exits despite a retained event-loop handle" {
+  write_memlab_scenario_file 'a-failing.js' "$(healthy_scenario)
+module.exports.workerOpenHandle = true;
+module.exports.workerError = true;"
+  write_memlab_scenario_file 'b-healthy.js' "$(healthy_scenario)"
+
+  cd "$MEMLAB_SANDBOX"
+  run timeout 10 node tests/memory-leak/run-memlab-tests.js
+  [ "$status" -eq 1 ]
+  assert_output_contains 'selected scenario failed'
+  assert_output_contains 'Completed scenario: default'
+  assert_output_contains '1 worker failure(s)'
+}

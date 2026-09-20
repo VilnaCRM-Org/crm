@@ -1,138 +1,81 @@
 require('dotenv').config();
 
+const fs = require('node:fs');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 
-const { run, analyze } = require('@memlab/api');
-const { StringAnalysis } = require('@memlab/heap-analysis');
-
-const { hasValidScenarioHooks } = require('./utils/scenario-validation');
 const { initializeLocalization } = require('./utils/initialize-localization');
-const { LeakAllowlistLoader, LeakReporter } = require('./utils/leak-allowlist');
+const { LeakAllowlistLoader } = require('./utils/leak-allowlist');
+const { loadScenarios } = require('./utils/scenario-inventory');
 const ScenarioFinder = require('./utils/scenario-finder');
 const logger = require('./utils/logger');
 
-const memoryLeakDir = path.join('.', 'tests', 'memory-leak');
+const memoryLeakDir = path.resolve('tests', 'memory-leak');
 const testsDir = path.join(memoryLeakDir, 'tests');
 const allowlistPath = path.join(memoryLeakDir, 'leak-allowlist.json');
+const resultsDir = path.join(memoryLeakDir, 'results');
+const workerPath = path.join(__dirname, 'utils', 'scenario-worker.js');
 
-const workDir = path.join(memoryLeakDir, 'results');
-const consoleMode = 'VERBOSE';
-
-(async function runMemoryLeakTests() {
-  let testFilePaths;
-  try {
-    testFilePaths = new ScenarioFinder().find(testsDir);
-  } catch (error) {
-    logger.error(`Failed to read tests directory: ${testsDir}`, error);
-    process.exit(1);
-  }
-
-  let leakReporter;
-  try {
-    leakReporter = new LeakReporter(new LeakAllowlistLoader().load(allowlistPath), logger);
-  } catch (error) {
-    logger.error(`Failed to load the leak allowlist ${allowlistPath}`, error);
-    process.exit(1);
-  }
-
+async function runMemoryLeakTests() {
+  // Validate the complete inventory and allowlist before launching any browsers.
+  new LeakAllowlistLoader().load(allowlistPath);
   await initializeLocalization();
-
-  let totalScenariosRun = 0;
-  let totalLeaks = 0;
-
-  for (const testFilePath of testFilePaths) {
-    try {
-      const testModule = require(testFilePath);
-
-      logger.debug(`\n📂 Loading test file: ${path.basename(testFilePath)}`);
-      logger.debug(`Exported keys: ${Object.keys(testModule).join(', ')}`);
-
-      const scenarios = [];
-
-      if (testModule && typeof testModule === 'object') {
-        if (hasValidScenarioHooks(testModule)) {
-          scenarios.push({ name: 'default', scenario: testModule });
-          logger.debug(`✓ Found default export as scenario`);
-        }
-
-        for (const [key, value] of Object.entries(testModule)) {
-          const isScenarioProperty = ['url', 'action', 'back', 'setup'].includes(key);
-
-          if (
-            !isScenarioProperty &&
-            value &&
-            typeof value === 'object' &&
-            hasValidScenarioHooks(value)
-          ) {
-            scenarios.push({ name: key, scenario: value });
-            logger.debug(`✓ Found named export: ${key}`);
-          }
-        }
-      }
-
-      const fileName = path.basename(testFilePath);
-      if (scenarios.length === 0) {
-        logger.error(`✗ ${fileName} exports no valid memory leak scenario.`);
-        process.exit(1);
-      }
-
-      totalScenariosRun += scenarios.length;
-      logger.info(`\n📋 Found ${scenarios.length} scenario(s) in ${fileName}`);
-
-      for (const { name, scenario } of scenarios) {
-        logger.info(`\n🧪 Running scenario: ${name} from ${path.basename(testFilePath)}`);
-        logger.info(
-          `[memlab] before scenario rssMiB=${Math.ceil(process.memoryUsage().rss / 1048576)}`
-        );
-        const { leaks, runResult } = await run({
-          scenario,
-          consoleMode,
-          workDir,
-          skipWarmup: process.env.MEMLAB_SKIP_WARMUP === 'true',
-          debug: process.env.MEMLAB_DEBUG === 'true',
-        });
-        let scenarioLeaks = 0;
-        try {
-          scenarioLeaks = leakReporter.report(leaks, name);
-          totalLeaks += scenarioLeaks;
-
-          const analyzer = new StringAnalysis();
-          await analyze(runResult, analyzer);
-        } finally {
-          runResult.cleanup();
-          logger.info(
-            `[memlab] after scenario rssMiB=${Math.ceil(process.memoryUsage().rss / 1048576)}`
-          );
-        }
-
-        if (scenarioLeaks > 0) {
-          logger.error(`✗ Scenario ${name} leaked — see the retainer trace above.`);
-        } else {
-          logger.info(`✅ Completed scenario: ${name}`);
-        }
-      }
-    } catch (error) {
-      logger.error(`✗ Failed memory leak test: ${path.basename(testFilePath)}`, error);
-      process.exit(1);
-    }
+  const inventory = new ScenarioFinder().find(testsDir).flatMap((file) => {
+    const scenarios = loadScenarios(file);
+    logger.info(`\n📋 Found ${scenarios.length} scenario(s) in ${path.basename(file)}`);
+    return scenarios.map(({ name }, index) => ({ file, name, index }));
+  });
+  if (inventory.length === 0) {
+    throw new Error('No memory leak scenarios were executed — the gate would pass vacuously.');
   }
 
-  if (totalScenariosRun === 0) {
-    logger.error(
-      '✗ No memory leak scenarios were executed — the gate would pass vacuously. ' +
-        `Ensure ${testsDir} contains files exporting valid scenarios.`
+  fs.mkdirSync(resultsDir, { recursive: true });
+  let totalLeaks = 0;
+  let failedWorkers = 0;
+  for (const { file, name, index } of inventory) {
+    const workDir = fs.mkdtempSync(path.join(resultsDir, 'scenario-'));
+    logger.info(`\n🧪 Running scenario: ${name} from ${path.basename(file)}`);
+    // stdout/stderr stay live; a separate descriptor carries the completion verdict.
+    // Wait for worker exit before starting another, never sharing MemLab module state.
+    const child = spawnSync(
+      process.execPath,
+      [workerPath, file, String(index), name, workDir, allowlistPath],
+      { stdio: ['ignore', 'inherit', 'inherit', 'pipe'] }
     );
-    process.exit(1);
+    try {
+      if (child.error) throw child.error;
+      if (child.signal) throw new Error(`Worker terminated by ${child.signal}`);
+      const result = JSON.parse(child.output[3].toString());
+      if (
+        result.name !== name ||
+        result.pid !== child.pid ||
+        !Number.isSafeInteger(result.leaks) ||
+        result.leaks < 0 ||
+        child.status !== (result.leaks > 0 ? 1 : 0)
+      ) {
+        throw new Error('Invalid worker completion or exit status');
+      }
+      totalLeaks += result.leaks;
+    } catch (error) {
+      failedWorkers += 1;
+      logger.error(`✗ Failed memory leak test: ${path.basename(file)} (${name})`, error);
+    }
   }
 
   if (totalLeaks > 0) {
     logger.error(
       `✗ ${totalLeaks} unallowlisted memory leak(s) detected across ` +
-        `${totalScenariosRun} scenario(s). Fix the retention, or add a reviewed ` +
-        `waiver to ${allowlistPath}.`
+        `${inventory.length} scenario(s). Fix the retention, or add a reviewed waiver to ` +
+        `${allowlistPath}.`
     );
-    process.exit(1);
   }
+  if (failedWorkers > 0 || totalLeaks > 0) {
+    throw new Error(`Memory leak gate failed: ${failedWorkers} worker failure(s).`);
+  }
+  logger.info(`\n✅ ${inventory.length} scenario(s) executed with no unallowlisted leaks.`);
+}
 
-  logger.info(`\n✅ ${totalScenariosRun} scenario(s) executed with no unallowlisted leaks.`);
-})();
+runMemoryLeakTests().catch((error) => {
+  logger.error(error);
+  process.exitCode = 1;
+});

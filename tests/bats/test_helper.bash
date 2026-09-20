@@ -405,12 +405,30 @@ STUB
   create_memlab_stub_module '@memlab/api' "$(
     cat <<'STUB'
 module.exports = {
-  run: async () => {
+  run: async ({ scenario, workDir }) => {
     console.log('MEMLAB_RUN');
+    const fs = require('node:fs');
+    const record = (event) => {
+      if (process.env.FAKE_MEMLAB_EVENTS) {
+        fs.appendFileSync(process.env.FAKE_MEMLAB_EVENTS,
+          JSON.stringify({ event, pid: process.pid, workDir }) + '\n');
+      }
+    };
+    record('start');
+    process.on('exit', () => record('exit'));
+    if (scenario.workerOpenHandle) setInterval(() => {}, 1000);
+    if (scenario.workerExit !== undefined) process.exit(scenario.workerExit);
+    if (scenario.workerSignal) process.kill(process.pid, scenario.workerSignal);
+    if (scenario.workerError) throw new Error('selected scenario failed');
     if (process.env.FAKE_MEMLAB_RUN_ERROR) throw new Error('scenario failed');
+    await new Promise((resolve) => setTimeout(resolve, 10));
     return {
       leaks: JSON.parse(process.env.FAKE_MEMLAB_LEAKS || '[]'),
-      runResult: { cleanup: () => console.log('MEMLAB_CLEANUP') },
+      runResult: { cleanup: () => {
+        console.log('MEMLAB_CLEANUP');
+        if (process.env.FAKE_MEMLAB_CLEANUP_ERROR) throw new Error('cleanup failed');
+        record('cleanup');
+      } },
     };
   },
   analyze: async () => {
