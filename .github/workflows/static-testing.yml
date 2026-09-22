@@ -3,12 +3,13 @@ name: static testing
 on:
   pull_request:
     branches: ['main']
+  merge_group:
 
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.merge_group.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   static:
@@ -35,10 +36,16 @@ jobs:
       - name: Run all linters
         run: make lint
 
+      # The ADR drift gate is a pull-request policy: it needs the base branch, the pull-request
+      # body and its labels, none of which a merge_group event carries. A queue run re-checks the
+      # merged tree with `make lint` and `make codegen-check` only; the drift verdict was already
+      # decided on the pull request that the queue entry was built from.
+      #
       # The gate resolves a merge base against origin/main. fetch-depth: 0 normally provides it;
       # fetching explicitly makes the gate independent of that behaviour rather than failing
       # closed on a missing ref.
       - name: Fetch the base branch for the ADR drift diff
+        if: github.event_name == 'pull_request'
         env:
           BASE_REF: ${{ github.base_ref }}
         run: git fetch --no-tags origin "+refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
@@ -47,6 +54,7 @@ jobs:
       # environment into the dev container, and interpolating a pull-request body into a shell
       # command would be an injection vector. `reports/` is gitignored.
       - name: Record pull-request context for the ADR drift gate
+        if: github.event_name == 'pull_request'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           # JSON, not a joined string: a label may legitimately contain the separator.
@@ -57,6 +65,7 @@ jobs:
           printf '%s' "$PR_LABELS" > reports/adr-drift/pr-labels.txt
 
       - name: Fail undocumented architecture changes
+        if: github.event_name == 'pull_request'
         run: make check-adr-drift
 
       - name: Verify API contract versions and generated types are in sync

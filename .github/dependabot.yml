@@ -42,3 +42,29 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
+
+  # Base images are pinned by digest (issue #139); this lane is what moves a pin, so a digest is
+  # a floor that Dependabot raises rather than a freeze that goes stale. `tests/load` is listed
+  # because its Dockerfile is lower-case and lives outside the root.
+  - package-ecosystem: 'docker'
+    directories:
+      - '/'
+      - '/tests/load'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 5
+    labels:
+      - 'dependencies'
+      - 'docker'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    groups:
+      docker-minor-patch:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - 'minor'
+          - 'patch'

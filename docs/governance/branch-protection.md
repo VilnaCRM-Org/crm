@@ -10,13 +10,17 @@ the reason in the same pull request.
 
 ## Required status checks on `main`
 
-There is no branch protection rule or ruleset on `main` yet, so **no** check is required: every
-pull-request workflow reports its result, and a red one still merges. The checks a maintainer
-has to add, and why each one matters, are enumerated in CONTRIBUTING.md under "Required status
-checks (maintainer action)", "Relaxing a gate threshold", and "Workflow, YAML, and
-repository-posture gates"; the workflow files under `.github/workflows/` are the source of
-truth for which checks exist. Until that configuration lands, treat every gate described in this
-repository as advisory at the merge boundary and binding only by convention.
+A classic branch protection rule on `main` now requires status checks: the release App's push
+on 2026-09-20 was declined with `GH006` and "11 of 11 required status checks are expected"
+(issue #280). Which eleven is not readable back with a contributor-scope token — the
+branch-protection endpoint answers `404` and `rules/branches/main` lists no ruleset — so this
+document cannot yet name them, and no ruleset exists on `main` (the only ruleset targets the
+`v*` tags). The checks a maintainer has to require, and why each one matters, are enumerated in
+CONTRIBUTING.md under "Required status checks (maintainer action)", "Relaxing a gate threshold",
+and "Workflow, YAML, and repository-posture gates"; the workflow files under
+`.github/workflows/` are the source of truth for which checks exist. Until the list is read back
+and recorded here, treat every gate not known to be among the eleven as advisory at the merge
+boundary and binding only by convention.
 
 ### Supply-chain gates — issues #140 and #141
 
@@ -42,9 +46,120 @@ would imply a gate that does not exist. The audit job
 is skipped on purpose: the dev-tooling advisories it reports go to a `dependency-audit` tracking
 issue rather than a red check.
 
-> **Outstanding prerequisite.** These four rows extend the list in CONTRIBUTING.md; none of it is
-> applied yet, because no branch protection rule or ruleset exists on `main` (see the top of this
-> section). Adding them is a maintainer action.
+> **Outstanding prerequisite.** These four rows extend the list in CONTRIBUTING.md. Whether the
+> classic rule on `main` already requires any of them cannot be read back with a contributor
+> token (see the top of this section), so treat them as not yet applied until the eleven
+> required checks are recorded here. Adding them is a maintainer action.
+
+## Merge queue — issue #185 (phase 2)
+
+Pull-request checks run against the pull-request head, not against the tree that a merge
+produces. Two individually green pull requests can still compose into a red `main` — a rename in
+one, a consumer of the old name in the other — and until the merge queue exists the only thing
+that notices is `main verification`, after the fact. A merge queue closes that hole at the merge
+boundary: GitHub builds the speculative merge result on a `gh-readonly-queue/main/...` ref,
+dispatches a `merge_group` event for it, and merges only once the required checks report green
+on that ref.
+
+The in-repo half is applied. Five workflows declare `merge_group:` beside their `pull_request`
+trigger — `static testing`, `unit testing`, `bats testing`, `eslint suppressions` and
+`dependency cruiser` — and their concurrency group keys on
+`github.event.merge_group.head_ref` with `cancel-in-progress` true **only** for a pull-request
+run, so a push to a pull request cannot cancel a queue entry that is already being verified.
+`static testing` skips its three ADR-drift steps on a queue run: that gate diffs against
+`github.base_ref` and reads the pull-request body and labels, none of which a `merge_group`
+event carries, and its verdict was already decided on the pull request the entry was built from.
+`tests/unit/tooling/merge-queue-gates.test.ts` pins the set both ways, so a sixth workflow
+cannot join the queue silently and none of the five can leave it.
+
+Every other workflow stays pull-request-only, each for a stated reason:
+
+- **`mutation testing`** is a 16-way sharded matrix; queuing it would add its wall-clock and
+  sixteen runners to every merge.
+- **`e2e testing`, `visual tests`, `performance testing`, `load testing`,
+  `memory-leak testing` and `integration testing`** are minutes of browser or measurement
+  wall-clock each; the queue is for the fast, deterministic gates.
+- **`gate ratchet`, `conventional commit contract`, `contract testing` and `codecov`** read the
+  pull-request payload — the merge base and base tip, the title, the labels, the body — which a
+  `merge_group` event does not carry.
+- **`bundle size`, `dockerfile performance`, `storybook testing` and `image optimization`** are
+  path-filtered; a filtered workflow can skip itself, and a skipped required check counts as
+  satisfied.
+
+### Ruleset: require merge queue
+
+Enable this on `main` under **Settings → Rules → Rulesets** (admin), together with the review
+and merge policy below. The classic branch-protection rule that declines direct pushes today
+must be migrated into the same ruleset, because required checks and the merge queue are
+evaluated by one rule set and a check required by the classic rule but absent from the queue
+context leaves every queue entry waiting until its status-check timeout expires and fails.
+
+| Setting                                  | Value                                  |
+| ---------------------------------------- | -------------------------------------- |
+| Ruleset name                             | `main merge queue`                     |
+| Target                                   | Branch — default branch (`main`)       |
+| Rule                                     | Require merge queue                    |
+| Merge method                             | Squash and merge                       |
+| Build concurrency                        | 1                                      |
+| Minimum / maximum group size             | 1 / 5                                  |
+| Wait time to meet minimum group size     | 5 minutes                              |
+| Require all queue entries to pass checks | Enabled                                |
+| Status check timeout                     | 60 minutes                             |
+| Required status checks                   | Exactly the five contexts listed below |
+
+A workflow is not a status-check context. GitHub matches a required check by
+`<workflow name> / <job name>`, and only these five contexts report on `merge_group`:
+
+| Required status-check context               | Workflow file             | On `merge_group` |
+| ------------------------------------------- | ------------------------- | ---------------- |
+| `static testing / static`                   | `static-testing.yml`      | Yes              |
+| `unit testing / unit`                       | `unit-testing.yml`        | Yes              |
+| `bats testing / bats`                       | `bats-testing.yml`        | Yes              |
+| `eslint-suppressions / eslint-suppressions` | `eslint-suppressions.yml` | Yes              |
+| `dependency cruiser / dependency-cruiser`   | `dependency-cruiser.yml`  | Yes              |
+
+The required-check list is what makes or breaks the queue. GitHub applies one list to both the
+pull-request and the queue context, and a required context that never reports on `merge_group`
+leaves every queue entry pending until the status-check timeout expires and fails it. The
+classic rule on `main` requires eleven contexts today, and this document cannot name them (see
+the top of the file). **Enabling the queue therefore starts with an admin reading that list**:
+
+```bash
+gh api repos/VilnaCRM-Org/crm/branches/main/protection/required_status_checks --jq '.contexts[]'
+```
+
+and reconciling every context against the table above. A context that is one of the five stays
+required. A context that is not — `mutation testing / merge and enforce gate`, the Lighthouse
+jobs, the browser suites, `conventional commit contract`, or any other job listed as
+pull-request-only earlier in this section — has exactly two honest futures, and the admin picks
+one per context before the queue goes on:
+
+- **Keep it required and give its workflow a real `merge_group` run.** That is a decision to
+  spend its wall-clock on every merge, which this document deliberately does not make for the
+  mutation matrix or the browser suites; it is available for a fast job whose event payload
+  allows it.
+- **Drop it from the required list.** The check still runs and still reports red on the pull
+  request, but it no longer blocks the merge button; enforcement becomes review discipline on
+  the pull request. `main verification` after the merge detects a breakage it would have caught
+  and attributes it — it does not prevent it.
+
+Until every one of the eleven has been placed in one of those two rows, the queue must stay off:
+turning it on with an unreconciled list does not weaken a gate quietly, it stalls every merge.
+Never satisfy a waiting queue by adding a `merge_group:` trigger to a workflow whose job then
+skips itself — a skipped required check counts as a pass, which is a gate that does not exist.
+
+Record the ruleset ID here once it is created:
+
+- Ruleset ID: _not yet created_
+
+> **Outstanding prerequisite.** The `merge_group:` triggers are inert until the ruleset exists:
+> GitHub dispatches that event only for a branch with a merge queue, so nothing changes on a pull
+> request today. Enabling the queue is an admin action with a cascade: the moment it is on, the
+> merge button becomes "Merge when ready" and any required context that does not report on
+> `merge_group` stalls the queue, which is why the eleven-context reconciliation above has to
+> land in the same ruleset edit, and why its outcome — which contexts were kept, which were
+> dropped — is recorded here. Verify it by queuing one pull request and confirming the five
+> contexts reported once more on the `gh-readonly-queue/main/...` ref before it merged.
 
 ## Code scanning results (CodeQL) — issue #172
 
@@ -140,8 +255,10 @@ on a public repository and are enabled per repository under
 The merge method is already settled at the repository level and was read back through the API:
 squash merge is the only method enabled (`allow_squash_merge` true, `allow_merge_commit` and
 `allow_rebase_merge` false), the squash title is `COMMIT_OR_PR_TITLE`, and the head branch is
-deleted on merge. Everything else in this table is a branch protection or ruleset setting that
-does not exist yet.
+deleted on merge. Everything else in this table is a branch protection or ruleset setting whose
+state cannot be read back with a contributor token; the classic rule on `main` is known to
+require status checks (see the top of this document) and nothing more is known about it, so
+each "No" row is recorded as not yet verified rather than as absent.
 
 | Setting                                         | Value                | Already applied |
 | ----------------------------------------------- | -------------------- | --------------- |

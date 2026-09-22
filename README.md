@@ -430,6 +430,8 @@ In-repository documentation:
 - [Feature flags — lifecycle and rollout](docs/feature-flags.md)
 - [Where does my state go? — server, client and session state](docs/state-architecture.md)
 - [Runtime configuration (`@/config/runtime`)](src/config/runtime/README.md)
+- [Operational runbooks — what each automated tracking issue means and how it closes](docs/runbooks/README.md)
+- [Branch protection and repository rulesets](docs/governance/branch-protection.md)
 
 If the documentation doesn't cover what you need, search the
 [many questions on Stack Overflow](http://stackoverflow.com/questions/tagged/vilnacrm),

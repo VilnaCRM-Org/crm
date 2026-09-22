@@ -164,7 +164,7 @@ COMMIT_RANGE_TO             ?= HEAD
 # ShellCheck gate over the CI gate shell scripts (issue #163). Digest-pinned like the
 # other CI images; lints the standalone scripts, git hooks, and the Bats shared helper.
 SHELLCHECK_IMAGE            = koalaman/shellcheck:v0.10.0@sha256:2097951f02e735b613f4a34de20c40f937a6c8f18ecb170612c88c34517221fb
-SHELL_LINT_PATHS            = scripts/*.sh scripts/ci/*.sh .husky/pre-commit .husky/commit-msg tests/bats/*.bash
+SHELL_LINT_PATHS            = scripts/*.sh scripts/ci/*.sh scripts/docker/*.sh .husky/pre-commit .husky/commit-msg tests/bats/*.bash
 # actionlint gate for the GitHub Actions workflows (issue #162). Digest-pinned like the
 # other CI images; shellcheck is disabled (-shellcheck=) so the gate stays zero-noise
 # pure-correctness (expressions, contexts, needs graphs, event names). run: scripts are

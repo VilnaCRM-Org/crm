@@ -70,6 +70,23 @@ If you find an issue to work on, you are welcome to open a PR with a fix.
 
 3. Create a working branch and start with your changes!
 
+#### Dev Containers and Codespaces
+
+[`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json) attaches VS Code, or a
+GitHub Codespace, to the same `dev` service `make start` runs: it starts `dev`, `mockoon` and
+`apollo` from `docker-compose.yml`, keeps the RSBuild dev server as the container's main
+process, forwards ports 3000, 4000, 6006 and 8080, and installs the ESLint, Prettier,
+EditorConfig, markdownlint and Playwright extensions with format-on-save. Its
+`initializeCommand` bootstraps `.env` from the template and creates the external `crm-network`
+before compose starts, the two steps any `make` invocation would otherwise do for you.
+
+Inside the container the workspace is `/app` and `node_modules` is the named volume, so run
+the tools directly — `bun x jest`, `bun x eslint .`, `bun x tsc --noEmit`, `bun x prettier`
+— rather than through `make`: the Docker-backed targets (`make lint`, `make test-unit-all`,
+`make lint-metrics`, the browser suites) shell out to `docker compose exec`, which needs the
+host's Docker socket. Run those from a host terminal against the same containers, exactly as
+CI does.
+
 #### Local environment and the `.env` template
 
 `.env` is gitignored and never committed (issue #142): this repository is the template for every
@@ -248,6 +265,11 @@ there _and_ does more elsewhere:
 - **`security testing`** _does_ run on every pull request. What is extra is its `push` to `main`
   and weekly re-scan: those maintain the CodeQL baseline that pull-request alert diffing compares
   against, and re-check old code against new query-pack releases.
+
+Each of these monitors, and the post-merge and release monitors, files one tracking issue per
+label and is paired with a runbook under [`docs/runbooks/`](docs/runbooks/README.md) that says
+what the signal means, how to reproduce it, what fixes it, and whether the monitor closes the
+issue itself.
 
 Because `schedule` triggers only ever fire from the default branch, schedule-only behaviour cannot
 be proven by the pull request that changes it — it is covered by Bats fixtures instead
@@ -606,6 +628,16 @@ that is already broken.
 This run **detects**; it does not yet gate the release. `autorelease.yml` fires on the same
 push, so sequencing the release behind a green verification remains a follow-up to issue #138.
 
+The preventive half is the merge queue. `static testing`, `unit testing`, `bats testing`,
+`eslint suppressions` and `dependency cruiser` also trigger on `merge_group`, so once a
+maintainer enables the queue on `main`, GitHub re-runs those five against the speculative merge
+result before the squash lands, and a pull request that is green on its branch but red against
+the merged tree is rejected instead of breaking `main`. The event fires only for a branch with a
+merge queue, so nothing changes on a pull request until then; the ruleset settings, the
+required-check split, and the workflows that deliberately stay pull-request-only are recorded
+in [`docs/governance/branch-protection.md`](docs/governance/branch-protection.md), "Merge
+queue".
+
 ### Releases and the changelog
 
 Every push to `main` runs `generate changelog and create release` (`autorelease.yml`). It reads
@@ -659,18 +691,25 @@ the train recovers.
 ## Dependency updates
 
 Dependencies are kept current by [Dependabot](.github/dependabot.yml), which opens pull
-requests on a weekly schedule for two ecosystems:
+requests on a weekly schedule for three ecosystems:
 
 - `bun` — the `package.json` JavaScript dependencies. The Bun ecosystem updates the manifest
   and `bun.lock` together in one pull request, so the `bun install --frozen-lockfile` step
   used across the Docker images and CI stays green.
 - `github-actions` — the SHA-pinned actions in `.github/workflows/`.
+- `docker` — the digest-pinned `FROM` lines of every Dockerfile (issue #139), in `/` and in
+  `tests/load`. A digest pin is a floor, not a freeze: this lane is what raises it when a tag
+  is re-pushed. A Node major arriving here fails
+  `tests/unit/tooling/ci-job-hygiene.test.ts`, which holds `.nvmrc`, the Dockerfile base image
+  and `engines.node` to one version, so it is taken through the major-version playbook with
+  all three moved together rather than merged as a lone image bump.
 
 To keep pull request volume low, minor and patch updates are grouped into a single request
 per ecosystem — that is what `update-types: ['minor', 'patch']` on each group means. Majors
 match no group, so **every major opens its own pull request** and can be reviewed, gated, and
 reverted on its own. `open-pull-requests-limit` is 10 for `bun` (the grouped minor/patch
-request takes one slot and each pending major takes one) and 5 for `github-actions`.
+request takes one slot and each pending major takes one) and 5 for `github-actions` and
+`docker`.
 
 Dependabot has no equivalent of Renovate's `lockFileMaintenance`, so `bun.lock` is never
 re-resolved against unchanged ranges on its own. Refresh it deliberately when transitive
