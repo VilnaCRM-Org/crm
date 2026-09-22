@@ -11,6 +11,11 @@ This index lists the Architecture Decision Records for this repository.
 - [ADR-007: Reliability model: recoverable errors, route boundaries, and visible fallbacks](./007-reliability-model.md)
 - [ADR-008: Frontend state architecture: server, client, and session state](./008-frontend-state-architecture.md)
 - [ADR-009: Runtime resilience: request deadlines, bounded retry, offline state, chunk recovery](./009-runtime-resilience.md)
+- [ADR-010: RSBuild is the bundler, configured in one file the gates read](./010-rsbuild-bundler.md)
+- [ADR-011: tsyringe is the dependency-injection container, kept off the paint path](./011-tsyringe-dependency-injection.md)
+- [ADR-012: Contract-driven API mocks: Mockoon for REST, Apollo Server for GraphQL](./012-contract-driven-api-mocks.md)
+- [ADR-013: Bun manages dependencies and runs tooling; Node stays the runtime](./013-bun-package-manager.md)
+- [ADR-014: Code health is gated by a committed metrics policy and a zero-clone duplication gate](./014-code-health-metric-gates.md)
 
 ## Writing a new ADR
 

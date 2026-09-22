@@ -81,6 +81,9 @@ make test-mutation    # Stryker; the enforced floor is 100%
   (`make security-headers-generate`), never edited by hand, and a new foreign origin is a new
   environment variable in `connectSrcFromEnv`, never a hard-coded host. `script-src` stays
   `'self'`; only `style-src` carries `'unsafe-inline'` (the Emotion/MUI accommodation).
+- **Dockerfiles pin every registry `FROM` by digest, declare a `HEALTHCHECK`, and install Bun
+  through `scripts/docker/install-bun.sh`** against a pinned SHA256 — never `curl | bash`. A Bun
+  bump moves `packageManager`, each `ARG BUN_VERSION`, and the script's digests together.
 
 ## Quality gates
 

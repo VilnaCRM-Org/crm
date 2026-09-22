@@ -37,6 +37,12 @@ make start-prod     # Start the prod-parity stack (port 3001; test-harness image
 make sh             # Open shell in dev container
 ```
 
+`.devcontainer/devcontainer.json` attaches VS Code or a Codespace to the same `dev` compose
+service (with `mockoon` and `apollo`), bootstrapping `.env` and the external `crm-network`
+first. Inside it, run tools directly (`bun x jest`, `bun x eslint .`); the Docker-backed `make`
+targets need the host's Docker socket and run from a host terminal — see CONTRIBUTING.md,
+"Dev Containers and Codespaces".
+
 ### Building
 
 ```bash
@@ -519,6 +525,47 @@ The lever there is Docker layer caching for the dev image, a separate, measured 
 layers are already a digest-pinned image (`docker-compose.test.yml`), and the flaky-test controls
 landed as the nightly flake audit (issue #186).
 
+### Image hardening: digest pins, health signals, verified Bun (issue #139, item 4)
+
+Three properties every image in the repository now carries, pinned by
+[`tests/unit/tooling/image-hardening.test.ts`](tests/unit/tooling/image-hardening.test.ts):
+
+- **Every registry `FROM` is pinned by digest** (`image:tag@sha256:…`) in `Dockerfile`,
+  `Apollo.Dockerfile`, `MemoryLeak.Dockerfile`, `Mockoon.Dockerfile`, `Playwright.Dockerfile`
+  and `tests/load/dockerfile`. A tag is mutable — the `python3` Alpine pin broke every
+  Docker-based job when the tag moved under it — and a digest is not. The pin is a floor, not
+  a freeze: the `docker` Dependabot lane (`.github/dependabot.yml`, directories `/` and
+  `/tests/load`) raises it when a tag is re-pushed. The tag stays in the line so a human can
+  read the version and so the Node single-version test keeps matching it.
+- **Every image declares its health.** The long-running images carry the same probe their
+  compose service runs, so an orchestrator outside compose restarts a dead container: the
+  static server (`serve-base`, inherited by `production` and `test-harness`) curls port 3001,
+  Apollo posts a `{__typename}` query to `GRAPHQL_PORT`, Mockoon fetches `/api/users`, the
+  memory-leak harness runs `chromium-browser --version`. The two one-shot runners
+  (`Playwright.Dockerfile`, the k6 image) declare `HEALTHCHECK NONE`: a container that idles
+  until `docker compose exec` drives it, or exits when its scenario ends, has no health to
+  report, and saying so explicitly is what keeps the test from passing vacuously.
+- **Bun is installed from a checksum-verified release archive.**
+  [`scripts/docker/install-bun.sh`](scripts/docker/install-bun.sh) replaces
+  `curl https://bun.sh/install | bash` in all four Bun images: it picks the archive the way
+  the upstream script does (architecture, musl or glibc, the AVX2 baseline fallback on x64),
+  downloads it from the GitHub release, checks it against a SHA256 pinned in the script from
+  the release's `SHASUMS256.txt`, and only then unzips it and proves `bun --version` runs. An
+  unknown architecture or a version with no pinned digest fails the build. **Bumping Bun** is
+  four edits in one change: `packageManager` in `package.json`, `ARG BUN_VERSION` in each of
+  the four Dockerfiles, and the six digests in the script; the test holds them together.
+  `MemoryLeak.Dockerfile` now installs with `--frozen-lockfile` like every other image.
+
+Verified locally: the installer under glibc on the host and under musl in a two-layer probe
+built `FROM` the digest-pinned Node image; `hadolint` clean on all six Dockerfiles;
+`make lint-shell` covers `scripts/docker/*.sh`. The full `production` build is exercised by
+the `security testing`, `supply-chain security`, `sbom` and `dockerfile performance`
+workflows on the pull request. Not done here, and still open in issue #139: the CD pipeline,
+CDN delivery, rollback runbook and in-repo IaC.
+
+**No suppression:** satisfy the test by pinning, probing or verifying — never by moving an
+image out of the file list or reverting to the unversioned installer.
+
 ### Release train (issue #138)
 
 `autorelease.yml` runs `make check-release-version` before the changelog action — `package.json`'s
@@ -839,6 +886,23 @@ instead of surfacing on an unrelated PR.
 This is detection and attribution only — sequencing `autorelease.yml` behind it belongs to
 issue #138.
 
+**The merge queue re-runs the fast gates on the merge result (`#185`, phase 2).** Five
+workflows — `static testing`, `unit testing`, `bats testing`, `eslint suppressions` and
+`dependency cruiser` — declare `merge_group:` beside `pull_request`, with a concurrency group
+keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only for a
+pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
+skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
+body and its labels, which `merge_group` does not carry; its verdict was already decided on the
+pull request). `mutation testing` stays out — a 16-way matrix queued on every merge is
+wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
+workflows that read the pull-request payload, and every path-filtered workflow.
+[`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
+pins the set both ways. The triggers are inert until a maintainer enables the queue in a
+`main` ruleset whose required-check list is exactly those five checks — see
+[`docs/governance/branch-protection.md`](docs/governance/branch-protection.md), "Merge queue".
+Never satisfy a waiting queue by giving a heavy workflow a `merge_group:` trigger whose job
+skips itself: a skipped required check counts as a pass.
+
 ### Dependency updates and major upgrades (issue #143)
 
 Dependabot groups **minor and patch** updates into one weekly pull request per ecosystem and
@@ -1039,10 +1103,12 @@ fragments, constants, factories, or a base object plus overrides — never with
 ignore/suppress directives. The same root-cause-not-suppression policy used for
 ESLint, TypeScript, and metrics applies here.
 
-### TypeScript strictness: indexed access and overrides (issue #166)
+### TypeScript strictness: indexed access, overrides, and implicit returns (issues #166, #136)
 
-`tsconfig.json` sets `noUncheckedIndexedAccess: true` and `noImplicitOverride: true` on top of
-`strict`, enforced by the existing `make lint-tsc` gate in the `static testing` workflow.
+`tsconfig.json` sets `noUncheckedIndexedAccess: true`, `noImplicitOverride: true` and
+`noImplicitReturns: true` on top of `strict`, enforced by the existing `make lint-tsc` gate in the
+`static testing` workflow. All three are in the set the gate ratchet guards (issue #188), so a
+later pull request cannot drop one without the `gate-relaxation` label.
 
 - **`noUncheckedIndexedAccess`** types every index read (`arr[i]`, `record[key]` on a
   `Record<string, T>`) as `T | undefined`. This closes the gap this file's own metrics advice
@@ -1052,8 +1118,16 @@ ESLint, TypeScript, and metrics applies here.
 - **`noImplicitOverride`** requires the `override` modifier on any member that redeclares a base
   member, so a base-class rename leaves a compile error instead of an orphaned, silently-dead
   "override".
+- **`noImplicitReturns`** (issue #136, section E) fails a function whose code paths do not all
+  return a value, so a branch added to a lookup or a mapper that forgets its `return` is a compile
+  error instead of an `undefined` that surfaces at the call site. It was measured at zero errors
+  before it was enabled, so it cost no source change and binds only from here on.
 - **`noPropertyAccessFromIndexSignature` is deliberately NOT enabled** — measured 367 errors (all
   `TS4111`), dominated by `process.env` dot-access in tests and configs, for no defect class.
+- **`exactOptionalPropertyTypes` is deliberately NOT enabled yet** — measured 75 errors across 45
+  files, dominated by `TS2769` overload mismatches against MUI, react-hook-form and Sentry prop
+  types where the fix is a conditional spread rather than a narrowing; it deserves its own
+  pull request with that cost weighed, not a flag flipped alongside a free one.
 
 `@typescript-eslint/no-non-null-assertion` is `error` for `src/**` and `warn` for `tests/**`: the
 `!` operator silences a `noUncheckedIndexedAccess` result instead of narrowing it, which is the
@@ -1548,7 +1622,9 @@ The project uses tsyringe for DI with **per-module / per-infra composition roots
    `container.register*` calls — it collects the registrars and invokes each against the
    container. Adding a module = one import + one array entry there, plus that module's own
    `config/{di,tokens}.ts`.
-3. Import `reflect-metadata` at app entry point (already done in `src/index.tsx`).
+3. `reflect-metadata` is imported once, at the top of the aggregator
+   `src/config/dependency-injection-config.ts` — never in `src/index.tsx`, so the polyfill
+   loads with the container and stays out of the auth paint path (ADR-011).
 4. Use `@injectable()` on classes; register them in the owning area's `di.ts`.
 5. Resolve / inject via the area's namespaced tokens, e.g.
    `@inject(HTTP_TOKENS.HttpsClient)` or `container.resolve<Type>(AUTH_TOKENS.AuthRepository)`.
