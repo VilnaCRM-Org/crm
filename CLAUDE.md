@@ -897,9 +897,12 @@ pull request). `mutation testing` stays out — a 16-way matrix queued on every 
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
-pins the set both ways. The triggers are inert until a maintainer enables the queue in a
-`main` ruleset whose required-check list is exactly those five checks — see
-[`docs/governance/branch-protection.md`](docs/governance/branch-protection.md), "Merge queue".
+pins the set both ways. The triggers are inert until an admin enables the queue in a `main`
+ruleset whose required status-check contexts are exactly `static testing / static`,
+`unit testing / unit`, `bats testing / bats`, `eslint-suppressions / eslint-suppressions` and
+`dependency cruiser / dependency-cruiser`, after reconciling the eleven contexts the classic rule
+requires today — see [`docs/governance/branch-protection.md`](docs/governance/branch-protection.md),
+"Merge queue".
 Never satisfy a waiting queue by giving a heavy workflow a `merge_group:` trigger whose job
 skips itself: a skipped required check counts as a pass.
 

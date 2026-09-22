@@ -94,27 +94,59 @@ must be migrated into the same ruleset, because required checks and the merge qu
 evaluated by one rule set and a check required by the classic rule but absent from the queue
 context leaves every queue entry waiting until its status-check timeout expires and fails.
 
-| Setting                                  | Value                                    |
-| ---------------------------------------- | ---------------------------------------- |
-| Ruleset name                             | `main merge queue`                       |
-| Target                                   | Branch — default branch (`main`)         |
-| Rule                                     | Require merge queue                      |
-| Merge method                             | Squash and merge                         |
-| Build concurrency                        | 1                                        |
-| Minimum / maximum group size             | 1 / 5                                    |
-| Wait time to meet minimum group size     | 5 minutes                                |
-| Require all queue entries to pass checks | Enabled                                  |
-| Status check timeout                     | 60 minutes                               |
-| Required status checks (queue context)   | Exactly the five `merge_group` workflows |
+| Setting                                  | Value                                  |
+| ---------------------------------------- | -------------------------------------- |
+| Ruleset name                             | `main merge queue`                     |
+| Target                                   | Branch — default branch (`main`)       |
+| Rule                                     | Require merge queue                    |
+| Merge method                             | Squash and merge                       |
+| Build concurrency                        | 1                                      |
+| Minimum / maximum group size             | 1 / 5                                  |
+| Wait time to meet minimum group size     | 5 minutes                              |
+| Require all queue entries to pass checks | Enabled                                |
+| Status check timeout                     | 60 minutes                             |
+| Required status checks                   | Exactly the five contexts listed below |
+
+A workflow is not a status-check context. GitHub matches a required check by
+`<workflow name> / <job name>`, and only these five contexts report on `merge_group`:
+
+| Required status-check context               | Workflow file             | On `merge_group` |
+| ------------------------------------------- | ------------------------- | ---------------- |
+| `static testing / static`                   | `static-testing.yml`      | Yes              |
+| `unit testing / unit`                       | `unit-testing.yml`        | Yes              |
+| `bats testing / bats`                       | `bats-testing.yml`        | Yes              |
+| `eslint-suppressions / eslint-suppressions` | `eslint-suppressions.yml` | Yes              |
+| `dependency cruiser / dependency-cruiser`   | `dependency-cruiser.yml`  | Yes              |
 
 The required-check list is what makes or breaks the queue. GitHub applies one list to both the
-pull-request and the queue context, and a check that never reports on `merge_group` blocks
-every entry. So the list must be split by mechanism, not by wish: the five fast gates are
-required and report in both contexts; every workflow in the table above is enforced on the pull
-request by review and by `main verification` after the merge, never by the queue. Never add a
-pull-request-only workflow to the required list once the queue is on, and never satisfy a
-waiting queue by adding a `merge_group:` trigger to a workflow whose job then skips itself — a
-skipped check counts as a pass, which is a gate that does not exist.
+pull-request and the queue context, and a required context that never reports on `merge_group`
+leaves every queue entry pending until the status-check timeout expires and fails it. The
+classic rule on `main` requires eleven contexts today, and this document cannot name them (see
+the top of the file). **Enabling the queue therefore starts with an admin reading that list**:
+
+```bash
+gh api repos/VilnaCRM-Org/crm/branches/main/protection/required_status_checks --jq '.contexts[]'
+```
+
+and reconciling every context against the table above. A context that is one of the five stays
+required. A context that is not — `mutation testing / merge and enforce gate`, the Lighthouse
+jobs, the browser suites, `conventional commit contract`, or any other job listed as
+pull-request-only earlier in this section — has exactly two honest futures, and the admin picks
+one per context before the queue goes on:
+
+- **Keep it required and give its workflow a real `merge_group` run.** That is a decision to
+  spend its wall-clock on every merge, which this document deliberately does not make for the
+  mutation matrix or the browser suites; it is available for a fast job whose event payload
+  allows it.
+- **Drop it from the required list.** The check still runs and still reports red on the pull
+  request, but it no longer blocks the merge button; enforcement becomes review discipline on
+  the pull request. `main verification` after the merge detects a breakage it would have caught
+  and attributes it — it does not prevent it.
+
+Until every one of the eleven has been placed in one of those two rows, the queue must stay off:
+turning it on with an unreconciled list does not weaken a gate quietly, it stalls every merge.
+Never satisfy a waiting queue by adding a `merge_group:` trigger to a workflow whose job then
+skips itself — a skipped required check counts as a pass, which is a gate that does not exist.
 
 Record the ruleset ID here once it is created:
 
@@ -122,11 +154,12 @@ Record the ruleset ID here once it is created:
 
 > **Outstanding prerequisite.** The `merge_group:` triggers are inert until the ruleset exists:
 > GitHub dispatches that event only for a branch with a merge queue, so nothing changes on a pull
-> request today. Enabling the queue is a maintainer action with a cascade: the moment it is on,
-> the merge button becomes "Merge when ready" and any required check that does not report on
-> `merge_group` stalls the queue, which is why the required-check list above has to land in the
-> same ruleset edit. Verify it by queuing one pull request and confirming the five workflows ran
-> once more on the `gh-readonly-queue/main/...` ref before it merged.
+> request today. Enabling the queue is an admin action with a cascade: the moment it is on, the
+> merge button becomes "Merge when ready" and any required context that does not report on
+> `merge_group` stalls the queue, which is why the eleven-context reconciliation above has to
+> land in the same ruleset edit, and why its outcome — which contexts were kept, which were
+> dropped — is recorded here. Verify it by queuing one pull request and confirming the five
+> contexts reported once more on the `gh-readonly-queue/main/...` ref before it merged.
 
 ## Code scanning results (CodeQL) — issue #172
 
