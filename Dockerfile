@@ -1,11 +1,16 @@
-FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS base
+FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS base
 
+ARG BUN_VERSION=1.3.5
 ARG CURL_VERSION=8.14.1-r2
 ARG INSTALL_CHROMIUM=false
 ARG INSTALL_PLAYWRIGHT_BROWSERS=false
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
+# Bun is installed from a release archive whose SHA256 the script pins (issue #139), never by
+# piping the upstream install script into a shell; the script is copied first so a Bun bump
+# invalidates only this layer.
+COPY scripts/docker/install-bun.sh /usr/local/bin/install-bun
 RUN apk add --no-cache \
     bash=5.2.37-r0 \
     curl=${CURL_VERSION} \
@@ -22,7 +27,7 @@ RUN apk add --no-cache \
         harfbuzz=9.0.0-r1 \
         nss=3.109-r0; \
     fi && \
-    curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
+    install-bun "${BUN_VERSION}"
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="/root/.bun/bin:$PATH"
@@ -71,7 +76,7 @@ RUN bun x rsbuild build && \
 
 
 # -------- rust-code-analysis Stage --------
-FROM public.ecr.aws/docker/library/debian:12-slim AS rca
+FROM public.ecr.aws/docker/library/debian:12-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251 AS rca
 
 ARG RCA_VERSION=0.0.25
 ARG RCA_SHA256=9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894
@@ -114,13 +119,13 @@ ENV RCA_BIN=/usr/local/bin/rust-code-analysis-cli
 WORKDIR /app
 
 
-FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS serve-tools
+FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS serve-tools
 
 RUN npm install -g serve@14.2.6
 
 
 # -------- Static Server Stage --------
-FROM public.ecr.aws/docker/library/alpine:3.21 AS serve-base
+FROM public.ecr.aws/docker/library/alpine:3.21@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507 AS serve-base
 
 ARG CURL_VERSION=8.14.1-r2
 ARG LIBSTDCPP_VERSION=14.2.0-r4
@@ -148,6 +153,10 @@ ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 COPY --chown=node:node serve.json ./serve.json
 
 EXPOSE 3001
+
+# The same probe docker-compose.test.yml runs, carried by the image so an orchestrator outside
+# compose restarts a container whose server stopped answering (issue #139).
+HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=3 CMD ["curl", "-fsS", "-o", "/dev/null", "http://127.0.0.1:3001/"]
 
 CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]
 

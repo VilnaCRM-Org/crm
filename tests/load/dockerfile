@@ -1,4 +1,4 @@
-FROM golang:1.25.8-alpine3.22 AS builder
+FROM golang:1.25.8-alpine3.22@sha256:6b7607461f105ccaa0615b6f7932dfd5b36c5d827a0770b5578e565107cc3adb AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN xk6 build \
     --with github.com/grafana/xk6-exec@v0.5.0 \
     --with github.com/avitalique/xk6-file@v1.5.0
 
-FROM alpine:3.22
+FROM alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
 RUN apk add --no-cache ca-certificates=20260909-r0 tzdata=2026d-r0 \
     && addgroup -g 1000 k6 \
     && adduser -u 1000 -G k6 -D k6 \
@@ -23,5 +23,8 @@ RUN apk add --no-cache ca-certificates=20260909-r0 tzdata=2026d-r0 \
 COPY --chown=k6:k6 --from=builder /app/k6 /bin/k6
 
 USER k6
+
+# A one-shot k6 runner exits when the scenario ends; there is no long-lived service to probe.
+HEALTHCHECK NONE
 
 ENTRYPOINT [ "k6" ]
