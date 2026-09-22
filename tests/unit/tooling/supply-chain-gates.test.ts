@@ -208,7 +208,7 @@ describe('production runtime image (issue #140)', () => {
     const runtime = stageOf(dockerfile, 'serve-base');
 
     expect(dockerfile).toMatch(
-      /^FROM public\.ecr\.aws\/docker\/library\/alpine:\d+\.\d+ AS serve-base$/m
+      /^FROM public\.ecr\.aws\/docker\/library\/alpine:\d+\.\d+@sha256:[0-9a-f]{64} AS serve-base$/m
     );
     expect(runtime).not.toContain('npm ');
     expect(runtime).toContain('COPY --from=serve-tools /usr/local/bin/node /usr/local/bin/node');

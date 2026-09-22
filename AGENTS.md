@@ -1630,10 +1630,17 @@ build goes red. Know them before you touch a config file:
   strictness flag, or delete a manifest entry to go green. Strengthen the value instead; if a
   relaxation is genuinely right, apply the `gate-relaxation` label so it is reviewed — see
   "Relaxing a gate threshold" in `CONTRIBUTING.md` for the local reproduction commands.
-- **`tsconfig` strictness (issue #166)** — `noUncheckedIndexedAccess` makes every index read
-  `T | undefined`. Narrow it for real (`??`, a guard, `in`, `Map.get` + guard, optional chaining).
-  `@typescript-eslint/no-non-null-assertion` is an error in `src/**` precisely because `!` silences
-  that result instead of handling it; a cast is the same evasion.
+- **`tsconfig` strictness (issues #166, #136)** — `noUncheckedIndexedAccess` makes every index
+  read `T | undefined`. Narrow it for real (`??`, a guard, `in`, `Map.get` + guard, optional
+  chaining). `@typescript-eslint/no-non-null-assertion` is an error in `src/**` precisely because
+  `!` silences that result instead of handling it; a cast is the same evasion.
+  `noImplicitReturns` fails a function whose branches do not all return; give the missing branch
+  a real value rather than an explicit `return undefined`.
+- **Image hardening (issue #139)** — every registry `FROM` is digest-pinned, every image
+  declares a `HEALTHCHECK` (or `HEALTHCHECK NONE` for a one-shot runner), and Bun is installed by
+  `scripts/docker/install-bun.sh` against a pinned SHA256, never by piping the upstream install
+  script into a shell. A Bun bump moves `packageManager`, each `ARG BUN_VERSION` and the six
+  digests together; `tests/unit/tooling/image-hardening.test.ts` holds them to one version.
 - **dependency-cruiser rule fixtures (issue #181)** — every rule in `.dependency-cruiser.js` must
   land with a fixture in `scripts/ci/depcruise-rule-fixtures.mjs`; the completeness assertion is
   bidirectional and has no exemption list, so a new rule cannot ship untested.

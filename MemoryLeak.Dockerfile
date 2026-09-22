@@ -1,7 +1,10 @@
-FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21 AS base
+FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS base
+
+ARG BUN_VERSION=1.3.5
 
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
+COPY scripts/docker/install-bun.sh /usr/local/bin/install-bun
 RUN apk add --no-cache \
     bash=5.2.37-r0 \
     ca-certificates=20260909-r0 \
@@ -17,7 +20,7 @@ RUN apk add --no-cache \
     nss=3.109-r0 \
     ttf-freefont=20120503-r4 \
     xvfb=21.1.16-r0 \
-    && curl --retry 5 --retry-delay 2 -fsSL https://bun.sh/install | bash -s "bun-v1.3.5"
+    && install-bun "${BUN_VERSION}"
 
 ENV BUN_INSTALL=/root/.bun
 ENV PATH="/root/.bun/bin:$PATH"
@@ -34,7 +37,7 @@ WORKDIR /app
 FROM base AS build
 
 COPY package.json bun.lock* check-node-version.js ./
-RUN bun install
+RUN bun install --frozen-lockfile
 
 
 FROM base AS final
@@ -45,5 +48,8 @@ COPY --from=build /app/node_modules ./node_modules
 COPY tests/memory-leak tests/memory-leak
 COPY src/config/i18n-config.js ./src/config/i18n-config.js
 COPY src/i18n/localization.json ./src/i18n/localization.json
+
+# The probe docker-compose.memory-leak.yml runs, carried by the image (issue #139).
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=3 CMD ["chromium-browser", "--version"]
 
 CMD ["sleep","infinity"]
