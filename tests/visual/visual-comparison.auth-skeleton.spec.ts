@@ -4,7 +4,6 @@ import type { Page } from '@playwright/test';
 import { interceptAuthFormChunks, AUTH_ASYNC_JS_GLOB } from '../utils/intercept-auth-form-chunks';
 
 import { currentLanguage, PAGES, ScreenSize, screenSizes } from './constants';
-import waitForStableDom from './wait-for-stable-dom';
 
 async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<void> {
   await page.setViewportSize({ width: screen.width, height: screen.height });
@@ -18,7 +17,7 @@ async function takeSkeletonSnapshot(page: Page, screen: ScreenSize): Promise<voi
   const skeletonTitle = page.locator('#auth-skeleton-title');
   await expect(skeletonTitle).toBeVisible({ timeout: 5000 });
 
-  await waitForStableDom(page);
+  await page.waitForFunction(() => document.fonts.status === 'loaded');
 
   const snapshotName = `${currentLanguage}_${screen.name}.png`;
 
