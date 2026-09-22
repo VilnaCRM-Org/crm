@@ -1,7 +1,7 @@
 # ADR-013: Bun manages dependencies and runs tooling; Node stays the runtime
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-20
 
 **Technical Story**: Pull request [#38](https://github.com/VilnaCRM-Org/crm/pull/38) (issue

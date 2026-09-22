@@ -1,7 +1,7 @@
 # ADR-011: tsyringe is the dependency-injection container, kept off the paint path
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-20
 
 **Technical Story**: `tsyringe` has been in `package.json` since the template's first commit,

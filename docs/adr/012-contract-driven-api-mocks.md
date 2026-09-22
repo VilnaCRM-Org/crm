@@ -1,7 +1,7 @@
 # ADR-012: Contract-driven API mocks: Mockoon for REST, Apollo Server for GraphQL
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-20
 
 **Technical Story**: Pull request [#15](https://github.com/VilnaCRM-Org/crm/pull/15)

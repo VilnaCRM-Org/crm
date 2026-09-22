@@ -1,7 +1,7 @@
 # ADR-014: Code health is gated by a committed metrics policy and a zero-clone duplication gate
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-20
 
 **Technical Story**: Pull request [#73](https://github.com/VilnaCRM-Org/crm/pull/73) (issue

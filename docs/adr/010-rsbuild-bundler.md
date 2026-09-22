@@ -1,7 +1,7 @@
 # ADR-010: RSBuild is the bundler, configured in one file the gates read
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-20
 
 **Technical Story**: The build moved from Create React App with `craco` and
