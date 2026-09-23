@@ -189,7 +189,11 @@ run_gate() {
   run_gate
   [ "$status" -eq 1 ]
   assert_output_contains '  Field c was removed from object type Query'
-  [[ "$output" != *'  Enum value B was removed from enum E'* ]]
+  # The raw inspector dump above the verdict always echoes every detected change (approved or
+  # not), so only the unapproved-list section after the ERROR marker proves the approved
+  # change was actually filtered out.
+  error_section="${output#*'introduces breaking changes for this client:'}"
+  [[ "$error_section" != *'  Enum value B was removed from enum E'* ]]
 }
 
 # Matching is whole-line: a prefix or a substring of a finding approves nothing.

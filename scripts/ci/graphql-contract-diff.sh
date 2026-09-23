@@ -187,9 +187,17 @@ if [ "$status" -ne 1 ] || [ -z "$reported_count" ] || [ "$reported_count" -ne "$
 fi
 
 # grep exits 1 when every breaking change is approved; only 2 and above is a real failure.
-filter_status=0
-grep -Fxv -f "$LIVE_ALLOWLIST" "$BREAKING" > "$UNAPPROVED" || filter_status=$?
-[ "$filter_status" -le 1 ] || fail "could not apply $GRAPHQL_CONTRACT_BREAKING_ALLOWLIST"
+# An empty allowlist (every entry stripped as a comment or blank line) is handled separately:
+# BusyBox grep's `-f` with an empty pattern file matches every input line (so `-v` drops all
+# of them), the opposite of GNU grep's "empty pattern set matches nothing" behaviour -- under
+# BusyBox that reads a comment-only allowlist as approving everything.
+if [ -s "$LIVE_ALLOWLIST" ]; then
+  filter_status=0
+  grep -Fxv -f "$LIVE_ALLOWLIST" "$BREAKING" > "$UNAPPROVED" || filter_status=$?
+  [ "$filter_status" -le 1 ] || fail "could not apply $GRAPHQL_CONTRACT_BREAKING_ALLOWLIST"
+else
+  cp "$BREAKING" "$UNAPPROVED"
+fi
 
 if [ -s "$UNAPPROVED" ]; then
   printf 'ERROR: GraphQL %s -> %s introduces breaking changes for this client:\n' \
