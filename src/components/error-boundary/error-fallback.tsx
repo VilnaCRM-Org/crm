@@ -59,7 +59,7 @@ function RecoveryActions({
   );
 }
 
-function ErrorDiagnostics({ error }: { error?: Error }): JSX.Element | null {
+function ErrorDiagnostics({ error }: Pick<ErrorFallbackProps, 'error'>): JSX.Element | null {
   const { t } = useTranslation();
 
   if (process.env.NODE_ENV === 'production' || error == null) return null;

@@ -11,7 +11,7 @@ export interface RetryOptions {
   /** Total wall-clock budget across every attempt and every backoff wait. */
   readonly budgetMs: number;
   /** The caller's abort: stops the loop between attempts and during a backoff wait. */
-  readonly signal?: AbortSignal;
+  readonly signal?: AbortSignal | undefined;
 }
 
 export interface RetryRun {

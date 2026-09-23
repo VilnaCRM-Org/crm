@@ -132,10 +132,14 @@ request. The complete workflow inventory is in [README.md](README.md#ci-checks).
 - **Lockfile provenance** — `make lint-lockfile`, part of `make lint` and therefore of
   `static testing`. Every package in `bun.lock` must resolve from the npm registry allowlist.
 
-Not yet in place: artifact signing and build provenance (cosign signatures, SLSA attestations).
-Issue #140 scopes them as a follow-up phase. Nothing in this repository publishes the image to a
-registry yet, so there is no signed image to verify, and the SBOMs attached to a release are
-authenticated only by the release that carries them.
+- **Build provenance** — [`autorelease.yml`](.github/workflows/autorelease.yml), every release
+  (issue #136). The release tarball and the GHCR image (by manifest digest) carry a SLSA build
+  provenance attestation signed through Sigstore; verify with
+  `gh attestation verify <tarball> --repo VilnaCRM-Org/crm` or
+  `gh attestation verify oci://ghcr.io/vilnacrm-org/crm:<version> --repo VilnaCRM-Org/crm`.
+
+Not yet in place: the SBOMs attached to a release carry no attestation and are authenticated only
+by the release that carries them, and no deployment enforces provenance verification.
 
 ## Published advisories
 

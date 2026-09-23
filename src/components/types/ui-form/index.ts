@@ -15,13 +15,13 @@ export interface UIFormProps<T extends FieldValues> {
   children: ReactNode;
   formOptions?: Omit<UseFormProps<T>, 'defaultValues'>;
   isSubmitting?: boolean;
-  error?: string | null;
+  error?: string | null | undefined;
   submitLabel: string;
   title: ReactNode;
   subtitle?: ReactNode;
   showTitle?: boolean;
   showSubtitle?: boolean;
-  resetOnSuccess?: boolean;
+  resetOnSuccess?: boolean | undefined;
   isSubmitDisabled?: boolean;
   submittingLabel: string;
   submittingAnnouncement?: boolean;
@@ -48,7 +48,7 @@ export type FormHeaderProps = {
   subtitle?: ReactNode;
   showTitle: boolean;
   showSubtitle: boolean;
-  titleComponent?: TitleHeadingComponent;
+  titleComponent?: TitleHeadingComponent | undefined;
 };
 
 export interface OfflineSubmit {
@@ -61,7 +61,7 @@ export interface OfflineSubmit {
 export interface UseUIFormOptions<T extends FieldValues> {
   defaultValues: DefaultValues<T>;
   formOptions: Omit<UseFormProps<T>, 'defaultValues'>;
-  isSubmitting?: boolean;
+  isSubmitting?: boolean | undefined;
 }
 
 export interface UseUIFormResult<T extends FieldValues> {
@@ -75,7 +75,7 @@ export type FormBodyProps<T extends FieldValues> = {
   announceSubmitting: boolean;
   handleSubmit: SubmitHandler<T>;
   children: ReactNode;
-  error?: string | null;
+  error: string | null;
   submitting: boolean;
   isSubmitDisabled: boolean;
   submitLabel: string;

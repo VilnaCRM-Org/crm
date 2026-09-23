@@ -3,7 +3,7 @@ import type { ApiErrorOptions } from '@/modules/user/types/api-errors/api-error'
 export default class ApiError extends Error {
   public readonly code: string;
 
-  public readonly status?: number;
+  public readonly status?: number | undefined;
 
   public override readonly cause?: unknown;
 

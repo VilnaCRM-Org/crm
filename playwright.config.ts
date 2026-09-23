@@ -67,10 +67,9 @@ export default defineConfig({
   // Playwright can only classify a test as flaky when it is allowed to retry it.
   retries,
   failOnFlakyTests: process.env.PLAYWRIGHT_FAIL_ON_FLAKY === '1',
-  // Keep Playwright's default parallelism for the dedicated test container — this
-  // matches the suite's actual pre-#190 CI behavior (CI never reached the container,
-  // so workers resolved to undefined). A reviewed choice, not an accident.
-  workers: undefined,
+  // `workers` is left unset on purpose: Playwright's default parallelism for the dedicated
+  // test container matches the suite's actual pre-#190 CI behavior (CI never reached the
+  // container, so workers resolved to the default). A reviewed choice, not an accident.
   reporter,
   ...(testOutputDir ? { outputDir: testOutputDir } : {}),
   ...(isDevMode ? { snapshotPathTemplate: devSnapshotPathTemplate } : {}),

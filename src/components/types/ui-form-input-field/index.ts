@@ -15,7 +15,7 @@ export type CustomTextField<T extends FieldValues> = TextFieldProps & {
     RegisterOptions<T, Path<T>>,
     'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
   >;
-  defaultValue?: PathValue<T, Path<T>>;
+  defaultValue?: PathValue<T, Path<T>> | undefined;
   name: Path<T>;
 };
 
@@ -30,8 +30,7 @@ export type ControlledFieldProps<T extends FieldValues> = {
     RegisterOptions<T, Path<T>>,
     'disabled' | 'valueAsNumber' | 'valueAsDate' | 'setValueAs'
   >;
-  defaultValue?: PathValue<T, Path<T>>;
+  defaultValue?: PathValue<T, Path<T>> | undefined;
   name: Path<T>;
-  sx: TextFieldProps['sx'];
-  textFieldProps: Omit<CustomTextField<T>, 'control' | 'rules' | 'defaultValue' | 'name' | 'sx'>;
+  textFieldProps: Omit<CustomTextField<T>, 'control' | 'rules' | 'defaultValue' | 'name'>;
 };

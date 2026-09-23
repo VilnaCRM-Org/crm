@@ -117,7 +117,7 @@ lint-prettier	bats	tests/bats/makefile_targets.bats	Validated as a member of the
 lint-shell	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
 lint-lockfile	bats	tests/bats/lockfile_registries.bats	Validated as the bun.lock registry-allowlist gate with rogue-URL, rogue-specifier, lookalike-host, version-bump, and clean-pass fixtures.
 lint-actionlint	bats	tests/bats/makefile_targets.bats	Validated as a member of the CI lint target list passed to run-parallel-lint.sh.
-contract-diff	bats	tests/bats/contract_diff.bats	Validated as the semantic OpenAPI breaking-change gate over base/head contract pins.
+contract-diff	bats	tests/bats/contract_diff.bats	Validated as the semantic OpenAPI and GraphQL breaking-change gates over base/head contract pins.
 check-contract-drift	bats	tests/bats/contract_drift.bats	Validated as the scheduled upstream contract drift monitor and its issue upsert.
 check-e2e-route-coverage	bats	tests/bats/ci_scripts.bats	Validated as the route-coverage inventory gate over the route table and its manifest.
 test-e2e-flake-audit	bats	tests/bats/makefile_targets.bats	Validated as the retry-enabled E2E audit run that injects the flake toggles into the Playwright container.
@@ -150,7 +150,7 @@ check-security-headers	bats	tests/bats/security_headers.bats	Validated as the pr
 check-release-version	bats	tests/bats/release_train.bats	Validated as the wrapper around the release version preflight that runs before the changelog action (issue #138).
 check-release-health	bats	tests/bats/release_train.bats	Validated as the wrapper around the scheduled release-train health monitor (issue #138).
 release-tarball	bats	tests/bats/release_train.bats	Validated as the production bundle extraction followed by the versioned tarball for the GitHub Release (issue #138).
-publish-image	bats	tests/bats/release_train.bats	Validated as the production image build pushed to GHCR under the version and commit tags (issue #138).
+publish-image	bats	tests/bats/release_train.bats	Validated as the production image build pushed to GHCR under the version and commit tags, recording the pushed digest for the provenance attestation (issues #138, #136).
 test-a11y	bats	tests/bats/makefile_targets.bats	Validated as the aggregate that runs the jest-axe component gate before the Playwright a11y lane (issue #118).
 test-a11y-unit	ci	.github/workflows/a11y-testing.yml	Executed directly by the accessibility PR workflow (issue #118).
 test-a11y-e2e	ci	.github/workflows/a11y-testing.yml	Executed directly by the accessibility PR workflow against the production stack (issue #118).

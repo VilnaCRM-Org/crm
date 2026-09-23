@@ -526,6 +526,35 @@ describe('gate ratchet — set directions', () => {
     ).toEqual([]);
   });
 
+  it('guards every strictness flag the live tsconfig enables (issues #166, #136)', () => {
+    const snapshot = extract(REPO_ROOT, 'tsconfig.json', 'tsconfig-strict-flags');
+    expect(snapshot.sets['compilerOptions.enabledStrictFlags']?.items).toEqual(
+      expect.arrayContaining([
+        'strict',
+        'noUncheckedIndexedAccess',
+        'noImplicitOverride',
+        'noImplicitReturns',
+        'exactOptionalPropertyTypes',
+      ])
+    );
+  });
+
+  it('fails when exactOptionalPropertyTypes is disabled', () => {
+    const withFlag = `${JSON.stringify(
+      { compilerOptions: { strict: true, exactOptionalPropertyTypes: true } },
+      null,
+      2
+    )}\n`;
+    const withoutFlag = `${JSON.stringify({ compilerOptions: { strict: true } }, null, 2)}\n`;
+    expect(snapshotPair('tsconfig.json', 'tsconfig-strict-flags', withFlag, withoutFlag)).toEqual([
+      expect.objectContaining({
+        key: 'compilerOptions.enabledStrictFlags',
+        base: 'exactOptionalPropertyTypes',
+        rule: 'no-shrink',
+      }),
+    ]);
+  });
+
   it('ignores non-strictness compiler options that are turned off', () => {
     const base = `${JSON.stringify(
       { compilerOptions: { strict: true, skipLibCheck: true, allowJs: true } },

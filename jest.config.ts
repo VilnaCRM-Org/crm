@@ -1,24 +1,24 @@
 import type { Config } from 'jest';
 
 const { TEST_ENV } = process.env;
+const defaultRoots = ['./tests/unit'];
 const rootsMap: Record<string, string[]> = {
   server: ['./tests/apollo-server'],
   integration: ['./tests/integration'],
-  default: ['./tests/unit'],
 };
 
-const roots = rootsMap[TEST_ENV ?? ''] || rootsMap.default;
+const roots = rootsMap[TEST_ENV ?? ''] ?? defaultRoots;
 
 const testEnvironment =
   TEST_ENV === 'server' ? 'node' : '<rootDir>/tests/jsdom-fetch-environment.cjs';
 
+const defaultTestMatch = ['<rootDir>/tests/unit/**/*.test.{ts,tsx,js,jsx}'];
 const testMatchMap: Record<string, string[]> = {
   server: ['<rootDir>/tests/apollo-server/**/*.test.{ts,mts}'],
   integration: ['<rootDir>/tests/integration/**/*.integration.test.{ts,tsx}'],
-  default: ['<rootDir>/tests/unit/**/*.test.{ts,tsx,js,jsx}'],
 };
 
-const testMatch = testMatchMap[TEST_ENV ?? ''] || testMatchMap.default;
+const testMatch = testMatchMap[TEST_ENV ?? ''] ?? defaultTestMatch;
 
 const isIntegration = TEST_ENV === 'integration';
 const coverageThreshold = {

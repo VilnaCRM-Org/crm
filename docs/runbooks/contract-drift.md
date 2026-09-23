@@ -25,9 +25,11 @@ Take the bump as one pull request:
 1. Move both pins in `.env.example` to the new tag, and the tag named in `Mockoon.Dockerfile`
    with it; `make codegen-check` fails when they disagree.
 2. Run `make codegen` and commit the regenerated `src/api/generated/**`.
-3. Run `make contract-diff`. An `ERR`-level breaking change fails it; if the break is intended
-   upstream, record it in `src/api/contracts/breaking-changes-approved.txt` as a reviewed
-   diff, never as an environment-variable bypass.
+3. Run `make contract-diff`. An `ERR`-level OpenAPI breaking change or a GraphQL breaking
+   change fails it; if the break is intended upstream, record it in
+   `src/api/contracts/breaking-changes-approved.txt` (OpenAPI) or
+   `src/api/contracts/graphql-breaking-changes-approved.txt` (GraphQL) as a reviewed diff,
+   never as an environment-variable bypass.
 4. Run `make lint` and `make test-unit-all`; the browser suites will exercise the new mocks in
    CI.
 

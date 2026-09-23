@@ -1,7 +1,7 @@
 # ADR-005: Client security events leave through the observability boundary, not a second channel
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-09
 
 **Technical Story**: The single-page application produced no security signal of any kind. Issue

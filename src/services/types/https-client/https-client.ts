@@ -9,7 +9,7 @@ export type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 // idempotent method out (issue #147).
 export interface RequestConfig<R> {
   schema: ZodType<R>;
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
   headers?: Record<string, string>;
   timeoutMs?: number;
   retry?: boolean;

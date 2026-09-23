@@ -256,7 +256,13 @@ EOF
   cat > "$MAKEFILE_SANDBOX/scripts/ci/contract-diff.sh" <<'EOF'
 #!/usr/bin/env sh
 printf 'contract-diff.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
-exit 0
+exit "${CONTRACT_DIFF_STUB_STATUS:-0}"
+EOF
+
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/graphql-contract-diff.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'graphql-contract-diff.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
+exit "${GRAPHQL_CONTRACT_DIFF_STUB_STATUS:-0}"
 EOF
 
   cat > "$MAKEFILE_SANDBOX/scripts/ci/check-contract-drift.sh" <<'EOF'
@@ -302,6 +308,12 @@ printf 'check-release-health.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
 exit 0
 EOF
 
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/push-release-image.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'push-release-image.sh RELEASE_DIGEST_FILE=%s %s\n' "${RELEASE_DIGEST_FILE:-}" "$*" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
   chmod +x \
     "$MAKEFILE_SANDBOX/scripts/lint-metrics.sh" \
     "$MAKEFILE_SANDBOX/scripts/get-pr-comments.sh" \
@@ -309,6 +321,7 @@ EOF
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-lint.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-tests.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/contract-diff.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/graphql-contract-diff.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/check-contract-drift.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/lint-commit-range.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/assert-secret-scan-detects.sh" \
@@ -316,6 +329,7 @@ EOF
     "$MAKEFILE_SANDBOX/scripts/ci/check-security-headers.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/check-release-version.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/check-release-health.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/push-release-image.sh" \
     "$MAKEFILE_SANDBOX/scripts/check-env-sync.sh"
 }
 

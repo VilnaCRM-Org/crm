@@ -27,17 +27,18 @@ const UIButton = React.forwardRef<
   const linkTarget = resolveLinkTarget(to) ?? href;
   const resolvedComponent = component ?? (linkTarget ? 'a' : 'button');
   const baseButton = (
-    <Button
-      ref={ref}
-      component={resolvedComponent}
-      href={linkTarget && resolvedComponent !== 'button' ? linkTarget : undefined}
-      type={resolvedComponent === 'button' ? type : undefined}
-    >
+    <Button ref={ref} component={resolvedComponent}>
       {children}
     </Button>
   );
+  const linkAttributes = linkTarget && resolvedComponent !== 'button' ? { href: linkTarget } : {};
+  const typeAttributes = resolvedComponent === 'button' ? { type } : {};
 
-  return <ThemeProvider theme={Theme}>{React.cloneElement(baseButton, rest)}</ThemeProvider>;
+  return (
+    <ThemeProvider theme={Theme}>
+      {React.cloneElement(baseButton, { ...linkAttributes, ...typeAttributes, ...rest })}
+    </ThemeProvider>
+  );
 });
 UIButton.displayName = 'UIButton';
 export default UIButton;

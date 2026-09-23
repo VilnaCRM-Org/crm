@@ -1,25 +1,60 @@
 name: generate changelog and create release
 
+# Reusable, not push-triggered (issue #185): main verification calls this workflow from its
+# `release` job, which needs its lint and unit jobs, so a release is only ever cut from a
+# commit whose merged tree passed them. The release commit carries the changelog action's
+# default `[skip ci]`, so it does not start a verification (and a release) of its own.
 on:
-  push:
-    branches: ['main']
-    paths-ignore:
-      - 'package.json'
-      - 'CHANGELOG.md'
+  workflow_call:
+    secrets:
+      VILNACRM_APP_ID:
+        required: true
+      VILNACRM_APP_PRIVATE_KEY:
+        required: true
 
 permissions: {}
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
-
 jobs:
-  build:
+  tip:
+    name: verify main tip
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      current: ${{ steps.tip.outputs.current }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          persist-credentials: false
+
+      # main may have moved past the verified commit while lint and unit ran. The newer push is
+      # verified and released by its own run, so this one skips rather than racing it.
+      - name: Release only while main is still at the verified commit
+        id: tip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERIFIED_SHA: ${{ github.sha }}
+        run: sh scripts/ci/check-release-tip.sh
+
+  build:
+    needs: tip
+    if: ${{ needs.tip.outputs.current == 'true' }}
+    runs-on: ubuntu-latest
+    # The caller already runs one verification at a time; this keeps any second caller from
+    # aborting an in-flight release.
+    concurrency:
+      group: release-train
+      cancel-in-progress: false
     timeout-minutes: 30
     permissions:
       contents: write
       packages: write
+      # SLSA build provenance for the tarball and the image (issue #136).
+      id-token: write
+      attestations: write
 
     steps:
       - name: Verify the release App credentials are available
@@ -144,5 +179,26 @@ jobs:
         run: printf '%s' "$REGISTRY_TOKEN" | docker login ghcr.io -u "$REGISTRY_USER" --password-stdin
 
       - name: Publish the production image
+        id: publish_image
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         run: make publish-image
+
+      # Provenance runs only after the release, the tarball and the image are all published: the
+      # tag is already on the remote, so a signing outage here must not strand it without them.
+      # The digest is what `docker push` reported for the tags just pushed, so the attestation
+      # names the exact manifest rather than a tag that can move. No storage record: that needs
+      # the extra artifact-metadata permission and adds nothing to `gh attestation verify`.
+      - name: Attest the production image
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ghcr.io/vilnacrm-org/crm
+          subject-digest: ${{ steps.publish_image.outputs.digest }}
+          push-to-registry: true
+          create-storage-record: false
+
+      - name: Attest the release tarball
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: 'release/crm-dist-*.tar.gz'

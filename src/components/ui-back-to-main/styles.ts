@@ -6,7 +6,9 @@ import breakpointsTheme from '@/components/ui-breakpoints';
 const lgUp = `@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`;
 
 class BackToMainStyles {
-  public build(theme: Theme): Record<string, SxProps<Theme>> {
+  public build(
+    theme: Theme
+  ): Record<'section' | 'backButton' | 'icon' | 'backText', SxProps<Theme>> {
     return {
       section: this.section(theme),
       backButton: this.backButton(theme),

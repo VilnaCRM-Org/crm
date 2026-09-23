@@ -19,8 +19,11 @@ interface WorkflowJob {
 }
 
 interface Workflow {
+  on?: Record<string, unknown>;
   jobs?: Record<string, WorkflowJob>;
 }
+
+const LOCAL_WORKFLOW = /^\.\/\.github\/workflows\/([^/]+\.ya?ml)$/;
 
 const workflows = (): [string, Workflow][] =>
   fs
@@ -33,6 +36,9 @@ const jobsOf = (): { file: string; id: string; job: WorkflowJob }[] =>
   workflows().flatMap(([file, workflow]) =>
     Object.entries(workflow.jobs ?? {}).map(([id, job]) => ({ file, id, job }))
   );
+
+const isReusableWorkflowCall = (job: WorkflowJob): boolean =>
+  job.uses !== undefined && LOCAL_WORKFLOW.test(job.uses);
 
 const walk = (dir: string): string[] =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -47,12 +53,29 @@ describe('CI job hygiene (issue #144)', () => {
 
   it('bounds every job with timeout-minutes so a hung job cannot burn the 6-hour default', () => {
     const unbounded = jobsOf()
+      .filter(({ job }) => !isReusableWorkflowCall(job))
       .filter(
         ({ job }) => typeof job['timeout-minutes'] !== 'number' || job['timeout-minutes'] <= 0
       )
       .map(({ file, id }) => `${file}#${id}`);
 
     expect(unbounded).toEqual([]);
+  });
+
+  it('exempts only calls of an in-repo workflow_call workflow; its jobs carry the bound', () => {
+    const calls = jobsOf().filter(({ job }) => job.uses !== undefined);
+    const byFile = new Map(workflows());
+
+    expect(calls.length).toBeGreaterThan(0);
+    for (const { job } of calls) {
+      const callee = LOCAL_WORKFLOW.exec(job.uses ?? '')?.[1];
+      const workflow = callee === undefined ? undefined : byFile.get(callee);
+
+      expect(callee).toBeDefined();
+      expect(job['timeout-minutes']).toBeUndefined();
+      expect(Object.keys(workflow?.on ?? {})).toEqual(['workflow_call']);
+      expect(Object.keys(workflow?.jobs ?? {}).length).toBeGreaterThan(0);
+    }
   });
 
   it('keeps every timeout under two hours, so a bound is not a rename of the default', () => {

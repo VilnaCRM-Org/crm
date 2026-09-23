@@ -62,7 +62,7 @@ function ErrorButtons({
 }: {
   isSubmitting: boolean;
   isClosing: boolean;
-  onRetry?: () => void;
+  onRetry?: (() => void) | undefined;
   onBack: () => void;
   retryLabel: string;
   backLabel: string;

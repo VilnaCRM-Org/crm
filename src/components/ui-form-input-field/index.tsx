@@ -1,5 +1,4 @@
 import { TextField, ThemeProvider } from '@mui/material';
-import { TextFieldProps } from '@mui/material/TextField';
 import React from 'react';
 import { Controller, FieldValues } from 'react-hook-form';
 
@@ -11,7 +10,6 @@ import type {
 import theme from '@/components/ui-form-input-field/theme';
 
 function createRenderField<T extends FieldValues>(
-  sx: TextFieldProps['sx'],
   textFieldProps: ControlledFieldProps<T>['textFieldProps']
 ): (args: RenderFieldArgs<T>) => React.ReactElement {
   return function fieldView({
@@ -25,7 +23,6 @@ function createRenderField<T extends FieldValues>(
         inputRef={ref}
         error={fieldState.invalid}
         helperText={fieldState.error?.message ?? textFieldProps.helperText}
-        sx={sx}
       />
     );
   };
@@ -36,10 +33,9 @@ function ControlledField<T extends FieldValues>({
   rules,
   defaultValue,
   name,
-  sx,
   textFieldProps,
 }: ControlledFieldProps<T>): React.ReactElement {
-  const view = createRenderField<T>(sx, textFieldProps);
+  const view = createRenderField<T>(textFieldProps);
 
   if (defaultValue !== undefined) {
     return (
@@ -61,7 +57,6 @@ export default function UIFormInputField<T extends FieldValues>({
   rules,
   defaultValue,
   name,
-  sx,
   ...props
 }: CustomTextField<T>): React.ReactElement {
   return (
@@ -71,7 +66,6 @@ export default function UIFormInputField<T extends FieldValues>({
         rules={rules}
         defaultValue={defaultValue}
         name={name}
-        sx={sx}
         textFieldProps={props}
       />
     </ThemeProvider>

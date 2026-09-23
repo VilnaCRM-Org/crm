@@ -1,7 +1,7 @@
 # ADR-007: Reliability model: recoverable errors, route boundaries, and visible fallbacks
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-15
 
 **Technical Story**: The application had one reliability story, and it belonged to the auth

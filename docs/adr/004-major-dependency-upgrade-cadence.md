@@ -1,7 +1,7 @@
 # ADR-004: Major dependency upgrades arrive per lane, and coupled lanes move together
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-09
 
 **Technical Story**: Eleven direct dependencies were one to three majors behind, and Dependabot's

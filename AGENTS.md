@@ -1635,7 +1635,10 @@ build goes red. Know them before you touch a config file:
   chaining). `@typescript-eslint/no-non-null-assertion` is an error in `src/**` precisely because
   `!` silences that result instead of handling it; a cast is the same evasion.
   `noImplicitReturns` fails a function whose branches do not all return; give the missing branch
-  a real value rather than an explicit `return undefined`.
+  a real value rather than an explicit `return undefined`. `exactOptionalPropertyTypes` rejects
+  `prop: undefined` for a `prop?: T`: widen the declaration to `T | undefined` where `undefined`
+  really flows through, otherwise omit the key, and reserve a conditional spread for third-party
+  prop types — never a cast, a `!` or `@ts-expect-error`.
 - **Image hardening (issue #139)** — every registry `FROM` is digest-pinned, every image
   declares a `HEALTHCHECK` (or `HEALTHCHECK NONE` for a one-shot runner), and Bun is installed by
   `scripts/docker/install-bun.sh` against a pinned SHA256, never by piping the upstream install

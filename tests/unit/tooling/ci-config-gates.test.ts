@@ -18,6 +18,8 @@ const directivesOf = (contents: string): string => contents.replace(/^[ \t]*#.*$
 const usesRefsOf = (contents: string): string[] =>
   contents.match(/^[ \t]*-?[ \t]*uses: .*$/gm) ?? [];
 
+const LOCAL_WORKFLOW_REF = /^ {4}uses: \.\/\.github\/workflows\/[a-z-]+\.yml$/;
+
 const workflowEntries = (): [string, string][] =>
   fs
     .readdirSync(path.join(repoRoot, '.github/workflows'))
@@ -65,7 +67,17 @@ describe('workflow action-pin hygiene (issue #174)', () => {
     const refs = usesRefsOf(contents);
 
     expect(refs.length).toBeGreaterThan(0);
-    refs.forEach((ref) => expect(ref).toMatch(/uses: \S+@[0-9a-f]{40}(?: #.*)?$/));
+    refs
+      .filter((ref) => !LOCAL_WORKFLOW_REF.test(ref))
+      .forEach((ref) => expect(ref).toMatch(/uses: \S+@[0-9a-f]{40}(?: #.*)?$/));
+  });
+
+  it('exempts only in-repo reusable workflows, run from the same commit as the caller', () => {
+    const local = workflows.flatMap(([, contents]) =>
+      usesRefsOf(contents).filter((ref) => LOCAL_WORKFLOW_REF.test(ref))
+    );
+
+    expect(local).toEqual(['    uses: ./.github/workflows/autorelease.yml']);
   });
 
   it.each(workflows)('%s uses no archived or mutable-branch action', (_name, contents) => {

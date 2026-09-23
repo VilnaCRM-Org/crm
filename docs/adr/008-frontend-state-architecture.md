@@ -1,7 +1,7 @@
 # ADR-008: Frontend state architecture: server, client, and session state
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-17
 
 **Technical Story**: Three state mechanisms were in flight with no rule for which to use when.

@@ -1,9 +1,9 @@
 import type { FeatureFlagValues } from './feature-flag';
 
 export interface AppConfigValues {
-  readonly apiBaseUrl?: string;
-  readonly graphqlUrl?: string;
-  readonly flags?: FeatureFlagValues;
+  readonly apiBaseUrl?: string | undefined;
+  readonly graphqlUrl?: string | undefined;
+  readonly flags?: FeatureFlagValues | undefined;
 }
 
 export interface AppConfigReader {

@@ -1,7 +1,7 @@
 # ADR-003: Browser support matrix and polyfill strategy
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-08-13
 
 **Technical Story**: The template declared a wide production browserslist range that the build

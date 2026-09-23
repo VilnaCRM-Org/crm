@@ -6,5 +6,5 @@ export type Props = {
   isSubmitting: boolean;
   onShown?: () => void;
   onBack: () => void;
-  onRetry?: () => void;
+  onRetry?: (() => void) | undefined;
 };

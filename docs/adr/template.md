@@ -1,7 +1,7 @@
 # ADR-NNN: Short present-tense title of the decision
 
 - Status: Proposed
-- Deciders: [@handle](https://github.com/handle)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: YYYY-MM-DD
 
 **Technical Story**: One or two sentences naming the change that forced the decision, and a
