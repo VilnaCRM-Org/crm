@@ -25,7 +25,7 @@ export type SentryBeforeSend = (event: SentryEvent) => SentryEvent | null;
 export interface SentryInitOptions {
   dsn: string;
   environment?: string;
-  release?: string;
+  release?: string | undefined;
   tracesSampleRate?: number;
   sendDefaultPii?: boolean;
   beforeSend?: SentryBeforeSend;

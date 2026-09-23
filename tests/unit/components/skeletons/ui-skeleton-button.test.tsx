@@ -29,8 +29,8 @@ describe('UISkeletonButton', () => {
     expect(getSkeletonButton()).toHaveAttribute('id', 'skeleton-button');
   });
 
-  it('renders cleanly when sx is undefined', () => {
-    render(<UISkeletonButton sx={undefined} id="skeleton-button" />);
+  it('renders cleanly without an sx prop', () => {
+    render(<UISkeletonButton id="skeleton-button" />);
 
     expect(getSkeletonButton()).toHaveAttribute('id', 'skeleton-button');
   });

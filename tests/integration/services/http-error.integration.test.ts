@@ -9,12 +9,9 @@ describe('HttpError integration', () => {
   });
 
   it('still constructs when captureStackTrace is missing', () => {
-    const originalCapture = (
-      Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
-    ).captureStackTrace;
+    const originalCapture = Error.captureStackTrace;
     // Simulate environment without captureStackTrace
-    (Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }).captureStackTrace =
-      undefined;
+    Reflect.deleteProperty(Error, 'captureStackTrace');
 
     try {
       const error = new HttpError({ status: 400, message: 'Bad request', cause: 'cause' });
@@ -22,9 +19,7 @@ describe('HttpError integration', () => {
       expect(error.cause).toBe('cause');
       expect(error.stack).toBeDefined();
     } finally {
-      (
-        Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
-      ).captureStackTrace = originalCapture;
+      Error.captureStackTrace = originalCapture;
     }
   });
 });

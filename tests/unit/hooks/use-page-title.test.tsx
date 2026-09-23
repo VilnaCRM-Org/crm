@@ -16,8 +16,8 @@ type LanguageListener = () => void;
 interface MockI18n {
   language: string;
   t: (key: string) => string;
-  on?: jest.Mock;
-  off?: jest.Mock;
+  on?: jest.Mock | undefined;
+  off?: jest.Mock | undefined;
 }
 
 const SIGN_UP_KEY = 'sign_up.title';

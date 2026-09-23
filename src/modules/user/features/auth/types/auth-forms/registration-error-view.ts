@@ -2,6 +2,6 @@ export interface Props {
   resolvedErrorText: string;
   isSubmitting: boolean;
   isClosing: boolean;
-  onRetry?: () => void;
+  onRetry?: (() => void) | undefined;
   onBack: () => void;
 }

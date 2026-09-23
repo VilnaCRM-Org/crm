@@ -48,7 +48,7 @@ export default class RegistrationAPI extends BaseAPI {
   private mutateCreateUser(
     credentials: RegisterUserDto,
     options?: RequestOptions
-  ): Promise<{ data?: CreateUserMutation | null }> {
+  ): Promise<{ data?: CreateUserMutation | null | undefined }> {
     return this.apolloClient.mutate<CreateUserMutation, CreateUserMutationVariables>({
       mutation: CREATE_USER,
       variables: { input: this.toCreateUserInput(credentials) },

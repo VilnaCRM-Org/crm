@@ -1,7 +1,7 @@
 import type { TextFieldProps } from '@mui/material/TextField';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { JSX, PropsWithChildren, ReactNode } from 'react';
-import { useForm, type Mode, type RegisterOptions } from 'react-hook-form';
+import { useForm, type Control, type Mode } from 'react-hook-form';
 
 import UIFormInputField from '@/components/ui-form-input-field';
 
@@ -34,45 +34,20 @@ jest.mock('@mui/material/styles', () => {
   };
 });
 
-function FormInputFieldHarness({
-  defaultValue,
-  inputProps,
-  helperText,
-  mode,
-  rules = {},
-  sx,
-}: {
-  defaultValue?: string;
-  inputProps?: TextFieldProps['InputProps'];
-  helperText?: string;
-  mode?: Mode;
-  rules?: RegisterOptions<{ email: string }, 'email'>;
-  sx?: TextFieldProps['sx'];
-}): JSX.Element {
-  const { control } = useForm<{ email: string }>({
-    defaultValues:
-      defaultValue === undefined
-        ? undefined
-        : {
-            email: defaultValue,
-          },
-    mode,
-  });
+type EmailForm = { email: string };
 
-  return (
-    <UIFormInputField
-      autoComplete="email"
-      control={control}
-      defaultValue={defaultValue}
-      InputProps={inputProps}
-      helperText={helperText}
-      name="email"
-      placeholder="Email"
-      rules={rules}
-      sx={sx}
-      type="email"
-    />
-  );
+function FormInputFieldHarness({
+  defaultValues,
+  mode = 'onSubmit',
+  renderField,
+}: {
+  defaultValues?: EmailForm;
+  mode?: Mode;
+  renderField: (control: Control<EmailForm>) => JSX.Element;
+}): JSX.Element {
+  const { control } = useForm<EmailForm>(defaultValues ? { defaultValues, mode } : { mode });
+
+  return renderField(control);
 }
 
 describe('UIFormInputField', () => {
@@ -84,7 +59,19 @@ describe('UIFormInputField', () => {
     const endAdornment = <span>Password toggle</span>;
     const sx: TextFieldProps['sx'] = { px: 2 };
 
-    render(<FormInputFieldHarness inputProps={{ endAdornment }} sx={sx} />);
+    render(
+      <FormInputFieldHarness
+        renderField={(control) => (
+          <UIFormInputField
+            control={control}
+            name="email"
+            rules={{}}
+            InputProps={{ endAdornment }}
+            sx={sx}
+          />
+        )}
+      />
+    );
 
     expect(textFieldMock).toHaveBeenCalled();
 
@@ -99,7 +86,13 @@ describe('UIFormInputField', () => {
   });
 
   it('passes the field value through to TextField when no default is provided', () => {
-    render(<FormInputFieldHarness defaultValue={undefined} helperText="Helper text" />);
+    render(
+      <FormInputFieldHarness
+        renderField={(control) => (
+          <UIFormInputField control={control} name="email" rules={{}} helperText="Helper text" />
+        )}
+      />
+    );
 
     expect(textFieldMock).toHaveBeenCalled();
 
@@ -110,7 +103,11 @@ describe('UIFormInputField', () => {
   });
 
   it('passes undefined helperText to TextField when none is provided', () => {
-    render(<FormInputFieldHarness helperText={undefined} />);
+    render(
+      <FormInputFieldHarness
+        renderField={(control) => <UIFormInputField control={control} name="email" rules={{}} />}
+      />
+    );
 
     expect(textFieldMock).toHaveBeenCalled();
 
@@ -122,12 +119,17 @@ describe('UIFormInputField', () => {
   it('prefers the validation error message over the fallback helper text', async () => {
     render(
       <FormInputFieldHarness
-        defaultValue=""
-        helperText="Helper text"
+        defaultValues={{ email: '' }}
         mode="onBlur"
-        rules={{
-          required: 'Email is required',
-        }}
+        renderField={(control) => (
+          <UIFormInputField
+            control={control}
+            defaultValue=""
+            name="email"
+            helperText="Helper text"
+            rules={{ required: 'Email is required' }}
+          />
+        )}
       />
     );
 

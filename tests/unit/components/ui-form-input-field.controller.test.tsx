@@ -39,7 +39,6 @@ let controllerRenderParams: ControllerRenderParams = {
     onBlur: jest.fn(),
     onChange: jest.fn(),
     ref: jest.fn(),
-    value: undefined,
   },
   fieldState: {
     invalid: false,
@@ -93,7 +92,6 @@ describe('UIFormInputField controller branches', () => {
         onBlur: jest.fn(),
         onChange: jest.fn(),
         ref: jest.fn(),
-        value: undefined,
       },
       fieldState: {
         invalid: false,

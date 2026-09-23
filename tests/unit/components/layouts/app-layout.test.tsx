@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes, useNavigate } from 'react-router';
 
 import AppLayout from '@/components/layouts/app-layout';
 
-type Entry = Parameters<typeof MemoryRouter>[0]['initialEntries'];
+type Entry = NonNullable<Parameters<typeof MemoryRouter>[0]['initialEntries']>;
 
 let navigate: ReturnType<typeof useNavigate> | undefined;
 

@@ -6,7 +6,7 @@ import type { ObservabilityService } from '@/services/types/observability/observ
 
 @injectable()
 export default class ObservabilityErrorReporter implements ErrorReporter {
-  private readonly observability?: ObservabilityService;
+  private readonly observability?: ObservabilityService | undefined;
 
   // The service is optional so a reporter resolved before the DI graph is composed still reports
   // through the container-free core, which the observability root registers by value (issue #130).

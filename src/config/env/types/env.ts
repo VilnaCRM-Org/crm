@@ -1,18 +1,18 @@
 export interface Env {
-  readonly nodeEnv?: 'development' | 'production' | 'test';
-  readonly graphqlUrl?: string;
-  readonly mockoonUrl?: string;
-  readonly mainLanguage?: 'uk' | 'en';
-  readonly fallbackLanguage?: 'uk' | 'en';
-  readonly release?: string;
-  readonly sentryDsn?: string;
-  readonly sentryEnvironment?: string;
-  readonly authFailureAlertThreshold?: number;
-  readonly authFailureAlertWindowMs?: number;
-  readonly requestTimeoutMs?: number;
+  readonly nodeEnv?: 'development' | 'production' | 'test' | undefined;
+  readonly graphqlUrl?: string | undefined;
+  readonly mockoonUrl?: string | undefined;
+  readonly mainLanguage?: 'uk' | 'en' | undefined;
+  readonly fallbackLanguage?: 'uk' | 'en' | undefined;
+  readonly release?: string | undefined;
+  readonly sentryDsn?: string | undefined;
+  readonly sentryEnvironment?: string | undefined;
+  readonly authFailureAlertThreshold?: number | undefined;
+  readonly authFailureAlertWindowMs?: number | undefined;
+  readonly requestTimeoutMs?: number | undefined;
 }
 
 export interface AuthFailureAlertEnv {
-  readonly threshold?: string;
-  readonly windowMs?: string;
+  readonly threshold?: string | undefined;
+  readonly windowMs?: string | undefined;
 }

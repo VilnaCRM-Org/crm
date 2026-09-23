@@ -1126,12 +1126,14 @@ fragments, constants, factories, or a base object plus overrides — never with
 ignore/suppress directives. The same root-cause-not-suppression policy used for
 ESLint, TypeScript, and metrics applies here.
 
-### TypeScript strictness: indexed access, overrides, and implicit returns (issues #166, #136)
+### TypeScript strictness: indexed access, overrides, returns, optionals (issues #166, #136)
 
-`tsconfig.json` sets `noUncheckedIndexedAccess: true`, `noImplicitOverride: true` and
-`noImplicitReturns: true` on top of `strict`, enforced by the existing `make lint-tsc` gate in the
-`static testing` workflow. All three are in the set the gate ratchet guards (issue #188), so a
-later pull request cannot drop one without the `gate-relaxation` label.
+`tsconfig.json` sets `noUncheckedIndexedAccess: true`, `noImplicitOverride: true`,
+`noImplicitReturns: true` and `exactOptionalPropertyTypes: true` on top of `strict`, enforced by
+the existing `make lint-tsc` gate in the `static testing` workflow. `tsconfig.stryker.json`
+extends the root config, so the mutation type-checker compiles under the same flags. All four are
+in the set the gate ratchet guards (issue #188), so a later pull request cannot drop one without
+the `gate-relaxation` label.
 
 - **`noUncheckedIndexedAccess`** types every index read (`arr[i]`, `record[key]` on a
   `Record<string, T>`) as `T | undefined`. This closes the gap this file's own metrics advice
@@ -1147,10 +1149,21 @@ later pull request cannot drop one without the `gate-relaxation` label.
   before it was enabled, so it cost no source change and binds only from here on.
 - **`noPropertyAccessFromIndexSignature` is deliberately NOT enabled** — measured 367 errors (all
   `TS4111`), dominated by `process.env` dot-access in tests and configs, for no defect class.
-- **`exactOptionalPropertyTypes` is deliberately NOT enabled yet** — measured 75 errors across 45
-  files, dominated by `TS2769` overload mismatches against MUI, react-hook-form and Sentry prop
-  types where the fix is a conditional spread rather than a narrowing; it deserves its own
-  pull request with that cost weighed, not a flag flipped alongside a free one.
+- **`exactOptionalPropertyTypes`** (issue #136, section E) distinguishes an absent optional
+  property from one explicitly set to `undefined`, so `prop?: T` no longer silently accepts
+  `prop: undefined`. It was measured at 74 errors across 45 files (25 in `src/`) before it was
+  enabled and every one was fixed at the source, in this order of preference:
+  1. **Widen the declaration** to `prop?: T | undefined` in the owning type-only file when the
+     property really does receive `undefined` — a prop passed straight through from an optional
+     source, or a zod `.optional()` output. No runtime change, so no new mutant.
+  2. **Stop producing `undefined`** — omit the key, rest-spread the props that were given, or use
+     a real value the code path already treats identically (`null` for a React `ref`).
+  3. **Conditional spread** (`...(x === undefined ? {} : { x })`) only against a third-party prop
+     type that cannot be widened (MUI, react-hook-form, Sentry, Jest, Playwright), and every
+     such branch needs an assertion on both sides for the 100% mutation gate.
+
+  Never satisfy it with a cast, a `!`, `@ts-expect-error`, or by loosening a type to
+  `any`/`unknown`.
 
 `@typescript-eslint/no-non-null-assertion` is `error` for `src/**` and `warn` for `tests/**`: the
 `!` operator silences a `noUncheckedIndexedAccess` result instead of narrowing it, which is the

@@ -20,7 +20,7 @@ function headersOf(config: RequestInit): Record<string, string> {
 
 function createWithoutArrayBuffer(body: unknown): RequestInit {
   const globalWithArrayBuffer = globalThis as { ArrayBuffer?: ArrayBufferConstructor };
-  const originalArrayBuffer = globalWithArrayBuffer.ArrayBuffer;
+  const originalArrayBuffer = ArrayBuffer;
   delete globalWithArrayBuffer.ArrayBuffer;
 
   try {

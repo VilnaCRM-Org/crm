@@ -50,12 +50,8 @@ describe('ApiError classes', () => {
     });
 
     it('should construct even when captureStackTrace is unavailable', () => {
-      const originalCapture = (
-        Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
-      ).captureStackTrace;
-      (
-        Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
-      ).captureStackTrace = undefined;
+      const originalCapture = Error.captureStackTrace;
+      Reflect.deleteProperty(Error, 'captureStackTrace');
 
       try {
         const error = new ApiError({
@@ -67,9 +63,7 @@ describe('ApiError classes', () => {
         expect(error.status).toBe(400);
         expect(error.name).toBe('ApiError');
       } finally {
-        (
-          Error as unknown as { captureStackTrace?: typeof Error.captureStackTrace }
-        ).captureStackTrace = originalCapture;
+        Error.captureStackTrace = originalCapture;
       }
     });
   });

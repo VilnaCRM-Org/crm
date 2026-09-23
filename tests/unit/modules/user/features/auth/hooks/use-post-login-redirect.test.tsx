@@ -23,7 +23,7 @@ function Probe(): null {
   return null;
 }
 
-type Entry = Parameters<typeof MemoryRouter>[0]['initialEntries'];
+type Entry = NonNullable<Parameters<typeof MemoryRouter>[0]['initialEntries']>;
 
 function renderProbe(entries: Entry = ['/sign-in']): ReturnType<typeof render> {
   return render(

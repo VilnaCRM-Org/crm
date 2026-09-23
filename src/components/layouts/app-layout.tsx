@@ -25,7 +25,7 @@ export default function AppLayout(): JSX.Element {
   return (
     <Box
       component="main"
-      ref={focusMain ? focusOnce : undefined}
+      ref={focusMain ? focusOnce : null}
       tabIndex={-1}
       sx={{
         flexGrow: 1,

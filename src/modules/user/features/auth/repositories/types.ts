@@ -1,3 +1,3 @@
 export interface RequestOptions {
-  readonly signal?: AbortSignal;
+  readonly signal?: AbortSignal | undefined;
 }

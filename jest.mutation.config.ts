@@ -6,8 +6,11 @@ import base from './jest.config.ts';
 
 const requireFromConfig = createRequire(import.meta.url);
 
+const inheritedConfig: Config = { ...base };
+delete inheritedConfig.coverageThreshold;
+
 const config: Config = {
-  ...base,
+  ...inheritedConfig,
   roots: ['./tests/unit', './tests/integration'],
   testMatch: [
     '<rootDir>/tests/unit/**/*.test.{ts,tsx,js,jsx}',
@@ -27,11 +30,10 @@ const config: Config = {
   testEnvironment: requireFromConfig.resolve('./tests/jsdom-fetch-environment.cjs'),
   setupFilesAfterEnv: ['<rootDir>/tests/mutation/setup.ts'],
   transform: {
-    ...base.transform,
+    ...inheritedConfig.transform,
     '^.+\\.(ts|tsx)$': ['ts-jest', { isolatedModules: true }],
   },
   collectCoverage: false,
-  coverageThreshold: undefined,
 };
 
 export default config;

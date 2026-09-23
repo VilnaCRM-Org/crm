@@ -7,7 +7,8 @@ before proposing any change, and follow every `.claude/skills/*/SKILL.md` that m
 
 ## Stack
 
-- React 19, TypeScript (`strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`),
+- React 19, TypeScript (`strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`,
+  `noImplicitReturns`, `exactOptionalPropertyTypes`),
   Material UI v7 with Emotion, a dependency-free reactive var for client state (ADR-008),
   React Router v7 (the `react-router` package).
 - tsyringe with `reflect-metadata` for dependency injection.

@@ -13,13 +13,16 @@ import sentryConfig from './sentry-config';
 export class SentryClient {
   private readonly maxPending: number = 100;
 
-  private sdk?: SentryApi;
+  private sdk?: SentryApi | undefined;
 
   private loading: boolean = false;
 
-  private readonly pending: Array<{ error: unknown; context?: Record<string, unknown> }> = [];
+  private readonly pending: Array<{
+    error: unknown;
+    context?: Record<string, unknown> | undefined;
+  }> = [];
 
-  private pendingUser?: { value: SentryUser | null };
+  private pendingUser?: { value: SentryUser | null } | undefined;
 
   public async init(): Promise<void> {
     if (this.sdk || this.loading) return;

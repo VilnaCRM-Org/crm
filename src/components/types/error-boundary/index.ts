@@ -7,11 +7,11 @@ import type { ErrorReporter } from '@/services/types/error-reporting';
 export type FallbackLandmark = 'main' | 'region';
 
 export interface ErrorFallbackProps {
-  error?: Error;
+  error?: Error | undefined;
   recovery: RecoverableError;
   reset: () => void;
-  reload?: () => void;
-  landmark?: FallbackLandmark;
+  reload?: (() => void) | undefined;
+  landmark?: FallbackLandmark | undefined;
 }
 
 export type ErrorFallbackRenderer = (props: ErrorFallbackProps) => ReactNode;
@@ -21,12 +21,12 @@ export interface UIErrorBoundaryProps {
   surface: string;
   reporter: ErrorReporter;
   fallback?: ErrorFallbackRenderer;
-  onError?: (error: Error, info: ErrorInfo) => void;
+  onError?: ((error: Error, info: ErrorInfo) => void) | undefined;
 }
 
 export interface UIErrorBoundaryState {
-  error?: Error;
-  recovery?: RecoverableError;
+  error?: Error | undefined;
+  recovery?: RecoverableError | undefined;
   attempt: number;
 }
 

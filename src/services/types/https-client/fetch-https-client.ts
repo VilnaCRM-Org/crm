@@ -2,7 +2,7 @@ import type { RequestConfig, RequestMethod } from './https-client';
 
 interface RequestOptions {
   headers?: Record<string, string>;
-  signal?: AbortSignal;
+  signal?: AbortSignal | undefined;
 }
 
 interface RequestArgs<R> {
