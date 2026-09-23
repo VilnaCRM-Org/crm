@@ -1,7 +1,7 @@
 # ADR-006: One generated security-header baseline serves production and the dev server
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-14
 
 **Technical Story**: The production server emitted no browser security header at all — `serve.json`

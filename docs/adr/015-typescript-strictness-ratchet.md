@@ -1,7 +1,7 @@
 # ADR-015: TypeScript strictness is ratcheted flag-by-flag, gated against regression
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-23
 
 **Technical Story**: Issue [#166](https://github.com/VilnaCRM-Org/crm/issues/166) added

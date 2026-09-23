@@ -1,7 +1,7 @@
 # ADR-009: Runtime resilience: request deadlines, bounded retry, offline state, chunk recovery
 
 - Status: Approved
-- Deciders: [@RudoiDmytro](https://github.com/RudoiDmytro)
+- Deciders: [@kravalg](https://github.com/kravalg)
 - Date: 2026-09-18
 
 **Technical Story**: ADR-007 gave every failure a recoverable classification and a boundary to

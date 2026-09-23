@@ -1394,7 +1394,8 @@ and fenced blocks, so prose like "make sure the build passes" is never mistaken 
 
 **Adding an ADR:** copy [`docs/adr/template.md`](docs/adr/template.md) to
 `docs/adr/NNN-kebab-case-slug.md`, fill every required section, and add the row to
-`docs/adr/README.md`. Statuses are `Proposed`, `Approved`, `Rejected`, `Deprecated`,
+`docs/adr/README.md`. The `Deciders` line always names [@kravalg](https://github.com/kravalg),
+whoever authored the record. Statuses are `Proposed`, `Approved`, `Rejected`, `Deprecated`,
 `Superseded`. The linter also checks the template against the policy, so the skeleton and the
 required-section list can never disagree.
 
