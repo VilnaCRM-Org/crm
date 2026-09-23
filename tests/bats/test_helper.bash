@@ -302,6 +302,12 @@ printf 'check-release-health.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
 exit 0
 EOF
 
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/push-release-image.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'push-release-image.sh RELEASE_DIGEST_FILE=%s %s\n' "${RELEASE_DIGEST_FILE:-}" "$*" >> "${COMMAND_LOG:?}"
+exit 0
+EOF
+
   chmod +x \
     "$MAKEFILE_SANDBOX/scripts/lint-metrics.sh" \
     "$MAKEFILE_SANDBOX/scripts/get-pr-comments.sh" \
@@ -316,6 +322,7 @@ EOF
     "$MAKEFILE_SANDBOX/scripts/ci/check-security-headers.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/check-release-version.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/check-release-health.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/push-release-image.sh" \
     "$MAKEFILE_SANDBOX/scripts/check-env-sync.sh"
 }
 

@@ -318,11 +318,11 @@ tag, and `gh release create` publishes the release the `sbom` workflow then atta
 to. A tag ruleset targeting `v*` that restricts creation to the App and blocks update and
 deletion keeps a published tag from being moved onto other code after the fact.
 
-Artifact signing and provenance — cosign signatures for the image, SLSA attestations for the
-image and the SBOMs — are **not implemented**; issue #140 scopes them as a follow-up phase. No
-workflow in this repository publishes the image to a registry, so there is no signed image to
-verify yet, and the SBOMs attached to a release are authenticated only by the release that
-carries them.
+Build provenance is in place for the two release artifacts (issue #136): the release job attests
+the tarball and the GHCR image, by manifest digest, with SLSA provenance signed through Sigstore,
+so `gh attestation verify` ties each one to this repository's workflow and commit. The SBOMs
+attached to a release are **not** attested and are authenticated only by the release that carries
+them, and no cosign signature exists beyond the attestation.
 
 > **Outstanding prerequisite.** Both rulesets are maintainer actions. Record their IDs here once
 > they exist so drift can be checked against `gh api repos/VilnaCRM-Org/crm/rulesets`, which

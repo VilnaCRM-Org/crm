@@ -566,19 +566,32 @@ CDN delivery, rollback runbook and in-repo IaC.
 **No suppression:** satisfy the test by pinning, probing or verifying — never by moving an
 image out of the file list or reverting to the unversioned installer.
 
-### Release train (issue #138)
+### Release train (issues #138, #185, #136)
 
-`autorelease.yml` runs `make check-release-version` before the changelog action — `package.json`'s
-version must be at least as high as every `v*` tag, so the computed bump can never collide with an
-existing tag — runs the action with `git-push: false`, pushes the branch ref before the tag ref (a
-declined branch push strands nothing), creates the GitHub Release with the production bundle
-attached (`make release-tarball`) and pushes the deployable image to GHCR under the version and
-commit tags (`make publish-image`). `make check-release-health` (`release health`, daily) files or
-updates one `release-broken` issue when the newest run is red or the newest tag has no release,
-tarball or image, and closes it on recovery. Flow, versioning rules and recovery — including the
-branch-protection bypass the release App needs on `main` — live in `CONTRIBUTING.md`, "Releases
-and the changelog"; `tests/bats/release_train.bats` pins the guard, the monitor, the workflow shape
-and the make targets.
+`autorelease.yml` is a reusable workflow (`on: workflow_call`) with no trigger of its own: the
+`release` job of `main verification` calls it with `needs: [lint, unit]`, passing the two release
+App secrets by name, so a release is only ever cut from a commit whose merged tree passed
+`make lint`, `make codegen-check` and `make test-unit-all`. Its `tip` job
+(`scripts/ci/check-release-tip.sh`) first compares the tip of `main` with the verified commit and
+skips the release with a notice when `main` has moved on — the newer push is verified and released
+by its own run. The `build` job runs `make check-release-version` before the changelog action —
+`package.json`'s version must be at least as high as every `v*` tag, so the computed bump can never
+collide with an existing tag — runs the action with `git-push: false`, pushes the branch ref before
+the tag ref (a declined branch push strands nothing), creates the GitHub Release with the
+production bundle attached (`make release-tarball`), pushes the deployable image to GHCR under the
+version and commit tags (`make publish-image`, which records the pushed manifest digest through
+`scripts/ci/push-release-image.sh`), and attests both with SLSA build provenance. The release
+commit keeps the changelog action's default `[skip ci]` marker, so it starts no verification of
+its own; that is what replaced the old `paths-ignore` on `package.json` / `CHANGELOG.md`.
+`make check-release-health` (`release health`, daily) reads the `release / …` jobs of the newest
+`main verification` push run and files or updates one `release-broken` issue when one of them
+failed or the newest tag has no release, tarball or image, and closes it on recovery; a run whose
+lint or unit job failed skips the release and is left to `main-is-red`. Flow, versioning rules,
+provenance verification and recovery — including the branch-protection bypass the release App
+needs on `main` — live in `CONTRIBUTING.md`, "Releases and the changelog";
+`tests/bats/release_train.bats` pins the guards, the monitor, the image push, the workflow shape
+and the make targets, and `tests/unit/tooling/main-verification.test.ts` pins the sequencing and
+the attestation steps.
 
 ### Contract gates: semantic diff and upstream drift (issues #177, #178)
 
@@ -707,8 +720,14 @@ Add `supply-chain security / secret scan`, `supply-chain security / dependency s
 checks; until then they report but do not block. Do not add `full-tree dependency audit`,
 `attach to release` or `report a release without SBOM` — none of them runs on a pull request.
 
-**Honest scope.** Artifact signing and build provenance (cosign, SLSA) are **not** implemented;
-the issue allows them as a follow-up phase and nothing here claims them. The dependency scan
+**Honest scope.** Every release now carries SLSA build provenance (issue #136): the release
+tarball and the GHCR image — by the manifest digest `docker push` reported — are attested with
+`actions/attest-build-provenance`, signed through Sigstore with the workflow's OIDC identity, and
+the image attestation is also pushed to the registry. Verify with `gh attestation verify` (see
+`CONTRIBUTING.md`, "Releases and the changelog"). Still **not** implemented: the SBOM documents
+carry no attestation of their own, no cosign signature is made outside the attestation, no
+artifact-metadata storage record is created, and nothing at deploy time enforces verification.
+The dependency scan
 scores the manifest's production closure, an over-approximation of the browser bundle —
 tree-shaking drops code the lockfile still lists — so a finding can sit in a code path the bundle
 never loads and still block until the dependency is updated. Scheduled CodeQL was already in
@@ -883,8 +902,9 @@ the title is still checked for type, scope, subject, and length.
 `main-is-red` tracking issue via `scripts/ci/report-main-verification-failure.sh` and the next
 green run closes it, so a logical merge conflict is attributed to the merge that caused it
 instead of surfacing on an unrelated PR.
-This is detection and attribution only — sequencing `autorelease.yml` behind it belongs to
-issue #138.
+The same run also cuts the release: its `release` job calls the reusable `autorelease.yml` only
+once `lint` and `unit` succeed, and releases only while `main` is still at the verified commit
+(see "Release train"). A red run therefore releases nothing.
 
 **The merge queue re-runs the fast gates on the merge result (`#185`, phase 2).** Five
 workflows — `static testing`, `unit testing`, `bats testing`, `eslint suppressions` and

@@ -203,10 +203,12 @@ SECRET_SCAN_CONTROL_SCRIPT  = scripts/ci/assert-secret-scan-detects.sh
 # just wrote to package.json, so the release, the asset and the image tag cannot disagree.
 RELEASE_VERSION_SCRIPT      = scripts/ci/check-release-version.sh
 RELEASE_HEALTH_SCRIPT       = scripts/ci/check-release-health.sh
+RELEASE_PUSH_SCRIPT         = scripts/ci/push-release-image.sh
 RELEASE_VERSION             = $(shell node -pe 'require("./package.json").version')
 RELEASE_IMAGE               = ghcr.io/vilnacrm-org/crm
 RELEASE_DIR                 = ./release
 RELEASE_TARBALL             = $(RELEASE_DIR)/crm-dist-$(RELEASE_VERSION).tar.gz
+RELEASE_DIGEST_FILE         = $(RELEASE_DIR)/image-digest
 RELEASE_GIT_SHA             = $(shell git rev-parse --short=12 HEAD)
 # Locale-parity gate (issue #151). Pure Node over the working tree, so it runs on the host
 # like lint-lockfile and check-env-sync instead of inside the dev container.
@@ -543,12 +545,11 @@ release-tarball: build-out ## Pack the production bundle into $(RELEASE_DIR) for
 	tar -czf $(RELEASE_TARBALL) -C ./out .
 	@echo "✅ Release tarball written to $(RELEASE_TARBALL)"
 
-publish-image: ## Build the production image and push it to GHCR tagged with the package.json version and the commit (issue #138)
+publish-image: ## Build the production image, push it to GHCR under the package.json version and the commit, and record its digest (issues #138, #136)
 	docker build -t $(RELEASE_IMAGE):$(RELEASE_VERSION) -t $(RELEASE_IMAGE):sha-$(RELEASE_GIT_SHA) -f Dockerfile --target production .
-	docker push $(RELEASE_IMAGE):$(RELEASE_VERSION)
-	docker push $(RELEASE_IMAGE):sha-$(RELEASE_GIT_SHA)
+	RELEASE_DIGEST_FILE=$(RELEASE_DIGEST_FILE) sh $(RELEASE_PUSH_SCRIPT) $(RELEASE_IMAGE):$(RELEASE_VERSION) $(RELEASE_IMAGE):sha-$(RELEASE_GIT_SHA)
 
-check-release-health: ## Report a stalled release train (red autorelease, tag without release, missing tarball or image) to one tracking issue (scheduled)
+check-release-health: ## Report a stalled release train (failed release job, tag without release, missing tarball or image) to one tracking issue (scheduled)
 	sh $(RELEASE_HEALTH_SCRIPT)
 
 # Compose-file validation (issue #161). Prettier normalizes YAML but its bundled parser sets

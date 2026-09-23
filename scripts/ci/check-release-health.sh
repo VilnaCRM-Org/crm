@@ -1,14 +1,17 @@
 #!/usr/bin/env sh
-# Scheduled release-train health monitor (issue #138): the newest autorelease run on main must
-# have succeeded, and the newest v* tag must carry a GitHub release with its dist tarball and a
-# matching GHCR image. An offence files or updates one tracking issue and exits 1; a healthy
-# train closes that issue. A run still in flight defers the check; a GitHub API failure exits 1
-# without filing anything.
+# Scheduled release-train health monitor (issues #138, #185): the release jobs of the newest main
+# verification run must not have failed, and the newest v* tag must carry a GitHub release with
+# its dist tarball and a matching GHCR image. The release is a reusable workflow called by main
+# verification, so its jobs run inside that run as "<caller job> / <job>"; a run whose lint or
+# unit job failed skips them, and that red main is main-is-red's to report. An offence files or
+# updates one tracking issue and exits 1; a healthy train closes that issue. A run still in
+# flight defers the check; a GitHub API failure exits 1 without filing anything.
 #
 # Inputs (env):
 #   GH_REPO                       owner/name                        (required)
 #   RELEASE_HEALTH_LABEL          label keying the tracking issue   (default release-broken)
-#   RELEASE_WORKFLOW              release workflow file             (default autorelease.yml)
+#   RELEASE_WORKFLOW              workflow that runs the release    (default main-verification.yml)
+#   RELEASE_JOB                   name of the calling release job   (default release)
 #   RELEASE_ASSET_PREFIX          tarball name prefix               (default crm-dist-)
 #   RELEASE_IMAGE_NAME            GHCR container package name       (default crm)
 #   RELEASE_HEALTH_BODY_FILE      issue body path                   (default reports/release-health/issue-body.md)
@@ -17,7 +20,8 @@ set -eu
 
 : "${GH_REPO:?GH_REPO is required}"
 RELEASE_HEALTH_LABEL="${RELEASE_HEALTH_LABEL:-release-broken}"
-RELEASE_WORKFLOW="${RELEASE_WORKFLOW:-autorelease.yml}"
+RELEASE_WORKFLOW="${RELEASE_WORKFLOW:-main-verification.yml}"
+RELEASE_JOB="${RELEASE_JOB:-release}"
 RELEASE_ASSET_PREFIX="${RELEASE_ASSET_PREFIX:-crm-dist-}"
 RELEASE_IMAGE_NAME="${RELEASE_IMAGE_NAME:-crm}"
 BODY_FILE="${RELEASE_HEALTH_BODY_FILE:-reports/release-health/issue-body.md}"
@@ -35,16 +39,16 @@ offend() {
 "
 }
 
-RUN_JSON="$(gh run list --workflow "$RELEASE_WORKFLOW" --branch main --limit 1 \
-  --json status,conclusion,url,headSha \
-  --jq '.[0] | select(. != null) | "\(.status) \(.conclusion) \(.headSha) \(.url)"')" \
+RUN_JSON="$(gh run list --workflow "$RELEASE_WORKFLOW" --branch main --event push --limit 1 \
+  --json databaseId,status,url,headSha \
+  --jq '.[0] | select(. != null) | "\(.databaseId) \(.status) \(.headSha) \(.url)"')" \
   || fail "could not list the runs of $RELEASE_WORKFLOW"
 
 RUN_SHA=''
 if [ -n "$RUN_JSON" ]; then
-  RUN_STATUS="${RUN_JSON%% *}"
+  RUN_ID="${RUN_JSON%% *}"
   rest="${RUN_JSON#* }"
-  RUN_CONCLUSION="${rest%% *}"
+  RUN_STATUS="${rest%% *}"
   rest="${rest#* }"
   RUN_SHA="${rest%% *}"
   RUN_URL_LATEST="${rest#* }"
@@ -53,8 +57,17 @@ if [ -n "$RUN_JSON" ]; then
       "$RELEASE_WORKFLOW" "$RUN_SHA" "$RUN_STATUS" "$RUN_URL_LATEST"
     exit 0
   fi
-  if [ "$RUN_CONCLUSION" != 'success' ]; then
-    offend "the newest \`$RELEASE_WORKFLOW\` run on \`main\` concluded **$RUN_CONCLUSION** at \`$RUN_SHA\`: $RUN_URL_LATEST"
+  JOBS="$(gh run view "$RUN_ID" --json jobs --jq '.jobs[] | "\(.conclusion)\t\(.name)"')" \
+    || fail "could not list the jobs of $RELEASE_WORKFLOW run $RUN_ID"
+  RELEASE_JOBS="$(printf '%s\n' "$JOBS" | awk -F'\t' -v job="$RELEASE_JOB" \
+    '$2 == job || index($2, job " / ") == 1')"
+  if [ -z "$RELEASE_JOBS" ]; then
+    offend "the newest \`$RELEASE_WORKFLOW\` run on \`main\` at \`$RUN_SHA\` has no \`$RELEASE_JOB\` job: $RUN_URL_LATEST"
+  fi
+  FAILED_JOBS="$(printf '%s\n' "$RELEASE_JOBS" \
+    | awk -F'\t' 'NF && $1 != "success" && $1 != "skipped" { printf "%s%s (%s)", sep, $2, $1; sep = ", " }')"
+  if [ -n "$FAILED_JOBS" ]; then
+    offend "the release in the newest \`$RELEASE_WORKFLOW\` run on \`main\` did not succeed at \`$RUN_SHA\`: $FAILED_JOBS: $RUN_URL_LATEST"
   fi
 else
   printf 'release-health: no %s run on main yet\n' "$RELEASE_WORKFLOW"

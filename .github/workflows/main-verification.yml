@@ -60,6 +60,22 @@ jobs:
       - name: Run unit tests
         run: make test-unit-all
 
+  # Issue #185: the release is cut only from a commit whose merged tree passed lint and unit.
+  # A job that calls a reusable workflow takes no timeout-minutes; every job inside
+  # autorelease.yml declares its own. Secrets are passed by name, never inherited.
+  release:
+    name: release
+    needs: [lint, unit]
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/autorelease.yml
+    secrets:
+      VILNACRM_APP_ID: ${{ secrets.VILNACRM_APP_ID }}
+      VILNACRM_APP_PRIVATE_KEY: ${{ secrets.VILNACRM_APP_PRIVATE_KEY }}
+
   report:
     name: report a red main
     needs: [lint, unit]

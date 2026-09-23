@@ -363,8 +363,8 @@ every PR, and no threshold (Stryker, metrics, jscpd, dependency-cruiser, Lightho
 **Cancel superseded runs.** Every workflow declares a `concurrency` group keyed on the workflow and
 the PR (or ref) with `cancel-in-progress: true`, so pushing a new commit aborts the previous run for
 that PR instead of letting it finish. The release and sandbox-lifecycle workflows
-(`autorelease`, `sandbox-creating`, `sandbox-deleting`) use `cancel-in-progress: false` so an
-in-flight release or sandbox trigger is never aborted.
+(`autorelease`, on its `build` job, `sandbox-creating`, `sandbox-deleting`) use
+`cancel-in-progress: false` so an in-flight release or sandbox trigger is never aborted.
 
 **Mutation testing is sharded and incremental, not slowed.** Stryker mutates the whole logic layer
 plus module UI — repositories, `src/services/**`, auth stores/state, validation policies, and the
@@ -625,8 +625,9 @@ green run closes it, so the signal never outlives the breakage. Treat an open on
 fix `main` before merging further pull requests, because their checks are running against a base
 that is already broken.
 
-This run **detects**; it does not yet gate the release. `autorelease.yml` fires on the same
-push, so sequencing the release behind a green verification remains a follow-up to issue #138.
+The same run **gates the release** (issue #185). Its `release` job calls the reusable
+`autorelease.yml` only after `lint` and `unit` succeed, so a red run releases nothing and a
+release is only ever cut from a verified tree; see "Releases and the changelog".
 
 The preventive half is the merge queue. `static testing`, `unit testing`, `bats testing`,
 `eslint suppressions` and `dependency cruiser` also trigger on `merge_group`, so once a
@@ -640,7 +641,13 @@ queue".
 
 ### Releases and the changelog
 
-Every push to `main` runs `generate changelog and create release` (`autorelease.yml`). It reads
+Every push to `main` runs `main verification`, and once its `lint` and `unit` jobs pass, its
+`release` job calls `generate changelog and create release` (`autorelease.yml`, a reusable
+workflow with no trigger of its own; the jobs show up in the run as `release / verify main tip`
+and `release / build`). The release first checks that `main` still points at the commit that was
+verified. If a newer push has landed meanwhile it skips with a notice, because the newer push is
+verified and released by its own run; releasing here would either be refused as a
+non-fast-forward push or cut a release from a tree nothing verified. It then reads
 the conventional commits since the newest `v*` tag, bumps `version` in `package.json`, prepends
 the section to `CHANGELOG.md`, commits both, tags the commit `v<version>`, and creates the GitHub
 Release with the production bundle attached as `crm-dist-<version>.tar.gz`. The same run pushes
@@ -648,6 +655,27 @@ the deployable image to `ghcr.io/vilnacrm-org/crm:<version>` and `:sha-<commit>`
 artifact can always be traced back to its release, its commit, and — through commitlint's
 `(#N)` scope — its issues. The `sbom` workflow then attaches the CycloneDX documents on the
 `release: published` event.
+
+The release commit (`chore(release): <version> [skip ci]`, the changelog action's default message
+and `skip-ci` input) starts no workflow, so it is neither verified nor released again. That marker
+replaced the old `paths-ignore` on `package.json` and `CHANGELOG.md`, with one behaviour change: a
+merged pull request that touches only those two files is now verified and, if its commits call
+for a bump, released like any other push.
+
+**Build provenance (issue #136).** The same job attests the tarball and the image with SLSA build
+provenance (`actions/attest-build-provenance`, signed through Sigstore with the workflow's OIDC
+identity). The image is attested by the manifest digest `docker push` reported for the tags it
+just pushed, which `make publish-image` records in `release/image-digest`, and that attestation is
+also pushed to GHCR. Verify a downloaded tarball or a pulled image before deploying it:
+
+```bash
+gh attestation verify crm-dist-<version>.tar.gz --repo VilnaCRM-Org/crm
+gh attestation verify oci://ghcr.io/vilnacrm-org/crm:<version> --repo VilnaCRM-Org/crm
+```
+
+A pass proves the artifact was built by this repository's `main verification` workflow from the
+commit the attestation names. The SBOM documents are not attested, and nothing enforces
+verification at deploy time; that is the consumer's step.
 
 **Versioning rules.** The bump follows the action's `angular` preset over the commits since the
 last tag: `feat` is a minor, `fix`/`perf`/`revert` are a patch, and a `!` in the header or a
@@ -657,14 +685,18 @@ skipped without a release (`skip-on-empty`). `package.json` is the version file 
 the train relies on is simple: **its `version` is at least as high as every existing `v*` tag**,
 so the next bump can never land on a tag that already exists.
 
-**Guards, in order.** `make check-release-version` runs before the changelog action and fails
+**Guards, in order.** The tip guard (`scripts/ci/check-release-tip.sh`) skips the release when
+`main` has moved past the verified commit, and fails closed when it cannot read the tip.
+`make check-release-version` runs before the changelog action and fails
 loudly when `package.json` sits below the highest tag, with the remedy in the message. The action
 runs with `git-push: false`; the workflow pushes the branch ref first and the tag ref only after,
 so a declined branch push leaves nothing on the remote. The workflow hands the tarball
-to `gh release create`, and the health monitor detects a release that lacks it. `make check-release-health`
-(`release health`, daily) files or updates one `release-broken` issue when the newest run is red,
-the newest tag has no release, or the release lacks its tarball or GHCR image, and closes it when
-the train recovers.
+to `gh release create`, and the health monitor detects a release that lacks it.
+`make check-release-health` (`release health`, daily) reads the `release / …` jobs of the newest
+`main verification` push run and files or updates one `release-broken` issue when one of them
+failed, the newest tag has no release, or the release lacks its tarball or GHCR image, and closes
+it when the train recovers. A run whose `lint` or `unit` job failed skips the release; that is
+`main-is-red`'s signal, not this one's.
 
 **Recovery.**
 
@@ -680,11 +712,36 @@ the train recovers.
   and the release App cannot be an administrator, so the fix is a repository setting: move `main`
   to a **ruleset** whose `bypass_actors` lists the VilnaCRM release App with `bypass_mode: always`
   (or add it to the classic rule's bypass list where the plan allows), then re-run the failed
-  workflow. Record the change in
+  jobs of that `main verification` run. Use **Re-run failed jobs**, not **Re-run all jobs**: the
+  passed `release / verify main tip` job keeps its decision, while a fresh one would skip the
+  release as soon as anything else has landed on `main`. Record the change in
   [`docs/governance/branch-protection.md`](docs/governance/branch-protection.md).
-- Missing tarball or image on an existing release — re-run the `Pack the release tarball` /
-  `Publish the production image` steps by re-running the failed job; both read the version from
-  `package.json` at that commit, so a re-run is idempotent.
+- A failure **after** the tag push (`Pack the release tarball`, `Create Release`, the GHCR login,
+  `Publish the production image`, or an `Attest …` step) cannot be recovered by re-running the
+  job. The re-run checks out the verified commit again, where `package.json` still holds the old
+  version while `v<version>` already exists, so `make check-release-version` stops it before the
+  changelog action. Only a failure before the tag push — the tip read, the version guard,
+  `GH006` — is recovered the usual way above. Finish a stranded tag by hand from a checkout of
+  the tag itself, whose `package.json` carries the new version, publishing only what is missing:
+
+  ```bash
+  git fetch --tags && git checkout v<version>
+  make release-tarball
+  # no release yet: body from the v<version> section of CHANGELOG.md
+  gh release create v<version> release/crm-dist-<version>.tar.gz --title v<version> --notes-file <notes>
+  # release exists, tarball missing
+  gh release upload v<version> release/crm-dist-<version>.tar.gz
+  # image missing: `docker login ghcr.io` with a token that can write packages first
+  make publish-image
+  ```
+
+  Provenance cannot be recovered this way: an attestation is signed with the workflow's OIDC
+  identity, and no workflow re-attests an existing tag, so a hand-published or unattested
+  `v<version>` fails `gh attestation verify`. Say so in its release notes; the next release is
+  attested normally. Because the attest steps run only after the release, the tarball and the
+  image are all published, a signing outage leaves a complete but unattested release rather than
+  a bare tag.
+
 - The `release-broken` issue stays open while any offence persists and is closed by the next green
   daily run; do not close it by hand.
 
