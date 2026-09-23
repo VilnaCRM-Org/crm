@@ -601,8 +601,13 @@ fresh. Two gates close what it cannot see; both are documented in full in
 
 - **`make contract-diff`** (`contract testing`, every PR) runs digest-pinned
   `oasdiff breaking --fail-on ERR` when `OPENAPI_SPEC_VERSION` moves against the base branch,
-  and fast-exits 0 when it does not. Acknowledged upstream breaks live in
-  `src/api/contracts/breaking-changes-approved.txt` — a reviewed diff, never an env-var bypass.
+  and digest-pinned `graphql-inspector diff` (breaking changes fail; dangerous ones are only
+  reported) when `GRAPHQL_SCHEMA_VERSION` moves; each half fast-exits 0 when its pin does not,
+  and a fetch or tool failure is a red run. Acknowledged upstream breaks live in
+  `src/api/contracts/breaking-changes-approved.txt` (oasdiff) and
+  `src/api/contracts/graphql-breaking-changes-approved.txt` (exact whole-line
+  graphql-inspector messages; `#` lines and blank lines approve nothing) — a reviewed diff,
+  never an env-var bypass.
 - **`make check-contract-drift`** (`contract drift`, weekly) reports when the pins fall behind
   user-service. It takes the latest upstream version as the maximum of `releases/latest` and the
   highest semver tag, because `releases/latest` is the most recently _published_ release rather
@@ -766,7 +771,7 @@ make lint-licenses  # dependency license SPDX-allowlist gate over the production
 make lint-docs      # documentation + ADR drift gates (see below)
 make check-browser-support # browser matrix / polyfill drift gate (see below)
 make check-adr-drift # ADR-required gate for architecture changes (CI/PR-only, see below)
-make contract-diff  # semantic OpenAPI breaking-change gate on pin bumps (see above)
+make contract-diff  # semantic OpenAPI + GraphQL breaking-change gates on pin bumps (see above)
 make check-e2e-route-coverage # route-coverage inventory gate (see above)
 make check-auth-seed-gate # preloaded-auth seed bundle scan (Docker; not part of `make lint`)
 make lint-security-headers # serve.json drift against config/security-headers.json (in `make lint`)

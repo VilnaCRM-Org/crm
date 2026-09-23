@@ -256,7 +256,13 @@ EOF
   cat > "$MAKEFILE_SANDBOX/scripts/ci/contract-diff.sh" <<'EOF'
 #!/usr/bin/env sh
 printf 'contract-diff.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
-exit 0
+exit "${CONTRACT_DIFF_STUB_STATUS:-0}"
+EOF
+
+  cat > "$MAKEFILE_SANDBOX/scripts/ci/graphql-contract-diff.sh" <<'EOF'
+#!/usr/bin/env sh
+printf 'graphql-contract-diff.sh %s\n' "$*" >> "${COMMAND_LOG:?}"
+exit "${GRAPHQL_CONTRACT_DIFF_STUB_STATUS:-0}"
 EOF
 
   cat > "$MAKEFILE_SANDBOX/scripts/ci/check-contract-drift.sh" <<'EOF'
@@ -315,6 +321,7 @@ EOF
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-lint.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/run-parallel-tests.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/contract-diff.sh" \
+    "$MAKEFILE_SANDBOX/scripts/ci/graphql-contract-diff.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/check-contract-drift.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/lint-commit-range.sh" \
     "$MAKEFILE_SANDBOX/scripts/ci/assert-secret-scan-detects.sh" \

@@ -278,8 +278,9 @@ be proven by the pull request that changes it — it is covered by Bats fixtures
 repository activity.
 
 The one contract check that _does_ run on every pull request is `contract testing`
-(`make contract-diff`). It fast-exits when `OPENAPI_SPEC_VERSION` is unchanged and runs
-`oasdiff breaking` when you bump it; see [`src/api/contracts/README.md`](src/api/contracts/README.md).
+(`make contract-diff`). It fast-exits when `OPENAPI_SPEC_VERSION` and `GRAPHQL_SCHEMA_VERSION`
+are unchanged, and runs `oasdiff breaking` or `graphql-inspector diff` on the pin you bump; see
+[`src/api/contracts/README.md`](src/api/contracts/README.md).
 
 ### Architecture decisions and documentation drift
 
@@ -473,7 +474,8 @@ checks:
 - `security testing / security headers` (issue #113; the header baseline is proven against the
   deployable image, so the check only protects a merge once it is required)
 - `contract testing / OpenAPI breaking-change gate` (the job in `contract-testing.yml` — issue
-  #177; `contract drift` and `nightly flake audit` must not be added, because neither has a
+  #177; it also runs the GraphQL schema diff from issue #178 phase 2 under the same name;
+  `contract drift` and `nightly flake audit` must not be added, because neither has a
   `pull_request` trigger)
 - `supply-chain security / secret scan`
 - `supply-chain security / dependency scan`

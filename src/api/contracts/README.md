@@ -74,8 +74,8 @@ pinned versions, regenerates, and fails on any diff under `src/api/generated/**`
 2. Run `make codegen` and commit the regenerated `src/api/generated/**`.
 3. `make codegen-check` must pass. A deliberate, temporary skew must be documented here and
    opted in with `ALLOW_CONTRACT_VERSION_SKEW=1`.
-4. `make contract-diff` must pass — the semantic gate below classifies what the bump actually
-   changed.
+4. `make contract-diff` must pass — the semantic gates below classify what the bump actually
+   changed, for the OpenAPI spec and the GraphQL schema alike.
 
 ## Semantic breaking-change gate (issue #177)
 
@@ -105,10 +105,43 @@ An upstream break that this client is verified unaffected by is recorded in
 Each entry needs a comment naming the change and why it is safe here, and stale entries are
 pruned on the next bump.
 
-**Scope: OpenAPI only.** The GraphQL half of the same bump — whose version
-`scripts/check-contract-versions.sh` asserts equal — still has no semantic diff. That follow-up
-(a pinned `graphql-inspector diff`) is tracked in issue #178's phase 2 and is deliberately out
-of scope here.
+### The GraphQL half (issues #178 phase 2, #136 E)
+
+The same `make contract-diff` target, and the same `contract testing` job, also runs
+`scripts/ci/graphql-contract-diff.sh` against `GRAPHQL_SCHEMA_VERSION`, the pin this client's
+operations are generated from. The GraphQL half runs even when the OpenAPI half fails, and the
+target and the job fail when either half fails, so a bump that moves both pins reports every
+unapproved break in one run. It follows the OpenAPI half step for step:
+
+- fast-exits 0 when the pin is unchanged, with no fetch and no container;
+- otherwise fetches both SDLs from `GRAPHQL_SCHEMA_URL` (each side with its own URL template,
+  bounded in time and size) and runs digest-pinned `graphql-inspector diff`
+  (`kamilkisiela/graphql-inspector:v3.4.0`), appending its full report to the job summary;
+- fails on any **breaking** change that is not approved. **Dangerous** and safe changes appear
+  in the report and never fail the gate;
+- fails closed on a fetch failure, an empty or oversized SDL, a base-ref failure, or an
+  inspector run that ends without a readable verdict. graphql-inspector exits 1 for its own
+  crashes as well as for breaking changes, so the script only accepts a run whose
+  `Detected N breaking changes` line agrees with the number of breaking lines it listed.
+
+The image is pinned to v3.4.0 on purpose: the published v4.0.0 and `master` images ship
+workspace links to `dist/` folders with no `package.json`, so every command dies resolving its
+loaders before it reads a schema. Move the pin, tag and digest together, only to an image
+whose `graphql-inspector diff` runs.
+
+Approved GraphQL breaks live in
+[`graphql-breaking-changes-approved.txt`](graphql-breaking-changes-approved.txt). Its format is
+deliberately different from the oasdiff file, and unambiguous:
+
+- one breaking-change message per line, copied exactly as graphql-inspector prints it after the
+  cross mark — for example `Field emptyResponse was removed from object type Query`;
+- matching is exact and whole-line (`grep -Fx`, trailing whitespace ignored), so a prefix, a
+  substring or a paraphrase approves nothing;
+- lines starting with `#` and blank lines are dropped before matching, so the file can document
+  itself and a comment-only file approves nothing.
+
+As with OpenAPI, each entry needs a comment naming the upstream change and why this client is
+unaffected, and entries are pruned on the next bump.
 
 ## Upstream drift monitor (issue #178)
 

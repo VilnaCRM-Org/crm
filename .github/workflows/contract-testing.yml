@@ -31,3 +31,11 @@ jobs:
         run: sh scripts/ci/contract-diff.sh
         env:
           CONTRACT_BASE_REF: origin/${{ github.base_ref }}
+
+      # Same job, so the required check name stays unchanged while it gains the GraphQL half.
+      # Runs even when the OpenAPI half fails, so one push reports the verdict of both pins.
+      - name: Diff the GraphQL schema on pin bumps
+        if: ${{ !cancelled() }}
+        run: sh scripts/ci/graphql-contract-diff.sh
+        env:
+          CONTRACT_BASE_REF: origin/${{ github.base_ref }}

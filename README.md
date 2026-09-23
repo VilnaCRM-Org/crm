@@ -465,7 +465,7 @@ a row names a workflow that does not exist.
 | `bundle size`              | Gzip budgets per entrypoint and chunk                  |
 | `memory leak testing`      | memlab scenarios, fail-closed on a leak                |
 | `load testing`             | k6 latency, error-rate and check-pass thresholds       |
-| `contract testing`         | Semantic OpenAPI breaking-change gate on a pin bump    |
+| `contract testing`         | Semantic OpenAPI and GraphQL breaking-change gates     |
 | `dependency cruiser`       | Architecture boundary rules                            |
 | `rust-code-analysis`       | Complexity, size, Halstead and maintainability metrics |
 | `eslint-suppressions`      | No inline lint suppressions in the tree                |

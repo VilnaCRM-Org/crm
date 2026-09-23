@@ -684,8 +684,12 @@ verify-scaffold: ensure-dev ## Generate a throwaway module, run the static gates
 codegen: ensure-dev ## Regenerate typed API contract artifacts (src/api/generated) from the pinned upstream specs
 	$(EXEC_DEV_TTYLESS) sh scripts/codegen.sh
 
-contract-diff: ## Fail an OPENAPI_SPEC_VERSION bump that introduces ERR-level breaking changes (issue #177)
-	sh scripts/ci/contract-diff.sh
+# Both halves always run so one bump reports every unapproved break; either failing fails the target.
+contract-diff: ## Fail an OPENAPI_SPEC_VERSION or GRAPHQL_SCHEMA_VERSION bump that introduces breaking changes (issues #177, #178)
+	status=0; \
+	sh scripts/ci/contract-diff.sh || status=1; \
+	sh scripts/ci/graphql-contract-diff.sh || status=1; \
+	exit $$status
 
 check-contract-drift: ## Report when the pinned upstream contract versions fall behind user-service (issue #178)
 	sh scripts/ci/check-contract-drift.sh

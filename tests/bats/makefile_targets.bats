@@ -252,6 +252,41 @@ check-flakes|node scripts/ci/check-flakes.ts|
 EOF
 }
 
+# Both halves share the one `contract testing` job, so the target must run the OpenAPI and the
+# GraphQL gate. The anchored counts keep the GraphQL script's name from satisfying the OpenAPI
+# assertion as a substring.
+@test "contract-diff runs both the OpenAPI and the GraphQL gate" {
+  run_make_target contract-diff
+  [ "$status" -eq 0 ]
+
+  run grep -c '^contract-diff.sh' "$COMMAND_LOG"
+  [ "$output" -eq 1 ]
+
+  run grep -c '^graphql-contract-diff.sh' "$COMMAND_LOG"
+  [ "$output" -eq 1 ]
+}
+
+# A bump moves both pins, so a failing OpenAPI half must not hide the GraphQL verdict; the
+# target still fails when either half fails.
+@test "contract-diff still runs the GraphQL gate when the OpenAPI gate fails" {
+  CONTRACT_DIFF_STUB_STATUS=1 run_make_target contract-diff
+  [ "$status" -ne 0 ]
+
+  run grep -c '^contract-diff.sh' "$COMMAND_LOG"
+  [ "$output" -eq 1 ]
+
+  run grep -c '^graphql-contract-diff.sh' "$COMMAND_LOG"
+  [ "$output" -eq 1 ]
+}
+
+@test "contract-diff fails when only the GraphQL gate fails" {
+  GRAPHQL_CONTRACT_DIFF_STUB_STATUS=1 run_make_target contract-diff
+  [ "$status" -ne 0 ]
+
+  run grep -c '^contract-diff.sh' "$COMMAND_LOG"
+  [ "$output" -eq 1 ]
+}
+
 @test "container-backed helper targets fail fast when required names are missing" {
   while IFS='|' read -r target required_var; do
     [ -n "$target" ] || continue

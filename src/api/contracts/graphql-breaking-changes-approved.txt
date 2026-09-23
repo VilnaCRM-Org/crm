@@ -1,0 +1,22 @@
+# Approved upstream GraphQL breaking changes (issues #178 phase 2, #136 E).
+#
+# scripts/ci/graphql-contract-diff.sh reads this file when a GRAPHQL_SCHEMA_VERSION bump is
+# diffed with graphql-inspector. An entry here means: "upstream broke the schema, and this
+# client is verified unaffected." It is a reviewed acknowledgement, never a bypass -- the gate
+# has no env-var escape hatch, so every acknowledgement is visible in the pull request.
+#
+# Format: one breaking-change message per line, copied exactly as graphql-inspector prints it
+# after the cross mark, with no prefix and no trailing text, for example:
+#
+#   Field emptyResponse was removed from object type Query
+#
+# Matching is exact and whole-line (grep -Fx). A line that is a substring, a prefix, or a
+# paraphrase of a finding approves nothing, so an entry cannot quietly cover a different break.
+# Lines starting with '#' and blank lines are dropped before matching, which is why the
+# example above -- indented inside a comment -- is inert: a comment-only file approves nothing.
+#
+# Every entry MUST be preceded by a comment naming the upstream change and why it is safe for
+# this client, and entries MUST be pruned on the next pin bump so a stale acknowledgement can
+# never silently cover a new break.
+#
+# No approved breaking changes today.
