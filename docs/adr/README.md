@@ -16,6 +16,7 @@ This index lists the Architecture Decision Records for this repository.
 - [ADR-012: Contract-driven API mocks: Mockoon for REST, Apollo Server for GraphQL](./012-contract-driven-api-mocks.md)
 - [ADR-013: Bun manages dependencies and runs tooling; Node stays the runtime](./013-bun-package-manager.md)
 - [ADR-014: Code health is gated by a committed metrics policy and a zero-clone duplication gate](./014-code-health-metric-gates.md)
+- [ADR-015: TypeScript strictness is ratcheted flag-by-flag, gated against regression](./015-typescript-strictness-ratchet.md)
 
 ## Writing a new ADR
 
