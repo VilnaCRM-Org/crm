@@ -16,7 +16,13 @@ interface WorkflowJob {
   'timeout-minutes'?: number;
   if?: string;
   uses?: string;
-  steps?: { uses?: string; with?: Record<string, unknown> }[];
+  permissions?: Record<string, string>;
+  steps?: {
+    uses?: string;
+    with?: Record<string, unknown>;
+    env?: Record<string, string>;
+    run?: string;
+  }[];
 }
 
 interface Workflow {
@@ -142,10 +148,25 @@ describe('sandbox creation approval', () => {
 
   it('starts a sandbox only for a labeled open same-repository PR', () => {
     expect(sandboxWorkflow?.on?.pull_request).toEqual({ types: ['labeled'] });
-    expect(sandboxDeploy?.if).toContain("github.event.label.name == 'deploy-sandbox'");
-    expect(sandboxDeploy?.if).toContain("github.event.pull_request.state == 'open'");
-    expect(sandboxDeploy?.if).toContain(
-      'github.event.pull_request.head.repo.full_name == github.repository'
+    expect(sandboxDeploy?.if?.replace(/\s+/g, ' ').trim()).toBe(
+      "github.event.label.name == 'deploy-sandbox' && " +
+        "github.event.pull_request.state == 'open' && " +
+        'github.event.pull_request.head.repo.full_name == github.repository'
     );
+  });
+
+  it('rechecks current PR eligibility immediately before launching the pipeline', () => {
+    const startStep = sandboxDeploy?.steps?.find((step) =>
+      step.run?.includes('aws codepipeline start-pipeline-execution')
+    );
+    const run = startStep?.run ?? '';
+
+    expect(sandboxDeploy?.permissions).toEqual({ 'id-token': 'write', 'pull-requests': 'read' });
+    expect(startStep?.env?.GH_TOKEN).toBe('${{ github.token }}');
+    expect(run).toContain('gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}"');
+    expect(run).toContain('.state == "open"');
+    expect(run).toContain('.head.repo.full_name == $repo');
+    expect(run).toContain('any(.labels[]?; .name == "deploy-sandbox")');
+    expect(run.indexOf('gh api')).toBeLessThan(run.indexOf('aws codepipeline'));
   });
 });
