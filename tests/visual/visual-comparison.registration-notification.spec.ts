@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Page } from '@playwright/test';
 
 import {
   REGISTRATION_URL,
@@ -13,37 +13,27 @@ import fillInput from '../e2e/utils/fill-input';
 
 import { currentLanguage, screenSizes } from './constants';
 import getRegistrationNotificationSnapshotName from './get-registration-notification-snapshot-name';
+import stabilizePage from './stabilize-page';
 
-async function disableAnimations(page: import('@playwright/test').Page): Promise<void> {
-  await page.addInitScript(() => {
-    if (document.getElementById('__pw-disable-animations')) return;
-    const style = document.createElement('style');
-    style.id = '__pw-disable-animations';
-    style.textContent = `
-      *, *::before, *::after {
-        transition: none !important;
-        animation: none !important;
-        caret-color: transparent !important;
-      }`;
-    document.head.appendChild(style);
-  });
+async function submitRegistration(page: Page): Promise<void> {
+  await stabilizePage(page, REGISTRATION_URL);
+
+  const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
+  await fillInput(initialsInput, userData.fullName);
+  await fillInput(emailInput, userData.email);
+  await fillInput(passwordInput, userData.password);
+  await signupButton.click();
+  await expect(signupButton).toBeDisabled();
 }
 
 test.describe.parallel('Registration Notification Visual Tests', () => {
   for (const screen of screenSizes) {
     test(`[notification-success] ${screen.name}`, async ({ page }) => {
       await page.setViewportSize({ width: screen.width, height: screen.height });
-      await disableAnimations(page);
       await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
 
       await page.route(REGISTRATION_API_URL, successResponse);
-      await page.goto(REGISTRATION_URL, { waitUntil: 'domcontentloaded' });
-
-      const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
-      await fillInput(initialsInput, userData.fullName);
-      await fillInput(emailInput, userData.email);
-      await fillInput(passwordInput, userData.password);
-      await signupButton.click();
+      await submitRegistration(page);
 
       await expect(page.locator(`text=${successNotificationTitle}`)).toBeVisible();
       await page.waitForLoadState('networkidle');
@@ -61,20 +51,13 @@ test.describe.parallel('Registration Notification Visual Tests', () => {
 
     test(`[notification-error] ${screen.name}`, async ({ page }) => {
       await page.setViewportSize({ width: screen.width, height: screen.height });
-      await disableAnimations(page);
       await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: 'light' });
 
       await page.route(
         REGISTRATION_API_URL,
         serverErrorResponse(400, { message: 'EMAIL_ALREADY_EXISTS' })
       );
-      await page.goto(REGISTRATION_URL, { waitUntil: 'domcontentloaded' });
-
-      const { initialsInput, emailInput, passwordInput, signupButton } = getFormFields(page);
-      await fillInput(initialsInput, userData.fullName);
-      await fillInput(emailInput, userData.email);
-      await fillInput(passwordInput, userData.password);
-      await signupButton.click();
+      await submitRegistration(page);
 
       await expect(page.locator('[role="alert"]')).toBeVisible();
       await page.waitForLoadState('networkidle');
