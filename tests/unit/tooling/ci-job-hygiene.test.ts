@@ -14,6 +14,7 @@ const readRepoFile = (relativePath: string): string =>
 
 interface WorkflowJob {
   'timeout-minutes'?: number;
+  if?: string;
   uses?: string;
   steps?: { uses?: string; with?: Record<string, unknown> }[];
 }
@@ -132,5 +133,19 @@ describe('CI job hygiene (issue #144)', () => {
       .map((file) => path.relative(repoRoot, file));
 
     expect(offenders).toEqual([]);
+  });
+});
+
+describe('sandbox creation approval', () => {
+  const sandboxWorkflow = workflows().find(([file]) => file === 'sandbox-creating.yml')?.[1];
+  const sandboxDeploy = sandboxWorkflow?.jobs?.deploy;
+
+  it('starts a sandbox only for a labeled open same-repository PR', () => {
+    expect(sandboxWorkflow?.on?.pull_request).toEqual({ types: ['labeled'] });
+    expect(sandboxDeploy?.if).toContain("github.event.label.name == 'deploy-sandbox'");
+    expect(sandboxDeploy?.if).toContain("github.event.pull_request.state == 'open'");
+    expect(sandboxDeploy?.if).toContain(
+      'github.event.pull_request.head.repo.full_name == github.repository'
+    );
   });
 });

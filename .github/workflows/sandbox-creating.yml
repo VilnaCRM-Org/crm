@@ -2,7 +2,8 @@ name: sandbox
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    # A maintainer applies deploy-sandbox when this PR needs an ephemeral test environment.
+    types: [labeled]
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
@@ -18,7 +19,10 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event.label.name == 'deploy-sandbox' &&
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
