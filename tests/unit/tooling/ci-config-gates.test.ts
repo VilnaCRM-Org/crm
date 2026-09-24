@@ -19,12 +19,6 @@ const usesRefsOf = (contents: string): string[] =>
   contents.match(/^[ \t]*-?[ \t]*uses: .*$/gm) ?? [];
 
 const LOCAL_WORKFLOW_REF = /^ {4}uses: \.\/\.github\/workflows\/[a-z-]+\.yml$/;
-const LOCAL_ACTION_REF = /^ {8}uses: \.\/\.github\/actions\/[a-z-]+$/;
-
-const actionEntries = (): [string, string][] =>
-  fs
-    .readdirSync(path.join(repoRoot, '.github/actions'))
-    .map((entry) => [entry, readRepoFile(path.join('.github/actions', entry, 'action.yml'))]);
 
 const workflowEntries = (): [string, string][] =>
   fs
@@ -45,9 +39,8 @@ describe('workflow-security gate (issue #174)', () => {
     // workflow-level `permissions: write-all` in a single-job workflow.
     expect(makefile).toMatch(/^ZIZMOR_ARGS\s+=.*--persona pedantic/m);
     expect(makefile).toMatch(
-      /^\tdocker run .*\$\(ZIZMOR_IMAGE\) \$\(ZIZMOR_ARGS\) \.github\/workflows\/ \S+$/m
+      /^\tdocker run .*\$\(ZIZMOR_IMAGE\) \$\(ZIZMOR_ARGS\) \.github\/workflows\/$/m
     );
-    expect(makefile).toContain('$(ZIZMOR_ARGS) .github/workflows/ .github/actions/*/\n');
   });
 
   it('runs the gate through the Makefile target so the pin cannot fork from the local run', () => {
@@ -75,29 +68,8 @@ describe('workflow action-pin hygiene (issue #174)', () => {
 
     expect(refs.length).toBeGreaterThan(0);
     refs
-      .filter((ref) => !LOCAL_WORKFLOW_REF.test(ref) && !LOCAL_ACTION_REF.test(ref))
+      .filter((ref) => !LOCAL_WORKFLOW_REF.test(ref))
       .forEach((ref) => expect(ref).toMatch(/uses: \S+@[0-9a-f]{40}(?: #.*)?$/));
-  });
-
-  it.each(actionEntries())(
-    'composite action %s pins every action to a full commit SHA',
-    (_name, contents) => {
-      const refs = usesRefsOf(contents);
-
-      expect(refs.length).toBeGreaterThan(0);
-      refs.forEach((ref) => expect(ref).toMatch(/uses: \S+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/));
-    }
-  );
-
-  it('exempts only in-repo composite actions that exist, run from the same commit', () => {
-    const local = workflows.flatMap(([, contents]) =>
-      usesRefsOf(contents).filter((ref) => LOCAL_ACTION_REF.test(ref))
-    );
-    const names = new Set(actionEntries().map(([name]) => name));
-
-    expect(local.length).toBeGreaterThan(0);
-    local.forEach((ref) => expect(names.has(ref.replace(/^.*\/actions\//, ''))).toBe(true));
-    expect(LOCAL_ACTION_REF.test('        uses: ./.github/actions/dev-image@main')).toBe(false);
   });
 
   it('exempts only in-repo reusable workflows, run from the same commit as the caller', () => {

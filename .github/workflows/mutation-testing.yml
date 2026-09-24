@@ -65,9 +65,6 @@ jobs:
           restore-keys: |
             mutation-incremental-shard-${{ matrix.index }}-of16-${{ hashFiles('stryker.config.mjs', 'stryker.shard.config.mjs', 'jest.mutation.config.ts', 'tsconfig.stryker.json', 'tsconfig.json', 'tsconfig.paths.json', 'scripts/ci/mutation-scope.mjs', 'package.json', 'bun.lock', 'Dockerfile', 'docker-compose.yml', 'Makefile', '.github/workflows/mutation-testing.yml') }}-
 
-      - name: Build dev image through the layer cache
-        uses: ./.github/actions/dev-image
-
       - name: Start dev container
         run: make start-dev
 
@@ -125,9 +122,6 @@ jobs:
           pattern: mutation-shard-*
           path: reports/mutation
           merge-multiple: true
-
-      - name: Build dev image through the layer cache
-        uses: ./.github/actions/dev-image
 
       - name: Start dev container
         run: make start-dev

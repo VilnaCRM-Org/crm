@@ -15,6 +15,7 @@ wait-for-dev	ci	.github/workflows/static-testing.yml	Exercised transitively by P
 wait-for-mockoon	ci	.github/workflows/static-testing.yml	Exercised transitively by PR workflows that call `make start`.
 wait-for-apollo	ci	.github/workflows/static-testing.yml	Exercised transitively by PR workflows that call `make start`.
 build	bats	tests/bats/makefile_targets.bats	Validated for both the default Docker build path and the DIND branch.
+build-dev-chromium	ci	.github/workflows/performance-testing.yml	Executed directly by the performance workflow.
 ensure-chromium	ci	.github/workflows/performance-testing.yml	Exercised transitively by the Lighthouse PR workflow targets.
 build-analyze	bats	tests/bats/makefile_targets.bats	Validated as the ANALYZE=true production build wrapper.
 check-auth-seed-gate	bats	tests/bats/makefile_targets.bats	Validated as the two-build preloaded-auth seed scan: a deployable bundle and an opted-in bundle.
@@ -123,7 +124,7 @@ test-e2e-flake-audit	bats	tests/bats/makefile_targets.bats	Validated as the retr
 test-visual-flake-audit	bats	tests/bats/makefile_targets.bats	Validated as the retry-enabled visual audit run that injects the flake toggles into the Playwright container.
 check-flakes	bats	tests/bats/flake_budget.bats	Validated as the FLAKE_BUDGET enforcement over a Playwright JSON report.
 print-flake-env	bats	tests/bats/makefile_targets.bats	Validated as the in-container echo proving the flake toggles crossed the compose boundary.
-lint-zizmor	bats	tests/bats/makefile_targets.bats	Validated as the Docker-based zizmor workflow-security gate, asserting the digest-pinned image, the medium severity threshold, and the audit scope of .github/workflows plus the .github/actions composite actions.
+lint-zizmor	bats	tests/bats/makefile_targets.bats	Validated as the Docker-based zizmor workflow-security gate, asserting the digest-pinned image, the medium severity threshold, and the .github/workflows audit scope.
 scan-secrets	bats	tests/bats/supply_chain_targets.bats	Validated as the Docker-based gitleaks history scan followed by its seeded-credential positive control (issue #140).
 scan-dependencies	bats	tests/bats/supply_chain_targets.bats	Validated as the Docker-based Trivy scan of the production dependency closure in bun.lock (issue #140).
 scan-image	bats	tests/bats/supply_chain_targets.bats	Validated as the production image build followed by the Docker-based Trivy image scan (issue #140).

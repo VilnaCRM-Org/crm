@@ -78,9 +78,6 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
-      - name: Build dev image through the layer cache
-        uses: ./.github/actions/dev-image
-
       # Only the dev image is needed: the gate builds its own production image and runs the
       # scanner with `docker compose run`, so mockoon/apollo readiness is pure flake surface.
       - name: Start container
