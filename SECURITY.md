@@ -137,10 +137,11 @@ request. The complete workflow inventory is in [README.md](README.md#ci-checks).
   provenance attestation signed through Sigstore; verify with
   `gh attestation verify <tarball> --repo VilnaCRM-Org/crm` or
   `gh attestation verify oci://ghcr.io/vilnacrm-org/crm:<version> --repo VilnaCRM-Org/crm`.
-- **Release signatures** — `autorelease.yml` and `sbom.yml`, every release (issue #136). The
-  image (by digest), the tarball and both SBOM documents carry a keyless cosign signature for the
-  workflow's GitHub OIDC identity; verify with `cosign verify` / `cosign verify-blob --bundle`
-  as `CONTRIBUTING.md`, "Releases and the changelog", shows.
+- **Release signatures (pending)** — `autorelease.yml` and `sbom.yml`, intended for every release
+  once the release App bypass is configured (issue #136). The image (by digest), the tarball and
+  both SBOM documents will carry a keyless cosign signature for the workflow's GitHub OIDC
+  identity; verify with `cosign verify` / `cosign verify-blob --bundle` as `CONTRIBUTING.md`,
+  "Releases and the changelog", shows.
 
 Not yet in place: the SBOMs are signed but not attested to the artifact they describe, and no
 deployment enforces provenance or signature verification.
