@@ -94,7 +94,7 @@ lint-eslint|bun x eslint .|
 lint-tsc|bun x tsc|
 lint-md|bun x markdownlint -i CHANGELOG.md -i test-results/**/*.md -i playwright-report/data/**/*.md **/*.md|
 lint-dup|bun x jscpd|
-lint-zizmor|ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d --no-online-audits --min-severity medium --persona pedantic --format plain .github/workflows/|
+lint-zizmor|ghcr.io/zizmorcore/zizmor:1.28.0@sha256:8e6b3e4fb74d1aa5d23e83ea369f386c66eced0d1fb944d32cd8b2aac100b00d --no-online-audits --min-severity medium --persona pedantic --format plain .github/workflows/|.github/workflows/ .github/actions/
 lint-compose|docker compose -f docker-compose.yml config -q|docker compose -f docker-compose.test.yml config -q|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml config -q|docker compose -f docker-compose.memory-leak.yml config -q
 check-env-sync|check-env-sync.sh|
 check-browser-support|docker compose exec -T dev bun scripts/ci/check-browser-support.ts|

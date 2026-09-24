@@ -34,8 +34,10 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
-      - name: Build dev image with Chromium
-        run: INSTALL_CHROMIUM=true make build-dev-chromium
+      - name: Build dev image with Chromium through the layer cache
+        uses: ./.github/actions/dev-image
+        with:
+          install-chromium: 'true'
 
       - name: Start container
         run: INSTALL_CHROMIUM=true make start

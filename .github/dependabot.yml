@@ -22,8 +22,11 @@ updates:
           - 'minor'
           - 'patch'
 
+  # `/` covers only `.github/workflows/`; the composite actions pin their own SHAs (issue #136).
   - package-ecosystem: 'github-actions'
-    directory: '/'
+    directories:
+      - '/'
+      - '/.github/actions/*'
     schedule:
       interval: 'weekly'
       day: 'monday'

@@ -39,6 +39,9 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      - name: Build dev image through the layer cache
+        uses: ./.github/actions/dev-image
+
       - name: Start dev container
         run: make start-dev
 
@@ -105,6 +108,9 @@ jobs:
           pattern: mutation-shard-*
           path: reports/mutation
           merge-multiple: true
+
+      - name: Build dev image through the layer cache
+        uses: ./.github/actions/dev-image
 
       - name: Start dev container
         run: make start-dev

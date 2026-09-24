@@ -520,10 +520,54 @@ held for five consecutive frames, replacing the two 3-second sleeps in `stabiliz
 
 **What the issue asked for and this repository cannot use as written:** an `actions/cache` step
 for the Bun cache does not apply — no workflow runs `bun install` on the runner; every install
-happens inside the Docker build that `make start` performs (measured at ~2:15 of a ~4:00 unit job).
-The lever there is Docker layer caching for the dev image, a separate, measured change. Browser
+happens inside the Docker build of the dev image (measured at ~2:15 of a ~4:00 unit job). Browser
 layers are already a digest-pinned image (`docker-compose.test.yml`), and the flaky-test controls
 landed as the nightly flake audit (issue #186).
+
+**Dev-image layer cache (issue #136).** That lever is Docker layer caching, and it is what every
+job that needs the dev image now does — the ones that start the dev stack and the ones that reach
+the `dev` service through `docker compose run` (`make test-bats` in `bats testing`,
+`make check-auth-seed-gate`). The composite action
+[`.github/actions/dev-image`](.github/actions/dev-image/action.yml) builds the compose `dev`
+service image (Dockerfile target `base`) with `docker/build-push-action` against a `type=gha`
+cache, loads it under the tag compose resolves for the service (`<project>-dev`, read from
+`docker compose config`), and exports `DEV_IMAGE_PREBUILT=1`; the Makefile then drops `--build`
+from the `up` in `make start`, `make start-dev` and CI `make ci-setup`, so compose reuses that
+image instead of rebuilding it (`compose run` never passes `--build` and only builds a missing
+image, so it reuses it too). Without the variable — every local run — the commands are
+unchanged. `bun install` sits behind `COPY package.json bun.lock*`, so only a lockfile or
+toolchain change invalidates it.
+
+- **Scopes.** One per variant: `dev-image`, and `dev-image-chromium` for the Lighthouse jobs
+  (`install-chromium: 'true'`, which replaced the uncached `build-dev-chromium` target). Export is
+  `mode=max` with `ignore-error=true`, so a cache-service error or a rate limit from the 16
+  mutation shards costs a warm cache, never a red build.
+- **Who reads and writes what.** GitHub scopes Actions caches by ref: a pull-request or
+  merge-queue run reads its own ref and `main` and writes only to its own ref, so nothing a pull
+  request writes reaches `main` or another pull request. The push-to-`main` runs of
+  `main verification` and `mutation testing`, and the weekly `mutation testing (scheduled full)`,
+  are what keep the `main` `dev-image` entry warm.
+  `dev-image-chromium` has no `main` writer — `performance testing` runs on pull requests only —
+  so the first Lighthouse run of every pull request is cold and pays the export, and only later
+  pushes and re-runs of that same pull request read it back.
+- **Cold vs warm.** A cold run (new lockfile, or an entry GitHub evicted after 7 days unused or
+  under the 10 GB repository limit) builds as before and exports the layers; a warm run imports
+  them and skips `bun install`. Both pay for loading the image into the runner's Docker; that
+  cost and the net saving can only be measured on CI runs, and no figure is recorded here yet.
+- **Never on a publishing job.** No job that holds a `contents`, `packages`, `id-token` or
+  `attestations` write grant uses the action, and `autorelease.yml` / `sbom.yml` never do — a
+  restored cache feeding a published artifact is the cache-poisoning shape zizmor flags.
+  [`tests/unit/tooling/dev-image-cache.test.ts`](tests/unit/tooling/dev-image-cache.test.ts)
+  dry-runs (`make -n`) every `make` target a workflow step invokes and fails the build on a job
+  whose target brings up or runs the compose `dev` service without the action (or runs it out of
+  order), on a publishing job that uses it, and on an action whose tag, target, build args or
+  cache scopes drift from `docker-compose.yml`. `make lint-zizmor` audits `.github/actions/*/`
+  alongside the workflows.
+
+Still built by compose without a layer cache, as before: mockoon and apollo in the `make start`
+jobs, and the `prod` / test-harness image of `docker-compose.test.yml` (e2e, visual, the
+accessibility browser lane, memory-leak and the nightly flake audit), which is built `FROM base`
+and so repeats the same `bun install` uncached — a follow-up, not covered here.
 
 ### Image hardening: digest pins, health signals, verified Bun (issue #139, item 4)
 

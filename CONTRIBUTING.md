@@ -195,7 +195,8 @@ merge-blocking once the check is in the branch-protection required list (see the
 section for which ones belong there).
 
 - **`workflow security / zizmor`** (pull-request gate) runs
-  [zizmor](https://github.com/zizmorcore/zizmor) over `.github/workflows/`. Reproduce it locally
+  [zizmor](https://github.com/zizmorcore/zizmor) over `.github/workflows/` and the composite
+  actions in `.github/actions/*/`. Reproduce it locally
   with `make lint-zizmor` (Docker, digest-pinned; deliberately not part of `make lint`, so it stays
   independent of the dev container). It fails on medium-or-higher findings: an action pinned to a
   mutable tag or branch instead of a reviewed release commit, an over-broad `permissions` block, a
@@ -366,6 +367,20 @@ the PR (or ref) with `cancel-in-progress: true`, so pushing a new commit aborts 
 that PR instead of letting it finish. The release and sandbox-lifecycle workflows
 (`autorelease`, on its `build` job, `sandbox-creating`, `sandbox-deleting`) use
 `cancel-in-progress: false` so an in-flight release or sandbox trigger is never aborted.
+
+**The dev image comes from a layer cache.** Every job that runs `make start`, `make start-dev`,
+`make ci-setup` or another target that runs the compose `dev` service (`make test-bats`,
+`make check-auth-seed-gate`) first runs the
+[`.github/actions/dev-image`](.github/actions/dev-image/action.yml) composite action, which builds
+the compose `dev` image against a `type=gha` BuildKit cache and sets `DEV_IMAGE_PREBUILT=1` so the
+Makefile's compose `up` skips `--build`. A warm run skips the `bun install` layer; a lockfile
+change rebuilds it once and re-exports it. Pull-request runs read `main`'s cache and write only to
+their own ref. The Chromium variant the Lighthouse jobs build has no `main` writer, so it is cold
+on each pull request's first run and warm only for later pushes and re-runs of that pull request.
+Locally nothing sets the variable, so `make start` builds exactly as before. A new job that needs
+the dev image without the action fails
+`tests/unit/tooling/dev-image-cache.test.ts`; see "Dev-image layer cache" in `CLAUDE.md` for the
+scopes, eviction and the publishing-job exclusion.
 
 **Mutation testing is sharded and incremental, not slowed.** Stryker mutates the whole logic layer
 plus module UI — repositories, `src/services/**`, auth stores/state, validation policies, and the
@@ -755,7 +770,9 @@ requests on a weekly schedule for three ecosystems:
 - `bun` — the `package.json` JavaScript dependencies. The Bun ecosystem updates the manifest
   and `bun.lock` together in one pull request, so the `bun install --frozen-lockfile` step
   used across the Docker images and CI stays green.
-- `github-actions` — the SHA-pinned actions in `.github/workflows/`.
+- `github-actions` — the SHA-pinned actions in `.github/workflows/` and in the composite
+  actions under `.github/actions/*` (listed as a second directory, since `/` covers workflows
+  only).
 - `docker` — the digest-pinned `FROM` lines of every Dockerfile (issue #139), in `/` and in
   `tests/load`. A digest pin is a floor, not a freeze: this lane is what raises it when a tag
   is re-pushed. A Node major arriving here fails

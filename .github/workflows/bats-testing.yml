@@ -24,5 +24,8 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Build dev image through the layer cache
+        uses: ./.github/actions/dev-image
+
       - name: Run Bats shell coverage
         run: make test-bats BATS_FORMATTER=tap

@@ -14,6 +14,7 @@ on:
       - '.dockerignore'
       - 'docker-compose.yml'
       - 'Makefile'
+      - '.github/actions/dev-image/**'
 
 permissions: {}
 
@@ -32,6 +33,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           persist-credentials: false
+
+      - name: Build dev image through the layer cache
+        uses: ./.github/actions/dev-image
 
       - name: Start dev container
         run: make start-dev

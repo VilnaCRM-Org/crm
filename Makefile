@@ -241,12 +241,16 @@ BUNX                        = $(BUN) x
 BUN_DIND                    = bun
 BUNX_DIND                   = $(BUN_DIND) x
 EXEC_CMD                    = $(EXEC_DEV_TTYLESS)
-DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev mockoon apollo && make wait-for-dev && make wait-for-mockoon && make wait-for-apollo
+DEV_UP_FLAGS                = -d --build
+ifneq ($(filter 1 true TRUE,$(DEV_IMAGE_PREBUILT)),)
+DEV_UP_FLAGS                = -d
+endif
+DEV_CMD                     = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(DEV_UP_FLAGS) dev mockoon apollo && make wait-for-dev && make wait-for-mockoon && make wait-for-apollo
 BUILD_CMD                   = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev $(RSBUILD_BUILD)
 CI_SETUP_SERVICES           = dev mockoon
 CI_SETUP_UP_FLAGS           = -d --no-recreate
 ifneq ($(filter 1 true TRUE,$(CI)),)
-CI_SETUP_UP_FLAGS           = -d --build
+CI_SETUP_UP_FLAGS           = $(DEV_UP_FLAGS)
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
 CI_LINT_TARGETS             = check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers
@@ -326,7 +330,7 @@ start: create-network ## Start the frontend dev server and Mockoon API mock
 	$(DEV_CMD)
 
 start-dev: create-network ## Build and start only the dev service (no mockoon/apollo, no readiness wait) for container-exec jobs like mutation sharding
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d --build dev
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(DEV_UP_FLAGS) dev
 
 ci-setup: create-network ## Prepare the shared dev environment for CI-oriented checks
 	$(CI_SETUP_CMD)
@@ -432,9 +436,6 @@ else
 	$(BUILD_CMD)
 endif
 
-build-dev-chromium:
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) build --build-arg INSTALL_CHROMIUM=$(INSTALL_CHROMIUM) dev
-
 ensure-chromium: ## Ensure Chromium is installed in the dev container for Lighthouse runs
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up -d dev
 	@$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) exec -T dev sh -lc '\
@@ -510,7 +511,7 @@ lint-actionlint: ## Lint the GitHub Actions workflows with actionlint (requires 
 # Standalone by design, not part of `make lint`: needing no dev container is what lets the
 # `workflow security` job report in seconds and still report when the compose stack cannot start.
 lint-zizmor: ## Audit the workflows for security regressions with zizmor (Docker; standalone)
-	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ZIZMOR_IMAGE) $(ZIZMOR_ARGS) .github/workflows/
+	docker run --rm -v "$(CURDIR):/repo" -w /repo $(ZIZMOR_IMAGE) $(ZIZMOR_ARGS) .github/workflows/ .github/actions/*/
 
 scan-secrets: ## Scan the git history for committed secrets with gitleaks, then prove the scanner still detects one (Docker; standalone)
 	docker run --rm -v "$(CURDIR):/repo:ro" -w /repo $(GITLEAKS_IMAGE) $(GITLEAKS_ARGS) .

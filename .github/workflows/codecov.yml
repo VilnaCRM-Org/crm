@@ -29,6 +29,9 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      - name: Build dev image through the layer cache
+        uses: ./.github/actions/dev-image
+
       - name: Start container
         run: make start
 
