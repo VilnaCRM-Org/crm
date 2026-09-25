@@ -10,7 +10,7 @@ This template is used for all VilnaCRM microservices.
 
 ## Tech Stack
 
-- **Frontend**: React 19, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
+- **Frontend**: React 19, TypeScript, Material-UI v9, Emotion (CSS-in-JS)
 - **State Management**: three categories with one primitive each (ADR-008, issue #110) —
   server state behind repositories over Apollo Client / `HttpsClient`, client/UI state in the
   dependency-free reactive var from `src/lib/state/` read through `useReactiveVar`, and the
@@ -2626,7 +2626,7 @@ replaces.
      nested in a conditional — see "Test liveness (issue #167)" above.
 
 5. **Submit-button loader**: The auth submit button (shared `UIForm` →
-   `SubmitControls`) shows its busy state with MUI v7's native `Button`
+   `SubmitControls`) shows its busy state with MUI v9's native `Button`
    `loading` + `loadingPosition="center"` + `loadingIndicator={<SubmitSpinner />}`.
    While submitting, the button goes natively `disabled` into the grey `#E1E7EA`
    disabled state (matching the Figma design), its text label is removed

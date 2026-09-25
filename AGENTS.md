@@ -60,7 +60,7 @@ for deeper, technique-level guidance. The UI/design/motion/a11y groups come from
 [ui-skills.com](https://www.ui-skills.com/skills/); the rest were installed earlier.
 
 **Stack note:** several UI skills assume Tailwind CSS or shadcn/ui. This project uses
-Material UI v7 + Emotion, so translate their utility-class / token guidance to MUI's `sx`,
+Material UI v9 + Emotion, so translate their utility-class / token guidance to MUI's `sx`,
 `styled()`, and theme — keep the design principles, adapt the implementation.
 
 - **Build & style UI** (creating or beautifying components, pages, dashboards):
