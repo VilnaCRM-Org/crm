@@ -1343,6 +1343,72 @@ pattern to star height 1 (alternation instead of an optional group; `split()` + 
 per-segment regex instead of a nested quantifier) — never by dropping the rule or
 suppressing the finding.
 
+### Code-health bug patterns (issue #136)
+
+`eslint-plugin-sonarjs` (pinned exact, a devDependency, so `make lint-licenses` does not score
+its LGPL-3.0 licence) adds a curated set of **bug-pattern** rules to `src/**/*.{ts,tsx}` —
+same scope and same `make lint` → `lint-eslint` path as the #173 block, all at `error`
+(a `warn` never fails `eslint .`, the issue-#164 lesson). Each rule flags code that does
+not do what it says; none of them fires on `src/` today, so the set is a regression guard,
+not a backlog. The list lives in `sonarjsBugPatternRules` in `eslint.config.mjs`.
+
+- **Conditions and branches:** `no-all-duplicated-branches`, `no-duplicated-branches`,
+  `no-identical-conditions`, `no-identical-expressions`, `no-gratuitous-expressions`,
+  `no-inverted-boolean-check`, `no-redundant-boolean`, `prefer-single-boolean-return`,
+  `no-same-line-conditional`, `no-redundant-jump`, `comma-or-logical-or-case`,
+  `bitwise-operators`.
+- **Values and calls:** `no-element-overwrite`, `no-empty-collection`, `no-unused-collection`,
+  `no-collection-size-mischeck`, `no-ignored-return`, `no-use-of-empty-return-value`,
+  `no-misleading-array-reverse`, `array-callback-without-return`, `reduce-initial-value`,
+  `no-dead-store`, `no-redundant-assignments`, `no-useless-increment`, `non-existent-operator`,
+  `for-loop-increment-sign`, `no-unthrown-error`, `constructor-for-side-effects`,
+  `no-try-promise`.
+- **React:** `jsx-no-leaked-render`, `no-hook-setter-in-body`, `no-useless-react-setstate`.
+- **Regex correctness** (not ReDoS, which #173 owns): `anchor-precedence`, `existing-groups`,
+  `empty-string-repetition`, `no-empty-alternatives`.
+
+**Why not `recommended`.** The preset enables 231 of the plugin's 295 rules. Measured over
+`src/` it reported 79 findings from 10 rules, and every one was excluded for a stated reason:
+
+- `prefer-read-only-props` (55): style — `Readonly<>` on every component's props, no defect
+  class.
+- `deprecation` (9): migration debt (React 19 `MutableRefObject`, MUI `InputProps`, Apollo
+  error fields) that would also red an unrelated dependency bump.
+- `super-linear-regex` (3): ReDoS belongs to the frozen #173 set (`detect-unsafe-regex`).
+- `different-types-comparison` (3): flags runtime guards the static types deny; the "fix"
+  deletes a guard the tests exercise.
+- `function-return-type` (3): a component returning an element or `null` is idiomatic React.
+- `todo-tag` (2): process, not a defect.
+- `no-invariant-returns` (1): fires on the deliberate echo API of `ReactiveVarState.write`.
+- `pseudo-random` (1): backoff jitter is not a security context.
+- `concise-regex`, `redundant-type-aliases` (1 each): style.
+
+Zero-finding rules are excluded when another gate owns the concern: `cognitive-complexity`
+(`make lint-metrics`, rust-code-analysis), `no-duplicate-string` and `no-identical-functions`
+(`make lint-dup`; jscpd's 75-token bar is calibrated to keep incidental similarity from forcing
+abstractions), `slow-regex` (#173), `no-extra-arguments` (TypeScript's TS2554 already fails it,
+and it misfired on a reassigned `let` callback in `tests/`), and `no-alphabetical-sort` (it
+demands `localeCompare`, a locale-dependent order the #155 formatting boundary keeps out of
+logic). `tests/**` is out of scope, like #173: its quality is the test-liveness gate below, and
+the adopted rules measured six findings there — four identical ternary branches in one mock
+written to consume its parameters, and two in-place `.sort()` calls in tooling tests.
+
+**Gate integrity.** The rules are silent on `src/`, so a dead rule would look identical to a
+clean tree. [`tests/unit/tooling/sonarjs-gate.test.ts`](tests/unit/tooling/sonarjs-gate.test.ts)
+runs [`scripts/ci/sonarjs-gate-fixtures.mjs`](scripts/ci/sonarjs-gate-fixtures.mjs), which
+derives the adopted universe from the flat config, asserts every `src` scope resolves it at
+`error` and tests and stories resolve none of it, keeps the excluded rules off, and lints a
+must-fail and a corrected snippet per rule through the resolved plugin and parser against a
+throwaway TypeScript program (the typed rules need one). The fixture set must equal the
+universe and this section must name every adopted rule, so adding a rule means a fixture pair
+and an entry here in the same change. `tests/unit/config/eslint-policy.test.ts` pins a slice.
+
+**No suppression:** fix the finding at the source — merge the duplicated branch, use the
+ignored return value, throw the constructed error. Never `eslint-disable` (the
+`eslint-suppressions` workflow rejects it), never narrow the scope, and never drop a rule
+to clear a finding; a rule that turns out noisy is removed by a reviewed change to this section,
+the list and its fixtures together.
+
 ### Test liveness (issue #167)
 
 The Jest 100/100/100/100 `coverageThreshold` measures execution, not verification: a test
