@@ -76,7 +76,7 @@ RUN bun x rsbuild build && \
 
 
 # -------- rust-code-analysis Stage --------
-FROM public.ecr.aws/docker/library/debian:12-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251 AS rca
+FROM public.ecr.aws/docker/library/debian:13-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS rca
 
 ARG RCA_VERSION=0.0.25
 ARG RCA_SHA256=9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894
