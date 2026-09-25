@@ -400,7 +400,7 @@ mutants into one type-check pass and re-splits any group whose error cannot be p
 mutant. `tests/unit/tooling/mutation-checker-config.test.ts` fails the build if any of these
 regresses; never relax them to buy wall-clock.
 
-`mutation-testing.yml` fans `make test-mutation-shard` across a 16-way matrix; each shard mutates a
+`mutation-testing.yml` fans `make test-mutation-shard` across a 24-way matrix; each shard mutates a
 deterministic, disjoint slice and uploads a per-shard JSON report. The slice is bin-packed by
 file size (heaviest file to the lightest shard), not sliced round-robin, because the run costs
 whatever its slowest shard costs — round-robin left one shard carrying 1.54x the mean load.
@@ -420,7 +420,7 @@ against a lean dev-only container (`make start-dev`) because mutation tests mock
 need neither Mockoon nor Apollo.
 
 `mutation-testing-full.yml` runs weekly (`schedule:` + `workflow_dispatch`) as the authoritative
-pass: the same 16-way matrix, but **cold and from scratch** so the score can't inherit stale reused
+pass: the same 24-way matrix, but **cold and from scratch** so the score can't inherit stale reused
 results, and it saves a fresh incremental cache for PRs. Tune its cadence (e.g. nightly
 `0 3 * * *`) against CI cost. It is not a pull-request required check.
 
@@ -444,10 +444,10 @@ Run it locally either way (heavy — prefer letting CI shard it):
 make test-mutation                                   # full, gated, single-process run
 # or reproduce the sharded CI flow against a running dev service:
 make start-dev
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=16  # repeat for 1..15
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=24  # repeat for 1..23
 # PR mode (incremental): only mutants the diff touches re-run
-make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=16 MUTATION_INCREMENTAL=1
-make merge-mutation-reports MUTATION_SHARD_TOTAL=16
+make test-mutation-shard MUTATION_SHARD_INDEX=0 MUTATION_SHARD_TOTAL=24 MUTATION_INCREMENTAL=1
+make merge-mutation-reports MUTATION_SHARD_TOTAL=24
 ```
 
 To change the shard count, keep the `index` matrix in both `mutation-testing.yml` and
@@ -798,7 +798,10 @@ requests on a weekly schedule for three ecosystems:
   is re-pushed. A Node major arriving here fails
   `tests/unit/tooling/ci-job-hygiene.test.ts`, which holds `.nvmrc`, the Dockerfile base image
   and `engines.node` to one version, so it is taken through the major-version playbook with
-  all three moved together rather than merged as a lone image bump.
+  all three moved together rather than merged as a lone image bump. The apt snapshot ARGs
+  (`UBUNTU_SNAPSHOT`, `DEBIAN_SNAPSHOT`, issue #300) are not a Dependabot target; bump one by
+  hand with its package pins, as "apt pins resolve from a snapshot archive" in
+  [`CLAUDE.md`](CLAUDE.md) describes, and move it whenever the base image it serves moves.
 
 To keep pull request volume low, minor and patch updates are grouped into a single request
 per ecosystem — that is what `update-types: ['minor', 'patch']` on each group means. Majors

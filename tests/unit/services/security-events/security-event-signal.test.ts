@@ -13,7 +13,9 @@ describe('SecurityEventSignal', () => {
   it('keeps the prototype chain intact for every event name', () => {
     const signal = new SecurityEventSignal('auth_failure_burst');
 
-    expect(signal instanceof SecurityEventSignal).toBe(true);
+    expect(signal).toBeInstanceOf(SecurityEventSignal);
+    expect(signal).toBeInstanceOf(Error);
+    expect(Object.getPrototypeOf(signal)).toBe(SecurityEventSignal.prototype);
     expect(signal.message).toBe('security.auth_failure_burst');
   });
 });

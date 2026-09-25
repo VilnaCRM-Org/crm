@@ -60,7 +60,7 @@ for deeper, technique-level guidance. The UI/design/motion/a11y groups come from
 [ui-skills.com](https://www.ui-skills.com/skills/); the rest were installed earlier.
 
 **Stack note:** several UI skills assume Tailwind CSS or shadcn/ui. This project uses
-Material UI v7 + Emotion, so translate their utility-class / token guidance to MUI's `sx`,
+Material UI v9 + Emotion, so translate their utility-class / token guidance to MUI's `sx`,
 `styled()`, and theme — keep the design principles, adapt the implementation.
 
 - **Build & style UI** (creating or beautifying components, pages, dashboards):
@@ -1644,6 +1644,12 @@ build goes red. Know them before you touch a config file:
   `scripts/docker/install-bun.sh` against a pinned SHA256, never by piping the upstream install
   script into a shell. A Bun bump moves `packageManager`, each `ARG BUN_VERSION` and the six
   digests together; `tests/unit/tooling/image-hardening.test.ts` holds them to one version.
+- **apt snapshot archives (issue #300)** — every apt stage (`Playwright.Dockerfile`, the `rca`
+  stage of `Dockerfile`) rewrites its sources to a fixed-timestamp `snapshot.ubuntu.com` /
+  `snapshot.debian.org` archive from one `UBUNTU_SNAPSHOT` / `DEBIAN_SNAPSHOT` ARG before
+  `apt-get update`, so an exact package pin cannot vanish when a security update supersedes it.
+  Bump the ARG and re-pin together; never unpin a package or point a stage back at the live
+  archive. Alpine has no snapshot archive, so its `apk` pins are re-pinned when they break.
 - **dependency-cruiser rule fixtures (issue #181)** — every rule in `.dependency-cruiser.js` must
   land with a fixture in `scripts/ci/depcruise-rule-fixtures.mjs`; the completeness assertion is
   bidirectional and has no exemption list, so a new rule cannot ship untested.

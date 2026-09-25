@@ -94,7 +94,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: '.nvmrc'
 
@@ -106,7 +106,7 @@ jobs:
       # later run dies on it. The step below pushes the branch first and the tag only after.
       - name: Conventional Changelog Action
         id: changelog
-        uses: TriPSs/conventional-changelog-action@3c4970b6573374889b897403d2f1278c395ea0df # v5
+        uses: TriPSs/conventional-changelog-action@469f0e5e35831fbd1962706f29f65daf0a5723f2 # v6.5.0
         with:
           github-token: ${{ steps.generate_token.outputs.token }}
           output-file: 'CHANGELOG.md'

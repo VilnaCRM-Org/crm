@@ -144,7 +144,7 @@ signal, schema, or user-facing change), execute **every** skill in
 **When activated**:
 
 - Adding or modifying a React component, hook, or feature module.
-- Wiring MUI v7 + Emotion styles.
+- Wiring MUI v9 + Emotion styles.
 - Adding i18n (`en.json`, `uk.json`).
 - Connecting Redux Toolkit / RTK Query data flow.
 

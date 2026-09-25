@@ -12,6 +12,7 @@ import playwright from 'eslint-plugin-playwright';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
 import security from 'eslint-plugin-security';
+import sonarjs from 'eslint-plugin-sonarjs';
 import storybook from 'eslint-plugin-storybook';
 import testingLibrary from 'eslint-plugin-testing-library';
 import prettier from 'eslint-config-prettier';
@@ -449,6 +450,58 @@ const componentDiGateIgnores = [
 ];
 const storyGlobs = ['**/*.stories.js', '**/*.stories.jsx', '**/*.stories.ts', '**/*.stories.tsx'];
 
+// Issue #136 (section E): the curated eslint-plugin-sonarjs bug-pattern set. The plugin's
+// `recommended` preset (231 enabled rules) is NOT adopted: measured over `src/` it reported 79
+// findings, every one of them style, migration debt, or a gate this repository already owns
+// (cognitive complexity is rust-code-analysis, duplication is jscpd, ReDoS is the frozen #173
+// SAST set). This list keeps only rules that flag a program that does not do what it says, none
+// of which fires on `src/` today, so each one is a regression guard rather than a backlog. The
+// excluded rules and their reasons are recorded in CLAUDE.md, "Code-health bug patterns
+// (issue #136)"; scripts/ci/sonarjs-gate-fixtures.mjs holds a must-fail and a must-pass
+// fixture per rule and fails when this list and the fixtures disagree.
+const sonarjsBugPatternRules = [
+  // Conditions and branches
+  'no-all-duplicated-branches',
+  'no-duplicated-branches',
+  'no-identical-conditions',
+  'no-identical-expressions',
+  'no-gratuitous-expressions',
+  'no-inverted-boolean-check',
+  'no-redundant-boolean',
+  'prefer-single-boolean-return',
+  'no-same-line-conditional',
+  'no-redundant-jump',
+  'comma-or-logical-or-case',
+  'bitwise-operators',
+  // Values, collections, and calls
+  'no-element-overwrite',
+  'no-empty-collection',
+  'no-unused-collection',
+  'no-collection-size-mischeck',
+  'no-ignored-return',
+  'no-use-of-empty-return-value',
+  'no-misleading-array-reverse',
+  'array-callback-without-return',
+  'reduce-initial-value',
+  'no-dead-store',
+  'no-redundant-assignments',
+  'no-useless-increment',
+  'non-existent-operator',
+  'for-loop-increment-sign',
+  'no-unthrown-error',
+  'constructor-for-side-effects',
+  'no-try-promise',
+  // React
+  'jsx-no-leaked-render',
+  'no-hook-setter-in-body',
+  'no-useless-react-setstate',
+  // Regular-expression correctness (not ReDoS, which #173 owns)
+  'anchor-precedence',
+  'existing-groups',
+  'empty-string-repetition',
+  'no-empty-alternatives',
+];
+
 export default [
   {
     ignores: [
@@ -759,6 +812,17 @@ export default [
       'no-implied-eval': 'error',
       'no-new-func': 'error',
     },
+  },
+
+  // Source (issue #136): the curated eslint-plugin-sonarjs bug-pattern set, at `error` because a
+  // `warn` never fails `eslint .` (the issue-#164 lesson). Same scope as the #173 SAST block. No
+  // later block sets a `sonarjs/*` rule, so flat config's per-rule replacement cannot drop one.
+  // Fix a finding at the source; `eslint-suppressions.yml` rejects any inline directive.
+  {
+    files: ['src/**/*.ts', 'src/**/*.tsx'],
+    ignores: ['**/*.stories.*', '**/*.test.*', '**/*.spec.*', '**/*.d.ts'],
+    plugins: { sonarjs },
+    rules: Object.fromEntries(sonarjsBugPatternRules.map((rule) => [`sonarjs/${rule}`, 'error'])),
   },
 
   // Source (issue #128): components must not `new` a behavioral collaborator — resolve it

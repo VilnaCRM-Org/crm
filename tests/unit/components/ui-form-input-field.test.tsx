@@ -55,7 +55,7 @@ describe('UIFormInputField', () => {
     textFieldMock.mockClear();
   });
 
-  it('forwards InputProps and sx onto TextField directly', () => {
+  it('forwards the input slotProps and sx onto TextField directly', () => {
     const endAdornment = <span>Password toggle</span>;
     const sx: TextFieldProps['sx'] = { px: 2 };
 
@@ -66,7 +66,7 @@ describe('UIFormInputField', () => {
             control={control}
             name="email"
             rules={{}}
-            InputProps={{ endAdornment }}
+            slotProps={{ input: { endAdornment } }}
             sx={sx}
           />
         )}
@@ -79,7 +79,7 @@ describe('UIFormInputField', () => {
 
     expect(textFieldProps).toEqual(
       expect.objectContaining({
-        InputProps: { endAdornment },
+        slotProps: { input: { endAdornment } },
         sx,
       })
     );

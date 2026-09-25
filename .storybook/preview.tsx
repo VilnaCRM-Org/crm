@@ -1,5 +1,5 @@
-import type { Preview } from '@storybook/react';
-import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+import type { Preview } from '@storybook/react-webpack5';
+import type { ViewportMap } from 'storybook/viewport';
 import resources from '../src/i18n/localization.json';
 import { initReactI18next } from 'react-i18next';
 import i18next from 'i18next';
@@ -25,7 +25,7 @@ export const i18nInitPromise = i18next.isInitialized
         throw error;
       });
 
-const customViewports: typeof INITIAL_VIEWPORTS = {
+const customViewports: ViewportMap = {
   xs: {
     name: 'XS (320)',
     styles: { width: '320px', height: '568px' },

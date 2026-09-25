@@ -79,9 +79,10 @@ Out of scope, with where to report instead:
 
 ## Automated controls
 
-Every control below already runs; none is planned. Each one runs in CI and, unless noted, locally
-through the same `make` target, so a scanner result can be reproduced without opening a pull
-request. The complete workflow inventory is in [README.md](README.md#ci-checks).
+Every control below already runs, except the one entry marked **(pending)**; no other control
+is planned. Each one runs in CI and, unless noted, locally through the same `make` target, so a
+scanner result can be reproduced without opening a pull request. The complete workflow inventory
+is in [README.md](README.md#ci-checks).
 
 - **CodeQL, `security-extended` suite** —
   [`security-testing.yml`](.github/workflows/security-testing.yml), on every pull request, on

@@ -58,3 +58,21 @@ describe('FormField parameter defaults', () => {
     expect(screen.getByRole('textbox')).toHaveAttribute('readonly');
   });
 });
+
+describe('FormField layout', () => {
+  it('stacks the label above the input in a column flex container', () => {
+    renderField(BASE as unknown as FormFieldProps);
+
+    const label = screen.getByText('Email');
+    const input = screen.getByLabelText('Email');
+    const wrapper = screen
+      .getAllByRole('generic')
+      .filter((element) => element.contains(label) && element.contains(input))
+      .at(-1);
+
+    expect(wrapper).toHaveStyle({
+      display: 'flex',
+      flexDirection: 'column',
+    });
+  });
+});
