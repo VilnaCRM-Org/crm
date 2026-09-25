@@ -7,6 +7,8 @@ import { collectMutateFiles, shardMutateFiles } from '../../../scripts/ci/mutati
 const projectRoot = path.resolve(__dirname, '..', '..', '..');
 
 interface StrykerConfigShape {
+  concurrency?: number;
+  testRunnerNodeArgs?: string[];
   plugins?: string[];
   checkers?: string[];
   disableTypeChecks?: boolean;
@@ -113,6 +115,51 @@ describe('stryker mutant-classification config', () => {
       expect(low).toBeLessThanOrEqual(high);
       expect(high).toBe(100);
     });
+  });
+});
+
+describe('the DinD mutation runner memory budget', () => {
+  const base = loadStrykerConfig('stryker.config.mjs');
+  const dind = loadStrykerConfig('stryker.dind.config.mjs');
+  const shard = loadStrykerConfig('stryker.shard.config.mjs');
+  const makefile = fs.readFileSync(path.join(projectRoot, 'Makefile'), 'utf8');
+
+  it('changes only concurrency and the runner heap, preserving every base gate and file', () => {
+    expect(dind).toEqual({
+      ...base,
+      concurrency: 1,
+      testRunnerNodeArgs: ['--max-old-space-size=4096'],
+    });
+    expect(dind.mutate).toEqual(collectMutateFiles());
+    expect(dind.thresholds).toEqual({ high: 100, low: 100, break: 100 });
+  });
+
+  it('does not leak the DinD resource overrides into local or GitHub shard configs', () => {
+    expect(base.concurrency).toBeUndefined();
+    expect(base.testRunnerNodeArgs).toBeUndefined();
+    expect(shard.concurrency).toBeUndefined();
+    expect(shard.testRunnerNodeArgs).toBeUndefined();
+  });
+
+  it('passes a heap argument accepted by the actual Node runner process', () => {
+    const raw = execFileSync(
+      process.execPath,
+      [...(dind.testRunnerNodeArgs ?? []), '--eval', 'process.stdout.write(process.execArgv[0])'],
+      { encoding: 'utf8' }
+    );
+    expect(raw).toBe('--max-old-space-size=4096');
+  });
+
+  it('selects the dedicated config only in the DinD Stryker command', () => {
+    expect(makefile).toMatch(
+      /^STRYKER_CMD_DIND\s*= \$\(BUNX_DIND\) stryker run stryker\.dind\.config\.mjs$/m
+    );
+    expect(makefile).toMatch(/^STRYKER_CMD\s*= make start && \$\(BUNX\) stryker run$/m);
+    expect(makefile).toContain('dev bun x stryker run stryker.shard.config.mjs');
+  });
+
+  it('keeps DinD execution fail-closed without ignoring the Docker exit status', () => {
+    expect(makefile).toMatch(/^\tdocker exec "\$\(TEMP_CONTAINER_NAME\)" \$\(STRYKER_CMD_DIND\)$/m);
   });
 });
 
