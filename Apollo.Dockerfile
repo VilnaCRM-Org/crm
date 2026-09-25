@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS builder
+FROM public.ecr.aws/docker/library/node:25.2.1-alpine3.21@sha256:32509199057d74a987fdd88cde00fdfd48ef52469adbd6bd11969fc701477761 AS builder
 
 ARG BUN_VERSION=1.3.5
 
@@ -18,7 +18,7 @@ RUN bun install --frozen-lockfile && \
     node ./node_modules/typescript/bin/tsc --project ./docker/apollo-server/tsconfig.server.json
 
 ## -------- Production Stage --------
-FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c
+FROM public.ecr.aws/docker/library/node:25.2.1-alpine3.21@sha256:32509199057d74a987fdd88cde00fdfd48ef52469adbd6bd11969fc701477761
 ENV NODE_ENV=production
 ENV DEV_PORT=3000
 
