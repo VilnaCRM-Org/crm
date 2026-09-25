@@ -521,9 +521,18 @@ held for five consecutive frames, replacing the two 3-second sleeps in `stabiliz
 **What the issue asked for and this repository cannot use as written:** an `actions/cache` step
 for the Bun cache does not apply — no workflow runs `bun install` on the runner; every install
 happens inside the Docker build that `make start` performs (measured at ~2:15 of a ~4:00 unit job).
-The lever there is Docker layer caching for the dev image, a separate, measured change. Browser
-layers are already a digest-pinned image (`docker-compose.test.yml`), and the flaky-test controls
-landed as the nightly flake audit (issue #186).
+Browser layers are already a digest-pinned image (`docker-compose.test.yml`), and the flaky-test
+controls landed as the nightly flake audit (issue #186).
+
+**Dev-image layer caching was measured and reverted (issue #136).** Building the dev image with
+`docker/build-push-action` against a `type=gha` cache and loading it into the runner's Docker
+(`load: true`) made every job slower, even on a second push that read the cache: unit 4:20 → 5:52
+(7:51 on the first push), static 3:40 → 5:22 (8:27), integration 2:52 → 4:27 (5:30), bats 2:30 →
+3:22 (5:28). Exporting the image from the BuildKit container into the Docker daemon took ~97 s on
+a cache-reading run, more than the uncached build plus container start it replaced (83–93 s in a
+mutation shard), and the extra time pushed a mutation shard past its 15-minute kill switch. A
+cache that skips that export — a registry cache the default Docker driver builds from — is the
+remaining option, and would have to be measured against the same job timings before it lands.
 
 ### Image hardening: digest pins, health signals, verified Bun (issue #139, item 4)
 
@@ -580,18 +589,20 @@ collide with an existing tag — runs the action with `git-push: false`, pushes 
 the tag ref (a declined branch push strands nothing), creates the GitHub Release with the
 production bundle attached (`make release-tarball`), pushes the deployable image to GHCR under the
 version and commit tags (`make publish-image`, which records the pushed manifest digest through
-`scripts/ci/push-release-image.sh`), and attests both with SLSA build provenance. The release
-commit keeps the changelog action's default `[skip ci]` marker, so it starts no verification of
-its own; that is what replaced the old `paths-ignore` on `package.json` / `CHANGELOG.md`.
+`scripts/ci/push-release-image.sh`), attests both with SLSA build provenance, and then signs
+both with keyless cosign — the image by that digest, the tarball into a
+`crm-dist-<version>.tar.gz.sigstore.json` bundle uploaded beside it. The release commit keeps the
+changelog action's default `[skip ci]` marker, so it starts no verification of its own; that is
+what replaced the old `paths-ignore` on `package.json` / `CHANGELOG.md`.
 `make check-release-health` (`release health`, daily) reads the `release / …` jobs of the newest
 `main verification` push run and files or updates one `release-broken` issue when one of them
 failed or the newest tag has no release, tarball or image, and closes it on recovery; a run whose
 lint or unit job failed skips the release and is left to `main-is-red`. Flow, versioning rules,
-provenance verification and recovery — including the branch-protection bypass the release App
-needs on `main` — live in `CONTRIBUTING.md`, "Releases and the changelog";
+provenance and signature verification and recovery — including the branch-protection bypass the
+release App needs on `main` — live in `CONTRIBUTING.md`, "Releases and the changelog";
 `tests/bats/release_train.bats` pins the guards, the monitor, the image push, the workflow shape
-and the make targets, and `tests/unit/tooling/main-verification.test.ts` pins the sequencing and
-the attestation steps.
+and the make targets, and `tests/unit/tooling/main-verification.test.ts` pins the sequencing,
+the attestation steps and the cosign signing steps.
 
 ### Contract gates: semantic diff and upstream drift (issues #177, #178)
 
@@ -705,7 +716,9 @@ loads.
 on `release: published`: it builds the `production` image and writes CycloneDX JSON for the image
 (`sbom/crm-image.cdx.json`) and the production lockfile closure (`sbom/crm-dependencies.cdx.json`),
 uploaded as a 90-day workflow artifact. Its `attach to release` job runs on the release event and
-on a `workflow_dispatch` that names a `release_tag`, and `gh release upload`s both documents. The
+on a `workflow_dispatch` that names a `release_tag`, signs each document with keyless
+`cosign sign-blob --bundle` (the job's only addition to `contents: write` is `id-token: write`),
+and `gh release upload`s both documents with their `.sigstore.json` bundles. The
 release event reaches the workflow because `autorelease.yml` publishes with a GitHub App token; a
 release created with `GITHUB_TOKEN` triggers no workflow at all. The workflow restores no cache
 on purpose — a restored cache on a job that writes release assets is the cache-poisoning shape
@@ -729,9 +742,15 @@ checks; until then they report but do not block. Do not add `full-tree dependenc
 tarball and the GHCR image — by the manifest digest `docker push` reported — are attested with
 `actions/attest-build-provenance`, signed through Sigstore with the workflow's OIDC identity, and
 the image attestation is also pushed to the registry. Verify with `gh attestation verify` (see
-`CONTRIBUTING.md`, "Releases and the changelog"). Still **not** implemented: the SBOM documents
-carry no attestation of their own, no cosign signature is made outside the attestation, no
-artifact-metadata storage record is created, and nothing at deploy time enforces verification.
+`CONTRIBUTING.md`, "Releases and the changelog"). Beside the attestations, the image, the
+tarball and both SBOM documents carry a keyless cosign signature (issue #136): Fulcio certifies
+the workflow's GitHub OIDC identity, Rekor logs the signature, and no key or secret exists.
+`sigstore/cosign-installer` is pinned to a full commit SHA and installs an exact cosign release.
+The SBOMs are **signed, not attested** — `actions/attest-sbom` would bind them to the digest of
+the image `make sbom` rebuilds, which is not the published manifest — so a signature proves
+which workflow produced the document, not which shipped artifact it describes. Still **not**
+implemented: no artifact-metadata storage record is created, the health monitor does not check
+for the signature bundles, and nothing at deploy time enforces verification.
 The dependency scan
 scores the manifest's production closure, an over-approximation of the browser bundle —
 tree-shaking drops code the lockfile still lists — so a finding can sit in a code path the bundle
@@ -739,7 +758,8 @@ never loads and still block until the dependency is updated. Scheduled CodeQL wa
 place from issue #172 and is not new here.
 [`tests/unit/tooling/supply-chain-gates.test.ts`](tests/unit/tooling/supply-chain-gates.test.ts)
 pins the digest pins, the severity and `--ignore-unfixed` policy, the `production` target, the
-positive control, the two-entry allowlist, the workflow triggers and the runtime-stage shape;
+positive control, the two-entry allowlist, the workflow triggers, the SBOM signing steps and the
+runtime-stage shape;
 [`tests/bats/supply_chain.bats`](tests/bats/supply_chain.bats) pins the audit script's issue
 routing, its fail-closed scanner path and the positive control's exit codes.
 

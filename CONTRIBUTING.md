@@ -655,8 +655,8 @@ the section to `CHANGELOG.md`, commits both, tags the commit `v<version>`, and c
 Release with the production bundle attached as `crm-dist-<version>.tar.gz`. The same run pushes
 the deployable image to `ghcr.io/vilnacrm-org/crm:<version>` and `:sha-<commit>`, so a deployed
 artifact can always be traced back to its release, its commit, and — through commitlint's
-`(#N)` scope — its issues. The `sbom` workflow then attaches the CycloneDX documents on the
-`release: published` event.
+`(#N)` scope — its issues. The `sbom` workflow then attaches the CycloneDX documents, each with
+its cosign signature bundle, on the `release: published` event.
 
 The release commit (`chore(release): <version> [skip ci]`, the changelog action's default message
 and `skip-ci` input) starts no workflow, so it is neither verified nor released again. That marker
@@ -676,8 +676,42 @@ gh attestation verify oci://ghcr.io/vilnacrm-org/crm:<version> --repo VilnaCRM-O
 ```
 
 A pass proves the artifact was built by this repository's `main verification` workflow from the
-commit the attestation names. The SBOM documents are not attested, and nothing enforces
-verification at deploy time; that is the consumer's step.
+commit the attestation names.
+
+**Signatures (issue #136).** After the attestations the job signs the same two artifacts with
+keyless cosign (`sigstore/cosign-installer`, SHA-pinned, installing an exact cosign release): the
+image by the digest `make publish-image` recorded, with the signature pushed to GHCR beside it,
+and the tarball with `cosign sign-blob --bundle`, whose `crm-dist-<version>.tar.gz.sigstore.json`
+bundle is uploaded to the release next to the tarball. The `sbom` workflow's `attach to release`
+job signs each CycloneDX document the same way and uploads `<document>.sigstore.json` with it; a
+failed signature fails that job and files the `sbom-missing` issue like any other attach failure.
+No key or secret exists: Fulcio issues a short-lived certificate for the workflow's GitHub OIDC
+identity and Rekor logs the signature publicly, so verification pins that identity and issuer:
+
+```bash
+workflows='https://github\.com/VilnaCRM-Org/crm/\.github/workflows'
+release="^${workflows}/autorelease\.yml@refs/heads/main\$"
+sbom="^${workflows}/sbom\.yml@refs/(tags/v[0-9]+\.[0-9]+\.[0-9]+|heads/main)\$"
+issuer='https://token.actions.githubusercontent.com'
+
+cosign verify ghcr.io/vilnacrm-org/crm@sha256:<digest> \
+  --certificate-identity-regexp "$release" --certificate-oidc-issuer "$issuer"
+cosign verify-blob crm-dist-<version>.tar.gz --bundle crm-dist-<version>.tar.gz.sigstore.json \
+  --certificate-identity-regexp "$release" --certificate-oidc-issuer "$issuer"
+cosign verify-blob crm-image.cdx.json --bundle crm-image.cdx.json.sigstore.json \
+  --certificate-identity-regexp "$sbom" --certificate-oidc-issuer "$issuer"
+```
+
+The release identity is `autorelease.yml`, not `main-verification.yml`: a reusable workflow's
+certificate names the called workflow. The SBOM identity admits a tag ref (the `release:
+published` run) and `main` (a `workflow_dispatch` retry). `cosign verify` accepts a tag too, but
+verifying the digest is what pins the bytes you deploy;
+`docker buildx imagetools inspect ghcr.io/vilnacrm-org/crm:<version>` prints it. Verify with
+cosign v3 or newer, the major the workflow pins (`v3.1.3`), which writes the signatures in the
+Sigstore bundle format. The SBOMs are signed, not attested:
+`actions/attest-sbom` binds a document to a subject digest, and the image `make sbom` scans is a
+rebuild, not the published manifest, so such an attestation would name an artifact nobody ships.
+Nothing enforces any of this at deploy time; that is the consumer's step.
 
 **Versioning rules.** The bump follows the action's `angular` preset over the commits since the
 last tag: `feat` is a minor, `fix`/`perf`/`revert` are a patch, and a `!` in the header or a
@@ -719,10 +753,10 @@ it when the train recovers. A run whose `lint` or `unit` job failed skips the re
   release as soon as anything else has landed on `main`. Record the change in
   [`docs/governance/branch-protection.md`](docs/governance/branch-protection.md).
 - A failure **after** the tag push (`Pack the release tarball`, `Create Release`, the GHCR login,
-  `Publish the production image`, or an `Attest …` step) cannot be recovered by re-running the
-  job. The re-run checks out the verified commit again, where `package.json` still holds the old
-  version while `v<version>` already exists, so `make check-release-version` stops it before the
-  changelog action. Only a failure before the tag push — the tip read, the version guard,
+  `Publish the production image`, an `Attest …` step, or a cosign step) cannot be recovered by
+  re-running the job. The re-run checks out the verified commit again, where `package.json` still
+  holds the old version while `v<version>` already exists, so `make check-release-version` stops
+  it before the changelog action. Only a failure before the tag push — the tip read, the version guard,
   `GH006` — is recovered the usual way above. Finish a stranded tag by hand from a checkout of
   the tag itself, whose `package.json` carries the new version, publishing only what is missing:
 
@@ -737,12 +771,15 @@ it when the train recovers. A run whose `lint` or `unit` job failed skips the re
   make publish-image
   ```
 
-  Provenance cannot be recovered this way: an attestation is signed with the workflow's OIDC
-  identity, and no workflow re-attests an existing tag, so a hand-published or unattested
-  `v<version>` fails `gh attestation verify`. Say so in its release notes; the next release is
-  attested normally. Because the attest steps run only after the release, the tarball and the
-  image are all published, a signing outage leaves a complete but unattested release rather than
-  a bare tag.
+  Provenance and signatures cannot be recovered this way: both are made with the workflow's OIDC
+  identity, and no workflow re-attests or re-signs an existing tag, so a hand-published or
+  unsigned `v<version>` fails `gh attestation verify` and `cosign verify`. Do not sign it from a
+  laptop either: that certificate names a person, not the workflow, and fails the identity pinned
+  above. Say so in its release notes; the next release is attested and signed normally. Because
+  the attest and sign steps run only after the release, the tarball and the image are all
+  published, a Sigstore outage leaves a complete but unsigned release rather than a bare tag. The
+  SBOM signatures are the exception: `gh workflow run sbom.yml -f release_tag=<tag>` regenerates,
+  re-signs and re-attaches them under the `sbom.yml` identity.
 
 - The `release-broken` issue stays open while any offence persists and is closed by the next green
   daily run; do not close it by hand.
