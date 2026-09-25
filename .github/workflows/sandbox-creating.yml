@@ -2,7 +2,8 @@ name: sandbox
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    # A maintainer applies deploy-sandbox when this PR needs an ephemeral test environment.
+    types: [labeled]
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
@@ -18,12 +19,15 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      github.event.label.name == 'deploy-sandbox' &&
+      github.event.pull_request.state == 'open' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       id-token: write
-      contents: read
+      pull-requests: read
     steps:
       - name: Validate environment variables
         run: |
@@ -52,7 +56,26 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Start Pipeline Execution
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          # The label event may have waited in a runner queue while the PR closed.
+          current_pr="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")"
+          if jq -e --arg repo "${GITHUB_REPOSITORY}" \
+            '.state == "open" and .head.repo.full_name == $repo and
+             any(.labels[]?; .name == "deploy-sandbox")' \
+            <<< "${current_pr}" >/dev/null; then
+            :
+          else
+            eligibility_status=$?
+            if [ "${eligibility_status}" -ne 1 ]; then
+              echo "::error::Failed to parse current PR eligibility"
+              exit "${eligibility_status}"
+            fi
+            echo "::notice::PR is no longer eligible for a sandbox"
+            exit 0
+          fi
+
           aws codepipeline start-pipeline-execution --name "sandbox-crm-creation" \
             --variables \
             "name=BRANCH_NAME,value=${BRANCH_NAME}" \
