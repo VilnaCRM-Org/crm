@@ -74,8 +74,8 @@ cannot join the queue silently and none of the five can leave it.
 
 Every other workflow stays pull-request-only, each for a stated reason:
 
-- **`mutation testing`** is a 16-way sharded matrix; queuing it would add its wall-clock and
-  sixteen runners to every merge.
+- **`mutation testing`** is a 24-way sharded matrix; queuing it would add its wall-clock and
+  twenty-four runners to every merge.
 - **`e2e testing`, `visual tests`, `performance testing`, `load testing`,
   `memory-leak testing` and `integration testing`** are minutes of browser or measurement
   wall-clock each; the queue is for the fast, deterministic gates.
