@@ -115,11 +115,10 @@ const aptSnapshotViolations = (dockerfile: string): string[] =>
   });
 
 const aptInstalledPackages = (stage: string): string[] =>
-  [...stage.matchAll(/apt-get install -y --no-install-recommends((?:[^;&]|\\\n)*)/g)].flatMap(
-    (match) =>
-      (match[1] ?? '')
-        .split(/\s+/)
-        .filter((token) => token !== '' && token !== '\\' && !token.startsWith('-'))
+  [...stage.matchAll(/apt-get install\b((?:[^;&]|\\\n)*)/g)].flatMap((match) =>
+    (match[1] ?? '')
+      .split(/\s+/)
+      .filter((token) => token !== '' && token !== '\\' && !token.startsWith('-'))
   );
 
 describe('image hardening (issue #139, item 4)', () => {
@@ -283,6 +282,20 @@ describe('apt installs resolve from a fixed-timestamp snapshot archive (issue #3
     for (const pkg of packages) {
       expect(pkg).toMatch(/^[a-z0-9][a-z0-9.+-]*=[0-9][\w.+~:-]*$/);
     }
+  });
+
+  it('matches every apt-get install form independently of option order', () => {
+    const reorderedOptions = [
+      'apt-get install --no-install-recommends -y curl=8.14.1-2+deb13u5;',
+      'apt-get install -y --no-install-recommends jq=1.7.1-6+deb13u3;',
+      'apt-get install --no-install-recommends -y unzip',
+    ].join(' ');
+
+    expect(aptInstalledPackages(reorderedOptions)).toEqual([
+      'curl=8.14.1-2+deb13u5',
+      'jq=1.7.1-6+deb13u3',
+      'unzip',
+    ]);
   });
 
   it('reads the Ubuntu snapshot for the release the Playwright base image is built on', () => {
