@@ -798,7 +798,10 @@ requests on a weekly schedule for three ecosystems:
   is re-pushed. A Node major arriving here fails
   `tests/unit/tooling/ci-job-hygiene.test.ts`, which holds `.nvmrc`, the Dockerfile base image
   and `engines.node` to one version, so it is taken through the major-version playbook with
-  all three moved together rather than merged as a lone image bump.
+  all three moved together rather than merged as a lone image bump. The apt snapshot ARGs
+  (`UBUNTU_SNAPSHOT`, `DEBIAN_SNAPSHOT`, issue #300) are not a Dependabot target; bump one by
+  hand with its package pins, as "apt pins resolve from a snapshot archive" in
+  [`CLAUDE.md`](CLAUDE.md) describes, and move it whenever the base image it serves moves.
 
 To keep pull request volume low, minor and patch updates are grouped into a single request
 per ecosystem — that is what `update-types: ['minor', 'patch']` on each group means. Majors

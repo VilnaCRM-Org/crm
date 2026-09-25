@@ -66,6 +66,50 @@ const registryFromLines = (dockerfile: string): string[] => {
 const healthchecks = (dockerfile: string): string[] =>
   dockerfile.split('\n').filter((line) => line.startsWith('HEALTHCHECK '));
 
+const APT_IMAGES = ['Dockerfile', 'Playwright.Dockerfile'];
+const SNAPSHOT_ARG = /^ARG ([A-Z]+_SNAPSHOT)=(\d{8}T\d{6}Z)$/m;
+const SNAPSHOT_HOSTS = [
+  'https://snapshot.ubuntu.com/ubuntu/',
+  'http://snapshot.debian.org/archive/',
+];
+const SOURCES_WRITE = /> \/etc\/apt\/sources\.list(?:\.d\/\S+)? /;
+const DEBIAN_CODENAMES: Record<string, string> = { '13': 'trixie' };
+
+const stagesOf = (dockerfile: string): string[] =>
+  dockerfile.split(/^(?=FROM )/m).filter((stage) => stage.startsWith('FROM '));
+
+const aptStages = (dockerfile: string): string[] =>
+  stagesOf(dockerfile).filter((stage) => stage.includes('apt-get update'));
+
+const aptSnapshotViolations = (dockerfile: string): string[] =>
+  aptStages(dockerfile).flatMap((stage) => {
+    const from = fromLines(stage)[0] ?? '';
+    const beforeUpdate = stage.slice(0, stage.indexOf('apt-get update'));
+    const argName = beforeUpdate.match(SNAPSHOT_ARG)?.[1];
+    const checks: [boolean, string][] = [
+      [argName !== undefined, 'declares no ARG <DISTRO>_SNAPSHOT=<YYYYMMDDTHHMMSSZ>'],
+      [SOURCES_WRITE.test(beforeUpdate), 'does not rewrite the apt sources before apt-get update'],
+      [
+        SNAPSHOT_HOSTS.some((host) => beforeUpdate.includes(host)),
+        'points apt at no snapshot archive',
+      ],
+      [
+        argName !== undefined && beforeUpdate.includes(`\${${argName}}`),
+        'does not build the source URL from the snapshot ARG',
+      ],
+    ];
+
+    return checks.filter(([ok]) => !ok).map(([, problem]) => `${from}: ${problem}`);
+  });
+
+const aptInstalledPackages = (stage: string): string[] =>
+  [...stage.matchAll(/apt-get install -y --no-install-recommends((?:[^;&]|\\\n)*)/g)].flatMap(
+    (match) =>
+      (match[1] ?? '')
+        .split(/\s+/)
+        .filter((token) => token !== '' && token !== '\\' && !token.startsWith('-'))
+  );
+
 describe('image hardening (issue #139, item 4)', () => {
   describe('every registry base image is pinned by digest', () => {
     it.each(DOCKERFILES)('%s', (file) => {
@@ -175,5 +219,68 @@ describe('image hardening (issue #139, item 4)', () => {
     const docker = config.updates.find((update) => update['package-ecosystem'] === 'docker');
 
     expect(docker?.directories).toEqual(['/', '/tests/load']);
+  });
+});
+
+describe('apt installs resolve from a fixed-timestamp snapshot archive (issue #300)', () => {
+  it.each(APT_IMAGES)('%s rewrites its apt sources to the snapshot ARG before updating', (file) => {
+    const dockerfile = readRepoFile(file);
+
+    expect(aptStages(dockerfile).length).toBeGreaterThan(0);
+    expect(aptSnapshotViolations(dockerfile)).toEqual([]);
+  });
+
+  it('flags an apt stage that still reads the live archive', () => {
+    const live = [
+      'FROM ubuntu:22.04@sha256:' + '0'.repeat(64),
+      'RUN apt-get update && apt-get install -y --no-install-recommends curl=7.81.0-1ubuntu1.27',
+      '',
+    ].join('\n');
+    const mirror = [
+      'FROM ubuntu:22.04@sha256:' + '0'.repeat(64),
+      'ARG UBUNTU_SNAPSHOT=20260925T000000Z',
+      'RUN echo "deb http://archive.ubuntu.com/ubuntu jammy main" > /etc/apt/sources.list \\',
+      '    && apt-get update',
+      '',
+    ].join('\n');
+
+    expect(aptSnapshotViolations(live)).toHaveLength(4);
+    expect(aptSnapshotViolations(mirror)).toEqual([
+      expect.stringContaining('points apt at no snapshot archive'),
+      expect.stringContaining('does not build the source URL from the snapshot ARG'),
+    ]);
+  });
+
+  it.each(APT_IMAGES)('%s pins every apt package to an exact version', (file) => {
+    const packages = aptStages(readRepoFile(file)).flatMap(aptInstalledPackages);
+
+    expect(packages.length).toBeGreaterThan(0);
+    for (const pkg of packages) {
+      expect(pkg).toMatch(/^[a-z0-9][a-z0-9.+-]*=[0-9][\w.+~:-]*$/);
+    }
+  });
+
+  it('reads the Ubuntu snapshot for the release the Playwright base image is built on', () => {
+    const dockerfile = readRepoFile('Playwright.Dockerfile');
+    const codename = fromLines(dockerfile)[0]?.match(/-([a-z]+)@sha256:/)?.[1];
+
+    expect(codename).toBe('jammy');
+    expect(dockerfile).toContain(
+      `for suite in ${codename} ${codename}-updates ${codename}-security; do`
+    );
+    expect(dockerfile).toContain('done > /etc/apt/sources.list');
+  });
+
+  it('reads the Debian snapshot for the release the rust-code-analysis stage is built on', () => {
+    const [stage] = aptStages(readRepoFile('Dockerfile'));
+    const major = stage?.match(/debian:(\d+)-slim@sha256:/)?.[1] ?? '';
+    const codename = DEBIAN_CODENAMES[major];
+
+    expect(stage).toMatch(/^FROM \S+debian:\d+-slim@sha256:[0-9a-f]{64} AS rca$/m);
+    expect(codename).toBeDefined();
+    expect(stage).toContain(`debian "\${DEBIAN_SNAPSHOT}" "${codename} ${codename}-updates"`);
+    expect(stage).toContain(`debian-security "\${DEBIAN_SNAPSHOT}" ${codename}-security`);
+    expect(stage).toContain('Check-Valid-Until: no');
+    expect(stage).toContain('> /etc/apt/sources.list.d/debian.sources; ');
   });
 });

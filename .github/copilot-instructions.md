@@ -85,6 +85,9 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **Dockerfiles pin every registry `FROM` by digest, declare a `HEALTHCHECK`, and install Bun
   through `scripts/docker/install-bun.sh`** against a pinned SHA256 — never `curl | bash`. A Bun
   bump moves `packageManager`, each `ARG BUN_VERSION`, and the script's digests together.
+- **apt stages install from a fixed-timestamp snapshot archive** (`UBUNTU_SNAPSHOT` in
+  `Playwright.Dockerfile`, `DEBIAN_SNAPSHOT` in the `rca` stage, issue #300), so exact package
+  pins stay resolvable. Bump the ARG and re-pin together; never unpin or use the live archive.
 
 ## Quality gates
 

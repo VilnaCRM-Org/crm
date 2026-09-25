@@ -575,6 +575,57 @@ CDN delivery, rollback runbook and in-repo IaC.
 **No suppression:** satisfy the test by pinning, probing or verifying — never by moving an
 image out of the file list or reverting to the unversioned installer.
 
+### apt pins resolve from a snapshot archive (issue #300)
+
+A digest pins the base image, not the package archive the image installs from. Every `apt-get
+install` pins exact versions (hadolint `DL3008`), and the live Ubuntu and Debian archives drop a
+version the day a security update supersedes it: a jammy curl USN removed `7.81.0-1ubuntu1.27`
+and turned every job that builds `Playwright.Dockerfile` red with
+`E: Version '7.81.0-1ubuntu1.27' for 'curl' was not found`. Each apt stage therefore rewrites its
+sources, in the same `RUN` as `apt-get update`, to a fixed-timestamp snapshot whose contents never
+change:
+
+| Stage                   | Base             | Archive host                  | ARG               |
+| ----------------------- | ---------------- | ----------------------------- | ----------------- |
+| `Playwright.Dockerfile` | Playwright jammy | `https://snapshot.ubuntu.com` | `UBUNTU_SNAPSHOT` |
+| `Dockerfile` `rca`      | `debian:13-slim` | `http://snapshot.debian.org`  | `DEBIAN_SNAPSHOT` |
+
+The Ubuntu stage reads `ubuntu/<ts>` for the release, `-updates` and `-security` suites; the
+Debian stage reads `archive/debian/<ts>` and `archive/debian-security/<ts>`.
+
+The sources file is written whole rather than edited with `sed`: the Playwright base images do not
+agree on a mirror (`v1.61.1` reads `archive.ubuntu.com`, `v1.63.0` `azure.archive.ubuntu.com`), and
+a substitution that stops matching falls back to the live archive in silence. The Debian stage sets
+`Check-Valid-Until: no` because the `-updates` and `-security` Release files in a snapshot carry a
+`Valid-Until` a few days out; the `Signed-By` keyring still verifies every index. The Ubuntu
+snapshot Release files carry no `Valid-Until`, so that stage needs no such option. The Debian stage
+uses plain `http`, as the base image does, because `ca-certificates` is one of the packages it
+installs; apt authenticates the archive by signature, not by transport.
+
+**Bumping a snapshot** is one reviewed edit per image: set the ARG to a newer
+`YYYYMMDDTHHMMSSZ`, then re-pin each package to the candidate that snapshot serves — run
+`apt-get update && apt-cache policy <pkg>` in the base image with the snapshot sources, or read
+the `Packages` index under `<snapshot>/dists/<suite>/main/binary-amd64/`. Bump it whenever the base
+image moves as well: a snapshot older than the base can pin a package below the version the base
+already ships, and `apt-get install` refuses that downgrade. The `debian` base records its own build
+snapshot as a comment in `/etc/apt/sources.list.d/debian.sources`, which is a good floor.
+Dependabot does not move either ARG.
+
+`tests/unit/tooling/image-hardening.test.ts` fails when an apt stage reaches `apt-get update`
+without rewriting its sources to a snapshot host built from a `*_SNAPSHOT` ARG, when a package is
+installed without an exact version, and when the suite codename stops matching the base image
+(the Playwright tag's `-jammy`, or a Debian major the test has no codename for). Its fixtures
+prove the check flags both a stage that never rewrites its sources and one that rewrites them to
+a live mirror.
+
+**Alpine has no snapshot archive.** An Alpine branch keeps a single version of each package and
+drops the old one on update, so the exact `apk` pins in `Dockerfile`, `Apollo.Dockerfile`,
+`MemoryLeak.Dockerfile` and `tests/load/dockerfile` can rot the same way. They are not covered by
+this change; when one breaks, re-pin it to the version the branch now serves.
+
+**No suppression:** fix a rotted pin by moving the snapshot and re-pinning — never by unpinning a
+package, adding a hadolint ignore, or pointing a stage back at the live archive.
+
 ### Release train (issues #138, #185, #136)
 
 `autorelease.yml` is a reusable workflow (`on: workflow_call`) with no trigger of its own: the
