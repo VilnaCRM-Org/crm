@@ -55,7 +55,7 @@ jobs:
       # fast, retried, honest error instead of a silent budget burn.
       - name: Check YAML formatting
         env:
-          PRETTIER_VERSION: 3.9.6
+          PRETTIER_VERSION: 3.9.9
           npm_config_fetch_timeout: '60000'
           npm_config_fetch_retries: '3'
         run: npx --yes "prettier@$PRETTIER_VERSION" "**/*.{yml,yaml}" --check --ignore-path .prettierignore
