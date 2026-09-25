@@ -72,6 +72,14 @@ const SNAPSHOT_HOSTS = [
   'https://snapshot.ubuntu.com/ubuntu/',
   'http://snapshot.debian.org/archive/',
 ];
+const LIVE_ARCHIVE_HOSTS = [
+  'archive.ubuntu.com',
+  'security.ubuntu.com',
+  'ports.ubuntu.com',
+  'deb.debian.org',
+  'ftp.debian.org',
+  'security.debian.org',
+];
 const SOURCES_WRITE = /> \/etc\/apt\/sources\.list(?:\.d\/\S+)? /;
 const DEBIAN_CODENAMES: Record<string, string> = { '13': 'trixie' };
 
@@ -96,6 +104,10 @@ const aptSnapshotViolations = (dockerfile: string): string[] =>
       [
         argName !== undefined && beforeUpdate.includes(`\${${argName}}`),
         'does not build the source URL from the snapshot ARG',
+      ],
+      [
+        !LIVE_ARCHIVE_HOSTS.some((host) => beforeUpdate.includes(host)),
+        'also reads a live (non-snapshot) archive host',
       ],
     ];
 
@@ -243,11 +255,24 @@ describe('apt installs resolve from a fixed-timestamp snapshot archive (issue #3
       '    && apt-get update',
       '',
     ].join('\n');
+    const mixed = [
+      'FROM ubuntu:22.04@sha256:' + '0'.repeat(64),
+      'ARG UBUNTU_SNAPSHOT=20260925T000000Z',
+      'RUN echo "deb https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT} jammy main" ' +
+        '> /etc/apt/sources.list \\',
+      '    && echo "deb http://archive.ubuntu.com/ubuntu jammy main" >> /etc/apt/sources.list \\',
+      '    && apt-get update',
+      '',
+    ].join('\n');
 
     expect(aptSnapshotViolations(live)).toHaveLength(4);
     expect(aptSnapshotViolations(mirror)).toEqual([
       expect.stringContaining('points apt at no snapshot archive'),
       expect.stringContaining('does not build the source URL from the snapshot ARG'),
+      expect.stringContaining('also reads a live (non-snapshot) archive host'),
+    ]);
+    expect(aptSnapshotViolations(mixed)).toEqual([
+      expect.stringContaining('also reads a live (non-snapshot) archive host'),
     ]);
   });
 

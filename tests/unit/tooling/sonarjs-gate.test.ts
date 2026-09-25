@@ -133,7 +133,9 @@ describe('eslint-plugin-sonarjs bug-pattern gate (issue #136)', () => {
       const claude = readFileSync('CLAUDE.md', 'utf8');
       const start = claude.indexOf('### Code-health bug patterns (issue #136)');
       expect(start).toBeGreaterThan(-1);
-      const section = claude.slice(start, claude.indexOf('\n### ', start + 1));
+      const rest = claude.slice(start + 1);
+      const next = rest.search(/\n#{1,3} /);
+      const section = next === -1 ? rest : rest.slice(0, next);
       const missing = report.universe.filter((rule) => !section.includes(`\`${rule}\``));
       expect(missing).toEqual([]);
     });
