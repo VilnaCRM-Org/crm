@@ -158,6 +158,27 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     expect(severityOf(rules['playwright/no-wait-for-timeout'])).toBe(2);
   });
 
+  it('pins the sonarjs bug-pattern gate (issue #136) at error on src and off tests', () => {
+    // A representative slice; the full adopted set, its exclusions and a must-fail fixture per
+    // rule are pinned by tests/unit/tooling/sonarjs-gate.test.ts.
+    const pinned = [
+      'sonarjs/no-identical-conditions',
+      'sonarjs/no-identical-expressions',
+      'sonarjs/no-all-duplicated-branches',
+      'sonarjs/no-ignored-return',
+      'sonarjs/jsx-no-leaked-render',
+    ];
+    [LOGIC_TS, COMPONENT_TSX, HOOK_TS].forEach((file) => {
+      const rules = rulesFor(file);
+      pinned.forEach((rule) => expect(severityOf(rules[rule])).toBe(2));
+      // The recommended preset is deliberately not spread: complexity belongs to
+      // rust-code-analysis (`make lint-metrics`), duplication to jscpd (`make lint-dup`).
+      expect(rules['sonarjs/cognitive-complexity']).toBeUndefined();
+      expect(rules['sonarjs/no-duplicate-string']).toBeUndefined();
+    });
+    expect(rulesFor(PLAYWRIGHT_SPEC)['sonarjs/no-identical-conditions']).toBeUndefined();
+  });
+
   it('keeps the module/feature public-API import boundary (issue #107) pinned', () => {
     // The @auth/*/* deep-import ban resolves onto cross-boundary logic files (services) and
     // type files, guarding the feature public-API contract for ESLint's half of the gate.

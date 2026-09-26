@@ -21,7 +21,7 @@ export default function FormField<T extends FieldValues>({
   const { control } = useFormContext<T>();
 
   return (
-    <Grid container flexDirection="column" sx={styles.formFieldWrapper}>
+    <Grid container sx={[{ flexDirection: 'column' }, styles.formFieldWrapper]}>
       <UITypography sx={styles.formFieldLabel} component="label" htmlFor={name}>
         {label}
       </UITypography>
@@ -35,7 +35,7 @@ export default function FormField<T extends FieldValues>({
         type={type}
         autoComplete={autoComplete}
         sx={styles.formFieldInput}
-        InputProps={inputProps}
+        slotProps={{ input: inputProps }}
       />
     </Grid>
   );

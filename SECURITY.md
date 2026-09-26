@@ -79,9 +79,10 @@ Out of scope, with where to report instead:
 
 ## Automated controls
 
-Every control below already runs; none is planned. Each one runs in CI and, unless noted, locally
-through the same `make` target, so a scanner result can be reproduced without opening a pull
-request. The complete workflow inventory is in [README.md](README.md#ci-checks).
+Every control below already runs, except the one entry marked **(pending)**; no other control
+is planned. Each one runs in CI and, unless noted, locally through the same `make` target, so a
+scanner result can be reproduced without opening a pull request. The complete workflow inventory
+is in [README.md](README.md#ci-checks).
 
 - **CodeQL, `security-extended` suite** —
   [`security-testing.yml`](.github/workflows/security-testing.yml), on every pull request, on
@@ -137,9 +138,14 @@ request. The complete workflow inventory is in [README.md](README.md#ci-checks).
   provenance attestation signed through Sigstore; verify with
   `gh attestation verify <tarball> --repo VilnaCRM-Org/crm` or
   `gh attestation verify oci://ghcr.io/vilnacrm-org/crm:<version> --repo VilnaCRM-Org/crm`.
+- **Release signatures (pending)** — `autorelease.yml` and `sbom.yml`, intended for every release
+  once the release App bypass is configured (issue #136). The image (by digest), the tarball and
+  both SBOM documents will carry a keyless cosign signature for the workflow's GitHub OIDC
+  identity; verify with `cosign verify` / `cosign verify-blob --bundle` as `CONTRIBUTING.md`,
+  "Releases and the changelog", shows.
 
-Not yet in place: the SBOMs attached to a release carry no attestation and are authenticated only
-by the release that carries them, and no deployment enforces provenance verification.
+Not yet in place: the SBOMs are signed but not attested to the artifact they describe, and no
+deployment enforces provenance or signature verification.
 
 ## Published advisories
 

@@ -74,8 +74,8 @@ cannot join the queue silently and none of the five can leave it.
 
 Every other workflow stays pull-request-only, each for a stated reason:
 
-- **`mutation testing`** is a 16-way sharded matrix; queuing it would add its wall-clock and
-  sixteen runners to every merge.
+- **`mutation testing`** is a 24-way sharded matrix; queuing it would add its wall-clock and
+  twenty-four runners to every merge.
 - **`e2e testing`, `visual tests`, `performance testing`, `load testing`,
   `memory-leak testing` and `integration testing`** are minutes of browser or measurement
   wall-clock each; the queue is for the fast, deterministic gates.
@@ -320,9 +320,12 @@ deletion keeps a published tag from being moved onto other code after the fact.
 
 Build provenance is in place for the two release artifacts (issue #136): the release job attests
 the tarball and the GHCR image, by manifest digest, with SLSA provenance signed through Sigstore,
-so `gh attestation verify` ties each one to this repository's workflow and commit. The SBOMs
-attached to a release are **not** attested and are authenticated only by the release that carries
-them, and no cosign signature exists beyond the attestation.
+so `gh attestation verify` ties each one to this repository's workflow and commit. The same job
+then signs both with keyless cosign, and the `sbom` workflow signs each SBOM it attaches, so
+`cosign verify` / `cosign verify-blob --bundle` tie every release artifact to the workflow
+identity that produced it (`CONTRIBUTING.md`, "Releases and the changelog"). None of it runs
+until the release App can bypass this rule and the pull-request requirement above: the tag push
+precedes every signature, so a declined branch push signs nothing.
 
 > **Outstanding prerequisite.** Both rulesets are maintainer actions. Record their IDs here once
 > they exist so drift can be checked against `gh api repos/VilnaCRM-Org/crm/rulesets`, which

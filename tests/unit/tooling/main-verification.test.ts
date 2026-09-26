@@ -229,3 +229,83 @@ describe('release build provenance (issue #136)', () => {
     }
   });
 });
+
+const COSIGN_INSTALLER_PIN = /^sigstore\/cosign-installer@[0-9a-f]{40}$/;
+const COSIGN_RELEASE_PIN = /^v\d+\.\d+\.\d+$/;
+const IMAGE_BY_DIGEST = 'cosign sign --yes "ghcr.io/vilnacrm-org/crm@${IMAGE_DIGEST}"';
+
+const signsImageByDigest = (step: Step): boolean =>
+  step.run === IMAGE_BY_DIGEST &&
+  step.env?.IMAGE_DIGEST === '${{ steps.publish_image.outputs.digest }}';
+
+const signsTarballWithBundle = (step: Step): boolean => {
+  const run = step.run ?? '';
+  const sign = run.indexOf('cosign sign-blob --yes --bundle "$bundle" "${tarballs[0]}"');
+  const upload = run.indexOf('gh release upload "$RELEASE_TAG" "$bundle"');
+
+  return (
+    run.includes('bundle="${tarballs[0]}.sigstore.json"') &&
+    sign > -1 &&
+    upload > sign &&
+    step.env?.GH_TOKEN === '${{ steps.generate_token.outputs.token }}'
+  );
+};
+
+describe('release keyless cosign signatures (issue #136)', () => {
+  const build = jobIn(release, 'autorelease.yml', 'build');
+  const installer = stepNamed(build, 'Install cosign');
+  const image = stepNamed(build, 'Sign the production image');
+  const tarball = stepNamed(build, 'Sign the release tarball');
+  const names = (build.steps ?? []).map((step) => step.name);
+
+  it('installs cosign from a SHA-pinned installer at an exact cosign release', () => {
+    expect(installer.uses).toMatch(COSIGN_INSTALLER_PIN);
+    expect(releaseRaw).toMatch(/uses: sigstore\/cosign-installer@[0-9a-f]{40} # v\d+\.\d+\.\d+\n/);
+    expect(installer.with?.['cosign-release']).toMatch(COSIGN_RELEASE_PIN);
+    expect('sigstore/cosign-installer@v4').not.toMatch(COSIGN_INSTALLER_PIN);
+    expect('v3').not.toMatch(COSIGN_RELEASE_PIN);
+  });
+
+  it('signs only after every artifact is published and attested', () => {
+    const lastAttest = Math.max(
+      names.indexOf('Attest the production image'),
+      names.indexOf('Attest the release tarball')
+    );
+
+    expect(names.indexOf('Install cosign')).toBe(lastAttest + 1);
+    expect(names.indexOf('Sign the production image')).toBe(names.indexOf('Install cosign') + 1);
+    expect(names.indexOf('Sign the release tarball')).toBe(
+      names.indexOf('Sign the production image') + 1
+    );
+    for (const step of [installer, image, tarball]) {
+      expect(step.if).toBe("${{ steps.changelog.outputs.skipped == 'false' }}");
+    }
+  });
+
+  it('signs the image by the digest docker push reported, never by a movable tag', () => {
+    expect(signsImageByDigest(image)).toBe(true);
+    expect(
+      signsImageByDigest({
+        ...image,
+        run: 'cosign sign --yes "ghcr.io/vilnacrm-org/crm:${RELEASE_TAG}"',
+      })
+    ).toBe(false);
+  });
+
+  it('signs the tarball into a Sigstore bundle and uploads it beside the tarball', () => {
+    expect(signsTarballWithBundle(tarball)).toBe(true);
+    expect(
+      signsTarballWithBundle({
+        ...tarball,
+        run: (tarball.run ?? '').replace('gh release upload "$RELEASE_TAG" "$bundle"', ''),
+      })
+    ).toBe(false);
+  });
+
+  it('signs keylessly with the workflow identity: no key, no signing secret', () => {
+    expect(releaseRaw).not.toMatch(/cosign [a-z-]+ .*--key\b/);
+    expect(releaseRaw).not.toMatch(/COSIGN_(PRIVATE_KEY|PASSWORD|KEY)/);
+    expect(build.permissions?.['id-token']).toBe('write');
+    expect(release.on.workflow_call?.secrets).not.toHaveProperty('COSIGN_PRIVATE_KEY');
+  });
+});

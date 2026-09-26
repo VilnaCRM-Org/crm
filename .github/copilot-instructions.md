@@ -9,7 +9,7 @@ before proposing any change, and follow every `.claude/skills/*/SKILL.md` that m
 
 - React 19, TypeScript (`strict`, `noUncheckedIndexedAccess`, `noImplicitOverride`,
   `noImplicitReturns`, `exactOptionalPropertyTypes`),
-  Material UI v7 with Emotion, a dependency-free reactive var for client state (ADR-008),
+  Material UI v9 with Emotion, a dependency-free reactive var for client state (ADR-008),
   React Router v7 (the `react-router` package).
 - tsyringe with `reflect-metadata` for dependency injection.
 - i18next v26 with react-i18next; `uk` is the main language, `en` the fallback.
@@ -85,6 +85,9 @@ make test-mutation    # Stryker; the enforced floor is 100%
 - **Dockerfiles pin every registry `FROM` by digest, declare a `HEALTHCHECK`, and install Bun
   through `scripts/docker/install-bun.sh`** against a pinned SHA256 — never `curl | bash`. A Bun
   bump moves `packageManager`, each `ARG BUN_VERSION`, and the script's digests together.
+- **apt stages install from a fixed-timestamp snapshot archive** (`UBUNTU_SNAPSHOT` in
+  `Playwright.Dockerfile`, `DEBIAN_SNAPSHOT` in the `rca` stage, issue #300), so exact package
+  pins stay resolvable. Bump the ARG and re-pin together; never unpin or use the live archive.
 
 ## Quality gates
 

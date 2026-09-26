@@ -5,12 +5,21 @@
 import fs from 'fs';
 import path from 'path';
 
+import { parse } from 'yaml';
+
 const repoRoot = path.resolve(__dirname, '..', '..', '..');
 
 const readRepoFile = (relativePath: string): string =>
   fs.readFileSync(path.join(repoRoot, relativePath), 'utf-8');
 
 const readWorkflow = (name: string): string => readRepoFile(path.join('.github/workflows', name));
+
+type SbomJob = {
+  permissions?: Record<string, string>;
+  steps?: { name?: string; uses?: string; run?: string; with?: Record<string, string> }[];
+};
+
+type SbomWorkflow = { jobs: Record<string, SbomJob | undefined> };
 
 const directivesOf = (contents: string): string => contents.replace(/^[ \t]*#.*$/gm, '');
 
@@ -184,6 +193,36 @@ describe('sbom workflow (issue #140)', () => {
     expect(attach).toMatch(/permissions:\n {6}contents: write/);
     expect(attach).toContain('gh release upload "$RELEASE_TAG" sbom/*.cdx.json');
     expect(workflow).not.toContain('actions/cache');
+  });
+
+  it('signs every SBOM document keylessly and attaches each bundle beside it (issue #136)', () => {
+    const parsed = parse(readWorkflow('sbom.yml')) as SbomWorkflow;
+    const attach = parsed.jobs.attach;
+    const names = (attach?.steps ?? []).map((step) => step.name);
+    const installer = attach?.steps?.find((step) => step.name === 'Install cosign');
+    const sign = attach?.steps?.find((step) => step.name === 'Sign the SBOMs')?.run ?? '';
+    const upload = attach?.steps?.find((step) => step.name === 'Attach the SBOMs to the release');
+
+    expect(attach?.permissions).toEqual({ contents: 'write', 'id-token': 'write' });
+    expect(parsed.jobs.generate?.permissions).toEqual({ contents: 'read' });
+    expect(parsed.jobs.report?.permissions).not.toHaveProperty('id-token');
+    expect(installer?.uses).toMatch(/^sigstore\/cosign-installer@[0-9a-f]{40}$/);
+    expect(workflow).toMatch(/uses: sigstore\/cosign-installer@[0-9a-f]{40} # v\d+\.\d+\.\d+\n/);
+    expect(installer?.with?.['cosign-release']).toMatch(/^v\d+\.\d+\.\d+$/);
+    expect(sign).toContain(
+      'cosign sign-blob --yes --bundle "${document}.sigstore.json" "$document"'
+    );
+    expect(sign).toContain('documents=(sbom/*.cdx.json)');
+    expect(sign).toMatch(/if \[ "\$\{#documents\[@\]\}" -eq 0 \]; then\n.*\n\s+exit 1/);
+    expect(sign).not.toMatch(/--key\b/);
+    expect(upload?.run).toBe(
+      'gh release upload "$RELEASE_TAG" sbom/*.cdx.json sbom/*.cdx.json.sigstore.json --clobber'
+    );
+    expect(names.indexOf('Install cosign')).toBe(names.indexOf('Download the SBOMs') + 1);
+    expect(names.indexOf('Sign the SBOMs')).toBe(names.indexOf('Install cosign') + 1);
+    expect(names.indexOf('Attach the SBOMs to the release')).toBe(
+      names.indexOf('Sign the SBOMs') + 1
+    );
   });
 
   it('files a tracking issue when a release ends up without its SBOM, with a retry path', () => {

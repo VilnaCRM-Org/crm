@@ -7,7 +7,7 @@ description: Use when building or changing React components, hooks, forms, or fe
 
 ## Stack
 
-Use React 18.3, TypeScript, MUI v7, Emotion, Redux Toolkit, RTK Query,
+Use React 18.3, TypeScript, MUI v9, Emotion, Redux Toolkit, RTK Query,
 React Router v6, `react-hook-form`, and `react-i18next` patterns already present
 in the repo.
 

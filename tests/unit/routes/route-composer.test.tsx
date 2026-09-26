@@ -159,6 +159,36 @@ describe('route composer', () => {
     expect(landmarkOf(child)).toBe('main');
   });
 
+  it('refuses to compose modules that share an id (validation runs before composing)', () => {
+    const id = buildToken();
+    const modules: RouteModule[] = [
+      { id, routes: [{ path: '/first', guard: 'public', load: page }] },
+      { id, routes: [{ path: '/second', guard: 'public', load: page }] },
+    ];
+
+    expect(() => routeComposer.compose(modules)).toThrow(`Duplicate route module id: ${id}`);
+  });
+
+  it('refuses to compose a nested route that declares its own guard', () => {
+    const modules: RouteModule[] = [
+      {
+        id: 'nested-guard',
+        routes: [
+          {
+            path: '/parent',
+            guard: 'public',
+            load: page,
+            children: [{ path: 'child', guard: 'protected', load: page }],
+          },
+        ],
+      },
+    ];
+
+    expect(() => routeComposer.compose(modules)).toThrow(
+      'Nested routes must not declare a guard (guards are top-level only)'
+    );
+  });
+
   it('propagates the region landmark to nested children of a protected route', () => {
     const modules: RouteModule[] = [
       {

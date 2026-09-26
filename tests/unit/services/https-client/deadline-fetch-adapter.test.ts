@@ -19,6 +19,9 @@ const hangingFetch = (): jest.Mock =>
       })
   );
 
+const fetchSignal = (mockFetch: jest.Mock): AbortSignal | null | undefined =>
+  (mockFetch.mock.lastCall?.[1] as RequestInit | undefined)?.signal;
+
 const settle = async (promise: Promise<unknown>): Promise<unknown> =>
   promise.then(
     (value) => value,
@@ -155,6 +158,44 @@ describe('DeadlineFetchAdapter', () => {
 
       await response.body?.cancel('no longer needed');
 
+      expect(jest.getTimerCount()).toBe(0);
+    });
+
+    it('keeps a cancelled body from timing out the request after the deadline', async () => {
+      const mockFetch = streamingResponse(['{"data":'], { stallAfter: 1 });
+      global.fetch = mockFetch as unknown as typeof fetch;
+
+      const response = await adapter.fetch('https://api.example.test/graphql');
+      const signal = fetchSignal(mockFetch);
+      await jest.advanceTimersByTimeAsync(0);
+      await response.body?.cancel('no longer needed');
+      await jest.advanceTimersByTimeAsync(TIMEOUT_MS);
+
+      expect(signal?.aborted).toBe(false);
+      expect(jest.getTimerCount()).toBe(0);
+    });
+
+    it('keeps a body read that failed from timing out the request after the deadline', async () => {
+      const failure = new TypeError('network connection lost');
+      const mockFetch = jest.fn((_url: string, _init: RequestInit) =>
+        Promise.resolve(
+          new Response(
+            new ReadableStream<Uint8Array>({
+              pull: (): Promise<void> => Promise.reject(failure),
+            }),
+            { status: 200 }
+          )
+        )
+      );
+      global.fetch = mockFetch as unknown as typeof fetch;
+
+      const response = await adapter.fetch('https://api.example.test/graphql');
+      const signal = fetchSignal(mockFetch);
+
+      await expect(response.text()).rejects.toBe(failure);
+      await jest.advanceTimersByTimeAsync(TIMEOUT_MS);
+
+      expect(signal?.aborted).toBe(false);
       expect(jest.getTimerCount()).toBe(0);
     });
 

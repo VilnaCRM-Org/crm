@@ -76,28 +76,35 @@ RUN bun x rsbuild build && \
 
 
 # -------- rust-code-analysis Stage --------
-FROM public.ecr.aws/docker/library/debian:12-slim@sha256:3783cc01769c7b2b1b83a5c5ad96c815348e28ed7da68e2e3687004faa906251 AS rca
+FROM public.ecr.aws/docker/library/debian:13-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS rca
 
 ARG RCA_VERSION=0.0.25
 ARG RCA_SHA256=9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894
+ARG DEBIAN_SNAPSHOT=20260918T000000Z
 ARG TARGETARCH
 
 SHELL ["/bin/sh", "-c"]
 
 RUN set -eux; \
+    printf 'Types: deb\nURIs: http://snapshot.debian.org/archive/%s/%s\nSuites: %s\n'\
+'Components: main\nSigned-By: /usr/share/keyrings/debian-archive-keyring.pgp\n'\
+'Check-Valid-Until: no\n\n' \
+      debian "${DEBIAN_SNAPSHOT}" "trixie trixie-updates" \
+      debian-security "${DEBIAN_SNAPSHOT}" trixie-security \
+      > /etc/apt/sources.list.d/debian.sources; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
-      ca-certificates=20230311+deb12u1 \
-      jq=1.6-2.1+deb12u2 \
-      make=4.3-4.1 \
-      tar=1.34+dfsg-1.2+deb12u1 \
-      unzip=6.0-28; \
+      ca-certificates=20250419 \
+      jq=1.7.1-6+deb13u3 \
+      make=4.4.1-2 \
+      tar=1.35+dfsg-3.1 \
+      unzip=6.0-29+deb13u1; \
     if [ "${TARGETARCH}" = "amd64" ]; then \
-      apt-get install -y --no-install-recommends curl=7.88.1-10+deb12u15; \
+      apt-get install -y --no-install-recommends curl=8.14.1-2+deb13u5; \
     else \
       apt-get install -y --no-install-recommends \
-        build-essential=12.9 \
-        cargo=0.66.0+ds1-1; \
+        build-essential=12.12 \
+        cargo=1.85.1+dfsg1-1+deb13u1; \
     fi; \
     rm -rf /var/lib/apt/lists/*; \
     if [ "${TARGETARCH}" = "amd64" ]; then \

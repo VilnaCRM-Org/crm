@@ -32,6 +32,9 @@ nothing to attach to. The issue body names the offence; the same tag can carry s
    - `Attest the production image` / `Attest the release tarball` — the provenance signing or
      upload failed after the release, the tarball and the image were published; check that the
      calling `release` job still grants `id-token: write` and `attestations: write`.
+   - `Install cosign` / `Sign the production image` / `Sign the release tarball` — the keyless
+     cosign signing or the bundle upload failed after everything was published and attested:
+     usually a Sigstore (Fulcio or Rekor) outage, or a missing `id-token: write` grant.
    - A tag without a release, tarball or image — the run died after the tag push.
 3. For the full flow, versioning rules and the recovery sequence, read `CONTRIBUTING.md`,
    "Releases and the changelog".
@@ -50,8 +53,10 @@ Which fix applies depends on whether the tag reached the remote.
   changelog action. Finish the tag by hand from a checkout of `v<version>` —
   `make release-tarball`, then `gh release create` or `gh release upload`, then
   `make publish-image` — publishing only what is missing; the commands are in
-  `CONTRIBUTING.md`, "Releases and the changelog". A missing attestation cannot be recreated
-  outside the workflow, so that version stays unattested; say so in its release notes.
+  `CONTRIBUTING.md`, "Releases and the changelog". A missing attestation or cosign signature
+  cannot be recreated outside the workflow — a laptop signature names a person, not the workflow
+  identity verification pins — so that version stays unattested or unsigned; say so in its
+  release notes.
 
 A missing SBOM on an otherwise complete release is the `sbom-missing` runbook, not this one.
 

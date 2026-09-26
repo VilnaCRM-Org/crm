@@ -11,7 +11,6 @@ export class HttpError extends Error {
     this.cause = cause;
     this.name = 'HttpError';
 
-    Object.setPrototypeOf(this, new.target.prototype);
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, new.target);
     }

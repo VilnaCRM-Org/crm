@@ -14,8 +14,6 @@ export default class ApiError extends Error {
     this.status = options.status;
     this.cause = options.cause;
 
-    Object.setPrototypeOf(this, new.target.prototype);
-
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, new.target);
     }

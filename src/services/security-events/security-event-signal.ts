@@ -7,6 +7,5 @@ export default class SecurityEventSignal extends Error {
     super(`security.${event}`);
     this.name = 'SecurityEventSignal';
     this.event = event;
-    Object.setPrototypeOf(this, new.target.prototype);
   }
 }

@@ -1,11 +1,21 @@
 import { act, renderHook } from '@testing-library/react';
 import type { TFunction } from 'i18next';
+import { Activity, type ReactNode } from 'react';
 
 import useLoginSubmitter from '@auth/components/form-section/auth-forms/use-login-submitter';
 import { AuthStateVar, authActions } from '@auth/stores';
 import { buildCredentials } from '@tests/builders';
 
 const t = ((key: string): string => key) as unknown as TFunction;
+
+function neverSettlingLogin(signals: AbortSignal[]): void {
+  jest.spyOn(authActions, 'loginUser').mockImplementation(
+    (_data, signal?: AbortSignal): Promise<void> =>
+      new Promise<void>(() => {
+        signals.push(signal as AbortSignal);
+      })
+  );
+}
 
 describe('useLoginSubmitter request tracking', () => {
   beforeEach(() => {
@@ -59,6 +69,40 @@ describe('useLoginSubmitter request tracking', () => {
     unmount();
 
     expect(signals[0]?.aborted).toBe(true);
+  });
+
+  it('forgets aborted requests, so a later cleanup of the same form aborts only newer ones', () => {
+    const signals: AbortSignal[] = [];
+    neverSettlingLogin(signals);
+    const abort = jest.spyOn(AbortController.prototype, 'abort');
+    let mode: 'visible' | 'hidden' = 'visible';
+    const wrapper = ({ children }: { children: ReactNode }): ReactNode => (
+      <Activity mode={mode}>{children}</Activity>
+    );
+
+    const { result, rerender } = renderHook(() => useLoginSubmitter(t), { wrapper });
+
+    act(() => {
+      void result.current.handleLogin(buildCredentials());
+    });
+    mode = 'hidden';
+    rerender();
+
+    expect(signals[0]?.aborted).toBe(true);
+    expect(abort).toHaveBeenCalledTimes(1);
+
+    mode = 'visible';
+    rerender();
+    act(() => {
+      void result.current.handleLogin(buildCredentials());
+    });
+    mode = 'hidden';
+    rerender();
+
+    expect(signals).toHaveLength(2);
+    expect(signals[1]?.aborted).toBe(true);
+    expect(abort).toHaveBeenCalledTimes(2);
+    expect(new Set(abort.mock.contexts).size).toBe(2);
   });
 
   it('keeps a stable handler that still calls through to the live login action', async () => {

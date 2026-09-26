@@ -1,6 +1,9 @@
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import type { StorybookConfig } from '@storybook/react-webpack5';
+
+const resolvePackage = (specifier: string): string => fileURLToPath(import.meta.resolve(specifier));
 
 const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -21,12 +24,12 @@ const config: StorybookConfig = {
       exclude: /node_modules/,
       use: [
         {
-          loader: require.resolve('babel-loader'),
+          loader: resolvePackage('babel-loader'),
           options: {
             presets: [
-              require.resolve('@babel/preset-env'),
-              [require.resolve('@babel/preset-react'), { runtime: 'automatic' }],
-              require.resolve('@babel/preset-typescript'),
+              resolvePackage('@babel/preset-env'),
+              [resolvePackage('@babel/preset-react'), { runtime: 'automatic' }],
+              resolvePackage('@babel/preset-typescript'),
             ],
           },
         },
@@ -39,7 +42,7 @@ const config: StorybookConfig = {
     );
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': path.resolve(__dirname, '../src'),
+      '@': path.resolve(import.meta.dirname, '../src'),
     };
 
     return config;

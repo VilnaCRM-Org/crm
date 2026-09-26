@@ -616,6 +616,31 @@ run_push() {
   [ -n "$(code_line '^[0-9]+: +attestations: write$')" ]
 }
 
+@test "autorelease signs the pushed image digest and the tarball keylessly with a SHA-pinned cosign, after provenance" {
+  local step
+  step="$(step_code 'Install cosign')"
+  printf '%s\n' "$step" | grep -qE '^[0-9]+: +uses: sigstore/cosign-installer@[0-9a-f]{40} # v[0-9]+\.[0-9]+\.[0-9]+$'
+  printf '%s\n' "$step" | grep -qE "^[0-9]+: +cosign-release: 'v[0-9]+\.[0-9]+\.[0-9]+'$"
+  step="$(step_code 'Sign the production image')"
+  printf '%s\n' "$step" | grep -qF 'IMAGE_DIGEST: ${{ steps.publish_image.outputs.digest }}'
+  printf '%s\n' "$step" | grep -qF 'run: cosign sign --yes "ghcr.io/vilnacrm-org/crm@${IMAGE_DIGEST}"'
+  step="$(step_code 'Sign the release tarball')"
+  printf '%s\n' "$step" | grep -qF 'bundle="${tarballs[0]}.sigstore.json"'
+  printf '%s\n' "$step" | grep -qF 'cosign sign-blob --yes --bundle "$bundle" "${tarballs[0]}"'
+  printf '%s\n' "$step" | grep -qF 'gh release upload "$RELEASE_TAG" "$bundle"'
+  for name in 'Install cosign' 'Sign the production image' 'Sign the release tarball'; do
+    step="$(step_code "$name")"
+    printf '%s\n' "$step" | grep -qE "^[0-9]+: +if: \\\$\{\{ steps\.changelog\.outputs\.skipped == 'false' \}\}$"
+  done
+  [ "$(code_line 'name: Install cosign')" -gt "$(code_line 'name: Attest the release tarball')" ]
+  [ "$(code_line 'name: Install cosign')" -gt "$(code_line 'name: Attest the production image')" ]
+  [ "$(code_line 'name: Sign the production image')" -gt "$(code_line 'name: Install cosign')" ]
+  [ "$(code_line 'name: Sign the release tarball')" -gt "$(code_line 'name: Install cosign')" ]
+  [ "$(code_line 'cosign sign-blob')" -lt "$(code_line 'gh release upload "\$RELEASE_TAG" "\$bundle"')" ]
+  [ -z "$(code_line 'cosign [a-z-]+ .*--key')" ]
+  [ -z "$(code_line 'COSIGN_(PRIVATE_KEY|PASSWORD|KEY)')" ]
+}
+
 @test "main verification calls the release only after lint and unit, passing the secrets by name" {
   local job
   job="$(caller_job_code release)"

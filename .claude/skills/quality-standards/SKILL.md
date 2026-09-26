@@ -62,6 +62,11 @@ suite and should not be used as a mutating formatter.
   `no-restricted-imports` entries are NOT tracked by the rot-guard today and must be verified
   manually. Config-level gates in `eslint.config.mjs` are pinned by
   `tests/unit/config/eslint-policy.test.ts` (issue #165) — a rule rename updates both.
+- The `eslint-plugin-sonarjs` bug-pattern set (`sonarjsBugPatternRules` in `eslint.config.mjs`,
+  issue #136) is curated, not the plugin's `recommended` preset. A rule added to it needs a
+  must-fail and a corrected fixture in `scripts/ci/sonarjs-gate-fixtures.mjs` and a mention in
+  the CLAUDE.md "Code-health bug patterns" section, or `tests/unit/tooling/sonarjs-gate.test.ts`
+  fails. Fix a finding at the source; never drop the rule or narrow its `src/**` scope.
 - Do not narrow a gate's scan scope, drop `en` or `uk` from the i18n required
   set, or add an ignore entry to make `make lint-i18n` pass.
 

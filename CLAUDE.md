@@ -10,7 +10,7 @@ This template is used for all VilnaCRM microservices.
 
 ## Tech Stack
 
-- **Frontend**: React 19, TypeScript, Material-UI v7, Emotion (CSS-in-JS)
+- **Frontend**: React 19, TypeScript, Material-UI v9, Emotion (CSS-in-JS)
 - **State Management**: three categories with one primitive each (ADR-008, issue #110) —
   server state behind repositories over Apollo Client / `HttpsClient`, client/UI state in the
   dependency-free reactive var from `src/lib/state/` read through `useReactiveVar`, and the
@@ -256,8 +256,8 @@ Load test scenarios (configurable in `./test/load/config.json.dist`):
 
 ### CI parallelization
 
-`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across an
-16-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
+`make test-mutation` runs the full, gated Stryker suite locally. In CI it is **sharded** across a
+24-way matrix (`make test-mutation-shard`, lean `make start-dev` container) and a final
 `merge and enforce gate` job merges the per-shard JSON reports and re-enforces the same `break`
 threshold read from `stryker.config.mjs` (`make merge-mutation-reports`). On pull requests the shards
 run **incrementally** (`MUTATION_INCREMENTAL=1`, per-shard `actions/cache`), so only mutants the diff
@@ -280,12 +280,14 @@ jest-runner cannot use Jest `projects` with `perTest` coverage — so repository
 are killed by the integration tests that assert on them. The mutation config excludes the
 `tests/unit/{tooling,scripts,performance,load}` meta-tests (they read source as text and break under
 instrumentation) and uses ts-jest `isolatedModules`; `stryker.config.mjs` sets `ignoreStatic: true`.
-These keep the run affordable — parallelism comes from the 16-way shard count rather than
+These keep the run affordable — parallelism comes from the 24-way shard count rather than
 Stryker's in-process concurrency. The shard count is a wall-clock lever, not a gate: the split is
 weight-balanced over the whole mutate scope, but an incremental run only re-runs the mutants a diff
 invalidates, and those cluster by area. A diff touching one area can therefore land most of its
-re-run cost in a single shard; 16 shards keep that hot shard inside the `timeout-minutes` kill
-switch. Raise the count if a shard starts approaching it — never the kill switch.
+re-run cost in a single shard; 24 shards keep that hot shard inside the `timeout-minutes` kill
+switch. Raise the count if a shard starts approaching it — never the kill switch. The count went
+from 16 to 24 when Stryker 10's `CallExpression` mutator added 164 mutants and a cold run pushed
+shards 5 and 14 into the 15-minute kill switch.
 
 ### Honest mutant classification (issue #171)
 
@@ -521,9 +523,18 @@ held for five consecutive frames, replacing the two 3-second sleeps in `stabiliz
 **What the issue asked for and this repository cannot use as written:** an `actions/cache` step
 for the Bun cache does not apply — no workflow runs `bun install` on the runner; every install
 happens inside the Docker build that `make start` performs (measured at ~2:15 of a ~4:00 unit job).
-The lever there is Docker layer caching for the dev image, a separate, measured change. Browser
-layers are already a digest-pinned image (`docker-compose.test.yml`), and the flaky-test controls
-landed as the nightly flake audit (issue #186).
+Browser layers are already a digest-pinned image (`docker-compose.test.yml`), and the flaky-test
+controls landed as the nightly flake audit (issue #186).
+
+**Dev-image layer caching was measured and reverted (issue #136).** Building the dev image with
+`docker/build-push-action` against a `type=gha` cache and loading it into the runner's Docker
+(`load: true`) made every job slower, even on a second push that read the cache: unit 4:20 → 5:52
+(7:51 on the first push), static 3:40 → 5:22 (8:27), integration 2:52 → 4:27 (5:30), bats 2:30 →
+3:22 (5:28). Exporting the image from the BuildKit container into the Docker daemon took ~97 s on
+a cache-reading run, more than the uncached build plus container start it replaced (83–93 s in a
+mutation shard), and the extra time pushed a mutation shard past its 15-minute kill switch. A
+cache that skips that export — a registry cache the default Docker driver builds from — is the
+remaining option, and would have to be measured against the same job timings before it lands.
 
 ### Image hardening: digest pins, health signals, verified Bun (issue #139, item 4)
 
@@ -566,6 +577,57 @@ CDN delivery, rollback runbook and in-repo IaC.
 **No suppression:** satisfy the test by pinning, probing or verifying — never by moving an
 image out of the file list or reverting to the unversioned installer.
 
+### apt pins resolve from a snapshot archive (issue #300)
+
+A digest pins the base image, not the package archive the image installs from. Every `apt-get
+install` pins exact versions (hadolint `DL3008`), and the live Ubuntu and Debian archives drop a
+version the day a security update supersedes it: a jammy curl USN removed `7.81.0-1ubuntu1.27`
+and turned every job that builds `Playwright.Dockerfile` red with
+`E: Version '7.81.0-1ubuntu1.27' for 'curl' was not found`. Each apt stage therefore rewrites its
+sources, in the same `RUN` as `apt-get update`, to a fixed-timestamp snapshot whose contents never
+change:
+
+| Stage                   | Base             | Archive host                  | ARG               |
+| ----------------------- | ---------------- | ----------------------------- | ----------------- |
+| `Playwright.Dockerfile` | Playwright jammy | `https://snapshot.ubuntu.com` | `UBUNTU_SNAPSHOT` |
+| `Dockerfile` `rca`      | `debian:13-slim` | `http://snapshot.debian.org`  | `DEBIAN_SNAPSHOT` |
+
+The Ubuntu stage reads `ubuntu/<ts>` for the release, `-updates` and `-security` suites; the
+Debian stage reads `archive/debian/<ts>` and `archive/debian-security/<ts>`.
+
+The sources file is written whole rather than edited with `sed`: the Playwright base images do not
+agree on a mirror (`v1.61.1` reads `archive.ubuntu.com`, `v1.63.0` `azure.archive.ubuntu.com`), and
+a substitution that stops matching falls back to the live archive in silence. The Debian stage sets
+`Check-Valid-Until: no` because the `-updates` and `-security` Release files in a snapshot carry a
+`Valid-Until` a few days out; the `Signed-By` keyring still verifies every index. The Ubuntu
+snapshot Release files carry no `Valid-Until`, so that stage needs no such option. The Debian stage
+uses plain `http`, as the base image does, because `ca-certificates` is one of the packages it
+installs; apt authenticates the archive by signature, not by transport.
+
+**Bumping a snapshot** is one reviewed edit per image: set the ARG to a newer
+`YYYYMMDDTHHMMSSZ`, then re-pin each package to the candidate that snapshot serves — run
+`apt-get update && apt-cache policy <pkg>` in the base image with the snapshot sources, or read
+the `Packages` index under `<snapshot>/dists/<suite>/main/binary-amd64/`. Bump it whenever the base
+image moves as well: a snapshot older than the base can pin a package below the version the base
+already ships, and `apt-get install` refuses that downgrade. The `debian` base records its own build
+snapshot as a comment in `/etc/apt/sources.list.d/debian.sources`, which is a good floor.
+Dependabot does not move either ARG.
+
+`tests/unit/tooling/image-hardening.test.ts` fails when an apt stage reaches `apt-get update`
+without rewriting its sources to a snapshot host built from a `*_SNAPSHOT` ARG, when a package is
+installed without an exact version, and when the suite codename stops matching the base image
+(the Playwright tag's `-jammy`, or a Debian major the test has no codename for). Its fixtures
+prove the check flags both a stage that never rewrites its sources and one that rewrites them to
+a live mirror.
+
+**Alpine has no snapshot archive.** An Alpine branch keeps a single version of each package and
+drops the old one on update, so the exact `apk` pins in `Dockerfile`, `Apollo.Dockerfile`,
+`MemoryLeak.Dockerfile` and `tests/load/dockerfile` can rot the same way. They are not covered by
+this change; when one breaks, re-pin it to the version the branch now serves.
+
+**No suppression:** fix a rotted pin by moving the snapshot and re-pinning — never by unpinning a
+package, adding a hadolint ignore, or pointing a stage back at the live archive.
+
 ### Release train (issues #138, #185, #136)
 
 `autorelease.yml` is a reusable workflow (`on: workflow_call`) with no trigger of its own: the
@@ -580,18 +642,20 @@ collide with an existing tag — runs the action with `git-push: false`, pushes 
 the tag ref (a declined branch push strands nothing), creates the GitHub Release with the
 production bundle attached (`make release-tarball`), pushes the deployable image to GHCR under the
 version and commit tags (`make publish-image`, which records the pushed manifest digest through
-`scripts/ci/push-release-image.sh`), and attests both with SLSA build provenance. The release
-commit keeps the changelog action's default `[skip ci]` marker, so it starts no verification of
-its own; that is what replaced the old `paths-ignore` on `package.json` / `CHANGELOG.md`.
+`scripts/ci/push-release-image.sh`), attests both with SLSA build provenance, and then signs
+both with keyless cosign — the image by that digest, the tarball into a
+`crm-dist-<version>.tar.gz.sigstore.json` bundle uploaded beside it. The release commit keeps the
+changelog action's default `[skip ci]` marker, so it starts no verification of its own; that is
+what replaced the old `paths-ignore` on `package.json` / `CHANGELOG.md`.
 `make check-release-health` (`release health`, daily) reads the `release / …` jobs of the newest
 `main verification` push run and files or updates one `release-broken` issue when one of them
 failed or the newest tag has no release, tarball or image, and closes it on recovery; a run whose
 lint or unit job failed skips the release and is left to `main-is-red`. Flow, versioning rules,
-provenance verification and recovery — including the branch-protection bypass the release App
-needs on `main` — live in `CONTRIBUTING.md`, "Releases and the changelog";
+provenance and signature verification and recovery — including the branch-protection bypass the
+release App needs on `main` — live in `CONTRIBUTING.md`, "Releases and the changelog";
 `tests/bats/release_train.bats` pins the guards, the monitor, the image push, the workflow shape
-and the make targets, and `tests/unit/tooling/main-verification.test.ts` pins the sequencing and
-the attestation steps.
+and the make targets, and `tests/unit/tooling/main-verification.test.ts` pins the sequencing,
+the attestation steps and the cosign signing steps.
 
 ### Contract gates: semantic diff and upstream drift (issues #177, #178)
 
@@ -705,7 +769,9 @@ loads.
 on `release: published`: it builds the `production` image and writes CycloneDX JSON for the image
 (`sbom/crm-image.cdx.json`) and the production lockfile closure (`sbom/crm-dependencies.cdx.json`),
 uploaded as a 90-day workflow artifact. Its `attach to release` job runs on the release event and
-on a `workflow_dispatch` that names a `release_tag`, and `gh release upload`s both documents. The
+on a `workflow_dispatch` that names a `release_tag`, signs each document with keyless
+`cosign sign-blob --bundle` (the job's only addition to `contents: write` is `id-token: write`),
+and `gh release upload`s both documents with their `.sigstore.json` bundles. The
 release event reaches the workflow because `autorelease.yml` publishes with a GitHub App token; a
 release created with `GITHUB_TOKEN` triggers no workflow at all. The workflow restores no cache
 on purpose — a restored cache on a job that writes release assets is the cache-poisoning shape
@@ -729,9 +795,15 @@ checks; until then they report but do not block. Do not add `full-tree dependenc
 tarball and the GHCR image — by the manifest digest `docker push` reported — are attested with
 `actions/attest-build-provenance`, signed through Sigstore with the workflow's OIDC identity, and
 the image attestation is also pushed to the registry. Verify with `gh attestation verify` (see
-`CONTRIBUTING.md`, "Releases and the changelog"). Still **not** implemented: the SBOM documents
-carry no attestation of their own, no cosign signature is made outside the attestation, no
-artifact-metadata storage record is created, and nothing at deploy time enforces verification.
+`CONTRIBUTING.md`, "Releases and the changelog"). Beside the attestations, the image, the
+tarball and both SBOM documents carry a keyless cosign signature (issue #136): Fulcio certifies
+the workflow's GitHub OIDC identity, Rekor logs the signature, and no key or secret exists.
+`sigstore/cosign-installer` is pinned to a full commit SHA and installs an exact cosign release.
+The SBOMs are **signed, not attested** — `actions/attest-sbom` would bind them to the digest of
+the image `make sbom` rebuilds, which is not the published manifest — so a signature proves
+which workflow produced the document, not which shipped artifact it describes. Still **not**
+implemented: no artifact-metadata storage record is created, the health monitor does not check
+for the signature bundles, and nothing at deploy time enforces verification.
 The dependency scan
 scores the manifest's production closure, an over-approximation of the browser bundle —
 tree-shaking drops code the lockfile still lists — so a finding can sit in a code path the bundle
@@ -739,7 +811,8 @@ never loads and still block until the dependency is updated. Scheduled CodeQL wa
 place from issue #172 and is not new here.
 [`tests/unit/tooling/supply-chain-gates.test.ts`](tests/unit/tooling/supply-chain-gates.test.ts)
 pins the digest pins, the severity and `--ignore-unfixed` policy, the `production` target, the
-positive control, the two-entry allowlist, the workflow triggers and the runtime-stage shape;
+positive control, the two-entry allowlist, the workflow triggers, the SBOM signing steps and the
+runtime-stage shape;
 [`tests/bats/supply_chain.bats`](tests/bats/supply_chain.bats) pins the audit script's issue
 routing, its fail-closed scanner path and the positive control's exit codes.
 
@@ -918,7 +991,7 @@ keyed on `github.event.merge_group.head_ref` and `cancel-in-progress` true only 
 pull-request run, so a push to a pull request never cancels a queue entry. `static testing`
 skips its ADR-drift steps on a queue run (the gate needs `github.base_ref`, the pull-request
 body and its labels, which `merge_group` does not carry; its verdict was already decided on the
-pull request). `mutation testing` stays out — a 16-way matrix queued on every merge is
+pull request). `mutation testing` stays out — a 24-way matrix queued on every merge is
 wall-clock and runner cost, not a gate — as do the browser and measurement suites, the
 workflows that read the pull-request payload, and every path-filtered workflow.
 [`tests/unit/tooling/merge-queue-gates.test.ts`](tests/unit/tooling/merge-queue-gates.test.ts)
@@ -1271,6 +1344,72 @@ even when the separator makes them unambiguous and linear. Satisfy it by rewriti
 pattern to star height 1 (alternation instead of an optional group; `split()` + a
 per-segment regex instead of a nested quantifier) — never by dropping the rule or
 suppressing the finding.
+
+### Code-health bug patterns (issue #136)
+
+`eslint-plugin-sonarjs` (pinned exact, a devDependency, so `make lint-licenses` does not score
+its LGPL-3.0 licence) adds a curated set of **bug-pattern** rules to `src/**/*.{ts,tsx}` —
+same scope and same `make lint` → `lint-eslint` path as the #173 block, all at `error`
+(a `warn` never fails `eslint .`, the issue-#164 lesson). Each rule flags code that does
+not do what it says; none of them fires on `src/` today, so the set is a regression guard,
+not a backlog. The list lives in `sonarjsBugPatternRules` in `eslint.config.mjs`.
+
+- **Conditions and branches:** `no-all-duplicated-branches`, `no-duplicated-branches`,
+  `no-identical-conditions`, `no-identical-expressions`, `no-gratuitous-expressions`,
+  `no-inverted-boolean-check`, `no-redundant-boolean`, `prefer-single-boolean-return`,
+  `no-same-line-conditional`, `no-redundant-jump`, `comma-or-logical-or-case`,
+  `bitwise-operators`.
+- **Values and calls:** `no-element-overwrite`, `no-empty-collection`, `no-unused-collection`,
+  `no-collection-size-mischeck`, `no-ignored-return`, `no-use-of-empty-return-value`,
+  `no-misleading-array-reverse`, `array-callback-without-return`, `reduce-initial-value`,
+  `no-dead-store`, `no-redundant-assignments`, `no-useless-increment`, `non-existent-operator`,
+  `for-loop-increment-sign`, `no-unthrown-error`, `constructor-for-side-effects`,
+  `no-try-promise`.
+- **React:** `jsx-no-leaked-render`, `no-hook-setter-in-body`, `no-useless-react-setstate`.
+- **Regex correctness** (not ReDoS, which #173 owns): `anchor-precedence`, `existing-groups`,
+  `empty-string-repetition`, `no-empty-alternatives`.
+
+**Why not `recommended`.** The preset enables 231 of the plugin's 295 rules. Measured over
+`src/` it reported 79 findings from 10 rules, and every one was excluded for a stated reason:
+
+- `prefer-read-only-props` (55): style — `Readonly<>` on every component's props, no defect
+  class.
+- `deprecation` (9): migration debt (React 19 `MutableRefObject`, MUI `InputProps`, Apollo
+  error fields) that would also red an unrelated dependency bump.
+- `super-linear-regex` (3): ReDoS belongs to the frozen #173 set (`detect-unsafe-regex`).
+- `different-types-comparison` (3): flags runtime guards the static types deny; the "fix"
+  deletes a guard the tests exercise.
+- `function-return-type` (3): a component returning an element or `null` is idiomatic React.
+- `todo-tag` (2): process, not a defect.
+- `no-invariant-returns` (1): fires on the deliberate echo API of `ReactiveVarState.write`.
+- `pseudo-random` (1): backoff jitter is not a security context.
+- `concise-regex`, `redundant-type-aliases` (1 each): style.
+
+Zero-finding rules are excluded when another gate owns the concern: `cognitive-complexity`
+(`make lint-metrics`, rust-code-analysis), `no-duplicate-string` and `no-identical-functions`
+(`make lint-dup`; jscpd's 75-token bar is calibrated to keep incidental similarity from forcing
+abstractions), `slow-regex` (#173), `no-extra-arguments` (TypeScript's TS2554 already fails it,
+and it misfired on a reassigned `let` callback in `tests/`), and `no-alphabetical-sort` (it
+demands `localeCompare`, a locale-dependent order the #155 formatting boundary keeps out of
+logic). `tests/**` is out of scope, like #173: its quality is the test-liveness gate below, and
+the adopted rules measured six findings there — four identical ternary branches in one mock
+written to consume its parameters, and two in-place `.sort()` calls in tooling tests.
+
+**Gate integrity.** The rules are silent on `src/`, so a dead rule would look identical to a
+clean tree. [`tests/unit/tooling/sonarjs-gate.test.ts`](tests/unit/tooling/sonarjs-gate.test.ts)
+runs [`scripts/ci/sonarjs-gate-fixtures.mjs`](scripts/ci/sonarjs-gate-fixtures.mjs), which
+derives the adopted universe from the flat config, asserts every `src` scope resolves it at
+`error` and tests and stories resolve none of it, keeps the excluded rules off, and lints a
+must-fail and a corrected snippet per rule through the resolved plugin and parser against a
+throwaway TypeScript program (the typed rules need one). The fixture set must equal the
+universe and this section must name every adopted rule, so adding a rule means a fixture pair
+and an entry here in the same change. `tests/unit/config/eslint-policy.test.ts` pins a slice.
+
+**No suppression:** fix the finding at the source — merge the duplicated branch, use the
+ignored return value, throw the constructed error. Never `eslint-disable` (the
+`eslint-suppressions` workflow rejects it), never narrow the scope, and never drop a rule
+to clear a finding; a rule that turns out noisy is removed by a reviewed change to this section,
+the list and its fixtures together.
 
 ### Test liveness (issue #167)
 
@@ -2555,7 +2694,7 @@ replaces.
      nested in a conditional — see "Test liveness (issue #167)" above.
 
 5. **Submit-button loader**: The auth submit button (shared `UIForm` →
-   `SubmitControls`) shows its busy state with MUI v7's native `Button`
+   `SubmitControls`) shows its busy state with MUI v9's native `Button`
    `loading` + `loadingPosition="center"` + `loadingIndicator={<SubmitSpinner />}`.
    While submitting, the button goes natively `disabled` into the grey `#E1E7EA`
    disabled state (matching the Figma design), its text label is removed

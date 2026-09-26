@@ -38,7 +38,7 @@ longer descriptions lives in `AGENTS.md` ("Global Skills"); this table is the
 enforced, on-path quick reference.
 
 **Stack note:** several UI skills assume Tailwind CSS or shadcn/ui. This project
-uses Material UI v7 + Emotion — keep their design principles but translate
+uses Material UI v9 + Emotion — keep their design principles but translate
 utility-class / token guidance to MUI's `sx`, `styled()`, and theme.
 
 **Accessibility note:** the a11y skills below are technique guidance; they do
