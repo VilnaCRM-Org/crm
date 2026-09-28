@@ -72,6 +72,31 @@ free-for-all.
    `import()`-split inside the contract. Governed by
    `no-routes-import-feature-internals` (issue #105); see `src/routes/README.md`.
 
+## Sign-out through the protected outlet context (issue #106)
+
+The module barrel cannot export `authActions` (it would close a `no-circular`
+cycle and break barrel purity), and code outside the module may not import
+`@auth/stores`. The sign-out action therefore reaches protected pages through
+react-router **outlet context**: `ProtectedRoute` renders
+`<Outlet context={{ signOut }} />` typed as `ProtectedOutletContext`
+(`src/routes/types/protected-outlet-context.ts`), and `AppLayout` forwards it.
+
+`signOut` comes from the `useSignOut` hook (`stores/use-sign-out.ts`). It loads
+`@auth/stores` with a **dynamic** `import()` through a `ChunkRetryLoader`, so
+the eager entrypoint does not grow, and calls `authActions.logout()` on the
+singleton. A final load failure is reported through `observabilityCore` with
+`source: 'auth:sign-out'` and leaves the user on the protected page, where the
+button can be pressed again. This failure is deliberately silent (accepted in
+the approved design: no live region on the page), and there is no busy state
+while the chunk loads; surfacing either is a design-owner follow-up. Once the
+token is cleared, the guard redirects to `/sign-in` with
+`state.focusMain: true` — set only after a sign-out, never for an
+unauthenticated visit — and `AuthPageLayout` moves focus to its `<main>` once,
+through the same `useArrivalFocus` hook (`src/hooks/use-arrival-focus.ts`) that
+`AppLayout` uses after a login. The hook then replaces the entry's state with
+`focusMain: false` (keeping `from`), so returning to that entry with Back never
+moves focus again, even though `AuthPageLayout` remounts with every auth page.
+
 ## Enforcement
 
 `make lint` runs all three gates; fix a violation by routing through the

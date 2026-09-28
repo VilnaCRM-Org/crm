@@ -16,7 +16,7 @@ interface RouteScan {
 }
 
 const routeScans: readonly RouteScan[] = [
-  { key: 'home', path: ROUTE_PATHS.home, ready: 'main', seedAuth: true },
+  { key: 'home', path: ROUTE_PATHS.home, ready: 'main h1', seedAuth: true },
   { key: 'signIn', path: ROUTE_PATHS.signIn, ready: 'form button[type="submit"]' },
   { key: 'signUp', path: ROUTE_PATHS.signUp, ready: 'form button[type="submit"]' },
   { key: 'notFound', path: UNKNOWN_PATH, ready: 'main h1' },
@@ -28,6 +28,7 @@ async function openRoute(page: Page, scan: RouteScan): Promise<void> {
   }
   await page.goto(scan.path, { waitUntil: 'domcontentloaded' });
   await expect(page.locator(scan.ready).first()).toBeVisible();
+  await expect(page.getByRole('contentinfo')).toBeVisible();
 }
 
 test.describe('WCAG 2.1 AA route scans (issue #118)', () => {

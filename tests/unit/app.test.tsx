@@ -63,9 +63,9 @@ jest.mock('@/components/not-found/not-found', () => ({
   default: (): ReactElement => <div>not found page</div>,
 }));
 
-jest.mock('@/button-example', () => ({
+jest.mock('@/features/home', () => ({
   __esModule: true,
-  default: (): ReactElement => <div>button example page</div>,
+  default: (): ReactElement => <div>home page</div>,
 }));
 
 jest.mock('@auth/routes/sign-up', () => ({

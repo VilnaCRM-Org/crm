@@ -4,15 +4,19 @@ import { type JSX, Suspense } from 'react';
 import AuthSkeleton from '@/components/skeletons/auth-skeleton';
 import UIBackToMain from '@/components/ui-back-to-main';
 import UIFooter from '@/components/ui-footer';
+import useArrivalFocus from '@/hooks/use-arrival-focus';
 import AuthErrorBoundary from '@auth/components/auth-error-boundary';
 import type { AuthPageLayoutProps } from '@auth/types/auth-page-layout';
 
 export default function AuthPageLayout({ children }: AuthPageLayoutProps): JSX.Element {
+  const focusOnArrival = useArrivalFocus();
+
   return (
     <>
       <UIBackToMain />
       <Box
         component="main"
+        ref={focusOnArrival}
         tabIndex={-1}
         sx={{
           flexGrow: 1,

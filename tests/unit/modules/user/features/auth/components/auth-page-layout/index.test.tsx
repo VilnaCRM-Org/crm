@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { I18nextProvider } from 'react-i18next';
+import { MemoryRouter } from 'react-router';
 
 import localization from '@/i18n/localization.json';
 import AuthPageLayout from '@/modules/user/features/auth/components/auth-page-layout';
@@ -52,11 +53,15 @@ function makeControlledChild(): { Child: () => ReactElement; recover: () => void
   };
 }
 
-function renderLayout(child: ReactElement, onCaughtError?: jest.Mock): void {
+type Entry = NonNullable<Parameters<typeof MemoryRouter>[0]['initialEntries']>;
+
+function renderLayout(child: ReactElement, onCaughtError?: jest.Mock, entries?: Entry): void {
   render(
-    <I18nextProvider i18n={testI18n}>
-      <AuthPageLayout>{child}</AuthPageLayout>
-    </I18nextProvider>,
+    <MemoryRouter initialEntries={entries ?? ['/sign-in']}>
+      <I18nextProvider i18n={testI18n}>
+        <AuthPageLayout>{child}</AuthPageLayout>
+      </I18nextProvider>
+    </MemoryRouter>,
     { onCaughtError }
   );
 }
@@ -84,6 +89,22 @@ describe('AuthPageLayout', () => {
       'none'
     );
     expect(styleRuleFor(main)?.getPropertyValue('outline')).toBe('');
+  });
+
+  it('moves focus to the main landmark when the sign-out redirect asks for it', () => {
+    renderLayout(<p>child</p>, undefined, [
+      { pathname: '/sign-in', state: { from: { pathname: '/' }, focusMain: true } },
+    ] as Entry);
+
+    expect(screen.getByRole('main')).toHaveFocus();
+  });
+
+  it('leaves focus alone when the redirect state does not ask for it', () => {
+    renderLayout(<p>child</p>, undefined, [
+      { pathname: '/sign-in', state: { from: { pathname: '/' }, focusMain: false } },
+    ] as Entry);
+
+    expect(screen.getByRole('main')).not.toHaveFocus();
   });
 
   it('renders the AuthSkeleton fallback while the child suspends (AC2)', () => {

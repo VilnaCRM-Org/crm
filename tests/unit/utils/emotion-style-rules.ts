@@ -19,15 +19,29 @@ const selectorsFor = (element: Element, suffix: string): string[] =>
     .filter((token) => token.startsWith('css-'))
     .map((token) => `.${token}${suffix}`);
 
+const declarationsIn = (
+  rules: CSSRule[],
+  element: Element,
+  suffix: string
+): CSSStyleDeclaration[] => {
+  const selectors = selectorsFor(element, suffix).map(compact);
+  return rules
+    .filter(isStyleRule)
+    .filter((rule) => selectors.includes(compact(rule.selectorText)))
+    .map((rule) => rule.style);
+};
+
 const declarationIn = (
   rules: CSSRule[],
   element: Element,
   suffix: string
-): CSSStyleDeclaration | undefined => {
-  const selectors = selectorsFor(element, suffix).map(compact);
-  return rules.filter(isStyleRule).find((rule) => selectors.includes(compact(rule.selectorText)))
-    ?.style;
-};
+): CSSStyleDeclaration | undefined => declarationsIn(rules, element, suffix)[0];
+
+const mediaRulesMatching = (mediaFragment: string): CSSRule[] =>
+  topLevelRules()
+    .filter(isMediaRule)
+    .filter((rule) => compact(rule.media.mediaText).includes(compact(mediaFragment)))
+    .flatMap((rule) => Array.from(rule.cssRules));
 
 /**
  * The emotion declaration block generated for `element` (optionally for one of its
@@ -44,10 +58,15 @@ export const mediaStyleRuleFor = (
   element: Element,
   mediaFragment: string,
   suffix = ''
-): CSSStyleDeclaration | undefined => {
-  const nested = topLevelRules()
-    .filter(isMediaRule)
-    .filter((rule) => compact(rule.media.mediaText).includes(compact(mediaFragment)))
-    .flatMap((rule) => Array.from(rule.cssRules));
-  return declarationIn(nested, element, suffix);
-};
+): CSSStyleDeclaration | undefined =>
+  declarationIn(mediaRulesMatching(mediaFragment), element, suffix);
+
+export const winningMediaValueFor = (
+  element: Element,
+  mediaFragment: string,
+  property: string
+): string | undefined =>
+  declarationsIn(mediaRulesMatching(mediaFragment), element, '')
+    .map((style) => style.getPropertyValue(property))
+    .filter((value) => value !== '')
+    .at(-1);

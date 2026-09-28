@@ -67,6 +67,23 @@ applies to a module's **top-level** routes only; nested children inherit their
 parent's protection context, so declaring a guard on a child is rejected by the
 `RouteValidator` (it would otherwise render outside `ProtectedRoute`).
 
+`AppLayout` is the shell chrome of every protected page (issue #106). It renders
+the page's `<main>` and, after it as a sibling, the shared `UIFooter`, so the
+footer keeps its `contentinfo` role and never sits inside `<main>`. The footer
+is loaded lazily behind its own `<Suspense>`, because `AppLayout` is in the
+eager entrypoint and a static footer import would spend the remaining raw
+entrypoint budget. Its fallback is an empty, `aria-hidden` box that only holds
+the footer's height: the page is already usable, so the chrome shows no loader
+and announces nothing while its chunk loads. The chunk comes through a `ChunkRetryLoader`
+(`src/components/layouts/footer-loader.ts`, issue #147), and a load that still
+fails resolves to an empty component: a missing footer never reaches the
+`AppLayout` `errorElement` and never replaces the page. `AppLayout` also forwards
+`ProtectedRoute`'s outlet context (`ProtectedOutletContext`, `{ signOut }`,
+from `src/routes/types/protected-outlet-context.ts`) to the page with
+`<Outlet context={useOutletContext()} />` — a bare `<Outlet />` resets the
+context to `undefined` in react-router 7. The home page at `/`
+(`@/features/home`) reads `signOut` from that context.
+
 ## Errors and fallbacks (issue #116)
 
 Every route object the composer emits — the root route, the two layout routes of

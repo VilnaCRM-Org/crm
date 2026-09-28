@@ -352,17 +352,17 @@ Two remedies, in order:
    and is silently ignored. For that shape write the call expanded, with the deps array on its own
    line under the directive.
 
-The only annotated case today is the React hook dependency array, at twelve sites, and it comes in
-two shapes. Eleven are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
+The only annotated case today is the React hook dependency array, at ten sites, and it comes in
+two shapes. Nine are empty: `ArrayDeclaration` rewrites `[]` to `["Stryker was here"]`, and React
 compares deps element-wise with `Object.is`, so a constant one-element array is equal on every
-render and the effect or memo fires exactly as it does with `[]`. The twelfth,
+render and the effect or memo fires exactly as it does with `[]`. The tenth,
 `use-login-submitter.ts`, annotates the **non-empty** `[actions, loginControllersRef]`, which
 `ArrayDeclaration` empties instead — equivalent for a different reason worth stating separately:
 `actions` is always the `authActions` module singleton and `loginControllersRef` is a `useRef`
 box, so neither identity ever changes and an emptied list memoizes exactly the same callback.
 Hoisting either literal to a named constant would remove the mutant, but
 `react-hooks/exhaustive-deps` (an `error` here, issue #164) rejects a deps argument that is not an
-array literal, so there is nothing left to change. Adding a thirteenth needs the same standard of
+array literal, so there is nothing left to change. Adding an eleventh needs the same standard of
 proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
@@ -2677,7 +2677,12 @@ replaces.
    after a successful login (issue #150). The redirect fires only on a
    null→token transition — never on mount — so the Lighthouse seeded-token
    audit of `/sign-in` is unaffected; the target must be an internal path and
-   `AppLayout` moves focus to `<main>` when it lands.
+   `AppLayout` moves focus to `<main>` when it lands. Sign-out reaches a protected page
+   through the outlet context `ProtectedRoute` provides and `AppLayout` forwards
+   (`ProtectedOutletContext`, `{ signOut }`, issue #106); the redirect it causes
+   carries `state.focusMain`, so `AuthPageLayout` focuses `<main>` of `/sign-in`
+   through the same `useArrivalFocus` hook, which then clears the marker from the
+   history entry so Back never moves focus again.
 
 4. **Testing Philosophy**:
    - Unit tests for components and utilities

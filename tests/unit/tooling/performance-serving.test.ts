@@ -106,7 +106,7 @@ describe('performance serving config', () => {
     // Each page is a lazy loader inside its owning module's contract, and its chunk is named
     // via webpackChunkName so the bundle-size report tracks it per route (issue #117).
     expect(appRoutesSource).toMatch(
-      /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'@\/button-example'\)/
+      /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'@\/features\/home'\)/
     );
     expect(appRoutesSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'@\/components\/not-found\/not-found'\)/
@@ -121,7 +121,7 @@ describe('performance serving config', () => {
     // Pages are never statically imported (which would defeat code splitting).
     expect(routesSource).not.toContain('import SignUp');
     expect(routesSource).not.toContain('import SignIn');
-    expect(routesSource).not.toContain('import ButtonExample');
+    expect(routesSource).not.toContain('import Home');
     expect(authRoutesSource).not.toContain("import SignUp from './sign-up'");
     expect(authRoutesSource).not.toContain("import SignIn from './sign-in'");
 
