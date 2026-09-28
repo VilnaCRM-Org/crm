@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import type { ReactElement } from 'react';
+import { MemoryRouter } from 'react-router';
 
 import AuthPageLayout from '@auth/components/auth-page-layout';
 
@@ -21,9 +22,11 @@ jest.mock('@/components/skeletons/auth-skeleton', () => ({
 describe('AuthPageLayout main region', () => {
   it('lets the main region grow as a vertical flex column', () => {
     render(
-      <AuthPageLayout>
-        <p>child</p>
-      </AuthPageLayout>
+      <MemoryRouter>
+        <AuthPageLayout>
+          <p>child</p>
+        </AuthPageLayout>
+      </MemoryRouter>
     );
 
     expect(screen.getByRole('main')).toHaveStyle({
@@ -35,9 +38,11 @@ describe('AuthPageLayout main region', () => {
 
   it('does not lay the main region out as a row', () => {
     render(
-      <AuthPageLayout>
-        <p>child</p>
-      </AuthPageLayout>
+      <MemoryRouter>
+        <AuthPageLayout>
+          <p>child</p>
+        </AuthPageLayout>
+      </MemoryRouter>
     );
 
     expect(screen.getByRole('main')).not.toHaveStyle({ flexDirection: 'row' });

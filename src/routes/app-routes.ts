@@ -7,7 +7,7 @@ const appRoutes: RouteModule = {
     {
       index: true,
       guard: 'protected',
-      load: () => import(/* webpackChunkName: "button-example" */ '@/button-example'),
+      load: () => import(/* webpackChunkName: "home" */ '@/features/home'),
       meta: { permission: 'app.home' },
     },
     {

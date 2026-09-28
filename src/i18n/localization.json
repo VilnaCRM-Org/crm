@@ -1,9 +1,6 @@
 {
   "en": {
     "translation": {
-      "button_example": {
-        "label": "Example button"
-      },
       "error_boundary": {
         "title": "Something went wrong",
         "unexpected": "An unexpected error occurred. You can try again or go to the homepage.",
@@ -32,6 +29,12 @@
       "formatting": {
         "updated_at": "Last updated {{value, datetime}}",
         "price": "Price: {{value, currency}}"
+      },
+      "home": {
+        "title": "Home",
+        "heading": "Welcome to VilnaCRM",
+        "description": "CRM sections will appear here once they are connected.",
+        "sign_out": "Sign out"
       },
       "root_element_missing": "Root element not found",
       "buttons": {
@@ -177,9 +180,6 @@
   },
   "uk": {
     "translation": {
-      "button_example": {
-        "label": "Приклад кнопки"
-      },
       "error_boundary": {
         "title": "Щось пішло не так",
         "unexpected": "Сталася неочікувана помилка. Спробуйте ще раз або перейдіть на головну сторінку.",
@@ -208,6 +208,12 @@
       "formatting": {
         "updated_at": "Оновлено {{value, datetime}}",
         "price": "Ціна: {{value, currency}}"
+      },
+      "home": {
+        "title": "Головна",
+        "heading": "Ласкаво просимо до VilnaCRM",
+        "description": "Розділи CRM з’являться тут, щойно їх буде підключено.",
+        "sign_out": "Вийти"
       },
       "root_element_missing": "Кореневий елемент не знайдено",
       "buttons": {

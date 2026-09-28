@@ -50,9 +50,9 @@ jest.mock('@/components/not-found/not-found', () => ({
   default: (): JSX.Element => <div>not found page</div>,
 }));
 
-jest.mock('@/button-example', () => ({
+jest.mock('@/features/home', () => ({
   __esModule: true,
-  default: (): JSX.Element => <div>button example page</div>,
+  default: (): JSX.Element => <div>home page</div>,
 }));
 
 jest.mock('@auth/routes/sign-up', () => ({
@@ -68,9 +68,9 @@ jest.mock('@auth/routes/sign-in', () => ({
 const App = jest.requireActual<typeof import('@/app')>('@/app').default;
 
 describe('App root route', () => {
-  it('renders the button example page through the protected outlet', async () => {
+  it('renders the home page through the protected outlet', async () => {
     render(<App />);
 
-    expect(await screen.findByText('button example page')).toBeInTheDocument();
+    expect(await screen.findByText('home page')).toBeInTheDocument();
   });
 });

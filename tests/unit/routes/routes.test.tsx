@@ -73,13 +73,13 @@ jest.mock('@/components/not-found/not-found', () => ({
   default: (): ReactElement => <div>not found page</div>,
 }));
 
-jest.mock('@/button-example', () => ({
+jest.mock('@/features/home', () => ({
   __esModule: true,
   default: (): ReactElement => {
     if (mockPageError) {
       throw mockPageError;
     }
-    return <div>button example page</div>;
+    return <div>home page</div>;
   },
 }));
 
@@ -131,9 +131,9 @@ describe('routes', () => {
     expect(await screen.findByText('not found page')).toBeInTheDocument();
   });
 
-  it('renders ButtonExample through AppLayout at / (AC1)', async () => {
+  it('renders the home page through AppLayout at / (AC1)', async () => {
     renderAt('/');
-    expect(await screen.findByText('button example page')).toBeInTheDocument();
+    expect(await screen.findByText('home page')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
   });
 
@@ -146,7 +146,7 @@ describe('routes', () => {
 
     expect(await screen.findByText('route error')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
-    expect(screen.queryByText('button example page')).not.toBeInTheDocument();
+    expect(screen.queryByText('home page')).not.toBeInTheDocument();
     expect(onCaughtError).toHaveBeenCalledTimes(1);
     expect(onCaughtError.mock.calls[0]?.[0]).toBe(mockPageError);
     // The exported onRouteError is the composer's handler: the page error reaches the boundary
