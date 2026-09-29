@@ -49,6 +49,14 @@ export default class UiToolkitChecksumsBuilder {
     if (installFindings.length > 0) {
       return { findings: installFindings };
     }
+    const gathered = await this.gather(pin);
+    if (gathered.findings.length > 0) {
+      return gathered;
+    }
+    return { findings: [], manifest: this.manifestFor(pin, gathered) };
+  }
+
+  async gather(pin) {
     const tarball = await this.fetchTarball(pin.spec);
     if (tarball.findings.length > 0) {
       return tarball;
@@ -61,17 +69,18 @@ export default class UiToolkitChecksumsBuilder {
     if (tree.findings.length > 0) {
       return tree;
     }
+    return { findings: [], tarball, checksum, tree };
+  }
+
+  manifestFor(pin, { tarball, checksum, tree }) {
     return {
-      findings: [],
-      manifest: {
-        comment: this.existingComment(),
-        algorithm: ALGORITHM,
-        version: pin.version,
-        tarballUrl: pin.spec,
-        tarballSha256: tarball.sha256,
-        releaseChecksum: checksum.state,
-        artifacts: tree.artifacts,
-      },
+      comment: this.existingComment(),
+      algorithm: ALGORITHM,
+      version: pin.version,
+      tarballUrl: pin.spec,
+      tarballSha256: tarball.sha256,
+      releaseChecksum: checksum.state,
+      artifacts: tree.artifacts,
     };
   }
 

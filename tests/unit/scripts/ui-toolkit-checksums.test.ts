@@ -2,15 +2,10 @@
  * @jest-environment node
  */
 
-import { createHash } from 'node:crypto';
-
 import UiToolkitChecksumsBuilder from '@scripts/ci/ui-toolkit/ui-toolkit-checksums-builder.mjs';
 import UiToolkitInstallSource from '@scripts/ci/ui-toolkit/ui-toolkit-install-source.mjs';
 import UI_TOOLKIT_POLICY from '@scripts/ci/ui-toolkit/ui-toolkit-policy.mjs';
-
-type Files = Record<string, string>;
-
-type FakeFileSystem = { readFile: jest.Mock; readDir: jest.Mock };
+import { fileSystem, releaseUrl, sha256, type Files } from '@tests/utils/ui-toolkit-fixtures';
 
 type Manifest = {
   comment: string;
@@ -31,17 +26,6 @@ const EXPECTED_PATHS = [
   'package.json',
 ];
 
-function sha256(content: string): string {
-  return createHash('sha256').update(content).digest('hex');
-}
-
-function releaseUrl(tag: string, asset = tag): string {
-  return (
-    'https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/' +
-    `v${tag}/vilnacrm-ui-toolkit-${asset}.tgz`
-  );
-}
-
 function repository(version: string, spec = releaseUrl(version)): Files {
   return {
     'package.json': JSON.stringify({ dependencies: { '@vilnacrm/ui-toolkit': spec } }),
@@ -52,38 +36,6 @@ function repository(version: string, spec = releaseUrl(version)): Files {
     [`${PACKAGE_ROOT}/build/assets/Golos.woff2`]: 'font bytes',
     [`${PACKAGE_ROOT}/build/Golos-OFL.txt`]: 'font licence',
   };
-}
-
-function entryKind(files: Files, links: string[], childPath: string): string {
-  if (links.includes(childPath)) {
-    return 'link';
-  }
-  return childPath in files ? 'file' : 'directory';
-}
-
-function fileSystem(files: Files, links: string[] = []): FakeFileSystem {
-  const readFile = jest.fn((filePath: string, encoding?: BufferEncoding) => {
-    const content = files[filePath];
-    if (content === undefined) {
-      throw new Error(`ENOENT: no such file or directory, open '${filePath}'`);
-    }
-    return encoding === undefined ? Buffer.from(content) : content;
-  });
-  const readDir = jest.fn((dirPath: string) => {
-    const prefix = `${dirPath}/`;
-    const names = [...Object.keys(files), ...links]
-      .filter((entryPath) => entryPath.startsWith(prefix))
-      .map((entryPath) => entryPath.slice(prefix.length).split('/')[0] ?? '');
-    return [...new Set(names)].map((name) => {
-      const kind = entryKind(files, links, `${prefix}${name}`);
-      return {
-        name,
-        isFile: (): boolean => kind === 'file',
-        isDirectory: (): boolean => kind === 'directory',
-      };
-    });
-  });
-  return { readFile, readDir };
 }
 
 function respond(body: string | null, status: number): () => Promise<Response> {
