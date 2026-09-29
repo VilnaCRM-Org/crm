@@ -95,7 +95,7 @@ describe('Lighthouse DIND runtime contract', () => {
     const dotenvVersion = lock.match(/^\s*"dotenv": \["dotenv@([^"]+)"/m)?.[1];
 
     expect(lhciVersion).toBe('0.15.1');
-    expect(dotenvExpandVersion).toBe('12.0.3');
+    expect(dotenvExpandVersion).toBe('13.0.0');
     expect(dotenvVersion).toBe('17.4.2');
     expect(makefile).toMatch(/LHCI_DIND_CLI_VERSION\s*:=\s*\$\(shell sed .*bun\.lock/);
     expect(makefile).toMatch(/DOTENV_EXPAND_DIND_VERSION\s*:=\s*\$\(shell sed .*bun\.lock/);
