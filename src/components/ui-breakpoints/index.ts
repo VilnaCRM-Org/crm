@@ -1,20 +1,8 @@
-import { Theme, createTheme } from '@mui/material';
+import {
+  crmBreakpointsTheme,
+  heightBreakpoints as toolkitHeightBreakpoints,
+} from '@vilnacrm/ui-toolkit/ui-breakpoints';
 
-const breakpointsTheme: Theme = createTheme({
-  breakpoints: {
-    values: {
-      xs: 320,
-      sm: 480,
-      md: 768,
-      lg: 1024,
-      xl: 1440,
-    },
-  },
-});
+export const heightBreakpoints = toolkitHeightBreakpoints;
 
-export const heightBreakpoints = {
-  compact: 550,
-  medium: 700,
-} as const;
-
-export default breakpointsTheme;
+export default crmBreakpointsTheme;

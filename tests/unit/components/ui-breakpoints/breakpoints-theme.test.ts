@@ -37,4 +37,12 @@ describe('ui-breakpoints theme', () => {
 
     expect(heightBreakpoints).toEqual({ compact: 550, medium: 700 });
   });
+
+  it('re-exports the toolkit CRM breakpoints theme and height map by identity', async () => {
+    const seam = await import('@/components/ui-breakpoints');
+    const toolkit = await import('@vilnacrm/ui-toolkit/ui-breakpoints');
+
+    expect(seam.default).toBe(toolkit.crmBreakpointsTheme);
+    expect(seam.heightBreakpoints).toBe(toolkit.heightBreakpoints);
+  });
 });
