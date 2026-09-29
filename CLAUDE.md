@@ -547,7 +547,12 @@ Three properties every image in the repository now carries, pinned by
   Docker-based job when the tag moved under it — and a digest is not. The pin is a floor, not
   a freeze: the `docker` Dependabot lane (`.github/dependabot.yml`, directories `/` and
   `/tests/load`) raises it when a tag is re-pushed. The tag stays in the line so a human can
-  read the version and so the Node single-version test keeps matching it.
+  read the version and so the Node single-version test keeps matching it. The Docker Official
+  Images (`node`, `alpine`, `debian`) are pulled from `mirror.gcr.io/library/`, Google's
+  pull-through cache of Docker Hub, which serves the same manifest digests. They used to come
+  from `public.ecr.aws/docker/library/`, whose anonymous data allowance is shared by every
+  GitHub-hosted runner and ran out near each month's end, failing random jobs with
+  `429 Too Many Requests: Data limit exceeded` before any repository code ran.
 - **Every image declares its health.** The long-running images carry the same probe their
   compose service runs, so an orchestrator outside compose restarts a dead container: the
   static server (`serve-base`, inherited by `production` and `test-harness`) curls port 3001,
@@ -746,7 +751,7 @@ bundled npm and its `node_modules` were the bulk of the image findings, and the 
 performance` dive gate (`.dive-ci`, `highestWastedBytes: 20MB`) forbids the obvious fix of deleting
 base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in a throwaway
 `serve-tools` stage (`node:24.8.0-alpine3.21`) and builds `serve-base`
-`FROM public.ecr.aws/docker/library/alpine:3.21` — pinned `curl`, `libgcc` and `libstdc++`, a
+`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc` and `libstdc++`, a
 `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
 `/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →

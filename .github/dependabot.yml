@@ -73,5 +73,5 @@ updates:
           - 'minor'
           - 'patch'
     ignore:
-      - dependency-name: 'docker/library/node'
+      - dependency-name: '*library/node'
         versions: ['25.x']
