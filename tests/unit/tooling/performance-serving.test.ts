@@ -10,11 +10,14 @@ const readFile = (relativePath: string): string =>
 
 const readJson = <T>(relativePath: string): T => JSON.parse(readFile(relativePath)) as T;
 
-// Static value-level module edges only: `import type` is erased, `import()` is a chunk boundary.
+// Static value-level module edges only: `import type` and an all-`type` specifier list are
+// erased, and `import()` is a chunk boundary.
+const TYPE_ONLY_SPECIFIERS = /^\{\s*type\s[^,}]+(?:,\s*type\s[^,}]+)*,?\s*\}$/;
+
 const staticImportsOf = (source: string): string[] =>
-  [...source.matchAll(/^(?:import|export)\s+(?!type\s)(?:[^'";]*?\sfrom\s+)?'([^']+)';$/gms)].map(
-    (match) => match[1] ?? ''
-  );
+  [...source.matchAll(/^(?:import|export)\s+(?!type\s)(?:([^'";]*?)\s+from\s+)?'([^']+)';$/gms)]
+    .filter((match) => !TYPE_ONLY_SPECIFIERS.test((match[1] ?? '').trim()))
+    .map((match) => match[2] ?? '');
 
 const MODULE_EXTENSIONS = ['.ts', '.tsx', '.js', '/index.ts', '/index.tsx', '/index.js'];
 

@@ -74,4 +74,4 @@ updates:
           - 'patch'
     ignore:
       - dependency-name: '*library/node'
-        versions: ['25.x']
+        versions: ['~> 25.0']
