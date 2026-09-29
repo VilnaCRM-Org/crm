@@ -131,7 +131,19 @@ is in [README.md](README.md#ci-checks).
   request. No binding threshold in `config/gate-thresholds.manifest.json` can be weakened without
   the `gate-relaxation` label turning the relaxation into a reviewed decision.
 - **Lockfile provenance** — `make lint-lockfile`, part of `make lint` and therefore of
-  `static testing`. Every package in `bun.lock` must resolve from the npm registry allowlist.
+  `static testing`. Every package in `bun.lock` must resolve from the npm registry allowlist,
+  with one exception: `@vilnacrm/ui-toolkit` may resolve from the single release-tarball URL
+  pinned in `package.json` (a `github.com/VilnaCRM-Org/ui-toolkit/releases/download/` asset),
+  and only as that package's own resolution; the same URL under any other package name fails.
+  The bytes installed from that tarball are then checked offline by the `make lint-ui-toolkit`
+  digest gate below.
+- **UI toolkit digest** — `make lint-ui-toolkit`, part of `make lint` and therefore of
+  `static testing`. Installed build artifacts are verifiable offline: every installed toolkit
+  file must match the sha256 digest committed in `config/ui-toolkit-checksums.json`, and no
+  extra file may appear. `bun install --frozen-lockfile` itself fetches unverified bytes —
+  `bun.lock` pins the tarball's URL, not its bytes — so the gate detects a tampered, drifted or
+  stale install afterwards rather than preventing the download. See
+  [`docs/ui-toolkit.md`](docs/ui-toolkit.md).
 
 - **Build provenance** — [`autorelease.yml`](.github/workflows/autorelease.yml), every release
   (issue #136). The release tarball and the GHCR image (by manifest digest) carry a SLSA build

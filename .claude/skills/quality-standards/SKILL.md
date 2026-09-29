@@ -17,17 +17,18 @@ suite and should not be used as a mutating formatter.
 
 ## Quality Gates
 
-| Gate         | Command              |
-| ------------ | -------------------- |
-| Formatting   | `make format`        |
-| ESLint       | `make lint-eslint`   |
-| TypeScript   | `make lint-tsc`      |
-| Markdown     | `make lint-md`       |
-| Duplication  | `make lint-dup`      |
-| Metrics      | `make lint-metrics`  |
-| Licenses     | `make lint-licenses` |
-| Localization | `make lint-i18n`     |
-| Full quality | `make lint`          |
+| Gate              | Command                |
+| ----------------- | ---------------------- |
+| Formatting        | `make format`          |
+| ESLint            | `make lint-eslint`     |
+| TypeScript        | `make lint-tsc`        |
+| Markdown          | `make lint-md`         |
+| Duplication       | `make lint-dup`        |
+| Metrics           | `make lint-metrics`    |
+| Licenses          | `make lint-licenses`   |
+| UI toolkit digest | `make lint-ui-toolkit` |
+| Localization      | `make lint-i18n`       |
+| Full quality      | `make lint`            |
 
 ## Protected Policy
 

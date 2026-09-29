@@ -17,6 +17,7 @@ This index lists the Architecture Decision Records for this repository.
 - [ADR-013: Bun manages dependencies and runs tooling; Node stays the runtime](./013-bun-package-manager.md)
 - [ADR-014: Code health is gated by a committed metrics policy and a zero-clone duplication gate](./014-code-health-metric-gates.md)
 - [ADR-015: TypeScript strictness is ratcheted flag-by-flag, gated against regression](./015-typescript-strictness-ratchet.md)
+- [ADR-016: UI toolkit installed from a digest-verified tarball, consumed only via identical seams](./016-ui-toolkit-installation.md)
 
 ## Writing a new ADR
 
