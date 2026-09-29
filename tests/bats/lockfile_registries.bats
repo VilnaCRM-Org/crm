@@ -179,6 +179,121 @@ EOF
   [ "$status" -eq 2 ]
 }
 
+@test "sanctioned ui-toolkit tarball URL under another package name is rejected (exit 1)" {
+  write_lock toolkit-other-pkg.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "foo": ["foo@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz", { "peerDependencies": {} }],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/toolkit-other-pkg.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz"* ]]
+}
+
+@test "another repository's release asset under the ui-toolkit name is rejected (exit 1)" {
+  write_lock toolkit-other-repo.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/evil-org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz", { "peerDependencies": {} }],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/toolkit-other-repo.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"https://github.com/evil-org/ui-toolkit/"* ]]
+}
+
+@test "ui-toolkit with a wrong release tag or a wrong asset name is rejected (exit 1)" {
+  write_lock toolkit-wrong-tag.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "dependencies": {
+        "@vilnacrm/ui-toolkit": "https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.1/vilnacrm-ui-toolkit-0.5.0.tgz",
+      },
+    },
+  },
+  "packages": {
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0-evil.tgz", { "peerDependencies": {} }],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/toolkit-wrong-tag.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"/download/v0.5.1/vilnacrm-ui-toolkit-0.5.0.tgz"* ]]
+  [[ "$output" == *"/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0-evil.tgz"* ]]
+}
+
+@test "ui-toolkit from the lookalike host github.com.evil.example is rejected (exit 1)" {
+  write_lock toolkit-lookalike.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com.evil.example/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz", { "peerDependencies": {} }],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/toolkit-lookalike.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"https://github.com.evil.example/"* ]]
+}
+
+@test "ui-toolkit in the github: spec form is rejected (exit 1)" {
+  write_lock toolkit-github-spec.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@github:VilnaCRM-Org/ui-toolkit#v0.5.0", { "peerDependencies": {} }],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/toolkit-github-spec.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"non-registry resolution specifiers"* ]]
+}
+
+@test "rogue URL appended after the sanctioned ui-toolkit packages-entry token is rejected (exit 1)" {
+  write_lock toolkit-appended.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "packages": {
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz", { "tarball": "https://evil.example/ui-toolkit.tgz" }],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/toolkit-appended.lock"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"https://evil.example/ui-toolkit.tgz"* ]]
+}
+
+@test "both sanctioned ui-toolkit lines beside a registry entry pass (exit 0)" {
+  write_lock toolkit-sanctioned.lock <<'EOF'
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "dependencies": {
+        "@vilnacrm/ui-toolkit": "https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz",
+      },
+    },
+  },
+  "packages": {
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz", { "peerDependencies": { "react": "^19.0.0" } }],
+
+    "ok": ["ok@1.0.0", "", {}, "https://registry.npmjs.org/ok/-/ok-1.0.0.tgz"],
+  }
+}
+EOF
+  run sh "$SCRIPT" "$FIX/toolkit-sanctioned.lock"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"all resolutions on allowed registries"* ]]
+}
+
 @test "make lint-lockfile passes on the real repository bun.lock" {
   run make -C "$PROJECT_ROOT" lint-lockfile
   [ "$status" -eq 0 ]

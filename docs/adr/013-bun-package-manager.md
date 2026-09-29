@@ -25,8 +25,9 @@ memory-leak harnesses and the CI scripts all run on Node, and several of them (J
 
 - Install speed inside Docker, where a cold install runs on every image build
 - A lockfile the supply-chain gates can parse: Trivy scores `bun.lock`'s production closure,
-  `make lint-lockfile` checks its registry provenance, and Dependabot's `bun` ecosystem updates
-  it with `package.json` in one pull request (ADR-004)
+  `make lint-lockfile` checks its registry provenance (the npm registry plus one exact,
+  package-bound release-tarball URL for `@vilnacrm/ui-toolkit`), and Dependabot's `bun`
+  ecosystem updates it with `package.json` in one pull request (ADR-004)
 - No change to the runtime the test harnesses and the production `serve` image are validated
   against
 - One pinned version, reproducible in Docker and CI

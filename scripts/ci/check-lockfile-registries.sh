@@ -3,7 +3,8 @@
 #
 # `bun install --frozen-lockfile` only verifies lockfile/manifest *consistency*; it
 # says nothing about *provenance*. This gate fails the build if any package in the
-# lockfile resolves from somewhere other than the npm registry allowlist, closing the
+# lockfile resolves from somewhere other than the npm registry allowlist or the single
+# sanctioned @vilnacrm/ui-toolkit release tarball, closing the
 # "swap a resolution URL + matching integrity hash for an attacker tarball" hole that a
 # multi-thousand-line lockfile diff hides from human review.
 #
@@ -39,7 +40,19 @@ fi
 # (a) URL resolutions: allowlist anchored so lookalike hosts
 #     (registry.npmjs.org.evil.com) fail.
 ALLOWED='^https://registry\.npmjs\.org(/|$)'
-rogue_urls=$(grep -oE 'https?://[^" ]+' "$LOCK" | grep -vE "$ALLOWED" || true)
+TOOLKIT_PKG='@vilnacrm/ui-toolkit'
+TOOLKIT_URL='https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz'
+WORKSPACE_TOKEN="\"$TOOLKIT_PKG\": \"$TOOLKIT_URL\""
+PACKAGE_TOKEN="\"$TOOLKIT_PKG\": [\"$TOOLKIT_PKG@$TOOLKIT_URL\", {"
+rogue_urls=$(awk -v ws="$WORKSPACE_TOKEN" -v pk="$PACKAGE_TOKEN" '{
+  sub(/^[ \t]+/, "")
+  if (index($0, ws) == 1) {
+    $0 = substr($0, length(ws) + 1)
+  } else if (index($0, pk) == 1) {
+    $0 = substr($0, length(pk) + 1)
+  }
+  print
+}' "$LOCK" | grep -oE 'https?://[^" ]+' | grep -vE "$ALLOWED" || true)
 if [ -n "$rogue_urls" ]; then
   echo "Disallowed resolution URLs in $LOCK:"
   echo "$rogue_urls"

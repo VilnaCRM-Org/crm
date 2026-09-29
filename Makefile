@@ -575,7 +575,7 @@ lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry
 # rejected — a literal `--onlyAllow` list cannot do this). Remediation policy (mirrors the
 # repo's root-cause-not-suppression rule): 1st replace the offending dependency; 2nd add its
 # specific SPDX id here as a reviewed one-line diff. Never bypass the checker.
-ALLOWED_LICENSES            = MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;CC-BY-4.0
+ALLOWED_LICENSES            = MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;CC-BY-4.0;CC0-1.0
 
 lint-licenses: ## Fail on any production dependency whose license is outside the SPDX allowlist (issue #191)
 	$(EXEC_DEV_TTYLESS) env ALLOWED_LICENSES='$(ALLOWED_LICENSES)' node scripts/ci/check-licenses.mjs

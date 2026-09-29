@@ -838,7 +838,9 @@ Apache-2.0)` passes, `(GPL-3.0 AND MIT)` fails (the AND binds you to GPL), and u
 strings fail closed. This is stricter than a literal allowlist match, which would wrongly accept an
 AND-compound whenever one operand happened to be allowed. The allowlist of permitted SPDX operand
 ids lives in the `Makefile` (`ALLOWED_LICENSES`), trimmed to exactly what the production tree
-contains today; `--production` keeps devDependencies out of scope.
+contains today; `--production` keeps devDependencies out of scope. `CC0-1.0` is on it for
+`@vilnacrm/ui-toolkit`, a first-party VilnaCRM package released under the same `CC0-1.0` as CRM
+itself.
 
 Because a dependency (or a transitive one) can **relicense between versions**, review the
 `make lint-licenses` result whenever you add or bump a dependency. If it fails, follow the
