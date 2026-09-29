@@ -1,4 +1,4 @@
-import { Box } from '@mui/material';
+import styled from '@emotion/styled';
 import type { JSX } from 'react';
 
 const visuallyHidden = {
@@ -13,10 +13,12 @@ const visuallyHidden = {
   width: '1px',
 } as const;
 
+const VisuallyHiddenStatus = styled('span')(visuallyHidden);
+
 export default function UILiveStatus({ message }: { message: string }): JSX.Element {
   return (
-    <Box component="span" role="status" aria-atomic="true" sx={visuallyHidden}>
+    <VisuallyHiddenStatus role="status" aria-atomic="true">
       {message}
-    </Box>
+    </VisuallyHiddenStatus>
   );
 }

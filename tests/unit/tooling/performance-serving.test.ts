@@ -134,6 +134,40 @@ describe('performance serving config', () => {
     expect(rootLayoutSource).not.toContain('fallback={null}');
   });
 
+  it('keeps the MUI theme engine off the eager path (ADR-017)', () => {
+    const eagerSources = [
+      'src/index.tsx',
+      'src/app.tsx',
+      'src/providers/app-providers.tsx',
+      'src/components/route-fallback/index.tsx',
+      'src/components/route-fallback/styles.ts',
+      'src/components/ui-live-status/index.tsx',
+      'src/components/layouts/app-layout.tsx',
+      'src/components/layouts/root-layout.tsx',
+      'src/components/error-boundary/error-fallback.tsx',
+      'src/components/error-boundary/route-error.tsx',
+      'src/components/error-boundary/ui-error-boundary.tsx',
+      'src/modules/user/features/auth/components/protected-route/index.tsx',
+    ];
+    const muiImports = Object.fromEntries(
+      eagerSources.map((file) => [file, readFile(file).match(/^import .* from '@mui\/.*';$/gm)])
+    );
+
+    expect(muiImports).toEqual({
+      ...Object.fromEntries(eagerSources.map((file) => [file, null])),
+      'src/providers/app-providers.tsx': [
+        "import { StyledEngineProvider } from '@mui/material/styles';",
+      ],
+    });
+
+    // Every lazy surface that renders MUI receives the theme from the parallel mui-theme chunk.
+    expect(readFile('src/routes/route-mapper.tsx')).toContain('new ThemedChunkLoader(');
+    expect(readFile('src/components/layouts/footer-loader.ts')).toContain('new ThemedChunkLoader(');
+    expect(readFile('src/providers/mui-theme/mui-theme-shell-loader.ts')).toContain(
+      'webpackChunkName: "mui-theme"'
+    );
+  });
+
   it('keeps registration notifications out of the initial auth form chunk', () => {
     const registrationFormSource = readFile(
       'src/modules/user/features/auth/components/form-section/auth-forms/registration-form.tsx'

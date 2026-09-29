@@ -20,7 +20,4 @@ export default createTheme({
   customFonts: {
     inter: 'Inter, sans-serif',
   },
-  components: {
-    MuiCssBaseline: {},
-  },
 });

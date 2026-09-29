@@ -6,6 +6,8 @@ import type { FallbackLandmark } from '@/components/types/error-boundary';
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import ReloadOnceGuard from '@/lib/reliability/reload-once-guard';
 import ReloadingChunkLoader from '@/lib/reliability/reloading-chunk-loader';
+import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
+import ThemedChunkLoader from '@/providers/mui-theme/themed-chunk-loader';
 
 import type { AppRouteObject, PageLoader, PageModule } from './types/app-route';
 
@@ -27,7 +29,10 @@ class RouteMapper {
   // fresh deploy; a protected page may not, because the in-memory auth token would not survive
   // the reload (ADR-007) — its second failure goes to the route error boundary instead.
   private loaderFor(route: AppRouteObject): PageLoader {
-    const retrying = new ChunkRetryLoader<PageModule>(route.load);
+    const retrying = new ThemedChunkLoader(
+      new ChunkRetryLoader<PageModule>(route.load),
+      muiThemeShellLoader
+    );
     if (route.guard === 'protected') {
       return retrying;
     }

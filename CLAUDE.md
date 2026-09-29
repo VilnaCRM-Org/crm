@@ -1712,7 +1712,11 @@ it paints nothing for the first 150 ms so fast chunk loads never flash a loader 
 layout shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
 announces loading via a polite live region. `RouteFallback` takes optional `minHeight` and
 `message` props, so an in-page Suspense boundary (the registration form's result chunk) reuses
-it instead of shipping `fallback={null}`. To add a page, follow the registry ("Adding a page"
+it instead of shipping `fallback={null}`. The MUI theme engine is not on the eager path either
+([ADR-017](docs/adr/017-mui-theme-off-the-eager-path.md)): `RouteMapper` and the footer loader
+wrap each lazy surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel
+with it, and the paint-path components style themselves with `@emotion/styled`, never `Box` or
+another `@mui/material` import. To add a page, follow the registry ("Adding a page"
 below); never eagerly import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
@@ -2913,14 +2917,15 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
 
     Chunk recovery: `ChunkRetryLoader` (`src/lib/reliability/`) memoizes one dynamic `import()`,
     forgets a failure, and re-imports once when `chunkLoadErrorDetector` recognises it; it wraps
-    every page loader in `RouteMapper`, the registration-notification loader, and
-    `DeferredAuthActions.load()`. `ReloadingChunkLoader` — **public routes only** — then asks
-    `ReloadOnceGuard` (a per-key `sessionStorage` flag, refusing when storage throws) and calls
-    `pageReloadNavigator.reload()` once, leaving React suspended on the fallback; a second miss
-    in the session, and every miss on a protected route, is rethrown to the route `errorElement`
-    (strategy `reload`, user-initiated). `tests/unit/routes/route-mapper.test.tsx` pins the
-    guard-dependent choice, `tests/unit/tooling/performance-serving.test.ts` pins that the
-    mapper still wraps `route.load` through `React.lazy`.
+    every page loader in `RouteMapper`, the footer loader, the `mui-theme` shell loader, the
+    registration-notification loader, and `DeferredAuthActions.load()`. `ReloadingChunkLoader` —
+    **public routes only** — then asks `ReloadOnceGuard` (a per-key `sessionStorage` flag,
+    refusing when storage throws) and calls `pageReloadNavigator.reload()` once, leaving React
+    suspended on the fallback; a second miss in the session, and every miss on a protected route,
+    is rethrown to the route `errorElement` (strategy `reload`, user-initiated).
+    `tests/unit/routes/route-mapper.test.tsx` pins the guard-dependent choice,
+    `tests/unit/tooling/performance-serving.test.ts` pins that the mapper still wraps
+    `route.load` through `React.lazy`.
 
 ## Node Version Management
 
