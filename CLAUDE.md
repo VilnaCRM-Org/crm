@@ -1183,7 +1183,7 @@ any clone at or above the threshold is found.
 
 **Thresholds (authoritative source: `.jscpd.json`):**
 
-- `minTokens: 75` — a clone must span at least 75 tokens to count.
+- `minTokens: 70` — a clone must span at least 70 tokens to count (jscpd 5 tokens; see below).
 - `minLines: 5` — and at least 5 lines.
 - `threshold: 0` — zero tolerance above `minTokens`; any qualifying clone fails.
 - `mode: "mild"` — blank lines and comments are ignored when matching.
@@ -1192,12 +1192,19 @@ any clone at or above the threshold is found.
   generated `i18n` JSON.
 
 **Threshold rationale:** the bar is set at genuine copy-paste, not incidental
-similarity. At 75 tokens the gate catches real duplicated blocks (the
-~120–160-token notification style clones that motivated this gate) while staying
+similarity. At 70 tokens the gate catches real duplicated blocks (the
+notification style clones that motivated this gate) while staying
 above incidental TypeScript noise — shared `import` headers, repeated type
 shapes, and short JSX scaffolding — which would otherwise push contributors
 toward unhealthy abstractions. Duplication detection is threshold-based and noisy
 on styles/markup, so keep the bar at copy-paste mass if you widen coverage.
+
+**Why 70 and not 75:** jscpd 5 is a Rust rewrite whose tokenizer counts roughly 0.6 of the
+tokens jscpd 4 counted for the same code, so the unchanged 75 silently loosened the gate — against
+the pre-#98 tree (`27bf30ad^`) it found five of the six notification clones jscpd 4 flagged,
+missing the 121-token one it now counts as 73. At 70 it reports exactly jscpd 4's six and nothing
+on today's `src`. Re-derive the bar the same way (the historical corpus plus a clean `src`) on the
+next jscpd major, and only ever downwards — `minTokens` is a ratchet ceiling.
 
 **Remediation:** satisfy the gate by **deduplicating** — extract shared style
 fragments, constants, factories, or a base object plus overrides — never with
@@ -1387,7 +1394,7 @@ not a backlog. The list lives in `sonarjsBugPatternRules` in `eslint.config.mjs`
 
 Zero-finding rules are excluded when another gate owns the concern: `cognitive-complexity`
 (`make lint-metrics`, rust-code-analysis), `no-duplicate-string` and `no-identical-functions`
-(`make lint-dup`; jscpd's 75-token bar is calibrated to keep incidental similarity from forcing
+(`make lint-dup`; jscpd's 70-token bar is calibrated to keep incidental similarity from forcing
 abstractions), `slow-regex` (#173), `no-extra-arguments` (TypeScript's TS2554 already fails it,
 and it misfired on a reassigned `let` callback in `tests/`), and `no-alphabetical-sort` (it
 demands `localeCompare`, a locale-dependent order the #155 formatting boundary keeps out of
