@@ -52,7 +52,9 @@ Chosen option: **"Load the theme with each page"**, because it frees the most by
 - `src/providers/mui-theme/` holds `MuiThemeShell` (the `ThemeProvider`), its
   `muiThemeShellLoader` (a `ChunkRetryLoader` over a `webpackChunkName: "mui-theme"` import),
   and `ThemedChunkLoader`, which resolves a content loader and the shell loader with one
-  `Promise.all` and renders the content inside the shell.
+  `Promise.all` and renders the content inside the shell. `src/index.tsx` starts the shell load
+  at bootstrap, so the theme chunk and the MUI modules it shares with every page download while
+  React renders the shell rather than after the first route renders.
 - `RouteMapper` wraps every page loader, and `footer-loader.ts` the footer loader, in a
   `ThemedChunkLoader`; `ReloadingChunkLoader` now accepts any `ModuleLoader`
   (`src/lib/reliability/types/module-loader.ts`), so a public route's theme chunk gets the same
