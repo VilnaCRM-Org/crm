@@ -1,7 +1,7 @@
 import chunkLoadErrorDetector from './chunk-load-error-detector';
-import type ChunkRetryLoader from './chunk-retry-loader';
 import pageReloadNavigator from './page-reload-navigator';
 import type ReloadOnceGuard from './reload-once-guard';
+import type { ModuleLoader } from './types/module-loader';
 
 // The recovery of last resort for a page chunk that is still missing after the retry: one full
 // navigation, so the browser fetches the current deploy's manifest. It is reserved for public
@@ -11,7 +11,7 @@ import type ReloadOnceGuard from './reload-once-guard';
 export default class ReloadingChunkLoader<TModule> {
   constructor(
     private readonly key: string,
-    private readonly loader: ChunkRetryLoader<TModule>,
+    private readonly loader: ModuleLoader<TModule>,
     private readonly guard: ReloadOnceGuard
   ) {}
 

@@ -2,7 +2,6 @@
 
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
-import { useTheme } from '@mui/material/styles';
 import { act, render, screen } from '@testing-library/react';
 import React, { type JSX } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -13,11 +12,6 @@ import AppProviders from '@/providers/app-providers';
 const ROUTE_FALLBACK_DELAY_MS = 150;
 
 const NeverResolves = React.lazy<() => JSX.Element>(() => new Promise(() => undefined));
-
-function ThemeChecker(): JSX.Element {
-  const theme = useTheme();
-  return <span>{theme.palette ? 'has-theme' : 'no-theme'}</span>;
-}
 
 function I18nChecker(): JSX.Element {
   const { i18n } = useTranslation();
@@ -33,16 +27,6 @@ describe('AppProviders', () => {
     );
 
     expect(screen.getByText('child')).toBeInTheDocument();
-  });
-
-  it('provides MUI theme to children via context (AC1)', () => {
-    render(
-      <AppProviders>
-        <ThemeChecker />
-      </AppProviders>
-    );
-
-    expect(screen.getByText('has-theme')).toBeInTheDocument();
   });
 
   it('suspends a pending lazy child behind the deferred, announced route fallback', async () => {

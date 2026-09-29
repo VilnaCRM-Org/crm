@@ -547,7 +547,12 @@ Three properties every image in the repository now carries, pinned by
   Docker-based job when the tag moved under it — and a digest is not. The pin is a floor, not
   a freeze: the `docker` Dependabot lane (`.github/dependabot.yml`, directories `/` and
   `/tests/load`) raises it when a tag is re-pushed. The tag stays in the line so a human can
-  read the version and so the Node single-version test keeps matching it.
+  read the version and so the Node single-version test keeps matching it. The Docker Official
+  Images (`node`, `alpine`, `debian`) are pulled from `mirror.gcr.io/library/`, Google's
+  pull-through cache of Docker Hub, which serves the same manifest digests. They used to come
+  from `public.ecr.aws/docker/library/`, whose anonymous data allowance is shared by every
+  GitHub-hosted runner and ran out near each month's end, failing random jobs with
+  `429 Too Many Requests: Data limit exceeded` before any repository code ran.
 - **Every image declares its health.** The long-running images carry the same probe their
   compose service runs, so an orchestrator outside compose restarts a dead container: the
   static server (`serve-base`, inherited by `production` and `test-harness`) curls port 3001,
@@ -746,7 +751,7 @@ bundled npm and its `node_modules` were the bulk of the image findings, and the 
 performance` dive gate (`.dive-ci`, `highestWastedBytes: 20MB`) forbids the obvious fix of deleting
 base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in a throwaway
 `serve-tools` stage (`node:24.8.0-alpine3.21`) and builds `serve-base`
-`FROM public.ecr.aws/docker/library/alpine:3.21` — pinned `curl`, `libgcc` and `libstdc++`, a
+`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc` and `libstdc++`, a
 `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
 `/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
@@ -1183,7 +1188,7 @@ any clone at or above the threshold is found.
 
 **Thresholds (authoritative source: `.jscpd.json`):**
 
-- `minTokens: 75` — a clone must span at least 75 tokens to count.
+- `minTokens: 70` — a clone must span at least 70 tokens to count (jscpd 5 tokens; see below).
 - `minLines: 5` — and at least 5 lines.
 - `threshold: 0` — zero tolerance above `minTokens`; any qualifying clone fails.
 - `mode: "mild"` — blank lines and comments are ignored when matching.
@@ -1192,12 +1197,19 @@ any clone at or above the threshold is found.
   generated `i18n` JSON.
 
 **Threshold rationale:** the bar is set at genuine copy-paste, not incidental
-similarity. At 75 tokens the gate catches real duplicated blocks (the
-~120–160-token notification style clones that motivated this gate) while staying
+similarity. At 70 tokens the gate catches real duplicated blocks (the
+notification style clones that motivated this gate) while staying
 above incidental TypeScript noise — shared `import` headers, repeated type
 shapes, and short JSX scaffolding — which would otherwise push contributors
 toward unhealthy abstractions. Duplication detection is threshold-based and noisy
 on styles/markup, so keep the bar at copy-paste mass if you widen coverage.
+
+**Why 70 and not 75:** jscpd 5 is a Rust rewrite whose tokenizer counts roughly 0.6 of the
+tokens jscpd 4 counted for the same code, so the unchanged 75 silently loosened the gate — against
+the pre-#98 tree (`27bf30ad^`) it found five of the six notification clones jscpd 4 flagged,
+missing the 121-token one it now counts as 73. At 70 it reports exactly jscpd 4's six and nothing
+on today's `src`. Re-derive the bar the same way (the historical corpus plus a clean `src`) on the
+next jscpd major, and only ever downwards — `minTokens` is a ratchet ceiling.
 
 **Remediation:** satisfy the gate by **deduplicating** — extract shared style
 fragments, constants, factories, or a base object plus overrides — never with
@@ -1387,7 +1399,7 @@ not a backlog. The list lives in `sonarjsBugPatternRules` in `eslint.config.mjs`
 
 Zero-finding rules are excluded when another gate owns the concern: `cognitive-complexity`
 (`make lint-metrics`, rust-code-analysis), `no-duplicate-string` and `no-identical-functions`
-(`make lint-dup`; jscpd's 75-token bar is calibrated to keep incidental similarity from forcing
+(`make lint-dup`; jscpd's 70-token bar is calibrated to keep incidental similarity from forcing
 abstractions), `slow-regex` (#173), `no-extra-arguments` (TypeScript's TS2554 already fails it,
 and it misfired on a reassigned `let` callback in `tests/`), and `no-alphabetical-sort` (it
 demands `localeCompare`, a locale-dependent order the #155 formatting boundary keeps out of
@@ -1705,7 +1717,11 @@ it paints nothing for the first 150 ms so fast chunk loads never flash a loader 
 layout shift that cost ~0.03 of the mobile Lighthouse budget), then shows a spinner and
 announces loading via a polite live region. `RouteFallback` takes optional `minHeight` and
 `message` props, so an in-page Suspense boundary (the registration form's result chunk) reuses
-it instead of shipping `fallback={null}`. To add a page, follow the registry ("Adding a page"
+it instead of shipping `fallback={null}`. The MUI theme engine is not on the eager path either
+([ADR-017](docs/adr/017-mui-theme-off-the-eager-path.md)): `RouteMapper` and the footer loader
+wrap each lazy surface in a `ThemedChunkLoader` that fetches the `mui-theme` chunk in parallel
+with it, and the paint-path components style themselves with `@emotion/styled`, never `Box` or
+another `@mui/material` import. To add a page, follow the registry ("Adding a page"
 below); never eagerly import a page. Three checks fail CI on a regression:
 
 - the `performance serving` golden test
@@ -2906,14 +2922,15 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
 
     Chunk recovery: `ChunkRetryLoader` (`src/lib/reliability/`) memoizes one dynamic `import()`,
     forgets a failure, and re-imports once when `chunkLoadErrorDetector` recognises it; it wraps
-    every page loader in `RouteMapper`, the registration-notification loader, and
-    `DeferredAuthActions.load()`. `ReloadingChunkLoader` — **public routes only** — then asks
-    `ReloadOnceGuard` (a per-key `sessionStorage` flag, refusing when storage throws) and calls
-    `pageReloadNavigator.reload()` once, leaving React suspended on the fallback; a second miss
-    in the session, and every miss on a protected route, is rethrown to the route `errorElement`
-    (strategy `reload`, user-initiated). `tests/unit/routes/route-mapper.test.tsx` pins the
-    guard-dependent choice, `tests/unit/tooling/performance-serving.test.ts` pins that the
-    mapper still wraps `route.load` through `React.lazy`.
+    every page loader in `RouteMapper`, the footer loader, the `mui-theme` shell loader, the
+    registration-notification loader, and `DeferredAuthActions.load()`. `ReloadingChunkLoader` —
+    **public routes only** — then asks `ReloadOnceGuard` (a per-key `sessionStorage` flag,
+    refusing when storage throws) and calls `pageReloadNavigator.reload()` once, leaving React
+    suspended on the fallback; a second miss in the session, and every miss on a protected route,
+    is rethrown to the route `errorElement` (strategy `reload`, user-initiated).
+    `tests/unit/routes/route-mapper.test.tsx` pins the guard-dependent choice,
+    `tests/unit/tooling/performance-serving.test.ts` pins that the mapper still wraps
+    `route.load` through `React.lazy`.
 
 ## Node Version Management
 

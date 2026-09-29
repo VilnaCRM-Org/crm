@@ -810,6 +810,17 @@ reverted on its own. `open-pull-requests-limit` is 10 for `bun` (the grouped min
 request takes one slot and each pending major takes one) and 5 for `github-actions` and
 `docker`.
 
+Two updates are declined standing, as `ignore` entries in `.github/dependabot.yml`, so they
+stop reopening:
+
+- `dotenv-expand` 1000 and later. That release runs command substitution (`$(…)`) and decrypts
+  values while expanding a dotenv file, through the new `@dotenvx/primitives` dependency. Our
+  scripts expand `.env.example` and `.env` in CI jobs that check out pull-request code, so a
+  dotenv value would become a shell command. 13.x is the last line without that behavior.
+- The Node 25 base image. Node 25 is an odd, non-LTS line that reached end of life on
+  2026-06-01; the image, `.nvmrc` and `engines.node` move together to the next LTS line through
+  the major-version playbook instead.
+
 Dependabot has no equivalent of Renovate's `lockFileMaintenance`, so `bun.lock` is never
 re-resolved against unchanged ranges on its own. Refresh it deliberately when transitive
 drift matters.

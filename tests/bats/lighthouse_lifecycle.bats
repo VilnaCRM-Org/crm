@@ -62,7 +62,7 @@ assert_lighthouse_compose_files() {
   [ "$status" -eq 0 ]
   assert_output_contains 'chromium=136.0.7103.113-r0'
   assert_output_contains 'LHCI_VERSION="0.15.1"'
-  assert_output_contains 'DOTENV_EXPAND_VERSION="12.0.3"'
+  assert_output_contains 'DOTENV_EXPAND_VERSION="13.0.0"'
   assert_output_contains 'DOTENV_VERSION="17.4.2"'
   assert_output_contains '"@lhci/cli@$LHCI_VERSION"'
   ! printf '%s' "$output" | grep -Fq '@lhci/cli@0.10.0'

@@ -1,4 +1,4 @@
-FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS base
+FROM mirror.gcr.io/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS base
 
 ARG BUN_VERSION=1.3.5
 ARG CURL_VERSION=8.14.1-r2
@@ -76,7 +76,7 @@ RUN bun x rsbuild build && \
 
 
 # -------- rust-code-analysis Stage --------
-FROM public.ecr.aws/docker/library/debian:13-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS rca
+FROM mirror.gcr.io/library/debian:13-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS rca
 
 ARG RCA_VERSION=0.0.25
 ARG RCA_SHA256=9ec2a217b8ff191e02dab5d5f2eee6158b63fd975c532b2c5d67c2e6c7249894
@@ -126,13 +126,13 @@ ENV RCA_BIN=/usr/local/bin/rust-code-analysis-cli
 WORKDIR /app
 
 
-FROM public.ecr.aws/docker/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS serve-tools
+FROM mirror.gcr.io/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS serve-tools
 
 RUN npm install -g serve@14.2.6
 
 
 # -------- Static Server Stage --------
-FROM public.ecr.aws/docker/library/alpine:3.21@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507 AS serve-base
+FROM mirror.gcr.io/library/alpine:3.21@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507 AS serve-base
 
 ARG CURL_VERSION=8.14.1-r2
 ARG LIBSTDCPP_VERSION=14.2.0-r4
