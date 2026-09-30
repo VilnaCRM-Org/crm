@@ -34,12 +34,12 @@ setup() {
     [ -z "$expected_two" ] || assert_log_contains "$expected_two"
   done <<'EOF'
 ci-setup|docker compose -f docker-compose.yml up -d --no-recreate dev mockoon|curl -fsS http://localhost:8080/api/users
-ci-lint|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers|
+ci-lint|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-ui-toolkit lint-i18n lint-security-headers|
 ci-test|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration|
 ci-mutation|bun x stryker run|
 ci-prod-setup|docker compose -f docker-compose.yml up -d dev|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --no-recreate prod mockoon playwright
 ci-test-prod|docker compose -f docker-compose.test.yml exec playwright ./node_modules/.bin/playwright test ./tests/e2e|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)
-ci|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
+ci|run-parallel-lint.sh check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-ui-toolkit lint-i18n lint-security-headers|run-parallel-tests.sh ci-test-unit-client ci-test-unit-server ci-test-integration
 install|docker compose exec -T dev bun install --frozen-lockfile|bun x husky
 clean|docker compose -f docker-compose.yml down --volumes --remove-orphans --rmi local|docker compose -f docker-compose.test.yml down --volumes --remove-orphans --rmi local
 start-prod-clean|docker compose -f docker-compose.yml -f docker-compose.test.yml -f common-healthchecks.yml up -d --force-recreate --build prod mockoon playwright|curl -fsS http://localhost:8080/api/users
@@ -106,6 +106,8 @@ lint-docs|docker compose exec -T dev bun scripts/docs/lint-docs.ts adr|docker co
 check-adr-drift|docker compose exec -T dev bun scripts/docs/lint-docs.ts drift|
 lint-i18n|node scripts/ci/check-i18n-parity.mjs|
 i18n-generate|node scripts/ci/check-i18n-parity.mjs --write|
+lint-ui-toolkit|docker compose exec -T dev node scripts/ci/verify-ui-toolkit.mjs|
+update-ui-toolkit|docker compose exec -T dev node scripts/ci/update-ui-toolkit.mjs|
 lint-metrics-run|lint-metrics.sh RCA_BIN=./bin/rust-code-analysis-cli RCA_VERSION=0.0.25 RCA_SCOPE=src/ RCA_EXCLUDES=**/node_modules/** **/dist/** **/coverage/** **/.storybook/** **/tests/** **/api/generated/** METRICS_POLICY=config/metrics-policy.json|
 husky|bun x husky|
 storybook-start|bun x storybook dev -p 6006 --host 0.0.0.0 --no-open|
@@ -479,10 +481,11 @@ EOF
   # compares the committed src/i18n/localization.json against a fresh merge of every catalog,
   # so a generated feature's uncommitted locale keys always report the catalog as stale.
   # The ninth, lint-security-headers, reads only config/security-headers.json, .env.example and
-  # serve.json — no generated source can change its verdict.
+  # serve.json — no generated source can change its verdict. The tenth, lint-ui-toolkit, reads
+  # only the installed package, its manifest, package.json, bun.lock and the lockfile gate.
   # Adding a new lint gate fails this test until it is classified one way or the other.
   local makefile="$MAKEFILE_SANDBOX/Makefile"
-  local excluded=" check-env-sync check-browser-support lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers "
+  local excluded=" check-env-sync check-browser-support lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-ui-toolkit lint-i18n lint-security-headers "
 
   local lint_prereqs scaffold_targets expected actual target
   lint_prereqs=$(grep -E '^lint:[[:space:]]' "$makefile" | sed 's/^lint:[[:space:]]*//; s/[[:space:]]*##.*//')

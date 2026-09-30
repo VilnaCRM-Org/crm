@@ -28,13 +28,44 @@ const COMPONENT_TSX =
 const TYPE_ONLY_TS = 'src/modules/user/types/api-errors/validation-error.ts';
 const HOOK_TS = 'src/modules/user/features/auth/stores/use-auth-token.ts';
 const PLAYWRIGHT_SPEC = 'tests/e2e/modules/back-to-main.spec.ts';
+const ROUTE_SHELL_TSX = 'src/routes/routes.tsx';
+const CONTAINER_SEAM_TSX = 'src/components/ui-container/index.tsx';
+const BREAKPOINTS_SEAM_TS = 'src/components/ui-breakpoints/index.ts';
+const UI_TOOLKIT = '@vilnacrm/ui-toolkit';
+const UI_TOOLKIT_SUBPATHS = `${UI_TOOLKIT}/*`;
 
 interface ResolvedConfig {
   rules: Record<string, unknown>;
 }
 
+interface RestrictedImportPath {
+  name: string;
+  importNames?: string[];
+  allowImportNames?: string[];
+}
+
+interface RestrictedImportPattern {
+  group: string[];
+}
+
+interface RestrictedImportOptions {
+  paths: RestrictedImportPath[];
+  patterns: RestrictedImportPattern[];
+}
+
 const configs: Record<string, ResolvedConfig> = JSON.parse(
   execFileSync('node', ['scripts/ci/print-eslint-policy-config.mjs'], { encoding: 'utf8' })
+);
+
+const printedConfigs: Record<string, ResolvedConfig> = Object.fromEntries(
+  [ROUTE_SHELL_TSX, CONTAINER_SEAM_TSX, BREAKPOINTS_SEAM_TS].map((file) => [
+    file,
+    JSON.parse(
+      execFileSync('node', ['node_modules/eslint/bin/eslint.js', '--print-config', file], {
+        encoding: 'utf8',
+      })
+    ),
+  ])
 );
 
 const severityOf = (rule: unknown): unknown => (Array.isArray(rule) ? rule[0] : rule);
@@ -54,6 +85,47 @@ const rulesFor = (file: string): Record<string, unknown> => {
   }
   return resolved.rules;
 };
+
+const restrictedImportsFor = (file: string): RestrictedImportOptions => {
+  const resolved = configs[file] ?? printedConfigs[file];
+  if (!resolved) {
+    throw new Error(`No resolved ESLint config for probe file ${file}`);
+  }
+  const rule = resolved.rules['no-restricted-imports'];
+  if (!Array.isArray(rule) || rule[0] !== 2) {
+    throw new Error(`no-restricted-imports is not an error on ${file}`);
+  }
+  return rule[1];
+};
+
+const toolkitGroupFor = (file: string): string[] => {
+  const pattern = restrictedImportsFor(file).patterns.find(({ group }) =>
+    group.includes(UI_TOOLKIT_SUBPATHS)
+  );
+  if (!pattern) {
+    throw new Error(`No ${UI_TOOLKIT_SUBPATHS} pattern on ${file}`);
+  }
+  return pattern.group;
+};
+
+const groupsFor = (file: string): string[] =>
+  restrictedImportsFor(file).patterns.flatMap(({ group }) => group);
+
+const SRC_PROBES = [
+  LOGIC_TS,
+  COMPONENT_TSX,
+  TYPE_ONLY_TS,
+  HOOK_TS,
+  ROUTE_SHELL_TSX,
+  CONTAINER_SEAM_TSX,
+  BREAKPOINTS_SEAM_TS,
+];
+const NON_SEAM_SRC_PROBES = [LOGIC_TS, COMPONENT_TSX, TYPE_ONLY_TS, HOOK_TS, ROUTE_SHELL_TSX];
+const ALWAYS_FORBIDDEN_TOOLKIT_GROUP = [
+  UI_TOOLKIT_SUBPATHS,
+  `!${UI_TOOLKIT}/styles.css`,
+  `!${UI_TOOLKIT}/ui-color-theme`,
+];
 
 describe('eslint.config.mjs policy integrity (issue #165)', () => {
   it('pins the no-static gate (#100) at error on non-hook logic files', () => {
@@ -184,5 +256,69 @@ describe('eslint.config.mjs policy integrity (issue #165)', () => {
     // type files, guarding the feature public-API contract for ESLint's half of the gate.
     expect(jsonOf(rulesFor(LOGIC_TS)['no-restricted-imports'])).toContain('@auth/*/*');
     expect(severityOf(rulesFor(LOGIC_TS)['no-restricted-imports'])).toBe(2);
+  });
+
+  it('bans the ui-toolkit root barrel, styles.css, colour theme and theme default (#250)', () => {
+    SRC_PROBES.forEach((file) => {
+      const { paths } = restrictedImportsFor(file);
+      expect(paths).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ name: UI_TOOLKIT }),
+          expect.objectContaining({ name: `${UI_TOOLKIT}/styles.css` }),
+          expect.objectContaining({ name: `${UI_TOOLKIT}/ui-color-theme` }),
+          expect.objectContaining({
+            name: `${UI_TOOLKIT}/ui-breakpoints`,
+            importNames: ['default'],
+          }),
+        ])
+      );
+      expect(paths.find(({ name }) => name === UI_TOOLKIT)).not.toHaveProperty('importNames');
+    });
+  });
+
+  it('forbids every ui-toolkit subpath outside the CRM seams (#250)', () => {
+    NON_SEAM_SRC_PROBES.forEach((file) => {
+      expect(toolkitGroupFor(file)).toEqual(ALWAYS_FORBIDDEN_TOOLKIT_GROUP);
+    });
+  });
+
+  it('lets each ui-toolkit seam through its own subpath only (#250)', () => {
+    expect(toolkitGroupFor(CONTAINER_SEAM_TSX)).toEqual([
+      ...ALWAYS_FORBIDDEN_TOOLKIT_GROUP,
+      `!${UI_TOOLKIT}/ui-container`,
+    ]);
+    expect(toolkitGroupFor(BREAKPOINTS_SEAM_TS)).toEqual([
+      ...ALWAYS_FORBIDDEN_TOOLKIT_GROUP,
+      `!${UI_TOOLKIT}/ui-breakpoints`,
+    ]);
+  });
+
+  it('limits a ui-toolkit component seam to its subpath default export (#250)', () => {
+    expect(restrictedImportsFor(CONTAINER_SEAM_TSX).paths).toContainEqual(
+      expect.objectContaining({
+        name: `${UI_TOOLKIT}/ui-container`,
+        allowImportNames: ['default'],
+      })
+    );
+    [...NON_SEAM_SRC_PROBES, BREAKPOINTS_SEAM_TS].forEach((file) => {
+      expect(
+        restrictedImportsFor(file).paths.filter(({ allowImportNames }) => allowImportNames)
+      ).toEqual([]);
+    });
+  });
+
+  it('keeps the public-API import boundary beside the ui-toolkit ban (#107, #250)', () => {
+    expect(groupsFor(LOGIC_TS)).toEqual(
+      expect.arrayContaining(['@/features/*/*', '@/modules/*/*', '@auth/*/*'])
+    );
+    expect(groupsFor(CONTAINER_SEAM_TSX)).toEqual(
+      expect.arrayContaining(['@/features/*/*', '@/modules/*/*', '@auth/*/*'])
+    );
+    expect(groupsFor(TYPE_ONLY_TS)).toEqual(
+      expect.arrayContaining(['@/features/*/*', '@auth/*/*', '@/modules/*/features/*/*'])
+    );
+    [COMPONENT_TSX, HOOK_TS, ROUTE_SHELL_TSX].forEach((file) => {
+      expect(groupsFor(file)).toContain('@/features/*/*');
+    });
   });
 });

@@ -9,7 +9,7 @@ const STATIC_BACKGROUND_SIZE = '100% 100%';
 
 function skeletonLayers(): HTMLElement[] {
   const layers = screen
-    .getAllByRole('generic')
+    .getAllByRole('generic', { hidden: true })
     .filter(
       (element) =>
         element.id === SKELETON_ID || element.className.includes('ui-skeleton-input__placeholder')

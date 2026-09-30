@@ -249,7 +249,7 @@ ifneq ($(filter 1 true TRUE,$(CI)),)
 CI_SETUP_UP_FLAGS           = -d --build
 endif
 CI_SETUP_CMD                = $(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) up $(CI_SETUP_UP_FLAGS) $(CI_SETUP_SERVICES) && make wait-for-dev && make wait-for-mockoon
-CI_LINT_TARGETS             = check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers
+CI_LINT_TARGETS             = check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-ui-toolkit lint-i18n lint-security-headers
 CI_LINT_RUNNER              = ./scripts/ci/run-parallel-lint.sh
 CI_TEST_TARGETS             = ci-test-unit-client ci-test-unit-server ci-test-integration
 CI_TEST_PROD_TARGETS        = ci-test-e2e ci-test-visual ci-test-memory-leak ci-test-load ci-test-lighthouse-desktop ci-test-lighthouse-mobile
@@ -285,7 +285,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 # .RECIPEPREFIX not overridden; keep default TAB
 .PHONY: $(filter-out node_modules,$(MAKECMDGOALS))
 .PHONY: clean lint lint-dup lint-metrics lint-metrics-run check-env-sync check-browser-support env-bootstrap
-.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-zizmor lint-compose lint-lockfile lint-licenses
+.PHONY: lint-eslint lint-tsc lint-md lint-deps lint-prettier lint-shell lint-actionlint lint-zizmor lint-compose lint-lockfile lint-licenses lint-ui-toolkit update-ui-toolkit
 .PHONY: lint-docs lint-adr lint-doc-coverage lint-doc-references lint-doc-links check-adr-drift
 .PHONY: lint-i18n i18n-generate
 .PHONY: lint-security-headers security-headers-generate check-security-headers
@@ -575,10 +575,16 @@ lint-lockfile: ## Fail if bun.lock resolves any package outside the npm registry
 # rejected — a literal `--onlyAllow` list cannot do this). Remediation policy (mirrors the
 # repo's root-cause-not-suppression rule): 1st replace the offending dependency; 2nd add its
 # specific SPDX id here as a reviewed one-line diff. Never bypass the checker.
-ALLOWED_LICENSES            = MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;CC-BY-4.0
+ALLOWED_LICENSES            = MIT;Apache-2.0;ISC;BSD-2-Clause;BSD-3-Clause;0BSD;CC-BY-4.0;CC0-1.0
 
 lint-licenses: ## Fail on any production dependency whose license is outside the SPDX allowlist (issue #191)
 	$(EXEC_DEV_TTYLESS) env ALLOWED_LICENSES='$(ALLOWED_LICENSES)' node scripts/ci/check-licenses.mjs
+
+lint-ui-toolkit: ## Verify installed ui-toolkit bytes against the committed digests (issue #250)
+	$(EXEC_DEV_TTYLESS) node scripts/ci/verify-ui-toolkit.mjs
+
+update-ui-toolkit: ## Rewrite config/ui-toolkit-checksums.json (networked, issue #250)
+	$(EXEC_DEV_TTYLESS) node scripts/ci/update-ui-toolkit.mjs
 
 lint-i18n: ## Fail if locales lose key parity or src/i18n/localization.json is stale (issue #151)
 	node $(I18N_PARITY_SCRIPT)
@@ -703,7 +709,7 @@ codegen-check: ensure-dev ## Reconcile contract versions and fail if generated A
 		exit 1; \
 	}
 
-lint: check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-i18n lint-security-headers ## Runs all linters: env-sync, browser-support, ESLint, TypeScript, Markdown, documentation drift, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, compose validation, the bun.lock provenance gate, the dependency license-policy gate, the i18n locale-parity gate, and the serve.json security-header drift gate.
+lint: check-env-sync check-browser-support lint-eslint lint-tsc lint-md lint-docs lint-deps lint-dup lint-metrics lint-prettier lint-shell lint-actionlint lint-compose lint-lockfile lint-licenses lint-ui-toolkit lint-i18n lint-security-headers ## Runs all linters: env-sync, browser-support, ESLint, TypeScript, Markdown, documentation drift, dependency-cruiser, jscpd duplication, rust-code-analysis metrics, Prettier formatting, ShellCheck, actionlint, compose validation, the bun.lock provenance gate, the dependency license-policy gate, the ui-toolkit digest gate, the i18n locale-parity gate, and the serve.json security-header drift gate.
 
 # ESLint suppression inventory policy. Standalone during MVP: intentionally not
 # wired into aggregate `lint` until the suppression baseline decision

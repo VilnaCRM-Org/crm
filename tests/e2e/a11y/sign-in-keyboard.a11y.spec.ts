@@ -42,6 +42,17 @@ test.describe('Sign-in form keyboard contract (issue #118)', () => {
     ]);
   });
 
+  test('the back-to-main link paints a 2px dark focus ring from the keyboard', async ({ page }) => {
+    const backToMain = page.getByRole('link', { name: backToMainLabel });
+
+    await page.keyboard.press('Tab');
+
+    await expect(backToMain).toBeFocused();
+    await expect(backToMain).toHaveCSS('outline-style', 'solid');
+    await expect(backToMain).toHaveCSS('outline-width', '2px');
+    await expect(backToMain).toHaveCSS('outline-color', 'rgb(26, 28, 30)');
+  });
+
   test('Space toggles the password visibility from the keyboard', async ({ page }) => {
     const password = page.locator('#password');
     const toggle = page.getByRole('button', { name: showPasswordLabel });

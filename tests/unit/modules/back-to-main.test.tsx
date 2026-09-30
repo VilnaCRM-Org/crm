@@ -3,7 +3,7 @@ import i18n from 'i18next';
 
 import UIBackToMain from '@/components/ui-back-to-main';
 
-import renderWithProviders, { testTheme } from '../utils/render-with-providers';
+import renderWithProviders from '../utils/render-with-providers';
 
 const BackToHomeText: string = 'Back to homepage';
 
@@ -107,25 +107,6 @@ describe('UIBackToMain Component', () => {
       renderWithProviders(<UIBackToMain />, { i18nMock });
 
       expect(screen.getByText('Volver al principal')).toBeInTheDocument();
-    });
-  });
-
-  describe('Theme Coverage', () => {
-    it('should handle theme without primary.main color', async () => {
-      const themeWithoutPrimary = {
-        ...testTheme,
-        palette: {
-          ...testTheme.palette,
-          primary: {
-            ...testTheme.palette.primary,
-            main: '',
-          },
-        },
-      };
-      renderWithProviders(<UIBackToMain />, { theme: themeWithoutPrimary });
-
-      const button = screen.getByRole('link');
-      expect(button).toBeInTheDocument();
     });
   });
 });

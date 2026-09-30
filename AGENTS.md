@@ -1827,6 +1827,8 @@ make lint-eslint        # ESLint only
 make lint-tsc           # TypeScript only
 make lint-md            # Markdown only
 make lint-dup           # Duplication (jscpd) only
+make lint-ui-toolkit    # Installed ui-toolkit bytes vs committed sha256 digests (offline)
+make update-ui-toolkit  # Rewrite the ui-toolkit digest manifest on a reviewed pin bump (networked)
 make lint-commit-message     # Commit message or squash header from stdin
 make lint-commit-bot-message # Same, task-number rule relaxed for bot authors
 make lint-commit-range       # Commit headers in COMMIT_RANGE_FROM..COMMIT_RANGE_TO

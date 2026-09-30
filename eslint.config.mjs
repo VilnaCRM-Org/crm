@@ -502,6 +502,104 @@ const sonarjsBugPatternRules = [
   'no-empty-alternatives',
 ];
 
+const featureBarrelImportPattern = {
+  group: ['@/features/*/*', '!@/features/*/index'],
+  message: 'Import a feature through its public API barrel, not a deep internal path.',
+};
+const moduleBarrelImportPattern = {
+  group: ['@/modules/*/*', '!@/modules/*/index'],
+  message:
+    'Import a module through its public API barrel (e.g. @/modules/user), ' +
+    'not a deep internal path.',
+};
+const authPublicApiImportPattern = {
+  group: ['@auth/*/*'],
+  message: 'Import the auth feature through its public API (@auth), not a deep path.',
+};
+const moduleFeatureBarrelImportPattern = {
+  group: ['@/modules/*/features/*/*', '!@/modules/*/features/*/index'],
+  message:
+    'Import a feature through its public API barrel (feature index), ' +
+    'not a deep internal path.',
+};
+const sharedSourceImportPatterns = [
+  featureBarrelImportPattern,
+  moduleBarrelImportPattern,
+  authPublicApiImportPattern,
+];
+
+const uiToolkitPackage = '@vilnacrm/ui-toolkit';
+const uiToolkitSeams = [
+  { subpath: 'ui-breakpoints', file: 'src/components/ui-breakpoints/index.ts' },
+  { subpath: 'ui-container', file: 'src/components/ui-container/index.tsx' },
+  { subpath: 'ui-typography', file: 'src/components/ui-typography/index.tsx' },
+  { subpath: 'ui-skeleton-text', file: 'src/components/skeletons/ui-skeleton-text/index.tsx' },
+  { subpath: 'ui-skeleton-block', file: 'src/components/skeletons/ui-skeleton-block/index.tsx' },
+  { subpath: 'ui-skeleton-button', file: 'src/components/skeletons/ui-skeleton-button/index.tsx' },
+  { subpath: 'ui-skeleton-input', file: 'src/components/skeletons/ui-skeleton-input/index.tsx' },
+  { subpath: 'ui-back-to-main', file: 'src/components/ui-back-to-main/index.tsx' },
+];
+const uiToolkitForbiddenPaths = [
+  {
+    name: uiToolkitPackage,
+    message:
+      'Never import the ui-toolkit root barrel — it pulls the whole kit (swiper included) into ' +
+      'the bundle. Import the CRM seam under src/components instead (ADR-016).',
+  },
+  {
+    name: `${uiToolkitPackage}/styles.css`,
+    message:
+      'Never import the ui-toolkit stylesheet — CRM ships its own woff2 fonts ' +
+      '(ADR-016, docs/ui-toolkit.md "Fonts").',
+  },
+  {
+    name: `${uiToolkitPackage}/ui-color-theme`,
+    message:
+      'Never import the ui-toolkit colour theme — it is the website palette; CRM keeps its own ' +
+      'theme in src/styles (ADR-016).',
+  },
+  {
+    name: `${uiToolkitPackage}/ui-breakpoints`,
+    importNames: ['default'],
+    message:
+      'The ui-breakpoints default export is the website theme (xs 375, sm 640) — import the ' +
+      'named crmBreakpointsTheme / heightBreakpoints instead (ADR-016).',
+  },
+];
+const uiToolkitImportPatterns = (seamSubpath) => [
+  {
+    group: [
+      `${uiToolkitPackage}/*`,
+      `!${uiToolkitPackage}/styles.css`,
+      `!${uiToolkitPackage}/ui-color-theme`,
+      ...(seamSubpath ? [`!${uiToolkitPackage}/${seamSubpath}`] : []),
+    ],
+    message:
+      'Import ui-toolkit only through its CRM seam (src/components/ui-container, ' +
+      'ui-typography, skeletons/ui-skeleton-*, ui-back-to-main, ui-breakpoints); a subpath the ' +
+      'product owner has not adopted stays forbidden (ADR-016, docs/ui-toolkit.md).',
+  },
+];
+const uiToolkitSeamComponentPaths = (seamSubpath) =>
+  seamSubpath && seamSubpath !== 'ui-breakpoints'
+    ? [
+        {
+          name: `${uiToolkitPackage}/${seamSubpath}`,
+          allowImportNames: ['default'],
+          message:
+            'A ui-toolkit component seam imports its subpath default export only — the ' +
+            'component itself (ADR-016).',
+        },
+      ]
+    : [];
+const restrictedSourceImports = (patterns, seamSubpath) => [
+  'error',
+  {
+    paths: [...uiToolkitForbiddenPaths, ...uiToolkitSeamComponentPaths(seamSubpath)],
+    patterns: [...patterns, ...uiToolkitImportPatterns(seamSubpath)],
+  },
+];
+
 export default [
   {
     ignores: [
@@ -1236,30 +1334,17 @@ export default [
   },
 
   {
+    files: ['src/**/*.ts', 'src/**/*.tsx', 'src/**/*.js', 'src/**/*.jsx'],
+    rules: {
+      'no-restricted-imports': restrictedSourceImports([{ group: ['@/features/*/*'] }]),
+    },
+  },
+
+  {
     files: ['src/**/*.ts', 'src/**/*.tsx'],
     ignores: ['src/modules/**', 'src/routes/**', 'src/config/dependency-injection-config.ts'],
     rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['@/features/*/*', '!@/features/*/index'],
-              message: 'Import a feature through its public API barrel, not a deep internal path.',
-            },
-            {
-              group: ['@/modules/*/*', '!@/modules/*/index'],
-              message:
-                'Import a module through its public API barrel (e.g. @/modules/user), ' +
-                'not a deep internal path.',
-            },
-            {
-              group: ['@auth/*/*'],
-              message: 'Import the auth feature through its public API (@auth), not a deep path.',
-            },
-          ],
-        },
-      ],
+      'no-restricted-imports': restrictedSourceImports(sharedSourceImportPatterns),
     },
   },
 
@@ -1279,27 +1364,11 @@ export default [
       'src/modules/*/config/**/*.tsx',
     ],
     rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['@/features/*/*', '!@/features/*/index'],
-              message: 'Import a feature through its public API barrel, not a deep internal path.',
-            },
-            {
-              group: ['@auth/*/*'],
-              message: 'Import the auth feature through its public API (@auth), not a deep path.',
-            },
-            {
-              group: ['@/modules/*/features/*/*', '!@/modules/*/features/*/index'],
-              message:
-                'Import a feature through its public API barrel (feature index), ' +
-                'not a deep internal path.',
-            },
-          ],
-        },
-      ],
+      'no-restricted-imports': restrictedSourceImports([
+        featureBarrelImportPattern,
+        authPublicApiImportPattern,
+        moduleFeatureBarrelImportPattern,
+      ]),
     },
   },
 
@@ -1313,19 +1382,16 @@ export default [
   {
     files: ['src/modules/*/config/di.ts'],
     rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: ['@/features/*/*', '!@/features/*/index'],
-              message: 'Import a feature through its public API barrel, not a deep internal path.',
-            },
-          ],
-        },
-      ],
+      'no-restricted-imports': restrictedSourceImports([featureBarrelImportPattern]),
     },
   },
+
+  ...uiToolkitSeams.map(({ subpath, file }) => ({
+    files: [file],
+    rules: {
+      'no-restricted-imports': restrictedSourceImports(sharedSourceImportPatterns, subpath),
+    },
+  })),
 
   // Source (issue #153): the production build ships no polyfills (`output.polyfill: "off"` in
   // config/browser-support.json), so every Web API reachable from `src/` must already exist in

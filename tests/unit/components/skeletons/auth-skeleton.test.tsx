@@ -9,7 +9,7 @@ jest.mock('react-i18next', () => ({
 }));
 
 function getGenericSkeletonIds(): string[] {
-  return (screen.getAllByRole('generic') as HTMLElement[]).map((element) => element.id);
+  return screen.getAllByRole('generic', { hidden: true }).map((element) => element.id);
 }
 
 function getPresentationSkeletonIds(): string[] {
@@ -73,6 +73,20 @@ describe('AuthSkeleton Component', () => {
       const section = screen.getByRole('region');
       expect(section).toHaveAttribute('aria-label', 'auth.loadingForm');
       expect(getPresentationSkeletonIds()).toContain('auth-skeleton-divider');
+    });
+
+    it('hides every placeholder shape from assistive technology', () => {
+      render(<AuthSkeleton />);
+
+      expect(
+        screen
+          .queryAllByRole('generic')
+          .map((element) => element.id)
+          .filter(Boolean)
+      ).toEqual([]);
+      expect(getGenericSkeletonIds().filter((id) => id.startsWith('auth-skeleton-'))).toHaveLength(
+        16
+      );
     });
 
     it('should not have interactive elements during loading', () => {

@@ -6,7 +6,9 @@ import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
 
 describe('UISkeletonText Integration', () => {
   const getSkeletonText = (): HTMLElement => {
-    const element = screen.getAllByRole('generic').find((item) => item.id === 'skeleton-text');
+    const element = screen
+      .getAllByRole('generic', { hidden: true })
+      .find((item) => item.id === 'skeleton-text');
 
     if (!element) {
       throw new Error('skeleton-text element not found');
@@ -19,7 +21,7 @@ describe('UISkeletonText Integration', () => {
     expect(React).toBeDefined();
     render(<UISkeletonText id="skeleton-text" />);
 
-    expect(getSkeletonText()).toHaveAttribute('id', 'skeleton-text');
+    expect(getSkeletonText()).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('renders with explicit size and width', () => {

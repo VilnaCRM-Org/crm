@@ -53,6 +53,7 @@ const config: Config = {
       : [
           '<rootDir>/src/**/*.{ts,tsx}',
           '<rootDir>/scripts/localization-generator.js',
+          '<rootDir>/scripts/ci/ui-toolkit/**/*.mjs',
           '!<rootDir>/src/api/generated/**',
           '!<rootDir>/src/**/types/**',
           '!<rootDir>/src/**/types.ts',
@@ -84,7 +85,8 @@ const config: Config = {
     [
       '/node_modules/(?!',
       '@faker-js/|msw/|@mswjs/|@bundled-es-modules/|until-async/|rettime/|',
-      'outvariant/|strict-event-emitter/|headers-polyfill/|is-node-process/|@open-draft/',
+      'outvariant/|strict-event-emitter/|headers-polyfill/|is-node-process/|@open-draft/|',
+      '@vilnacrm/ui-toolkit/',
       ')',
     ].join(''),
     '\\.pnp\\.[^\\/]+$',
@@ -97,6 +99,7 @@ const config: Config = {
     '^@auth/(.*)$': '<rootDir>/src/modules/user/features/auth/$1',
     '^@tests/(.*)$': '<rootDir>/tests/$1',
     '^@scripts/(.*)$': '<rootDir>/scripts/$1',
+    '^@vilnacrm/ui-toolkit/([a-z-]+)$': '<rootDir>/node_modules/@vilnacrm/ui-toolkit/build/$1.mjs',
     '^@/(.*)$': '<rootDir>/src/$1',
     '^(\\.{1,2}/.+)\\.js$': '$1',
   },

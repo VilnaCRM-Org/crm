@@ -11,6 +11,7 @@
     "@mui/material": "^9.4.0",
     "@mui/system": "^9.4.0",
     "@sentry/react": "^10.75.0",
+    "@vilnacrm/ui-toolkit": "https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz",
     "dotenv": "^17.4.2",
     "dotenv-expand": "^13.0.0",
     "graphql": "^16.11.0",

@@ -94,10 +94,13 @@ make test-mutation    # Stryker; the enforced floor is 100%
 `make lint` runs ESLint, `tsc`, dependency-cruiser, Prettier, markdownlint, jscpd (zero clones
 at 70 tokens), the rust-code-analysis metrics policy (cyclomatic above 10, cognitive above 15,
 more than 3 arguments, or more than 10 function LLOC fail the build), i18n parity, the docs
-gates, the license allowlist, the lockfile provenance gate, and the serve.json security-header
-drift gate; the ADR drift gate and the production-image header probe run in CI only. Jest enforces 100%
-coverage, Stryker enforces a 100% mutation score, and an unexpected `console.error` or
-`console.warn` fails the emitting test. Every pull-request check must be green.
+gates, the license allowlist, the lockfile provenance gate (the npm registry plus one pinned
+`@vilnacrm/ui-toolkit` release tarball), the ui-toolkit digest gate (`make lint-ui-toolkit`:
+installed toolkit bytes against the committed sha256 manifest, offline), and the serve.json
+security-header drift gate; the ADR drift gate and the production-image header probe run in CI
+only. Jest enforces 100% coverage, Stryker enforces a 100% mutation score, and an unexpected
+`console.error` or `console.warn` fails the emitting test. Every pull-request check must be
+green.
 
 ## Never suppress a gate
 

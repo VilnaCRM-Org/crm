@@ -1,84 +1,94 @@
 import { render, screen } from '@testing-library/react';
 
 import UISkeletonText from '@/components/skeletons/ui-skeleton-text';
-import getTextSkeletonStyles from '@/components/skeletons/ui-skeleton-text/styles';
 import type { SkeletonTextSize } from '@/components/skeletons/ui-skeleton-text/types';
+import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
-jest.mock('@/components/skeletons/ui-skeleton-text/styles', () => ({
-  __esModule: true,
-  default: { build: jest.fn(() => ({})) },
-}));
+const SKELETON_ID = 'ui-skeleton-text';
+const SHIMMER_GRADIENT =
+  'linear-gradient(90deg, rgba(211, 216, 224, 0) 0%, ' +
+  'rgba(211, 216, 224, 0.6) 49.13%, rgba(211, 216, 224, 0) 100%)';
+
+function skeletonText(id = SKELETON_ID): HTMLElement {
+  const element = screen.getAllByRole('generic', { hidden: true }).find((el) => el.id === id);
+  if (!element) throw new Error(`Skeleton text element with id "${id}" not found`);
+  return element;
+}
 
 describe('UISkeletonText', () => {
-  const getSkeletonText = (id: string): HTMLElement => {
-    const element = screen.getAllByRole('generic').find((el) => el.id === id);
-    if (!element) throw new Error(`Skeleton text element with id "${id}" not found`);
-    return element;
-  };
+  it('renders one decorative bar hidden from assistive technology', () => {
+    render(<UISkeletonText id={SKELETON_ID} />);
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+    expect(skeletonText()).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryAllByRole('generic').map((el) => el.id)).not.toContain(SKELETON_ID);
   });
 
-  it('uses default size and width when props are omitted', () => {
-    render(<UISkeletonText id="ui-skeleton-text" />);
+  it('renders a medium, full-width, pill-shaped shimmer bar by default', () => {
+    render(<UISkeletonText id={SKELETON_ID} />);
 
-    expect(getSkeletonText('ui-skeleton-text')).toHaveAttribute('id', 'ui-skeleton-text');
-    expect(getTextSkeletonStyles.build).toHaveBeenCalledWith('m', '100%');
-  });
-
-  it('passes provided size and width to style builder', () => {
-    const size: SkeletonTextSize = 'l';
-    const width = '45%';
-
-    render(<UISkeletonText size={size} width={width} id="ui-skeleton-text-custom" />);
-
-    expect(getSkeletonText('ui-skeleton-text-custom')).toHaveAttribute(
-      'id',
-      'ui-skeleton-text-custom'
+    expect(skeletonText()).toHaveStyle({
+      height: '12px',
+      width: '100%',
+      borderRadius: '57px',
+      backgroundSize: '200% 100%',
+    });
+    expect(getComputedStyle(skeletonText()).backgroundImage.replace(/\s+/g, '')).toBe(
+      SHIMMER_GRADIENT.replace(/\s+/g, '')
     );
-    expect(getTextSkeletonStyles.build).toHaveBeenCalledWith(size, width);
-  });
-
-  it('applies array sx without dropping the base styles', () => {
-    const arraySx = [{ mt: 1 }, { mb: 2 }];
-
-    render(<UISkeletonText sx={arraySx} id="ui-skeleton-text-array-sx" />);
-
-    expect(getSkeletonText('ui-skeleton-text-array-sx')).toHaveAttribute(
-      'id',
-      'ui-skeleton-text-array-sx'
+    expect(styleRuleFor(skeletonText())?.getPropertyValue('animation')).toContain(
+      '1.5s ease-in-out infinite alternate'
     );
   });
 
-  it('accepts a single sx object without wrapping errors', () => {
-    render(<UISkeletonText sx={{ mt: 3 }} id="ui-skeleton-text-object-sx" />);
+  it.each<[SkeletonTextSize, string]>([
+    ['s', '8px'],
+    ['m', '12px'],
+    ['l', '18px'],
+  ])('renders size "%s" at %s tall', (size, height) => {
+    render(<UISkeletonText id={SKELETON_ID} size={size} width="45%" />);
 
-    expect(getSkeletonText('ui-skeleton-text-object-sx')).toHaveAttribute(
-      'id',
-      'ui-skeleton-text-object-sx'
-    );
+    expect(skeletonText()).toHaveStyle({ height, width: '45%' });
   });
 
-  it('calls style builder with size "s" and provided width', () => {
-    render(<UISkeletonText size="s" width="30%" id="ui-skeleton-text-s" />);
+  it('stops the shimmer for users who prefer reduced motion', () => {
+    render(<UISkeletonText id={SKELETON_ID} />);
 
-    expect(getSkeletonText('ui-skeleton-text-s')).toHaveAttribute('id', 'ui-skeleton-text-s');
-    expect(getTextSkeletonStyles.build).toHaveBeenCalledWith('s', '30%');
+    expect(
+      mediaStyleRuleFor(skeletonText(), 'prefers-reduced-motion:reduce')?.getPropertyValue(
+        'animation'
+      )
+    ).toBe('none');
   });
 
-  it('calls style builder with size "l" and provided width', () => {
-    render(<UISkeletonText size="l" width="80%" id="ui-skeleton-text-l" />);
+  it('keeps the bar outlined when forced colours drop its gradient', () => {
+    render(<UISkeletonText id={SKELETON_ID} />);
 
-    expect(getSkeletonText('ui-skeleton-text-l')).toHaveAttribute('id', 'ui-skeleton-text-l');
-    expect(getTextSkeletonStyles.build).toHaveBeenCalledWith('l', '80%');
+    expect(
+      mediaStyleRuleFor(skeletonText(), 'forced-colors:active')?.getPropertyValue('outline')
+    ).toBe('1px solid GrayText');
+  });
+
+  it('forwards a single sx object on top of the base styles', () => {
+    render(<UISkeletonText id={SKELETON_ID} sx={{ mt: 3 }} />);
+
+    expect(skeletonText()).toHaveStyle({ marginTop: '24px', height: '12px' });
+  });
+
+  it('forwards every entry of an sx array on top of the base styles', () => {
+    render(<UISkeletonText id={SKELETON_ID} sx={[{ mt: 1 }, { mb: 2 }]} />);
+
+    expect(skeletonText()).toHaveStyle({
+      marginTop: '8px',
+      marginBottom: '16px',
+      borderRadius: '57px',
+    });
   });
 
   it('has no interactive elements', () => {
-    render(<UISkeletonText id="ui-skeleton-text" />);
+    render(<UISkeletonText id={SKELETON_ID} />);
 
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
-    expect(screen.queryAllByRole('link')).toHaveLength(0);
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+    expect(screen.queryAllByRole('button', { hidden: true })).toHaveLength(0);
+    expect(screen.queryAllByRole('link', { hidden: true })).toHaveLength(0);
+    expect(screen.queryAllByRole('textbox', { hidden: true })).toHaveLength(0);
   });
 });

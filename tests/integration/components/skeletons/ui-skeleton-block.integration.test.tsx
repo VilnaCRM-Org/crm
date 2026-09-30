@@ -6,7 +6,9 @@ import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
 
 describe('UISkeletonBlock Integration', () => {
   const getSkeletonBlock = (): HTMLElement => {
-    const element = screen.getAllByRole('generic').find((el) => el.id === 'skeleton-block');
+    const element = screen
+      .getAllByRole('generic', { hidden: true })
+      .find((el) => el.id === 'skeleton-block');
     if (!element) throw new Error('Skeleton block element with id "skeleton-block" not found');
     return element;
   };
@@ -15,7 +17,7 @@ describe('UISkeletonBlock Integration', () => {
     expect(React).toBeDefined();
     render(<UISkeletonBlock id="skeleton-block" />);
 
-    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
+    expect(getSkeletonBlock()).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('renders with custom dimensions', () => {

@@ -1,10 +1,10 @@
-import { Typography } from '@mui/material';
+import UiTypography from '@vilnacrm/ui-toolkit/ui-typography';
 import React from 'react';
 
 import type { UITypographyProps } from '@/components/ui-typography/types';
 
-function UITypography({ children, component, ...rest }: UITypographyProps): React.ReactElement {
-  return React.cloneElement(<Typography component={component || 'p'}>{children}</Typography>, rest);
+function UITypography(props: UITypographyProps): React.ReactElement {
+  return React.createElement(UiTypography, { ...props, inheritTheme: true });
 }
 
 export default UITypography;

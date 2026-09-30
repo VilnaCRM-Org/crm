@@ -18,7 +18,7 @@ jest.mock('react-i18next', () => ({
 }));
 
 function skeletons(): HTMLElement[] {
-  return screen.getAllByRole('generic');
+  return screen.getAllByRole('generic', { hidden: true });
 }
 
 function skeletonById(id: string): HTMLElement {
