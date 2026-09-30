@@ -17,7 +17,7 @@ This index lists the Architecture Decision Records for this repository.
 - [ADR-013: Bun manages dependencies and runs tooling; Node stays the runtime](./013-bun-package-manager.md)
 - [ADR-014: Code health is gated by a committed metrics policy and a zero-clone duplication gate](./014-code-health-metric-gates.md)
 - [ADR-015: TypeScript strictness is ratcheted flag-by-flag, gated against regression](./015-typescript-strictness-ratchet.md)
-- [ADR-016: UI toolkit installed from a digest-verified tarball, consumed only via identical seams](./016-ui-toolkit-installation.md)
+- [ADR-016: UI toolkit installed from a digest-verified tarball and consumed through CRM seams](./016-ui-toolkit-installation.md)
 - [ADR-017: The MUI theme engine loads with the page chunk, not before first paint](./017-mui-theme-off-the-eager-path.md)
 
 ## Writing a new ADR

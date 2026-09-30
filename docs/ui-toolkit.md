@@ -1,8 +1,10 @@
 # UI toolkit
 
-CRM installs the shared VilnaCRM design-system package, `@vilnacrm/ui-toolkit`, and reads
-exactly one value from it: the breakpoints theme. Every other CRM primitive stays local, with
-its reason recorded below. The decision, its options and its deviations from issue
+CRM installs the shared VilnaCRM design-system package, `@vilnacrm/ui-toolkit`. Since v0.6.0 it
+reads the breakpoints theme from it and renders seven toolkit components, each behind the CRM
+seam it replaces: the container, typography, the four skeleton leaves and back-to-main. Every
+other CRM primitive stays local, with its reason recorded below. The decision, its options and
+its deviations from issue
 [#250](https://github.com/VilnaCRM-Org/crm/issues/250) are in
 [ADR-016](./adr/016-ui-toolkit-installation.md).
 
@@ -34,28 +36,51 @@ its reason recorded below. The decision, its options and its deviations from iss
 
 ## Importing
 
-Import named exports from a toolkit subpath, and nothing else:
+The toolkit is imported only by CRM seam files. Every other file imports the seam, whose path,
+export and props did not change when it started rendering the toolkit:
 
 ```ts
+import UiContainer from '@vilnacrm/ui-toolkit/ui-container';
 import {
   crmBreakpointsTheme,
   heightBreakpoints as toolkitHeightBreakpoints,
 } from '@vilnacrm/ui-toolkit/ui-breakpoints';
 ```
 
-- **Allowed:** named exports from `@vilnacrm/ui-toolkit/<subpath>`. Today that is only
-  `crmBreakpointsTheme` and `heightBreakpoints` from `ui-breakpoints`, imported by the one seam,
-  `src/components/ui-breakpoints/index.ts`. Every other file keeps importing that seam.
-- **Forbidden:** the root barrel `@vilnacrm/ui-toolkit` (346,575 B raw, about 60 chunks,
+- **Adopted component subpaths:** each is imported by its `default` export only, and only inside
+  its own seam:
+
+  | Toolkit subpath                    | CRM seam                                       |
+  | ---------------------------------- | ---------------------------------------------- |
+  | `ui-container`                     | `src/components/ui-container/index.tsx`        |
+  | `ui-typography`                    | `src/components/ui-typography/index.tsx`       |
+  | `ui-skeleton-<leaf>` (four leaves) | `src/components/skeletons/ui-skeleton-<leaf>/` |
+  | `ui-back-to-main`                  | `src/components/ui-back-to-main/index.tsx`     |
+
+  The four leaves are `text`, `block`, `button` and `input`; each seam is its folder's
+  `index.tsx`. A seam passes its props through `React.createElement` or by name, never as a JSX
+  spread, which `react/jsx-props-no-spreading` rejects.
+
+- **Theme subpath:** `ui-breakpoints` is read by named export only: `crmBreakpointsTheme` and
+  `heightBreakpoints`, in `src/components/ui-breakpoints/index.ts`.
+- **Forbidden:** the root barrel `@vilnacrm/ui-toolkit` (352,296 B raw across 69 files,
   including `swiper`); `@vilnacrm/ui-toolkit/styles.css` (the toolkit fonts, see
-  [Fonts](#fonts)); the `default` export of any subpath (on the theme subpaths it is the website
-  theme, with xs 375 and sm 640); and any `website*` or `Ui*` export.
+  [Fonts](#fonts)); the `ui-color-theme` subpath (R9); the `default` export of `ui-breakpoints`,
+  which is the website theme with xs 375 and sm 640; any `website*` export; every subpath not
+  listed above; and an adopted subpath imported anywhere but its own seam.
 - **Eager path:** no module in the `src/index.tsx` closure may import the toolkit, so the
-  470,000 B initial-entrypoint budget is untouched. The seam is reached only from lazily loaded
-  route and footer chunks.
-- **Enforcement:** the rule is documented, not linted. The Jest mapper in `jest.config.ts`
-  resolves only `[a-z-]+` subpaths, to `build/<subpath>.mjs`. An ESLint import-restriction rule
-  is added by the first pull request that imports a second toolkit subpath.
+  470,000 B initial-entrypoint budget is untouched. Every seam is reached only from lazily
+  loaded route and footer chunks.
+- **Enforcement:** the ESLint `no-restricted-imports` gate in `eslint.config.mjs` fails
+  `make lint-eslint` on the root barrel, `styles.css`, `ui-color-theme`, the `ui-breakpoints`
+  `default` export, every subpath not adopted, and an adopted subpath imported anywhere but its
+  own seam. It is set in each flat-config block that configures the rule, because flat config
+  replaces a rule's options per file. `no-restricted-imports` only sees static `import` and
+  `export` declarations, so a dynamic `import()` or a `require()` of a toolkit subpath is held
+  by review; no `src` file does either today. The `website*` named exports are held by review. The Jest
+  mapper in `jest.config.ts` resolves only `[a-z-]+` subpaths, to `build/<subpath>.mjs`. It
+  names the same file as the `default` export condition v0.6.0 added, so removing it is
+  optional; the `transformIgnorePatterns` entry and the `.mjs` transform stay required.
 
 ## The digest gate
 
@@ -96,7 +121,8 @@ network access. There is no exemption: v0.5.0's asset digest also equals its com
 the toolkit's releases are immutable, so its post-publication upload is refused (ui-toolkit
 [#190](https://github.com/VilnaCRM-Org/ui-toolkit/issues/190)).
 
-**The release attestation:** this command passed on the first pin, v0.5.0:
+**The release attestation:** `gh attestation verify` was verified for the first pin, v0.5.0,
+only:
 
 ```bash
 gh attestation verify vilnacrm-ui-toolkit-0.5.0.tgz -R VilnaCRM-Org/ui-toolkit
@@ -105,6 +131,15 @@ gh attestation verify vilnacrm-ui-toolkit-0.5.0.tgz -R VilnaCRM-Org/ui-toolkit
 It proves that a build of the `v0.5.0` tag produced a tarball with that digest. It does not
 prove the upload, the installed tree or the lockfile; the manifest and `make lint-ui-toolkit`
 stay the offline proof.
+
+The v0.6.0 asset digest,
+`sha256:a4c92edf1caebf1f688c8ba70b31efb9ff5792202d228a2fb51c6d11ba76895c`, also has
+build-provenance attestations in the toolkit repository:
+`GET /repos/VilnaCRM-Org/ui-toolkit/attestations/sha256:<digest>` returns 2. They were produced
+by its `release-provenance` workflow, which re-packs the tag byte-identically. That workflow's
+asset upload fails on immutable releases (ui-toolkit
+[#190](https://github.com/VilnaCRM-Org/ui-toolkit/issues/190)), which is why the refresher
+reads the release API's server-side digest instead of a sidecar asset.
 
 ## Stale dev container
 
@@ -150,153 +185,231 @@ release is forbidden.
 
 ## Keep-local register
 
-This is the one register of the CRM primitives and themes that are not swapped, with the reason
-each stays local. The reason codes R1 to R12 belong to this register only. Each holds for
-v0.5.0; the last column gives the outlook once a toolkit release above 0.5.0, carrying
-ui-toolkit [#185](https://github.com/VilnaCRM-Org/ui-toolkit/pull/185), is pinned.
+This is the one register of the CRM primitives and themes, adopted or local, with the reason
+each local one stays local. The reason codes belong to this register only, and each holds for
+v0.6.0. A code keeps its number while its reason is true, and a retired code is never reused.
 
-- **R1** extra `role="status"` node changes the a11y tree and `UIForm` queries.
-- **R2** module-scope fallback to the website theme (`chunk-WXH4AINV` guard).
-- **R3** module-scope website breakpoints: `sm` moves from 480 to 640.
-- **R4** render-time bare `process.env.REACT_APP_VILNACRM_USAGE_POLICY_URL` read.
-- **R5** different API surface; would need an adapter (out of scope).
+- **R2** website-theme fallback: CRM's app theme fails the toolkit's `isUiTheme` guard, so a
+  component that styles from the toolkit theme without `inheritTheme` falls back to the
+  module-scope website `uiTheme`.
+- **R3** through that fallback, `sm` resolves to the website's 640 instead of CRM's 480, so an
+  `sm` rule moves for viewports from 481 to 639 px. Only components with an `sm` rule are hit.
+- **R5** different API surface: `UiLink` requires `href` and drops `component`, so the swap
+  needs an adapter (out of scope).
 - **R6** no `src` importer; nothing to swap.
 - **R7** eager path under the 470,000 B budget; ADR-007 reliability model not upstream.
 - **R8** no toolkit counterpart.
 - **R9** whole-object value differs: 10 palette keys differ (`success` changes, 9 keys are
   added), and the seam has no production consumer.
-- **R10** the contained `UiButton` has no `:focus-visible` outline, which CRM's has; #185 left
-  it out on purpose (it changes the website's visuals and needs a design-checked change).
 - **R11** CRM's skeleton is a named `section[aria-label]`; the toolkit skeleton deliberately
   stays a nameless busy container.
-- **R12** v0.5.0 `UiContainer` puts `aria-label="container"` on a generic `div`, which ARIA
-  prohibits and CRM's container does not render. Its styles and props equal CRM's: its only
-  media rules read `md`, `lg` and `xl`, which are 768, 1024 and 1440 as in CRM, so R3 does not
-  apply to it.
+- **R13** `UiButton`'s variant rules are `sx`, which beats the `MuiButton` `styleOverrides` in
+  `src/styles/theme.ts`: the outlined pill radius and `#969B9D` border replace CRM's 12 px
+  radius and `#E1E7EA` border, and the text variant loses MUI's `0.02857em` letter-spacing, so
+  the not-found, auth-provider and home buttons change.
+- **R14** `loadingMode="native"` never forwards `loading` to MUI, so the `MuiButton-loading`
+  class that the login and registration e2e specs and the unit tests select is gone.
+- **R15** `UiForm`'s submit differs: CRM's primary has no `contrastText`, so MUI gives the label
+  on `#1EAEFF` the colour `rgba(0,0,0,0.87)`; the label drops to weight 400 below the website
+  `sm` (640); the form forwards no spinner; and native mode announces nothing on submit.
+- **R16** `UiFooter variant="crm"` values differ, and the variant takes no override: link colour
+  `#404142` instead of `#1976D2`, the logo as an `<img>` instead of CRM's inline `<svg>`,
+  letter-spacing, the `lg` max-height clamp, and the hover, focus and visited states.
+- **R17** `UiLink` forces its colour through `sx` (tone `brand` `#1EAEFF` or `accessible`
+  `#0074B5`, against CRM's `#1976D2`) and emits a fixed `@media (max-width:1130px)` 1rem
+  font-size rule after the consumer's own.
+- **R18** the field API is compatible; the blocker is visual. Input heights, placeholder size,
+  value weight and colour, and the focus and error outlines differ at the 1280 and 1366 px
+  baselines, and the toolkit error outline `#DF7878` is 2.96:1 on white, under the 3:1 of
+  SC 1.4.11.
+- **R19** `AuthSkeleton` layout: its form section has no `flexGrow` and no vertical centering,
+  its card border is `#E1E7EA` instead of `#EAECEE`, and its static shadow differs.
 
-In the last column, **adoptable** means keep-local in this change and adoptable through an
-opt-in of ui-toolkit #185 as a follow-up swap behind the existing CRM seam and props; **local**
-means the named reason still holds after #185.
+Retired codes, resolved in v0.6.0: R1 (`UiButton`'s extra `role="status"` node, by
+`loadingMode="native"`), R4 (`UiFooter`'s render-time `process.env` read, by `variant="crm"`),
+R10 (no contained `:focus-visible` outline, by `focusOutline` and `submitFocusOutline`) and R12
+(`aria-label="container"` on a generic `div`, dropped). An earlier revision listed
+`ui-back-to-main` under R3; that was wrong: it and its container read only `md`, `lg` and `xl`,
+which are 768, 1024 and 1440 in both breakpoint sets, and its text-variant button has no `sm`
+rule.
 
-| CRM primitive or theme                      | Importers  | Now   | Reason    | After #185     |
-| ------------------------------------------- | ---------- | ----- | --------- | -------------- |
-| `ui-breakpoints`                            | 21 (lazy)  | adopt | -         | adopted (bump) |
-| `ui-color-theme`                            | 1 (orphan) | local | R9        | local: R9      |
-| `ui-button`                                 | 8          | local | R1 R10    | local: R10     |
-| `ui-typography`                             | 11         | local | R2        | adoptable      |
-| `ui-link`                                   | 2          | local | R2 R5     | local: R2 R5   |
-| `ui-container`                              | 3          | local | R12       | adoptable      |
-| `ui-back-to-main`                           | 2          | local | R3        | local: R3      |
-| `ui-form`                                   | 2          | local | R2 R3 R10 | local: R2 R10  |
-| `auth-skeleton`, `ui-skeleton-*`            | 4          | local | R3 R11    | local: R11     |
-| `ui-footer`                                 | 3          | local | R2 R3 R4  | local: R2      |
-| `ui-form-input-field`, `ui-text-field-form` | 1          | local | R5        | local: R5      |
-| `ui-text-field`, `ui-input`                 | 0          | local | R6        | local: R6      |
-| `error-boundary`, `ui-error-boundary`       | 5 (eager)  | local | R7        | local: R7      |
-| `ui-live-status`                            | eager      | local | R8        | local: R8      |
-| `ui-offline-notice`                         | -          | local | R8        | local: R8      |
-| `ui-async-section`, `route-fallback`        | -          | local | R8        | local: R8      |
-| layouts, not-found                          | -          | local | R8        | local: R8      |
-| `render-with-theme`                         | tests only | local | R8        | local: R8      |
-| `src/styles/theme.ts` (app theme)           | eager      | local | R8        | local: R8      |
+| CRM primitive or theme                            | Importers  | Status  | Reason        |
+| ------------------------------------------------- | ---------- | ------- | ------------- |
+| `ui-breakpoints`                                  | 17 (lazy)  | adopted | named exports |
+| `ui-container`                                    | 2          | adopted | -             |
+| `ui-typography`                                   | 11         | adopted | -             |
+| `ui-skeleton-text`, `-block`, `-button`, `-input` | 1          | adopted | -             |
+| `ui-back-to-main`                                 | 2          | adopted | -             |
+| `ui-button`                                       | 7          | local   | R2 R3 R13 R14 |
+| `ui-form`                                         | 2          | local   | R3 R14 R15    |
+| `ui-footer`                                       | 3          | local   | R16           |
+| `ui-link`                                         | 2          | local   | R2 R5 R17     |
+| `ui-form-input-field`, `ui-text-field-form`       | 1          | local   | R18           |
+| `ui-text-field`, `ui-input`                       | 0          | local   | R6            |
+| `auth-skeleton`                                   | 2          | local   | R3 R11 R19    |
+| `ui-color-theme`                                  | 1 (orphan) | local   | R9            |
+| `error-boundary`, `ui-error-boundary`             | 5 (eager)  | local   | R7            |
+| `ui-live-status`                                  | eager      | local   | R8            |
+| `ui-offline-notice`                               | -          | local   | R8            |
+| `ui-async-section`, `route-fallback`              | -          | local   | R8            |
+| layouts, not-found                                | -          | local   | R8            |
+| `render-with-theme`                               | tests only | local   | R8            |
+| `src/styles/theme.ts` (app theme)                 | eager      | local   | R8            |
 
 `ui-color-theme` stays local until a CRM consumer reads a toolkit-only palette key, or upstream
 ships a CRM-distinct palette; either one reverses R9.
 
-What #185 does and does not change, per row:
+What each adopted row renders, and what it changes:
 
-- `ui-button`: `loadingMode="native"` resolves R1 (native `disabled` grey, the consumer's
-  `loadingIndicator`, no own status region, matching CRM's submit loader), but R10 remains.
-- `ui-typography`: `inheritTheme` resolves R2 (variants come from the ambient MUI theme, so the
-  kit theme need not sit on the eager path).
-- `ui-link`, `ui-back-to-main`: unchanged by #185.
-- `ui-container`: #185 drops the prohibited `aria-label="container"` (R12) and changes nothing
-  else, so after the bump the toolkit `UiContainer` renders the same markup and styles as CRM's
-  `UIContainer`.
-- `ui-form`: the `sm` rule resolves at render time (R3, given a `crm` UI theme in scope), and
-  `titleComponent`, `submitLoadingMode` and `offlineNotice` cover CRM's heading, loader and
-  offline notice. Two reasons remain: its submit is still the contained `UiButton` (R10), and
-  its title and error banner render through `UiTypography` without `inheritTheme` (R2).
-- `auth-skeleton`, `ui-skeleton-*`: `idPrefix=""` gives CRM's bare `auth-skeleton-*` ids and
-  the `sm` rules resolve at render time, but R11 remains.
-- `ui-footer`: `variant="crm"` reads no `process.env` (R4) and renders the logo plus same-tab
-  privacy and usage-policy links; its `md`, `lg` and `xl` rules equal CRM's (R3 does not bite).
-  R2 remains: the variant renders each link label through `UiTypography` without
-  `inheritTheme`, so the label takes the kit theme's `body1`, whose font family is MUI's
-  default, not CRM's `Golos`.
-- `ui-live-status`, `ui-offline-notice`: the #185 offline notice is internal to `UiForm`, not
-  an exported primitive, so R8 stands.
+- `ui-container`: the same `Box`, with no role, `aria-*` or `id`, the same `sx` in the same key
+  order (width 100%, `margin: 0 auto`, gutters of 15, 26, 32 and 124 px at 768, 1024 and
+  1440 px), and the same single `children` prop. It reads no theme. No change.
+- `ui-typography`: the seam always sets `inheritTheme`, so the toolkit passes `sx` through and
+  every variant CRM uses resolves from the ambient CRM theme. The DOM, the serialized CSS and
+  every selector stay the same. Without the flag, `h4` would turn 600, 1.875rem and `#484848`;
+  the seam's direct unit test pins the ambient values.
+- `ui-skeleton-text`, `-block`, `-button`, `-input`: geometry, colours, breakpoints, ids and the
+  placeholder class are value-identical. Accepted non-pixel changes: each leaf is
+  `aria-hidden="true"`, an empty decorative shape with no spoken content lost, and the shimmer
+  stops under `prefers-reduced-motion: reduce` and gains a `GrayText` outline under forced
+  colours. The recorded baselines stay identical, because the visual spec disables animations
+  and emulates reduced motion. `AuthSkeleton` stays local, so the named `section` and the card
+  pulse are still CRM's; the pulse still animates under reduced motion.
+- `ui-back-to-main`: the seam passes the translated `buttons.back_to_main` label and CRM's own arrow
+  `<img alt="" aria-hidden="true">` as the icon, so the layout, colours, font size, `href` and
+  accessible name are CRM's. Accepted changes: the label's letter-spacing below 1024 px changes from
+  `0.00938em`, an accident of CRM's old `UIButton` wrapping the children in a bare Roboto-default
+  MUI theme, to `normal`, which matches Figma (node 15:1104 and the 15:999 band: Golos Text Medium
+  15/18, letter-spacing 0), and the affected sub-1024 px visual baselines of sign-in, sign-up,
+  not-found and the mobile lane are re-recorded for it; the keyboard focus ring is `#1A1C1E` (about
+  17:1 on white) instead of `#1EAEFF` (2.46:1, under the 3:1 of SC 1.4.11); the link carries an
+  `aria-label` equal to its visible text, so label-in-name holds; the icon wrapper is `aria-hidden`,
+  which leaves the accessibility tree unchanged because the image was already hidden; and the
+  label's font stack, `var(--ui-toolkit-font-golos, 'Golos')`, has no generic fallback while Golos
+  loads. No recorded baseline focuses the link, so the focus ring moves none.
 
-The Storybook preview theme and the unit-test `testTheme` are not changed either: no toolkit
-component renders in CRM, so neither needs the toolkit guard.
+The Storybook preview theme and the unit-test `testTheme` stay CRM's. The adopted components
+either read no toolkit theme or opt out of it with `inheritTheme`, and the fallback theme
+`UiBackToMain` reads changes no computed value.
 
-## Adopting ui-toolkit #185 (deferred)
+## Adoption in v0.6.0
 
-ui-toolkit #185 merged to the toolkit's `main` after v0.5.0, and no release carries it yet.
-Its adoption is a deferred follow-up, blocked on a toolkit release above 0.5.0, and is not part
-of the installation. Each swap:
+v0.6.0 is the first release carrying the CRM opt-ins of ui-toolkit
+[#185](https://github.com/VilnaCRM-Org/ui-toolkit/pull/185) and
+[#187](https://github.com/VilnaCRM-Org/ui-toolkit/pull/187). Seven component subpaths were
+adopted with it. Each swap:
 
-- happens behind an existing CRM seam and its current props: the CRM file keeps its path,
-  export and props and renders the toolkit component with the opt-in set, so no importer
-  changes and no component, module, `UI*` primitive or adapter is added;
-- starts with the [bump recipe](#bumping-the-toolkit), which the checksum gate cross-checks
-  against the release asset's server-side digest;
-- carries its own value-diff and baseline evidence: 0 visual diffs, 0 new axe violations, the
-  keyboard contract, the eager budget and the Lighthouse floors;
-- keeps a row local, with a new reason, if that evidence shows any difference;
-- amends the [import rule](#importing) for that one component subpath only: a toolkit component
-  is its subpath's `default` export (for example `@vilnacrm/ui-toolkit/ui-container`), which the
-  rule forbids today because the theme subpaths' defaults are the website themes. Theme-subpath
-  defaults, the root barrel and `styles.css` stay forbidden.
+- happens behind the existing CRM seam and its current props: the seam keeps its path, export
+  and props and renders the toolkit component, so no importer changes and no component, module,
+  `UI*` primitive or adapter is added;
+- deletes the CRM style module the toolkit replaces: `ui-container/styles.ts`,
+  `ui-back-to-main/styles.ts` and the four `skeletons/ui-skeleton-<leaf>/styles.ts`;
+- has a unit test that imports the seam directly, so the 100% coverage and mutation gates
+  reach it;
+- is held to the same evidence: 0 visual diffs beyond the re-recorded sub-1024 px back-to-main
+  baselines, 0 new axe violations,
+  the keyboard contract, the eager budget and the Lighthouse floors.
 
-The adoptable rows are `ui-typography` and `ui-container`; each is blocked only on the release.
-`ui-footer`, `ui-button` and `ui-form` are blocked twice: on the release, and on an upstream
-change. For the footer that change is `inheritTheme` on its link labels (R2); for the button and
-the form it is a contained `:focus-visible` outline (R10), and for the form also `inheritTheme`
-on its title and error banner (R2). `auth-skeleton` is not adopted: R11 is a deliberate toolkit
-decision, not an open gap.
+**Bundle cost.** Measured on the installed v0.6.0 build, before CRM's bundler and before the
+deleted CRM styles are subtracted, the seven subpaths add 26,469 B raw (8,098 B gzip) of
+toolkit code beyond what `ui-breakpoints` already loads:
 
-After the bump, the Jest mapper keeps working unchanged, because it names the same file the new
-`default` condition names; removing it becomes optional and is proven by the focused breakpoints
-test. The `transformIgnorePatterns` entry and the `.mjs` transform stay required.
+| Adopted subpaths                | Raw bytes | Gzip bytes |
+| ------------------------------- | --------- | ---------- |
+| `ui-container`, `ui-typography` | 5,660     | 2,122      |
+| the four skeleton leaves        | 7,580     | 2,560      |
+| `ui-back-to-main`               | 19,779    | 6,506      |
+| all seven (shared chunks once)  | 26,469    | 8,098      |
+
+`ui-back-to-main` is the heaviest because it renders `UiButton` and brings its field-control
+chunk. The closure also runs three module-scope `createTheme` calls (the website `uiTheme` and
+the two colour themes) that CRM never reads and cannot tree-shake. All of it lands in lazily
+loaded chunks: sign-in, sign-up, home, not-found and the footer. No seam is in the
+`src/index.tsx` closure, so the eager path and its 470,000 B budget are untouched; the
+per-chunk gzip budget and the mobile Lighthouse floor are measured in CI.
+
+**What remains blocked.** Every other row stays local for a reason v0.6.0 does not remove, and
+none of these can be closed on the CRM side without an adapter or a wrapper, which the scope
+excludes:
+
+- `ui-button` needs variant rules that yield to a consumer theme's `styleOverrides` (R13), a
+  loading state that keeps the `MuiButton-loading` class in native mode (R14), and a way for a
+  non-toolkit theme such as CRM's to supply its breakpoints and typography (R2, R3).
+- `ui-form` needs a submit label colour that does not depend on `contrastText`, a spinner prop,
+  a status announcement in native mode (R15), the loading class (R14) and CRM breakpoints (R3).
+- `ui-footer` needs its `crm` variant to match CRM's footer values, or to accept overrides
+  (R16). Taking the toolkit's darker link colour instead is a separate, design-checked decision.
+- `ui-link` needs a tone that leaves the consumer's colour alone, no fixed 1130 px font-size
+  rule (R17), CRM breakpoints (R2) and the `component` prop with an optional `href` (R5).
+- The fields need a design-checked geometry that matches CRM's inputs, and an error outline of
+  at least 3:1 (R18).
+- `auth-skeleton` stays local by design: its nameless container is a deliberate toolkit
+  decision (R11), and its layout, border and shadow differ (R19) on top of R3.
+- `ui-color-theme` waits for a CRM-distinct palette (R9); the open ui-toolkit
+  [#186](https://github.com/VilnaCRM-Org/ui-toolkit/pull/186) adds one.
+
+The module-scope theme work is the one cost shared by every adopted row. The open
+ui-toolkit #186 builds the fallback theme lazily and moves component styles to plain token
+objects; a release carrying it is a pin bump through the [recipe](#bumping-the-toolkit) that
+removes those `createTheme` calls from CRM's chunks.
 
 ## Fonts
 
-The toolkit's fonts and `styles.css` are not wired. Its `styles.css` declares `Golos Text` and
-`Inter` as TTF with no `font-display`, 1,348,788 B in total, against the 480,000 B Lighthouse
-`totalSizeBytes` budget, and the `font-src 'self'` directive of the security-header baseline
-([ADR-006](./adr/006-browser-security-header-baseline.md)) would require serving them locally.
-CRM keeps `src/styles/fonts.css`: `Golos` and `Inter` as woff2 with `font-display: swap`,
-273,168 B in total. Fonts are revisited when the toolkit ships a woff2 build that fits the
-budget.
+The toolkit's fonts and `styles.css` are not wired. Since v0.6.0 its `styles.css` declares
+`Golos` and `Inter` as woff2 with `font-display: swap`: the same font versions as CRM's, with
+identical outlines for every character CRM covers, but 473,836 B in total against CRM's
+273,168 B, because its Inter is not subset. Swapping would take `/sign-in` to about 483 kB,
+over the 480,000 B Lighthouse `totalSizeBytes` budget, and a second `@font-face` for the same
+family would silently replace CRM's files. CRM keeps `src/styles/fonts.css`. No font wiring is
+needed for the adopted components: their styles read
+`var(--ui-toolkit-font-golos, 'Golos')` and `var(--ui-toolkit-font-inter, Inter)`, which
+resolve to CRM's own faces. Fonts are revisited when the toolkit ships a subset build that fits
+the budget.
 
 ## Upstream follow-ups
 
-Recorded here, not filed. This list is the one source for them. Statuses are as of 2026-09-29;
-"merged in #185, unreleased" means fixed on the toolkit's `main` after v0.5.0, reaching CRM only
-through the deferred adoption above.
+This list is the one source for them. Statuses are as of 2026-09-30. The blockers that keep
+the remaining rows of the [keep-local register](#keep-local-register) local are filed upstream:
+
+| Blocker                                                   | Reasons | Issue         |
+| --------------------------------------------------------- | ------- | ------------- |
+| `UiButton` `sx` precedence, loading class, letter-spacing | R13 R14 | [#191][tk191] |
+| `UiForm` submit ink, mobile weight, spinner, announcement | R15     | [#192][tk192] |
+| `UiFooter variant="crm"` value differences                | R16     | [#193][tk193] |
+| `UiLink` forced colour, fixed 1130px font size            | R17     | [#194][tk194] |
+| `UiInput` error outline `#DF7878` at 2.96:1               | R18     | [#195][tk195] |
+| `UiInput` / `UiTextFieldForm` CRM geometry and type       | R18     | [#196][tk196] |
+| `AuthSkeleton` named section, layout, border, shadow      | R11     | [#197][tk197] |
+| Website-theme fallback under a non-toolkit theme          | R2 R3   | [#198][tk198] |
+| `UiBackToMain` `aria-label` repeats the visible text      | adopted | [#199][tk199] |
 
 1. Annotate the module-scope `createTheme` calls `/*#__PURE__*/`, or split the website and CRM
-   themes into separate chunks. Status: open.
-2. Stop exporting the website theme as the unnamed `default` of shared subpaths. Status: open.
-3. Give CRM a distinct palette, or drop `crmColorTheme` (today value-identical to
-   `websiteColorTheme`, a superset of CRM's palette, with a different `success`). Status: open.
-4. Ship MUI module augmentation for the extra palette keys. Status: open.
+   themes into separate chunks. Status: open; the open ui-toolkit #186 builds the fallback
+   theme lazily and keeps `createTheme` out of the chunk every component imports.
+2. Stop exporting the website theme as the unnamed `default` of shared subpaths. Status: open;
+   #186 keeps it on purpose.
+3. Give CRM a distinct palette, or drop `crmColorTheme` (in v0.6.0 value-identical to
+   `websiteColorTheme`, a superset of CRM's palette, with a different `success`). Status: open;
+   #186 adds `crmPalette`.
+4. Ship MUI module augmentation for the extra palette keys. Status: released in v0.6.0
+   (`mui-augmentation.d.mts`, #187).
 5. Add a `default` or `require` export condition, or document the Jest mapper recipe. Status:
-   merged in #185, unreleased.
+   released in v0.6.0 (#185).
 6. Bind components to a theme variant instead of the module-scope website breakpoints
-   (skeletons, container, footer, form, back-to-main, card list). Status: partly merged in
-   #185, unreleased: the `ui-form` and skeleton `sm` rules resolve at render time. Open: the
-   container, footer and back-to-main rules, and `UiForm`'s title and error banner, which render
-   through `UiTypography` without `inheritTheme` (R2).
+   (skeletons, container, footer, form, back-to-main, card list). Status: partly released in
+   v0.6.0: the `ui-form` and skeleton `sm` rules resolve at render time, but only against a
+   toolkit theme, so in CRM they still resolve to 640 (R3). The container, footer and
+   back-to-main rules are in #186. Open: a way for a non-toolkit theme to supply breakpoints.
 7. Fonts: woff2 with `font-display: swap`; reconcile the `Golos Text` and `Golos` names.
-   Status: open.
-8. Replace `UiFooter`'s render-time `process.env` read with a prop. Status: merged in #185 as
-   `variant="crm"`, unreleased. Open: that variant renders its link labels through
-   `UiTypography` without `inheritTheme`, so they take the kit `body1` (R2).
+   Status: released in v0.6.0 (#187), with the names reconciled through the
+   `--ui-toolkit-font-*` properties. Open: a subset build that fits the budget.
+8. Replace `UiFooter`'s render-time `process.env` read with a prop. Status: released in v0.6.0
+   as `variant="crm"` (#185), whose labels take `inheritTheme` (#187). Open: the variant's
+   values (R16).
 9. Remove `UiButton`'s extra `role="status"` node, or make it opt-in, and give the contained
-   variant a `:focus-visible` outline. Status: the first half is merged in #185 as
-   `loadingMode="native"`, unreleased; the outline is open (R10).
+   variant a `:focus-visible` outline. Status: released in v0.6.0 as `loadingMode="native"`
+   (#185) and `focusOutline` (#187). Open: the `sx` precedence (R13) and the loading class in
+   native mode (R14).
 10. Drop `scripts.prepare` from the published manifest; fix source maps pointing at
     `../../src`. Status: open.
 11. Publish to a registry that records integrity, or attach a signed digest or attestation to
@@ -310,8 +423,23 @@ through the deferred adoption above.
     `gh release upload --clobber` was refused ("Cannot delete asset from an immutable
     release"), so the asset is the original upload, identical to the attested bytes by digest.
     Nor does it cover the installed tree or the lockfile; the committed manifest and
-    `make lint-ui-toolkit` stay the offline proof. Not met: the `.sha256` sidecar #185 added
+    `make lint-ui-toolkit` stay the offline proof. For v0.6.0 the asset digest
+    `sha256:a4c92edf...` also has build-provenance attestations in the toolkit repository
+    (`GET /repos/VilnaCRM-Org/ui-toolkit/attestations/sha256:<digest>` returns 2), produced by
+    the same `release-provenance` workflow re-packing the tag byte-identically;
+    `gh attestation verify` was run for v0.5.0 only. Not met: the `.sha256` sidecar #185 added
     to that same post-publication step, because an immutable release refuses the upload
-    (HTTP 422, ui-toolkit [#190](https://github.com/VilnaCRM-Org/ui-toolkit/issues/190));
+    (HTTP 422, ui-toolkit [#190](https://github.com/VilnaCRM-Org/ui-toolkit/issues/190)), so the
+    `release-provenance` asset upload fails on immutable releases;
     `make update-ui-toolkit` cross-checks the release API's server-side asset digest instead.
     Open: a registry that records integrity, so the lockfile pins bytes.
+
+[tk191]: https://github.com/VilnaCRM-Org/ui-toolkit/issues/191
+[tk192]: https://github.com/VilnaCRM-Org/ui-toolkit/issues/192
+[tk193]: https://github.com/VilnaCRM-Org/ui-toolkit/issues/193
+[tk194]: https://github.com/VilnaCRM-Org/ui-toolkit/issues/194
+[tk195]: https://github.com/VilnaCRM-Org/ui-toolkit/issues/195
+[tk196]: https://github.com/VilnaCRM-Org/ui-toolkit/issues/196
+[tk197]: https://github.com/VilnaCRM-Org/ui-toolkit/issues/197
+[tk198]: https://github.com/VilnaCRM-Org/ui-toolkit/issues/198
+[tk199]: https://github.com/VilnaCRM-Org/ui-toolkit/issues/199

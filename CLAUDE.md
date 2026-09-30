@@ -366,7 +366,7 @@ array literal, so there is nothing left to change. Adding an eleventh needs the 
 proof, and a non-empty array needs the stability argument spelled out, not assumed.
 
 The enforced floor is **100%**: `break = 100`, so a single surviving mutant fails the gate. The
-mutate scope is 221 files; not all of them produce scored mutants — the rest are pure re-export
+mutate scope is 242 files; not all of them produce scored mutants — the rest are pure re-export
 barrels or files whose only mutants are static and skipped by `ignoreStatic`.
 
 **The merge is ownership-authoritative.** Shard membership is packed by file size, so editing a
