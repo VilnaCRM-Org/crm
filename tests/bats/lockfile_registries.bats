@@ -184,13 +184,13 @@ EOF
 {
   "lockfileVersion": 1,
   "packages": {
-    "foo": ["foo@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz", { "peerDependencies": {} }],
+    "foo": ["foo@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz", { "peerDependencies": {} }],
   }
 }
 EOF
   run sh "$SCRIPT" "$FIX/toolkit-other-pkg.lock"
   [ "$status" -eq 1 ]
-  [[ "$output" == *"https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz"* ]]
+  [[ "$output" == *"https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz"* ]]
 }
 
 @test "another repository's release asset under the ui-toolkit name is rejected (exit 1)" {

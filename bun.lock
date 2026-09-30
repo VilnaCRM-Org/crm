@@ -15,7 +15,7 @@
         "dotenv": "^17.4.2",
         "dotenv-expand": "^13.0.0",
         "graphql": "^16.11.0",
-        "@vilnacrm/ui-toolkit": "https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz",
+        "@vilnacrm/ui-toolkit": "https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz",
         "i18next": "^26.4.2",
         "react": "19.3.0",
         "react-dom": "19.3.0",
@@ -1455,7 +1455,7 @@
 
     "@unrs/resolver-binding-win32-x64-msvc": ["@unrs/resolver-binding-win32-x64-msvc@1.12.2", "", { "os": "win32", "cpu": "x64" }, "sha512-nAB74NfSNKknqQ1RrYj6uz8FcXEomu/MATJZxh/x+BArzN2U3JbOYC0APYzUIGhVY3m5hRxA8VPNdPBoG8txlA=="],
 
-    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz", { "peerDependencies": { "@emotion/react": "^11.0.0", "@emotion/styled": "^11.0.0", "@mui/material": "^9.0.0", "@mui/system": "^9.0.0", "i18next": ">=23.0.0 <27.0.0", "react": "^19.0.0", "react-dom": "^19.0.0", "react-hook-form": "^7.0.0", "react-i18next": ">=14.0.0 <18.0.0" } }],
+    "@vilnacrm/ui-toolkit": ["@vilnacrm/ui-toolkit@https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz", { "peerDependencies": { "@emotion/react": "^11.0.0", "@emotion/styled": "^11.0.0", "@mui/material": "^9.0.0", "@mui/system": "^9.0.0", "i18next": ">=23.0.0 <27.0.0", "react": "^19.0.0", "react-dom": "^19.0.0", "react-hook-form": "^7.0.0", "react-i18next": ">=14.0.0 <18.0.0" } }],
 
     "@vitest/expect": ["@vitest/expect@3.2.4", "", { "dependencies": { "@types/chai": "^5.2.2", "@vitest/spy": "3.2.4", "@vitest/utils": "3.2.4", "chai": "^5.2.0", "tinyrainbow": "^2.0.0" } }, "sha512-Io0yyORnB6sikFlt8QW5K7slY4OjqNX9jmJQ02QDda8lyM6B5oNgVWoSoKPac8/kgnCUzuHQKrSLtu/uOqqrig=="],
 

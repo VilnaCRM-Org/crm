@@ -7,7 +7,6 @@ const {
   ALGORITHM,
   UNHASHED_FILES,
   CHECKSUM_STATES,
-  RELEASES_WITHOUT_CHECKSUM,
   ARTIFACT_PATH_PATTERN,
   DIGEST_PATTERN,
 } = UI_TOOLKIT_POLICY;
@@ -80,7 +79,7 @@ export default class UiToolkitIntegrityVerifier {
     );
   }
 
-  headerProblems({ algorithm, version, tarballSha256, releaseChecksum }) {
+  headerProblems({ algorithm, tarballSha256, releaseChecksum }) {
     return this.failed([
       [algorithm !== ALGORITHM, `algorithm is "${algorithm}"; expected "${ALGORITHM}"`],
       [
@@ -90,11 +89,6 @@ export default class UiToolkitIntegrityVerifier {
       [
         !CHECKSUM_STATES.includes(releaseChecksum),
         `releaseChecksum "${releaseChecksum}" is not one of ${CHECKSUM_STATES.join(', ')}`,
-      ],
-      [
-        releaseChecksum === 'absent' && !RELEASES_WITHOUT_CHECKSUM.includes(version),
-        `releaseChecksum "absent" is allowed only for ` +
-          `${RELEASES_WITHOUT_CHECKSUM.join(', ')}, not ${version}`,
       ],
     ]);
   }

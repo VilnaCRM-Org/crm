@@ -17,7 +17,10 @@ type Manifest = {
   artifacts: { path: string; sha256: string }[];
 };
 
-const { PACKAGE_ROOT, CHECKSUMS_PATH, DEFAULT_COMMENT } = UI_TOOLKIT_POLICY;
+type Release = { immutable?: unknown; assets?: unknown };
+
+const { PACKAGE_ROOT, CHECKSUMS_PATH, DEFAULT_COMMENT, RELEASE_API_URL } = UI_TOOLKIT_POLICY;
+const ACCEPT_HEADERS = { headers: { Accept: 'application/vnd.github+json' } };
 const ASSET_BYTES = 'fake release tarball bytes';
 const EXPECTED_PATHS = [
   'build/Golos-OFL.txt',
@@ -46,12 +49,31 @@ function reject(message: string): () => Promise<Response> {
   return () => Promise.reject(new Error(message));
 }
 
-function fetchWith(tarball: () => Promise<Response>, sidecar: () => Promise<Response>): jest.Mock {
-  return jest.fn((url: string) => (url.endsWith('.sha256') ? sidecar() : tarball()));
+function fetchWith(tarball: () => Promise<Response>, release: () => Promise<Response>): jest.Mock {
+  return jest.fn((url: string) => (url.startsWith(RELEASE_API_URL) ? release() : tarball()));
 }
 
-function sidecarFor(version: string, digest = sha256(ASSET_BYTES), asset = version): string {
-  return `${digest}  vilnacrm-ui-toolkit-${asset}.tgz\n`;
+function releaseApiUrl(version: string): string {
+  return `https://api.github.com/repos/VilnaCRM-Org/ui-toolkit/releases/tags/v${version}`;
+}
+
+function releaseFor(version: string, overrides: Release = {}): Release {
+  return {
+    immutable: true,
+    assets: [
+      { name: 'provenance.intoto.jsonl', digest: `sha256:${sha256('provenance')}` },
+      { name: `vilnacrm-ui-toolkit-${version}.tgz`, digest: `sha256:${sha256(ASSET_BYTES)}` },
+    ],
+    ...overrides,
+  };
+}
+
+function assetWith(version: string, digest: unknown): Release {
+  return { assets: [{ name: `vilnacrm-ui-toolkit-${version}.tgz`, digest }] };
+}
+
+function releaseJson(release: unknown): () => Promise<Response> {
+  return respond(JSON.stringify(release), 200);
 }
 
 async function runBuilder(
@@ -63,7 +85,13 @@ async function runBuilder(
   const writeFile = jest.fn();
   const stdout = { write: jest.fn() };
   const stderr = { write: jest.fn() };
-  const builder = new UiToolkitChecksumsBuilder({ readFile, readDir, writeFile, fetch });
+  const builder = new UiToolkitChecksumsBuilder({
+    readFile,
+    readDir,
+    writeFile,
+    fetch,
+    token: undefined,
+  });
   const code = await builder.run({ stdout, stderr });
   return {
     code,
@@ -96,7 +124,7 @@ describe('UiToolkitChecksumsBuilder refusals', () => {
     ['a semver range', '^0.5.0'],
     ['a v0.5.0 tag with a 0.5.1 asset', releaseUrl('0.5.0', '0.5.1')],
   ])('refuses %s as [pin] before any download or write', async (_label, spec) => {
-    const fetch = fetchWith(respond(ASSET_BYTES, 200), respond(null, 404));
+    const fetch = fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.5.0')));
     const result = await runBuilder(repository('0.5.0', spec), fetch);
 
     expectRefusal(result, 'pin');
@@ -106,7 +134,7 @@ describe('UiToolkitChecksumsBuilder refusals', () => {
 
   it('refuses a package.json without a dependencies map as [pin]', async () => {
     const files = { ...repository('0.5.0'), 'package.json': '{}' };
-    const fetch = fetchWith(respond(ASSET_BYTES, 200), respond(null, 404));
+    const fetch = fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.5.0')));
     const result = await runBuilder(files, fetch);
 
     expectRefusal(result, 'pin');
@@ -118,7 +146,7 @@ describe('UiToolkitChecksumsBuilder refusals', () => {
       ...repository('0.5.0'),
       [`${PACKAGE_ROOT}/package.json`]: JSON.stringify({ version: '0.4.0' }),
     };
-    const fetch = fetchWith(respond(ASSET_BYTES, 200), respond(null, 404));
+    const fetch = fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.5.0')));
     const result = await runBuilder(files, fetch);
 
     expectRefusal(result, 'install');
@@ -128,7 +156,7 @@ describe('UiToolkitChecksumsBuilder refusals', () => {
 
   it('refuses a missing installed package as [install] and names make install', async () => {
     const { [`${PACKAGE_ROOT}/package.json`]: _installed, ...files } = repository('0.5.0');
-    const fetch = fetchWith(respond(ASSET_BYTES, 200), respond(null, 404));
+    const fetch = fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.5.0')));
     const result = await runBuilder(files, fetch);
 
     expectRefusal(result, 'install');
@@ -137,37 +165,114 @@ describe('UiToolkitChecksumsBuilder refusals', () => {
   });
 
   it.each([
-    ['the tarball request rejects', reject('network down'), respond(null, 404), 'network down'],
-    ['the tarball request answers 404', respond(null, 404), respond(null, 404), 'HTTP 404'],
-    ['the .sha256 request rejects', respond(ASSET_BYTES, 200), reject('reset'), 'reset'],
-    ['the .sha256 request answers 500', respond(ASSET_BYTES, 200), respond(null, 500), 'HTTP 500'],
-  ])('refuses as [download] when %s', async (_label, tarball, sidecar, detail) => {
-    const result = await runBuilder(repository('0.5.0'), fetchWith(tarball, sidecar));
+    [
+      'the tarball request rejects',
+      reject('network down'),
+      respond(null, 404),
+      `${releaseUrl('0.6.0')}: network down`,
+    ],
+    [
+      'the tarball request answers 404',
+      respond(null, 404),
+      respond(null, 404),
+      `${releaseUrl('0.6.0')}: answered HTTP 404`,
+    ],
+    [
+      'the release API request rejects',
+      respond(ASSET_BYTES, 200),
+      reject('reset'),
+      `${releaseApiUrl('0.6.0')}: reset`,
+    ],
+    [
+      'the release API answers 404',
+      respond(ASSET_BYTES, 200),
+      respond(null, 404),
+      `${releaseApiUrl('0.6.0')}: answered HTTP 404`,
+    ],
+    [
+      'the release API answers 403',
+      respond(ASSET_BYTES, 200),
+      respond(null, 403),
+      `${releaseApiUrl('0.6.0')}: answered HTTP 403`,
+    ],
+  ])('refuses as [download] when %s', async (_label, tarball, release, detail) => {
+    const result = await runBuilder(repository('0.6.0'), fetchWith(tarball, release));
 
     expectRefusal(result, 'download');
     expect(result.stderr).toContain(detail);
   });
 
-  it.each([
-    ['a malformed .sha256 body', '0.6.0', respond('not a checksum line\n', 200)],
+  it.each<[string, () => Promise<Response>, string]>([
+    ['a body that is not JSON', respond('not json', 200), 'the body is not JSON'],
     [
-      'a .sha256 body naming another asset',
-      '0.6.0',
-      respond(sidecarFor('0.6.0', sha256(ASSET_BYTES), '0.6.1'), 200),
+      'a release that is not immutable',
+      releaseJson(releaseFor('0.6.0', { immutable: false })),
+      'the release is not immutable, so its asset digests are not a stable anchor',
     ],
     [
-      'a .sha256 body carrying another digest',
-      '0.6.0',
-      respond(sidecarFor('0.6.0', sha256('other bytes')), 200),
+      'a release without an immutable field',
+      releaseJson({ assets: releaseFor('0.6.0').assets }),
+      'the release is not immutable, so its asset digests are not a stable anchor',
     ],
-    ['a .sha256 404 for a release that must publish one', '0.6.0', respond(null, 404)],
-  ])('refuses %s as [checksum]', async (_label, version, sidecar) => {
+    [
+      'a JSON null body',
+      releaseJson(null),
+      'the release is not immutable, so its asset digests are not a stable anchor',
+    ],
+    [
+      'a release that lists only another asset',
+      releaseJson(releaseFor('0.6.0', assetWith('0.6.1', `sha256:${sha256(ASSET_BYTES)}`))),
+      'the release lists no asset named vilnacrm-ui-toolkit-0.6.0.tgz',
+    ],
+    [
+      'a release whose assets field is not a list',
+      releaseJson(releaseFor('0.6.0', { assets: {} })),
+      'the release lists no asset named vilnacrm-ui-toolkit-0.6.0.tgz',
+    ],
+    [
+      'a release whose asset list holds a null entry',
+      releaseJson(releaseFor('0.6.0', { assets: [null] })),
+      'the release lists no asset named vilnacrm-ui-toolkit-0.6.0.tgz',
+    ],
+    [
+      'an asset whose digest is null',
+      releaseJson(releaseFor('0.6.0', assetWith('0.6.0', null))),
+      'vilnacrm-ui-toolkit-0.6.0.tgz carries no digest',
+    ],
+    [
+      'an asset without a digest field',
+      releaseJson(releaseFor('0.6.0', { assets: [{ name: 'vilnacrm-ui-toolkit-0.6.0.tgz' }] })),
+      'vilnacrm-ui-toolkit-0.6.0.tgz carries no digest',
+    ],
+    [
+      'an asset whose digest is bare hex',
+      releaseJson(releaseFor('0.6.0', assetWith('0.6.0', sha256(ASSET_BYTES)))),
+      `vilnacrm-ui-toolkit-0.6.0.tgz digest "${sha256(ASSET_BYTES)}" ` +
+        'is not sha256: and 64 lower-case hex digits',
+    ],
+    [
+      'an asset whose digest names another algorithm',
+      releaseJson(releaseFor('0.6.0', assetWith('0.6.0', `sha512:${sha256(ASSET_BYTES)}`))),
+      `vilnacrm-ui-toolkit-0.6.0.tgz digest "sha512:${sha256(ASSET_BYTES)}" ` +
+        'is not sha256: and 64 lower-case hex digits',
+    ],
+    [
+      'an asset whose digest records other bytes',
+      releaseJson(releaseFor('0.6.0', assetWith('0.6.0', `sha256:${sha256('other bytes')}`))),
+      `vilnacrm-ui-toolkit-0.6.0.tgz records sha256:${sha256('other bytes')}, ` +
+        `but the asset hashes to sha256:${sha256(ASSET_BYTES)}`,
+    ],
+  ])('refuses %s as [checksum] naming the release API URL', async (_label, release, reason) => {
     const result = await runBuilder(
-      repository(version),
-      fetchWith(respond(ASSET_BYTES, 200), sidecar)
+      repository('0.6.0'),
+      fetchWith(respond(ASSET_BYTES, 200), release)
     );
 
     expectRefusal(result, 'checksum');
+    expect(result.stderr).toBe(
+      `ui-toolkit checksums: REFUSED (${CHECKSUMS_PATH} unchanged)\n` +
+        `  - [checksum] ${releaseApiUrl('0.6.0')}: ${reason}\n`
+    );
   });
 
   it('refuses an installed tree with a symbolic link as [install] and never reads it', async () => {
@@ -179,7 +284,8 @@ describe('UiToolkitChecksumsBuilder refusals', () => {
       readFile,
       readDir,
       writeFile,
-      fetch: fetchWith(respond(ASSET_BYTES, 200), respond(null, 404)),
+      fetch: fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.5.0'))),
+      token: undefined,
     });
 
     await expect(builder.run({ stdout: { write: jest.fn() }, stderr })).resolves.toBe(1);
@@ -190,56 +296,59 @@ describe('UiToolkitChecksumsBuilder refusals', () => {
 });
 
 describe('UiToolkitChecksumsBuilder writes', () => {
-  it('writes the v0.5.0 shape with "absent" and keeps the existing comment', async () => {
+  it('writes "matched" when the release digest agrees and keeps the comment', async () => {
     const files = {
-      ...repository('0.5.0'),
+      ...repository('0.6.0'),
       [CHECKSUMS_PATH]: JSON.stringify({ comment: 'Reviewed digests.', version: '9.9.9' }),
     };
-    const fetch = fetchWith(respond(ASSET_BYTES, 200), respond(null, 404));
+    const fetch = fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.6.0')));
     const result = await runBuilder(files, fetch);
 
     expect(result.code).toBe(0);
-    expect(fetch.mock.calls).toEqual([[releaseUrl('0.5.0')], [`${releaseUrl('0.5.0')}.sha256`]]);
+    expect(fetch.mock.calls).toEqual([
+      [releaseUrl('0.6.0'), {}],
+      [releaseApiUrl('0.6.0'), ACCEPT_HEADERS],
+    ]);
     const manifest = writtenManifest(result.writeFile);
     expect(manifest).toEqual({
       comment: 'Reviewed digests.',
       algorithm: 'sha256',
-      version: '0.5.0',
-      tarballUrl: releaseUrl('0.5.0'),
-      tarballSha256: sha256(ASSET_BYTES),
-      releaseChecksum: 'absent',
-      artifacts: EXPECTED_PATHS.map((path) => ({
-        path,
-        sha256: sha256(repository('0.5.0')[`${PACKAGE_ROOT}/${path}`] ?? ''),
-      })),
-    });
-    expect(result.stdout).toBe(
-      `ui-toolkit checksums: wrote ${CHECKSUMS_PATH} ` +
-        '(v0.5.0, 4 artifacts, releaseChecksum absent)\n'
-    );
-    expect(result.stderr).toBe('');
-  });
-
-  it('writes releaseChecksum "matched" for a later release whose .sha256 agrees', async () => {
-    const files = {
-      ...repository('0.6.0'),
-      [CHECKSUMS_PATH]: JSON.stringify({ comment: 'Reviewed digests.' }),
-    };
-    const result = await runBuilder(
-      files,
-      fetchWith(respond(ASSET_BYTES, 200), respond(sidecarFor('0.6.0'), 200))
-    );
-
-    expect(result.code).toBe(0);
-    const manifest = writtenManifest(result.writeFile);
-    expect(manifest).toMatchObject({
-      comment: 'Reviewed digests.',
       version: '0.6.0',
       tarballUrl: releaseUrl('0.6.0'),
       tarballSha256: sha256(ASSET_BYTES),
       releaseChecksum: 'matched',
+      artifacts: EXPECTED_PATHS.map((path) => ({
+        path,
+        sha256: sha256(repository('0.6.0')[`${PACKAGE_ROOT}/${path}`] ?? ''),
+      })),
     });
-    expect(manifest.artifacts.map(({ path }) => path)).toEqual(EXPECTED_PATHS);
+    expect(result.stdout).toBe(
+      `ui-toolkit checksums: wrote ${CHECKSUMS_PATH} ` +
+        '(v0.6.0, 4 artifacts, releaseChecksum matched)\n'
+    );
+    expect(result.stderr).toBe('');
+  });
+
+  it.each([
+    ['a token', 'ghs_example', { ...ACCEPT_HEADERS.headers, Authorization: 'Bearer ghs_example' }],
+    ['an empty token', '', ACCEPT_HEADERS.headers],
+    ['no token', undefined, ACCEPT_HEADERS.headers],
+  ])('asks the release API with %s', async (_label, token, headers) => {
+    const { readFile, readDir } = fileSystem(repository('0.6.0'));
+    const fetch = fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.6.0')));
+    const builder = new UiToolkitChecksumsBuilder({
+      readFile,
+      readDir,
+      writeFile: jest.fn(),
+      fetch,
+      token,
+    });
+
+    await expect(
+      builder.run({ stdout: { write: jest.fn() }, stderr: { write: jest.fn() } })
+    ).resolves.toBe(0);
+    expect(fetch).toHaveBeenCalledWith(releaseApiUrl('0.6.0'), { headers });
+    expect(fetch).toHaveBeenCalledWith(releaseUrl('0.6.0'), {});
   });
 
   it.each([
@@ -251,7 +360,7 @@ describe('UiToolkitChecksumsBuilder writes', () => {
   ])('writes the default comment when %s', async (_label, files) => {
     const result = await runBuilder(
       files,
-      fetchWith(respond(ASSET_BYTES, 200), respond(null, 404))
+      fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.5.0')))
     );
 
     expect(result.code).toBe(0);

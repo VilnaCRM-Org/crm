@@ -17,7 +17,7 @@ const {
   WORKSPACE_LINE_PATTERN,
   PACKAGE_LINE_PATTERN,
   GATE_LITERAL_PATTERN,
-  RELEASES_WITHOUT_CHECKSUM,
+  CHECKSUM_STATES,
 } = UI_TOOLKIT_POLICY;
 const OTHER_URL =
   'https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/' +
@@ -92,9 +92,17 @@ describe('ui-toolkit pin statements in the real repository', () => {
     ]);
   });
 
-  it('keeps RELEASES_WITHOUT_CHECKSUM at exactly one frozen release', () => {
-    expect(RELEASES_WITHOUT_CHECKSUM).toEqual(['0.5.0']);
-    expect(Object.isFrozen(RELEASES_WITHOUT_CHECKSUM)).toBe(true);
+  it('keeps CHECKSUM_STATES at exactly one frozen state, "matched"', () => {
+    expect(CHECKSUM_STATES).toEqual(['matched']);
+    expect(Object.isFrozen(CHECKSUM_STATES)).toBe(true);
+  });
+
+  it('records a committed manifest whose release digest was matched', () => {
+    const manifest = JSON.parse(readRepositoryFile(CHECKSUMS_PATH, 'utf8')) as {
+      releaseChecksum: string;
+    };
+
+    expect(manifest.releaseChecksum).toBe('matched');
   });
 });
 

@@ -59,13 +59,13 @@ Chosen option: **"Release tarball, digest gate, identical seams only"**, because
 form Bun can install that carries the built output, it answers the lockfile's missing integrity
 with a committed record, and it changes nothing a user can see. The artifacts that implement it:
 
-- The pin: `package.json` names the v0.5.0 release tarball URL, and both `bun.lock` lines carry
-  the same URL. The package is not in `trustedDependencies`, so Bun runs none of its lifecycle
-  scripts.
-- The manifest: `config/ui-toolkit-checksums.json` holds the SHA-256 of 331 installed files
-  (330 under `build/` plus `package.json`; `LICENSE` and `README.md` are not hashed), the
-  release tarball's own digest (`tarballSha256`) and the outcome of the published-checksum
-  check (`releaseChecksum`).
+- The pin: `package.json` names the v0.6.0 release tarball URL, and both `bun.lock` lines carry
+  the same URL; the first pin was v0.5.0. The package is not in `trustedDependencies`, so Bun
+  runs none of its lifecycle scripts.
+- The manifest: `config/ui-toolkit-checksums.json` holds the SHA-256 of 334 installed files
+  (333 under `build/` plus `package.json`; `LICENSE` and `README.md` are not hashed), the
+  release tarball's own digest (`tarballSha256`) and the outcome of the release-digest
+  cross-check (`releaseChecksum`).
 - The two scripts: `scripts/ci/verify-ui-toolkit.mjs` and `scripts/ci/update-ui-toolkit.mjs`,
   thin entry files over constructor-injected classes in `scripts/ci/ui-toolkit/`.
 - Both make targets: `make lint-ui-toolkit` verifies the installed tree offline and sits in
@@ -95,10 +95,14 @@ the seam has no production consumer, and the swap would add a wasted module-scop
 `createTheme`. Every other CRM primitive stays local too, with the reason recorded in the
 keep-local register of [`docs/ui-toolkit.md`](../ui-toolkit.md).
 
-The `.sha256` rule: v0.5.0 has no published checksum asset, so its manifest records
-`releaseChecksum: "absent"`. Every later pin must match its published
-`vilnacrm-ui-toolkit-<version>.tgz.sha256` asset: the refresher refuses to write otherwise, and
-the offline verifier rejects `"absent"` for any version other than 0.5.0.
+The release-digest rule: every pin is cross-checked against the digest GitHub computes
+server-side for the release asset. The refresher reads the release from the GitHub API and
+refuses to write the manifest unless the release is `immutable` and its
+`vilnacrm-ui-toolkit-<version>.tgz` asset's `digest` is `sha256:` plus the downloaded tarball's
+digest; it then records `releaseChecksum: "matched"`, the only value the offline verifier
+accepts. No release is exempt. The rule replaces a published `.sha256` sidecar asset, which an
+immutable release can never receive: the toolkit's post-publication upload is refused with
+HTTP 422 (ui-toolkit [#190](https://github.com/VilnaCRM-Org/ui-toolkit/issues/190)).
 
 The provenance claim, stated precisely: installed build artifacts are verifiable offline, and
 `bun install --frozen-lockfile` itself fetches unverified bytes. The lockfile pins a URL, not
@@ -107,10 +111,10 @@ The v0.5.0 build-provenance attestation proves that a build of the `v0.5.0` tag 
 tarball with that digest; it does not prove the upload, the installed tree or the lockfile.
 
 The ui-toolkit #185 decision: v0.5.0 is installed now, and the next release is a pin bump. The
-checksum gate already handles a release that publishes a `.sha256`, the Jest mapper keeps
-working when the `default` condition arrives, and the keep-local register says per primitive
-whether #185 resolves its reason. Adopting the #185 opt-ins is a deferred follow-up, blocked on
-a toolkit release above 0.5.0.
+checksum gate cross-checks every release against its asset's server-side digest, the Jest
+mapper keeps working when the `default` condition arrives, and the keep-local register says per
+primitive whether #185 resolves its reason. Adopting the #185 opt-ins is a deferred follow-up,
+blocked on a toolkit release above 0.5.0.
 
 ### Deviations from the issue text
 
@@ -247,8 +251,8 @@ Wait for the release that carries ui-toolkit #185, or pin its unreleased `main`.
 #### Bad (waiting for #185)
 
 - Waiting blocks the installation on another repository's release train
-- A `main` build has no release asset, no attestation and no `.sha256`, reports the same 0.5.0
-  version, and Bun does not build a git dependency
+- A `main` build has no release asset, no attestation and no asset digest, reports the same
+  0.5.0 version, and Bun does not build a git dependency
 
 ## Links
 

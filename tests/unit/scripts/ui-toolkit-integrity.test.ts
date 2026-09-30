@@ -67,7 +67,7 @@ function lockfile(workspaceSpec: string, packageSpec: string): string {
   ].join('\n');
 }
 
-function repository(version: string, releaseChecksum = 'absent'): Files {
+function repository(version: string, releaseChecksum = 'matched'): Files {
   const spec = releaseUrl(version);
   const installed = Object.entries(installedFiles(version)).map(([path, content]) => [
     `${PACKAGE_ROOT}/${path}`,
@@ -121,10 +121,10 @@ function findingLines(result: RunResult): string[] {
 
 describe('UiToolkitIntegrityVerifier pass', () => {
   it.each([
-    ['a v0.5.0 manifest with releaseChecksum "absent"', '0.5.0', 'absent'],
-    ['a later manifest with releaseChecksum "matched"', '0.6.0', 'matched'],
-  ])('accepts %s and prints the OK line', (_label, version, releaseChecksum) => {
-    const result = runVerifier(repository(version, releaseChecksum));
+    ['a v0.5.0 manifest', '0.5.0'],
+    ['a v0.6.0 manifest', '0.6.0'],
+  ])('accepts %s with releaseChecksum "matched" and prints the OK line', (_label, version) => {
+    const result = runVerifier(repository(version));
 
     expect(result.code).toBe(0);
     expect(result.stdout).toBe(
@@ -194,9 +194,11 @@ describe('UiToolkitIntegrityVerifier [manifest] group', () => {
       'a releaseChecksum outside CHECKSUM_STATES',
       withManifest(repository('0.5.0'), (m) => ({ ...m, releaseChecksum: 'skipped' })),
     ],
+    ['the retired releaseChecksum "absent" for v0.5.0', repository('0.5.0', 'absent')],
+    ['the retired releaseChecksum "absent" for v0.6.0', repository('0.6.0', 'absent')],
     [
-      'releaseChecksum "absent" for a version outside RELEASES_WITHOUT_CHECKSUM',
-      repository('0.6.0', 'absent'),
+      'a missing releaseChecksum',
+      withManifest(repository('0.6.0'), ({ releaseChecksum: _dropped, ...m }) => m),
     ],
     ['an unparseable manifest', { ...repository('0.5.0'), [CHECKSUMS_PATH]: '{"algorithm":' }],
   ])('fails %s as [manifest]', (_label, files) => {
@@ -215,7 +217,7 @@ describe('UiToolkitIntegrityVerifier [manifest] group', () => {
 
     expect(findingLines(runVerifier(files))).toEqual([
       '  - [manifest] algorithm is "md5"; expected "sha256"',
-      '  - [manifest] releaseChecksum "absent" is allowed only for 0.5.0, not 0.6.0',
+      '  - [manifest] releaseChecksum "absent" is not one of matched',
       '  - [manifest] path "build/./index.mjs" is not package.json ' +
         'or a build/ path without . or .. segments',
       '  - [manifest] build/./index.mjs sha256 "XYZ" is not 64 lower-case hex digits',

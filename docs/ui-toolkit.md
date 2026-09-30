@@ -8,8 +8,9 @@ its reason recorded below. The decision, its options and its deviations from iss
 
 ## What is installed
 
-- **Pin:** v0.5.0, the latest toolkit release, installed from its GitHub release tarball:
-  `https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.5.0/vilnacrm-ui-toolkit-0.5.0.tgz`.
+- **Pin:** v0.6.0, the latest toolkit release, installed from its GitHub release tarball:
+  `https://github.com/VilnaCRM-Org/ui-toolkit/releases/download/v0.6.0/vilnacrm-ui-toolkit-0.6.0.tgz`.
+  The first pin was v0.5.0.
   The toolkit is not published to a registry, and a git dependency cannot be used: its entry
   points live in a gitignored `build/`, and Bun does not build a git dependency.
 - **Where the pin lives:** the same URL appears in five machine-read places: the `package.json`
@@ -60,9 +61,9 @@ import {
 
 `make lint-ui-toolkit` runs inside `make lint`, in the dev container, and needs no network. It
 reads [`config/ui-toolkit-checksums.json`](../config/ui-toolkit-checksums.json), which holds the
-SHA-256 of 331 installed files (330 under `build/` plus `package.json`; `LICENSE` and
+SHA-256 of 334 installed files (333 under `build/` plus `package.json`; `LICENSE` and
 `README.md` are not hashed), the release tarball's digest (`tarballSha256`) and the outcome of
-the published-checksum check (`releaseChecksum`). It fails closed, naming the class, on any of:
+the release-digest cross-check (`releaseChecksum`). It fails closed, naming the class, on any of:
 
 | Class      | Fails when                                                |
 | ---------- | --------------------------------------------------------- |
@@ -74,21 +75,28 @@ the published-checksum check (`releaseChecksum`). It fails closed, naming the cl
 | `missing`  | a manifest path is absent from the install                |
 | `extra`    | an installed file is neither in the manifest nor unhashed |
 
-On success it prints `ui-toolkit integrity: OK (v0.5.0, 331 artifacts verified, 0 extra files)`.
+On success it prints `ui-toolkit integrity: OK (v0.6.0, 334 artifacts verified, 0 extra files)`.
 
 **What it proves, precisely:** installed build artifacts are verifiable offline;
 `bun install --frozen-lockfile` itself fetches unverified bytes. `bun.lock` pins the tarball's
 URL, not its bytes, so the gate cannot stop a tampered download from being installed; it
 detects a tampered, drifted or stale install afterwards and fails `make lint`.
 
-**The `.sha256` rule:** v0.5.0 has no published checksum asset, so its manifest records
-`releaseChecksum: "absent"`. Every later pin must match its published
-`vilnacrm-ui-toolkit-<version>.tgz.sha256` asset: `make update-ui-toolkit` refuses to write the
-manifest unless that asset exists, names the pinned tarball and carries the same digest, and
-records `releaseChecksum: "matched"`. The offline gate rejects `"absent"` for any version other
-than 0.5.0, so the rule holds without network access.
+**The release-digest rule:** every pin is cross-checked against the digest GitHub computes
+server-side for each release asset. `make update-ui-toolkit` reads
+`https://api.github.com/repos/VilnaCRM-Org/ui-toolkit/releases/tags/v<version>` (with
+`Authorization: Bearer $GITHUB_TOKEN` when that variable is set) and refuses to write the
+manifest unless the release is `immutable`, lists an asset named
+`vilnacrm-ui-toolkit-<version>.tgz`, and that asset's `digest` is exactly `sha256:` plus the
+digest of the downloaded tarball; only then does it record `releaseChecksum: "matched"`. An
+immutable release cannot have its assets replaced, which is what makes the digest a stable
+anchor. The offline gate accepts no other `releaseChecksum` value, so the rule holds without
+network access. There is no exemption: v0.5.0's asset digest also equals its committed
+`tarballSha256`. The rule replaces a published `.sha256` sidecar asset, which can never exist:
+the toolkit's releases are immutable, so its post-publication upload is refused (ui-toolkit
+[#190](https://github.com/VilnaCRM-Org/ui-toolkit/issues/190)).
 
-**The release attestation:** this command passes on the pinned asset:
+**The release attestation:** this command passed on the first pin, v0.5.0:
 
 ```bash
 gh attestation verify vilnacrm-ui-toolkit-0.5.0.tgz -R VilnaCRM-Org/ui-toolkit
@@ -129,8 +137,8 @@ make lint-lockfile lint-ui-toolkit
 
 The refresher reads only the `package.json` pin (`readPackagePin()`) and the installed version,
 so step 2 can come before or after it; doing it second keeps every pin statement consistent
-before any digest is written. For any release after v0.5.0 the refresher also requires the
-release's published `.sha256` asset to exist and to agree, and records
+before any digest is written. For every release the refresher also requires the release API
+to report the release immutable and the tarball asset's server-side digest to agree, and records
 `releaseChecksum: "matched"`. The machine-read part of the diff is exactly: one `package.json`
 line, the two `bun.lock` lines (plus any peer-range change the new release makes, which is then
 a reviewed peer decision), the gate literal and the manifest. The bump also edits the version
@@ -232,7 +240,7 @@ of the installation. Each swap:
   export and props and renders the toolkit component with the opt-in set, so no importer
   changes and no component, module, `UI*` primitive or adapter is added;
 - starts with the [bump recipe](#bumping-the-toolkit), which the checksum gate cross-checks
-  against the release's published `.sha256`;
+  against the release asset's server-side digest;
 - carries its own value-diff and baseline evidence: 0 visual diffs, 0 new axe violations, the
   keyboard contract, the eager budget and the Lighthouse floors;
 - keeps a row local, with a new reason, if that evidence shows any difference;
@@ -302,6 +310,8 @@ through the deferred adoption above.
     `gh release upload --clobber` was refused ("Cannot delete asset from an immutable
     release"), so the asset is the original upload, identical to the attested bytes by digest.
     Nor does it cover the installed tree or the lockfile; the committed manifest and
-    `make lint-ui-toolkit` stay the offline proof. Merged in #185, unreleased: a `.sha256`
-    sidecar uploaded in that same post-publication step, which `make update-ui-toolkit`
-    cross-checks. Open: a registry that records integrity, so the lockfile pins bytes.
+    `make lint-ui-toolkit` stay the offline proof. Not met: the `.sha256` sidecar #185 added
+    to that same post-publication step, because an immutable release refuses the upload
+    (HTTP 422, ui-toolkit [#190](https://github.com/VilnaCRM-Org/ui-toolkit/issues/190));
+    `make update-ui-toolkit` cross-checks the release API's server-side asset digest instead.
+    Open: a registry that records integrity, so the lockfile pins bytes.

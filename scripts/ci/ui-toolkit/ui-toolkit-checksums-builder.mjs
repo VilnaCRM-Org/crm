@@ -9,16 +9,18 @@ const {
   ALGORITHM,
   DEFAULT_COMMENT,
   UNHASHED_FILES,
-  CHECKSUM_SUFFIX,
-  RELEASES_WITHOUT_CHECKSUM,
-  CHECKSUM_LINE_PATTERN,
+  RELEASE_API_URL,
+  RELEASE_API_ACCEPT,
+  RELEASE_DIGEST_PREFIX,
+  RELEASE_DIGEST_PATTERN,
 } = UI_TOOLKIT_POLICY;
 
 export default class UiToolkitChecksumsBuilder {
-  constructor({ readFile, readDir, writeFile, fetch }) {
+  constructor({ readFile, readDir, writeFile, fetch, token }) {
     this.readFile = readFile;
     this.writeFile = writeFile;
     this.fetch = fetch;
+    this.token = token;
     this.pinSource = new UiToolkitPinSource({ readFile });
     this.installSource = new UiToolkitInstallSource({ readFile, readDir });
   }
@@ -84,9 +86,9 @@ export default class UiToolkitChecksumsBuilder {
     };
   }
 
-  async request(url) {
+  async request(url, options = {}) {
     try {
-      return { response: await this.fetch(url), findings: [] };
+      return { response: await this.fetch(url, options), findings: [] };
     } catch (error) {
       return { response: null, findings: [this.downloadFinding(url, error.message)] };
     }
@@ -113,53 +115,69 @@ export default class UiToolkitChecksumsBuilder {
   }
 
   async settleReleaseChecksum({ spec, version }, tarballSha256) {
-    const url = `${spec}${CHECKSUM_SUFFIX}`;
-    const { response, findings } = await this.request(url);
+    const url = `${RELEASE_API_URL}${version}`;
+    const { response, findings } = await this.request(url, { headers: this.releaseHeaders() });
     if (findings.length > 0) {
       return { findings };
-    }
-    if (response.status === 404) {
-      return this.absentChecksum(url, version);
     }
     if (!response.ok) {
       return { findings: [this.downloadFinding(url, `answered HTTP ${response.status}`)] };
     }
+    const release = await this.releaseBody(response);
     const assetName = spec.slice(spec.lastIndexOf('/') + 1);
-    const body = await response.text();
+    const problems = this.releaseProblems(release, assetName, tarballSha256);
     return {
-      findings: this.checksumFindings(url, body, assetName, tarballSha256),
+      findings: problems.map((reason) => this.checksumFinding(url, reason)),
       state: 'matched',
     };
   }
 
-  absentChecksum(url, version) {
-    if (RELEASES_WITHOUT_CHECKSUM.includes(version)) {
-      return { findings: [], state: 'absent' };
-    }
-    return {
-      findings: [
-        this.checksumFinding(
-          url,
-          `answered HTTP 404, but v${version} is not a release without a published checksum`
-        ),
-      ],
-    };
+  releaseHeaders() {
+    const headers = { Accept: RELEASE_API_ACCEPT };
+    return this.token ? { ...headers, Authorization: `Bearer ${this.token}` } : headers;
   }
 
-  checksumFindings(url, body, assetName, tarballSha256) {
-    const match = CHECKSUM_LINE_PATTERN.exec(body);
-    if (match === null) {
-      return [this.checksumFinding(url, 'the body is not one sha256sum line')];
+  async releaseBody(response) {
+    try {
+      return Object(await response.json());
+    } catch {
+      return null;
     }
-    if (match[2] !== assetName) {
-      return [this.checksumFinding(url, `names ${match[2]}, not ${assetName}`)];
+  }
+
+  releaseProblems(release, assetName, tarballSha256) {
+    if (release === null) {
+      return ['the body is not JSON'];
     }
-    if (match[1] !== tarballSha256) {
-      return [
-        this.checksumFinding(url, `records ${match[1]}, but the asset hashes to ${tarballSha256}`),
-      ];
+    if (release.immutable !== true) {
+      return ['the release is not immutable, so its asset digests are not a stable anchor'];
     }
-    return [];
+    return this.assetProblems(release.assets, assetName, tarballSha256);
+  }
+
+  assetProblems(assets, assetName, tarballSha256) {
+    const listed = Array.isArray(assets) ? assets.map((asset) => Object(asset)) : [];
+    const asset = listed.find(({ name }) => name === assetName);
+    if (asset === undefined) {
+      return [`the release lists no asset named ${assetName}`];
+    }
+    return this.digestProblems(asset.digest, assetName, tarballSha256);
+  }
+
+  digestProblems(digest, assetName, tarballSha256) {
+    const expected = `${RELEASE_DIGEST_PREFIX}${tarballSha256}`;
+    const checks = [
+      [digest === undefined || digest === null, `${assetName} carries no digest`],
+      [
+        !RELEASE_DIGEST_PATTERN.test(digest),
+        `${assetName} digest "${digest}" is not sha256: and 64 lower-case hex digits`,
+      ],
+      [digest !== expected, `${assetName} records ${digest}, but the asset hashes to ${expected}`],
+    ];
+    return checks
+      .filter(([isFailed]) => isFailed)
+      .map(([, reason]) => reason)
+      .slice(0, 1);
   }
 
   hashTree() {

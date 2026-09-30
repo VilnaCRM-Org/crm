@@ -8,9 +8,11 @@ const UI_TOOLKIT_POLICY = Object.freeze({
   ALGORITHM: 'sha256',
   DEFAULT_COMMENT: 'SHA-256 digests of the installed toolkit files; see docs/ui-toolkit.md.',
   UNHASHED_FILES: Object.freeze(['LICENSE', 'README.md']),
-  CHECKSUM_SUFFIX: '.sha256',
-  CHECKSUM_STATES: Object.freeze(['absent', 'matched']),
-  RELEASES_WITHOUT_CHECKSUM: Object.freeze(['0.5.0']),
+  CHECKSUM_STATES: Object.freeze(['matched']),
+  RELEASE_API_URL: 'https://api.github.com/repos/VilnaCRM-Org/ui-toolkit/releases/tags/v',
+  RELEASE_API_ACCEPT: 'application/vnd.github+json',
+  RELEASE_DIGEST_PREFIX: 'sha256:',
+  RELEASE_DIGEST_PATTERN: /^sha256:[0-9a-f]{64}$/,
   RELEASE_URL_PATTERN: new RegExp(
     String.raw`^https://github\.com/VilnaCRM-Org/ui-toolkit/releases/download/` +
       String.raw`v(\d+\.\d+\.\d+)/vilnacrm-ui-toolkit-\1\.tgz$`
@@ -20,7 +22,6 @@ const UI_TOOLKIT_POLICY = Object.freeze({
   WORKSPACE_LINE_PATTERN: /^\s*"@vilnacrm\/ui-toolkit": "([^"]+)",?$/m,
   PACKAGE_LINE_PATTERN: /^\s*"@vilnacrm\/ui-toolkit": \["@vilnacrm\/ui-toolkit@([^"]+)", \{/m,
   GATE_LITERAL_PATTERN: /^TOOLKIT_URL='([^']+)'$/m,
-  CHECKSUM_LINE_PATTERN: /^([0-9a-f]{64}) {2}(vilnacrm-ui-toolkit-\d+\.\d+\.\d+\.tgz)\n?$/,
 });
 
 export default UI_TOOLKIT_POLICY;
