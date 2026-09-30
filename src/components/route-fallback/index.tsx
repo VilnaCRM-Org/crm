@@ -1,4 +1,4 @@
-import Box from '@mui/material/Box';
+import styled from '@emotion/styled';
 import { type JSX, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -6,6 +6,13 @@ import type { RouteFallbackProps } from '@/components/types/route-fallback';
 import UILiveStatus from '@/components/ui-live-status';
 
 import styles from './styles';
+
+const Wrapper = styled('div')<{ minHeight: string }>(({ minHeight }) => ({
+  ...styles.wrapper,
+  minHeight,
+}));
+const Pill = styled('div')(styles.pill);
+const Spinner = styled('div')(styles.spinner);
 
 // Paint nothing for the first frames of a route transition. Most chunk loads resolve well
 // inside this window, so the fallback never paints: no loader flash, and no layout shift
@@ -37,11 +44,11 @@ export default function RouteFallback({
   return (
     <>
       {pending && (
-        <Box sx={{ ...styles.wrapper, minHeight }}>
-          <Box sx={styles.pill}>
-            <Box aria-hidden="true" sx={styles.spinner} />
-          </Box>
-        </Box>
+        <Wrapper minHeight={minHeight}>
+          <Pill>
+            <Spinner aria-hidden="true" />
+          </Pill>
+        </Wrapper>
       )}
       <UILiveStatus message={pending ? announcement : ''} />
     </>

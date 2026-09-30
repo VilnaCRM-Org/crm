@@ -58,7 +58,7 @@ whole threshold set lives in the repository and runs offline. The artifacts:
   service (a Debian stage of the `Dockerfile` with a checksum-verified binary) over `src/`,
   evaluates the JSON with `jq`, prints only hard failures as a table, and writes a Job Summary
   in CI. `make lint-metrics` is a member of `make lint` and of `CI_LINT_TARGETS`.
-- `.jscpd.json` sets `minTokens: 75`, `minLines: 5`, `threshold: 0`, `mode: "mild"` over `src`
+- `.jscpd.json` sets `minTokens: 70`, `minLines: 5`, `threshold: 0`, `mode: "mild"` over `src`
   only, excluding tests, stories, `*.d.ts` and the generated i18n catalog; `make lint-dup` is
   a member of `make lint`.
 - Both files are guarded by the gate ratchet: `config/metrics-policy.json` and `.jscpd.json`
@@ -82,9 +82,11 @@ whole threshold set lives in the repository and runs offline. The artifacts:
   `rca` image is one more stage to keep pinned.
 - The analyzer counts closures as functions and caps functions per file, so a new hook or
   class often needs its own file; that is a real cost in file count.
-- jscpd is threshold-based and noisy on styles and markup; the 75-token bar is calibrated to
-  the clones that motivated the gate, and lowering it would start flagging shared import
-  headers and JSX scaffolding.
+- jscpd is threshold-based and noisy on styles and markup; the token bar is calibrated to
+  the clones that motivated the gate, and lowering it further would start flagging shared import
+  headers and JSX scaffolding. The bar is tokenizer-specific: it was 75 under jscpd 4 and became
+  70 with the jscpd 5 rewrite, the value at which jscpd 5 reports exactly the six pre-#98
+  notification clones jscpd 4 reported and nothing on the current `src`.
 - Review-gate metrics (maintainability index original/SEI, comment and blank ratios, the
   remaining Halstead submetrics) are recorded in the policy but not enforced; they inform
   review rather than fail CI.

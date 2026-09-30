@@ -11,6 +11,7 @@ import connectivityStateVar from '@/lib/connectivity/connectivity-state-var';
 import pageReloadNavigator from '@/lib/reliability/page-reload-navigator';
 import type { RecoverableError } from '@/lib/reliability/types/recoverable-error';
 import AppProviders from '@/providers/app-providers';
+import muiThemeShellLoader from '@/providers/mui-theme/mui-theme-shell-loader';
 import boundaryErrorReporter from '@/services/error-reporting/boundary-error-reporter';
 import observabilityCore from '@/services/observability/observability-core';
 
@@ -26,6 +27,7 @@ if (!rootElement) {
 const root = createRoot(rootElement);
 
 observabilityCore.init();
+muiThemeShellLoader.load().catch(() => undefined);
 new BrowserConnectivityAdapter(connectivityStateVar).attach(window);
 
 const BOOTSTRAP_RECOVERY: RecoverableError = {

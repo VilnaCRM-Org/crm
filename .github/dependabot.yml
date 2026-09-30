@@ -21,6 +21,10 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
+    # Standing declines, each with its reason in CONTRIBUTING.md ("Dependency updates").
+    ignore:
+      - dependency-name: 'dotenv-expand'
+        versions: ['>=1000.0.0']
 
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -68,3 +72,6 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
+    ignore:
+      - dependency-name: '*library/node'
+        versions: ['~> 25.0']

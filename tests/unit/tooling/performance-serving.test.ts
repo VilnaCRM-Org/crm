@@ -10,6 +10,31 @@ const readFile = (relativePath: string): string =>
 
 const readJson = <T>(relativePath: string): T => JSON.parse(readFile(relativePath)) as T;
 
+// Static value-level module edges only: `import type` and an all-`type` specifier list are
+// erased, and `import()` is a chunk boundary.
+const TYPE_ONLY_SPECIFIERS = /^\{\s*type\s[^,}]+(?:,\s*type\s[^,}]+)*,?\s*\}$/;
+
+const staticImportsOf = (source: string): string[] =>
+  [...source.matchAll(/^(?:import|export)\s+(?!type\s)(?:([^'";]*?)\s+from\s+)?'([^']+)';$/gms)]
+    .filter((match) => !TYPE_ONLY_SPECIFIERS.test((match[1] ?? '').trim()))
+    .map((match) => match[2] ?? '');
+
+const MODULE_EXTENSIONS = ['.ts', '.tsx', '.js', '/index.ts', '/index.tsx', '/index.js'];
+
+const resolveLocalModule = (importer: string, specifier: string): string | null => {
+  const aliased = specifier
+    .replace(/^@auth\//, 'src/modules/user/features/auth/')
+    .replace(/^@\//, 'src/');
+  const isLocal = aliased.startsWith('src/') || specifier.startsWith('.');
+  if (!isLocal || /\.(css|json|svg)$/.test(aliased)) return null;
+  const base = specifier.startsWith('.') ? path.join(path.dirname(importer), specifier) : aliased;
+  const found = MODULE_EXTENSIONS.map((extension) => `${base}${extension}`).find((candidate) =>
+    fs.existsSync(path.join(projectRoot, candidate))
+  );
+  if (!found) throw new Error(`Unresolved eager import ${specifier} in ${importer}`);
+  return found;
+};
+
 describe('performance serving config', () => {
   it('ships immutable cache headers for built static assets', () => {
     const serveConfig = readJson<{
@@ -132,6 +157,38 @@ describe('performance serving config', () => {
     // (issue #116), with must-fail fixtures in scripts/ci/eslint-gate-fixtures.mjs.
     expect(rootLayoutSource).toContain('<RouteFallback />');
     expect(rootLayoutSource).not.toContain('fallback={null}');
+  });
+
+  it('keeps the MUI theme engine off the eager path (ADR-017)', () => {
+    const eagerMuiImports = new Set<string>();
+    const visited = new Set<string>();
+    const pending = ['src/index.tsx'];
+
+    while (pending.length > 0) {
+      const file = pending.pop() ?? '';
+      if (!visited.has(file)) {
+        visited.add(file);
+        for (const specifier of staticImportsOf(readFile(file))) {
+          const local = resolveLocalModule(file, specifier);
+          if (local) pending.push(local);
+          else if (specifier.startsWith('@mui/')) eagerMuiImports.add(`${file} -> ${specifier}`);
+        }
+      }
+    }
+
+    expect([...eagerMuiImports]).toEqual([
+      'src/providers/app-providers.tsx -> @mui/material/styles',
+    ]);
+    expect(readFile('src/providers/app-providers.tsx')).toContain(
+      "import { StyledEngineProvider } from '@mui/material/styles';"
+    );
+
+    // Every lazy surface that renders MUI receives the theme from the parallel mui-theme chunk.
+    expect(readFile('src/routes/route-mapper.tsx')).toContain('new ThemedChunkLoader(');
+    expect(readFile('src/components/layouts/footer-loader.ts')).toContain('new ThemedChunkLoader(');
+    expect(readFile('src/providers/mui-theme/mui-theme-shell-loader.ts')).toContain(
+      'webpackChunkName: "mui-theme"'
+    );
   });
 
   it('keeps registration notifications out of the initial auth form chunk', () => {

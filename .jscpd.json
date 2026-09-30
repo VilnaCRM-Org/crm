@@ -1,6 +1,6 @@
 {
   "threshold": 0,
-  "minTokens": 75,
+  "minTokens": 70,
   "minLines": 5,
   "mode": "mild",
   "format": ["typescript", "tsx", "javascript", "jsx"],

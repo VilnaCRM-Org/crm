@@ -92,7 +92,7 @@ make test-mutation    # Stryker; the enforced floor is 100%
 ## Quality gates
 
 `make lint` runs ESLint, `tsc`, dependency-cruiser, Prettier, markdownlint, jscpd (zero clones
-at 75 tokens), the rust-code-analysis metrics policy (cyclomatic above 10, cognitive above 15,
+at 70 tokens), the rust-code-analysis metrics policy (cyclomatic above 10, cognitive above 15,
 more than 3 arguments, or more than 10 function LLOC fail the build), i18n parity, the docs
 gates, the license allowlist, the lockfile provenance gate (the npm registry plus one pinned
 `@vilnacrm/ui-toolkit` release tarball), the ui-toolkit digest gate (`make lint-ui-toolkit`:
