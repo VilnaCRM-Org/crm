@@ -1,21 +1,10 @@
-import Box from '@mui/material/Box';
-import type { JSX } from 'react';
+import UiSkeletonBlock from '@vilnacrm/ui-toolkit/ui-skeleton-block';
+import React from 'react';
 
-import blockSkeletonStyles from '@/components/skeletons/ui-skeleton-block/styles';
 import type { UISkeletonBlockProps } from '@/components/skeletons/ui-skeleton-block/types';
 
-function UISkeletonBlock({
-  id,
-  width = '100%',
-  height = '3rem',
-  borderRadius = '8px',
-  sx = [],
-}: UISkeletonBlockProps): JSX.Element {
-  const additionalSx = Array.isArray(sx) ? sx : [sx];
-
-  return (
-    <Box id={id} sx={[blockSkeletonStyles.build(width, height, borderRadius), ...additionalSx]} />
-  );
+function UISkeletonBlock(props: UISkeletonBlockProps): React.ReactElement {
+  return React.createElement(UiSkeletonBlock, props);
 }
 
 export default UISkeletonBlock;

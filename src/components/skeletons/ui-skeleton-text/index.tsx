@@ -1,18 +1,10 @@
-import Box from '@mui/material/Box';
-import type { JSX } from 'react';
+import UiSkeletonText from '@vilnacrm/ui-toolkit/ui-skeleton-text';
+import React from 'react';
 
-import textSkeletonStyles from '@/components/skeletons/ui-skeleton-text/styles';
 import type { UISkeletonTextProps } from '@/components/skeletons/ui-skeleton-text/types';
 
-function UISkeletonText({
-  id,
-  size = 'm',
-  width = '100%',
-  sx = [],
-}: UISkeletonTextProps): JSX.Element {
-  return (
-    <Box id={id} sx={[textSkeletonStyles.build(size, width), ...(Array.isArray(sx) ? sx : [sx])]} />
-  );
+function UISkeletonText(props: UISkeletonTextProps): React.ReactElement {
+  return React.createElement(UiSkeletonText, props);
 }
 
 export default UISkeletonText;

@@ -1,15 +1,14 @@
+import { render, screen } from '@testing-library/react';
+
 import authSkeletonStyles from '@/components/skeletons/auth-skeleton/styles';
-import skeletonButtonStyles from '@/components/skeletons/ui-skeleton-button/styles';
-import {
-  BASE_INPUT_HEIGHT,
-  MD_INPUT_HEIGHT,
-  XL_INPUT_HEIGHT,
-} from '@/components/skeletons/ui-skeleton-input/styles';
+import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
+import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
 import breakpointsTheme from '@/components/ui-breakpoints';
 import uiFormStyles from '@/components/ui-form/styles';
 import providerStyles from '@auth/components/form-section/components/auth-provider-buttons/styles';
 import formFieldStyles from '@auth/components/form-section/components/styles';
 import authFormSectionStyles, { fieldGapMargins } from '@auth/components/form-section/styles';
+import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
 jest.mock('@auth/assets/eye-off.svg', () => ({
   ReactComponent: 'svg',
@@ -97,6 +96,10 @@ function effectiveHeight(style: Record<string, unknown>, breakpoint: BreakpointN
   return maxHeightStr ? Math.min(height, toRem(maxHeightStr)) : height;
 }
 
+const BASE_INPUT_HEIGHT = 3;
+const MD_INPUT_HEIGHT = 4.9375;
+const XL_INPUT_HEIGHT = 4;
+
 const INPUT_HEIGHTS: Record<BreakpointName, number> = {
   base: BASE_INPUT_HEIGHT,
   sm: BASE_INPUT_HEIGHT,
@@ -107,6 +110,43 @@ const INPUT_HEIGHTS: Record<BreakpointName, number> = {
 
 function inputHeightAt(breakpoint: BreakpointName): number {
   return INPUT_HEIGHTS[breakpoint];
+}
+
+const MEDIA_BREAKPOINTS: Exclude<BreakpointName, 'base'>[] = ['sm', 'md', 'lg', 'xl'];
+
+function hiddenSkeleton(id: string): HTMLElement {
+  const element = screen.getAllByRole('generic', { hidden: true }).find((el) => el.id === id);
+  if (!element) throw new Error(`Skeleton with id "${id}" not found`);
+  return element;
+}
+
+function mediaFragment(breakpoint: Exclude<BreakpointName, 'base'>): string {
+  return `min-width:${breakpointsTheme.breakpoints.values[breakpoint]}px`;
+}
+
+function emittedStyle(element: HTMLElement, properties: string[]): Record<string, unknown> {
+  const pick = (declaration: CSSStyleDeclaration | undefined): Record<string, string> =>
+    Object.fromEntries(
+      properties
+        .map((property) => [property, declaration?.getPropertyValue(property) ?? ''])
+        .filter(([, value]) => value !== '')
+    );
+  const style: Record<string, unknown> = pick(styleRuleFor(element));
+  MEDIA_BREAKPOINTS.forEach((breakpoint) => {
+    const declarations = pick(mediaStyleRuleFor(element, mediaFragment(breakpoint)));
+    if (Object.keys(declarations).length > 0) style[mediaKey(breakpoint)] = declarations;
+  });
+  return style;
+}
+
+function measureButtonHeights(): Record<string, unknown> {
+  render(<UISkeletonButton id="spacing-button" />);
+  return emittedStyle(hiddenSkeleton('spacing-button'), ['height']);
+}
+
+function measureInputHeights(): Record<string, unknown> {
+  render(<UISkeletonInput id="spacing-input" />);
+  return emittedStyle(hiddenSkeleton('spacing-input'), ['height', 'max-height']);
 }
 
 const FORM_LABEL_STYLE = formFieldStyles.formFieldLabel as Record<string, unknown>;
@@ -137,6 +177,19 @@ function lineHeightAt(
 }
 
 describe('AuthSkeleton spacing parity', () => {
+  it('renders the skeleton field and button heights the parity math assumes', () => {
+    expect(measureInputHeights()).toEqual({
+      height: `clamp(${BASE_INPUT_HEIGHT}rem, 4vw, ${XL_INPUT_HEIGHT}rem)`,
+      [mediaKey('md')]: { height: `${MD_INPUT_HEIGHT}rem` },
+      [mediaKey('xl')]: { 'max-height': `${XL_INPUT_HEIGHT}rem` },
+    });
+    expect(measureButtonHeights()).toEqual({
+      height: '3.125rem',
+      [mediaKey('md')]: { height: '4.375rem' },
+      [mediaKey('xl')]: { height: '3.875rem' },
+    });
+  });
+
   it('matches subtitle margins and height with UIForm subtitle across breakpoints', () => {
     const smKey = `@media (min-width:${breakpointsTheme.breakpoints.values.sm}px)`;
     const lgKey = `@media (min-width:${breakpointsTheme.breakpoints.values.lg}px)`;
@@ -286,6 +339,7 @@ describe('AuthSkeleton spacing parity', () => {
     const skeletonFieldGap = authSkeletonStyles.fieldContainer as Record<string, unknown>;
     const skeletonSubmit = authSkeletonStyles.buttonSkeleton as Record<string, unknown>;
     const skeletonDivider = authSkeletonStyles.divider as Record<string, unknown>;
+    const skeletonButtonHeights = measureButtonHeights();
 
     breakpoints.forEach((breakpoint) => {
       const titleStepForm =
@@ -341,13 +395,8 @@ describe('AuthSkeleton spacing parity', () => {
           )
         );
       const submitToDividerSkeleton =
-        toRem(
-          valueAt(
-            skeletonButtonStyles.buttonSkeleton as Record<string, unknown>,
-            'height',
-            breakpoint
-          )
-        ) + toRem(valueAt(skeletonDivider, 'marginTop', breakpoint));
+        toRem(valueAt(skeletonButtonHeights, 'height', breakpoint)) +
+        toRem(valueAt(skeletonDivider, 'marginTop', breakpoint));
 
       expect(titleStepSkeleton).toBeCloseTo(titleStepForm, 2);
       expect(subtitleStepSkeleton).toBeCloseTo(subtitleStepForm, 2);

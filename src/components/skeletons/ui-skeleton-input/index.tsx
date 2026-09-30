@@ -1,22 +1,10 @@
-import Box from '@mui/material/Box';
-import { useTheme } from '@mui/material/styles';
-import type { JSX } from 'react';
+import UiSkeletonInput from '@vilnacrm/ui-toolkit/ui-skeleton-input';
+import React from 'react';
 
-import styles from '@/components/skeletons/ui-skeleton-input/styles';
 import type { UISkeletonInputProps } from '@/components/skeletons/ui-skeleton-input/types';
 
-function UISkeletonInput({ disableAnimation = false, id }: UISkeletonInputProps): JSX.Element {
-  const theme = useTheme();
-  const staticSx = disableAnimation ? styles.staticSkeleton : undefined;
-
-  return (
-    <Box id={id} sx={[styles.inputContainer(theme), ...(staticSx ? [staticSx] : [])]}>
-      <Box
-        className="ui-skeleton-input__placeholder"
-        sx={[styles.inputPlaceholder, ...(staticSx ? [staticSx] : [])]}
-      />
-    </Box>
-  );
+function UISkeletonInput(props: UISkeletonInputProps): React.ReactElement {
+  return React.createElement(UiSkeletonInput, props);
 }
 
 export default UISkeletonInput;

@@ -1,57 +1,55 @@
 import '@testing-library/jest-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import React from 'react';
 
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
-import styles from '@/components/skeletons/ui-skeleton-input/styles';
+import { styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
-const theme = createTheme();
+const theme = createTheme({ palette: { background: { default: '#fafafa' } } });
+const PLACEHOLDER_CLASS = 'ui-skeleton-input__placeholder';
 
 describe('UISkeletonInput Integration', () => {
+  const hiddenGenerics = (): HTMLElement[] => screen.getAllByRole('generic', { hidden: true });
+
   const getSkeletonInput = (): HTMLElement => {
-    const element = screen.getAllByRole('generic').find((node) => node.id === 'skeleton-input');
+    const element = hiddenGenerics().find((node) => node.id === 'skeleton-input');
     if (!element) throw new Error('skeleton-input not found');
     return element;
   };
 
-  const getSkeletonElements = (): HTMLElement[] =>
-    within(getSkeletonInput()).getAllByRole('generic') as HTMLElement[];
-
   const getSkeletonPlaceholders = (): HTMLElement[] =>
-    getSkeletonElements().filter((element) =>
-      element.classList.contains('ui-skeleton-input__placeholder')
-    );
+    hiddenGenerics().filter((element) => element.classList.contains(PLACEHOLDER_CLASS));
 
   const getSkeletonPlaceholder = (): HTMLElement => {
-    const placeholder = getSkeletonPlaceholders()[0];
-    if (!placeholder) throw new Error('ui-skeleton-input__placeholder not found');
+    const [placeholder] = getSkeletonPlaceholders();
+    if (!placeholder) throw new Error(`${PLACEHOLDER_CLASS} not found`);
     return placeholder;
   };
 
-  it('renders with default props', () => {
+  it('renders a decorative field hidden from assistive technology', () => {
     expect(React).toBeDefined();
     render(<UISkeletonInput id="skeleton-input" />);
 
-    expect(getSkeletonInput()).toBeInTheDocument();
+    expect(getSkeletonInput()).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('renders correctly inside ThemeProvider', () => {
-    // inputContainer style is a theme function — verify it resolves without error
+  it('paints the field interior with the ambient theme background', () => {
     render(
       <ThemeProvider theme={theme}>
         <UISkeletonInput id="skeleton-input" />
       </ThemeProvider>
     );
 
-    expect(getSkeletonInput()).toBeInTheDocument();
-    expect(getSkeletonPlaceholder()).toBeInTheDocument();
+    expect(styleRuleFor(getSkeletonInput(), '::after')?.getPropertyValue('background-color')).toBe(
+      '#fafafa'
+    );
+    expect(getSkeletonPlaceholder()).toHaveStyle({ position: 'absolute', width: '9.1875rem' });
   });
 
   it('renders exactly one inner placeholder child element', () => {
     render(<UISkeletonInput id="skeleton-input" />);
 
-    expect(getSkeletonInput()).toBeInTheDocument();
     expect(getSkeletonPlaceholders()).toHaveLength(1);
   });
 
@@ -62,19 +60,18 @@ describe('UISkeletonInput Integration', () => {
       </ThemeProvider>
     );
 
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
-    expect(screen.queryAllByRole('link')).toHaveLength(0);
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+    expect(screen.queryAllByRole('button', { hidden: true })).toHaveLength(0);
+    expect(screen.queryAllByRole('link', { hidden: true })).toHaveLength(0);
+    expect(screen.queryAllByRole('textbox', { hidden: true })).toHaveLength(0);
   });
 
-  it('applies static styles when animation is disabled', () => {
+  it('applies static styles to both layers when animation is disabled', () => {
     render(<UISkeletonInput disableAnimation id="skeleton-input" />);
 
-    expect(getSkeletonInput()).toHaveStyle({
-      backgroundSize: styles.staticSkeleton.backgroundSize,
-    });
+    expect(getSkeletonInput()).toHaveStyle({ animation: 'none', backgroundSize: '100% 100%' });
     expect(getSkeletonPlaceholder()).toHaveStyle({
-      backgroundSize: styles.staticSkeleton.backgroundSize,
+      animation: 'none',
+      backgroundSize: '100% 100%',
     });
   });
 });

@@ -1,73 +1,82 @@
 import { render, screen } from '@testing-library/react';
 
 import UISkeletonBlock from '@/components/skeletons/ui-skeleton-block';
-import getBlockSkeletonStyles from '@/components/skeletons/ui-skeleton-block/styles';
+import { mediaStyleRuleFor } from '@tests/unit/utils/emotion-style-rules';
 
-jest.mock('@/components/skeletons/ui-skeleton-block/styles', () => ({
-  __esModule: true,
-  default: { build: jest.fn(() => ({})) },
-}));
+const SKELETON_ID = 'skeleton-block';
+
+function skeletonBlock(): HTMLElement {
+  const element = screen
+    .getAllByRole('generic', { hidden: true })
+    .find((el) => el.id === SKELETON_ID);
+  if (!element) throw new Error(`Skeleton block element with id "${SKELETON_ID}" not found`);
+  return element;
+}
 
 describe('UISkeletonBlock', () => {
-  const getSkeletonBlock = (): HTMLElement => {
-    const element = screen.getAllByRole('generic').find((el) => el.id === 'skeleton-block');
-    if (!element) throw new Error('skeleton-block not found');
-    return element;
-  };
+  it('renders one decorative block hidden from assistive technology', () => {
+    render(<UISkeletonBlock id={SKELETON_ID} />);
 
-  beforeEach(() => {
-    jest.clearAllMocks();
+    expect(skeletonBlock()).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryAllByRole('generic').map((el) => el.id)).not.toContain(SKELETON_ID);
   });
 
-  it('renders with default props', () => {
-    render(<UISkeletonBlock id="skeleton-block" />);
+  it('renders a full-width 3rem shimmer block with an 8px radius by default', () => {
+    render(<UISkeletonBlock id={SKELETON_ID} />);
 
-    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
-    expect(getBlockSkeletonStyles.build).toHaveBeenCalledWith('100%', '3rem', '8px');
+    expect(skeletonBlock()).toHaveStyle({
+      width: '100%',
+      height: '3rem',
+      borderRadius: '8px',
+      backgroundSize: '200% 100%',
+    });
   });
 
-  it('renders with custom dimensions and borderRadius', () => {
-    render(<UISkeletonBlock width="200px" height="4rem" borderRadius="12px" id="skeleton-block" />);
+  it('renders the requested dimensions and radius', () => {
+    render(<UISkeletonBlock id={SKELETON_ID} width="200px" height="4rem" borderRadius="12px" />);
 
-    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
-    expect(getBlockSkeletonStyles.build).toHaveBeenCalledWith('200px', '4rem', '12px');
+    expect(skeletonBlock()).toHaveStyle({ width: '200px', height: '4rem', borderRadius: '12px' });
   });
 
-  it('applies array sx without dropping the base styles', () => {
-    const arraySx = [{ mt: 1 }, { mb: 2 }];
+  it('stops the shimmer for users who prefer reduced motion', () => {
+    render(<UISkeletonBlock id={SKELETON_ID} />);
 
-    render(<UISkeletonBlock sx={arraySx} id="skeleton-block" />);
-
-    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
-    expect(getBlockSkeletonStyles.build).toHaveBeenCalledWith('100%', '3rem', '8px');
+    expect(
+      mediaStyleRuleFor(skeletonBlock(), 'prefers-reduced-motion:reduce')?.getPropertyValue(
+        'animation'
+      )
+    ).toBe('none');
   });
 
-  it('renders with object sx prop', () => {
-    render(<UISkeletonBlock sx={{ mt: 1 }} id="skeleton-block" />);
+  it('forwards a single sx object on top of the base styles', () => {
+    render(<UISkeletonBlock id={SKELETON_ID} sx={{ mt: 1 }} />);
 
-    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
+    expect(skeletonBlock()).toHaveStyle({ marginTop: '8px', height: '3rem' });
   });
 
-  it('renders cleanly without an sx prop', () => {
-    render(<UISkeletonBlock id="skeleton-block" />);
+  it('forwards every entry of an sx array on top of the base styles', () => {
+    render(<UISkeletonBlock id={SKELETON_ID} sx={[{ mt: 1 }, { mb: 2 }]} />);
 
-    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
+    expect(skeletonBlock()).toHaveStyle({
+      marginTop: '8px',
+      marginBottom: '16px',
+      borderRadius: '8px',
+    });
+  });
+
+  it('re-renders with the latest dimensions', () => {
+    const { rerender } = render(<UISkeletonBlock id={SKELETON_ID} />);
+
+    rerender(<UISkeletonBlock id={SKELETON_ID} width="50%" />);
+
+    expect(skeletonBlock()).toHaveStyle({ width: '50%', height: '3rem' });
   });
 
   it('has no interactive elements', () => {
-    render(<UISkeletonBlock id="skeleton-block" />);
+    render(<UISkeletonBlock id={SKELETON_ID} />);
 
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
-    expect(screen.queryAllByRole('link')).toHaveLength(0);
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
-  });
-
-  it('renders consistently across re-renders', () => {
-    const { rerender } = render(<UISkeletonBlock id="skeleton-block" />);
-    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
-
-    rerender(<UISkeletonBlock width="50%" id="skeleton-block" />);
-    expect(getSkeletonBlock()).toHaveAttribute('id', 'skeleton-block');
-    expect(getBlockSkeletonStyles.build).toHaveBeenLastCalledWith('50%', '3rem', '8px');
+    expect(screen.queryAllByRole('button', { hidden: true })).toHaveLength(0);
+    expect(screen.queryAllByRole('link', { hidden: true })).toHaveLength(0);
+    expect(screen.queryAllByRole('textbox', { hidden: true })).toHaveLength(0);
   });
 });

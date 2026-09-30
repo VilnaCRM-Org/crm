@@ -6,7 +6,9 @@ import UISkeletonButton from '@/components/skeletons/ui-skeleton-button';
 
 describe('UISkeletonButton Integration', () => {
   const getSkeletonButton = (): HTMLElement => {
-    const el = screen.getAllByRole('generic').find((element) => element.id === 'skeleton-button');
+    const el = screen
+      .getAllByRole('generic', { hidden: true })
+      .find((element) => element.id === 'skeleton-button');
     if (!el) throw new Error('skeleton-button not found in DOM');
     return el;
   };
@@ -15,7 +17,7 @@ describe('UISkeletonButton Integration', () => {
     expect(React).toBeDefined();
     render(<UISkeletonButton id="skeleton-button" />);
 
-    expect(getSkeletonButton()).toHaveAttribute('id', 'skeleton-button');
+    expect(getSkeletonButton()).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('renders with object sx prop', () => {

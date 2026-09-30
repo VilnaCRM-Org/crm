@@ -1,65 +1,132 @@
 import { render, screen } from '@testing-library/react';
 
 import UISkeletonInput from '@/components/skeletons/ui-skeleton-input';
-import styles from '@/components/skeletons/ui-skeleton-input/styles';
+import { mediaStyleRuleFor, styleRuleFor } from '@tests/unit/utils/emotion-style-rules';
+
+const SKELETON_ID = 'skeleton-input';
+const PLACEHOLDER_CLASS = 'ui-skeleton-input__placeholder';
+
+function hiddenGenerics(): HTMLElement[] {
+  return screen.getAllByRole('generic', { hidden: true });
+}
+
+function skeletonInput(): HTMLElement {
+  const element = hiddenGenerics().find((el) => el.id === SKELETON_ID);
+  if (!element) throw new Error(`Skeleton input element with id "${SKELETON_ID}" not found`);
+  return element;
+}
+
+function placeholders(): HTMLElement[] {
+  return hiddenGenerics().filter((el) => el.classList.contains(PLACEHOLDER_CLASS));
+}
+
+function placeholder(): HTMLElement {
+  const [element] = placeholders();
+  if (!element) throw new Error(`${PLACEHOLDER_CLASS} not found`);
+  return element;
+}
 
 describe('UISkeletonInput', () => {
-  const getSkeletonElements = (): HTMLElement[] => screen.getAllByRole('generic') as HTMLElement[];
+  it('renders a decorative field hidden from assistive technology', () => {
+    render(<UISkeletonInput id={SKELETON_ID} />);
 
-  const getSkeletonInput = (): HTMLElement =>
-    getSkeletonElements().find((element) => element.id === 'skeleton-input') as HTMLElement;
-
-  const getSkeletonPlaceholder = (): HTMLElement =>
-    getSkeletonElements().find((element) =>
-      element.className.includes('ui-skeleton-input__placeholder')
-    ) as HTMLElement;
-
-  it('renders without crashing', () => {
-    render(<UISkeletonInput id="skeleton-input" />);
-
-    expect(getSkeletonInput()).toBeInTheDocument();
+    expect(skeletonInput()).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.queryAllByRole('generic').map((el) => el.id)).not.toContain(SKELETON_ID);
   });
 
-  it('renders a container and placeholder child', () => {
-    render(<UISkeletonInput id="skeleton-input" />);
+  it('renders exactly one placeholder bar inside the field', () => {
+    render(<UISkeletonInput id={SKELETON_ID} />);
 
-    expect(getSkeletonInput()).toBeInTheDocument();
-    expect(getSkeletonPlaceholder()).toBeInTheDocument();
+    expect(placeholders()).toHaveLength(1);
+    expect(placeholder()).not.toHaveAttribute('id');
   });
 
-  it('has no interactive elements', () => {
-    render(<UISkeletonInput id="skeleton-input" />);
+  it('shapes the field as a full-width rounded box that grows with the viewport', () => {
+    render(<UISkeletonInput id={SKELETON_ID} />);
 
-    expect(screen.queryAllByRole('button')).toHaveLength(0);
-    expect(screen.queryAllByRole('link')).toHaveLength(0);
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+    expect(skeletonInput()).toHaveStyle({
+      position: 'relative',
+      boxSizing: 'border-box',
+      borderRadius: '0.5rem',
+      width: '100%',
+      backgroundSize: '200% 100%',
+    });
+    expect(styleRuleFor(skeletonInput())?.getPropertyValue('height')).toBe(
+      'clamp(3rem, 4vw, 4rem)'
+    );
   });
 
-  it('has no form elements', () => {
-    render(<UISkeletonInput id="skeleton-input" />);
+  it('paints the field interior with the theme background over a 1px shimmer border', () => {
+    render(<UISkeletonInput id={SKELETON_ID} />);
 
-    expect(screen.queryAllByRole('checkbox')).toHaveLength(0);
-    expect(screen.queryAllByRole('combobox')).toHaveLength(0);
+    const after = styleRuleFor(skeletonInput(), '::after');
+
+    expect(after?.getPropertyValue('inset')).toBe('1px');
+    expect(after?.getPropertyValue('border-radius')).toBe('calc(0.5rem - 1px)');
+    expect(after?.getPropertyValue('background-color')).toBe('#fff');
   });
 
-  it('renders consistently across re-renders', () => {
-    const { rerender } = render(<UISkeletonInput id="skeleton-input" />);
-    expect(getSkeletonInput()).toBeInTheDocument();
+  it.each([
+    ['min-width:375px', 'min-width', '19.6875rem'],
+    ['min-width:768px', 'height', '4.9375rem'],
+    ['min-width:768px', 'min-width', '33.75rem'],
+    ['min-width:1024px', 'min-width', '26.375rem'],
+    ['min-width:1440px', 'max-height', '4rem'],
+  ])('at %s sets the field %s to %s', (mediaFragment, property, value) => {
+    render(<UISkeletonInput id={SKELETON_ID} />);
 
-    rerender(<UISkeletonInput id="skeleton-input" />);
-    expect(getSkeletonInput()).toBeInTheDocument();
-    expect(getSkeletonPlaceholder()).toBeInTheDocument();
+    expect(mediaStyleRuleFor(skeletonInput(), mediaFragment)?.getPropertyValue(property)).toBe(
+      value
+    );
   });
 
-  it('disables animation styles for both container layers when requested', () => {
-    render(<UISkeletonInput disableAnimation id="skeleton-input" />);
+  it('places the placeholder bar vertically centred above the field interior', () => {
+    render(<UISkeletonInput id={SKELETON_ID} />);
 
-    const container = getSkeletonInput();
-    const placeholder = getSkeletonPlaceholder();
+    expect(placeholder()).toHaveStyle({
+      position: 'absolute',
+      zIndex: '1',
+      width: '9.1875rem',
+      height: '1.125rem',
+      left: '1.25rem',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      borderRadius: '3.5625rem',
+    });
+  });
 
-    expect(container).toHaveStyle('animation: none');
-    expect(container).toHaveStyle(`background-size: ${styles.staticSkeleton.backgroundSize}`);
-    expect(placeholder).toHaveStyle('animation: none');
-    expect(placeholder).toHaveStyle(`background-size: ${styles.staticSkeleton.backgroundSize}`);
+  it.each([
+    ['min-width:768px', '1.75rem'],
+    ['min-width:1440px', '1.6875rem'],
+  ])('at %s moves the placeholder bar to %s from the left', (mediaFragment, left) => {
+    render(<UISkeletonInput id={SKELETON_ID} />);
+
+    expect(mediaStyleRuleFor(placeholder(), mediaFragment)?.getPropertyValue('left')).toBe(left);
+  });
+
+  it('stops both layers from shimmering for users who prefer reduced motion', () => {
+    render(<UISkeletonInput id={SKELETON_ID} />);
+
+    [skeletonInput(), placeholder()].forEach((layer) => {
+      expect(
+        mediaStyleRuleFor(layer, 'prefers-reduced-motion:reduce')?.getPropertyValue('animation')
+      ).toBe('none');
+    });
+  });
+
+  it('freezes both layers with the static background when animation is disabled', () => {
+    render(<UISkeletonInput disableAnimation id={SKELETON_ID} />);
+
+    [skeletonInput(), placeholder()].forEach((layer) => {
+      expect(layer).toHaveStyle({ animation: 'none', backgroundSize: '100% 100%' });
+    });
+  });
+
+  it('has no interactive or form elements', () => {
+    render(<UISkeletonInput id={SKELETON_ID} />);
+
+    ['button', 'link', 'textbox', 'checkbox', 'combobox'].forEach((role) => {
+      expect(screen.queryAllByRole(role, { hidden: true })).toHaveLength(0);
+    });
   });
 });

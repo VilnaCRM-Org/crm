@@ -1,31 +1,16 @@
-import { Box, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import UiBackToMain from '@vilnacrm/ui-toolkit/ui-back-to-main';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 import BackArrow from '@/assets/icons/arrows/back-arrow.svg';
-import backToMainStyles from '@/components/ui-back-to-main/styles';
-import UIButton from '@/components/ui-button';
-import UIContainer from '@/components/ui-container';
 
 export default function UIBackToMain(): React.ReactElement {
-  const theme = useTheme();
-  const styles = backToMainStyles.build(theme);
   const { t } = useTranslation();
 
   return (
-    <Box component="section" sx={styles.section}>
-      <UIContainer>
-        <UIButton disableRipple sx={styles.backButton} to="/">
-          <Box sx={styles.icon}>
-            <img src={BackArrow} alt="" aria-hidden="true" />
-          </Box>
-
-          <Typography sx={styles.backText} component="span">
-            {t('buttons.back_to_main')}
-          </Typography>
-        </UIButton>
-      </UIContainer>
-    </Box>
+    <UiBackToMain
+      label={t('buttons.back_to_main')}
+      icon={<img src={BackArrow} alt="" aria-hidden="true" />}
+    />
   );
 }
