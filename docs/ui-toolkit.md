@@ -23,10 +23,10 @@ its deviations from issue
   `make lint-ui-toolkit` and a tooling test fail when any of them disagree.
 - **Peers:** all nine required peers are already satisfied, so the install changed none of
   them:
-  - `react` and `react-dom` ^19 (19.2.8)
+  - `react` and `react-dom` ^19 (19.3.0)
   - `@mui/material` and `@mui/system` ^9 (9.4.0)
   - `@emotion/react` ^11 (11.14.0) and `@emotion/styled` ^11 (11.14.1)
-  - `react-hook-form` ^7 (7.88.0)
+  - `react-hook-form` ^7 (7.89.0)
   - `i18next` `>=23 <27` (26.4.2) and `react-i18next` `>=14 <18` (17.0.15)
 - **Lifecycle scripts:** the package is not in `trustedDependencies`, so Bun runs none of its
   scripts at install time.
@@ -121,6 +121,19 @@ network access. There is no exemption: v0.5.0's asset digest also equals its com
 the toolkit's releases are immutable, so its post-publication upload is refused (ui-toolkit
 [#190](https://github.com/VilnaCRM-Org/ui-toolkit/issues/190)).
 
+**The tarball-derived digests:** the manifest's `artifacts` come from the verified tarball, not
+from `node_modules`. After the release-digest check, `make update-ui-toolkit` decompresses the
+downloaded bytes with `node:zlib` and reads the tar itself (`UiToolkitTarballParser`: ustar
+headers and their `prefix` field, pax `path` overrides, regular files only, the later entry
+winning a repeated path), strips the `package/` prefix, drops `LICENSE` and `README.md`, and
+hashes every file whose path is `package.json` or under `build/`. It then compares the installed
+tree with the tarball's files and refuses, leaving the manifest unchanged, on any difference, as
+an `[install]` finding: `<path> differs from the verified release tarball`,
+`<path> is missing from the installed tree` or `<path> is installed but not in the release
+tarball`. A modified installed file can therefore never be baked into the manifest while
+`package.json` keeps the pin. A downloaded body whose digest matches but which is not a
+gzip-compressed tar is a `[download]` finding, because the asset itself is unusable.
+
 **The release attestation:** `gh attestation verify` was verified for the first pin, v0.5.0,
 only:
 
@@ -174,14 +187,16 @@ The refresher reads only the `package.json` pin (`readPackagePin()`) and the ins
 so step 2 can come before or after it; doing it second keeps every pin statement consistent
 before any digest is written. For every release the refresher also requires the release API
 to report the release immutable and the tarball asset's server-side digest to agree, and records
-`releaseChecksum: "matched"`. The machine-read part of the diff is exactly: one `package.json`
-line, the two `bun.lock` lines (plus any peer-range change the new release makes, which is then
-a reviewed peer decision), the gate literal and the manifest. The bump also edits the version
-named in `docs/ui-toolkit.md` and records the new pin in ADR-016: changing the `dependencies`
-map trips the ADR drift gate (`config/docs-policy.json`, `architectureDrift.manifestKeys`),
-which the ADR edit satisfies without the escape hatch. No script, test or constant changes.
-Running `make update-ui-toolkit` to clear a red `lint-ui-toolkit` without re-reviewing the
-release is forbidden.
+`releaseChecksum: "matched"`. It takes every artifact digest from that verified tarball and
+refuses when the installed tree from step 1 differs from it, so a stale or modified
+`node_modules` fails the bump instead of entering the manifest. The machine-read part of the
+diff is exactly: one `package.json` line, the two `bun.lock` lines (plus any peer-range change
+the new release makes, which is then a reviewed peer decision), the gate literal and the
+manifest. The bump also edits the version named in `docs/ui-toolkit.md` and records the new pin
+in ADR-016: changing the `dependencies` map trips the ADR drift gate (`config/docs-policy.json`,
+`architectureDrift.manifestKeys`), which the ADR edit satisfies without the escape hatch. No
+script, test or constant changes. Running `make update-ui-toolkit` to clear a red
+`lint-ui-toolkit` without re-reviewing the release is forbidden.
 
 ## Keep-local register
 

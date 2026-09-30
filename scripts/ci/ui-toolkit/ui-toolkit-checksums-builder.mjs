@@ -1,18 +1,20 @@
 import { createHash } from 'node:crypto';
 
 import UiToolkitInstallSource from './ui-toolkit-install-source.mjs';
+import UiToolkitInstallValidator from './ui-toolkit-install-validator.mjs';
 import UiToolkitPinSource from './ui-toolkit-pin-source.mjs';
 import UI_TOOLKIT_POLICY from './ui-toolkit-policy.mjs';
+import UiToolkitTarballParser from './ui-toolkit-tarball-parser.mjs';
 
 const {
   CHECKSUMS_PATH,
   ALGORITHM,
   DEFAULT_COMMENT,
-  UNHASHED_FILES,
   RELEASE_API_URL,
   RELEASE_API_ACCEPT,
   RELEASE_DIGEST_PREFIX,
   RELEASE_DIGEST_PATTERN,
+  ARTIFACT_PATH_PATTERN,
 } = UI_TOOLKIT_POLICY;
 
 export default class UiToolkitChecksumsBuilder {
@@ -23,6 +25,8 @@ export default class UiToolkitChecksumsBuilder {
     this.token = token;
     this.pinSource = new UiToolkitPinSource({ readFile });
     this.installSource = new UiToolkitInstallSource({ readFile, readDir });
+    this.installValidator = new UiToolkitInstallValidator({ installSource: this.installSource });
+    this.tarballParser = new UiToolkitTarballParser();
   }
 
   async run({ stdout, stderr }) {
@@ -67,7 +71,7 @@ export default class UiToolkitChecksumsBuilder {
     if (checksum.findings.length > 0) {
       return checksum;
     }
-    const tree = this.hashTree();
+    const tree = this.releasedArtifacts(pin.spec, tarball.bytes);
     if (tree.findings.length > 0) {
       return tree;
     }
@@ -111,7 +115,7 @@ export default class UiToolkitChecksumsBuilder {
       return { findings: [this.downloadFinding(url, `answered HTTP ${response.status}`)] };
     }
     const bytes = Buffer.from(await response.arrayBuffer());
-    return { findings: [], sha256: createHash(ALGORITHM).update(bytes).digest('hex') };
+    return { findings: [], bytes, sha256: createHash(ALGORITHM).update(bytes).digest('hex') };
   }
 
   async settleReleaseChecksum({ spec, version }, tarballSha256) {
@@ -180,16 +184,30 @@ export default class UiToolkitChecksumsBuilder {
       .slice(0, 1);
   }
 
-  hashTree() {
-    const { files, findings } = this.installSource.listTree();
-    if (findings.length > 0) {
-      return { findings: findings.map(({ detail }) => ({ className: 'install', detail })) };
+  releasedArtifacts(url, bytes) {
+    const released = this.releasedDigests(url, bytes);
+    if (released.findings.length > 0) {
+      return released;
     }
-    const artifacts = files
-      .filter((path) => !UNHASHED_FILES.includes(path))
-      .sort()
-      .map((path) => ({ path, sha256: this.installSource.digest(path) }));
-    return { findings: [], artifacts };
+    return {
+      findings: this.installValidator.findings(released.digests),
+      artifacts: released.digests.filter(({ path }) => ARTIFACT_PATH_PATTERN.test(path)),
+    };
+  }
+
+  releasedDigests(url, bytes) {
+    try {
+      return { findings: [], digests: this.tarballParser.packageDigests(bytes) };
+    } catch (error) {
+      return {
+        findings: [
+          this.downloadFinding(
+            url,
+            `the verified body is not a gzip-compressed tar archive (${error.message})`
+          ),
+        ],
+      };
+    }
   }
 
   existingComment() {

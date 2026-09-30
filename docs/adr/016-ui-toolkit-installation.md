@@ -16,9 +16,9 @@ their existing CRM seams: the container, typography, the four skeleton leaves an
 
 CRM and `website` are meant to render one VilnaCRM design system, and the toolkit is where it
 lives. Issue #250 describes the work as blocked on React 19 and MUI 9. That premise is stale:
-`package.json` already pins React 19.2.8, `@mui/material` 9.4.0, i18next 26.4.2 and
-react-i18next 17.0.15, and all nine required toolkit peers are satisfied, so no framework upgrade
-is part of this change.
+`package.json` already pinned React 19.2.8 (19.3.0 since #307), `@mui/material` 9.4.0, i18next
+26.4.2 and react-i18next 17.0.15, and all nine required toolkit peers are satisfied, so no
+framework upgrade is part of this change.
 
 The toolkit is published only as a GitHub release tarball, not to a registry, and its entry
 points live in a gitignored `build/` directory. Adding it trips four repository gates:
@@ -79,7 +79,9 @@ The v0.6.0 adoption below accepts the deltas it lists. The artifacts that implem
   thin entry files over constructor-injected classes in `scripts/ci/ui-toolkit/`.
 - Both make targets: `make lint-ui-toolkit` verifies the installed tree offline and sits in
   `make lint` and `CI_LINT_TARGETS` directly after `lint-licenses`; `make update-ui-toolkit`
-  regenerates the manifest over the network and stays out of `make lint`.
+  regenerates the manifest over the network and stays out of `make lint`. It hashes the files of
+  the downloaded, digest-verified tarball, not the installed tree, and refuses to write when the
+  installed tree differs from them.
 - The lockfile token: `scripts/ci/check-lockfile-registries.sh` strips two fixed-string,
   package-bound tokens built from its `TOOLKIT_URL` literal before its unchanged URL scan, so
   exactly this URL under exactly this package name passes.

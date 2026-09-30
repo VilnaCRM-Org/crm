@@ -2,10 +2,21 @@
  * @jest-environment node
  */
 
+import { gunzipSync, gzipSync } from 'node:zlib';
+
 import UiToolkitChecksumsBuilder from '@scripts/ci/ui-toolkit/ui-toolkit-checksums-builder.mjs';
 import UiToolkitInstallSource from '@scripts/ci/ui-toolkit/ui-toolkit-install-source.mjs';
 import UI_TOOLKIT_POLICY from '@scripts/ci/ui-toolkit/ui-toolkit-policy.mjs';
-import { fileSystem, releaseUrl, sha256, type Files } from '@tests/utils/ui-toolkit-fixtures';
+import UiToolkitTarballParser from '@scripts/ci/ui-toolkit/ui-toolkit-tarball-parser.mjs';
+import {
+  fileSystem,
+  npmTarball,
+  paxRecord,
+  releaseUrl,
+  sha256,
+  tarball,
+  type Files,
+} from '@tests/utils/ui-toolkit-fixtures';
 
 type Manifest = {
   comment: string;
@@ -21,7 +32,6 @@ type Release = { immutable?: unknown; assets?: unknown };
 
 const { PACKAGE_ROOT, CHECKSUMS_PATH, DEFAULT_COMMENT, RELEASE_API_URL } = UI_TOOLKIT_POLICY;
 const ACCEPT_HEADERS = { headers: { Accept: 'application/vnd.github+json' } };
-const ASSET_BYTES = 'fake release tarball bytes';
 const EXPECTED_PATHS = [
   'build/Golos-OFL.txt',
   'build/assets/Golos.woff2',
@@ -29,20 +39,33 @@ const EXPECTED_PATHS = [
   'package.json',
 ];
 
-function repository(version: string, spec = releaseUrl(version)): Files {
+function installed(version: string): Files {
   return {
-    'package.json': JSON.stringify({ dependencies: { '@vilnacrm/ui-toolkit': spec } }),
-    [`${PACKAGE_ROOT}/package.json`]: JSON.stringify({ name: '@vilnacrm/ui-toolkit', version }),
-    [`${PACKAGE_ROOT}/LICENSE`]: 'license text',
-    [`${PACKAGE_ROOT}/README.md`]: 'readme text',
-    [`${PACKAGE_ROOT}/build/index.mjs`]: 'export {};',
-    [`${PACKAGE_ROOT}/build/assets/Golos.woff2`]: 'font bytes',
-    [`${PACKAGE_ROOT}/build/Golos-OFL.txt`]: 'font licence',
+    'package.json': JSON.stringify({ name: '@vilnacrm/ui-toolkit', version }),
+    LICENSE: 'license text',
+    'README.md': 'readme text',
+    'build/index.mjs': 'export {};',
+    'build/assets/Golos.woff2': 'font bytes',
+    'build/Golos-OFL.txt': 'font licence',
   };
 }
 
-function respond(body: string | null, status: number): () => Promise<Response> {
-  return () => Promise.resolve(new Response(body, { status }));
+function repository(version: string, spec = releaseUrl(version), tree = installed(version)): Files {
+  return {
+    'package.json': JSON.stringify({ dependencies: { '@vilnacrm/ui-toolkit': spec } }),
+    ...Object.fromEntries(
+      Object.entries(tree).map(([path, content]) => [`${PACKAGE_ROOT}/${path}`, content])
+    ),
+  };
+}
+
+const ASSET_BYTES = npmTarball(installed('0.6.0'));
+
+function respond(body: string | Uint8Array | null, status: number): () => Promise<Response> {
+  return () =>
+    Promise.resolve(
+      new Response(typeof body === 'string' ? body : body && new Uint8Array(body), { status })
+    );
 }
 
 function reject(message: string): () => Promise<Response> {
@@ -57,12 +80,16 @@ function releaseApiUrl(version: string): string {
   return `https://api.github.com/repos/VilnaCRM-Org/ui-toolkit/releases/tags/v${version}`;
 }
 
-function releaseFor(version: string, overrides: Release = {}): Release {
+function releaseFor(
+  version: string,
+  overrides: Release = {},
+  asset: Uint8Array = npmTarball(installed(version))
+): Release {
   return {
     immutable: true,
     assets: [
       { name: 'provenance.intoto.jsonl', digest: `sha256:${sha256('provenance')}` },
-      { name: `vilnacrm-ui-toolkit-${version}.tgz`, digest: `sha256:${sha256(ASSET_BYTES)}` },
+      { name: `vilnacrm-ui-toolkit-${version}.tgz`, digest: `sha256:${sha256(asset)}` },
     ],
     ...overrides,
   };
@@ -284,7 +311,10 @@ describe('UiToolkitChecksumsBuilder refusals', () => {
       readFile,
       readDir,
       writeFile,
-      fetch: fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.5.0'))),
+      fetch: fetchWith(
+        respond(npmTarball(installed('0.5.0')), 200),
+        releaseJson(releaseFor('0.5.0'))
+      ),
       token: undefined,
     });
 
@@ -319,7 +349,7 @@ describe('UiToolkitChecksumsBuilder writes', () => {
       releaseChecksum: 'matched',
       artifacts: EXPECTED_PATHS.map((path) => ({
         path,
-        sha256: sha256(repository('0.6.0')[`${PACKAGE_ROOT}/${path}`] ?? ''),
+        sha256: sha256(installed('0.6.0')[path] ?? ''),
       })),
     });
     expect(result.stdout).toBe(
@@ -360,11 +390,138 @@ describe('UiToolkitChecksumsBuilder writes', () => {
   ])('writes the default comment when %s', async (_label, files) => {
     const result = await runBuilder(
       files,
-      fetchWith(respond(ASSET_BYTES, 200), releaseJson(releaseFor('0.5.0')))
+      fetchWith(respond(npmTarball(installed('0.5.0')), 200), releaseJson(releaseFor('0.5.0')))
     );
 
     expect(result.code).toBe(0);
     expect(writtenManifest(result.writeFile).comment).toBe(DEFAULT_COMMENT);
+  });
+});
+
+function refusedWith(detail: string): string {
+  return `ui-toolkit checksums: REFUSED (${CHECKSUMS_PATH} unchanged)\n  - [install] ${detail}\n`;
+}
+
+async function runAgainst(
+  tree: Files,
+  asset: Uint8Array
+): Promise<Awaited<ReturnType<typeof runBuilder>>> {
+  return runBuilder(
+    repository('0.6.0', releaseUrl('0.6.0'), tree),
+    fetchWith(respond(asset, 200), releaseJson(releaseFor('0.6.0', {}, asset)))
+  );
+}
+
+function rawArchive(files: Files): Buffer {
+  return gunzipSync(npmTarball(files));
+}
+
+describe('UiToolkitChecksumsBuilder against the verified tarball', () => {
+  it.each<[string, Files, string]>([
+    [
+      'a tampered installed file',
+      { ...installed('0.6.0'), 'build/index.mjs': 'export const injected = true;' },
+      'build/index.mjs differs from the verified release tarball',
+    ],
+    [
+      'a missing installed file',
+      Object.fromEntries(
+        Object.entries(installed('0.6.0')).filter(([path]) => path !== 'build/Golos-OFL.txt')
+      ),
+      'build/Golos-OFL.txt is missing from the installed tree',
+    ],
+    [
+      'an extra installed file',
+      { ...installed('0.6.0'), 'build/extra.mjs': 'export {};' },
+      'build/extra.mjs is installed but not in the release tarball',
+    ],
+  ])('refuses %s as [install] and leaves the manifest unchanged', async (_label, tree, detail) => {
+    const result = await runAgainst(tree, ASSET_BYTES);
+
+    expectRefusal(result, 'install');
+    expect(result.stderr).toBe(refusedWith(detail));
+  });
+
+  it('writes digests from the tarball, honouring pax paths and skipping non-files', async () => {
+    const tree: Files = { ...installed('0.6.0'), 'CHANGELOG.md': 'changes' };
+    const asset = tarball([
+      { name: 'package', type: '5' },
+      { name: 'pax_global_header', type: 'g', body: paxRecord('comment', 'npm pack') },
+      { name: 'package/build/index.mjs', body: 'export const stale = true;' },
+      { name: 'PaxHeader/index', type: 'x', body: paxRecord('mtime', '1') },
+      { name: 'package/build/index.mjs', type: '\0', body: 'export {};' },
+      {
+        name: 'PaxHeader/golos',
+        type: 'x',
+        body: `${paxRecord('mtime', '1')}${paxRecord('path', 'package/build/assets/Golos.woff2')}`,
+      },
+      { name: 'package/build/assets/Golos-truncat', body: 'font bytes' },
+      { name: 'Golos-OFL.txt', prefix: 'package/build', body: 'font licence' },
+      { name: 'package/build/link.mjs', type: '2' },
+      { name: 'package/package.json', body: tree['package.json'] ?? '' },
+      { name: 'package/CHANGELOG.md', body: 'changes' },
+      { name: 'package/LICENSE', body: 'another licence text' },
+      { name: 'package/README.md', body: 'another readme text' },
+      { name: 'outside/package.json', body: 'not part of the package' },
+    ]);
+
+    const result = await runAgainst(tree, asset);
+
+    expect(result.stderr).toBe('');
+    expect(result.code).toBe(0);
+    expect(writtenManifest(result.writeFile).artifacts).toEqual(
+      EXPECTED_PATHS.map((path) => ({ path, sha256: sha256(tree[path] ?? '') }))
+    );
+  });
+
+  it('refuses a verified body that is not gzip as [download] naming the tarball URL', async () => {
+    const result = await runAgainst(installed('0.6.0'), Buffer.from('not a gzip body'));
+
+    expectRefusal(result, 'download');
+    expect(result.stderr).toContain(
+      `  - [download] ${releaseUrl('0.6.0')}: ` +
+        'the verified body is not a gzip-compressed tar archive ('
+    );
+  });
+});
+
+describe('UiToolkitTarballParser', () => {
+  const parser = new UiToolkitTarballParser();
+
+  it('reads an archive that ends without the two zero blocks', () => {
+    const archive = rawArchive({ 'build/index.mjs': 'export {};' }).subarray(0, 1024);
+
+    expect(parser.packageDigests(gzipSync(archive))).toEqual([
+      { path: 'build/index.mjs', sha256: sha256('export {};') },
+    ]);
+  });
+
+  it('reads a name that fills its whole 100-byte field without a terminator', () => {
+    const name = `build/${'a'.repeat(94)}`;
+    const asset = tarball([{ name, prefix: 'package', body: 'long name' }]);
+
+    expect(parser.packageDigests(asset)).toEqual([{ path: name, sha256: sha256('long name') }]);
+  });
+
+  it('rejects an entry whose body is cut short', () => {
+    const archive = rawArchive({ 'build/index.mjs': 'export {};' }).subarray(0, 520);
+
+    expect(() => parser.packageDigests(gzipSync(archive))).toThrow(
+      'the tar entry at byte 0 is truncated'
+    );
+  });
+
+  it('rejects a header whose size field is not octal', () => {
+    const archive = rawArchive({ 'build/index.mjs': 'export {};' });
+    archive.write('9'.repeat(11), 124);
+
+    expect(() => parser.packageDigests(gzipSync(archive))).toThrow(
+      'the tar header at "package/build/index.mjs" has no octal size'
+    );
+  });
+
+  it('rejects bytes that are not gzip', () => {
+    expect(() => parser.packageDigests(Buffer.from('plain bytes'))).toThrow();
   });
 });
 
