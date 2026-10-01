@@ -88,7 +88,8 @@ function checkReference(build, file, reference) {
   const target = local.startsWith('/')
     ? path.join(build.root, local.slice(build.base.length))
     : path.resolve(path.dirname(file), local);
-  if (path.relative(build.root, target).startsWith('..')) {
+  const relative = path.relative(build.root, target);
+  if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
     return `${where}: reference "${reference}" resolves outside the build`;
   }
   return existsSync(target) ? null : `${where}: reference "${reference}" names a missing file`;

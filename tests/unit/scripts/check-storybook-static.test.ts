@@ -213,6 +213,22 @@ describe('check-storybook-static (issue #310)', () => {
     expect(present.status).toBe(0);
   });
 
+  it('keeps an in-build file whose name starts with two dots inside the build', () => {
+    const result = run(
+      makeBuild({ ...VALID_BUILD, 'fonts.css': 'src: url(..font.woff2);', '..font.woff2': '' })
+    );
+
+    expect(result.status).toBe(0);
+  });
+
+  it('rejects a reference that climbs to exactly the parent of the build', () => {
+    const css = '@font-face { src: url(../..); }';
+    const result = run(makeBuild({ ...VALID_BUILD, 'sb-common-assets/fonts.css': css }));
+
+    expect(result.status).toBe(1);
+    expect(result.output).toContain('reference "../.." resolves outside the build');
+  });
+
   it.each(['index.html', 'iframe.html'])('rejects a build without %s', (page) => {
     const result = run(makeBuild(withoutFile(page)));
 
