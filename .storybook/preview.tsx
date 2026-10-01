@@ -6,6 +6,7 @@ import i18next from 'i18next';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import theme from '../src/styles/theme';
+import '../src/styles/fonts.css';
 
 const mainLanguage = process.env.REACT_APP_MAIN_LANGUAGE || 'uk';
 const fallbackLanguage = process.env.REACT_APP_FALLBACK_LANGUAGE || 'en';

@@ -641,6 +641,17 @@ required-check split, and the workflows that deliberately stay pull-request-only
 in [`docs/governance/branch-protection.md`](docs/governance/branch-protection.md), "Merge
 queue".
 
+### The published Storybook
+
+Every push to `main` publishes the component catalogue to
+<https://vilnacrm-org.github.io/crm/> through `storybook deploy`
+(`.github/workflows/storybook-deploy.yml`, issue #310). Reviewers and designers can browse the
+current `main` there without running the stack; a pull request is never deployed. Because Pages
+serves the catalogue under the `/crm/` sub-path, `make check-storybook-static` fails a build
+whose HTML or CSS references an asset by a root-absolute path, or names a file the build does
+not contain — the `storybook testing` pull-request check runs it after `make storybook-build`.
+Fix a finding by making the reference relative; never by narrowing what the gate scans.
+
 ### Releases and the changelog
 
 Every push to `main` runs `main verification`, and once its `lint` and `unit` jobs pass, its

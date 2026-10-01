@@ -250,6 +250,23 @@ on a public repository and are enabled per repository under
 > access. Enabling and verifying them is therefore recorded here as a maintainer action, and the
 > in-repo scan stays the only half that is known to run.
 
+## GitHub Pages — issue #310
+
+`storybook deploy` publishes Storybook to <https://vilnacrm-org.github.io/crm/> on every push
+to `main`. Its `deploy` job targets the `github-pages` environment, which exists only once a
+repository admin has made two settings changes:
+
+1. Settings → Pages → Build and deployment → Source: **GitHub Actions**. This creates the
+   `github-pages` environment.
+2. Settings → Environments → `github-pages` → Deployment branches and tags: **Selected branches
+   and tags**, with `main` as the only rule.
+
+Until step 1 is done the `deploy` job fails on `main` and the `build` job still proves the
+catalogue builds. The second step is the server-side half of "nothing deploys from a pull
+request or a fork": the workflow already has no `pull_request` trigger and skips `deploy` for
+any ref other than `refs/heads/main`. Do not add `storybook deploy` to the required checks — it
+never runs on a pull request; `storybook testing` is the pull-request half.
+
 ## Review and merge policy
 
 The merge method is already settled at the repository level and was read back through the API:

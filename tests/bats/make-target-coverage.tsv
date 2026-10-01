@@ -40,6 +40,7 @@ lint	ci	.github/workflows/static-testing.yml	Executed directly by the static-tes
 husky	bats	tests/bats/makefile_targets.bats	Validated as the one-time Git hook setup command.
 storybook-start	bats	tests/bats/makefile_targets.bats	Validated as the Storybook dev-server wrapper.
 storybook-build	bats	tests/bats/makefile_targets.bats	Validated as the Storybook build wrapper.
+check-storybook-static	bats	tests/bats/makefile_targets.bats	Validated as the Storybook Pages sub-path gate wrapper; its logic is pinned by tests/unit/scripts/check-storybook-static.test.ts.
 test-e2e	ci	.github/workflows/e2e-testing.yml	Executed directly by the E2E PR workflow.
 test-e2e-ui	bats	tests/bats/makefile_targets.bats	Validated as the UI-mode Playwright E2E wrapper.
 test-visual	ci	.github/workflows/visual-testing.yml	Executed directly by the visual-testing PR workflow.
