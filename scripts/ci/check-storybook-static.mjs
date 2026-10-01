@@ -8,7 +8,8 @@
 //   - `index.json` is missing, unparseable, or lists no story (a build that published nothing);
 //   - `index.html` or `iframe.html` is missing;
 //   - an HTML `src`/`href`, an inline module `import`, a CSS `url()`, or a JavaScript dynamic
-//     `import()` is root-absolute and outside the base path;
+//     `import()` of a `.js`/`.mjs` chunk is root-absolute and outside the base path (a browser
+//     resolves no extension, so an extensionless specifier in a vendor bundle is never a chunk);
 //   - a `<base href>` or the webpack runtime's public path is root-absolute and outside the base
 //     path, which re-roots every lazy chunk and font the preview loads;
 //   - a reference names a file that is not in the build (an asset that would 404).
@@ -25,6 +26,7 @@ const REQUIRED_PAGES = ['index.html', 'iframe.html'];
 const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i;
 const CSS_URL = /\burl\(\s*["']?([^"')]+?)["']?\s*\)/g;
 const DYNAMIC_IMPORT = /\bimport\(\s*["']((?:\.{1,2})?\/[^"']+)["']\s*\)/g;
+const CHUNK_IMPORT = /\bimport\(\s*["']((?:\.{1,2})?\/[^"']+\.m?js(?:[?#][^"']*)?)["']\s*\)/g;
 const REFERENCES = {
   '.html': [
     /\s(?:src|href)\s*=\s*["']([^"']*)["']/gi,
@@ -33,7 +35,7 @@ const REFERENCES = {
     DYNAMIC_IMPORT,
   ],
   '.css': [CSS_URL],
-  '.js': [DYNAMIC_IMPORT],
+  '.js': [CHUNK_IMPORT],
 };
 const BASE_HREF = /<base\s[^>]*href\s*=\s*["']([^"']*)["']/gi;
 const WEBPACK_PUBLIC_PATH = /\.p\s*=\s*["'](\/[^"']*)["']/g;

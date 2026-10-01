@@ -2467,8 +2467,9 @@ there while it works on `localhost:6006`.
 [`scripts/ci/check-storybook-static.mjs`](scripts/ci/check-storybook-static.mjs), given the base
 path `/crm/` (`STORYBOOK_PAGES_BASE`), fails the build on an empty `index.json`, a missing
 `index.html` / `iframe.html`, an HTML `src`/`href`, inline module `import`, CSS `url()`,
-JavaScript dynamic `import()`, `<base href>` or webpack runtime public path that is
-root-absolute outside `/crm/`, and a reference to a file the build does not contain.
+JavaScript dynamic `import()` of a `.js` / `.mjs` chunk, `<base href>` or webpack runtime
+public path that is root-absolute outside `/crm/`, and a reference to a file the build does not
+contain.
 `storybook testing` runs the same gate on pull requests whose diff reaches the Storybook build
 inputs in its path filter — stories, `.storybook/`, `src/components/`, `src/styles/`, the fonts,
 `src/i18n/`, the gate script, the image and the lockfile. The preview

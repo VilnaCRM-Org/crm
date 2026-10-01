@@ -60,7 +60,7 @@ const VALID_BUILD: Record<string, string> = {
   'sb-manager/globals-runtime.js': '',
   'sb-manager/runtime.js': '',
   'runtime~main.iframe.bundle.js': 'r.p="";r.l=(u)=>import("./main.iframe.bundle.js");',
-  'main.iframe.bundle.js': 'const m=import("react");',
+  'main.iframe.bundle.js': 'const m=import("react");const g=import("./get");',
 };
 
 const makeBuild = (files: Record<string, string>): string => {
@@ -200,6 +200,17 @@ describe('check-storybook-static (issue #310)', () => {
     const result = run(makeBuild({ ...VALID_BUILD, 'index.html': page }));
 
     expect(result.status).toBe(0);
+  });
+
+  it('checks only .js and .mjs chunk imports in emitted JavaScript', () => {
+    const bundle = 'import("./get");import("./lazy.mjs?v=2");';
+    const missing = run(makeBuild({ ...VALID_BUILD, 'vendor.js': bundle }));
+    const present = run(makeBuild({ ...VALID_BUILD, 'vendor.js': bundle, 'lazy.mjs': '' }));
+
+    expect(missing.status).toBe(1);
+    expect(missing.output).toContain('(1):');
+    expect(missing.output).toContain('vendor.js: reference "./lazy.mjs?v=2" names a missing file');
+    expect(present.status).toBe(0);
   });
 
   it.each(['index.html', 'iframe.html'])('rejects a build without %s', (page) => {
