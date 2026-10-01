@@ -186,6 +186,12 @@ describe('performance serving config', () => {
     // Every lazy surface that renders MUI receives the theme from the parallel mui-theme chunk.
     expect(readFile('src/routes/route-mapper.tsx')).toContain('new ThemedChunkLoader(');
     expect(readFile('src/components/layouts/footer-loader.ts')).toContain('new ThemedChunkLoader(');
+    expect(readFile('src/components/error-boundary/error-page-loader.ts')).toContain(
+      'new ThemedChunkLoader<ErrorPageProps>('
+    );
+    expect(readFile('src/components/error-boundary/error-page-loader.ts')).toMatch(
+      /import\(\s*\/\* webpackChunkName: "error-page" \*\/\s*'@\/components\/error-page'\)/
+    );
     expect(readFile('src/providers/mui-theme/mui-theme-shell-loader.ts')).toContain(
       'webpackChunkName: "mui-theme"'
     );
