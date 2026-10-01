@@ -751,7 +751,8 @@ bundled npm and its `node_modules` were the bulk of the image findings, and the 
 performance` dive gate (`.dive-ci`, `highestWastedBytes: 20MB`) forbids the obvious fix of deleting
 base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in a throwaway
 `serve-tools` stage (`node:24.8.0-alpine3.21`) and builds `serve-base`
-`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc` and `libstdc++`, a
+`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc`, `libstdc++`, and
+`libssl3` / `libcrypto3` at the patched OpenSSL (the base image can lag an OpenSSL fix), a
 `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
 `/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
