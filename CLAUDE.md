@@ -752,9 +752,9 @@ bundled npm and its `node_modules` were the bulk of the image findings, and the 
 performance` dive gate (`.dive-ci`, `highestWastedBytes: 20MB`) forbids the obvious fix of deleting
 base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in a throwaway
 `serve-tools` stage (`node:24.8.0-alpine3.21`) and builds `serve-base`
-`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libgcc` and `libstdc++`, a
-`node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the resolved
-`/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
+`FROM mirror.gcr.io/library/alpine:3.21` — pinned `curl`, `libcrypto3`, `libssl3`, `libgcc` and
+`libstdc++`, a `node` user at uid/gid 1000 — copying in only `/usr/local/bin/node` and the
+resolved `/usr/local/lib/node_modules/serve` tree. `production` and `test-harness` both build on
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
 57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
 resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
@@ -2049,6 +2049,7 @@ type files, stories, tests) must end in one of these:
 | `*State`       | listener bookkeeping of a reactive cell     | repo idiom (auth render path)     |
 | `*Cache`       | memoized instances keyed by arguments       | PoEAA Identity Map                |
 | `*Loader`      | loads a resource or module on demand        | lazy-loading idiom                |
+| `*Prefetcher`  | loads resources ahead of demand after load  | resource-prefetch idiom (#309)    |
 | `*Client`      | outbound transport client                   | enterprise Gateway                |
 | `*API`         | typed façade over one remote API            | enterprise Gateway                |
 | `*Provider`    | supplies a value or capability              | provider idiom                    |
@@ -2872,7 +2873,8 @@ replaces.
     `ErrorPage` for 403, 404 and 500 to 599, so a 5xx route response shows the 5xx page with
     only a homepage link and no in-place Try again; every other error, and every status error
     once the error-page chunk has failed twice, renders `RouteErrorFallback` → `ErrorFallback`
-    exactly as before. `ErrorFallback` renders a focused `<h1>`,
+    exactly as before. The status page is pre-warmed after load (pattern 15).
+    `ErrorFallback` renders a focused `<h1>`,
     a `role="alert"` message, a strategy-gated button (`retry`/`reset` → Try again, `reload` →
     Reload the page, otherwise none) and an **unconditional** homepage anchor; it is keyed by
     `attempt` so a failed retry remounts and re-announces, and focus returns to
@@ -2941,6 +2943,16 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
     `tests/unit/routes/route-mapper.test.tsx` pins the guard-dependent choice,
     `tests/unit/tooling/performance-serving.test.ts` pins that the mapper still wraps
     `route.load` through `React.lazy`.
+
+    Post-load warm-up (issue #309, ADR-018): `PostLoadPrefetcher` (`src/lib/reliability/`),
+    attached once from `src/index.tsx` after `root.render`, loads `errorPageLoader` and the
+    error-page font faces (`FontFaceLoader` over `ERROR_PAGE_FONT_FACES`) 2 s after `load` while
+    online, re-arming on the next `online` event otherwise. Failures are silent and do not poison
+    the `ChunkRetryLoader` memo. The three error routes share the `error-page` chunk name with
+    `errorPageLoader`, so one request warms them all and a later 404, 403 or 5xx renders with no
+    network; `performance-serving.test.ts` pins the shared name and the entry wiring, and
+    `tests/e2e/modules/error-pages-offline.spec.ts` renders all three offline. Never prefetch
+    through a `ReloadingChunkLoader`: a warm-up must never be able to reload the page.
 
 ## Node Version Management
 

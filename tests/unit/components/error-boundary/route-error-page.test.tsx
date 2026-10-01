@@ -117,6 +117,19 @@ describe('RouteErrorPage', () => {
     expect(screen.queryByRole('heading', { name: 'notFound in region' })).not.toBeInTheDocument();
   });
 
+  it('renders from the same loader the post-load warm-up already settled', async () => {
+    const { RouteErrorPage, errorPageLoader } = await loadFresh();
+    await errorPageLoader.load();
+    const load = jest.spyOn(errorPageLoader, 'load');
+
+    render(<RouteErrorPage variant="serverError" landmark="main" />, { wrapper: Providers });
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'serverError in main' })
+    ).toBeInTheDocument();
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
   it('remounts the page when the location key changes, so focus and the title repeat', async () => {
     const { RouteErrorPage } = await loadFresh();
     const view = render(<RouteErrorPage variant="notFound" landmark="main" />, {

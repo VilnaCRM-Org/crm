@@ -13,18 +13,18 @@ const appRoutes: RouteModule = {
     {
       path: ROUTE_PATHS.forbidden,
       guard: 'public',
-      load: () => import(/* webpackChunkName: "forbidden" */ '@/components/forbidden/forbidden'),
+      load: () => import(/* webpackChunkName: "error-page" */ '@/components/forbidden/forbidden'),
     },
     {
       path: ROUTE_PATHS.serverError,
       guard: 'public',
       load: () =>
-        import(/* webpackChunkName: "server-error" */ '@/components/server-error/server-error'),
+        import(/* webpackChunkName: "error-page" */ '@/components/server-error/server-error'),
     },
     {
       path: ROUTE_PATHS.notFound,
       guard: 'public',
-      load: () => import(/* webpackChunkName: "not-found" */ '@/components/not-found/not-found'),
+      load: () => import(/* webpackChunkName: "error-page" */ '@/components/not-found/not-found'),
     },
   ],
 };

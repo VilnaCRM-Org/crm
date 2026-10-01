@@ -37,3 +37,6 @@ serverError	visual	tests/visual/visual-comparison.error-pages.spec.ts	1440 x 940
 serverError	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /server-error with axe against the WCAG 2.1 AA tag set.
 notFound	e2e	tests/e2e/a11y/error-pages-keyboard.a11y.spec.ts	Tabs once to the visibly focused home link on the catch-all route, follows it with Enter, and asserts the focused heading without an outline and inside a short landscape viewport.
 serverError	e2e	tests/e2e/a11y/error-pages-keyboard.a11y.spec.ts	Tabs once to the visibly focused home link on /server-error, follows it with Enter, and asserts the focused heading without an outline and inside a short landscape viewport.
+notFound	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders the catch-all page by client-side navigation with no failed request.
+forbidden	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders /forbidden by client-side navigation with no failed request.
+serverError	e2e	tests/e2e/modules/error-pages-offline.spec.ts	Warms the error-page chunk and fonts after /sign-in loads, goes offline and renders /server-error by client-side navigation with no failed request.

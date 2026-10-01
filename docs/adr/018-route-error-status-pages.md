@@ -65,6 +65,16 @@ detector and a loader to the eager path.
 - Reporting is unchanged: `routeComposer.routeErrorHandler()` reports every route error with
   `surface: 'route'` before the `errorElement` renders, and the page shows no status text,
   message or stack.
+- **Warm-up after load.** `PostLoadPrefetcher` (`src/lib/reliability/post-load-prefetcher.ts`),
+  attached once from `src/index.tsx` after `root.render`, waits for the window `load` event,
+  then 2 000 ms, then calls `errorPageLoader.load()` and a `FontFaceLoader` over the four Golos
+  weights the page renders (`ERROR_PAGE_FONT_FACES`). Offline at that moment, it waits for the
+  next `online` event and the same delay. Each target's rejection is swallowed, and
+  `ChunkRetryLoader` forgets a failed promise, so a failed warm-up never poisons the later
+  render. The three error routes name their chunk `error-page`, the same name as
+  `errorPageLoader`, so one request warms `RouteError` and all three routes: a later 404, 403
+  or 5xx, and a client-side navigation to `*`, `/forbidden` or `/server-error`, renders with
+  no network request.
 
 A 5xx route response therefore no longer offers an in-place **Try again**; it shows the
 designed 5xx page, whose only action is the homepage link.
@@ -79,6 +89,9 @@ designed 5xx page, whose only action is the homepage link.
   strings, and imports no MUI module.
 - ADR-007's `RecoverableError` contract, `recoveryStrategyDetector` and `ErrorFallback` are not
   edited.
+- On a slow or dropped connection the designed page still appears: everything it needs, the
+  chunk, the MUI theme shell, the catalog strings, the inlined SVG illustration and its font
+  faces, is already in memory once the warm-up has run.
 
 ## Negative Consequences
 
@@ -88,7 +101,23 @@ designed 5xx page, whose only action is the homepage link.
 - `ThemedChunkLoader` gains a props type parameter, widening the surface ADR-017 introduced.
 - React caches the resolved lazy module, so after the error-page chunk fails twice, status
   errors render `ErrorFallback` for the rest of the session, the same degradation the lazy
-  footer accepts.
+  footer accepts. The warm-up narrows this to a status error in the first seconds after
+  `load`; it does not close it.
+- Every session downloads the `error-page` chunk (about 8 KB gzip) and any of the four Golos
+  weights the current page has not rendered yet, whether or not an error happens. The
+  worst-case growth stays inside every `config/performance-budget.json` and Lighthouse
+  `resource-summary` budget, and no budget is raised. Save-Data is not honoured and
+  `requestIdleCallback` is not used: `compat/compat` rejects `navigator.connection` and
+  `requestIdleCallback` against the Safari 16.4 floor of
+  [ADR-003](./003-browser-support-matrix.md), so the timing is a fixed delay after `load`.
+- A request issued by the page's own nested lazy chunks after `load` can still be in flight
+  when the warm-up starts, and shares bandwidth with it.
+- A full document load of `/forbidden` or `/server-error` while offline still fails: the HTML
+  shell is `Cache-Control: no-cache`, and only a service worker could answer it. That offline
+  shell needs its own ADR and is left to a follow-up issue.
+- An offline client-side navigation to a public route that was never warmed still reaches
+  `ReloadingChunkLoader`, which reloads the document into the browser's offline page. Checking
+  `navigator.onLine` before that reload is an ADR-007 and ADR-009 decision outside this one.
 - Status is classified in two places: the status detector first, the recovery model second.
 
 ## Pros and Cons of the Options
@@ -139,6 +168,7 @@ The `errorElement` navigates to `/forbidden` or `/server-error`.
 
 ## Links
 
+- [ADR-003: Browser support matrix and polyfill strategy](./003-browser-support-matrix.md)
 - [ADR-007: Reliability model](./007-reliability-model.md)
 - [ADR-009: Runtime resilience](./009-runtime-resilience.md)
 - [ADR-017: The MUI theme engine loads with the page chunk](./017-mui-theme-off-the-eager-path.md)

@@ -1461,3 +1461,54 @@ after the last fix; footer deviations become follow-up issues.
   (5) E2E, a11y, visual specs, the manifest and the Lighthouse URLs; (6) ADR-018 and doc sync; (7) Fable
   verification and baseline regeneration. Stories 1 → 2 → 3 are sequential; 4 depends on 2;
   5 depends on 3 and 4; 6 is independent; 7 is last.
+
+## 21. Amendment: post-load warm-up of the error pages (added after implementation)
+
+Product-owner request on draft PR #311: a user on a slow or unreliable connection must still get
+the designed page when a route errors, so the page is fetched before it is needed.
+
+- **What is warmed.** The `error-page` chunk group (`ErrorPage`, its card, digits, actions,
+  inlined svgr illustration and the statically imported `UIFooter`) and the four Golos weights
+  the page renders (400, 500, 600, 700). The `mui-theme` shell is already warmed at boot and the
+  `error_page.*` strings are in the eager `localization.json`, so neither needs a request.
+- **One chunk.** The `*`, `/forbidden` and `/server-error` route loaders in
+  `src/routes/app-routes.ts` use `webpackChunkName: "error-page"`, the name `errorPageLoader`
+  already uses, so one request warms `RouteError` and all three routes. Once rspack has installed
+  the chunk, every later `import()` of a module in it resolves from the module registry with no
+  request, whichever `ChunkRetryLoader` instance asks.
+- **When.** `PostLoadPrefetcher` (`src/lib/reliability/post-load-prefetcher.ts`) is attached once
+  from `src/index.tsx`, after `root.render`, in the success branch only. It waits for the window
+  `load` event (or schedules at once when `document.readyState` is already `complete`), then
+  2 000 ms, then loads every target in parallel. Offline at that moment, it waits for the next
+  `online` event and the same delay. `requestIdleCallback` and `navigator.connection.saveData`
+  fail `compat/compat` against the Safari 16.4 floor, so the timing is a fixed delay.
+- **Failure.** Each target's rejection is swallowed with no log, so nothing reaches the e2e
+  `pageerror` gate or the Jest console gate. `FontFaceLoader.load` is `async`, so a font source
+  that throws synchronously surfaces as that swallowed rejection rather than as an uncaught
+  error in the timer callback. `ChunkRetryLoader` forgets a failed promise, so the
+  later render retries normally. The warm-up targets `errorPageLoader`, never a
+  `ReloadingChunkLoader`, so it can never reload the page.
+- **New code.** `PostLoadPrefetcher` and `FontFaceLoader` in `src/lib/reliability/`, the
+  `PrefetchHost` and `FontFaceSource` types in `src/lib/reliability/types/`, and
+  `ERROR_PAGE_FONT_FACES` in `src/components/error-page/error-page-fonts.ts`. `Prefetcher` joins
+  the approved class-name suffixes in `config/class-naming-policy.js` and the CLAUDE.md table.
+- **Tests.** Direct unit tests for both classes and the font list (fake timers for the delay,
+  idempotence, the `{ once: true }` listeners, the offline re-arm, a rejected target, and a
+  `ChunkRetryLoader` that is not poisoned by a failed warm-up); a `RouteErrorPage` test that
+  renders from the already-settled loader; `performance-serving.test.ts` pins the shared chunk
+  name and the entry wiring; `tests/e2e/modules/error-pages-offline.spec.ts` waits for the
+  warm-up on `/sign-in`, goes offline, navigates client-side to each error route and asserts
+  the designed page, every Golos weight loaded and no failed request. The wait is the shared
+  `tests/e2e/utils/error-page-warm-up.ts` helper (chunk response, `document.fonts.ready`, no
+  request in flight), and `offline-notice.spec.ts` navigates through it too, so its
+  `setOffline(true)` can never cut the warm-up request mid-flight — Firefox reports an aborted
+  script load as a console error, which the e2e guard rejects.
+- **Budgets.** Worst case on an audited URL, if Lighthouse captures the warm-up: about 8 KB gzip
+  of script and up to two unused Golos weights (about 46 KB), inside every
+  `resource-summary` budget; the eager entrypoint grows by the two small classes only. No budget
+  is edited.
+- **Out of scope.** A full document load of an error route while offline still needs the
+  network; only a service worker could answer it (follow-up issue, own ADR). The warm-up narrows
+  but does not close the window in which `React.lazy` caches the `ErrorFallback` after a
+  double chunk failure, and an offline client-side navigation to an unwarmed public route still
+  reaches `ReloadingChunkLoader`.
