@@ -94,6 +94,8 @@ export const PAGES = {
   SIGN_UP: '/sign-up',
   SIGN_IN: '/sign-in',
   NOT_FOUND: '/definitely-not-a-route',
+  FORBIDDEN: '/forbidden',
+  SERVER_ERROR: '/server-error',
 } as const;
 
 // The catch-all route renders the 404 error page, so its three Figma frames (desktop, tablet,
@@ -103,4 +105,13 @@ export const notFoundScreens: ReadonlyArray<ScreenSize> = [
   { width: 1440, height: 1000, name: 'desktop' },
   { width: 1024, height: 1366, name: 'tablet' },
   { width: 375, height: 1082, name: 'mobile' },
+];
+
+export const forbiddenScreens: ReadonlyArray<ScreenSize> = [
+  { width: 1440, height: 940, name: 'forbidden-desktop' },
+  { width: 1024, height: 1366, name: 'forbidden-tablet' },
+];
+
+export const serverErrorScreens: ReadonlyArray<ScreenSize> = [
+  { width: 1440, height: 940, name: 'server-error-desktop' },
 ];

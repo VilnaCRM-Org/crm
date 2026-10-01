@@ -136,6 +136,15 @@ describe('performance serving config', () => {
     expect(appRoutesSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'@\/components\/not-found\/not-found'\)/
     );
+    expect(appRoutesSource).toMatch(
+      /import\(\s*\/\* webpackChunkName: "forbidden" \*\/\s*'@\/components\/forbidden\/forbidden'\)/
+    );
+    expect(appRoutesSource).toMatch(
+      new RegExp(
+        String.raw`import\(\s*/\* webpackChunkName: "server-error" \*/\s*` +
+          String.raw`'@/components/server-error/server-error'\)`
+      )
+    );
     expect(authRoutesSource).toMatch(
       /import\(\s*\/\* webpackChunkName: "[^"]+" \*\/\s*'\.\/sign-up'\)/
     );
@@ -147,6 +156,8 @@ describe('performance serving config', () => {
     expect(routesSource).not.toContain('import SignUp');
     expect(routesSource).not.toContain('import SignIn');
     expect(routesSource).not.toContain('import Home');
+    expect(appRoutesSource).not.toContain('import Forbidden');
+    expect(appRoutesSource).not.toContain('import ServerError');
     expect(authRoutesSource).not.toContain("import SignUp from './sign-up'");
     expect(authRoutesSource).not.toContain("import SignIn from './sign-in'");
 

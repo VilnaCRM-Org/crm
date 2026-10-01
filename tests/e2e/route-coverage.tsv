@@ -27,3 +27,13 @@ home	e2e	tests/e2e/modules/home.spec.ts	Renders the authenticated home page (hea
 signIn	e2e	tests/e2e/modules/home.spec.ts	Lands on /sign-in after signing out from home and asserts its heading and the focused main landmark.
 home	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Drives the home page with the keyboard only: tab order through sign out and the footer links, visible focus, Enter and Space sign-out.
 signIn	e2e	tests/e2e/a11y/home-keyboard.a11y.spec.ts	Lands on /sign-in after a keyboard sign-out from home and asserts the focused main landmark.
+forbidden	e2e	tests/e2e/modules/error-pages.spec.ts	Renders /forbidden with and without a seeded token, follows its home link and proves the request-access button is inert.
+forbidden	visual	tests/visual/visual-comparison.error-pages.spec.ts	1440 x 940 and 1024 x 1366 screenshots of /forbidden.
+forbidden	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /forbidden with axe against the WCAG 2.1 AA tag set.
+forbidden	e2e	tests/e2e/a11y/error-pages-keyboard.a11y.spec.ts	Drives /forbidden with the keyboard only: tab order through both actions and the footer links, visible focus, Enter on home, the focused heading without an outline and inside a short landscape viewport.
+forbidden	e2e	tests/e2e/a11y/error-pages-text-spacing.a11y.spec.ts	Applies the WCAG 1.4.12 text-spacing overrides on /forbidden and asserts the heading, description and both actions stay inside the card, the actions at least 4 px in.
+serverError	e2e	tests/e2e/modules/error-pages.spec.ts	Renders /server-error with its single home link and no button, and follows the home link.
+serverError	visual	tests/visual/visual-comparison.error-pages.spec.ts	1440 x 940 screenshots of /server-error.
+serverError	e2e	tests/e2e/a11y/routes.a11y.spec.ts	Scans /server-error with axe against the WCAG 2.1 AA tag set.
+notFound	e2e	tests/e2e/a11y/error-pages-keyboard.a11y.spec.ts	Tabs once to the visibly focused home link on the catch-all route, follows it with Enter, and asserts the focused heading without an outline and inside a short landscape viewport.
+serverError	e2e	tests/e2e/a11y/error-pages-keyboard.a11y.spec.ts	Tabs once to the visibly focused home link on /server-error, follows it with Enter, and asserts the focused heading without an outline and inside a short landscape viewport.

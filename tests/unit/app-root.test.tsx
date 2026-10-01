@@ -50,6 +50,16 @@ jest.mock('@/components/not-found/not-found', () => ({
   default: (): JSX.Element => <div>not found page</div>,
 }));
 
+jest.mock('@/components/forbidden/forbidden', () => ({
+  __esModule: true,
+  default: (): JSX.Element => <div>forbidden page</div>,
+}));
+
+jest.mock('@/components/server-error/server-error', () => ({
+  __esModule: true,
+  default: (): JSX.Element => <div>server error page</div>,
+}));
+
 jest.mock('@/features/home', () => ({
   __esModule: true,
   default: (): JSX.Element => <div>home page</div>,
