@@ -258,7 +258,7 @@ CI_TESTS                    = $(EXEC_DEV_TTYLESS) env
 PROD_START_SERVICES         = prod mockoon playwright
 
 STRYKER_CMD                 = make start && $(BUNX) stryker run
-STRYKER_CMD_DIND            = $(BUNX_DIND) stryker run
+STRYKER_CMD_DIND            = $(BUNX_DIND) stryker run stryker.dind.config.mjs
 UNIT_TESTS                  = $(MAKE) ensure-dev && $(EXEC_DEV_TTYLESS) env
 
 MUTATION_SHARD_TOTAL        ?= 1
