@@ -327,8 +327,8 @@ Storybook
   make check-storybook-static: fails if the Storybook build would 404 under the GitHub Pages sub-path
 ```
 
-Every push to `main` publishes the Storybook catalogue to
-<https://vilnacrm-org.github.io/crm/>.
+Once a repository admin sets Settings → Pages → Source to **GitHub Actions**, every push to
+`main` publishes the Storybook catalogue to <https://vilnacrm-org.github.io/crm/>.
 
 Docker
 

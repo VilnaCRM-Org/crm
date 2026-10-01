@@ -269,7 +269,8 @@ STRYKER_INCREMENTAL_FLAG     = $(if $(filter 1 true,$(MUTATION_INCREMENTAL)),--i
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
 STORYBOOK_STATIC_DIR        = storybook-static
-STORYBOOK_STATIC_CHECK      = $(EXEC_DEV_TTYLESS) node scripts/ci/check-storybook-static.mjs $(STORYBOOK_STATIC_DIR)
+STORYBOOK_PAGES_BASE        = /crm/
+STORYBOOK_STATIC_CHECK      = $(EXEC_DEV_TTYLESS) node scripts/ci/check-storybook-static.mjs $(STORYBOOK_STATIC_DIR) $(STORYBOOK_PAGES_BASE)
 STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint

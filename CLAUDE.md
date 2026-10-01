@@ -2459,15 +2459,19 @@ at <https://vilnacrm-org.github.io/crm/> through
 runner and needs no copy out of the container. The `deploy` job (`pages: write`,
 `id-token: write`, `environment: github-pages`) runs only for `refs/heads/main` and reports the
 page URL. Nothing deploys from a pull request or a fork: the workflow has no `pull_request`
-trigger, and `workflow_dispatch` needs write access.
+trigger, and `workflow_dispatch` needs write access. The concurrency group is
+`github-pages-<ref>`, so a manual run from another branch cannot evict a pending `main` deploy.
 
 Pages serves the catalogue under the `/crm/` sub-path, so a root-absolute asset reference 404s
 there while it works on `localhost:6006`.
-[`scripts/ci/check-storybook-static.mjs`](scripts/ci/check-storybook-static.mjs) fails the build
-on an empty `index.json`, a missing `index.html` / `iframe.html`, a root-absolute HTML
-`src`/`href`, inline module `import`, CSS `url()` or `<base href>`, and a relative reference to
-a file the build does not contain. `storybook testing` runs the same gate on every pull request
-that touches Storybook, so a sub-path regression is caught before it reaches `main`. The preview
+[`scripts/ci/check-storybook-static.mjs`](scripts/ci/check-storybook-static.mjs), given the base
+path `/crm/` (`STORYBOOK_PAGES_BASE`), fails the build on an empty `index.json`, a missing
+`index.html` / `iframe.html`, an HTML `src`/`href`, inline module `import`, CSS `url()`,
+JavaScript dynamic `import()`, `<base href>` or webpack runtime public path that is
+root-absolute outside `/crm/`, and a reference to a file the build does not contain.
+`storybook testing` runs the same gate on pull requests whose diff reaches the Storybook build
+inputs in its path filter — stories, `.storybook/`, `src/components/`, `src/styles/`, the fonts,
+`src/i18n/`, the gate script, the image and the lockfile. The preview
 imports `src/styles/fonts.css`, so stories render in Golos and Inter as the app does; the
 builder emits the fonts under `static/media/` with an empty `publicPath`, which resolves them
 relative to `iframe.html`.

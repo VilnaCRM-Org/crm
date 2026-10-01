@@ -59,8 +59,8 @@ const VALID_BUILD: Record<string, string> = {
   'sb-common-assets/fonts.css': '@font-face { src: url(nunito-sans-regular.woff2); }',
   'sb-manager/globals-runtime.js': '',
   'sb-manager/runtime.js': '',
-  'runtime~main.iframe.bundle.js': '',
-  'main.iframe.bundle.js': '',
+  'runtime~main.iframe.bundle.js': 'r.p="";r.l=(u)=>import("./main.iframe.bundle.js");',
+  'main.iframe.bundle.js': 'const m=import("react");',
 };
 
 const makeBuild = (files: Record<string, string>): string => {
@@ -73,8 +73,9 @@ const makeBuild = (files: Record<string, string>): string => {
   return dir;
 };
 
-const run = (dir: string): { status: number | null; output: string } => {
-  const result = spawnSync(process.execPath, [SCRIPT, dir], { encoding: 'utf8' });
+const run = (dir: string, base?: string): { status: number | null; output: string } => {
+  const args = base === undefined ? [SCRIPT, dir] : [SCRIPT, dir, base];
+  const result = spawnSync(process.execPath, args, { encoding: 'utf8' });
 
   return { status: result.status, output: `${result.stdout}${result.stderr}` };
 };
@@ -84,10 +85,40 @@ const withoutFile = (name: string): Record<string, string> =>
 
 describe('check-storybook-static (issue #310)', () => {
   it('passes a build whose every local reference resolves relatively', () => {
-    const result = run(makeBuild(VALID_BUILD));
+    const result = run(makeBuild(VALID_BUILD), '/crm/');
 
     expect(result.status).toBe(0);
-    expect(result.output).toContain('resolves relatively');
+    expect(result.output).toContain('resolves under /crm/.');
+  });
+
+  it('defaults to the origin root, where a root-absolute reference is in scope', () => {
+    const page = PREVIEW_PAGE.replace('./main', '/main');
+    const result = run(makeBuild({ ...VALID_BUILD, 'iframe.html': page }));
+
+    expect(result.status).toBe(0);
+    expect(result.output).toContain('resolves under /.');
+  });
+
+  it.each(['crm', '/crm', 'crm/', '//crm//'])('normalises the base path %s to /crm/', (base) => {
+    const page = PREVIEW_PAGE.replace('./main', '/crm/main');
+    const result = run(makeBuild({ ...VALID_BUILD, 'iframe.html': page }), base);
+
+    expect(result.status).toBe(0);
+    expect(result.output).toContain('resolves under /crm/.');
+  });
+
+  it('resolves a reference under the base path against the build root', () => {
+    const page = PREVIEW_PAGE.replace('<base target="_parent" />', '<base href="/crm/" />')
+      .replace('./main', '/crm/main')
+      .replace('<body>', '<body><a href="/crm">home</a>');
+    const passing = run(makeBuild({ ...VALID_BUILD, 'iframe.html': page }), '/crm/');
+    const missing = run(makeBuild(withoutFile('main.iframe.bundle.js')), '/crm/');
+
+    expect(passing.status).toBe(0);
+    expect(missing.status).toBe(1);
+    expect(missing.output).toContain(
+      'runtime~main.iframe.bundle.js: reference "./main.iframe.bundle.js" names a missing file'
+    );
   });
 
   it.each([
@@ -100,25 +131,48 @@ describe('check-storybook-static (issue #310)', () => {
       '"/sb-manager/runtime.js"',
     ],
     [
+      'a JavaScript dynamic import()',
+      'runtime~main.iframe.bundle.js',
+      'r.l=(u)=>import("/main.iframe.bundle.js");',
+      '"/main.iframe.bundle.js"',
+    ],
+    [
       'a CSS url()',
       'sb-common-assets/fonts.css',
       '@font-face { src: url("/sb-common-assets/nunito-sans-regular.woff2"); }',
       '"/sb-common-assets/nunito-sans-regular.woff2"',
     ],
   ])('rejects a root-absolute reference in %s', (_label, file, contents, reference) => {
-    const result = run(makeBuild({ ...VALID_BUILD, [file]: contents }));
+    const result = run(makeBuild({ ...VALID_BUILD, [file]: contents }), '/crm/');
 
     expect(result.status).toBe(1);
-    expect(result.output).toContain(`root-absolute reference ${reference}`);
-    expect(result.output).toContain(file);
+    expect(result.output).toContain(`${file}: root-absolute reference ${reference}`);
+    expect(result.output).toContain('escapes the Pages base path /crm/');
   });
 
-  it('rejects a root-absolute base href, which re-roots every relative reference', () => {
-    const page = PREVIEW_PAGE.replace('<base target="_parent" />', '<base href="/" />');
-    const result = run(makeBuild({ ...VALID_BUILD, 'iframe.html': page }));
+  it.each(['/', '/other/'])('rejects a base href of %s outside the base path', (href) => {
+    const page = PREVIEW_PAGE.replace('<base target="_parent" />', `<base href="${href}" />`);
+    const result = run(makeBuild({ ...VALID_BUILD, 'iframe.html': page }), '/crm/');
 
     expect(result.status).toBe(1);
-    expect(result.output).toContain('iframe.html: <base href="/"> is root-absolute');
+    expect(result.output).toContain(
+      `iframe.html: <base href="${href}"> is outside the Pages base path`
+    );
+  });
+
+  it('rejects a webpack runtime whose public path leaves the base path', () => {
+    const runtime = 'r.p="/";';
+    const result = run(
+      makeBuild({ ...VALID_BUILD, 'runtime~main.iframe.bundle.js': runtime }),
+      '/crm/'
+    );
+    const elsewhere = run(makeBuild({ ...VALID_BUILD, 'vendor.js': runtime }), '/crm/');
+
+    expect(result.status).toBe(1);
+    expect(result.output).toContain(
+      'runtime~main.iframe.bundle.js: webpack public path "/" is outside the base path'
+    );
+    expect(elsewhere.status).toBe(0);
   });
 
   it('rejects a relative reference to a file the build does not contain', () => {
@@ -136,6 +190,16 @@ describe('check-storybook-static (issue #310)', () => {
 
     expect(result.status).toBe(1);
     expect(result.output).toContain('reference "../../outside.woff2" resolves outside the build');
+  });
+
+  it('ignores bare module specifiers, which name packages rather than files', () => {
+    const page = MANAGER_PAGE.replace(
+      "import './sb-manager/runtime.js';",
+      "import './sb-manager/runtime.js'; import 'react'; import x from \"react-dom\";"
+    );
+    const result = run(makeBuild({ ...VALID_BUILD, 'index.html': page }));
+
+    expect(result.status).toBe(0);
   });
 
   it.each(['index.html', 'iframe.html'])('rejects a build without %s', (page) => {
@@ -181,6 +245,8 @@ describe('check-storybook-static (issue #310)', () => {
 
     expect(result.output).toContain('(1):');
     expect(broken.output).toContain('(2):');
+    expect(broken.output).toContain('index.json lists no story');
+    expect(broken.output).toContain('iframe.html is missing from the build');
   });
 
   it('fails when the build directory does not exist', () => {

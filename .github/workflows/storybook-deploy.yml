@@ -9,7 +9,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: github-pages
+  group: github-pages-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:

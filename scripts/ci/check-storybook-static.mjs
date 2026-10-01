@@ -2,30 +2,42 @@
 //
 // Sub-path gate for the published Storybook (issue #310). GitHub Pages serves this repository's
 // Storybook from https://vilnacrm-org.github.io/crm/, so every asset the static build references
-// must resolve relative to the page that loads it. A root-absolute reference (`/sb-manager/…`) or
-// a `<base href="/">` points at the github.io origin root and 404s, which the build itself never
+// must resolve inside that sub-path. A root-absolute reference outside it (`/sb-manager/…`) or a
+// `<base href="/">` points at the github.io origin root and 404s, which the build itself never
 // reports. This gate reads the emitted `storybook-static/` and fails when:
 //   - `index.json` is missing, unparseable, or lists no story (a build that published nothing);
 //   - `index.html` or `iframe.html` is missing;
-//   - an HTML `src`/`href`, an inline module `import`, or a CSS `url()` is root-absolute;
-//   - a `<base href>` is root-absolute;
-//   - a relative reference names a file that is not in the build (an asset that would 404).
+//   - an HTML `src`/`href`, an inline module `import`, a CSS `url()`, or a JavaScript dynamic
+//     `import()` is root-absolute and outside the base path;
+//   - a `<base href>` or the webpack runtime's public path is root-absolute and outside the base
+//     path, which re-roots every lazy chunk and font the preview loads;
+//   - a reference names a file that is not in the build (an asset that would 404).
 //
-// Runs as `node scripts/ci/check-storybook-static.mjs [dir]` from `make check-storybook-static`.
-// Its own behaviour is pinned by tests/unit/scripts/check-storybook-static.test.ts.
+// Runs as `node scripts/ci/check-storybook-static.mjs [dir] [base-path]` from
+// `make check-storybook-static`. A reference under the base path (`/crm/x.js` for `/crm/`) is
+// resolved against the build root. Its own behaviour is pinned by
+// tests/unit/scripts/check-storybook-static.test.ts.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
 const REQUIRED_PAGES = ['index.html', 'iframe.html'];
 const EXTERNAL = /^(?:[a-z][a-z0-9+.-]*:|\/\/|#)/i;
-const HTML_REFERENCES = [
-  /\s(?:src|href)\s*=\s*["']([^"']*)["']/gi,
-  /\bimport\s*(?:[^'"]*?\sfrom\s*)?["']([^"']+)["']/g,
-  /\burl\(\s*["']?([^"')]+?)["']?\s*\)/g,
-];
-const CSS_REFERENCES = [/\burl\(\s*["']?([^"')]+?)["']?\s*\)/g];
+const CSS_URL = /\burl\(\s*["']?([^"')]+?)["']?\s*\)/g;
+const DYNAMIC_IMPORT = /\bimport\(\s*["']((?:\.{1,2})?\/[^"']+)["']\s*\)/g;
+const REFERENCES = {
+  '.html': [
+    /\s(?:src|href)\s*=\s*["']([^"']*)["']/gi,
+    /\bimport\s*(?:[^'"]*?\sfrom\s*)?["']((?:\.{1,2})?\/[^"']+)["']/g,
+    CSS_URL,
+    DYNAMIC_IMPORT,
+  ],
+  '.css': [CSS_URL],
+  '.js': [DYNAMIC_IMPORT],
+};
 const BASE_HREF = /<base\s[^>]*href\s*=\s*["']([^"']*)["']/gi;
+const WEBPACK_PUBLIC_PATH = /\.p\s*=\s*["'](\/[^"']*)["']/g;
+const WEBPACK_RUNTIME = /^runtime~.*\.js$/;
 
 /**
  * @param {string} dir directory to walk
@@ -50,19 +62,31 @@ function referencesIn(source, patterns) {
 }
 
 /**
- * @param {string} root the build directory
+ * @param {string} base the Pages base path, `/` when the site is served from the origin root
+ * @param {string} reference a root-absolute URL
+ * @returns {boolean} whether the reference stays inside the base path
+ */
+function insideBase(base, reference) {
+  return reference === base.replace(/\/$/, '') || reference.startsWith(base);
+}
+
+/**
+ * @param {{root: string, base: string}} build the build directory and its Pages base path
  * @param {string} file the file holding the reference
  * @param {string} reference the URL as written
  * @returns {string|null} a finding, or null when the reference resolves inside the build
  */
-function checkReference(root, file, reference) {
+function checkReference(build, file, reference) {
   if (EXTERNAL.test(reference)) return null;
-  const where = path.relative(root, file);
-  if (reference.startsWith('/')) {
-    return `${where}: root-absolute reference "${reference}" escapes the Pages sub-path`;
+  const where = path.relative(build.root, file);
+  if (reference.startsWith('/') && !insideBase(build.base, reference)) {
+    return `${where}: root-absolute reference "${reference}" escapes the Pages base path ${build.base}`;
   }
-  const target = path.resolve(path.dirname(file), decodeURI(reference.split(/[?#]/)[0]));
-  if (path.relative(root, target).startsWith('..')) {
+  const local = decodeURI(reference.split(/[?#]/)[0]);
+  const target = local.startsWith('/')
+    ? path.join(build.root, local.slice(build.base.length))
+    : path.resolve(path.dirname(file), local);
+  if (path.relative(build.root, target).startsWith('..')) {
     return `${where}: reference "${reference}" resolves outside the build`;
   }
   return existsSync(target) ? null : `${where}: reference "${reference}" names a missing file`;
@@ -86,48 +110,72 @@ function checkIndex(root) {
 }
 
 /**
- * @param {string} root the build directory
- * @param {string} file an HTML or CSS file in the build
- * @returns {string[]} findings for that file
+ * @param {{root: string, base: string}} build the build directory and its Pages base path
+ * @param {string} file a file in the build
+ * @param {string} source its contents
+ * @returns {string[]} findings for a base href or webpack public path outside the base path
  */
-function checkFile(root, file) {
-  const source = readFileSync(file, 'utf8');
-  const isHtml = file.endsWith('.html');
-  const findings = referencesIn(source, isHtml ? HTML_REFERENCES : CSS_REFERENCES)
-    .map((reference) => checkReference(root, file, reference))
-    .filter(Boolean);
-  if (!isHtml) return findings;
-  const bases = referencesIn(source, [BASE_HREF]).filter((href) => href.startsWith('/'));
+function checkRebasing(build, file, source) {
+  const where = path.relative(build.root, file);
+  const bases = file.endsWith('.html') ? referencesIn(source, [BASE_HREF]) : [];
+  const publicPaths = WEBPACK_RUNTIME.test(path.basename(file))
+    ? referencesIn(source, [WEBPACK_PUBLIC_PATH])
+    : [];
   return [
-    ...findings,
-    ...bases.map((href) => `${path.relative(root, file)}: <base href="${href}"> is root-absolute`),
+    ...bases
+      .filter((href) => href.startsWith('/') && !insideBase(build.base, href))
+      .map((href) => `${where}: <base href="${href}"> is outside the Pages base path`),
+    ...publicPaths
+      .filter((publicPath) => !insideBase(build.base, publicPath))
+      .map(
+        (publicPath) => `${where}: webpack public path "${publicPath}" is outside the base path`
+      ),
   ];
 }
 
 /**
- * @param {string} root the build directory
- * @returns {string[]} every finding for the build
+ * @param {{root: string, base: string}} build the build directory and its Pages base path
+ * @param {string} file an HTML, CSS or JavaScript file in the build
+ * @returns {string[]} findings for that file
  */
-function checkBuild(root) {
-  if (!existsSync(root) || !statSync(root).isDirectory()) {
-    return [`${root} does not exist; run 'make storybook-build' first`];
-  }
-  const missingPages = REQUIRED_PAGES.filter((page) => !existsSync(path.join(root, page))).map(
-    (page) => `${page} is missing from the build`
-  );
-  const pageFindings = listFiles(root)
-    .filter((file) => file.endsWith('.html') || file.endsWith('.css'))
-    .flatMap((file) => checkFile(root, file));
-  return [...checkIndex(root), ...missingPages, ...pageFindings];
+function checkFile(build, file) {
+  const source = readFileSync(file, 'utf8');
+  const findings = referencesIn(source, REFERENCES[path.extname(file)])
+    .map((reference) => checkReference(build, file, reference))
+    .filter(Boolean);
+  return [...findings, ...checkRebasing(build, file, source)];
 }
 
-const root = path.resolve(process.argv[2] ?? 'storybook-static');
-const findings = checkBuild(root);
+/**
+ * @param {{root: string, base: string}} build the build directory and its Pages base path
+ * @returns {string[]} every finding for the build
+ */
+function checkBuild(build) {
+  if (!existsSync(build.root) || !statSync(build.root).isDirectory()) {
+    return [`${build.root} does not exist; run 'make storybook-build' first`];
+  }
+  const missingPages = REQUIRED_PAGES.filter(
+    (page) => !existsSync(path.join(build.root, page))
+  ).map((page) => `${page} is missing from the build`);
+  const fileFindings = listFiles(build.root)
+    .filter((file) => path.extname(file) in REFERENCES)
+    .flatMap((file) => checkFile(build, file));
+  return [...checkIndex(build.root), ...missingPages, ...fileFindings];
+}
+
+const rawBase = process.argv[3] ?? '/';
+const build = {
+  root: path.resolve(process.argv[2] ?? 'storybook-static'),
+  base: `/${rawBase.replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/'),
+};
+const findings = checkBuild(build);
 
 if (findings.length > 0) {
-  console.error(`Storybook build is not publishable under a sub-path (${findings.length}):`);
+  console.error(`Storybook build is not publishable under ${build.base} (${findings.length}):`);
   findings.forEach((finding) => console.error(`  - ${finding}`));
   process.exit(1);
 }
 
-console.log(`Storybook build in ${path.relative(process.cwd(), root) || '.'} resolves relatively.`);
+console.log(
+  `Storybook build in ${path.relative(process.cwd(), build.root) || '.'} resolves under ${build.base}.`
+);
