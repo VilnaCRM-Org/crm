@@ -1494,13 +1494,18 @@ Every page-level route is code-split by the module-owned route registry (issue #
 route contract declares a dynamic `import()` loader named via `webpackChunkName`, the composer
 wraps it in `React.lazy` and attaches a per-route `errorElement` (`<RouteError />`,
 issue #116), and the route-level `Suspense` boundary in `root-layout.tsx` ships a non-null
-deferred `RouteFallback`. The `performance serving` golden test
-(`tests/unit/tooling/performance-serving.test.ts`) fails CI if a page loader loses its named
-dynamic `import()` or that boundary reverts to `fallback={null}`; the issue-#116 ESLint
-selectors (`make lint-eslint`) fail a `fallback={null|undefined|false|true|""}` or a `<Suspense>`
-without a `fallback` anywhere in `src/**`, and a router built outside `src/routes/routes.tsx`.
-Satisfy a budget by reducing/splitting the bundle, never by raising a limit without rationale
-or disabling the gate.
+deferred `RouteFallback`. `RouteError` dispatches on status first (issue #309, ADR-018):
+`errorPageStatusDetector` reads a status from a router error response, a render-thrown
+`Response` or a `data()` value — so a guard may throw `data(null, { status: 403 })` or navigate
+to `/forbidden` — and renders the lazy designed `ErrorPage` for 403, 404 and 500 to 599, so a
+5xx route response shows the 5xx page with only a homepage link and no in-place Try again;
+every other error renders `RouteErrorFallback` → `ErrorFallback` exactly as before. The
+`performance serving` golden test (`tests/unit/tooling/performance-serving.test.ts`) fails CI if a
+page loader loses its named dynamic `import()` or that boundary reverts to `fallback={null}`; the
+issue-#116 ESLint selectors (`make lint-eslint`) fail a `fallback={null|undefined|false|true|""}`
+or a `<Suspense>` without a `fallback` anywhere in `src/**`, and a router built outside
+`src/routes/routes.tsx`. Satisfy a budget by reducing/splitting the bundle, never by raising a
+limit without rationale or disabling the gate.
 
 ### Load Testing with K6
 

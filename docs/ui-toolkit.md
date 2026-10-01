@@ -267,7 +267,7 @@ rule.
 | `ui-live-status`                                  | eager      | local   | R8            |
 | `ui-offline-notice`                               | -          | local   | R8            |
 | `ui-async-section`, `route-fallback`              | -          | local   | R8            |
-| layouts, not-found                                | -          | local   | R8            |
+| layouts, not-found, `error-page`                  | -          | local   | R8            |
 | `render-with-theme`                               | tests only | local   | R8            |
 | `src/styles/theme.ts` (app theme)                 | eager      | local   | R8            |
 
