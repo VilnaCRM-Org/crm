@@ -112,6 +112,7 @@ lint-metrics-run|lint-metrics.sh RCA_BIN=./bin/rust-code-analysis-cli RCA_VERSIO
 husky|bun x husky|
 storybook-start|bun x storybook dev -p 6006 --host 0.0.0.0 --no-open|
 storybook-build|bun x storybook build|
+check-storybook-static|node scripts/ci/check-storybook-static.mjs storybook-static|
 update|docker compose exec -T dev bun update|
 check-node-version|docker compose exec -T dev node check-node-version.js|
 pr-comments|get-pr-comments.sh 78 markdown|

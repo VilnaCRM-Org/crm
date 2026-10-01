@@ -2442,11 +2442,38 @@ its ESLint gate.
 ## Storybook
 
 ```bash
-make storybook-start    # Start on port 6006
-make storybook-build    # Build static files
+make storybook-start          # Start on port 6006
+make storybook-build          # Build static files into storybook-static/
+make check-storybook-static   # Fail if the build would 404 under a sub-path
 ```
 
 Stories location: `src/**/*.stories.@(js|jsx|ts|tsx)`
+
+**Published catalogue (issue #310):** every push to `main` publishes Storybook to GitHub Pages
+at <https://vilnacrm-org.github.io/crm/> through
+[`storybook-deploy.yml`](.github/workflows/storybook-deploy.yml), modelled on the UI kit's
+(<https://vilnacrm-org.github.io/ui-toolkit/>). The `build` job (`contents: read`) runs
+`make start-dev`, `make storybook-build` and `make check-storybook-static`, then uploads
+`storybook-static/` — the dev service bind-mounts the checkout, so the build is already on the
+runner and needs no copy out of the container. The `deploy` job (`pages: write`,
+`id-token: write`, `environment: github-pages`) runs only for `refs/heads/main` and reports the
+page URL. Nothing deploys from a pull request or a fork: the workflow has no `pull_request`
+trigger, and `workflow_dispatch` needs write access.
+
+Pages serves the catalogue under the `/crm/` sub-path, so a root-absolute asset reference 404s
+there while it works on `localhost:6006`.
+[`scripts/ci/check-storybook-static.mjs`](scripts/ci/check-storybook-static.mjs) fails the build
+on an empty `index.json`, a missing `index.html` / `iframe.html`, a root-absolute HTML
+`src`/`href`, inline module `import`, CSS `url()` or `<base href>`, and a relative reference to
+a file the build does not contain. `storybook testing` runs the same gate on every pull request
+that touches Storybook, so a sub-path regression is caught before it reaches `main`. The preview
+imports `src/styles/fonts.css`, so stories render in Golos and Inter as the app does; the
+builder emits the fonts under `static/media/` with an empty `publicPath`, which resolves them
+relative to `iframe.html`.
+
+**Admin step:** Settings → Pages → Source must be **GitHub Actions**, which creates the
+`github-pages` environment; restrict its deployment branches to `main` (see
+[`docs/governance/branch-protection.md`](docs/governance/branch-protection.md), "GitHub Pages").
 
 ## Docker Commands
 

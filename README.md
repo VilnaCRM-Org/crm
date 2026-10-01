@@ -324,7 +324,11 @@ Storybook
 ```bash
   make storybook-start: starts Storybook UI targeting the dev container
   make storybook-build: builds Storybook targeting the dev container
+  make check-storybook-static: fails if the Storybook build would 404 under the GitHub Pages sub-path
 ```
+
+Every push to `main` publishes the Storybook catalogue to
+<https://vilnacrm-org.github.io/crm/>.
 
 Docker
 
@@ -501,6 +505,7 @@ a row names a workflow that does not exist.
 | `generate changelog and create release` | Changelog, version bump, tag, release assets     |
 | `release health`                        | Daily release-train check to a tracking issue    |
 | `sentry release and source maps`        | Sentry release with uploaded source maps         |
+| `storybook deploy`                      | Storybook published to GitHub Pages from `main`  |
 
 Required branch-protection checks and the repository settings that back them are recorded in
 [`docs/governance/branch-protection.md`](docs/governance/branch-protection.md).

@@ -7,6 +7,9 @@ on:
       - 'src/**/*.stories.*'
       - '.storybook/**'
       - 'src/components/**'
+      - 'src/styles/fonts.css'
+      - 'src/assets/fonts/**'
+      - 'scripts/ci/check-storybook-static.mjs'
       - 'package.json'
       - 'bun.lock'
       - '.github/workflows/storybook-testing.yml'
@@ -38,3 +41,6 @@ jobs:
 
       - name: Build Storybook
         run: make storybook-build
+
+      - name: Verify the build resolves under the Pages sub-path
+        run: make check-storybook-static

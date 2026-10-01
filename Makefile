@@ -268,6 +268,8 @@ MUTATION_INCREMENTAL        ?=
 STRYKER_INCREMENTAL_FLAG     = $(if $(filter 1 true,$(MUTATION_INCREMENTAL)),--incremental,)
 
 STORYBOOK_BUILD             = $(BUNX) storybook build
+STORYBOOK_STATIC_DIR        = storybook-static
+STORYBOOK_STATIC_CHECK      = $(EXEC_DEV_TTYLESS) node scripts/ci/check-storybook-static.mjs $(STORYBOOK_STATIC_DIR)
 STORYBOOK_START             = $(STORYBOOK_CMD) --host 0.0.0.0 --no-open
 
 MARKDOWNLINT_BIN            = $(BUNX) markdownlint
@@ -289,7 +291,7 @@ RUN_MEMLAB                  = $(MEMLEAK_RUN_DOCKER)
 .PHONY: lint-docs lint-adr lint-doc-coverage lint-doc-references lint-doc-links check-adr-drift
 .PHONY: lint-i18n i18n-generate
 .PHONY: lint-security-headers security-headers-generate check-security-headers
-.PHONY: storybook
+.PHONY: storybook check-storybook-static
 .PHONY: all test
 .PHONY: lint-commit-message lint-commit-bot-message lint-commit-range
 .PHONY: scan-secrets scan-dependencies scan-image sbom report-dependency-audit
@@ -771,6 +773,9 @@ storybook-start: ## Start Storybook UI and open in browser
 
 storybook-build: ## Build Storybook UI.
 	$(STORYBOOK_BUILD)
+
+check-storybook-static: ## Fail if the Storybook build would 404 under the GitHub Pages sub-path (issue #310)
+	$(STORYBOOK_STATIC_CHECK)
 
 test-e2e: $(PLAYWRIGHT_PREREQS)  ## Run E2E tests (Playwright); ENV=dev runs in the dev container, FILE= one spec, DEBUG=1 opens the Inspector (dev only)
 ifeq ($(ENV),dev)
