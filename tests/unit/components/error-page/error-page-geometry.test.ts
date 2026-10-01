@@ -1,6 +1,8 @@
 import loadIsolated from '@tests/unit/utils/isolated-module';
 
 type ErrorPageGeometryModule = typeof import('@/components/error-page/error-page-geometry');
+type Leaves = Record<string, unknown>;
+type Row = [path: string, desktop: unknown, tablet: unknown, mobile: unknown];
 
 const loadGeometry = async (): Promise<ErrorPageGeometryModule['default']> => {
   const { default: geometry } = await loadIsolated(
@@ -9,137 +11,100 @@ const loadGeometry = async (): Promise<ErrorPageGeometryModule['default']> => {
   return geometry;
 };
 
-const largeDigits = {
-  width: 466,
-  height: 330,
-  fontSize: 244.5,
-  lineHeight: 293.4,
-  shadowOffset: 4,
-  glyphs: [
-    { x: 0, y: 0 },
-    { x: 147, y: 36 },
-    { x: 301, y: 0 },
-  ],
+const flatten = (value: unknown, path: string, leaves: Leaves): Leaves => {
+  if (value !== null && typeof value === 'object') {
+    return Object.entries(value).reduce(
+      (acc, [key, child]) => flatten(child, path === '' ? key : `${path}.${key}`, acc),
+      leaves
+    );
+  }
+  return { ...leaves, [path]: value };
 };
 
+const ROWS: Row[] = [
+  ['page.paddingTop', 76, 76, 43.61],
+  ['page.paddingBottom', 121, 121, 73.91],
+  ['composition.width', 614, 474, 350.348],
+  ['composition.paddingBottom', 0, 0, 78.87],
+  ['digits.width', 466, 466, 344.435],
+  ['digits.height', 330, 330, 243.913],
+  ['digits.fontSize', 244.5, 244.5, 154.462],
+  ['digits.lineHeight', 293.4, 293.4, 185.355],
+  ['digits.shadowOffset', 4, 4, 2.527],
+  ['digits.glyphs.0.x', 0, 0, 27.739],
+  ['digits.glyphs.0.y', 0, 0, 14.582],
+  ['digits.glyphs.1.x', 147, 147, 120.606],
+  ['digits.glyphs.1.y', 36, 36, 37.324],
+  ['digits.glyphs.2.x', 301, 301, 217.896],
+  ['digits.glyphs.2.y', 0, 0, 14.582],
+  ['card.border', 1, 1, 0.739],
+  ['card.radius', 16, 16, 11.826],
+  ['card.shadowY', 4, 4, 2.957],
+  ['card.shadowBlur', 31, 31, 22.913],
+  ['card.textInset', 24, 24, 16],
+  ['card.titleSize', 36, 36, 22],
+  ['card.titleWeight', 600, 600, 700],
+  ['card.width', 614, 474, 350.348],
+  ['card.height', 222, 235, 173.696],
+  ['card.top', 29, 24, 26.476],
+  ['card.titleLine', 43, 43, 26],
+  ['card.gapTitle', 6, 4, 3.74],
+  ['card.descSize', 16, 18, 15],
+  ['card.descLine', 26, 30, 25],
+  ['card.gapActions', 24, 24, 16],
+  ['card.actionsHeight', 62, 70, 50],
+  ['card.bottom', 32, 40, 26.48],
+  ['button.height', 62, 70, 50],
+  ['button.paddingX', 32, 44, 24],
+  ['button.labelSize', 18, 18, 15],
+  ['button.labelLine', 22, 22, 18],
+  ['button.labelWeight', 600, 600, 500],
+  ['tab.left', 37, 26, 19.216],
+  ['tab.right', 37, 27, 19.958],
+  ['tab.y', 301, 301, 222.478],
+  ['tab.height', 225, 225, 166.304],
+  ['tab.radius', 32, 32, 23.652],
+  ['curve.x', -56, -84.303, 2.695],
+  ['curve.y', 36, 36, 58.388],
+  ['curve.width', 643, 654.86, 360],
+  ['curve.height', 357, 357, 200],
+  ['diamond.x', 44, 17.541, 10.346],
+  ['diamond.y', 54, 54, 39.912],
+  ['diamond.width', 40, 40.738, 29.565],
+  ['diamond.height', 40, 40, 29.565],
+  ['dot.x', 574.921, 558.255, undefined],
+  ['dot.y', 99.928, 99.928, undefined],
+  ['dot.width', 10.338, 10.529, undefined],
+  ['dot.height', 10.354, 10.354, undefined],
+  ['dotColumns.x', -80, -79.211, undefined],
+  ['dotColumns.y', 376, 376, undefined],
+  ['dotColumns.width', 59.09, 60.181, undefined],
+  ['dotColumns.height', 161.541, 161.541, undefined],
+  ['dotRows', null, null, undefined],
+  ['dot', undefined, undefined, null],
+  ['dotColumns', undefined, undefined, null],
+  ['dotRows.width', undefined, undefined, 161.541],
+  ['dotRows.height', undefined, undefined, 59.091],
+  ['dotRows.gapBelowCard', undefined, undefined, 19.779],
+];
+
 describe('error page geometry table', () => {
-  it('pins the desktop record to appendix A.1', async () => {
-    const { desktop } = await loadGeometry();
+  it.each(ROWS)('pins %s to appendix A', async (path, desktop, tablet, mobile) => {
+    const geometry = await loadGeometry();
 
-    expect(desktop).toEqual({
-      page: { paddingTop: 76, paddingBottom: 121 },
-      composition: { width: 614, paddingBottom: 0 },
-      digits: largeDigits,
-      card: {
-        border: 1,
-        radius: 16,
-        shadowY: 4,
-        shadowBlur: 31,
-        textInset: 24,
-        titleSize: 36,
-        titleWeight: 600,
-        width: 614,
-        height: 222,
-        top: 29,
-        titleLine: 43,
-        gapTitle: 6,
-        descSize: 16,
-        descLine: 26,
-        gapActions: 24,
-        actionsHeight: 62,
-        bottom: 32,
-      },
-      button: { height: 62, paddingX: 32, labelSize: 18, labelLine: 22, labelWeight: 600 },
-      tab: { left: 37, right: 37, y: 301, height: 225, radius: 32 },
-      curve: { x: -56, y: 36, width: 643, height: 357 },
-      diamond: { x: 44, y: 54, width: 40, height: 40 },
-      dot: { x: 574.921, y: 99.928, width: 10.338, height: 10.354 },
-      dotColumns: { x: -80, y: 376, width: 59.09, height: 161.541 },
-      dotRows: null,
-    });
+    expect(flatten(geometry.desktop, '', {})[path]).toBe(desktop);
+    expect(flatten(geometry.tablet, '', {})[path]).toBe(tablet);
+    expect(flatten(geometry.mobile, '', {})[path]).toBe(mobile);
   });
 
-  it('pins the tablet record to appendix A.2', async () => {
-    const { tablet } = await loadGeometry();
+  it('pins every leaf the table holds', async () => {
+    const geometry = await loadGeometry();
 
-    expect(tablet).toEqual({
-      page: { paddingTop: 76, paddingBottom: 121 },
-      composition: { width: 474, paddingBottom: 0 },
-      digits: largeDigits,
-      card: {
-        border: 1,
-        radius: 16,
-        shadowY: 4,
-        shadowBlur: 31,
-        textInset: 24,
-        titleSize: 36,
-        titleWeight: 600,
-        width: 474,
-        height: 235,
-        top: 24,
-        titleLine: 43,
-        gapTitle: 4,
-        descSize: 18,
-        descLine: 30,
-        gapActions: 24,
-        actionsHeight: 70,
-        bottom: 40,
-      },
-      button: { height: 70, paddingX: 44, labelSize: 18, labelLine: 22, labelWeight: 600 },
-      tab: { left: 26, right: 27, y: 301, height: 225, radius: 32 },
-      curve: { x: -84.303, y: 36, width: 654.86, height: 357 },
-      diamond: { x: 17.541, y: 54, width: 40.738, height: 40 },
-      dot: { x: 558.255, y: 99.928, width: 10.529, height: 10.354 },
-      dotColumns: { x: -79.211, y: 376, width: 60.181, height: 161.541 },
-      dotRows: null,
-    });
-  });
+    const paths = new Set(
+      Object.values(geometry).flatMap((record) => Object.keys(flatten(record, '', {})))
+    );
 
-  it('pins the mobile record to appendix A.3', async () => {
-    const { mobile } = await loadGeometry();
-
-    expect(mobile).toEqual({
-      page: { paddingTop: 43.61, paddingBottom: 73.91 },
-      composition: { width: 350.348, paddingBottom: 78.87 },
-      digits: {
-        width: 344.435,
-        height: 243.913,
-        fontSize: 154.462,
-        lineHeight: 185.355,
-        shadowOffset: 2.527,
-        glyphs: [
-          { x: 27.739, y: 14.582 },
-          { x: 120.606, y: 37.324 },
-          { x: 217.896, y: 14.582 },
-        ],
-      },
-      card: {
-        border: 0.739,
-        radius: 11.826,
-        shadowY: 2.957,
-        shadowBlur: 22.913,
-        textInset: 16,
-        titleSize: 22,
-        titleWeight: 700,
-        width: 350.348,
-        height: 173.696,
-        top: 26.476,
-        titleLine: 26,
-        gapTitle: 3.74,
-        descSize: 15,
-        descLine: 25,
-        gapActions: 16,
-        actionsHeight: 50,
-        bottom: 26.48,
-      },
-      button: { height: 50, paddingX: 24, labelSize: 15, labelLine: 18, labelWeight: 500 },
-      tab: { left: 19.216, right: 19.958, y: 222.478, height: 166.304, radius: 23.652 },
-      curve: { x: 2.695, y: 58.388, width: 360, height: 200 },
-      diamond: { x: 10.346, y: 39.912, width: 29.565, height: 29.565 },
-      dot: null,
-      dotColumns: null,
-      dotRows: { width: 161.541, height: 59.091, gapBelowCard: 19.779 },
-    });
+    expect([...paths].sort()).toEqual(ROWS.map(([path]) => path).sort());
   });
 
   it('shares one page and one digit record between desktop and tablet', async () => {

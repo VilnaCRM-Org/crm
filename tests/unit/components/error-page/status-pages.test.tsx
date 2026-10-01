@@ -3,8 +3,11 @@
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import type { ComponentType, ReactElement } from 'react';
 
+import Forbidden from '@/components/forbidden/forbidden';
+import NotFound from '@/components/not-found/not-found';
+import ServerError from '@/components/server-error/server-error';
 import type { ErrorPageProps } from '@/components/types/error-page';
 
 jest.mock('@/components/error-page', () => ({
@@ -16,28 +19,30 @@ jest.mock('@/components/error-page', () => ({
   )),
 }));
 
-const NotFound = jest.requireActual<typeof import('@/components/not-found/not-found')>(
-  '@/components/not-found/not-found'
-).default;
-
 const errorPageMock = (): jest.Mock =>
   jest.requireMock<{ default: jest.Mock }>('@/components/error-page').default;
 
-describe('NotFound', () => {
+const PAGES: [name: string, Page: ComponentType, variant: string][] = [
+  ['NotFound', NotFound, 'notFound'],
+  ['Forbidden', Forbidden, 'forbidden'],
+  ['ServerError', ServerError, 'serverError'],
+];
+
+describe.each(PAGES)('%s', (_name, Page, variant) => {
   beforeEach(() => {
     errorPageMock().mockClear();
   });
 
-  it('renders the shared error page as the 404 variant in the main landmark', () => {
-    render(<NotFound />);
+  it('renders the shared error page for its variant in the main landmark', () => {
+    render(<Page />);
 
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('notFound:main');
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(`${variant}:main`);
     expect(errorPageMock()).toHaveBeenCalledTimes(1);
-    expect(errorPageMock().mock.calls[0]?.[0]).toEqual({ variant: 'notFound', landmark: 'main' });
+    expect(errorPageMock().mock.calls[0]?.[0]).toEqual({ variant, landmark: 'main' });
   });
 
-  it('renders no back-to-main link and no button of its own', () => {
-    render(<NotFound />);
+  it('renders no link, button or navigation of its own', () => {
+    render(<Page />);
 
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
