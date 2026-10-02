@@ -3,84 +3,44 @@
 import '@tests/unit/utils/setup-bun-dom';
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import type { JSX, ReactElement, ReactNode } from 'react';
-jest.mock('@/components/ui-back-to-main', () => ({
-  __esModule: true,
-  default: (): ReactElement => <nav aria-label="back-to-main" />,
-}));
+import type { ReactElement } from 'react';
 
-jest.mock('@/components/ui-footer', () => ({
-  __esModule: true,
-  default: (): ReactElement => <footer />,
-}));
+import type { ErrorPageProps } from '@/components/types/error-page';
 
-jest.mock('@/components/ui-button', () => ({
+jest.mock('@/components/error-page', () => ({
   __esModule: true,
-  default: ({ children, to }: { children: ReactNode; to: string }): ReactElement => (
-    <a href={to}>{children}</a>
-  ),
-}));
-
-jest.mock('@/components/ui-typography', () => ({
-  __esModule: true,
-  default: ({ children, component }: { children: ReactNode; component?: string }): ReactElement => {
-    const Tag = (component ?? 'p') as keyof JSX.IntrinsicElements;
-    return <Tag>{children}</Tag>;
-  },
-}));
-
-jest.mock('@/hooks/use-page-title', () => ({
-  __esModule: true,
-  default: jest.fn(),
-}));
-
-jest.mock('react-i18next', () => ({
-  useTranslation: (): { t: (key: string) => string } => ({
-    t: (key: string): string => key,
-  }),
+  default: jest.fn(({ variant, landmark }: ErrorPageProps): ReactElement => (
+    <h1>
+      {variant}:{landmark}
+    </h1>
+  )),
 }));
 
 const NotFound = jest.requireActual<typeof import('@/components/not-found/not-found')>(
   '@/components/not-found/not-found'
 ).default;
 
+const errorPageMock = (): jest.Mock =>
+  jest.requireMock<{ default: jest.Mock }>('@/components/error-page').default;
+
 describe('NotFound', () => {
-  it('renders a main landmark (AC1)', () => {
-    render(<NotFound />);
-    expect(screen.getByRole('main')).toBeInTheDocument();
+  beforeEach(() => {
+    errorPageMock().mockClear();
   });
 
-  it('renders exactly one h1 heading inside main (AC1)', () => {
+  it('renders the shared error page as the 404 variant in the main landmark', () => {
     render(<NotFound />);
-    const main = screen.getByRole('main');
-    const heading = screen.getByRole('heading', { level: 1 });
-    expect(main).toContainElement(heading);
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('notFound:main');
+    expect(errorPageMock()).toHaveBeenCalledTimes(1);
+    expect(errorPageMock().mock.calls[0]?.[0]).toEqual({ variant: 'notFound', landmark: 'main' });
   });
 
-  it('heading text comes from not_found.title (AC1)', () => {
+  it('renders no back-to-main link and no button of its own', () => {
     render(<NotFound />);
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('not_found.title');
-  });
 
-  it('description text comes from not_found.description (AC1)', () => {
-    render(<NotFound />);
-    expect(screen.getByText('not_found.description')).toBeInTheDocument();
-  });
-
-  it('renders a link to home with not_found.cta text (AC2)', () => {
-    render(<NotFound />);
-    const link = screen.getByRole('link', { name: 'not_found.cta' });
-    expect(link).toHaveAttribute('href', '/');
-  });
-
-  it('does not render any element with role="alert" (AR2)', () => {
-    render(<NotFound />);
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-  });
-
-  it('calls usePageTitle with not_found.title (AR4)', () => {
-    const usePageTitle = jest.requireMock<{ default: jest.Mock }>('@/hooks/use-page-title').default;
-    render(<NotFound />);
-    expect(usePageTitle).toHaveBeenCalledWith('not_found.title');
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
   });
 });

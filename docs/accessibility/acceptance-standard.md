@@ -22,15 +22,15 @@ route lane calls [`expectNoAxeViolations`][route-helper] on every route in
 `src/routes/route-paths.ts` in Chromium, Firefox and WebKit, and the keyboard lane uses
 [`expectTabOrder`][keyboard-helper] to assert tab order, `:focus-visible`, a visible focus change
 and Space/Enter activation. Both Playwright lanes ride the `accessibility testing` check.
-Lighthouse keeps its 0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in` and
-`/sign-up` as a second signal, not the primary gate.
+Lighthouse keeps its 0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in`,
+`/sign-up`, `/forbidden` and `/server-error` as a second signal, not the primary gate.
 
 The component lane renders the `UI*` components and pages listed in [`tests/unit/a11y/`][unit]
 and also runs inside `make test-unit-all`. The route lane scans every route in
 `src/routes/route-paths.ts` in Chromium, Firefox and WebKit, and the keyboard lane asserts tab
 order, `:focus-visible`, a visible focus change and Space/Enter activation. Lighthouse keeps its
-0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in` and `/sign-up` as a second
-signal, not the primary gate.
+0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in`, `/sign-up`, `/forbidden` and
+`/server-error` as a second signal, not the primary gate.
 
 The **rule set** is one constant, [`WCAG_AA_TAGS`][config] = `wcag2a`, `wcag2aa`, `wcag21a`,
 `wcag21aa`; both axe layers import it and no test re-declares it. `best-practice` rules are
@@ -99,9 +99,13 @@ scoped entry in [`A11Y_EXCEPTIONS`][config]:
 
 ### Current exceptions
 
-Four `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
+Six `color-contrast` entries, all rooted in Figma palette tokens (`#1EAEFF` primary,
 `grey[50]` `#969B9D`) and the `UILink` theme dropping the palette, tracked together in
-[issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Fixing them changes rendered
+[issue #276](https://github.com/VilnaCRM-Org/crm/issues/276). Two of them belong to the error
+pages (issue #309): the primary actions (`#error-page-actions > .MuiButton-contained`, white on
+`#1EAEFF` at 2.46:1) and the decorative status digits (`#error-page-digits > span`, `#1EAEFF` and
+`#FFC01E` on `#FBFBFB` at 2.37:1 and 1.58:1). The digits are `aria-hidden` decoration; the status
+is announced by the page heading and a visually hidden status-code line. Fixing them changes rendered
 colour and therefore every visual baseline, which is why they are design-owned work rather than
 part of the gate's own pull request.
 

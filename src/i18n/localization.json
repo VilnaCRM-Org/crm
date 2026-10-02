@@ -14,10 +14,26 @@
         "go_home": "Go to homepage",
         "details": "Error details"
       },
-      "not_found": {
-        "title": "Page not found",
-        "description": "The page you're looking for doesn't exist.",
-        "cta": "Go to homepage"
+      "error_page": {
+        "not_found": {
+          "title": "Error 404",
+          "description": "This page does not exist",
+          "code": "Error code: 404"
+        },
+        "forbidden": {
+          "title": "Access denied",
+          "description": "Unfortunately, you do not have permission to access this page",
+          "code": "Error code: 403"
+        },
+        "server_error": {
+          "title": "Server error",
+          "description": "The server is temporarily unavailable. Please try again later.",
+          "code": "Error code: 5xx"
+        },
+        "actions": {
+          "home": "Go to homepage",
+          "request_access": "Request access"
+        }
       },
       "route_fallback": {
         "loading": "Loading page"
@@ -193,10 +209,26 @@
         "go_home": "На головну сторінку",
         "details": "Деталі помилки"
       },
-      "not_found": {
-        "title": "Сторінку не знайдено",
-        "description": "Сторінку, яку ви шукаєте, не існує.",
-        "cta": "На головну сторінку"
+      "error_page": {
+        "not_found": {
+          "title": "Помилка 404",
+          "description": "Сторінки не існує",
+          "code": "Код помилки: 404"
+        },
+        "forbidden": {
+          "title": "В доступі відмовлено",
+          "description": "На жаль, у вас немає прав доступу до цієї сторінки",
+          "code": "Код помилки: 403"
+        },
+        "server_error": {
+          "title": "Помилка сервера",
+          "description": "Сервер тимчасово недоступний. Спробуйте пізніше.",
+          "code": "Код помилки: 5xx"
+        },
+        "actions": {
+          "home": "На головну",
+          "request_access": "Запросити доступ"
+        }
       },
       "route_fallback": {
         "loading": "Завантаження сторінки"

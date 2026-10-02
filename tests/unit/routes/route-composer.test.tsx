@@ -76,6 +76,8 @@ describe('route composer', () => {
     // A protected route (the home index route) must never leak into the flat list.
     expect(flat.every((child) => child.index !== true)).toBe(true);
     expect(flat.map((child) => child.path)).toEqual([
+      ROUTE_PATHS.forbidden,
+      ROUTE_PATHS.serverError,
       ROUTE_PATHS.notFound,
       ROUTE_PATHS.signUp,
       ROUTE_PATHS.signIn,
@@ -115,6 +117,20 @@ describe('route composer', () => {
 
     expect(flat.length).toBeGreaterThan(0);
     expect(flat.map(landmarkOf)).toEqual(flat.map(() => 'main'));
+  });
+
+  it('maps the 403 and 5xx pages as open main-landmark routes outside the guard (#309)', () => {
+    const tree = routeComposer.compose(registry);
+    const errorPaths: string[] = [ROUTE_PATHS.forbidden, ROUTE_PATHS.serverError];
+    const open = (rootOf(tree).children ?? []).filter((child) =>
+      errorPaths.includes(child.path ?? '')
+    );
+    const { guard } = protectedBranchOf(tree);
+    const guardedPaths = walk(guard.children ?? []).map((route) => route.path);
+
+    expect(open.map((route) => route.path)).toEqual(errorPaths);
+    expect(open.map(landmarkOf)).toEqual(['main', 'main']);
+    expect(guardedPaths.filter((path) => errorPaths.includes(path ?? ''))).toEqual([]);
   });
 
   it('omits the protected branch when no route is protected (edge: empty branch)', () => {

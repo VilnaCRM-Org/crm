@@ -153,6 +153,30 @@ describe('security-event chain (integration)', () => {
     expect(hint.extra).toMatchObject({ event: 'error_boundary_catch', reason: 'app' });
   });
 
+  it('reports a 404 route error on the route surface through the boundary reporter', async () => {
+    const { Sentry, observabilityCore } = await loadChain();
+    const boundaryErrorReporter = (
+      await import('@/services/error-reporting/boundary-error-reporter')
+    ).default;
+    observabilityCore.init();
+    await untilSdkLoaded(Sentry);
+    const routeError = new Error('404 Not Found');
+
+    boundaryErrorReporter.report(routeError, { surface: 'route' });
+
+    const { calls } = (Sentry.captureException as jest.Mock).mock;
+    expect(calls).toHaveLength(2);
+    const [[signal, signalHint], [captured, captureHint]] = calls as [
+      [Error, { extra: Record<string, unknown> }],
+      [Error, { extra: Record<string, unknown> }],
+    ];
+    expect(signal.name).toBe('SecurityEventSignal');
+    expect(signal.message).toBe('security.error_boundary_catch');
+    expect(signalHint.extra).toMatchObject({ event: 'error_boundary_catch', reason: 'route' });
+    expect(captured).toBe(routeError);
+    expect(captureHint.extra).toMatchObject({ surface: 'route' });
+  });
+
   it('is a verified no-op when no Sentry DSN is configured', async () => {
     process.env.REACT_APP_SENTRY_DSN = '';
     const { Sentry, securityEventCore, observabilityCore } = await loadChain();

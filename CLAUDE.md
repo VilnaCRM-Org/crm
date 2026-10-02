@@ -492,9 +492,10 @@ request, distinct from `static testing` and `performance testing`.
 the offending element must match (`Element.matches`, so axe's hashed emotion class strings are
 not valid scopes and `*` is rejected by the filter), a reason and a tracking issue;
 `applyA11yExceptions` drops only the matching nodes and keeps every other node of the same rule.
-The allowlist today carries four `color-contrast` entries rooted in the Figma palette tokens
-(`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette), tracked in
-issue #276 and deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
+The allowlist today carries six `color-contrast` entries rooted in the Figma palette tokens
+(`#1EAEFF` primary, `grey[50]` `#969B9D`, the `UILink` theme dropping the palette, and the
+error-page primary actions and decorative status digits, issue #309), tracked in issue #276 and
+deleted when it closes. `tests/unit/a11y/a11y-gate.test.tsx` pins that a nameless
 button and an `alt`-less image really fail, that a wildcard is never honoured, and that every
 entry carries all four fields.
 
@@ -2371,7 +2372,7 @@ wiring — it contains no route-array literal and no feature/module page imports
 - **Module contract** — `src/modules/<m>/features/<f>/routes/index.ts` exports a
   `RouteModule` whose routes lazy-`load` the feature's pages (per-route code
   splitting preserved). The auth feature: `@auth/routes`. The app shell's own
-  routes (home + 404) live in `src/routes/app-routes.ts`.
+  routes (home, 404, 403 and 5xx) live in `src/routes/app-routes.ts`.
 - **Registry** — `src/routes/registry.ts` collects the contracts (one-line
   append per new module).
 - **Composer** — `src/routes/route-composer.tsx` (+ `route-mapper.tsx`,
@@ -2417,7 +2418,7 @@ artifact. Nothing in the build or the dev server regenerates it — it is refres
 verified in CI.
 
 - **Source of truth**: `src/**/i18n/{en,uk}.json`, one catalog folder per feature or component
-  (for example `src/modules/user/features/auth/i18n/` and `src/components/not-found/i18n/`).
+  (for example `src/modules/user/features/auth/i18n/` and `src/components/error-page/i18n/`).
   Both locales are mandatory and their key sets must stay identical.
 - **Derived artifact**: `src/i18n/localization.json`, the merge of every catalog into
   `{ [locale]: { translation: … } }` by `scripts/localization-generator.js`. It is committed,
@@ -2897,7 +2898,14 @@ replaces.
     boundary: the shell mounts it with `surface="app"`, `AuthErrorBoundary` composes it with
     `surface="auth"`,
     and every route the composer emits carries `errorElement: <RouteError landmark=… />`
-    (`"region"` under `AppLayout`, `"main"` elsewhere). `ErrorFallback` renders a focused `<h1>`,
+    (`"region"` under `AppLayout`, `"main"` elsewhere). `RouteError` dispatches on status before
+    this model (issue #309, ADR-018): `errorPageStatusDetector` reads a status from a router
+    error response, a render-thrown `Response` or a `data()` value — so a guard may throw
+    `data(null, { status: 403 })` or navigate to `/forbidden` — and renders the lazy designed
+    `ErrorPage` for 403, 404 and 500 to 599, so a 5xx route response shows the 5xx page with
+    only a homepage link and no in-place Try again; every other error, and every status error
+    once the error-page chunk has failed twice, renders `RouteErrorFallback` → `ErrorFallback`
+    exactly as before. `ErrorFallback` renders a focused `<h1>`,
     a `role="alert"` message, a strategy-gated button (`retry`/`reset` → Try again, `reload` →
     Reload the page, otherwise none) and an **unconditional** homepage anchor; it is keyed by
     `attempt` so a failed retry remounts and re-announces, and focus returns to

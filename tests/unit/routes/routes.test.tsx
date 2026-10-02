@@ -73,6 +73,16 @@ jest.mock('@/components/not-found/not-found', () => ({
   default: (): ReactElement => <div>not found page</div>,
 }));
 
+jest.mock('@/components/forbidden/forbidden', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div>forbidden page</div>,
+}));
+
+jest.mock('@/components/server-error/server-error', () => ({
+  __esModule: true,
+  default: (): ReactElement => <div>server error page</div>,
+}));
+
 jest.mock('@/features/home', () => ({
   __esModule: true,
   default: (): ReactElement => {
@@ -129,6 +139,18 @@ describe('routes', () => {
   it('renders NotFound on unknown path (AC2)', async () => {
     renderAt('/does-not-exist');
     expect(await screen.findByText('not found page')).toBeInTheDocument();
+  });
+
+  it('renders the 403 page at /forbidden outside AppLayout and the guard (#309)', async () => {
+    renderAt('/forbidden');
+    expect(await screen.findByText('forbidden page')).toBeInTheDocument();
+    expect(screen.queryByRole('main')).not.toBeInTheDocument();
+  });
+
+  it('renders the 5xx page at /server-error outside AppLayout and the guard (#309)', async () => {
+    renderAt('/server-error');
+    expect(await screen.findByText('server error page')).toBeInTheDocument();
+    expect(screen.queryByRole('main')).not.toBeInTheDocument();
   });
 
   it('renders the home page through AppLayout at / (AC1)', async () => {

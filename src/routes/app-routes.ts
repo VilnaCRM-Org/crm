@@ -11,6 +11,17 @@ const appRoutes: RouteModule = {
       meta: { permission: 'app.home' },
     },
     {
+      path: ROUTE_PATHS.forbidden,
+      guard: 'public',
+      load: () => import(/* webpackChunkName: "forbidden" */ '@/components/forbidden/forbidden'),
+    },
+    {
+      path: ROUTE_PATHS.serverError,
+      guard: 'public',
+      load: () =>
+        import(/* webpackChunkName: "server-error" */ '@/components/server-error/server-error'),
+    },
+    {
       path: ROUTE_PATHS.notFound,
       guard: 'public',
       load: () => import(/* webpackChunkName: "not-found" */ '@/components/not-found/not-found'),
