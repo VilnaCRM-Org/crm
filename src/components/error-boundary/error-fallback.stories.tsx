@@ -60,14 +60,14 @@ export const NotRecoverable: Story = {
   args: { recovery: recovery('none', 'error_boundary.unrecoverable') },
 };
 
-export const InsideAppLayout: Story = {
+export const RegionLandmark: Story = {
   args: { landmark: 'region' },
   parameters: {
     docs: {
       description: {
         story:
-          'Under AppLayout the fallback renders a labelled `<section>` instead of a second ' +
-          '`<main>`.',
+          'With `landmark="region"` the fallback renders a labelled `<section>` instead of ' +
+          '`<main>`, the variant AppLayout selects to avoid nesting a second `<main>`.',
       },
     },
   },

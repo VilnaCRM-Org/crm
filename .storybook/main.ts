@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { StorybookConfig } from '@storybook/react-webpack5';
+import type { RuleSetRule } from 'webpack';
 
 const resolvePackage = (specifier: string): string => fileURLToPath(import.meta.resolve(specifier));
 
@@ -10,7 +11,7 @@ const SVG_PATTERN = /\.svg$/;
 const hasTestProperty = (rule: unknown): rule is { test: unknown } =>
   typeof rule === 'object' && rule !== null && 'test' in rule;
 
-const handlesSvg = (rule: unknown): rule is { test: RegExp } =>
+const handlesSvg = (rule: unknown): rule is RuleSetRule & { test: RegExp } =>
   hasTestProperty(rule) && rule.test instanceof RegExp && rule.test.test('icon.svg');
 
 const config: StorybookConfig = {
@@ -28,11 +29,17 @@ const config: StorybookConfig = {
   }),
   webpackFinal: async (config) => {
     config.module = config.module || {};
-    config.module.rules = (config.module.rules || []).map((rule) =>
-      handlesSvg(rule) ? { ...rule, exclude: SVG_PATTERN } : rule
+    const rules = (config.module.rules || []).map((rule) =>
+      handlesSvg(rule)
+        ? {
+            ...rule,
+            exclude: rule.exclude === undefined ? SVG_PATTERN : [rule.exclude, SVG_PATTERN].flat(),
+          }
+        : rule
     );
+    config.module.rules = rules;
 
-    config.module.rules.push(
+    rules.push(
       {
         test: /\.(ts|tsx)$/,
         exclude: /node_modules/,

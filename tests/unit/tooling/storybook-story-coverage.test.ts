@@ -59,11 +59,22 @@ const resolveSpecifier = (storyFile: string, specifier: string): string | null =
   return alias ? specifier.replace(alias[0], alias[1]) : null;
 };
 
+const isTypeOnlyBindings = (bindings: string): boolean => {
+  const named = /\{([^}]*)\}/s.exec(bindings)?.[1];
+  const hasDefault = bindings.replace(/\{[^}]*\}/s, '').replace(/[,\s]/g, '').length > 0;
+  if (hasDefault || named === undefined) return false;
+  const names = named
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+  return names.length > 0 && names.every((name) => name.startsWith('type '));
+};
+
 const importedComponents = (storyFile: string): string[] => {
   const text = fs.readFileSync(path.join(repoRoot, storyFile), 'utf-8');
-  const specifiers = [...text.matchAll(/^import\s(?!type\s)[^;]*?from\s'([^']+)';/gms)].map(
-    (match) => match[1] ?? ''
-  );
+  const specifiers = [...text.matchAll(/^import\s(?!type\s)([^;]*?)from\s'([^']+)';/gms)]
+    .filter((match) => !isTypeOnlyBindings(match[1] ?? ''))
+    .map((match) => match[2] ?? '');
   return specifiers
     .map((specifier) => resolveSpecifier(storyFile, specifier))
     .filter((target): target is string => target !== null)
@@ -74,7 +85,7 @@ const importedComponents = (storyFile: string): string[] => {
 const covered = new Set(storyFiles.flatMap(importedComponents));
 
 const storyTitle = (storyFile: string): string | undefined =>
-  /^\s*title:\s*'([^']+)'/m.exec(fs.readFileSync(path.join(repoRoot, storyFile), 'utf-8'))?.[1];
+  /^ {2}title:\s*'([^']+)'/m.exec(fs.readFileSync(path.join(repoRoot, storyFile), 'utf-8'))?.[1];
 
 describe('every rendered component ships a Storybook story', () => {
   it('finds the component and story inventories', () => {

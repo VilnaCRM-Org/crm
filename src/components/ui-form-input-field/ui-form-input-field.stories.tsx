@@ -23,7 +23,10 @@ function ControlledFieldDemo({
   disabled,
   showError,
 }: DemoProps): JSX.Element {
-  const { control, trigger } = useForm<DemoValues>({ defaultValues: { email: '' } });
+  const { control, trigger } = useForm<DemoValues>({
+    defaultValues: { email: '' },
+    mode: 'onChange',
+  });
 
   useEffect(() => {
     if (showError) void trigger('email');

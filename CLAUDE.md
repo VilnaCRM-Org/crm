@@ -2481,7 +2481,8 @@ relative to `iframe.html`.
 **Every rendered component ships a story.** Stories are colocated with the component
 (`<folder>/<name>.stories.tsx`), and
 [`tests/unit/tooling/storybook-story-coverage.test.ts`](tests/unit/tooling/storybook-story-coverage.test.ts)
-fails when a `.tsx` file under `src/` is neither imported by a story nor listed in its `EXEMPT`
+fails when a `.tsx` file under `src/` (excluding `*.stories.tsx`, `*.test.tsx` and files under
+`/types/`) is neither imported by a story nor listed in its `EXEMPT`
 map with a reason — which today holds only wiring that renders nothing of its own (the entry,
 the app root, providers, the router builders, `ProtectedRoute`, `FormProviderBridge`,
 `renderWithTheme` and the auth `AuthSkeleton` re-export). The map is checked both ways: an

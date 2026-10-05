@@ -7,9 +7,9 @@ const meta: Meta<typeof UISkeletonBlock> = {
   component: UISkeletonBlock,
   tags: ['autodocs'],
   argTypes: {
-    width: { control: 'text', description: 'Block width (CSS length or px number)' },
-    height: { control: 'text', description: 'Block height (CSS length or px number)' },
-    borderRadius: { control: 'text', description: 'Corner radius (CSS length or px number)' },
+    width: { control: 'number', description: 'Block width in px' },
+    height: { control: 'number', description: 'Block height in px' },
+    borderRadius: { control: 'text', description: 'Corner radius as a CSS length with a unit' },
   },
   parameters: {
     docs: {
