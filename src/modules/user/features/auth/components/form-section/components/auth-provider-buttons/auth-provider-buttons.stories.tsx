@@ -1,16 +1,22 @@
-import type { StoryObj } from '@storybook/react-webpack5';
+import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
 import AuthProviderButtons from '@auth/components/form-section/components/auth-provider-buttons';
-import createStoryMeta from '@stories/story-meta';
 
-const meta = createStoryMeta({
+const meta: Meta<typeof AuthProviderButtons> = {
   title: 'Auth/Components/AuthProviderButtons',
   component: AuthProviderButtons,
-  description:
-    'The "or continue with" divider and the Google, GitHub, Facebook and Twitter OAuth ' +
-    'buttons. Each icon-only button is named "Continue with <provider>" and opens the ' +
-    'provider sign-in in a new tab.',
-});
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'The "or continue with" divider and the Google, GitHub, Facebook and Twitter OAuth ' +
+          'buttons. Each icon-only button is named "Continue with <provider>" and opens the ' +
+          'provider sign-in in a new tab.',
+      },
+    },
+  },
+};
 
 export default meta;
 
