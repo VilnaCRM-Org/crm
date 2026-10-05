@@ -7,12 +7,11 @@ const resolvePackage = (specifier: string): string => fileURLToPath(import.meta.
 
 const SVG_PATTERN = /\.svg$/;
 
+const hasTestProperty = (rule: unknown): rule is { test: unknown } =>
+  typeof rule === 'object' && rule !== null && 'test' in rule;
+
 const handlesSvg = (rule: unknown): rule is { test: RegExp } =>
-  typeof rule === 'object' &&
-  rule !== null &&
-  'test' in rule &&
-  rule.test instanceof RegExp &&
-  rule.test.test('icon.svg');
+  hasTestProperty(rule) && rule.test instanceof RegExp && rule.test.test('icon.svg');
 
 const config: StorybookConfig = {
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|ts|tsx)'],
