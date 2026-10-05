@@ -1,4 +1,4 @@
-FROM mirror.gcr.io/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS base
+FROM mirror.gcr.io/library/node:24.11.0-alpine3.21@sha256:0d4cd385375043fc4612c20ede8b240b6b560dfdaef7cdaeff8e440c6a5b8499 AS base
 
 ARG BUN_VERSION=1.3.5
 ARG CURL_VERSION=8.14.1-r2
@@ -126,13 +126,13 @@ ENV RCA_BIN=/usr/local/bin/rust-code-analysis-cli
 WORKDIR /app
 
 
-FROM mirror.gcr.io/library/node:24.8.0-alpine3.21@sha256:f9e76ef2f60fc2003507927805d10e10c78e269186e8111b36f13b0cbe76218c AS serve-tools
+FROM mirror.gcr.io/library/node:24.11.0-alpine3.21@sha256:0d4cd385375043fc4612c20ede8b240b6b560dfdaef7cdaeff8e440c6a5b8499 AS serve-tools
 
 RUN npm install -g serve@14.2.6
 
 
 # -------- Static Server Stage --------
-FROM mirror.gcr.io/library/alpine:3.21@sha256:ce64758a109eb420d874a118f87920e625e12d3634e03b4a5573fd9f6e5d3507 AS serve-base
+FROM mirror.gcr.io/library/alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6 AS serve-base
 
 ARG CURL_VERSION=8.14.1-r2
 ARG LIBSTDCPP_VERSION=14.2.0-r4
