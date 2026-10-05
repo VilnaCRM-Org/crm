@@ -12,7 +12,6 @@ const meta: Meta<typeof UILink> = {
   },
   argTypes: {
     href: { control: 'text' },
-    underline: { control: 'inline-radio', options: ['none', 'hover', 'always'] },
   },
   parameters: {
     docs: {
@@ -28,7 +27,3 @@ export default meta;
 type Story = StoryObj<typeof UILink>;
 
 export const Default: Story = {};
-
-export const AlwaysUnderlined: Story = {
-  args: { underline: 'always' },
-};
