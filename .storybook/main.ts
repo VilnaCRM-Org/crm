@@ -2,7 +2,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { StorybookConfig } from '@storybook/react-webpack5';
-import type { RuleSetRule } from 'webpack';
 
 const resolvePackage = (specifier: string): string => fileURLToPath(import.meta.resolve(specifier));
 
@@ -11,7 +10,11 @@ const SVG_PATTERN = /\.svg$/;
 const hasTestProperty = (rule: unknown): rule is { test: unknown } =>
   typeof rule === 'object' && rule !== null && 'test' in rule;
 
-const handlesSvg = (rule: unknown): rule is RuleSetRule & { test: RegExp } =>
+type WebpackRule = NonNullable<
+  NonNullable<Awaited<ReturnType<NonNullable<StorybookConfig['webpackFinal']>>>['module']>['rules']
+>[number];
+
+const handlesSvg = (rule: unknown): rule is Extract<WebpackRule, object> & { test: RegExp } =>
   hasTestProperty(rule) && rule.test instanceof RegExp && rule.test.test('icon.svg');
 
 const config: StorybookConfig = {
