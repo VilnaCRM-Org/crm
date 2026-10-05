@@ -2471,11 +2471,32 @@ JavaScript dynamic `import()` of a `.js` / `.mjs` chunk, `<base href>` or webpac
 public path that is root-absolute outside `/crm/`, and a reference to a file the build does not
 contain.
 `storybook testing` runs the same gate on pull requests whose diff reaches the Storybook build
-inputs in its path filter — stories, `.storybook/`, `src/components/`, `src/styles/`, the fonts,
-`src/i18n/`, the gate script, the image and the lockfile. The preview
+inputs in its path filter — all of `src/` (stories import the auth feature, hooks, `lib/` and
+assets, not just `src/components/`), `.storybook/`, the gate script, the image and the
+lockfile. The preview
 imports `src/styles/fonts.css`, so stories render in Golos and Inter as the app does; the
 builder emits the fonts under `static/media/` with an empty `publicPath`, which resolves them
 relative to `iframe.html`.
+
+**Every rendered component ships a story.** Stories are colocated with the component
+(`<folder>/<name>.stories.tsx`), and
+[`tests/unit/tooling/storybook-story-coverage.test.ts`](tests/unit/tooling/storybook-story-coverage.test.ts)
+fails when a `.tsx` file under `src/` (excluding `*.stories.tsx`, `*.test.tsx` and files under
+`/types/`) is neither imported by a story nor listed in its `EXEMPT`
+map with a reason — which today holds only wiring that renders nothing of its own (the entry,
+the app root, providers, the router builders, `ProtectedRoute`, `FormProviderBridge`,
+`renderWithTheme` and the auth `AuthSkeleton` re-export). The map is checked both ways: an
+entry for a missing file or for a component that has a story fails too, and story titles must
+be unique. Shared router decorators live in `.storybook/router-decorators.tsx`.
+`.storybook/main.ts` mirrors the RSBuild resolution the stories need — the `@auth` alias, the
+mixed SVG import (default URL plus `ReactComponent`, via `.storybook/svg-url-loader.cjs` chained
+into `@svgr/webpack`) and legacy decorators with metadata, because the auth forms reach the DI
+graph through a lazy `import()` that webpack still compiles. Stories render against no backend,
+so a valid login or registration submit cannot succeed there; the registration result views
+have their own stories. Story callbacks use the shared `noop` from
+`.storybook/story-callbacks.ts` rather than `storybook/test`'s `fn()`, because
+dependency-cruiser's `not-to-dev-dep` forbids `src/` value-importing a devDependency. Stories
+import the `.storybook/` helpers through the `@stories/*` alias.
 
 **Admin step:** Settings → Pages → Source must be **GitHub Actions**, which creates the
 `github-pages` environment; restrict its deployment branches to `main` (see

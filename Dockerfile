@@ -18,7 +18,7 @@ RUN apk add --no-cache \
     git=2.47.3-r0 \
     jq=1.7.1-r0 \
     make=4.4.1-r2 \
-    python3=3.12.14-r0 && \
+    python3=3.12.15-r0 && \
     if [ "$INSTALL_CHROMIUM" = "true" ] || [ "$INSTALL_PLAYWRIGHT_BROWSERS" = "true" ]; then \
       apk add --no-cache \
         chromium=136.0.7103.113-r0 \

@@ -72,6 +72,7 @@ const preview: Preview = {
   loaders: [
     async () => {
       await i18nInitPromise;
+      document.documentElement.lang = i18next.language;
       return {};
     },
   ],
