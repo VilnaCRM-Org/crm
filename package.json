@@ -29,7 +29,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@apollo/server": "^4.12.2",
+    "@apollo/server": "^5.5.1",
     "@axe-core/playwright": "^4.13.0",
     "@babel/core": "^7.27.1",
     "@babel/plugin-proposal-decorators": "^7.28.0",
