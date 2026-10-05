@@ -711,7 +711,7 @@ export default [
     },
     settings: {
       react: { version: 'detect' },
-      'import/internal-regex': '^@/',
+      'import/internal-regex': '^@(?:/|stories/)',
       'import/resolver': {
         node: { extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'] },
         typescript: { project: tsconfigPath, alwaysTryTypes: true },
