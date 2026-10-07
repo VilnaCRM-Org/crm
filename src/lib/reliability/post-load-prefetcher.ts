@@ -1,10 +1,12 @@
 import type { ModuleLoader } from './types/module-loader';
-import type { PrefetchHost } from './types/prefetch-host';
-
-const PREFETCH_DELAY_MS = 2000;
+import type { PrefetchHost, PrefetchHostEvent } from './types/prefetch-host';
 
 export default class PostLoadPrefetcher {
+  private readonly intentEvents: readonly PrefetchHostEvent[] = ['pointerdown', 'keydown'];
+
   private attached = false;
+
+  private started = false;
 
   constructor(private readonly targets: readonly ModuleLoader<unknown>[]) {}
 
@@ -13,20 +15,28 @@ export default class PostLoadPrefetcher {
     this.attached = true;
 
     if (host.document.readyState === 'complete') {
-      this.schedule(host);
+      this.awaitIntent(host);
       return;
     }
 
-    host.addEventListener('load', () => this.schedule(host), { once: true });
+    host.addEventListener('load', () => this.awaitIntent(host), { once: true });
   }
 
-  private schedule(host: PrefetchHost): void {
-    host.setTimeout(() => this.prefetch(host), PREFETCH_DELAY_MS);
+  private awaitIntent(host: PrefetchHost): void {
+    this.intentEvents.forEach((type) => {
+      host.addEventListener(type, () => this.start(host), { once: true, passive: true });
+    });
+  }
+
+  private start(host: PrefetchHost): void {
+    if (this.started) return;
+    this.started = true;
+    this.prefetch(host);
   }
 
   private prefetch(host: PrefetchHost): void {
     if (!host.navigator.onLine) {
-      host.addEventListener('online', () => this.schedule(host), { once: true });
+      host.addEventListener('online', () => this.prefetch(host), { once: true });
       return;
     }
 

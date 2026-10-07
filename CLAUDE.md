@@ -3003,8 +3003,10 @@ true` (`LoginAPI` opts in — a token issue creates nothing). **Never opt a crea
 
     Post-load warm-up (issue #309, ADR-018): `PostLoadPrefetcher` (`src/lib/reliability/`),
     attached once from `src/index.tsx` after `root.render`, loads `errorPageLoader` and the
-    error-page font faces (`FontFaceLoader` over `ERROR_PAGE_FONT_FACES`) 2 s after `load` while
-    online, re-arming on the next `online` event otherwise. Failures are silent and do not poison
+    error-page font faces (`FontFaceLoader` over `ERROR_PAGE_FONT_FACES`) on the first
+    `pointerdown` or `keydown` after `load` while online, re-arming on the next `online` event
+    otherwise. Never move it back to a timer: a post-load timer makes every page download and
+    evaluate the chunk inside its own Lighthouse run. Failures are silent and do not poison
     the `ChunkRetryLoader` memo. The three error routes share the `error-page` chunk name with
     `errorPageLoader`, so one request warms them all and a later 404, 403 or 5xx renders with no
     network; `performance-serving.test.ts` pins the shared name and the entry wiring, and

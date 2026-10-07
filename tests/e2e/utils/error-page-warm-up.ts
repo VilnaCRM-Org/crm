@@ -36,7 +36,8 @@ export default async function gotoAndSettleWarmUp(page: Page, path: string): Pro
 
   try {
     const warmUp = page.waitForResponse(isErrorPageChunk);
-    await page.goto(path);
+    await page.goto(path, { waitUntil: 'load' });
+    await page.keyboard.press('Shift');
     const chunk = await warmUp;
     expect(chunk.ok()).toBe(true);
     await chunk.finished();

@@ -67,9 +67,15 @@ detector and a loader to the eager path.
   message or stack.
 - **Warm-up after load.** `PostLoadPrefetcher` (`src/lib/reliability/post-load-prefetcher.ts`),
   attached once from `src/index.tsx` after `root.render`, waits for the window `load` event,
-  then 2 000 ms, then calls `errorPageLoader.load()` and a `FontFaceLoader` over the four Golos
-  weights the page renders (`ERROR_PAGE_FONT_FACES`). Offline at that moment, it waits for the
-  next `online` event and the same delay. Each target's rejection is swallowed, and
+  then for the first `pointerdown` or `keydown`, then calls `errorPageLoader.load()` and a
+  `FontFaceLoader` over the four Golos weights the page renders (`ERROR_PAGE_FONT_FACES`).
+  Offline at that moment, it waits for the next `online` event. The trigger is interaction
+  rather than a timer because only a client-side navigation can reuse the warmed chunk, and
+  every navigation starts with an interaction: a timer made every page download and evaluate
+  the chunk during its own load, which broke the `/sign-in` script budget (269 516 of
+  265 000 bytes) and the 0.84 mobile performance floor. A page nobody touches never pays for
+  it; the cost is that a session that goes offline before its first interaction falls back to
+  `RouteErrorFallback` for a status error. Each target's rejection is swallowed, and
   `ChunkRetryLoader` forgets a failed promise, so a failed warm-up never poisons the later
   render. The three error routes name their chunk `error-page`, the same name as
   `errorPageLoader`, so one request warms `RouteError` and all three routes: a later 404, 403

@@ -1,6 +1,16 @@
+export type PrefetchHostEvent = 'load' | 'online' | 'pointerdown' | 'keydown';
+
+export interface PrefetchListenerOptions {
+  once: true;
+  passive?: true;
+}
+
 export interface PrefetchHost {
   readonly document: { readonly readyState: DocumentReadyState };
   readonly navigator: { readonly onLine: boolean };
-  addEventListener(type: 'load' | 'online', listener: () => void, options: { once: true }): void;
-  setTimeout(handler: () => void, timeout: number): number;
+  addEventListener(
+    type: PrefetchHostEvent,
+    listener: () => void,
+    options: PrefetchListenerOptions
+  ): void;
 }

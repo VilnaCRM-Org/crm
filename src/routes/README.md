@@ -107,8 +107,9 @@ fallback always offers a homepage link. When the error-page chunk still fails
 after its retry, status errors render that fallback for the rest of the
 session. The `*`, `/forbidden` and `/server-error` routes in `app-routes.ts`
 deliberately share the `webpackChunkName: "error-page"` of `errorPageLoader`:
-`PostLoadPrefetcher`, attached from `src/index.tsx`, loads that one chunk 2 s
-after the page has loaded, so every error page then renders with no network.
+`PostLoadPrefetcher`, attached from `src/index.tsx`, loads that one chunk on the
+first interaction after the page has loaded, so every error page a navigation
+then reaches renders with no network.
 Do not give those routes their own chunk names; `performance-serving.test.ts`
 pins the shared name. Reporting lives at the router seam:
 `routeComposer.routeErrorHandler()` builds the callback that `routes.tsx`

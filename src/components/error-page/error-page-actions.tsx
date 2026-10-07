@@ -32,7 +32,7 @@ export default function ErrorPageActions({
   variant,
 }: Pick<ErrorPageProps, 'variant'>): JSX.Element {
   const { t } = useTranslation();
-  const stacked = useMediaQuery(ERROR_PAGE_MEDIA.mobile, { noSsr: true });
+  const stacked = useMediaQuery(ERROR_PAGE_MEDIA.mobile);
   const { homeAppearance, requestAccess } = ERROR_PAGE_VARIANTS[variant];
   const home = (
     <UIButton

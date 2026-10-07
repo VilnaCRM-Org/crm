@@ -28,8 +28,6 @@ const scheduleFocusCheck = (): void => {
   window.requestAnimationFrame(focusMainWhenFocusWasLost);
 };
 
-const checkFocusAfterRender = (): (() => void) => scheduleFocusCheck;
-
 export default function RouteErrorFallback({ landmark }: RouteErrorProps): JSX.Element {
   const routeError = useRouteError();
   const navigate = useNavigate();
@@ -40,7 +38,7 @@ export default function RouteErrorFallback({ landmark }: RouteErrorProps): JSX.E
     navigate({ pathname, search, hash }, { replace: true, state });
   }, [navigate, pathname, search, hash, state]);
 
-  useEffect(checkFocusAfterRender);
+  useEffect(() => scheduleFocusCheck);
 
   return (
     <ErrorFallback

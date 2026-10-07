@@ -1,22 +1,27 @@
 import ChunkRetryLoader from '@/lib/reliability/chunk-retry-loader';
 import PostLoadPrefetcher from '@/lib/reliability/post-load-prefetcher';
 import type { ModuleLoader } from '@/lib/reliability/types/module-loader';
-import type { PrefetchHost } from '@/lib/reliability/types/prefetch-host';
+import type {
+  PrefetchHost,
+  PrefetchHostEvent,
+  PrefetchListenerOptions,
+} from '@/lib/reliability/types/prefetch-host';
 import { buildToken } from '@tests/builders';
-
-type HostEvent = 'load' | 'online';
 
 interface FakeHost extends PrefetchHost {
   readyState: DocumentReadyState;
   onLine: boolean;
-  readonly addEventListener: jest.Mock<void, [HostEvent, () => void, { once: true }]>;
-  fire(type: HostEvent): void;
+  readonly addEventListener: jest.Mock<
+    void,
+    [PrefetchHostEvent, () => void, PrefetchListenerOptions]
+  >;
+  fire(type: PrefetchHostEvent): void;
 }
 
-const PREFETCH_DELAY_MS = 2000;
+const INTENT = { once: true, passive: true };
 
 const createHost = (readyState: DocumentReadyState = 'loading'): FakeHost => {
-  const listeners = new Map<HostEvent, (() => void)[]>();
+  const listeners = new Map<PrefetchHostEvent, (() => void)[]>();
   const host: FakeHost = {
     readyState,
     onLine: true,
@@ -26,13 +31,15 @@ const createHost = (readyState: DocumentReadyState = 'loading'): FakeHost => {
     get navigator(): { readonly onLine: boolean } {
       return { onLine: host.onLine };
     },
-    addEventListener: jest.fn<void, [HostEvent, () => void, { once: true }]>((type, listener) => {
-      listeners.set(type, [...(listeners.get(type) ?? []), listener]);
-    }),
-    setTimeout: (handler: () => void, timeout: number): number =>
-      window.setTimeout(handler, timeout),
-    fire: (type: HostEvent): void => {
-      (listeners.get(type) ?? []).forEach((listener) => listener());
+    addEventListener: jest.fn<void, [PrefetchHostEvent, () => void, PrefetchListenerOptions]>(
+      (type, listener) => {
+        listeners.set(type, [...(listeners.get(type) ?? []), listener]);
+      }
+    ),
+    fire: (type: PrefetchHostEvent): void => {
+      const pending = listeners.get(type) ?? [];
+      listeners.delete(type);
+      pending.forEach((listener) => listener());
     },
   };
   return host;
@@ -45,60 +52,77 @@ const createTarget = (): jest.Mocked<ModuleLoader<unknown>> => ({
 const chunkFailure = (): Error =>
   Object.assign(new Error('Loading chunk error-page failed.'), { name: 'ChunkLoadError' });
 
-describe('PostLoadPrefetcher', () => {
-  beforeEach(() => {
-    jest.useFakeTimers();
-  });
+const registeredTypes = (host: FakeHost): PrefetchHostEvent[] =>
+  host.addEventListener.mock.calls.map(([type]) => type);
 
+describe('PostLoadPrefetcher', () => {
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  it('waits for the load event and then the prefetch delay before loading every target', () => {
+  it('waits for the load event and then the first interaction before loading every target', () => {
     const host = createHost('loading');
     const targets = [createTarget(), createTarget()];
 
     new PostLoadPrefetcher(targets).attach(host);
-    jest.advanceTimersByTime(PREFETCH_DELAY_MS * 2);
 
-    targets.forEach((target) => expect(target.load).not.toHaveBeenCalled());
-    expect(host.addEventListener).toHaveBeenCalledTimes(1);
+    expect(registeredTypes(host)).toEqual(['load']);
     expect(host.addEventListener).toHaveBeenCalledWith('load', expect.any(Function), {
       once: true,
     });
 
     host.fire('load');
-    jest.advanceTimersByTime(PREFETCH_DELAY_MS - 1);
     targets.forEach((target) => expect(target.load).not.toHaveBeenCalled());
+    expect(host.addEventListener).toHaveBeenCalledWith('pointerdown', expect.any(Function), INTENT);
+    expect(host.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function), INTENT);
 
-    jest.advanceTimersByTime(1);
+    host.fire('pointerdown');
     targets.forEach((target) => expect(target.load).toHaveBeenCalledTimes(1));
   });
 
-  it('schedules straight away when the page has already loaded', () => {
+  it('never loads the targets for a page nobody interacts with', () => {
     const host = createHost('complete');
     const target = createTarget();
 
     new PostLoadPrefetcher([target]).attach(host);
+    host.fire('load');
+    host.fire('online');
 
-    expect(host.addEventListener).not.toHaveBeenCalled();
-    jest.advanceTimersByTime(PREFETCH_DELAY_MS - 1);
+    expect(registeredTypes(host)).toEqual(['pointerdown', 'keydown']);
     expect(target.load).not.toHaveBeenCalled();
-    jest.advanceTimersByTime(1);
+  });
+
+  it('arms the interaction listeners straight away when the page has already loaded', () => {
+    const host = createHost('complete');
+    const target = createTarget();
+
+    new PostLoadPrefetcher([target]).attach(host);
+    host.fire('keydown');
+
+    expect(registeredTypes(host)).toEqual(['pointerdown', 'keydown']);
     expect(target.load).toHaveBeenCalledTimes(1);
   });
 
-  it('waits for the load event while the document is still interactive', () => {
+  it('ignores an interaction before the load event while the document is interactive', () => {
     const host = createHost('interactive');
     const target = createTarget();
 
     new PostLoadPrefetcher([target]).attach(host);
-    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
+    host.fire('pointerdown');
 
+    expect(registeredTypes(host)).toEqual(['load']);
     expect(target.load).not.toHaveBeenCalled();
-    expect(host.addEventListener).toHaveBeenCalledWith('load', expect.any(Function), {
-      once: true,
-    });
+  });
+
+  it('prefetches once even when both interaction kinds fire', () => {
+    const host = createHost('complete');
+    const target = createTarget();
+
+    new PostLoadPrefetcher([target]).attach(host);
+    host.fire('pointerdown');
+    host.fire('keydown');
+
+    expect(target.load).toHaveBeenCalledTimes(1);
   });
 
   it('attaches only once however often attach is called', () => {
@@ -109,32 +133,27 @@ describe('PostLoadPrefetcher', () => {
     prefetcher.attach(host);
     prefetcher.attach(host);
     host.fire('load');
-    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
+    host.fire('pointerdown');
 
-    expect(host.addEventListener).toHaveBeenCalledTimes(1);
+    expect(registeredTypes(host)).toEqual(['load', 'pointerdown', 'keydown']);
     expect(target.load).toHaveBeenCalledTimes(1);
   });
 
-  it('skips the prefetch while offline and re-arms on the next online event', () => {
+  it('defers the prefetch while offline and runs it on the next online event', () => {
     const host = createHost('complete');
     host.onLine = false;
     const target = createTarget();
 
     new PostLoadPrefetcher([target]).attach(host);
-    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
+    host.fire('pointerdown');
 
     expect(target.load).not.toHaveBeenCalled();
-    expect(host.addEventListener).toHaveBeenCalledTimes(1);
-    expect(host.addEventListener).toHaveBeenCalledWith('online', expect.any(Function), {
+    expect(host.addEventListener).toHaveBeenLastCalledWith('online', expect.any(Function), {
       once: true,
     });
 
     host.onLine = true;
     host.fire('online');
-    jest.advanceTimersByTime(PREFETCH_DELAY_MS - 1);
-    expect(target.load).not.toHaveBeenCalled();
-
-    jest.advanceTimersByTime(1);
     expect(target.load).toHaveBeenCalledTimes(1);
   });
 
@@ -145,7 +164,7 @@ describe('PostLoadPrefetcher', () => {
     const healthy = createTarget();
 
     new PostLoadPrefetcher([failing, healthy]).attach(host);
-    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
+    host.fire('pointerdown');
     await Promise.resolve();
 
     expect(failing.load).toHaveBeenCalledTimes(1);
@@ -153,6 +172,7 @@ describe('PostLoadPrefetcher', () => {
   });
 
   it('leaves a failed chunk loader free to retry when the page later needs it', async () => {
+    jest.useFakeTimers();
     const host = createHost('complete');
     const loaded = { default: buildToken() };
     const importModule = jest
@@ -163,7 +183,7 @@ describe('PostLoadPrefetcher', () => {
     const loader = new ChunkRetryLoader(importModule);
 
     new PostLoadPrefetcher([loader]).attach(host);
-    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
+    host.fire('keydown');
     await jest.runAllTimersAsync();
 
     expect(importModule).toHaveBeenCalledTimes(2);
