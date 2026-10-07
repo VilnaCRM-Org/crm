@@ -1,16 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-webpack5';
 
-import NotFound from '@/components/not-found/not-found';
+import ServerError from '@/components/server-error/server-error';
 
-const meta: Meta<typeof NotFound> = {
-  title: 'Pages/NotFound',
-  component: NotFound,
+const meta: Meta<typeof ServerError> = {
+  title: 'Pages/ServerError',
+  component: ServerError,
   tags: ['autodocs'],
   parameters: {
     docs: {
       description: {
         component:
-          'The 404 page for any unknown path (issue #309): the designed 404 error page in a ' +
+          'The public `/server-error` page (issue #309): the designed 5xx error page in a ' +
           '`<main>` landmark with the footer. It also sets the document title.',
       },
       story: { inline: false },
@@ -21,7 +21,7 @@ const meta: Meta<typeof NotFound> = {
 
 export default meta;
 
-type Story = StoryObj<typeof NotFound>;
+type Story = StoryObj<typeof ServerError>;
 
 export const Default: Story = {};
 
