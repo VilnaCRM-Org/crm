@@ -42,8 +42,6 @@ export default class PostLoadPrefetcher {
       return;
     }
 
-    this.targets.forEach((target) => {
-      target.load().catch(() => undefined);
-    });
+    Promise.allSettled(this.targets.map((target) => target.load()));
   }
 }
