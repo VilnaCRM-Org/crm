@@ -72,8 +72,11 @@ keeping production inert.
   and protected routes redirect to sign-in as they do in production
 - A reviewer signs in with `demo@vilnacrm.com` / `Demo1234`, reaches every protected page, and
   stays signed in across reloads and deep links until signing out
-- No pipeline, Dockerfile or Makefile change; the preloaded-auth seed gate keeps covering
-  issue #158 only
+- No pipeline, Dockerfile or Makefile change. `make check-auth-seed-gate` scans the shipped
+  `production` image: besides proving the #158 seed absent, its `--expect absent` run now fails
+  unless the bundle keeps the demo provider (its storage key `vilnacrm.sandbox-demo-session` and
+  the demo email, both of which survive minification) and a `404.html` byte-identical to
+  `index.html`, so a bundler change cannot silently strip what sandboxes rely on
 
 ## Negative Consequences
 

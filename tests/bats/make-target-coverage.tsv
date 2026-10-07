@@ -18,7 +18,7 @@ build	bats	tests/bats/makefile_targets.bats	Validated for both the default Docke
 build-dev-chromium	ci	.github/workflows/performance-testing.yml	Executed directly by the performance workflow.
 ensure-chromium	ci	.github/workflows/performance-testing.yml	Exercised transitively by the Lighthouse PR workflow targets.
 build-analyze	bats	tests/bats/makefile_targets.bats	Validated as the ANALYZE=true production build wrapper.
-check-auth-seed-gate	bats	tests/bats/makefile_targets.bats	Validated as the two-build preloaded-auth seed scan: a deployable bundle and an opted-in bundle.
+check-auth-seed-gate	bats	tests/bats/makefile_targets.bats	Validated as the three-build auth-seed scan: the shipped production image must lack the seed yet keep the sandbox demo login and a 404.html copy of index.html; a token-set source build without the opt-in must lack the seed; the opted-in build must still carry it.
 build-out	bats	tests/bats/makefile_targets.bats	Validated as the Docker artifact extraction flow.
 format	bats	tests/bats/makefile_targets.bats	Validated as the combined Prettier and Qlty formatting entrypoint.
 fmt-prettier	bats	tests/bats/makefile_targets.bats	Validated as the direct Prettier formatting command.

@@ -2701,7 +2701,11 @@ look-alikes (`sandbox-crm-x.evil.com`, an `amazonaws.com` host without an `s3-we
 `.amazonaws.com.evil.com` suffix, another bucket's S3 website) signs nobody in and restores
 nothing, and that the real sandbox endpoint does both.
 `tests/unit/scripts/spa-fallback-document-plugin.test.ts` pins that the fallback plugin is
-registered unconditionally.
+registered unconditionally. `make check-auth-seed-gate` closes the bundling half: its
+`--expect absent` scan of the shipped `production` image (and of the token-set, unflagged source
+build) keeps every #158 assertion and additionally fails unless the emitted bundle still contains
+the provider's storage key `vilnacrm.sandbox-demo-session` and the demo email — both survive
+minification — and a `404.html` byte-identical to `index.html`.
 
 **Honest scope:** the demo login ships in every production bundle and is inert only because of
 the hostname check. On a sandbox anyone who reads the published credentials signs in; that is
