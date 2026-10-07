@@ -328,14 +328,34 @@ gate" in [`CLAUDE.md`](CLAUDE.md) and [`src/config/env/README.md`](src/config/en
 three invariants that keep the guard foldable.
 
 Run it locally with `make check-auth-seed-gate`. It builds `--target production`, scans the image's
-`dist` for the seam, and then re-scans a deliberately opted-in build that **must** still contain it,
-so the check cannot pass against the wrong artifact. In CI it is the `preloaded-auth seed gate` job
+`dist` for the seam and for the sandbox demo login below, and then re-scans a deliberately opted-in
+build and the `--target sandbox` image, each of which **must** still contain its seam, so the check
+cannot pass against the wrong artifact. In CI it is the `preloaded-auth seed gate` job
 of the `security testing` workflow, and it is the only job that exercises the deployable
 `--target production` image — every other prod-side suite builds the ephemeral `test-harness` target.
 
 Satisfy it by keeping the seam gated. Never relax the scan, narrow its file set, move a seed read
 out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere but the Dockerfile's
 `test-harness` stage.
+
+### Pull-request sandboxes and the demo login
+
+The `sandbox` workflow triggers the `sandbox-crm-creation` AWS CodePipeline, which builds the pull
+request and syncs it to an S3 static website. A sandbox has no backend, so it is built from the
+Dockerfile's `sandbox` target (`make build-out-sandbox`), which compiles in two things the
+deployable `production` target never carries (issue #309,
+[ADR-019](docs/adr/019-sandbox-demo-session.md)):
+
+- **A demo login.** Sign in with `demo@vilnacrm.com` / `Demo1234` to reach every protected page.
+  The session is client-only and never calls the API; any other credentials fail as they would
+  against an unreachable backend.
+- **Deep links.** The build emits `404.html` as a copy of `index.html`, so S3 answers `/sign-in`,
+  `/forbidden` or any other route with the app instead of its own error page. S3 still reports
+  HTTP status 404 for those responses; the page itself renders normally.
+
+Both take effect only once the crm-infrastructure buildspec runs `make build-out-sandbox` instead
+of `make build-out`. `make check-auth-seed-gate` proves on every pull request that the
+`production` image carries neither.
 
 ### The browser security-header gate
 

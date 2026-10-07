@@ -1697,6 +1697,10 @@ build goes red. Know them before you touch a config file:
 - `make check-auth-seed-gate` (run by the `security testing` workflow) scans the **emitted
   bundle** rather than config source text: it fails when a deployable build carries the seam,
   and equally when an opted-in build has lost it, so the gate cannot pass vacuously
+- The pull-request sandbox's demo login (`demo@vilnacrm.com` / `Demo1234`, issue #309) is the
+  same kind of compile-guarded seam, behind `ENABLE_SANDBOX_DEMO`, which only the Dockerfile's
+  `build-sandbox` stage sets. The same gate proves the `production` image carries neither the
+  demo login nor the `404.html` deep-link fallback, and that the `sandbox` image carries both
 - No refresh-token or HTTP-only cookie handling is implemented in this frontend module
 
 ### Browser Security Headers (issue #113)
@@ -1852,9 +1856,10 @@ make format             # Prettier and Qlty format
 ```bash
 make build              # Build in Docker
 make build-out          # Extract build to ./build
+make build-out-sandbox  # Extract the sandbox build (demo login + 404.html) to ./out
 make build-analyze      # Bundle analyzer (writes dist/bundle-report.html + dist/bundle-stats.json)
 make perf-budget        # Build + enforce gzip byte budgets (config/performance-budget.json)
-make check-auth-seed-gate  # Scan the built bundles so the test-only preloaded-auth seed cannot ship
+make check-auth-seed-gate  # Scan bundles so neither auth seed nor sandbox demo login ships
 make check-security-headers  # Build the production image and assert the security-header baseline
 make security-headers-generate  # Regenerate the serve.json headers block from config/security-headers.json
 ```

@@ -75,6 +75,22 @@ RUN bun x rsbuild build && \
     find dist-production -name '*.map' -type f -delete
 
 
+# -------- Sandbox Build Stage --------
+# A pull-request sandbox is a static S3 website with no backend, so this build compiles in the
+# demo login and emits 404.html for deep links (issue #309). Like the test harness it is its own
+# stage, so the deployable `production` target cannot be handed either.
+FROM base AS build-sandbox
+
+ENV PATH="/root/.bun/bin:${PATH}"
+ENV ENABLE_SANDBOX_DEMO=true
+
+COPY . .
+COPY .env.example .env
+RUN bun x rsbuild build && \
+    cp -a dist dist-production && \
+    find dist-production -name '*.map' -type f -delete
+
+
 # -------- rust-code-analysis Stage --------
 FROM mirror.gcr.io/library/debian:13-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a AS rca
 
@@ -177,6 +193,13 @@ CMD ["serve", "-s", "dist", "-l", "tcp://0.0.0.0:3001", "-c", "/app/serve.json"]
 FROM serve-base AS production
 
 COPY --from=build --chown=node:node /app/dist-production ./dist
+USER node
+
+
+# -------- Sandbox Image --------
+FROM serve-base AS sandbox
+
+COPY --from=build-sandbox --chown=node:node /app/dist-production ./dist
 USER node
 
 

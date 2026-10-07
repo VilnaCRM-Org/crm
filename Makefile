@@ -26,6 +26,8 @@ AUTH_SEED_GATE_SCRIPT       = scripts/ci/check-auth-seed-gate.mjs
 AUTH_SEED_PROBE_TOKEN       = auth-seed-gate-probe-token
 AUTH_SEED_PROBE_IMAGE       = crm-auth-seed-probe
 AUTH_SEED_PROBE_DIR         = ./dist-auth-seed-probe
+SANDBOX_PROBE_IMAGE         = crm-sandbox-probe
+SANDBOX_PROBE_DIR           = ./dist-sandbox-probe
 STORYBOOK_PORT				?= 6006
 STORYBOOK_CMD         		= $(BUNX) storybook dev -p $(STORYBOOK_PORT)
 
@@ -458,18 +460,25 @@ build-analyze: ## Build production bundle with the analyzer; writes dist/bundle-
 perf-budget: ## Build the production bundle and enforce the gzip byte budgets in config/performance-budget.json
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev sh -c '$(RSBUILD_BUILD) && node scripts/bundle-size-report.mjs --dir dist'
 
-check-auth-seed-gate: create-network ## Scan built bundles so the preloaded-auth seed cannot ship
-	@echo "🔒 [1/3] the artifact that actually ships: docker --target production"
+check-auth-seed-gate: create-network ## Scan built bundles so neither the preloaded-auth seed nor the sandbox demo login can ship
+	@echo "🔒 [1/4] the artifact that actually ships: docker --target production"
 	docker build -t $(AUTH_SEED_PROBE_IMAGE) -f Dockerfile --target production .
 	@cid=$$(docker create $(AUTH_SEED_PROBE_IMAGE)); \
 		trap 'docker rm "$$cid" >/dev/null 2>&1 || true' EXIT INT TERM; \
 		rm -rf $(AUTH_SEED_PROBE_DIR) && \
 		docker cp "$$cid":/app/dist $(AUTH_SEED_PROBE_DIR)
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev node $(AUTH_SEED_GATE_SCRIPT) --dir $(AUTH_SEED_PROBE_DIR) --expect absent --token $(AUTH_SEED_PROBE_TOKEN)
-	@echo "🔒 [2/3] a source build with the token set but no opt-in must still strip it"
+	@echo "🔒 [2/4] a source build with the token set but no opt-in must still strip it"
 	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(AUTH_SEED_PROBE_TOKEN) dev sh -c '$(RSBUILD_BUILD) && node $(AUTH_SEED_GATE_SCRIPT) --dir dist --expect absent --token $(AUTH_SEED_PROBE_TOKEN)'
-	@echo "🔒 [3/3] positive control: an opted-in build must still carry the seam"
-	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(AUTH_SEED_PROBE_TOKEN) -e ENABLE_PRELOADED_AUTH_TOKEN_SEED=true dev sh -c '$(RSBUILD_BUILD) && node $(AUTH_SEED_GATE_SCRIPT) --dir dist --expect present --token $(AUTH_SEED_PROBE_TOKEN)'
+	@echo "🔒 [3/4] positive control: an opted-in build must still carry the seam"
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm -e REACT_APP_LHCI_PRELOADED_AUTH_TOKEN=$(AUTH_SEED_PROBE_TOKEN) -e ENABLE_PRELOADED_AUTH_TOKEN_SEED=true dev sh -c '$(RSBUILD_BUILD) && node $(AUTH_SEED_GATE_SCRIPT) --dir dist --expect present --seam preloaded-auth --token $(AUTH_SEED_PROBE_TOKEN)'
+	@echo "🔒 [4/4] positive control: the sandbox target must carry the demo login and 404.html"
+	docker build -t $(SANDBOX_PROBE_IMAGE) -f Dockerfile --target sandbox .
+	@cid=$$(docker create $(SANDBOX_PROBE_IMAGE)); \
+		trap 'docker rm "$$cid" >/dev/null 2>&1 || true' EXIT INT TERM; \
+		rm -rf $(SANDBOX_PROBE_DIR) && \
+		docker cp "$$cid":/app/dist $(SANDBOX_PROBE_DIR)
+	$(DOCKER_COMPOSE) $(DOCKER_COMPOSE_DEV_FILE) run --rm dev node $(AUTH_SEED_GATE_SCRIPT) --dir $(SANDBOX_PROBE_DIR) --expect present --seam sandbox-demo --token $(AUTH_SEED_PROBE_TOKEN)
 
 build-out: ## Build production artifacts to ./out directory (via Docker)
 	@echo "🏗️ Building production Docker image for Rsbuild bundle..."
@@ -479,6 +488,15 @@ build-out: ## Build production artifacts to ./out directory (via Docker)
 	docker cp $$container_id:/app/dist ./out && \
 	docker rm $$container_id && \
 	echo "✅ Build artifacts extracted to ./out directory"
+
+build-out-sandbox: ## Build the sandbox bundle (demo login + 404.html deep-link fallback) to ./out (via Docker)
+	@echo "🏗️ Building sandbox Docker image for Rsbuild bundle..."
+	docker build -t rsbuild-sandbox-bundle -f Dockerfile --target sandbox .
+	@container_id=$$(docker create rsbuild-sandbox-bundle) && \
+	rm -rf ./out && \
+	docker cp $$container_id:/app/dist ./out && \
+	docker rm $$container_id && \
+	echo "✅ Sandbox build artifacts extracted to ./out directory"
 
 format: fmt-prettier fmt-qlty ## Run Prettier and Qlty formatting
 

@@ -29,6 +29,7 @@ The module is therefore split in two:
 | `env-schema.ts`           | `zod`       | —              | the zod contract (constraints)       |
 | `types/env.ts`            | none (type) | —              | the hand-authored `Env` interface    |
 | `preloaded-auth-token.ts` | none        | lazy, per call | the auth store's initial seed (only) |
+| `sandbox-demo-session.ts` | none        | lazy, per call | the sandbox demo login (only)        |
 
 - **`raw-env`** (`@/config/env/raw-env`) — a dependency-free singleton and, with the seed seam
   below, one of the two sanctioned places that touch `process.env`. Accessors are lazy (read on
@@ -120,6 +121,28 @@ Three invariants keep that guard real, and breaking any of them is a security re
 `make check-auth-seed-gate` (in the `security testing` workflow) proves them against the emitted
 bundle: one build must not contain the seam, and the opted-in build must, so the scan cannot pass
 against the wrong artifact.
+
+## The sandbox demo session (issue #309)
+
+`sandbox-demo-session.ts` gives a pull-request sandbox — a static S3 website with no backend — a
+working login: `sessionFor({ email, password })` returns a demo session for exactly
+`demo@vilnacrm.com` / `Demo1234` and `null` for anything else. The auth module's composition root
+registers it by value under `AUTH_TOKENS.SandboxDemoSessionSeed`, and `AuthStoreActions.login`
+consults it before the repository, so a match never touches the network. It is the issue-#158
+seam's twin and keeps the same three invariants: the guard
+
+```ts
+if (process.env.NODE_ENV === 'production' && process.env.ENABLE_SANDBOX_DEMO !== 'true') {
+  return null;
+}
+```
+
+the credential literals and the token literal all stay in that one method; no other `src/` file
+names the flag or the literals; and only the Dockerfile's `build-sandbox` stage sets the flag,
+which `rsbuild.config.ts` reads before `loadEnv` and defines for the bundler. The same flag makes
+the build emit `404.html` as a copy of `index.html`, the deep-link fallback S3 serves.
+`make check-auth-seed-gate` proves the `production` image carries none of it and the `sandbox`
+image carries all of it. See [ADR-019](../../../docs/adr/019-sandbox-demo-session.md).
 
 ## Adding a variable
 

@@ -20,6 +20,7 @@ This index lists the Architecture Decision Records for this repository.
 - [ADR-016: UI toolkit installed from a digest-verified tarball and consumed through CRM seams](./016-ui-toolkit-installation.md)
 - [ADR-017: The MUI theme engine loads with the page chunk, not before first paint](./017-mui-theme-off-the-eager-path.md)
 - [ADR-018: Route error responses with a known status render the designed error pages](./018-route-error-status-pages.md)
+- [ADR-019: Pull-request sandboxes ship a compile-guarded demo login and a 404.html shell](./019-sandbox-demo-session.md)
 
 ## Writing a new ADR
 

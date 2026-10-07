@@ -12,6 +12,7 @@ import {
   originsFromEnv,
   responseHeaders,
 } from './scripts/security-headers';
+import { pluginSpaFallbackDocument } from './scripts/spa-fallback-document-plugin';
 
 const mode = process.env.NODE_ENV || 'production';
 const isDev = mode === 'development';
@@ -22,6 +23,11 @@ const isAnalyze = process.env.ANALYZE === 'true';
 // opt-in and compile the test-only auth seed into a deployable bundle (issue #158). The flag is
 // a build-environment input — the Dockerfile's test-harness stage — and never a dotenv key.
 const preloadedAuthSeedOptIn = process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED ?? '';
+// The sandbox demo login and the 404.html deep-link fallback are opted into the same way, by the
+// Dockerfile's build-sandbox stage only, and for the same reason are read before loadEnv
+// (issue #309).
+const sandboxDemoOptIn = process.env.ENABLE_SANDBOX_DEMO ?? '';
+const sandboxPlugins = sandboxDemoOptIn === 'true' ? [pluginSpaFallbackDocument()] : [];
 
 const { publicVars } = loadEnv({ mode, prefixes: ['REACT_APP_'] });
 
@@ -127,6 +133,7 @@ export default defineConfig({
         svgo: true,
       },
     }),
+    ...sandboxPlugins,
   ],
   html: {
     template: './public/index.html',
@@ -199,6 +206,8 @@ export default defineConfig({
       // strips the test-only auth seed from deployable bundles. Dropping the define leaves a
       // runtime `process` read that throws in the browser (issue #158).
       'process.env.ENABLE_PRELOADED_AUTH_TOKEN_SEED': JSON.stringify(preloadedAuthSeedOptIn),
+      // src/config/env/sandbox-demo-session.ts folds on this the same way (issue #309).
+      'process.env.ENABLE_SANDBOX_DEMO': JSON.stringify(sandboxDemoOptIn),
     },
   },
 });

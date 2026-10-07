@@ -2067,7 +2067,7 @@ type files, stories, tests) must end in one of these:
 | `*Provider`    | supplies a value or capability              | provider idiom                    |
 | `*Providers`   | catalog of providers, one singleton         | provider idiom (OAuth)            |
 | `*Source`      | reads a value from where it is stored       | data-source idiom (#145)          |
-| `*Seed`        | test-only preloaded value, compile-guarded  | repo idiom (#158)                 |
+| `*Seed`        | test/sandbox-only value, compile-guarded    | repo idiom (#158, #309)           |
 | `*Registrar`   | DI composition root of one area             | registry idiom (#109)             |
 | `*Core`        | container-free half of a two-layer boundary | repo idiom (#115, #155, #159)     |
 | `*Config`      | typed configuration value object            | repo idiom (env / runtime config) |
@@ -2602,7 +2602,8 @@ Key variables in `.env.example`:
 environment flag set only by the Dockerfile's `test-harness` stage, and it must never appear in
 `.env`, `.env.local`, or any other dotenv file. RSBuild's `loadEnv` merges every key it finds in
 those files into `process.env` — including non-`REACT_APP_` ones — so a dotenv entry really would
-turn the seed back on.
+turn the seed back on. `ENABLE_SANDBOX_DEMO` (issue #309) follows the same rule and is set only by
+the `build-sandbox` stage.
 
 ### Preloaded-auth-token seed gate (issue #158)
 
@@ -2659,6 +2660,61 @@ as they are for the issue-#188 ratchet.
 
 **No suppression:** satisfy the gate by keeping the seam gated, never by relaxing the scan,
 narrowing its file set, or moving a read out of the guarded method.
+
+### Sandbox demo login and deep-link fallback (issue #309, ADR-019)
+
+A pull-request sandbox is an S3 static website with no backend: the `sandbox-crm-creation`
+pipeline in `VilnaCRM-Org/crm-infrastructure` syncs a build to a bucket whose error document is
+`404.html`. Without help, every deep link returns S3's own error page and no login can ever
+succeed, so no protected page — the 403 page included — can be reviewed there. The sandbox
+build therefore compiles in two things the deployable build never carries:
+
+- **A demo login.** [`src/config/env/sandbox-demo-session.ts`](src/config/env/sandbox-demo-session.ts)
+  (`SandboxDemoSessionSeed.sessionFor`) returns a demo session for exactly
+  `demo@vilnacrm.com` / `Demo1234` and `null` otherwise. `AuthStoreActions.login` asks it
+  before the repository — it arrives through `AuthStoreActionsDeps`, registered by value under
+  `AUTH_TOKENS.SandboxDemoSessionSeed` — and a match settles like any successful login
+  (`applyLogin`, then `loginSettled`) with no network call.
+- **A deep-link fallback.** `scripts/spa-fallback-document-plugin.ts` copies the built
+  `index.html` byte for byte to `404.html`, so S3 answers a deep link with the SPA shell and
+  the router renders the route.
+
+Both are behind `ENABLE_SANDBOX_DEMO`, set only by the Dockerfile's `build-sandbox` stage; the
+`sandbox` target is `serve-base` plus that bundle, and `make build-out-sandbox` extracts it to
+`./out` the way `make build-out` extracts `production`. Three invariants, the same as #158:
+
+1. **The guard, the credentials and the token stay in that one method**, behind
+   `NODE_ENV === 'production' && ENABLE_SANDBOX_DEMO !== 'true'`, so Rspack folds the guard and
+   drops every literal from a build that did not opt in. `rsbuild.config.ts` reads the flag
+   **before** `loadEnv` (no dotenv file can supply it), defines it for the bundler, and
+   registers the fallback plugin only when it is `true`.
+2. **No other `src/` file names the flag, the demo credentials, or the demo token.**
+3. **Only the sandbox image opts in.** The `production` target and its `build` stage take no
+   ARG or ENV for it, so `make build-out` — what production ships — cannot receive it.
+
+`tests/unit/tooling/preloaded-auth-seed-gate.test.ts` pins the invariants as source contracts.
+`make check-auth-seed-gate` proves them against the emitted bundle: the `production` image and
+an unflagged source build must contain none of `ENABLE_SANDBOX_DEMO`, the demo email, the demo
+password, the demo token, or `404.html`; the `sandbox` image is the positive control and must
+contain the demo login and a `404.html` identical to `index.html` (and no #158 seed), so the
+absent scan cannot pass vacuously.
+
+**The sandbox only gets this once the crm-infrastructure buildspec**
+(`aws/buildspecs/sandbox-crm/deploy.yml`) **runs `make build-out-sandbox` instead of
+`make build-out`.**
+
+**Honest scope:** the demo session is client-only, on a public bucket, against no backend —
+anyone who reads the published credentials signs in to a sandbox, which is acceptable only
+because a sandbox holds no data. S3 serves `404.html` with HTTP status **404**, so a deep link
+renders correctly in a browser while a crawler or a status probe sees 404. A dev server
+(`NODE_ENV=development`) accepts the demo credentials too, exactly as it accepts the #158 seed.
+The `sandbox` image's `404.html` is a build-time copy, so the container entrypoint's
+`APP_CONFIG_*` rewrite of `index.html` does not reach it; neither S3 nor `serve -s` reads it
+for a route that exists.
+
+**No suppression:** keep the seam gated and the gate's marker list in step with the seam's
+literals; never set `ENABLE_SANDBOX_DEMO` outside the `build-sandbox` stage or in a dotenv
+file, and never ship the sandbox target as production.
 
 ### Browser security-header baseline (issue #113)
 

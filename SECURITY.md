@@ -91,8 +91,8 @@ is in [README.md](README.md#ci-checks).
   [`docs/governance/branch-protection.md`](docs/governance/branch-protection.md), which is still
   a pending maintainer action.
 - **Preloaded-auth seed gate** — the same workflow, pull requests only;
-  `make check-auth-seed-gate`. Proves against the emitted bundle that the test-only auth seam is
-  compiled out of the deployable image.
+  `make check-auth-seed-gate`. Proves against the emitted bundle that the test-only auth seam and
+  the pull-request sandbox's demo login (issue #309) are compiled out of the deployable image.
 - **Browser security headers** — the same workflow, pull requests only;
   `make check-security-headers`. Boots the deployable `production` image and asserts every
   header of the baseline below on its responses; `make lint-security-headers`, part of
