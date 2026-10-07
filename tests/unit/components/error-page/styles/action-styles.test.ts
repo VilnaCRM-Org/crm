@@ -68,6 +68,7 @@ describe('ErrorPageActionStyles', () => {
     expect(actionStyles.build().contained).toEqual({
       ...SHARED_BASE,
       color: WHITE,
+      '&:visited': { color: WHITE },
       minHeight: '62px',
       padding: '20px 32px',
       ...DESKTOP_LABEL,
@@ -84,6 +85,7 @@ describe('ErrorPageActionStyles', () => {
       backgroundColor: WHITE,
       border: `1px solid ${BORDER_GREY}`,
       color: '#1B2327',
+      '&:visited': { color: '#1B2327' },
       '&:hover': { backgroundColor: WHITE, borderColor: BORDER_GREY },
       minHeight: '62px',
       padding: '19px 31px',

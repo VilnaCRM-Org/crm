@@ -5,7 +5,7 @@ import { I18nextProvider } from 'react-i18next';
 import ErrorPageActions from '@/components/error-page/components/error-page-actions';
 import type { ErrorPageVariantId } from '@/components/types/error-page';
 import createLocaleI18n from '@tests/unit/utils/create-locale-i18n';
-import { winningMediaValueFor } from '@tests/unit/utils/emotion-style-rules';
+import { styleRuleFor, winningMediaValueFor } from '@tests/unit/utils/emotion-style-rules';
 
 const HOME = 'На головну';
 const REQUEST_ACCESS = 'Запросити доступ';
@@ -62,6 +62,21 @@ describe('ErrorPageActions', () => {
 
     expect(home.compareDocumentPosition(requestAccess)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
+
+  it.each<[ErrorPageVariantId, string]>([
+    ['notFound', '#FFFFFF'],
+    ['serverError', '#FFFFFF'],
+    ['forbidden', '#1B2327'],
+  ])(
+    'keeps the %s home label colour on a visited link over the global a:visited',
+    (variant, colour) => {
+      renderActions(variant);
+
+      const home = screen.getByRole('link', { name: HOME });
+
+      expect(styleRuleFor(home, ':visited')?.color).toBe(colour);
+    }
+  );
 
   it('stretches both forbidden actions to the row width below the mobile breakpoint', () => {
     renderActions('forbidden');

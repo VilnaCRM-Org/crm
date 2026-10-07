@@ -80,8 +80,12 @@ class ErrorPageActionStyles {
     };
   }
 
+  private label(color: string): CSSObject {
+    return { color, '&:visited': { color } };
+  }
+
   private containedSurface(): CSSObject {
-    return { ...this.base(), color: paletteColors.background.default };
+    return { ...this.base(), ...this.label(paletteColors.background.default) };
   }
 
   private outlinedSurface(): CSSObject {
@@ -89,7 +93,7 @@ class ErrorPageActionStyles {
       ...this.base(),
       backgroundColor: paletteColors.background.default,
       border: `${OUTLINED_BORDER_WIDTH}px solid ${paletteColors.grey[50]}`,
-      color: customColors.brand.darkPrimary,
+      ...this.label(customColors.brand.darkPrimary),
       '&:hover': {
         backgroundColor: paletteColors.background.default,
         borderColor: paletteColors.grey[50],
