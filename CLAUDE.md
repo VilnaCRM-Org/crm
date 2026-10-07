@@ -166,10 +166,12 @@ more project names.
   overflow, and submit reachability at keyboard-height viewport. Playwright cannot open a native
   on-screen keyboard, so that last one shrinks the **layout** viewport as the closest proxy — it
   is named for what it measures, not for a keyboard it cannot summon.
-- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in` and `/sign-up`
-  captured with `scale: 'device'`, so the baselines are true 2.625× / 3× rasters and catch the
-  asset and raster regressions that CSS-scaled desktop snapshots average away. Baselines live in
-  `tests/visual/mobile/auth.spec.ts-snapshots/`, one per mobile project.
+- **Mobile visual** — [`tests/visual/mobile/`](tests/visual/mobile/): `/sign-in`, `/sign-up` and
+  the three error pages (404, `/forbidden`, `/server-error`) captured with `scale: 'device'`, so
+  the baselines are true 2.625× / 3× rasters and catch the asset and raster regressions that
+  CSS-scaled desktop snapshots average away. Baselines live in
+  `tests/visual/mobile/auth.spec.ts-snapshots/` and
+  `tests/visual/mobile/error-pages.spec.ts-snapshots/`, one per page per mobile project.
 
 Both lanes run inside the existing `make test-e2e` / `make test-visual` targets, so the
 `e2e testing` and `visual tests` PR checks gate them with no new workflow, no `--project` flag in
