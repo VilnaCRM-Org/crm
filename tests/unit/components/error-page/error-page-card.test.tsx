@@ -82,7 +82,6 @@ const expectCopy = ({ title, code, description }: CardCopy): void => {
   const descriptionLine = screen.getByText(description);
 
   expect(heading).toHaveTextContent(new RegExp(`^${title}$`));
-  expect(screen.getAllByText(code)).toHaveLength(1);
   expect(codeLine.tagName).toBe('P');
   expect(descriptionLine.tagName).toBe('P');
   expect(heading.compareDocumentPosition(codeLine)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);

@@ -130,7 +130,7 @@ describe('RouteErrorPage', () => {
     expect(load).toHaveBeenCalledTimes(1);
   });
 
-  it('remounts the page when the location key changes, so focus and the title repeat', async () => {
+  it('mounts a new page instance when the location key changes', async () => {
     const { RouteErrorPage } = await loadFresh();
     const view = render(<RouteErrorPage variant="notFound" landmark="main" />, {
       wrapper: Providers,

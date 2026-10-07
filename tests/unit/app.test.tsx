@@ -63,16 +63,6 @@ jest.mock('@/components/not-found/not-found', () => ({
   default: (): ReactElement => <div>not found page</div>,
 }));
 
-jest.mock('@/components/forbidden/forbidden', () => ({
-  __esModule: true,
-  default: (): ReactElement => <div>forbidden page</div>,
-}));
-
-jest.mock('@/components/server-error/server-error', () => ({
-  __esModule: true,
-  default: (): ReactElement => <div>server error page</div>,
-}));
-
 jest.mock('@/features/home', () => ({
   __esModule: true,
   default: (): ReactElement => <div>home page</div>,

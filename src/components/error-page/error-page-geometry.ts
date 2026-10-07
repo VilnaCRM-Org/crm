@@ -36,12 +36,11 @@ const LARGE_CARD_SURFACE: ErrorPageCardSurfaceGeometry = {
 
 const DESKTOP: ErrorPageGeometryTable['desktop'] = {
   page: LARGE_PAGE,
-  composition: { width: 614, paddingBottom: 0 },
+  composition: { width: 614 },
   digits: LARGE_DIGITS,
   card: {
     ...LARGE_CARD_SURFACE,
     width: 614,
-    height: 222,
     top: 29,
     titleLine: 43,
     gapTitle: 6,
@@ -64,11 +63,10 @@ const ERROR_PAGE_GEOMETRY: ErrorPageGeometryTable = {
   desktop: DESKTOP,
   tablet: {
     ...DESKTOP,
-    composition: { ...DESKTOP.composition, width: 474 },
+    composition: { width: 474 },
     card: {
       ...DESKTOP.card,
       width: 474,
-      height: 235,
       top: 24,
       gapTitle: 4,
       descSize: 18,
@@ -86,7 +84,7 @@ const ERROR_PAGE_GEOMETRY: ErrorPageGeometryTable = {
   },
   mobile: {
     page: { paddingTop: 43.61, paddingBottom: 73.91 },
-    composition: { width: 350.348, paddingBottom: 78.87 },
+    composition: { width: 350.348 },
     digits: {
       width: 344.435,
       height: 243.913,
@@ -109,7 +107,6 @@ const ERROR_PAGE_GEOMETRY: ErrorPageGeometryTable = {
       titleSize: 22,
       titleWeight: 700,
       width: 350.348,
-      height: 173.696,
       top: 26.476,
       titleLine: 26,
       gapTitle: 3.74,

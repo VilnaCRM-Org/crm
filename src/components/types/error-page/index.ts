@@ -36,7 +36,6 @@ export interface ErrorPagePageGeometry {
 
 export interface ErrorPageCompositionGeometry {
   width: number;
-  paddingBottom: number;
 }
 
 export interface ErrorPageGlyphPosition {
@@ -66,7 +65,6 @@ export interface ErrorPageCardSurfaceGeometry {
 
 export interface ErrorPageCardGeometry extends ErrorPageCardSurfaceGeometry {
   width: number;
-  height: number;
   top: number;
   titleLine: number;
   gapTitle: number;

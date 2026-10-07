@@ -31,9 +31,6 @@ inputDocuments:
   - 'https://github.com/VilnaCRM-Org/crm/issues/309'
   - 'specs/309-error-pages/planning-artifacts/research-309-error-pages-2026-10-01.md'
   - 'specs/309-error-pages/planning-artifacts/brief-309-error-pages-2026-10-01.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-research-codebase.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-figma-spec.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-research-gates.md'
   - 'Figma file xZ7ccrH6d4QyqLQsayFSEX, nodes 143:12154, 143:12166, 143:12178, 172:6675, 172:6914'
   - '.claude/react-sdlc.yml'
   - 'CLAUDE.md'
@@ -49,8 +46,8 @@ inputDocuments:
 
 Predecessors: [technical research](./research-309-error-pages-2026-10-01.md) (cited "R§n") and
 [product brief](./brief-309-error-pages-2026-10-01.md) (cited "B§n", goals G-1 to G-8, metrics
-M-1 to M-11). The pixel-level Figma note `plans/309-figma-spec.md` (cited "F§n") is the source of
-the parity reference in appendix A. This PRD carries the brief's goals into functional
+M-1 to M-11). A local, uncommitted pixel-level Figma note (cited "F§n") was the source of the
+parity reference in appendix A, which now carries its measurements. This PRD carries the brief's goals into functional
 requirements (section 9), its metrics into acceptance criteria, its constraints into NFRs
 (section 10) and its risks into section 12. It does not re-open any product owner decision.
 
@@ -154,7 +151,7 @@ The brief's metrics are binding acceptance criteria, mapped in section 11:
 - An access-request flow behind "Запросити доступ" (RBAC #114).
 - The app shell drawn in the frames: header with search, notifications and user menu, and the
   left sidebar.
-- Designed tablet and mobile frames for 403 and 5xx, and hover, focus and pressed designs.
+- Hover, focus and pressed designs.
 
 ### Out of Scope
 
@@ -163,8 +160,18 @@ The brief's metrics are binding acceptance criteria, mapped in section 11:
 - **Any behaviour on "Запросити доступ".** No handler, navigation, request or analytics event.
   The TODO is tracked in these specs and the PR body (FR-8, FR-20), never as an inline code
   comment.
-- **Parity claims for 403 and 5xx below 1440 px.** No frames exist. Those pages reuse the 404
-  tablet and mobile rules (FR-13, FR-14) without a parity claim.
+- **Parity claims for 403 and 5xx on tablet.** Frames 172:6702 (403) and 172:6941 (5xx) exist
+  but are labelled "Помилка 404 tablet", so planning missed them. They draw a 636 px card where
+  the 404 tablet frame draws 474 px; both pages reuse the 404 tablet rules (FR-13) and the
+  wider card is a follow-up.
+
+> Correction (review, 2026-10-07): the 403 (172:6730) and 5xx (172:6970) mobile frames also
+> exist under the label "Помилка 404 mobile". The mobile composition now follows them: the
+> 403 stacks its actions full width (20 px card inset, 6 px gap) with "Запросити доступ"
+> first, the description keeps the 261.65 px text box, and each status carries its own
+> title gap, action gap and bottom padding (404: 3.74 / 16 / 26.48, 403: 8 / 16 / 24,
+> 5xx: 8 / 8 / 20).
+
 - **Hover, pressed and disabled designs.** None are drawn; FR-7 and FR-11 set the minimum.
 - **Changes to `ErrorFallback`, `UIErrorBoundary`, `AuthErrorBoundary` or the bootstrap path
   in `src/index.tsx`.** They keep handling every non-status error unchanged.
@@ -1086,17 +1093,17 @@ Carried from B§9; each has an owning requirement.
 - **Design confirmation (flagged in the PR):** the 5xx copy, "На жаль", white-on-primary
   contrast, the decorative digit contrast, the `#969B9D` outlined border, the centred tablet
   card, the 24 / 16 px text inset, and the missing hover, focus and pressed designs.
-- **Follow-ups (new issues, not this PR):** the app shell; 403 and 5xx tablet and mobile frames;
-  any footer deviation the Fable review finds.
+- **Follow-ups (new issues, not this PR):** the app shell; the 636 px 403 and 5xx tablet card
+  (frames 172:6702, 172:6941); any footer deviation the Fable review finds.
 
 > Assumption: the PR closes #309; the shell and the access-request flow are separate issues.
 
 ## 14. Next Step
 
-Hand this PRD to the architect for `create-architecture`: component and file layout under
-`src/components/error-page/`, the status detector and lazy loader, the decoration asset
-strategy, the responsive switch points, the a11y exception selector, and the ADR-007 amendment
-or ADR-018 choice.
+The architecture is complete in
+[`architecture-309-error-pages-2026-10-01.md`](./architecture-309-error-pages-2026-10-01.md) and
+recorded as ADR-018. Implement and deliver against it, closing the requirements and acceptance
+criteria in section 9 and the NFRs in section 10.
 
 ## Appendix A: Parity reference
 

@@ -1,4 +1,4 @@
-import { type JSX, useCallback } from 'react';
+import { type JSX, useCallback, useEffect } from 'react';
 import { isRouteErrorResponse, useLocation, useNavigate, useRouteError } from 'react-router';
 
 import type { RouteErrorProps } from '@/components/types/error-boundary';
@@ -24,6 +24,12 @@ const focusMainWhenFocusWasLost = (): void => {
   document.querySelector<HTMLElement>('main[tabindex="-1"]')?.focus();
 };
 
+const scheduleFocusCheck = (): void => {
+  window.requestAnimationFrame(focusMainWhenFocusWasLost);
+};
+
+const checkFocusAfterRender = (): (() => void) => scheduleFocusCheck;
+
 export default function RouteErrorFallback({ landmark }: RouteErrorProps): JSX.Element {
   const routeError = useRouteError();
   const navigate = useNavigate();
@@ -32,8 +38,9 @@ export default function RouteErrorFallback({ landmark }: RouteErrorProps): JSX.E
   const { pathname, search, hash, state, key } = location;
   const reset = useCallback((): void => {
     navigate({ pathname, search, hash }, { replace: true, state });
-    window.requestAnimationFrame(focusMainWhenFocusWasLost);
   }, [navigate, pathname, search, hash, state]);
+
+  useEffect(checkFocusAfterRender);
 
   return (
     <ErrorFallback

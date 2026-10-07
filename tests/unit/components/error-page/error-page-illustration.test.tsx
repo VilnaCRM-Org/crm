@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 
 import ErrorPageIllustration from '@/components/error-page/error-page-illustration';
+import { assertInstanceOf, elementAt } from '@tests/utils/assert-result';
 
 jest.mock('@/assets/illustrations/error-page/curve.svg', () => ({ ReactComponent: 'svg' }));
 jest.mock('@/assets/illustrations/error-page/diamond.svg', () => ({ ReactComponent: 'svg' }));
@@ -16,15 +17,17 @@ interface RenderedLayer {
 
 const renderLayer = (): RenderedLayer => {
   render(<ErrorPageIllustration />);
-  const [, layer, tab, dot] = screen.getAllByRole('generic', { hidden: true });
-  expect(layer).toBeInstanceOf(HTMLElement);
-  expect(tab).toBeInstanceOf(HTMLElement);
-  expect(dot).toBeInstanceOf(HTMLElement);
+  const layer = screen
+    .getAllByRole('generic', { hidden: true })
+    .find((element) => element.getAttribute('aria-hidden') === 'true');
+  assertInstanceOf(layer, HTMLElement);
+  const blocks = within(layer).getAllByRole('generic', { hidden: true });
+  expect(blocks).toHaveLength(2);
   return {
-    layer: layer as HTMLElement,
-    tab: tab as HTMLElement,
-    dot: dot as HTMLElement,
-    art: screen.getAllByRole('presentation', { hidden: true }),
+    layer,
+    tab: elementAt(blocks, 0),
+    dot: elementAt(blocks, 1),
+    art: within(layer).getAllByRole('presentation', { hidden: true }),
   };
 };
 

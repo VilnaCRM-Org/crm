@@ -47,6 +47,23 @@ describe('ErrorPageStyles', () => {
     });
   });
 
+  it('reserves the mobile dot rows and their gap below the card', async () => {
+    const errorPageStyles = await loadErrorPageStyles();
+    const { default: geometry } = await import('@/components/error-page/error-page-geometry');
+    const gapBelowCard = 19.779;
+    const dotRowsHeight = 59.091;
+
+    expect(geometry.mobile.dotRows).toEqual({
+      width: 161.541,
+      height: dotRowsHeight,
+      gapBelowCard,
+    });
+    expect(errorPageStyles.build().composition[MOBILE]).toEqual({
+      width: '350.348px',
+      paddingBottom: `${gapBelowCard + dotRowsHeight}px`,
+    });
+  });
+
   it('builds exactly the landmark and composition tokens', async () => {
     const sheet = (await loadErrorPageStyles()).build();
 

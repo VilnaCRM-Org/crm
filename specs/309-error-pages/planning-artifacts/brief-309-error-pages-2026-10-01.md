@@ -10,9 +10,6 @@ author: 'analyst (Mary), autonomous run'
 inputDocuments:
   - 'https://github.com/VilnaCRM-Org/crm/issues/309'
   - 'specs/309-error-pages/planning-artifacts/research-309-error-pages-2026-10-01.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-research-codebase.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-figma-spec.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-research-gates.md'
   - 'Figma file xZ7ccrH6d4QyqLQsayFSEX, nodes 143:12154, 143:12166, 143:12178, 172:6675, 172:6914'
   - 'CLAUDE.md'
   - '.claude/react-sdlc.yml'
@@ -186,7 +183,7 @@ All metrics are binary or numeric and are read from CI, a committed file or the 
 
 ### Behaviour
 
-- **M-1** `/` + unknown path, `/forbidden` and `/server-error` each render exactly one `h1` with
+- **M-1** An unknown path, `/forbidden` and `/server-error` each render exactly one `h1` with
   the variant's title in uk (and in en when the language is switched), and focus is on that `h1`
   on arrival.
 - **M-2** A `RouteError` unit matrix over statuses 400, 401, 403, 404, 499, 500, 599, 600 and a

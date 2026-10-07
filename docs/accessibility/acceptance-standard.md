@@ -25,13 +25,6 @@ and Space/Enter activation. Both Playwright lanes ride the `accessibility testin
 Lighthouse keeps its 0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in`,
 `/sign-up`, `/forbidden` and `/server-error` as a second signal, not the primary gate.
 
-The component lane renders the `UI*` components and pages listed in [`tests/unit/a11y/`][unit]
-and also runs inside `make test-unit-all`. The route lane scans every route in
-`src/routes/route-paths.ts` in Chromium, Firefox and WebKit, and the keyboard lane asserts tab
-order, `:focus-visible`, a visible focus change and Space/Enter activation. Lighthouse keeps its
-0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in`, `/sign-up`, `/forbidden` and
-`/server-error` as a second signal, not the primary gate.
-
 The **rule set** is one constant, [`WCAG_AA_TAGS`][config] = `wcag2a`, `wcag2aa`, `wcag21a`,
 `wcag21aa`; both axe layers import it and no test re-declares it. `best-practice` rules are
 advisory and are not part of the gate: in jsdom they false-fail every rendered fragment

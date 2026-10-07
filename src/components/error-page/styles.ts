@@ -56,8 +56,10 @@ class ErrorPageStyles {
     return { paddingTop: `${page.paddingTop}px`, paddingBottom: `${page.paddingBottom}px` };
   }
 
-  private composition({ composition }: ErrorPageGeometry): CSSObject {
-    return { width: `${composition.width}px`, paddingBottom: `${composition.paddingBottom}px` };
+  private composition({ composition, dotRows }: ErrorPageGeometry): CSSObject {
+    const decorationBelow = dotRows === null ? 0 : dotRows.gapBelowCard + dotRows.height;
+
+    return { width: `${composition.width}px`, paddingBottom: `${decorationBelow}px` };
   }
 }
 

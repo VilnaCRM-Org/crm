@@ -13,6 +13,8 @@ interface Rect {
 }
 
 interface CardLayout {
+  viewportWidth: number;
+  scrollWidth: number;
   card: Rect;
   title: Rect;
   description: Rect;
@@ -53,17 +55,24 @@ async function openForbidden(page: Page, viewport: SpacingViewport): Promise<voi
 
 function readCardLayout(page: Page): Promise<CardLayout> {
   return page.evaluate((): CardLayout => {
-    const rectOf = (element: Element): Rect => {
-      const { left, right, top, bottom, height } = element.getBoundingClientRect();
+    const rectOf = (box: Element | Range): Rect => {
+      const { left, right, top, bottom, height } = box.getBoundingClientRect();
       return { left, right, top, bottom, height };
+    };
+    const glyphsOf = (element: Element): Rect => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return rectOf(range);
     };
     const title = document.querySelector('main h1') as HTMLElement;
     const card = title.parentElement as HTMLElement;
 
     return {
+      viewportWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
       card: rectOf(card),
-      title: rectOf(title),
-      description: rectOf(card.querySelector(':scope > h1 + p + p') as HTMLElement),
+      title: glyphsOf(title),
+      description: glyphsOf(card.querySelector(':scope > h1 + p + p') as HTMLElement),
       actions: [...document.querySelectorAll('#error-page-actions > *')].map(rectOf),
     };
   });
@@ -88,6 +97,9 @@ test.describe('Error-page WCAG 1.4.12 text spacing (issue #309)', () => {
       const spaced = await readCardLayout(page);
 
       expect(spaced.card.height).toBeGreaterThan(resting.card.height);
+      expect(spaced.scrollWidth).toBe(spaced.viewportWidth);
+      expect(spaced.card.left).toBeGreaterThanOrEqual(0);
+      expect(spaced.card.right).toBeLessThanOrEqual(spaced.viewportWidth);
       expectInside(spaced.title, spaced.card, 0);
       expectInside(spaced.description, spaced.card, 0);
       expect(spaced.actions).toHaveLength(REQUEST_ACCESS_ACTIONS);

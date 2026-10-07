@@ -22,9 +22,6 @@ inputDocuments:
   - 'specs/309-error-pages/planning-artifacts/prd-309-error-pages-2026-10-01.md'
   - 'specs/309-error-pages/planning-artifacts/architecture-309-error-pages-2026-10-01.md'
   - 'specs/309-error-pages/planning-artifacts/epics-309-error-pages-2026-10-01.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-research-codebase.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-figma-spec.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-research-gates.md'
   - 'https://github.com/VilnaCRM-Org/crm/issues/309'
   - 'CLAUDE.md'
   - '.jscpd.json'
@@ -62,9 +59,9 @@ mode, iteration 4 (plan iteration 3/5). **Date:** 2026-10-01. **Issue:**
 Inputs: [research](./research-309-error-pages-2026-10-01.md),
 [brief](./brief-309-error-pages-2026-10-01.md), [PRD](./prd-309-error-pages-2026-10-01.md),
 [architecture](./architecture-309-error-pages-2026-10-01.md) and
-[epics and stories](./epics-309-error-pages-2026-10-01.md), plus the three research notes in
-`crm-worktrees/plans/` (codebase map, pixel-level Figma spec cited "F§n", gates note). Worktree
-`/home/dima/Desktop/crm-worktrees/309-error-pages`, branch `feat/309-error-pages`, head `cff55203`,
+[epics and stories](./epics-309-error-pages-2026-10-01.md), plus three local research notes that are not committed (codebase map, pixel-level Figma spec
+cited "F§n", gates note) and whose findings the research artifact and PRD appendix A carry.
+Branch `feat/309-error-pages`, head `cff55203`,
 only `specs/309-error-pages/` untracked. No build, suite or Docker command was run; the only
 tools executed were `rust-code-analysis-cli`, `jscpd` and `prettier` on scratch files and the
 artifacts themselves, and (plan iteration 3) two read-only Figma `use_figma` scripts.
@@ -115,14 +112,14 @@ wording at the group A commit, and an accepted, tested short-viewport scroll.
 
 ## 1. Document Discovery
 
-| Type            | File                                         | Lines | State    |
-| --------------- | -------------------------------------------- | ----- | -------- |
-| Research        | `research-309-error-pages-2026-10-01.md`     | 527   | complete |
-| Brief           | `brief-309-error-pages-2026-10-01.md`        | 351   | complete |
-| PRD             | `prd-309-error-pages-2026-10-01.md`          | 1151  | complete |
-| Architecture    | `architecture-309-error-pages-2026-10-01.md` | 1408  | complete |
-| Epics & stories | `epics-309-error-pages-2026-10-01.md`        | 1516  | complete |
-| UX design       | none (the five Figma frames, measured)       | -     | n/a      |
+| Type            | File                                         | State    |
+| --------------- | -------------------------------------------- | -------- |
+| Research        | `research-309-error-pages-2026-10-01.md`     | complete |
+| Brief           | `brief-309-error-pages-2026-10-01.md`        | complete |
+| PRD             | `prd-309-error-pages-2026-10-01.md`          | complete |
+| Architecture    | `architecture-309-error-pages-2026-10-01.md` | complete |
+| Epics & stories | `epics-309-error-pages-2026-10-01.md`        | complete |
+| UX design       | none (the five Figma frames, measured)       | n/a      |
 
 - Every document is whole, not sharded, carries `status: 'complete'`, and links its
   predecessors by relative path. All six pass `prettier --check` with the repository config
@@ -400,7 +397,7 @@ No finding was rejected.
 | I-8  | The `forbidden-tablet` screen adds three baselines with no parity claim; the PR stage now commits nine 403 / 5xx baselines.                                            |
 | I-9  | The Figma base64 export is inline in the tool response; the Story 6.1 reviewer decodes it into the scratch directory. Any other fetch path needs explicit permission.  |
 | I-10 | The en pass edits only the local, untracked `.env` and restores it; a forgotten value would build en locally but never reach CI, which copies `.env.example`.          |
-| I-11 | The Figma spec in `crm-worktrees/plans/` is outside the repository; it was corrected for consistency (G-1, G-2, G-6) but is not committed.                             |
+| I-11 | The local Figma spec note is outside the repository; it was corrected for consistency (G-1, G-2, G-6) but is not committed.                                            |
 | I-12 | G-7 adds a `statusCode` literal to `ErrorPageCardStyles.build()` and G-4 adds `display` keys; both are small against the spike's headroom; `make lint-metrics` checks. |
 
 Critical findings open: 0. Major findings open: 0. Minor findings open: 0. Info notes: 12.

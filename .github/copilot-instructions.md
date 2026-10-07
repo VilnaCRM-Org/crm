@@ -66,8 +66,9 @@ make test-mutation    # Stryker; the enforced floor is 100%
   a render-thrown `Response` or a `data()` value — so a guard may throw
   `data(null, { status: 403 })` or navigate to `/forbidden` — and renders the lazy designed
   `ErrorPage` for 403, 404 and 500 to 599, so a 5xx route response shows the 5xx page with only
-  a homepage link and no in-place Try again; every other error renders `RouteErrorFallback` →
-  `ErrorFallback` exactly as before.
+  a homepage link and no in-place Try again; every other error, and every status error once the
+  error-page chunk has failed twice, renders `RouteErrorFallback` → `ErrorFallback` exactly as
+  before.
 - **Classes receive collaborators through DI**: a token in the area's `tokens.ts`, a
   registration in its `di.ts` composition root, and a constructor `@inject`. Allowed value
   imports are `import type`, the base class, tokens, config data, error classes, constant maps,

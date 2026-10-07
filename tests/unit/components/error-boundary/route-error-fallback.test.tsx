@@ -46,6 +46,16 @@ function renderFallback(landmark: FallbackLandmark = 'region'): ReturnType<typeo
   );
 }
 
+const RECOVERED = 'Orders page';
+
+function RetryOutlet({ retried }: { retried: boolean }): JSX.Element {
+  return (
+    <main tabIndex={-1}>
+      {retried ? <p>{RECOVERED}</p> : <RouteErrorFallback landmark="region" />}
+    </main>
+  );
+}
+
 function fakeAnimationFrame(): jest.SpyInstance {
   return jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
     callback(0);
@@ -99,7 +109,6 @@ describe('RouteErrorFallback', () => {
   });
 
   it('offers an in-place retry for a retryable route error', () => {
-    fakeAnimationFrame();
     const message = faker.lorem.sentence();
     mockRouteError = Object.assign(new Error(message), { retryable: true });
 
@@ -113,7 +122,6 @@ describe('RouteErrorFallback', () => {
   });
 
   it('re-renders the current location in place, keeping its search and hash', () => {
-    const animationFrame = fakeAnimationFrame();
     mockRouteError = new Error('route failed');
     mockLocation = { ...mockLocation, search: '?next=%2Fx', hash: '#frag' };
 
@@ -127,45 +135,54 @@ describe('RouteErrorFallback', () => {
       { pathname: '/orders', search: '?next=%2Fx', hash: '#frag' },
       { replace: true, state: mockLocation.state }
     );
-    expect(animationFrame).toHaveBeenCalledTimes(1);
   });
 
-  it('focuses the main landmark after a retry that left nothing focused', () => {
-    fakeAnimationFrame();
+  it('defers the focus check until a successful retry replaces the fallback', () => {
+    const animationFrame = fakeAnimationFrame();
     mockRouteError = new Error('route failed');
 
-    renderFallback();
-    screen.getByRole('heading', { level: 1, name: HEADING }).blur();
-    expect(document.body).toHaveFocus();
+    const view = render(<RetryOutlet retried={false} />, { wrapper: Providers });
+    const tryAgain = screen.getByRole('button', { name: TRY_AGAIN });
+    tryAgain.focus();
+    fireEvent.click(tryAgain);
 
-    fireEvent.click(screen.getByRole('button', { name: TRY_AGAIN }));
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(animationFrame).not.toHaveBeenCalled();
+    expect(tryAgain).toHaveFocus();
 
+    view.rerender(<RetryOutlet retried />);
+
+    expect(screen.getByText(RECOVERED)).toBeInTheDocument();
+    expect(animationFrame).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('main')).toHaveFocus();
   });
 
-  it('leaves focus alone when a remounted fallback already holds it', () => {
-    fakeAnimationFrame();
+  it('leaves focus on the remounted heading after a retry that failed again', () => {
+    const animationFrame = fakeAnimationFrame();
     mockRouteError = new Error('route failed');
 
-    renderFallback();
-    const heading = screen.getByRole('heading', { level: 1, name: HEADING });
-    expect(heading).toHaveFocus();
-
+    const view = render(<RetryOutlet retried={false} />, { wrapper: Providers });
+    const firstHeading = screen.getByRole('heading', { level: 1, name: HEADING });
     fireEvent.click(screen.getByRole('button', { name: TRY_AGAIN }));
 
-    expect(heading).toHaveFocus();
+    mockLocation = { ...mockLocation, key: `${mockLocation.key}-retried` };
+    view.rerender(<RetryOutlet retried={false} />);
+
+    const secondHeading = screen.getByRole('heading', { level: 1, name: HEADING });
+    expect(secondHeading).not.toBe(firstHeading);
+    expect(animationFrame).toHaveBeenCalledTimes(1);
+    expect(secondHeading).toHaveFocus();
     expect(screen.getByRole('main')).not.toHaveFocus();
   });
 
-  it('tolerates a retry when no focusable main landmark exists', () => {
-    fakeAnimationFrame();
+  it('tolerates an unmount when no focusable main landmark exists', () => {
+    const animationFrame = fakeAnimationFrame();
     mockRouteError = new Error('route failed');
 
-    render(<RouteErrorFallback landmark="region" />, { wrapper: Providers });
-    screen.getByRole('heading', { level: 1, name: HEADING }).blur();
-    fireEvent.click(screen.getByRole('button', { name: TRY_AGAIN }));
+    const view = render(<RouteErrorFallback landmark="region" />, { wrapper: Providers });
+    view.unmount();
 
-    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(animationFrame).toHaveBeenCalledTimes(1);
     expect(document.body).toHaveFocus();
   });
 

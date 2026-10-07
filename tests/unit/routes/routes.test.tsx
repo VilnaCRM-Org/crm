@@ -13,6 +13,8 @@ import { buildToken } from '@tests/builders';
 let mockCurrentPath = '/sign-up';
 let mockPageError: Error | undefined;
 
+const GUARD = 'protected route guard';
+
 jest.mock('react-i18next', () => ({
   useTranslation: (): { i18n: { language: string }; t: (k: string) => string } => ({
     i18n: { language: 'en' },
@@ -43,7 +45,14 @@ jest.mock('react-router', () => {
 
 jest.mock('@auth/components/protected-route', () => {
   const { Outlet } = jest.requireActual('react-router');
-  return { __esModule: true, default: (): ReactElement => <Outlet /> };
+  return {
+    __esModule: true,
+    default: (): ReactElement => (
+      <section aria-label="protected route guard">
+        <Outlet />
+      </section>
+    ),
+  };
 });
 
 jest.mock('@/components/layouts/root-layout', () => {
@@ -145,18 +154,23 @@ describe('routes', () => {
     renderAt('/forbidden');
     expect(await screen.findByText('forbidden page')).toBeInTheDocument();
     expect(screen.queryByRole('main')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: GUARD })).not.toBeInTheDocument();
   });
 
   it('renders the 5xx page at /server-error outside AppLayout and the guard (#309)', async () => {
     renderAt('/server-error');
     expect(await screen.findByText('server error page')).toBeInTheDocument();
     expect(screen.queryByRole('main')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: GUARD })).not.toBeInTheDocument();
   });
 
   it('renders the home page through AppLayout at / (AC1)', async () => {
     renderAt('/');
     expect(await screen.findByText('home page')).toBeInTheDocument();
     expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: GUARD })).toContainElement(
+      screen.getByText('home page')
+    );
   });
 
   it('renders the route error boundary inside AppLayout when a page throws (#116)', async () => {

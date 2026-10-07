@@ -18,9 +18,6 @@ inputDocuments:
   - 'specs/309-error-pages/planning-artifacts/brief-309-error-pages-2026-10-01.md'
   - 'specs/309-error-pages/planning-artifacts/prd-309-error-pages-2026-10-01.md'
   - 'specs/309-error-pages/planning-artifacts/architecture-309-error-pages-2026-10-01.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-research-codebase.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-figma-spec.md'
-  - '/home/dima/Desktop/crm-worktrees/plans/309-research-gates.md'
   - 'Figma file xZ7ccrH6d4QyqLQsayFSEX, nodes 143:12154, 143:12166, 143:12178, 172:6675, 172:6914'
   - 'specs/250-ui-toolkit/planning-artifacts/epics-250-ui-toolkit-2026-09-29.md (format precedent)'
   - 'CLAUDE.md'
@@ -38,7 +35,7 @@ Predecessors: [technical research](./research-309-error-pages-2026-10-01.md) ("R
 [product brief](./brief-309-error-pages-2026-10-01.md) ("B§n"),
 [PRD](./prd-309-error-pages-2026-10-01.md) ("FR-n", "NFR-n", appendix "A.n") and
 [architecture](./architecture-309-error-pages-2026-10-01.md) ("AD§n", decisions "D-n"). The
-pixel-level Figma note `plans/309-figma-spec.md` is cited "F§n". This document does not re-open
+local, uncommitted pixel-level Figma note is cited "F§n"; PRD appendix A carries its measurements. This document does not re-open
 any product owner decision (PRD UD-1 to UD-10) or any architecture decision (D-1 to D-13).
 
 ## Overview

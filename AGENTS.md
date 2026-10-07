@@ -1498,8 +1498,10 @@ deferred `RouteFallback`. `RouteError` dispatches on status first (issue #309, A
 `errorPageStatusDetector` reads a status from a router error response, a render-thrown
 `Response` or a `data()` value — so a guard may throw `data(null, { status: 403 })` or navigate
 to `/forbidden` — and renders the lazy designed `ErrorPage` for 403, 404 and 500 to 599, so a
-5xx route response shows the 5xx page with only a homepage link and no in-place Try again;
-every other error renders `RouteErrorFallback` → `ErrorFallback` exactly as before. The
+5xx route response shows the 5xx page with only a homepage link and no in-place Try again —
+unless the lazy `ErrorPage` chunk still fails after its retry, when `RouteErrorPage` falls back to
+`RouteErrorFallback` and its retry or reload button for the original route error; every other
+error renders `RouteErrorFallback` → `ErrorFallback` exactly as before. The
 `performance serving` golden test (`tests/unit/tooling/performance-serving.test.ts`) fails CI if a
 page loader loses its named dynamic `import()` or that boundary reverts to `fallback={null}`; the
 issue-#116 ESLint selectors (`make lint-eslint`) fail a `fallback={null|undefined|false|true|""}`
