@@ -19,6 +19,7 @@ interface FakeHost extends PrefetchHost {
 }
 
 const INTENT = { once: true, passive: true };
+const PREFETCH_DELAY_MS = 2000;
 
 const createHost = (readyState: DocumentReadyState = 'loading'): FakeHost => {
   const listeners = new Map<PrefetchHostEvent, (() => void)[]>();
@@ -36,6 +37,8 @@ const createHost = (readyState: DocumentReadyState = 'loading'): FakeHost => {
         listeners.set(type, [...(listeners.get(type) ?? []), listener]);
       }
     ),
+    setTimeout: (handler: () => void, timeout: number): number =>
+      window.setTimeout(handler, timeout),
     fire: (type: PrefetchHostEvent): void => {
       const pending = listeners.get(type) ?? [];
       listeners.delete(type);
@@ -56,11 +59,15 @@ const registeredTypes = (host: FakeHost): PrefetchHostEvent[] =>
   host.addEventListener.mock.calls.map(([type]) => type);
 
 describe('PostLoadPrefetcher', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  it('waits for the load event and then the first interaction before loading every target', () => {
+  it('waits for load, the first interaction and then the delay before loading every target', () => {
     const host = createHost('loading');
     const targets = [createTarget(), createTarget()];
 
@@ -72,11 +79,14 @@ describe('PostLoadPrefetcher', () => {
     });
 
     host.fire('load');
-    targets.forEach((target) => expect(target.load).not.toHaveBeenCalled());
     expect(host.addEventListener).toHaveBeenCalledWith('pointerdown', expect.any(Function), INTENT);
     expect(host.addEventListener).toHaveBeenCalledWith('keydown', expect.any(Function), INTENT);
 
     host.fire('pointerdown');
+    jest.advanceTimersByTime(PREFETCH_DELAY_MS - 1);
+    targets.forEach((target) => expect(target.load).not.toHaveBeenCalled());
+
+    jest.advanceTimersByTime(1);
     targets.forEach((target) => expect(target.load).toHaveBeenCalledTimes(1));
   });
 
@@ -87,6 +97,7 @@ describe('PostLoadPrefetcher', () => {
     new PostLoadPrefetcher([target]).attach(host);
     host.fire('load');
     host.fire('online');
+    jest.advanceTimersByTime(PREFETCH_DELAY_MS * 10);
 
     expect(registeredTypes(host)).toEqual(['pointerdown', 'keydown']);
     expect(target.load).not.toHaveBeenCalled();
@@ -98,6 +109,7 @@ describe('PostLoadPrefetcher', () => {
 
     new PostLoadPrefetcher([target]).attach(host);
     host.fire('keydown');
+    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
 
     expect(registeredTypes(host)).toEqual(['pointerdown', 'keydown']);
     expect(target.load).toHaveBeenCalledTimes(1);
@@ -109,6 +121,7 @@ describe('PostLoadPrefetcher', () => {
 
     new PostLoadPrefetcher([target]).attach(host);
     host.fire('pointerdown');
+    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
 
     expect(registeredTypes(host)).toEqual(['load']);
     expect(target.load).not.toHaveBeenCalled();
@@ -121,6 +134,7 @@ describe('PostLoadPrefetcher', () => {
     new PostLoadPrefetcher([target]).attach(host);
     host.fire('pointerdown');
     host.fire('keydown');
+    jest.advanceTimersByTime(PREFETCH_DELAY_MS * 2);
 
     expect(target.load).toHaveBeenCalledTimes(1);
   });
@@ -134,6 +148,7 @@ describe('PostLoadPrefetcher', () => {
     prefetcher.attach(host);
     host.fire('load');
     host.fire('pointerdown');
+    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
 
     expect(registeredTypes(host)).toEqual(['load', 'pointerdown', 'keydown']);
     expect(target.load).toHaveBeenCalledTimes(1);
@@ -146,6 +161,7 @@ describe('PostLoadPrefetcher', () => {
 
     new PostLoadPrefetcher([target]).attach(host);
     host.fire('pointerdown');
+    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
 
     expect(target.load).not.toHaveBeenCalled();
     expect(host.addEventListener).toHaveBeenLastCalledWith('online', expect.any(Function), {
@@ -165,6 +181,7 @@ describe('PostLoadPrefetcher', () => {
 
     new PostLoadPrefetcher([failing, healthy]).attach(host);
     host.fire('pointerdown');
+    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
     await Promise.resolve();
 
     expect(failing.load).toHaveBeenCalledTimes(1);
@@ -172,7 +189,6 @@ describe('PostLoadPrefetcher', () => {
   });
 
   it('leaves a failed chunk loader free to retry when the page later needs it', async () => {
-    jest.useFakeTimers();
     const host = createHost('complete');
     const loaded = { default: buildToken() };
     const importModule = jest
@@ -184,6 +200,7 @@ describe('PostLoadPrefetcher', () => {
 
     new PostLoadPrefetcher([loader]).attach(host);
     host.fire('keydown');
+    jest.advanceTimersByTime(PREFETCH_DELAY_MS);
     await jest.runAllTimersAsync();
 
     expect(importModule).toHaveBeenCalledTimes(2);

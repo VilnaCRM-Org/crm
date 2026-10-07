@@ -67,7 +67,9 @@ detector and a loader to the eager path.
   message or stack.
 - **Warm-up after load.** `PostLoadPrefetcher` (`src/lib/reliability/post-load-prefetcher.ts`),
   attached once from `src/index.tsx` after `root.render`, waits for the window `load` event,
-  then for the first `pointerdown` or `keydown`, then calls `errorPageLoader.load()` and a
+  then for the first `pointerdown` or `keydown`, then 2 000 ms more (a click that leaves the
+  page at once never starts a fetch the navigation would abort — Firefox logs an aborted font
+  download as a console error), then calls `errorPageLoader.load()` and a
   `FontFaceLoader` over the four Golos weights the page renders (`ERROR_PAGE_FONT_FACES`).
   Offline at that moment, it waits for the next `online` event. The trigger is interaction
   rather than a timer because only a client-side navigation can reuse the warmed chunk, and

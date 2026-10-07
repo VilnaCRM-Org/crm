@@ -13,4 +13,5 @@ export interface PrefetchHost {
     listener: () => void,
     options: PrefetchListenerOptions
   ): void;
+  setTimeout(handler: () => void, timeout: number): number;
 }

@@ -1,6 +1,8 @@
 import type { ModuleLoader } from './types/module-loader';
 import type { PrefetchHost, PrefetchHostEvent } from './types/prefetch-host';
 
+const PREFETCH_DELAY_MS = 2000;
+
 export default class PostLoadPrefetcher {
   private readonly intentEvents: readonly PrefetchHostEvent[] = ['pointerdown', 'keydown'];
 
@@ -31,7 +33,7 @@ export default class PostLoadPrefetcher {
   private start(host: PrefetchHost): void {
     if (this.started) return;
     this.started = true;
-    this.prefetch(host);
+    host.setTimeout(() => this.prefetch(host), PREFETCH_DELAY_MS);
   }
 
   private prefetch(host: PrefetchHost): void {
