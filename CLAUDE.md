@@ -759,6 +759,9 @@ base-layer files in a later layer. The Dockerfile now resolves `serve@14.2.6` in
 `serve-base`, so the harness image is the same runtime plus the seeded bundle. Measured: 280 MB →
 57 MB, zero fixable HIGH/CRITICAL findings, hadolint and dive green. A new runtime binary is
 resolved in `serve-tools` and copied in; npm, corepack and yarn never return to the runtime stage.
+`serve@14.2.6` pins `compression` exactly at 1.8.1 (CVE-2026-87776, fixed in 1.8.2), so the
+same stage rewrites that one dependency of the installed `serve` and reinstalls its production
+tree; drop the repin once a `serve` release depends on a fixed `compression`.
 `NO_UPDATE_CHECK=1` stops `serve` from contacting the npm registry at container start, and the
 `serve` bump (`14.2.0` → `14.2.6`) negotiates Brotli where the client accepts it, so measured
 transfer sizes can only shrink against the Lighthouse resource budgets.
