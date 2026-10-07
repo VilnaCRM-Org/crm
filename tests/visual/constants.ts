@@ -110,8 +110,11 @@ export const notFoundScreens: ReadonlyArray<ScreenSize> = [
 export const forbiddenScreens: ReadonlyArray<ScreenSize> = [
   { width: 1440, height: 940, name: 'forbidden-desktop' },
   { width: 1024, height: 1366, name: 'forbidden-tablet' },
+  { width: 375, height: 1082, name: 'forbidden-mobile' },
 ];
 
 export const serverErrorScreens: ReadonlyArray<ScreenSize> = [
   { width: 1440, height: 940, name: 'server-error-desktop' },
+  { width: 1024, height: 1366, name: 'server-error-tablet' },
+  { width: 375, height: 1082, name: 'server-error-mobile' },
 ];
