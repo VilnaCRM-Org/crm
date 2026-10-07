@@ -1514,6 +1514,7 @@ limit without rationale or disabling the gate.
 ```bash
 # Edit scenario in tests/load/config.json.dist
 make test-load
+make test-load-error-pages
 ```
 
 **Scenarios**:

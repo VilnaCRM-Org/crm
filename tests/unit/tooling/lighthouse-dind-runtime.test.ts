@@ -69,12 +69,17 @@ describe('Lighthouse DIND runtime contract', () => {
           ${JSON.stringify(path.join(lighthouseDir, 'lighthouserc.mobile.js'))}
         );
         const constants = require(${JSON.stringify(path.join(lighthouseDir, 'constants.js'))});
-        const expected = ['', '/sign-up', '/sign-in', '/forbidden', '/server-error'].map(
-          route => 'http://localhost:3001' + route
-        );
+        const expected = [
+          '',
+          '/sign-up',
+          '/sign-in',
+          '/forbidden',
+          '/server-error',
+          '/definitely-not-a-route',
+        ].map(route => 'http://localhost:3001' + route);
         if (desktop.ci.collect.url.join(',') !== expected.join(',')) process.exit(11);
         if (mobile.ci.collect.url.join(',') !== desktop.ci.collect.url.join(',')) process.exit(12);
-        if (constants.pages.length !== 5) process.exit(13);
+        if (constants.pages.length !== 6) process.exit(13);
       `;
       execFileSync(process.execPath, ['-e', script], {
         env: {

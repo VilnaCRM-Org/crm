@@ -243,12 +243,20 @@ under Code Quality and [`docs/accessibility/acceptance-standard.md`](docs/access
 ### Performance Tests
 
 ```bash
-make test-memory-leak   # Memlab memory leak tests
-make test-load          # K6 load testing
-make lighthouse-desktop # Lighthouse audit (desktop)
-make lighthouse-mobile  # Lighthouse audit (mobile)
-make test-mutation      # Stryker mutation testing
+make test-memory-leak      # Memlab memory leak tests
+make test-load             # K6 load testing (homepage)
+make test-load-signup      # K6 load testing (signup API)
+make test-load-error-pages # K6 load testing (403, 5xx and 404 error pages)
+make lighthouse-desktop    # Lighthouse audit (desktop)
+make lighthouse-mobile     # Lighthouse audit (mobile)
+make test-mutation         # Stryker mutation testing
 ```
+
+The error pages (`/forbidden`, `/server-error` and the catch-all 404, probed at
+`/definitely-not-a-route`) ride every performance lane: `lighthouse/constants.js` audits all
+three on desktop and mobile under the unchanged budgets, `make test-load-error-pages` (the
+`error pages load testing` job) requests all three under the homepage's k6 budgets, and the
+`tests/memory-leak/tests/error-pages.js` memlab scenario walks them from `/sign-in` and back.
 
 Load test scenarios (configurable in `./test/load/config.json.dist`):
 

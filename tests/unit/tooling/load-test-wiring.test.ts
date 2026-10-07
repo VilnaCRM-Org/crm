@@ -28,6 +28,20 @@ describe('load test wiring', () => {
     expect(batchScript).toContain('test-load-signup)');
   });
 
+  it('runs the error-pages suite in the batch script, the PR matrix and the CI load phase', () => {
+    const batchScript = readFile('scripts/ci/batch_pw_load.sh');
+    const workflow = readFile('.github/workflows/load-testing.yml');
+    const makefile = readFile('Makefile');
+    const ciTestLoad = makefile.match(/^ci-test-load:.*?\n((?:\t.*\n)+)/m)?.[1];
+
+    expect(batchScript).toContain('run_load_tests_dind "$crm_dir" "error-pages"');
+    expect(batchScript).toContain('run_load_tests_dind "." "error-pages"');
+    expect(batchScript).toContain('test-load-error-pages)');
+    expect(workflow).toContain('make_cmd: test-load-error-pages');
+    expect(makefile).toContain('K6_ERROR_PAGES_SCRIPT       ?= /loadTests/error-pages.js');
+    expect(ciTestLoad).toContain('$(LOAD_TESTS_RUN_ERROR_PAGES)');
+  });
+
   it('uses maxVUs consistently across the signup load config and scenario builder', () => {
     const config = readFile('tests/load/config.json.dist');
     const scenariosBuilder = readFile('tests/load/utils/scenarios-builder.js');

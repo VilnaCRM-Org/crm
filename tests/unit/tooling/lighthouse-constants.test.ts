@@ -31,6 +31,7 @@ describe('lighthouse constants', () => {
       'http://prod:3001/sign-in',
       'http://prod:3001/forbidden',
       'http://prod:3001/server-error',
+      'http://prod:3001/definitely-not-a-route',
     ]);
   });
 });

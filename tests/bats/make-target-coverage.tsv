@@ -71,6 +71,7 @@ wait-for-prod-health	ci	.github/workflows/load-testing.yml	Exercised transitivel
 prepare-results-dir	ci	.github/workflows/load-testing.yml	Exercised transitively by the load-testing PR workflow targets.
 test-load	ci	.github/workflows/load-testing.yml	Executed directly by the homepage load-testing PR workflow.
 test-load-signup	ci	.github/workflows/load-testing.yml	Executed directly by the signup load-testing PR workflow.
+test-load-error-pages	ci	.github/workflows/load-testing.yml	Executed directly by the error pages load-testing PR workflow.
 lighthouse-desktop	ci	.github/workflows/performance-testing.yml	Executed directly by the desktop performance PR workflow.
 lighthouse-mobile	ci	.github/workflows/performance-testing.yml	Executed directly by the mobile performance PR workflow.
 lighthouse-setup	ci	.github/workflows/performance-testing.yml	Exercised transitively by the Lighthouse PR workflow targets.

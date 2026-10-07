@@ -23,7 +23,8 @@ route lane calls [`expectNoAxeViolations`][route-helper] on every route in
 [`expectTabOrder`][keyboard-helper] to assert tab order, `:focus-visible`, a visible focus change
 and Space/Enter activation. Both Playwright lanes ride the `accessibility testing` check.
 Lighthouse keeps its 0.95 desktop / 0.90 mobile accessibility scores on `/`, `/sign-in`,
-`/sign-up`, `/forbidden` and `/server-error` as a second signal, not the primary gate.
+`/sign-up`, `/forbidden`, `/server-error` and the catch-all 404 (`/definitely-not-a-route`) as a
+second signal, not the primary gate.
 
 The **rule set** is one constant, [`WCAG_AA_TAGS`][config] = `wcag2a`, `wcag2aa`, `wcag21a`,
 `wcag21aa`; both axe layers import it and no test re-declares it. `best-practice` rules are

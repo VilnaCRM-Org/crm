@@ -96,6 +96,10 @@ run_load_tests_dind() {
             k6_script="/loadTests/signup.js"
             k6_results_file="/loadTests/results/signup.html"
             ;;
+        error-pages)
+            k6_script="/loadTests/error-pages.js"
+            k6_results_file="/loadTests/results/error-pages.html"
+            ;;
         *)
             echo "Unknown load suite: $load_suite" >&2
             exit 1
@@ -135,6 +139,7 @@ main() {
     run_visual_tests_dind "$crm_dir"
     run_load_tests_dind "$crm_dir" "homepage"
     run_load_tests_dind "$crm_dir" "signup"
+    run_load_tests_dind "$crm_dir" "error-pages"
 }
 
 case "${1:-all}" in
@@ -149,6 +154,9 @@ case "${1:-all}" in
         ;;
     test-load-signup)
         run_load_tests_dind "." "signup"
+        ;;
+    test-load-error-pages)
+        run_load_tests_dind "." "error-pages"
         ;;
     *)
         main "$@"

@@ -18,6 +18,9 @@ const pages = [
   normalizedBaseUrl === '/' ? '/sign-in' : `${normalizedBaseUrl}/sign-in`,
   normalizedBaseUrl === '/' ? '/forbidden' : `${normalizedBaseUrl}/forbidden`,
   normalizedBaseUrl === '/' ? '/server-error' : `${normalizedBaseUrl}/server-error`,
+  normalizedBaseUrl === '/'
+    ? '/definitely-not-a-route'
+    : `${normalizedBaseUrl}/definitely-not-a-route`,
 ];
 
 module.exports = {
