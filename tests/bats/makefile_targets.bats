@@ -191,7 +191,7 @@ test-a11y|docker compose exec -T dev env TEST_ENV=client node ./node_modules/jes
 ci-test-visual|playwright test ./tests/visual|
 ci-test-memory-leak|docker compose -p memleak -f docker-compose.memory-leak.yml exec -T memory-leak node ./tests/memory-leak/run-memlab-tests.js|
 ci-test-load|docker compose -f docker-compose.test.yml --profile load run --rm k6 run --summary-trend-stats=avg,min,med,max,p(95),p(99)|/loadTests/homepage.js
-ci-test-load|/loadTests/homepage.js|/loadTests/error-pages.js
+ci-test-load|export=/loadTests/results/error-pages.html|/loadTests/error-pages.js
 ci-test-lighthouse-desktop|docker compose exec -T dev bun x lhci autorun --config=./lighthouse/lighthouserc.desktop.js|
 ci-test-lighthouse-mobile|docker compose exec -T dev bun x lhci autorun --config=./lighthouse/lighthouserc.mobile.js|
 test-integration-watch|docker compose exec -T dev env TEST_ENV=integration node ./node_modules/jest/bin/jest.js --watch|

@@ -58,7 +58,8 @@ async function back(page) {
     await navigateInApp(page, BASELINE_PATH);
 
     const unmounted = await page.waitForFunction(
-      (selector) => !document.querySelector(selector) && document.querySelector('form') !== null,
+      (selector) =>
+        !document.querySelector(selector) && document.querySelector('form, [role="form"]') !== null,
       { timeout: BACK_TIMEOUT },
       TITLE_SELECTOR
     );

@@ -1068,7 +1068,7 @@ helpers instead pushes `ErrorPageStyles` (build plus seven breakpoint-dependent 
 | File                     | Class                         | Tokens (`build()` keys)                      | Methods                                                                 |
 | ------------------------ | ----------------------------- | -------------------------------------------- | ----------------------------------------------------------------------- |
 | `responsive-styles.ts`   | `ErrorPageResponsiveStyles`   | -                                            | `compose(desktop, tablet, mobile)`                                      |
-| `styles.ts`              | `ErrorPageStyles`             | `landmark`, `composition`                    | `build`, 2 fragments                                                    |
+| `error-page-styles.ts`   | `ErrorPageStyles`             | `landmark`, `composition`                    | `build`, 2 fragments                                                    |
 | `card-styles.ts`         | `ErrorPageCardStyles`         | `card`, `title`, `description`, `statusCode` | `build`, 3 fragments (`statusCode` is a breakpoint-independent literal) |
 | `digit-styles.ts`        | `ErrorPageDigitStyles`        | `digits`, `glyphs`                           | `build`, 2 fragments                                                    |
 | `illustration-styles.ts` | `ErrorPageIllustrationStyles` | `tab`, `curve`, `diamond`                    | `build`, 3 fragments                                                    |
