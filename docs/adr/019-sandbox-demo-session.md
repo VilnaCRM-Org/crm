@@ -57,12 +57,15 @@ unaware of the demo while making the sandbox reviewable without new infrastructu
   `NODE_ENV !== 'production' || ENABLE_SANDBOX_DEMO === 'true'`, and then returns the demo
   session only for `demo@vilnacrm.com` / `Demo1234`. The guard, both credential literals and
   the token literal sit in that one method body, so Rspack folds the guard and drops the rest
-  in every build that did not opt in.
+  in every production build that did not opt in. A development build is not guarded and
+  accepts the demo credentials.
 - The user module's composition root registers the seed by value under
   `AUTH_TOKENS.SandboxDemoSessionSeed` and hands it to `AuthStoreActions` through
   `AuthStoreActionsDeps`. `AuthStoreActions.login` asks it first: a match settles exactly as a
   successful repository login (`applyLogin`, then `loginSettled`, which tags the opaque
-  observability identity), and the repository — so the network — is never called.
+  observability identity), and the repository — so the network — is never called. A login
+  whose signal is already aborted skips the seed and settles as aborted, so a canceled attempt
+  never publishes a session.
 - `rsbuild.config.ts` reads `ENABLE_SANDBOX_DEMO` before `loadEnv`, defines it for the bundler,
   and only when it is `true` registers `scripts/spa-fallback-document-plugin.ts`, which copies
   the built `index.html` byte for byte to `404.html` after the build.
@@ -88,8 +91,10 @@ unaware of the demo while making the sandbox reviewable without new infrastructu
 - The demo session is client-only on a public bucket: anyone who knows the published
   credentials signs in to a sandbox. That is acceptable only because a sandbox has no backend
   and no data; it would be an auth bypass anywhere else, which is what the gate prevents
-- The sandbox only benefits once the crm-infrastructure buildspec calls
-  `make build-out-sandbox` instead of `make build-out`
+- The sandbox only benefits once
+  [VilnaCRM-Org/crm-infrastructure#60](https://github.com/VilnaCRM-Org/crm-infrastructure/pull/60)
+  lands: its buildspec probes `make -n build-out-sandbox` and falls back to `make build-out`, so
+  until then a sandbox is built from the production bundle
 - A dev server (`NODE_ENV=development`) also accepts the demo credentials, the same way it
   accepts the issue-#158 seed
 - The `sandbox` image's `404.html` is copied at build time, so the container entrypoint's
@@ -109,7 +114,8 @@ A separate build stage opts in; the deployable stage cannot.
 
 #### Bad (Sandbox Docker target with a compile-guarded demo login and a `404.html` copy)
 
-- Needs a one-line change in the crm-infrastructure buildspec to take effect
+- Takes effect only with the crm-infrastructure buildspec change in
+  [crm-infrastructure#60](https://github.com/VilnaCRM-Org/crm-infrastructure/pull/60)
 - Adds a fourth build to the seed gate's CI job
 
 ### Mock backend in the sandbox

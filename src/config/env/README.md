@@ -137,7 +137,9 @@ if (process.env.NODE_ENV === 'production' && process.env.ENABLE_SANDBOX_DEMO !==
 }
 ```
 
-the credential literals and the token literal all stay in that one method; no other `src/` file
+the credential literals and the token literal all stay in that one method, so an unopted
+production build drops them (a development build keeps them and accepts the demo credentials); a
+login whose signal is already aborted never consults it; no other `src/` file
 names the flag or the literals; and only the Dockerfile's `build-sandbox` stage sets the flag,
 which `rsbuild.config.ts` reads before `loadEnv` and defines for the bundler. The same flag makes
 the build emit `404.html` as a copy of `index.html`, the deep-link fallback S3 serves.

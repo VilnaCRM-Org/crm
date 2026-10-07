@@ -341,10 +341,14 @@ out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere bu
 ### Pull-request sandboxes and the demo login
 
 The `sandbox` workflow triggers the `sandbox-crm-creation` AWS CodePipeline, which builds the pull
-request and syncs it to an S3 static website. A sandbox has no backend, so it is built from the
-Dockerfile's `sandbox` target (`make build-out-sandbox`), which compiles in two things the
-deployable `production` target never carries (issue #309,
-[ADR-019](docs/adr/019-sandbox-demo-session.md)):
+request and syncs it to an S3 static website. A sandbox has no backend, so the Dockerfile has a
+`sandbox` target (`make build-out-sandbox`) that compiles in two things the deployable
+`production` target never carries (issue #309, [ADR-019](docs/adr/019-sandbox-demo-session.md)).
+The pipeline uses it once
+[VilnaCRM-Org/crm-infrastructure#60](https://github.com/VilnaCRM-Org/crm-infrastructure/pull/60)
+lands — its buildspec runs `make build-out-sandbox` when the branch has the target and falls back
+to `make build-out` otherwise. Until then a sandbox is built from the production bundle and has
+neither of the following:
 
 - **A demo login.** Sign in with `demo@vilnacrm.com` / `Demo1234` to reach every protected page.
   The session is client-only and never calls the API; any other credentials fail as they would
@@ -353,9 +357,8 @@ deployable `production` target never carries (issue #309,
   `/forbidden` or any other route with the app instead of its own error page. S3 still reports
   HTTP status 404 for those responses; the page itself renders normally.
 
-Both take effect only once the crm-infrastructure buildspec runs `make build-out-sandbox` instead
-of `make build-out`. `make check-auth-seed-gate` proves on every pull request that the
-`production` image carries neither.
+`make check-auth-seed-gate` proves on every pull request that the `production` image carries
+neither, and that the `sandbox` image carries both.
 
 ### The browser security-header gate
 

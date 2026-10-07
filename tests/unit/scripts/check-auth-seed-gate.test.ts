@@ -115,6 +115,8 @@ describe('check-auth-seed-gate', () => {
   });
 
   it.each([
+    ['the preloaded-auth opt-in flag', 'ENABLE_PRELOADED_AUTH_TOKEN_SEED'],
+    ['the preloaded-auth token variable', 'REACT_APP_LHCI_PRELOADED_AUTH_TOKEN'],
     ['the sandbox opt-in flag', SANDBOX_FLAG],
     ['the demo email', DEMO_EMAIL],
     ['the demo password', DEMO_PASSWORD],
@@ -210,6 +212,26 @@ describe('check-auth-seed-gate', () => {
     expect(run(['--dir', dir, '--expect', 'maybe', '--token', PROBE_TOKEN]).status).not.toBe(0);
     expect(run(['--dir', dir, '--expect', 'absent']).status).not.toBe(0);
     expect(run(['--dir', dir, '--expect', 'absent', '--token', '  ']).status).not.toBe(0);
+  });
+
+  it.each([
+    ['no --dir', ['--expect', 'absent', '--token', PROBE_TOKEN], '--dir <distDir> is required'],
+    ['no --expect', ['--dir', '.', '--token', PROBE_TOKEN], '--expect must be "absent" or'],
+    [
+      'a blank --token',
+      ['--dir', '.', '--expect', 'absent', '--token', ' '],
+      '--token <probeValue>',
+    ],
+    [
+      'a valueless --token',
+      ['--dir', '.', '--expect', 'absent', '--token'],
+      '--token <probeValue>',
+    ],
+  ])('names the broken argument for an invocation with %s', (_label, args, message) => {
+    const result = run(args);
+
+    expect(result.status).not.toBe(0);
+    expect(result.output).toContain(`check-auth-seed-gate: ${message}`);
   });
 
   it('demands a known seam for a positive control and refuses one for an absent scan', () => {

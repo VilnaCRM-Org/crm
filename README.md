@@ -143,7 +143,7 @@ Linting & Formatting
   make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
   make lint-i18n: checks en/uk locale parity, merged-catalog freshness, and t() key resolution
   make i18n-generate: regenerates src/i18n/localization.json from the src/**/i18n catalogs
-  make check-auth-seed-gate: scans the bundles so neither auth seed nor sandbox demo login ships
+  make check-auth-seed-gate: no auth seam in the production bundle; the sandbox keeps its demo login
   make lint-security-headers: fails when serve.json drifts from config/security-headers.json
   make security-headers-generate: regenerates the serve.json headers block from the policy
   make check-security-headers: boots the production image and asserts the security-header baseline

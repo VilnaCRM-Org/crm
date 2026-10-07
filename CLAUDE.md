@@ -2674,7 +2674,9 @@ build therefore compiles in two things the deployable build never carries:
   `demo@vilnacrm.com` / `Demo1234` and `null` otherwise. `AuthStoreActions.login` asks it
   before the repository — it arrives through `AuthStoreActionsDeps`, registered by value under
   `AUTH_TOKENS.SandboxDemoSessionSeed` — and a match settles like any successful login
-  (`applyLogin`, then `loginSettled`) with no network call.
+  (`applyLogin`, then `loginSettled`) with no network call. A login whose `AbortSignal` is
+  already aborted skips the seed and settles as aborted through the repository, so a canceled
+  attempt never publishes a session.
 - **A deep-link fallback.** `scripts/spa-fallback-document-plugin.ts` copies the built
   `index.html` byte for byte to `404.html`, so S3 answers a deep link with the SPA shell and
   the router renders the route.
@@ -2685,9 +2687,10 @@ Both are behind `ENABLE_SANDBOX_DEMO`, set only by the Dockerfile's `build-sandb
 
 1. **The guard, the credentials and the token stay in that one method**, behind
    `NODE_ENV === 'production' && ENABLE_SANDBOX_DEMO !== 'true'`, so Rspack folds the guard and
-   drops every literal from a build that did not opt in. `rsbuild.config.ts` reads the flag
-   **before** `loadEnv` (no dotenv file can supply it), defines it for the bundler, and
-   registers the fallback plugin only when it is `true`.
+   drops every literal from a **production** build that did not opt in. A development build is
+   not guarded: it keeps the literals and accepts the demo credentials (see "Honest scope").
+   `rsbuild.config.ts` reads the flag **before** `loadEnv` (no dotenv file can supply it),
+   defines it for the bundler, and registers the fallback plugin only when it is `true`.
 2. **No other `src/` file names the flag, the demo credentials, or the demo token.**
 3. **Only the sandbox image opts in.** The `production` target and its `build` stage take no
    ARG or ENV for it, so `make build-out` — what production ships — cannot receive it.
@@ -2699,9 +2702,12 @@ password, the demo token, or `404.html`; the `sandbox` image is the positive con
 contain the demo login and a `404.html` identical to `index.html` (and no #158 seed), so the
 absent scan cannot pass vacuously.
 
-**The sandbox only gets this once the crm-infrastructure buildspec**
-(`aws/buildspecs/sandbox-crm/deploy.yml`) **runs `make build-out-sandbox` instead of
-`make build-out`.**
+**The sandbox only gets this once
+[VilnaCRM-Org/crm-infrastructure#60](https://github.com/VilnaCRM-Org/crm-infrastructure/pull/60)
+lands.** Its buildspec (`aws/buildspecs/sandbox-crm/deploy.yml`) probes `make -n
+build-out-sandbox` and runs that target when the branch has it, falling back to `make build-out`;
+until then a sandbox is built from the production bundle, with neither the demo login nor
+`404.html`.
 
 **Honest scope:** the demo session is client-only, on a public bucket, against no backend —
 anyone who reads the published credentials signs in to a sandbox, which is acceptable only

@@ -68,30 +68,42 @@ const SEAMS = {
   },
 };
 
-function parseArgs(argv) {
+const FLAGS = new Map([
+  ['--dir', 'dir'],
+  ['--expect', 'expect'],
+  ['--token', 'token'],
+  ['--seam', 'seam'],
+]);
+const EXPECTATIONS = ['absent', 'present'];
+
+// Checked in order; the first rule an invocation breaks is the error it reports.
+const ARGUMENT_RULES = [
+  [(args) => !args.dir, '--dir <distDir> is required'],
+  [(args) => !EXPECTATIONS.includes(args.expect), '--expect must be "absent" or "present"'],
+  [(args) => !args.token?.trim(), '--token <probeValue> is required'],
+  [
+    (args) => args.expect === 'present' && !Object.hasOwn(SEAMS, args.seam ?? ''),
+    `--expect present needs --seam ${Object.keys(SEAMS).join('|')}`,
+  ],
+  [
+    (args) => args.expect === 'absent' && args.seam !== null,
+    '--seam only applies to --expect present',
+  ],
+];
+
+function readFlags(argv) {
   const args = { dir: null, expect: null, token: null, seam: null };
   for (let i = 0; i < argv.length; i += 1) {
-    const key = argv[i];
-    if (key === '--dir') args.dir = argv[(i += 1)];
-    else if (key === '--expect') args.expect = argv[(i += 1)];
-    else if (key === '--token') args.token = argv[(i += 1)];
-    else if (key === '--seam') args.seam = argv[(i += 1)];
+    const field = FLAGS.get(argv[i]);
+    if (field !== undefined) args[field] = argv[(i += 1)];
   }
-  if (!args.dir) throw new Error('check-auth-seed-gate: --dir <distDir> is required');
-  if (args.expect !== 'absent' && args.expect !== 'present') {
-    throw new Error('check-auth-seed-gate: --expect must be "absent" or "present"');
-  }
-  if (!args.token || !args.token.trim()) {
-    throw new Error('check-auth-seed-gate: --token <probeValue> is required');
-  }
-  if (args.expect === 'present' && !Object.hasOwn(SEAMS, args.seam ?? '')) {
-    throw new Error(
-      `check-auth-seed-gate: --expect present needs --seam ${Object.keys(SEAMS).join('|')}`
-    );
-  }
-  if (args.expect === 'absent' && args.seam !== null) {
-    throw new Error('check-auth-seed-gate: --seam only applies to --expect present');
-  }
+  return args;
+}
+
+function parseArgs(argv) {
+  const args = readFlags(argv);
+  const broken = ARGUMENT_RULES.find(([breaks]) => breaks(args));
+  if (broken) throw new Error(`check-auth-seed-gate: ${broken[1]}`);
   return args;
 }
 

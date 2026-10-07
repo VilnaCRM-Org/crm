@@ -268,6 +268,37 @@ describe('AuthStoreActions', () => {
       return { actions, sessionFor };
     };
 
+    it('publishes no demo session for a login canceled before it ran', async () => {
+      const repository = makeRepo({
+        login: jest.fn().mockResolvedValue({ ok: false, error: abortError }),
+      });
+      const { actions, sessionFor } = actionsWith(repository, demoSession);
+      const controller = new AbortController();
+      controller.abort();
+
+      await actions.login({ email, password }, controller.signal);
+
+      expect(sessionFor).not.toHaveBeenCalled();
+      expect(repository.login).toHaveBeenCalledWith({ email, password }, controller.signal);
+      expect(AuthStateVar.get()).toMatchObject({
+        loginLoading: false,
+        token: null,
+        loginError: null,
+      });
+      expect(observability.setUser).not.toHaveBeenCalled();
+      expect(recorder.authFailure).not.toHaveBeenCalled();
+    });
+
+    it('still signs in with the demo session under a live, unaborted signal', async () => {
+      const repository = makeRepo();
+      const { actions } = actionsWith(repository, demoSession);
+
+      await actions.login({ email, password }, new AbortController().signal);
+
+      expect(repository.login).not.toHaveBeenCalled();
+      expect(AuthStateVar.get()).toMatchObject({ loginLoading: false, email, token });
+    });
+
     it('signs in with the demo session without calling the repository', async () => {
       const repository = makeRepo();
       const { actions, sessionFor } = actionsWith(repository, demoSession);

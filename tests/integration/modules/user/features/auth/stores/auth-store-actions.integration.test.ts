@@ -121,6 +121,28 @@ describe('AuthStoreActions integration coverage', () => {
     });
   });
 
+  it('settles a canceled demo-credential login as aborted instead of signing in', async () => {
+    const aborted = { kind: 'network', displayMessage: '', retryable: false, aborted: true };
+    const login = jest.fn().mockResolvedValue({ ok: false, error: aborted });
+    const controller = new AbortController();
+    controller.abort();
+
+    await new AuthStoreActions({
+      repository: makeRepo({ login }),
+      authRequestErrors,
+      authState: AuthStateVar,
+      securitySignals,
+      sandboxDemoSession: sandboxDemoSessionSeed,
+    }).login({ email: 'demo@vilnacrm.com', password: 'Demo1234' }, controller.signal);
+
+    expect(login).toHaveBeenCalledTimes(1);
+    expect(AuthStateVar.get()).toMatchObject({
+      loginLoading: false,
+      token: null,
+      loginError: null,
+    });
+  });
+
   it('tags an opaque observability identity after a successful login', async () => {
     await loginWith({});
 
