@@ -1,6 +1,6 @@
-import sandboxDemoSessionSeed, {
-  type SandboxDemoSessionSeed,
-} from '@/config/env/sandbox-demo-session';
+import sandboxDemoSessionProvider, {
+  type SandboxDemoSessionProvider,
+} from '@/config/env/sandbox-demo-session-provider';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
 import AuthStateVar, { AuthStateVar as AuthStateVarClass } from '@auth/stores/auth-var';
@@ -49,7 +49,7 @@ const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
     authRequestErrors,
     authState: AuthStateVar,
     securitySignals,
-    sandboxDemoSession: sandboxDemoSessionSeed,
+    sandboxDemoSession: sandboxDemoSessionProvider,
   }).login({
     email,
     password,
@@ -61,7 +61,7 @@ const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
     authRequestErrors,
     authState: AuthStateVar,
     securitySignals,
-    sandboxDemoSession: sandboxDemoSessionSeed,
+    sandboxDemoSession: sandboxDemoSessionProvider,
   }).register({
     fullName,
     email,
@@ -98,7 +98,7 @@ describe('AuthStoreActions', () => {
       authRequestErrors,
       authState: injectedState,
       securitySignals,
-      sandboxDemoSession: sandboxDemoSessionSeed,
+      sandboxDemoSession: sandboxDemoSessionProvider,
     }).login({ email, password });
 
     expect(injectedState.get()).toMatchObject({ loginLoading: false, email, token });
@@ -255,30 +255,30 @@ describe('AuthStoreActions', () => {
     const actionsWith = (
       repository: AuthRepository,
       session: { email: string; token: string } | null
-    ): { actions: AuthStoreActions; sessionFor: jest.Mock } => {
-      const sessionFor = jest.fn().mockReturnValue(session);
+    ): { actions: AuthStoreActions; signIn: jest.Mock } => {
+      const signIn = jest.fn().mockReturnValue(session);
       const actions = new AuthStoreActions({
         repository,
         authRequestErrors,
         authState: AuthStateVar,
         securitySignals,
-        sandboxDemoSession: { sessionFor } as unknown as SandboxDemoSessionSeed,
+        sandboxDemoSession: { signIn } as unknown as SandboxDemoSessionProvider,
       });
 
-      return { actions, sessionFor };
+      return { actions, signIn };
     };
 
     it('publishes no demo session for a login canceled before it ran', async () => {
       const repository = makeRepo({
         login: jest.fn().mockResolvedValue({ ok: false, error: abortError }),
       });
-      const { actions, sessionFor } = actionsWith(repository, demoSession);
+      const { actions, signIn } = actionsWith(repository, demoSession);
       const controller = new AbortController();
       controller.abort();
 
       await actions.login({ email, password }, controller.signal);
 
-      expect(sessionFor).not.toHaveBeenCalled();
+      expect(signIn).not.toHaveBeenCalled();
       expect(repository.login).toHaveBeenCalledWith({ email, password }, controller.signal);
       expect(AuthStateVar.get()).toMatchObject({
         loginLoading: false,
@@ -301,11 +301,11 @@ describe('AuthStoreActions', () => {
 
     it('signs in with the demo session without calling the repository', async () => {
       const repository = makeRepo();
-      const { actions, sessionFor } = actionsWith(repository, demoSession);
+      const { actions, signIn } = actionsWith(repository, demoSession);
 
       await actions.login({ email, password });
 
-      expect(sessionFor).toHaveBeenCalledWith({ email, password });
+      expect(signIn).toHaveBeenCalledWith({ email, password });
       expect(repository.login).not.toHaveBeenCalled();
       expect(AuthStateVar.get()).toMatchObject({
         loginLoading: false,
@@ -335,7 +335,7 @@ describe('AuthStoreActions', () => {
       expect(AuthStateVar.get()).toMatchObject({ email, token });
     });
 
-    it('signs in with the published demo credentials through the real seed', async () => {
+    it('signs in with the published demo credentials through the real provider', async () => {
       const repository = makeRepo();
       const demoEmail = 'demo@vilnacrm.com';
 
@@ -344,7 +344,7 @@ describe('AuthStoreActions', () => {
         authRequestErrors,
         authState: AuthStateVar,
         securitySignals,
-        sandboxDemoSession: sandboxDemoSessionSeed,
+        sandboxDemoSession: sandboxDemoSessionProvider,
       }).login({ email: demoEmail, password: 'Demo1234' });
 
       expect(repository.login).not.toHaveBeenCalled();
@@ -352,6 +352,8 @@ describe('AuthStoreActions', () => {
         email: demoEmail,
         token: 'sandbox-demo-session-token',
       });
+      expect(localStorage.getItem('vilnacrm.sandbox-demo-session')).toBe(demoEmail);
+      sandboxDemoSessionProvider.signOut();
     });
   });
 });

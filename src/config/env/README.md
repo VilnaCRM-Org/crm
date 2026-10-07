@@ -29,7 +29,6 @@ The module is therefore split in two:
 | `env-schema.ts`           | `zod`       | —              | the zod contract (constraints)       |
 | `types/env.ts`            | none (type) | —              | the hand-authored `Env` interface    |
 | `preloaded-auth-token.ts` | none        | lazy, per call | the auth store's initial seed (only) |
-| `sandbox-demo-session.ts` | none        | lazy, per call | the sandbox demo login (only)        |
 
 - **`raw-env`** (`@/config/env/raw-env`) — a dependency-free singleton and, with the seed seam
   below, one of the two sanctioned places that touch `process.env`. Accessors are lazy (read on
@@ -124,27 +123,32 @@ against the wrong artifact.
 
 ## The sandbox demo session (issue #309)
 
-`sandbox-demo-session.ts` gives a pull-request sandbox — a static S3 website with no backend — a
-working login: `sessionFor({ email, password })` returns a demo session for exactly
-`demo@vilnacrm.com` / `Demo1234` and `null` for anything else. The auth module's composition root
-registers it by value under `AUTH_TOKENS.SandboxDemoSessionSeed`, and `AuthStoreActions.login`
-consults it before the repository, so a match never touches the network. It is the issue-#158
-seam's twin and keeps the same three invariants: the guard
+`sandbox-demo-session-provider.ts` (`SandboxDemoSessionProvider`) gives a pull-request sandbox — a
+static S3 website with no backend — a working login. It is **runtime**-gated, unlike the seed
+above: the production bundle carries it, and it is active only when
 
 ```ts
-if (process.env.NODE_ENV === 'production' && process.env.ENABLE_SANDBOX_DEMO !== 'true') {
-  return null;
-}
+process.env.NODE_ENV !== 'production' || isSandboxHost(location.hostname);
 ```
 
-the credential literals and the token literal all stay in that one method, so an unopted
-production build drops them (a development build keeps them and accepts the demo credentials); a
-login whose signal is already aborted never consults it; no other `src/` file
-names the flag or the literals; and only the Dockerfile's `build-sandbox` stage sets the flag,
-which `rsbuild.config.ts` reads before `loadEnv` and defines for the bundler. The same flag makes
-the build emit `404.html` as a copy of `index.html`, the deep-link fallback S3 serves.
-`make check-auth-seed-gate` proves the `production` image carries none of it and the `sandbox`
-image carries all of it. See [ADR-019](../../../docs/adr/019-sandbox-demo-session.md).
+where a sandbox host starts with `sandbox-crm-`, ends with `.amazonaws.com`, and has an
+`s3-website` or `s3-website-<region>` label. The check is plain `startsWith` / `endsWith` /
+`split`, so it has no regular expression to backtrack. While active:
+
+- `signIn({ email, password })` returns the demo session for exactly `demo@vilnacrm.com` /
+  `Demo1234` and remembers the demo **email** (never the password or a token) in `localStorage`
+  under `vilnacrm.sandbox-demo-session`;
+- `restore()` turns that marker back into the demo session, so `AuthStateVar` starts signed in
+  after a reload or a deep link;
+- `signOut()` removes the marker; the auth composition root's `logout` calls it.
+
+Inactive, `signIn` and `restore` return `null` and nothing is written. Every storage call is
+wrapped, so a browser that refuses storage simply gets no persistence. The location and the
+storage are constructor parameters defaulting to `globalThis`, so tests drive the host without
+touching globals. The auth module's composition root registers the singleton by value under
+`AUTH_TOKENS.SandboxDemoSessionProvider`; `AuthStoreActions.login` asks it before the repository
+unless the login's signal is already aborted. See
+[ADR-019](../../../docs/adr/019-sandbox-demo-session.md).
 
 ## Adding a variable
 

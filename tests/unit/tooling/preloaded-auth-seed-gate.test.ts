@@ -28,31 +28,6 @@ function walkSource(dir: string, acc: string[] = []): string[] {
 const sourceFilesMentioning = (identifier: string): string[] =>
   walkSource('src').filter((file) => readFile(file).includes(identifier));
 
-// Sliced on the `FROM … AS <stage>` headers, never on the banner comments: a renamed banner
-// would make indexOf return -1 and every assertion would pass against an empty string.
-const dockerStage = (name: string): string => {
-  const dockerfile = readFile('Dockerfile');
-  const start = dockerfile.search(new RegExp(`^FROM .+ AS ${name}$`, 'm'));
-  expect(start).toBeGreaterThan(-1);
-  const rest = dockerfile.slice(start + 1);
-  const end = rest.search(/^FROM /m);
-
-  return end === -1 ? rest : rest.slice(0, end);
-};
-
-const makeRecipe = (makefile: string, target: string): string => {
-  const start = makefile.search(new RegExp(`^${target}:`, 'm'));
-  expect(start).toBeGreaterThan(-1);
-  const rest = makefile.slice(start);
-  const end = rest.search(/\n(?=[A-Za-z0-9_.-]+:)/);
-
-  return end === -1 ? rest : rest.slice(0, end);
-};
-
-const DEMO_SEAM = 'src/config/env/sandbox-demo-session.ts';
-const DEMO_OPT_IN_FLAG = 'ENABLE_SANDBOX_DEMO';
-const DEMO_LITERALS = ['demo@vilnacrm.com', 'Demo1234', 'sandbox-demo-session-token'];
-
 describe('preloaded-auth-token seed gate (issue #158)', () => {
   it('confines both seed reads and the guard to a single foldable function', () => {
     const seam = readFile(SEAM);
@@ -103,12 +78,25 @@ describe('preloaded-auth-token seed gate (issue #158)', () => {
   });
 
   it('never hands the deployable production image the seed', () => {
-    expect(dockerStage('build')).not.toContain(ENV_TOKEN_VAR);
-    expect(dockerStage('build')).not.toContain(OPT_IN_FLAG);
-    expect(dockerStage('build-test-harness')).toContain(`ENV ${OPT_IN_FLAG}=true`);
-    expect(dockerStage('production')).toContain('COPY --from=build --chown=node:node');
-    expect(dockerStage('production')).not.toContain('build-test-harness');
-    expect(dockerStage('test-harness')).toContain('COPY --from=build-test-harness');
+    // Sliced on the `FROM … AS <stage>` headers, never on the banner comments: a renamed
+    // banner would make indexOf return -1 and every assertion below would pass against an
+    // empty string while the real stage carried the seed.
+    const dockerfile = readFile('Dockerfile');
+    const stage = (name: string): string => {
+      const start = dockerfile.search(new RegExp(`^FROM .+ AS ${name}$`, 'm'));
+      expect(start).toBeGreaterThan(-1);
+      const rest = dockerfile.slice(start + 1);
+      const end = rest.search(/^FROM /m);
+
+      return end === -1 ? rest : rest.slice(0, end);
+    };
+
+    expect(stage('build')).not.toContain(ENV_TOKEN_VAR);
+    expect(stage('build')).not.toContain(OPT_IN_FLAG);
+    expect(stage('build-test-harness')).toContain(`ENV ${OPT_IN_FLAG}=true`);
+    expect(stage('production')).toContain('COPY --from=build --chown=node:node');
+    expect(stage('production')).not.toContain('build-test-harness');
+    expect(stage('test-harness')).toContain('COPY --from=build-test-harness');
   });
 
   it('builds the ephemeral harness image, not the deployable one, for the test stack', () => {
@@ -134,73 +122,6 @@ describe('preloaded-auth-token seed gate (issue #158)', () => {
     expect(job).toMatch(/^ {4}if: github\.event_name == 'pull_request'$/m);
     expect(job.indexOf("if: github.event_name == 'pull_request'")).toBeLessThan(
       job.indexOf('runs-on:')
-    );
-  });
-});
-
-describe('sandbox demo-session seam (issue #309)', () => {
-  it('confines the guard, the demo credentials and the demo token to one foldable method', () => {
-    const seam = readFile(DEMO_SEAM);
-    const guardIndex = seam.indexOf(`process.env.NODE_ENV === 'production'`);
-    const optInIndex = seam.indexOf(`process.env.${DEMO_OPT_IN_FLAG} !== 'true'`);
-
-    expect(guardIndex).toBeGreaterThan(-1);
-    expect(optInIndex).toBeGreaterThan(guardIndex);
-    DEMO_LITERALS.forEach((literal) => {
-      expect([literal, seam.indexOf(`'${literal}'`) > optInIndex]).toEqual([literal, true]);
-    });
-    expect(seam.match(/^\s*(?:public|private|protected)\s/gm)).toHaveLength(1);
-    expect(seam).not.toMatch(/^\s*#/m);
-  });
-
-  it('keeps the demo identifiers out of every other source file', () => {
-    [DEMO_OPT_IN_FLAG, ...DEMO_LITERALS].forEach((identifier) => {
-      expect([identifier, sourceFilesMentioning(identifier)]).toEqual([identifier, [DEMO_SEAM]]);
-    });
-  });
-
-  it('scans the emitted bundle for exactly the literals the seam compiles in', () => {
-    const gateScript = readFile('scripts/ci/check-auth-seed-gate.mjs');
-
-    expect(gateScript).toContain(`'${DEMO_OPT_IN_FLAG}'`);
-    DEMO_LITERALS.forEach((literal) => {
-      expect([literal, gateScript.includes(`'${literal}'`)]).toEqual([literal, true]);
-    });
-  });
-
-  it('reads the opt-in before loadEnv, defines it, and gates the 404.html fallback on it', () => {
-    const rsbuildConfig = readFile('rsbuild.config.ts');
-    const optInReadIndex = rsbuildConfig.indexOf(`process.env.${DEMO_OPT_IN_FLAG} ??`);
-
-    expect(optInReadIndex).toBeGreaterThan(-1);
-    expect(optInReadIndex).toBeLessThan(rsbuildConfig.indexOf('loadEnv('));
-    expect(rsbuildConfig).toContain(`'process.env.${DEMO_OPT_IN_FLAG}': JSON.stringify(`);
-    expect(rsbuildConfig).toMatch(
-      /sandboxDemoOptIn === 'true' \? \[pluginSpaFallbackDocument\(\)\] : \[\]/
-    );
-    expect(readFile('.env.example')).not.toContain(DEMO_OPT_IN_FLAG);
-  });
-
-  it('opts only the sandbox build stage in, and ships it only from the sandbox target', () => {
-    expect(dockerStage('build-sandbox')).toContain(`ENV ${DEMO_OPT_IN_FLAG}=true`);
-    expect(dockerStage('build-sandbox')).not.toContain(OPT_IN_FLAG);
-    expect(dockerStage('build-sandbox')).not.toContain(ENV_TOKEN_VAR);
-    expect(dockerStage('build')).not.toContain(DEMO_OPT_IN_FLAG);
-    expect(dockerStage('build-test-harness')).not.toContain(DEMO_OPT_IN_FLAG);
-    expect(dockerStage('production')).not.toContain('build-sandbox');
-    expect(dockerStage('test-harness')).not.toContain('build-sandbox');
-    expect(dockerStage('sandbox')).toContain('COPY --from=build-sandbox --chown=node:node');
-    expect(readFile('Dockerfile')).toMatch(/^FROM serve-base AS sandbox$/m);
-  });
-
-  it('builds and scans the sandbox target as the positive control', () => {
-    const makefile = readFile('Makefile');
-
-    expect(makeRecipe(makefile, 'build-out-sandbox')).toContain('--target sandbox');
-    expect(makeRecipe(makefile, 'build-out')).not.toContain('--target sandbox');
-    expect(makeRecipe(makefile, 'check-auth-seed-gate')).toContain('--target sandbox');
-    expect(makeRecipe(makefile, 'check-auth-seed-gate')).toContain(
-      '--expect present --seam sandbox-demo'
     );
   });
 });

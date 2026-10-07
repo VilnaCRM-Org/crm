@@ -1,4 +1,4 @@
-# ADR-019: Pull-request sandboxes ship a compile-guarded demo login and a 404.html shell
+# ADR-019: Pull-request sandboxes get a host-gated demo login and a 404.html shell
 
 - Status: Approved
 - Deciders: [@kravalg](https://github.com/kravalg)
@@ -11,112 +11,113 @@ sign-in, and no deep link at all, could be reached there.
 ## Context and Problem Statement
 
 A pull-request sandbox is built by the `sandbox-crm-creation` CodePipeline in
-`VilnaCRM-Org/crm-infrastructure`: it clones the branch, runs `make build-out`, and syncs `./out`
-to an S3 static website whose index document is `index.html` and whose error document is
-`404.html`. Production is built by the same `make build-out`, from the same `production`
-Dockerfile target.
+`VilnaCRM-Org/crm-infrastructure`: it clones the branch, runs `make build-out` — the
+`production` Dockerfile target, the same bundle that ships — and syncs `./out` to an S3 static
+website whose index document is `index.html` and whose error document is `404.html`. The
+pipeline is not changing, so whatever a sandbox needs has to be in the production bundle.
 
-Two things break a sandbox review. The build never emits `404.html`, so every deep link —
-`/sign-in`, `/forbidden`, `/settings` — gets S3's own error page and the SPA never boots. And
-no backend is deployed beside the sandbox (the API URLs point at `localhost`), so a real login
-can never succeed: every protected page, including the 403 page this issue adds, is out of
-reach. The auth token is memory-only, so a reviewer cannot hand-seed one either, and the
-test-harness seed of issue #158 is deliberately absent from a deployable artifact.
-
-Anything added to the `production` target reaches production, so the fix cannot live there.
+Two things break a sandbox review. The build never emitted `404.html`, so every deep link —
+`/sign-in`, `/forbidden`, `/settings` — got S3's own error page and the SPA never booted. And no
+backend is deployed beside the sandbox (the API URLs point at `localhost`), so a real login can
+never succeed: every protected page, including the 403 page this issue adds, is out of reach.
+The auth token is memory-only, so a reviewer cannot hand-seed one, and the test-harness seed of
+issue #158 is compiled out of the production bundle on purpose.
 
 ## Decision Drivers
 
-- The deployable `production` artifact must not gain a login bypass, a new flag, or a new file
-- An opt-in must be impossible to set from a dotenv file, exactly like the issue-#158 seed
-- The proof that the demo login is absent has to be made against the emitted bundle, with a
-  positive control so the scan cannot pass vacuously
+- The sandbox pipeline keeps running `make build-out`; no infrastructure change
+- Production, on any host that is not a sandbox, must behave exactly as before
+- The activation check must be exact and ReDoS-safe (`security/detect-unsafe-regex` is an error)
 - The auth paint path stays container-free, and the store receives every collaborator through
   DI (issues #115, #130)
-- The sandbox must work with the existing S3 website configuration, with no CloudFront in front
+- A reviewer must stay signed in across a reload or a deep link, or every deep link sends them
+  back to sign-in
 
 ## Considered Options
 
-1. **Sandbox Docker target with a compile-guarded demo login and a `404.html` copy** — a
-   `build-sandbox` stage sets `ENABLE_SANDBOX_DEMO=true`, and `make build-out-sandbox` extracts
-   it.
-2. **Mock backend in the sandbox** — deploy Mockoon or the Apollo mock beside the bucket.
-3. **Runtime switch** — read a flag from the runtime-config block or the hostname and enable
-   the demo login when it says "sandbox".
+1. **Host-gated demo login in the production bundle, plus a `404.html` copy in every build**
+2. **Compile-time sandbox build** — a separate Docker target that compiles the demo in, which
+   the pipeline would build instead of `production`.
+3. **Mock backend in the sandbox** — deploy Mockoon or the Apollo mock beside the bucket.
 4. **Infrastructure-only fallback** — point the S3 error document at `index.html` and leave the
    login unreachable.
 
 ## Decision Outcome
 
-Chosen option: **"Sandbox Docker target with a compile-guarded demo login and a `404.html`
-copy"**, because it is the only option that leaves the `production` artifact byte-for-byte
-unaware of the demo while making the sandbox reviewable without new infrastructure.
+Chosen option: **"Host-gated demo login in the production bundle, plus a `404.html` copy in
+every build"**, because it is the only option that works with the unchanged pipeline while
+keeping production inert.
 
-- `src/config/env/sandbox-demo-session.ts` (`SandboxDemoSessionSeed`) has one method,
-  `sessionFor(credentials)`. It returns `null` unless
-  `NODE_ENV !== 'production' || ENABLE_SANDBOX_DEMO === 'true'`, and then returns the demo
-  session only for `demo@vilnacrm.com` / `Demo1234`. The guard, both credential literals and
-  the token literal sit in that one method body, so Rspack folds the guard and drops the rest
-  in every production build that did not opt in. A development build is not guarded and
-  accepts the demo credentials.
-- The user module's composition root registers the seed by value under
-  `AUTH_TOKENS.SandboxDemoSessionSeed` and hands it to `AuthStoreActions` through
-  `AuthStoreActionsDeps`. `AuthStoreActions.login` asks it first: a match settles exactly as a
-  successful repository login (`applyLogin`, then `loginSettled`, which tags the opaque
-  observability identity), and the repository — so the network — is never called. A login
-  whose signal is already aborted skips the seed and settles as aborted, so a canceled attempt
-  never publishes a session.
-- `rsbuild.config.ts` reads `ENABLE_SANDBOX_DEMO` before `loadEnv`, defines it for the bundler,
-  and only when it is `true` registers `scripts/spa-fallback-document-plugin.ts`, which copies
-  the built `index.html` byte for byte to `404.html` after the build.
-- The Dockerfile's `build-sandbox` stage sets the flag; the `sandbox` target is `serve-base`
-  plus that bundle. `make build-out-sandbox` extracts it to `./out`.
-- `make check-auth-seed-gate` now proves both seams: the `production` image and an unflagged
-  source build must contain neither the demo flag, the demo credentials, the demo token, nor
-  `404.html`; the `sandbox` image must contain the demo login and a `404.html` identical to
-  `index.html`, and no test-harness seed.
+- `scripts/spa-fallback-document-plugin.ts` is registered for every build in
+  `rsbuild.config.ts`; after the build it copies `index.html` byte for byte to `404.html`.
+- `src/config/env/sandbox-demo-session-provider.ts` (`SandboxDemoSessionProvider`) is active
+  when `NODE_ENV !== 'production'` or the hostname starts with `sandbox-crm-`, ends with
+  `.amazonaws.com`, and has an `s3-website` or `s3-website-<region>` label — checked with
+  `startsWith`, `endsWith` and `split`, no regular expression. The location and the storage are
+  constructor parameters defaulting to `globalThis`.
+- While active, `signIn` accepts exactly `demo@vilnacrm.com` / `Demo1234` and writes the demo
+  email to `localStorage` under `vilnacrm.sandbox-demo-session`; `restore` turns the marker back
+  into the demo session; `signOut` removes it. Every storage call is wrapped, so refused storage
+  means no persistence. Inactive, `signIn` and `restore` return `null`.
+- The user module's composition root registers the provider by value under
+  `AUTH_TOKENS.SandboxDemoSessionProvider`, and `AuthStoreActions` receives it through
+  `AuthStoreActionsDeps`. `login` asks it before the repository unless the signal is already
+  aborted; a match settles exactly as a successful repository login, with no network call.
+  `AuthStateVar` calls `restore()` when it is created, and the auth composition root's `logout`
+  calls `signOut()`.
 
 ## Positive Consequences
 
-- Every deep link on a sandbox loads the SPA, so the router renders the 404, 403 and 5xx
-  pages and protected routes redirect to sign-in as they do in production
-- A reviewer signs in with `demo@vilnacrm.com` / `Demo1234` and reaches every protected page
-- The `production` target, its `build` stage and `make build-out` are unchanged, and the gate
-  proves on every pull request that the deployable image carries no trace of the demo
+- Every deep link on a sandbox loads the SPA, so the router renders the 404, 403 and 5xx pages
+  and protected routes redirect to sign-in as they do in production
+- A reviewer signs in with `demo@vilnacrm.com` / `Demo1234`, reaches every protected page, and
+  stays signed in across reloads and deep links until signing out
+- No pipeline, Dockerfile or Makefile change; the preloaded-auth seed gate keeps covering
+  issue #158 only
 
 ## Negative Consequences
 
-- S3 serves `404.html` with HTTP status 404 for a deep link; a browser renders it normally,
-  but a crawler or a status probe sees 404 on routes that exist
-- The demo session is client-only on a public bucket: anyone who knows the published
-  credentials signs in to a sandbox. That is acceptable only because a sandbox has no backend
-  and no data; it would be an auth bypass anywhere else, which is what the gate prevents
-- The sandbox only benefits once
-  [VilnaCRM-Org/crm-infrastructure#60](https://github.com/VilnaCRM-Org/crm-infrastructure/pull/60)
-  lands: its buildspec probes `make -n build-out-sandbox` and falls back to `make build-out`, so
-  until then a sandbox is built from the production bundle
-- A dev server (`NODE_ENV=development`) also accepts the demo credentials, the same way it
-  accepts the issue-#158 seed
-- The `sandbox` image's `404.html` is copied at build time, so the container entrypoint's
-  `APP_CONFIG_*` rewrite of `index.html` does not reach it; S3 runs no entrypoint, and `serve`
-  answers deep links from `index.html`, so neither consumer reads the stale copy
+- The demo code and its credentials ship in every production bundle. They are inert off sandbox
+  hosts only because of the hostname check, which unit tests pin against the production domain,
+  `localhost`, a missing location and look-alike hosts; there is no emitted-bundle proof of
+  absence as there is for the #158 seed
+- On a sandbox, anyone who reads the published credentials signs in. That is acceptable only
+  because a sandbox has no backend and no data; the demo token is a non-secret placeholder the
+  API would reject
+- The demo session is persisted in `localStorage` on sandbox hosts and in development, while
+  real tokens stay memory-only; the marker holds the demo email only
+- S3 serves `404.html` with HTTP status 404 for a deep link; a browser renders it normally, but a
+  crawler or a status probe sees 404 on routes that exist. Production's CDN rewrites
+  extension-less paths to `index.html`, so it normally never serves `404.html`
+- A development build accepts the demo credentials on any host
 
 ## Pros and Cons of the Options
 
-### Sandbox Docker target with a compile-guarded demo login and a `404.html` copy
+### Host-gated demo login in the production bundle, plus a `404.html` copy in every build
 
-A separate build stage opts in; the deployable stage cannot.
+One bundle; the demo activates at runtime on sandbox hosts only.
 
-#### Good (Sandbox Docker target with a compile-guarded demo login and a `404.html` copy)
+#### Good (Host-gated demo login in the production bundle, plus a `404.html` copy in every build)
 
-- Production cannot receive the demo by ARG, ENV or dotenv, and the emitted-bundle scan proves it
-- Reuses the issue-#158 pattern, invariants and gate, so there is one way to ship a test seam
+- Works with the pipeline exactly as it is
+- One artifact for production and sandboxes, so a sandbox reviews what ships
 
-#### Bad (Sandbox Docker target with a compile-guarded demo login and a `404.html` copy)
+#### Bad (Host-gated demo login in the production bundle, plus a `404.html` copy in every build)
 
-- Takes effect only with the crm-infrastructure buildspec change in
-  [crm-infrastructure#60](https://github.com/VilnaCRM-Org/crm-infrastructure/pull/60)
-- Adds a fourth build to the seed gate's CI job
+- Production carries inert demo code; correctness rests on the hostname check and its tests
+
+### Compile-time sandbox build
+
+A separate build stage opts the demo in; the production bundle never contains it.
+
+#### Good (Compile-time sandbox build)
+
+- Production cannot contain the demo, provably, from the emitted bundle
+
+#### Bad (Compile-time sandbox build)
+
+- Needs the infrastructure pipeline to build a different target, which is not changing
+- A sandbox would review a different artifact from the one that ships
 
 ### Mock backend in the sandbox
 
@@ -131,19 +132,6 @@ Deploy Mockoon or the Apollo mock beside the bucket and point the sandbox build 
 - New always-on infrastructure per pull request, and a CORS and CSP change to reach it
 - Still leaves deep links broken without the `404.html` fallback
 
-### Runtime switch
-
-Read a flag at runtime and enable the demo login when it is set.
-
-#### Good (Runtime switch)
-
-- One artifact serves both production and sandboxes
-
-#### Bad (Runtime switch)
-
-- The demo code and credentials ship in the production bundle, one misconfigured value away
-  from an auth bypass — exactly what issue #158 rules out
-
 ### Infrastructure-only fallback
 
 Set the S3 error document to `index.html` in crm-infrastructure.
@@ -154,7 +142,8 @@ Set the S3 error document to `index.html` in crm-infrastructure.
 
 #### Bad (Infrastructure-only fallback)
 
-- Protected pages stay unreachable because no login can succeed
+- Protected pages stay unreachable because no login can succeed, and it is an infrastructure
+  change
 
 ## Links
 

@@ -328,9 +328,8 @@ gate" in [`CLAUDE.md`](CLAUDE.md) and [`src/config/env/README.md`](src/config/en
 three invariants that keep the guard foldable.
 
 Run it locally with `make check-auth-seed-gate`. It builds `--target production`, scans the image's
-`dist` for the seam and for the sandbox demo login below, and then re-scans a deliberately opted-in
-build and the `--target sandbox` image, each of which **must** still contain its seam, so the check
-cannot pass against the wrong artifact. In CI it is the `preloaded-auth seed gate` job
+`dist` for the seam, and then re-scans a deliberately opted-in build that **must** still contain it,
+so the check cannot pass against the wrong artifact. In CI it is the `preloaded-auth seed gate` job
 of the `security testing` workflow, and it is the only job that exercises the deployable
 `--target production` image — every other prod-side suite builds the ephemeral `test-harness` target.
 
@@ -341,24 +340,17 @@ out of the guarded method, or set `ENABLE_PRELOADED_AUTH_TOKEN_SEED` anywhere bu
 ### Pull-request sandboxes and the demo login
 
 The `sandbox` workflow triggers the `sandbox-crm-creation` AWS CodePipeline, which builds the pull
-request and syncs it to an S3 static website. A sandbox has no backend, so the Dockerfile has a
-`sandbox` target (`make build-out-sandbox`) that compiles in two things the deployable
-`production` target never carries (issue #309, [ADR-019](docs/adr/019-sandbox-demo-session.md)).
-The pipeline uses it once
-[VilnaCRM-Org/crm-infrastructure#60](https://github.com/VilnaCRM-Org/crm-infrastructure/pull/60)
-lands — its buildspec runs `make build-out-sandbox` when the branch has the target and falls back
-to `make build-out` otherwise. Until then a sandbox is built from the production bundle and has
-neither of the following:
+request with `make build-out` — the same production bundle that ships — and syncs it to an S3
+static website. A sandbox has no backend, so two things make it reviewable (issue #309,
+[ADR-019](docs/adr/019-sandbox-demo-session.md)):
 
-- **A demo login.** Sign in with `demo@vilnacrm.com` / `Demo1234` to reach every protected page.
-  The session is client-only and never calls the API; any other credentials fail as they would
-  against an unreachable backend.
-- **Deep links.** The build emits `404.html` as a copy of `index.html`, so S3 answers `/sign-in`,
-  `/forbidden` or any other route with the app instead of its own error page. S3 still reports
-  HTTP status 404 for those responses; the page itself renders normally.
-
-`make check-auth-seed-gate` proves on every pull request that the `production` image carries
-neither, and that the `sandbox` image carries both.
+- **A demo login.** On a sandbox, sign in with `demo@vilnacrm.com` / `Demo1234` to reach every
+  protected page. The session is client-only and never calls the API, and it survives a reload
+  until you sign out. The demo code ships in every production bundle but only activates on a
+  `sandbox-crm-*` S3 website host; anywhere else those credentials go to the API like any others.
+- **Deep links.** Every build emits `404.html` as a copy of `index.html`, so S3 answers
+  `/sign-in`, `/forbidden` or any other route with the app instead of its own error page. S3
+  still reports HTTP status 404 for those responses; the page itself renders normally.
 
 ### The browser security-header gate
 

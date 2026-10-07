@@ -1,4 +1,4 @@
-import sandboxDemoSessionSeed from '@/config/env/sandbox-demo-session';
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import type { ObservabilityService } from '@/services/types/observability/observability';
 import AuthStoreActions from '@auth/stores/auth-store-actions';
 import AuthStateVar from '@auth/stores/auth-var';
@@ -41,7 +41,7 @@ const loginWith = (over: Partial<AuthRepository>): Promise<void> =>
     authRequestErrors,
     authState: AuthStateVar,
     securitySignals,
-    sandboxDemoSession: sandboxDemoSessionSeed,
+    sandboxDemoSession: sandboxDemoSessionProvider,
   }).login({
     email: 'a@b.c',
     password: 'p',
@@ -53,7 +53,7 @@ const registerWith = (over: Partial<AuthRepository>): Promise<void> =>
     authRequestErrors,
     authState: AuthStateVar,
     securitySignals,
-    sandboxDemoSession: sandboxDemoSessionSeed,
+    sandboxDemoSession: sandboxDemoSessionProvider,
   }).register({
     fullName: 'A',
     email: 'a@b.c',
@@ -110,7 +110,7 @@ describe('AuthStoreActions integration coverage', () => {
       authRequestErrors,
       authState: AuthStateVar,
       securitySignals,
-      sandboxDemoSession: sandboxDemoSessionSeed,
+      sandboxDemoSession: sandboxDemoSessionProvider,
     }).login({ email: 'demo@vilnacrm.com', password: 'Demo1234' });
 
     expect(login).not.toHaveBeenCalled();
@@ -119,6 +119,8 @@ describe('AuthStoreActions integration coverage', () => {
       email: 'demo@vilnacrm.com',
       token: 'sandbox-demo-session-token',
     });
+    expect(localStorage.getItem('vilnacrm.sandbox-demo-session')).toBe('demo@vilnacrm.com');
+    sandboxDemoSessionProvider.signOut();
   });
 
   it('settles a canceled demo-credential login as aborted instead of signing in', async () => {
@@ -132,7 +134,7 @@ describe('AuthStoreActions integration coverage', () => {
       authRequestErrors,
       authState: AuthStateVar,
       securitySignals,
-      sandboxDemoSession: sandboxDemoSessionSeed,
+      sandboxDemoSession: sandboxDemoSessionProvider,
     }).login({ email: 'demo@vilnacrm.com', password: 'Demo1234' }, controller.signal);
 
     expect(login).toHaveBeenCalledTimes(1);

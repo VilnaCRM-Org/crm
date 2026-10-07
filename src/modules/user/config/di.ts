@@ -1,9 +1,9 @@
 import { ApolloClient, InMemoryCache, type NormalizedCacheObject } from '@apollo/client';
 import { instanceCachingFactory, type DependencyContainer } from 'tsyringe';
 
-import sandboxDemoSessionSeed, {
-  type SandboxDemoSessionSeed,
-} from '@/config/env/sandbox-demo-session';
+import sandboxDemoSessionProvider, {
+  type SandboxDemoSessionProvider,
+} from '@/config/env/sandbox-demo-session-provider';
 import type { ModuleRegistrar } from '@/config/types/module-registrar';
 import AuthUiErrorMapper from '@/modules/user/store/auth-ui-error-mapper';
 import LoginResponseMapper from '@/modules/user/store/login-response-mapper';
@@ -47,14 +47,18 @@ class UserModuleRegistrar implements ModuleRegistrar {
   // container-resolved store actions inject it instead of value-importing it (issue #130).
   private registerAuthState(container: DependencyContainer): void {
     container.register(AUTH_TOKENS.AuthStateVar, { useValue: authStateVar });
-    container.register(AUTH_TOKENS.SandboxDemoSessionSeed, { useValue: sandboxDemoSessionSeed });
+    container.register(AUTH_TOKENS.SandboxDemoSessionProvider, {
+      useValue: sandboxDemoSessionProvider,
+    });
     container.register<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps, {
       useFactory: (c) => ({
         repository: c.resolve<AuthRepository>(AUTH_TOKENS.AuthRepository),
         authRequestErrors: c.resolve<AuthRequestErrors>(AUTH_TOKENS.AuthRequestErrors),
         authState: c.resolve<AuthStateVar>(AUTH_TOKENS.AuthStateVar),
         securitySignals: c.resolve<AuthSecuritySignals>(AUTH_TOKENS.AuthSecuritySignals),
-        sandboxDemoSession: c.resolve<SandboxDemoSessionSeed>(AUTH_TOKENS.SandboxDemoSessionSeed),
+        sandboxDemoSession: c.resolve<SandboxDemoSessionProvider>(
+          AUTH_TOKENS.SandboxDemoSessionProvider
+        ),
       }),
     });
   }

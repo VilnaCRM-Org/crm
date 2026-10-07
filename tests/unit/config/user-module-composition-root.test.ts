@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { container, type DependencyContainer } from 'tsyringe';
 
-import sandboxDemoSessionSeed from '@/config/env/sandbox-demo-session';
+import sandboxDemoSessionProvider from '@/config/env/sandbox-demo-session-provider';
 import runtimeConfigRegistrar from '@/config/runtime/di';
 import userModuleRegistrar from '@/modules/user/config/di';
 import AUTH_TOKENS from '@/modules/user/config/tokens';
@@ -27,7 +27,7 @@ const API_TOKENS = [AUTH_TOKENS.RegistrationAPI, AUTH_TOKENS.LoginAPI];
 const REPOSITORY_TOKENS = [AUTH_TOKENS.AuthRepositoryDeps, AUTH_TOKENS.AuthRepository];
 const AUTH_STATE_TOKENS = [
   AUTH_TOKENS.AuthStateVar,
-  AUTH_TOKENS.SandboxDemoSessionSeed,
+  AUTH_TOKENS.SandboxDemoSessionProvider,
   AUTH_TOKENS.AuthStoreActionsDeps,
 ];
 const EVERY_TOKEN = [
@@ -116,10 +116,10 @@ describe('user module composition root', () => {
     child.register(AUTH_TOKENS.AuthRequestErrors, { useValue: {} });
     child.register(AUTH_TOKENS.AuthSecuritySignals, { useValue: {} });
 
-    expect(child.resolve(AUTH_TOKENS.SandboxDemoSessionSeed)).toBe(sandboxDemoSessionSeed);
+    expect(child.resolve(AUTH_TOKENS.SandboxDemoSessionProvider)).toBe(sandboxDemoSessionProvider);
     expect(
       child.resolve<AuthStoreActionsDeps>(AUTH_TOKENS.AuthStoreActionsDeps).sandboxDemoSession
-    ).toBe(sandboxDemoSessionSeed);
+    ).toBe(sandboxDemoSessionProvider);
   });
 
   it('registers the mappers as singletons rather than per-resolve instances', () => {

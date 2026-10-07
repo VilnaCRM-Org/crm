@@ -124,8 +124,8 @@ const APPROVED_SUFFIXES = [
   },
   {
     suffix: 'Seed',
-    role: 'test/sandbox-only value, compile-guarded',
-    lineage: 'repo idiom (#158, #309)',
+    role: 'test-only preloaded value, compile-guarded',
+    lineage: 'repo idiom (#158)',
   },
   {
     suffix: 'Registrar',

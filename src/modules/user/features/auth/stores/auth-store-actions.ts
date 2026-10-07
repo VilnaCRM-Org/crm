@@ -15,9 +15,7 @@ export default class AuthStoreActions {
   public async login(credentials: LoginUserDto, signal?: AbortSignal): Promise<void> {
     this.deps.authState.set({ loginLoading: true, loginError: null });
     try {
-      const demoSession = signal?.aborted
-        ? null
-        : this.deps.sandboxDemoSession.sessionFor(credentials);
+      const demoSession = signal?.aborted ? null : this.deps.sandboxDemoSession.signIn(credentials);
       const result: LoginResult =
         demoSession === null
           ? await this.deps.repository.login(credentials, signal)

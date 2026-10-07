@@ -143,7 +143,7 @@ Linting & Formatting
   make lint-dup: detects copy/paste duplication with jscpd (thresholds in .jscpd.json)
   make lint-i18n: checks en/uk locale parity, merged-catalog freshness, and t() key resolution
   make i18n-generate: regenerates src/i18n/localization.json from the src/**/i18n catalogs
-  make check-auth-seed-gate: no auth seam in the production bundle; the sandbox keeps its demo login
+  make check-auth-seed-gate: scans the built bundles so the test-only preloaded-auth seed cannot ship
   make lint-security-headers: fails when serve.json drifts from config/security-headers.json
   make security-headers-generate: regenerates the serve.json headers block from the policy
   make check-security-headers: boots the production image and asserts the security-header baseline
@@ -486,7 +486,7 @@ a row names a workflow that does not exist.
 | `dockerfile performance`   | Image size budget, hadolint and dive efficiency        |
 | `codecov`                  | Coverage upload                                        |
 | `image optimization`       | Lossless compression of committed images               |
-| `sandbox`                  | Sandbox creation via AWS CodePipeline (demo login)     |
+| `sandbox`                  | Sandbox environment creation via AWS CodePipeline      |
 | `Trigger Sandbox Deletion` | Sandbox environment teardown                           |
 
 ### Scheduled, push and release monitors

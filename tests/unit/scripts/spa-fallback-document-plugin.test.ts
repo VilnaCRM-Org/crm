@@ -54,6 +54,14 @@ describe('pluginSpaFallbackDocument (issue #309)', () => {
     expect(readFileSync(path.join(distPath, '404.html')).equals(shell)).toBe(true);
   });
 
+  it('is registered unconditionally, so every build (make build-out too) emits 404.html', () => {
+    const config = readFileSync(path.resolve(__dirname, '../../../rsbuild.config.ts'), 'utf8');
+    const plugins = config.slice(config.indexOf('  plugins: ['), config.indexOf('  html: {'));
+
+    expect(plugins).toMatch(/^ {4}pluginSpaFallbackDocument\(\),$/m);
+    expect(config.match(/pluginSpaFallbackDocument\(/g)).toHaveLength(1);
+  });
+
   it('fails the build when there is no shell to copy', () => {
     const distPath = mkdtempSync(path.join(tmpdir(), 'spa-fallback-'));
     const [afterBuild] = setUp(pluginSpaFallbackDocument(), distPath);

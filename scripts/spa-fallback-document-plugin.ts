@@ -7,10 +7,11 @@ export const SPA_SHELL_DOCUMENT = 'index.html';
 export const SPA_FALLBACK_DOCUMENT = '404.html';
 
 /**
- * Emits `404.html` as a byte copy of the built `index.html` (issue #309). A static host whose
- * error document is `404.html` — the S3 website a sandbox is synced to — then answers every deep
- * link with the SPA shell instead of its own error page, and the router renders the route. Only
- * the sandbox build registers it: a production build must not emit the file.
+ * Emits `404.html` as a byte copy of the built `index.html` after every build (issue #309). A
+ * static host whose error document is `404.html` — the S3 website a pull-request sandbox is
+ * synced to — then answers every deep link with the SPA shell instead of its own error page, and
+ * the router renders the route. Production's CDN rewrites extension-less paths to `index.html`,
+ * so it never serves the copy.
  */
 export const pluginSpaFallbackDocument = (): RsbuildPlugin => ({
   name: 'crm:spa-fallback-document',
