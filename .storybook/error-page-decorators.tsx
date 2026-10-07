@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import type { Decorator } from '@storybook/react-webpack5';
 import type { JSX } from 'react';
 
-import errorPageStyles from '../src/components/error-page/styles';
+import errorPageStyles from '../src/components/error-page/styles/error-page-styles';
 
 const styles = errorPageStyles.build();
 

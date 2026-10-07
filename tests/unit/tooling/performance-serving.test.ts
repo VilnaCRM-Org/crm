@@ -232,7 +232,7 @@ describe('performance serving config', () => {
       "import errorPageLoader from '@/components/error-boundary/error-page-loader';"
     );
     expect(entrySource).toContain(
-      "import ERROR_PAGE_FONT_FACES from '@/components/error-page/error-page-fonts';"
+      "import ERROR_PAGE_FONT_FACES from '@/components/error-page/config/error-page-fonts';"
     );
     expect(entrySource).not.toContain('ReloadingChunkLoader');
   });

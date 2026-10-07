@@ -414,32 +414,32 @@ AR-9.
   `ErrorPageHomeAppearance`, `ErrorPageBreakpoint`, `ErrorPageVariant`, `ErrorPageProps`
   (reusing `FallbackLandmark`), `ErrorPageGeometry` with its sub-record types and the six
   style-sheet types (AD§4.1).
-- `src/components/error-page/error-page-variants.ts` (new): default-exported
+- `src/components/error-page/config/error-page-variants.ts` (new): default-exported
   `ERROR_PAGE_VARIANTS` (`as const satisfies Record<ErrorPageVariantId, ErrorPageVariant>`) with
   the AD§4.2 table, plus `ERROR_PAGE_TITLE_ID = 'error-page-title'`,
   `ERROR_PAGE_ACTIONS_ID = 'error-page-actions'` and `ERROR_PAGE_DIGITS_ID = 'error-page-digits'`.
-- `src/components/error-page/error-page-geometry.ts` (new): `ERROR_PAGE_GEOMETRY`, one record
+- `src/components/error-page/config/error-page-geometry.ts` (new): `ERROR_PAGE_GEOMETRY`, one record
   per breakpoint with the appendix A.1 to A.3 values and the AD§8.3 field list verbatim; the
   desktop/tablet-identical sub-records `LARGE_DIGITS`, `LARGE_PAGE` and `LARGE_CARD_SURFACE`
   are module-level `const`s referenced from both breakpoints (never written out twice); the tab
   is stored as `left` / `right` insets, the description has no width field, the card carries
   `textInset` 24 / 24 / 16 (24 inside `LARGE_CARD_SURFACE`), and the mobile glyphs carry their
   tops (14.582 / 37.324 / 14.582).
-- `src/components/error-page/error-page-media.ts` (new): `ERROR_PAGE_MEDIA`, the tablet
+- `src/components/error-page/config/error-page-media.ts` (new): `ERROR_PAGE_MEDIA`, the tablet
   `max-width: 1024px` and mobile `breakpointsTheme.breakpoints.down('md')` strings built from
   `ui-breakpoints`.
-- `src/components/error-page/responsive-styles.ts` (new): class `ErrorPageResponsiveStyles`, one
+- `src/components/error-page/styles/responsive-styles.ts` (new): class `ErrorPageResponsiveStyles`, one
   public `compose(desktop, tablet, mobile)` that returns `{ ...desktop, [tablet query]: tablet,
 [mobile query]: mobile }` (AD§14.1), exported as a singleton.
 
 **Tests (new, each loads its module inside the test):**
 
-- `tests/unit/components/error-page/error-page-variants.test.ts`: `toEqual` on the full table and
+- `tests/unit/components/error-page/config/error-page-variants.test.ts`: `toEqual` on the full table and
   the three id constants.
-- `tests/unit/components/error-page/error-page-geometry.test.ts`: `toEqual` on every breakpoint
+- `tests/unit/components/error-page/config/error-page-geometry.test.ts`: `toEqual` on every breakpoint
   record against appendix A.
-- `tests/unit/components/error-page/error-page-media.test.ts`: the two exact query strings.
-- `tests/unit/components/error-page/responsive-styles.test.ts`: isolated load; `compose` places
+- `tests/unit/components/error-page/config/error-page-media.test.ts`: the two exact query strings.
+- `tests/unit/components/error-page/styles/responsive-styles.test.ts`: isolated load; `compose` places
   the desktop fragment at the top level and the tablet and mobile fragments under the exact
   `ERROR_PAGE_MEDIA` keys.
 
@@ -558,28 +558,28 @@ r="3.36">` columns 4 / 6 / 8 / 10 and the transposed rows 10 / 8 / 6 / 4, `fill=
 - Every root carries `viewBox` and `preserveAspectRatio="none"` and no `width` or `height`
   attribute; sizes come from CSS only, so svgo's `removeViewBox` keeps the `viewBox` with no
   svgo configuration change (AD§7.1).
-- `src/components/error-page/illustration-styles.ts` (new): class
+- `src/components/error-page/styles/illustration-styles.ts` (new): class
   `ErrorPageIllustrationStyles`, `build()` with tokens tab, curve, diamond and one private
   fragment method per token that reads one breakpoint's geometry (AD§14.1); the tab uses the
   `left` / `right` insets.
-- `src/components/error-page/dot-styles.ts` (new): class `ErrorPageDotStyles`, the same shape
+- `src/components/error-page/styles/dot-styles.ts` (new): class `ErrorPageDotStyles`, the same shape
   for dot, dot columns and dot rows; a `null` geometry block yields `{ display: 'none' }`, and
   every non-null fragment of these nullable tokens declares `display: 'block'` (the mobile
   `dotRows` fragment must, or the base `display: none` hides the rows below 768 px; the desktop
   and tablet `dot` and `dotColumns` fragments do too, for symmetry; AD§14.1).
-- `src/components/error-page/error-page-illustration.tsx` (new): one `aria-hidden="true"` layer
+- `src/components/error-page/components/error-page-illustration.tsx` (new): one `aria-hidden="true"` layer
   rendering the CSS tab and dot and the four svgr components with `focusable="false"`.
 
 **Tests (new):**
 
-- `tests/unit/components/error-page/illustration-styles.test.ts`: isolated load, `toEqual` on
+- `tests/unit/components/error-page/styles/illustration-styles.test.ts`: isolated load, `toEqual` on
   every token, including the three breakpoint blocks, the `#FFC01E` tab with its insets and the
   opacity 0.3 curve.
-- `tests/unit/components/error-page/dot-styles.test.ts`: isolated load, `toEqual` on every
+- `tests/unit/components/error-page/styles/dot-styles.test.ts`: isolated load, `toEqual` on every
   token, including the mobile `display: none` of the dot and dot columns, the desktop and
   tablet `display: none` of the dot rows, the mobile `display: 'block'` of the dot rows and the
   desktop and tablet `display: 'block'` of the dot and dot columns.
-- `tests/unit/components/error-page/error-page-illustration.test.tsx`: each SVG mocked as
+- `tests/unit/components/error-page/components/error-page-illustration.test.tsx`: each SVG mocked as
   `{ ReactComponent: 'svg' }`; the layer is `aria-hidden`, every svg is `focusable="false"`, four
   art elements plus the tab and the dot render.
 
@@ -627,7 +627,7 @@ So that I can leave the page with the keyboard or the mouse.
 
 **Files:**
 
-- `src/components/error-page/action-styles.ts` (new): class `ErrorPageActionStyles` in the
+- `src/components/error-page/styles/action-styles.ts` (new): class `ErrorPageActionStyles` in the
   AD§14.1 shape (`build()`, a private `base`, and row, contained and outlined fragments that
   each read one breakpoint's geometry), one shared base plus two overrides (AD§10.2): no text transform,
   letter-spacing 0, Golos, radius 57, `minHeight` 62 / 70 / 50, padding per breakpoint, the
@@ -635,7 +635,7 @@ So that I can leave the page with the keyboard or the mouse.
   `:focus-visible` outline `2px solid customColors.text.dark` offset 2, and the `UIButton`
   theme's `max-width: 1024px` / `max-width: 375px` padding and `marginBottom: 0` re-pinned under
   the exact theme query strings.
-- `src/components/error-page/error-page-actions.tsx` (new): `ErrorPageActions({ variant })`,
+- `src/components/error-page/components/error-page-actions.tsx` (new): `ErrorPageActions({ variant })`,
   `Box id={ERROR_PAGE_ACTIONS_ID}` (flex row, gap 8, centred, wrap), a home `UIButton
 to={ROUTE_PATHS.home}` with the variant's appearance, and for `forbidden` a second
   `UIButton variant="contained"` with no `to`, `href` or handler. Labels are plain text
@@ -646,9 +646,9 @@ to={ROUTE_PATHS.home}` with the variant's appearance, and for `forbidden` a seco
 
 **Tests:**
 
-- `tests/unit/components/error-page/action-styles.test.ts` (new): isolated load, `toEqual` on
+- `tests/unit/components/error-page/styles/action-styles.test.ts` (new): isolated load, `toEqual` on
   every token and both media blocks.
-- `tests/unit/components/error-page/error-page-actions.test.tsx` (new): contained home
+- `tests/unit/components/error-page/components/error-page-actions.test.tsx` (new): contained home
   `a[href="/"]` for `notFound` and `serverError`; outlined home then
   `button[type="button"]` "Запросити доступ" for `forbidden`, in that DOM order; clicking the
   button changes nothing; `notFound` and `serverError` render no `button`; the test title names
@@ -710,23 +710,23 @@ NFR-7, NFR-8, NFR-9, AR-9, AR-14, AR-18, UX-DR2, UX-DR3.
 
 **Files:**
 
-- `src/components/error-page/card-styles.ts` (new): class `ErrorPageCardStyles` in the AD§14.1
+- `src/components/error-page/styles/card-styles.ts` (new): class `ErrorPageCardStyles` in the AD§14.1
   shape, tokens card, title, description and the breakpoint-independent `statusCode` (the
   visually hidden object `UILiveStatus` uses: absolute, 1 x 1 px, `clip: rect(0 0 0 0)`,
   `overflow: hidden`, no wrap): Golos pinned, text sizes in `rem` (AD§9.1), card
   padding `top − border` / `bottom − border` with `box-sizing: border-box`, the title and the
   description centred with no width but `max-width: calc(100% - 2 × textInset)` (48 / 48 / 32
   px, AD§8.2), and the title's `'&:focus': { outline: 'none' }` (AD§12).
-- `src/components/error-page/digit-styles.ts` (new): class `ErrorPageDigitStyles`, tokens digits
+- `src/components/error-page/styles/digit-styles.ts` (new): class `ErrorPageDigitStyles`, tokens digits
   (frame, Golos 700, `text-shadow: 0 <offset>px 0 <shadow>`) and glyphs (the three absolute
   `:nth-of-type` positions of one breakpoint per fragment). No generated content.
-- `src/components/error-page/error-page-digits.tsx` (new): one `Box id={ERROR_PAGE_DIGITS_ID}`
+- `src/components/error-page/components/error-page-digits.tsx` (new): one `Box id={ERROR_PAGE_DIGITS_ID}`
   with `aria-hidden="true"` holding three `<span>` elements whose text is the glyph, coloured
   from the variant.
 - `tests/utils/a11y/axe-config.ts`: the second appended `A11Y_EXCEPTIONS` entry (AD§10.4), rule
   `color-contrast`, selector `#error-page-digits > span`, reason citing `#1EAEFF` / `#FFC01E`
   on `#FBFBFB` at 2.37:1 / 1.58:1, `trackingUrl: PALETTE_CONTRAST_ISSUE` (#276).
-- `src/components/error-page/error-page-card.tsx` (new): `Box component="h1"
+- `src/components/error-page/components/error-page-card.tsx` (new): `Box component="h1"
 id={ERROR_PAGE_TITLE_ID} tabIndex={-1}` focused through `useFocusOnMount`, a plain `p`
   visually hidden `p` with `t(config.codeKey)` (the status code, WCAG 1.3.1, AD§8.4), a plain
   `p` description, then `ErrorPageActions`. The `h1` is a programmatic focus target only and
@@ -734,19 +734,19 @@ id={ERROR_PAGE_TITLE_ID} tabIndex={-1}` focused through `useFocusOnMount`, a pla
 
 **Tests (new):**
 
-- `tests/unit/components/error-page/card-styles.test.ts`: isolated load, `toEqual` on every
+- `tests/unit/components/error-page/styles/card-styles.test.ts`: isolated load, `toEqual` on every
   token for the three breakpoints (title 600 2.25rem / 2.6875rem desktop, 700 1.375rem /
   1.625rem mobile; description 1rem / 1.625rem, 1.125rem / 1.875rem, 0.9375rem / 1.5625rem;
   card shadows and radii; the title and description `maxWidth` 48 / 48 / 32 px insets; the
   title's `'&:focus': { outline: 'none' }`; the `statusCode` visually hidden object).
-- `tests/unit/components/error-page/digit-styles.test.ts`: isolated load, `toEqual` on every
+- `tests/unit/components/error-page/styles/digit-styles.test.ts`: isolated load, `toEqual` on every
   token (digits 244.5px / 293.4px and 154.462px / 185.355px; glyph tops 0 / 36 / 0 and
   14.582 / 37.324 / 14.582).
-- `tests/unit/components/error-page/error-page-digits.test.tsx`: `#error-page-digits` holds
+- `tests/unit/components/error-page/components/error-page-digits.test.tsx`: `#error-page-digits` holds
   three spans with text 4/0/4, 4/0/3, 5/x/x; the box is `aria-hidden`, so no digit is exposed by
   role.
 - `tests/unit/a11y/a11y-gate.test.tsx`: passes unedited (validates the second entry's fields).
-- `tests/unit/components/error-page/error-page-card.test.tsx`: `h1#error-page-title` has focus
+- `tests/unit/components/error-page/components/error-page-card.test.tsx`: `h1#error-page-title` has focus
   after mount; uk strings per variant; en strings after `changeLanguage` without a reload; the
   uk 403 description contains "На жаль," and not "Нажаль"; the description has no
   `role="alert"` and is not a live region; `getByText('Код помилки: 403')` (and the 404 / 5xx
@@ -802,11 +802,11 @@ UX-DR1, UX-DR7.
 
 **Files:**
 
-- `src/components/error-page/styles.ts` (new): class `ErrorPageStyles` in the AD§14.1 shape,
+- `src/components/error-page/styles/error-page-styles.ts` (new): class `ErrorPageStyles` in the AD§14.1 shape,
   tokens landmark (`#FBFBFB`, top and bottom padding, `overflow-x: clip`, flex column that grows
   to push the footer down) and composition (width, `max-width`, centring, mobile
   `padding-bottom`).
-- `src/components/error-page/error-page-composition.tsx` (new): the positioned 614 / 474 /
+- `src/components/error-page/components/error-page-composition.tsx` (new): the positioned 614 / 474 /
   350.348 px box (`position: relative; isolation: isolate`, flex column centred) holding
   `ErrorPageIllustration`, `ErrorPageDigits` and `ErrorPageCard`, with the mobile
   `padding-bottom: 78.87px` and `max-width: calc(100% - 24.6px)`.
@@ -825,9 +825,9 @@ landmark })`: `usePageTitle(config.titleKey)`, `Box component` `main` or `sectio
   in `main` mode and 0 from the page in `region` mode; `usePageTitle` called with each variant's
   key; one `h1`; no `role="alert"`; the title "<title> - VilnaCRM" is applied and reset to
   "VilnaCRM" on unmount.
-- `tests/unit/components/error-page/error-page-composition.test.tsx`: illustration, digits and
+- `tests/unit/components/error-page/components/error-page-composition.test.tsx`: illustration, digits and
   card render in that order for each variant.
-- `tests/unit/components/error-page/styles.test.ts`: isolated load, `toEqual` on both tokens for
+- `tests/unit/components/error-page/styles/error-page-styles.test.ts`: isolated load, `toEqual` on both tokens for
   the three breakpoints.
 
 **Verification (local-light):** focused Jest on the two new tests and the jest-axe test; ESLint,

@@ -2,13 +2,14 @@ import Box from '@mui/material/Box';
 import type { JSX } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import ErrorPageComposition from '@/components/error-page/components/error-page-composition';
+import ERROR_PAGE_VARIANTS, {
+  ERROR_PAGE_TITLE_ID,
+} from '@/components/error-page/config/error-page-variants';
+import errorPageStyles from '@/components/error-page/styles/error-page-styles';
 import type { ErrorPageProps } from '@/components/types/error-page';
 import UIFooter from '@/components/ui-footer';
 import usePageTitle from '@/hooks/use-page-title';
-
-import ErrorPageComposition from './error-page-composition';
-import ERROR_PAGE_VARIANTS, { ERROR_PAGE_TITLE_ID } from './error-page-variants';
-import errorPageStyles from './styles';
 
 const styles = errorPageStyles.build();
 

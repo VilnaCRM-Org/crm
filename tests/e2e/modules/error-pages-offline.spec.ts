@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 
-import ERROR_PAGE_FONT_FACES from '@/components/error-page/error-page-fonts';
+import ERROR_PAGE_FONT_FACES from '@/components/error-page/config/error-page-fonts';
 import ROUTE_PATHS from '@/routes/route-paths';
 import gotoAndSettleWarmUp from '@tests/e2e/utils/error-page-warm-up';
 import { test, expect } from '@tests/e2e/utils/fixtures';

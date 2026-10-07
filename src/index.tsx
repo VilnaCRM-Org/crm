@@ -6,7 +6,7 @@ import '@/styles/fonts.css';
 import ErrorFallback from '@/components/error-boundary/error-fallback';
 import errorPageLoader from '@/components/error-boundary/error-page-loader';
 import UIErrorBoundary from '@/components/error-boundary/ui-error-boundary';
-import ERROR_PAGE_FONT_FACES from '@/components/error-page/error-page-fonts';
+import ERROR_PAGE_FONT_FACES from '@/components/error-page/config/error-page-fonts';
 import appConfigSource from '@/config/runtime/app-config-source';
 import BrowserConnectivityAdapter from '@/lib/connectivity/browser-connectivity-adapter';
 import connectivityStateVar from '@/lib/connectivity/connectivity-state-var';
