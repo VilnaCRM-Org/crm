@@ -19,6 +19,7 @@ describe('error page variant table', () => {
         codeKey: 'error_page.not_found.code',
         homeAppearance: 'contained',
         requestAccess: false,
+        mobileCard: { gapTitle: 3.74, gapActions: 16, bottom: 26.48 },
       },
       forbidden: {
         glyphs: ['4', '0', '3'],
@@ -29,6 +30,7 @@ describe('error page variant table', () => {
         codeKey: 'error_page.forbidden.code',
         homeAppearance: 'outlined',
         requestAccess: true,
+        mobileCard: { gapTitle: 8, gapActions: 16, bottom: 24 },
       },
       serverError: {
         glyphs: ['5', 'x', 'x'],
@@ -39,6 +41,7 @@ describe('error page variant table', () => {
         codeKey: 'error_page.server_error.code',
         homeAppearance: 'contained',
         requestAccess: false,
+        mobileCard: { gapTitle: 8, gapActions: 8, bottom: 20 },
       },
     });
   });

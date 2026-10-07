@@ -35,7 +35,13 @@ const MOBILE_LABEL = { fontSize: '0.9375rem', lineHeight: '1.125rem', fontWeight
 const MOBILE_OUTLINED = { minHeight: '50px', padding: '15px 23px', ...MOBILE_LABEL };
 
 describe('ErrorPageActionStyles', () => {
-  it('lays the actions out as a centred, wrapping row inset from the card edges', async () => {
+  it('stretches only the stacked actions to the row width on mobile', async () => {
+    const { default: actionStyles } = await loadActionStyles();
+
+    expect(actionStyles.build().stacked).toEqual({ [MOBILE]: { width: '100%' } });
+  });
+
+  it('lays the actions out in a centred row, a column inset 20px on mobile', async () => {
     const { default: actionStyles } = await loadActionStyles();
 
     expect(actionStyles.build().row).toEqual({
@@ -48,6 +54,11 @@ describe('ErrorPageActionStyles', () => {
       width: '100%',
       paddingInline: '4px',
       boxSizing: 'border-box',
+      [MOBILE]: {
+        flexDirection: 'column',
+        gap: '6px',
+        paddingInline: '19.261px',
+      },
     });
   });
 

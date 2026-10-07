@@ -6,6 +6,7 @@ import ErrorPageActions from '@/components/error-page/error-page-actions';
 import type { ErrorPageVariantId } from '@/components/types/error-page';
 
 import createLocaleI18n from '../../utils/create-locale-i18n';
+import { winningMediaValueFor } from '../../utils/emotion-style-rules';
 
 const HOME = 'На головну';
 const REQUEST_ACCESS = 'Запросити доступ';
@@ -22,7 +23,76 @@ function actionsRow(): HTMLElement | undefined {
   return screen.getAllByRole('generic').find((element) => element.id === 'error-page-actions');
 }
 
+const MOBILE_QUERY = '(max-width:767.95px)';
+
+function mockViewport(mobile: boolean): void {
+  window.matchMedia = ((query: string) => ({
+    matches: mobile && query === MOBILE_QUERY,
+    media: query,
+    onchange: null,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })) as unknown as typeof window.matchMedia;
+}
+
 describe('ErrorPageActions', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(window, 'matchMedia');
+  });
+
+  it('stacks the request-access button above the home link on mobile for forbidden', () => {
+    mockViewport(true);
+    renderActions('forbidden');
+
+    const home = screen.getByRole('link', { name: HOME });
+    const requestAccess = screen.getByRole('button', { name: REQUEST_ACCESS });
+
+    expect(requestAccess.compareDocumentPosition(home)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(actionsRow()).toContainElement(home);
+  });
+
+  it('keeps the home link first above the mobile breakpoint for forbidden', () => {
+    mockViewport(false);
+    renderActions('forbidden');
+
+    const home = screen.getByRole('link', { name: HOME });
+    const requestAccess = screen.getByRole('button', { name: REQUEST_ACCESS });
+
+    expect(home.compareDocumentPosition(requestAccess)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('stretches both forbidden actions to the row width below the mobile breakpoint', () => {
+    renderActions('forbidden');
+
+    const home = screen.getByRole('link', { name: HOME });
+    const requestAccess = screen.getByRole('button', { name: REQUEST_ACCESS });
+
+    expect(winningMediaValueFor(home, MOBILE_QUERY, 'width')).toBe('100%');
+    expect(winningMediaValueFor(requestAccess, MOBILE_QUERY, 'width')).toBe('100%');
+  });
+
+  it.each<ErrorPageVariantId>(['notFound', 'serverError'])(
+    'keeps the single %s home link at its own width on mobile',
+    (variant) => {
+      renderActions(variant);
+
+      const home = screen.getByRole('link', { name: HOME });
+
+      expect(winningMediaValueFor(home, MOBILE_QUERY, 'width')).toBeUndefined();
+    }
+  );
+
+  it('renders only the home link on mobile for notFound', () => {
+    mockViewport(true);
+    renderActions('notFound');
+
+    expect(screen.getByRole('link', { name: HOME })).toHaveClass('MuiButton-contained');
+    expect(screen.queryAllByRole('button')).toHaveLength(0);
+  });
+
   it.each<ErrorPageVariantId>(['notFound', 'serverError'])(
     'renders one contained home link and no button for %s',
     (variant) => {

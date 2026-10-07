@@ -6,6 +6,12 @@ export type ErrorPageVariantId = 'notFound' | 'forbidden' | 'serverError';
 export type ErrorPageHomeAppearance = 'contained' | 'outlined';
 export type ErrorPageBreakpoint = 'desktop' | 'tablet' | 'mobile';
 
+export interface ErrorPageCardRhythm {
+  gapTitle: number;
+  gapActions: number;
+  bottom: number;
+}
+
 export interface ErrorPageVariant {
   glyphs: readonly [string, string, string];
   digitColor: string;
@@ -15,6 +21,7 @@ export interface ErrorPageVariant {
   codeKey: string;
   homeAppearance: ErrorPageHomeAppearance;
   requestAccess: boolean;
+  mobileCard: ErrorPageCardRhythm;
 }
 
 export interface ErrorPageProps {
@@ -52,6 +59,7 @@ export interface ErrorPageCardSurfaceGeometry {
   shadowY: number;
   shadowBlur: number;
   textInset: number;
+  descInset: number;
   titleSize: number;
   titleWeight: number;
 }
@@ -124,6 +132,7 @@ export type ErrorPageStyleSheet = Record<ErrorPageStyleToken, CSSObject>;
 
 export type ErrorPageCardStyleToken = 'card' | 'title' | 'description' | 'statusCode';
 export type ErrorPageCardStyleSheet = Record<ErrorPageCardStyleToken, CSSObject>;
+export type ErrorPageCardRhythmSheet = Record<'card' | 'description', CSSObject>;
 
 export type ErrorPageDigitStyleToken = 'digits' | 'glyphs';
 export type ErrorPageDigitStyleSheet = Record<ErrorPageDigitStyleToken, CSSObject>;
@@ -134,5 +143,5 @@ export type ErrorPageIllustrationStyleSheet = Record<ErrorPageIllustrationStyleT
 export type ErrorPageDotStyleToken = 'dot' | 'dotColumns' | 'dotRows';
 export type ErrorPageDotStyleSheet = Record<ErrorPageDotStyleToken, CSSObject>;
 
-export type ErrorPageActionStyleToken = 'row' | 'contained' | 'outlined';
+export type ErrorPageActionStyleToken = 'row' | 'contained' | 'outlined' | 'stacked';
 export type ErrorPageActionStyleSheet = Record<ErrorPageActionStyleToken, CSSObject>;

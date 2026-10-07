@@ -7,6 +7,8 @@ import ErrorPageCard from '@/components/error-page/error-page-card';
 import type { ErrorPageVariantId } from '@/components/types/error-page';
 import localization from '@/i18n/localization.json';
 
+import { winningMediaValueFor } from '../../utils/emotion-style-rules';
+
 interface CardCopy {
   title: string;
   code: string;
@@ -50,6 +52,7 @@ const EN_COPY: Record<ErrorPageVariantId, CardCopy> = {
 };
 
 const VARIANTS: ErrorPageVariantId[] = ['notFound', 'forbidden', 'serverError'];
+const MOBILE_QUERY = '(max-width:767.95px)';
 
 const createBilingualI18n = (): I18nType => {
   const instance = i18next.createInstance();
@@ -156,6 +159,28 @@ describe('ErrorPageCard', () => {
     expect(description).not.toHaveAttribute('role');
     expect(description).not.toHaveAttribute('aria-live');
   });
+
+  it.each([
+    ['notFound', '25.741px', '3.74px 0 16px'],
+    ['forbidden', '23.261px', '8px 0 16px'],
+    ['serverError', '19.261px', '8px 0 8px'],
+  ] as const)(
+    'applies the %s mobile frame bottom padding and description gaps',
+    (variant, paddingBottom, margin) => {
+      renderCard(variant, createBilingualI18n());
+
+      const heading = screen.getByRole('heading', { level: 1 });
+      const card = screen
+        .getAllByRole('generic')
+        .filter((element) => element.contains(heading))
+        .at(-1);
+      if (card === undefined) throw new Error('The card wrapping the heading is missing');
+      const description = screen.getByText(UK_COPY[variant].description);
+
+      expect(winningMediaValueFor(card, MOBILE_QUERY, 'padding-bottom')).toBe(paddingBottom);
+      expect(winningMediaValueFor(description, MOBILE_QUERY, 'margin')).toBe(margin);
+    }
+  );
 
   it('renders the actions row inside the card', () => {
     renderCard('forbidden', createBilingualI18n());

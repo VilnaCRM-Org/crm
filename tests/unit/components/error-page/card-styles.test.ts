@@ -96,7 +96,7 @@ describe('ErrorPageCardStyles', () => {
         lineHeight: '1.875rem',
       },
       [MOBILE]: {
-        maxWidth: 'calc(100% - 32px)',
+        maxWidth: 'calc(100% - 87.39px)',
         margin: '3.74px 0 16px',
         fontSize: '0.9375rem',
         lineHeight: '1.5625rem',
@@ -120,6 +120,23 @@ describe('ErrorPageCardStyles', () => {
       whiteSpace: 'nowrap',
     });
   });
+
+  it.each([
+    ['notFound', '25.741px', '3.74px 0 16px'],
+    ['forbidden', '23.261px', '8px 0 16px'],
+    ['serverError', '19.261px', '8px 0 8px'],
+  ] as const)(
+    'overrides the mobile card bottom and description gaps for %s from its frame',
+    async (variant, paddingBottom, margin) => {
+      const cardStyles = await loadCardStyles();
+      const { default: variants } = await import('@/components/error-page/error-page-variants');
+
+      expect(cardStyles.rhythm(variants[variant])).toEqual({
+        card: { [MOBILE]: { paddingBottom } },
+        description: { [MOBILE]: { margin } },
+      });
+    }
+  );
 
   it('builds exactly the four card tokens and never clips the card overflow', async () => {
     const sheet = (await loadCardStyles()).build();

@@ -1,9 +1,15 @@
 import type { CSSObject } from '@emotion/react';
 
-import type { ErrorPageCardStyleSheet, ErrorPageGeometry } from '@/components/types/error-page';
+import type {
+  ErrorPageCardRhythmSheet,
+  ErrorPageCardStyleSheet,
+  ErrorPageGeometry,
+  ErrorPageVariant,
+} from '@/components/types/error-page';
 import { customColors, paletteColors } from '@/styles/colors';
 
 import ERROR_PAGE_GEOMETRY from './error-page-geometry';
+import ERROR_PAGE_MEDIA from './error-page-media';
 import responsiveStyles from './responsive-styles';
 
 const ROOT_FONT_SIZE = 16;
@@ -57,6 +63,19 @@ class ErrorPageCardStyles {
     };
   }
 
+  public rhythm({ mobileCard }: ErrorPageVariant): ErrorPageCardRhythmSheet {
+    const { border } = ERROR_PAGE_GEOMETRY.mobile.card;
+
+    return {
+      card: { [ERROR_PAGE_MEDIA.mobile]: { paddingBottom: `${mobileCard.bottom - border}px` } },
+      description: {
+        [ERROR_PAGE_MEDIA.mobile]: {
+          margin: `${mobileCard.gapTitle}px 0 ${mobileCard.gapActions}px`,
+        },
+      },
+    };
+  }
+
   private surface(): CSSObject {
     return {
       position: 'relative',
@@ -94,7 +113,7 @@ class ErrorPageCardStyles {
 
   private description({ card }: ErrorPageGeometry): CSSObject {
     return {
-      maxWidth: `calc(100% - ${card.textInset * 2}px)`,
+      maxWidth: `calc(100% - ${card.descInset * 2}px)`,
       margin: `${card.gapTitle}px 0 ${card.gapActions}px`,
       fontSize: `${card.descSize / ROOT_FONT_SIZE}rem`,
       lineHeight: `${card.descLine / ROOT_FONT_SIZE}rem`,

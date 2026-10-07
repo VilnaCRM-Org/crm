@@ -5,11 +5,14 @@ import type { ErrorPageActionStyleSheet, ErrorPageGeometry } from '@/components/
 import { customColors, paletteColors } from '@/styles/colors';
 
 import ERROR_PAGE_GEOMETRY from './error-page-geometry';
+import ERROR_PAGE_MEDIA from './error-page-media';
 import responsiveStyles from './responsive-styles';
 
 const THEME_PHONE_MEDIA = '@media (max-width: 375px)';
 const OUTLINED_BORDER_WIDTH = 1;
 const ROOT_FONT_SIZE = 16;
+const STACK_GAP = 6;
+const STACK_INSET = 20;
 
 class ErrorPageActionStyles {
   public build(): ErrorPageActionStyleSheet {
@@ -34,6 +37,7 @@ class ErrorPageActionStyles {
         ),
         [THEME_PHONE_MEDIA]: { ...this.outlined(mobile), marginBottom: 0 },
       },
+      stacked: { [ERROR_PAGE_MEDIA.mobile]: { width: '100%' } },
     };
   }
 
@@ -48,6 +52,11 @@ class ErrorPageActionStyles {
       width: '100%',
       paddingInline: '4px',
       boxSizing: 'border-box',
+      [ERROR_PAGE_MEDIA.mobile]: {
+        flexDirection: 'column',
+        gap: `${STACK_GAP}px`,
+        paddingInline: `${STACK_INSET - ERROR_PAGE_GEOMETRY.mobile.card.border}px`,
+      },
     };
   }
 

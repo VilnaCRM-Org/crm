@@ -42,6 +42,7 @@ const ROWS: Row[] = [
   ['card.shadowY', 4, 4, 2.957],
   ['card.shadowBlur', 31, 31, 22.913],
   ['card.textInset', 24, 24, 16],
+  ['card.descInset', 24, 24, 43.695],
   ['card.titleSize', 36, 36, 22],
   ['card.titleWeight', 600, 600, 700],
   ['card.width', 614, 474, 350.348],

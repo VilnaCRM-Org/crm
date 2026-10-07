@@ -15,16 +15,17 @@ export default function ErrorPageCard({ variant }: Pick<ErrorPageProps, 'variant
   const { t } = useTranslation();
   const focusTitle = useFocusOnMount<HTMLHeadingElement>();
   const { titleKey, codeKey, descriptionKey } = ERROR_PAGE_VARIANTS[variant];
+  const rhythm = cardStyles.rhythm(ERROR_PAGE_VARIANTS[variant]);
 
   return (
-    <Box sx={styles.card}>
+    <Box sx={[styles.card, rhythm.card]}>
       <Box component="h1" id={ERROR_PAGE_TITLE_ID} tabIndex={-1} ref={focusTitle} sx={styles.title}>
         {t(titleKey)}
       </Box>
       <Box component="p" sx={styles.statusCode}>
         {t(codeKey)}
       </Box>
-      <Box component="p" sx={styles.description}>
+      <Box component="p" sx={[styles.description, rhythm.description]}>
         {t(descriptionKey)}
       </Box>
       <ErrorPageActions variant={variant} />

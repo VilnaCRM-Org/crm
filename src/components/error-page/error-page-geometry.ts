@@ -29,6 +29,7 @@ const LARGE_CARD_SURFACE: ErrorPageCardSurfaceGeometry = {
   shadowY: 4,
   shadowBlur: 31,
   textInset: 24,
+  descInset: 24,
   titleSize: 36,
   titleWeight: 600,
 };
@@ -104,6 +105,7 @@ const ERROR_PAGE_GEOMETRY: ErrorPageGeometryTable = {
       shadowY: 2.957,
       shadowBlur: 22.913,
       textInset: 16,
+      descInset: 43.695,
       titleSize: 22,
       titleWeight: 700,
       width: 350.348,
