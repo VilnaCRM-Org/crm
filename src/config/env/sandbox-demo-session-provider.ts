@@ -52,9 +52,11 @@ export class SandboxDemoSessionProvider {
   }
 
   private isActive(): boolean {
+    const hostname = this.host.location?.hostname;
+
     return (
       process.env.NODE_ENV !== 'production' ||
-      this.isSandboxHost(this.host.location?.hostname ?? '')
+      (hostname !== undefined && this.isSandboxHost(hostname))
     );
   }
 
